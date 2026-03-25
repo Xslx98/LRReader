@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
   ~ Copyright 2019 Hippo Seven
   ~
@@ -486,7 +486,7 @@
     <string name="share_image">แชร์รูปภาพ</string>
     <string name="image_saved">ภาพถูกบันทึกไปที่ %s</string>
 
-    <string name="settings_eh">显示</string>
+    <string name="settings_eh">การแสดงผล</string>
     <string name="settings_eh_sign_out">ออกจากระบบ</string>
     <string name="settings_eh_sign_out_summary">เริ่มแอปพลิเคชั่นใหม่เพื่อลงชื่อเข้าสู่ระบบ</string>
     <string name="settings_eh_sign_out_warning">คุณแน่ใจแล้วนะที่จะลงชื่อออกจากระบบ?</string>
