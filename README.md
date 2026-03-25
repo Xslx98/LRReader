@@ -66,9 +66,9 @@ After cloning, create `local.properties` in the project root with your signing c
 ```properties
 sdk.dir=/path/to/your/Android/Sdk
 RELEASE_STORE_FILE=keystore/release.jks
-RELEASE_STORE_PASSWORD=REDACTED
-RELEASE_KEY_ALIAS=lrreader
-RELEASE_KEY_PASSWORD=REDACTED
+RELEASE_STORE_PASSWORD=<your-store-password>
+RELEASE_KEY_ALIAS=<your-key-alias>
+RELEASE_KEY_PASSWORD=<your-key-password>
 ```
 
 构建 | Build:
