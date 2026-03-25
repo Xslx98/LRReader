@@ -1,0 +1,43 @@
+# Build output
+.gradle
+/build
+*.iml
+.idea
+/.kotlin/
+
+# Local configuration (contains signing passwords)
+/local.properties
+google-services.json
+/.vscode/
+
+# Signing keys
+/keystore/
+
+# Platform files
+.DS_Store
+Thumbs.db
+
+# Build artifacts (use GitHub Releases for distribution)
+*.apk
+*.aab
+*.idsig
+*.hprof
+
+# Native build cache
+/app/.cxx/
+/app/build/
+
+# Temp files
+/captures
+/src
+/download/
+open_source_licenses.html
+
+# Screenshots and images from device
+Screenshot_*.png
+Weixin\ Image_*.png
+Image_*.jpg
+
+# Internal development docs (not for public repo)
+/ROADMAP.md
+/docs/

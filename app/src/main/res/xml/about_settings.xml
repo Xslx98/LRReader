@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Licensed under the Apache License, Version 2.0
+  -->
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <Preference
+        android:key="declaration"
+        android:summary="@string/settings_about_declaration_summary"
+        android:title="@string/settings_about_declaration"
+        android:selectable="false"
+        app:allowDividerAbove="true" />
+
+    <Preference
+        android:key="author"
+        android:title="@string/settings_about_author"
+        android:summary="@string/settings_about_author_summary"
+        android:selectable="false"
+        app:allowDividerAbove="true" />
+
+    <Preference
+        android:key="license"
+        android:summary="@string/settings_about_license_summary"
+        android:title="@string/settings_about_license"
+        app:allowDividerAbove="true" />
+
+    <com.hippo.ehviewer.preference.VersionPreference
+        android:key="version"
+        app:allowDividerAbove="true" />
+
+</PreferenceScreen>
