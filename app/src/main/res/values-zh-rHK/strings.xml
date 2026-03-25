@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
   ~ Copyright 2016 Hippo Seven
   ~
@@ -535,7 +535,7 @@
     <string name="image_saved">已儲存圖片至 %s</string>
 
     <!-- Settings -->
-    <string name="settings_eh">显示</string>
+    <string name="settings_eh">顯示</string>
     <string name="settings_eh_sign_out">登出</string>
     <string name="settings_eh_sign_out_summary">登出後重啟應用程式以便再次登入</string>
     <string name="settings_eh_sign_out_warning">你真係要登出？</string>
@@ -1061,7 +1061,7 @@
     <string name="lrr_category_edit">編輯分類</string>
     <string name="lrr_category_name_empty">請輸入分類名稱</string>
     <string name="lrr_category_name_hint">分類名稱</string>
-    <string name="lrr_category_pinned">已置頂</string>
+    <string name="lrr_category_pinned">📌 %1$s</string>
     <string name="lrr_category_pinned_switch">置頂顯示</string>
     <string name="lrr_category_search_hint">搜尋條件（動態分類用）</string>
     <string name="lrr_category_type_dynamic">動態（搜尋）</string>
