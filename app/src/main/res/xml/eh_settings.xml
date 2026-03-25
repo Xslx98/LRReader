@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Licensed under the Apache License, Version 2.0
+  -->
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- LANraragi: removed E-Hentai sign-out, cookies, gallery site, UConfig, MyTags, events, limits -->
+
+    <com.hippo.preference.ListPreference
+        android:defaultValue="0"
+        android:key="theme"
+        android:summary="%s"
+        android:title="@string/settings_eh_theme"
+        app:allowDividerAbove="true"
+        app:entries="@array/theme_entries"
+        app:entryValues="@array/theme_entry_values" />
+
+    <com.hippo.preference.SwitchPreference
+        android:defaultValue="false"
+        android:key="theme_auto_switch"
+        android:title="@string/settings_eh_theme_auto_switch" />
+
+    <com.hippo.preference.SwitchPreference
+        android:defaultValue="false"
+        android:key="apply_nav_bar_theme_color"
+        android:title="@string/settings_eh_apply_nav_bar_theme_color" />
+
+
+
+    <com.hippo.preference.ListPreference
+        android:defaultValue="0"
+        android:key="list_mode"
+        android:summary="%s"
+        android:title="@string/settings_eh_list_mode"
+        app:allowDividerAbove="true"
+        app:entries="@array/list_mode_entries"
+        app:entryValues="@array/list_mode_entry_values" />
+
+
+    <com.hippo.preference.ListPreference
+        android:defaultValue="0"
+        android:key="detail_size"
+        android:summary="%s"
+        android:title="@string/settings_eh_detail_size"
+        app:allowDividerAbove="true"
+        app:entries="@array/detail_size_entries"
+        app:entryValues="@array/detail_size_entry_values" />
+
+    <com.hippo.preference.ListPreference
+        android:defaultValue="1"
+        android:key="thumb_size"
+        android:summary="%s"
+        android:title="@string/settings_eh_thumb_size"
+        app:allowDividerAbove="true"
+        app:entries="@array/thumb_size_entries"
+        app:entryValues="@array/thumb_size_entry_values" />
+
+    <!-- LANraragi: removed show_read_progress, tag_translations_source, filter -->
+
+    <com.hippo.preference.SwitchPreference
+        android:defaultValue="true"
+        android:key="show_tag_translations"
+        android:summary="@string/settings_eh_show_tag_translations_summary"
+        android:title="@string/settings_eh_show_tag_translations" />
+
+
+    <com.hippo.preference.SwitchPreference
+        android:defaultValue="false"
+        android:key="cellular_network_warning"
+        android:title="@string/settings_eh_cellular_network_warning" />
+
+</PreferenceScreen>
