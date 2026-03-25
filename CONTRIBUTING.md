@@ -35,15 +35,15 @@ The project uses `keystore/release.jks` for release signing. Credentials are inj
 
 ```properties
 RELEASE_STORE_FILE=keystore/release.jks
-RELEASE_STORE_PASSWORD=REDACTED
-RELEASE_KEY_ALIAS=lrreader
-RELEASE_KEY_PASSWORD=REDACTED
+RELEASE_STORE_PASSWORD=<your-store-password>
+RELEASE_KEY_ALIAS=<your-key-alias>
+RELEASE_KEY_PASSWORD=<your-key-password>
 ```
 
 > ⚠️ **密钥信息 | Key Info**
 > - Keystore: `keystore/release.jks`
-> - Key Alias: `lrreader`
-> - Store/Key Password: `REDACTED`
+> - Key Alias: *(see `SIGNING_CREDENTIALS.md`)*
+> - Store/Key Password: *(see `SIGNING_CREDENTIALS.md`)*
 > - Algorithm: RSA 2048, validity 10000 days
 >
 > **请妥善保管 release.jks 文件和密码。一旦丢失，将无法更新已发布的应用。**
