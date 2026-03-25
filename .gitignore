@@ -12,6 +12,7 @@ google-services.json
 
 # Signing keys
 /keystore/
+/SIGNING_CREDENTIALS.md
 
 # Platform files
 .DS_Store
