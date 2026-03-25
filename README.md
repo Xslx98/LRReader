@@ -38,7 +38,7 @@ An Android client for [LANraragi](https://github.com/Difegue/LANraragi), built u
 
 | 渠道 / Channel | 链接 / Link |
 |---|---|
-| GitHub Releases | [最新版本 / Latest](https://github.com/<YOUR_USERNAME>/<YOUR_REPO>/releases) |
+| GitHub Releases | [最新版本 / Latest](https://github.com/Xslx98/LRReader/releases) |
 
 ## 🛠️ 构建 | Build
 
@@ -55,8 +55,8 @@ An Android client for [LANraragi](https://github.com/Difegue/LANraragi), built u
 ### 快速开始 | Quick Start
 
 ```bash
-git clone https://github.com/<YOUR_USERNAME>/<YOUR_REPO>.git
-cd <YOUR_REPO>
+git clone https://github.com/Xslx98/LRReader.git
+cd LRReader
 ```
 
 首次 clone 后，在根目录创建 `local.properties` 并添加签名配置：
@@ -89,11 +89,11 @@ RELEASE_KEY_PASSWORD=lrreader2026
 
 | 层 / Layer | 技术 / Technology |
 |---|---|
-| **语言 / Language** | Java / Kotlin 混合 / hybrid |
+| **语言 / Language** | Java / Kotlin hybrid |
 | **网络 / Network** | OkHttp 4.12 + Kotlin Coroutines |
 | **API 序列化 / Serialization** | kotlinx-serialization (LRR API) + Gson (legacy) |
 | **数据库 / Database** | Room 2.6.1 + KSP (schema v9) |
-| **图像解码 / Image Decoding** | 自研 C/JNI 引擎 / Custom C/JNI engine (libjpeg-turbo, libpng, libwebp) |
+| **图像解码 / Image Decoding** | Custom C/JNI engine (libjpeg-turbo, libpng, libwebp) |
 | **安全 / Security** | EncryptedSharedPreferences (API Key) |
 | **构建 / Build** | Gradle + R8/ProGuard |
 | **ABI** | arm64-v8a, x86_64 |
@@ -103,18 +103,18 @@ RELEASE_KEY_PASSWORD=lrreader2026
 ```
 LRReader/
 ├── app/src/main/
-│   ├── java/com/hippo/ehviewer/  # 主代码 / Main source (EhViewer framework)
-│   │   ├── client/lrr/           # LANraragi REST API 客户端 / API client
-│   │   ├── dao/                  # Room 数据库 / Database (AppDatabase.kt)
+│   ├── java/com/hippo/ehviewer/  # Main source (EhViewer framework)
+│   │   ├── client/lrr/           # LANraragi REST API client
+│   │   ├── dao/                  # Room Database (AppDatabase.kt)
 │   │   ├── ui/                   # Activity & Fragment
-│   │   └── Settings.java         # 应用偏好设置 / App preferences
-│   ├── cpp/                      # C/JNI 图像解码引擎 / Native image decoder
-│   ├── res/                      # 资源文件 / Resources (10 languages)
-│   └── assets/                   # 开源许可证页面 / License pages
-├── keystore/                     # 签名密钥 / Signing keys (gitignored)
-├── CONTRIBUTING.md               # 贡献指南 / Contributing guide
-├── PRIVACY_POLICY.md             # 隐私政策 / Privacy policy
-├── NOTICE                        # 上游项目致谢 / Upstream credits
+│   │   └── Settings.java         # App preferences
+│   ├── cpp/                      # C/JNI native image decoder
+│   ├── res/                      # Resources (10 languages)
+│   └── assets/                   # License pages
+├── keystore/                     # Signing keys (gitignored)
+├── CONTRIBUTING.md               # Contributing guide
+├── PRIVACY_POLICY.md             # Privacy policy
+├── NOTICE                        # Upstream credits
 └── LICENSE                       # GPLv3
 ```
 
@@ -132,18 +132,18 @@ This project is built upon the following open-source projects:
 ### 依赖库 | Dependencies
 
 - [AndroidX](https://developer.android.com/jetpack/androidx) (AppCompat, Room, RecyclerView, Security)
-- [OkHttp](https://github.com/square/okhttp) — 网络请求 / HTTP client
-- [kotlinx-serialization](https://github.com/Kotlin/kotlinx.serialization) — JSON 序列化 / JSON serialization
-- [kotlinx-coroutines](https://github.com/Kotlin/kotlinx.coroutines) — 异步编程 / Async programming
-- [Gson](https://github.com/google/gson) — JSON 解析（遗留）/ JSON parsing (legacy)
-- [UCrop](https://github.com/Yalantis/uCrop) — 图像裁剪 / Image cropping
-- [ReLinker](https://github.com/KeepSafe/ReLinker) — 原生库加载 / Native library loading
-- [jsoup](https://github.com/jhy/jsoup) — HTML 解析 / HTML parsing
-- [libjpeg-turbo](https://libjpeg-turbo.org/) / [libpng](http://www.libpng.org/) — 原生图像解码 / Native image decoding
+- [OkHttp](https://github.com/square/okhttp) - HTTP client
+- [kotlinx-serialization](https://github.com/Kotlin/kotlinx.serialization) - JSON serialization
+- [kotlinx-coroutines](https://github.com/Kotlin/kotlinx.coroutines) - Async programming
+- [Gson](https://github.com/google/gson) - JSON parsing (legacy)
+- [UCrop](https://github.com/Yalantis/uCrop) - Image cropping
+- [ReLinker](https://github.com/KeepSafe/ReLinker) - Native library loading
+- [jsoup](https://github.com/jhy/jsoup) - HTML parsing
+- [libjpeg-turbo](https://libjpeg-turbo.org/) / [libpng](http://www.libpng.org/) - Native image decoding
 
-完整开源许可信息请查看应用内 **设置 → 关于 → 许可证**。
+完整开源许可信息请查看应用内 **设置 - 关于 - 许可证**。
 
-Full license details available in-app under **Settings → About → License**.
+Full license details available in-app under **Settings - About - License**.
 
 ## 📜 许可证 | License
 
