@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><!--
+﻿<?xml version="1.0" encoding="utf-8"?><!--
   ~ Copyright 2016 Hippo Sevenerror_please_login_first
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -499,7 +499,7 @@
     <string name="image_saved">이미지를 %s 경로에 저장함</string>
 
     <!-- Settings -->
-    <string name="settings_eh">显示</string>
+    <string name="settings_eh">화면</string>
     <string name="settings_eh_sign_out">로그아웃</string>
     <string name="settings_eh_sign_out_summary">다시 로그인하려면 앱을 재시작하세요.</string>
     <string name="settings_eh_sign_out_warning">정말 로그아웃하시겠습니까?</string>
@@ -1016,7 +1016,7 @@
     <string name="lrr_category_edit">카테고리 편집</string>
     <string name="lrr_category_name_empty">카테고리 이름을 입력해 주세요</string>
     <string name="lrr_category_name_hint">카테고리 이름</string>
-    <string name="lrr_category_pinned">고정됨</string>
+    <string name="lrr_category_pinned">📌 %1$s</string>
     <string name="lrr_category_pinned_switch">상단에 고정</string>
     <string name="lrr_category_search_hint">검색 조건 (동적 카테고리용)</string>
     <string name="lrr_category_type_dynamic">동적 (검색)</string>
