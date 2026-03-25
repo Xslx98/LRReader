@@ -45,6 +45,7 @@ import com.hippo.a7zip.A7Zip;
 import com.hippo.beerbelly.SimpleDiskCache;
 import com.hippo.conaco.Conaco;
 import com.hippo.content.RecordingApplication;
+import com.hippo.content.ContextLocalWrapper;
 import com.hippo.ehviewer.client.EhClient;
 import com.hippo.ehviewer.client.EhCookieStore;
 import com.hippo.ehviewer.client.EhHosts;
@@ -84,15 +85,45 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-
+import android.content.res.Resources;
+import java.util.Locale;
 
 import okhttp3.Cache;
-import okhttp3.ConnectionSpec;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
 
 public class EhApplication extends RecordingApplication {
+
+    @Override
+    protected void attachBaseContext(Context base) {
+        // Apply locale before super.attachBaseContext() so the Application context
+        // uses the correct language. Settings is not yet initialized here, so we
+        // read the preference directly from SharedPreferences.
+        Locale locale = null;
+        try {
+            android.content.SharedPreferences prefs =
+                    android.preference.PreferenceManager.getDefaultSharedPreferences(base);
+            String language = prefs.getString("app_language", "system");
+            if (language != null && !language.equals("system")) {
+                String[] split = language.split("-");
+                if (split.length == 1) {
+                    locale = new Locale(split[0]);
+                } else if (split.length == 2) {
+                    locale = new Locale(split[0], split[1]);
+                } else if (split.length == 3) {
+                    locale = new Locale(split[0], split[1], split[2]);
+                }
+            }
+        } catch (Exception ignored) {
+            // First launch or preference not yet available — use system locale
+        }
+
+        if (locale == null) {
+            locale = Resources.getSystem().getConfiguration().locale;
+        }
+        base = ContextLocalWrapper.wrap(base, locale);
+        super.attachBaseContext(base);
+    }
 
     private static final String TAG = EhApplication.class.getSimpleName();
     private static final String KEY_GLOBAL_STUFF_NEXT_ID = "global_stuff_next_id";

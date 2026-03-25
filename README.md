@@ -9,7 +9,8 @@
 An Android client for [LANraragi](https://github.com/Difegue/LANraragi), built upon the EhViewer reading framework.
 
 <p align="center">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" width="280" alt="Screenshot"/>
+  <!-- TODO: 替换为当前版本的应用截图 -->
+  <!-- <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" width="280" alt="Screenshot"/> -->
 </p>
 
 ## ✨ 功能特性 / Features

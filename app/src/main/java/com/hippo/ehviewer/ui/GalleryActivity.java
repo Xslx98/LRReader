@@ -942,6 +942,25 @@ public class GalleryActivity extends EhActivity implements SeekBar.OnSeekBarChan
     }
 
     /**
+     * Prevent edge-to-edge window insets from offsetting dialog content.
+     * Without this, the dialog's decor view adds status bar padding,
+     * causing touch targets to misalign with visual positions.
+     */
+    private void applyImmersiveToDialog(AlertDialog dialog) {
+        Window window = dialog.getWindow();
+        if (window != null && Settings.getReadingFullscreen()) {
+            View decorView = window.getDecorView();
+            // Consume all window insets so no padding is applied to dialog content
+            androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(decorView, (v, insets) -> {
+                // Return CONSUMED to prevent any inset-based padding
+                return androidx.core.view.WindowInsetsCompat.CONSUMED;
+            });
+            // Force re-dispatch insets after setting listener
+            decorView.requestApplyInsets();
+        }
+    }
+
+    /**
      * Sanitize a string for use as a filename.
      * Removes illegal characters and truncates to maxLen.
      */
@@ -1179,7 +1198,8 @@ public class GalleryActivity extends EhActivity implements SeekBar.OnSeekBarChan
         final CharSequence[] items;
         items = new CharSequence[]{getString(R.string.page_menu_refresh), getString(R.string.page_menu_share), getString(R.string.page_menu_save), getString(R.string.page_menu_save_to)};
         pageDialogListener(builder, items, page);
-        builder.show();
+        AlertDialog dialog = builder.show();
+        applyImmersiveToDialog(dialog);
     }
 
     private void pageDialogListener(AlertDialog.Builder builder, CharSequence[] items, int page) {
@@ -1416,7 +1436,8 @@ public class GalleryActivity extends EhActivity implements SeekBar.OnSeekBarChan
         private void onTapMenuArea() {
             AlertDialog.Builder builder = new AlertDialog.Builder(GalleryActivity.this);
             GalleryMenuHelper helper = new GalleryMenuHelper(builder.getContext());
-            builder.setTitle(R.string.gallery_menu_title).setView(helper.getView()).setPositiveButton(android.R.string.ok, helper).show();
+            AlertDialog dialog = builder.setTitle(R.string.gallery_menu_title).setView(helper.getView()).setPositiveButton(android.R.string.ok, helper).show();
+            applyImmersiveToDialog(dialog);
         }
 
         private void onTapSliderArea() {
