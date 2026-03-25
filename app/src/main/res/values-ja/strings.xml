@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
   ~ Copyright 2016 Hippo Seven
   ~
@@ -452,7 +452,7 @@
     <string name="gallery_menu_title">メニュー</string>
     <string name="share_image">画像を共有</string>
     <string name="image_saved">画像は「%s」に保存されました</string>
-    <string name="settings_eh">显示</string>
+    <string name="settings_eh">表示</string>
     <string name="settings_eh_sign_out">ログアウト</string>
     <string name="settings_eh_sign_out_summary">ログアウト後にアプリを再起動して、もう一度ログインしてください。</string>
     <string name="settings_eh_sign_out_warning">本当にログアウトしますか？</string>
@@ -968,7 +968,7 @@
     <string name="lrr_category_edit">カテゴリ編集</string>
     <string name="lrr_category_name_empty">カテゴリ名を入力してください</string>
     <string name="lrr_category_name_hint">カテゴリ名</string>
-    <string name="lrr_category_pinned">ピン留めしました</string>
+    <string name="lrr_category_pinned">📌 %1$s</string>
     <string name="lrr_category_pinned_switch">トップに固定</string>
     <string name="lrr_category_search_hint">検索条件（動的カテゴリ用）</string>
     <string name="lrr_category_type_dynamic">動的（検索）</string>

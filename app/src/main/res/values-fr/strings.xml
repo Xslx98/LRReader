@@ -461,7 +461,7 @@ Bloquer le commentateur : masquer les commentaires de cet utilisateur. Le charge
     <string name="share_image">Partager l\'image</string>
     <string name="image_saved">Image sauvegardée à %s</string>
 
-    <string name="settings_eh">显示</string>
+    <string name="settings_eh">Affichage</string>
     <string name="settings_eh_sign_out">Se déconnecter</string>
     <string name="settings_eh_sign_out_summary">Redémarrez l\'appli pour vous connecter à nouveau</string>
     <string name="settings_eh_sign_out_warning">Voulez-vous vous déconnecter ?</string>
@@ -973,7 +973,7 @@ Bloquer le commentateur : masquer les commentaires de cet utilisateur. Le charge
     <string name="lrr_category_edit">Modifier la catégorie</string>
     <string name="lrr_category_name_empty">Veuillez entrer un nom de catégorie</string>
     <string name="lrr_category_name_hint">Nom de la catégorie</string>
-    <string name="lrr_category_pinned">Épinglée</string>
+    <string name="lrr_category_pinned">📌 %1$s</string>
     <string name="lrr_category_pinned_switch">Épingler en haut</string>
     <string name="lrr_category_search_hint">Condition de recherche (pour catégories dynamiques)</string>
     <string name="lrr_category_type_dynamic">Dynamique (recherche)</string>

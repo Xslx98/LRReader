@@ -41,3 +41,4 @@ Image_*.jpg
 # Internal development docs (not for public repo)
 /ROADMAP.md
 /docs/
+bugs/

@@ -55,7 +55,7 @@
     <string name="subscription">Subscription</string>
     <string name="whats_hot">What\'s hot</string>
     <string name="top_list">Top Lists</string>
-    <string name="favourite">Favourite</string>
+    <string name="favourite">Categories</string>
     <string name="history">History</string>
     <string name="downloads">Downloads</string>
     <string name="settings">Settings</string>
@@ -481,7 +481,7 @@
     <string name="share_image">Share image</string>
     <string name="image_saved">Image saved to %s</string>
 
-    <string name="settings_eh">显示</string>
+    <string name="settings_eh">Display</string>
     <string name="settings_eh_sign_out">Sign out</string>
     <string name="settings_eh_sign_out_summary">Restart the application to sign in</string>
     <string name="settings_eh_sign_out_warning">Do you really want to sign out?</string>

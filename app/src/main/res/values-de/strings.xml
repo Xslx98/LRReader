@@ -48,7 +48,7 @@ Kommentator blockieren: Kommentare dieses Benutzers ausblenden. Das Laden der Ga
     <string name="subscription">Gefolgte Etiketten</string>
     <string name="whats_hot">Top-Listen</string>
     <string name="top_lists">Bestenliste</string>
-    <string name="favourite">Lesezeichen</string>
+    <string name="favourite">Kategorien</string>
     <string name="history">Verlauf</string>
     <string name="downloads">Downloads</string>
     <string name="settings">Einstellungen</string>
@@ -409,7 +409,7 @@ Kommentator blockieren: Kommentare dieses Benutzers ausblenden. Das Laden der Ga
     <string name="gallery_menu_title">Menü</string>
     <string name="share_image">Das Bild teilen</string>
     <string name="image_saved">Das Bild wurde zu %s gespeichert</string>
-    <string name="settings_eh">显示</string>
+    <string name="settings_eh">Anzeige</string>
     <string name="settings_eh_sign_out">Abmelden</string>
     <string name="settings_eh_sign_out_summary">Starte die App neu, um dich weiter anzumelden</string>
     <string name="settings_eh_sign_out_warning">Möchtest du dich abmelden?</string>
@@ -957,7 +957,7 @@ Kommentator blockieren: Kommentare dieses Benutzers ausblenden. Das Laden der Ga
     <string name="lrr_category_edit">Kategorie bearbeiten</string>
     <string name="lrr_category_name_empty">Bitte Kategorienamen eingeben</string>
     <string name="lrr_category_name_hint">Kategoriename</string>
-    <string name="lrr_category_pinned">Angeheftet</string>
+    <string name="lrr_category_pinned">📌 %1$s</string>
     <string name="lrr_category_pinned_switch">Oben anheften</string>
     <string name="lrr_category_search_hint">Suchbedingung (für dynamische Kategorien)</string>
     <string name="lrr_category_type_dynamic">Dynamisch (Suche)</string>
