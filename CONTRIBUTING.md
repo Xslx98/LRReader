@@ -16,8 +16,8 @@ Thank you for your interest in LRReader! Bug reports, feature requests, and code
 ## 构建 | Build
 
 ```bash
-git clone https://github.com/<YOUR_USERNAME>/<YOUR_REPO>.git
-cd <YOUR_REPO>
+git clone https://github.com/Xslx98/LRReader.git
+cd LRReader
 ./gradlew :app:assembleAppReleaseDebug
 ```
 
@@ -46,9 +46,9 @@ RELEASE_KEY_PASSWORD=REDACTED
 > - Store/Key Password: `REDACTED`
 > - Algorithm: RSA 2048, validity 10000 days
 >
-> **请妥善保管 `release.jks` 文件和密码。一旦丢失，将无法更新已发布的应用。**
+> **请妥善保管 release.jks 文件和密码。一旦丢失，将无法更新已发布的应用。**
 >
-> **Keep `release.jks` and its password safe. If lost, published apps cannot be updated.**
+> **Keep release.jks and its password safe. If lost, published apps cannot be updated.**
 
 ## 发布构建 | Release Build
 
@@ -59,7 +59,7 @@ RELEASE_KEY_PASSWORD=REDACTED
 
 | 产物 / Artifact | 路径 / Path | 用途 / Usage |
 |---|---|---|
-| APK | `app/build/outputs/apk/appRelease/release/` | GitHub Releases / 直接安装 Direct install |
+| APK | `app/build/outputs/apk/appRelease/release/` | GitHub Releases |
 
 ## 提交规范 | Commit Guidelines
 
@@ -74,16 +74,16 @@ RELEASE_KEY_PASSWORD=REDACTED
 ```
 
 **类型 | Types**:
-- `feat` — 新功能 / New feature
-- `fix` — Bug 修复 / Bug fix
-- `refactor` — 代码重构 / Code refactoring
-- `docs` — 文档变更 / Documentation
-- `chore` — 构建/依赖/配置 / Build/deps/config
+- `feat` - 新功能 / New feature
+- `fix` - Bug 修复 / Bug fix
+- `refactor` - 代码重构 / Code refactoring
+- `docs` - 文档变更 / Documentation
+- `chore` - 构建/依赖/配置 / Build/deps/config
 
 ### 分支策略 | Branch Strategy
 
-- 基于 `BiLi_PC_Gamer` 分支创建 feature/fix 分支
-- Create your feature/fix branch from `BiLi_PC_Gamer`
+- 基于 `main` 分支创建 feature/fix 分支
+- Create your feature/fix branch from `main`
 - PR 标题应清晰描述改动内容
 - PR titles should clearly describe the changes
 
@@ -100,9 +100,9 @@ RELEASE_KEY_PASSWORD=REDACTED
 
 ## 报告 Bug | Reporting Bugs
 
-请在 [Issues](https://github.com/<YOUR_USERNAME>/<YOUR_REPO>/issues) 中提交，包含以下信息：
+请在 [Issues](https://github.com/Xslx98/LRReader/issues) 中提交，包含以下信息：
 
-Please file an [Issue](https://github.com/<YOUR_USERNAME>/<YOUR_REPO>/issues) with:
+Please file an [Issue](https://github.com/Xslx98/LRReader/issues) with:
 
 1. 设备型号和 Android 版本 / Device model and Android version
 2. LRReader 版本号 / LRReader version
