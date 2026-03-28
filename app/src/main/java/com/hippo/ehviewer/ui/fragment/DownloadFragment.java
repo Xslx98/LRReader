@@ -594,7 +594,7 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
         }
 
         Activity activity = getActivity();
-        new Thread(() -> {
+        com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
             List<String> paths = new ArrayList<>();
             collectImagePaths(downloadLocation, paths);
             if (!paths.isEmpty()) {
@@ -605,7 +605,7 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
                         null
                 );
             }
-        }).start();
+        });
     }
 
     private void collectImagePaths(UniFile dir, List<String> paths) {
