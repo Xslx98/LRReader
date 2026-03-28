@@ -21,9 +21,10 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.media.MediaScannerConnection;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
@@ -40,13 +41,12 @@ import com.hippo.ehviewer.download.DownloadManager;
 import com.hippo.ehviewer.ui.CommonOperations;
 import com.hippo.unifile.UniFile;
 import com.hippo.util.ExceptionUtils;
+import com.hippo.util.IoThreadPoolExecutor;
 import com.hippo.yorozuya.IOUtils;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -66,6 +66,8 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
     public static final String KEY_EXPORT_DOWNLOAD_ITEMS = "export_download_items";
     public static final String KEY_IMPORT_DOWNLOAD_ITEMS = "import_download_items";
     public static final String KEY_CLEAN_INVALID_DOWNLOAD = "clean_invalid_download";
+
+    private static final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Nullable
     private Preference mDownloadLocation;
@@ -148,7 +150,7 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
             new AlertDialog.Builder(requireActivity())
                     .setTitle(R.string.settings_download_clean_invalid_download)
                     .setMessage(R.string.settings_download_clean_invalid_download_confirm)
-                    .setPositiveButton(android.R.string.ok, (dialog, which) -> new CleanInvalidDownloadTask(this).execute())
+                    .setPositiveButton(android.R.string.ok, (dialog, which) -> executeCleanInvalidDownload())
                     .setNegativeButton(android.R.string.cancel, null)
                     .show();
             return true;
@@ -250,7 +252,7 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
             }
             case REQUEST_CODE_PICK_DOWNLOAD_IMPORT_FILE: {
                 if (resultCode == Activity.RESULT_OK) {
-                    new ImportDownloadTask(this, data.getData()).execute();
+                    executeImportDownload(data.getData());
                 }
                 break;
             }
@@ -292,41 +294,25 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
         }
     }
 
-    private static class ImportDownloadTask extends AsyncTask<Void, Integer, Integer> {
+    // --- Import download task (replaces AsyncTask) ---
 
-        private final WeakReference<DownloadFragment> mFragment;
-        private final Uri mUri;
-        private ProgressDialog mProgressDialog;
+    @SuppressWarnings("deprecation")
+    private void executeImportDownload(Uri uri) {
+        if (getActivity() == null || uri == null) return;
 
-        public ImportDownloadTask(DownloadFragment fragment, Uri uri) {
-            mFragment = new WeakReference<>(fragment);
-            mUri = uri;
-        }
+        ProgressDialog dialog = new ProgressDialog(getActivity());
+        dialog.setTitle(R.string.settings_download_import_items);
+        dialog.setIndeterminate(false);
+        dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        dialog.setCancelable(false);
+        dialog.show();
 
-        @Override
-        protected void onPreExecute() {
-            DownloadFragment fragment = mFragment.get();
-            if (fragment == null || fragment.getActivity() == null) {
-                return;
-            }
-            mProgressDialog = new ProgressDialog(fragment.getActivity());
-            mProgressDialog.setTitle(R.string.settings_download_import_items);
-            mProgressDialog.setIndeterminate(false);
-            mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-            mProgressDialog.setCancelable(false);
-            mProgressDialog.show();
-        }
-
-        @Override
-        protected Integer doInBackground(Void... voids) {
-            DownloadFragment fragment = mFragment.get();
-            if (fragment == null || fragment.getActivity() == null || mUri == null) {
-                return 0;
-            }
-
-            try (InputStream is = fragment.requireActivity().getContentResolver().openInputStream(mUri)) {
+        IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+            int importCount = 0;
+            try (InputStream is = requireActivity().getContentResolver().openInputStream(uri)) {
                 if (is == null) {
-                    return 0;
+                    mainHandler.post(() -> dismissAndShowResult(dialog, 0));
+                    return;
                 }
                 String content = IOUtils.readString(is, StandardCharsets.UTF_8.name());
                 String[] lines = content.split("\n");
@@ -341,10 +327,9 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
                     }
                 }
 
-                DownloadManager downloadManager = EhApplication.getDownloadManager(fragment.requireActivity());
-                int importCount = 0;
+                DownloadManager downloadManager = EhApplication.getDownloadManager(requireActivity());
                 int total = galleryInfos.size();
-                publishProgress(0, total);
+                mainHandler.post(() -> { dialog.setMax(total); dialog.setProgress(0); });
 
                 for (int i = 0; i < total; i++) {
                     GalleryInfo gi = galleryInfos.get(i);
@@ -352,95 +337,71 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
                         downloadManager.addDownload(gi, null);
                         importCount++;
                     }
-                    publishProgress(i + 1, total);
+                    final int progress = i + 1;
+                    mainHandler.post(() -> dialog.setProgress(progress));
                 }
-                return importCount;
             } catch (IOException e) {
-                return 0;
+                // importCount stays 0
             }
-        }
+            final int result = importCount;
+            mainHandler.post(() -> dismissAndShowResult(dialog, result));
+        });
+    }
 
-        @Override
-        protected void onProgressUpdate(Integer... values) {
-            if (mProgressDialog != null) {
-                mProgressDialog.setMax(values[1]);
-                mProgressDialog.setProgress(values[0]);
-            }
-        }
-
-        @Override
-        protected void onPostExecute(Integer result) {
-            DownloadFragment fragment = mFragment.get();
-            if (mProgressDialog != null) {
-                // 检查 Fragment 是否仍然附加到 Activity，避免在 Activity 销毁后关闭对话框导致崩溃
-                if (fragment != null && fragment.isAdded() && fragment.getActivity() != null) {
-                    try {
-                        if (mProgressDialog.isShowing()) {
-                            mProgressDialog.dismiss();
-                        }
-                    } catch (IllegalArgumentException e) {
-                        // 对话框已经不再附加到窗口管理器，忽略异常
-                        ExceptionUtils.throwIfFatal(e);
-                    }
-                }
-                mProgressDialog = null;
-            }
-            if (fragment == null || fragment.getActivity() == null) {
-                return;
+    @SuppressWarnings("deprecation")
+    private void dismissAndShowResult(ProgressDialog dialog, int result) {
+        if (isAdded() && getActivity() != null) {
+            try {
+                if (dialog.isShowing()) dialog.dismiss();
+            } catch (IllegalArgumentException e) {
+                ExceptionUtils.throwIfFatal(e);
             }
             if (result > 0) {
-                Toast.makeText(fragment.getActivity(), fragment.getString(R.string.settings_download_import_succeed, result), Toast.LENGTH_LONG).show();
+                Toast.makeText(getActivity(), getString(R.string.settings_download_import_succeed, result), Toast.LENGTH_LONG).show();
             } else {
-                Toast.makeText(fragment.getActivity(), R.string.settings_download_import_failed, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity(), R.string.settings_download_import_failed, Toast.LENGTH_SHORT).show();
             }
         }
     }
 
-    private static class CleanInvalidDownloadTask extends AsyncTask<Void, Integer, Integer> {
+    // --- Clean invalid download task (replaces AsyncTask) ---
 
-        private final WeakReference<DownloadFragment> mFragment;
-        private ProgressDialog mProgressDialog;
-        private final List<String> mLogs = new ArrayList<>();
+    @SuppressWarnings("deprecation")
+    private void executeCleanInvalidDownload() {
+        if (getActivity() == null) return;
 
-        public CleanInvalidDownloadTask(DownloadFragment fragment) {
-            mFragment = new WeakReference<>(fragment);
-        }
+        ProgressDialog dialog = new ProgressDialog(getActivity());
+        dialog.setTitle(R.string.settings_download_cleaning);
+        dialog.setIndeterminate(false);
+        dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        dialog.setCancelable(false);
+        dialog.show();
 
-        @Override
-        protected void onPreExecute() {
-            DownloadFragment fragment = mFragment.get();
-            if (fragment == null || fragment.getActivity() == null) {
-                return;
-            }
-            mProgressDialog = new ProgressDialog(fragment.getActivity());
-            mProgressDialog.setTitle(R.string.settings_download_cleaning);
-            mProgressDialog.setIndeterminate(false);
-            mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-            mProgressDialog.setCancelable(false);
-            mProgressDialog.show();
-        }
+        IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+            List<String> logs = new ArrayList<>();
+            int invalidCount = 0;
 
-        @Override
-        protected Integer doInBackground(Void... voids) {
             UniFile downloadDir = Settings.getDownloadLocation();
             if (downloadDir == null || !downloadDir.isDirectory()) {
-                return 0;
+                mainHandler.post(() -> dismissAndShowCleanResult(dialog, 0));
+                return;
             }
 
             UniFile[] files = downloadDir.listFiles();
             if (files == null) {
-                return 0;
+                mainHandler.post(() -> dismissAndShowCleanResult(dialog, 0));
+                return;
             }
 
-            int invalidCount = 0;
             int total = files.length;
-            publishProgress(0, total);
+            mainHandler.post(() -> { dialog.setMax(total); dialog.setProgress(0); });
 
-            DownloadManager downloadManager = EhApplication.getDownloadManager(mFragment.get().requireActivity());
+            DownloadManager downloadManager = EhApplication.getDownloadManager(requireActivity());
 
             for (int i = 0; i < total; i++) {
                 UniFile dir = files[i];
-                publishProgress(i + 1, total);
+                final int progress = i + 1;
+                mainHandler.post(() -> dialog.setProgress(progress));
 
                 if (!dir.isDirectory()) {
                     continue;
@@ -448,7 +409,7 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
 
                 UniFile[] subFiles = dir.listFiles();
                 if (subFiles == null || subFiles.length == 0) {
-                    mLogs.add("Empty directory: " + dir.getName());
+                    logs.add("Empty directory: " + dir.getName());
                     invalidCount++;
                     dir.delete();
                     continue;
@@ -456,21 +417,20 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
 
                 UniFile ehViewerFile = dir.findFile(DownloadManager.DOWNLOAD_INFO_FILENAME);
                 if (ehViewerFile == null) {
-                    mLogs.add("Missing .ehviewer file: " + dir.getName());
+                    logs.add("Missing .ehviewer file: " + dir.getName());
                     invalidCount++;
                     continue;
                 }
 
                 try {
                     String content = IOUtils.readString(ehViewerFile.openInputStream(), StandardCharsets.UTF_8.name());
-                    String[] lines = content.split("\n");
-                    if (lines.length < 8) {
-                        mLogs.add("Invalid .ehviewer file: " + dir.getName());
+                    String[] contentLines = content.split("\n");
+                    if (contentLines.length < 8) {
+                        logs.add("Invalid .ehviewer file: " + dir.getName());
                         invalidCount++;
-                        // Try to reset if possible
                         long gid;
                         try {
-                            gid = Long.parseLong(lines[0]);
+                            gid = Long.parseLong(contentLines[0]);
                         } catch (NumberFormatException e) {
                             gid = -1;
                         }
@@ -483,7 +443,7 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
                         }
                         continue;
                     }
-                    int pageCount = Integer.parseInt(lines[7]);
+                    int pageCount = Integer.parseInt(contentLines[7]);
                     int imageFileCount = 0;
                     for (UniFile subFile : subFiles) {
                         String name = subFile.getName();
@@ -493,7 +453,7 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
                     }
 
                     if (imageFileCount != pageCount) {
-                        mLogs.add("Inconsistent file count: " + dir.getName() + ", expected: " + pageCount + ", actual: " + imageFileCount);
+                        logs.add("Inconsistent file count: " + dir.getName() + ", expected: " + pageCount + ", actual: " + imageFileCount);
                         invalidCount++;
                         for (UniFile subFile : subFiles) {
                             String name = subFile.getName();
@@ -501,10 +461,9 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
                                 subFile.delete();
                             }
                         }
-                        // Reset to unfinished state
                         long gid;
                         try {
-                            gid = Long.parseLong(lines[0]);
+                            gid = Long.parseLong(contentLines[0]);
                         } catch (NumberFormatException e) {
                             gid = -1;
                         }
@@ -517,69 +476,47 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
                         }
                     }
                 } catch (IOException | NumberFormatException e) {
-                    mLogs.add("Error processing directory: " + dir.getName() + " - " + e.getMessage());
+                    logs.add("Error processing directory: " + dir.getName() + " - " + e.getMessage());
                     invalidCount++;
                 }
             }
 
-            if (!mLogs.isEmpty()) {
-                saveLog();
+            if (!logs.isEmpty()) {
+                saveCleanLog(downloadDir, logs);
             }
 
-            return invalidCount;
-        }
+            final int resultCount = invalidCount;
+            mainHandler.post(() -> dismissAndShowCleanResult(dialog, resultCount));
+        });
+    }
 
-        @Override
-        protected void onProgressUpdate(Integer... values) {
-            if (mProgressDialog != null) {
-                mProgressDialog.setMax(values[1]);
-                mProgressDialog.setProgress(values[0]);
-            }
-        }
-
-        @Override
-        protected void onPostExecute(Integer result) {
-            DownloadFragment fragment = mFragment.get();
-            if (mProgressDialog != null) {
-                // 检查 Fragment 是否仍然附加到 Activity，避免在 Activity 销毁后关闭对话框导致崩溃
-                if (fragment != null && fragment.isAdded() && fragment.getActivity() != null) {
-                    try {
-                        if (mProgressDialog.isShowing()) {
-                            mProgressDialog.dismiss();
-                        }
-                    } catch (IllegalArgumentException e) {
-                        // 对话框已经不再附加到窗口管理器，忽略异常
-                        ExceptionUtils.throwIfFatal(e);
-                    }
-                }
-                mProgressDialog = null;
-            }
-            if (fragment == null || fragment.getActivity() == null) {
-                return;
+    @SuppressWarnings("deprecation")
+    private void dismissAndShowCleanResult(ProgressDialog dialog, int result) {
+        if (isAdded() && getActivity() != null) {
+            try {
+                if (dialog.isShowing()) dialog.dismiss();
+            } catch (IllegalArgumentException e) {
+                ExceptionUtils.throwIfFatal(e);
             }
             if (result > 0) {
-                Toast.makeText(fragment.getActivity(), fragment.getString(R.string.settings_download_clean_invalid_done, result), Toast.LENGTH_LONG).show();
+                Toast.makeText(getActivity(), getString(R.string.settings_download_clean_invalid_done, result), Toast.LENGTH_LONG).show();
             } else {
-                Toast.makeText(fragment.getActivity(), R.string.settings_download_clean_invalid_no_invalid, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity(), R.string.settings_download_clean_invalid_no_invalid, Toast.LENGTH_SHORT).show();
             }
         }
+    }
 
-        private void saveLog() {
-            UniFile downloadDir = Settings.getDownloadLocation();
-            if (downloadDir == null) {
-                return;
-            }
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmm", Locale.US);
-            String fileName = "delfile-" + sdf.format(new Date()) + ".log";
-            UniFile logFile = downloadDir.createFile(fileName);
-            if (logFile != null) {
-                try (OutputStream os = logFile.openOutputStream()) {
-                    for (String log : mLogs) {
-                        os.write((log + "\n").getBytes(StandardCharsets.UTF_8));
-                    }
-                } catch (IOException e) {
-                    // Ignore
+    private void saveCleanLog(UniFile downloadDir, List<String> logs) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmm", Locale.US);
+        String fileName = "delfile-" + sdf.format(new Date()) + ".log";
+        UniFile logFile = downloadDir.createFile(fileName);
+        if (logFile != null) {
+            try (OutputStream os = logFile.openOutputStream()) {
+                for (String log : logs) {
+                    os.write((log + "\n").getBytes(StandardCharsets.UTF_8));
                 }
+            } catch (IOException e) {
+                // Ignore
             }
         }
     }
@@ -594,7 +531,7 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
         }
 
         Activity activity = getActivity();
-        com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+        IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
             List<String> paths = new ArrayList<>();
             collectImagePaths(downloadLocation, paths);
             if (!paths.isEmpty()) {
@@ -640,4 +577,3 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
         }
     }
 }
-
