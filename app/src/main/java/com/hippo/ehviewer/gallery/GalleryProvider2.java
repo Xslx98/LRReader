@@ -16,6 +16,9 @@
 
 package com.hippo.ehviewer.gallery;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.hippo.lib.glgallery.GalleryProvider;
@@ -31,6 +34,32 @@ public abstract class GalleryProvider2 extends GalleryProvider {
             ".gif", // Graphics Interchange Format
             ".webp"
     };
+
+    /** SharedPreferences name for local reading progress storage. */
+    private static final String SP_READING_PROGRESS = "reading_progress";
+
+    /**
+     * Save reading progress locally (0-indexed page number).
+     * @param gid Gallery identifier (used as SP key)
+     * @param page 0-indexed current page
+     */
+    public static void saveReadingProgress(@NonNull Context ctx, long gid, int page) {
+        ctx.getApplicationContext()
+                .getSharedPreferences(SP_READING_PROGRESS, Context.MODE_PRIVATE)
+                .edit()
+                .putInt(String.valueOf(gid), page)
+                .apply();
+    }
+
+    /**
+     * Load reading progress from local storage.
+     * @return 0-indexed page number, or 0 if not found
+     */
+    public static int loadReadingProgress(@NonNull Context ctx, long gid) {
+        return ctx.getApplicationContext()
+                .getSharedPreferences(SP_READING_PROGRESS, Context.MODE_PRIVATE)
+                .getInt(String.valueOf(gid), 0);
+    }
 
     public int getStartPage() {
         return 0;
