@@ -22,6 +22,7 @@ import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.hippo.lib.glgallery.GalleryProvider;
+import com.hippo.lib.glgallery.GalleryView;
 import com.hippo.unifile.UniFile;
 
 public abstract class GalleryProvider2 extends GalleryProvider {
@@ -70,6 +71,19 @@ public abstract class GalleryProvider2 extends GalleryProvider {
         return ctx.getApplicationContext()
                 .getSharedPreferences(SP_READING_PROGRESS, Context.MODE_PRIVATE)
                 .getLong(gid + "_ts", 0L);
+    }
+
+    /** Optional reference to GalleryView for async page navigation. */
+    @Nullable
+    private volatile GalleryView mGalleryView;
+
+    public void setGalleryView(@Nullable GalleryView galleryView) {
+        mGalleryView = galleryView;
+    }
+
+    @Nullable
+    public GalleryView getGalleryView() {
+        return mGalleryView;
     }
 
     public int getStartPage() {

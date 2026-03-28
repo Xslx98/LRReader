@@ -153,6 +153,15 @@ public class LRRGalleryProvider extends GalleryProvider2 {
                 // Notify UI that data is ready
                 notifyDataChanged();
 
+                // Jump GalleryView to the resolved start page
+                // (getStartPage() was called synchronously before this async callback,
+                //  so the view may be at the wrong position)
+                com.hippo.lib.glgallery.GalleryView gv = getGalleryView();
+                if (gv != null && serverPage > 0) {
+                    gv.setCurrentPage(serverPage);
+                    Log.d(TAG, "Jumping GalleryView to page " + serverPage);
+                }
+
                 // Preload pages from start page position
                 preloadPages(serverPage);
             } catch (Exception e) {
