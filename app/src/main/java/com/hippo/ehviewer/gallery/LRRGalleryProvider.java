@@ -11,6 +11,7 @@ import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.client.data.GalleryInfo;
 import com.hippo.ehviewer.client.lrr.LRRAuthManager;
 import com.hippo.ehviewer.client.lrr.LRRArchiveApi;
+import com.hippo.ehviewer.client.lrr.data.LRRArchive;
 import com.hippo.lib.glgallery.GalleryProvider;
 import com.hippo.lib.image.Image;
 import com.hippo.unifile.UniFile;
@@ -125,11 +126,30 @@ public class LRRGalleryProvider extends GalleryProvider2 {
                     );
                 } catch (Exception ignored) {}
 
+                // Load server-side reading progress
+                int serverPage = mStartPage; // fallback to local SP value
+                try {
+                    LRRArchive metadata = (LRRArchive) LRRCoroutineHelper.runSuspend(
+                            (scope, cont) -> LRRArchiveApi.getArchiveMetadata(client, mServerUrl, mArcId, cont)
+                    );
+                    if (metadata.progress > 0) {
+                        int serverPage0 = metadata.progress - 1; // convert 1-indexed to 0-indexed
+                        if (serverPage0 > mStartPage) {
+                            serverPage = serverPage0;
+                            mStartPage = serverPage0;
+                            saveReadingProgress(mContext, mGalleryInfo.gid, serverPage0);
+                            Log.d(TAG, "Server progress newer: page " + serverPage0);
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to load server progress: " + e.getMessage());
+                }
+
                 // Notify UI that data is ready
                 notifyDataChanged();
 
                 // Preload pages from start page position
-                preloadPages(mStartPage);
+                preloadPages(serverPage);
             } catch (Exception e) {
                 Log.e(TAG, "Failed to extract archive: " + e.getMessage(), e);
                 mError = "Failed to load pages: " + e.getMessage();
