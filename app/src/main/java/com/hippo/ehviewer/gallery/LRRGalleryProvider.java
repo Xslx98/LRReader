@@ -126,7 +126,7 @@ public class LRRGalleryProvider extends GalleryProvider2 {
                     );
                 } catch (Exception ignored) {}
 
-                // Load server-side reading progress
+                // Load server-side reading progress and compare by timestamp
                 int serverPage = mStartPage; // fallback to local SP value
                 try {
                     LRRArchive metadata = (LRRArchive) LRRCoroutineHelper.runSuspend(
@@ -134,11 +134,16 @@ public class LRRGalleryProvider extends GalleryProvider2 {
                     );
                     if (metadata.progress > 0) {
                         int serverPage0 = metadata.progress - 1; // convert 1-indexed to 0-indexed
-                        if (serverPage0 > mStartPage) {
+                        long serverTs = metadata.lastreadtime;    // epoch seconds from server
+                        long localTs = loadReadingTimestamp(mContext, mGalleryInfo.gid);
+                        if (serverTs > localTs) {
+                            // Server progress is more recent
                             serverPage = serverPage0;
                             mStartPage = serverPage0;
                             saveReadingProgress(mContext, mGalleryInfo.gid, serverPage0);
-                            Log.d(TAG, "Server progress newer: page " + serverPage0);
+                            Log.d(TAG, "Server progress newer (ts " + serverTs + " > " + localTs + "): page " + serverPage0);
+                        } else {
+                            Log.d(TAG, "Local progress newer (ts " + localTs + " >= " + serverTs + "): page " + mStartPage);
                         }
                     }
                 } catch (Exception e) {
