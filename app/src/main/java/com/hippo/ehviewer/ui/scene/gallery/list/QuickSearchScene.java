@@ -80,7 +80,6 @@ public final class QuickSearchScene extends ToolbarScene {
         mQuickSearchList = null;
     }
 
-    @SuppressWarnings("deprecation")
     @Nullable
     @Override
     public View onCreateView3(LayoutInflater inflater,
@@ -102,7 +101,7 @@ public final class QuickSearchScene extends ToolbarScene {
         // drag & drop manager
         RecyclerViewDragDropManager dragDropManager = new RecyclerViewDragDropManager();
         dragDropManager.setDraggingItemShadowDrawable(
-                (NinePatchDrawable) context.getResources().getDrawable(R.drawable.shadow_8dp));
+                (NinePatchDrawable) androidx.appcompat.content.res.AppCompatResources.getDrawable(context, R.drawable.shadow_8dp));
 
         RecyclerView.Adapter adapter = new QuickSearchAdapter();
         adapter.setHasStableIds(true);
