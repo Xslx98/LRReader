@@ -1619,10 +1619,34 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                         final boolean[] originalChecked = checked.clone();
 
                         new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                            // Build a scrollable CheckBox list for category selection
+                            android.widget.LinearLayout container = new android.widget.LinearLayout(activity);
+                            container.setOrientation(android.widget.LinearLayout.VERTICAL);
+                            int pad = (int) (16 * activity.getResources().getDisplayMetrics().density);
+                            container.setPadding(pad, pad / 2, pad, pad / 2);
+
+                            android.widget.CheckBox[] checkBoxes = new android.widget.CheckBox[staticCats.size()];
+                            for (int i = 0; i < staticCats.size(); i++) {
+                                android.widget.CheckBox cb = new android.widget.CheckBox(activity);
+                                cb.setText(names[i]);
+                                cb.setChecked(checked[i]);
+                                final int idx = i;
+                                cb.setOnCheckedChangeListener((btn, isChecked1) -> checked[idx] = isChecked1);
+                                checkBoxes[i] = cb;
+                                container.addView(cb);
+                            }
+
+                            android.widget.ScrollView scrollView = new android.widget.ScrollView(activity);
+                            scrollView.addView(container);
+                            // Limit max height to 60% of screen
+                            int screenH = activity.getResources().getDisplayMetrics().heightPixels;
+                            scrollView.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                                    Math.min(android.widget.FrameLayout.LayoutParams.WRAP_CONTENT, (int) (screenH * 0.6))));
+
                             new androidx.appcompat.app.AlertDialog.Builder(activity)
                                     .setTitle(R.string.lrr_add_to_category)
-                                    .setMultiChoiceItems(names, checked, (dialog1, which, isChecked1) ->
-                                            checked[which] = isChecked1)
+                                    .setView(scrollView)
                                     .setPositiveButton(android.R.string.ok, (dialog1, which) -> {
                                         // Apply changes in background
                                         com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
