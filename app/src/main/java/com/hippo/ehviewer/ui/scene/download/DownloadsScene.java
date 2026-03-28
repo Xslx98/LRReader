@@ -17,6 +17,8 @@
 package com.hippo.ehviewer.ui.scene.download;
 
 import static com.hippo.ehviewer.spider.SpiderDen.getGalleryDownloadDir;
+
+import com.hippo.ehviewer.ui.GalleryOpenHelper;
 import static com.hippo.ehviewer.spider.SpiderInfo.getSpiderInfo;
 import static com.hippo.ehviewer.ui.scene.download.part.DownloadAdapter.DRAG_ENABLE;
 import static com.hippo.util.FileUtils.getFileName;
@@ -986,18 +988,8 @@ public class DownloadsScene extends ToolbarScene
                 intent.setAction(Intent.ACTION_VIEW);
                 intent.setData(archiveUri);
             } else {
-                // Check if local downloaded files exist
-                File downloadDir = getLocalDownloadDir(downloadInfo);
-                if (downloadDir != null && downloadDir.exists() && hasImageFiles(downloadDir)) {
-                    // Local files available, read offline
-                    intent.setAction(GalleryActivity.ACTION_DIR);
-                    intent.putExtra(GalleryActivity.KEY_FILENAME, downloadDir.getAbsolutePath());
-                    intent.putExtra(GalleryActivity.KEY_GALLERY_INFO, downloadInfo);
-                } else {
-                    // No local files, use LANraragi server
-                    intent.setAction(GalleryActivity.ACTION_LRR);
-                    intent.putExtra(GalleryActivity.KEY_GALLERY_INFO, downloadInfo);
-                }
+                // Use GalleryOpenHelper to prefer local files over server
+                intent = GalleryOpenHelper.buildReadIntent(activity, downloadInfo);
             }
 //            startActivity(intent);
             galleryActivityLauncher.launch(intent);
@@ -1981,48 +1973,5 @@ public class DownloadsScene extends ToolbarScene
         updatePaginationIndicator();
         updateView();
         queryUnreadSpiderInfo();
-    }
-
-    /**
-     * Get the local download directory for a downloaded archive.
-     * Uses SpiderDen.getGalleryDownloadDir() for consistency with LRRDownloadWorker.
-     */
-    private File getLocalDownloadDir(DownloadInfo info) {
-        UniFile uniDir = getGalleryDownloadDir(info);
-        if (uniDir != null) {
-            Uri uri = uniDir.getUri();
-            if ("file".equals(uri.getScheme())) {
-                File dir = new File(uri.getPath());
-                if (dir.isDirectory()) {
-                    return dir;
-                }
-            }
-        }
-        // Fallback: check old app-private path for backwards compatibility
-        Context context = getEHContext();
-        if (context == null || info.title == null) return null;
-        File baseDir = new File(context.getExternalFilesDir(null), "download");
-        String dirName = info.title.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
-        File oldDir = new File(baseDir, dirName);
-        return oldDir.isDirectory() ? oldDir : null;
-    }
-
-    /**
-     * Check if a directory contains at least one image file.
-     */
-    private boolean hasImageFiles(File dir) {
-        File[] files = dir.listFiles();
-        if (files == null) return false;
-        for (File f : files) {
-            if (f.isFile()) {
-                String name = f.getName().toLowerCase();
-                if (name.endsWith(".jpg") || name.endsWith(".jpeg") ||
-                    name.endsWith(".png") || name.endsWith(".gif") ||
-                    name.endsWith(".webp") || name.endsWith(".bmp")) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 }

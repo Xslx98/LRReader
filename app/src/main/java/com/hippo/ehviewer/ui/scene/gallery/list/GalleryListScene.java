@@ -102,6 +102,7 @@ import com.hippo.ehviewer.dao.QuickSearch;
 import com.hippo.ehviewer.download.DownloadManager;
 import com.hippo.ehviewer.ui.CommonOperations;
 import com.hippo.ehviewer.ui.GalleryActivity;
+import com.hippo.ehviewer.ui.GalleryOpenHelper;
 import com.hippo.ehviewer.ui.MainActivity;
 import com.hippo.ehviewer.ui.dialog.SelectItemWithIconAdapter;
 import com.hippo.ehviewer.ui.scene.BaseScene;
@@ -1297,9 +1298,7 @@ public final class GalleryListScene extends BaseScene
                 .setAdapter(new SelectItemWithIconAdapter(context, items, icons), (dialog, which) -> {
                     switch (which) {
                         case 0: // Read
-                            Intent intent = new Intent(activity, GalleryActivity.class);
-                            intent.setAction(GalleryActivity.ACTION_EH);
-                            intent.putExtra(GalleryActivity.KEY_GALLERY_INFO, gi);
+                            Intent intent = GalleryOpenHelper.buildReadIntent(activity, gi);
                             startActivity(intent);
                             break;
                         case 1: // Download

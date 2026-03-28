@@ -96,6 +96,7 @@ import com.hippo.ehviewer.download.DownloadTorrentManager;
 import com.hippo.ehviewer.spider.SpiderQueen;
 import com.hippo.ehviewer.ui.CommonOperations;
 import com.hippo.ehviewer.ui.GalleryActivity;
+import com.hippo.ehviewer.ui.GalleryOpenHelper;
 import com.hippo.ehviewer.ui.MainActivity;
 import com.hippo.ehviewer.ui.annotation.WholeLifeCircle;
 import com.hippo.ehviewer.ui.dialog.ArchiverDownloadDialog;
@@ -1569,9 +1570,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                 galleryInfo = mGalleryDetail;
             }
             if (galleryInfo != null) {
-                Intent intent = new Intent(activity, GalleryActivity.class);
-                intent.setAction(GalleryActivity.ACTION_LRR);
-                intent.putExtra(GalleryActivity.KEY_GALLERY_INFO, galleryInfo);
+                Intent intent = GalleryOpenHelper.buildReadIntent(activity, galleryInfo);
                 startActivity(intent);
             }
         } else if (mInfo == v) {
