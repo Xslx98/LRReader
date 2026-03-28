@@ -33,7 +33,6 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.NinePatchDrawable;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.SparseBooleanArray;
@@ -1355,17 +1354,13 @@ public class DownloadsScene extends ToolbarScene
 
 
     private static void deleteFileAsync(UniFile... files) {
-        new AsyncTask<UniFile, Void, Void>() {
-            @Override
-            protected Void doInBackground(UniFile... params) {
-                for (UniFile file : params) {
-                    if (file != null) {
-                        file.delete();
-                    }
+        IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+            for (UniFile file : files) {
+                if (file != null) {
+                    file.delete();
                 }
-                return null;
             }
-        }.executeOnExecutor(IoThreadPoolExecutor.Companion.getInstance(), files);
+        });
     }
 
     @Override
