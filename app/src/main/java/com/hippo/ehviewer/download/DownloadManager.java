@@ -20,7 +20,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.AsyncTask;
+
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -808,47 +808,42 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
         ensureDownload();
     }
 
-    @SuppressLint("StaticFieldLeak")
     public void resetAllReadingProgress() {
         LinkedList<DownloadInfo> list = new LinkedList<>(mAllInfoList);
 
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... voids) {
-                GalleryInfo galleryInfo = new GalleryInfo();
-                for (DownloadInfo downloadInfo : list) {
-                    galleryInfo.gid = downloadInfo.gid;
-                    galleryInfo.token = downloadInfo.token;
-                    galleryInfo.title = downloadInfo.title;
-                    galleryInfo.thumb = downloadInfo.thumb;
-                    galleryInfo.category = downloadInfo.category;
-                    galleryInfo.posted = downloadInfo.posted;
-                    galleryInfo.uploader = downloadInfo.uploader;
-                    galleryInfo.rating = downloadInfo.rating;
+        IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+            GalleryInfo galleryInfo = new GalleryInfo();
+            for (DownloadInfo downloadInfo : list) {
+                galleryInfo.gid = downloadInfo.gid;
+                galleryInfo.token = downloadInfo.token;
+                galleryInfo.title = downloadInfo.title;
+                galleryInfo.thumb = downloadInfo.thumb;
+                galleryInfo.category = downloadInfo.category;
+                galleryInfo.posted = downloadInfo.posted;
+                galleryInfo.uploader = downloadInfo.uploader;
+                galleryInfo.rating = downloadInfo.rating;
 
-                    UniFile downloadDir = SpiderDen.getGalleryDownloadDir(galleryInfo);
-                    if (downloadDir == null) {
-                        continue;
-                    }
-                    UniFile file = downloadDir.findFile(".ehviewer");
-                    if (file == null) {
-                        continue;
-                    }
-                    SpiderInfo spiderInfo = SpiderInfo.read(file);
-                    if (spiderInfo == null) {
-                        continue;
-                    }
-                    spiderInfo.startPage = 0;
-
-                    try {
-                        spiderInfo.write(file.openOutputStream());
-                    } catch (IOException e) {
-                        Log.e(TAG, "Can't write SpiderInfo", e);
-                    }
+                UniFile downloadDir = SpiderDen.getGalleryDownloadDir(galleryInfo);
+                if (downloadDir == null) {
+                    continue;
                 }
-                return null;
+                UniFile file = downloadDir.findFile(".ehviewer");
+                if (file == null) {
+                    continue;
+                }
+                SpiderInfo spiderInfo = SpiderInfo.read(file);
+                if (spiderInfo == null) {
+                    continue;
+                }
+                spiderInfo.startPage = 0;
+
+                try {
+                    spiderInfo.write(file.openOutputStream());
+                } catch (IOException e) {
+                    Log.e(TAG, "Can't write SpiderInfo", e);
+                }
             }
-        }.executeOnExecutor(IoThreadPoolExecutor.Companion.getInstance());
+        });
     }
 
     // Update in DB
