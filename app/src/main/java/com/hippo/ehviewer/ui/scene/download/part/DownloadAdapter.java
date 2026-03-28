@@ -58,6 +58,7 @@ import com.hippo.lib.yorozuya.AssertUtils;
 import com.hippo.lib.yorozuya.ViewUtils;
 import com.hippo.ripple.Ripple;
 import com.hippo.scene.Announcer;
+import com.hippo.util.IoThreadPoolExecutor;
 import com.hippo.unifile.UniFile;
 import com.hippo.unifile.UniRandomAccessFile;
 import com.hippo.util.NaturalComparator;
@@ -471,8 +472,8 @@ public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.Downlo
         // Set default icon immediately as fallback
         thumb.setImageResource(R.drawable.v_archive_hh_primary_x48);
 
-        // Load thumbnail in background thread
-        new Thread(() -> {
+        // Load thumbnail in background (bounded thread pool prevents scroll-induced thread explosion)
+        IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
             try {
                 Bitmap thumbnail = extractFirstImageFromArchive(archiveUri);
                 mScene.runOnUiThread(() -> {
@@ -493,7 +494,7 @@ public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.Downlo
                 Log.e(TAG, "Failed to load archive thumbnail for " + uriString, e);
                 // Keep the default icon that was already set - no need to change anything
             }
-        }).start();
+        });
     }
 
     private Bitmap extractFirstImageFromArchive(Uri archiveUri) {
