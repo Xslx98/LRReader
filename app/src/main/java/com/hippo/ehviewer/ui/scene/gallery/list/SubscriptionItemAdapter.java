@@ -54,7 +54,7 @@ public class SubscriptionItemAdapter extends BaseAdapter {
 
         UserTag userTag = getItem(position);
 
-        View view = inflater.inflate(R.layout.subscripition_list_item,null);
+        View view = inflater.inflate(R.layout.subscription_list_item,null);
         ImageView imageView = view.findViewById(R.id.subscription_state);
         if (userTag.hidden){
             imageView.setImageResource(R.drawable.ic_baseline_visibility_off_24);
