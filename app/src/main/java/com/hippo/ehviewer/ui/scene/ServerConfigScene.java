@@ -22,6 +22,7 @@ import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.client.lrr.LRRAuthManager;
 import com.hippo.ehviewer.client.lrr.LRRApiUtilsKt;
 import com.hippo.ehviewer.client.lrr.LRRServerApi;
+import com.hippo.ehviewer.client.lrr.LRRUrlHelper;
 import com.hippo.ehviewer.client.lrr.data.LRRServerInfo;
 import com.hippo.ehviewer.dao.ServerProfile;
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene;
@@ -29,8 +30,6 @@ import com.hippo.scene.Announcer;
 import com.hippo.util.IoThreadPoolExecutor;
 import com.hippo.ehviewer.client.lrr.LRRCoroutineHelper;
 import com.hippo.lib.yorozuya.ViewUtils;
-
-import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
 
@@ -124,19 +123,7 @@ public final class ServerConfigScene extends SolidScene implements View.OnClickL
      */
     private String getRawInput() {
         if (mServerUrl == null) return null;
-        String input = mServerUrl.getText().toString().trim();
-        while (input.endsWith("/")) {
-            input = input.substring(0, input.length() - 1);
-        }
-        return input;
-    }
-
-    /**
-     * Check whether the user explicitly typed a protocol scheme.
-     */
-    private boolean hasExplicitScheme(String input) {
-        String lower = input.toLowerCase();
-        return lower.startsWith("http://") || lower.startsWith("https://");
+        return LRRUrlHelper.normalizeUrl(mServerUrl.getText().toString());
     }
 
     private String getApiKey() {
@@ -177,14 +164,9 @@ public final class ServerConfigScene extends SolidScene implements View.OnClickL
         }
 
         OkHttpClient client = EhApplication.getOkHttpClient(getEHContext());
-        // Short timeouts for connection testing — prevent long hangs on wrong address
-        OkHttpClient testClient = client.newBuilder()
-                .connectTimeout(5, TimeUnit.SECONDS)
-                .readTimeout(5, TimeUnit.SECONDS)
-                .writeTimeout(5, TimeUnit.SECONDS)
-                .build();
+        OkHttpClient testClient = LRRUrlHelper.buildTestClient(client);
 
-        if (hasExplicitScheme(rawInput)) {
+        if (LRRUrlHelper.hasExplicitScheme(rawInput)) {
             // User specified protocol explicitly — use as-is
             LRRAuthManager.setServerUrl(rawInput);
             tryConnect(testClient, rawInput, null, navigateOnSuccess);
@@ -301,7 +283,7 @@ public final class ServerConfigScene extends SolidScene implements View.OnClickL
             }
 
             // LANraragi: Warn if using HTTP on non-LAN address
-            if (resolvedUrl.toLowerCase().startsWith("http://") && !isLanAddress(resolvedUrl)) {
+            if (resolvedUrl.toLowerCase().startsWith("http://") && !LRRUrlHelper.isLanAddress(resolvedUrl)) {
                 Toast.makeText(ctx != null ? ctx : getEHContext(),
                         R.string.lrr_security_warning,
                         Toast.LENGTH_LONG).show();
@@ -309,32 +291,6 @@ public final class ServerConfigScene extends SolidScene implements View.OnClickL
         });
     }
 
-    /**
-     * Check if the URL points to a LAN (private) address.
-     */
-    private static boolean isLanAddress(@NonNull String url) {
-        try {
-            java.net.URI uri = java.net.URI.create(url);
-            String host = uri.getHost();
-            if (host == null) return false;
-            // Common private network ranges
-            if (host.startsWith("192.168.") || host.startsWith("10.")
-                    || host.equals("localhost") || host.equals("127.0.0.1")
-                    || host.endsWith(".local")) {
-                return true;
-            }
-            // 172.16.0.0 – 172.31.255.255
-            if (host.startsWith("172.")) {
-                try {
-                    int second = Integer.parseInt(host.split("\\.")[1]);
-                    return second >= 16 && second <= 31;
-                } catch (Exception ignored) {}
-            }
-            return false;
-        } catch (Exception e) {
-            return false;
-        }
-    }
 
     /**
      * Called on worker thread when all connection attempts fail.

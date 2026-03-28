@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
   ~ Copyright 2016 Hippo Seven
   ~
@@ -976,6 +976,7 @@
     <string name="lrr_category_updated">カテゴリを更新しました</string>
     <string name="lrr_connect">接続</string>
     <string name="lrr_connection_failed">接続失敗: %1$s</string>
+    <string name="lrr_security_warning">⚠️ セキュリティ警告：パブリックアドレスへの暗号化されていないHTTP接続です。APIキーが傍受される可能性があります。HTTPSの使用を強く推奨します。</string>
     <string name="lrr_connection_success">%1$s に接続しました (v%2$s)</string>
     <string name="lrr_delete_archive">アーカイブを削除</string>
     <string name="lrr_delete_confirm_button">削除</string>
