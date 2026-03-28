@@ -128,6 +128,7 @@ import com.hippo.text.URLImageGetter;
 import com.hippo.util.AppHelper;
 import com.hippo.util.DrawableManager;
 import com.hippo.util.ExceptionUtils;
+import com.hippo.util.IoThreadPoolExecutor;
 import com.hippo.util.FileUtils;
 import com.hippo.util.ReadableTime;
 import com.hippo.view.ViewTransition;
@@ -666,39 +667,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
             // Write to LANraragi: GET original tags -> modify rating -> PUT back
             Context ctx = getEHContext();
             if (ctx == null) return;
-            new Thread(() -> {
-                try {
-                    String serverUrl = com.hippo.ehviewer.client.lrr.LRRAuthManager.getServerUrl();
-                    if (serverUrl == null) return;
-                    okhttp3.OkHttpClient client = com.hippo.ehviewer.EhApplication.getOkHttpClient(ctx);
-
-                    // GET current metadata to get original tags string
-                    com.hippo.ehviewer.client.lrr.data.LRRArchive archive =
-                            (com.hippo.ehviewer.client.lrr.data.LRRArchive) com.hippo.ehviewer.client.lrr.LRRCoroutineHelper.runSuspend(
-                                    (scope, cont) -> com.hippo.ehviewer.client.lrr.LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcid, cont)
-                            );
-                    String originalTags = archive.tags != null ? archive.tags : "";
-
-                    // Remove existing rating:... tag and add new one with emoji
-                    String newRatingTag = "rating:" + com.hippo.ehviewer.client.lrr.data.LRRArchive.buildRatingEmoji(Math.round(newRating));
-                    String updatedTags;
-                    // Remove old rating tag (handles both emoji and numeric formats)
-                    String cleaned = originalTags.replaceAll(",\\s*rating:[^,]*", "")
-                                                 .replaceAll("rating:[^,]*\\s*,?\\s*", "")
-                                                 .trim();
-                    // Remove trailing/leading commas
-                    cleaned = cleaned.replaceAll("^,\\s*|,\\s*$", "").trim();
-                    updatedTags = cleaned.isEmpty() ? newRatingTag : cleaned + ", " + newRatingTag;
-
-                    // PUT back with original tags preserved
-                    com.hippo.ehviewer.client.lrr.LRRCoroutineHelper.runSuspend(
-                            (scope, cont) -> com.hippo.ehviewer.client.lrr.LRRArchiveApi.updateArchiveMetadata(client, serverUrl, arcid, updatedTags, cont)
-                    );
-                    android.util.Log.d("GalleryDetailScene", "Rating saved: " + newRatingTag);
-                } catch (Exception e) {
-                    android.util.Log.e("GalleryDetailScene", "Rating update failed", e);
-                }
-            }).start();
+            saveRatingToServer(ctx, arcid, newRating, null);
         });
 
         mTags = (LinearLayout) ViewUtils.$$(belowHeader, R.id.tags);
@@ -2693,6 +2662,46 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         }
     }
 
+    /**
+     * Save rating to LANraragi server in background.
+     * GET current metadata -> modify rating tag -> PUT back.
+     * @param onSuccess optional callback run on background thread after successful save
+     */
+    private void saveRatingToServer(@NonNull Context ctx, @NonNull String arcid,
+                                    float rating, @Nullable Runnable onSuccess) {
+        IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+            try {
+                String serverUrl = com.hippo.ehviewer.client.lrr.LRRAuthManager.getServerUrl();
+                if (serverUrl == null) return;
+                okhttp3.OkHttpClient client = EhApplication.getOkHttpClient(ctx);
+
+                // GET current metadata to get original tags
+                com.hippo.ehviewer.client.lrr.data.LRRArchive archive =
+                        (com.hippo.ehviewer.client.lrr.data.LRRArchive) com.hippo.ehviewer.client.lrr.LRRCoroutineHelper.runSuspend(
+                                (scope, cont) -> com.hippo.ehviewer.client.lrr.LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcid, cont)
+                        );
+                String originalTags = archive.tags != null ? archive.tags : "";
+
+                // Remove old rating tag, add new with emoji
+                String newRatingTag = "rating:" + com.hippo.ehviewer.client.lrr.data.LRRArchive.buildRatingEmoji(Math.round(rating));
+                String cleaned = originalTags.replaceAll(",\\s*rating:[^,]*", "")
+                                             .replaceAll("rating:[^,]*\\s*,?\\s*", "")
+                                             .trim();
+                cleaned = cleaned.replaceAll("^,\\s*|,\\s*$", "").trim();
+                String updatedTags = cleaned.isEmpty() ? newRatingTag : cleaned + ", " + newRatingTag;
+
+                // PUT back with original tags preserved
+                com.hippo.ehviewer.client.lrr.LRRCoroutineHelper.runSuspend(
+                        (scope, cont) -> com.hippo.ehviewer.client.lrr.LRRArchiveApi.updateArchiveMetadata(client, serverUrl, arcid, updatedTags, cont)
+                );
+                android.util.Log.d("GalleryDetailScene", "Rating saved: " + newRatingTag);
+                if (onSuccess != null) onSuccess.run();
+            } catch (Exception e) {
+                android.util.Log.e("GalleryDetailScene", "Rating update failed", e);
+            }
+        });
+    }
+
     private class RateDialogHelper implements GalleryRatingBar.OnUserRateListener,
             DialogInterface.OnClickListener {
 
@@ -2728,44 +2737,14 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
             final String arcid = mGalleryDetail.token; // LANraragi archive ID
             final GalleryDetail gd = mGalleryDetail;
 
-            // Update tags on server in background (GET original -> modify rating -> PUT)
-            new Thread(() -> {
-                try {
-                    String serverUrl = com.hippo.ehviewer.client.lrr.LRRAuthManager.getServerUrl();
-                    if (serverUrl == null) return;
-                    okhttp3.OkHttpClient client = com.hippo.ehviewer.EhApplication.getOkHttpClient(context);
-
-                    // GET current metadata to get original tags
-                    com.hippo.ehviewer.client.lrr.data.LRRArchive archive =
-                            (com.hippo.ehviewer.client.lrr.data.LRRArchive) com.hippo.ehviewer.client.lrr.LRRCoroutineHelper.runSuspend(
-                                    (scope, cont) -> com.hippo.ehviewer.client.lrr.LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcid, cont)
-                            );
-                    String originalTags = archive.tags != null ? archive.tags : "";
-
-                    // Remove old rating tag, add new with emoji
-                    String newRatingTag = "rating:" + com.hippo.ehviewer.client.lrr.data.LRRArchive.buildRatingEmoji(Math.round(newRating));
-                    String cleaned = originalTags.replaceAll(",\\s*rating:[^,]*", "")
-                                                 .replaceAll("rating:[^,]*\\s*,?\\s*", "")
-                                                 .trim();
-                    cleaned = cleaned.replaceAll("^,\\s*|,\\s*$", "").trim();
-                    String updatedTags = cleaned.isEmpty() ? newRatingTag : cleaned + ", " + newRatingTag;
-
-                    com.hippo.ehviewer.client.lrr.LRRCoroutineHelper.runSuspend(
-                            (scope, cont) -> com.hippo.ehviewer.client.lrr.LRRArchiveApi.updateArchiveMetadata(client, serverUrl, arcid, updatedTags, cont)
-                    );
-                    handler.post(() -> {
-                        // Update local state
-                        gd.rating = newRating;
-                        gd.rated = true;
-                        gd.ratingCount = 1;
-                        bindViewSecond();
-                        showTip(R.string.rate_successfully, LENGTH_SHORT);
-                    });
-                } catch (Exception e) {
-                    android.util.Log.e("GalleryDetailScene", "Rating update failed", e);
-                    handler.post(() -> showTip(R.string.rate_failed, LENGTH_LONG));
-                }
-            }).start();
+            // Update tags on server in background
+            saveRatingToServer(context, arcid, newRating, () -> handler.post(() -> {
+                gd.rating = newRating;
+                gd.rated = true;
+                gd.ratingCount = 1;
+                bindViewSecond();
+                showTip(R.string.rate_successfully, LENGTH_SHORT);
+            }));
         }
     }
 
