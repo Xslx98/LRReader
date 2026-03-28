@@ -28,6 +28,7 @@ import com.hippo.ehviewer.client.data.GalleryInfo;
 import com.hippo.ehviewer.client.lrr.LRRArchiveApi;
 import com.hippo.ehviewer.client.lrr.LRRAuthManager;
 import com.hippo.ehviewer.client.lrr.LRRCoroutineHelper;
+import com.hippo.ehviewer.client.lrr.data.LRRArchive;
 import com.hippo.lib.glgallery.GalleryPageView;
 import com.hippo.lib.image.Image;
 //import com.hippo.lib.image.Image1;
@@ -120,6 +121,55 @@ public class DirGalleryProvider extends GalleryProvider2 implements Runnable {
     @Override
     public void start() {
         super.start();
+
+        // Async: load server progress and jump if newer
+        if (mArcId != null && mServerUrl != null && mContext != null) {
+            IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+                try {
+                    OkHttpClient client = EhApplication.getOkHttpClient(mContext);
+                    LRRArchive metadata = (LRRArchive) LRRCoroutineHelper.runSuspend(
+                            (scope, cont) -> LRRArchiveApi.getArchiveMetadata(client, mServerUrl, mArcId, cont)
+                    );
+                    Log.i(TAG, "[PROGRESS] Server metadata: progress=" + metadata.progress
+                            + " lastreadtime=" + metadata.lastreadtime);
+                    if (metadata.progress > 0) {
+                        int serverPage0 = metadata.progress - 1;
+                        long serverTs = metadata.lastreadtime;
+                        long localTs = loadReadingTimestamp(mContext, mGid);
+                        Log.i(TAG, "[PROGRESS] serverPage0=" + serverPage0
+                                + " serverTs=" + serverTs + " localTs=" + localTs
+                                + " localPage=" + mStartPage);
+                        int resolvedPage = mStartPage;
+                        if (serverTs > localTs) {
+                            resolvedPage = serverPage0;
+                            mStartPage = serverPage0;
+                            saveReadingProgress(mContext, mGid, serverPage0);
+                            Log.i(TAG, "[PROGRESS] Using SERVER progress: page " + serverPage0);
+                        } else if (localTs > serverTs && mStartPage > 0) {
+                            resolvedPage = mStartPage;
+                            Log.i(TAG, "[PROGRESS] Using LOCAL progress: page " + mStartPage);
+                        } else {
+                            resolvedPage = Math.max(serverPage0, mStartPage);
+                            mStartPage = resolvedPage;
+                            Log.i(TAG, "[PROGRESS] Timestamps equal, using max: page " + resolvedPage);
+                        }
+                        // Jump GalleryView if needed
+                        final int finalPage = resolvedPage;
+                        if (finalPage > 0) {
+                            com.hippo.lib.glgallery.GalleryView gv = getGalleryView();
+                            if (gv != null) {
+                                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                                    gv.setCurrentPage(finalPage);
+                                    Log.i(TAG, "[PROGRESS] setCurrentPage(" + finalPage + ") called");
+                                }, 300);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "[PROGRESS] Failed to load server progress: " + e.getMessage());
+                }
+            });
+        }
 
         mBgThread = new PriorityThread(this, TAG + '-' + sIdGenerator.incrementAndGet(),
                 Process.THREAD_PRIORITY_BACKGROUND);

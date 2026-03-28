@@ -126,44 +126,65 @@ public class LRRGalleryProvider extends GalleryProvider2 {
                     );
                 } catch (Exception ignored) {}
 
-                // Load server-side reading progress and compare by timestamp
+                // Load server-side reading progress
                 int serverPage = mStartPage; // fallback to local SP value
+                Log.i(TAG, "[PROGRESS] Local SP page=" + mStartPage + " for gid=" + mGalleryInfo.gid);
                 try {
                     LRRArchive metadata = (LRRArchive) LRRCoroutineHelper.runSuspend(
                             (scope, cont) -> LRRArchiveApi.getArchiveMetadata(client, mServerUrl, mArcId, cont)
                     );
+                    Log.i(TAG, "[PROGRESS] Server metadata: progress=" + metadata.progress
+                            + " lastreadtime=" + metadata.lastreadtime + " arcid=" + metadata.arcid);
                     if (metadata.progress > 0) {
                         int serverPage0 = metadata.progress - 1; // convert 1-indexed to 0-indexed
-                        long serverTs = metadata.lastreadtime;    // epoch seconds from server
+                        long serverTs = metadata.lastreadtime;
                         long localTs = loadReadingTimestamp(mContext, mGalleryInfo.gid);
+                        Log.i(TAG, "[PROGRESS] serverPage0=" + serverPage0 + " serverTs=" + serverTs + " localTs=" + localTs);
+                        // Use whichever is more recent by timestamp
                         if (serverTs > localTs) {
-                            // Server progress is more recent
                             serverPage = serverPage0;
                             mStartPage = serverPage0;
                             saveReadingProgress(mContext, mGalleryInfo.gid, serverPage0);
-                            Log.d(TAG, "Server progress newer (ts " + serverTs + " > " + localTs + "): page " + serverPage0);
+                            Log.i(TAG, "[PROGRESS] Using SERVER progress: page " + serverPage0);
+                        } else if (localTs > serverTs && mStartPage > 0) {
+                            serverPage = mStartPage;
+                            Log.i(TAG, "[PROGRESS] Using LOCAL progress: page " + mStartPage);
                         } else {
-                            Log.d(TAG, "Local progress newer (ts " + localTs + " >= " + serverTs + "): page " + mStartPage);
+                            // Equal timestamps or both zero — use the larger page number
+                            serverPage = Math.max(serverPage0, mStartPage);
+                            mStartPage = serverPage;
+                            Log.i(TAG, "[PROGRESS] Timestamps equal, using max page: " + serverPage);
                         }
+                    } else {
+                        Log.i(TAG, "[PROGRESS] Server progress=0, using local page=" + mStartPage);
+                        serverPage = mStartPage;
                     }
                 } catch (Exception e) {
-                    Log.w(TAG, "Failed to load server progress: " + e.getMessage());
+                    Log.w(TAG, "[PROGRESS] Failed to load server progress: " + e.getMessage());
                 }
+
+                final int finalPage = serverPage;
+                Log.i(TAG, "[PROGRESS] Final resolved page=" + finalPage);
 
                 // Notify UI that data is ready
                 notifyDataChanged();
 
-                // Jump GalleryView to the resolved start page
-                // (getStartPage() was called synchronously before this async callback,
-                //  so the view may be at the wrong position)
-                com.hippo.lib.glgallery.GalleryView gv = getGalleryView();
-                if (gv != null && serverPage > 0) {
-                    gv.setCurrentPage(serverPage);
-                    Log.d(TAG, "Jumping GalleryView to page " + serverPage);
+                // Jump GalleryView to the resolved page via main-thread Handler
+                // (getStartPage() was read synchronously before this async callback)
+                if (finalPage > 0) {
+                    com.hippo.lib.glgallery.GalleryView gv = getGalleryView();
+                    Log.i(TAG, "[PROGRESS] GalleryView ref=" + (gv != null ? "OK" : "NULL"));
+                    if (gv != null) {
+                        // Post with delay to ensure GL layout is attached
+                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                            gv.setCurrentPage(finalPage);
+                            Log.i(TAG, "[PROGRESS] setCurrentPage(" + finalPage + ") called");
+                        }, 300);
+                    }
                 }
 
                 // Preload pages from start page position
-                preloadPages(serverPage);
+                preloadPages(finalPage);
             } catch (Exception e) {
                 Log.e(TAG, "Failed to extract archive: " + e.getMessage(), e);
                 mError = "Failed to load pages: " + e.getMessage();
