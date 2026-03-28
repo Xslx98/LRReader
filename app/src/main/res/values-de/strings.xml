@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
   ~ Copyright 2016 Hippo Seven
   ~
@@ -965,6 +965,7 @@ Kommentator blockieren: Kommentare dieses Benutzers ausblenden. Das Laden der Ga
     <string name="lrr_category_updated">Kategorie aktualisiert</string>
     <string name="lrr_connect">Verbinden</string>
     <string name="lrr_connection_failed">Verbindung fehlgeschlagen: %1$s</string>
+    <string name="lrr_security_warning">⚠️ Sicherheitswarnung: Unverschlüsselte HTTP-Verbindung zu einer öffentlichen Adresse. API-Schlüssel kann abgefangen werden. HTTPS wird dringend empfohlen.</string>
     <string name="lrr_connection_success">Verbunden mit %1$s (v%2$s)</string>
     <string name="lrr_delete_archive">Archiv löschen</string>
     <string name="lrr_delete_confirm_button">Löschen</string>

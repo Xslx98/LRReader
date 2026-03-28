@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
   ~ Copyright 2019 Hippo Seven
   ~
@@ -1031,6 +1031,7 @@
     <string name="lrr_category_updated">Category updated</string>
     <string name="lrr_connect">เชื่อมต่อ</string>
     <string name="lrr_connection_failed">เชื่อมต่อล้มเหลว: %1$s</string>
+    <string name="lrr_security_warning">⚠️ คำเตือนด้านความปลอดภัย: ใช้ HTTP ที่ไม่เข้ารหัสสำหรับที่อยู่สาธารณะ API Key อาจถูกดักจับ แนะนำให้ใช้ HTTPS อย่างยิ่ง</string>
     <string name="lrr_connection_success">เชื่อมต่อกับ %1$s แล้ว (v%2$s)</string>
     <string name="lrr_delete_archive">ลบไฟล์เก็บถาวร</string>
     <string name="lrr_delete_confirm_button">ลบ</string>

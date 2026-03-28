@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,17 +26,13 @@ import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.client.lrr.LRRApiUtilsKt;
 import com.hippo.ehviewer.client.lrr.LRRAuthManager;
-import com.hippo.ehviewer.client.lrr.LRRServerApi;
+import com.hippo.ehviewer.client.lrr.LRRUrlHelper;
 import com.hippo.ehviewer.client.lrr.data.LRRServerInfo;
 import com.hippo.ehviewer.dao.ServerProfile;
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene;
 import com.hippo.scene.Announcer;
 import com.hippo.util.IoThreadPoolExecutor;
 
-import java.util.concurrent.TimeUnit;
-
-import kotlin.coroutines.EmptyCoroutineContext;
-import kotlinx.coroutines.BuildersKt;
 import okhttp3.OkHttpClient;
 
 import java.util.ArrayList;
@@ -127,6 +124,13 @@ public final class ServerListScene extends BaseScene {
 
         Toast.makeText(ctx, getString(R.string.lrr_server_switched, profile.getName()),
                 Toast.LENGTH_SHORT).show();
+
+        // Warn if switching to HTTP on a public address
+        String url = profile.getUrl();
+        if (url != null && url.toLowerCase().startsWith("http://")
+                && !LRRUrlHelper.isLanAddress(url)) {
+            Toast.makeText(ctx, R.string.lrr_security_warning, Toast.LENGTH_LONG).show();
+        }
 
         // Navigate to archive list
         Bundle args = new Bundle();
@@ -259,6 +263,24 @@ public final class ServerListScene extends BaseScene {
                 .setNegativeButton(android.R.string.cancel, null)
                 .create();
 
+        // Prevent the dialog's keyboard from resizing the underlying Activity layout.
+        // Save the original mode so we can restore it when the dialog is dismissed.
+        final int originalSoftInputMode;
+        if (getActivity() != null && getActivity().getWindow() != null) {
+            originalSoftInputMode = getActivity().getWindow().getAttributes().softInputMode;
+            getActivity().getWindow().setSoftInputMode(
+                    WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
+        } else {
+            originalSoftInputMode = WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN;
+        }
+
+        dialog.setOnDismissListener(d -> {
+            // Restore the Activity's original soft input mode
+            if (getActivity() != null && getActivity().getWindow() != null) {
+                getActivity().getWindow().setSoftInputMode(originalSoftInputMode);
+            }
+        });
+
         dialog.show();
 
         // Override positive button to add validation
@@ -276,31 +298,38 @@ public final class ServerListScene extends BaseScene {
                 return;
             }
 
+            // Normalize URL: add protocol if missing, strip trailing slashes
+            String normalizedUrl = LRRUrlHelper.normalizeUrl(newUrl);
+            if (!LRRUrlHelper.hasExplicitScheme(normalizedUrl)) {
+                // Default to https:// for bare hostnames
+                normalizedUrl = "https://" + normalizedUrl;
+            }
+
             // Save to DB
             ServerProfile updated = new ServerProfile(
-                    profile.getId(), newName, newUrl,
+                    profile.getId(), newName, normalizedUrl,
                     newKey.isEmpty() ? null : newKey,
                     profile.isActive());
             EhDB.updateServerProfile(updated);
 
             // If this is the active profile, update LRRAuthManager too
             if (profile.isActive()) {
-                LRRAuthManager.setServerUrl(newUrl);
+                LRRAuthManager.setServerUrl(normalizedUrl);
                 LRRAuthManager.setApiKey(newKey.isEmpty() ? null : newKey);
                 LRRAuthManager.setServerName(newName);
             }
 
-            // Refresh list
+            // Refresh list and dismiss
             mProfiles.set(position, updated);
             mAdapter.notifyItemChanged(position);
-
             dialog.dismiss();
         });
     }
 
     /**
      * Show a dialog to add a new server profile.
-     * Reuses dialog_edit_server.xml layout. Tests connection, then saves and optionally switches.
+     * Reuses dialog_edit_server.xml layout. Tests connection with HTTPS→HTTP
+     * fallback, then saves and switches to the new server.
      */
     private void showAddDialog() {
         Context ctx = getEHContext();
@@ -337,84 +366,85 @@ public final class ServerListScene extends BaseScene {
                 return;
             }
 
-            // Normalize URL
-            String normalizedUrl = url;
-            if (!normalizedUrl.toLowerCase().startsWith("http://") &&
-                    !normalizedUrl.toLowerCase().startsWith("https://")) {
-                normalizedUrl = "http://" + normalizedUrl;
-            }
-            while (normalizedUrl.endsWith("/")) {
-                normalizedUrl = normalizedUrl.substring(0, normalizedUrl.length() - 1);
-            }
-
-            final String finalUrl = normalizedUrl;
+            // Normalize: trim + strip trailing slashes
+            final String normalizedInput = LRRUrlHelper.normalizeUrl(url);
             final String finalKey = apiKey.isEmpty() ? null : apiKey;
 
             // Disable button during connection test
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
             Toast.makeText(ctx, R.string.lrr_test_connection, Toast.LENGTH_SHORT).show();
 
-            // Test connection before saving
-            OkHttpClient baseClient = EhApplication.getOkHttpClient(ctx);
-            OkHttpClient testClient = baseClient.newBuilder()
-                    .connectTimeout(5, TimeUnit.SECONDS)
-                    .readTimeout(5, TimeUnit.SECONDS)
-                    .build();
-
-            // Temporarily set auth for test
+            // Temporarily set auth for the interceptor
             String oldUrl = LRRAuthManager.getServerUrl();
             String oldKey = LRRAuthManager.getApiKey();
-            LRRAuthManager.setServerUrl(finalUrl);
             LRRAuthManager.setApiKey(finalKey);
 
+            // Build a test client with short timeouts
+            OkHttpClient baseClient = EhApplication.getOkHttpClient(ctx);
+            OkHttpClient testClient = LRRUrlHelper.buildTestClient(baseClient);
+
             IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
-                try {
-                    LRRServerInfo info = (LRRServerInfo) BuildersKt.runBlocking(
-                            EmptyCoroutineContext.INSTANCE,
-                            (scope, cont) -> LRRServerApi.getServerInfo(testClient, finalUrl, cont)
-                    );
+                // Use HTTPS→HTTP fallback logic
+                LRRUrlHelper.connectWithFallback(testClient, normalizedInput,
+                        new LRRUrlHelper.ConnectCallback() {
+                    @Override
+                    public void onSuccess(@NonNull String resolvedUrl,
+                                          @NonNull LRRServerInfo info,
+                                          boolean usedHttpFallback) {
+                        if (getActivity() == null) return;
+                        getActivity().runOnUiThread(() -> {
+                            // Save as new profile and switch to it
+                            EhDB.deactivateAllProfiles();
+                            ServerProfile newProfile = new ServerProfile(
+                                    0, name, resolvedUrl, finalKey, true);
+                            long newId = EhDB.insertServerProfile(newProfile);
 
-                    if (getActivity() == null) return;
-                    getActivity().runOnUiThread(() -> {
-                        // Connection success — save as new profile and switch to it
-                        EhDB.deactivateAllProfiles();
-                        String profileName = name;
-                        ServerProfile newProfile = new ServerProfile(
-                                0, profileName, finalUrl, finalKey, true);
-                        long newId = EhDB.insertServerProfile(newProfile);
+                            LRRAuthManager.setServerUrl(resolvedUrl);
+                            LRRAuthManager.setApiKey(finalKey);
+                            LRRAuthManager.setServerName(name);
+                            LRRAuthManager.setActiveProfileId(newId);
 
-                        LRRAuthManager.setServerUrl(finalUrl);
-                        LRRAuthManager.setApiKey(finalKey);
-                        LRRAuthManager.setServerName(profileName);
-                        LRRAuthManager.setActiveProfileId(newId);
+                            EhApplication.getDownloadManager(ctx).reload();
 
-                        EhApplication.getDownloadManager(ctx).reload();
+                            Toast.makeText(ctx, getString(R.string.lrr_connection_success,
+                                    info.name, info.version), Toast.LENGTH_SHORT).show();
 
-                        Toast.makeText(ctx, getString(R.string.lrr_connection_success,
-                                info.name, info.version), Toast.LENGTH_SHORT).show();
-                        dialog.dismiss();
-                        loadProfiles();
+                            // Warn if connected via HTTP on a public address
+                            if (usedHttpFallback && !LRRUrlHelper.isLanAddress(resolvedUrl)) {
+                                Toast.makeText(ctx, R.string.lrr_security_warning,
+                                        Toast.LENGTH_LONG).show();
+                            }
 
-                        // Navigate to archive list
-                        Bundle args = new Bundle();
-                        args.putString(GalleryListScene.KEY_ACTION, GalleryListScene.ACTION_HOMEPAGE);
-                        if (getActivity() instanceof com.hippo.scene.StageActivity) {
-                            ((com.hippo.scene.StageActivity) getActivity())
-                                    .startSceneFirstly(new Announcer(GalleryListScene.class).setArgs(args));
-                        }
-                    });
-                } catch (Exception e) {
-                    // Restore old auth on failure
-                    LRRAuthManager.setServerUrl(oldUrl);
-                    LRRAuthManager.setApiKey(oldKey);
+                            dialog.dismiss();
+                            loadProfiles();
 
-                    if (getActivity() == null) return;
-                    getActivity().runOnUiThread(() -> {
-                        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
-                        Toast.makeText(ctx, getString(R.string.lrr_connection_failed,
-                                LRRApiUtilsKt.friendlyError(e)), Toast.LENGTH_LONG).show();
-                    });
-                }
+                            // Navigate to archive list
+                            Bundle args = new Bundle();
+                            args.putString(GalleryListScene.KEY_ACTION,
+                                    GalleryListScene.ACTION_HOMEPAGE);
+                            if (getActivity() instanceof com.hippo.scene.StageActivity) {
+                                ((com.hippo.scene.StageActivity) getActivity())
+                                        .startSceneFirstly(new Announcer(GalleryListScene.class)
+                                                .setArgs(args));
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Exception error) {
+                        // Restore old auth on failure
+                        LRRAuthManager.setServerUrl(oldUrl);
+                        LRRAuthManager.setApiKey(oldKey);
+
+                        if (getActivity() == null) return;
+                        getActivity().runOnUiThread(() -> {
+                            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+                            Toast.makeText(ctx, getString(R.string.lrr_connection_failed,
+                                    LRRApiUtilsKt.friendlyError(error)),
+                                    Toast.LENGTH_LONG).show();
+                        });
+                    }
+                });
             });
         });
     }

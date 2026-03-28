@@ -944,6 +944,7 @@
     <string name="lrr_category_updated">Category updated</string>
     <string name="lrr_connect">Connect</string>
     <string name="lrr_connection_failed">Connection failed: %1$s</string>
+    <string name="lrr_security_warning">⚠️ Security Warning: Using unencrypted HTTP for a public address. API Key may be intercepted. HTTPS is strongly recommended.</string>
     <string name="lrr_connection_success">Connected to %1$s (v%2$s)</string>
     <string name="lrr_delete_archive">Delete</string>
     <string name="lrr_delete_confirm_button">Delete</string>

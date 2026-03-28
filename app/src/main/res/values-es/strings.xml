@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
   ~ Copyright 2016 Hippo Seven
   ~
@@ -1030,6 +1030,7 @@ Bloquear comentarista: ocultar los comentarios de este usuario. Puede tardar má
     <string name="lrr_category_updated">Categoría actualizada</string>
     <string name="lrr_connect">Conectar</string>
     <string name="lrr_connection_failed">Conexión fallida: %1$s</string>
+    <string name="lrr_security_warning">⚠️ Advertencia de seguridad: Conexión HTTP sin cifrar a una dirección pública. La clave API puede ser interceptada. Se recomienda encarecidamente HTTPS.</string>
     <string name="lrr_connection_success">Conectado a %1$s (v%2$s)</string>
     <string name="lrr_delete_archive">Eliminar archivo</string>
     <string name="lrr_delete_confirm_button">Eliminar</string>
