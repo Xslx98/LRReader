@@ -21,19 +21,26 @@ import android.os.Process;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.GetText;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.client.data.GalleryInfo;
+import com.hippo.ehviewer.client.lrr.LRRArchiveApi;
+import com.hippo.ehviewer.client.lrr.LRRAuthManager;
+import com.hippo.ehviewer.client.lrr.LRRCoroutineHelper;
 import com.hippo.lib.glgallery.GalleryPageView;
 import com.hippo.lib.image.Image;
 //import com.hippo.lib.image.Image1;
 import com.hippo.unifile.FilenameFilter;
 import com.hippo.unifile.UniFile;
+import com.hippo.util.IoThreadPoolExecutor;
 import com.hippo.util.NaturalComparator;
 import com.hippo.lib.yorozuya.FileUtils;
 import com.hippo.lib.yorozuya.IOUtils;
 import com.hippo.lib.yorozuya.StringUtils;
 import com.hippo.lib.yorozuya.thread.PriorityThread;
+
+import okhttp3.OkHttpClient;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -53,6 +60,8 @@ public class DirGalleryProvider extends GalleryProvider2 implements Runnable {
     private final UniFile mDir;
     @Nullable private final Context mContext;
     private final long mGid;
+    @Nullable private final String mArcId;
+    @Nullable private final String mServerUrl;
     private int mStartPage = 0;
 
     private final Stack<Integer> mRequests = new Stack<>();
@@ -68,6 +77,8 @@ public class DirGalleryProvider extends GalleryProvider2 implements Runnable {
         mDir = dir;
         mContext = null;
         mGid = 0;
+        mArcId = null;
+        mServerUrl = null;
     }
 
     /** Constructor with Context and GalleryInfo for reading progress persistence. */
@@ -75,6 +86,8 @@ public class DirGalleryProvider extends GalleryProvider2 implements Runnable {
         mDir = dir;
         mContext = context.getApplicationContext();
         mGid = galleryInfo.gid;
+        mArcId = galleryInfo.token;  // LANraragi arcid
+        mServerUrl = LRRAuthManager.getServerUrl();
         mStartPage = loadReadingProgress(mContext, mGid);
     }
 
@@ -88,6 +101,19 @@ public class DirGalleryProvider extends GalleryProvider2 implements Runnable {
         mStartPage = page;
         if (mContext != null && mGid != 0) {
             saveReadingProgress(mContext, mGid, page);
+        }
+        // Sync progress to LANraragi server (1-indexed)
+        if (mArcId != null && mServerUrl != null) {
+            IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+                try {
+                    OkHttpClient client = EhApplication.getOkHttpClient(mContext);
+                    LRRCoroutineHelper.runSuspend(
+                            (scope, cont) -> LRRArchiveApi.updateProgress(client, mServerUrl, mArcId, page + 1, cont)
+                    );
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to sync progress: " + e.getMessage());
+                }
+            });
         }
     }
 
