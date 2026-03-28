@@ -1663,7 +1663,8 @@ public class DownloadsScene extends ToolbarScene
         Toast.makeText(context, R.string.import_archive_processing, Toast.LENGTH_LONG).show();
 
         // Process the archive file in background
-        new Thread(() -> processArchiveFile(uri)).start();
+        com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(
+                () -> processArchiveFile(uri));
     }
 
     private void processArchiveFile(Uri uri) {
