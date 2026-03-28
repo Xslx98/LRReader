@@ -81,10 +81,9 @@ public final class ImageSearchLayout extends LinearLayout implements View.OnClic
         init(context);
     }
 
-    @SuppressWarnings("deprecation")
     public void init(Context context) {
         setOrientation(VERTICAL);
-        setDividerDrawable(context.getResources().getDrawable(R.drawable.spacer_keyline));
+        setDividerDrawable(androidx.appcompat.content.res.AppCompatResources.getDrawable(context, R.drawable.spacer_keyline));
         setShowDividers(SHOW_DIVIDER_MIDDLE);
         LayoutInflater.from(context).inflate(R.layout.widget_image_search, this);
 

@@ -1165,7 +1165,6 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         });
     }
 
-    @SuppressWarnings("deprecation")
     private void bindTags(GalleryTagGroup[] tagGroups) {
         Context context = getEHContext();
         LayoutInflater inflater = getLayoutInflater2();
@@ -1199,7 +1198,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
             TextView tgName = (TextView) inflater.inflate(R.layout.item_gallery_tag, ll, false);
             ll.addView(tgName);
             tgName.setText(readableTagName != null ? readableTagName : tg.groupName);
-            tgName.setBackgroundDrawable(new RoundSideRectDrawable(colorName));
+            tgName.setBackground(new RoundSideRectDrawable(colorName));
 
             String prefix = EhTagDatabase.namespaceToPrefix(tg.groupName);
             if (prefix == null) {
@@ -1219,7 +1218,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                 }
 
                 tag.setText(readableTag != null ? readableTag : tagStr);
-                tag.setBackgroundDrawable(new RoundSideRectDrawable(colorTag));
+                tag.setBackground(new RoundSideRectDrawable(colorTag));
                 tag.setTag(R.id.tag, tg.groupName + ":" + tagStr);
                 tag.setOnClickListener(this);
                 tag.setOnLongClickListener(this);

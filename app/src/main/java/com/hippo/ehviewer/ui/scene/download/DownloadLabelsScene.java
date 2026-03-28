@@ -80,7 +80,6 @@ public class DownloadLabelsScene extends ToolbarScene {
         mList = null;
     }
 
-    @SuppressWarnings("deprecation")
     @Nullable
     @Override
     public View onCreateView3(LayoutInflater inflater,
@@ -101,7 +100,7 @@ public class DownloadLabelsScene extends ToolbarScene {
         // drag & drop manager
         RecyclerViewDragDropManager dragDropManager = new RecyclerViewDragDropManager();
         dragDropManager.setDraggingItemShadowDrawable(
-                (NinePatchDrawable) context.getResources().getDrawable(R.drawable.shadow_8dp));
+                (NinePatchDrawable) androidx.appcompat.content.res.AppCompatResources.getDrawable(context, R.drawable.shadow_8dp));
 
         RecyclerView.Adapter adapter = new LabelAdapter();
         adapter.setHasStableIds(true);
