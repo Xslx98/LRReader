@@ -16,12 +16,14 @@
 
 package com.hippo.ehviewer.gallery;
 
+import android.content.Context;
 import android.os.Process;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.hippo.ehviewer.GetText;
 import com.hippo.ehviewer.R;
+import com.hippo.ehviewer.client.data.GalleryInfo;
 import com.hippo.lib.glgallery.GalleryPageView;
 import com.hippo.lib.image.Image;
 //import com.hippo.lib.image.Image1;
@@ -49,6 +51,10 @@ public class DirGalleryProvider extends GalleryProvider2 implements Runnable {
     private static final AtomicInteger sIdGenerator = new AtomicInteger();
 
     private final UniFile mDir;
+    @Nullable private final Context mContext;
+    private final long mGid;
+    private int mStartPage = 0;
+
     private final Stack<Integer> mRequests = new Stack<>();
     private final AtomicInteger mDecodingIndex = new AtomicInteger(GalleryPageView.INVALID_INDEX);
     private final AtomicReference<UniFile[]> mFileList = new AtomicReference<>();
@@ -57,8 +63,32 @@ public class DirGalleryProvider extends GalleryProvider2 implements Runnable {
     private volatile int mSize = STATE_WAIT;
     private String mError;
 
+    /** Legacy constructor (no progress tracking). */
     public DirGalleryProvider(@NonNull UniFile dir) {
         mDir = dir;
+        mContext = null;
+        mGid = 0;
+    }
+
+    /** Constructor with Context and GalleryInfo for reading progress persistence. */
+    public DirGalleryProvider(@NonNull UniFile dir, @NonNull Context context, @NonNull GalleryInfo galleryInfo) {
+        mDir = dir;
+        mContext = context.getApplicationContext();
+        mGid = galleryInfo.gid;
+        mStartPage = loadReadingProgress(mContext, mGid);
+    }
+
+    @Override
+    public int getStartPage() {
+        return mStartPage;
+    }
+
+    @Override
+    public void putStartPage(int page) {
+        mStartPage = page;
+        if (mContext != null && mGid != 0) {
+            saveReadingProgress(mContext, mGid, page);
+        }
     }
 
     @Override

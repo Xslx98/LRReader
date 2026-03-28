@@ -74,6 +74,8 @@ public class LRRGalleryProvider extends GalleryProvider2 {
         mGalleryInfo = galleryInfo;
         mArcId = galleryInfo.token;  // arcid stored in token by toGalleryInfo()
         mServerUrl = LRRAuthManager.getServerUrl();
+        // Load cached reading progress from local storage (instantly available)
+        mStartPage = loadReadingProgress(mContext, galleryInfo.gid);
     }
 
     @Override
@@ -218,6 +220,9 @@ public class LRRGalleryProvider extends GalleryProvider2 {
     @Override
     public void putStartPage(int page) {
         mStartPage = page;
+
+        // Persist locally for instant restore on next open
+        saveReadingProgress(mContext, mGalleryInfo.gid, page);
 
         // Sync progress to LANraragi server (1-indexed)
         IoThreadPoolExecutor.Companion.getInstance().execute(() -> {

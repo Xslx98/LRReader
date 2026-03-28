@@ -251,7 +251,11 @@ public class GalleryActivity extends EhActivity implements SeekBar.OnSeekBarChan
 
         if (ACTION_DIR.equals(mAction)) {
             if (mFilename != null) {
-                mGalleryProvider = new DirGalleryProvider(UniFile.fromFile(new File(mFilename)));
+                if (mGalleryInfo != null) {
+                    mGalleryProvider = new DirGalleryProvider(UniFile.fromFile(new File(mFilename)), this, mGalleryInfo);
+                } else {
+                    mGalleryProvider = new DirGalleryProvider(UniFile.fromFile(new File(mFilename)));
+                }
             }
         } else if (ACTION_EH.equals(mAction)) {
             if (mGalleryInfo != null) {
