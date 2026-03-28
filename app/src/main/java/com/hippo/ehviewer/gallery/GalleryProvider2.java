@@ -39,7 +39,7 @@ public abstract class GalleryProvider2 extends GalleryProvider {
     private static final String SP_READING_PROGRESS = "reading_progress";
 
     /**
-     * Save reading progress locally (0-indexed page number).
+     * Save reading progress locally (0-indexed page number) with timestamp.
      * @param gid Gallery identifier (used as SP key)
      * @param page 0-indexed current page
      */
@@ -48,6 +48,7 @@ public abstract class GalleryProvider2 extends GalleryProvider {
                 .getSharedPreferences(SP_READING_PROGRESS, Context.MODE_PRIVATE)
                 .edit()
                 .putInt(String.valueOf(gid), page)
+                .putLong(gid + "_ts", System.currentTimeMillis() / 1000L)
                 .apply();
     }
 
@@ -59,6 +60,16 @@ public abstract class GalleryProvider2 extends GalleryProvider {
         return ctx.getApplicationContext()
                 .getSharedPreferences(SP_READING_PROGRESS, Context.MODE_PRIVATE)
                 .getInt(String.valueOf(gid), 0);
+    }
+
+    /**
+     * Load the timestamp (epoch seconds) of the last local progress save.
+     * @return epoch seconds, or 0 if not found
+     */
+    public static long loadReadingTimestamp(@NonNull Context ctx, long gid) {
+        return ctx.getApplicationContext()
+                .getSharedPreferences(SP_READING_PROGRESS, Context.MODE_PRIVATE)
+                .getLong(gid + "_ts", 0L);
     }
 
     public int getStartPage() {
