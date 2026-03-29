@@ -29,6 +29,7 @@ import androidx.annotation.Nullable;
 
 import com.hippo.ehviewer.Analytics;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.client.data.GalleryDetail;
 import com.hippo.ehviewer.client.data.GalleryInfo;
 import com.hippo.ehviewer.client.data.PreviewSet;
@@ -240,7 +241,7 @@ public class SpiderInfo {
                 // Ignore
             }
             // Read from cache
-            OutputStreamPipe pipe = EhApplication.getSpiderInfoCache(context).getOutputStreamPipe(Long.toString(gid));
+            OutputStreamPipe pipe = ServiceRegistry.INSTANCE.getDataModule().getSpiderInfoCache().getOutputStreamPipe(Long.toString(gid));
             try {
                 pipe.obtain();
                 write(pipe.open());

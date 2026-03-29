@@ -20,6 +20,7 @@ import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.Parcelable;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.FavouriteStatusRouter;
 import com.hippo.ehviewer.client.data.GalleryInfo;
 import com.hippo.widget.ContentLayout;
@@ -43,11 +44,11 @@ public abstract class GalleryInfoContentHelper extends ContentLayout.ContentHelp
         info.favoriteSlot = slot;
       }
     };
-    EhApplication.getFavouriteStatusRouter().addListener(listener);
+    ServiceRegistry.INSTANCE.getDataModule().getFavouriteStatusRouter().addListener(listener);
   }
 
   public void destroy() {
-    EhApplication.getFavouriteStatusRouter().removeListener(listener);
+    ServiceRegistry.INSTANCE.getDataModule().getFavouriteStatusRouter().removeListener(listener);
   }
 
   @Override
@@ -84,7 +85,7 @@ public abstract class GalleryInfoContentHelper extends ContentLayout.ContentHelp
     Bundle bundle = (Bundle) super.saveInstanceState(superState);
 
     // TODO It's a bad design
-    FavouriteStatusRouter router = EhApplication.getFavouriteStatusRouter();
+    FavouriteStatusRouter router = ServiceRegistry.INSTANCE.getDataModule().getFavouriteStatusRouter();
     int id = router.saveDataMap(map);
     bundle.putInt(KEY_DATA_MAP, id);
 
@@ -97,7 +98,7 @@ public abstract class GalleryInfoContentHelper extends ContentLayout.ContentHelp
 
     int id = bundle.getInt(KEY_DATA_MAP, IntIdGenerator.INVALID_ID);
     if (id != IntIdGenerator.INVALID_ID) {
-      FavouriteStatusRouter router = EhApplication.getFavouriteStatusRouter();
+      FavouriteStatusRouter router = ServiceRegistry.INSTANCE.getDataModule().getFavouriteStatusRouter();
       Map<Long, GalleryInfo> map = router.restoreDataMap(id);
       if (map != null) {
         this.map = map;

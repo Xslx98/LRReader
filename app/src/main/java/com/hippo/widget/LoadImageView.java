@@ -40,6 +40,7 @@ import com.hippo.conaco.DataContainer;
 import com.hippo.conaco.Unikery;
 import com.hippo.drawable.PreciselyClipDrawable;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.client.EhCacheKeyFactory;
@@ -103,7 +104,7 @@ public class LoadImageView extends FixedAspectImageView implements Unikery<Image
         a.recycle();
         setFocusable(false);
         if (!isInEditMode()) {
-            mConaco = EhApplication.getConaco(context);
+            mConaco = ServiceRegistry.INSTANCE.getClientModule().getConaco();
         }
 //        setScaleType(ScaleType.FIT_CENTER);
     }
@@ -369,7 +370,7 @@ public class LoadImageView extends FixedAspectImageView implements Unikery<Image
                         .setMethod(EhClient.METHOD_GET_GALLERY_DETAIL)
                         .setArgs(detailUrl)
                         .setCallback(callback);
-                EhApplication.getEhClient(context).execute(request);
+                ServiceRegistry.INSTANCE.getClientModule().getEhClient().execute(request);
             }
             // Can't retry, so release
             mKey = null;
@@ -455,7 +456,7 @@ public class LoadImageView extends FixedAspectImageView implements Unikery<Image
                 return;
             }
             // Put gallery detail to cache
-            EhApplication.getGalleryDetailCache(context).put(result.gid, result);
+            ServiceRegistry.INSTANCE.getDataModule().getGalleryDetailCache().put(result.gid, result);
             if (downloadInfo.gid == result.gid && !downloadInfo.thumb.equals(result.thumb)) {
                 downloadInfo.updateInfo(result);
                 EhDB.putDownloadInfo(downloadInfo);

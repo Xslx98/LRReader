@@ -21,6 +21,7 @@ import android.content.Intent;
 
 import com.hippo.app.ListCheckBoxDialogBuilder;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
@@ -51,7 +52,7 @@ public final class CommonOperations {
             EhDB.putLocalFavorite(galleryInfo);
             listener.onSuccess(null);
         } else if (slot >= 0 && slot <= 9) {
-            EhClient client = EhApplication.getEhClient(activity);
+            EhClient client = ServiceRegistry.INSTANCE.getClientModule().getEhClient();
             EhRequest request = new EhRequest();
             request.setMethod(EhClient.METHOD_ADD_FAVORITES);
             request.setArgs(galleryInfo.gid, galleryInfo.token, slot, "");
@@ -93,7 +94,7 @@ public final class CommonOperations {
     public static void removeFromFavorites(Activity activity, GalleryInfo galleryInfo,
                                            final EhClient.Callback<Void> listener) {
         EhDB.removeLocalFavorites(galleryInfo.gid);
-        EhClient client = EhApplication.getEhClient(activity);
+        EhClient client = ServiceRegistry.INSTANCE.getClientModule().getEhClient();
         EhRequest request = new EhRequest();
         request.setMethod(EhClient.METHOD_ADD_FAVORITES);
         request.setArgs(galleryInfo.gid, galleryInfo.token, -1, "");
@@ -121,7 +122,7 @@ public final class CommonOperations {
             info.favoriteName = newFavoriteName;
             info.favoriteSlot = slot;
             delegate.onSuccess(result);
-            EhApplication.getFavouriteStatusRouter().modifyFavourites(info.gid, slot);
+            ServiceRegistry.INSTANCE.getDataModule().getFavouriteStatusRouter().modifyFavourites(info.gid, slot);
         }
 
         @Override
@@ -141,7 +142,7 @@ public final class CommonOperations {
 
     // TODO Add context if activity and context are different style
     public static void startDownload(final MainActivity activity, final List<GalleryInfo> galleryInfos, boolean forceDefault) {
-        final DownloadManager dm = EhApplication.getDownloadManager(activity);
+        final DownloadManager dm = ServiceRegistry.INSTANCE.getDataModule().getDownloadManager();
 
         LongList toStart = new LongList();
         List<GalleryInfo> toAdd = new ArrayList<>();

@@ -26,6 +26,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.client.EhClient;
 import com.hippo.ehviewer.client.EhRequest;
@@ -101,7 +102,7 @@ public final class ProgressScene extends BaseScene implements View.OnClickListen
                     .setArgs(mGid, mPToken, mPage)
                     .setCallback(new GetGalleryTokenListener(context,
                             activity.getStageId(), getTag()));
-            EhApplication.getEhClient(context).execute(request);
+            ServiceRegistry.INSTANCE.getClientModule().getEhClient().execute(request);
             return true;
         }
         return false;

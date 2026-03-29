@@ -43,6 +43,7 @@ import com.hippo.android.resource.AttrResources;
 import com.hippo.easyrecyclerview.EasyRecyclerView;
 import com.hippo.easyrecyclerview.LinearDividerItemDecoration;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.Hosts;
 import com.hippo.ehviewer.R;
 import com.hippo.ripple.Ripple;
@@ -70,7 +71,7 @@ public class HostsActivity extends ToolbarActivity
   protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    hosts = EhApplication.getHosts(this);
+    hosts = ServiceRegistry.INSTANCE.getNetworkModule().getHosts();
     data = hosts.getAll();
 
     setContentView(R.layout.activity_hosts);

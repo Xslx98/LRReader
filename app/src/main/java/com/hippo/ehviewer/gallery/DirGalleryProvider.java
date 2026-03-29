@@ -22,6 +22,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.GetText;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.client.data.GalleryInfo;
@@ -107,7 +108,7 @@ public class DirGalleryProvider extends GalleryProvider2 implements Runnable {
         if (mArcId != null && mServerUrl != null) {
             IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
                 try {
-                    OkHttpClient client = EhApplication.getOkHttpClient(mContext);
+                    OkHttpClient client = ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
                     LRRCoroutineHelper.runSuspend(
                             (scope, cont) -> LRRArchiveApi.updateProgress(client, mServerUrl, mArcId, page + 1, cont)
                     );
@@ -126,7 +127,7 @@ public class DirGalleryProvider extends GalleryProvider2 implements Runnable {
         if (mArcId != null && mServerUrl != null && mContext != null) {
             IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
                 try {
-                    OkHttpClient client = EhApplication.getOkHttpClient(mContext);
+                    OkHttpClient client = ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
                     LRRArchive metadata = (LRRArchive) LRRCoroutineHelper.runSuspend(
                             (scope, cont) -> LRRArchiveApi.getArchiveMetadata(client, mServerUrl, mArcId, cont)
                     );

@@ -2,6 +2,7 @@ package com.hippo.ehviewer.ui.scene.gallery.detail
 
 import android.content.Context
 import com.hippo.ehviewer.EhApplication
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryDetail
@@ -22,7 +23,7 @@ class GetGalleryDetailListener(
             return
         }
         // Put gallery detail to cache
-        EhApplication.getGalleryDetailCache(application).put(result.gid, result)
+        ServiceRegistry.dataModule.galleryDetailCache.put(result.gid, result)
 
         // Add history
         EhDB.putHistoryInfo(result)

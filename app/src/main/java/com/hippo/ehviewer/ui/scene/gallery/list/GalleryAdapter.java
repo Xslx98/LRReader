@@ -35,6 +35,7 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import com.hippo.drawable.TriangleDrawable;
 import com.hippo.easyrecyclerview.MarginItemDecoration;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
 import com.hippo.ehviewer.settings.AppearanceSettings;
@@ -100,7 +101,7 @@ abstract class GalleryAdapter extends RecyclerView.Adapter<GalleryHolder> {
 
         setType(type);
 
-        mDownloadManager = EhApplication.getDownloadManager(inflater.getContext());
+        mDownloadManager = ServiceRegistry.INSTANCE.getDataModule().getDownloadManager();
     }
 
     private void adjustPaddings() {

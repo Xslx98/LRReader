@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.client.data.GalleryInfo;
 import com.hippo.ehviewer.client.lrr.LRRAuthManager;
@@ -97,7 +98,7 @@ public class LRRGalleryProvider extends GalleryProvider2 {
 
 
         // Create shared OkHttpClient with longer timeout for page downloads
-        OkHttpClient baseClient = EhApplication.getOkHttpClient(mContext);
+        OkHttpClient baseClient = ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
         mPageClient = baseClient.newBuilder()
                 .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
                 .build();
@@ -111,7 +112,7 @@ public class LRRGalleryProvider extends GalleryProvider2 {
         IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
             try {
                 OkHttpClient client = mPageClient != null ? mPageClient
-                        : EhApplication.getOkHttpClient(mContext);
+                        : ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
                 String[] pages = (String[]) LRRCoroutineHelper.runSuspend(
                         (scope, cont) -> LRRArchiveApi.getFileList(client, mServerUrl, mArcId, cont)
                 );
@@ -282,7 +283,7 @@ public class LRRGalleryProvider extends GalleryProvider2 {
         // Sync progress to LANraragi server (1-indexed)
         IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
             try {
-                OkHttpClient client = EhApplication.getOkHttpClient(mContext);
+                OkHttpClient client = ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
                 LRRCoroutineHelper.runSuspend(
                         (scope, cont) -> LRRArchiveApi.updateProgress(client, mServerUrl, mArcId, page + 1, cont)
                 );
@@ -425,7 +426,7 @@ public class LRRGalleryProvider extends GalleryProvider2 {
                 String pageUrl = mServerUrl + mPagePaths[index];
                 // Use shared page client with 30s timeout (created once in start())
                 OkHttpClient pageClient = mPageClient != null ? mPageClient
-                        : EhApplication.getOkHttpClient(mContext);
+                        : ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
                 Request request = new Request.Builder()
                         .url(pageUrl)
                         .get()

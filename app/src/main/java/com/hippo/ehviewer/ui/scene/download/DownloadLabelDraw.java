@@ -13,6 +13,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
 
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
 import com.hippo.ehviewer.settings.DownloadSettings;
@@ -91,7 +92,7 @@ public class DownloadLabelDraw {
             return false;
         });
 
-        final DownloadManager downloadManager = EhApplication.getDownloadManager(context);
+        final DownloadManager downloadManager = ServiceRegistry.INSTANCE.getDataModule().getDownloadManager();
 
 
         List<DownloadLabel> list = downloadManager.getLabelList();
@@ -145,7 +146,7 @@ public class DownloadLabelDraw {
     }
 
     public void updateDownloadLabels(){
-        final DownloadManager downloadManager = EhApplication.getDownloadManager(context);
+        final DownloadManager downloadManager = ServiceRegistry.INSTANCE.getDataModule().getDownloadManager();
         List<DownloadLabel> list = downloadManager.getLabelList();
         final List<String> labels = new ArrayList<>(list.size() + 1);
         // Add default label name

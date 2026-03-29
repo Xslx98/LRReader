@@ -80,6 +80,7 @@ import com.hippo.easyrecyclerview.HandlerDrawable;
 import com.hippo.easyrecyclerview.MarginItemDecoration;
 import com.hippo.ehviewer.Analytics;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
@@ -288,7 +289,7 @@ public class DownloadsScene extends ToolbarScene
 
         Context context = getEHContext();
         AssertUtils.assertNotNull(context);
-        mDownloadManager = EhApplication.getDownloadManager(context);
+        mDownloadManager = ServiceRegistry.INSTANCE.getDataModule().getDownloadManager();
         mDownloadManager.addDownloadInfoListener(this);
         canPagination = DownloadSettings.getDownloadPagination();
         if (savedInstanceState == null) {
@@ -308,7 +309,7 @@ public class DownloadsScene extends ToolbarScene
         if (null == manager) {
             Context context = getEHContext();
             if (null != context) {
-                manager = EhApplication.getDownloadManager(context);
+                manager = ServiceRegistry.INSTANCE.getDataModule().getDownloadManager();
             }
         } else {
             mDownloadManager = null;
@@ -1129,7 +1130,7 @@ public class DownloadsScene extends ToolbarScene
                     if (downloadInfoList.isEmpty()) {
                         break;
                     }
-                    List<DownloadLabel> labelRawList = EhApplication.getDownloadManager(context).getLabelList();
+                    List<DownloadLabel> labelRawList = ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().getLabelList();
                     List<String> labelList = new ArrayList<>(labelRawList.size() + 1);
                     labelList.add(getString(R.string.default_download_label_name));
                     for (int i = 0, n = labelRawList.size(); i < n; i++) {
@@ -1888,7 +1889,7 @@ public class DownloadsScene extends ToolbarScene
             } else {
                 label = mLabels[which];
             }
-            EhApplication.getDownloadManager(context).changeLabel(mDownloadInfoList, label);
+            ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().changeLabel(mDownloadInfoList, label);
         }
     }
 

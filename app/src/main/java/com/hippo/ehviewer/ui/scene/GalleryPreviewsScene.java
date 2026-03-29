@@ -39,6 +39,7 @@ import com.hippo.easyrecyclerview.EasyRecyclerView;
 import com.hippo.easyrecyclerview.MarginItemDecoration;
 import com.hippo.ehviewer.Analytics;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
 import com.hippo.ehviewer.settings.AppearanceSettings;
@@ -97,7 +98,7 @@ public class GalleryPreviewsScene extends ToolbarScene implements EasyRecyclerVi
 
         Context context = getEHContext();
         AssertUtils.assertNotNull(context);
-        mClient = EhApplication.getEhClient(context);
+        mClient = ServiceRegistry.INSTANCE.getClientModule().getEhClient();
         onInit();
 //        if (savedInstanceState == null) {
 //            onInit();

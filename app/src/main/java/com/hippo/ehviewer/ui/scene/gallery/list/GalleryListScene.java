@@ -70,6 +70,7 @@ import com.hippo.drawerlayout.DrawerLayout;
 import com.hippo.easyrecyclerview.EasyRecyclerView;
 import com.hippo.easyrecyclerview.FastScroller;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.FavouriteStatusRouter;
 import com.hippo.ehviewer.R;
@@ -356,10 +357,10 @@ public final class GalleryListScene extends BaseScene
         Context context = getEHContext();
         assert context != null;
         AssertUtils.assertNotNull(context);
-        executorService = EhApplication.getExecutorService(context);
-        mClient = EhApplication.getEhClient(context);
-        mDownloadManager = EhApplication.getDownloadManager(context);
-        mFavouriteStatusRouter = EhApplication.getFavouriteStatusRouter(context);
+        executorService = ServiceRegistry.INSTANCE.getAppModule().getExecutorService();
+        mClient = ServiceRegistry.INSTANCE.getClientModule().getEhClient();
+        mDownloadManager = ServiceRegistry.INSTANCE.getDataModule().getDownloadManager();
+        mFavouriteStatusRouter = ServiceRegistry.INSTANCE.getDataModule().getFavouriteStatusRouter();
 
         mDownloadInfoListener = new DownloadManager.DownloadInfoListener() {
 
@@ -2236,7 +2237,7 @@ public final class GalleryListScene extends BaseScene
             }
 
             int start = page * LRR_PAGE_SIZE;
-            OkHttpClient client = EhApplication.getOkHttpClient(getEHContext());
+            OkHttpClient client = ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
             final String searchFilter = filter;
             final String searchCategory = categoryId;
             final int currentPage = page;

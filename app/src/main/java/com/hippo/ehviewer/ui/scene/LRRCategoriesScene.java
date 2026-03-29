@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.client.data.ListUrlBuilder;
 import com.hippo.ehviewer.client.lrr.LRRAuthManager;
@@ -117,7 +118,7 @@ public class LRRCategoriesScene extends BaseScene {
                 Context ctx = getEHContext();
                 if (ctx == null) return;
                 String serverUrl = LRRAuthManager.getServerUrl();
-                OkHttpClient client = EhApplication.getOkHttpClient(ctx);
+                OkHttpClient client = ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
                 @SuppressWarnings("unchecked")
                 List<LRRCategory> categories = (List<LRRCategory>) LRRCoroutineHelper.runSuspend(
                         (scope, cont) -> LRRCategoryApi.getCategories(client, serverUrl, cont)
@@ -222,7 +223,7 @@ public class LRRCategoriesScene extends BaseScene {
                 Context ctx = getEHContext();
                 if (ctx == null) return;
                 String serverUrl = LRRAuthManager.getServerUrl();
-                OkHttpClient client = EhApplication.getOkHttpClient(ctx);
+                OkHttpClient client = ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
                 LRRCoroutineHelper.runSuspend(
                         (scope, cont) -> LRRCategoryApi.createCategory(client, serverUrl, name, search, pinned, cont));
                 if (getActivity() == null) return;
@@ -245,7 +246,7 @@ public class LRRCategoriesScene extends BaseScene {
                 Context ctx = getEHContext();
                 if (ctx == null) return;
                 String serverUrl = LRRAuthManager.getServerUrl();
-                OkHttpClient client = EhApplication.getOkHttpClient(ctx);
+                OkHttpClient client = ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
                 LRRCoroutineHelper.runSuspend(
                         (scope, cont) -> LRRCategoryApi.updateCategory(client, serverUrl, categoryId, name, search, pinned, cont));
                 if (getActivity() == null) return;
@@ -272,7 +273,7 @@ public class LRRCategoriesScene extends BaseScene {
                             Context ctx = getEHContext();
                             if (ctx == null) return;
                             String serverUrl = LRRAuthManager.getServerUrl();
-                            OkHttpClient client = EhApplication.getOkHttpClient(ctx);
+                            OkHttpClient client = ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
                             LRRCoroutineHelper.runSuspend(
                                     (scope, cont) -> LRRCategoryApi.deleteCategory(client, serverUrl, category.id, cont));
                             if (getActivity() == null) return;

@@ -83,7 +83,7 @@ public class AboutFragment extends BasePreferenceFragmentCompat
         if (activity == null) return true;
 
         if (KEY_AUTHOR.equals(key)) {
-            AppHelper.sendEmail(activity, EhApplication.getDeveloperEmail(),
+            AppHelper.sendEmail(activity, com.hippo.ehviewer.module.AppModule.getDeveloperEmail(),
                     "About LR Reader", null);
         } else if (KEY_LICENSE.equals(key)) {
             activity.startActivity(new Intent(activity, LicenseActivity.class));

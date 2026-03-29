@@ -40,6 +40,7 @@ import com.hippo.conaco.ConacoTask;
 import com.hippo.conaco.Unikery;
 import com.hippo.drawable.PreciselyClipDrawable;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.R;
 import com.hippo.lib.image.Image;
 import com.hippo.util.DrawableManager;
@@ -89,7 +90,7 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
         a.recycle();
         setFocusable(false);
         if (!isInEditMode()) {
-            mConaco = EhApplication.getConaco(context);
+            mConaco = ServiceRegistry.INSTANCE.getClientModule().getConaco();
         }
     }
 

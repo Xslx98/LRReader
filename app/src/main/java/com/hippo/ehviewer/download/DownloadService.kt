@@ -31,6 +31,7 @@ import android.util.Log
 import androidx.annotation.IntDef
 import androidx.core.app.NotificationCompat
 import com.hippo.ehviewer.EhApplication
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryInfo
@@ -72,7 +73,7 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
                 )
             )
         }
-        mDownloadManager = EhApplication.getDownloadManager(applicationContext)
+        mDownloadManager = ServiceRegistry.dataModule.downloadManager
         mDownloadManager!!.setDownloadListener(this)
     }
 

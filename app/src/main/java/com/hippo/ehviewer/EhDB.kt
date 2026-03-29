@@ -895,7 +895,7 @@ object EhDB {
             )
 
             sendImportProgress(handler, 10)
-            val manager = EhApplication.getDownloadManager(context)
+            val manager = ServiceRegistry.dataModule.downloadManager
 
             runBlocking {
                 val downloadDao = sDatabase.downloadDao()

@@ -33,6 +33,7 @@ import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
@@ -170,7 +171,7 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
     }
 
     private void exportDownloadItems() {
-        List<GalleryInfo> list = EhApplication.getDownloadManager(requireActivity()).getDownloadInfoList();
+        List<GalleryInfo> list = ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().getDownloadInfoList();
         if (list.isEmpty()) {
             Toast.makeText(getActivity(), R.string.settings_download_export_no_items, Toast.LENGTH_SHORT).show();
             return;
@@ -328,7 +329,7 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
                     }
                 }
 
-                DownloadManager downloadManager = EhApplication.getDownloadManager(requireActivity());
+                DownloadManager downloadManager = ServiceRegistry.INSTANCE.getDataModule().getDownloadManager();
                 int total = galleryInfos.size();
                 mainHandler.post(() -> { dialog.setMax(total); dialog.setProgress(0); });
 
@@ -397,7 +398,7 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
             int total = files.length;
             mainHandler.post(() -> { dialog.setMax(total); dialog.setProgress(0); });
 
-            DownloadManager downloadManager = EhApplication.getDownloadManager(requireActivity());
+            DownloadManager downloadManager = ServiceRegistry.INSTANCE.getDataModule().getDownloadManager();
 
             for (int i = 0; i < total; i++) {
                 UniFile dir = files[i];

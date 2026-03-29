@@ -61,6 +61,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.hippo.drawerlayout.DrawerLayout;
 import com.hippo.ehviewer.AppConfig;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
@@ -555,7 +556,7 @@ public final class MainActivity extends StageActivity
     private void onInit() {
         // Storage permission no longer required (Scoped Storage: getExternalFilesDir + SAF + MediaStore)
 
-        EhCookieStore store = EhApplication.getEhCookieStore(getApplicationContext());
+        EhCookieStore store = ServiceRegistry.INSTANCE.getNetworkModule().getCookieStore();
         List<Cookie> eCookies = store.getCookies(HttpUrl.get(EhUrl.HOST_E));
         List<Cookie> exCookies = store.getCookies(HttpUrl.get(EhUrl.HOST_EX));
         List<Cookie> cookies = new LinkedList<>(eCookies);

@@ -56,6 +56,7 @@ import com.hippo.android.resource.AttrResources;
 import com.hippo.easyrecyclerview.EasyRecyclerView;
 import com.hippo.easyrecyclerview.LinearDividerItemDecoration;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.UrlOpener;
@@ -301,7 +302,7 @@ public final class GalleryCommentsScene extends ToolbarScene
                 .setArgs(mApiUid, mApiKey, mGid, mToken, id, vote)
                 .setCallback(new VoteCommentListener(context,
                         activity.getStageId(), getTag()));
-        EhApplication.getEhClient(context).execute(request);
+        ServiceRegistry.INSTANCE.getClientModule().getEhClient().execute(request);
     }
 
 
@@ -472,7 +473,7 @@ public final class GalleryCommentsScene extends ToolbarScene
                     .setMethod(EhClient.METHOD_GET_GALLERY_DETAIL)
                     .setArgs(url)
                     .setCallback(new RefreshCommentListener(activity, activity.getStageId(), getTag()));
-                EhApplication.getEhClient(activity).execute(request);
+                ServiceRegistry.INSTANCE.getClientModule().getEhClient().execute(request);
             }
         }
 
@@ -658,7 +659,7 @@ public final class GalleryCommentsScene extends ToolbarScene
                         .setArgs(url, comment, mCommentId != 0 ? Long.toString(mCommentId) : null)
                         .setCallback(new CommentGalleryListener(context,
                                 activity.getStageId(), getTag(), mCommentId));
-                EhApplication.getEhClient(context).execute(request);
+                ServiceRegistry.INSTANCE.getClientModule().getEhClient().execute(request);
                 hideSoftInput();
                 hideEditPanel(true);
             }
@@ -705,7 +706,7 @@ public final class GalleryCommentsScene extends ToolbarScene
 
         private CharSequence generateComment(Context context, ObservedTextView textView, GalleryComment comment) {
             SpannableStringBuilder ssb = new SpannableStringBuilder(Html.fromHtml(comment.comment, Html.FROM_HTML_MODE_LEGACY, new URLImageGetter(textView,
-                EhApplication.getConaco(context)), null));
+                ServiceRegistry.INSTANCE.getClientModule().getConaco()), null));
 
             if (0 != comment.id && 0 != comment.score) {
                 int score = comment.score;

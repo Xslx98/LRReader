@@ -10,6 +10,7 @@ import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.BuildConfig
 import com.hippo.ehviewer.EhApplication
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.ui.dialog.UpdateDialog
@@ -123,7 +124,7 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
                     }
 
                     val client =
-                        EhApplication.getOkHttpClient(EhApplication.getInstance())
+                        ServiceRegistry.networkModule.okHttpClient
 
                     // Save new json data
                     val tempDataFile = File(dir, "$dataName.tmp")
