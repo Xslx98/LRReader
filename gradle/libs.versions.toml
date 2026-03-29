@@ -1,0 +1,129 @@
+# Version Catalog — LRReader
+# Ref: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog-declaration
+
+[versions]
+# --- Build tools ---
+agp = "8.13.2"
+kotlin = "2.1.0"
+ksp = "2.1.0-1.0.29"
+
+# --- AndroidX ---
+activity = "1.10.1"
+appcompat = "1.7.0"
+biometric = "1.1.0"
+browser = "1.8.0"
+cardview = "1.0.0"
+core-ktx = "1.15.0"
+exifinterface = "1.3.7"
+fragment = "1.8.6"
+lifecycle = "2.8.7"
+preference = "1.2.1"
+recyclerview = "1.4.0"
+room = "2.6.1"
+security-crypto = "1.1.0-alpha06"
+test-core = "1.6.1"
+webkit = "1.13.0"
+
+# --- Google ---
+material = "1.13.0"
+firebase-crashlytics-plugin = "3.0.2"
+google-services = "4.4.2"
+
+# --- Kotlin/JetBrains ---
+coroutines = "1.10.2"
+serialization-json = "1.8.1"
+
+# --- Third-party ---
+detekt = "1.23.7"
+jsoup = "1.18.1"
+license-plugin = "0.9.8"
+okhttp = "4.12.0"
+relinker = "1.4.4"
+robolectric = "4.14.1"
+ucrop = "2.2.11"
+
+# --- Test ---
+junit = "4.13.2"
+joor = "0.9.6"
+
+# --- JitPack (commit-hash pinned, no auto-upgrade) ---
+# These use commit hashes or non-semver tags — Dependabot/Renovate cannot auto-bump.
+# Track manually; see ROADMAP for fork plan.
+advrecyclerview = "1.0.0"
+showcaseview = "5.4.3"
+spinkit = "1.4.0"
+
+[libraries]
+# --- AndroidX ---
+activity = { module = "androidx.activity:activity", version.ref = "activity" }
+appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
+browser = { module = "androidx.browser:browser", version.ref = "browser" }
+cardview = { module = "androidx.cardview:cardview", version.ref = "cardview" }
+core-ktx = { module = "androidx.core:core-ktx", version.ref = "core-ktx" }
+exifinterface = { module = "androidx.exifinterface:exifinterface", version.ref = "exifinterface" }
+fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
+lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
+material = { module = "com.google.android.material:material", version.ref = "material" }
+preference-ktx = { module = "androidx.preference:preference-ktx", version.ref = "preference" }
+recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "recyclerview" }
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
+security-crypto = { module = "androidx.security:security-crypto", version.ref = "security-crypto" }
+test-core-ktx = { module = "androidx.test:core-ktx", version.ref = "test-core" }
+webkit = { module = "androidx.webkit:webkit", version.ref = "webkit" }
+
+# --- Kotlin ---
+coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization-json" }
+
+# --- Third-party ---
+jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+okhttp-dnsoverhttps = { module = "com.squareup.okhttp3:okhttp-dnsoverhttps", version.ref = "okhttp" }
+okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "okhttp" }
+relinker = { module = "com.getkeepsafe.relinker:relinker", version.ref = "relinker" }
+ucrop = { module = "com.github.yalantis:ucrop", version.ref = "ucrop" }
+libpng = { module = "com.fpliu.ndk.pkg.prefab.android.21:libpng", version = "1.6.37" }
+advrecyclerview = { module = "com.h6ah4i.android.widget.advrecyclerview:advrecyclerview", version.ref = "advrecyclerview" }
+showcaseview = { module = "com.github.amlcurran.showcaseview:library", version.ref = "showcaseview" }
+spinkit = { module = "com.github.ybq:Android-SpinKit", version.ref = "spinkit" }
+
+# --- Test ---
+junit = { module = "junit:junit", version.ref = "junit" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+joor = { module = "org.jooq:joor", version.ref = "joor" }
+
+# --- JitPack (pinned by commit hash — no version.ref) ---
+a7zip = { module = "com.github.xiaojieonly.a7zip_XJ:extract-lite", version = "1.0.3" }
+seven332-android-resource = { module = "com.github.seven332:android-resource", version = "0.1.0" }
+seven332-animator = { module = "com.github.seven332:animator", version = "0.1.0" }
+seven332-drawerlayout = { module = "com.github.seven332:drawerlayout", version = "ea2bb388f0" }
+seven332-easyrecyclerview = { module = "com.github.seven332:easyrecyclerview", version = "0.1.1" }
+seven332-hotspot = { module = "com.github.seven332:hotspot", version = "0.1.0" }
+seven332-refreshlayout = { module = "com.github.seven332:refreshlayout", version = "0.1.0" }
+seven332-ripple = { module = "com.github.seven332:ripple", version = "0.1.2" }
+seven332-streampipe = { module = "com.github.seven332:streampipe", version = "0.1.0" }
+pagination-sxj = { module = "com.github.xiaojieonly:Pagination_Sxj", version = "8d2c34d8f53927aeaa1d405d8653969379cb37ec" }
+request-inspector = { module = "com.github.xiaojieonly:Android-Request-Inspector-WebView", version = "70403bb" }
+
+# --- Force-resolved JitPack (used in resolutionStrategy) ---
+seven332-glgallery = { module = "com.github.seven332:glgallery", version = "25893283ca" }
+seven332-glview = { module = "com.github.seven332:glview", version = "ba6aee61d7" }
+seven332-glview-image = { module = "com.github.seven332:glview-image", version = "68d94b0fc2" }
+seven332-image = { module = "com.github.seven332:image", version = "09b43c0c68" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebase-crashlytics-plugin" }
+license = { id = "com.jaredsburrows.license", version.ref = "license-plugin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }

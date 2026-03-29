@@ -105,78 +105,78 @@ detekt {
 }
 
 dependencies {
-    implementation 'com.google.android.material:material:1.13.0'
+    implementation libs.material
 
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation "androidx.activity:activity:1.10.1"
-    implementation 'androidx.appcompat:appcompat:1.7.0'
-    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
-    implementation 'androidx.biometric:biometric:1.1.0'
-    implementation "androidx.browser:browser:1.8.0"
-    implementation 'androidx.cardview:cardview:1.0.0'
-    implementation "androidx.fragment:fragment:1.8.6"
-    implementation "androidx.preference:preference-ktx:1.2.1"
-    implementation 'androidx.recyclerview:recyclerview:1.4.0'
+    implementation libs.activity
+    implementation libs.appcompat
+    implementation libs.security.crypto
+    implementation libs.biometric
+    implementation libs.browser
+    implementation libs.cardview
+    implementation libs.fragment
+    implementation libs.preference.ktx
+    implementation libs.recyclerview
 
-    implementation 'androidx.core:core-ktx:1.15.0'
+    implementation libs.core.ktx
     // Kotlin Coroutines (structured concurrency for LRREngine + Scene)
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2'
+    implementation libs.coroutines.android
     // lifecycleScope for Fragment coroutines (viewLifecycleOwner.lifecycleScope)
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.7'
+    implementation libs.lifecycle.runtime.ktx
     // kotlinx-serialization (LRR data classes)
-    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1'
+    implementation libs.serialization.json
 
-    implementation 'com.fpliu.ndk.pkg.prefab.android.21:libpng:1.6.37'
-    implementation 'com.getkeepsafe.relinker:relinker:1.4.4'
-    implementation 'com.github.amlcurran.showcaseview:library:5.4.3'
-    implementation 'com.github.ybq:Android-SpinKit:1.4.0'
+    implementation libs.libpng
+    implementation libs.relinker
+    implementation libs.showcaseview
+    implementation libs.spinkit
 
     // Native archive extraction
-    implementation 'com.github.xiaojieonly.a7zip_XJ:extract-lite:1.0.3'
+    implementation libs.a7zip
     // seven332 UI components
-    implementation 'com.github.seven332:android-resource:0.1.0'
-    implementation 'com.github.seven332:animator:0.1.0'
-    implementation 'com.github.seven332:drawerlayout:ea2bb388f0'
-    implementation 'com.github.seven332:easyrecyclerview:0.1.1'
-    implementation 'com.github.xiaojieonly:Pagination_Sxj:8d2c34d8f53927aeaa1d405d8653969379cb37ec'
-    implementation 'com.github.seven332:hotspot:0.1.0'
-    implementation 'com.github.seven332:refreshlayout:0.1.0'
-    implementation 'com.github.seven332:ripple:0.1.2'
-    implementation 'com.github.seven332:streampipe:0.1.0'
+    implementation libs.seven332.android.resource
+    implementation libs.seven332.animator
+    implementation libs.seven332.drawerlayout
+    implementation libs.seven332.easyrecyclerview
+    implementation libs.pagination.sxj
+    implementation libs.seven332.hotspot
+    implementation libs.seven332.refreshlayout
+    implementation libs.seven332.ripple
+    implementation libs.seven332.streampipe
 
-    implementation 'com.h6ah4i.android.widget.advrecyclerview:advrecyclerview:1.0.0'
+    implementation libs.advrecyclerview
 
-    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-    implementation 'com.squareup.okhttp3:okhttp-dnsoverhttps:4.12.0'
-    implementation 'com.github.xiaojieonly:Android-Request-Inspector-WebView:70403bb'
+    implementation libs.okhttp
+    implementation libs.okhttp.dnsoverhttps
+    implementation libs.request.inspector
 
     // Room database (replaces GreenDAO)
-    implementation "androidx.room:room-runtime:2.6.1"
-    implementation "androidx.room:room-ktx:2.6.1"
-    ksp "androidx.room:room-compiler:2.6.1"
+    implementation libs.room.runtime
+    implementation libs.room.ktx
+    ksp libs.room.compiler
     // UCrop — image cropping with circular overlay for avatar
-    implementation 'com.github.yalantis:ucrop:2.2.11'
-    implementation 'androidx.exifinterface:exifinterface:1.3.7'
-    implementation 'org.jsoup:jsoup:1.18.1'
+    implementation libs.ucrop
+    implementation libs.exifinterface
+    implementation libs.jsoup
 
-    testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.robolectric:robolectric:4.14.1'
-    testImplementation 'org.jooq:joor:0.9.6'
-    testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
-    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2'
-    testImplementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1'
-    testImplementation "androidx.room:room-testing:2.6.1"
-    testImplementation "androidx.test:core-ktx:1.6.1"
+    testImplementation libs.junit
+    testImplementation libs.robolectric
+    testImplementation libs.joor
+    testImplementation libs.okhttp.mockwebserver
+    testImplementation libs.coroutines.test
+    testImplementation libs.serialization.json
+    testImplementation libs.room.testing
+    testImplementation libs.test.core.ktx
 
-    runtimeOnly group: 'androidx.webkit', name: 'webkit', version: '1.13.0'
+    runtimeOnly libs.webkit
 }
 
 configurations.configureEach {
     resolutionStrategy {
-        force 'com.github.seven332:glgallery:25893283ca'
-        force 'com.github.seven332:glview:ba6aee61d7'
-        force 'com.github.seven332:glview-image:68d94b0fc2'
-        force 'com.github.seven332:image:09b43c0c68'
+        force libs.seven332.glgallery
+        force libs.seven332.glview
+        force libs.seven332.glview.image
+        force libs.seven332.image
 
         exclude group: 'com.github.seven332', module: 'okhttp'
     }
