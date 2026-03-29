@@ -41,7 +41,7 @@ public class EhProxySelector extends ProxySelector {
   private ProxySelector delegation;
   private ProxySelector alternative;
 
-  EhProxySelector() {
+  public EhProxySelector() {
     alternative = ProxySelector.getDefault();
     if (alternative == null) {
       alternative = new NullProxySelector();

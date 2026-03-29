@@ -33,7 +33,6 @@ import android.os.Debug;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.View;
-import android.webkit.CookieManager;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -42,7 +41,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.collection.LruCache;
 
 import com.hippo.Native;
-//import com.gu.toolargetool.TooLargeTool;
 import com.hippo.a7zip.A7Zip;
 import com.hippo.beerbelly.SimpleDiskCache;
 import com.hippo.conaco.Conaco;
@@ -50,49 +48,32 @@ import com.hippo.content.RecordingApplication;
 import com.hippo.content.ContextLocalWrapper;
 import com.hippo.ehviewer.client.EhClient;
 import com.hippo.ehviewer.client.EhCookieStore;
-import com.hippo.ehviewer.client.EhHosts;
 import com.hippo.ehviewer.client.EhEngine;
-import com.hippo.ehviewer.client.data.EhNewsDetail;
 import com.hippo.ehviewer.client.data.GalleryDetail;
 import com.hippo.ehviewer.client.data.userTag.UserTagList;
 import com.hippo.ehviewer.download.DownloadManager;
-import com.hippo.ehviewer.spider.SpiderDen;
 import com.hippo.ehviewer.ui.CommonOperations;
 import com.hippo.lib.image.Image;
-//import com.hippo.lib.image.Image1;
-//import com.hippo.lib.image.ImageBitmap;
 
-import com.hippo.network.StatusCodeException;
-import android.text.Html;
 import com.hippo.unifile.UniFile;
-import com.hippo.util.AppHelper;
 import com.hippo.util.BitmapUtils;
 import com.hippo.util.ExceptionUtils;
 import com.hippo.util.IoThreadPoolExecutor;
 import com.hippo.util.ReadableTime;
 import com.hippo.lib.yorozuya.FileUtils;
-import com.hippo.lib.yorozuya.IntIdGenerator;
-import com.hippo.lib.yorozuya.OSUtils;
 import com.hippo.lib.yorozuya.SimpleHandler;
 
 
-
 import java.io.File;
-
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import android.content.res.Resources;
 import java.util.Locale;
 
+import android.text.Html;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
-import okhttp3.Response;
 
 public class EhApplication extends RecordingApplication {
 
@@ -128,47 +109,18 @@ public class EhApplication extends RecordingApplication {
     }
 
     private static final String TAG = EhApplication.class.getSimpleName();
-    private static final String KEY_GLOBAL_STUFF_NEXT_ID = "global_stuff_next_id";
 
     public static final boolean BETA = false;
 
-    private static final boolean DEBUG_CONACO = false;
     private static final boolean DEBUG_PRINT_NATIVE_MEMORY = false;
     private static final boolean DEBUG_PRINT_IMAGE_COUNT = false;
     private static final long DEBUG_PRINT_INTERVAL = 3000L;
 
     private static EhApplication instance;
 
-    private final IntIdGenerator mIdGenerator = new IntIdGenerator();
-    private final HashMap<Integer, Object> mGlobalStuffMap = new HashMap<>();
-
-    private final HashMap<String, Object> mTempCacheMap = new HashMap<>();
-
-    private EhCookieStore mEhCookieStore;
-    private EhClient mEhClient;
-    private EhProxySelector mEhProxySelector;
-    private OkHttpClient mOkHttpClient;
-    private OkHttpClient mImageOkHttpClient;
-    private Cache mOkHttpCache;
-    private ImageBitmapHelper mImageBitmapHelper;
-    private Conaco<Image> mConaco;
-    private LruCache<Long, GalleryDetail> mGalleryDetailCache;
-    private SimpleDiskCache mSpiderInfoCache;
-    private DownloadManager mDownloadManager;
-    private Hosts mHosts;
-    private FavouriteStatusRouter mFavouriteStatusRouter;
-    @Nullable
-    private UserTagList userTagList;
-    @Nullable
-    private EhNewsDetail ehNewsDetail;
-
     private final List<Activity> mActivityList = new ArrayList<>();
 
-    private final List<String> torrentList = new ArrayList<>();
-
     private boolean initialized = false;
-
-    private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     public static EhApplication getInstance() {
         return instance;
@@ -195,12 +147,9 @@ public class EhApplication extends RecordingApplication {
         });
 
         super.onCreate();
-//        if(BuildConfig.DEBUG){
-//            TooLargeTool.startLogging(this);
-//        }
 
         GetText.initialize(this);
-        StatusCodeException.initialize(this);
+        com.hippo.network.StatusCodeException.initialize(this);
         Settings.initialize(this);
         com.hippo.ehviewer.client.lrr.LRRAuthManager.initialize(this);
         ReadableTime.initialize(this);
@@ -222,16 +171,15 @@ public class EhApplication extends RecordingApplication {
         EhEngine.initialize();
         com.hippo.ehviewer.client.lrr.LRRClientProvider.init(this);
         BitmapUtils.initialize(this);
-//        Image1.initialize(this);
         Image.initialize(this);
         Native.initialize();
-        // 实际作用不确定，但是与64位应用有冲突
-//        A7Zip.loadLibrary(A7ZipExtractLite.LIBRARY, libname -> ReLinker.loadLibrary(EhApplication.this, libname));
-        // 64位适配
         A7Zip.initialize(this);
         if (EhDB.needMerge()) {
             EhDB.mergeOldDB(this);
         }
+
+        // Initialize ServiceRegistry (must be after Settings/EhDB)
+        ServiceRegistry.INSTANCE.initialize(this);
 
         if (Settings.getEnableAnalytics()) {
             Analytics.start(this);
@@ -305,8 +253,6 @@ public class EhApplication extends RecordingApplication {
             // Ignore
         }
 
-        mIdGenerator.setNextId(Settings.getInt(KEY_GLOBAL_STUFF_NEXT_ID, 0));
-
         if (DEBUG_PRINT_NATIVE_MEMORY || DEBUG_PRINT_IMAGE_COUNT) {
             debugPrint();
         }
@@ -323,13 +269,8 @@ public class EhApplication extends RecordingApplication {
         if (null != dir) {
             FileUtils.deleteContent(dir);
         }
-
         // Add .nomedia to external temp dir
         CommonOperations.ensureNoMediaFile(UniFile.fromFile(AppConfig.getExternalTempDir()));
-    }
-
-    public EhCookieStore getmEhCookieStore() {
-        return mEhCookieStore;
     }
 
     private void update() {
@@ -339,21 +280,12 @@ public class EhApplication extends RecordingApplication {
         }
     }
 
-    public void clearMemoryCache() {
-        if (null != mConaco) {
-            mConaco.getBeerBelly().clearMemory();
-        }
-        if (null != mGalleryDetailCache) {
-            mGalleryDetailCache.evictAll();
-        }
-    }
-
     @Override
     public void onTrimMemory(int level) {
         super.onTrimMemory(level);
-
         if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
-            clearMemoryCache();
+            ServiceRegistry.INSTANCE.getClientModule().clearMemoryCache();
+            ServiceRegistry.INSTANCE.getDataModule().clearGalleryDetailCache();
         }
     }
 
@@ -370,246 +302,7 @@ public class EhApplication extends RecordingApplication {
         }.run();
     }
 
-    public int putGlobalStuff(@NonNull Object o) {
-        int id = mIdGenerator.nextId();
-        mGlobalStuffMap.put(id, o);
-        Settings.putInt(KEY_GLOBAL_STUFF_NEXT_ID, mIdGenerator.nextId());
-        return id;
-    }
-
-    public boolean containGlobalStuff(int id) {
-        return mGlobalStuffMap.containsKey(id);
-    }
-
-    public Object getGlobalStuff(int id) {
-        return mGlobalStuffMap.get(id);
-    }
-
-    public Object removeGlobalStuff(int id) {
-        return mGlobalStuffMap.remove(id);
-    }
-
-    public String putTempCache(@NonNull String key,@NonNull Object o) {
-        mTempCacheMap.put(key, o);
-        return key;
-    }
-
-    public boolean containTempCache(@NonNull String key) {
-        return mTempCacheMap.containsKey(key);
-    }
-
-    public Object getTempCache(@NonNull String key) {
-        return mTempCacheMap.get(key);
-    }
-
-    public Object removeTempCache(@NonNull String key) {
-        return mTempCacheMap.remove(key);
-    }
-
-    public void removeGlobalStuff(Object o) {
-        mGlobalStuffMap.values().removeAll(Collections.singleton(o));
-    }
-
-    public static EhCookieStore getEhCookieStore(@NonNull Context context) {
-        EhApplication application = ((EhApplication) context.getApplicationContext());
-        if (application.mEhCookieStore == null) {
-            application.mEhCookieStore = new EhCookieStore(context);
-        }
-        return application.mEhCookieStore;
-    }
-
-    @NonNull
-    public static EhClient getEhClient(@NonNull Context context) {
-        EhApplication application = ((EhApplication) context.getApplicationContext());
-        if (application.mEhClient == null) {
-            application.mEhClient = new EhClient(application);
-        }
-        return application.mEhClient;
-    }
-
-    @NonNull
-    public static EhProxySelector getEhProxySelector(@NonNull Context context) {
-        EhApplication application = ((EhApplication) context.getApplicationContext());
-        if (application.mEhProxySelector == null) {
-            application.mEhProxySelector = new EhProxySelector();
-        }
-        return application.mEhProxySelector;
-    }
-
-    @NonNull
-    public static OkHttpClient getOkHttpClient(@NonNull Context context) {
-        EhApplication application = ((EhApplication) context.getApplicationContext());
-        if (application.mOkHttpClient == null) {
-//            Dispatcher dispatcher = new Dispatcher();
-//            dispatcher.setMaxRequestsPerHost(4);
-            OkHttpClient.Builder builder = new OkHttpClient.Builder()
-                    .followRedirects(true)
-                    .followSslRedirects(true)
-                    .connectTimeout(10, TimeUnit.SECONDS)
-                    .readTimeout(10, TimeUnit.SECONDS)
-                    .writeTimeout(10, TimeUnit.SECONDS)
-                    .callTimeout(30, TimeUnit.SECONDS)
-                    .cookieJar(getEhCookieStore(application))
-                    .cache(getOkHttpCache(application))
-//                    .hostnameVerifier((hostname, session) -> true)
-//                    .dispatcher(dispatcher)
-                    .dns(new EhHosts(application))
-                    .addNetworkInterceptor(sprocket -> {
-                        try {
-                            okhttp3.Response resp = sprocket.proceed(sprocket.request());
-                            // Force cache LRR thumbnail responses for 24 hours
-                            String url = sprocket.request().url().toString();
-                            if (url.contains("/api/archives/") && url.contains("/thumbnail")) {
-                                return resp.newBuilder()
-                                        .header("Cache-Control", "public, max-age=86400")
-                                        .removeHeader("Pragma")
-                                        .build();
-                            }
-                            return resp;
-                        } catch (NullPointerException e) {
-                            throw new NullPointerException(e.getMessage());
-                        }
-                    })
-                    .addNetworkInterceptor(chain -> {
-                        Response response = chain.proceed(chain.request());
-                        // 同步Cookie到WebView
-                        if (response.headers("Set-Cookie") != null) {
-                            CookieManager cookieManager = CookieManager.getInstance();
-                            String url =chain.request().url().toString();
-                            for (String header : response.headers("Set-Cookie")) {
-                                cookieManager.setCookie(url, header);
-                            }
-                            cookieManager.flush();
-                        }
-                        return response;
-                    })
-                    .proxySelector(getEhProxySelector(application))
-                    .addInterceptor(new com.hippo.ehviewer.client.lrr.LRRAuthInterceptor());
-            // Domain fronting (EH-specific) removed — LRReader uses standard platform SSL
-            application.mOkHttpClient = builder.build();
-        }
-
-        return application.mOkHttpClient;
-    }
-
-    @NonNull
-    public static OkHttpClient getImageOkHttpClient(@NonNull Context context) {
-        EhApplication application = ((EhApplication) context.getApplicationContext());
-        if (application.mImageOkHttpClient == null) {
-            // Derive from main client to share connection pool, thread pool, and SSL config
-            application.mImageOkHttpClient = getOkHttpClient(context).newBuilder()
-                    .followRedirects(false)
-                    .followSslRedirects(false)
-                    .connectTimeout(20, TimeUnit.SECONDS)
-                    .readTimeout(20, TimeUnit.SECONDS)
-                    .writeTimeout(20, TimeUnit.SECONDS)
-                    .callTimeout(20, TimeUnit.SECONDS)
-                    .build();
-        }
-
-        return application.mImageOkHttpClient;
-    }
-
-    @NonNull
-    public static ImageBitmapHelper getImageBitmapHelper(@NonNull Context context) {
-        EhApplication application = ((EhApplication) context.getApplicationContext());
-        if (application.mImageBitmapHelper == null) {
-            application.mImageBitmapHelper = new ImageBitmapHelper();
-        }
-        return application.mImageBitmapHelper;
-    }
-
-    private static int getMemoryCacheMaxSize() {
-        return Math.min(20 * 1024 * 1024, (int) OSUtils.getAppMaxMemory());
-    }
-
-    @NonNull
-    public static Conaco<Image> getConaco(@NonNull Context context) {
-        EhApplication application = ((EhApplication) context.getApplicationContext());
-        if (application.mConaco == null) {
-            Conaco.Builder<Image> builder = new Conaco.Builder<>();
-            builder.hasMemoryCache = true;
-            builder.memoryCacheMaxSize = getMemoryCacheMaxSize();
-            builder.hasDiskCache = true;
-            builder.diskCacheDir = new File(context.getCacheDir(), "thumb");
-            builder.diskCacheMaxSize = 320 * 1024 * 1024; // 320MB
-            builder.okHttpClient = getOkHttpClient(context);
-//            builder.okHttpClient = getImageOkHttpClient(context);
-            builder.objectHelper = getImageBitmapHelper(context);
-            builder.debug = DEBUG_CONACO;
-            application.mConaco = builder.build();
-        }
-        return application.mConaco;
-    }
-
-
-    @NonNull
-    public static LruCache<Long, GalleryDetail> getGalleryDetailCache(@NonNull Context context) {
-        EhApplication application = ((EhApplication) context.getApplicationContext());
-        if (application.mGalleryDetailCache == null) {
-            // Max size 25, 3 min timeout
-            application.mGalleryDetailCache = new LruCache<>(25);
-            getFavouriteStatusRouter().addListener((gid, slot) -> {
-                GalleryDetail gd = application.mGalleryDetailCache.get(gid);
-                if (gd != null) {
-                    gd.favoriteSlot = slot;
-                }
-            });
-        }
-        return application.mGalleryDetailCache;
-    }
-
-    @NonNull
-    public static SimpleDiskCache getSpiderInfoCache(@NonNull Context context) {
-        EhApplication application = ((EhApplication) context.getApplicationContext());
-        if (null == application.mSpiderInfoCache) {
-            application.mSpiderInfoCache = new SimpleDiskCache(
-                    new File(context.getCacheDir(), "spider_info"), 5 * 1024 * 1024); // 5M
-        }
-        return application.mSpiderInfoCache;
-    }
-
-    @NonNull
-    public static DownloadManager getDownloadManager() {
-        return getDownloadManager(instance);
-    }
-
-    @NonNull
-    public static DownloadManager getDownloadManager(@NonNull Context context) {
-        EhApplication application = ((EhApplication) context.getApplicationContext());
-        if (application.mDownloadManager == null) {
-            application.mDownloadManager = new DownloadManager(application);
-        }
-        return application.mDownloadManager;
-    }
-
-    @NonNull
-    public static Hosts getHosts(@NonNull Context context) {
-        EhApplication application = ((EhApplication) context.getApplicationContext());
-        if (application.mHosts == null) {
-            application.mHosts = new Hosts(application, "hosts.db");
-        }
-        return application.mHosts;
-    }
-
-    @NonNull
-    public static FavouriteStatusRouter getFavouriteStatusRouter() {
-        return getFavouriteStatusRouter(getInstance());
-    }
-
-    @NonNull
-    public static FavouriteStatusRouter getFavouriteStatusRouter(@NonNull Context context) {
-        EhApplication application = ((EhApplication) context.getApplicationContext());
-        if (application.mFavouriteStatusRouter == null) {
-            application.mFavouriteStatusRouter = new FavouriteStatusRouter();
-        }
-        return application.mFavouriteStatusRouter;
-    }
-
-    @NonNull
-    public static String getDeveloperEmail() {
-        return "xiaojieonly$foxmail.com".replace('$', '@');
-    }
+    // ======== Activity registry ========
 
     public void registerActivity(Activity activity) {
         mActivityList.add(activity);
@@ -628,81 +321,7 @@ public class EhApplication extends RecordingApplication {
         }
     }
 
-    @NonNull
-    public static Cache getOkHttpCache(@NonNull Context context) {
-        EhApplication application = ((EhApplication) context.getApplicationContext());
-        if (application.mOkHttpCache == null) {
-            application.mOkHttpCache = new Cache(new File(application.getCacheDir(), "http_cache"), 100L * 1024L * 1024L);
-        }
-        return application.mOkHttpCache;
-    }
-
-    // Avoid crash on some "energy saving" devices
-    @Override
-    public ComponentName startService(Intent service) {
-        try {
-            return super.startService(service);
-        } catch (Throwable t) {
-            ExceptionUtils.throwIfFatal(t);
-            return null;
-        }
-    }
-
-    // Avoid crash on some "energy saving" devices
-    @Override
-    public boolean bindService(Intent service, ServiceConnection conn, int flags) {
-        try {
-            return super.bindService(service, conn, flags);
-        } catch (Throwable t) {
-            ExceptionUtils.throwIfFatal(t);
-            return false;
-        }
-    }
-
-    // Avoid crash on some "energy saving" devices
-    @Override
-    public void unbindService(ServiceConnection conn) {
-        try {
-            super.unbindService(conn);
-        } catch (Throwable t) {
-            ExceptionUtils.throwIfFatal(t);
-        }
-    }
-
-    public static boolean addDownloadTorrent(@NonNull Context context, String url) {
-        EhApplication application = ((EhApplication) context.getApplicationContext());
-
-        if (application.torrentList.contains(url)) {
-            return false;
-        }
-
-        application.torrentList.add(url);
-        return true;
-    }
-
-    public static void removeDownloadTorrent(@NonNull Context context, String url) {
-        EhApplication application = ((EhApplication) context.getApplicationContext());
-
-        application.torrentList.remove(url);
-    }
-
-    /**
-     * 将用户订阅标签列表存入内存缓存
-     *
-     */
-    public static void saveUserTagList(@NonNull Context context, UserTagList userTagList) {
-        EhApplication application = ((EhApplication) context.getApplicationContext());
-        application.userTagList = userTagList;
-    }
-
-    /**
-     * 从内存缓存中获取用户订阅标签列表
-     *
-     */
-    public static UserTagList getUserTagList(@NonNull Context context) {
-        EhApplication application = ((EhApplication) context.getApplicationContext());
-        return application.userTagList;
-    }
+    // ======== Event pane ========
 
     public void showEventPane(String html){
         if (!Settings.getShowEhEvents()){
@@ -733,23 +352,216 @@ public class EhApplication extends RecordingApplication {
         }
     }
 
-    /**
-     * 显示eh事件
-     *
-     */
-    public void showEventPane(EhNewsDetail result) {
-        // LANraragi: E-Hentai event pane disabled
+    // ======== Service override for device compatibility ========
+
+    @Override
+    public ComponentName startService(Intent service) {
+        try {
+            return super.startService(service);
+        } catch (Throwable t) {
+            ExceptionUtils.throwIfFatal(t);
+            return null;
+        }
     }
 
-    @Nullable
-    public EhNewsDetail getEhNewsDetail(){
-        return null;
+    @Override
+    public boolean bindService(Intent service, ServiceConnection conn, int flags) {
+        try {
+            return super.bindService(service, conn, flags);
+        } catch (Throwable t) {
+            ExceptionUtils.throwIfFatal(t);
+            return false;
+        }
     }
 
-    public static ExecutorService getExecutorService(@NonNull Context context){
+    @Override
+    public void unbindService(ServiceConnection conn) {
+        try {
+            super.unbindService(conn);
+        } catch (Throwable t) {
+            ExceptionUtils.throwIfFatal(t);
+        }
+    }
+
+    // ======== Memory cache (instance method called by AdvancedFragment) ========
+
+    public void clearMemoryCache() {
+        ServiceRegistry.INSTANCE.getClientModule().clearMemoryCache();
+        ServiceRegistry.INSTANCE.getDataModule().clearGalleryDetailCache();
+    }
+
+    // ======== Torrent download dedup (called by GalleryDetailScene) ========
+
+    private final List<String> torrentList = new ArrayList<>();
+
+    public static boolean addDownloadTorrent(@NonNull Context context, String url) {
         EhApplication application = ((EhApplication) context.getApplicationContext());
-        return  application.executorService;
+        if (application.torrentList.contains(url)) {
+            return false;
+        }
+        application.torrentList.add(url);
+        return true;
     }
 
-}
+    // ========================================================================
+    // Thin delegating stubs — forward to ServiceRegistry.
+    // Existing callers continue to compile unchanged.
+    // TODO: Gradually migrate callers to use ServiceRegistry directly.
+    // ========================================================================
 
+    /** @deprecated Use {@code ServiceRegistry.networkModule.cookieStore} */
+    public EhCookieStore getmEhCookieStore() {
+        return ServiceRegistry.INSTANCE.getNetworkModule().getCookieStore();
+    }
+
+    /** @deprecated Use {@code ServiceRegistry.networkModule.cookieStore} */
+    @NonNull
+    public static EhCookieStore getEhCookieStore(@NonNull Context context) {
+        return ServiceRegistry.INSTANCE.getNetworkModule().getCookieStore();
+    }
+
+    /** @deprecated Use {@code ServiceRegistry.clientModule.ehClient} */
+    @NonNull
+    public static EhClient getEhClient(@NonNull Context context) {
+        return ServiceRegistry.INSTANCE.getClientModule().getEhClient();
+    }
+
+    /** @deprecated Use {@code ServiceRegistry.networkModule.proxySelector} */
+    @NonNull
+    public static EhProxySelector getEhProxySelector(@NonNull Context context) {
+        return ServiceRegistry.INSTANCE.getNetworkModule().getProxySelector();
+    }
+
+    /** @deprecated Use {@code ServiceRegistry.networkModule.okHttpClient} */
+    @NonNull
+    public static OkHttpClient getOkHttpClient(@NonNull Context context) {
+        return ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
+    }
+
+    /** @deprecated Use {@code ServiceRegistry.networkModule.imageOkHttpClient} */
+    @NonNull
+    public static OkHttpClient getImageOkHttpClient(@NonNull Context context) {
+        return ServiceRegistry.INSTANCE.getNetworkModule().getImageOkHttpClient();
+    }
+
+    /** @deprecated Use {@code ServiceRegistry.clientModule.imageBitmapHelper} */
+    @NonNull
+    public static ImageBitmapHelper getImageBitmapHelper(@NonNull Context context) {
+        return ServiceRegistry.INSTANCE.getClientModule().getImageBitmapHelper();
+    }
+
+    /** @deprecated Use {@code ServiceRegistry.clientModule.conaco} */
+    @NonNull
+    public static Conaco<Image> getConaco(@NonNull Context context) {
+        return ServiceRegistry.INSTANCE.getClientModule().getConaco();
+    }
+
+    /** @deprecated Use {@code ServiceRegistry.dataModule.galleryDetailCache} */
+    @NonNull
+    public static LruCache<Long, GalleryDetail> getGalleryDetailCache(@NonNull Context context) {
+        return ServiceRegistry.INSTANCE.getDataModule().getGalleryDetailCache();
+    }
+
+    /** @deprecated Use {@code ServiceRegistry.dataModule.spiderInfoCache} */
+    @NonNull
+    public static SimpleDiskCache getSpiderInfoCache(@NonNull Context context) {
+        return ServiceRegistry.INSTANCE.getDataModule().getSpiderInfoCache();
+    }
+
+    /** @deprecated Use {@code ServiceRegistry.dataModule.downloadManager} */
+    @NonNull
+    public static DownloadManager getDownloadManager() {
+        return ServiceRegistry.INSTANCE.getDataModule().getDownloadManager();
+    }
+
+    /** @deprecated Use {@code ServiceRegistry.dataModule.downloadManager} */
+    @NonNull
+    public static DownloadManager getDownloadManager(@NonNull Context context) {
+        return ServiceRegistry.INSTANCE.getDataModule().getDownloadManager();
+    }
+
+    /** @deprecated Use {@code ServiceRegistry.networkModule.hosts} */
+    @NonNull
+    public static Hosts getHosts(@NonNull Context context) {
+        return ServiceRegistry.INSTANCE.getNetworkModule().getHosts();
+    }
+
+    /** @deprecated Use {@code ServiceRegistry.dataModule.favouriteStatusRouter} */
+    @NonNull
+    public static FavouriteStatusRouter getFavouriteStatusRouter() {
+        return ServiceRegistry.INSTANCE.getDataModule().getFavouriteStatusRouter();
+    }
+
+    /** @deprecated Use {@code ServiceRegistry.dataModule.favouriteStatusRouter} */
+    @NonNull
+    public static FavouriteStatusRouter getFavouriteStatusRouter(@NonNull Context context) {
+        return ServiceRegistry.INSTANCE.getDataModule().getFavouriteStatusRouter();
+    }
+
+    /** @deprecated Use {@code ServiceRegistry.networkModule.cache} */
+    @NonNull
+    public static Cache getOkHttpCache(@NonNull Context context) {
+        return ServiceRegistry.INSTANCE.getNetworkModule().getCache();
+    }
+
+    /** @deprecated Use {@code AppModule.getDeveloperEmail()} */
+    @NonNull
+    public static String getDeveloperEmail() {
+        return com.hippo.ehviewer.module.AppModule.getDeveloperEmail();
+    }
+
+    /** @deprecated Use {@code ServiceRegistry.dataModule.saveUserTagList()} */
+    public static void saveUserTagList(@NonNull Context context, UserTagList userTagList) {
+        ServiceRegistry.INSTANCE.getDataModule().saveUserTagList(userTagList);
+    }
+
+    /** @deprecated Use {@code ServiceRegistry.dataModule.userTagList} */
+    public static UserTagList getUserTagList(@NonNull Context context) {
+        return ServiceRegistry.INSTANCE.getDataModule().getUserTagList();
+    }
+
+    /** @deprecated Use {@code ServiceRegistry.appModule.executorService} */
+    public static ExecutorService getExecutorService(@NonNull Context context) {
+        return ServiceRegistry.INSTANCE.getAppModule().getExecutorService();
+    }
+
+    // --- GlobalStuff delegation ---
+
+    public int putGlobalStuff(@NonNull Object o) {
+        return ServiceRegistry.INSTANCE.getAppModule().putGlobalStuff(o);
+    }
+
+    public boolean containGlobalStuff(int id) {
+        return ServiceRegistry.INSTANCE.getAppModule().containGlobalStuff(id);
+    }
+
+    public Object getGlobalStuff(int id) {
+        return ServiceRegistry.INSTANCE.getAppModule().getGlobalStuff(id);
+    }
+
+    public Object removeGlobalStuff(int id) {
+        return ServiceRegistry.INSTANCE.getAppModule().removeGlobalStuff(id);
+    }
+
+    public void removeGlobalStuff(Object o) {
+        ServiceRegistry.INSTANCE.getAppModule().removeGlobalStuff(o);
+    }
+
+    // --- TempCache delegation ---
+
+    public String putTempCache(@NonNull String key, @NonNull Object o) {
+        return ServiceRegistry.INSTANCE.getAppModule().putTempCache(key, o);
+    }
+
+    public boolean containTempCache(@NonNull String key) {
+        return ServiceRegistry.INSTANCE.getAppModule().containTempCache(key);
+    }
+
+    public Object getTempCache(@NonNull String key) {
+        return ServiceRegistry.INSTANCE.getAppModule().getTempCache(key);
+    }
+
+    public Object removeTempCache(@NonNull String key) {
+        return ServiceRegistry.INSTANCE.getAppModule().removeTempCache(key);
+    }
+}
