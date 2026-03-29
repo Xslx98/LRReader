@@ -41,6 +41,7 @@ import com.hippo.easyrecyclerview.EasyRecyclerView;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.DownloadSettings;
 import com.hippo.ehviewer.client.EhCacheKeyFactory;
 import com.hippo.ehviewer.client.EhUtils;
 import com.hippo.ehviewer.dao.DownloadInfo;
@@ -109,7 +110,7 @@ public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.Downlo
     }
 
     public DownloadAdapter(DownloadsScene scene, DownloadAdapterCallback callback) {
-        DRAG_ENABLE = Settings.getDragDownloadGallery();
+        DRAG_ENABLE = DownloadSettings.getDragDownloadGallery();
         this.mScene = scene;
         this.mCallback = callback;
         

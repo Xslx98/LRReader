@@ -17,6 +17,7 @@ import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.AppearanceSettings;
 import com.hippo.ehviewer.client.EhTagDatabase;
 import com.hippo.ehviewer.dao.QuickSearch;
 import com.hippo.ehviewer.util.TagTranslationUtil;
@@ -63,7 +64,7 @@ public class BookmarksDraw {
 
         List<QuickSearch> quickSearchList = EhDB.getAllQuickSearch();
         //汉化标签
-        final boolean judge = Settings.getShowTagTranslations();
+        final boolean judge = AppearanceSettings.getShowTagTranslations();
         if (judge && !quickSearchList.isEmpty()) {
             for (int i = 0; i < quickSearchList.size(); i++) {
                 String name = quickSearchList.get(i).getName();

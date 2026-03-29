@@ -9,6 +9,7 @@ import androidx.preference.Preference;
 import com.hippo.ehviewer.Analytics;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.SecuritySettings;
 
 /**
  * Created by Mo10 on 2018/2/10.
@@ -32,7 +33,7 @@ public class PrivacyFragment extends BasePreferenceFragmentCompat
     public void onResume() {
         super.onResume();
         Preference patternProtection = findPreference(KEY_PATTERN_PROTECTION);
-        patternProtection.setSummary(TextUtils.isEmpty(Settings.getSecurity()) ?
+        patternProtection.setSummary(TextUtils.isEmpty(SecuritySettings.getSecurity()) ?
                 R.string.settings_privacy_pattern_protection_not_set :
                 R.string.settings_privacy_pattern_protection_set);
     }

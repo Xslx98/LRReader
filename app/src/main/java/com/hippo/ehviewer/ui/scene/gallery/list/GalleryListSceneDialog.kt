@@ -10,6 +10,7 @@ import androidx.appcompat.app.AlertDialog
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.UrlOpener
 import com.hippo.ehviewer.client.EhClient
 import com.hippo.ehviewer.client.EhFilter
@@ -41,7 +42,7 @@ class GalleryListSceneDialog(val baseScene: BaseScene) {
         } else {
             tagName
         }
-        val title = if (Settings.getShowTagTranslations()) {
+        val title = if (AppearanceSettings.getShowTagTranslations()) {
             TagTranslationUtil.getTagCN(tagName, ehTags) + "(" + tagName + ")"
         } else {
             tagName

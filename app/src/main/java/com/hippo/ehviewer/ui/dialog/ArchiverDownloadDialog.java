@@ -30,6 +30,7 @@ import com.hippo.ehviewer.AppConfig;
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.AppearanceSettings;
 import com.hippo.ehviewer.client.EhClient;
 import com.hippo.ehviewer.client.EhRequest;
 import com.hippo.ehviewer.client.EhUrl;
@@ -151,7 +152,7 @@ public class ArchiverDownloadDialog implements
     public void onSuccess(ArchiverData result) {
         data = result;
         String cF;
-        if (Settings.getGallerySite() == EhUrl.SITE_E) {
+        if (AppearanceSettings.getGallerySite() == EhUrl.SITE_E) {
             cF = context.getString(R.string.archiver_dialog_current_funds) + data.funds;
         } else {
             cF = data.funds;

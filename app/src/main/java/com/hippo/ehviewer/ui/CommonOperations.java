@@ -24,6 +24,8 @@ import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.FavoritesSettings;
+import com.hippo.ehviewer.settings.DownloadSettings;
 import com.hippo.ehviewer.client.EhClient;
 import com.hippo.ehviewer.client.EhRequest;
 import com.hippo.ehviewer.client.data.GalleryInfo;
@@ -62,10 +64,10 @@ public final class CommonOperations {
 
     public static void addToFavorites(final Activity activity, final GalleryInfo galleryInfo,
                                       final EhClient.Callback<Void> listener, boolean isDefaultFavSolt) {
-        int slot = Settings.getDefaultFavSlot();
+        int slot = FavoritesSettings.getDefaultFavSlot();
         String[] items = new String[11];
         items[0] = activity.getString(R.string.local_favorites);
-        String[] favCat = Settings.getFavCat();
+        String[] favCat = FavoritesSettings.getFavCat();
         System.arraycopy(favCat, 0, items, 1, 10);
         if ((slot >= -1 && slot <= 9)&&!isDefaultFavSolt) {
             String newFavoriteName = slot >= 0 ? items[slot + 1] : null;
@@ -77,9 +79,9 @@ public final class CommonOperations {
                         String newFavoriteName = (slot1 >= 0 && slot1 <= 9) ? items[slot1 + 1] : null;
                         doAddToFavorites(activity, galleryInfo, slot1, new DelegateFavoriteCallback(listener, galleryInfo, newFavoriteName, slot1));
                         if (builder.isChecked()) {
-                            Settings.putDefaultFavSlot(slot1);
+                            FavoritesSettings.putDefaultFavSlot(slot1);
                         } else {
-                            Settings.putDefaultFavSlot(Settings.INVALID_DEFAULT_FAV_SLOT);
+                            FavoritesSettings.putDefaultFavSlot(FavoritesSettings.INVALID_DEFAULT_FAV_SLOT);
                         }
                     }, activity.getString(R.string.remember_favorite_collection), false)
                     .setTitle(R.string.add_favorites_dialog_title)
@@ -166,8 +168,8 @@ public final class CommonOperations {
         boolean justStart = forceDefault;
         String label = null;
         // Get default download label
-        if (!justStart && Settings.getHasDefaultDownloadLabel()) {
-            label = Settings.getDefaultDownloadLabel();
+        if (!justStart && DownloadSettings.getHasDefaultDownloadLabel()) {
+            label = DownloadSettings.getDefaultDownloadLabel();
             justStart = label == null || dm.containLabel(label);
         }
         // If there is no other label, just use null label
@@ -217,10 +219,10 @@ public final class CommonOperations {
                         }
                         // Save settings
                         if (builder.isChecked()) {
-                            Settings.putHasDefaultDownloadLabel(true);
-                            Settings.putDefaultDownloadLabel(label1);
+                            DownloadSettings.putHasDefaultDownloadLabel(true);
+                            DownloadSettings.putDefaultDownloadLabel(label1);
                         } else {
-                            Settings.putHasDefaultDownloadLabel(false);
+                            DownloadSettings.putHasDefaultDownloadLabel(false);
                         }
                         // Notify
                         activity.showTip(R.string.added_to_download_list, BaseScene.LENGTH_SHORT);

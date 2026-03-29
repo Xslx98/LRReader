@@ -40,6 +40,7 @@ import com.hippo.easyrecyclerview.EasyRecyclerView;
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.AppearanceSettings;
 import com.hippo.ehviewer.client.EhClient;
 import com.hippo.ehviewer.client.EhRequest;
 import com.hippo.ehviewer.client.EhTagDatabase;
@@ -276,7 +277,7 @@ public final class SubscriptionsScene extends ToolbarScene {
         @Override
         public void onBindViewHolder(SubscriptionHolder holder, int position) {
             if (userTagList != null) {
-                if (Settings.getShowTagTranslations()){
+                if (AppearanceSettings.getShowTagTranslations()){
                     holder.label.setText(userTagList.userTags.get(position).getName(ehTags));
                 }else {
                     holder.label.setText(userTagList.userTags.get(position).tagName);

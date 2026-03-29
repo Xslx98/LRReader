@@ -15,6 +15,7 @@ import androidx.appcompat.widget.Toolbar;
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.DownloadSettings;
 import com.hippo.ehviewer.dao.DownloadLabel;
 import com.hippo.ehviewer.download.DownloadManager;
 import com.hippo.scene.Announcer;
@@ -73,16 +74,16 @@ public class DownloadLabelDraw {
                             .setTitle(R.string.default_download_label)
                             .setItems(items, (dialog, which) -> {
                                 if (which == 0) {
-                                    Settings.putHasDefaultDownloadLabel(false);
+                                    DownloadSettings.putHasDefaultDownloadLabel(false);
                                 } else {
-                                    Settings.putHasDefaultDownloadLabel(true);
+                                    DownloadSettings.putHasDefaultDownloadLabel(true);
                                     String label;
                                     if (which == 1) {
                                         label = null;
                                     } else {
                                         label = items[which];
                                     }
-                                    Settings.putDefaultDownloadLabel(label);
+                                    DownloadSettings.putDefaultDownloadLabel(label);
                                 }
                             }).show();
                     return true;

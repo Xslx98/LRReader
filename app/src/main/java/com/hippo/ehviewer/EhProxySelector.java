@@ -16,6 +16,8 @@
 
 package com.hippo.ehviewer;
 
+import com.hippo.ehviewer.settings.NetworkSettings;
+
 import android.text.TextUtils;
 import com.hippo.network.InetValidator;
 import com.hippo.util.ExceptionUtils;
@@ -49,7 +51,7 @@ public class EhProxySelector extends ProxySelector {
   }
 
   public void updateProxy() {
-    switch (Settings.getProxyType()) {
+    switch (NetworkSettings.getProxyType()) {
       case TYPE_DIRECT:
         delegation = new NullProxySelector();
         break;
@@ -66,11 +68,11 @@ public class EhProxySelector extends ProxySelector {
 
   @Override
   public List<Proxy> select(URI uri) {
-    int type = Settings.getProxyType();
+    int type = NetworkSettings.getProxyType();
     if (type == TYPE_HTTP || type == TYPE_SOCKS) {
       try {
-        String ip = Settings.getProxyIp();
-        int port = Settings.getProxyPort();
+        String ip = NetworkSettings.getProxyIp();
+        int port = NetworkSettings.getProxyPort();
         if (!TextUtils.isEmpty(ip) && InetValidator.isValidInetPort(port)) {
           InetAddress inetAddress = InetAddress.getByName(ip);
           SocketAddress socketAddress = new InetSocketAddress(inetAddress, port);

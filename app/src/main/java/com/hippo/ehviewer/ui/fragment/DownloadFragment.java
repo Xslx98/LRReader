@@ -36,6 +36,7 @@ import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.DownloadSettings;
 import com.hippo.ehviewer.client.data.GalleryInfo;
 import com.hippo.ehviewer.download.DownloadManager;
 import com.hippo.ehviewer.ui.CommonOperations;
@@ -76,8 +77,8 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
     public void onCreatePreferences(@Nullable Bundle savedInstanceState, @Nullable String rootKey) {
         addPreferencesFromResource(R.xml.download_settings);
 
-        Preference mediaScan = findPreference(Settings.KEY_MEDIA_SCAN);
-        Preference downloadTimeout = findPreference(Settings.KEY_DOWNLOAD_TIMEOUT);
+        Preference mediaScan = findPreference(DownloadSettings.KEY_MEDIA_SCAN);
+        Preference downloadTimeout = findPreference(DownloadSettings.KEY_DOWNLOAD_TIMEOUT);
         mDownloadLocation = findPreference(KEY_DOWNLOAD_LOCATION);
         Preference exportDownloadItems = findPreference(KEY_EXPORT_DOWNLOAD_ITEMS);
         Preference importDownloadItems = findPreference(KEY_IMPORT_DOWNLOAD_ITEMS);
@@ -88,11 +89,11 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
 
         // Initialize summaries with current settings
         if (downloadTimeout != null) {
-            String timeoutStr = Settings.getDownloadTimeout() == 0 ? getString(R.string.download_timeout_unlimited) : String.valueOf(Settings.getDownloadTimeout());
+            String timeoutStr = DownloadSettings.getDownloadTimeout() == 0 ? getString(R.string.download_timeout_unlimited) : String.valueOf(DownloadSettings.getDownloadTimeout());
             downloadTimeout.setSummary(getString(R.string.settings_download_timeout_summary, timeoutStr));
         }
         if(preloadImage != null){
-            preloadImage.setSummary(getString(R.string.settings_download_preload_image_summary, String.valueOf(Settings.getPreloadImage())));
+            preloadImage.setSummary(getString(R.string.settings_download_preload_image_summary, String.valueOf(DownloadSettings.getPreloadImage())));
         }
 
 
@@ -124,7 +125,7 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
     }
 
     public void onUpdateDownloadLocation() {
-        UniFile file = Settings.getDownloadLocation();
+        UniFile file = DownloadSettings.getDownloadLocation();
         if (mDownloadLocation != null) {
             if (file != null) {
                 mDownloadLocation.setSummary(file.getUri().toString());
@@ -175,7 +176,7 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
             return;
         }
 
-        UniFile dir = Settings.getDownloadLocation();
+        UniFile dir = DownloadSettings.getDownloadLocation();
         if (dir == null) {
             Toast.makeText(getActivity(), R.string.settings_download_invalid_download_location, Toast.LENGTH_SHORT).show();
             return;
@@ -223,7 +224,7 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
                 if (resultCode == Activity.RESULT_OK) {
                     UniFile uniFile = UniFile.fromUri(getActivity(), data.getData());
                     if (uniFile != null) {
-                        Settings.putDownloadLocation(uniFile);
+                        DownloadSettings.putDownloadLocation(uniFile);
                         onUpdateDownloadLocation();
                     } else {
                         Toast.makeText(getActivity(), R.string.settings_download_cant_get_download_location,
@@ -240,7 +241,7 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
                                 treeUri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                         UniFile uniFile = UniFile.fromTreeUri(getActivity(), treeUri);
                         if (uniFile != null) {
-                            Settings.putDownloadLocation(uniFile);
+                            DownloadSettings.putDownloadLocation(uniFile);
                             onUpdateDownloadLocation();
                         } else {
                             Toast.makeText(getActivity(), R.string.settings_download_cant_get_download_location,
@@ -265,9 +266,9 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
     @Override
     public boolean onPreferenceChange(Preference preference, Object newValue) {
         String key = preference.getKey();
-        if (Settings.KEY_MEDIA_SCAN.equals(key)) {
+        if (DownloadSettings.KEY_MEDIA_SCAN.equals(key)) {
             if (newValue instanceof Boolean) {
-                UniFile downloadLocation = Settings.getDownloadLocation();
+                UniFile downloadLocation = DownloadSettings.getDownloadLocation();
                 if ((Boolean) newValue) {
                     CommonOperations.removeNoMediaFile(downloadLocation);
                     // Trigger MediaStore re-scan so images appear in Photos/Gallery
@@ -277,9 +278,9 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
                 }
             }
             return true;
-        } else if (Settings.KEY_DOWNLOAD_TIMEOUT.equals(key)) {
+        } else if (DownloadSettings.KEY_DOWNLOAD_TIMEOUT.equals(key)) {
             if (newValue instanceof String) {
-                Settings.setDownloadTimeout(toTimeoutTime(newValue));
+                DownloadSettings.setDownloadTimeout(toTimeoutTime(newValue));
             }
             return true;
         }
@@ -381,7 +382,7 @@ public class DownloadFragment extends PreferenceFragmentCompat implements
             List<String> logs = new ArrayList<>();
             int invalidCount = 0;
 
-            UniFile downloadDir = Settings.getDownloadLocation();
+            UniFile downloadDir = DownloadSettings.getDownloadLocation();
             if (downloadDir == null || !downloadDir.isDirectory()) {
                 mainHandler.post(() -> dismissAndShowCleanResult(dialog, 0));
                 return;

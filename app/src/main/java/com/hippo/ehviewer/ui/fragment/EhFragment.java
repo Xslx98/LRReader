@@ -25,6 +25,7 @@ import androidx.preference.Preference;
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.AppearanceSettings;
 
 public class EhFragment extends BasePreferenceFragmentCompat
         implements Preference.OnPreferenceChangeListener {
@@ -33,10 +34,10 @@ public class EhFragment extends BasePreferenceFragmentCompat
     public void onCreatePreferences(@Nullable Bundle savedInstanceState, @Nullable String rootKey) {
         addPreferencesFromResource(R.xml.eh_settings);
 
-        Preference theme = findPreference(Settings.KEY_THEME);
-        Preference themeAutoSwitch = findPreference(Settings.KEY_THEME_AUTO_SWITCH);
-        Preference applyNavBarThemeColor = findPreference(Settings.KEY_APPLY_NAV_BAR_THEME_COLOR);
-        Preference listMode = findPreference(Settings.KEY_LIST_MODE);
+        Preference theme = findPreference(AppearanceSettings.KEY_THEME);
+        Preference themeAutoSwitch = findPreference(AppearanceSettings.KEY_THEME_AUTO_SWITCH);
+        Preference applyNavBarThemeColor = findPreference(AppearanceSettings.KEY_APPLY_NAV_BAR_THEME_COLOR);
+        Preference listMode = findPreference(AppearanceSettings.KEY_LIST_MODE);
 
         if (theme != null) theme.setOnPreferenceChangeListener(this);
         if (themeAutoSwitch != null) themeAutoSwitch.setOnPreferenceChangeListener(this);
@@ -47,20 +48,20 @@ public class EhFragment extends BasePreferenceFragmentCompat
     @Override
     public boolean onPreferenceChange(Preference preference, Object newValue) {
         String key = preference.getKey();
-        if (Settings.KEY_THEME.equals(key)) {
+        if (AppearanceSettings.KEY_THEME.equals(key)) {
             ((EhApplication) getActivity().getApplication()).recreate();
             return true;
-        } else if (Settings.KEY_APPLY_NAV_BAR_THEME_COLOR.equals(key)) {
+        } else if (AppearanceSettings.KEY_APPLY_NAV_BAR_THEME_COLOR.equals(key)) {
             ((EhApplication) getActivity().getApplication()).recreate();
             return true;
-        } else if (Settings.KEY_LIST_MODE.equals(key)) {
+        } else if (AppearanceSettings.KEY_LIST_MODE.equals(key)) {
             getActivity().setResult(Activity.RESULT_OK);
             return true;
-        } else if (Settings.KEY_THEME_AUTO_SWITCH.equals(key) && Boolean.TRUE.equals(newValue)) {
-            if (Settings.getDarkModeStatus(getContext())) {
-                Settings.putTheme(Settings.THEME_DARK);
+        } else if (AppearanceSettings.KEY_THEME_AUTO_SWITCH.equals(key) && Boolean.TRUE.equals(newValue)) {
+            if (AppearanceSettings.getDarkModeStatus(getContext())) {
+                AppearanceSettings.putTheme(AppearanceSettings.THEME_DARK);
             } else {
-                Settings.putTheme(Settings.THEME_LIGHT);
+                AppearanceSettings.putTheme(AppearanceSettings.THEME_LIGHT);
             }
             ((EhApplication) getActivity().getApplication()).recreate();
             return true;

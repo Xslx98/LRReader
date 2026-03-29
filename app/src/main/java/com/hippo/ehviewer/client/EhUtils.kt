@@ -18,6 +18,7 @@ package com.hippo.ehviewer.client
 import android.graphics.Color
 import android.text.TextUtils
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.client.data.GalleryInfo
 import java.util.regex.Pattern
 
@@ -127,7 +128,7 @@ object EhUtils {
 
     @JvmStatic
     fun getSuitableTitle(gi: GalleryInfo): String? {
-        if (Settings.getShowJpnTitle()) {
+        if (AppearanceSettings.getShowJpnTitle()) {
             return if (TextUtils.isEmpty(gi.titleJpn)) gi.title else gi.titleJpn
         } else {
             return if (TextUtils.isEmpty(gi.title)) gi.titleJpn else gi.title

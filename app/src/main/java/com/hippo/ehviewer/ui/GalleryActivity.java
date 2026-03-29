@@ -72,6 +72,8 @@ import com.hippo.android.resource.AttrResources;
 import com.hippo.ehviewer.AppConfig;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.ReadingSettings;
+import com.hippo.ehviewer.settings.AppearanceSettings;
 import com.hippo.ehviewer.client.data.GalleryInfo;
 import com.hippo.ehviewer.event.AppEventBus;
 import com.hippo.ehviewer.event.GalleryActivityEvent;
@@ -234,12 +236,12 @@ public class GalleryActivity extends EhActivity implements SeekBar.OnSeekBarChan
     @Override
     protected int getThemeResId(int theme) {
         switch (theme) {
-            case Settings.THEME_LIGHT:
+            case AppearanceSettings.THEME_LIGHT:
             default:
                 return R.style.AppTheme_Gallery;
-            case Settings.THEME_DARK:
+            case AppearanceSettings.THEME_DARK:
                 return R.style.AppTheme_Gallery_Dark;
-            case Settings.THEME_BLACK:
+            case AppearanceSettings.THEME_BLACK:
                 return R.style.AppTheme_Gallery_Black;
         }
     }
@@ -336,7 +338,7 @@ public class GalleryActivity extends EhActivity implements SeekBar.OnSeekBarChan
     @Override
     @SuppressWarnings({"WrongConstant"})
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-        if (Settings.getReadingFullscreen()) {
+        if (ReadingSettings.getReadingFullscreen()) {
             Window w = getWindow();
             w.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION, WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
             w.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
@@ -384,7 +386,7 @@ public class GalleryActivity extends EhActivity implements SeekBar.OnSeekBarChan
         mGLRootView = (GLRootView) ViewUtils.$$(this, R.id.gl_root_view);
         mGalleryAdapter = new GalleryAdapter(mGLRootView, mGalleryProvider);
         Resources resources = getResources();
-        mGalleryView = new GalleryView.Builder(this, mGalleryAdapter).setListener(this).setLayoutMode(Settings.getReadingDirection()).setScaleMode(Settings.getPageScaling()).setStartPosition(Settings.getStartPosition()).setStartPage(startPage).setBackgroundColor(AttrResources.getAttrColor(this, android.R.attr.colorBackground)).setEdgeColor(AttrResources.getAttrColor(this, R.attr.colorEdgeEffect) & 0xffffff | 0x33000000).setPagerInterval(Settings.getShowPageInterval() ? resources.getDimensionPixelOffset(R.dimen.gallery_pager_interval) : 0).setScrollInterval(Settings.getShowPageInterval() ? resources.getDimensionPixelOffset(R.dimen.gallery_scroll_interval) : 0).setPageMinHeight(resources.getDimensionPixelOffset(R.dimen.gallery_page_min_height)).setPageInfoInterval(resources.getDimensionPixelOffset(R.dimen.gallery_page_info_interval)).setProgressColor(ResourcesUtils.getAttrColor(this, androidx.appcompat.R.attr.colorPrimary)).setProgressSize(resources.getDimensionPixelOffset(R.dimen.gallery_progress_size)).setPageTextColor(AttrResources.getAttrColor(this, android.R.attr.textColorSecondary)).setPageTextSize(resources.getDimensionPixelOffset(R.dimen.gallery_page_text_size)).setPageTextTypeface(Typeface.DEFAULT).setErrorTextColor(resources.getColor(R.color.red_500, null)).setErrorTextSize(resources.getDimensionPixelOffset(R.dimen.gallery_error_text_size)).setDefaultErrorString(resources.getString(R.string.error_unknown)).setEmptyString(resources.getString(R.string.error_empty)).build();
+        mGalleryView = new GalleryView.Builder(this, mGalleryAdapter).setListener(this).setLayoutMode(ReadingSettings.getReadingDirection()).setScaleMode(ReadingSettings.getPageScaling()).setStartPosition(ReadingSettings.getStartPosition()).setStartPage(startPage).setBackgroundColor(AttrResources.getAttrColor(this, android.R.attr.colorBackground)).setEdgeColor(AttrResources.getAttrColor(this, R.attr.colorEdgeEffect) & 0xffffff | 0x33000000).setPagerInterval(ReadingSettings.getShowPageInterval() ? resources.getDimensionPixelOffset(R.dimen.gallery_pager_interval) : 0).setScrollInterval(ReadingSettings.getShowPageInterval() ? resources.getDimensionPixelOffset(R.dimen.gallery_scroll_interval) : 0).setPageMinHeight(resources.getDimensionPixelOffset(R.dimen.gallery_page_min_height)).setPageInfoInterval(resources.getDimensionPixelOffset(R.dimen.gallery_page_info_interval)).setProgressColor(ResourcesUtils.getAttrColor(this, androidx.appcompat.R.attr.colorPrimary)).setProgressSize(resources.getDimensionPixelOffset(R.dimen.gallery_progress_size)).setPageTextColor(AttrResources.getAttrColor(this, android.R.attr.textColorSecondary)).setPageTextSize(resources.getDimensionPixelOffset(R.dimen.gallery_page_text_size)).setPageTextTypeface(Typeface.DEFAULT).setErrorTextColor(resources.getColor(R.color.red_500, null)).setErrorTextSize(resources.getDimensionPixelOffset(R.dimen.gallery_error_text_size)).setDefaultErrorString(resources.getString(R.string.error_unknown)).setEmptyString(resources.getString(R.string.error_empty)).build();
         mGLRootView.setContentPane(mGalleryView);
         mGLRootView.setOnGenericMotionListener(this::onGenericMotion);
         mGalleryProvider.setGalleryView(mGalleryView);
@@ -392,7 +394,7 @@ public class GalleryActivity extends EhActivity implements SeekBar.OnSeekBarChan
         mGalleryProvider.setGLRoot(mGLRootView);
 
         // System UI helper
-        if (Settings.getReadingFullscreen()) {
+        if (ReadingSettings.getReadingFullscreen()) {
             Window w = getWindow();
             w.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION, WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
             w.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
@@ -405,9 +407,9 @@ public class GalleryActivity extends EhActivity implements SeekBar.OnSeekBarChan
         mClock = ViewUtils.$$(this, R.id.clock);
         mProgress = (TextView) ViewUtils.$$(this, R.id.progress);
         mBattery = ViewUtils.$$(this, R.id.battery);
-        mClock.setVisibility(Settings.getShowClock() ? View.VISIBLE : View.GONE);
-        mProgress.setVisibility(Settings.getShowProgress() ? View.VISIBLE : View.GONE);
-        mBattery.setVisibility(Settings.getShowBattery() ? View.VISIBLE : View.GONE);
+        mClock.setVisibility(ReadingSettings.getShowClock() ? View.VISIBLE : View.GONE);
+        mProgress.setVisibility(ReadingSettings.getShowProgress() ? View.VISIBLE : View.GONE);
+        mBattery.setVisibility(ReadingSettings.getShowBattery() ? View.VISIBLE : View.GONE);
 
         mSeekBarPanel = ViewUtils.$$(this, R.id.seek_bar_panel);
         mAutoTransferPanel = (ImageView) ViewUtils.$$(this, R.id.auto_transfer);
@@ -425,7 +427,7 @@ public class GalleryActivity extends EhActivity implements SeekBar.OnSeekBarChan
         updateSlider();
 
         // Update keep screen on
-        if (Settings.getKeepScreenOn()) {
+        if (ReadingSettings.getKeepScreenOn()) {
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         } else {
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -433,7 +435,7 @@ public class GalleryActivity extends EhActivity implements SeekBar.OnSeekBarChan
 
         // Orientation
         int orientation;
-        switch (Settings.getScreenRotation()) {
+        switch (ReadingSettings.getScreenRotation()) {
             default:
             case 0:
                 orientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
@@ -451,7 +453,7 @@ public class GalleryActivity extends EhActivity implements SeekBar.OnSeekBarChan
         setRequestedOrientation(orientation);
 
         // Screen lightness
-        setScreenLightness(Settings.getCustomScreenLightness(), Settings.getScreenLightness());
+        setScreenLightness(ReadingSettings.getCustomScreenLightness(), ReadingSettings.getScreenLightness());
 
         // Cutout
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -580,9 +582,9 @@ public class GalleryActivity extends EhActivity implements SeekBar.OnSeekBarChan
         if (mGalleryView == null) {
             return super.onKeyDown(keyCode, event);
         }
-        boolean unReverse = !Settings.getReverseVolumePage();
+        boolean unReverse = !ReadingSettings.getReverseVolumePage();
         // Check volume
-        if (Settings.getVolumePage()) {
+        if (ReadingSettings.getVolumePage()) {
             if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
                 if (mLayoutMode == GalleryView.LAYOUT_RIGHT_TO_LEFT && unReverse) {
                     mGalleryView.pageRight();
@@ -638,7 +640,7 @@ public class GalleryActivity extends EhActivity implements SeekBar.OnSeekBarChan
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
         // Check volume
-        if (Settings.getVolumePage()) {
+        if (ReadingSettings.getVolumePage()) {
             if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
                 return true;
             }
@@ -674,7 +676,7 @@ public class GalleryActivity extends EhActivity implements SeekBar.OnSeekBarChan
             if (transferService.isShutdown()) {
                 transferService = Executors.newSingleThreadScheduledExecutor();
             }
-            long initialDelay = Settings.getStartTransferTime();
+            long initialDelay = ReadingSettings.getStartTransferTime();
             long waitTime = initialDelay * 2L;
             try {
                 transferService.scheduleWithFixedDelay(() -> transHandle.post(() -> {
@@ -953,7 +955,7 @@ public class GalleryActivity extends EhActivity implements SeekBar.OnSeekBarChan
      */
     private void applyImmersiveToDialog(AlertDialog dialog) {
         Window window = dialog.getWindow();
-        if (window != null && Settings.getReadingFullscreen()) {
+        if (window != null && ReadingSettings.getReadingFullscreen()) {
             View decorView = window.getDecorView();
             // Consume all window insets so no padding is applied to dialog content
             androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(decorView, (v, insets) -> {
@@ -1269,26 +1271,26 @@ public class GalleryActivity extends EhActivity implements SeekBar.OnSeekBarChan
             mCustomScreenLightness = mView.findViewById(R.id.custom_screen_lightness);
             mScreenLightness = mView.findViewById(R.id.screen_lightness);
 
-            mScreenRotation.setSelection(Settings.getScreenRotation());
-            mReadingDirection.setSelection(Settings.getReadingDirection());
-            mScaleMode.setSelection(Settings.getPageScaling());
-            mStartPosition.setSelection(Settings.getStartPosition());
-            mStartTransferTime.setProgress(Settings.getStartTransferTime());
-            mKeepScreenOn.setChecked(Settings.getKeepScreenOn());
-            mShowClock.setChecked(Settings.getShowClock());
-            mShowProgress.setChecked(Settings.getShowProgress());
-            mShowBattery.setChecked(Settings.getShowBattery());
-            mShowPageInterval.setChecked(Settings.getShowPageInterval());
-            mVolumePage.setChecked(Settings.getVolumePage());
-            mReverseVolumePage.setChecked(Settings.getReverseVolumePage());
-            mReadingFullscreen.setChecked(Settings.getReadingFullscreen());
-            mCustomScreenLightness.setChecked(Settings.getCustomScreenLightness());
-            mScreenLightness.setProgress(Settings.getScreenLightness());
-            mScreenLightness.setEnabled(Settings.getCustomScreenLightness());
+            mScreenRotation.setSelection(ReadingSettings.getScreenRotation());
+            mReadingDirection.setSelection(ReadingSettings.getReadingDirection());
+            mScaleMode.setSelection(ReadingSettings.getPageScaling());
+            mStartPosition.setSelection(ReadingSettings.getStartPosition());
+            mStartTransferTime.setProgress(ReadingSettings.getStartTransferTime());
+            mKeepScreenOn.setChecked(ReadingSettings.getKeepScreenOn());
+            mShowClock.setChecked(ReadingSettings.getShowClock());
+            mShowProgress.setChecked(ReadingSettings.getShowProgress());
+            mShowBattery.setChecked(ReadingSettings.getShowBattery());
+            mShowPageInterval.setChecked(ReadingSettings.getShowPageInterval());
+            mVolumePage.setChecked(ReadingSettings.getVolumePage());
+            mReverseVolumePage.setChecked(ReadingSettings.getReverseVolumePage());
+            mReadingFullscreen.setChecked(ReadingSettings.getReadingFullscreen());
+            mCustomScreenLightness.setChecked(ReadingSettings.getCustomScreenLightness());
+            mScreenLightness.setProgress(ReadingSettings.getScreenLightness());
+            mScreenLightness.setEnabled(ReadingSettings.getCustomScreenLightness());
 
             mVolumePage.setOnCheckedChangeListener(this::onVolumePageChange);
 
-            if (Settings.getVolumePage()) {
+            if (ReadingSettings.getVolumePage()) {
                 mReverseVolumePage.setVisibility(View.VISIBLE);
 
             } else {
@@ -1349,23 +1351,23 @@ public class GalleryActivity extends EhActivity implements SeekBar.OnSeekBarChan
             int screenLightness = mScreenLightness.getProgress();
             int transferTime = mStartTransferTime.getProgress();
 
-            boolean oldReadingFullscreen = Settings.getReadingFullscreen();
+            boolean oldReadingFullscreen = ReadingSettings.getReadingFullscreen();
 
-            Settings.putScreenRotation(screenRotation);
-            Settings.putReadingDirection(layoutMode);
-            Settings.putPageScaling(scaleMode);
-            Settings.putStartPosition(startPosition);
-            Settings.putStartTransferTime(transferTime);
-            Settings.putKeepScreenOn(keepScreenOn);
-            Settings.putShowClock(showClock);
-            Settings.putShowProgress(showProgress);
-            Settings.putShowBattery(showBattery);
-            Settings.putShowPageInterval(showPageInterval);
-            Settings.putVolumePage(volumePage);
-            Settings.putReadingFullscreen(readingFullscreen);
-            Settings.putCustomScreenLightness(customScreenLightness);
-            Settings.putScreenLightness(screenLightness);
-            Settings.putReverseVolumePage(reverseVolumePage);
+            ReadingSettings.putScreenRotation(screenRotation);
+            ReadingSettings.putReadingDirection(layoutMode);
+            ReadingSettings.putPageScaling(scaleMode);
+            ReadingSettings.putStartPosition(startPosition);
+            ReadingSettings.putStartTransferTime(transferTime);
+            ReadingSettings.putKeepScreenOn(keepScreenOn);
+            ReadingSettings.putShowClock(showClock);
+            ReadingSettings.putShowProgress(showProgress);
+            ReadingSettings.putShowBattery(showBattery);
+            ReadingSettings.putShowPageInterval(showPageInterval);
+            ReadingSettings.putVolumePage(volumePage);
+            ReadingSettings.putReadingFullscreen(readingFullscreen);
+            ReadingSettings.putCustomScreenLightness(customScreenLightness);
+            ReadingSettings.putScreenLightness(screenLightness);
+            ReadingSettings.putReverseVolumePage(reverseVolumePage);
             if (!volumePage) {
                 mReverseVolumePage.setVisibility(View.GONE);
             } else {

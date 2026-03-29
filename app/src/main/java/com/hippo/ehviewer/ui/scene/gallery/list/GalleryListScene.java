@@ -74,6 +74,8 @@ import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.FavouriteStatusRouter;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.ReadingSettings;
+import com.hippo.ehviewer.settings.AppearanceSettings;
 import com.hippo.ehviewer.callBack.SubscriptionCallback;
 import com.hippo.ehviewer.client.EhCacheKeyFactory;
 import com.hippo.ehviewer.client.EhClient;
@@ -428,7 +430,7 @@ public final class GalleryListScene extends BaseScene
         } else {
             onRestore(savedInstanceState);
         }
-        showReadProgress = Settings.getShowReadProgress();
+        showReadProgress = ReadingSettings.getShowReadProgress();
     }
 
     public void onInit() {
@@ -471,7 +473,7 @@ public final class GalleryListScene extends BaseScene
         Resources resources = context.getResources();
         Drawable searchImage = DrawableManager.getVectorDrawable(context, R.drawable.v_magnify_x24);
         SpannableStringBuilder ssb = new SpannableStringBuilder("   ");
-        ssb.append(resources.getString(EhUrl.SITE_EX == Settings.getGallerySite() ?
+        ssb.append(resources.getString(EhUrl.SITE_EX == AppearanceSettings.getGallerySite() ?
                 R.string.gallery_list_search_bar_hint_exhentai :
                 R.string.gallery_list_search_bar_hint_e_hentai));
         int textSize = (int) (searchBar.getEditTextTextSize() * 1.25);
@@ -633,7 +635,7 @@ public final class GalleryListScene extends BaseScene
         contentLayout.getFastScroller().setOnDragHandlerListener(this);
 
         mAdapter = new GalleryListAdapter(inflater, resources,
-                mRecyclerView, Settings.getListMode());
+                mRecyclerView, AppearanceSettings.getListMode());
 
         mAdapter.setThumbItemClickListener(this::onThumbItemClick);
         mRecyclerView.setSelector(Ripple.generateRippleDrawable(context, !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme), new ColorDrawable(Color.TRANSPARENT)));
@@ -756,7 +758,7 @@ public final class GalleryListScene extends BaseScene
             @SuppressLint("InflateParams") Chip chip = (Chip) getLayoutInflater().inflate(R.layout.item_chip_tag, null);
             chip.setChipBackgroundColor(ColorStateList.valueOf(colorTag));
             chip.setTextColor(Color.WHITE);
-            if (Settings.getShowTagTranslations()) {
+            if (AppearanceSettings.getShowTagTranslations()) {
                 if (ehTags == null) {
                     ehTags = EhTagDatabase.getInstance(getContext());
                 }
@@ -773,7 +775,7 @@ public final class GalleryListScene extends BaseScene
             @SuppressLint("InflateParams") Chip chip = (Chip) getLayoutInflater().inflate(R.layout.item_chip_tag, null);
             chip.setChipBackgroundColor(ColorStateList.valueOf(colorTag));
             chip.setTextColor(Color.WHITE);
-            if (Settings.getShowTagTranslations()) {
+            if (AppearanceSettings.getShowTagTranslations()) {
                 if (ehTags == null) {
                     ehTags = EhTagDatabase.getInstance(getContext());
                 }
@@ -948,7 +950,7 @@ public final class GalleryListScene extends BaseScene
 
     void showAddQuickSearchDialog(final List<QuickSearch> list,
                                   final ArrayAdapter<QuickSearch> adapter, final ListView listView, final TextView tip) {
-        boolean translation = Settings.getShowTagTranslations();
+        boolean translation = AppearanceSettings.getShowTagTranslations();
 //        if (translation){
 //            String translationString = getTagCN();
 //        }
@@ -1148,7 +1150,7 @@ public final class GalleryListScene extends BaseScene
         super.onResume();
         // Apply list mode change immediately when returning from settings
         if (mAdapter != null) {
-            mAdapter.setType(Settings.getListMode());
+            mAdapter.setType(AppearanceSettings.getListMode());
             mAdapter.refreshColumnSize();
         }
         if (mBookmarksDraw == null) {

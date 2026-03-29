@@ -23,6 +23,7 @@ import androidx.annotation.NonNull;
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.DownloadSettings;
 import com.hippo.ehviewer.download.DownloadManager;
 import com.hippo.unifile.UniFile;
 import com.hippo.lib.yorozuya.NumberUtils;
@@ -81,7 +82,7 @@ public class CleanRedundancyPreference extends TaskPreference {
 
         @Override
         protected Object doInBackground(Void... params) {
-            UniFile dir = Settings.getDownloadLocation();
+            UniFile dir = DownloadSettings.getDownloadLocation();
             if (null == dir) {
                 publishProgress(new int[]{0, 0});
                 return 0;

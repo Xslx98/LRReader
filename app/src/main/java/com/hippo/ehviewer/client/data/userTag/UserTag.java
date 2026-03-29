@@ -4,6 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.AppearanceSettings;
 import com.hippo.ehviewer.client.EhTagDatabase;
 import com.hippo.ehviewer.util.TagTranslationUtil;
 
@@ -57,7 +58,7 @@ public class UserTag implements Parcelable {
 
     public String getName(EhTagDatabase ehTags) {
         //汉化标签
-        final boolean judge = Settings.getShowTagTranslations();
+        final boolean judge = AppearanceSettings.getShowTagTranslations();
         if (judge) {
             String name = tagName;
             //重设标签名称,并跳过已翻译的标签

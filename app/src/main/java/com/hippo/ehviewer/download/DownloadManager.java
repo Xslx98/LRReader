@@ -31,6 +31,7 @@ import androidx.annotation.Nullable;
 import com.hippo.ehviewer.Analytics;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.DownloadSettings;
 import com.hippo.ehviewer.client.data.GalleryInfo;
 import com.hippo.ehviewer.dao.DownloadInfo;
 import com.hippo.ehviewer.dao.DownloadLabel;
@@ -458,7 +459,7 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
 
     void startRangeDownload(LongList gidList) {
         boolean update = false;
-        boolean downloadOrder = Settings.getDownloadOrder();
+        boolean downloadOrder = DownloadSettings.getDownloadOrder();
         if (downloadOrder) {
             for (int i = 0, n = gidList.size(); i < n; i++) {
                 long gid = gidList.get(i);
@@ -519,7 +520,7 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
         // Start all STATE_NONE and STATE_FAILED item
         LinkedList<DownloadInfo> allInfoList = mAllInfoList;
         LinkedList<DownloadInfo> waitList = mWaitList;
-        boolean downloadOrder = Settings.getDownloadOrder();
+        boolean downloadOrder = DownloadSettings.getDownloadOrder();
         if (downloadOrder) {
             for (DownloadInfo info : allInfoList) {
                 if (info.state == DownloadInfo.STATE_NONE || info.state == DownloadInfo.STATE_FAILED) {

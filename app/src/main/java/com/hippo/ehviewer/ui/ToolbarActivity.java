@@ -25,18 +25,19 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.widget.Toolbar;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.AppearanceSettings;
 
 public abstract class ToolbarActivity extends EhActivity {
 
     @Override
     protected int getThemeResId(int theme) {
         switch (theme) {
-            case Settings.THEME_LIGHT:
+            case AppearanceSettings.THEME_LIGHT:
             default:
                 return R.style.AppTheme_Toolbar;
-            case Settings.THEME_DARK:
+            case AppearanceSettings.THEME_DARK:
                 return R.style.AppTheme_Toolbar_Dark;
-            case Settings.THEME_BLACK:
+            case AppearanceSettings.THEME_BLACK:
                 return R.style.AppTheme_Toolbar_Black;
         }
     }
