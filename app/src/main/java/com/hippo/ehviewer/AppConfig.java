@@ -50,7 +50,7 @@ public class AppConfig {
     private static volatile boolean sDeletingOldParseErrorFiles = false;
     private static final Object sDeleteOldParseErrorFilesLock = new Object();
 
-    @SuppressLint("StaticFieldLeak")
+    @SuppressLint("StaticFieldLeak") // Safe: holds Application Context, not Activity
     private static Context sContext;
 
     public static void initialize(Context context) {
