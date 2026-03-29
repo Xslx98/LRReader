@@ -1281,7 +1281,7 @@ public class DownloadsScene extends ToolbarScene
 
     @Override
     public void onUpdateLabels() {
-        // TODO
+        // No-op: label updates are handled by DownloadLabelDraw
     }
 
     @Nullable

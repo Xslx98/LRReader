@@ -386,7 +386,7 @@ public class GLView implements TouchOwner {
 
     @Override
     public boolean isEnabled() {
-        return true; // TODO
+        return true; // dispatchTouchEvent: always consumed by GLView hierarchy
     }
 
     @Override

@@ -104,7 +104,7 @@ public class EhApplication extends RecordingApplication {
         Locale locale = null;
         try {
             android.content.SharedPreferences prefs =
-                    android.preference.PreferenceManager.getDefaultSharedPreferences(base);
+                    androidx.preference.PreferenceManager.getDefaultSharedPreferences(base);
             String language = prefs.getString("app_language", "system");
             if (language != null && !language.equals("system")) {
                 String[] split = language.split("-");

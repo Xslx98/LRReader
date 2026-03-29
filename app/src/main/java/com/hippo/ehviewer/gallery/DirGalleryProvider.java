@@ -222,7 +222,7 @@ public class DirGalleryProvider extends GalleryProvider2 implements Runnable {
     @NonNull
     @Override
     public String getImageFilename(int index) {
-        // TODO
+        // LEGACY: local files use index as filename fallback
         return Integer.toString(index);
     }
 
