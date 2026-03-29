@@ -17,6 +17,7 @@ import androidx.annotation.Nullable;
 
 import com.google.android.material.textfield.TextInputLayout;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.client.lrr.LRRAuthManager;
@@ -163,7 +164,7 @@ public final class ServerConfigScene extends SolidScene implements View.OnClickL
             LRRAuthManager.setApiKey(null);
         }
 
-        OkHttpClient client = EhApplication.getOkHttpClient(getEHContext());
+        OkHttpClient client = ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
         OkHttpClient testClient = LRRUrlHelper.buildTestClient(client);
 
         if (LRRUrlHelper.hasExplicitScheme(rawInput)) {

@@ -17,6 +17,7 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.hippo.app.EditTextDialogBuilder;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.callBack.SubscriptionCallback;
 import com.hippo.ehviewer.client.EhClient;
@@ -148,7 +149,7 @@ public class SubscriptionDraw {
             return;
         }
         userTagList.stageId = activity.getStageId();
-        EhApplication.saveUserTagList(context, userTagList);
+        ServiceRegistry.INSTANCE.getDataModule().saveUserTagList(userTagList);
         activity.startScene(new Announcer(SubscriptionsScene.class));
     }
 
@@ -298,7 +299,7 @@ public class SubscriptionDraw {
             } else {
                 userTagList = result;
             }
-            EhApplication.saveUserTagList(context, userTagList);
+            ServiceRegistry.INSTANCE.getDataModule().saveUserTagList(userTagList);
             bindViewSecond();
             needLoad = false;
         }

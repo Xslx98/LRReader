@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.util.Log;
 
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.client.lrr.LRRAuthManager;
 import com.hippo.ehviewer.client.lrr.LRRArchiveApi;
 import com.hippo.ehviewer.dao.DownloadInfo;
@@ -76,7 +77,7 @@ public class LRRDownloadWorker {
     }
 
     private void doDownload() {
-        OkHttpClient client = EhApplication.getOkHttpClient(mContext);
+        OkHttpClient client = ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
         // Use longer timeout for page downloads (large archives may need extraction time)
         OkHttpClient pageClient = client.newBuilder()
                 .readTimeout(30, TimeUnit.SECONDS)

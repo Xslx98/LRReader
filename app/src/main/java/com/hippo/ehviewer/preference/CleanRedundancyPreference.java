@@ -21,6 +21,7 @@ import android.util.AttributeSet;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
 import com.hippo.ehviewer.settings.DownloadSettings;
@@ -56,7 +57,7 @@ public class CleanRedundancyPreference extends TaskPreference {
         public ClearTask(@NonNull Context context) {
             super(context);
             mApplication = (EhApplication) context.getApplicationContext();
-            mManager = EhApplication.getDownloadManager(mApplication);
+            mManager = ServiceRegistry.INSTANCE.getDataModule().getDownloadManager();
         }
 
         // True for cleared

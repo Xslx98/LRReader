@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.client.lrr.LRRApiUtilsKt;
@@ -120,7 +121,7 @@ public final class ServerListScene extends BaseScene {
         LRRAuthManager.setActiveProfileId(profile.getId());
 
         // Reload download manager
-        EhApplication.getDownloadManager(ctx).reload();
+        ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().reload();
 
         Toast.makeText(ctx, getString(R.string.lrr_server_switched, profile.getName()),
                 Toast.LENGTH_SHORT).show();
@@ -380,7 +381,7 @@ public final class ServerListScene extends BaseScene {
             LRRAuthManager.setApiKey(finalKey);
 
             // Build a test client with short timeouts
-            OkHttpClient baseClient = EhApplication.getOkHttpClient(ctx);
+            OkHttpClient baseClient = ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
             OkHttpClient testClient = LRRUrlHelper.buildTestClient(baseClient);
 
             IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
@@ -404,7 +405,7 @@ public final class ServerListScene extends BaseScene {
                             LRRAuthManager.setServerName(name);
                             LRRAuthManager.setActiveProfileId(newId);
 
-                            EhApplication.getDownloadManager(ctx).reload();
+                            ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().reload();
 
                             Toast.makeText(ctx, getString(R.string.lrr_connection_success,
                                     info.name, info.version), Toast.LENGTH_SHORT).show();

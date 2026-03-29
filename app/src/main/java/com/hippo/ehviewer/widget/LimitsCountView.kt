@@ -12,6 +12,7 @@ import android.widget.TextView
 import android.widget.Toast
 import com.github.ybq.android.spinkit.SpinKitView
 import com.hippo.ehviewer.EhApplication
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.EhClient
@@ -128,7 +129,7 @@ class LimitsCountView : FrameLayout {
         val request = EhRequest()
             .setMethod(EhClient.METHOD_RESET_LIMIT)
             .setCallback(callback)
-        EhApplication.getEhClient(context).execute(request)
+        ServiceRegistry.clientModule.ehClient.execute(request)
     }
 
     fun onLoadData(view: View, checkData: Boolean) {
@@ -162,7 +163,7 @@ class LimitsCountView : FrameLayout {
         val request = EhRequest()
             .setMethod(EhClient.METHOD_GET_HOME)
             .setCallback(callback)
-        EhApplication.getEhClient(context).execute(request)
+        ServiceRegistry.clientModule.ehClient.execute(request)
     }
 
     private fun onClick(view: View) {

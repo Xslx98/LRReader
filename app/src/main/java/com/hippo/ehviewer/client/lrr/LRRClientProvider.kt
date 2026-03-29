@@ -2,6 +2,7 @@ package com.hippo.ehviewer.client.lrr
 
 import android.content.Context
 import com.hippo.ehviewer.EhApplication
+import com.hippo.ehviewer.ServiceRegistry
 import okhttp3.OkHttpClient
 
 /**
@@ -45,7 +46,7 @@ object LRRClientProvider {
     fun getClient(): OkHttpClient {
         val ctx = appContext
             ?: throw IllegalStateException("LRRClientProvider not initialized. Call init(context) first.")
-        return EhApplication.getOkHttpClient(ctx)
+        return ServiceRegistry.networkModule.okHttpClient
     }
 
     /**

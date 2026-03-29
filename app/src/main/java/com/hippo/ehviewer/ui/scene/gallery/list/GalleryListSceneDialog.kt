@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import com.hippo.ehviewer.EhApplication
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.settings.AppearanceSettings
@@ -138,7 +139,7 @@ class GalleryListSceneDialog(val baseScene: BaseScene) {
             .setMethod(EhClient.METHOD_ADD_TAG)
             .setArgs(url, param).setCallback(callback)
 
-        EhApplication.getEhClient(context).execute(mRequest)
+        ServiceRegistry.clientModule.ehClient.execute(mRequest)
     }
 
     private inner class SubscriptionDetailListener(

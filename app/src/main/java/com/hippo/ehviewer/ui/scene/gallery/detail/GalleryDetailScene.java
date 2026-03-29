@@ -68,6 +68,7 @@ import com.hippo.drawerlayout.DrawerLayout;
 import com.hippo.ehviewer.Analytics;
 import com.hippo.ehviewer.AppConfig;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
@@ -515,7 +516,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         long gid = getGid();
         if (gid != -1) {
             AssertUtils.assertNotNull(context);
-            mDownloadState = EhApplication.getDownloadManager(context).getDownloadState(gid);
+            mDownloadState = ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().getDownloadState(gid);
         } else {
             mDownloadState = DownloadInfo.STATE_INVALID;
         }
@@ -710,7 +711,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
             adjustViewVisibility(STATE_FAILED, false);
         }
 
-        EhApplication.getDownloadManager(context).addDownloadInfoListener(this);
+        ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().addDownloadInfoListener(this);
         if (myUpdateDialog == null) {
             myUpdateDialog = new GalleryUpdateDialog(this, context);
         }
@@ -728,7 +729,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
 
         Context context = getEHContext();
         AssertUtils.assertNotNull(context);
-        EhApplication.getDownloadManager(context).removeDownloadInfoListener(this);
+        ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().removeDownloadInfoListener(this);
 
         setDrawerGestureBlocker(null);
 
@@ -804,7 +805,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         }
 
         // Get from cache
-        mGalleryDetail = EhApplication.getGalleryDetailCache(context).get(gid);
+        mGalleryDetail = ServiceRegistry.INSTANCE.getDataModule().getGalleryDetailCache().get(gid);
         if (mGalleryDetail != null) {
             return true;
         }
@@ -835,7 +836,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
             return false;
         }
 
-        OkHttpClient client = EhApplication.getOkHttpClient(context);
+        OkHttpClient client = ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
 
         com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
             try {
@@ -874,7 +875,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                 }
 
                 // Cache the detail
-                EhApplication.getGalleryDetailCache(context).put(gd.gid, gd);
+                ServiceRegistry.INSTANCE.getDataModule().getGalleryDetailCache().put(gd.gid, gd);
 
                 Activity activity = getActivity();
                 if (activity != null) {
@@ -1146,7 +1147,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
             }
         }
         if (executorService == null) {
-            executorService = EhApplication.getExecutorService(mContext);
+            executorService = ServiceRegistry.INSTANCE.getAppModule().getExecutorService();
         }
 
         executorService.submit(() -> {
@@ -1259,7 +1260,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
             ObservedTextView c = v.findViewById(R.id.comment);
             c.setMaxLines(5);
             c.setText(Html.fromHtml(comment.comment, Html.FROM_HTML_MODE_LEGACY,
-                    new URLImageGetter(c, EhApplication.getConaco(context)), null));
+                    new URLImageGetter(c, ServiceRegistry.INSTANCE.getClientModule().getConaco()), null));
         }
     }
 
@@ -1500,7 +1501,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         if (null == temp) {
             return;
         }
-        BeerBelly beerBelly = EhApplication.getConaco(context).getBeerBelly();
+        BeerBelly beerBelly = ServiceRegistry.INSTANCE.getClientModule().getConaco().getBeerBelly();
 
         OutputStream os = null;
         try {
@@ -1588,7 +1589,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                 Toast.makeText(activity, R.string.lrr_loading_categories, Toast.LENGTH_SHORT).show();
                 com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
                     try {
-                        okhttp3.OkHttpClient client = com.hippo.ehviewer.EhApplication.getOkHttpClient(activity);
+                        okhttp3.OkHttpClient client = com.hippo.ehviewer.ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
                         @SuppressWarnings("unchecked")
                         java.util.List<com.hippo.ehviewer.client.lrr.data.LRRCategory> categories =
                                 (java.util.List<com.hippo.ehviewer.client.lrr.data.LRRCategory>) kotlinx.coroutines.BuildersKt.runBlocking(
@@ -1652,7 +1653,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                                         // Apply changes in background
                                         com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
                                             try {
-                                                okhttp3.OkHttpClient c = com.hippo.ehviewer.EhApplication.getOkHttpClient(activity);
+                                                okhttp3.OkHttpClient c = com.hippo.ehviewer.ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
                                                 for (int i = 0; i < staticCats.size(); i++) {
                                                     if (checked[i] != originalChecked[i]) {
                                                         String catId = staticCats.get(i).id;
@@ -1717,7 +1718,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                                                     }
                                                     com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
                                                         try {
-                                                            okhttp3.OkHttpClient c2 = com.hippo.ehviewer.EhApplication.getOkHttpClient(activity);
+                                                            okhttp3.OkHttpClient c2 = com.hippo.ehviewer.ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
                                                             // Create category
                                                             String newCatId = (String) com.hippo.ehviewer.client.lrr.LRRCoroutineHelper.runSuspend(
                                                                     (scope, cont) -> com.hippo.ehviewer.client.lrr.LRRCategoryApi.createCategory(c2, serverUrl, catName, null, false, cont)
@@ -1768,7 +1769,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                         .setView(R.layout.dialog_torrent_list)
                         .setOnDismissListener(helper)
                         .show();
-                helper.setDialog(dialog, mGalleryDetail.torrentUrl, EhApplication.getOkHttpClient(mContext));
+                helper.setDialog(dialog, mGalleryDetail.torrentUrl, ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient());
             }
         } else if (mHaH == v) {
             if (mGalleryDetail == null) {
@@ -1967,13 +1968,13 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
     private void onDownload() {
         GalleryInfo galleryInfo = getGalleryInfo();
         if (galleryInfo != null) {
-            if (EhApplication.getDownloadManager(mContext).getDownloadState(galleryInfo.gid) == DownloadInfo.STATE_INVALID) {
+            if (ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().getDownloadState(galleryInfo.gid) == DownloadInfo.STATE_INVALID) {
                 CommonOperations.startDownload(activity, galleryInfo, false);
             } else {
                 new AlertDialog.Builder(mContext)
                         .setTitle(R.string.download_remove_dialog_title)
                         .setMessage(getString(R.string.download_remove_dialog_message, galleryInfo.title))
-                        .setPositiveButton(android.R.string.ok, (dialog1, which1) -> EhApplication.getDownloadManager(mContext).deleteDownload(galleryInfo.gid))
+                        .setPositiveButton(android.R.string.ok, (dialog1, which1) -> ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().deleteDownload(galleryInfo.gid))
                         .show();
             }
         }
@@ -2068,7 +2069,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
             return;
         }
 
-        int downloadState = EhApplication.getDownloadManager(context).getDownloadState(gid);
+        int downloadState = ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().getDownloadState(gid);
         if (downloadState == mDownloadState) {
             return;
         }
@@ -2461,7 +2462,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                             .setArgs(url, mGid, mToken)
                             .setCallback(this);
                     assert mRequest != null;
-                    EhApplication.getEhClient(context).execute(mRequest);
+                    ServiceRegistry.INSTANCE.getClientModule().getEhClient().execute(mRequest);
                 } else {
                     bind(mArchiveList);
                 }
@@ -2502,7 +2503,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                 request.setMethod(EhClient.METHOD_DOWNLOAD_ARCHIVE);
                 request.setArgs(mGalleryDetail.gid, mGalleryDetail.token, mArchiveFormParamOr, res);
                 request.setCallback(new DownloadArchiveListener(context, activity.getStageId(), getTag()));
-                EhApplication.getEhClient(context).execute(request);
+                ServiceRegistry.INSTANCE.getClientModule().getEhClient().execute(request);
             }
 
             if (mDialog != null) {
@@ -2588,7 +2589,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                     if (mRequest == null) {
                         return;
                     }
-                    EhApplication.getEhClient(context).execute(mRequest);
+                    ServiceRegistry.INSTANCE.getClientModule().getEhClient().execute(mRequest);
                 } else {
                     bind(mTorrentList);
                 }
@@ -2696,7 +2697,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
             try {
                 String serverUrl = com.hippo.ehviewer.client.lrr.LRRAuthManager.getServerUrl();
                 if (serverUrl == null) return;
-                okhttp3.OkHttpClient client = EhApplication.getOkHttpClient(ctx);
+                okhttp3.OkHttpClient client = ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
 
                 // GET current metadata to get original tags
                 com.hippo.ehviewer.client.lrr.data.LRRArchive archive =
@@ -2789,7 +2790,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                 scene.onRateGallerySuccess(result);
             } else {
                 // Update rating in cache
-                GalleryDetail gd = EhApplication.getGalleryDetailCache(getApplication()).get(mGid);
+                GalleryDetail gd = ServiceRegistry.INSTANCE.getDataModule().getGalleryDetailCache().get(mGid);
                 if (gd != null) {
                     gd.rating = result.rating;
                     gd.ratingCount = result.ratingCount;

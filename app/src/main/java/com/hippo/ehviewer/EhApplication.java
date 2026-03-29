@@ -28,7 +28,6 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 
-import android.os.Build;
 import android.os.Debug;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
@@ -38,20 +37,12 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.collection.LruCache;
 
 import com.hippo.Native;
 import com.hippo.a7zip.A7Zip;
-import com.hippo.beerbelly.SimpleDiskCache;
-import com.hippo.conaco.Conaco;
 import com.hippo.content.RecordingApplication;
 import com.hippo.content.ContextLocalWrapper;
-import com.hippo.ehviewer.client.EhClient;
-import com.hippo.ehviewer.client.EhCookieStore;
 import com.hippo.ehviewer.client.EhEngine;
-import com.hippo.ehviewer.client.data.GalleryDetail;
-import com.hippo.ehviewer.client.data.userTag.UserTagList;
-import com.hippo.ehviewer.download.DownloadManager;
 import com.hippo.ehviewer.ui.CommonOperations;
 import com.hippo.lib.image.Image;
 
@@ -63,17 +54,14 @@ import com.hippo.util.ReadableTime;
 import com.hippo.lib.yorozuya.FileUtils;
 import com.hippo.lib.yorozuya.SimpleHandler;
 
+import android.text.Html;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 import android.content.res.Resources;
 import java.util.Locale;
 
-import android.text.Html;
-import okhttp3.Cache;
-import okhttp3.OkHttpClient;
 
 public class EhApplication extends RecordingApplication {
 
@@ -403,127 +391,8 @@ public class EhApplication extends RecordingApplication {
         return true;
     }
 
-    // ========================================================================
-    // Thin delegating stubs — forward to ServiceRegistry.
-    // Existing callers continue to compile unchanged.
-    // TODO: Gradually migrate callers to use ServiceRegistry directly.
-    // ========================================================================
 
-    /** @deprecated Use {@code ServiceRegistry.networkModule.cookieStore} */
-    public EhCookieStore getmEhCookieStore() {
-        return ServiceRegistry.INSTANCE.getNetworkModule().getCookieStore();
-    }
 
-    /** @deprecated Use {@code ServiceRegistry.networkModule.cookieStore} */
-    @NonNull
-    public static EhCookieStore getEhCookieStore(@NonNull Context context) {
-        return ServiceRegistry.INSTANCE.getNetworkModule().getCookieStore();
-    }
-
-    /** @deprecated Use {@code ServiceRegistry.clientModule.ehClient} */
-    @NonNull
-    public static EhClient getEhClient(@NonNull Context context) {
-        return ServiceRegistry.INSTANCE.getClientModule().getEhClient();
-    }
-
-    /** @deprecated Use {@code ServiceRegistry.networkModule.proxySelector} */
-    @NonNull
-    public static EhProxySelector getEhProxySelector(@NonNull Context context) {
-        return ServiceRegistry.INSTANCE.getNetworkModule().getProxySelector();
-    }
-
-    /** @deprecated Use {@code ServiceRegistry.networkModule.okHttpClient} */
-    @NonNull
-    public static OkHttpClient getOkHttpClient(@NonNull Context context) {
-        return ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
-    }
-
-    /** @deprecated Use {@code ServiceRegistry.networkModule.imageOkHttpClient} */
-    @NonNull
-    public static OkHttpClient getImageOkHttpClient(@NonNull Context context) {
-        return ServiceRegistry.INSTANCE.getNetworkModule().getImageOkHttpClient();
-    }
-
-    /** @deprecated Use {@code ServiceRegistry.clientModule.imageBitmapHelper} */
-    @NonNull
-    public static ImageBitmapHelper getImageBitmapHelper(@NonNull Context context) {
-        return ServiceRegistry.INSTANCE.getClientModule().getImageBitmapHelper();
-    }
-
-    /** @deprecated Use {@code ServiceRegistry.clientModule.conaco} */
-    @NonNull
-    public static Conaco<Image> getConaco(@NonNull Context context) {
-        return ServiceRegistry.INSTANCE.getClientModule().getConaco();
-    }
-
-    /** @deprecated Use {@code ServiceRegistry.dataModule.galleryDetailCache} */
-    @NonNull
-    public static LruCache<Long, GalleryDetail> getGalleryDetailCache(@NonNull Context context) {
-        return ServiceRegistry.INSTANCE.getDataModule().getGalleryDetailCache();
-    }
-
-    /** @deprecated Use {@code ServiceRegistry.dataModule.spiderInfoCache} */
-    @NonNull
-    public static SimpleDiskCache getSpiderInfoCache(@NonNull Context context) {
-        return ServiceRegistry.INSTANCE.getDataModule().getSpiderInfoCache();
-    }
-
-    /** @deprecated Use {@code ServiceRegistry.dataModule.downloadManager} */
-    @NonNull
-    public static DownloadManager getDownloadManager() {
-        return ServiceRegistry.INSTANCE.getDataModule().getDownloadManager();
-    }
-
-    /** @deprecated Use {@code ServiceRegistry.dataModule.downloadManager} */
-    @NonNull
-    public static DownloadManager getDownloadManager(@NonNull Context context) {
-        return ServiceRegistry.INSTANCE.getDataModule().getDownloadManager();
-    }
-
-    /** @deprecated Use {@code ServiceRegistry.networkModule.hosts} */
-    @NonNull
-    public static Hosts getHosts(@NonNull Context context) {
-        return ServiceRegistry.INSTANCE.getNetworkModule().getHosts();
-    }
-
-    /** @deprecated Use {@code ServiceRegistry.dataModule.favouriteStatusRouter} */
-    @NonNull
-    public static FavouriteStatusRouter getFavouriteStatusRouter() {
-        return ServiceRegistry.INSTANCE.getDataModule().getFavouriteStatusRouter();
-    }
-
-    /** @deprecated Use {@code ServiceRegistry.dataModule.favouriteStatusRouter} */
-    @NonNull
-    public static FavouriteStatusRouter getFavouriteStatusRouter(@NonNull Context context) {
-        return ServiceRegistry.INSTANCE.getDataModule().getFavouriteStatusRouter();
-    }
-
-    /** @deprecated Use {@code ServiceRegistry.networkModule.cache} */
-    @NonNull
-    public static Cache getOkHttpCache(@NonNull Context context) {
-        return ServiceRegistry.INSTANCE.getNetworkModule().getCache();
-    }
-
-    /** @deprecated Use {@code AppModule.getDeveloperEmail()} */
-    @NonNull
-    public static String getDeveloperEmail() {
-        return com.hippo.ehviewer.module.AppModule.getDeveloperEmail();
-    }
-
-    /** @deprecated Use {@code ServiceRegistry.dataModule.saveUserTagList()} */
-    public static void saveUserTagList(@NonNull Context context, UserTagList userTagList) {
-        ServiceRegistry.INSTANCE.getDataModule().saveUserTagList(userTagList);
-    }
-
-    /** @deprecated Use {@code ServiceRegistry.dataModule.userTagList} */
-    public static UserTagList getUserTagList(@NonNull Context context) {
-        return ServiceRegistry.INSTANCE.getDataModule().getUserTagList();
-    }
-
-    /** @deprecated Use {@code ServiceRegistry.appModule.executorService} */
-    public static ExecutorService getExecutorService(@NonNull Context context) {
-        return ServiceRegistry.INSTANCE.getAppModule().getExecutorService();
-    }
 
     // --- GlobalStuff delegation ---
 

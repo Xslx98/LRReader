@@ -25,6 +25,7 @@ import androidx.annotation.Nullable;
 import com.hippo.ehviewer.Analytics;
 import com.hippo.ehviewer.AppConfig;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.client.data.Tag;
 import com.hippo.util.ExceptionUtils;
@@ -384,7 +385,7 @@ public class EhTagDatabase {
                     }
                 }
 
-                OkHttpClient client = EhApplication.getOkHttpClient(EhApplication.getInstance());
+                OkHttpClient client = ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
 
                 // Save new sha1
                 File tempSha1File = new File(dir, sha1Name + ".tmp");

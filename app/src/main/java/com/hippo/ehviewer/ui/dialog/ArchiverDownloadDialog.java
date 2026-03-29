@@ -28,6 +28,7 @@ import androidx.appcompat.app.AlertDialog;
 
 import com.hippo.ehviewer.AppConfig;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
 import com.hippo.ehviewer.settings.AppearanceSettings;
@@ -108,7 +109,7 @@ public class ArchiverDownloadDialog implements
                 .setArgs(galleryDetail.archiveUrl, galleryDetail.gid, galleryDetail.token)
                 .setCallback(this);
         assert mRequest != null;
-        EhApplication.getEhClient(context).execute(mRequest);
+        ServiceRegistry.INSTANCE.getClientModule().getEhClient().execute(mRequest);
     }
 
     private void onArchiverDownload(View view) {
@@ -135,7 +136,7 @@ public class ArchiverDownloadDialog implements
                 request.setMethod(EhClient.METHOD_DOWNLOAD_ARCHIVER);
                 request.setArgs(url, galleryDetail.archiveUrl, dltype, dlcheck);
                 request.setCallback(new DownloadArchiverListener(context, activity.getStageId(), detailScene.getTag(), this));
-                EhApplication.getEhClient(context).execute(request);
+                ServiceRegistry.INSTANCE.getClientModule().getEhClient().execute(request);
             }
         } finally {
             progressBar.setVisibility(View.VISIBLE);
@@ -459,7 +460,7 @@ public class ArchiverDownloadDialog implements
             String finalFileName = tempFile.getName();
             new Handler(Looper.getMainLooper()).post(() -> {
                 String labelName = context.getString(R.string.download_label_archiver);
-                com.hippo.ehviewer.download.DownloadManager manager = EhApplication.getDownloadManager(context);
+                com.hippo.ehviewer.download.DownloadManager manager = ServiceRegistry.INSTANCE.getDataModule().getDownloadManager();
                 manager.addLabel(labelName);
                 manager.addDownload(galleryDetail, labelName, DownloadInfo.STATE_FINISH);
                 Toast.makeText(context,context.getString(R.string.stat_download_done_line_succeeded, finalFileName),Toast.LENGTH_LONG).show();

@@ -23,6 +23,7 @@ import android.util.Log;
 
 import com.hippo.ehviewer.Analytics;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.client.data.userTag.TagPushParam;
 import com.hippo.ehviewer.client.data.userTag.UserTag;
 import com.hippo.ehviewer.client.exception.CancelledException;
@@ -76,8 +77,8 @@ public class EhClient {
 
     public EhClient(Context context) {
         mRequestThreadPool = IoThreadPoolExecutor.Companion.getInstance();
-        mOkHttpClient = EhApplication.getOkHttpClient(context);
-        mImageOkHttpClient = EhApplication.getImageOkHttpClient(context);
+        mOkHttpClient = ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
+        mImageOkHttpClient = ServiceRegistry.INSTANCE.getNetworkModule().getImageOkHttpClient();
     }
 
     public void execute(EhRequest request) {

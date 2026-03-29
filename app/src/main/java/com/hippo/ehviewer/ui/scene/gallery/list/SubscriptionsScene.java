@@ -38,6 +38,7 @@ import com.h6ah4i.android.widget.advrecyclerview.draggable.RecyclerViewDragDropM
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemViewHolder;
 import com.hippo.easyrecyclerview.EasyRecyclerView;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
 import com.hippo.ehviewer.settings.AppearanceSettings;
@@ -86,9 +87,9 @@ public final class SubscriptionsScene extends ToolbarScene {
         super.onCreate(savedInstanceState);
         this.context = getEHContext();
         if (ehClient == null){
-            this.ehClient = EhApplication.getEhClient(context);
+            this.ehClient = ServiceRegistry.INSTANCE.getClientModule().getEhClient();
         }
-        userTagList = EhApplication.getUserTagList(context);
+        userTagList = ServiceRegistry.INSTANCE.getDataModule().getUserTagList();
         ehTags = EhTagDatabase.getInstance(context);
     }
 
@@ -324,7 +325,7 @@ public final class SubscriptionsScene extends ToolbarScene {
             }else {
                 userTagList.userTags = result.userTags;
             }
-            EhApplication.saveUserTagList(context,result);
+            ServiceRegistry.INSTANCE.getDataModule().saveUserTagList(result);
             bindSecond();
         }
 

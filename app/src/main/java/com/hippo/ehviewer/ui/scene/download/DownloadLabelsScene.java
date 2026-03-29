@@ -41,6 +41,7 @@ import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemView
 import com.hippo.app.EditTextDialogBuilder;
 import com.hippo.easyrecyclerview.EasyRecyclerView;
 import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.dao.DownloadLabel;
 import com.hippo.ehviewer.ui.scene.ToolbarScene;
@@ -71,7 +72,7 @@ public class DownloadLabelsScene extends ToolbarScene {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mList = EhApplication.getDownloadManager(getEHContext()).getLabelList();
+        mList = ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().getLabelList();
     }
 
     @Override
@@ -205,12 +206,12 @@ public class DownloadLabelsScene extends ToolbarScene {
                 mBuilder.setError(getString(R.string.label_text_is_empty));
             } else if (getString(R.string.default_download_label_name).equals(text)) {
                 mBuilder.setError(getString(R.string.label_text_is_invalid));
-            } else if (EhApplication.getDownloadManager(context).containLabel(text)) {
+            } else if (ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().containLabel(text)) {
                 mBuilder.setError(getString(R.string.label_text_exist));
             } else {
                 mBuilder.setError(null);
                 mDialog.dismiss();
-                EhApplication.getDownloadManager(context).addLabel(text);
+                ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().addLabel(text);
                 if (mAdapter != null && mList != null) {
                     mAdapter.notifyItemInserted(mList.size() - 1);
                 }
@@ -256,12 +257,12 @@ public class DownloadLabelsScene extends ToolbarScene {
                 mBuilder.setError(getString(R.string.label_text_is_empty));
             } else if (getString(R.string.default_download_label_name).equals(text)) {
                 mBuilder.setError(getString(R.string.label_text_is_invalid));
-            } else if (EhApplication.getDownloadManager(context).containLabel(text)) {
+            } else if (ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().containLabel(text)) {
                 mBuilder.setError(getString(R.string.label_text_exist));
             } else {
                 mBuilder.setError(null);
                 mDialog.dismiss();
-                EhApplication.getDownloadManager(context).renameLabel(mOriginalLabel, text);
+                ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().renameLabel(mOriginalLabel, text);
                 if (mAdapter != null) {
                     mAdapter.notifyItemChanged(mPosition);
                 }
@@ -311,7 +312,7 @@ public class DownloadLabelsScene extends ToolbarScene {
                     .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            EhApplication.getDownloadManager(context).deleteLabel(label.getLabel());
+                            ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().deleteLabel(label.getLabel());
                         }
                     })
                     .setOnDismissListener(new DialogInterface.OnDismissListener() {
@@ -376,7 +377,7 @@ public class DownloadLabelsScene extends ToolbarScene {
                 return;
             }
 
-            EhApplication.getDownloadManager(context).moveLabel(fromPosition, toPosition);
+            ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().moveLabel(fromPosition, toPosition);
         }
 
         @Override
