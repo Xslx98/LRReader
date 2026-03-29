@@ -50,7 +50,7 @@ public final class NumberUtils {
     public static int parseIntSafely(String str, int defaultValue) {
         try {
             return Integer.parseInt(str);
-        } catch (Throwable e) {
+        } catch (NumberFormatException e) {
             return defaultValue;
         }
     }
@@ -65,7 +65,7 @@ public final class NumberUtils {
     public static long parseLongSafely(String str, long defaultValue) {
         try {
             return Long.parseLong(str);
-        } catch (Throwable e) {
+        } catch (NumberFormatException e) {
             return defaultValue;
         }
     }
@@ -80,7 +80,7 @@ public final class NumberUtils {
     public static float parseFloatSafely(String str, float defaultValue) {
         try {
             return Float.parseFloat(str);
-        } catch (Throwable e) {
+        } catch (NumberFormatException e) {
             return defaultValue;
         }
     }

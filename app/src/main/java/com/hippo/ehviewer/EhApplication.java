@@ -196,7 +196,7 @@ public class EhApplication extends RecordingApplication {
 
             try{
                 AppConfig.deleteOldParseErrorFiles();
-            } catch (Throwable ignored) {
+            } catch (Exception ignored) {
             }
 
             // Migrate downloads from old app-private path to user-visible location
@@ -225,7 +225,7 @@ public class EhApplication extends RecordingApplication {
                         }
                     }
                 }
-            } catch (Throwable t) {
+            } catch (Exception t) {
                 Log.w(TAG, "Download directory migration failed", t);
             }
         });
@@ -333,7 +333,7 @@ public class EhApplication extends RecordingApplication {
                 });
                 try {
                     dialog.show();
-                } catch (Throwable t) {
+                } catch (Exception t) {
                     // ignore
                 }
             });
