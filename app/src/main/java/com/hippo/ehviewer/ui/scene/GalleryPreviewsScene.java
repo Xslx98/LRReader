@@ -41,6 +41,7 @@ import com.hippo.ehviewer.Analytics;
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.AppearanceSettings;
 import com.hippo.ehviewer.client.EhClient;
 import com.hippo.ehviewer.client.EhRequest;
 import com.hippo.ehviewer.client.EhUrl;
@@ -148,7 +149,7 @@ public class GalleryPreviewsScene extends ToolbarScene implements EasyRecyclerVi
 
         mAdapter = new GalleryPreviewAdapter();
         mRecyclerView.setAdapter(mAdapter);
-        int columnWidth = resources.getDimensionPixelOffset(Settings.getThumbSizeResId());
+        int columnWidth = resources.getDimensionPixelOffset(AppearanceSettings.getThumbSizeResId());
         AutoGridLayoutManager layoutManager = new AutoGridLayoutManager(context, columnWidth);
         layoutManager.setStrategy(AutoGridLayoutManager.STRATEGY_SUITABLE_SIZE);
         mRecyclerView.setLayoutManager(layoutManager);

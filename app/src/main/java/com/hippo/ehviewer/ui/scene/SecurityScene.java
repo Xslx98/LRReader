@@ -31,7 +31,7 @@ import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.hippo.ehviewer.R;
-import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.SecuritySettings;
 import com.hippo.ehviewer.ui.MainActivity;
 import com.hippo.ehviewer.ui.SetSecurityActivity;
 import com.hippo.hardware.ShakeDetector;
@@ -176,7 +176,7 @@ public class SecurityScene extends SolidScene implements
         mPatternView.setOnPatternListener(this);
 
         mFingerprintIcon = (ImageView) ViewUtils.$$(view, R.id.fingerprint_icon);
-        if (Settings.getEnableFingerprint() && isFingerprintAuthAvailable()) {
+        if (SecuritySettings.getEnableFingerprint() && isFingerprintAuthAvailable()) {
             mFingerprintIcon.setVisibility(View.VISIBLE);
             mFingerprintIcon.setImageResource(R.drawable.ic_fp_40px);
         }
@@ -207,7 +207,7 @@ public class SecurityScene extends SolidScene implements
         }
 
         String enteredPatter = LockPatternUtils.patternToString(pattern);
-        String targetPatter = Settings.getSecurity();
+        String targetPatter = SecuritySettings.getSecurity();
 
         if (ObjectUtils.equal(enteredPatter, targetPatter)) {
             if (getEHContext() != null && isAdded()) {
@@ -230,7 +230,7 @@ public class SecurityScene extends SolidScene implements
             if (null == activity) {
                 return;
             }
-            Settings.putSecurity("");
+            SecuritySettings.putSecurity("");
             if (getEHContext() != null && isAdded()) {
                 startSceneForCheckStep(CHECK_STEP_SECURITY, getArguments());
                 finish();
@@ -242,7 +242,7 @@ public class SecurityScene extends SolidScene implements
         // The line below prevents the false positive inspection from Android Studio
         // noinspection ResourceType
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                && Settings.getEnableFingerprint()
+                && SecuritySettings.getEnableFingerprint()
                 && mFingerprintManager != null
                 && SetSecurityActivity.hasEnrolledFingerprints(mFingerprintManager);
     }

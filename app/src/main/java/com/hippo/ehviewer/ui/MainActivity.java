@@ -64,6 +64,10 @@ import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.SecuritySettings;
+import com.hippo.ehviewer.settings.NetworkSettings;
+import com.hippo.ehviewer.settings.DownloadSettings;
+import com.hippo.ehviewer.settings.AppearanceSettings;
 import com.hippo.ehviewer.callBack.ImageChangeCallBack;
 import com.hippo.ehviewer.client.EhCookieStore;
 import com.hippo.ehviewer.client.EhTagDatabase;
@@ -193,12 +197,12 @@ public final class MainActivity extends StageActivity
     @Override
     protected int getThemeResId(int theme) {
         switch (theme) {
-            case Settings.THEME_LIGHT:
+            case AppearanceSettings.THEME_LIGHT:
             default:
                 return R.style.AppTheme_Main;
-            case Settings.THEME_DARK:
+            case AppearanceSettings.THEME_DARK:
                 return R.style.AppTheme_Main_Dark;
-            case Settings.THEME_BLACK:
+            case AppearanceSettings.THEME_BLACK:
                 return R.style.AppTheme_Main_Black;
         }
     }
@@ -211,7 +215,7 @@ public final class MainActivity extends StageActivity
     @NonNull
     @Override
     protected Announcer getLaunchAnnouncer() {
-        if (!TextUtils.isEmpty(Settings.getSecurity())) {
+        if (!TextUtils.isEmpty(SecuritySettings.getSecurity())) {
             return new Announcer(SecurityScene.class);
         } else if (!LRRAuthManager.isConfigured()) {
             // LANraragi: show server config if not yet configured
@@ -226,7 +230,7 @@ public final class MainActivity extends StageActivity
     // LANraragi: simplified — only security gate and server config gate remain
     private Announcer processAnnouncer(Announcer announcer) {
         if (0 == getSceneCount()) {
-            if (!TextUtils.isEmpty(Settings.getSecurity())) {
+            if (!TextUtils.isEmpty(SecuritySettings.getSecurity())) {
                 Bundle newArgs = new Bundle();
                 newArgs.putString(SecurityScene.KEY_TARGET_SCENE, announcer.getClazz().getName());
                 newArgs.putBundle(SecurityScene.KEY_TARGET_ARGS, announcer.getArgs());
@@ -341,7 +345,7 @@ public final class MainActivity extends StageActivity
                     finish();
                 } else {
                     Bundle args = new Bundle();
-                    args.putString(GalleryListScene.KEY_ACTION, Settings.getLaunchPageGalleryListSceneAction());
+                    args.putString(GalleryListScene.KEY_ACTION, AppearanceSettings.getLaunchPageGalleryListSceneAction());
                     startScene(processAnnouncer(new Announcer(GalleryListScene.class).setArgs(args)));
                 }
             }
@@ -408,11 +412,11 @@ public final class MainActivity extends StageActivity
 //            }
             mNavView.setNavigationItemSelectedListener(this);
         }
-        if (Settings.getTheme() == 0) {
+        if (AppearanceSettings.getTheme() == 0) {
             mChangeTheme.setTextColor(getColor(R.color.theme_change_light));
 
             mChangeTheme.setBackgroundColor(getColor(R.color.white));
-        } else if (Settings.getTheme() == 1) {
+        } else if (AppearanceSettings.getTheme() == 1) {
             mChangeTheme.setTextColor(getColor(R.color.theme_change_other));
             mChangeTheme.setBackgroundColor(getColor(R.color.grey_850));
         } else {
@@ -422,14 +426,14 @@ public final class MainActivity extends StageActivity
 
         mChangeTheme.setText(getThemeText());
         mChangeTheme.setOnClickListener(v -> {
-            Settings.putTheme(getNextTheme());
+            AppearanceSettings.putTheme(getNextTheme());
             ((EhApplication) getApplication()).recreate();
         });
 
         if (savedInstanceState == null) {
             onInit();
             checkDownloadLocation();
-            if (Settings.getCellularNetworkWarning()) {
+            if (NetworkSettings.getCellularNetworkWarning()) {
                 checkCellularNetwork();
             }
         } else {
@@ -502,15 +506,15 @@ public final class MainActivity extends StageActivity
 
     private String getThemeText() {
         int resId;
-        switch (Settings.getTheme()) {
+        switch (AppearanceSettings.getTheme()) {
             default:
-            case Settings.THEME_LIGHT:
+            case AppearanceSettings.THEME_LIGHT:
                 resId = R.string.theme_light;
                 break;
-            case Settings.THEME_DARK:
+            case AppearanceSettings.THEME_DARK:
                 resId = R.string.theme_dark;
                 break;
-            case Settings.THEME_BLACK:
+            case AppearanceSettings.THEME_BLACK:
                 resId = R.string.theme_black;
                 break;
         }
@@ -518,19 +522,19 @@ public final class MainActivity extends StageActivity
     }
 
     private int getNextTheme() {
-        switch (Settings.getTheme()) {
+        switch (AppearanceSettings.getTheme()) {
             default:
-            case Settings.THEME_LIGHT:
-                return Settings.THEME_DARK;
-            case Settings.THEME_DARK:
-                return Settings.THEME_BLACK;
-            case Settings.THEME_BLACK:
-                return Settings.THEME_LIGHT;
+            case AppearanceSettings.THEME_LIGHT:
+                return AppearanceSettings.THEME_DARK;
+            case AppearanceSettings.THEME_DARK:
+                return AppearanceSettings.THEME_BLACK;
+            case AppearanceSettings.THEME_BLACK:
+                return AppearanceSettings.THEME_LIGHT;
         }
     }
 
     private void checkDownloadLocation() {
-        UniFile uniFile = Settings.getDownloadLocation();
+        UniFile uniFile = DownloadSettings.getDownloadLocation();
         // null == uniFile for first start
         if (null == uniFile || uniFile.ensureDir()) {
             return;

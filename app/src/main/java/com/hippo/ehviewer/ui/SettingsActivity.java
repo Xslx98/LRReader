@@ -31,6 +31,7 @@ import androidx.preference.PreferenceFragmentCompat;
 
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.AppearanceSettings;
 import com.hippo.ehviewer.ui.fragment.SettingsHeaders;
 import com.hippo.util.DrawableManager;
 
@@ -41,12 +42,12 @@ public final class SettingsActivity extends EhActivity {
     @Override
     protected int getThemeResId(int theme) {
       switch (theme) {
-        case Settings.THEME_LIGHT:
+        case AppearanceSettings.THEME_LIGHT:
         default:
           return R.style.AppTheme_Settings;
-        case Settings.THEME_DARK:
+        case AppearanceSettings.THEME_DARK:
           return R.style.AppTheme_Settings_Dark;
-        case Settings.THEME_BLACK:
+        case AppearanceSettings.THEME_BLACK:
           return R.style.AppTheme_Settings_Black;
       }
     }

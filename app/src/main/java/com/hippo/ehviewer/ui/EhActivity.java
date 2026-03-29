@@ -30,6 +30,8 @@ import com.hippo.content.ContextLocalWrapper;
 import com.hippo.ehviewer.Analytics;
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.SecuritySettings;
+import com.hippo.ehviewer.settings.AppearanceSettings;
 import java.util.Locale;
 
 public abstract class EhActivity extends AppCompatActivity {
@@ -43,7 +45,7 @@ public abstract class EhActivity extends AppCompatActivity {
         // Apply FLAG_SECURE before the window is created — must be set before
         // super.onCreate() / setContentView() for reliable screenshot prevention.
         // See: WindowManager.LayoutParams.FLAG_SECURE documentation.
-        if (Settings.getEnabledSecurity()) {
+        if (SecuritySettings.getEnabledSecurity()) {
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
         }
 
@@ -54,8 +56,8 @@ public abstract class EhActivity extends AppCompatActivity {
                 WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
         }
 
-//        setTheme(getThemeResId(Settings.getTheme(context)));
-        setTheme(getThemeResId(Settings.getTheme()));
+//        setTheme(getThemeResId(AppearanceSettings.getTheme(context)));
+        setTheme(getThemeResId(AppearanceSettings.getTheme()));
         super.onCreate(savedInstanceState);
 
         ((EhApplication) getApplication()).registerActivity(this);
@@ -75,7 +77,7 @@ public abstract class EhActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         // Re-check on resume to handle setting changes while app is running
-        if(Settings.getEnabledSecurity()){
+        if(SecuritySettings.getEnabledSecurity()){
             getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE,
                     WindowManager.LayoutParams.FLAG_SECURE);
         }else{
@@ -86,7 +88,7 @@ public abstract class EhActivity extends AppCompatActivity {
     @Override
     protected void attachBaseContext(Context newBase) {
         Locale locale = null;
-        String language = Settings.getAppLanguage();
+        String language = AppearanceSettings.getAppLanguage();
         if (language != null && !language.equals("system")) {
             String[] split = language.split("-");
             if (split.length == 1) {
@@ -109,13 +111,13 @@ public abstract class EhActivity extends AppCompatActivity {
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        if (Settings.isThemeAutoSwitchAvailable()) {
+        if (AppearanceSettings.isThemeAutoSwitchAvailable()) {
             boolean is_dark = (newConfig.uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
-            if ((Settings.getTheme() == 0) == is_dark) {
+            if ((AppearanceSettings.getTheme() == 0) == is_dark) {
                 if (is_dark) {
-                    Settings.putTheme(Settings.THEME_DARK);
+                    AppearanceSettings.putTheme(AppearanceSettings.THEME_DARK);
                 } else {
-                    Settings.putTheme(Settings.THEME_LIGHT);
+                    AppearanceSettings.putTheme(AppearanceSettings.THEME_LIGHT);
                 }
                 ((EhApplication) getApplication()).recreate();
             }

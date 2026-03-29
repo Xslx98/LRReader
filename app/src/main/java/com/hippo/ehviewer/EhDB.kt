@@ -16,6 +16,8 @@
 
 package com.hippo.ehviewer
 
+import com.hippo.ehviewer.settings.AppearanceSettings
+
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
@@ -85,7 +87,7 @@ object EhDB {
     fun initialize(context: Context) {
         sHasOldDB = context.getDatabasePath("data").exists()
         sDatabase = AppDatabase.getInstance(context)
-        MAX_HISTORY_COUNT = Settings.getHistoryInfoSize()
+        MAX_HISTORY_COUNT = AppearanceSettings.getHistoryInfoSize()
     }
 
     @JvmStatic

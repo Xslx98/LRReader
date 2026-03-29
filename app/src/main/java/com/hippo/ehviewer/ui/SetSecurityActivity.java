@@ -26,7 +26,7 @@ import android.widget.CheckBox;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import com.hippo.ehviewer.R;
-import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.SecuritySettings;
 import com.hippo.widget.lockpattern.LockPatternUtils;
 import com.hippo.widget.lockpattern.LockPatternView;
 import com.hippo.lib.yorozuya.ViewUtils;
@@ -53,7 +53,7 @@ public class SetSecurityActivity extends ToolbarActivity implements View.OnClick
         mSet = ViewUtils.$$(this, R.id.set);
         mFingerprint = (CheckBox) ViewUtils.$$(this, R.id.fingerprint_checkbox);
 
-        String pattern = Settings.getSecurity();
+        String pattern = SecuritySettings.getSecurity();
         if (!TextUtils.isEmpty(pattern)) {
             mPatternView.setPattern(LockPatternView.DisplayMode.Correct,
                     LockPatternUtils.stringToPattern(pattern));
@@ -65,7 +65,7 @@ public class SetSecurityActivity extends ToolbarActivity implements View.OnClick
             // noinspection ResourceType
             if (fingerprintManager != null && hasEnrolledFingerprints(fingerprintManager)) {
                 mFingerprint.setVisibility(View.VISIBLE);
-                mFingerprint.setChecked(Settings.getEnableFingerprint());
+                mFingerprint.setChecked(SecuritySettings.getEnableFingerprint());
             }
         }
 
@@ -112,8 +112,8 @@ public class SetSecurityActivity extends ToolbarActivity implements View.OnClick
                 } else {
                     security = mPatternView.getPatternString();
                 }
-                Settings.putSecurity(security);
-                Settings.putEnableFingerprint(mFingerprint.getVisibility() == View.VISIBLE &&
+                SecuritySettings.putSecurity(security);
+                SecuritySettings.putEnableFingerprint(mFingerprint.getVisibility() == View.VISIBLE &&
                         mFingerprint.isChecked() && !security.isEmpty());
             }
             finish();

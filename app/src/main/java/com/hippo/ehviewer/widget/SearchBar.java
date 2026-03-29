@@ -48,6 +48,7 @@ import androidx.cardview.widget.CardView;
 
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.AppearanceSettings;
 import com.hippo.ehviewer.client.EhTagDatabase;
 import com.hippo.view.ViewTransition;
 import com.hippo.lib.yorozuya.AnimationUtils;
@@ -121,7 +122,7 @@ public class SearchBar extends CardView implements View.OnClickListener,
     }
 
     private void init(Context context) {
-        showTranslation = Settings.getShowTagTranslations();
+        showTranslation = AppearanceSettings.getShowTagTranslations();
         mSearchDatabase = SearchDatabase.getInstance(getContext());
 
         LayoutInflater inflater = LayoutInflater.from(context);

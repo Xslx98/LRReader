@@ -16,6 +16,8 @@
 
 package com.hippo.ehviewer;
 
+import com.hippo.ehviewer.settings.DownloadSettings;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ComponentCallbacks2;
@@ -239,8 +241,8 @@ public class EhApplication extends RecordingApplication {
         IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
             // Check no media file
             try {
-                UniFile downloadLocation = Settings.getDownloadLocation();
-                if (Settings.getMediaScan()) {
+                UniFile downloadLocation = DownloadSettings.getDownloadLocation();
+                if (DownloadSettings.getMediaScan()) {
                     CommonOperations.removeNoMediaFile(downloadLocation);
                 } else {
                     CommonOperations.ensureNoMediaFile(downloadLocation);
@@ -265,7 +267,7 @@ public class EhApplication extends RecordingApplication {
             try {
                 File oldBase = new File(getExternalFilesDir(null), "download");
                 if (oldBase.exists() && oldBase.isDirectory()) {
-                    UniFile newBase = Settings.getDownloadLocation();
+                    UniFile newBase = DownloadSettings.getDownloadLocation();
                     if (newBase != null && "file".equals(newBase.getUri().getScheme())) {
                         File newBaseFile = new File(newBase.getUri().getPath());
                         File[] children = oldBase.listFiles();

@@ -37,6 +37,7 @@ import com.hippo.easyrecyclerview.MarginItemDecoration;
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.AppearanceSettings;
 import com.hippo.ehviewer.client.EhCacheKeyFactory;
 import com.hippo.ehviewer.client.EhUtils;
 import com.hippo.ehviewer.client.data.GalleryInfo;
@@ -123,7 +124,7 @@ abstract class GalleryAdapter extends RecyclerView.Adapter<GalleryHolder> {
         switch (type) {
             default:
             case GalleryAdapter.TYPE_LIST: {
-                int columnWidth = mResources.getDimensionPixelOffset(Settings.getDetailSizeResId());
+                int columnWidth = mResources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId());
                 mLayoutManager.setColumnSize(columnWidth);
                 mLayoutManager.setStrategy(AutoStaggeredGridLayoutManager.STRATEGY_MIN_SIZE);
                 if (null != mGirdDecoration) {
@@ -142,7 +143,7 @@ abstract class GalleryAdapter extends RecyclerView.Adapter<GalleryHolder> {
                 break;
             }
             case GalleryAdapter.TYPE_GRID: {
-                int columnWidth = mResources.getDimensionPixelOffset(Settings.getThumbSizeResId());
+                int columnWidth = mResources.getDimensionPixelOffset(AppearanceSettings.getThumbSizeResId());
                 mLayoutManager.setColumnSize(columnWidth);
                 mLayoutManager.setStrategy(AutoStaggeredGridLayoutManager.STRATEGY_SUITABLE_SIZE);
                 if (null != mListDecoration) {
@@ -172,10 +173,10 @@ abstract class GalleryAdapter extends RecyclerView.Adapter<GalleryHolder> {
         switch (mType) {
             default:
             case TYPE_LIST:
-                columnWidth = mResources.getDimensionPixelOffset(Settings.getDetailSizeResId());
+                columnWidth = mResources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId());
                 break;
             case TYPE_GRID:
-                columnWidth = mResources.getDimensionPixelOffset(Settings.getThumbSizeResId());
+                columnWidth = mResources.getDimensionPixelOffset(AppearanceSettings.getThumbSizeResId());
                 break;
         }
         mLayoutManager.setColumnSize(columnWidth);
@@ -233,7 +234,7 @@ abstract class GalleryAdapter extends RecyclerView.Adapter<GalleryHolder> {
                 // LANraragi doesn't use E-Hentai categories - hide badge
                 holder.category.setVisibility(View.GONE);
                 holder.posted.setText(gi.posted);
-                if (gi.pages == 0 || !Settings.getShowGalleryPages()) {
+                if (gi.pages == 0 || !AppearanceSettings.getShowGalleryPages()) {
                     holder.pages.setText(null);
                     holder.pages.setVisibility(View.GONE);
                 } else {

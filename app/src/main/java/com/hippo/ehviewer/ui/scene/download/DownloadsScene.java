@@ -83,6 +83,8 @@ import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.DownloadSettings;
+import com.hippo.ehviewer.settings.AppearanceSettings;
 import com.hippo.ehviewer.callBack.DownloadSearchCallback;
 import com.hippo.ehviewer.client.EhConfig;
 import com.hippo.ehviewer.client.EhUtils;
@@ -288,7 +290,7 @@ public class DownloadsScene extends ToolbarScene
         AssertUtils.assertNotNull(context);
         mDownloadManager = EhApplication.getDownloadManager(context);
         mDownloadManager.addDownloadInfoListener(this);
-        canPagination = Settings.getDownloadPagination();
+        canPagination = DownloadSettings.getDownloadPagination();
         if (savedInstanceState == null) {
             onInit();
         } else {
@@ -343,7 +345,7 @@ public class DownloadsScene extends ToolbarScene
 //        filterByCategory();
         updateTitle();
         updatePaginationIndicator();
-        Settings.putRecentDownloadLabel(mLabel);
+        DownloadSettings.putRecentDownloadLabel(mLabel);
         queryUnreadSpiderInfo();
     }
 
@@ -385,7 +387,7 @@ public class DownloadsScene extends ToolbarScene
 
     private void onInit() {
         if (!handleArguments(getArguments())) {
-            mLabel = Settings.getRecentDownloadLabel();
+            mLabel = DownloadSettings.getRecentDownloadLabel();
             updateForLabel();
         }
     }
@@ -536,7 +538,7 @@ public class DownloadsScene extends ToolbarScene
             }
         });
         mLayoutManager = new AutoStaggeredGridLayoutManager(0, StaggeredGridLayoutManager.VERTICAL);
-        mLayoutManager.setColumnSize(resources.getDimensionPixelOffset(Settings.getDetailSizeResId()));
+        mLayoutManager.setColumnSize(resources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId()));
         mLayoutManager.setStrategy(AutoStaggeredGridLayoutManager.STRATEGY_MIN_SIZE);
 
         // 设置拖拽动画器
@@ -711,7 +713,7 @@ public class DownloadsScene extends ToolbarScene
         super.onResume();
         // Refresh column size to pick up detail_size changes from settings
         if (mLayoutManager != null) {
-            int columnWidth = getResources().getDimensionPixelOffset(Settings.getDetailSizeResId());
+            int columnWidth = getResources().getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId());
             mLayoutManager.setColumnSize(columnWidth);
             if (mRecyclerView != null) {
                 mRecyclerView.requestLayout();
@@ -1159,7 +1161,7 @@ public class DownloadsScene extends ToolbarScene
 
     private void setDragEnable(FloatingActionButton fab) {
         DRAG_ENABLE = !DRAG_ENABLE;
-        Settings.setDragDownloadGallery(DRAG_ENABLE);
+        DownloadSettings.setDragDownloadGallery(DRAG_ENABLE);
         Context context = getEHContext();
         if (null == context) return;
         if (DRAG_ENABLE) {

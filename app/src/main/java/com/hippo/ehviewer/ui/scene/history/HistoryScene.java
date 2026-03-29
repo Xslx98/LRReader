@@ -52,6 +52,7 @@ import com.hippo.easyrecyclerview.MarginItemDecoration;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.AppearanceSettings;
 import com.hippo.ehviewer.client.EhCacheKeyFactory;
 import com.hippo.ehviewer.client.EhUtils;
 import com.hippo.ehviewer.client.data.GalleryInfo;
@@ -132,7 +133,7 @@ public class HistoryScene extends ToolbarScene
         mRecyclerView.setItemAnimator(animator);
         mLayoutManager = new AutoStaggeredGridLayoutManager(
                 0, StaggeredGridLayoutManager.VERTICAL);
-        mLayoutManager.setColumnSize(resources.getDimensionPixelOffset(Settings.getDetailSizeResId()));
+        mLayoutManager.setColumnSize(resources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId()));
         mLayoutManager.setStrategy(AutoStaggeredGridLayoutManager.STRATEGY_MIN_SIZE);
         mRecyclerView.setLayoutManager(mLayoutManager);
         mRecyclerView.setSelector(Ripple.generateRippleDrawable(context, !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme), new ColorDrawable(Color.TRANSPARENT)));
@@ -172,7 +173,7 @@ public class HistoryScene extends ToolbarScene
         super.onResume();
         // Refresh column size to pick up detail_size changes from settings
         if (mLayoutManager != null) {
-            int columnWidth = getResources().getDimensionPixelOffset(Settings.getDetailSizeResId());
+            int columnWidth = getResources().getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId());
             mLayoutManager.setColumnSize(columnWidth);
             if (mRecyclerView != null) {
                 mRecyclerView.requestLayout();

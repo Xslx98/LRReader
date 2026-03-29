@@ -1,5 +1,7 @@
 package com.hippo.ehviewer.download;
 
+import com.hippo.ehviewer.settings.DownloadSettings;
+
 import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
@@ -312,7 +314,7 @@ public class LRRDownloadWorker {
     }
 
     private File getDownloadDir() {
-        // Use the same download location as SpiderDen (Settings.getDownloadLocation())
+        // Use the same download location as SpiderDen (DownloadSettings.getDownloadLocation())
         // so downloaded files are visible in the user-configured directory
         try {
             UniFile uniDir = SpiderDen.getGalleryDownloadDir(mInfo);

@@ -25,6 +25,8 @@ import androidx.annotation.Nullable;
 import com.hippo.beerbelly.SimpleDiskCache;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.DownloadSettings;
+import com.hippo.ehviewer.settings.ReadingSettings;
 import com.hippo.ehviewer.client.EhCacheKeyFactory;
 import com.hippo.ehviewer.client.EhUtils;
 import com.hippo.ehviewer.client.data.GalleryInfo;
@@ -59,7 +61,7 @@ public final class SpiderDen {
 
     public static void initialize(Context context) {
         sCache = new SimpleDiskCache(new File(context.getCacheDir(), "image"),
-                MathUtils.clamp(Settings.getReadCacheSize(), 40, 640) * 1024 * 1024);
+                MathUtils.clamp(ReadingSettings.getReadCacheSize(), 40, 640) * 1024 * 1024);
     }
 
     public static class StartWithFilenameFilter implements FilenameFilter {
@@ -77,7 +79,7 @@ public final class SpiderDen {
     }
 
     public static UniFile getGalleryDownloadDir(GalleryInfo galleryInfo) {
-        UniFile dir = Settings.getDownloadLocation();
+        UniFile dir = DownloadSettings.getDownloadLocation();
         if (dir != null) {
             // Read from DB
             String dirname = EhDB.getDownloadDirname(galleryInfo.gid);

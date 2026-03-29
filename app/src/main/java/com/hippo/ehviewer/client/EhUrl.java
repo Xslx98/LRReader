@@ -20,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.AppearanceSettings;
 import com.hippo.ehviewer.client.data.GalleryInfo;
 import com.hippo.network.UrlBuilder;
 import java.util.List;
@@ -90,7 +91,7 @@ public class EhUrl {
     }
 
     public static String getHost() {
-        switch (Settings.getGallerySite()) {
+        switch (AppearanceSettings.getGallerySite()) {
             default:
             case SITE_E:
                 return HOST_E;
@@ -104,7 +105,7 @@ public class EhUrl {
     }
 
     public static String getMyTag() {
-        switch (Settings.getGallerySite()) {
+        switch (AppearanceSettings.getGallerySite()) {
             default:
             case SITE_E:
                 return URL_MY_TAGS_E;
@@ -114,7 +115,7 @@ public class EhUrl {
     }
 
     public static String getFavoritesUrl() {
-        switch (Settings.getGallerySite()) {
+        switch (AppearanceSettings.getGallerySite()) {
             default:
             case SITE_E:
                 return URL_FAVORITES_E;
@@ -124,7 +125,7 @@ public class EhUrl {
     }
 
     public static String getApiUrl() {
-        switch (Settings.getGallerySite()) {
+        switch (AppearanceSettings.getGallerySite()) {
             default:
             case SITE_E:
                 return API_E;
@@ -134,7 +135,7 @@ public class EhUrl {
     }
 
     public static String getReferer() {
-        switch (Settings.getGallerySite()) {
+        switch (AppearanceSettings.getGallerySite()) {
             default:
             case SITE_E:
                 return REFERER_E;
@@ -144,7 +145,7 @@ public class EhUrl {
     }
 
     public static String getOrigin() {
-        switch (Settings.getGallerySite()) {
+        switch (AppearanceSettings.getGallerySite()) {
             default:
             case SITE_E:
                 return ORIGIN_E;
@@ -154,7 +155,7 @@ public class EhUrl {
     }
 
     public static String getUConfigUrl() {
-        switch (Settings.getGallerySite()) {
+        switch (AppearanceSettings.getGallerySite()) {
             default:
             case SITE_E:
                 return URL_UCONFIG_E;
@@ -164,7 +165,7 @@ public class EhUrl {
     }
 
     public static String getMyTagsUrl() {
-        switch (Settings.getGallerySite()) {
+        switch (AppearanceSettings.getGallerySite()) {
             default:
             case SITE_E:
                 return URL_MY_TAGS_E;
@@ -217,7 +218,7 @@ public class EhUrl {
      */
     @NonNull
     public static String getPopularUrl() {
-        switch (Settings.getGallerySite()) {
+        switch (AppearanceSettings.getGallerySite()) {
             default:
             case SITE_E:
                 return URL_POPULAR_E;
@@ -237,7 +238,7 @@ public class EhUrl {
          * 里站没排行榜入口？？？
          * 妈的绝了
          */
-//        switch (Settings.getGallerySite()) {
+//        switch (AppearanceSettings.getGallerySite()) {
 //            default:
 //            case SITE_E:
 //                return URL_TOP_LIST_E;
@@ -257,7 +258,7 @@ public class EhUrl {
 
     @NonNull
     public static String getImageSearchUrl() {
-        switch (Settings.getGallerySite()) {
+        switch (AppearanceSettings.getGallerySite()) {
             default:
             case SITE_E:
                 return URL_IMAGE_SEARCH_E;
@@ -268,7 +269,7 @@ public class EhUrl {
 
     @NonNull
     public static String getWatchedUrl() {
-        switch (Settings.getGallerySite()) {
+        switch (AppearanceSettings.getGallerySite()) {
             default:
             case SITE_E:
                 return URL_WATCHED_E;
@@ -278,7 +279,7 @@ public class EhUrl {
     }
 
     public static String getThumbUrlPrefix() {
-        switch (Settings.getGallerySite()) {
+        switch (AppearanceSettings.getGallerySite()) {
             default:
             //case SITE_E:
                 return URL_PREFIX_THUMB_E;

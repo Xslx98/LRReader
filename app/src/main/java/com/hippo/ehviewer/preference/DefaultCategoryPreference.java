@@ -22,6 +22,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.settings.AppearanceSettings;
 import com.hippo.ehviewer.widget.CategoryTable;
 import com.hippo.preference.DialogPreference;
 import com.hippo.lib.yorozuya.ViewUtils;
@@ -60,14 +61,14 @@ public class DefaultCategoryPreference extends DialogPreference {
     protected void onDialogCreated(AlertDialog dialog) {
         super.onDialogCreated(dialog);
         mCategoryTable = (CategoryTable) ViewUtils.$$(dialog, R.id.category_table);
-        mCategoryTable.setCategory(Settings.getDefaultCategories());
+        mCategoryTable.setCategory(AppearanceSettings.getDefaultCategories());
     }
 
     @Override
     protected void onDialogClosed(boolean positiveResult) {
         super.onDialogClosed(positiveResult);
         if (null != mCategoryTable && positiveResult) {
-            Settings.putDefaultCategories(mCategoryTable.getCategory());
+            AppearanceSettings.putDefaultCategories(mCategoryTable.getCategory());
         }
         mCategoryTable = null;
     }
