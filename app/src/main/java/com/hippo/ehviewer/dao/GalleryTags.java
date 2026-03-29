@@ -6,7 +6,7 @@ import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 import androidx.room.TypeConverters;
 
-import com.google.gson.Gson;
+import org.json.JSONObject;
 
 /**
  * Entity mapped to table "Gallery_Tags".
@@ -99,8 +99,26 @@ public class GalleryTags {
 
 	@Override
 	public String toString() {
-		Gson gson = new Gson();
-		return gson.toJson(this);
+		try {
+			JSONObject json = new JSONObject();
+			json.put("gid", gid);
+			json.put("rows", rows);
+			json.put("artist", artist);
+			json.put("cosplayer", cosplayer);
+			json.put("character", character);
+			json.put("female", female);
+			json.put("group", group);
+			json.put("language", language);
+			json.put("male", male);
+			json.put("misc", misc);
+			json.put("mixed", mixed);
+			json.put("other", other);
+			json.put("parody", parody);
+			json.put("reclass", reclass);
+			return json.toString();
+		} catch (Exception e) {
+			return "{\"gid\":" + gid + "}";
+		}
 	}
 
 }

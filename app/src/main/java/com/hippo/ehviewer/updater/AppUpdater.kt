@@ -5,8 +5,7 @@ import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.core.content.ContextCompat
-import com.google.gson.JsonObject
-import com.google.gson.JsonParser
+import org.json.JSONObject
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.BuildConfig
@@ -32,14 +31,14 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.Volatile
 
 class AppUpdater(private val name: String, source: okio.BufferedSource) {
-    private val updateData: JsonObject
+    private val updateData: JSONObject
 
 
     init {
-        val jsonObject: JsonObject = try {
-            JsonParser.parseString(source.readUtf8()).asJsonObject
+        val jsonObject: JSONObject = try {
+            JSONObject(source.readUtf8())
         } catch (e: Exception) {
-            JsonObject()
+            JSONObject()
         }
         updateData = jsonObject
     }
@@ -139,7 +138,7 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
                     val needUpdate: Boolean
                     // 使用FastJSON的parseObject方法解析JSON内容
                     val tempUpdateData =
-                        JsonParser.parseString(FileUtils.read(tempDataFile)).asJsonObject
+                        JSONObject(FileUtils.read(tempDataFile))
 
                     // Check new data
                     needUpdate = if (instance != null) {
@@ -184,8 +183,8 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
         }
 
         private fun checkData(
-            updateData: JsonObject?,
-            tempUpdateData: JsonObject,
+            updateData: JSONObject?,
+            tempUpdateData: JSONObject,
             manualChecking: Boolean
         ): Boolean {
             try {
@@ -193,15 +192,15 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
                 val currentVersionCode = BuildConfig.VERSION_CODE
                 var updateResult: Int
                 if (updateData != null) {
-                    val version1 = updateData.get(VERSION)?.asString ?: "0.0.0"
-                    val version2 = tempUpdateData.get(VERSION)?.asString ?: "0.0.0"
+                    val version1 = updateData.optString(VERSION, "0.0.0")
+                    val version2 = tempUpdateData.optString(VERSION, "0.0.0")
                     updateResult = compareVersion(version1, version2)
                     if (updateResult < 0) {
                         return true
                     } else if (updateResult == 0) {
-                        if (updateData.get(VERSION_CODE).asInt < tempUpdateData.get(
-                                VERSION_CODE
-                            ).asInt
+                        if (updateData.optInt(VERSION_CODE, 0) < tempUpdateData.optInt(
+                                VERSION_CODE, 0
+                            )
                         ) {
                             return true
                         }
@@ -210,10 +209,10 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
                         return false
                     }
                 }
-                updateResult = compareVersion(currentVersion, tempUpdateData.get(VERSION).asString)
+                updateResult = compareVersion(currentVersion, tempUpdateData.optString(VERSION, "0.0.0"))
                 return if (updateResult < 0) {
                     true
-                } else currentVersionCode < tempUpdateData.get(VERSION_CODE).asInt
+                } else currentVersionCode < tempUpdateData.optInt(VERSION_CODE, 0)
             } catch (e: Exception) {
                 Log.e(TAG, e.message, e)
                 Analytics.recordException(e)

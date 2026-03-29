@@ -4,6 +4,7 @@ apply plugin: "org.jetbrains.kotlin.plugin.parcelize"
 apply plugin: "org.jetbrains.kotlin.plugin.serialization"
 apply plugin: "com.google.devtools.ksp"
 apply plugin: "com.jaredsburrows.license"
+apply plugin: "io.gitlab.arturbosch.detekt"
 if (file('google-services.json').exists()) {
     apply plugin: 'com.google.gms.google-services'
     apply plugin: 'com.google.firebase.crashlytics'
@@ -55,10 +56,10 @@ android {
             if (propsFile.exists()) {
                 props.load(new FileInputStream(propsFile))
             }
-            storeFile rootProject.file(props.getProperty('RELEASE_STORE_FILE', 'keystore/release.jks'))
-            storePassword props.getProperty('RELEASE_STORE_PASSWORD', '')
-            keyAlias props.getProperty('RELEASE_KEY_ALIAS', 'lrreader')
-            keyPassword props.getProperty('RELEASE_KEY_PASSWORD', '')
+            storeFile rootProject.file(System.getenv('RELEASE_STORE_FILE') ?: props.getProperty('RELEASE_STORE_FILE', 'keystore/release.jks'))
+            storePassword System.getenv('RELEASE_STORE_PASSWORD') ?: props.getProperty('RELEASE_STORE_PASSWORD', '')
+            keyAlias System.getenv('RELEASE_KEY_ALIAS') ?: props.getProperty('RELEASE_KEY_ALIAS', 'lrreader')
+            keyPassword System.getenv('RELEASE_KEY_PASSWORD') ?: props.getProperty('RELEASE_KEY_PASSWORD', '')
         }
     }
 
@@ -97,11 +98,14 @@ ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
 
+detekt {
+    config.setFrom("$rootDir/config/detekt/detekt.yml")
+    buildUponDefaultConfig = true
+    source.setFrom("src/main/java")
+}
+
 dependencies {
     implementation 'com.google.android.material:material:1.13.0'
-
-    // JSON parsing (legacy EH data model — see ROADMAP §14.3)
-    implementation 'com.google.code.gson:gson:2.11.0'
 
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "androidx.activity:activity:1.10.1"

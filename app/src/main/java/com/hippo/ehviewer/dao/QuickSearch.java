@@ -5,7 +5,8 @@ import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
-import com.google.gson.JsonObject;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Entity mapped to table "QUICK_SEARCH".
@@ -73,31 +74,35 @@ public class QuickSearch {
 	@Override
 	public String toString() { return name; }
 
-	public JsonObject toJson() {
-		JsonObject object = new JsonObject();
-		object.addProperty("name", name);
-		object.addProperty("mode", mode);
-		object.addProperty("category", category);
-		object.addProperty("keyword", keyword);
-		object.addProperty("advanceSearch", advanceSearch);
-		object.addProperty("minRating", minRating);
-		object.addProperty("pageFrom", pageFrom);
-		object.addProperty("pageTo", pageTo);
-		object.addProperty("time", time);
-		return object;
+	public JSONObject toJson() {
+		try {
+			JSONObject object = new JSONObject();
+			object.put("name", name);
+			object.put("mode", mode);
+			object.put("category", category);
+			object.put("keyword", keyword);
+			object.put("advanceSearch", advanceSearch);
+			object.put("minRating", minRating);
+			object.put("pageFrom", pageFrom);
+			object.put("pageTo", pageTo);
+			object.put("time", time);
+			return object;
+		} catch (JSONException e) {
+			return new JSONObject();
+		}
 	}
 
-	public static QuickSearch quickSearchFromJson(JsonObject object) {
+	public static QuickSearch quickSearchFromJson(JSONObject object) {
 		QuickSearch search = new QuickSearch();
-		search.name = object.has("name") ? object.get("name").getAsString() : null;
-		search.mode = object.has("mode") ? object.get("mode").getAsInt() : 0;
-		search.category = object.has("category") ? object.get("category").getAsInt() : 0;
-		search.keyword = object.has("keyword") ? object.get("keyword").getAsString() : null;
-		search.advanceSearch = object.has("advanceSearch") ? object.get("advanceSearch").getAsInt() : 0;
-		search.minRating = object.has("minRating") ? object.get("minRating").getAsInt() : 0;
-		search.pageFrom = object.has("pageFrom") ? object.get("pageFrom").getAsInt() : 0;
-		search.pageTo = object.has("pageTo") ? object.get("pageTo").getAsInt() : 0;
-		search.time = object.has("time") ? object.get("time").getAsLong() : 0;
+		search.name = object.optString("name", null);
+		search.mode = object.optInt("mode", 0);
+		search.category = object.optInt("category", 0);
+		search.keyword = object.optString("keyword", null);
+		search.advanceSearch = object.optInt("advanceSearch", 0);
+		search.minRating = object.optInt("minRating", 0);
+		search.pageFrom = object.optInt("pageFrom", 0);
+		search.pageTo = object.optInt("pageTo", 0);
+		search.time = object.optLong("time", 0);
 		return search;
 	}
 

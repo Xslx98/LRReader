@@ -9,9 +9,6 @@ import android.util.Base64;
 
 import androidx.annotation.Nullable;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.client.data.GalleryInfo;
 import com.hippo.ehviewer.client.parser.GalleryDetailUrlParser;
@@ -22,25 +19,30 @@ import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene;
 import com.hippo.scene.Announcer;
 import com.hippo.util.ExceptionUtils;
 
+import org.json.JSONObject;
+
 
 public class ClipboardUtil {
 
-    private static final JsonObject defaultInfo ;
+    private static final JSONObject defaultInfo;
 
     static {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("favoriteName", (String) null);
-        jsonObject.addProperty("favoriteSlot", -2);
-        jsonObject.addProperty("pages", 0);
-        jsonObject.addProperty("rated", false);
-        jsonObject.add("simpleTags", null);
-        jsonObject.addProperty("thumbWidth", 0);
-        jsonObject.addProperty("thumbHeight", 0);
-        jsonObject.addProperty("spanSize", 0);
-        jsonObject.addProperty("spanIndex", 0);
-        jsonObject.addProperty("spanGroupIndex", 0);
-
-        defaultInfo = jsonObject;
+        try {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("favoriteName", JSONObject.NULL);
+            jsonObject.put("favoriteSlot", -2);
+            jsonObject.put("pages", 0);
+            jsonObject.put("rated", false);
+            jsonObject.put("simpleTags", JSONObject.NULL);
+            jsonObject.put("thumbWidth", 0);
+            jsonObject.put("thumbHeight", 0);
+            jsonObject.put("spanSize", 0);
+            jsonObject.put("spanIndex", 0);
+            jsonObject.put("spanGroupIndex", 0);
+            defaultInfo = jsonObject;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
@@ -97,27 +99,25 @@ public class ClipboardUtil {
 
         clearClipboard();
         try {
-            JsonObject object = JsonParser.parseString(galleryString).getAsJsonObject();
+            JSONObject object = new JSONObject(galleryString);
 
-            if (object == null){
-                return null;
-            }
             // Merge default values
-            for (String key : defaultInfo.keySet()) {
+            java.util.Iterator<String> keys = defaultInfo.keys();
+            while (keys.hasNext()) {
+                String key = keys.next();
                 if (!object.has(key)) {
-                    object.add(key, defaultInfo.get(key));
+                    object.put(key, defaultInfo.get(key));
                 }
             }
-            object.addProperty("time", System.currentTimeMillis());
-            return new Gson().fromJson(object, GalleryInfo.class);
+            object.put("time", System.currentTimeMillis());
+            return GalleryInfo.galleryInfoFromJson(object);
         } catch (Exception e) {
             return null;
         }
     }
 
     private static String reduceString(GalleryInfo galleryInfo){
-        Gson gson = new Gson();
-        JsonObject favoriteJson = JsonParser.parseString(gson.toJson(galleryInfo)).getAsJsonObject();
+        JSONObject favoriteJson = galleryInfo.toJson();
 
         favoriteJson.remove("favoriteName");
         favoriteJson.remove("pages");
@@ -131,7 +131,6 @@ public class ClipboardUtil {
         favoriteJson.remove("favoriteSlot");
 
         String s = favoriteJson.toString();
-        String s1 = new String(Base64.encode(s.getBytes(),Base64.DEFAULT));
 
         return GZIPUtils.compress(s);
     }

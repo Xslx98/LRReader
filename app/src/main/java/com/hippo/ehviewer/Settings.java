@@ -91,7 +91,11 @@ public class Settings {
         if (s.isEmpty()){
             return null;
         }
-        return GalleryInfo.galleryInfoFromJson(com.google.gson.JsonParser.parseString(s).getAsJsonObject());
+        try {
+            return GalleryInfo.galleryInfoFromJson(new org.json.JSONObject(s));
+        } catch (org.json.JSONException e) {
+            return null;
+        }
     }
 
     public static void putArchiverDownload(long downloadId,GalleryInfo info){

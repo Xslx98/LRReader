@@ -11,7 +11,7 @@ import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
-import com.google.gson.JsonObject
+import org.json.JSONObject
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhRequestBuilder
@@ -71,20 +71,20 @@ class UpdateDialog(private val activity: Activity) {
         }
     }
 
-    fun showUpdateDialog(tempUpdateData: JsonObject) {
+    fun showUpdateDialog(tempUpdateData: JSONObject) {
         try {
-            val version = tempUpdateData.get(AppUpdater.VERSION).asString
-            val mustUpdate = tempUpdateData.has(AppUpdater.MUST_UPDATE) && tempUpdateData.get(AppUpdater.MUST_UPDATE).asBoolean
-            val updateContent = tempUpdateData.getAsJsonObject(AppUpdater.UPDATE_CONTENT)
-            val title = updateContent.get(AppUpdater.TITLE).asString
-            val contentArr = updateContent.getAsJsonArray(AppUpdater.CONTENT)
-            val contentSts: Array<String?> = arrayOfNulls(contentArr.size())
+            val version = tempUpdateData.optString(AppUpdater.VERSION, "")
+            val mustUpdate = tempUpdateData.has(AppUpdater.MUST_UPDATE) && tempUpdateData.optBoolean(AppUpdater.MUST_UPDATE, false)
+            val updateContent = tempUpdateData.getJSONObject(AppUpdater.UPDATE_CONTENT)
+            val title = updateContent.optString(AppUpdater.TITLE, "")
+            val contentArr = updateContent.getJSONArray(AppUpdater.CONTENT)
+            val contentSts: Array<String?> = arrayOfNulls(contentArr.length())
 
-            for (index in 0 until contentArr.size()) {
-                contentSts[index] = contentArr.get(index).asString
+            for (index in 0 until contentArr.length()) {
+                contentSts[index] = contentArr.getString(index)
             }
 
-            val downloadUrl = updateContent.get(AppUpdater.FILE_DOWNLOAD_URL).asString
+            val downloadUrl = updateContent.optString(AppUpdater.FILE_DOWNLOAD_URL, "")
             ContextCompat.getMainExecutor(activity).execute {
                 if (!isActivityAlive()) {
                     return@execute
