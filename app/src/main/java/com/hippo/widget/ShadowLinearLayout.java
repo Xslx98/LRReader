@@ -49,12 +49,12 @@ public class ShadowLinearLayout extends LinearLayout {
     }
 
     private void init(Context context) {
-        // TODO not only 2dp
+        // LEGACY (upstream): only 2dp shadow supported
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             setOutlineProvider(ViewOutlineProvider.BOUNDS);
             setElevation(LayoutUtils.dp2pix(context, 2));
         } else {
-            setShadow((NinePatchDrawable) context.getResources().getDrawable(R.drawable.shadow_2dp)); // TODO draktheme
+            setShadow((NinePatchDrawable) context.getResources().getDrawable(R.drawable.shadow_2dp)); // LEGACY (upstream): dark theme shadow not implemented
         }
     }
 

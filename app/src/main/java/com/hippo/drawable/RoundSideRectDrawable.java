@@ -58,7 +58,7 @@ public class RoundSideRectDrawable extends Drawable {
         } else if (width == height) {
             path.addCircle(bounds.centerX(), bounds.centerY(), width / 2, Path.Direction.CW);
         } else {
-            // TODO
+            // LEGACY: height > width case not needed in current UI layouts
         }
     }
 

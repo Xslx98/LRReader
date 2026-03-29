@@ -136,20 +136,20 @@ public class ArchiveGalleryProvider extends GalleryProvider2 {
   @NonNull
   @Override
   public String getImageFilename(int index) {
-    // TODO
+    // LEGACY: archive entries lack original filenames; return index as fallback
     return Integer.toString(index);
   }
 
   @Override
   public boolean save(int index, @NonNull UniFile file) {
-    // TODO
+    // LEGACY: save not implemented for archive stream-based entries
     return false;
   }
 
   @Nullable
   @Override
   public UniFile save(int index, @NonNull UniFile dir, @NonNull String filename) {
-    // TODO
+    // LEGACY: save-to-dir not implemented for archive stream-based entries
     return null;
   }
 
