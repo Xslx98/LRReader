@@ -1,11 +1,15 @@
-name: Build
+name: Build & Test
 
 on:
   push:
-    branches: [ BiLi_PC_Gamer ]
+    branches: [ main ]
   pull_request:
-    branches: [ BiLi_PC_Gamer ]
+    branches: [ main ]
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -20,13 +24,34 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 21
+          cache: gradle
 
       - name: Build
         run: |
           chmod +x ./gradlew
-          ./gradlew app:assembleDebug
-          
-      - name: Upload Artifact
+          ./gradlew app:assembleAppReleaseDebug
+
+      - name: Unit Tests
+        run: ./gradlew app:testAppReleaseDebugUnitTest
+
+      - name: Lint
+        run: ./gradlew app:lintAppReleaseDebug
+
+      - name: Upload Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: app/build/reports/tests/
+
+      - name: Upload Lint Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-reports
+          path: app/build/reports/lint-results-*.html
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Build
