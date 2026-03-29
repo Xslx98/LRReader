@@ -43,7 +43,7 @@ import androidx.room.TypeConverters
         ServerProfile::class
     ],
     version = 9,
-    exportSchema = false
+    exportSchema = true
 )
 @TypeConverters(DateConverter::class)
 abstract class AppDatabase : RoomDatabase() {
