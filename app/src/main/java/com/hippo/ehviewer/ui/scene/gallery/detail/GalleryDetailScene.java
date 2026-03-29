@@ -250,37 +250,11 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
     private TextView mHeart;
     @Nullable
     private TextView mHeartOutline;
-    @Nullable
-    private TextView mTorrent;
-    @Nullable
-    private TextView mHaH;
-    @Nullable
-    private TextView mArchiver;
-    @Nullable
-    private TextView mShare;
-    @Nullable
-    private TextView mRate;
-    @Nullable
-    private TextView mSimilar;
-    @Nullable
-    private TextView mSearchCover;
     // Tags
     @Nullable
     private LinearLayout mTags;
     @Nullable
     private TextView mNoTags;
-    // Comments
-    @Nullable
-    private LinearLayout mComments;
-    @Nullable
-    private TextView mCommentsText;
-    // Previews
-    @Nullable
-    private View mPreviews;
-    @Nullable
-    private SimpleGridAutoSpanLayout mGridLayout;
-    @Nullable
-    private TextView mPreviewText;
     // Progress
     @Nullable
     private View mProgress;
@@ -306,29 +280,13 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
     private GalleryDetail mGalleryDetail;
     private int mRequestId = IntIdGenerator.INVALID_ID;
 
-    private Pair<String, String>[] mTorrentList;
-
-    private String mArchiveFormParamOr;
-    private Pair<String, String>[] mArchiveList;
-
     @Nullable
     private Map<String, String> properties;
 
     @State
     private int mState = STATE_INIT;
-
-    private boolean mModifingFavorites;
-
-    @Nullable
-    private AlertDialog downLoadAlertDialog;
-    @Nullable
-    private View torrentDownloadView;
-    @Nullable
-    private TextView downloadProgress;
     private GalleryUpdateDialog myUpdateDialog;
     private GalleryListSceneDialog tagDialog;
-    @Nullable
-    private Handler torrentDownloadHandler = null;
 
     private boolean useNetWorkLoadThumb = false;
 
@@ -470,8 +428,6 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
             properties.put("Title", mGalleryInfo.title);
             properties.put("Time", dateFormat.format(date));
         }
-
-        torrentDownloadHandler = new TorrentDownloadHandler();
     }
 
     private void onInit() {
@@ -520,8 +476,6 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         } else {
             mDownloadState = DownloadInfo.STATE_INVALID;
         }
-
-        torrentDownloadView = View.inflate(context, R.layout.notification_contentview, null);
 
         View view = inflater.inflate(R.layout.scene_gallery_detail, container, false);
 
@@ -595,8 +549,6 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         mRead.setOnClickListener(this);
         mTitle.setOnClickListener(this);
 
-
-
         mUploader.setOnLongClickListener(this);
 
 
@@ -615,42 +567,10 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         mHeartGroup = ViewUtils.$$(mActions, R.id.heart_group);
         mHeart = (TextView) ViewUtils.$$(mHeartGroup, R.id.heart);
         mHeartOutline = (TextView) ViewUtils.$$(mHeartGroup, R.id.heart_outline);
-        mTorrent = (TextView) ViewUtils.$$(mActions, R.id.torrent);
-        mHaH = (TextView) ViewUtils.$$(mActions, R.id.h_h);
-        mArchiver = (TextView) ViewUtils.$$(mActions, R.id.archiver);
-        mShare = (TextView) ViewUtils.$$(mActions, R.id.share);
-        mRate = (TextView) ViewUtils.$$(mActions, R.id.rate);
-        mSimilar = (TextView) ViewUtils.$$(mActions, R.id.similar);
-        mSearchCover = (TextView) ViewUtils.$$(mActions, R.id.search_cover);
         Ripple.addRipple(mHeartGroup, isDarkTheme);
-        Ripple.addRipple(mTorrent, isDarkTheme);
-        Ripple.addRipple(mHaH, isDarkTheme);
-        Ripple.addRipple(mArchiver, isDarkTheme);
-        Ripple.addRipple(mShare, isDarkTheme);
-        Ripple.addRipple(mRate, isDarkTheme);
-        Ripple.addRipple(mSimilar, isDarkTheme);
-        Ripple.addRipple(mSearchCover, isDarkTheme);
         mHeartGroup.setOnClickListener(this);
         mHeartGroup.setOnLongClickListener(this);
-        mTorrent.setOnClickListener(this);
-        mHaH.setOnClickListener(this);
-        mArchiver.setOnClickListener(this);
-        mShare.setOnClickListener(this);
-        mRate.setOnClickListener(this);
-        mSimilar.setOnClickListener(this);
-        mSearchCover.setOnClickListener(this);
         ensureActionDrawable(context);
-
-        // === LANraragi: Hide E-Hentai-specific actions ===
-        mTorrent.setVisibility(View.GONE);
-        mHaH.setVisibility(View.GONE);
-        mArchiver.setVisibility(View.GONE);
-        mRate.setVisibility(View.GONE);      // Replace with touch-to-rate on stars
-        mSimilar.setVisibility(View.GONE);
-        mSearchCover.setVisibility(View.GONE);
-        mShare.setVisibility(View.GONE);     // No share in LANraragi
-        // mRating and mRatingText kept visible for LANraragi rating display
-        // === end LANraragi ===
 
         // Make rating bar interactive: touch/drag to rate, release to confirm
         mRating.setIsIndicator(false);
@@ -667,28 +587,12 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                 mRatingText.setText(com.hippo.ehviewer.client.lrr.data.LRRArchive.buildRatingEmoji(Math.round(newRating)));
             }
 
-            // Write to LANraragi: GET original tags -> modify rating -> PUT back
-            Context ctx = getEHContext();
-            if (ctx == null) return;
-            saveRatingToServer(ctx, arcid, newRating, null);
+            // Write to LANraragi server
+            RatingHelper.saveRatingToServer(arcid, newRating, null);
         });
 
         mTags = (LinearLayout) ViewUtils.$$(belowHeader, R.id.tags);
         mNoTags = (TextView) ViewUtils.$$(mTags, R.id.no_tags);
-
-        mComments = (LinearLayout) ViewUtils.$$(belowHeader, R.id.comments);
-        mCommentsText = (TextView) ViewUtils.$$(mComments, R.id.comments_text);
-        // LANraragi: hide comments section (no LRR equivalent)
-        mComments.setVisibility(View.GONE);
-        if (mCommentsText != null) mCommentsText.setVisibility(View.GONE);
-
-        mPreviews = ViewUtils.$$(belowHeader, R.id.previews);
-        mGridLayout = (SimpleGridAutoSpanLayout) ViewUtils.$$(mPreviews, R.id.grid_layout);
-        mPreviewText = (TextView) ViewUtils.$$(mPreviews, R.id.preview_text);
-        // LANraragi: hide previews section
-        mPreviews.setVisibility(View.GONE);
-        Ripple.addRipple(mPreviews, isDarkTheme);
-        mPreviews.setOnClickListener(this);
 
         mProgress = ViewUtils.$$(mainView, R.id.progress);
 
@@ -764,23 +668,9 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         mHeartGroup = null;
         mHeart = null;
         mHeartOutline = null;
-        mTorrent = null;
-        mHaH = null;
-        mArchiver = null;
-        mShare = null;
-        mRate = null;
-        mSimilar = null;
-        mSearchCover = null;
 
         mTags = null;
         mNoTags = null;
-
-        mComments = null;
-        mCommentsText = null;
-
-        mPreviews = null;
-        mGridLayout = null;
-        mPreviewText = null;
 
         mProgress = null;
 
@@ -905,35 +795,6 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         Drawable heartOutline = DrawableManager.getVectorDrawable(context, R.drawable.v_heart_outline_primary_x48);
         if (mHeartOutline != null) {
             setActionDrawable(mHeartOutline, heartOutline);
-        }
-        Drawable torrent = DrawableManager.getVectorDrawable(context, R.drawable.v_utorrent_primary_x48);
-        if (mTorrent != null) {
-            setActionDrawable(mTorrent, torrent);
-        }
-        Drawable archiver = DrawableManager.getVectorDrawable(context, R.drawable.v_archiver_primary_x48);
-        if (mArchiver != null) {
-            setActionDrawable(mArchiver, archiver);
-        }
-        Drawable archiveHH = DrawableManager.getVectorDrawable(context, R.drawable.v_archive_hh_primary_x48);
-        if (mHaH != null) {
-            setActionDrawable(mHaH, archiveHH);
-        }
-
-        Drawable share = DrawableManager.getVectorDrawable(context, R.drawable.v_share_primary_x48);
-        if (mShare != null) {
-            setActionDrawable(mShare, share);
-        }
-        Drawable rate = DrawableManager.getVectorDrawable(context, R.drawable.v_thumb_up_primary_x48);
-        if (mRate != null) {
-            setActionDrawable(mRate, rate);
-        }
-        Drawable similar = DrawableManager.getVectorDrawable(context, R.drawable.v_similar_primary_x48);
-        if (mSimilar != null) {
-            setActionDrawable(mSimilar, similar);
-        }
-        Drawable searchCover = DrawableManager.getVectorDrawable(context, R.drawable.v_file_find_primary_x48);
-        if (mSearchCover != null) {
-            setActionDrawable(mSearchCover, searchCover);
         }
     }
 
@@ -1074,7 +935,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         }
         if (mThumb == null || mTitle == null || mUploader == null || mCategory == null ||
                 mLanguage == null || mPages == null || mSize == null || mPosted == null ||
-                mFavoredTimes == null || mRatingText == null || mRating == null || mTorrent == null) {
+                mFavoredTimes == null || mRatingText == null || mRating == null) {
             return;
         }
         Resources resources = getResources2();
@@ -1122,15 +983,9 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
             mRating.setRating(0);
         }
 
-        if (resources != null) {
-            mTorrent.setText(resources.getString(R.string.torrent_count, gd.torrentCount));
-        }
-
         updateFavoriteDrawable();
         bindArchiverProgress(gd);
         bindTags(gd.tags);
-        bindComments(gd.comments != null ? gd.comments.comments : null);
-        bindPreviews(gd);
     }
 
     public void bindArchiverProgress(GalleryDetail gd) {
@@ -1229,171 +1084,6 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         }
     }
 
-    private void bindComments(GalleryComment[] comments) {
-        Context context = getEHContext();
-        LayoutInflater inflater = getLayoutInflater2();
-        if (null == context || null == mComments || null == mCommentsText) {
-            return;
-        }
-
-        mComments.removeViews(0, mComments.getChildCount() - 1);
-
-        final int maxShowCount = 2;
-        if (comments == null || comments.length == 0) {
-            mCommentsText.setText(R.string.no_comments);
-            return;
-        } else if (comments.length <= maxShowCount) {
-            mCommentsText.setText(R.string.no_more_comments);
-        } else {
-            mCommentsText.setText(R.string.more_comment);
-        }
-
-        int length = Math.min(maxShowCount, comments.length);
-        for (int i = 0; i < length; i++) {
-            GalleryComment comment = comments[i];
-            View v = inflater.inflate(R.layout.item_gallery_comment, mComments, false);
-            mComments.addView(v, i);
-            TextView user = v.findViewById(R.id.user);
-            user.setText(comment.user);
-            TextView time = v.findViewById(R.id.time);
-            time.setText(ReadableTime.getTimeAgo(comment.time));
-            ObservedTextView c = v.findViewById(R.id.comment);
-            c.setMaxLines(5);
-            c.setText(Html.fromHtml(comment.comment, Html.FROM_HTML_MODE_LEGACY,
-                    new URLImageGetter(c, ServiceRegistry.INSTANCE.getClientModule().getConaco()), null));
-        }
-    }
-
-    @SuppressLint("SetTextI18n")
-    private void bindPreviews(GalleryDetail gd) {
-        LayoutInflater inflater = getLayoutInflater2();
-        Resources resources = getResources2();
-        if (null == resources || null == mGridLayout || null == mPreviewText) {
-            return;
-        }
-
-        mGridLayout.removeAllViews();
-        PreviewSet previewSet = gd.previewSet;
-
-        // LANraragi doesn't provide preview data - guard against null
-        if (previewSet == null || previewSet.size() == 0 || gd.previewPages <= 0) {
-            mPreviewText.setText(R.string.no_previews);
-            return;
-        }
-
-        int columnWidth = resources.getDimensionPixelOffset(AppearanceSettings.getThumbSizeResId());
-        mGridLayout.setColumnSize(columnWidth);
-        mGridLayout.setStrategy(SimpleGridAutoSpanLayout.STRATEGY_SUITABLE_SIZE);
-
-        final int totalSize = previewSet.size();
-        final long gid = gd.gid;
-
-        if (gd.previewPages == 1 ) {
-            mPreviewText.setText(R.string.no_more_previews);
-        } else {
-            mPreviewText.setText(R.string.more_previews);
-        }
-
-        // 只创建限制数量的视图，大幅减少视图数量以提升滚动性能
-        for (int i = 0; i < totalSize; i++) {
-            View view = inflater.inflate(R.layout.item_gallery_preview, mGridLayout, false);
-            LoadImageView image = view.findViewById(R.id.image);
-            image.setTag(R.id.index, i);
-            image.setOnClickListener(this);
-            TextView text = view.findViewById(R.id.text);
-            text.setText(Integer.toString(previewSet.getPosition(i) + 1));
-            mGridLayout.addView(view);
-        }
-
-        // 分批加载图片：优先加载前12个（约前2行，通常可见），延迟加载后面的
-        // 这样可以减少初始加载压力，提升滚动性能
-        final int immediateLoadCount = 12; // 立即加载的数量
-
-        for (int i = 0; i < totalSize; i++) {
-            View view = mGridLayout.getChildAt(i);
-            if (view == null) {
-                continue;
-            }
-
-            LoadImageView image = view.findViewById(R.id.image);
-            if (image == null) {
-                continue;
-            }
-
-            final int index = i;
-
-            if (i < immediateLoadCount) {
-                // 前12个：立即加载（通常可见区域）
-                image.post(() -> {
-                    if (image.getParent() != null && mGridLayout != null) {
-                        previewSet.load(image, gid, index);
-                    }
-                });
-            } else {
-                // 后面的：延迟加载，根据索引调整延迟时间
-                int delay = (i - immediateLoadCount) * 50; // 每个延迟50ms
-                delay = Math.min(delay, 500); // 最大延迟500ms
-                handler.postDelayed(() -> {
-                    if (image.getParent() != null && mGridLayout != null) {
-                        previewSet.load(image, gid, index);
-                    }
-                }, delay);
-            }
-        }
-    }
-
-
-    private static String getRatingText(float rating, Resources resources) {
-        int resId;
-        switch (Math.round(rating * 2)) {
-            case 0:
-                resId = R.string.rating0;
-                break;
-            case 1:
-                resId = R.string.rating1;
-                break;
-            case 2:
-                resId = R.string.rating2;
-                break;
-            case 3:
-                resId = R.string.rating3;
-                break;
-            case 4:
-                resId = R.string.rating4;
-                break;
-            case 5:
-                resId = R.string.rating5;
-                break;
-            case 6:
-                resId = R.string.rating6;
-                break;
-            case 7:
-                resId = R.string.rating7;
-                break;
-            case 8:
-                resId = R.string.rating8;
-                break;
-            case 9:
-                resId = R.string.rating9;
-                break;
-            case 10:
-                resId = R.string.rating10;
-                break;
-            default:
-                resId = R.string.rating_none;
-                break;
-        }
-
-        return resources.getString(resId);
-    }
-
-    private String getAllRatingText(float rating, int ratingCount) {
-        Resources resources = getResources2();
-        assert resources != null;
-        AssertUtils.assertNotNull(resources);
-        return resources.getString(R.string.rating_text, getRatingText(rating, resources), rating, ratingCount);
-    }
-
     private void setTransitionName() {
         long gid = getGid();
 
@@ -1439,88 +1129,16 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                     }
                     break;
                 case R.id.action_lrr_delete:
-                    showDeleteConfirmDialog();
+                    DeleteArchiveHelper.show(getActivity2(), mGalleryInfo, title -> {
+                        showTip(getString(R.string.lrr_delete_success, title), LENGTH_LONG);
+                        onBackPressed();
+                    });
                     break;
             }
             return true;
         });
     }
 
-    @Nullable
-    private static String getArtist(GalleryTagGroup[] tagGroups) {
-        if (null == tagGroups) {
-            return null;
-        }
-        for (GalleryTagGroup tagGroup : tagGroups) {
-            if ("artist".equals(tagGroup.groupName) && tagGroup.size() > 0) {
-                return tagGroup.getTagAt(0);
-            }
-        }
-        return null;
-    }
-
-    private void showSimilarGalleryList() {
-        GalleryDetail gd = mGalleryDetail;
-        if (null == gd) {
-            return;
-        }
-        String keyword = EhUtils.extractTitle(gd.title);
-        if (null != keyword) {
-            ListUrlBuilder lub = new ListUrlBuilder();
-            lub.setMode(ListUrlBuilder.MODE_NORMAL);
-            lub.setKeyword("\"" + keyword + "\"");
-            GalleryListScene.startScene(this, lub);
-            return;
-        }
-        String artist = getArtist(gd.tags);
-        if (null != artist) {
-            ListUrlBuilder lub = new ListUrlBuilder();
-            lub.setMode(ListUrlBuilder.MODE_TAG);
-            lub.setKeyword("artist:" + artist);
-            GalleryListScene.startScene(this, lub);
-            return;
-        }
-        if (null != gd.uploader) {
-            ListUrlBuilder lub = new ListUrlBuilder();
-            lub.setMode(ListUrlBuilder.MODE_UPLOADER);
-            lub.setKeyword(gd.uploader);
-            GalleryListScene.startScene(this, lub);
-        }
-    }
-
-    private void showCoverGalleryList() {
-        Context context = getEHContext();
-        if (null == context) {
-            return;
-        }
-        long gid = getGid();
-        if (-1L == gid) {
-            return;
-        }
-        File temp = AppConfig.createTempFile();
-        if (null == temp) {
-            return;
-        }
-        BeerBelly beerBelly = ServiceRegistry.INSTANCE.getClientModule().getConaco().getBeerBelly();
-
-        OutputStream os = null;
-        try {
-            os = new FileOutputStream(temp);
-            if (beerBelly.pullFromDiskCache(EhCacheKeyFactory.getThumbKey(gid), os)) {
-//            if (beerBelly.pullRawFromDisk(EhCacheKeyFactory.getThumbKey(gid), os)) {
-                ListUrlBuilder lub = new ListUrlBuilder();
-                lub.setMode(ListUrlBuilder.MODE_IMAGE_SEARCH);
-                lub.setImagePath(temp.getPath());
-                lub.setUseSimilarityScan(true);
-                lub.setShowExpunged(true);
-                GalleryListScene.startScene(this, lub);
-            }
-        } catch (FileNotFoundException e) {
-            // Ignore
-        } finally {
-            IOUtils.closeQuietly(os);
-        }
-    }
 
     @Override
     public void onClick(View v) {
@@ -1582,260 +1200,14 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         } else if (mHeartGroup == v) {
             // LANraragi: Show category selection dialog
             if (mGalleryDetail != null) {
-                final String arcid = mGalleryDetail.token;
-                final String serverUrl = com.hippo.ehviewer.client.lrr.LRRAuthManager.getServerUrl();
-                if (arcid == null || serverUrl == null) return;
-
-                Toast.makeText(activity, R.string.lrr_loading_categories, Toast.LENGTH_SHORT).show();
-                com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
-                    try {
-                        okhttp3.OkHttpClient client = com.hippo.ehviewer.ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
-                        @SuppressWarnings("unchecked")
-                        java.util.List<com.hippo.ehviewer.client.lrr.data.LRRCategory> categories =
-                                (java.util.List<com.hippo.ehviewer.client.lrr.data.LRRCategory>) kotlinx.coroutines.BuildersKt.runBlocking(
-                                        kotlin.coroutines.EmptyCoroutineContext.INSTANCE,
-                                        (scope, cont) -> com.hippo.ehviewer.client.lrr.LRRCategoryApi.getCategories(client, serverUrl, cont)
-                                );
-
-                        // Filter to static categories only (dynamic categories can't have archives added)
-                        java.util.List<com.hippo.ehviewer.client.lrr.data.LRRCategory> staticCats = new java.util.ArrayList<>();
-                        for (com.hippo.ehviewer.client.lrr.data.LRRCategory cat : categories) {
-                            if (cat.search == null || cat.search.isEmpty()) {
-                                staticCats.add(cat);
+                CategoryDialogHelper.showCategoryDialog(activity, mGalleryDetail,
+                        (isFavorited, favoriteName) -> {
+                            if (mGalleryDetail != null) {
+                                mGalleryDetail.isFavorited = isFavorited;
+                                mGalleryDetail.favoriteName = favoriteName;
+                                updateFavoriteDrawable();
                             }
-                        }
-
-                        if (staticCats.isEmpty()) {
-                            new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                                    Toast.makeText(activity, R.string.lrr_no_static_categories, Toast.LENGTH_SHORT).show());
-                            return;
-                        }
-
-                        String[] names = new String[staticCats.size()];
-                        boolean[] checked = new boolean[staticCats.size()];
-                        for (int i = 0; i < staticCats.size(); i++) {
-                            com.hippo.ehviewer.client.lrr.data.LRRCategory cat = staticCats.get(i);
-                            names[i] = cat.name + " (" + (cat.archives != null ? cat.archives.size() : 0) + ")";
-                            checked[i] = cat.archives != null && cat.archives.contains(arcid);
-                        }
-                        final boolean[] originalChecked = checked.clone();
-
-                        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                            // Build a scrollable CheckBox list for category selection
-                            android.widget.LinearLayout container = new android.widget.LinearLayout(activity);
-                            container.setOrientation(android.widget.LinearLayout.VERTICAL);
-                            int pad = (int) (16 * activity.getResources().getDisplayMetrics().density);
-                            container.setPadding(pad, pad / 2, pad, pad / 2);
-
-                            android.widget.CheckBox[] checkBoxes = new android.widget.CheckBox[staticCats.size()];
-                            for (int i = 0; i < staticCats.size(); i++) {
-                                android.widget.CheckBox cb = new android.widget.CheckBox(activity);
-                                cb.setText(names[i]);
-                                cb.setChecked(checked[i]);
-                                final int idx = i;
-                                cb.setOnCheckedChangeListener((btn, isChecked1) -> checked[idx] = isChecked1);
-                                checkBoxes[i] = cb;
-                                container.addView(cb);
-                            }
-
-                            android.widget.ScrollView scrollView = new android.widget.ScrollView(activity);
-                            scrollView.addView(container);
-                            // Limit max height to 60% of screen
-                            int screenH = activity.getResources().getDisplayMetrics().heightPixels;
-                            scrollView.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
-                                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-                                    Math.min(android.widget.FrameLayout.LayoutParams.WRAP_CONTENT, (int) (screenH * 0.6))));
-
-                            new androidx.appcompat.app.AlertDialog.Builder(activity)
-                                    .setTitle(R.string.lrr_add_to_category)
-                                    .setView(scrollView)
-                                    .setPositiveButton(android.R.string.ok, (dialog1, which) -> {
-                                        // Apply changes in background
-                                        com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
-                                            try {
-                                                okhttp3.OkHttpClient c = com.hippo.ehviewer.ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
-                                                for (int i = 0; i < staticCats.size(); i++) {
-                                                    if (checked[i] != originalChecked[i]) {
-                                                        String catId = staticCats.get(i).id;
-                                                        if (checked[i]) {
-                                                            com.hippo.ehviewer.client.lrr.LRRCoroutineHelper.runSuspend(
-                                                                    (scope, cont) -> com.hippo.ehviewer.client.lrr.LRRCategoryApi.addToCategory(c, serverUrl, catId, arcid, cont)
-                                                            );
-                                                        } else {
-                                                            com.hippo.ehviewer.client.lrr.LRRCoroutineHelper.runSuspend(
-                                                                    (scope, cont) -> com.hippo.ehviewer.client.lrr.LRRCategoryApi.removeFromCategory(c, serverUrl, catId, arcid, cont)
-                                                            );
-                                                        }
-                                                    }
-                                                }
-                                                // Compute new favorite status from final checked state
-                                                java.util.List<String> newFavNames = new java.util.ArrayList<>();
-                                                for (int i = 0; i < staticCats.size(); i++) {
-                                                    if (checked[i]) {
-                                                        newFavNames.add(staticCats.get(i).name);
-                                                    }
-                                                }
-                                                new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                                                    if (mGalleryDetail != null) {
-                                                        mGalleryDetail.isFavorited = !newFavNames.isEmpty();
-                                                        if (newFavNames.isEmpty()) {
-                                                            mGalleryDetail.favoriteName = null;
-                                                        } else if (newFavNames.size() == 1) {
-                                                            mGalleryDetail.favoriteName = newFavNames.get(0);
-                                                        } else {
-                                                            mGalleryDetail.favoriteName = newFavNames.get(0) + getString(R.string.lrr_category_info_suffix) + newFavNames.size() + getString(R.string.lrr_category_count_suffix);
-                                                        }
-                                                        updateFavoriteDrawable();
-                                                    }
-                                                    Toast.makeText(activity, R.string.lrr_category_updated_toast, Toast.LENGTH_SHORT).show();
-                                                });
-                                            } catch (Exception e) {
-                                                new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                                                        Toast.makeText(activity,
-                                                                com.hippo.ehviewer.client.lrr.LRRApiUtilsKt.friendlyError(e),
-                                                                Toast.LENGTH_SHORT).show());
-                                            }
-                                        });
-                                    })
-                                    .setNegativeButton(android.R.string.cancel, null)
-                                    .setNeutralButton(R.string.lrr_category_create_inline, (dialog1, which) -> {
-                                        // Show inline create dialog
-                                        android.widget.EditText input = new android.widget.EditText(activity);
-                                        input.setHint(R.string.lrr_category_name_hint);
-                                        input.setSingleLine(true);
-                                        int px = (int) (24 * activity.getResources().getDisplayMetrics().density);
-                                        android.widget.FrameLayout frame = new android.widget.FrameLayout(activity);
-                                        frame.setPadding(px, px / 2, px, 0);
-                                        frame.addView(input);
-                                        new androidx.appcompat.app.AlertDialog.Builder(activity)
-                                                .setTitle(R.string.lrr_category_create)
-                                                .setView(frame)
-                                                .setPositiveButton(android.R.string.ok, (d2, w2) -> {
-                                                    String catName = input.getText().toString().trim();
-                                                    if (catName.isEmpty()) {
-                                                        Toast.makeText(activity, R.string.lrr_category_name_empty, Toast.LENGTH_SHORT).show();
-                                                        return;
-                                                    }
-                                                    com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
-                                                        try {
-                                                            okhttp3.OkHttpClient c2 = com.hippo.ehviewer.ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
-                                                            // Create category
-                                                            String newCatId = (String) com.hippo.ehviewer.client.lrr.LRRCoroutineHelper.runSuspend(
-                                                                    (scope, cont) -> com.hippo.ehviewer.client.lrr.LRRCategoryApi.createCategory(c2, serverUrl, catName, null, false, cont)
-                                                            );
-                                                            // Add current archive to it
-                                                            com.hippo.ehviewer.client.lrr.LRRCoroutineHelper.runSuspend(
-                                                                    (scope, cont) -> com.hippo.ehviewer.client.lrr.LRRCategoryApi.addToCategory(c2, serverUrl, newCatId, arcid, cont)
-                                                            );
-                                                            new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                                                                Toast.makeText(activity, R.string.lrr_category_created, Toast.LENGTH_SHORT).show();
-                                                                if (mGalleryDetail != null) {
-                                                                    mGalleryDetail.isFavorited = true;
-                                                                    mGalleryDetail.favoriteName = catName;
-                                                                    updateFavoriteDrawable();
-                                                                }
-                                                            });
-                                                        } catch (Exception ex) {
-                                                            new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                                                                    Toast.makeText(activity,
-                                                                            com.hippo.ehviewer.client.lrr.LRRApiUtilsKt.friendlyError(ex),
-                                                                            Toast.LENGTH_SHORT).show());
-                                                        }
-                                                    });
-                                                })
-                                                .setNegativeButton(android.R.string.cancel, null)
-                                                .show();
-                                    })
-                                    .show();
                         });
-                    } catch (Exception e) {
-                        new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                                Toast.makeText(activity,
-                                        com.hippo.ehviewer.client.lrr.LRRApiUtilsKt.friendlyError(e),
-                                        Toast.LENGTH_SHORT).show());
-                    }
-                });
-            }
-        } else if (mShare == v) {
-            String url = getGalleryDetailUrl();
-            if (url != null) {
-                AppHelper.share(activity, url);
-            }
-        } else if (mTorrent == v) {
-            if (mGalleryDetail != null) {
-                TorrentListDialogHelper helper = new TorrentListDialogHelper();
-                Dialog dialog = new AlertDialog.Builder(mContext)
-                        .setTitle(R.string.torrents)
-                        .setView(R.layout.dialog_torrent_list)
-                        .setOnDismissListener(helper)
-                        .show();
-                helper.setDialog(dialog, mGalleryDetail.torrentUrl, ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient());
-            }
-        } else if (mHaH == v) {
-            if (mGalleryDetail == null) {
-                return;
-            }
-            if (mGalleryDetail.apiUid < 0) {
-                showTip(R.string.sign_in_first, LENGTH_LONG);
-                return;
-            }
-            ArchiveListDialogHelper helper = new ArchiveListDialogHelper();
-            Dialog dialog = new AlertDialog.Builder(mContext)
-                    .setTitle(R.string.dialog_archive_title)
-                    .setView(R.layout.dialog_archive_list)
-                    .setOnDismissListener(helper)
-                    .show();
-            helper.setDialog(dialog, mGalleryDetail.archiveUrl);
-        } else if (mArchiver == v) {
-            if (mGalleryDetail == null) {
-                return;
-            }
-            if (mGalleryDetail.apiUid < 0) {
-                showTip(R.string.sign_in_first, LENGTH_LONG);
-                return;
-            }
-
-            ArchiverDownloadDialog archiverDownloadDialog = new ArchiverDownloadDialog(mGalleryDetail, this);
-            archiverDownloadDialog.showDialog();
-
-        } else if (mRate == v) {
-            if (mGalleryDetail == null) {
-                return;
-            }
-            if (mGalleryDetail.apiUid < 0) {
-                showTip(R.string.sign_in_first, LENGTH_LONG);
-                return;
-            }
-            RateDialogHelper helper = new RateDialogHelper();
-            Dialog dialog = new AlertDialog.Builder(mContext)
-                    .setTitle(R.string.rate)
-                    .setView(R.layout.dialog_rate)
-                    .setNegativeButton(android.R.string.cancel, null)
-                    .setPositiveButton(android.R.string.ok, helper)
-                    .show();
-            helper.setDialog(dialog, mGalleryDetail.rating);
-        } else if (mSimilar == v) {
-            showSimilarGalleryList();
-        } else if (mSearchCover == v) {
-            showCoverGalleryList();
-        } else if (mComments == v) {
-            if (mGalleryDetail == null) {
-                return;
-            }
-            Bundle args = new Bundle();
-            args.putLong(GalleryCommentsScene.KEY_API_UID, mGalleryDetail.apiUid);
-            args.putString(GalleryCommentsScene.KEY_API_KEY, mGalleryDetail.apiKey);
-            args.putLong(GalleryCommentsScene.KEY_GID, mGalleryDetail.gid);
-            args.putString(GalleryCommentsScene.KEY_TOKEN, mGalleryDetail.token);
-            args.putParcelable(GalleryCommentsScene.KEY_COMMENT_LIST, mGalleryDetail.comments);
-            startScene(new Announcer(GalleryCommentsScene.class)
-                    .setArgs(args)
-                    .setRequestCode(this, REQUEST_CODE_COMMENT_GALLERY));
-        } else if (mPreviews == v) {
-            if (null != mGalleryDetail) {
-                Bundle args = new Bundle();
-                args.putParcelable(GalleryPreviewsScene.KEY_GALLERY_INFO, mGalleryDetail);
-                startScene(new Announcer(GalleryPreviewsScene.class).setArgs(args));
             }
         } else if (mTitle == v) {
             if (mGalleryDetail != null && mGalleryDetail.title != null) {
@@ -1944,15 +1316,16 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
             onDownload();
             return true;
         } else if (v == mHeartGroup) {
-            if (mGalleryDetail != null && !mModifingFavorites) {
-                if (!(EhDB.containLocalFavorites(mGalleryDetail.gid) || mGalleryDetail.isFavorited)) {
-                    mModifingFavorites = true;
-                    CommonOperations.addToFavorites(activity, mGalleryDetail,
-                            new ModifyFavoritesListener(mContext,
-                                    activity.getStageId(), getTag(), false), true);
-                }
-                // Update UI
-                updateFavoriteDrawable();
+            // Long press also shows category dialog (same as click)
+            if (mGalleryDetail != null) {
+                CategoryDialogHelper.showCategoryDialog(activity, mGalleryDetail,
+                        (isFavorited, favoriteName) -> {
+                            if (mGalleryDetail != null) {
+                                mGalleryDetail.isFavorited = isFavorited;
+                                mGalleryDetail.favoriteName = favoriteName;
+                                updateFavoriteDrawable();
+                            }
+                        });
             }
         } else {
             String tag = (String) v.getTag(R.id.tag);
@@ -1998,35 +1371,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
 
     @Override
     public void onBackPressed() {
-        if (mViewTransition != null && mThumb != null &&
-                mViewTransition.getShownViewIndex() == 0 && mThumb.isShown()) {
-            int[] location = new int[2];
-            mThumb.getLocationInWindow(location);
-            // Only show transaction when thumb can be seen
-            if (location[1] + mThumb.getHeight() > 0) {
-                setTransitionName();
-                finish(new ExitTransaction(mThumb));
-                return;
-            }
-        }
         finish();
-    }
-
-    @Override
-    protected void onSceneResult(int requestCode, int resultCode, Bundle data) {
-        if (requestCode == REQUEST_CODE_COMMENT_GALLERY) {
-            if (resultCode != RESULT_OK || data == null) {
-                return;
-            }
-            GalleryCommentList comments = data.getParcelable(GalleryCommentsScene.KEY_COMMENT_LIST);
-            if (mGalleryDetail == null || comments == null) {
-                return;
-            }
-            mGalleryDetail.comments = comments;
-            bindComments(comments.comments);
-        } else {
-            super.onSceneResult(requestCode, resultCode, data);
-        }
     }
 
     private void updateDownloadText() {
@@ -2163,737 +1508,4 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         adjustViewVisibility(STATE_NORMAL, true);
     }
 
-    private void onRateGallerySuccess(RateGalleryParser.Result result) {
-        if (mGalleryDetail != null) {
-            mGalleryDetail.rating = result.rating;
-            mGalleryDetail.ratingCount = result.ratingCount;
-        }
-
-        // Update UI
-        if (mRatingText != null && mRating != null) {
-            mRatingText.setText(getAllRatingText(result.rating, result.ratingCount));
-            mRating.setRating(result.rating);
-        }
-    }
-
-    private void onModifyFavoritesSuccess(boolean addOrRemove) {
-        mModifingFavorites = false;
-        if (mGalleryDetail != null) {
-            mGalleryDetail.isFavorited = !addOrRemove && mGalleryDetail.favoriteName != null;
-            updateFavoriteDrawable();
-        }
-    }
-
-    private void onModifyFavoritesFailure(boolean addOrRemove) {
-        mModifingFavorites = false;
-    }
-
-    private void onModifyFavoritesCancel(boolean addOrRemove) {
-        mModifingFavorites = false;
-    }
-
-    /**
-     * 2022/4/7
-     * 心情不好
-     * 这个方法写的跟屎一样
-     */
-    @SuppressLint("SetTextI18n")
-    private void showTorrentDownloadDialog(TorrentDownloadMessage message, boolean success) {
-        Context context = getEHContext();
-        if (!isAdded()) {
-            return;
-        }
-        if (message.progress == 100 || !success) {
-            if (torrentDownloadView == null) {
-                return;
-            }
-            View detail = torrentDownloadView.findViewById(R.id.download_detail);
-            View progressView = torrentDownloadView.findViewById(R.id.progress_view);
-            detail.setVisibility(View.VISIBLE);
-            progressView.setVisibility(View.GONE);
-
-            TextView state = torrentDownloadView.findViewById(R.id.download_state);
-            TextView path = torrentDownloadView.findViewById(R.id.download_path);
-            Button leftButton = torrentDownloadView.findViewById(R.id.leader);
-            Button rightButton = torrentDownloadView.findViewById(R.id.action);
-
-            path.setText(getString(R.string.download_torrent_path, message.path));
-
-            rightButton.setText(R.string.sure);
-
-            rightButton.setOnClickListener(l -> dismissTorrentDialog());
-
-            if (success) {
-                leftButton.setText(R.string.open_directory);
-                leftButton.setOnClickListener(l -> {
-                    dismissTorrentDialog();
-                    FileUtils.openAssignFolder(message.dir, context);
-                });
-                state.setText(getString(R.string.download_torrent_state) + getString(R.string.download_state_finish));
-            } else {
-                leftButton.setText(R.string.try_again);
-                leftButton.setOnClickListener(l -> {
-                    dismissTorrentDialog();
-                    onClick(mTorrent);
-                });
-                state.setText(getString(R.string.download_torrent_state) + getString(R.string.download_state_failed));
-            }
-            if (downLoadAlertDialog != null) {
-                downLoadAlertDialog.setCancelable(true);
-            }
-        } else {
-            String progressString = message.progress + "%";
-            if (downLoadAlertDialog != null && downLoadAlertDialog.isShowing()) {
-                if (downloadProgress != null) {
-                    downloadProgress.setText(progressString);
-                }
-                return;
-            }
-            if (torrentDownloadView == null) {
-                return;
-            }
-            View detail = torrentDownloadView.findViewById(R.id.download_detail);
-            View progressView = torrentDownloadView.findViewById(R.id.progress_view);
-            detail.setVisibility(View.GONE);
-            progressView.setVisibility(View.VISIBLE);
-
-            downloadProgress = torrentDownloadView.findViewById(R.id.download_progress);
-
-            downloadProgress.setText(progressString);
-        }
-
-        TextView tName = torrentDownloadView.findViewById(R.id.download_name);
-        tName.setText(message.name);
-        assert context != null;
-        if (downLoadAlertDialog != null) {
-            downLoadAlertDialog.show();
-        } else {
-            if (torrentDownloadView.getParent() != null) {
-                ((android.view.ViewGroup) torrentDownloadView.getParent()).removeView(torrentDownloadView);
-            }
-            downLoadAlertDialog = new AlertDialog.Builder(context)
-                    .setView(torrentDownloadView)
-                    .setCancelable(false)
-                    .show();
-        }
-
-    }
-
-    private void dismissTorrentDialog() {
-        if (downLoadAlertDialog == null) {
-            return;
-        }
-        // 检查 Fragment 是否仍然附加到 Activity，避免在 Activity 销毁后关闭对话框导致崩溃
-        if (!isAdded() || getActivity() == null) {
-            downLoadAlertDialog = null;
-            return;
-        }
-        try {
-            if (downLoadAlertDialog.isShowing()) {
-                downLoadAlertDialog.dismiss();
-            }
-        } catch (IllegalArgumentException e) {
-            // 对话框已经不再附加到窗口管理器，忽略异常
-            ExceptionUtils.throwIfFatal(e);
-        }
-        downLoadAlertDialog = null;
-    }
-
-    @SuppressLint("HandlerLeak")
-    private class TorrentDownloadHandler extends Handler {
-        public TorrentDownloadHandler() {
-            super(Looper.getMainLooper());
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            // 检查 Fragment 是否仍然附加，避免在 Activity 销毁后处理消息导致崩溃
-            if (!isAdded() || getActivity() == null) {
-                return;
-            }
-            TorrentDownloadMessage message = msg.getData().getParcelable("torrent_download_message");
-            if (message.progress == 200) {
-                dismissTorrentDialog();
-                String text = mContext.getString(R.string.torrent_exist, message.path);
-                Toast.makeText(getEHContext(), text, Toast.LENGTH_SHORT).show();
-                return;
-            }
-            if (message.failed) {
-                dismissTorrentDialog();
-                showTorrentDownloadDialog(message, false);
-                return;
-            }
-            showTorrentDownloadDialog(message, true);
-        }
-    }
-
-    private record ExitTransaction(View mThumb) implements TransitionHelper {
-
-        @Override
-            public boolean onTransition(Context context,
-                                        FragmentTransaction transaction, Fragment exit, Fragment enter) {
-                if (!(enter instanceof GalleryListScene) && !(enter instanceof DownloadsScene) &&
-                        !(enter instanceof FavoritesScene) && !(enter instanceof HistoryScene)) {
-                    return false;
-                }
-
-                String transitionName = ViewCompat.getTransitionName(mThumb);
-                if (transitionName != null) {
-                    exit.setSharedElementReturnTransition(
-                            TransitionInflater.from(context).inflateTransition(R.transition.trans_move));
-                    exit.setExitTransition(
-                            TransitionInflater.from(context).inflateTransition(R.transition.trans_fade));
-                    enter.setSharedElementEnterTransition(
-                            TransitionInflater.from(context).inflateTransition(R.transition.trans_move));
-                    enter.setEnterTransition(
-                            TransitionInflater.from(context).inflateTransition(R.transition.trans_fade));
-                    transaction.addSharedElement(mThumb, transitionName);
-                }
-                return true;
-            }
-        }
-
-    private static class ModifyFavoritesListener extends EhCallback<GalleryDetailScene, Void> {
-
-        private final boolean mAddOrRemove;
-
-        /**
-         * @param addOrRemove false for add, true for remove
-         */
-        public ModifyFavoritesListener(Context context, int stageId, String sceneTag, boolean addOrRemove) {
-            super(context, stageId, sceneTag);
-            mAddOrRemove = addOrRemove;
-        }
-
-        @Override
-        public void onSuccess(Void result) {
-            showTip(mAddOrRemove ? R.string.remove_from_favorite_success :
-                    R.string.add_to_favorite_success, LENGTH_SHORT);
-            GalleryDetailScene scene = getScene();
-            if (scene != null) {
-                scene.onModifyFavoritesSuccess(mAddOrRemove);
-            }
-        }
-
-        @Override
-        public void onFailure(Exception e) {
-            showTip(mAddOrRemove ? R.string.remove_from_favorite_failure :
-                    R.string.add_to_favorite_failure, LENGTH_LONG);
-            GalleryDetailScene scene = getScene();
-            if (scene != null) {
-                scene.onModifyFavoritesFailure(mAddOrRemove);
-            }
-        }
-
-        @Override
-        public void onCancel() {
-            GalleryDetailScene scene = getScene();
-            if (scene != null) {
-                scene.onModifyFavoritesCancel(mAddOrRemove);
-            }
-        }
-
-        @Override
-        public boolean isInstance(SceneFragment scene) {
-            return scene instanceof GalleryDetailScene;
-        }
-    }
-
-    private static class DownloadArchiveListener extends EhCallback<GalleryDetailScene, Void> {
-
-        public DownloadArchiveListener(Context context, int stageId, String sceneTag) {
-            super(context, stageId, sceneTag);
-        }
-
-        @Override
-        public void onSuccess(Void result) {
-            showTip(R.string.download_archive_started, LENGTH_SHORT);
-        }
-
-        @Override
-        public void onFailure(Exception e) {
-            if (e instanceof NoHAtHClientException) {
-                showTip(R.string.download_h_h_failure_no_hath, LENGTH_LONG);
-            } else {
-                showTip(R.string.download_archive_failure, LENGTH_LONG);
-            }
-        }
-
-        @Override
-        public void onCancel() {
-        }
-
-        @Override
-        public boolean isInstance(SceneFragment scene) {
-            return scene instanceof GalleryDetailScene;
-        }
-    }
-
-    private class ArchiveListDialogHelper implements AdapterView.OnItemClickListener,
-            DialogInterface.OnDismissListener, EhClient.Callback<Pair<String, Pair<String, String>[]>> {
-
-        @Nullable
-        private ProgressView mProgressView;
-        @Nullable
-        private TextView mErrorText;
-        @Nullable
-        private ListView mListView;
-        @Nullable
-        private EhRequest mRequest;
-        @Nullable
-        private Dialog mDialog;
-
-        public void setDialog(@Nullable Dialog dialog, String url) {
-            if (dialog == null) {
-                return;
-            }
-            mDialog = dialog;
-            mProgressView = (ProgressView) ViewUtils.$$(dialog, R.id.progress);
-            mErrorText = (TextView) ViewUtils.$$(dialog, R.id.text);
-            mListView = (ListView) ViewUtils.$$(dialog, R.id.list_view);
-            mListView.setOnItemClickListener(this);
-
-            Context context = getEHContext();
-            if (context != null) {
-                if (mArchiveList == null) {
-                    mErrorText.setVisibility(View.GONE);
-                    mListView.setVisibility(View.GONE);
-                    mRequest = new EhRequest().setMethod(EhClient.METHOD_ARCHIVE_LIST)
-                            .setArgs(url, mGid, mToken)
-                            .setCallback(this);
-                    assert mRequest != null;
-                    ServiceRegistry.INSTANCE.getClientModule().getEhClient().execute(mRequest);
-                } else {
-                    bind(mArchiveList);
-                }
-            }
-        }
-
-        private void bind(Pair<String, String>[] data) {
-            if (null == mDialog || null == mProgressView || null == mErrorText || null == mListView) {
-                return;
-            }
-
-            if (0 == data.length) {
-                mProgressView.setVisibility(View.GONE);
-                mErrorText.setVisibility(View.VISIBLE);
-                mListView.setVisibility(View.GONE);
-                mErrorText.setText(R.string.no_archives);
-            } else {
-                String[] nameArray = new String[data.length];
-                for (int i = 0, n = data.length; i < n; i++) {
-                    nameArray[i] = data[i].second;
-                }
-                mProgressView.setVisibility(View.GONE);
-                mErrorText.setVisibility(View.GONE);
-                mListView.setVisibility(View.VISIBLE);
-                mListView.setAdapter(new ArrayAdapter<>(mDialog.getContext(), R.layout.item_select_dialog, nameArray));
-            }
-        }
-
-        @Override
-        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            Context context = getEHContext();
-            MainActivity activity = getActivity2();
-            if (null != context && null != activity && null != mArchiveList && position < mArchiveList.length) {
-                if (mGalleryDetail == null)
-                    return;
-                String res = mArchiveList[position].first;
-                EhRequest request = new EhRequest();
-                request.setMethod(EhClient.METHOD_DOWNLOAD_ARCHIVE);
-                request.setArgs(mGalleryDetail.gid, mGalleryDetail.token, mArchiveFormParamOr, res);
-                request.setCallback(new DownloadArchiveListener(context, activity.getStageId(), getTag()));
-                ServiceRegistry.INSTANCE.getClientModule().getEhClient().execute(request);
-            }
-
-            if (mDialog != null) {
-                mDialog.dismiss();
-                mDialog = null;
-            }
-        }
-
-        @Override
-        public void onDismiss(DialogInterface dialog) {
-            if (mRequest != null) {
-                mRequest.cancel();
-                mRequest = null;
-            }
-            mDialog = null;
-            mProgressView = null;
-            mErrorText = null;
-            mListView = null;
-        }
-
-        @Override
-        public void onSuccess(Pair<String, Pair<String, String>[]> result) {
-            if (mRequest != null) {
-                mRequest = null;
-                mArchiveFormParamOr = result.first;
-                mArchiveList = result.second;
-                bind(result.second);
-            }
-        }
-
-        @Override
-        public void onFailure(Exception e) {
-            mRequest = null;
-            Context context = getEHContext();
-            if (null != context && null != mProgressView && null != mErrorText && null != mListView) {
-                mProgressView.setVisibility(View.GONE);
-                mErrorText.setVisibility(View.VISIBLE);
-                mListView.setVisibility(View.GONE);
-                mErrorText.setText(ExceptionUtils.getReadableString(e));
-            }
-        }
-
-        @Override
-        public void onCancel() {
-            mRequest = null;
-        }
-    }
-
-    private class TorrentListDialogHelper implements AdapterView.OnItemClickListener,
-            DialogInterface.OnDismissListener, EhClient.Callback<Pair<String, String>[]> {
-
-        @Nullable
-        private ProgressView mProgressView;
-        @Nullable
-        private TextView mErrorText;
-        @Nullable
-        private ListView mListView;
-        @Nullable
-        private EhRequest mRequest;
-        @Nullable
-        private Dialog mDialog;
-        @Nullable
-        private OkHttpClient okHttpClient;
-
-        public void setDialog(@Nullable Dialog dialog, String url, OkHttpClient okHttpClient) {
-            if (dialog == null)
-                return;
-            mDialog = dialog;
-            this.okHttpClient = okHttpClient;
-            mProgressView = (ProgressView) ViewUtils.$$(dialog, R.id.progress);
-            mErrorText = (TextView) ViewUtils.$$(dialog, R.id.text);
-            mListView = (ListView) ViewUtils.$$(dialog, R.id.list_view);
-            mListView.setOnItemClickListener(this);
-
-            Context context = getEHContext();
-            if (context != null) {
-                if (mTorrentList == null) {
-                    mErrorText.setVisibility(View.GONE);
-                    mListView.setVisibility(View.GONE);
-                    mRequest = new EhRequest().setMethod(EhClient.METHOD_GET_TORRENT_LIST)
-                            .setArgs(url, mGid, mToken)
-                            .setCallback(this);
-                    if (mRequest == null) {
-                        return;
-                    }
-                    ServiceRegistry.INSTANCE.getClientModule().getEhClient().execute(mRequest);
-                } else {
-                    bind(mTorrentList);
-                }
-            }
-        }
-
-        private void bind(Pair<String, String>[] data) {
-            if (null == mDialog || null == mProgressView || null == mErrorText || null == mListView) {
-                return;
-            }
-
-            if (0 == data.length) {
-                mProgressView.setVisibility(View.GONE);
-                mErrorText.setVisibility(View.VISIBLE);
-                mListView.setVisibility(View.GONE);
-                mErrorText.setText(R.string.no_torrents);
-            } else {
-                String[] nameArray = new String[data.length];
-                for (int i = 0, n = data.length; i < n; i++) {
-                    nameArray[i] = data[i].second;
-                }
-                mProgressView.setVisibility(View.GONE);
-                mErrorText.setVisibility(View.GONE);
-                mListView.setVisibility(View.VISIBLE);
-                mListView.setAdapter(new ArrayAdapter<>(mDialog.getContext(), R.layout.item_select_dialog, nameArray));
-            }
-        }
-
-        @Override
-        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            Context context = getEHContext();
-            if (null != context && null != mTorrentList && position < mTorrentList.length) {
-                downLoadPlanB(parent, view, position, id, context);
-            }
-        }
-
-        private void downLoadPlanB(AdapterView<?> parent, View view, int position, long id, Context context) {
-            try {
-                String url = mTorrentList[position].first;
-                String name = mTorrentList[position].second + ".torrent";
-                String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath() + "/" + TORRENT_PATH;
-                DownloadTorrentManager downloadTorrentManager = DownloadTorrentManager.get(okHttpClient);
-                if (!EhApplication.addDownloadTorrent(context, url)) {
-                    Toast.makeText(context, R.string.downloading, Toast.LENGTH_LONG).show();
-                    return;
-                }
-                downloadTorrentManager.download(url, path, name, torrentDownloadHandler, context);
-
-            } catch (Exception e) {
-                ExceptionUtils.throwIfFatal(e);
-            }
-            if (mDialog != null) {
-                mDialog.dismiss();
-                mDialog = null;
-            }
-        }
-
-        @Override
-        public void onDismiss(DialogInterface dialog) {
-            if (mRequest != null) {
-                mRequest.cancel();
-                mRequest = null;
-            }
-            mDialog = null;
-            mProgressView = null;
-            mErrorText = null;
-            mListView = null;
-        }
-
-        @Override
-        public void onSuccess(Pair<String, String>[] result) {
-            if (mRequest != null) {
-                mRequest = null;
-                mTorrentList = result;
-                bind(result);
-            }
-        }
-
-        @Override
-        public void onFailure(Exception e) {
-            mRequest = null;
-            Context context = getEHContext();
-            if (null != context && null != mProgressView && null != mErrorText && null != mListView) {
-                mProgressView.setVisibility(View.GONE);
-                mErrorText.setVisibility(View.VISIBLE);
-                mListView.setVisibility(View.GONE);
-                mErrorText.setText(ExceptionUtils.getReadableString(e));
-            }
-        }
-
-        @Override
-        public void onCancel() {
-            mRequest = null;
-        }
-    }
-
-    /**
-     * Save rating to LANraragi server in background.
-     * GET current metadata -> modify rating tag -> PUT back.
-     * @param onSuccess optional callback run on background thread after successful save
-     */
-    private void saveRatingToServer(@NonNull Context ctx, @NonNull String arcid,
-                                    float rating, @Nullable Runnable onSuccess) {
-        IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
-            try {
-                String serverUrl = com.hippo.ehviewer.client.lrr.LRRAuthManager.getServerUrl();
-                if (serverUrl == null) return;
-                okhttp3.OkHttpClient client = ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
-
-                // GET current metadata to get original tags
-                com.hippo.ehviewer.client.lrr.data.LRRArchive archive =
-                        (com.hippo.ehviewer.client.lrr.data.LRRArchive) com.hippo.ehviewer.client.lrr.LRRCoroutineHelper.runSuspend(
-                                (scope, cont) -> com.hippo.ehviewer.client.lrr.LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcid, cont)
-                        );
-                String originalTags = archive.tags != null ? archive.tags : "";
-
-                // Remove old rating tag, add new with emoji
-                String newRatingTag = "rating:" + com.hippo.ehviewer.client.lrr.data.LRRArchive.buildRatingEmoji(Math.round(rating));
-                String cleaned = originalTags.replaceAll(",\\s*rating:[^,]*", "")
-                                             .replaceAll("rating:[^,]*\\s*,?\\s*", "")
-                                             .trim();
-                cleaned = cleaned.replaceAll("^,\\s*|,\\s*$", "").trim();
-                String updatedTags = cleaned.isEmpty() ? newRatingTag : cleaned + ", " + newRatingTag;
-
-                // PUT back with original tags preserved
-                com.hippo.ehviewer.client.lrr.LRRCoroutineHelper.runSuspend(
-                        (scope, cont) -> com.hippo.ehviewer.client.lrr.LRRArchiveApi.updateArchiveMetadata(client, serverUrl, arcid, updatedTags, cont)
-                );
-                android.util.Log.d("GalleryDetailScene", "Rating saved: " + newRatingTag);
-                if (onSuccess != null) onSuccess.run();
-            } catch (Exception e) {
-                android.util.Log.e("GalleryDetailScene", "Rating update failed", e);
-            }
-        });
-    }
-
-    private class RateDialogHelper implements GalleryRatingBar.OnUserRateListener,
-            DialogInterface.OnClickListener {
-
-        @Nullable
-        private GalleryRatingBar mRatingBar;
-        @Nullable
-        private TextView mRatingText;
-
-        public void setDialog(Dialog dialog, float rating) {
-            mRatingText = (TextView) ViewUtils.$$(dialog, R.id.rating_text);
-            mRatingBar = (GalleryRatingBar) ViewUtils.$$(dialog, R.id.rating_view);
-            mRatingText.setText(getRatingText(rating, getResources2()));
-            mRatingBar.setRating(rating);
-            mRatingBar.setOnUserRateListener(this);
-        }
-
-        @Override
-        public void onUserRate(float rating) {
-            if (null != mRatingText) {
-                mRatingText.setText(getRatingText(rating, getResources2()));
-            }
-        }
-
-        @Override
-        public void onClick(DialogInterface dialog, int which) {
-            Context context = getEHContext();
-            if (null == context || which != DialogInterface.BUTTON_POSITIVE ||
-                    null == mGalleryDetail || null == mRatingBar) {
-                return;
-            }
-
-            final float newRating = mRatingBar.getRating();
-            final String arcid = mGalleryDetail.token; // LANraragi archive ID
-            final GalleryDetail gd = mGalleryDetail;
-
-            // Update tags on server in background
-            saveRatingToServer(context, arcid, newRating, () -> handler.post(() -> {
-                gd.rating = newRating;
-                gd.rated = true;
-                gd.ratingCount = 1;
-                bindViewSecond();
-                showTip(R.string.rate_successfully, LENGTH_SHORT);
-            }));
-        }
-    }
-
-    private static class RateGalleryListener extends EhCallback<GalleryDetailScene, RateGalleryParser.Result> {
-
-        private final long mGid;
-
-        public RateGalleryListener(Context context, int stageId, String sceneTag, long gid) {
-            super(context, stageId, sceneTag);
-            mGid = gid;
-        }
-
-        @Override
-        public void onSuccess(RateGalleryParser.Result result) {
-            showTip(R.string.rate_successfully, LENGTH_SHORT);
-
-            GalleryDetailScene scene = getScene();
-            if (scene != null) {
-                scene.onRateGallerySuccess(result);
-            } else {
-                // Update rating in cache
-                GalleryDetail gd = ServiceRegistry.INSTANCE.getDataModule().getGalleryDetailCache().get(mGid);
-                if (gd != null) {
-                    gd.rating = result.rating;
-                    gd.ratingCount = result.ratingCount;
-                }
-            }
-        }
-
-        @Override
-        public void onFailure(Exception e) {
-            e.printStackTrace();
-            showTip(R.string.rate_failed, LENGTH_LONG);
-        }
-
-        @Override
-        public void onCancel() {
-        }
-
-        @Override
-        public boolean isInstance(SceneFragment scene) {
-            return scene instanceof GalleryDetailScene;
-        }
-    }
-
-    /**
-     * Show a two-stage confirmation dialog for deleting an archive from the LANraragi server.
-     * Stage 1: AlertDialog with warning text.
-     * Stage 2: Confirm button has a 3-second countdown before it becomes clickable.
-     */
-    private void showDeleteConfirmDialog() {
-        Context context = getEHContext();
-        if (context == null || mGalleryInfo == null) return;
-
-        String title = mGalleryInfo.title != null ? mGalleryInfo.title : "Unknown";
-        String arcid = mGalleryInfo.token; // token holds the LANraragi arcid
-
-        AlertDialog dialog = new AlertDialog.Builder(context)
-                .setTitle(R.string.lrr_delete_confirm_title)
-                .setMessage(getString(R.string.lrr_delete_confirm_message, title))
-                .setNegativeButton(android.R.string.cancel, null)
-                .setPositiveButton(R.string.lrr_delete_confirm_button, null) // set null to prevent auto-dismiss
-                .create();
-
-        dialog.setOnShowListener(d -> {
-            Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-            positiveButton.setTextColor(android.graphics.Color.parseColor("#F44336"));
-            positiveButton.setEnabled(false);
-
-            // 3-second countdown
-            android.os.CountDownTimer timer = new android.os.CountDownTimer(3000, 1000) {
-                @Override
-                public void onTick(long millisUntilFinished) {
-                    positiveButton.setText(getString(R.string.lrr_delete_countdown,
-                            (int) (millisUntilFinished / 1000) + 1));
-                }
-
-                @Override
-                public void onFinish() {
-                    positiveButton.setText(R.string.lrr_delete_confirm_button);
-                    positiveButton.setEnabled(true);
-                }
-            };
-            timer.start();
-
-            positiveButton.setOnClickListener(v -> {
-                dialog.dismiss();
-                performDeleteArchive(arcid, title);
-            });
-        });
-
-        dialog.show();
-    }
-
-    /**
-     * Perform the actual archive deletion and navigate back.
-     */
-    private void performDeleteArchive(String arcid, String title) {
-        if (arcid == null || arcid.isEmpty()) return;
-
-        com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
-            try {
-                com.hippo.ehviewer.client.lrr.LRRCoroutineHelper.runSuspend(
-                    (scope, cont) -> com.hippo.ehviewer.client.lrr.LRRArchiveApi.deleteArchive(
-                        com.hippo.ehviewer.client.lrr.LRRClientProvider.getClient(),
-                        com.hippo.ehviewer.client.lrr.LRRClientProvider.getBaseUrl(),
-                        arcid, cont)
-                );
-
-                Activity activity = getActivity2();
-                if (activity != null) {
-                    activity.runOnUiThread(() -> {
-                        showTip(getString(R.string.lrr_delete_success, title), BaseScene.LENGTH_LONG);
-                        onBackPressed();
-                    });
-                }
-            } catch (Exception e) {
-                android.util.Log.e("GalleryDetailScene", "Delete archive failed", e);
-                Activity activity = getActivity2();
-                if (activity != null) {
-                    activity.runOnUiThread(() ->
-                        showTip(getString(R.string.lrr_delete_failed, e.getMessage()),
-                            BaseScene.LENGTH_LONG));
-                }
-            }
-        });
-    }
 }
