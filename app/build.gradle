@@ -26,7 +26,8 @@ android {
         applicationId "com.lanraragi.reader"
         minSdkVersion 28
         targetSdkVersion 35
-        versionCode 14
+        // versionCode = MAJOR * 10000 + MINOR * 100 + PATCH
+        versionCode 11001
         versionName "1.10.1"
         vectorDrawables.useSupportLibrary = true
         resourceConfigurations += ['en', 'zh', 'zh-rCN', 'zh-rHK', 'zh-rTW', 'es', 'ja', 'ko', 'fr', 'de', 'th']
