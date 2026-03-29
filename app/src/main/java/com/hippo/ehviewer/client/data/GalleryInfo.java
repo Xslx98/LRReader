@@ -24,10 +24,9 @@ import androidx.annotation.Nullable;
 import androidx.room.ColumnInfo;
 import androidx.room.Ignore;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import com.hippo.ehviewer.dao.DownloadInfo;
 
 import java.util.ArrayList;
@@ -366,86 +365,94 @@ public class GalleryInfo implements Parcelable {
         return i;
     }
 
-    public JsonObject toJson() {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("gid", gid);
-        jsonObject.addProperty("token", token);
-        jsonObject.addProperty("title", title);
-        jsonObject.addProperty("titleJpn", titleJpn);
-        jsonObject.addProperty("thumb", thumb);
-        jsonObject.addProperty("category", category);
-        jsonObject.addProperty("posted", posted);
-        jsonObject.addProperty("uploader", uploader);
-        jsonObject.addProperty("rating", rating);
-        jsonObject.addProperty("rated", rated);
-        jsonObject.addProperty("simpleLanguage", simpleLanguage);
-        if (simpleTags != null) {
-            JsonArray tagsArr = new JsonArray();
-            for (String tag : simpleTags) {
-                tagsArr.add(tag);
+    public JSONObject toJson() {
+        try {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("gid", gid);
+            jsonObject.put("token", token);
+            jsonObject.put("title", title);
+            jsonObject.put("titleJpn", titleJpn);
+            jsonObject.put("thumb", thumb);
+            jsonObject.put("category", category);
+            jsonObject.put("posted", posted);
+            jsonObject.put("uploader", uploader);
+            jsonObject.put("rating", rating);
+            jsonObject.put("rated", rated);
+            jsonObject.put("simpleLanguage", simpleLanguage);
+            if (simpleTags != null) {
+                JSONArray tagsArr = new JSONArray();
+                for (String tag : simpleTags) {
+                    tagsArr.put(tag);
+                }
+                jsonObject.put("simpleTags", tagsArr);
             }
-            jsonObject.add("simpleTags", tagsArr);
+            jsonObject.put("thumbHeight", thumbHeight);
+            jsonObject.put("thumbWidth", thumbWidth);
+            jsonObject.put("spanSize", spanSize);
+            jsonObject.put("spanIndex", spanIndex);
+            jsonObject.put("spanGroupIndex", spanGroupIndex);
+            jsonObject.put("favoriteSlot", favoriteSlot);
+            jsonObject.put("favoriteName", favoriteName);
+            if (tgList != null) {
+                JSONArray tgArr = new JSONArray();
+                for (String t : tgList) {
+                    tgArr.put(t);
+                }
+                jsonObject.put("tgList", tgArr);
+            }
+            jsonObject.put("pages", pages);
+            jsonObject.put("serverProfileId", serverProfileId);
+            return jsonObject;
+        } catch (JSONException e) {
+            return new JSONObject();
         }
-        jsonObject.addProperty("thumbHeight", thumbHeight);
-        jsonObject.addProperty("thumbWidth", thumbWidth);
-        jsonObject.addProperty("spanSize", spanSize);
-        jsonObject.addProperty("spanIndex", spanIndex);
-        jsonObject.addProperty("spanGroupIndex", spanGroupIndex);
-        jsonObject.addProperty("favoriteSlot", favoriteSlot);
-        jsonObject.addProperty("favoriteName", favoriteName);
-        if (tgList != null) {
-            jsonObject.add("tgList", new Gson().toJsonTree(tgList));
-        }
-        jsonObject.addProperty("pages", pages);
-        jsonObject.addProperty("serverProfileId", serverProfileId);
-        return jsonObject;
     }
 
-    public static GalleryInfo galleryInfoFromJson(JsonObject object) {
+    public static GalleryInfo galleryInfoFromJson(JSONObject object) {
         GalleryInfo galleryInfo = new GalleryInfo();
-        galleryInfo.posted = object.has("posted") ? object.get("posted").getAsString() : null;
-        galleryInfo.category = object.has("category") ? object.get("category").getAsInt() : 0;
-        galleryInfo.favoriteName = object.has("favoriteName") ? object.get("favoriteName").getAsString() : null;
-        galleryInfo.favoriteSlot = object.has("favoriteSlot") ? object.get("favoriteSlot").getAsInt() : 0;
-        galleryInfo.gid = object.has("gid") ? object.get("gid").getAsLong() : 0;
-        galleryInfo.pages = object.has("pages") ? object.get("pages").getAsInt() : 0;
-        galleryInfo.rated = object.has("rated") && object.get("rated").getAsBoolean();
-        galleryInfo.rating = object.has("rating") ? object.get("rating").getAsFloat() : 0;
-        galleryInfo.simpleLanguage = object.has("simpleLanguage") ? object.get("simpleLanguage").getAsString() : null;
-        JsonArray simpleTagsArr = object.has("simpleTags") ? object.getAsJsonArray("simpleTags") : null;
+        galleryInfo.posted = object.optString("posted", null);
+        galleryInfo.category = object.optInt("category", 0);
+        galleryInfo.favoriteName = object.optString("favoriteName", null);
+        galleryInfo.favoriteSlot = object.optInt("favoriteSlot", 0);
+        galleryInfo.gid = object.optLong("gid", 0);
+        galleryInfo.pages = object.optInt("pages", 0);
+        galleryInfo.rated = object.optBoolean("rated", false);
+        galleryInfo.rating = (float) object.optDouble("rating", 0);
+        galleryInfo.simpleLanguage = object.optString("simpleLanguage", null);
+        JSONArray simpleTagsArr = object.optJSONArray("simpleTags");
         if (simpleTagsArr != null) {
             try {
-                String[] tags = new String[simpleTagsArr.size()];
-                for (int i = 0; i < simpleTagsArr.size(); i++) {
-                    tags[i] = simpleTagsArr.get(i).getAsString();
+                String[] tags = new String[simpleTagsArr.length()];
+                for (int i = 0; i < simpleTagsArr.length(); i++) {
+                    tags[i] = simpleTagsArr.getString(i);
                 }
                 galleryInfo.simpleTags = tags;
             } catch (Exception ignore) {
             }
         }
-        galleryInfo.spanGroupIndex = object.has("spanGroupIndex") ? object.get("spanGroupIndex").getAsInt() : 0;
-        galleryInfo.spanIndex = object.has("spanIndex") ? object.get("spanIndex").getAsInt() : 0;
-        galleryInfo.spanSize = object.has("spanSize") ? object.get("spanSize").getAsInt() : 0;
-        JsonArray tgArray = object.has("tgList") ? object.getAsJsonArray("tgList") : null;
+        galleryInfo.spanGroupIndex = object.optInt("spanGroupIndex", 0);
+        galleryInfo.spanIndex = object.optInt("spanIndex", 0);
+        galleryInfo.spanSize = object.optInt("spanSize", 0);
+        JSONArray tgArray = object.optJSONArray("tgList");
         if (tgArray != null) {
             try {
                 ArrayList<String> list = new ArrayList<>();
-                for (JsonElement el : tgArray) {
-                    list.add(el.getAsString());
+                for (int i = 0; i < tgArray.length(); i++) {
+                    list.add(tgArray.getString(i));
                 }
                 galleryInfo.tgList = list;
             } catch (Exception ignore) {
             }
         }
 
-        galleryInfo.thumb = object.has("thumb") ? object.get("thumb").getAsString() : null;
-        galleryInfo.thumbHeight = object.has("thumbHeight") ? object.get("thumbHeight").getAsInt() : 0;
-        galleryInfo.thumbWidth = object.has("thumbWidth") ? object.get("thumbWidth").getAsInt() : 0;
-        galleryInfo.title = object.has("title") ? object.get("title").getAsString() : null;
-        galleryInfo.titleJpn = object.has("titleJpn") ? object.get("titleJpn").getAsString() : null;
-        galleryInfo.token = object.has("token") ? object.get("token").getAsString() : null;
-        galleryInfo.uploader = object.has("uploader") ? object.get("uploader").getAsString() : null;
-        galleryInfo.serverProfileId = object.has("serverProfileId") ? object.get("serverProfileId").getAsLong() : 0;
+        galleryInfo.thumb = object.optString("thumb", null);
+        galleryInfo.thumbHeight = object.optInt("thumbHeight", 0);
+        galleryInfo.thumbWidth = object.optInt("thumbWidth", 0);
+        galleryInfo.title = object.optString("title", null);
+        galleryInfo.titleJpn = object.optString("titleJpn", null);
+        galleryInfo.token = object.optString("token", null);
+        galleryInfo.uploader = object.optString("uploader", null);
+        galleryInfo.serverProfileId = object.optLong("serverProfileId", 0);
         return galleryInfo;
     }
 }

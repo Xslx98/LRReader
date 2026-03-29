@@ -1,0 +1,50 @@
+# detekt configuration for LRReader
+# Initial config: lenient baseline. Tighten rules progressively as legacy code is migrated.
+# Reference: https://detekt.dev/docs/rules/overview
+
+build:
+  maxIssues: -1  # Report all issues without failing build (initially)
+
+complexity:
+  LongMethod:
+    threshold: 80  # Lenient for legacy code, default is 60
+  LongParameterList:
+    functionThreshold: 8  # Lenient, default is 6
+    constructorThreshold: 10  # Lenient, default is 7
+  CyclomaticComplexMethod:
+    threshold: 20  # Lenient, default is 15
+  TooManyFunctions:
+    active: false  # Many legacy files have many functions
+
+style:
+  MagicNumber:
+    active: false  # Too noisy for legacy code
+  WildcardImport:
+    active: false  # Legacy code uses wildcard imports
+  ReturnCount:
+    max: 5  # Lenient, default is 2
+  MaxLineLength:
+    maxLineLength: 140  # Wider than default 120 for legacy compatibility
+  ForbiddenComment:
+    active: false  # We have many TODOs intentionally
+  UnusedPrivateMember:
+    active: true
+
+naming:
+  FunctionNaming:
+    active: true
+    functionPattern: '[a-zA-Z][a-zA-Z0-9]*'
+  VariableNaming:
+    active: true
+    variablePattern: '[a-zA-Z][a-zA-Z0-9]*'
+
+potential-bugs:
+  active: true
+
+performance:
+  active: true
+
+exceptions:
+  active: true
+  TooGenericExceptionCaught:
+    active: false  # Legacy code catches Exception broadly

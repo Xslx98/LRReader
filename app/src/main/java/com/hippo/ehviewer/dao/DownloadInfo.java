@@ -6,7 +6,8 @@ import androidx.room.Ignore;
 
 import android.os.Parcel;
 import com.hippo.ehviewer.client.data.GalleryInfo;
-import com.google.gson.JsonObject;
+import org.json.JSONException;
+import org.json.JSONObject;
 import java.util.ArrayList;
 
 /**
@@ -161,33 +162,36 @@ public class DownloadInfo extends GalleryInfo {
 		this.simpleLanguage = galleryInfo.simpleLanguage;
 	}
 
-	public JsonObject toJson() {
-		JsonObject jsonObject = super.toJson();
-		jsonObject.addProperty("finished", finished);
-		jsonObject.addProperty("legacy", legacy);
-		jsonObject.addProperty("label", label);
-		jsonObject.addProperty("downloaded", downloaded);
-		jsonObject.addProperty("remaining", remaining);
-		jsonObject.addProperty("speed", speed);
-		jsonObject.addProperty("state", state);
-		jsonObject.addProperty("time", time);
-		jsonObject.addProperty("total", total);
-		jsonObject.addProperty("archiveUri", archiveUri);
+	public JSONObject toJson() {
+		JSONObject jsonObject = super.toJson();
+		try {
+			jsonObject.put("finished", finished);
+			jsonObject.put("legacy", legacy);
+			jsonObject.put("label", label);
+			jsonObject.put("downloaded", downloaded);
+			jsonObject.put("remaining", remaining);
+			jsonObject.put("speed", speed);
+			jsonObject.put("state", state);
+			jsonObject.put("time", time);
+			jsonObject.put("total", total);
+			jsonObject.put("archiveUri", archiveUri);
+		} catch (JSONException ignored) {
+		}
 		return jsonObject;
 	}
 
-	public static DownloadInfo downloadInfoFromJson(JsonObject object) throws ClassCastException {
+	public static DownloadInfo downloadInfoFromJson(JSONObject object) throws ClassCastException {
 		DownloadInfo downloadInfo = (DownloadInfo) GalleryInfo.galleryInfoFromJson(object);
-		downloadInfo.finished = object.has("finished") ? object.get("finished").getAsInt() : 0;
-		downloadInfo.legacy = object.has("legacy") ? object.get("legacy").getAsInt() : 0;
-		downloadInfo.label = object.has("label") ? object.get("label").getAsString() : null;
-		downloadInfo.downloaded = object.has("downloaded") ? object.get("downloaded").getAsInt() : 0;
-		downloadInfo.remaining = object.has("remaining") ? object.get("remaining").getAsLong() : 0;
-		downloadInfo.speed = object.has("speed") ? object.get("speed").getAsLong() : 0;
-		downloadInfo.state = object.has("state") ? object.get("state").getAsInt() : 0;
-		downloadInfo.time = object.has("time") ? object.get("time").getAsLong() : 0;
-		downloadInfo.total = object.has("total") ? object.get("total").getAsInt() : 0;
-		downloadInfo.archiveUri = object.has("archiveUri") ? object.get("archiveUri").getAsString() : null;
+		downloadInfo.finished = object.optInt("finished", 0);
+		downloadInfo.legacy = object.optInt("legacy", 0);
+		downloadInfo.label = object.optString("label", null);
+		downloadInfo.downloaded = object.optInt("downloaded", 0);
+		downloadInfo.remaining = object.optLong("remaining", 0);
+		downloadInfo.speed = object.optLong("speed", 0);
+		downloadInfo.state = object.optInt("state", 0);
+		downloadInfo.time = object.optLong("time", 0);
+		downloadInfo.total = object.optInt("total", 0);
+		downloadInfo.archiveUri = object.optString("archiveUri", null);
 		return downloadInfo;
 	}
 

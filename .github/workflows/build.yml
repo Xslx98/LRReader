@@ -37,6 +37,10 @@ jobs:
       - name: Lint
         run: ./gradlew app:lintAppReleaseDebug
 
+      - name: Detekt
+        run: ./gradlew detekt
+        continue-on-error: true
+
       - name: Upload Test Reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -50,6 +54,13 @@ jobs:
         with:
           name: lint-reports
           path: app/build/reports/lint-results-*.html
+
+      - name: Upload Detekt Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detekt-reports
+          path: app/build/reports/detekt/
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

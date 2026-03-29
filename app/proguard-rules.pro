@@ -31,17 +31,12 @@
 # === Room DAO entities ===
 -keep class com.hippo.ehviewer.dao.** { *; }
 
-# === Gson ===
--keep class com.google.gson.** { *; }
--keepclassmembers class * {
-    @com.google.gson.annotations.SerializedName <fields>;
-}
 
 # === OkHttp ===
 -dontwarn okhttp3.**
 -dontwarn okio.**
 
-# === LANraragi data models (used by kotlinx-serialization / Gson) ===
+# === LANraragi data models (used by kotlinx-serialization) ===
 -keep class com.hippo.ehviewer.client.lrr.data.** { *; }
 -keep class com.hippo.ehviewer.client.data.** { *; }
 
