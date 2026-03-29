@@ -67,6 +67,12 @@ public class Settings {
         fixDefaultValue();
     }
 
+    /** Exposed for modular settings objects. */
+    public static Context getContext() { return sContext; }
+
+    /** Exposed for modular settings objects that need batch editor access. */
+    public static SharedPreferences getPreferences() { return sSettingsPre; }
+
 
 
     private static void fixDefaultValue() {
