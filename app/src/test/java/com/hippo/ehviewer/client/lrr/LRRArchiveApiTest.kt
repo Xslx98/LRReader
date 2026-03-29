@@ -8,12 +8,17 @@ import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LRRArchiveApiTest {
+
+    @get:Rule
+    val tempFolder = TemporaryFolder()
 
     private lateinit var server: MockWebServer
     private lateinit var baseUrl: String
@@ -138,4 +143,82 @@ class LRRArchiveApiTest {
         assertTrue(url.startsWith("https://server.test/api/archives/abc/page"))
         assertTrue(url.contains("path="))
     }
+
+    // ── uploadArchive ──────────────────────────────────────────────
+
+    @Test
+    fun uploadArchive_success() = runTest {
+        server.enqueue(MockResponse().setBody("""{"success":1,"id":"new_arc_id"}"""))
+
+        val testFile = tempFolder.newFile("test_upload.zip")
+        testFile.writeBytes(ByteArray(100) { it.toByte() })
+
+        val arcid = LRRArchiveApi.uploadArchive(client, baseUrl, testFile)
+        assertEquals("new_arc_id", arcid)
+
+        val req = server.takeRequest()
+        assertEquals("PUT", req.method)
+        assertEquals("/api/archives/upload", req.path)
+        val contentType = req.getHeader("Content-Type")!!
+        assertTrue(contentType.startsWith("multipart/form-data"))
+        val body = req.body.readUtf8()
+        assertTrue(body.contains("test_upload.zip"))
+    }
+
+    @Test
+    fun uploadArchive_withAllParams() = runTest {
+        server.enqueue(MockResponse().setBody("""{"success":1,"id":"new_id"}"""))
+
+        val testFile = tempFolder.newFile("manga.cbz")
+        testFile.writeBytes(ByteArray(50))
+
+        val arcid = LRRArchiveApi.uploadArchive(
+            client, baseUrl, testFile,
+            title = "My Manga",
+            tags = "artist:foo, language:en",
+            categoryId = "cat42"
+        )
+        assertEquals("new_id", arcid)
+
+        val body = server.takeRequest().body.readUtf8()
+        assertTrue(body.contains("title"))
+        assertTrue(body.contains("My Manga"))
+        assertTrue(body.contains("tags"))
+        assertTrue(body.contains("artist:foo"))
+        assertTrue(body.contains("category_id"))
+        assertTrue(body.contains("cat42"))
+    }
+
+    @Test
+    fun uploadArchive_failure() = runTest {
+        server.enqueue(MockResponse().setBody("""{"success":0,"error":"File too large"}"""))
+
+        val testFile = tempFolder.newFile("big.zip")
+        testFile.writeBytes(ByteArray(10))
+
+        try {
+            LRRArchiveApi.uploadArchive(client, baseUrl, testFile)
+            fail("Should have thrown")
+        } catch (e: IOException) {
+            assertTrue(e.message!!.contains("File too large"))
+        }
+    }
+
+    @Test
+    fun uploadArchive_serverError() = runTest {
+        repeat(3) {
+            server.enqueue(MockResponse().setResponseCode(500))
+        }
+
+        val testFile = tempFolder.newFile("err.zip")
+        testFile.writeBytes(ByteArray(10))
+
+        try {
+            LRRArchiveApi.uploadArchive(client, baseUrl, testFile)
+            fail("Should have thrown")
+        } catch (e: IOException) {
+            assertTrue(e.message!!.contains("服务器错误"))
+        }
+    }
 }
+
