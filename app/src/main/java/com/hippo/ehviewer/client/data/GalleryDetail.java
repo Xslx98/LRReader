@@ -151,7 +151,7 @@ public class GalleryDetail extends GalleryInfo {
            n.gid = Long.parseLong(params[length-2]);
            n.newVersions = null;
            return n;
-       }catch (Throwable e){
+       }catch (Exception e){
            return this;
        }
     }

@@ -404,7 +404,7 @@ public class GalleryActivity extends EhActivity implements GalleryView.Listener,
             int[] numConfig = new int[1];
             return egl.eglChooseConfig(display, new int[]{EGL10.EGL_NONE}, null, 0, numConfig)
                     && numConfig[0] > 0;
-        } catch (Throwable e) {
+        } catch (Exception e) {
             return false;
         } finally {
             egl.eglTerminate(display);

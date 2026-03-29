@@ -76,7 +76,7 @@ public class SqlUtils {
             if (index != -1) {
                 return cursor.getInt(index) != 0;
             }
-        } catch (Throwable e) { /* Ignore */ }
+        } catch (Exception e) { /* Ignore */ }
         return defValue;
     }
 
@@ -86,7 +86,7 @@ public class SqlUtils {
             if (index != -1) {
                 return cursor.getInt(index);
             }
-        } catch (Throwable e) { /* Ignore */ }
+        } catch (Exception e) { /* Ignore */ }
         return defValue;
     }
 
@@ -96,7 +96,7 @@ public class SqlUtils {
             if (index != -1) {
                 return cursor.getLong(index);
             }
-        } catch (Throwable e) { /* Ignore */ }
+        } catch (Exception e) { /* Ignore */ }
         return defValue;
     }
 
@@ -106,7 +106,7 @@ public class SqlUtils {
             if (index != -1) {
                 return cursor.getFloat(index);
             }
-        } catch (Throwable e) { /* Ignore */ }
+        } catch (Exception e) { /* Ignore */ }
         return defValue;
     }
 
@@ -116,7 +116,7 @@ public class SqlUtils {
             if (index != -1) {
                 return cursor.getString(index);
             }
-        } catch (Throwable e) { /* Ignore */ }
+        } catch (Exception e) { /* Ignore */ }
         return defValue;
     }
 }

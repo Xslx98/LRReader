@@ -78,7 +78,7 @@ public class SetSecurityActivity extends ToolbarActivity implements View.OnClick
         try {
             return fingerprintManager.isHardwareDetected()
                 && fingerprintManager.hasEnrolledFingerprints();
-        } catch (Throwable e) {
+        } catch (Exception e) {
             return false;
         }
     }
