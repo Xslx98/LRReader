@@ -91,7 +91,7 @@ public class EhClient {
         }
     }
 
-    @SuppressLint("StaticFieldLeak")
+    @SuppressLint("StaticFieldLeak") // AsyncTask legacy: callback nulled in stop()/onPostExecute()
     public class Task extends AsyncTask<Object, Void, Object> {
 
         private final int mMethod;

@@ -41,7 +41,7 @@ public class Settings {
 
     private static final String TAG = Settings.class.getSimpleName();
 
-    @SuppressLint("StaticFieldLeak")
+    @SuppressLint("StaticFieldLeak") // Safe: holds Application Context, not Activity
     private static Context sContext;
     private static SharedPreferences sSettingsPre;
     private static SharedPreferences sArchiverPre;

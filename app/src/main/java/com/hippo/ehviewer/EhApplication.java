@@ -114,7 +114,7 @@ public class EhApplication extends RecordingApplication {
         return instance;
     }
 
-    @SuppressLint("StaticFieldLeak")
+    @SuppressLint("StaticFieldLeak") // Safe: Application instance is process-scoped
     @Override
     public void onCreate() {
         instance = this;
