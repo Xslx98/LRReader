@@ -43,7 +43,7 @@ public class OffsetLayout extends FrameLayout {
         layoutChildrenEx(left, top, right, bottom, false /* no force left gravity */);
     }
 
-    // TODO foreground not work fine
+    // UPSTREAM-LEGACY: foreground drawing does not work correctly with offset children
     @SuppressLint("RtlHardcoded")
     void layoutChildrenEx(int left, int top, int right, int bottom,
             boolean forceLeftGravity) {

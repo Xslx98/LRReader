@@ -59,7 +59,7 @@ public final class CommonOperations {
             request.setCallback(listener);
             client.execute(request);
         } else {
-            listener.onFailure(new Exception()); // TODO Add text
+            listener.onFailure(new Exception("Invalid favorite slot: " + slot));
         }
     }
 
@@ -140,7 +140,7 @@ public final class CommonOperations {
         startDownload(activity, Collections.singletonList(galleryInfo), forceDefault);
     }
 
-    // TODO Add context if activity and context are different style
+    // KNOWN-ISSUE (P2): assumes Activity context matches theme; may mismatch in multi-window
     public static void startDownload(final MainActivity activity, final List<GalleryInfo> galleryInfos, boolean forceDefault) {
         final DownloadManager dm = ServiceRegistry.INSTANCE.getDataModule().getDownloadManager();
 

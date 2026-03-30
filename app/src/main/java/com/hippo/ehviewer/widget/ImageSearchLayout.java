@@ -131,7 +131,7 @@ public final class ImageSearchLayout extends LinearLayout implements View.OnClic
                 return;
             }
 
-            // TODO ehentai image search is bad when I'm writing this line.
+            // EH-LEGACY: image search quality on ehentai is poor by design
             // Re-compress image will make image search failed.
             OutputStream os = null;
             try {

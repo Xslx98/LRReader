@@ -84,7 +84,7 @@ public abstract class GalleryInfoContentHelper extends ContentLayout.ContentHelp
   protected Parcelable saveInstanceState(Parcelable superState) {
     Bundle bundle = (Bundle) super.saveInstanceState(superState);
 
-    // TODO It's a bad design
+    // KNOWN-ISSUE (P2): inherits ContentHelper's global-state design for data persistence
     FavouriteStatusRouter router = ServiceRegistry.INSTANCE.getDataModule().getFavouriteStatusRouter();
     int id = router.saveDataMap(map);
     bundle.putInt(KEY_DATA_MAP, id);

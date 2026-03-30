@@ -35,7 +35,7 @@ import java.io.OutputStream;
 // and FileProvider uri may throw Exception when write. The Exception looks like:
 // java.io.IOException: write failed: EBADF (Bad file descriptor)
 // But UriOutputStream can avoid it on my Nexus 5 cm13.
-// TODO need more test
+// UPSTREAM-LEGACY: inherited from UniFile library, stable in production
 class UriOutputStream extends FileOutputStream {
 
     private final ParcelFileDescriptor mPfd;

@@ -1025,7 +1025,7 @@ public class ContentLayout extends FrameLayout {
             bundle.putInt(KEY_SHOWN_VIEW, shownView);
             bundle.putString(KEY_TIP, mTipView.getText().toString());
 
-            // TODO It's a bad design
+            // KNOWN-ISSUE (P2): uses EhApplication global state to persist data across config changes
             EhApplication app = (EhApplication) getContext().getApplicationContext();
             if (mSavedDataId != IntIdGenerator.INVALID_ID) {
                 app.removeGlobalStuff(mSavedDataId);

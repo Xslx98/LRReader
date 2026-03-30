@@ -469,7 +469,7 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
         }
     }
 
-    // TODO Include all notification in one delay
+    // KNOWN-ISSUE (P2): notifications should be batched into a single delayed update
     // Avoid frequent notification
     private class NotificationDelay(
         private var mService: Service?, private val mNotifyManager: NotificationManager?,

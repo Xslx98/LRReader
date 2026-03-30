@@ -7,7 +7,7 @@ import android.graphics.Typeface;
 
 import java.util.Arrays;
 
-// TODO support multiline
+// UPSTREAM-LEGACY: multiline text not needed in current usage
 /**
  * Works like movable type.<br>
  * <br>

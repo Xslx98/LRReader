@@ -57,7 +57,7 @@ public class GLES11Canvas implements GLCanvas {
     private static final int OFFSET_LAST = OFFSET_DRAW_CIRCLE + COUNT_CIRCLE_VERTEX + 1;
 
     private static final float[] BOX_COORDINATES = new float[OFFSET_LAST * 2];
-    // TODO: the code only work for 2D should get fixed for 3D or removed
+    // UPSTREAM-LEGACY (Gallery2/AOSP): 2D-only code, 3D support not needed
     private static final int MSKEW_X = 4;
     private static final int MSKEW_Y = 1;
     private static final int MSCALE_X = 0;

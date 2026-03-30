@@ -129,7 +129,7 @@ public abstract class TaskPreference extends DialogPreference {
             mTaskId = IntIdGenerator.INVALID_ID;
         }
 
-        // TODO if not task, show not reopen dialog
+        // EH-LEGACY: should show 'no reopen' dialog when no task is running
 
         super.onRestoreInstanceState(myState.getSuperState());
     }

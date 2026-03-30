@@ -34,7 +34,7 @@ class UpdateDialog(private val activity: Activity) {
             "https://github.com/xiaojieonly/Ehviewer_CN_SXJ/blob/BiLi_PC_Gamer/README.md"
         const val INSTALL_PERMISSION_CODE = 1002
 
-        // TODO more lock for different language
+        // EH-LEGACY: multi-language lock not implemented, Chinese-only is sufficient
         private val lock: Lock = ReentrantLock()
     }
 

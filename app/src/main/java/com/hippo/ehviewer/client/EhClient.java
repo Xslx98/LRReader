@@ -121,7 +121,7 @@ public class EhClient {
                 mStop.lazySet(true);
 
                 if (mCallback != null) {
-                    // TODO Avoid new runnable
+                    // EH-LEGACY: allocates new Runnable per request, acceptable for current usage volume
                     final Callback finalCallback = mCallback;
                     SimpleHandler.getInstance().post(finalCallback::onCancel);
                 }

@@ -23,7 +23,7 @@ import com.hippo.ehviewer.client.data.GalleryInfo;
 import java.util.Arrays;
 import java.util.List;
 
-// TODO GridLayoutManager do not work at all ! SpaceGroupIndex is useless for layout! I need to create one by myself
+// KNOWN-ISSUE (P2): GridLayoutManager ignores SpaceGroupIndex; custom span calculation needed
 public class ThumbSpanHelper {
 
     private static final int MIN_ARRAY_LENGTH = 50;
