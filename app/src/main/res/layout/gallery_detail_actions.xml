@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   ~ Copyright 2016 Hippo Seven
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,6 +40,7 @@
             android:divider="@drawable/spacer_keyline"
             android:showDividers="middle">
 
+            <!-- LANraragi category (repurposed from EH favorites) -->
             <FrameLayout
                 android:id="@+id/heart_group"
                 android:layout_width="wrap_content"
@@ -65,68 +65,6 @@
                     android:textColor="?android:attr/textColorPrimary"/>
 
             </FrameLayout>
-
-            <TextView
-                android:id="@+id/rate"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center_horizontal"
-                android:text="@string/rate"
-                android:drawablePadding="8dp"
-                android:textColor="?android:attr/textColorPrimary"/>
-
-            <TextView
-                android:id="@+id/share"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center_horizontal"
-                android:text="@string/share"
-                android:drawablePadding="8dp"
-                android:textColor="?android:attr/textColorPrimary"/>
-
-            <TextView
-                android:id="@+id/torrent"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center_horizontal"
-                android:drawablePadding="8dp"
-                android:textColor="?android:attr/textColorPrimary"/>
-
-            <TextView
-                android:id="@+id/archiver"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/archiver"
-                android:gravity="center_horizontal"
-                android:drawablePadding="8dp"
-                android:textColor="?android:attr/textColorPrimary"/>
-
-            <TextView
-                android:id="@+id/h_h"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/h_h"
-                android:gravity="center_horizontal"
-                android:drawablePadding="8dp"
-                android:textColor="?android:attr/textColorPrimary"/>
-
-            <TextView
-                android:id="@+id/similar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center_horizontal"
-                android:text="@string/similar_gallery"
-                android:drawablePadding="8dp"
-                android:textColor="?android:attr/textColorPrimary"/>
-
-            <TextView
-                android:id="@+id/search_cover"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center_horizontal"
-                android:text="@string/search_cover"
-                android:drawablePadding="8dp"
-                android:textColor="?android:attr/textColorPrimary"/>
 
         </LinearLayout>
     </HorizontalScrollView>
