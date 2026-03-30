@@ -70,11 +70,6 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical">
 
-                        <com.hippo.ehviewer.widget.LimitsCountView
-                            android:id="@+id/limits_count_view"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:maxHeight="180dp"/>
 
                         <TextView
                             android:id="@+id/change_theme"
