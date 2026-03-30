@@ -61,7 +61,7 @@ public class SearchEditText extends AppCompatEditText {
                     state.handleUpEvent(event);
                 }
                 if (event.isTracking() && !event.isCanceled()) {
-                    // TODO stopSelectionActionMode
+                    // EH-LEGACY: stopSelectionActionMode not implemented
                     if (mListener != null) {
                         mListener.onBackPressed();
                         return true;

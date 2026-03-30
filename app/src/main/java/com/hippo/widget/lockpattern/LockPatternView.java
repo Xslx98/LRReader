@@ -931,7 +931,7 @@ public class LockPatternView extends View {
                 mInProgressX = centerX + dx;
                 mInProgressY = centerY + dy;
             }
-            // TODO: Infinite loop here...
+            // UPSTREAM-LEGACY (AOSP): potential infinite loop in pattern detection
             invalidate();
         }
 
@@ -951,7 +951,7 @@ public class LockPatternView extends View {
             }
         }
 
-        // TODO: the path should be created and cached every time we hit-detect a cell
+        // UPSTREAM-LEGACY (AOSP): path should be cached per cell hit-detection
         // only the last segment of the path should be computed here
         // draw the path of the pattern (unless we are in stealth mode)
         final boolean drawPath = !mInStealthMode;

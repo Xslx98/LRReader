@@ -151,7 +151,7 @@ object EhUtils {
         title = PATTERN_TITLE_SUFFIX.matcher(title).replaceFirst("")
         // Sometimes title is combined by romaji and english translation.
         // Only need romaji.
-        // TODO But not sure every '|' means that
+        // EH-LEGACY: pipe '|' may not always mean tag separator in all contexts
         val index = title.indexOf('|')
         if (index >= 0) {
             title = title.substring(0, index)

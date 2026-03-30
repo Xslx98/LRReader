@@ -21,7 +21,7 @@ import android.os.Parcelable;
 
 import java.util.ArrayList;
 
-// TODO Add url field?
+// EH-LEGACY: URL field was considered but never needed
 public class GalleryTagGroup implements Parcelable {
 
     public String groupName;

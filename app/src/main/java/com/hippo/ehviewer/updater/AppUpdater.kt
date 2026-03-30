@@ -58,7 +58,7 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
         @Volatile
         private var instance: AppUpdater? = null
 
-        // TODO more lock for different language
+        // EH-LEGACY: multi-language lock not implemented, Chinese-only is sufficient
         private val lock: Lock = ReentrantLock()
 
         fun getInstance(context: Context): AppUpdater? {

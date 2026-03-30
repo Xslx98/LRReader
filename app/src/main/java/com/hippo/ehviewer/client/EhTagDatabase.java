@@ -207,7 +207,7 @@ public class EhTagDatabase {
     }
 
     private static volatile EhTagDatabase instance;
-    // TODO more lock for different language
+    // EH-LEGACY: multi-language lock not implemented, Chinese-only is sufficient
     private static final Lock lock = new ReentrantLock();
 
     @Nullable

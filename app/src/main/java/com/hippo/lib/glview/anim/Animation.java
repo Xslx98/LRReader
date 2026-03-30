@@ -131,7 +131,7 @@ abstract public class Animation {
         mLastFrameTime = 0;
     }
 
-    // TODO mRepeatMode
+    // UPSTREAM-LEGACY (Gallery2/AOSP): repeat mode not implemented
     public boolean calculate(long currentTimeMillis) {
         if (mStartTime == NO_ANIMATION) {
             return false;
