@@ -87,9 +87,7 @@ import com.hippo.ehviewer.ui.scene.download.DownloadLabelsScene;
 import com.hippo.ehviewer.ui.scene.download.DownloadsScene;
 import com.hippo.ehviewer.ui.scene.gallery.list.FavoritesScene;
 import com.hippo.ehviewer.ui.scene.LRRCategoriesScene;
-import com.hippo.ehviewer.ui.scene.GalleryCommentsScene;
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene;
-import com.hippo.ehviewer.ui.scene.GalleryInfoScene;
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene;
 import com.hippo.ehviewer.ui.scene.GalleryPreviewsScene;
 import com.hippo.ehviewer.ui.scene.gallery.list.SubscriptionsScene;
@@ -99,11 +97,9 @@ import com.hippo.ehviewer.ui.scene.ProgressScene;
 import com.hippo.ehviewer.ui.scene.gallery.list.QuickSearchScene;
 import com.hippo.ehviewer.ui.scene.SecurityScene;
 import com.hippo.ehviewer.ui.scene.SolidScene;
-import com.hippo.ehviewer.ui.scene.WarningScene;
 import com.hippo.ehviewer.ui.splash.SplashActivity;
 import com.hippo.ehviewer.updater.AppUpdater;
 import com.hippo.ehviewer.widget.EhDrawerLayout;
-import com.hippo.ehviewer.widget.LimitsCountView;
 import com.hippo.io.UniFileInputStreamPipe;
 import com.hippo.network.Network;
 import com.hippo.scene.Announcer;
@@ -155,8 +151,6 @@ public final class MainActivity extends StageActivity
     @Nullable
     private TextView mDisplayName;
     @Nullable
-    private LimitsCountView limitsCountView;
-    @Nullable
     UserImageChange userImageChange;
 
     private int mNavCheckedItem = 0;
@@ -176,7 +170,7 @@ public final class MainActivity extends StageActivity
 
     static {
         registerLaunchMode(SecurityScene.class, SceneFragment.LAUNCH_MODE_SINGLE_TASK);
-        registerLaunchMode(WarningScene.class, SceneFragment.LAUNCH_MODE_SINGLE_TASK);
+
         registerLaunchMode(AnalyticsScene.class, SceneFragment.LAUNCH_MODE_SINGLE_TASK);
         registerLaunchMode(ServerConfigScene.class, SceneFragment.LAUNCH_MODE_SINGLE_TASK);
         registerLaunchMode(ServerListScene.class, SceneFragment.LAUNCH_MODE_SINGLE_TASK);
@@ -184,8 +178,7 @@ public final class MainActivity extends StageActivity
         registerLaunchMode(QuickSearchScene.class, SceneFragment.LAUNCH_MODE_SINGLE_TASK);
         registerLaunchMode(SubscriptionsScene.class, SceneFragment.LAUNCH_MODE_SINGLE_TASK);
         registerLaunchMode(GalleryDetailScene.class, SceneFragment.LAUNCH_MODE_STANDARD);
-        registerLaunchMode(GalleryInfoScene.class, SceneFragment.LAUNCH_MODE_STANDARD);
-        registerLaunchMode(GalleryCommentsScene.class, SceneFragment.LAUNCH_MODE_STANDARD);
+
         registerLaunchMode(GalleryPreviewsScene.class, SceneFragment.LAUNCH_MODE_STANDARD);
         registerLaunchMode(DownloadsScene.class, SceneFragment.LAUNCH_MODE_SINGLE_TASK);
         registerLaunchMode(DownloadLabelsScene.class, SceneFragment.LAUNCH_MODE_SINGLE_TASK);
@@ -401,7 +394,7 @@ public final class MainActivity extends StageActivity
         mDisplayName = (TextView) ViewUtils.$$(headerLayout, R.id.display_name);
         TextView mChangeTheme = (TextView) ViewUtils.$$(this, R.id.change_theme);
 
-        limitsCountView = (LimitsCountView) ViewUtils.$$(this, R.id.limits_count_view);
+
 
         mDrawerLayout.setStatusBarColor(ResourcesUtils.getAttrColor(this, androidx.appcompat.R.attr.colorPrimaryDark));
 //        mDrawerLayout.setStatusBarColor(0);
@@ -901,9 +894,7 @@ public final class MainActivity extends StageActivity
             mDrawerLayout.closeDrawers();
         }
 
-        if (limitsCountView != null) {
-            limitsCountView.hide();
-        }
+
         return true;
     }
 
@@ -929,16 +920,10 @@ public final class MainActivity extends StageActivity
 
     @Override
     public void onDrawerOpened(View drawerView) {
-        if (limitsCountView != null) {
-            limitsCountView.onLoadData(drawerView, true);
-        }
     }
 
     @Override
     public void onDrawerClosed(View drawerView) {
-        if (limitsCountView != null) {
-            limitsCountView.hide();
-        }
     }
 
     @Override
