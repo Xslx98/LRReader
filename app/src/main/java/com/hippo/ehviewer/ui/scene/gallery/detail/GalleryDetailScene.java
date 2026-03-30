@@ -209,8 +209,6 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
     @Nullable
     private TextView mUploader;
     @Nullable
-    private TextView mCategory;
-    @Nullable
     private ImageView mOtherActions;
     @Nullable
     private ViewGroup mActionGroup;
@@ -226,17 +224,9 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
     private View mBelowHeader;
     // Info
     @Nullable
-    private View mInfo;
-    @Nullable
-    private TextView mLanguage;
-    @Nullable
     private TextView mPages;
     @Nullable
     private TextView mSize;
-    @Nullable
-    private TextView mPosted;
-    @Nullable
-    private TextView mFavoredTimes;
     // Actions
     @Nullable
     private View mActions;
@@ -530,7 +520,6 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         mThumb = (LoadImageView) ViewUtils.$$(mHeader, R.id.thumb);
         mTitle = (TextView) ViewUtils.$$(mHeader, R.id.title);
         mUploader = (TextView) ViewUtils.$$(mHeader, R.id.uploader);
-        mCategory = (TextView) ViewUtils.$$(mHeader, R.id.category);
         mOtherActions = (ImageView) ViewUtils.$$(mHeader, R.id.other_actions);
         mActionGroup = (ViewGroup) ViewUtils.$$(mHeader, R.id.action_card);
         mDownload = (TextView) ViewUtils.$$(mActionGroup, R.id.download);
@@ -541,7 +530,6 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         Ripple.addRipple(mDownload, isDarkTheme);
         Ripple.addRipple(mRead, isDarkTheme);
         mUploader.setOnClickListener(this);
-        mCategory.setOnClickListener(this);
         mOtherActions.setOnClickListener(this);
         mDownload.setOnClickListener(this);
         mDownload.setOnLongClickListener(this);
@@ -551,15 +539,9 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
 
         mUploader.setOnLongClickListener(this);
 
-
-        mInfo = ViewUtils.$$(belowHeader, R.id.info);
-        mLanguage = (TextView) ViewUtils.$$(mInfo, R.id.language);
-        mPages = (TextView) ViewUtils.$$(mInfo, R.id.pages);
-        mSize = (TextView) ViewUtils.$$(mInfo, R.id.size);
-        mPosted = (TextView) ViewUtils.$$(mInfo, R.id.posted);
-        mFavoredTimes = (TextView) ViewUtils.$$(mInfo, R.id.favoredTimes);
-        Ripple.addRipple(mInfo, isDarkTheme);
-        mInfo.setOnClickListener(this);
+        View infoView = ViewUtils.$$(belowHeader, R.id.info);
+        mPages = (TextView) ViewUtils.$$(infoView, R.id.pages);
+        mSize = (TextView) ViewUtils.$$(infoView, R.id.size);
 
         mActions = ViewUtils.$$(belowHeader, R.id.actions);
         mRatingText = (TextView) ViewUtils.$$(mActions, R.id.rating_text);
@@ -645,7 +627,6 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         mThumb = null;
         mTitle = null;
         mUploader = null;
-        mCategory = null;
         mOtherActions = null;
         mActionGroup = null;
         mDownload = null;
@@ -655,12 +636,8 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         mBelowHeader = null;
         mArchiverDownloadProgress = null;
 
-        mInfo = null;
-        mLanguage = null;
         mPages = null;
         mSize = null;
-        mPosted = null;
-        mFavoredTimes = null;
 
         mActions = null;
         mRatingText = null;
@@ -882,7 +859,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         if (mGalleryDetail != null) {
             return;
         }
-        if (mThumb == null || mTitle == null || mUploader == null || mCategory == null) {
+        if (mThumb == null || mTitle == null || mUploader == null) {
             return;
         }
 
@@ -891,8 +868,6 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
             mThumb.load(EhCacheKeyFactory.getThumbKey(gi.gid), gi.thumb);
             mTitle.setText(EhUtils.getSuitableTitle(gi));
             mUploader.setText(gi.uploader);
-            mCategory.setText(EhUtils.getCategory(gi.category));
-            mCategory.setTextColor(EhUtils.getCategoryColor(gi.category));
             updateDownloadText();
         }
     }
@@ -933,9 +908,9 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         if (gd == null) {
             return;
         }
-        if (mThumb == null || mTitle == null || mUploader == null || mCategory == null ||
-                mLanguage == null || mPages == null || mSize == null || mPosted == null ||
-                mFavoredTimes == null || mRatingText == null || mRating == null) {
+        if (mThumb == null || mTitle == null || mUploader == null ||
+                mPages == null || mSize == null ||
+                mRatingText == null || mRating == null) {
             return;
         }
         Resources resources = getResources2();
@@ -960,14 +935,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
 
         mTitle.setText(EhUtils.getSuitableTitle(gd));
         mUploader.setText(gd.uploader);
-        // LANraragi doesn't use E-Hentai categories - hide the badge
-        mCategory.setVisibility(View.GONE);
         updateDownloadText();
-
-        // LANraragi: hide irrelevant fields
-        mLanguage.setVisibility(View.GONE);
-        mPosted.setVisibility(View.GONE);
-        mFavoredTimes.setVisibility(View.GONE);
 
         GalleryInfo galleryInfo = getGalleryInfo();
         bindReadProgress(galleryInfo);
@@ -1088,11 +1056,10 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         long gid = getGid();
 
         if (gid != -1 && mThumb != null &&
-                mTitle != null && mUploader != null && mCategory != null) {
+                mTitle != null && mUploader != null) {
             ViewCompat.setTransitionName(mThumb, TransitionNameFactory.getThumbTransitionName(gid));
             ViewCompat.setTransitionName(mTitle, TransitionNameFactory.getTitleTransitionName(gid));
             ViewCompat.setTransitionName(mUploader, TransitionNameFactory.getUploaderTransitionName(gid));
-            ViewCompat.setTransitionName(mCategory, TransitionNameFactory.getCategoryTransitionName(gid));
         }
     }
 
@@ -1166,14 +1133,6 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
             lub.setMode(ListUrlBuilder.MODE_UPLOADER);
             lub.setKeyword(uploader);
             GalleryListScene.startScene(this, lub);
-        } else if (mCategory == v) {
-            int category = getCategory();
-            if (category == -1) {
-                return;
-            }
-            ListUrlBuilder lub = new ListUrlBuilder();
-            lub.setCategory(category);
-            GalleryListScene.startScene(this, lub);
         } else if (mDownload == v) {
             onDownload();
 
@@ -1193,10 +1152,6 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                 Intent intent = GalleryOpenHelper.buildReadIntent(activity, galleryInfo);
                 startActivity(intent);
             }
-        } else if (mInfo == v) {
-            Bundle args = new Bundle();
-            args.putParcelable(GalleryInfoScene.KEY_GALLERY_DETAIL, mGalleryDetail);
-            startScene(new Announcer(GalleryInfoScene.class).setArgs(args));
         } else if (mHeartGroup == v) {
             // LANraragi: Show category selection dialog
             if (mGalleryDetail != null) {

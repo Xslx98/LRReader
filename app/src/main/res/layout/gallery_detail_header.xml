@@ -88,22 +88,6 @@
                 android:textColor="@android:color/white"
                 android:textSize="@dimen/text_little_small" />
 
-            <TextView
-                android:id="@+id/category"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/uploader"
-                android:layout_alignStart="@id/title"
-                android:layout_marginTop="12dp"
-                android:layout_marginEnd="@dimen/keyline_margin"
-                android:ellipsize="end"
-                android:paddingLeft="8dp"
-                android:paddingTop="2dp"
-                android:paddingRight="8dp"
-                android:paddingBottom="2dp"
-                android:singleLine="true"
-                android:textAllCaps="true"
-                android:textStyle="bold" />
 
             <ImageView xmlns:app="http://schemas.android.com/apk/res-auto"
                 android:id="@+id/other_actions"
