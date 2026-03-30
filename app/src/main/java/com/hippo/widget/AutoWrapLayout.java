@@ -114,7 +114,7 @@ public class AutoWrapLayout extends ViewGroup {
     }
 
 
-    // TODO Take vertical mode
+    // UPSTREAM-LEGACY: vertical mode not implemented, horizontal-only is sufficient
     /**
      * each row or line at least show one child
      *

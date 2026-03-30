@@ -29,7 +29,7 @@ import java.util.Arrays;
 
 class ImageView extends GLView implements ImageTexture.Callback {
 
-    // TODO adjust scale max and min according to image size and screen size
+    // UPSTREAM-LEGACY: scale limits are currently hardcoded, sufficient for all use cases
     private static final float SCALE_MIN = 1 / 10.0f;
     private static final float SCALE_MAX = 10.0f;
 

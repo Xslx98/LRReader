@@ -126,7 +126,7 @@ public class SimpleAdapter extends GalleryView.Adapter implements GalleryProvide
                 page.setError(null, null);
             } else {
                 // The image is recycled, request again.
-                // TODO request loop ?
+                // UPSTREAM-LEGACY: potential infinite request loop if adapter keeps returning RESULT_ERROR
                 mProvider.request(index);
             }
         }
