@@ -330,7 +330,7 @@ public final class MainActivity extends StageActivity
     protected void onUnrecognizedIntent(@Nullable Intent intent) {
         Class<?> clazz = getTopSceneClass();
         if (clazz != null && SolidScene.class.isAssignableFrom(clazz)) {
-            // TODO the intent lost
+            // KNOWN-ISSUE (P1): intent is silently dropped when a SolidScene (security/config gate) is showing
             return;
         }
 

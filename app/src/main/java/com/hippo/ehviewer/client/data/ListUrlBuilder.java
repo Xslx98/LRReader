@@ -330,7 +330,7 @@ public class ListUrlBuilder implements Cloneable, Parcelable {
     /**
      * @param query xxx=yyy&mmm=nnn
      */
-    // TODO page
+    // EH-LEGACY: pagination for URL builder not implemented
     public void setQuery(String query) {
         reset();
 

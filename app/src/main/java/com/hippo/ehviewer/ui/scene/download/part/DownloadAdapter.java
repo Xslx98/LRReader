@@ -692,7 +692,7 @@ public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.Downlo
             percent = itemView.findViewById(R.id.percent);
             speed = itemView.findViewById(R.id.speed);
 
-            // TODO cancel on click listener when select items
+            // KNOWN-ISSUE (P2): click listeners remain active during multi-select mode
             thumb.setOnClickListener(this);
             start.setOnClickListener(this);
             stop.setOnClickListener(this);

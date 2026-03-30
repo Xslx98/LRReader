@@ -103,7 +103,7 @@ public class DownloadLabelDraw {
             labels.add(raw.getLabel());
         }
 
-        // TODO handle download label items update
+        // KNOWN-ISSUE (P2): download label items update not yet wired to adapter notification
         final List<DownloadLabelItem> downloadLabelList = new ArrayList<>();
 
         for (int i = 0; i < labels.size(); i++) {
@@ -155,7 +155,7 @@ public class DownloadLabelDraw {
             labels.add(raw.getLabel());
         }
 
-        // TODO handle download label items update
+        // KNOWN-ISSUE (P2): download label items update not yet wired to adapter notification
         final List<DownloadLabelItem> downloadLabelList = new ArrayList<>();
 
         for (int i = 0; i < labels.size(); i++) {

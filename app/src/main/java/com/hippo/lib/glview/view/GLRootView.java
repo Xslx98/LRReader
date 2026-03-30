@@ -55,7 +55,7 @@ import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.opengles.GL10;
 import javax.microedition.khronos.opengles.GL11;
 
-// TODO Call attachToRoot and detachFromRoot in render thread
+// UPSTREAM-LEGACY (Gallery2/AOSP): attachToRoot/detachFromRoot should run in render thread
 // The root component of all <code>GLView</code>s. The rendering is done in GL
 // thread while the event handling is done in the main thread.  To synchronize
 // the two threads, the entry points of this package need to synchronize on the
