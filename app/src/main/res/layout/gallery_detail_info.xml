@@ -31,19 +31,11 @@
 
         <TableRow>
             <TextView
-                android:id="@+id/language"
+                android:id="@+id/pages"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="left"
-                android:singleLine="true"
-                android:textColor="?android:attr/textColorPrimary"/>
-
-            <TextView
-                android:id="@+id/pages"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center"
                 android:singleLine="true"
                 android:textColor="?android:attr/textColorPrimary"/>
 
@@ -57,37 +49,6 @@
                 android:textColor="?android:attr/textColorPrimary"/>
 
         </TableRow>
-
-        <TableRow
-            android:paddingTop="8dp">
-
-            <TextView
-                android:id="@+id/favoredTimes"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="left"
-                android:singleLine="true"
-                android:textColor="?android:attr/textColorPrimary"/>
-
-            <TextView
-                android:id="@+id/posted"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="right"
-                android:singleLine="true"
-                android:textColor="?android:attr/textColorPrimary"/>
-
-        </TableRow>
     </TableLayout>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="16dp"
-        android:text="@string/more_information"
-        android:textColor="?attr/textColorThemeAccent"/>
 
 </LinearLayout>

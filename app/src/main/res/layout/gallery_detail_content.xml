@@ -49,8 +49,6 @@
             <include
                 layout="@layout/gallery_detail_tags"/>
 
-            <include
-                layout="@layout/gallery_detail_comments"/>
 
             <include
                 layout="@layout/gallery_detail_previews"/>
