@@ -138,6 +138,32 @@ public class LRRAuthManager {
         return sNeedsReauthentication;
     }
 
+    // ── Per-profile API key storage (encrypted, keyed by profile ID) ──────────
+
+    /**
+     * Store the API key for a specific server profile in encrypted prefs.
+     * Use this instead of storing keys in the Room {@code SERVER_PROFILES} table.
+     */
+    public static void setApiKeyForProfile(long profileId, @Nullable String apiKey) {
+        String prefKey = "api_key_" + profileId;
+        if (apiKey == null || apiKey.isEmpty()) {
+            sPrefs.edit().remove(prefKey).apply();
+        } else {
+            sPrefs.edit().putString(prefKey, apiKey).apply();
+        }
+    }
+
+    /** @return the API key for the given profile, or null if none stored. */
+    @Nullable
+    public static String getApiKeyForProfile(long profileId) {
+        return sPrefs.getString("api_key_" + profileId, null);
+    }
+
+    /** Remove the stored API key for a profile (e.g., when the profile is deleted). */
+    public static void clearApiKeyForProfile(long profileId) {
+        sPrefs.edit().remove("api_key_" + profileId).apply();
+    }
+
     // ── App-lock pattern (stored as SHA-256 + salt, never plaintext) ──────────
 
     /** @return true if an app-lock pattern has been stored. */
