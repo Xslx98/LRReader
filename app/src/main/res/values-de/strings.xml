@@ -941,7 +941,6 @@ Kommentator blockieren: Kommentare dieses Benutzers ausblenden. Das Laden der Ga
     <string name="lrr_api_key_helper">API-Schlüssel in LANraragi-Einstellungen finden</string>
     <string name="lrr_api_key_hint">API-Schlüssel (optional)</string>
     <string name="lrr_categories_empty">Keine Kategorien</string>
-    <string name="lrr_categories_error">Fehler beim Laden der Kategorien</string>
     <string name="lrr_categories_title">Kategorienverwaltung</string>
     <string name="lrr_category_action_delete">Löschen</string>
     <string name="lrr_category_action_edit">Bearbeiten</string>
