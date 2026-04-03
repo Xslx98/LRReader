@@ -90,7 +90,7 @@ public class DownloadManager {
     private final List<DownloadInfoListener> mDownloadInfoListeners;
 
     private final List<DownloadInfo> mActiveTasks = new ArrayList<>();
-    private final Map<DownloadInfo, LRRDownloadWorker> mActiveWorkers = new HashMap<>();
+    private final Map<DownloadInfo, LRRDownloadWorker> mActiveWorkers = new java.util.concurrent.ConcurrentHashMap<>();
 
     private final ConcurrentPool<NotifyTask> mNotifyTaskPool = new ConcurrentPool<>(5);
 
