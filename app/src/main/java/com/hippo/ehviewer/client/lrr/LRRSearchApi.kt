@@ -6,7 +6,6 @@ import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.io.IOException
 
 /**
  * API class for LANraragi search operations.
@@ -51,7 +50,7 @@ object LRRSearchApi {
             client.newCall(request).execute().use { response ->
                 ensureSuccess(response)
                 val body = response.body?.string()
-                    ?: throw IOException("服务器返回空响应体")
+                    ?: throw LRREmptyBodyException()
                 lrrJson.decodeFromString<LRRSearchResult>(body)
             }
         }
@@ -86,7 +85,7 @@ object LRRSearchApi {
         client.newCall(request).execute().use { response ->
             ensureSuccess(response)
             val body = response.body?.string()
-                ?: throw IOException("服务器返回空响应体")
+                ?: throw LRREmptyBodyException()
             lrrJson.decodeFromString<LRRSearchResult>(body)
         }
     }

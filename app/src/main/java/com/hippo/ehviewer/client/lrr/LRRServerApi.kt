@@ -29,7 +29,7 @@ object LRRServerApi {
                 client.newCall(request).execute().use { response ->
                     ensureSuccess(response)
                     val body = response.body?.string()
-                        ?: throw java.io.IOException("服务器返回空响应体")
+                        ?: throw LRREmptyBodyException()
                     lrrJson.decodeFromString<LRRServerInfo>(body)
                 }
             }

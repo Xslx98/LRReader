@@ -203,6 +203,12 @@ class LRRApiUtilsTest {
     }
 
     @Test
+    fun friendlyError_emptyBodyException() {
+        val msg = friendlyError(ctx, LRREmptyBodyException())
+        assertFalse(msg.isBlank())
+    }
+
+    @Test
     fun friendlyError_unknownException_passesMessageThrough() {
         val msg = friendlyError(ctx, RuntimeException("custom error"))
         assertEquals("custom error", msg)
