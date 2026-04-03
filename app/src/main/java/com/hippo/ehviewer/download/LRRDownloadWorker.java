@@ -20,6 +20,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import com.hippo.ehviewer.client.lrr.LRRCoroutineHelper;
@@ -41,6 +42,7 @@ public class LRRDownloadWorker {
     private static final int BUFFER_SIZE = 65536;  // 64KB for LAN
     private static final int MIN_IMAGE_SIZE = 1024; // 1KB minimum valid image
     private static final int MAX_RETRY = 2;         // Try up to 2 times per page
+    private static final long MAX_PAGE_SIZE = 200L * 1024 * 1024; // 200MB per page
 
     private final Context mContext;
     private final DownloadInfo mInfo;
@@ -205,7 +207,7 @@ public class LRRDownloadWorker {
                 .get()
                 .build();
 
-        File tmpFile = new File(outFile.getParent(), outFile.getName() + "." + Thread.currentThread().getId() + ".tmp");
+        File tmpFile = new File(outFile.getParent(), outFile.getName() + "." + UUID.randomUUID() + ".tmp");
 
         try {
             long contentLength = -1;
@@ -216,7 +218,10 @@ public class LRRDownloadWorker {
                     throw new IOException("HTTP " + response.code());
                 }
 
-                contentLength = response.body().contentLength();
+                contentLength = response.body() != null ? response.body().contentLength() : -1;
+                if (response.body() == null) {
+                    throw new IOException("Empty response body");
+                }
                 try (InputStream is = response.body().byteStream();
                      FileOutputStream fos = new FileOutputStream(tmpFile)) {
                     byte[] buffer = new byte[BUFFER_SIZE];
@@ -228,6 +233,10 @@ public class LRRDownloadWorker {
                         }
                         fos.write(buffer, 0, read);
                         totalRead += read;
+                        if (totalRead > MAX_PAGE_SIZE) {
+                            tmpFile.delete();
+                            throw new IOException("Page exceeds maximum size limit (" + MAX_PAGE_SIZE / 1024 / 1024 + " MB)");
+                        }
                         if (mListener != null && contentLength > 0) {
                             mListener.onPageDownload(index, contentLength, totalRead, read);
                         }
