@@ -146,7 +146,17 @@ public final class LRRUrlHelper {
             Log.d(TAG, "HTTPS failed: " + e1.getMessage());
         }
 
-        // Fallback to HTTP
+        // Fallback to HTTP — only permitted for private / LAN addresses.
+        // Allowing HTTP on public hosts would expose the Bearer token to
+        // a network-layer attacker that forced the HTTPS failure.
+        if (!isLanAddress(httpUrl)) {
+            LRRAuthManager.setServerUrl(httpsUrl); // restore HTTPS URL
+            callback.onFailure(new SecurityException(
+                    "HTTPS connection failed and HTTP is not allowed for non-LAN servers. "
+                    + "Verify the server address and SSL certificate."));
+            return;
+        }
+
         LRRAuthManager.setServerUrl(httpUrl);
         try {
             Log.d(TAG, "Trying HTTP fallback: " + httpUrl);
