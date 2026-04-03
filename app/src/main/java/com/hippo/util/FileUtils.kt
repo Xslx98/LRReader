@@ -124,7 +124,6 @@ class FileUtils {
 //                context.startActivity(intent)
 //            } else {
 //                Handler(Looper.getMainLooper()).post {
-//                    Toast.makeText(context, "无法打开下载目录", Toast.LENGTH_SHORT).show();
 //                }
 //            }
 

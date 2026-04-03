@@ -1149,4 +1149,5 @@
         <item>asc</item>
         <item>desc</item>
     </string-array>
+    <string name="error_save_image">ไม่สามารถบันทึกรูปภาพได้</string>
 </resources>

@@ -1088,4 +1088,5 @@
         <item>asc</item>
         <item>desc</item>
     </string-array>
+    <string name="error_save_image">画像を保存できませんでした</string>
 </resources>

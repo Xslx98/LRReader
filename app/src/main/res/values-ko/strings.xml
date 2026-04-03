@@ -1167,4 +1167,5 @@
         <item>asc</item>
         <item>desc</item>
     </string-array>
+    <string name="error_save_image">이미지를 저장할 수 없습니다</string>
 </resources>
