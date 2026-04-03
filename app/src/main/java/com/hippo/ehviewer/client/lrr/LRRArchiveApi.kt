@@ -45,8 +45,13 @@ object LRRArchiveApi {
         arcid: String
     ): LRRArchive = retryOnFailure {
         withContext(Dispatchers.IO) {
+            val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+                .addPathSegments("api/archives")
+                .addPathSegment(arcid)
+                .addPathSegment("metadata")
+                .build()
             val request = Request.Builder()
-                .url("$baseUrl/api/archives/$arcid/metadata")
+                .url(url)
                 .get()
                 .build()
             client.newCall(request).execute().use { response ->
@@ -69,7 +74,10 @@ object LRRArchiveApi {
         arcid: String,
         tags: String
     ) = withContext(Dispatchers.IO) {
-        val url = "$baseUrl/api/archives/$arcid/metadata".toHttpUrlOrNull()!!.newBuilder()
+        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+            .addPathSegments("api/archives")
+            .addPathSegment(arcid)
+            .addPathSegment("metadata")
             .addQueryParameter("tags", tags)
             .build()
         Log.d(TAG, "updateArchiveMetadata URL: $url")
@@ -103,8 +111,13 @@ object LRRArchiveApi {
         val longClient = client.newBuilder()
             .readTimeout(120, TimeUnit.SECONDS)
             .build()
+        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+            .addPathSegments("api/archives")
+            .addPathSegment(arcid)
+            .addPathSegment("files")
+            .build()
         val request = Request.Builder()
-            .url("$baseUrl/api/archives/$arcid/files")
+            .url(url)
             .get()
             .build()
         longClient.newCall(request).execute().use { response ->
@@ -130,8 +143,12 @@ object LRRArchiveApi {
         baseUrl: String,
         arcid: String
     ): String = withContext(Dispatchers.IO) {
+        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+            .addPathSegments("api/archives")
+            .addPathSegment(arcid)
+            .build()
         val request = Request.Builder()
-            .url("$baseUrl/api/archives/$arcid")
+            .url(url)
             .delete()
             .build()
         client.newCall(request).execute().use { response ->
@@ -206,8 +223,10 @@ object LRRArchiveApi {
      */
     @JvmStatic
     fun getPageUrl(baseUrl: String, arcid: String, pagePath: String): String {
-        return "$baseUrl/api/archives/$arcid/page".toHttpUrlOrNull()!!
-            .newBuilder()
+        return baseUrl.toHttpUrlOrNull()!!.newBuilder()
+            .addPathSegments("api/archives")
+            .addPathSegment(arcid)
+            .addPathSegment("page")
             .addQueryParameter("path", pagePath)
             .build()
             .toString()
@@ -222,8 +241,13 @@ object LRRArchiveApi {
         baseUrl: String,
         arcid: String
     ) = withContext(Dispatchers.IO) {
+        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+            .addPathSegments("api/archives")
+            .addPathSegment(arcid)
+            .addPathSegment("isnew")
+            .build()
         val request = Request.Builder()
-            .url("$baseUrl/api/archives/$arcid/isnew")
+            .url(url)
             .delete()
             .build()
         client.newCall(request).execute().use { response ->
@@ -241,8 +265,14 @@ object LRRArchiveApi {
         arcid: String,
         page: Int
     ) = withContext(Dispatchers.IO) {
+        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+            .addPathSegments("api/archives")
+            .addPathSegment(arcid)
+            .addPathSegment("progress")
+            .addPathSegment(page.toString())
+            .build()
         val request = Request.Builder()
-            .url("$baseUrl/api/archives/$arcid/progress/$page")
+            .url(url)
             .put(EMPTY_REQUEST_BODY)
             .build()
         client.newCall(request).execute().use { response ->
