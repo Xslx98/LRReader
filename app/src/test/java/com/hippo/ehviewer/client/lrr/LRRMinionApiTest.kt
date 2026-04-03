@@ -8,6 +8,7 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import com.hippo.ehviewer.client.lrr.LRRHttpException
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -91,8 +92,8 @@ class LRRMinionApiTest {
         try {
             LRRMinionApi.getJobStatus(client, baseUrl, "999")
             fail("Should have thrown")
-        } catch (e: IOException) {
-            assertTrue(e.message!!.contains("服务器错误"))
+        } catch (e: LRRHttpException) {
+            assertEquals(500, e.code)
         }
     }
 
@@ -104,8 +105,8 @@ class LRRMinionApiTest {
         try {
             LRRMinionApi.getJobStatus(client, baseUrl, "nonexistent")
             fail("Should have thrown")
-        } catch (e: IOException) {
-            assertTrue(e.message!!.contains("未找到"))
+        } catch (e: LRRHttpException) {
+            assertEquals(404, e.code)
         }
     }
 
@@ -132,8 +133,8 @@ class LRRMinionApiTest {
         try {
             LRRMinionApi.clearJobs(client, baseUrl)
             fail("Should have thrown")
-        } catch (e: IOException) {
-            assertTrue(e.message!!.contains("服务器错误"))
+        } catch (e: LRRHttpException) {
+            assertEquals(500, e.code)
         }
     }
 

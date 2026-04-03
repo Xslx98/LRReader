@@ -8,6 +8,7 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import com.hippo.ehviewer.client.lrr.LRRHttpException
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -68,8 +69,8 @@ class LRRDatabaseApiTest {
         try {
             LRRDatabaseApi.getDatabaseStats(client, baseUrl)
             fail("Should have thrown IOException")
-        } catch (e: IOException) {
-            assertTrue(e.message!!.contains("服务器错误"))
+        } catch (e: LRRHttpException) {
+            assertEquals(500, e.code)
         }
     }
 }
