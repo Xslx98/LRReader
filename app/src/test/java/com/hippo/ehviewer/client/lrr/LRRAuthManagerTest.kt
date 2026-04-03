@@ -162,7 +162,7 @@ class LRRAuthManagerTest {
     }
 
     @Test
-    fun setPattern_twoCallsProduceDifferentSalts() {
+    fun setPattern_overwritesPriorHash_stillVerifiesCorrectly() {
         // Same pattern stored twice should still verify correctly (different salts but same result)
         LRRAuthManager.setPattern("same")
         assertTrue(LRRAuthManager.verifyPattern("same"))
@@ -171,7 +171,7 @@ class LRRAuthManagerTest {
     }
 
     @Test
-    fun isNeedsReauthentication_falseAfterNormalInit() {
+    fun isNeedsReauthentication_falseAfterInitializeForTesting() {
         assertFalse("Reauth flag should be false when KeyStore is available",
             LRRAuthManager.isNeedsReauthentication())
     }
