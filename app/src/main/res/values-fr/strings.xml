@@ -673,7 +673,7 @@ Bloquer le commentateur : masquer les commentaires de cet utilisateur. Le charge
     <!-- DirPickerActivity -->
     <string name="preset">Préréglage</string>
     <string name="default_directory">Répertoire par défaut</string>
-    <string name="application_file_directory">Répertoire de fichiers de l\'application</string>
+    <string name="application_file_directory">Répertoire de fichiers %d (supprimé après désinstallation)</string>
 
     <!-- Dir Picker-->
     <string name="dir_picker">Sélectionner le répertoire</string>
@@ -808,7 +808,7 @@ Bloquer le commentateur : masquer les commentaires de cet utilisateur. Le charge
     <string name="archiver_dialog_download_original">Télécharger l\'archive originale</string>
     <string name="archiver_dialog_download_resample">Télécharger l\'archive rééchantillonnée</string>
     <string name="archiver_dialog_size">Taille estimée : %s</string>
-    <string name="archiver_dialog_cost">%s GP / %s crédits consommés</string>
+    <string name="archiver_dialog_cost">Coût de téléchargement : %s</string>
     <string name="dialog_archiver_title">Téléchargeur d\'archives</string>
     <string name="download_receiver_label">Récepteur de téléchargement LR Reader</string>
     <string name="decompressed_successfully">Décompressé avec succès !</string>
@@ -967,7 +967,7 @@ Bloquer le commentateur : masquer les commentaires de cet utilisateur. Le charge
     <string name="lrr_category_create">Créer une catégorie</string>
     <string name="lrr_category_create_inline">Créer une nouvelle catégorie</string>
     <string name="lrr_category_created">Catégorie créée</string>
-    <string name="lrr_category_delete_confirm">Supprimer cette catégorie ?</string>
+    <string name="lrr_category_delete_confirm">Supprimer la catégorie \"%1$s\" ?</string>
     <string name="lrr_category_deleted">Catégorie supprimée</string>
     <string name="lrr_category_dynamic">Dynamique</string>
     <string name="lrr_category_edit">Modifier la catégorie</string>
@@ -995,7 +995,7 @@ Cette action est irréversible.</string>
     <string name="lrr_delete_failed">Suppression échouée : %s</string>
     <string name="lrr_delete_server">Supprimer le serveur</string>
     <string name="lrr_delete_server_confirm">Supprimer le serveur \"%s\" ?</string>
-    <string name="lrr_delete_success">Archive supprimée</string>
+    <string name="lrr_delete_success">\"%s\" supprimé</string>
     <string name="lrr_edit_server">Modifier le serveur</string>
     <string name="lrr_edit_server_name">Nom du serveur</string>
     <string name="lrr_edit_server_save">Enregistrer</string>
@@ -1006,7 +1006,7 @@ Cette action est irréversible.</string>
     <string name="lrr_not_configured">Serveur non configuré</string>
     <string name="lrr_server_active">Actif</string>
     <string name="lrr_server_config_subtitle">Se connecter au serveur LANraragi</string>
-    <string name="lrr_server_info">LANraragi %s - %s archives</string>
+    <string name="lrr_server_info">Serveur : %1$s\nVersion : %2$s %3$s\nPar page : %4$s</string>
     <string name="lrr_server_switched">Basculé vers %s</string>
     <string name="lrr_server_url_empty">L\'URL du serveur ne peut pas être vide</string>
     <string name="lrr_server_url_hint">URL du serveur (ex : http://192.168.1.1:3000)</string>

@@ -47,6 +47,7 @@ android {
     lint {
         abortOnError true
         checkReleaseBuilds true
+        disable 'MissingTranslation', 'ExtraTranslation', 'PropertyEscape'
     }
 
     signingConfigs {

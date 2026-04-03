@@ -1062,7 +1062,7 @@
     <string name="app_language_zh_tw" translatable="false">中文（臺灣）</string>
     <string name="app_widget_description">显示下载进度的小部件</string>
     <string name="appwidget_text">示例小部件</string>
-    <string name="archiver_dialog_cost">消耗 %s GP / %s 积分</string>
+    <string name="archiver_dialog_cost">下载成本：%s</string>
     <string name="artist_cg">艺术家CG</string>
     <string name="asian_porn">亚洲写真</string>
     <string name="cosplay">Cosplay</string>
