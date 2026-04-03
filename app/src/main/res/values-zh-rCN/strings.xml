@@ -1160,4 +1160,18 @@
     <string name="lrr_request_failed_short">请求失败</string>
     <string name="lrr_not_found_short">资源未找到</string>
     <string name="lrr_save_and_connect">保存并连接</string>
+    <string name="lrr_error_title">出错了</string>
+    <string name="lrr_retry">重试</string>
+    <string-array name="lrr_sort_by_values">
+        <item>title</item>
+        <item>date_added</item>
+        <item>lastread</item>
+        <item>artist</item>
+        <item>group</item>
+        <item>parody</item>
+    </string-array>
+    <string-array name="lrr_sort_order_values">
+        <item>asc</item>
+        <item>desc</item>
+    </string-array>
 </resources>
