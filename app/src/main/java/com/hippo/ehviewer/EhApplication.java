@@ -29,14 +29,10 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 
 import android.os.Debug;
-import android.text.method.LinkMovementMethod;
 import android.util.Log;
-import android.view.View;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 
 import com.hippo.Native;
 import com.hippo.a7zip.A7Zip;
@@ -53,8 +49,6 @@ import com.hippo.util.IoThreadPoolExecutor;
 import com.hippo.util.ReadableTime;
 import com.hippo.lib.yorozuya.FileUtils;
 import com.hippo.lib.yorozuya.SimpleHandler;
-
-import android.text.Html;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -331,37 +325,6 @@ public class EhApplication extends RecordingApplication {
         }
     }
 
-    // ======== Event pane ========
-
-    public void showEventPane(String html){
-        if (!Settings.getShowEhEvents()){
-            return;
-        }
-        if (html==null){
-            return;
-        }
-        Activity activity = getTopActivity();
-        if (activity != null) {
-            activity.runOnUiThread(() -> {
-                AlertDialog dialog = new AlertDialog.Builder(activity)
-                        .setMessage(Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY))
-                        .setPositiveButton(android.R.string.ok, null)
-                        .create();
-                dialog.setOnShowListener(d -> {
-                    final View messageView = dialog.findViewById(android.R.id.message);
-                    if (messageView instanceof TextView) {
-                        ((TextView) messageView).setMovementMethod(LinkMovementMethod.getInstance());
-                    }
-                });
-                try {
-                    dialog.show();
-                } catch (Exception t) {
-                    // ignore
-                }
-            });
-        }
-    }
-
     // ======== Service override for device compatibility ========
 
     @Override
@@ -399,22 +362,6 @@ public class EhApplication extends RecordingApplication {
         ServiceRegistry.INSTANCE.getClientModule().clearMemoryCache();
         ServiceRegistry.INSTANCE.getDataModule().clearGalleryDetailCache();
     }
-
-    // ======== Torrent download dedup (called by GalleryDetailScene) ========
-
-    private final List<String> torrentList = new ArrayList<>();
-
-    public static boolean addDownloadTorrent(@NonNull Context context, String url) {
-        EhApplication application = ((EhApplication) context.getApplicationContext());
-        if (application.torrentList.contains(url)) {
-            return false;
-        }
-        application.torrentList.add(url);
-        return true;
-    }
-
-
-
 
     // --- GlobalStuff delegation ---
 
