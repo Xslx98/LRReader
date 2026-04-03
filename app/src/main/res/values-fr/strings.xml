@@ -1042,8 +1042,6 @@ Cette action est irréversible.</string>
     <string name="settings_about_declaration" translatable="false">LR Reader</string>
     <string name="settings_download_clean_invalid_download">Nettoyer les téléchargements invalides</string>
     <string name="settings_download_clean_invalid_download_summary">Supprimer les téléchargements invalides</string>
-    <string name="settings_eh_lock_cookies_igneous">Verrouiller le champ Cookie igneous</string>
-    <string name="settings_eh_lock_cookies_igneous_summary">Non recommandé sauf en cas particulier</string>
     <string name="settings_eh_show_tag_translations">Show tag translations</string>
     <string name="settings_eh_show_tag_translations_summary">Show tag translations instead of the original text (It takes time to download the data file)</string>
     <string name="settings_eh_system_theme">Thème système</string>
