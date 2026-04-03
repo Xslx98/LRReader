@@ -2,6 +2,7 @@ package com.hippo.ehviewer.client.lrr
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import com.hippo.ehviewer.R
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -205,7 +206,13 @@ class LRRApiUtilsTest {
     @Test
     fun friendlyError_emptyBodyException() {
         val msg = friendlyError(ctx, LRREmptyBodyException())
-        assertFalse(msg.isBlank())
+        assertEquals(ctx.getString(R.string.lrr_empty_response), msg)
+    }
+
+    @Test
+    fun friendlyError_missingFieldException() {
+        val msg = friendlyError(ctx, LRRMissingFieldException("pages"))
+        assertEquals(ctx.getString(R.string.lrr_empty_response), msg)
     }
 
     @Test

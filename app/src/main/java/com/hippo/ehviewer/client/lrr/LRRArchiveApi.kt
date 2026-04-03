@@ -113,7 +113,7 @@ object LRRArchiveApi {
                 ?: throw LRREmptyBodyException()
             val jsonObj = Json.parseToJsonElement(body).jsonObject
             val pages = jsonObj["pages"]?.jsonArray
-                ?: throw IOException("服务器响应缺少 pages 字段")
+                ?: throw LRRMissingFieldException("pages")
             Array(pages.size) { i -> pages[i].jsonPrimitive.content }
         }
     }
