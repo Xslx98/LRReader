@@ -102,7 +102,7 @@ public class LRRAuthManager {
         if (url.endsWith("/")) {
             url = url.substring(0, url.length() - 1);
         }
-        sPrefs.edit().putString(KEY_SERVER_URL, url).apply();
+        sPrefs.edit().putString(KEY_SERVER_URL, url).commit();
     }
 
     /**
@@ -115,7 +115,7 @@ public class LRRAuthManager {
 
     public static void setApiKey(@Nullable String apiKey) {
         if (sPrefs == null) return;
-        sPrefs.edit().putString(KEY_API_KEY, apiKey).apply();
+        sPrefs.edit().putString(KEY_API_KEY, apiKey).commit();
     }
 
     /**
@@ -148,7 +148,7 @@ public class LRRAuthManager {
 
     public static void setActiveProfileId(long id) {
         sActiveProfileId = id;
-        if (sPrefs != null) sPrefs.edit().putLong(KEY_ACTIVE_PROFILE_ID, id).apply();
+        if (sPrefs != null) sPrefs.edit().putLong(KEY_ACTIVE_PROFILE_ID, id).commit();
     }
 
     /**
@@ -170,9 +170,9 @@ public class LRRAuthManager {
         if (sPrefs == null) return;
         String prefKey = "api_key_" + profileId;
         if (apiKey == null || apiKey.isEmpty()) {
-            sPrefs.edit().remove(prefKey).apply();
+            sPrefs.edit().remove(prefKey).commit();
         } else {
-            sPrefs.edit().putString(prefKey, apiKey).apply();
+            sPrefs.edit().putString(prefKey, apiKey).commit();
         }
     }
 
