@@ -242,8 +242,11 @@ public final class SpiderDen {
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inJustDecodeBounds = true;
             pipe.obtain();
-            BitmapFactory.decodeStream(pipe.open(), null, options);
-            pipe.close();
+            try {
+                BitmapFactory.decodeStream(pipe.open(), null, options);
+            } finally {
+                pipe.close();
+            }
             extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(options.outMimeType);
             if (extension != null) {
                 extension = '.' + extension;
@@ -258,13 +261,16 @@ public final class SpiderDen {
                 return false;
             }
             os = file.openOutputStream();
-            IOUtils.copy(pipe.open(), os);
+            try {
+                IOUtils.copy(pipe.open(), os);
+            } finally {
+                pipe.close();
+            }
             return true;
         } catch (IOException e) {
             return false;
         } finally {
             IOUtils.closeQuietly(os);
-            pipe.close();
             pipe.release();
         }
     }
