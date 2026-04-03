@@ -231,8 +231,7 @@ class LRRApiUtilsTest {
             }
             fail("Should have thrown IOException")
         } catch (e: IOException) {
-            assertFalse("Error message must not contain HTML tags", e.message!!.contains("<html"))
-            assertTrue("Error message should contain friendly 503 text", e.message!!.contains("服务器错误"))
+            assertEquals("服务器错误 (503)，请稍后重试", e.message)
         }
     }
 }
