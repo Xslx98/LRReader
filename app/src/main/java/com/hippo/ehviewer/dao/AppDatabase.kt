@@ -46,7 +46,7 @@ import java.security.MessageDigest
         BookmarkInfo::class,
         ServerProfile::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class)
@@ -68,7 +68,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "eh.db"
                 )
-                    .addMigrations(MIGRATION_9_10)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11)
                     .build()
                     .also { INSTANCE = it }
             }
@@ -86,6 +86,15 @@ abstract class AppDatabase : RoomDatabase() {
          * Tables with GID only:     DOWNLOAD_DIRNAME (references DOWNLOADS.GID),
          *                           Gallery_Tags (references gallery GIDs)
          */
+        private val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE INDEX IF NOT EXISTS idx_downloads_profile ON DOWNLOADS (SERVER_PROFILE_ID)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS idx_downloads_time ON DOWNLOADS (TIME)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS idx_history_profile ON HISTORY (SERVER_PROFILE_ID)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS idx_history_time ON HISTORY (TIME)")
+            }
+        }
+
         private val MIGRATION_9_10 = object : Migration(9, 10) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // --- Collect old→new GID mappings from TOKEN-bearing tables ---
