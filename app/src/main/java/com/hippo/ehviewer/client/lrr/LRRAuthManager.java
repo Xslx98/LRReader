@@ -33,9 +33,7 @@ public class LRRAuthManager {
     private static final String KEY_API_KEY = "api_key";
     private static final String KEY_SERVER_NAME = "server_name";
     private static final String KEY_ACTIVE_PROFILE_ID = "active_profile_id";
-    private static final String KEY_PATTERN_HASH = "pattern_hash";
     private static final String KEY_PATTERN_SALT = "pattern_salt";
-    /** V2 pattern hash uses PBKDF2; the old KEY_PATTERN_HASH key is intentionally abandoned. */
     private static final String KEY_PATTERN_HASH_V2 = "pattern_hash_v2";
     private static final int    PBKDF2_ITERATIONS   = 100_000;
     private static final int    PBKDF2_KEY_BITS     = 256;
@@ -72,6 +70,11 @@ public class LRRAuthManager {
         }
         // Restore active profile (falls back to 0 when sPrefs is null)
         sActiveProfileId = sPrefs != null ? sPrefs.getLong(KEY_ACTIVE_PROFILE_ID, 0L) : 0L;
+        // Migrate away from v1 SHA-256 pattern hash: remove stale key so hasPattern()
+        // correctly returns false and prompts the user to re-enroll with PBKDF2.
+        if (sPrefs != null && sPrefs.contains("pattern_hash")) {
+            sPrefs.edit().remove("pattern_hash").apply();
+        }
     }
 
     /**
@@ -185,7 +188,7 @@ public class LRRAuthManager {
         sPrefs.edit().remove("api_key_" + profileId).apply();
     }
 
-    // ── App-lock pattern (stored as SHA-256 + salt, never plaintext) ──────────
+    // ── App-lock pattern (PBKDF2WithHmacSHA256 + random salt, never plaintext) ──
 
     /** @return true if an app-lock pattern has been stored. */
     public static boolean hasPattern() {
@@ -207,18 +210,20 @@ public class LRRAuthManager {
         }
         byte[] salt = new byte[16];
         new SecureRandom().nextBytes(salt);
+        char[] patChars = pattern.toCharArray();
+        PBEKeySpec spec = new PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS);
         try {
-            char[] patChars = pattern.toCharArray();
-            PBEKeySpec spec = new PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS);
             SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
             byte[] hash = factory.generateSecret(spec).getEncoded();
-            spec.clearPassword();
             sPrefs.edit()
                     .putString(KEY_PATTERN_HASH_V2, Base64.encodeToString(hash, Base64.NO_WRAP))
                     .putString(KEY_PATTERN_SALT,    Base64.encodeToString(salt, Base64.NO_WRAP))
                     .apply();
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new RuntimeException("PBKDF2WithHmacSHA256 not available on this device", e);
+        } finally {
+            spec.clearPassword();
+            java.util.Arrays.fill(patChars, '\0');
         }
     }
 
@@ -234,15 +239,17 @@ public class LRRAuthManager {
         if (saltStr == null || hashStr == null) return false;
         byte[] salt     = Base64.decode(saltStr, Base64.NO_WRAP);
         byte[] expected = Base64.decode(hashStr, Base64.NO_WRAP);
+        char[] patChars = (input != null ? input : "").toCharArray();
+        PBEKeySpec spec = new PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS);
         try {
-            char[] patChars = (input != null ? input : "").toCharArray();
-            PBEKeySpec spec = new PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS);
             SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
             byte[] actual = factory.generateSecret(spec).getEncoded();
-            spec.clearPassword();
             return MessageDigest.isEqual(actual, expected);
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             return false;
+        } finally {
+            spec.clearPassword();
+            java.util.Arrays.fill(patChars, '\0');
         }
     }
 
