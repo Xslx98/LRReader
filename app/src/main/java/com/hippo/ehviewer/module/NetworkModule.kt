@@ -87,4 +87,21 @@ class NetworkModule(private val context: Context) {
             .callTimeout(20, TimeUnit.SECONDS)
             .build()
     }
+
+    /** Long-read client for archive extraction (large archives can be slow to extract). */
+    val longReadClient: OkHttpClient by lazy {
+        okHttpClient.newBuilder()
+            .readTimeout(120, TimeUnit.SECONDS)
+            .callTimeout(0, TimeUnit.SECONDS) // no overall call timeout for slow servers
+            .build()
+    }
+
+    /** Upload client for file uploads (large write + long read timeouts). */
+    val uploadClient: OkHttpClient by lazy {
+        okHttpClient.newBuilder()
+            .writeTimeout(300, TimeUnit.SECONDS)
+            .readTimeout(120, TimeUnit.SECONDS)
+            .callTimeout(0, TimeUnit.SECONDS)
+            .build()
+    }
 }
