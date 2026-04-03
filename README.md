@@ -91,8 +91,8 @@ RELEASE_KEY_PASSWORD=<your-key-password>
 |---|---|
 | **语言 / Language** | Java / Kotlin hybrid |
 | **网络 / Network** | OkHttp 4.12 + Kotlin Coroutines |
-| **API 序列化 / Serialization** | kotlinx-serialization (LRR API) + Gson (legacy) |
-| **数据库 / Database** | Room 2.6.1 + KSP (schema v9) |
+| **API 序列化 / Serialization** | kotlinx-serialization (all JSON) |
+| **数据库 / Database** | Room 2.6.1 + KSP (schema v11) |
 | **图像解码 / Image Decoding** | Custom C/JNI engine (libjpeg-turbo, libpng, libwebp) |
 | **安全 / Security** | EncryptedSharedPreferences (API Key) |
 | **构建 / Build** | Gradle + R8/ProGuard |
@@ -135,7 +135,6 @@ This project is built upon the following open-source projects:
 - [OkHttp](https://github.com/square/okhttp) - HTTP client
 - [kotlinx-serialization](https://github.com/Kotlin/kotlinx.serialization) - JSON serialization
 - [kotlinx-coroutines](https://github.com/Kotlin/kotlinx.coroutines) - Async programming
-- [Gson](https://github.com/google/gson) - JSON parsing (legacy)
 - [UCrop](https://github.com/Yalantis/uCrop) - Image cropping
 - [ReLinker](https://github.com/KeepSafe/ReLinker) - Native library loading
 - [jsoup](https://github.com/jhy/jsoup) - HTML parsing
