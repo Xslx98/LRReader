@@ -285,6 +285,7 @@
     <string name="more_previews">더 불러오기</string>
     <string name="refresh">새로고침</string>
     <string name="open_in_other_app">다른 앱에서 열기</string>
+    <string name="file_chooser_title">다음으로 열기</string>
     <string name="rate_successfully">평가를 남겼습니다.</string>
     <string name="rate_failed">평가에 실패했습니다.</string>
     <string name="no_torrents">토렌트 없음</string>

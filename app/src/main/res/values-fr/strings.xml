@@ -270,6 +270,7 @@ Bloquer le commentateur : masquer les commentaires de cet utilisateur. Le charge
     <string name="more_previews">Voir plus d\'aperçus</string>
     <string name="refresh">Rafraîchir</string>
     <string name="open_in_other_app">Ouvrir avec une autre appli</string>
+    <string name="file_chooser_title">Ouvrir avec</string>
     <string name="rate_successfully">Noté avec succès</string>
     <string name="rate_failed">Échec de notation</string>
     <string name="no_torrents">Aucun fichier torrent</string>

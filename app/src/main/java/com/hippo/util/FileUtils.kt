@@ -11,6 +11,7 @@ import android.provider.OpenableColumns
 import android.util.Log
 import androidx.core.net.toUri
 import com.hippo.ehviewer.Analytics
+import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhConfig
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.unifile.UniFile
@@ -144,7 +145,7 @@ class FileUtils {
 
             try {
 //            context.startActivity(intent);
-                context.startActivity(Intent.createChooser(intent, "选择浏览工具"))
+                context.startActivity(Intent.createChooser(intent, context.getString(R.string.file_chooser_title)))
             } catch (e: ActivityNotFoundException) {
                 e.printStackTrace()
             }

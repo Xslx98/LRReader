@@ -269,6 +269,7 @@ Bloquear comentarista: ocultar los comentarios de este usuario. Puede tardar má
     <string name="more_previews">Más vistas previas</string>
     <string name="refresh">Actualizar</string>
     <string name="open_in_other_app">Abrir en otra aplicación</string>
+    <string name="file_chooser_title">Abrir con</string>
     <string name="rate_successfully">Valoración completada</string>
     <string name="rate_failed">Valoración fallida</string>
     <string name="no_torrents">Sin torrents</string>
