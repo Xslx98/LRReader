@@ -214,4 +214,25 @@ class LRRApiUtilsTest {
         advanceUntilIdle()
         assertEquals(3, callCount) // 1 initial + 2 retries
     }
+
+    @Test
+    fun ensureSuccess_htmlBodyDoesNotLeakIntoMessage() {
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(503)
+                .setBody("<html><body><h1>Service Unavailable</h1></body></html>")
+                .addHeader("Content-Type", "text/html")
+        )
+        val client = okhttp3.OkHttpClient()
+        val request = okhttp3.Request.Builder().url(server.url("/")).build()
+        try {
+            client.newCall(request).execute().use { response ->
+                ensureSuccess(response)
+            }
+            fail("Should have thrown IOException")
+        } catch (e: IOException) {
+            assertFalse("Error message must not contain HTML tags", e.message!!.contains("<html"))
+            assertTrue("Error message should contain friendly 503 text", e.message!!.contains("服务器错误"))
+        }
+    }
 }
