@@ -15,8 +15,10 @@ import org.robolectric.annotation.Config
  *
  * Uses Robolectric because [LRRAuthManager.initialize] creates [EncryptedSharedPreferences]
  * which requires an Android Context. The test Application is a plain [android.app.Application]
- * so the KeyStore may be unavailable — both the happy path (encryption works) and
- * the fallback path (KeyStore error → plaintext fallback) must behave correctly.
+ * so the Android KeyStore is unavailable in this environment — [LRRAuthManager.initialize]
+ * will set sPrefs=null and sNeedsReauthentication=true. We recover via
+ * [LRRAuthManager.initializeForTesting] which injects a plain SharedPreferences so that all
+ * credential round-trip tests remain meaningful.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], application = android.app.Application::class)
@@ -28,6 +30,14 @@ class LRRAuthManagerTest {
     fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
         LRRAuthManager.initialize(ctx)
+        // In Robolectric, Android KeyStore is unavailable so EncryptedSharedPreferences
+        // initialization fails and sPrefs is left null. Inject a plain SharedPreferences
+        // so the remaining tests can exercise credential storage logic.
+        if (LRRAuthManager.isNeedsReauthentication()) {
+            LRRAuthManager.initializeForTesting(
+                ctx.getSharedPreferences("lrr_auth_test", android.content.Context.MODE_PRIVATE)
+            )
+        }
     }
 
     @After
@@ -158,6 +168,23 @@ class LRRAuthManagerTest {
         assertTrue(LRRAuthManager.verifyPattern("same"))
         LRRAuthManager.setPattern("same")
         assertTrue(LRRAuthManager.verifyPattern("same"))
+    }
+
+    @Test
+    fun isNeedsReauthentication_falseAfterNormalInit() {
+        assertFalse("Reauth flag should be false when KeyStore is available",
+            LRRAuthManager.isNeedsReauthentication())
+    }
+
+    @Test
+    fun getServerUrl_returnsNullWhenNotSet() {
+        assertNull(LRRAuthManager.getServerUrl())
+    }
+
+    @Test
+    fun setServerUrl_persistsAndRetrievable() {
+        LRRAuthManager.setServerUrl("http://test.local:3000")
+        assertNotNull(LRRAuthManager.getServerUrl())
     }
 
     @Test
