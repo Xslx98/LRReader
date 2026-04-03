@@ -1,6 +1,5 @@
 package com.hippo.ehviewer.client.lrr
 
-import android.util.Log
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.lrr.data.LRRArchive
 import kotlinx.coroutines.Dispatchers
@@ -32,8 +31,6 @@ import java.io.IOException
  * - PUT    /api/archives/upload          — Upload archive file
  */
 object LRRArchiveApi {
-
-    private const val TAG = "LRRArchiveApi"
 
     /**
      * GET /api/archives/:id/metadata — Get archive metadata.
@@ -80,15 +77,12 @@ object LRRArchiveApi {
             .addPathSegment("metadata")
             .addQueryParameter("tags", tags)
             .build()
-        Log.d(TAG, "updateArchiveMetadata URL: $url")
-        Log.d(TAG, "updateArchiveMetadata tags: $tags")
         val request = Request.Builder()
             .url(url)
             .put(EMPTY_REQUEST_BODY)
             .build()
         client.newCall(request).execute().use { response ->
             val body = response.body?.string() ?: ""
-            Log.d(TAG, "updateArchiveMetadata response: ${response.code} $body")
             if (!response.isSuccessful) {
                 throw LRRHttpException(response.code)
             }
