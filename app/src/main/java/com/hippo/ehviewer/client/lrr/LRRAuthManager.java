@@ -33,10 +33,10 @@ public class LRRAuthManager {
     private static final String KEY_PATTERN_HASH = "pattern_hash";
     private static final String KEY_PATTERN_SALT = "pattern_salt";
 
-    private static SharedPreferences sPrefs;
-    private static long sActiveProfileId = 0;
+    private static volatile SharedPreferences sPrefs;
+    private static volatile long sActiveProfileId = 0;
     /** True when KeyStore became unavailable and the user must re-enter credentials. */
-    private static boolean sNeedsReauthentication = false;
+    private static volatile boolean sNeedsReauthentication = false;
 
     public static void initialize(@NonNull Context context) {
         try {
@@ -144,6 +144,7 @@ public class LRRAuthManager {
     /**
      * @return true if encryption was unavailable during initialize() and the user
      *         should be prompted to re-enter their API key.
+     * TODO: Surface this flag in the server setup/login UI to prompt re-entry.
      */
     public static boolean isNeedsReauthentication() {
         return sNeedsReauthentication;
@@ -242,5 +243,6 @@ public class LRRAuthManager {
     public static void clear() {
         if (sPrefs != null) sPrefs.edit().clear().apply();
         sActiveProfileId = 0;
+        sNeedsReauthentication = false;
     }
 }
