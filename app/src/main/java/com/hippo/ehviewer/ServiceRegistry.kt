@@ -34,4 +34,14 @@ object ServiceRegistry {
         clientModule = ClientModule(context, networkModule)
         dataModule = DataModule(context)
     }
+
+    /**
+     * Clear all in-memory and disk caches. Call when switching server profiles
+     * so that content from the previous server does not appear in the new one.
+     */
+    fun clearAllCaches() {
+        try { networkModule.cache.evictAll() } catch (_: Exception) {}
+        dataModule.galleryDetailCache.evictAll()
+        try { dataModule.spiderInfoCache.clear() } catch (_: Exception) {}
+    }
 }
