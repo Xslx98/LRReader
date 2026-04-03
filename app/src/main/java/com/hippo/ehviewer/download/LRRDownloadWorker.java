@@ -87,7 +87,7 @@ public class LRRDownloadWorker {
         // Step 1: Extract archive to get page list
         try {
             pagePaths = (String[]) LRRCoroutineHelper.runSuspend(
-                    (scope, cont) -> LRRArchiveApi.getFileList(client, mServerUrl, mArcId, cont)
+                    (scope, cont) -> LRRArchiveApi.getFileList(ServiceRegistry.INSTANCE.getNetworkModule().getLongReadClient(), mServerUrl, mArcId, cont)
             );
         } catch (Exception e) {
             Log.e(TAG, "Failed to extract archive", e);

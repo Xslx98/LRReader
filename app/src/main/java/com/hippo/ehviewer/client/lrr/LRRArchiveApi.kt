@@ -1,6 +1,7 @@
 package com.hippo.ehviewer.client.lrr
 
 import android.util.Log
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.lrr.data.LRRArchive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -16,7 +17,6 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import java.io.IOException
-import java.util.concurrent.TimeUnit
 
 /**
  * API class for LANraragi archive operations.
@@ -107,10 +107,6 @@ object LRRArchiveApi {
         baseUrl: String,
         arcid: String
     ): Array<String> = withContext(Dispatchers.IO) {
-        // Use longer timeout for extraction (large archives can be slow)
-        val longClient = client.newBuilder()
-            .readTimeout(120, TimeUnit.SECONDS)
-            .build()
         val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
             .addPathSegments("api/archives")
             .addPathSegment(arcid)
@@ -120,7 +116,7 @@ object LRRArchiveApi {
             .url(url)
             .get()
             .build()
-        longClient.newCall(request).execute().use { response ->
+        client.newCall(request).execute().use { response ->
             ensureSuccess(response)
             val body = response.body?.string()
                 ?: throw LRREmptyBodyException()
@@ -183,11 +179,6 @@ object LRRArchiveApi {
         tags: String? = null,
         categoryId: String? = null
     ): String = withContext(Dispatchers.IO) {
-        val longClient = client.newBuilder()
-            .writeTimeout(300, TimeUnit.SECONDS)
-            .readTimeout(120, TimeUnit.SECONDS)
-            .build()
-
         val bodyBuilder = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
             .addFormDataPart(
@@ -202,7 +193,7 @@ object LRRArchiveApi {
             .url("$baseUrl/api/archives/upload")
             .put(bodyBuilder.build())
             .build()
-        longClient.newCall(request).execute().use { response ->
+        client.newCall(request).execute().use { response ->
             ensureSuccess(response)
             val body = response.body?.string()
                 ?: throw LRREmptyBodyException()
@@ -292,7 +283,7 @@ object LRRArchiveApi {
 
     @JvmStatic
     suspend fun getFileList(arcid: String): Array<String> =
-        getFileList(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), arcid)
+        getFileList(ServiceRegistry.networkModule.longReadClient, LRRClientProvider.getBaseUrl(), arcid)
 
     @JvmStatic
     fun getPageUrl(arcid: String, pagePath: String): String =
@@ -312,5 +303,5 @@ object LRRArchiveApi {
 
     @JvmStatic
     suspend fun uploadArchive(file: File, title: String? = null, tags: String? = null, categoryId: String? = null): String =
-        uploadArchive(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), file, title, tags, categoryId)
+        uploadArchive(ServiceRegistry.networkModule.uploadClient, LRRClientProvider.getBaseUrl(), file, title, tags, categoryId)
 }
