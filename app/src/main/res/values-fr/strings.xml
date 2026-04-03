@@ -1098,4 +1098,56 @@ Cette action est irréversible.</string>
     <string name="yesterday_top_list">Yesterday TopList</string>
     <string name="lrr_category_label_dynamic">Dynamique</string>
     <string name="lrr_save_and_connect">Enregistrer et connecter</string>
+    <string name="lrr_error_title">Une erreur s\'est produite</string>
+    <string name="lrr_retry">Réessayer</string>
+    <string name="lrr_loading_categories">Chargement des catégories…</string>
+    <string name="lrr_no_static_categories">Aucune catégorie statique disponible</string>
+    <string name="lrr_add_to_category">Ajouter à une catégorie</string>
+    <string name="lrr_category_info_suffix"> etc.</string>
+    <string name="lrr_category_count_suffix"> catégories</string>
+    <string name="lrr_category_updated_toast">Catégorie mise à jour</string>
+    <string name="lrr_no_preview_tags">Aucun tag d\'aperçu</string>
+    <string name="lrr_title_copied">Titre copié</string>
+    <string name="lrr_download_failed_invalid">Téléchargement échoué : fichier invalide, appuyer pour réessayer</string>
+    <string name="lrr_download_failed_not_image">Téléchargement échoué : format non image, appuyer pour réessayer</string>
+    <string name="lrr_decode_failed">Décodage de l\'image échoué, appuyer pour réessayer</string>
+    <string name="lrr_subscription_profile_missing">Profil introuvable, essayez de redémarrer</string>
+    <string name="lrr_empty_response">Le serveur a retourné une réponse vide</string>
+    <string name="lrr_missing_pages_field">La réponse du serveur manque le champ des pages</string>
+    <string name="lrr_auth_failed_check_key">Authentification échouée, vérifiez la clé API</string>
+    <string name="lrr_not_found_404">Ressource introuvable (404)</string>
+    <string name="lrr_server_error_code">Erreur serveur (%1$d), veuillez réessayer plus tard</string>
+    <string name="lrr_request_failed_code">Requête échouée (HTTP %1$d)</string>
+    <string name="lrr_timeout_error">Délai de connexion dépassé, vérifiez le réseau ou l\'état du serveur</string>
+    <string name="lrr_connect_error_check">Impossible de se connecter au serveur, vérifiez l\'adresse et le réseau</string>
+    <string name="lrr_dns_error">Impossible de résoudre l\'adresse du serveur, vérifiez l\'URL</string>
+    <string name="lrr_ssl_error">Connexion sécurisée échouée, vérifiez le certificat du serveur</string>
+    <string name="lrr_auth_failed_short">Authentification échouée</string>
+    <string name="lrr_server_error_short">Erreur serveur</string>
+    <string name="lrr_request_failed_short">Requête échouée</string>
+    <string name="lrr_not_found_short">Ressource introuvable</string>
+    <string-array name="lrr_sort_by_entries">
+        <item>Titre</item>
+        <item>Date d\'ajout</item>
+        <item>Dernière lecture</item>
+        <item>Artiste</item>
+        <item>Groupe</item>
+        <item>Parodie</item>
+    </string-array>
+    <string-array name="lrr_sort_by_values">
+        <item>title</item>
+        <item>date_added</item>
+        <item>lastread</item>
+        <item>artist</item>
+        <item>group</item>
+        <item>parody</item>
+    </string-array>
+    <string-array name="lrr_sort_order_entries">
+        <item>Ascendant</item>
+        <item>Descendant</item>
+    </string-array>
+    <string-array name="lrr_sort_order_values">
+        <item>asc</item>
+        <item>desc</item>
+    </string-array>
 </resources>
