@@ -108,15 +108,16 @@ public final class ServerListScene extends BaseScene {
         Context ctx = getEHContext();
         if (ctx == null) return;
 
-        // Deactivate all, activate selected
+        // Deactivate all, activate selected (API key is in EncryptedSharedPreferences, not Room)
         EhDB.deactivateAllProfiles();
         EhDB.updateServerProfile(new ServerProfile(
                 profile.getId(), profile.getName(), profile.getUrl(),
-                profile.getApiKey(), true));
+                null, true));
 
         // Update LRRAuthManager
         LRRAuthManager.setServerUrl(profile.getUrl());
-        LRRAuthManager.setApiKey(profile.getApiKey());
+        String profileApiKey = LRRAuthManager.getApiKeyForProfile(profile.getId());
+        LRRAuthManager.setApiKey(profileApiKey);
         LRRAuthManager.setServerName(profile.getName());
         LRRAuthManager.setActiveProfileId(profile.getId());
 
@@ -153,6 +154,7 @@ public final class ServerListScene extends BaseScene {
                 .setTitle(R.string.lrr_delete_server)
                 .setMessage(getString(R.string.lrr_delete_server_confirm, profile.getName()))
                 .setPositiveButton(android.R.string.ok, (d, w) -> {
+                    LRRAuthManager.clearApiKeyForProfile(profile.getId());
                     EhDB.deleteServerProfile(profile);
                     mProfiles.remove(position);
                     mAdapter.notifyItemRemoved(position);
@@ -256,8 +258,9 @@ public final class ServerListScene extends BaseScene {
         // Pre-fill current values
         nameEdit.setText(profile.getName());
         urlEdit.setText(profile.getUrl());
-        if (profile.getApiKey() != null) {
-            apiKeyEdit.setText(profile.getApiKey());
+        String existingKey = LRRAuthManager.getApiKeyForProfile(profile.getId());
+        if (existingKey != null) {
+            apiKeyEdit.setText(existingKey);
         }
 
         AlertDialog dialog = new AlertDialog.Builder(ctx)
@@ -309,12 +312,12 @@ public final class ServerListScene extends BaseScene {
                 normalizedUrl = "https://" + normalizedUrl;
             }
 
-            // Save to DB
+            // Save to DB (API key is stored in EncryptedSharedPreferences, not Room)
             ServerProfile updated = new ServerProfile(
                     profile.getId(), newName, normalizedUrl,
-                    newKey.isEmpty() ? null : newKey,
-                    profile.isActive());
+                    null, profile.isActive());
             EhDB.updateServerProfile(updated);
+            LRRAuthManager.setApiKeyForProfile(profile.getId(), newKey.isEmpty() ? null : newKey);
 
             // If this is the active profile, update LRRAuthManager too
             if (profile.isActive()) {
@@ -398,10 +401,12 @@ public final class ServerListScene extends BaseScene {
                         if (getActivity() == null) return;
                         getActivity().runOnUiThread(() -> {
                             // Save as new profile and switch to it
+                            // API key is stored in EncryptedSharedPreferences, not Room
                             EhDB.deactivateAllProfiles();
                             ServerProfile newProfile = new ServerProfile(
-                                    0, name, resolvedUrl, finalKey, true);
+                                    0, name, resolvedUrl, null, true);
                             long newId = EhDB.insertServerProfile(newProfile);
+                            LRRAuthManager.setApiKeyForProfile(newId, finalKey);
 
                             LRRAuthManager.setServerUrl(resolvedUrl);
                             LRRAuthManager.setApiKey(finalKey);

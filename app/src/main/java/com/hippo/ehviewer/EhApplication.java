@@ -156,6 +156,26 @@ public class EhApplication extends RecordingApplication {
             // DB not ready yet on first launch — safe to ignore
         }
 
+        // One-time migration: move API keys from plaintext Room columns to EncryptedSharedPreferences
+        if (!Settings.getBoolean("api_key_migration_done", false)) {
+            try {
+                java.util.List<com.hippo.ehviewer.dao.ServerProfile> profiles = EhDB.getAllServerProfiles();
+                for (com.hippo.ehviewer.dao.ServerProfile profile : profiles) {
+                    if (profile.getApiKey() != null && !profile.getApiKey().isEmpty()) {
+                        com.hippo.ehviewer.client.lrr.LRRAuthManager.setApiKeyForProfile(
+                                profile.getId(), profile.getApiKey());
+                        EhDB.updateServerProfile(new com.hippo.ehviewer.dao.ServerProfile(
+                                profile.getId(), profile.getName(), profile.getUrl(),
+                                null, profile.isActive()));
+                    }
+                }
+                Settings.putBoolean("api_key_migration_done", true);
+            } catch (Exception e) {
+                // Migration will retry on next launch
+                android.util.Log.w("EhApplication", "API key migration failed, will retry", e);
+            }
+        }
+
         EhEngine.initialize();
         com.hippo.ehviewer.client.lrr.LRRClientProvider.init(this);
         BitmapUtils.initialize(this);
