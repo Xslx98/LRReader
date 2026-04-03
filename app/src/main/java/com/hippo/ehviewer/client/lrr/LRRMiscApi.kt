@@ -44,7 +44,7 @@ object LRRMiscApi {
         client.newCall(request).execute().use { response ->
             ensureSuccess(response)
             val body = response.body?.string()
-                ?: throw IOException("服务器返回空响应体")
+                ?: throw LRREmptyBodyException()
             val jsonObj = Json.parseToJsonElement(body).jsonObject
             val success = jsonObj["success"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0
             if (success != 1) {

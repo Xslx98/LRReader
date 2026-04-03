@@ -39,7 +39,7 @@ object LRRCategoryApi {
             client.newCall(request).execute().use { response ->
                 ensureSuccess(response)
                 val body = response.body?.string()
-                    ?: throw IOException("服务器返回空响应体")
+                    ?: throw LRREmptyBodyException()
                 lrrJson.decodeFromString<List<LRRCategory>>(body)
             }
         }
@@ -73,7 +73,7 @@ object LRRCategoryApi {
         client.newCall(request).execute().use { response ->
             ensureSuccess(response)
             val body = response.body?.string()
-                ?: throw IOException("服务器返回空响应体")
+                ?: throw LRREmptyBodyException()
             val obj = lrrJson.parseToJsonElement(body).jsonObject
             obj["category_id"]?.jsonPrimitive?.content
                 ?: throw IOException("Missing category_id in response")
