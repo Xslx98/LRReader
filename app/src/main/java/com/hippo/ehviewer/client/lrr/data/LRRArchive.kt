@@ -8,6 +8,7 @@ import com.hippo.ehviewer.client.data.GalleryTagGroup
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 /**
  * Represents a LANraragi archive. Maps to the JSON objects returned by
@@ -126,7 +127,12 @@ class LRRArchive() : Parcelable {
 
     /** Constructs the thumbnail URL for this archive. */
     fun getThumbnailUrl(baseUrl: String): String =
-        "$baseUrl/api/archives/$arcid/thumbnail"
+        baseUrl.toHttpUrlOrNull()!!.newBuilder()
+            .addPathSegments("api/archives")
+            .addPathSegment(arcid)
+            .addPathSegment("thumbnail")
+            .build()
+            .toString()
 
     /**
      * Parses the comma-separated tag string into a map of namespace → tag list.

@@ -6,6 +6,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.FormBody
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
@@ -100,8 +101,13 @@ object LRRCategoryApi {
         if (pinned) {
             formBuilder.add("pinned", "true")
         }
+        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+            .addPathSegment("api")
+            .addPathSegment("categories")
+            .addPathSegment(categoryId)
+            .build()
         val request = Request.Builder()
-            .url("$baseUrl/api/categories/$categoryId")
+            .url(url)
             .put(formBuilder.build())
             .build()
         client.newCall(request).execute().use { response ->
@@ -118,8 +124,13 @@ object LRRCategoryApi {
         baseUrl: String,
         categoryId: String
     ) = withContext(Dispatchers.IO) {
+        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+            .addPathSegment("api")
+            .addPathSegment("categories")
+            .addPathSegment(categoryId)
+            .build()
         val request = Request.Builder()
-            .url("$baseUrl/api/categories/$categoryId")
+            .url(url)
             .delete()
             .build()
         client.newCall(request).execute().use { response ->
@@ -137,8 +148,14 @@ object LRRCategoryApi {
         categoryId: String,
         arcid: String
     ) = withContext(Dispatchers.IO) {
+        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+            .addPathSegment("api")
+            .addPathSegment("categories")
+            .addPathSegment(categoryId)
+            .addPathSegment(arcid)
+            .build()
         val request = Request.Builder()
-            .url("$baseUrl/api/categories/$categoryId/$arcid")
+            .url(url)
             .put(EMPTY_REQUEST_BODY)
             .build()
         client.newCall(request).execute().use { response ->
@@ -156,8 +173,14 @@ object LRRCategoryApi {
         categoryId: String,
         arcid: String
     ) = withContext(Dispatchers.IO) {
+        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+            .addPathSegment("api")
+            .addPathSegment("categories")
+            .addPathSegment(categoryId)
+            .addPathSegment(arcid)
+            .build()
         val request = Request.Builder()
-            .url("$baseUrl/api/categories/$categoryId/$arcid")
+            .url(url)
             .delete()
             .build()
         client.newCall(request).execute().use { response ->
