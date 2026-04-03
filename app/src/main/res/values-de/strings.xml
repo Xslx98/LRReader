@@ -1083,4 +1083,5 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
         <item>asc</item>
         <item>desc</item>
     </string-array>
+    <string name="error_save_image">Bild konnte nicht gespeichert werden</string>
 </resources>

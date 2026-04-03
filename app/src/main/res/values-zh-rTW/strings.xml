@@ -1157,4 +1157,5 @@
         <item>asc</item>
         <item>desc</item>
     </string-array>
+    <string name="error_save_image">儲存圖片失敗</string>
 </resources>

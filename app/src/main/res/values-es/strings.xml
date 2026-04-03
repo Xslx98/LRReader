@@ -1144,4 +1144,5 @@ Esta acción no se puede deshacer.</string>
         <item>asc</item>
         <item>desc</item>
     </string-array>
+    <string name="error_save_image">No se pudo guardar la imagen</string>
 </resources>

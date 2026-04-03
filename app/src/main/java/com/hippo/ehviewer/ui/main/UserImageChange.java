@@ -270,7 +270,7 @@ public class UserImageChange implements PermissionCallBack {
         try {
             copyFile(croppedFile, persistentFile);
         } catch (IOException e) {
-            Toast.makeText(activity, "Failed to save image", Toast.LENGTH_SHORT).show();
+            Toast.makeText(activity, activity.getString(R.string.error_save_image), Toast.LENGTH_SHORT).show();
             return;
         }
 

@@ -82,7 +82,7 @@ object LRRArchiveApi {
             val body = response.body?.string() ?: ""
             Log.d(TAG, "updateArchiveMetadata response: ${response.code} $body")
             if (!response.isSuccessful) {
-                throw IOException("Update metadata failed (HTTP ${response.code}): $body")
+                throw LRRHttpException(response.code)
             }
         }
     }
