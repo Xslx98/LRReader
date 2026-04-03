@@ -235,19 +235,22 @@ public final class ServerConfigScene extends SolidScene implements View.OnClickL
             ServerProfile existing = EhDB.findProfileByUrl(resolvedUrl);
             EhDB.deactivateAllProfiles();
             if (existing != null) {
+                // API key is stored in EncryptedSharedPreferences, not in Room
                 ServerProfile updated = new ServerProfile(
                         existing.getId(),
                         info.name != null ? info.name : existing.getName(),
                         resolvedUrl,
-                        LRRAuthManager.getApiKey(),
+                        null,
                         true);
                 EhDB.updateServerProfile(updated);
+                LRRAuthManager.setApiKeyForProfile(existing.getId(), LRRAuthManager.getApiKey());
                 LRRAuthManager.setActiveProfileId(existing.getId());
             } else {
                 String profileName = info.name != null ? info.name : "LANraragi";
-                ServerProfile newProfile = new ServerProfile(
-                        0, profileName, resolvedUrl, LRRAuthManager.getApiKey(), true);
+                // API key is stored in EncryptedSharedPreferences, not in Room
+                ServerProfile newProfile = new ServerProfile(0, profileName, resolvedUrl, null, true);
                 long newId = EhDB.insertServerProfile(newProfile);
+                LRRAuthManager.setApiKeyForProfile(newId, LRRAuthManager.getApiKey());
                 LRRAuthManager.setActiveProfileId(newId);
             }
         }
