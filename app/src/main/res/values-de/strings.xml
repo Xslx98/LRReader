@@ -226,6 +226,7 @@ Kommentator blockieren: Kommentare dieses Benutzers ausblenden. Das Laden der Ga
     <string name="more_previews">Weitere Vorschauen</string>
     <string name="refresh">Neu laden</string>
     <string name="open_in_other_app">Öffnen mit …</string>
+    <string name="file_chooser_title">Öffnen mit</string>
     <string name="rate_successfully">Bewertung erfolgreich</string>
     <string name="rate_failed">Bewertung fehlgeschlagen</string>
     <string name="no_torrents">Keine Torrentdatei</string>

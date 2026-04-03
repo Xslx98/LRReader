@@ -349,7 +349,7 @@ public class UserImageChange implements PermissionCallBack {
                     imagePath = getImagePath(contentUri, null);
                 }catch (NumberFormatException e){
                     e.printStackTrace();
-                    Toast.makeText(activity,"获取图片路径出错",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(activity, activity.getString(R.string.error_cant_get_image), Toast.LENGTH_SHORT).show();
                 }
             }
         } else {
