@@ -3,6 +3,7 @@ package com.hippo.ehviewer.dao;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.Ignore;
+import androidx.room.Index;
 
 import android.os.Parcel;
 import com.hippo.ehviewer.client.data.GalleryInfo;
@@ -14,7 +15,10 @@ import java.util.ArrayList;
  * Entity mapped to table "DOWNLOADS".
  * Primary key is GID (inherited from GalleryInfo).
  */
-@Entity(tableName = "DOWNLOADS", primaryKeys = {"GID"})
+@Entity(tableName = "DOWNLOADS", primaryKeys = {"GID"}, indices = {
+    @Index("SERVER_PROFILE_ID"),
+    @Index("TIME")
+})
 public class DownloadInfo extends GalleryInfo {
 
 	@ColumnInfo(name = "STATE") public int state;
