@@ -308,4 +308,28 @@ class LRRApiUtilsTest {
         advanceUntilIdle()
         assertEquals("Should retry on 503", 3, callCount) // 1 initial + 2 retries
     }
+
+    // ── arcidToGid ─────────────────────────────────────────────
+
+    @Test
+    fun arcidToGid_emptyString_returnsZero() {
+        assertEquals(0L, arcidToGid(""))
+    }
+
+    @Test
+    fun arcidToGid_deterministic() {
+        val first  = arcidToGid("abc123def456")
+        val second = arcidToGid("abc123def456")
+        assertEquals("Same arcid must produce same GID on repeated calls", first, second)
+    }
+
+    @Test
+    fun arcidToGid_differentInputs_differentGids() {
+        assertNotEquals(arcidToGid("archive-a"), arcidToGid("archive-b"))
+    }
+
+    @Test
+    fun arcidToGid_resultIsPositive() {
+        assertTrue(arcidToGid("some-archive-id") >= 0L)
+    }
 }

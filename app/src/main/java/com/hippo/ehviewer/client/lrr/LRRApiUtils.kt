@@ -2,6 +2,7 @@ package com.hippo.ehviewer.client.lrr
 
 import android.content.Context
 import android.util.Log
+import androidx.collection.LruCache
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import kotlinx.coroutines.delay
@@ -26,10 +27,15 @@ private const val TAG = "LRRApi"
  * Replaces the 32-bit hashCode() approach which has 50% collision probability at ~77K archives.
  * SHA-256 collision space is ~2^63, making real-world collisions astronomically unlikely.
  */
+private val arcidGidCache = LruCache<String, Long>(1024)
+
 internal fun arcidToGid(arcid: String): Long {
     if (arcid.isEmpty()) return 0L
+    arcidGidCache.get(arcid)?.let { return it }
     val digest = MessageDigest.getInstance("SHA-256").digest(arcid.toByteArray(Charsets.UTF_8))
-    return ByteBuffer.wrap(digest, 0, 8).getLong() and Long.MAX_VALUE
+    val gid = ByteBuffer.wrap(digest, 0, 8).getLong() and Long.MAX_VALUE
+    arcidGidCache.put(arcid, gid)
+    return gid
 }
 
 /** Shared Json instance with lenient parsing. */
