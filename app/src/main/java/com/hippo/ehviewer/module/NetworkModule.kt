@@ -92,7 +92,7 @@ class NetworkModule(private val context: Context) {
     val longReadClient: OkHttpClient by lazy {
         okHttpClient.newBuilder()
             .readTimeout(120, TimeUnit.SECONDS)
-            .callTimeout(0, TimeUnit.SECONDS) // no overall call timeout for slow servers
+            .callTimeout(10, TimeUnit.MINUTES) // extraction should never exceed 10 min
             .build()
     }
 
@@ -101,7 +101,7 @@ class NetworkModule(private val context: Context) {
         okHttpClient.newBuilder()
             .writeTimeout(300, TimeUnit.SECONDS)
             .readTimeout(120, TimeUnit.SECONDS)
-            .callTimeout(0, TimeUnit.SECONDS)
+            .callTimeout(30, TimeUnit.MINUTES) // allow large archives on slow WAN
             .build()
     }
 
