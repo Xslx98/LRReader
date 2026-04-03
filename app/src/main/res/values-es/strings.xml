@@ -1079,8 +1079,6 @@ Esta acción no se puede deshacer.</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="settings_download_clean_invalid_download">Limpiar descargas inválidas</string>
     <string name="settings_download_clean_invalid_download_summary">Eliminar descargas inválidas</string>
-    <string name="settings_eh_lock_cookies_igneous">Bloquear campo Cookie igneous</string>
-    <string name="settings_eh_lock_cookies_igneous_summary">No se recomienda activar excepto en circunstancias especiales</string>
     <string name="settings_eh_system_theme">Tema del sistema</string>
     <string name="settings_read_picture_decoding_method">Método de decodificación de imagen</string>
     <string name="settings_read_picture_decoding_method_native">Biblioteca C++ de código abierto</string>

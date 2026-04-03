@@ -1112,8 +1112,6 @@
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="settings_download_clean_invalid_download">清理無效下載</string>
     <string name="settings_download_clean_invalid_download_summary">移除無效的下載項</string>
-    <string name="settings_eh_lock_cookies_igneous">鎖定 Cookie igneous 欄位</string>
-    <string name="settings_eh_lock_cookies_igneous_summary">除特殊情況外不建議開啟</string>
     <string name="settings_eh_system_theme">跟隨系統</string>
     <string name="settings_read_picture_decoding_method">圖片解碼方式</string>
     <string name="settings_read_picture_decoding_method_native">開源C++解碼庫</string>

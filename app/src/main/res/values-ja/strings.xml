@@ -460,8 +460,6 @@
     <string name="settings_eh_sign_out_tip">ログアウトしました。アプリを再起動することで再度ログインします。</string>
     <string name="settings_eh_identity_cookies">アカウントのCookie</string>
     <string name="settings_eh_identity_cookies_summary">ログイン用のCookieです</string>
-    <!--    <string name="settings_eh_lock_cookies_igneous">Cookie igneous フィールドをロック</string>-->
-    <!--    <string name="settings_eh_lock_cookies_igneous_summary">特別な状況を除いて有効にしないでください</string>-->
     <string name="settings_eh_identity_cookies_signed">下記の情報を持つ誰でもこのアカウントにログインできますので&lt;br&gt;&lt;b&gt;絶対に他人に渡さないように！&lt;/b&gt;&lt;br&gt;&lt;br&gt;%s</string>
     <string name="settings_eh_identity_cookies_tourist">まだログインしていません</string>
     <string name="settings_eh_identity_cookies_copy">コピー</string>

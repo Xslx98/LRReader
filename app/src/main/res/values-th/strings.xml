@@ -1080,8 +1080,6 @@
     <string name="settings_about_latest_release">Latest release</string>
     <string name="settings_download_clean_invalid_download">ล้างการดาวน์โหลดที่ไม่ถูกต้อง</string>
     <string name="settings_download_clean_invalid_download_summary">ลบรายการดาวน์โหลดที่ไม่ถูกต้อง</string>
-    <string name="settings_eh_lock_cookies_igneous">ล็อกฟิลด์ Cookie igneous</string>
-    <string name="settings_eh_lock_cookies_igneous_summary">ไม่แนะนำให้เปิดใช้งาน ยกเว้นกรณีพิเศษ</string>
     <string name="settings_eh_system_theme">ธีมระบบ</string>
     <string name="settings_read_auto_transfer_time">Auto Transfer(s)</string>
     <string name="settings_read_picture_decoding_method">วิธีถอดรหัสรูปภาพ</string>
