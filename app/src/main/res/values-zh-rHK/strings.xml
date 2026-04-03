@@ -1045,7 +1045,6 @@
     <string name="lrr_api_key_helper">在LANraragi設定中查找API密鑰</string>
     <string name="lrr_api_key_hint">API密鑰（選填）</string>
     <string name="lrr_categories_empty">沒有分類</string>
-    <string name="lrr_categories_error">載入分類時出錯</string>
     <string name="lrr_categories_title">分類管理</string>
     <string name="lrr_category_action_delete">刪除</string>
     <string name="lrr_category_action_edit">編輯</string>

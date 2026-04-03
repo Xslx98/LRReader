@@ -1006,7 +1006,6 @@ Bloquear comentarista: ocultar los comentarios de este usuario. Puede tardar má
     <string name="lrr_api_key_helper">Encuentra la clave API en la configuración de LANraragi</string>
     <string name="lrr_api_key_hint">Clave API (opcional)</string>
     <string name="lrr_categories_empty">Sin categorías</string>
-    <string name="lrr_categories_error">Error al cargar categorías</string>
     <string name="lrr_categories_title">Gestión de categorías</string>
     <string name="lrr_category_action_delete">Eliminar</string>
     <string name="lrr_category_action_edit">Editar</string>

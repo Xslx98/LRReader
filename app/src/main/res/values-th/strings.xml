@@ -1007,7 +1007,6 @@
     <string name="lrr_api_key_helper">Enter the API Key from LANraragi settings (not the web login password)</string>
     <string name="lrr_api_key_hint">API Key</string>
     <string name="lrr_categories_empty">No categories</string>
-    <string name="lrr_categories_error">Failed to load categories: %1$s</string>
     <string name="lrr_categories_title">Categories</string>
     <string name="lrr_category_action_delete">Delete</string>
     <string name="lrr_category_action_edit">Edit</string>
