@@ -10,6 +10,8 @@ import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.IOException
+import java.nio.ByteBuffer
+import java.security.MessageDigest
 
 /**
  * Shared utilities for all LRR API classes.
@@ -17,6 +19,17 @@ import java.io.IOException
  */
 
 private const val TAG = "LRRApi"
+
+/**
+ * Derive a stable 63-bit GID from an arcid using SHA-256.
+ * Replaces the 32-bit hashCode() approach which has 50% collision probability at ~77K archives.
+ * SHA-256 collision space is ~2^63, making real-world collisions astronomically unlikely.
+ */
+internal fun arcidToGid(arcid: String): Long {
+    if (arcid.isEmpty()) return 0L
+    val digest = MessageDigest.getInstance("SHA-256").digest(arcid.toByteArray(Charsets.UTF_8))
+    return ByteBuffer.wrap(digest, 0, 8).getLong() and Long.MAX_VALUE
+}
 
 /** Shared Json instance with lenient parsing. */
 internal val lrrJson = Json { ignoreUnknownKeys = true }

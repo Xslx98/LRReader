@@ -5,27 +5,31 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+import java.nio.ByteBuffer
+import java.security.MessageDigest
 
 /**
  * Room database replacing GreenDAO's DaoMaster/DaoSession.
  *
  * ## Migration 指南
  *
- * v9 是首个公开发布版本（baseline）。未来修改数据库结构时：
+ * 未来修改数据库结构时：
  *
  * 1. 修改 Entity（增删改字段/表）
- * 2. version 加 1（如 9 → 10）
+ * 2. version 加 1
  * 3. 编写 Migration 对象，例如：
  *    ```
- *    private val MIGRATION_9_10 = object : Migration(9, 10) {
+ *    private val MIGRATION_10_11 = object : Migration(10, 11) {
  *        override fun migrate(db: SupportSQLiteDatabase) {
  *            db.execSQL("ALTER TABLE ... ADD COLUMN ...")
  *        }
  *    }
  *    ```
- * 4. 在 databaseBuilder 中注册：`.addMigrations(MIGRATION_9_10)`
+ * 4. 在 databaseBuilder 中注册：`.addMigrations(MIGRATION_9_10, MIGRATION_10_11)`
  *
- * Room 会自动链式执行所需的 Migration（如 v9→v11 = MIGRATION_9_10 + MIGRATION_10_11）。
+ * Room 会自动链式执行所需的 Migration。
  * **不要使用 fallbackToDestructiveMigration()，否则用户数据会丢失。**
  */
 @Database(
@@ -42,7 +46,7 @@ import androidx.room.TypeConverters
         BookmarkInfo::class,
         ServerProfile::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class)
@@ -64,10 +68,78 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "eh.db"
                 )
-                    // 未来添加 Migration 示例：
-                    // .addMigrations(MIGRATION_9_10, MIGRATION_10_11)
+                    .addMigrations(MIGRATION_9_10)
                     .build()
                     .also { INSTANCE = it }
+            }
+        }
+
+        /**
+         * v9 → v10: Recompute GID column from TOKEN (arcid) using SHA-256 first 8 bytes.
+         *
+         * The old GID was computed as arcid.hashCode().toLong() & 0x7FFFFFFF (32-bit space,
+         * 50% collision at ~77K archives). The new GID uses SHA-256 (63-bit space, negligible
+         * collision probability). Since TOKEN stores the arcid verbatim, we can recompute
+         * without data loss.
+         *
+         * Tables with (GID, TOKEN): DOWNLOADS, HISTORY, LOCAL_FAVORITES, BOOKMARKS
+         * Tables with GID only:     DOWNLOAD_DIRNAME (references DOWNLOADS.GID),
+         *                           Gallery_Tags (references gallery GIDs)
+         */
+        private val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // --- Collect old→new GID mappings from TOKEN-bearing tables ---
+                val downloadsMap = collectGidMap(db, "DOWNLOADS")
+                val historyMap   = collectGidMap(db, "HISTORY")
+                val localFavMap  = collectGidMap(db, "LOCAL_FAVORITES")
+                val bookmarksMap = collectGidMap(db, "BOOKMARKS")
+
+                // Combined map for tables that reference GIDs from any source
+                val allMap = HashMap<Long, Long>().apply {
+                    putAll(downloadsMap); putAll(historyMap)
+                    putAll(localFavMap);  putAll(bookmarksMap)
+                }
+
+                // --- Update dependent tables BEFORE main tables ---
+                // (DOWNLOADS.GID is a PK; update DOWNLOAD_DIRNAME first to avoid losing the ref)
+                updateGids(db, "DOWNLOAD_DIRNAME", downloadsMap)
+                updateGids(db, "Gallery_Tags", allMap)
+
+                // --- Update main tables ---
+                updateGids(db, "DOWNLOADS",       downloadsMap)
+                updateGids(db, "HISTORY",         historyMap)
+                updateGids(db, "LOCAL_FAVORITES", localFavMap)
+                updateGids(db, "BOOKMARKS",       bookmarksMap)
+            }
+
+            private fun collectGidMap(db: SupportSQLiteDatabase, table: String): Map<Long, Long> {
+                val map = HashMap<Long, Long>()
+                db.query("SELECT GID, TOKEN FROM $table WHERE TOKEN IS NOT NULL AND TOKEN != ''").use { c ->
+                    while (c.moveToNext()) {
+                        val oldGid = c.getLong(0)
+                        val token  = c.getString(1)
+                        val newGid = sha256Gid(token)
+                        if (oldGid != newGid) map[oldGid] = newGid
+                    }
+                }
+                return map
+            }
+
+            private fun updateGids(db: SupportSQLiteDatabase, table: String, map: Map<Long, Long>) {
+                if (map.isEmpty()) return
+                val stmt = db.compileStatement("UPDATE $table SET GID = ? WHERE GID = ?")
+                for ((old, new) in map) {
+                    stmt.clearBindings()
+                    stmt.bindLong(1, new)
+                    stmt.bindLong(2, old)
+                    stmt.execute()
+                }
+                stmt.close()
+            }
+
+            private fun sha256Gid(arcid: String): Long {
+                val digest = MessageDigest.getInstance("SHA-256").digest(arcid.toByteArray(Charsets.UTF_8))
+                return ByteBuffer.wrap(digest, 0, 8).getLong() and Long.MAX_VALUE
             }
         }
     }
