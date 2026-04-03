@@ -5,47 +5,47 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Observes network connectivity using [ConnectivityManager.NetworkCallback].
  * Provides a fast-path [isAvailable] check so API calls can fail immediately
  * instead of waiting for a connect timeout when the device is offline.
  *
+ * Uses an [AtomicInteger] counter rather than calling [ConnectivityManager.activeNetwork]
+ * inside callbacks to avoid blocking binder calls on the system callback thread.
+ *
  * Initialized once via [NetworkModule] and kept alive for the process lifetime.
  */
 class NetworkMonitor(context: Context) {
 
-    @Volatile
-    private var mIsAvailable: Boolean = false
+    private val mNetworkCount = AtomicInteger(0)
 
-    val isAvailable: Boolean get() = mIsAvailable
+    val isAvailable: Boolean get() = mNetworkCount.get() > 0
 
     private val mCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
-            mIsAvailable = true
+            mNetworkCount.incrementAndGet()
         }
 
         override fun onLost(network: Network) {
-            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            // Only mark offline if there is genuinely no remaining network
-            mIsAvailable = cm.activeNetwork != null
-        }
-
-        override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
-            mIsAvailable = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            // Floor at 0 to guard against any callback ordering edge cases.
+            mNetworkCount.updateAndGet { if (it > 0) it - 1 else 0 }
         }
     }
 
     init {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-        // Seed the initial state before the callback fires
+        // Seed the initial count from the currently active network before callbacks fire.
+        // This is called once on the app's main thread — not a callback — so a binder
+        // call is acceptable here.
         val active = cm.activeNetwork
-        mIsAvailable = if (active != null) {
+        if (active != null) {
             val caps = cm.getNetworkCapabilities(active)
-            caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
-        } else {
-            false
+            if (caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true) {
+                mNetworkCount.set(1)
+            }
         }
 
         val request = NetworkRequest.Builder()
