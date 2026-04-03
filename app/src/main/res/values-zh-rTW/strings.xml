@@ -1105,4 +1105,56 @@
     <string name="western">西方</string>
     <string name="lrr_category_label_dynamic">動態</string>
     <string name="lrr_save_and_connect">儲存並連線</string>
+    <string name="lrr_error_title">出錯了</string>
+    <string name="lrr_retry">重試</string>
+    <string name="lrr_loading_categories">載入分類中…</string>
+    <string name="lrr_no_static_categories">沒有可用的靜態分類</string>
+    <string name="lrr_add_to_category">加入分類</string>
+    <string name="lrr_category_info_suffix"> 等</string>
+    <string name="lrr_category_count_suffix"> 個分類</string>
+    <string name="lrr_category_updated_toast">分類已更新</string>
+    <string name="lrr_no_preview_tags">沒有預覽標籤</string>
+    <string name="lrr_title_copied">已複製標題</string>
+    <string name="lrr_download_failed_invalid">下載失敗：無效的檔案，點擊重試</string>
+    <string name="lrr_download_failed_not_image">下載失敗：非圖片格式，點擊重試</string>
+    <string name="lrr_decode_failed">圖片解碼失敗，點擊重試</string>
+    <string name="lrr_subscription_profile_missing">找不到設定檔，請嘗試重新啟動</string>
+    <string name="lrr_empty_response">伺服器傳回空回應</string>
+    <string name="lrr_missing_pages_field">伺服器回應缺少頁面欄位</string>
+    <string name="lrr_auth_failed_check_key">驗證失敗，請檢查 API 金鑰</string>
+    <string name="lrr_not_found_404">找不到資源 (404)</string>
+    <string name="lrr_server_error_code">伺服器錯誤 (%1$d)，請稍後重試</string>
+    <string name="lrr_request_failed_code">請求失敗 (HTTP %1$d)</string>
+    <string name="lrr_timeout_error">連線逾時，請檢查網路或伺服器狀態</string>
+    <string name="lrr_connect_error_check">無法連接至伺服器，請檢查地址和網路</string>
+    <string name="lrr_dns_error">無法解析伺服器地址，請檢查網址</string>
+    <string name="lrr_ssl_error">安全連線失敗，請檢查伺服器憑證</string>
+    <string name="lrr_auth_failed_short">驗證失敗</string>
+    <string name="lrr_server_error_short">伺服器錯誤</string>
+    <string name="lrr_request_failed_short">請求失敗</string>
+    <string name="lrr_not_found_short">找不到資源</string>
+    <string-array name="lrr_sort_by_entries">
+        <item>標題</item>
+        <item>新增日期</item>
+        <item>上次閱讀</item>
+        <item>藝術家</item>
+        <item>群組</item>
+        <item>仿作</item>
+    </string-array>
+    <string-array name="lrr_sort_by_values">
+        <item>title</item>
+        <item>date_added</item>
+        <item>lastread</item>
+        <item>artist</item>
+        <item>group</item>
+        <item>parody</item>
+    </string-array>
+    <string-array name="lrr_sort_order_entries">
+        <item>升序</item>
+        <item>降序</item>
+    </string-array>
+    <string-array name="lrr_sort_order_values">
+        <item>asc</item>
+        <item>desc</item>
+    </string-array>
 </resources>
