@@ -1108,6 +1108,7 @@
     <string name="lrr_decode_failed">Image decode failed, tap to retry</string>
     <string name="lrr_subscription_profile_missing">Profile not found, try restarting</string>
     <string name="lrr_empty_response">Server returned empty response</string>
+    <string name="lrr_malformed_response">Server returned unexpected response</string>
     <string name="lrr_missing_pages_field">Server response missing pages field</string>
     <string name="lrr_auth_failed_check_key">Authentication failed, please check API Key</string>
     <string name="lrr_not_found_404">Resource not found (404)</string>

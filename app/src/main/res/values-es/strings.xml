@@ -1105,6 +1105,7 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_decode_failed">Error al decodificar imagen, toca para reintentar</string>
     <string name="lrr_subscription_profile_missing">Perfil no encontrado, intenta reiniciar</string>
     <string name="lrr_empty_response">El servidor devolvió una respuesta vacía</string>
+    <string name="lrr_malformed_response">El servidor devolvió una respuesta inesperada</string>
     <string name="lrr_missing_pages_field">La respuesta del servidor no incluye el campo de páginas</string>
     <string name="lrr_auth_failed_check_key">Autenticación fallida, verifica la clave API</string>
     <string name="lrr_not_found_404">Recurso no encontrado (404)</string>

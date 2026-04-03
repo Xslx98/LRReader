@@ -1110,6 +1110,7 @@
     <string name="lrr_decode_failed">ถอดรหัสรูปภาพล้มเหลว แตะเพื่อลองอีกครั้ง</string>
     <string name="lrr_subscription_profile_missing">ไม่พบโปรไฟล์ ลองรีสตาร์ต</string>
     <string name="lrr_empty_response">เซิร์ฟเวอร์ส่งการตอบกลับว่างเปล่า</string>
+    <string name="lrr_malformed_response">เซิร์ฟเวอร์ส่งการตอบกลับที่ไม่คาดคิด</string>
     <string name="lrr_missing_pages_field">การตอบกลับของเซิร์ฟเวอร์ไม่มีฟิลด์หน้า</string>
     <string name="lrr_auth_failed_check_key">การยืนยันตัวตนล้มเหลว โปรดตรวจสอบ API Key</string>
     <string name="lrr_not_found_404">ไม่พบทรัพยากร (404)</string>
