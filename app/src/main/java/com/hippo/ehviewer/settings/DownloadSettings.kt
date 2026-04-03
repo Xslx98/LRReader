@@ -136,6 +136,19 @@ object DownloadSettings {
     @JvmStatic
     fun setDragDownloadGallery(value: Boolean) = Settings.putBoolean(KEY_DRAG_DOWNLOAD_GALLERY, value)
 
+    // --- Concurrent Downloads (1-3) ---
+    const val KEY_CONCURRENT_DOWNLOADS = "concurrent_downloads"
+    private const val DEFAULT_CONCURRENT_DOWNLOADS = 1
+
+    @JvmStatic
+    fun getConcurrentDownloads(): Int =
+        Settings.getIntFromStr(KEY_CONCURRENT_DOWNLOADS, DEFAULT_CONCURRENT_DOWNLOADS)
+            .coerceIn(1, 3)
+
+    @JvmStatic
+    fun setConcurrentDownloads(value: Int) =
+        Settings.putIntToStr(KEY_CONCURRENT_DOWNLOADS, value.coerceIn(1, 3))
+
     // --- Download Timeout ---
     const val KEY_DOWNLOAD_TIMEOUT = "download_timeout"
     const val DEFAULT_DOWNLOAD_TIMEOUT = 0

@@ -60,7 +60,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class DownloadManager implements SpiderQueen.OnSpiderListener {
+public class DownloadManager {
 
     private static final String TAG = DownloadManager.class.getSimpleName();
 
@@ -90,10 +90,8 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
     private DownloadListener mDownloadListener;
     private final List<DownloadInfoListener> mDownloadInfoListeners;
 
-    @Nullable
-    private DownloadInfo mCurrentTask;
-    @Nullable
-    private LRRDownloadWorker mCurrentWorker;
+    private final List<DownloadInfo> mActiveTasks = new ArrayList<>();
+    private final Map<DownloadInfo, LRRDownloadWorker> mActiveWorkers = new HashMap<>();
 
     private final ConcurrentPool<NotifyTask> mNotifyTaskPool = new ConcurrentPool<>(5);
 
@@ -307,16 +305,20 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
 
     @Nullable
     public DownloadInfo getNoneDownloadInfo(long gid) {
-        if (mCurrentTask != null && mCurrentTask.gid == gid) {
-            // Stop current
-            stopCurrentDownloadInternal();
+        boolean wasActive = false;
+        for (DownloadInfo info : mActiveTasks) {
+            if (info.gid == gid) {
+                wasActive = true;
+                break;
+            }
+        }
+        if (wasActive) {
+            stopDownloadInternal(gid);
         } else {
-            // Remove wait
             for (Iterator<DownloadInfo> iterator = mWaitList.iterator(); iterator.hasNext(); ) {
                 DownloadInfo info = iterator.next();
                 if (info.gid == gid) {
                     info.state = DownloadInfo.STATE_NONE;
-                    // Remove from wait list
                     iterator.remove();
                     break;
                 }
@@ -347,18 +349,13 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
     }
 
     private void ensureDownload() {
-        if (mCurrentTask != null) {
-            // Only one download
-            return;
-        }
-
-        // Get download from wait list
-        if (!mWaitList.isEmpty()) {
+        int maxConcurrent = DownloadSettings.getConcurrentDownloads();
+        while (mActiveTasks.size() < maxConcurrent && !mWaitList.isEmpty()) {
             DownloadInfo info = mWaitList.removeFirst();
             LRRDownloadWorker worker = new LRRDownloadWorker(mContext, info);
-            mCurrentTask = info;
-            mCurrentWorker = worker;
-            worker.setListener(this);
+            mActiveTasks.add(info);
+            mActiveWorkers.put(info, worker);
+            worker.setListener(new PerTaskListener(info));
             info.state = DownloadInfo.STATE_DOWNLOAD;
             info.speed = -1;
             info.remaining = -1;
@@ -387,9 +384,8 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
     }
 
     void startDownload(GalleryInfo galleryInfo, @Nullable String label) {
-        if (mCurrentTask != null && mCurrentTask.gid == galleryInfo.gid) {
-            // It is current task
-            return;
+        for (DownloadInfo active : mActiveTasks) {
+            if (active.gid == galleryInfo.gid) return; // already downloading
         }
 
         // Do nothing in the case of a local compressed file.
@@ -851,10 +847,19 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
     // Update listener
     // No ensureDownload
     private DownloadInfo stopDownloadInternal(long gid) {
-        // Check current task
-        if (mCurrentTask != null && mCurrentTask.gid == gid) {
-            // Stop current
-            return stopCurrentDownloadInternal();
+        // Check active tasks
+        for (Iterator<DownloadInfo> it = mActiveTasks.iterator(); it.hasNext(); ) {
+            DownloadInfo info = it.next();
+            if (info.gid == gid) {
+                LRRDownloadWorker w = mActiveWorkers.remove(info);
+                if (w != null) w.cancel();
+                it.remove();
+                if (mActiveTasks.isEmpty()) mSpeedReminder.stop();
+                info.state = DownloadInfo.STATE_NONE;
+                EhDB.putDownloadInfo(info);
+                if (mDownloadListener != null) mDownloadListener.onCancel(info);
+                return info;
+            }
         }
 
         for (Iterator<DownloadInfo> iterator = mWaitList.iterator(); iterator.hasNext(); ) {
@@ -875,29 +880,21 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
     // Update in DB
     // Update mDownloadListener
     private DownloadInfo stopCurrentDownloadInternal() {
-        DownloadInfo info = mCurrentTask;
-        LRRDownloadWorker worker = mCurrentWorker;
-        // Cancel worker
-        if (worker != null) {
-            worker.cancel();
+        // Cancel all active workers
+        for (LRRDownloadWorker w : mActiveWorkers.values()) {
+            w.cancel();
         }
-        mCurrentTask = null;
-        mCurrentWorker = null;
-        // Stop speed reminder
+        List<DownloadInfo> stopped = new ArrayList<>(mActiveTasks);
+        mActiveTasks.clear();
+        mActiveWorkers.clear();
         mSpeedReminder.stop();
-        if (info == null) {
-            return null;
+        if (stopped.isEmpty()) return null;
+        for (DownloadInfo info : stopped) {
+            info.state = DownloadInfo.STATE_NONE;
+            EhDB.putDownloadInfo(info);
+            if (mDownloadListener != null) mDownloadListener.onCancel(info);
         }
-
-        // Update state
-        info.state = DownloadInfo.STATE_NONE;
-        // Update in DB
-        EhDB.putDownloadInfo(info);
-        // Listener
-        if (mDownloadListener != null) {
-            mDownloadListener.onCancel(info);
-        }
-        return info;
+        return stopped.get(0);
     }
 
     // Update in DB
@@ -909,10 +906,11 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
                 stopDownloadInternal(gidList.get(i));
             }
         } else {
-            // Check current task
-            if (mCurrentTask != null && gidList.contains(mCurrentTask.gid)) {
-                // Stop current
-                stopCurrentDownloadInternal();
+            // Check active tasks
+            for (DownloadInfo active : new ArrayList<>(mActiveTasks)) {
+                if (gidList.contains(active.gid)) {
+                    stopDownloadInternal(active.gid);
+                }
             }
 
             // Check all in wait list
@@ -1077,77 +1075,7 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
     }
 
     boolean isIdle() {
-        return mCurrentTask == null && mWaitList.isEmpty();
-    }
-
-    @Override
-    public void onGetPages(int pages) {
-        NotifyTask task = mNotifyTaskPool.pop();
-        if (task == null) {
-            task = new NotifyTask();
-        }
-        task.setOnGetPagesData(pages);
-        SimpleHandler.getInstance().post(task);
-    }
-
-    @Override
-    public void onGet509(int index) {
-        NotifyTask task = mNotifyTaskPool.pop();
-        if (task == null) {
-            task = new NotifyTask();
-        }
-        task.setOnGet509Data(index);
-        SimpleHandler.getInstance().post(task);
-    }
-
-    @Override
-    public void onPageDownload(int index, long contentLength, long receivedSize, int bytesRead) {
-        NotifyTask task = mNotifyTaskPool.pop();
-        if (task == null) {
-            task = new NotifyTask();
-        }
-        task.setOnPageDownloadData(index, contentLength, receivedSize, bytesRead);
-        SimpleHandler.getInstance().post(task);
-    }
-
-    @Override
-    public void onPageSuccess(int index, int finished, int downloaded, int total) {
-        NotifyTask task = mNotifyTaskPool.pop();
-        if (task == null) {
-            task = new NotifyTask();
-        }
-        task.setOnPageSuccessData(index, finished, downloaded, total);
-        SimpleHandler.getInstance().post(task);
-    }
-
-    @Override
-    public void onPageFailure(int index, String error, int finished, int downloaded, int total) {
-        NotifyTask task = mNotifyTaskPool.pop();
-        if (task == null) {
-            task = new NotifyTask();
-        }
-        task.setOnPageFailureDate(index, error, finished, downloaded, total);
-        SimpleHandler.getInstance().post(task);
-    }
-
-    @Override
-    public void onFinish(int finished, int downloaded, int total) {
-        NotifyTask task = mNotifyTaskPool.pop();
-        if (task == null) {
-            task = new NotifyTask();
-        }
-        task.setOnFinishDate(finished, downloaded, total);
-        SimpleHandler.getInstance().post(task);
-    }
-
-    @Override
-    public void onGetImageSuccess(int index, Image image) {
-        // Ignore
-    }
-
-    @Override
-    public void onGetImageFailure(int index, String error) {
-        // Ignore
+        return mActiveTasks.isEmpty() && mWaitList.isEmpty();
     }
 
     private class NotifyTask implements Runnable {
@@ -1160,6 +1088,7 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
         public static final int TYPE_ON_FINISH = 5;
 
         private int mType;
+        private DownloadInfo mTaskInfo; // task identity for task-specific events
         private int mPages;
         private int mIndex;
         private long mContentLength;
@@ -1171,8 +1100,9 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
         private int mDownloaded;
         private int mTotal;
 
-        public void setOnGetPagesData(int pages) {
+        public void setOnGetPagesData(DownloadInfo taskInfo, int pages) {
             mType = TYPE_ON_GET_PAGES;
+            mTaskInfo = taskInfo;
             mPages = pages;
         }
 
@@ -1189,16 +1119,18 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
             mBytesRead = bytesRead;
         }
 
-        public void setOnPageSuccessData(int index, int finished, int downloaded, int total) {
+        public void setOnPageSuccessData(DownloadInfo taskInfo, int index, int finished, int downloaded, int total) {
             mType = TYPE_ON_PAGE_SUCCESS;
+            mTaskInfo = taskInfo;
             mIndex = index;
             mFinished = finished;
             mDownloaded = downloaded;
             mTotal = total;
         }
 
-        public void setOnPageFailureDate(int index, String error, int finished, int downloaded, int total) {
+        public void setOnPageFailureDate(DownloadInfo taskInfo, int index, String error, int finished, int downloaded, int total) {
             mType = TYPE_ON_PAGE_FAILURE;
+            mTaskInfo = taskInfo;
             mIndex = index;
             mError = error;
             mFinished = finished;
@@ -1206,8 +1138,9 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
             mTotal = total;
         }
 
-        public void setOnFinishDate(int finished, int downloaded, int total) {
+        public void setOnFinishDate(DownloadInfo taskInfo, int finished, int downloaded, int total) {
             mType = TYPE_ON_FINISH;
+            mTaskInfo = taskInfo;
             mFinished = finished;
             mDownloaded = downloaded;
             mTotal = total;
@@ -1217,9 +1150,9 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
         public void run() {
             switch (mType) {
                 case TYPE_ON_GET_PAGES: {
-                    DownloadInfo info = mCurrentTask;
+                    DownloadInfo info = mTaskInfo;
                     if (info == null) {
-                        Log.e(TAG, "Current task is null, but it should not be");
+                        Log.e(TAG, "Task info is null on onGetPages");
                     } else {
                         info.total = mPages;
                         List<DownloadInfo> list = getInfoListForLabel(info.label);
@@ -1243,9 +1176,9 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
                 }
                 case TYPE_ON_PAGE_SUCCESS: {
                     mSpeedReminder.onDone(mIndex);
-                    DownloadInfo info = mCurrentTask;
+                    DownloadInfo info = mTaskInfo;
                     if (info == null) {
-                        Log.e(TAG, "Current task is null, but it should not be");
+                        Log.e(TAG, "Task info is null on onPageSuccess");
                     } else {
                         info.finished = mFinished;
                         info.downloaded = mDownloaded;
@@ -1264,9 +1197,9 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
                 }
                 case TYPE_ON_PAGE_FAILURE: {
                     mSpeedReminder.onDone(mIndex);
-                    DownloadInfo info = mCurrentTask;
+                    DownloadInfo info = mTaskInfo;
                     if (info == null) {
-                        Log.e(TAG, "Current task is null, but it should not be");
+                        Log.e(TAG, "Task info is null on onPageFailure");
                     } else {
                         info.finished = mFinished;
                         info.downloaded = mDownloaded;
@@ -1282,18 +1215,14 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
                 }
                 case TYPE_ON_FINISH: {
                     mSpeedReminder.onFinish();
-                    // Download done
-                    DownloadInfo info = mCurrentTask;
-                    mCurrentTask = null;
-                    LRRDownloadWorker worker = mCurrentWorker;
-                    mCurrentWorker = null;
-                    // Check null
-                    if (info == null || worker == null) {
-                        Log.e(TAG, "Current stuff is null, but it should not be");
+                    DownloadInfo info = mTaskInfo;
+                    if (info == null) {
+                        Log.e(TAG, "Task info is null on onFinish");
                         break;
                     }
-                    // Stop speed count
-                    mSpeedReminder.stop();
+                    mActiveTasks.remove(info);
+                    mActiveWorkers.remove(info);
+                    if (mActiveTasks.isEmpty()) mSpeedReminder.stop();
                     // Update state
                     info.finished = mFinished;
                     info.downloaded = mDownloaded;
@@ -1324,6 +1253,67 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
 
             mNotifyTaskPool.push(this);
         }
+    }
+
+    private class PerTaskListener implements SpiderQueen.OnSpiderListener {
+        private final DownloadInfo mInfo;
+
+        PerTaskListener(DownloadInfo info) {
+            mInfo = info;
+        }
+
+        private NotifyTask popTask() {
+            NotifyTask task = mNotifyTaskPool.pop();
+            return task != null ? task : new NotifyTask();
+        }
+
+        @Override
+        public void onGetPages(int pages) {
+            NotifyTask task = popTask();
+            task.setOnGetPagesData(mInfo, pages);
+            SimpleHandler.getInstance().post(task);
+        }
+
+        @Override
+        public void onGet509(int index) {
+            NotifyTask task = popTask();
+            task.setOnGet509Data(index);
+            SimpleHandler.getInstance().post(task);
+        }
+
+        @Override
+        public void onPageDownload(int index, long contentLength, long receivedSize, int bytesRead) {
+            NotifyTask task = popTask();
+            task.setOnPageDownloadData(index, contentLength, receivedSize, bytesRead);
+            SimpleHandler.getInstance().post(task);
+        }
+
+        @Override
+        public void onPageSuccess(int index, int finished, int downloaded, int total) {
+            NotifyTask task = popTask();
+            task.setOnPageSuccessData(mInfo, index, finished, downloaded, total);
+            SimpleHandler.getInstance().post(task);
+        }
+
+        @Override
+        public void onPageFailure(int index, String error, int finished, int downloaded, int total) {
+            NotifyTask task = popTask();
+            task.setOnPageFailureDate(mInfo, index, error, finished, downloaded, total);
+            SimpleHandler.getInstance().post(task);
+        }
+
+        @Override
+        public void onFinish(int finished, int downloaded, int total) {
+            NotifyTask task = popTask();
+            task.setOnFinishDate(mInfo, finished, downloaded, total);
+            SimpleHandler.getInstance().post(task);
+        }
+
+        @Override
+        public void onGetImageSuccess(int index, Image image) {}
+
+        @Override
+        public void onGetImageFailure(int index, String error) {}
     }
 
 
@@ -1373,7 +1363,7 @@ public class DownloadManager implements SpiderQueen.OnSpiderListener {
 
         @Override
         public void run() {
-            DownloadInfo info = mCurrentTask;
+            DownloadInfo info = mActiveTasks.isEmpty() ? null : mActiveTasks.get(0);
             if (info != null) {
                 long newSpeed = mBytesRead / 2;
                 if (oldSpeed != -1) {
