@@ -3,6 +3,7 @@ package com.hippo.ehviewer.client.lrr
 import android.content.Context
 import android.util.Log
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.ServiceRegistry
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -66,9 +67,13 @@ internal fun ensureSuccess(response: Response) {
  * Map common network exceptions to a localized user-friendly message.
  * Requires a [Context] to look up the appropriate string resource for the device locale.
  */
+/** Thrown by [retryOnFailure] when the device has no network connection. */
+class LRROfflineException : IOException("No network connection")
+
 @JvmName("friendlyError")
 fun friendlyError(context: Context, e: Exception): String {
     return when {
+        e is LRROfflineException                 -> context.getString(R.string.lrr_offline_error)
         e is LRRHttpException -> when (e.code) {
             401, 403 -> context.getString(R.string.lrr_auth_failed_check_key)
             404      -> context.getString(R.string.lrr_not_found_404)
@@ -96,6 +101,10 @@ internal suspend fun <T> retryOnFailure(
     maxRetries: Int = 2,
     block: suspend () -> T
 ): T {
+    // Fast-fail when device is known to be offline — avoids waiting for connect timeout
+    // runCatching guards against uninitialized ServiceRegistry in unit tests
+    val isOffline = runCatching { !ServiceRegistry.networkModule.networkMonitor.isAvailable }.getOrDefault(false)
+    if (isOffline) throw LRROfflineException()
     var lastException: Exception? = null
     repeat(maxRetries + 1) { attempt ->
         try {

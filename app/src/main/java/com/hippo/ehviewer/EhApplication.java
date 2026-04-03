@@ -188,6 +188,8 @@ public class EhApplication extends RecordingApplication {
 
         // Initialize ServiceRegistry (must be after Settings/EhDB)
         ServiceRegistry.INSTANCE.initialize(this);
+        // Eagerly start network monitoring so isAvailable() is ready before first API call
+        ServiceRegistry.INSTANCE.getNetworkModule().getNetworkMonitor();
 
         if (Settings.getEnableAnalytics()) {
             Analytics.start(this);
