@@ -1,6 +1,8 @@
 package com.hippo.ehviewer.client.lrr
 
+import android.content.Context
 import android.util.Log
+import com.hippo.ehviewer.R
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -25,40 +27,40 @@ internal val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaTypeOrNu
 /** Empty request body for POST/PUT calls that don't send data. */
 internal val EMPTY_REQUEST_BODY: RequestBody = ByteArray(0).toRequestBody()
 
+/** Thrown when the server returns a non-2xx HTTP status code. */
+class LRRHttpException(val code: Int) : IOException("HTTP $code")
+
 /**
  * Ensure the HTTP response is successful (2xx).
- * Throws [IOException] with a user-friendly message if not.
+ * Throws [LRRHttpException] carrying the status code if not.
  */
 internal fun ensureSuccess(response: Response) {
     if (!response.isSuccessful) {
-        val friendlyMsg = when (response.code) {
-            401, 403 -> "认证失败，请检查 API Key 是否正确"
-            404 -> "资源未找到 (404)"
-            in 500..503 -> "服务器错误 (${response.code})，请稍后重试"
-            else -> "请求失败 (HTTP ${response.code})"
-        }
         // Body is not consumed here; the caller's use{} block will close() it.
         // On error responses this discards the TCP connection rather than returning
         // it to the pool — acceptable since error rates should be low.
-        throw IOException(friendlyMsg)
+        throw LRRHttpException(response.code)
     }
 }
 
 /**
- * Map common network exceptions to user-friendly Chinese messages.
+ * Map common network exceptions to a localized user-friendly message.
+ * Requires a [Context] to look up the appropriate string resource for the device locale.
  */
 @JvmName("friendlyError")
-fun friendlyError(e: Exception): String {
-    val msg = e.message ?: e.javaClass.simpleName
-
+fun friendlyError(context: Context, e: Exception): String {
     return when {
-        e is java.net.SocketTimeoutException -> "连接超时，请检查网络或服务器状态"
-        e is java.net.ConnectException -> "无法连接到服务器，请检查地址和网络"
-        e is java.net.UnknownHostException -> "无法解析服务器地址，请检查 URL"
-        e is javax.net.ssl.SSLException -> "安全连接失败，请检查服务器证书"
-        msg.startsWith("认证失败") || msg.startsWith("服务器错误")
-            || msg.startsWith("请求失败") || msg.startsWith("资源未找到") -> msg
-        else -> msg
+        e is LRRHttpException -> when (e.code) {
+            401, 403 -> context.getString(R.string.lrr_auth_failed_check_key)
+            404      -> context.getString(R.string.lrr_not_found_404)
+            in 500..503 -> context.getString(R.string.lrr_server_error_code, e.code)
+            else     -> context.getString(R.string.lrr_request_failed_code, e.code)
+        }
+        e is java.net.SocketTimeoutException -> context.getString(R.string.lrr_timeout_error)
+        e is java.net.ConnectException       -> context.getString(R.string.lrr_connect_error_check)
+        e is java.net.UnknownHostException   -> context.getString(R.string.lrr_dns_error)
+        e is javax.net.ssl.SSLException      -> context.getString(R.string.lrr_ssl_error)
+        else -> e.message ?: e.javaClass.simpleName
     }
 }
 
