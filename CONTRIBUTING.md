@@ -9,7 +9,7 @@ Thank you for your interest in LRReader! Bug reports, feature requests, and code
 | 工具 / Tool | 版本 / Version |
 |---|---|
 | Android Studio | Ladybug+ |
-| JDK | 17+ |
+| JDK | 21+ |
 | Android SDK | API 35 (compile), API 28 (min) |
 | Kotlin | 2.1.0 |
 
