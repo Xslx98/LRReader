@@ -51,23 +51,31 @@ public class LRRAuthManager {
                     EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             );
         } catch (GeneralSecurityException e) {
-            // KeyStore unavailable (device restore or OS upgrade may corrupt keys).
-            // Wipe stored credentials so we don't silently use plaintext values.
-            Log.e(TAG, "KeyStore unavailable — wiping stored credentials", e);
+            Log.e(TAG, "KeyStore unavailable — credentials will not persist this session", e);
+            // Wipe any stale data from a prior encrypted store so it cannot be read as plaintext.
             context.getApplicationContext()
                     .getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
                     .edit().clear().apply();
-            sPrefs = context.getApplicationContext()
-                    .getSharedPreferences("lrr_auth_fallback", Context.MODE_PRIVATE);
+            sPrefs = null;
             sNeedsReauthentication = true;
         } catch (IOException e) {
-            Log.e(TAG, "I/O error initializing EncryptedSharedPreferences", e);
-            sPrefs = context.getApplicationContext()
-                    .getSharedPreferences("lrr_auth_fallback", Context.MODE_PRIVATE);
+            Log.e(TAG, "I/O error initializing EncryptedSharedPreferences — credentials will not persist", e);
+            sPrefs = null;
             sNeedsReauthentication = true;
         }
-        // Restore active profile across process restarts
-        sActiveProfileId = sPrefs.getLong(KEY_ACTIVE_PROFILE_ID, 0L);
+        // Restore active profile (falls back to 0 when sPrefs is null)
+        sActiveProfileId = sPrefs != null ? sPrefs.getLong(KEY_ACTIVE_PROFILE_ID, 0L) : 0L;
+    }
+
+    /**
+     * Inject a {@link SharedPreferences} instance for unit-testing environments where
+     * EncryptedSharedPreferences is unavailable (e.g., Robolectric without a real KeyStore).
+     * Must NOT be called from production code.
+     */
+    static void initializeForTesting(@NonNull SharedPreferences prefs) {
+        sPrefs = prefs;
+        sNeedsReauthentication = false;
+        sActiveProfileId = prefs.getLong(KEY_ACTIVE_PROFILE_ID, 0L);
     }
 
     /**
@@ -75,10 +83,11 @@ public class LRRAuthManager {
      */
     @Nullable
     public static String getServerUrl() {
-        return sPrefs.getString(KEY_SERVER_URL, null);
+        return sPrefs != null ? sPrefs.getString(KEY_SERVER_URL, null) : null;
     }
 
     public static void setServerUrl(@NonNull String url) {
+        if (sPrefs == null) return;
         // Remove trailing slash
         if (url.endsWith("/")) {
             url = url.substring(0, url.length() - 1);
@@ -91,10 +100,11 @@ public class LRRAuthManager {
      */
     @Nullable
     public static String getApiKey() {
-        return sPrefs.getString(KEY_API_KEY, null);
+        return sPrefs != null ? sPrefs.getString(KEY_API_KEY, null) : null;
     }
 
     public static void setApiKey(@Nullable String apiKey) {
+        if (sPrefs == null) return;
         sPrefs.edit().putString(KEY_API_KEY, apiKey).apply();
     }
 
@@ -103,10 +113,11 @@ public class LRRAuthManager {
      */
     @Nullable
     public static String getServerName() {
-        return sPrefs.getString(KEY_SERVER_NAME, null);
+        return sPrefs != null ? sPrefs.getString(KEY_SERVER_NAME, null) : null;
     }
 
     public static void setServerName(@Nullable String name) {
+        if (sPrefs == null) return;
         sPrefs.edit().putString(KEY_SERVER_NAME, name).apply();
     }
 
@@ -127,7 +138,7 @@ public class LRRAuthManager {
 
     public static void setActiveProfileId(long id) {
         sActiveProfileId = id;
-        sPrefs.edit().putLong(KEY_ACTIVE_PROFILE_ID, id).apply();
+        if (sPrefs != null) sPrefs.edit().putLong(KEY_ACTIVE_PROFILE_ID, id).apply();
     }
 
     /**
@@ -145,6 +156,7 @@ public class LRRAuthManager {
      * Use this instead of storing keys in the Room {@code SERVER_PROFILES} table.
      */
     public static void setApiKeyForProfile(long profileId, @Nullable String apiKey) {
+        if (sPrefs == null) return;
         String prefKey = "api_key_" + profileId;
         if (apiKey == null || apiKey.isEmpty()) {
             sPrefs.edit().remove(prefKey).apply();
@@ -156,11 +168,12 @@ public class LRRAuthManager {
     /** @return the API key for the given profile, or null if none stored. */
     @Nullable
     public static String getApiKeyForProfile(long profileId) {
-        return sPrefs.getString("api_key_" + profileId, null);
+        return sPrefs != null ? sPrefs.getString("api_key_" + profileId, null) : null;
     }
 
     /** Remove the stored API key for a profile (e.g., when the profile is deleted). */
     public static void clearApiKeyForProfile(long profileId) {
+        if (sPrefs == null) return;
         sPrefs.edit().remove("api_key_" + profileId).apply();
     }
 
@@ -168,7 +181,7 @@ public class LRRAuthManager {
 
     /** @return true if an app-lock pattern has been stored. */
     public static boolean hasPattern() {
-        return sPrefs.contains(KEY_PATTERN_HASH);
+        return sPrefs != null && sPrefs.contains(KEY_PATTERN_HASH);
     }
 
     /**
@@ -176,6 +189,7 @@ public class LRRAuthManager {
      * Pass null or empty string to clear the pattern.
      */
     public static void setPattern(@Nullable String pattern) {
+        if (sPrefs == null) return;
         if (pattern == null || pattern.isEmpty()) {
             sPrefs.edit().remove(KEY_PATTERN_HASH).remove(KEY_PATTERN_SALT).apply();
             return;
@@ -204,6 +218,7 @@ public class LRRAuthManager {
      * @return true if input matches the stored pattern.
      */
     public static boolean verifyPattern(@Nullable String input) {
+        if (sPrefs == null) return false;
         String saltStr = sPrefs.getString(KEY_PATTERN_SALT, null);
         String hashStr = sPrefs.getString(KEY_PATTERN_HASH, null);
         if (saltStr == null || hashStr == null) return false;
@@ -225,7 +240,7 @@ public class LRRAuthManager {
      * Clear all stored credentials.
      */
     public static void clear() {
-        sPrefs.edit().clear().apply();
+        if (sPrefs != null) sPrefs.edit().clear().apply();
         sActiveProfileId = 0;
     }
 }
