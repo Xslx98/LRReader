@@ -81,8 +81,6 @@ class NetworkModule(private val context: Context) {
     val imageOkHttpClient: OkHttpClient by lazy {
         // Derive from main client to share connection pool, thread pool, and SSL config
         okHttpClient.newBuilder()
-            .followRedirects(false)
-            .followSslRedirects(false)
             .connectTimeout(20, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
             .writeTimeout(20, TimeUnit.SECONDS)
