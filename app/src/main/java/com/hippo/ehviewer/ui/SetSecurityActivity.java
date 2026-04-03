@@ -53,11 +53,8 @@ public class SetSecurityActivity extends ToolbarActivity implements View.OnClick
         mSet = ViewUtils.$$(this, R.id.set);
         mFingerprint = (CheckBox) ViewUtils.$$(this, R.id.fingerprint_checkbox);
 
-        String pattern = SecuritySettings.getSecurity();
-        if (!TextUtils.isEmpty(pattern)) {
-            mPatternView.setPattern(LockPatternView.DisplayMode.Correct,
-                    LockPatternUtils.stringToPattern(pattern));
-        }
+        // Pattern is stored as a hash and cannot be recovered for display.
+        // The view starts empty regardless of whether a pattern was previously set.
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             FingerprintManager fingerprintManager = getSystemService(FingerprintManager.class);
@@ -112,7 +109,7 @@ public class SetSecurityActivity extends ToolbarActivity implements View.OnClick
                 } else {
                     security = mPatternView.getPatternString();
                 }
-                SecuritySettings.putSecurity(security);
+                SecuritySettings.setPattern(security);
                 SecuritySettings.putEnableFingerprint(mFingerprint.getVisibility() == View.VISIBLE &&
                         mFingerprint.isChecked() && !security.isEmpty());
             }
