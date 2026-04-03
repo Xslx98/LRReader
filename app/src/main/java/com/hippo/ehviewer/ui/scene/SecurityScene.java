@@ -207,9 +207,8 @@ public class SecurityScene extends SolidScene implements
         }
 
         String enteredPatter = LockPatternUtils.patternToString(pattern);
-        String targetPatter = SecuritySettings.getSecurity();
 
-        if (ObjectUtils.equal(enteredPatter, targetPatter)) {
+        if (SecuritySettings.verifyPattern(enteredPatter)) {
             if (getEHContext() != null && isAdded()) {
                 startSceneForCheckStep(CHECK_STEP_SECURITY, getArguments());
                 finish();
@@ -230,7 +229,7 @@ public class SecurityScene extends SolidScene implements
             if (null == activity) {
                 return;
             }
-            SecuritySettings.putSecurity("");
+            SecuritySettings.setPattern("");
             if (getEHContext() != null && isAdded()) {
                 startSceneForCheckStep(CHECK_STEP_SECURITY, getArguments());
                 finish();

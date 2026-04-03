@@ -33,7 +33,7 @@ public class PrivacyFragment extends BasePreferenceFragmentCompat
     public void onResume() {
         super.onResume();
         Preference patternProtection = findPreference(KEY_PATTERN_PROTECTION);
-        patternProtection.setSummary(TextUtils.isEmpty(SecuritySettings.getSecurity()) ?
+        patternProtection.setSummary(!SecuritySettings.hasPattern() ?
                 R.string.settings_privacy_pattern_protection_not_set :
                 R.string.settings_privacy_pattern_protection_set);
     }
