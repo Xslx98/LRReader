@@ -262,4 +262,50 @@ class LRRApiUtilsTest {
         advanceUntilIdle()
         assertEquals(3, callCount) // 1 initial + 2 retries
     }
+
+    @Test
+    fun retryOnFailure_doesNotRetryOn401() = runTest {
+        var callCount = 0
+        try {
+            retryOnFailure(maxRetries = 2) {
+                callCount++
+                throw LRRHttpException(401)
+            }
+            fail("Should have thrown")
+        } catch (e: LRRHttpException) {
+            assertEquals(401, e.code)
+        }
+        assertEquals("Should not retry on 401", 1, callCount)
+    }
+
+    @Test
+    fun retryOnFailure_doesNotRetryOn404() = runTest {
+        var callCount = 0
+        try {
+            retryOnFailure(maxRetries = 2) {
+                callCount++
+                throw LRRHttpException(404)
+            }
+            fail("Should have thrown")
+        } catch (e: LRRHttpException) {
+            assertEquals(404, e.code)
+        }
+        assertEquals("Should not retry on 404", 1, callCount)
+    }
+
+    @Test
+    fun retryOnFailure_retriesOn503() = runTest {
+        var callCount = 0
+        try {
+            retryOnFailure(maxRetries = 2) {
+                callCount++
+                throw LRRHttpException(503)
+            }
+            fail("Should have thrown")
+        } catch (e: LRRHttpException) {
+            assertEquals(503, e.code)
+        }
+        advanceUntilIdle()
+        assertEquals("Should retry on 503", 3, callCount) // 1 initial + 2 retries
+    }
 }
