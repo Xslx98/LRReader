@@ -11,9 +11,7 @@ import java.io.IOException
 
 /**
  * Shared utilities for all LRR API classes.
- *
- * Shared utilities for all LRR API classes.
- * across domain-specific API classes (LRRServerApi, LRRArchiveApi, etc.)
+ * Shared across domain-specific API classes (LRRServerApi, LRRArchiveApi, etc.)
  */
 
 private const val TAG = "LRRApi"
@@ -39,6 +37,9 @@ internal fun ensureSuccess(response: Response) {
             in 500..503 -> "服务器错误 (${response.code})，请稍后重试"
             else -> "请求失败 (HTTP ${response.code})"
         }
+        // Body is not consumed here; the caller's use{} block will close() it.
+        // On error responses this discards the TCP connection rather than returning
+        // it to the pool — acceptable since error rates should be low.
         throw IOException(friendlyMsg)
     }
 }
