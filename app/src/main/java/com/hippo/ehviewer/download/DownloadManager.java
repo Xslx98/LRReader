@@ -43,11 +43,10 @@ import com.hippo.lib.image.Image;
 import com.hippo.unifile.UniFile;
 import com.hippo.util.IoThreadPoolExecutor;
 import com.hippo.lib.yorozuya.ConcurrentPool;
-import com.hippo.lib.yorozuya.MathUtils;
 import com.hippo.lib.yorozuya.ObjectUtils;
 import com.hippo.lib.yorozuya.SimpleHandler;
 import com.hippo.lib.yorozuya.collect.LongList;
-import com.hippo.lib.yorozuya.collect.SparseIJArray;
+
 import com.hippo.lib.yorozuya.collect.SparseJLArray;
 
 import java.io.IOException;
@@ -84,7 +83,7 @@ public class DownloadManager {
     // Store download info wait to start
     private final LinkedList<DownloadInfo> mWaitList;
 
-    private final SpeedReminder mSpeedReminder;
+    private final DownloadSpeedTracker mSpeedReminder;
 
     @Nullable
     private DownloadListener mDownloadListener;
@@ -158,8 +157,29 @@ public class DownloadManager {
         }
 
         mWaitList = new LinkedList<>();
-        mSpeedReminder = new SpeedReminder();
         mDownloadInfoListeners = new ArrayList<>();
+        mSpeedReminder = new DownloadSpeedTracker(new DownloadSpeedTracker.Callback() {
+            @Override
+            public DownloadInfo getFirstActiveTask() {
+                return mActiveTasks.isEmpty() ? null : mActiveTasks.get(0);
+            }
+            @Override
+            public List<DownloadInfo> getInfoListForLabel(String label) {
+                return DownloadManager.this.getInfoListForLabel(label);
+            }
+            @Override
+            public DownloadListener getDownloadListener() {
+                return mDownloadListener;
+            }
+            @Override
+            public List<DownloadInfoListener> getDownloadInfoListeners() {
+                return mDownloadInfoListeners;
+            }
+            @Override
+            public LinkedList<DownloadInfo> getWaitList() {
+                return mWaitList;
+            }
+        });
     }
 
     public void replaceInfo(DownloadInfo newInfo, DownloadInfo oldInfo) {
@@ -1316,101 +1336,6 @@ public class DownloadManager {
         public void onGetImageFailure(int index, String error) {}
     }
 
-
-    class SpeedReminder implements Runnable {
-
-        private boolean mStop = true;
-
-        private long mBytesRead;
-        private long oldSpeed = -1;
-
-        private final SparseIJArray mContentLengthMap = new SparseIJArray();
-        private final SparseIJArray mReceivedSizeMap = new SparseIJArray();
-
-        public void start() {
-            if (mStop) {
-                mStop = false;
-                SimpleHandler.getInstance().post(this);
-            }
-        }
-
-        public void stop() {
-            if (!mStop) {
-                mStop = true;
-                mBytesRead = 0;
-                oldSpeed = -1;
-                mContentLengthMap.clear();
-                mReceivedSizeMap.clear();
-                SimpleHandler.getInstance().removeCallbacks(this);
-            }
-        }
-
-        public void onDownload(int index, long contentLength, long receivedSize, int bytesRead) {
-            mContentLengthMap.put(index, contentLength);
-            mReceivedSizeMap.put(index, receivedSize);
-            mBytesRead += bytesRead;
-        }
-
-        public void onDone(int index) {
-            mContentLengthMap.delete(index);
-            mReceivedSizeMap.delete(index);
-        }
-
-        public void onFinish() {
-            mContentLengthMap.clear();
-            mReceivedSizeMap.clear();
-        }
-
-        @Override
-        public void run() {
-            DownloadInfo info = mActiveTasks.isEmpty() ? null : mActiveTasks.get(0);
-            if (info != null) {
-                long newSpeed = mBytesRead / 2;
-                if (oldSpeed != -1) {
-                    newSpeed = (long) MathUtils.lerp(oldSpeed, newSpeed, 0.75f);
-                }
-                oldSpeed = newSpeed;
-                info.speed = newSpeed;
-
-                // Calculate remaining
-                if (info.total <= 0) {
-                    info.remaining = -1;
-                } else if (newSpeed == 0) {
-                    info.remaining = 300L * 24L * 60L * 60L * 1000L; // 300 days
-                } else {
-                    int downloadingCount = 0;
-                    long downloadingContentLengthSum = 0;
-                    long totalSize = 0;
-                    for (int i = 0, n = Math.max(mContentLengthMap.size(), mReceivedSizeMap.size()); i < n; i++) {
-                        long contentLength = mContentLengthMap.valueAt(i);
-                        long receivedSize = mReceivedSizeMap.valueAt(i);
-                        downloadingCount++;
-                        downloadingContentLengthSum += contentLength;
-                        totalSize += contentLength - receivedSize;
-                    }
-                    if (downloadingCount != 0) {
-                        totalSize += downloadingContentLengthSum * (info.total - info.downloaded - downloadingCount) / downloadingCount;
-                        info.remaining = totalSize / newSpeed * 1000;
-                    }
-                }
-                if (mDownloadListener != null) {
-                    mDownloadListener.onDownload(info);
-                }
-                List<DownloadInfo> list = getInfoListForLabel(info.label);
-                if (list != null) {
-                    for (DownloadInfoListener l : mDownloadInfoListeners) {
-                        l.onUpdate(info, list, mWaitList);
-                    }
-                }
-            }
-
-            mBytesRead = 0;
-
-            if (!mStop) {
-                SimpleHandler.getInstance().postDelayed(this, 2000);
-            }
-        }
-    }
 
     private static final Comparator<DownloadInfo> DATE_DESC_COMPARATOR = new Comparator<>() {
         @Override

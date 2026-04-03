@@ -88,10 +88,10 @@ abstract class AppDatabase : RoomDatabase() {
          */
         private val MIGRATION_10_11 = object : Migration(10, 11) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("CREATE INDEX IF NOT EXISTS idx_downloads_profile ON DOWNLOADS (SERVER_PROFILE_ID)")
-                db.execSQL("CREATE INDEX IF NOT EXISTS idx_downloads_time ON DOWNLOADS (TIME)")
-                db.execSQL("CREATE INDEX IF NOT EXISTS idx_history_profile ON HISTORY (SERVER_PROFILE_ID)")
-                db.execSQL("CREATE INDEX IF NOT EXISTS idx_history_time ON HISTORY (TIME)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_DOWNLOADS_SERVER_PROFILE_ID` ON `DOWNLOADS` (`SERVER_PROFILE_ID`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_DOWNLOADS_TIME` ON `DOWNLOADS` (`TIME`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_HISTORY_SERVER_PROFILE_ID` ON `HISTORY` (`SERVER_PROFILE_ID`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_HISTORY_TIME` ON `HISTORY` (`TIME`)")
             }
         }
 

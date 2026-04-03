@@ -39,7 +39,6 @@ import com.hippo.conaco.ConacoTask;
 import com.hippo.conaco.DataContainer;
 import com.hippo.conaco.Unikery;
 import com.hippo.drawable.PreciselyClipDrawable;
-import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
@@ -359,13 +358,13 @@ public class LoadImageView extends FixedAspectImageView implements Unikery<Image
         } else {
             if (secondTry && downloadInfo != null) {
                 Context context = this.getContext();
-                if (EhApplication.getInstance().containGlobalStuff(mRequestId)) {
+                if (ServiceRegistry.INSTANCE.getAppModule().containGlobalStuff(mRequestId)) {
                     // request exist
                     return;
                 }
                 String detailUrl = EhUrl.getGalleryDetailUrl(downloadInfo.gid, downloadInfo.token);
                 GalleryDetailCallback callback = new GalleryDetailCallback(context);
-                mRequestId = ((EhApplication) context.getApplicationContext()).putGlobalStuff(callback);
+                mRequestId = ServiceRegistry.INSTANCE.getAppModule().putGlobalStuff(callback);
                 EhRequest request = new EhRequest()
                         .setMethod(EhClient.METHOD_GET_GALLERY_DETAIL)
                         .setArgs(detailUrl)
@@ -441,16 +440,14 @@ public class LoadImageView extends FixedAspectImageView implements Unikery<Image
 
     private class GalleryDetailCallback implements EhClient.Callback<GalleryDetail> {
         private final Context context;
-        private final EhApplication ehApplication;
 
         private GalleryDetailCallback(Context context) {
             this.context = context;
-            this.ehApplication = (EhApplication) context.getApplicationContext();
         }
 
         @Override
         public void onSuccess(GalleryDetail result) {
-            ehApplication.removeGlobalStuff(this);
+            ServiceRegistry.INSTANCE.getAppModule().removeGlobalStuff(this);
             secondTry = true;
             if (context == null||result == null || downloadInfo == null) {
                 return;
@@ -466,12 +463,12 @@ public class LoadImageView extends FixedAspectImageView implements Unikery<Image
 
         @Override
         public void onFailure(Exception e) {
-            ehApplication.removeGlobalStuff(this);
+            ServiceRegistry.INSTANCE.getAppModule().removeGlobalStuff(this);
         }
 
         @Override
         public void onCancel() {
-            ehApplication.removeGlobalStuff(this);
+            ServiceRegistry.INSTANCE.getAppModule().removeGlobalStuff(this);
         }
     }
 }

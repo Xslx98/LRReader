@@ -547,38 +547,7 @@ public final class MainActivity extends StageActivity
     }
 
     private void onInit() {
-        // Storage permission no longer required (Scoped Storage: getExternalFilesDir + SAF + MediaStore)
-
-        EhCookieStore store = ServiceRegistry.INSTANCE.getNetworkModule().getCookieStore();
-        List<Cookie> eCookies = store.getCookies(HttpUrl.get(EhUrl.HOST_E));
-        List<Cookie> exCookies = store.getCookies(HttpUrl.get(EhUrl.HOST_EX));
-        List<Cookie> cookies = new LinkedList<>(eCookies);
-        cookies.addAll(exCookies);
-
-        String ipbMemberId = null;
-        String ipbPassHash = null;
-        String igneous = null;
-
-        for (int i = 0, n = cookies.size(); i < n; i++) {
-            Cookie cookie = cookies.get(i);
-            switch (cookie.name()) {
-                case EhCookieStore.KEY_IPD_MEMBER_ID:
-                    ipbMemberId = cookie.value();
-                    break;
-                case EhCookieStore.KEY_IPD_PASS_HASH:
-                    ipbPassHash = cookie.value();
-                    break;
-                case EhCookieStore.KEY_IGNEOUS:
-                    igneous = cookie.value();
-                    break;
-            }
-        }
-//        if (ipbMemberId != null || ipbPassHash != null || igneous != null) {
-//            Settings.setLoginState(true);
-//        } else {
-//            Settings.setLoginState(false);
-//        }
-        Settings.setLoginState(ipbMemberId != null || ipbPassHash != null || igneous != null);
+        // EH cookie auth check removed — login state is managed via LRRAuthManager
     }
 
 
