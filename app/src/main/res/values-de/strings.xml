@@ -717,7 +717,7 @@ Kommentator blockieren: Kommentare dieses Benutzers ausblenden. Das Laden der Ga
     <!-- DirPickerActivity -->
     <string name="preset">Voreinstellung</string>
     <string name="default_directory">Standardverzeichnis</string>
-    <string name="application_file_directory">App-Dateiverzeichnis</string>
+    <string name="application_file_directory">App-Dateiverzeichnis %d (wird nach Deinstallation entfernt)</string>
 
     <string name="download_service">Download-Dienst</string>
     <string name="favorite_name">Kategorie</string>
@@ -821,7 +821,7 @@ Kommentator blockieren: Kommentare dieses Benutzers ausblenden. Das Laden der Ga
     <string name="history_info_unlimited">Unbegrenzt</string>
     <string name="archiver">Archiver</string>
     <string name="archiver_dialog_current_funds">Aktuelle Mittel:</string>
-    <string name="archiver_dialog_cost">%s GP / %s Credits verbraucht</string>
+    <string name="archiver_dialog_cost">Download-Kosten: %s</string>
     <string name="archiver_dialog_download_original">Original-Archiv herunterladen</string>
     <string name="archiver_dialog_download_resample">Neu abgetastetes Archiv herunterladen</string>
     <string name="archiver_dialog_size">Geschätzte Größe:  %s</string>
@@ -951,7 +951,7 @@ Kommentator blockieren: Kommentare dieses Benutzers ausblenden. Das Laden der Ga
     <string name="lrr_category_create">Kategorie erstellen</string>
     <string name="lrr_category_create_inline">Neue Kategorie erstellen</string>
     <string name="lrr_category_created">Kategorie erstellt</string>
-    <string name="lrr_category_delete_confirm">Diese Kategorie löschen?</string>
+    <string name="lrr_category_delete_confirm">Kategorie \"%1$s\" löschen?</string>
     <string name="lrr_category_deleted">Kategorie gelöscht</string>
     <string name="lrr_category_dynamic">Dynamisch</string>
     <string name="lrr_category_edit">Kategorie bearbeiten</string>
@@ -979,7 +979,7 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_delete_failed">Löschen fehlgeschlagen: %s</string>
     <string name="lrr_delete_server">Server löschen</string>
     <string name="lrr_delete_server_confirm">Server \"%s\" löschen?</string>
-    <string name="lrr_delete_success">Archiv gelöscht</string>
+    <string name="lrr_delete_success">\"%s\" gelöscht</string>
     <string name="lrr_edit_server">Server bearbeiten</string>
     <string name="lrr_edit_server_name">Servername</string>
     <string name="lrr_edit_server_save">Speichern</string>
@@ -990,7 +990,7 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_not_configured">Server nicht konfiguriert</string>
     <string name="lrr_server_active">Aktiv</string>
     <string name="lrr_server_config_subtitle">Mit LANraragi-Server verbinden</string>
-    <string name="lrr_server_info">LANraragi %s - %s Archive</string>
+    <string name="lrr_server_info">Server: %1$s\nVersion: %2$s %3$s\nPro Seite: %4$s</string>
     <string name="lrr_server_switched">Gewechselt zu %s</string>
     <string name="lrr_server_url_empty">Server-URL darf nicht leer sein</string>
     <string name="lrr_server_url_hint">Server-URL (z.B. http://192.168.1.1:3000)</string>

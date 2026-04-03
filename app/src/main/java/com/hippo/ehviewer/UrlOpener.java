@@ -16,6 +16,7 @@
 
 package com.hippo.ehviewer;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -36,6 +37,7 @@ public final class UrlOpener {
     private UrlOpener() {
     }
 
+    @SuppressLint("UnsafeImplicitIntentLaunch")
     public static void openUrl(@NonNull Context context, String url, boolean ehUrl) {
         try {
             if (TextUtils.isEmpty(url)) {

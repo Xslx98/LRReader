@@ -691,7 +691,7 @@ Bloquear comentarista: ocultar los comentarios de este usuario. Puede tardar má
     <!-- Dir Picker-->
     <string name="preset">Predeterminado</string>
     <string name="default_directory">Directorio predeterminado</string>
-    <string name="application_file_directory">Directorio de archivos de la app</string>
+    <string name="application_file_directory">Directorio de archivos de la app %d (se eliminará tras desinstalar)</string>
 
     <!-- Categories -->
     <string name="let_me_select">Déjame elegir</string>
@@ -880,7 +880,7 @@ Bloquear comentarista: ocultar los comentarios de este usuario. Puede tardar má
     <string name="appwidget_text">Texto del widget</string>
     <string name="add_widget">Añadir widget</string>
     <string name="app_widget_description">Widget de progreso de descarga</string>
-    <string name="archiver_dialog_cost">%s GP / %s créditos consumidos</string>
+    <string name="archiver_dialog_cost">Costo de descarga: %s</string>
     <!--  wifi server -->
     <string name="wifi_server_name">WiFiServer</string>
     <string name="wifi_server">WiFiServer</string>
@@ -1016,7 +1016,7 @@ Bloquear comentarista: ocultar los comentarios de este usuario. Puede tardar má
     <string name="lrr_category_create">Crear categoría</string>
     <string name="lrr_category_create_inline">Crear nueva categoría</string>
     <string name="lrr_category_created">Categoría creada</string>
-    <string name="lrr_category_delete_confirm">¿Eliminar esta categoría?</string>
+    <string name="lrr_category_delete_confirm">¿Eliminar categoría \"%1$s\"?</string>
     <string name="lrr_category_deleted">Categoría eliminada</string>
     <string name="lrr_category_dynamic">Dinámica</string>
     <string name="lrr_category_edit">Editar categoría</string>
@@ -1044,7 +1044,7 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_delete_failed">Error al eliminar: %s</string>
     <string name="lrr_delete_server">Eliminar servidor</string>
     <string name="lrr_delete_server_confirm">¿Eliminar servidor \"%s\"?</string>
-    <string name="lrr_delete_success">Archivo eliminado</string>
+    <string name="lrr_delete_success">\"%s\" eliminado</string>
     <string name="lrr_edit_server">Editar servidor</string>
     <string name="lrr_edit_server_name">Nombre del servidor</string>
     <string name="lrr_edit_server_save">Guardar</string>
@@ -1055,7 +1055,7 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_not_configured">Servidor no configurado</string>
     <string name="lrr_server_active">Activo</string>
     <string name="lrr_server_config_subtitle">Conectar al servidor LANraragi</string>
-    <string name="lrr_server_info">LANraragi %s - %s archivos</string>
+    <string name="lrr_server_info">Servidor: %1$s\nVersión: %2$s %3$s\nPor página: %4$s</string>
     <string name="lrr_server_switched">Cambiado a %s</string>
     <string name="lrr_server_url_empty">La URL del servidor no puede estar vacía</string>
     <string name="lrr_server_url_hint">URL del servidor (ej: http://192.168.1.1:3000)</string>

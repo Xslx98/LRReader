@@ -26,6 +26,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <!-- LANraragi: Removed REQUEST_INSTALL_PACKAGES (EH auto-update) -->
     <!-- LANraragi: Removed ACCESS_DOWNLOAD_MANAGER (EH system downloader) -->
@@ -104,53 +105,6 @@
             android:theme="@style/AppTheme.Gallery">
 
             <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:scheme="file" />
-                <data android:scheme="content" />
-                <data android:host="*" />
-                <data android:mimeType="application/octet-stream" />
-                <data android:mimeType="application/7z" />
-                <data android:mimeType="application/rar" />
-                <data android:mimeType="application/zip" />
-                <data android:mimeType="application/x-7z-compressed" />
-                <data android:mimeType="application/x-rar-compressed" />
-                <data android:mimeType="application/x-zip-compressed" />
-            </intent-filter>
-
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:scheme="file" />
-                <data android:scheme="content" />
-                <data android:host="*" />
-                <data android:pathPattern=".*\\.7z" />
-                <data android:pathPattern=".*\\.rar" />
-                <data android:pathPattern=".*\\.zip" />
-            </intent-filter>
-
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:scheme="file" />
-                <data android:scheme="content" />
-                <data android:host="*" />
-                <data android:mimeType="*/*" />
-                <data android:pathPattern=".*\\.7z" />
-                <data android:pathPattern=".*\\.rar" />
-                <data android:pathPattern=".*\\.zip" />
-            </intent-filter>
-
-            <intent-filter>
                 <action android:name="com.samsung.android.support.REMOTE_ACTION"/>
             </intent-filter>
 
@@ -175,12 +129,6 @@
             android:theme="@style/AppTheme.Toolbar" />
 
         <activity
-            android:name="com.hippo.ehviewer.ui.FilterActivity"
-            android:configChanges="screenSize|uiMode"
-            android:label="@string/filter"
-            android:theme="@style/AppTheme.Toolbar" />
-
-        <activity
             android:name="com.hippo.ehviewer.ui.BlackListActivity"
             android:configChanges="screenSize|uiMode"
             android:label="@string/blacklist"
@@ -193,12 +141,6 @@
             android:theme="@style/AppTheme.Toolbar" />
 
         <!-- LANraragi: Removed EH-only UConfigActivity -->
-
-        <activity
-            android:name="com.hippo.ehviewer.ui.MyTagsActivity"
-            android:configChanges="screenSize|uiMode"
-            android:label="@string/my_tags"
-            android:theme="@style/AppTheme.Toolbar" />
 
         <!-- LANraragi: Removed EH-only HostsActivity -->
 

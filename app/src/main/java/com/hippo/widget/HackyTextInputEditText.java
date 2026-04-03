@@ -16,6 +16,7 @@
 
 package com.hippo.widget;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.TextView;
@@ -27,6 +28,7 @@ import java.lang.reflect.Method;
 // Avoid crash on some Meizu devices
 // https://github.com/android-in-china/Compatibility/issues/11
 // https://stackoverflow.com/questions/51891415/nullpointerexception-on-meizu-devices-in-editor-updatecursorpositionmz/52001305
+@SuppressLint("SoonBlockedPrivateApi")
 public class HackyTextInputEditText extends TextInputEditText {
 
   private static final boolean HAS_METHOD_UPDATE_CURSOR_POSITION_MZ;

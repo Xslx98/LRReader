@@ -442,7 +442,7 @@
     <!-- DirPickerActivity -->
     <string name="preset">プリセット</string>
     <string name="default_directory">デフォルトディレクトリ</string>
-    <string name="application_file_directory">アプリファイルディレクトリ</string>
+    <string name="application_file_directory">アプリファイルディレクトリ %d (アンインストール後に削除されます)</string>
     <!-- Gallery Activity -->
     <string name="page_menu_title">ページ%d</string>
     <string name="page_menu_refresh">@string/refresh</string>
@@ -834,7 +834,7 @@
     <string name="history_info_unlimited">無制限</string>
     <string name="archiver">アーカイブ</string>
     <string name="archiver_dialog_current_funds">現在の Funds:</string>
-    <string name="archiver_dialog_cost">%s GP / %s クレジット消費</string>
+    <string name="archiver_dialog_cost">ダウンロード費用: %s</string>
     <string name="archiver_dialog_download_original">オリジナルのアーカイブをダウンロード</string>
     <string name="archiver_dialog_download_resample">リサンプルアーカイブをダウンロード</string>
     <string name="archiver_dialog_size">推定サイズ: %s</string>
@@ -960,7 +960,7 @@
     <string name="lrr_category_create">カテゴリ作成</string>
     <string name="lrr_category_create_inline">新規カテゴリ作成</string>
     <string name="lrr_category_created">カテゴリを作成しました</string>
-    <string name="lrr_category_delete_confirm">このカテゴリを削除しますか？</string>
+    <string name="lrr_category_delete_confirm">カテゴリ \"%1$s\" を削除しますか？</string>
     <string name="lrr_category_deleted">カテゴリを削除しました</string>
     <string name="lrr_category_dynamic">動的</string>
     <string name="lrr_category_edit">カテゴリ編集</string>
@@ -988,7 +988,7 @@
     <string name="lrr_delete_failed">削除失敗: %s</string>
     <string name="lrr_delete_server">サーバーを削除</string>
     <string name="lrr_delete_server_confirm">サーバー\"%s\"を削除しますか？</string>
-    <string name="lrr_delete_success">アーカイブを削除しました</string>
+    <string name="lrr_delete_success">\"%s\" を削除しました</string>
     <string name="lrr_edit_server">サーバーを編集</string>
     <string name="lrr_edit_server_name">サーバー名</string>
     <string name="lrr_edit_server_save">保存</string>
@@ -999,7 +999,7 @@
     <string name="lrr_not_configured">サーバー未設定</string>
     <string name="lrr_server_active">有効</string>
     <string name="lrr_server_config_subtitle">LANraragiサーバーに接続</string>
-    <string name="lrr_server_info">LANraragi %s - %s アーカイブ</string>
+    <string name="lrr_server_info">サーバー: %1$s\nバージョン: %2$s %3$s\n1ページあたり: %4$s</string>
     <string name="lrr_server_switched">%s に切り替えました</string>
     <string name="lrr_server_url_empty">サーバーURLを入力してください</string>
     <string name="lrr_server_url_hint">サーバーURL（例: http://192.168.1.1:3000）</string>

@@ -1,5 +1,6 @@
 package com.hippo.ehviewer.ui.dialog
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.DownloadManager
 import android.content.BroadcastReceiver
@@ -115,6 +116,7 @@ class UpdateDialog(private val activity: Activity) {
         }
     }
 
+    @SuppressLint("UnsafeImplicitIntentLaunch")
     private fun downloadApk(
         dialog: DialogInterface?,
         id: Int,
@@ -163,6 +165,7 @@ class UpdateDialog(private val activity: Activity) {
 //        }
     }
 
+    @SuppressLint("UnsafeImplicitIntentLaunch")
     private fun gotoGithub(dialog: DialogInterface, id: Int) {
         val uri = GITHUB_RELEASE_URL.toUri()
         val intent = Intent(Intent.ACTION_VIEW, uri)

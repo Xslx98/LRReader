@@ -1038,7 +1038,7 @@
     <string name="lrr_category_create">新建分類</string>
     <string name="lrr_category_create_inline">建立新分類</string>
     <string name="lrr_category_created">分類已建立</string>
-    <string name="lrr_category_delete_confirm">確定刪除此分類？</string>
+    <string name="lrr_category_delete_confirm">確定刪除分類「%1$s」？</string>
     <string name="lrr_category_deleted">分類已刪除</string>
     <string name="lrr_category_dynamic">動態</string>
     <string name="lrr_category_edit">編輯分類</string>
@@ -1062,7 +1062,7 @@
     <string name="lrr_delete_failed">刪除失敗: %s</string>
     <string name="lrr_delete_server">刪除伺服器</string>
     <string name="lrr_delete_server_confirm">確定刪除伺服器\"%s\"？</string>
-    <string name="lrr_delete_success">檔案已刪除</string>
+    <string name="lrr_delete_success">「%s」已刪除</string>
     <string name="lrr_edit_server">編輯伺服器</string>
     <string name="lrr_edit_server_name">伺服器名稱</string>
     <string name="lrr_edit_server_save">儲存</string>
@@ -1073,7 +1073,7 @@
     <string name="lrr_not_configured">伺服器未配置</string>
     <string name="lrr_server_active">已啟用</string>
     <string name="lrr_server_config_subtitle">連接到LANraragi伺服器</string>
-    <string name="lrr_server_info">LANraragi %s - %s 個檔案</string>
+    <string name="lrr_server_info">伺服器: %1$s\n版本: %2$s %3$s\n每頁: %4$s</string>
     <string name="lrr_server_switched">已切換到 %s</string>
     <string name="lrr_server_url_empty">伺服器地址不能為空</string>
     <string name="lrr_server_url_hint">伺服器地址 (例: http://192.168.1.1:3000)</string>
