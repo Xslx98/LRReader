@@ -44,3 +44,4 @@ Image_*.jpg
 /docs/
 bugs/
 .superpowers/
+.venv/
