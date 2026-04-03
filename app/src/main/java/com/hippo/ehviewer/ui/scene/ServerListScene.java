@@ -120,6 +120,9 @@ public final class ServerListScene extends BaseScene {
         LRRAuthManager.setServerName(profile.getName());
         LRRAuthManager.setActiveProfileId(profile.getId());
 
+        // Clear caches so previous server's content doesn't appear under new server
+        ServiceRegistry.INSTANCE.clearAllCaches();
+
         // Reload download manager
         ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().reload();
 
