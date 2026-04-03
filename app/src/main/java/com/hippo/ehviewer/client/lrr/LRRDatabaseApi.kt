@@ -4,7 +4,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.io.IOException
 
 /**
  * API class for LANraragi database operations.
@@ -31,7 +30,7 @@ object LRRDatabaseApi {
         client.newCall(request).execute().use { response ->
             ensureSuccess(response)
             response.body?.string()
-                ?: throw IOException("服务器返回空响应体")
+                ?: throw LRREmptyBodyException()
         }
     }
 
@@ -65,7 +64,7 @@ object LRRShinobuApi {
         client.newCall(request).execute().use { response ->
             ensureSuccess(response)
             response.body?.string()
-                ?: throw IOException("服务器返回空响应体")
+                ?: throw LRREmptyBodyException()
         }
     }
 
