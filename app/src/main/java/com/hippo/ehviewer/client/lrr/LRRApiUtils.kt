@@ -33,21 +33,13 @@ internal val EMPTY_REQUEST_BODY: RequestBody = ByteArray(0).toRequestBody()
  */
 internal fun ensureSuccess(response: Response) {
     if (!response.isSuccessful) {
-        val errorBody = try {
-            response.body?.string() ?: ""
-        } catch (_: Exception) {
-            ""
-        }
-
         val friendlyMsg = when (response.code) {
             401, 403 -> "认证失败，请检查 API Key 是否正确"
             404 -> "资源未找到 (404)"
             in 500..503 -> "服务器错误 (${response.code})，请稍后重试"
             else -> "请求失败 (HTTP ${response.code})"
         }
-        throw IOException(
-            friendlyMsg + if (errorBody.isEmpty()) "" else ": $errorBody"
-        )
+        throw IOException(friendlyMsg)
     }
 }
 
