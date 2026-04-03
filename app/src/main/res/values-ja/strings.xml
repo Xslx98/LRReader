@@ -952,7 +952,6 @@
     <string name="lrr_api_key_helper">LANraragi設定でAPIキーを確認</string>
     <string name="lrr_api_key_hint">APIキー（任意）</string>
     <string name="lrr_categories_empty">カテゴリなし</string>
-    <string name="lrr_categories_error">カテゴリの読み込みエラー</string>
     <string name="lrr_categories_title">カテゴリ管理</string>
     <string name="lrr_category_action_delete">削除</string>
     <string name="lrr_category_action_edit">編集</string>
