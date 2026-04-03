@@ -1044,6 +1044,7 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_decode_failed">Bilddekodierung fehlgeschlagen, tippen zum Wiederholen</string>
     <string name="lrr_subscription_profile_missing">Profil nicht gefunden, versuche neu zu starten</string>
     <string name="lrr_empty_response">Server hat leere Antwort zurückgegeben</string>
+    <string name="lrr_malformed_response">Server hat unerwartete Antwort zurückgegeben</string>
     <string name="lrr_missing_pages_field">Serverantwort fehlt das Seitenfeld</string>
     <string name="lrr_auth_failed_check_key">Authentifizierung fehlgeschlagen, bitte API-Schlüssel prüfen</string>
     <string name="lrr_not_found_404">Ressource nicht gefunden (404)</string>

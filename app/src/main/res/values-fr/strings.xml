@@ -1111,6 +1111,7 @@ Cette action est irréversible.</string>
     <string name="lrr_decode_failed">Décodage de l\'image échoué, appuyer pour réessayer</string>
     <string name="lrr_subscription_profile_missing">Profil introuvable, essayez de redémarrer</string>
     <string name="lrr_empty_response">Le serveur a retourné une réponse vide</string>
+    <string name="lrr_malformed_response">Le serveur a retourné une réponse inattendue</string>
     <string name="lrr_missing_pages_field">La réponse du serveur manque le champ des pages</string>
     <string name="lrr_auth_failed_check_key">Authentification échouée, vérifiez la clé API</string>
     <string name="lrr_not_found_404">Ressource introuvable (404)</string>
