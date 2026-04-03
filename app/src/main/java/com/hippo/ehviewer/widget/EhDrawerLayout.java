@@ -17,6 +17,7 @@
 package com.hippo.ehviewer.widget;
 
 import android.animation.ValueAnimator;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
 import android.util.AttributeSet;
@@ -71,6 +72,7 @@ public class EhDrawerLayout extends DrawerLayout {
         }
     }
 
+    @SuppressLint("RestrictedApi")
     public static class Behavior extends CoordinatorLayout.Behavior<EhDrawerLayout> {
         // We only support the FAB <> Snackbar shift movement on Honeycomb and above. This is
         // because we can use view translation properties which greatly simplifies the code.

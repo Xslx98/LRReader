@@ -53,7 +53,7 @@ public class AnalyticsScene extends SolidScene implements View.OnClickListener {
         mAccept = ViewUtils.$$(view, R.id.accept);
         TextView text = (TextView) ViewUtils.$$(view, R.id.text);
 
-        text.setText(Html.fromHtml(getString(R.string.analytics_explain, Html.FROM_HTML_MODE_LEGACY)));
+        text.setText(Html.fromHtml(getString(R.string.analytics_explain), Html.FROM_HTML_MODE_LEGACY));
         text.setMovementMethod(LinkMovementMethod2.getInstance());
 
         mReject.setOnClickListener(this);

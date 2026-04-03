@@ -16,6 +16,7 @@
 
 package com.hippo.scene;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
@@ -573,6 +574,7 @@ public abstract class StageActivity extends EhActivity {
         onTransactScene();
     }
 
+    @SuppressLint("MissingSuperCall")
     @Override
     public void onBackPressed() {
         int size = mSceneTagList.size();

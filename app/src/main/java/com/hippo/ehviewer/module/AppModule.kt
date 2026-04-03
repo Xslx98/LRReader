@@ -1,7 +1,6 @@
 package com.hippo.ehviewer.module
 
 import android.content.Context
-import androidx.annotation.NonNull
 import com.hippo.ehviewer.Settings
 import com.hippo.lib.yorozuya.IntIdGenerator
 import java.lang.ref.WeakReference
@@ -28,7 +27,7 @@ class AppModule(private val context: Context) {
 
     // --- Global Stuff Registry ---
 
-    fun putGlobalStuff(@NonNull o: Any): Int {
+    fun putGlobalStuff(o: Any): Int {
         val id = idGenerator.nextId()
         globalStuffMap[id] = WeakReference(o)
         Settings.putInt(KEY_GLOBAL_STUFF_NEXT_ID, idGenerator.nextId())
@@ -47,16 +46,16 @@ class AppModule(private val context: Context) {
 
     // --- Temp Cache ---
 
-    fun putTempCache(@NonNull key: String, @NonNull o: Any): String {
+    fun putTempCache(key: String, o: Any): String {
         tempCacheMap[key] = o
         return key
     }
 
-    fun containTempCache(@NonNull key: String): Boolean = tempCacheMap.containsKey(key)
+    fun containTempCache(key: String): Boolean = tempCacheMap.containsKey(key)
 
-    fun getTempCache(@NonNull key: String): Any? = tempCacheMap[key]
+    fun getTempCache(key: String): Any? = tempCacheMap[key]
 
-    fun removeTempCache(@NonNull key: String): Any? = tempCacheMap.remove(key)
+    fun removeTempCache(key: String): Any? = tempCacheMap.remove(key)
 
     companion object {
         private const val KEY_GLOBAL_STUFF_NEXT_ID = "global_stuff_next_id"
