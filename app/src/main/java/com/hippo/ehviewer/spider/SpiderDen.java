@@ -57,9 +57,10 @@ public final class SpiderDen {
     private long mGid;
 
     @Nullable
-    private static SimpleDiskCache sCache;
+    private static volatile SimpleDiskCache sCache;
 
-    public static void initialize(Context context) {
+    public static synchronized void initialize(Context context) {
+        if (sCache != null) return;
         sCache = new SimpleDiskCache(new File(context.getCacheDir(), "image"),
                 MathUtils.clamp(ReadingSettings.getReadCacheSize(), 40, 640) * 1024 * 1024);
     }
