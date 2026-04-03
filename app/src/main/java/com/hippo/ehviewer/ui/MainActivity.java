@@ -209,7 +209,7 @@ public final class MainActivity extends StageActivity
     @NonNull
     @Override
     protected Announcer getLaunchAnnouncer() {
-        if (!TextUtils.isEmpty(SecuritySettings.getSecurity())) {
+        if (SecuritySettings.hasPattern()) {
             return new Announcer(SecurityScene.class);
         } else if (!LRRAuthManager.isConfigured()) {
             // LANraragi: show server config if not yet configured
@@ -224,7 +224,7 @@ public final class MainActivity extends StageActivity
     // LANraragi: simplified — only security gate and server config gate remain
     private Announcer processAnnouncer(Announcer announcer) {
         if (0 == getSceneCount()) {
-            if (!TextUtils.isEmpty(SecuritySettings.getSecurity())) {
+            if (SecuritySettings.hasPattern()) {
                 Bundle newArgs = new Bundle();
                 newArgs.putString(SecurityScene.KEY_TARGET_SCENE, announcer.getClazz().getName());
                 newArgs.putBundle(SecurityScene.KEY_TARGET_ARGS, announcer.getArgs());

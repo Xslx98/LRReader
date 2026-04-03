@@ -9,8 +9,14 @@ import androidx.annotation.Nullable;
 import androidx.security.crypto.EncryptedSharedPreferences;
 import androidx.security.crypto.MasterKey;
 
+import android.util.Base64;
+
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 
 /**
  * Manages LANraragi server connection settings (server URL and API key).
@@ -24,6 +30,8 @@ public class LRRAuthManager {
     private static final String KEY_API_KEY = "api_key";
     private static final String KEY_SERVER_NAME = "server_name";
     private static final String KEY_ACTIVE_PROFILE_ID = "active_profile_id";
+    private static final String KEY_PATTERN_HASH = "pattern_hash";
+    private static final String KEY_PATTERN_SALT = "pattern_salt";
 
     private static SharedPreferences sPrefs;
     private static long sActiveProfileId = 0;
@@ -128,6 +136,63 @@ public class LRRAuthManager {
      */
     public static boolean isNeedsReauthentication() {
         return sNeedsReauthentication;
+    }
+
+    // ── App-lock pattern (stored as SHA-256 + salt, never plaintext) ──────────
+
+    /** @return true if an app-lock pattern has been stored. */
+    public static boolean hasPattern() {
+        return sPrefs.contains(KEY_PATTERN_HASH);
+    }
+
+    /**
+     * Hash {@code pattern} with a fresh random salt and persist to encrypted prefs.
+     * Pass null or empty string to clear the pattern.
+     */
+    public static void setPattern(@Nullable String pattern) {
+        if (pattern == null || pattern.isEmpty()) {
+            sPrefs.edit().remove(KEY_PATTERN_HASH).remove(KEY_PATTERN_SALT).apply();
+            return;
+        }
+        byte[] salt = new byte[16];
+        new SecureRandom().nextBytes(salt);
+        byte[] patBytes = pattern.getBytes(StandardCharsets.UTF_8);
+        byte[] salted = new byte[salt.length + patBytes.length];
+        System.arraycopy(salt, 0, salted, 0, salt.length);
+        System.arraycopy(patBytes, 0, salted, salt.length, patBytes.length);
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256").digest(salted);
+            sPrefs.edit()
+                    .putString(KEY_PATTERN_HASH, Base64.encodeToString(hash, Base64.NO_WRAP))
+                    .putString(KEY_PATTERN_SALT, Base64.encodeToString(salt, Base64.NO_WRAP))
+                    .apply();
+        } catch (NoSuchAlgorithmException e) {
+            // SHA-256 is guaranteed on Android
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Verify {@code input} against the stored hash using a timing-safe comparison.
+     *
+     * @return true if input matches the stored pattern.
+     */
+    public static boolean verifyPattern(@Nullable String input) {
+        String saltStr = sPrefs.getString(KEY_PATTERN_SALT, null);
+        String hashStr = sPrefs.getString(KEY_PATTERN_HASH, null);
+        if (saltStr == null || hashStr == null) return false;
+        byte[] salt     = Base64.decode(saltStr, Base64.NO_WRAP);
+        byte[] expected = Base64.decode(hashStr, Base64.NO_WRAP);
+        byte[] patBytes = (input != null ? input : "").getBytes(StandardCharsets.UTF_8);
+        byte[] salted   = new byte[salt.length + patBytes.length];
+        System.arraycopy(salt, 0, salted, 0, salt.length);
+        System.arraycopy(patBytes, 0, salted, salt.length, patBytes.length);
+        try {
+            byte[] actual = MessageDigest.getInstance("SHA-256").digest(salted);
+            return MessageDigest.isEqual(actual, expected);
+        } catch (NoSuchAlgorithmException e) {
+            return false;
+        }
     }
 
     /**
