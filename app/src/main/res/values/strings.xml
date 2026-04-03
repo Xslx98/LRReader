@@ -68,7 +68,6 @@
     <string name="lrr_connection_failed">Connection failed: %1$s</string>
     <string name="lrr_categories_title">Categories</string>
     <string name="lrr_categories_empty">No categories</string>
-    <string name="lrr_categories_error">Failed to load categories: %1$s</string>
     <string name="lrr_error_title">出错了</string>
     <string name="lrr_retry">重试</string>
     <string name="lrr_category_pinned">📌 %1$s</string>
