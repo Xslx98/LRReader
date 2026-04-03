@@ -1031,8 +1031,6 @@
     <string name="settings_download_restore_download_items_get_gallery_info">Restore download items in gallery</string>
     <string name="settings_eh_blacklist">Comment Blacklist</string>
     <string name="settings_eh_blacklist_summary">Block comments by account name</string>
-    <string name="settings_eh_lock_cookies_igneous">Lock the Cookie igneous field</string>
-    <string name="settings_eh_lock_cookies_igneous_summary">It is not recommended to enable it except in special circumstances.</string>
     <string name="settings_eh_show_eh_event">Show EH events</string>
     <string name="settings_eh_show_gallery_comment">Show Gallery Comment</string>
     <string name="settings_eh_system_theme">System Theme</string>
