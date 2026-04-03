@@ -6,6 +6,7 @@ import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.GalleryTagGroup
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
+import com.hippo.ehviewer.client.lrr.arcidToGid
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -36,7 +37,7 @@ class LRRArchive() : Parcelable {
      */
     fun toGalleryInfo(): GalleryInfo {
         val gi = GalleryInfo()
-        gi.gid = if (arcid.isNotEmpty()) (arcid.hashCode().toLong() and 0x7FFFFFFFL) else 0
+        gi.gid = arcidToGid(arcid)
         gi.token = arcid
         gi.title = title
         gi.titleJpn = null
@@ -71,7 +72,7 @@ class LRRArchive() : Parcelable {
     fun toGalleryDetail(): GalleryDetail {
         val gd = GalleryDetail()
 
-        gd.gid = if (arcid.isNotEmpty()) (arcid.hashCode().toLong() and 0x7FFFFFFFL) else 0
+        gd.gid = arcidToGid(arcid)
         gd.token = arcid
         gd.title = title
         gd.titleJpn = null
