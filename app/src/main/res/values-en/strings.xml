@@ -921,6 +921,8 @@
     <string name="lrr_api_key_hint">API Key</string>
     <string name="lrr_categories_empty">No categories</string>
     <string name="lrr_categories_error">Failed to load categories: %1$s</string>
+    <string name="lrr_error_title">Something went wrong</string>
+    <string name="lrr_retry">Retry</string>
     <string name="lrr_categories_title">Categories</string>
     <string name="lrr_category_action_delete">Delete</string>
     <string name="lrr_category_action_edit">Edit</string>
