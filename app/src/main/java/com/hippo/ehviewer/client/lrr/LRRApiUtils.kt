@@ -110,6 +110,8 @@ internal suspend fun <T> retryOnFailure(
         try {
             return block()
         } catch (e: IOException) {
+            // Client errors (4xx) are permanent — retrying cannot fix them.
+            if (e is LRRHttpException && e.code in 400..499) throw e
             lastException = e
             if (attempt < maxRetries) {
                 val delayMs = 500L * (1 shl attempt) // 500, 1000
