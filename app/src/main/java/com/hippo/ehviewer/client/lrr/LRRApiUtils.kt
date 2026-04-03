@@ -30,6 +30,9 @@ internal val EMPTY_REQUEST_BODY: RequestBody = ByteArray(0).toRequestBody()
 /** Thrown when the server returns a non-2xx HTTP status code. */
 class LRRHttpException(val code: Int) : IOException("HTTP $code")
 
+/** Thrown when the server returns a 2xx response but an empty body. */
+class LRREmptyBodyException : IOException()
+
 /**
  * Ensure the HTTP response is successful (2xx).
  * Throws [LRRHttpException] carrying the status code if not.
@@ -60,6 +63,7 @@ fun friendlyError(context: Context, e: Exception): String {
         e is java.net.ConnectException       -> context.getString(R.string.lrr_connect_error_check)
         e is java.net.UnknownHostException   -> context.getString(R.string.lrr_dns_error)
         e is javax.net.ssl.SSLException      -> context.getString(R.string.lrr_ssl_error)
+        e is LRREmptyBodyException -> context.getString(R.string.lrr_empty_response)
         else -> e.message ?: e.javaClass.simpleName
     }
 }

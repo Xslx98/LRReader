@@ -9,7 +9,6 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.io.IOException
 
 /**
  * API class for LANraragi plugin operations.
@@ -62,7 +61,7 @@ object LRRPluginApi {
         client.newCall(request).execute().use { response ->
             ensureSuccess(response)
             val body = response.body?.string()
-                ?: throw IOException("服务器返回空响应体")
+                ?: throw LRREmptyBodyException()
             lrrJson.decodeFromString<List<PluginInfo>>(body)
         }
     }
@@ -94,7 +93,7 @@ object LRRPluginApi {
         client.newCall(request).execute().use { response ->
             ensureSuccess(response)
             val body = response.body?.string()
-                ?: throw IOException("服务器返回空响应体")
+                ?: throw LRREmptyBodyException()
             lrrJson.decodeFromString<PluginRunResult>(body)
         }
     }
