@@ -12,6 +12,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -51,7 +52,11 @@ public class LRRCategoriesScene extends BaseScene {
 
     private RecyclerView mRecyclerView;
     private View mProgress;
-    private TextView mTip;
+    private View mErrorView;
+    private ImageView mErrorIcon;
+    private TextView mErrorTitle;
+    private TextView mErrorMessage;
+    private Button mErrorRetry;
     private MaterialToolbar mToolbar;
 
     private List<LRRCategory> mCategories = new ArrayList<>();
@@ -71,7 +76,11 @@ public class LRRCategoriesScene extends BaseScene {
 
         mToolbar = view.findViewById(R.id.toolbar);
         mProgress = view.findViewById(R.id.progress);
-        mTip = view.findViewById(R.id.tip);
+        mErrorView = view.findViewById(R.id.error_view);
+        mErrorIcon = view.findViewById(R.id.error_icon);
+        mErrorTitle = view.findViewById(R.id.error_title);
+        mErrorMessage = view.findViewById(R.id.error_message);
+        mErrorRetry = view.findViewById(R.id.error_retry);
         mRecyclerView = view.findViewById(R.id.recycler_view);
 
         mToolbar.setTitle(R.string.lrr_categories_title);
@@ -103,7 +112,11 @@ public class LRRCategoriesScene extends BaseScene {
         super.onDestroyView();
         mRecyclerView = null;
         mProgress = null;
-        mTip = null;
+        mErrorView = null;
+        mErrorIcon = null;
+        mErrorTitle = null;
+        mErrorMessage = null;
+        mErrorRetry = null;
         mToolbar = null;
         mAdapter = null;
     }
@@ -142,7 +155,7 @@ public class LRRCategoriesScene extends BaseScene {
                     mCategories.clear();
                     mCategories.addAll(pinned);
                     if (mCategories.isEmpty()) {
-                        showTip(getString(R.string.lrr_categories_empty));
+                        showEmpty(getString(R.string.lrr_categories_empty));
                     } else {
                         showList();
                         if (mAdapter != null) mAdapter.notifyDataSetChanged();
@@ -152,7 +165,7 @@ public class LRRCategoriesScene extends BaseScene {
                 Log.e(TAG, "Failed to load categories", e);
                 if (getActivity() == null) return;
                 getActivity().runOnUiThread(() ->
-                        showTip(getString(R.string.lrr_categories_error, e.getMessage())));
+                        showError(LRRApiUtilsKt.friendlyError(e)));
             }
         });
     }
@@ -333,21 +346,42 @@ public class LRRCategoriesScene extends BaseScene {
     private void showProgress() {
         if (mProgress != null) mProgress.setVisibility(View.VISIBLE);
         if (mRecyclerView != null) mRecyclerView.setVisibility(View.GONE);
-        if (mTip != null) mTip.setVisibility(View.GONE);
+        if (mErrorView != null) mErrorView.setVisibility(View.GONE);
     }
 
     private void showList() {
         if (mProgress != null) mProgress.setVisibility(View.GONE);
         if (mRecyclerView != null) mRecyclerView.setVisibility(View.VISIBLE);
-        if (mTip != null) mTip.setVisibility(View.GONE);
+        if (mErrorView != null) mErrorView.setVisibility(View.GONE);
     }
 
-    private void showTip(String text) {
+    private void showError(String message) {
         if (mProgress != null) mProgress.setVisibility(View.GONE);
         if (mRecyclerView != null) mRecyclerView.setVisibility(View.GONE);
-        if (mTip != null) {
-            mTip.setVisibility(View.VISIBLE);
-            mTip.setText(text);
+        if (mErrorView != null) {
+            mErrorView.setVisibility(View.VISIBLE);
+            if (mErrorIcon != null) mErrorIcon.setVisibility(View.VISIBLE);
+            if (mErrorTitle != null) mErrorTitle.setText(R.string.lrr_error_title);
+            if (mErrorMessage != null) {
+                mErrorMessage.setVisibility(View.VISIBLE);
+                mErrorMessage.setText(message);
+            }
+            if (mErrorRetry != null) {
+                mErrorRetry.setVisibility(View.VISIBLE);
+                mErrorRetry.setOnClickListener(v -> fetchCategories());
+            }
+        }
+    }
+
+    private void showEmpty(String message) {
+        if (mProgress != null) mProgress.setVisibility(View.GONE);
+        if (mRecyclerView != null) mRecyclerView.setVisibility(View.GONE);
+        if (mErrorView != null) {
+            mErrorView.setVisibility(View.VISIBLE);
+            if (mErrorIcon != null) mErrorIcon.setVisibility(View.GONE);
+            if (mErrorTitle != null) mErrorTitle.setText(message);
+            if (mErrorMessage != null) mErrorMessage.setVisibility(View.GONE);
+            if (mErrorRetry != null) mErrorRetry.setVisibility(View.GONE);
         }
     }
 
