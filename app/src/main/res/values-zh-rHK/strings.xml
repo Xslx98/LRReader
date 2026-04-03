@@ -319,6 +319,7 @@
     <string name="more_previews">查看更多預覽</string>
     <string name="refresh">重新載入</string>
     <string name="open_in_other_app">用其他應用程式打開</string>
+    <string name="file_chooser_title">選擇開啟方式</string>
     <string name="rate_successfully">評分成功</string>
     <string name="rate_failed">評分失敗</string>
     <string name="no_torrents">沒有種子</string>
