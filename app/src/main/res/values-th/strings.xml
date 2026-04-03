@@ -283,6 +283,7 @@
     <string name="more_previews">มีรูปตัวอย่าง</string>
     <string name="refresh">รีเฟรช</string>
     <string name="open_in_other_app">เปิดด้วยแอปอื่น</string>
+    <string name="file_chooser_title">เปิดด้วย</string>
     <string name="rate_successfully">ให้คะแนนเรียบร้อยแล้ว</string>
     <string name="rate_failed">การให้คะแนนล้มเหลว</string>
     <string name="no_torrents">ไม่มีไฟล์ torrents</string>
