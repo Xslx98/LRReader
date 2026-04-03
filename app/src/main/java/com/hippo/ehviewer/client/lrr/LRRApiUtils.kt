@@ -33,6 +33,9 @@ class LRRHttpException(val code: Int) : IOException("HTTP $code")
 /** Thrown when the server returns a 2xx response but an empty body. */
 class LRREmptyBodyException : IOException()
 
+/** Thrown when a required field is missing from the server's JSON response. */
+class LRRMissingFieldException(field: String) : IOException("Missing field: $field")
+
 /**
  * Ensure the HTTP response is successful (2xx).
  * Throws [LRRHttpException] carrying the status code if not.
@@ -59,11 +62,12 @@ fun friendlyError(context: Context, e: Exception): String {
             in 500..503 -> context.getString(R.string.lrr_server_error_code, e.code)
             else     -> context.getString(R.string.lrr_request_failed_code, e.code)
         }
+        e is LRREmptyBodyException           -> context.getString(R.string.lrr_empty_response)
+        e is LRRMissingFieldException        -> context.getString(R.string.lrr_empty_response)
         e is java.net.SocketTimeoutException -> context.getString(R.string.lrr_timeout_error)
         e is java.net.ConnectException       -> context.getString(R.string.lrr_connect_error_check)
         e is java.net.UnknownHostException   -> context.getString(R.string.lrr_dns_error)
         e is javax.net.ssl.SSLException      -> context.getString(R.string.lrr_ssl_error)
-        e is LRREmptyBodyException -> context.getString(R.string.lrr_empty_response)
         else -> e.message ?: e.javaClass.simpleName
     }
 }
