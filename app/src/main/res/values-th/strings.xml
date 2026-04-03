@@ -807,7 +807,7 @@
     <string name="history_info_unlimited">ไม่จำกัด</string>
     <string name="archiver">Archiver</string>
     <string name="archiver_dialog_current_funds">เงินทุนปัจจุบัน:</string>
-    <string name="archiver_dialog_cost">ใช้ %s GP / %s เครดิต</string>
+    <string name="archiver_dialog_cost">ค่าใช้จ่ายดาวน์โหลด: %s</string>
     <string name="archiver_dialog_download_original">ดาวน์โหลดไฟล์บีบอัดต้นฉบับ</string>
     <string name="archiver_dialog_download_resample">ดาวน์โหลดไฟล์บีบอัดที่ปรับขนาดแล้ว</string>
     <string name="archiver_dialog_size">ขนาดโดยประมาณ:  %s</string>
@@ -1041,7 +1041,7 @@
     <string name="lrr_delete_failed">ลบล้มเหลว: %s</string>
     <string name="lrr_delete_server">ลบเซิร์ฟเวอร์</string>
     <string name="lrr_delete_server_confirm">ลบเซิร์ฟเวอร์ \"%s\" หรือไม่?</string>
-    <string name="lrr_delete_success">ลบไฟล์เก็บถาวรแล้ว</string>
+    <string name="lrr_delete_success">\"%s\" ถูกลบแล้ว</string>
     <string name="lrr_edit_server">แก้ไขเซิร์ฟเวอร์</string>
     <string name="lrr_edit_server_name">ชื่อเซิร์ฟเวอร์</string>
     <string name="lrr_edit_server_save">บันทึก</string>
