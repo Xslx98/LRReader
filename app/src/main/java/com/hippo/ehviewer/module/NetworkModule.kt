@@ -104,4 +104,7 @@ class NetworkModule(private val context: Context) {
             .callTimeout(0, TimeUnit.SECONDS)
             .build()
     }
+
+    /** Live connectivity monitor backed by NetworkCallback. */
+    val networkMonitor: NetworkMonitor by lazy { NetworkMonitor(context) }
 }
