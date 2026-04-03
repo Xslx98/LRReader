@@ -1092,4 +1092,56 @@ Esta acción no se puede deshacer.</string>
     <string name="western">Occidental</string>
     <string name="lrr_category_label_dynamic">Dinámica</string>
     <string name="lrr_save_and_connect">Guardar y conectar</string>
+    <string name="lrr_error_title">Ocurrió un error</string>
+    <string name="lrr_retry">Reintentar</string>
+    <string name="lrr_loading_categories">Cargando categorías…</string>
+    <string name="lrr_no_static_categories">No hay categorías estáticas disponibles</string>
+    <string name="lrr_add_to_category">Añadir a categoría</string>
+    <string name="lrr_category_info_suffix"> etc.</string>
+    <string name="lrr_category_count_suffix"> categorías</string>
+    <string name="lrr_category_updated_toast">Categoría actualizada</string>
+    <string name="lrr_no_preview_tags">Sin etiquetas de vista previa</string>
+    <string name="lrr_title_copied">Título copiado</string>
+    <string name="lrr_download_failed_invalid">Descarga fallida: archivo inválido, toca para reintentar</string>
+    <string name="lrr_download_failed_not_image">Descarga fallida: no es un formato de imagen, toca para reintentar</string>
+    <string name="lrr_decode_failed">Error al decodificar imagen, toca para reintentar</string>
+    <string name="lrr_subscription_profile_missing">Perfil no encontrado, intenta reiniciar</string>
+    <string name="lrr_empty_response">El servidor devolvió una respuesta vacía</string>
+    <string name="lrr_missing_pages_field">La respuesta del servidor no incluye el campo de páginas</string>
+    <string name="lrr_auth_failed_check_key">Autenticación fallida, verifica la clave API</string>
+    <string name="lrr_not_found_404">Recurso no encontrado (404)</string>
+    <string name="lrr_server_error_code">Error del servidor (%1$d), inténtalo más tarde</string>
+    <string name="lrr_request_failed_code">Solicitud fallida (HTTP %1$d)</string>
+    <string name="lrr_timeout_error">Tiempo de conexión agotado, verifica la red o el estado del servidor</string>
+    <string name="lrr_connect_error_check">No se puede conectar al servidor, verifica la dirección y la red</string>
+    <string name="lrr_dns_error">No se puede resolver la dirección del servidor, verifica la URL</string>
+    <string name="lrr_ssl_error">Conexión segura fallida, verifica el certificado del servidor</string>
+    <string name="lrr_auth_failed_short">Autenticación fallida</string>
+    <string name="lrr_server_error_short">Error del servidor</string>
+    <string name="lrr_request_failed_short">Solicitud fallida</string>
+    <string name="lrr_not_found_short">Recurso no encontrado</string>
+    <string-array name="lrr_sort_by_entries">
+        <item>Título</item>
+        <item>Fecha de adición</item>
+        <item>Última lectura</item>
+        <item>Artista</item>
+        <item>Grupo</item>
+        <item>Parodia</item>
+    </string-array>
+    <string-array name="lrr_sort_by_values">
+        <item>title</item>
+        <item>date_added</item>
+        <item>lastread</item>
+        <item>artist</item>
+        <item>group</item>
+        <item>parody</item>
+    </string-array>
+    <string-array name="lrr_sort_order_entries">
+        <item>Ascendente</item>
+        <item>Descendente</item>
+    </string-array>
+    <string-array name="lrr_sort_order_values">
+        <item>asc</item>
+        <item>desc</item>
+    </string-array>
 </resources>
