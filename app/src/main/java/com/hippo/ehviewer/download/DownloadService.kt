@@ -48,6 +48,7 @@ import com.hippo.lib.yorozuya.collect.SparseJLArray
 
 @SuppressLint("UnspecifiedImmutableFlag")
 class DownloadService : Service(), DownloadManager.DownloadListener {
+    private val TAG = "DownloadService"
     private var mNotifyManager: NotificationManager? = null
     private var mDownloadManager: DownloadManager? = null
     private var mDownloadingBuilder: NotificationCompat.Builder? = null
@@ -102,10 +103,10 @@ class DownloadService : Service(), DownloadManager.DownloadListener {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         try {
             if (intent != null) {
-                // Handle the case where the intent is not null
                 handleIntent(intent)
             }
-        } catch (_: NullPointerException) {
+        } catch (e: NullPointerException) {
+            Log.e(TAG, "Unexpected NPE in onStartCommand — intent=$intent", e)
         }
         return START_STICKY
     }
