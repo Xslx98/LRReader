@@ -441,7 +441,7 @@ public final class ServerListScene extends BaseScene {
                         getActivity().runOnUiThread(() -> {
                             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
                             Toast.makeText(ctx, getString(R.string.lrr_connection_failed,
-                                    LRRApiUtilsKt.friendlyError(error)),
+                                    LRRApiUtilsKt.friendlyError(ctx, error)),
                                     Toast.LENGTH_LONG).show();
                         });
                     }

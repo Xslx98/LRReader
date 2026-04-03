@@ -90,7 +90,7 @@ public class CategoryDialogHelper {
                                 arcid, serverUrl, callback));
             } catch (Exception e) {
                 new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                        Toast.makeText(activity, LRRApiUtilsKt.friendlyError(e),
+                        Toast.makeText(activity, LRRApiUtilsKt.friendlyError(activity, e),
                                 Toast.LENGTH_SHORT).show());
             }
         });
@@ -182,7 +182,7 @@ public class CategoryDialogHelper {
                 });
             } catch (Exception e) {
                 new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                        Toast.makeText(activity, LRRApiUtilsKt.friendlyError(e),
+                        Toast.makeText(activity, LRRApiUtilsKt.friendlyError(activity, e),
                                 Toast.LENGTH_SHORT).show());
             }
         });
@@ -224,7 +224,7 @@ public class CategoryDialogHelper {
                             });
                         } catch (Exception ex) {
                             new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                                    Toast.makeText(activity, LRRApiUtilsKt.friendlyError(ex),
+                                    Toast.makeText(activity, LRRApiUtilsKt.friendlyError(activity, ex),
                                             Toast.LENGTH_SHORT).show());
                         }
                     });

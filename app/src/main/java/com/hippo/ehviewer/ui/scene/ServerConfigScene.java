@@ -308,7 +308,7 @@ public final class ServerConfigScene extends SolidScene implements View.OnClickL
 
             Context ctx = getEHContext();
             if (ctx != null) {
-                String msg = LRRApiUtilsKt.friendlyError(e);
+                String msg = LRRApiUtilsKt.friendlyError(ctx, e);
                 Toast.makeText(ctx, getString(R.string.lrr_connection_failed, msg),
                         Toast.LENGTH_LONG).show();
             }

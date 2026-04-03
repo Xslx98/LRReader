@@ -165,7 +165,7 @@ public class LRRCategoriesScene extends BaseScene {
                 Log.e(TAG, "Failed to load categories", e);
                 if (getActivity() == null) return;
                 getActivity().runOnUiThread(() ->
-                        showError(LRRApiUtilsKt.friendlyError(e)));
+                        showError(LRRApiUtilsKt.friendlyError(getEHContext(), e)));
             }
         });
     }
@@ -248,7 +248,7 @@ public class LRRCategoriesScene extends BaseScene {
                 Log.e(TAG, "Failed to create category", e);
                 if (getActivity() == null) return;
                 getActivity().runOnUiThread(() ->
-                        Toast.makeText(getEHContext(), LRRApiUtilsKt.friendlyError(e), Toast.LENGTH_SHORT).show());
+                        Toast.makeText(getEHContext(), LRRApiUtilsKt.friendlyError(getEHContext(), e), Toast.LENGTH_SHORT).show());
             }
         });
     }
@@ -271,7 +271,7 @@ public class LRRCategoriesScene extends BaseScene {
                 Log.e(TAG, "Failed to update category", e);
                 if (getActivity() == null) return;
                 getActivity().runOnUiThread(() ->
-                        Toast.makeText(getEHContext(), LRRApiUtilsKt.friendlyError(e), Toast.LENGTH_SHORT).show());
+                        Toast.makeText(getEHContext(), LRRApiUtilsKt.friendlyError(getEHContext(), e), Toast.LENGTH_SHORT).show());
             }
         });
     }
@@ -298,7 +298,7 @@ public class LRRCategoriesScene extends BaseScene {
                             Log.e(TAG, "Failed to delete category", e);
                             if (getActivity() == null) return;
                             getActivity().runOnUiThread(() ->
-                                    Toast.makeText(getEHContext(), LRRApiUtilsKt.friendlyError(e), Toast.LENGTH_SHORT).show());
+                                    Toast.makeText(getEHContext(), LRRApiUtilsKt.friendlyError(getEHContext(), e), Toast.LENGTH_SHORT).show());
                         }
                     });
                 })
