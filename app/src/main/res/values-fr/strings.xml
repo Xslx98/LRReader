@@ -957,7 +957,6 @@ Bloquer le commentateur : masquer les commentaires de cet utilisateur. Le charge
     <string name="lrr_api_key_helper">Trouver la clé API dans les paramètres LANraragi</string>
     <string name="lrr_api_key_hint">Clé API (optionnel)</string>
     <string name="lrr_categories_empty">Aucune catégorie</string>
-    <string name="lrr_categories_error">Erreur lors du chargement des catégories</string>
     <string name="lrr_categories_title">Gestion des catégories</string>
     <string name="lrr_category_action_delete">Supprimer</string>
     <string name="lrr_category_action_edit">Modifier</string>

@@ -965,7 +965,6 @@
     <string name="lrr_connection_failed">连接失败: %1$s</string>
     <string name="lrr_categories_title">分类</string>
     <string name="lrr_categories_empty">暂无分类</string>
-    <string name="lrr_categories_error">加载分类失败: %1$s</string>
     <string name="lrr_category_pinned">📌 %1$s</string>
     <string name="lrr_category_archives">%1$d 个档案</string>
     <string name="lrr_server_config_subtitle">连接到LANraragi服务器</string>
