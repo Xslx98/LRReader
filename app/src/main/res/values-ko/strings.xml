@@ -1115,4 +1115,56 @@
     <string name="wifi_server_send_success">Message sent successfully: %s</string>
     <string name="lrr_category_label_dynamic">동적</string>
     <string name="lrr_save_and_connect">저장 후 연결</string>
+    <string name="lrr_error_title">오류가 발생했습니다</string>
+    <string name="lrr_retry">다시 시도</string>
+    <string name="lrr_loading_categories">카테고리 불러오는 중…</string>
+    <string name="lrr_no_static_categories">사용 가능한 정적 카테고리가 없습니다</string>
+    <string name="lrr_add_to_category">카테고리에 추가</string>
+    <string name="lrr_category_info_suffix"> 외</string>
+    <string name="lrr_category_count_suffix"> 카테고리</string>
+    <string name="lrr_category_updated_toast">카테고리가 업데이트되었습니다</string>
+    <string name="lrr_no_preview_tags">미리보기 태그 없음</string>
+    <string name="lrr_title_copied">제목이 복사되었습니다</string>
+    <string name="lrr_download_failed_invalid">다운로드 실패: 잘못된 파일, 탭하여 다시 시도</string>
+    <string name="lrr_download_failed_not_image">다운로드 실패: 이미지 형식이 아님, 탭하여 다시 시도</string>
+    <string name="lrr_decode_failed">이미지 디코드 실패, 탭하여 다시 시도</string>
+    <string name="lrr_subscription_profile_missing">프로필을 찾을 수 없습니다. 재시작해 보세요</string>
+    <string name="lrr_empty_response">서버가 빈 응답을 반환했습니다</string>
+    <string name="lrr_missing_pages_field">서버 응답에 페이지 필드가 없습니다</string>
+    <string name="lrr_auth_failed_check_key">인증 실패, API 키를 확인하세요</string>
+    <string name="lrr_not_found_404">리소스를 찾을 수 없습니다 (404)</string>
+    <string name="lrr_server_error_code">서버 오류 (%1$d), 나중에 다시 시도해 주세요</string>
+    <string name="lrr_request_failed_code">요청 실패 (HTTP %1$d)</string>
+    <string name="lrr_timeout_error">연결 시간 초과, 네트워크 또는 서버 상태를 확인하세요</string>
+    <string name="lrr_connect_error_check">서버에 연결할 수 없습니다. 주소와 네트워크를 확인하세요</string>
+    <string name="lrr_dns_error">서버 주소를 확인할 수 없습니다. URL을 확인하세요</string>
+    <string name="lrr_ssl_error">보안 연결 실패, 서버 인증서를 확인하세요</string>
+    <string name="lrr_auth_failed_short">인증 실패</string>
+    <string name="lrr_server_error_short">서버 오류</string>
+    <string name="lrr_request_failed_short">요청 실패</string>
+    <string name="lrr_not_found_short">리소스를 찾을 수 없습니다</string>
+    <string-array name="lrr_sort_by_entries">
+        <item>제목</item>
+        <item>추가된 날짜</item>
+        <item>마지막으로 읽은</item>
+        <item>아티스트</item>
+        <item>그룹</item>
+        <item>패러디</item>
+    </string-array>
+    <string-array name="lrr_sort_by_values">
+        <item>title</item>
+        <item>date_added</item>
+        <item>lastread</item>
+        <item>artist</item>
+        <item>group</item>
+        <item>parody</item>
+    </string-array>
+    <string-array name="lrr_sort_order_entries">
+        <item>오름차순</item>
+        <item>내림차순</item>
+    </string-array>
+    <string-array name="lrr_sort_order_values">
+        <item>asc</item>
+        <item>desc</item>
+    </string-array>
 </resources>
