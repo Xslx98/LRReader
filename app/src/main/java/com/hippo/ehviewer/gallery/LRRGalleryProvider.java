@@ -112,9 +112,9 @@ public class LRRGalleryProvider extends GalleryProvider2 {
         IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
             try {
                 OkHttpClient client = mPageClient != null ? mPageClient
-                        : ServiceRegistry.INSTANCE.getNetworkModule().getOkHttpClient();
+                        : ServiceRegistry.INSTANCE.getNetworkModule().getLongReadClient();
                 String[] pages = (String[]) LRRCoroutineHelper.runSuspend(
-                        (scope, cont) -> LRRArchiveApi.getFileList(client, mServerUrl, mArcId, cont)
+                        (scope, cont) -> LRRArchiveApi.getFileList(ServiceRegistry.INSTANCE.getNetworkModule().getLongReadClient(), mServerUrl, mArcId, cont)
                 );
                 mPagePaths = pages;
                 mPageCount = pages.length;
