@@ -54,8 +54,13 @@ object LRRPluginApi {
         baseUrl: String,
         type: String
     ): List<PluginInfo> = withContext(Dispatchers.IO) {
+        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+            .addPathSegment("api")
+            .addPathSegment("plugins")
+            .addPathSegment(type)
+            .build()
         val request = Request.Builder()
-            .url("$baseUrl/api/plugins/$type")
+            .url(url)
             .get()
             .build()
         client.newCall(request).execute().use { response ->
