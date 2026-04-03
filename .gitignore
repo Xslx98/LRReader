@@ -13,6 +13,8 @@ google-services.json
 # Signing keys
 /keystore/
 /SIGNING_CREDENTIALS.md
+*.keystore
+*.jks
 
 # Platform files
 .DS_Store
@@ -45,3 +47,4 @@ Image_*.jpg
 bugs/
 .superpowers/
 .venv/
+.claude/
