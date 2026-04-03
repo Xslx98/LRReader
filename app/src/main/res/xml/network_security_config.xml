@@ -1,15 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  ~ LANraragi Reader - Network Security Configuration
-  ~ Allows cleartext HTTP for LAN IP access and user-installed certificates for self-signed HTTPS.
-  -->
+  LANraragi Reader — Network Security Configuration
 
+  Security model:
+    base-config  : HTTPS only, system CA only — safe default for any public or cloud server.
+    domain-config: Cleartext HTTP and user-installed CAs allowed for local-network hostnames
+                   (localhost, *.local mDNS, *.lan router names, loopback).
+    debug-overrides: User CA trusted in debug builds for proxy/inspection tools.
+
+  Limitation: Android <domain-config> matches exact hostnames/IPs; CIDR ranges are not
+  supported. Users connecting via bare LAN IP (e.g., 192.168.1.x) over HTTP must add
+  their specific IP here, or use a *.local / *.lan hostname instead. Dynamic IP handling
+  is addressed at the code layer (LRRUrlHelper).
+-->
 <network-security-config>
-    <!-- Allow cleartext (HTTP) globally for LAN IP access (e.g., http://192.168.x.x:3000) -->
-    <base-config cleartextTrafficPermitted="true">
+
+    <!-- Default: HTTPS only, system CA only -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+
+    <!-- Local-network hostnames: allow HTTP and user-installed CA for self-signed certs -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <!-- mDNS .local hostnames (e.g., myserver.local) -->
+        <domain includeSubdomains="true">local</domain>
+        <!-- Common router-assigned .lan suffix -->
+        <domain includeSubdomains="true">lan</domain>
         <trust-anchors>
             <certificates src="system"/>
             <certificates src="user"/>
         </trust-anchors>
-    </base-config>
+    </domain-config>
+
+    <!-- Debug builds only: trust user CA for all hosts (Charles, mitmproxy, etc.) -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="user"/>
+        </trust-anchors>
+    </debug-overrides>
+
 </network-security-config>
