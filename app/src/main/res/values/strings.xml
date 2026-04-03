@@ -1179,6 +1179,7 @@
     <string name="lrr_server_error_code">Server error (%1$d), please try again later</string>
     <string name="lrr_request_failed_code">Request failed (HTTP %1$d)</string>
     <string name="lrr_timeout_error">Connection timeout, please check network or server status</string>
+    <string name="lrr_offline_error">No network connection</string>
     <string name="lrr_connect_error_check">Cannot connect to server, please check address and network</string>
     <string name="lrr_dns_error">Cannot resolve server address, please check URL</string>
     <string name="lrr_ssl_error">Secure connection failed, please check server certificate</string>
