@@ -1036,4 +1036,56 @@
     <string name="western">西洋</string>
     <string name="lrr_category_label_dynamic">動的</string>
     <string name="lrr_save_and_connect">保存して接続</string>
+    <string name="lrr_error_title">エラーが発生しました</string>
+    <string name="lrr_retry">再試行</string>
+    <string name="lrr_loading_categories">カテゴリを読み込み中…</string>
+    <string name="lrr_no_static_categories">利用可能な静的カテゴリがありません</string>
+    <string name="lrr_add_to_category">カテゴリに追加</string>
+    <string name="lrr_category_info_suffix"> など</string>
+    <string name="lrr_category_count_suffix"> カテゴリ</string>
+    <string name="lrr_category_updated_toast">カテゴリを更新しました</string>
+    <string name="lrr_no_preview_tags">プレビュータグがありません</string>
+    <string name="lrr_title_copied">タイトルをコピーしました</string>
+    <string name="lrr_download_failed_invalid">ダウンロード失敗：無効なファイルです。タップして再試行</string>
+    <string name="lrr_download_failed_not_image">ダウンロード失敗：画像形式ではありません。タップして再試行</string>
+    <string name="lrr_decode_failed">画像のデコードに失敗しました。タップして再試行</string>
+    <string name="lrr_subscription_profile_missing">プロファイルが見つかりません。再起動してください</string>
+    <string name="lrr_empty_response">サーバーが空のレスポンスを返しました</string>
+    <string name="lrr_missing_pages_field">サーバーのレスポンスにページフィールドがありません</string>
+    <string name="lrr_auth_failed_check_key">認証に失敗しました。APIキーを確認してください</string>
+    <string name="lrr_not_found_404">リソースが見つかりません (404)</string>
+    <string name="lrr_server_error_code">サーバーエラー (%1$d)。しばらくしてから再試行してください</string>
+    <string name="lrr_request_failed_code">リクエスト失敗 (HTTP %1$d)</string>
+    <string name="lrr_timeout_error">接続タイムアウト。ネットワークまたはサーバーの状態を確認してください</string>
+    <string name="lrr_connect_error_check">サーバーに接続できません。アドレスとネットワークを確認してください</string>
+    <string name="lrr_dns_error">サーバーアドレスを解決できません。URLを確認してください</string>
+    <string name="lrr_ssl_error">セキュア接続に失敗しました。サーバー証明書を確認してください</string>
+    <string name="lrr_auth_failed_short">認証失敗</string>
+    <string name="lrr_server_error_short">サーバーエラー</string>
+    <string name="lrr_request_failed_short">リクエスト失敗</string>
+    <string name="lrr_not_found_short">リソースが見つかりません</string>
+    <string-array name="lrr_sort_by_entries">
+        <item>タイトル</item>
+        <item>追加日</item>
+        <item>最終閲覧日</item>
+        <item>アーティスト</item>
+        <item>グループ</item>
+        <item>パロディ</item>
+    </string-array>
+    <string-array name="lrr_sort_by_values">
+        <item>title</item>
+        <item>date_added</item>
+        <item>lastread</item>
+        <item>artist</item>
+        <item>group</item>
+        <item>parody</item>
+    </string-array>
+    <string-array name="lrr_sort_order_entries">
+        <item>昇順</item>
+        <item>降順</item>
+    </string-array>
+    <string-array name="lrr_sort_order_values">
+        <item>asc</item>
+        <item>desc</item>
+    </string-array>
 </resources>
