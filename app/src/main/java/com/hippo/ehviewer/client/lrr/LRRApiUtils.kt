@@ -63,7 +63,7 @@ fun friendlyError(context: Context, e: Exception): String {
             else     -> context.getString(R.string.lrr_request_failed_code, e.code)
         }
         e is LRREmptyBodyException           -> context.getString(R.string.lrr_empty_response)
-        e is LRRMissingFieldException        -> context.getString(R.string.lrr_empty_response)
+        e is LRRMissingFieldException        -> context.getString(R.string.lrr_malformed_response)
         e is java.net.SocketTimeoutException -> context.getString(R.string.lrr_timeout_error)
         e is java.net.ConnectException       -> context.getString(R.string.lrr_connect_error_check)
         e is java.net.UnknownHostException   -> context.getString(R.string.lrr_dns_error)

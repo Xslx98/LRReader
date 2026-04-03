@@ -8,7 +8,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.io.IOException
 
 /**
  * API class for LANraragi category operations.
@@ -76,7 +75,7 @@ object LRRCategoryApi {
                 ?: throw LRREmptyBodyException()
             val obj = lrrJson.parseToJsonElement(body).jsonObject
             obj["category_id"]?.jsonPrimitive?.content
-                ?: throw IOException("Missing category_id in response")
+                ?: throw LRRMissingFieldException("category_id")
         }
     }
 

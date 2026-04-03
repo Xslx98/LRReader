@@ -1118,6 +1118,7 @@
     <string name="lrr_decode_failed">圖片解碼失敗，點擊重試</string>
     <string name="lrr_subscription_profile_missing">找不到設定檔，請嘗試重新啟動</string>
     <string name="lrr_empty_response">伺服器傳回空回應</string>
+    <string name="lrr_malformed_response">伺服器傳回意外回應</string>
     <string name="lrr_missing_pages_field">伺服器回應缺少頁面欄位</string>
     <string name="lrr_auth_failed_check_key">驗證失敗，請檢查 API 金鑰</string>
     <string name="lrr_not_found_404">找不到資源 (404)</string>

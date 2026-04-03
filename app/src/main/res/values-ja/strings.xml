@@ -1049,6 +1049,7 @@
     <string name="lrr_decode_failed">画像のデコードに失敗しました。タップして再試行</string>
     <string name="lrr_subscription_profile_missing">プロファイルが見つかりません。再起動してください</string>
     <string name="lrr_empty_response">サーバーが空のレスポンスを返しました</string>
+    <string name="lrr_malformed_response">サーバーが予期しないレスポンスを返しました</string>
     <string name="lrr_missing_pages_field">サーバーのレスポンスにページフィールドがありません</string>
     <string name="lrr_auth_failed_check_key">認証に失敗しました。APIキーを確認してください</string>
     <string name="lrr_not_found_404">リソースが見つかりません (404)</string>

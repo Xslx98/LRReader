@@ -212,7 +212,7 @@ class LRRApiUtilsTest {
     @Test
     fun friendlyError_missingFieldException() {
         val msg = friendlyError(ctx, LRRMissingFieldException("pages"))
-        assertEquals(ctx.getString(R.string.lrr_empty_response), msg)
+        assertEquals(ctx.getString(R.string.lrr_malformed_response), msg)
     }
 
     @Test

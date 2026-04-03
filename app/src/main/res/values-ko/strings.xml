@@ -1128,6 +1128,7 @@
     <string name="lrr_decode_failed">이미지 디코드 실패, 탭하여 다시 시도</string>
     <string name="lrr_subscription_profile_missing">프로필을 찾을 수 없습니다. 재시작해 보세요</string>
     <string name="lrr_empty_response">서버가 빈 응답을 반환했습니다</string>
+    <string name="lrr_malformed_response">서버가 예상치 못한 응답을 반환했습니다</string>
     <string name="lrr_missing_pages_field">서버 응답에 페이지 필드가 없습니다</string>
     <string name="lrr_auth_failed_check_key">인증 실패, API 키를 확인하세요</string>
     <string name="lrr_not_found_404">리소스를 찾을 수 없습니다 (404)</string>

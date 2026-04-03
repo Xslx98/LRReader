@@ -1144,6 +1144,7 @@
     <string name="lrr_decode_failed">图片解码失败，请点击重试</string>
     <string name="lrr_subscription_profile_missing">描述文件未找到？？？重启试试~</string>
     <string name="lrr_empty_response">服务器返回空响应体</string>
+    <string name="lrr_malformed_response">服务器返回了意外的响应</string>
     <string name="lrr_missing_pages_field">服务器响应缺少 pages 字段</string>
     <string name="lrr_auth_failed_check_key">认证失败，请检查 API Key 是否正确</string>
     <string name="lrr_not_found_404">资源未找到 (404)</string>
