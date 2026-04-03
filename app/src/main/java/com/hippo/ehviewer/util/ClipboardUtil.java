@@ -9,7 +9,7 @@ import android.util.Base64;
 
 import androidx.annotation.Nullable;
 
-import com.hippo.ehviewer.EhApplication;
+import com.hippo.ehviewer.ServiceRegistry;
 import com.hippo.ehviewer.client.data.GalleryInfo;
 import com.hippo.ehviewer.client.parser.GalleryDetailUrlParser;
 import com.hippo.ehviewer.client.parser.GalleryPageUrlParser;
@@ -58,7 +58,7 @@ public class ClipboardUtil {
         clearClipboard();
         if (!TextUtils.isEmpty(content)) {
             // 得到剪贴板管理器
-            ClipboardManager cmb = (ClipboardManager) EhApplication.getInstance().getSystemService(Context.CLIPBOARD_SERVICE);
+            ClipboardManager cmb = (ClipboardManager) ServiceRegistry.INSTANCE.getAppModule().getContext().getSystemService(Context.CLIPBOARD_SERVICE);
             cmb.setText(content.trim());
             // 创建一个剪贴数据集，包含一个普通文本数据条目（需要复制的数据）
             ClipData clipData = ClipData.newPlainText(null, content);
@@ -77,7 +77,7 @@ public class ClipboardUtil {
         clearClipboard();
         if (!TextUtils.isEmpty(text)) {
             // 得到剪贴板管理器
-            ClipboardManager cmb = (ClipboardManager) EhApplication.getInstance().getSystemService(Context.CLIPBOARD_SERVICE);
+            ClipboardManager cmb = (ClipboardManager) ServiceRegistry.INSTANCE.getAppModule().getContext().getSystemService(Context.CLIPBOARD_SERVICE);
             // 创建一个剪贴数据集，包含一个普通文本数据条目（需要复制的数据）
             ClipData clipData = ClipData.newPlainText(null, text);
             // 把数据集设置（复制）到剪贴板
@@ -139,7 +139,7 @@ public class ClipboardUtil {
      * 清空剪贴板内容
      */
     private static void clearClipboard() {
-        ClipboardManager manager = (ClipboardManager) EhApplication.getInstance().getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipboardManager manager = (ClipboardManager) ServiceRegistry.INSTANCE.getAppModule().getContext().getSystemService(Context.CLIPBOARD_SERVICE);
         if (manager != null) {
             try {
                 manager.setPrimaryClip(manager.getPrimaryClip());
@@ -154,7 +154,7 @@ public class ClipboardUtil {
      */
     private static String getClipContent() {
 
-        ClipboardManager manager = (ClipboardManager) EhApplication.getInstance().getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipboardManager manager = (ClipboardManager) ServiceRegistry.INSTANCE.getAppModule().getContext().getSystemService(Context.CLIPBOARD_SERVICE);
         if (manager != null) {
             if (manager.hasPrimaryClip() && manager.getPrimaryClip().getItemCount() > 0) {
                 CharSequence addedText = manager.getPrimaryClip().getItemAt(0).getText();

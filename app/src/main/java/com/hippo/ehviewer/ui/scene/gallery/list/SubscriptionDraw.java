@@ -38,8 +38,6 @@ import com.hippo.lib.yorozuya.ViewUtils;
 
 import java.util.ArrayList;
 
-import static com.hippo.ehviewer.Settings.*;
-
 public class SubscriptionDraw {
 
     private static final String SUBSCRIPTION_DRAW_SCROLL_Y = "SubscriptionDrawScrollY";
@@ -140,10 +138,6 @@ public class SubscriptionDraw {
     }
 
     private void seeDetailPage() {
-        if (!isLogin()) {
-            Toast.makeText(context, R.string.settings_eh_identity_cookies_tourist, Toast.LENGTH_SHORT).show();
-            return;
-        }
         if (userTagList == null) {
             Toast.makeText(context, R.string.empty_subscription, Toast.LENGTH_SHORT).show();
             return;
@@ -157,9 +151,6 @@ public class SubscriptionDraw {
         progressView.setVisibility(View.GONE);
         frameLayout.setVisibility(View.VISIBLE);
         if (userTagList.userTags.isEmpty()) {
-            if (isLogin()) {
-                textView.setVisibility(View.VISIBLE);
-            }
             return;
         }
 //        List<String> name = new ArrayList<>();
@@ -182,10 +173,6 @@ public class SubscriptionDraw {
     }
 
     private void addNewTag() {
-        if (!isLogin()) {
-            Toast.makeText(context, R.string.settings_eh_identity_cookies_tourist, Toast.LENGTH_SHORT).show();
-            return;
-        }
         tagName = callback.getAddTagName(userTagList);
         if (tagName == null) {
             Toast.makeText(context, R.string.can_not_use_this_tag, Toast.LENGTH_SHORT).show();

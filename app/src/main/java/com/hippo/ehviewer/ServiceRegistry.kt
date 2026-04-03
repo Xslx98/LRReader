@@ -29,7 +29,7 @@ object ServiceRegistry {
      * after Settings and EhDB have been initialized.
      */
     fun initialize(context: Context) {
-        appModule = AppModule().also { it.initialize() }
+        appModule = AppModule(context).also { it.initialize() }
         networkModule = NetworkModule(context)
         clientModule = ClientModule(context, networkModule)
         dataModule = DataModule(context)

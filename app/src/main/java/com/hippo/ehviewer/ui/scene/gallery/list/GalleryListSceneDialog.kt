@@ -10,7 +10,6 @@ import androidx.appcompat.app.AlertDialog
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.UrlOpener
 import com.hippo.ehviewer.client.EhClient
@@ -63,23 +62,10 @@ class GalleryListSceneDialog(val baseScene: BaseScene) {
                     1 -> showFilterTagDialog()
                 }
             }
-        if (!Settings.isLogin()) {
-            builder.setNegativeButton(
-                R.string.copy_tag
-            ) { _: DialogInterface?, _: Int -> copyTag(tagName) }
-                .show()
-        } else {
-            builder.setNeutralButton(
-                R.string.copy_tag
-            ) { _: DialogInterface?, _: Int -> copyTag(tagName) }
-                .setNegativeButton(
-                    R.string.subscription_watched
-                ) { _: DialogInterface?, _: Int -> requestTag(tagName, true) }
-                .setPositiveButton(
-                    R.string.subscription_hidden
-                ) { _: DialogInterface?, _: Int -> requestTag(tagName, false) }
-                .show()
-        }
+        builder.setNegativeButton(
+            R.string.copy_tag
+        ) { _: DialogInterface?, _: Int -> copyTag(tagName) }
+            .show()
     }
 
     private fun showFilterTagDialog() {

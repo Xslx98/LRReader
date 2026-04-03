@@ -21,16 +21,11 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.preference.PreferenceManager;
 
-import com.hippo.ehviewer.client.EhConfig;
 import com.hippo.ehviewer.client.data.GalleryInfo;
 import com.hippo.ehviewer.settings.AppearanceSettings;
 import com.hippo.ehviewer.settings.NetworkSettings;
-import com.hippo.lib.yorozuya.FileUtils;
-import com.hippo.lib.yorozuya.MathUtils;
 import com.hippo.lib.yorozuya.NumberUtils;
 
 import java.io.File;
@@ -225,17 +220,6 @@ public class Settings {
         putString(KEY_AVATAR, value);
     }
 
-    private static final String KEY_SHOW_WARNING = "show_warning";
-    private static final boolean DEFAULT_SHOW_WARNING = true;
-
-    public static boolean getShowWarning() {
-        return getBoolean(KEY_SHOW_WARNING, DEFAULT_SHOW_WARNING);
-    }
-
-    public static void putShowWarning(boolean value) {
-        putBoolean(KEY_SHOW_WARNING, value);
-    }
-
     private static final String KEY_REMOVE_IMAGE_FILES = "include_pic";
     private static final boolean DEFAULT_REMOVE_IMAGE_FILES = true;
 
@@ -267,31 +251,6 @@ public class Settings {
     // Launch page, list mode, thumb size, tag translations, categories,
     // excluded languages, cellular warning → AppearanceSettings.kt / NetworkSettings.kt
 
-    // Excluded tag namespaces and languages are still called directly from
-    // ExcludedLanguagesActivity and ExcludedTagNamespacesPreference.
-    // TODO: migrate these callers to a Kotlin settings object, then remove.
-    public static final String KEY_EXCLUDED_TAG_NAMESPACES = "excluded_tag_namespaces";
-    private static final int DEFAULT_EXCLUDED_TAG_NAMESPACES = 0;
-
-    public static int getExcludedTagNamespaces() {
-        return getInt(KEY_EXCLUDED_TAG_NAMESPACES, DEFAULT_EXCLUDED_TAG_NAMESPACES);
-    }
-
-    public static void putExcludedTagNamespaces(int value) {
-        putInt(KEY_EXCLUDED_TAG_NAMESPACES, value);
-    }
-
-    public static final String KEY_EXCLUDED_LANGUAGES = "excluded_languages";
-    private static final String DEFAULT_EXCLUDED_LANGUAGES = null;
-
-    public static String getExcludedLanguages() {
-        return getString(KEY_EXCLUDED_LANGUAGES, DEFAULT_EXCLUDED_LANGUAGES);
-    }
-
-    public static void putExcludedLanguages(String value) {
-        putString(KEY_EXCLUDED_LANGUAGES, value);
-    }
-
     // Reading → ReadingSettings.kt
     // Security → SecuritySettings.kt
     // Download location, labels, preload → DownloadSettings.kt
@@ -320,68 +279,6 @@ public class Settings {
 
     public static void putEnableAnalytics(boolean value) {
         putBoolean(KEY_ENABLE_ANALYTICS, value);
-    }
-
-    private static final String KEY_USER_ID = "user_id";
-    private static final String FILENAME_USER_ID = ".user_id";
-    private static final int LENGTH_USER_ID = 32;
-
-    public static String getUserID() {
-        boolean writeXml = false;
-        boolean writeFile = false;
-        String userID = getString(KEY_USER_ID, null);
-        File file = AppConfig.getFileInExternalAppDir(FILENAME_USER_ID);
-        if (!isValidUserID(userID)) {
-            writeXml = true;
-            // Get use ID from out sd card file
-            userID = FileUtils.read(file);
-            if (!isValidUserID(userID)) {
-                writeFile = true;
-                userID = generateUserID();
-            }
-        } else {
-            writeFile = true;
-        }
-
-        if (writeXml) {
-            putString(KEY_USER_ID, userID);
-        }
-        if (writeFile) {
-            FileUtils.write(file, userID);
-        }
-
-        return userID;
-    }
-
-    @NonNull
-    private static String generateUserID() {
-        int length = LENGTH_USER_ID;
-        StringBuilder sb = new StringBuilder(length);
-
-        for (int i = 0; i < length; i++) {
-            if (MathUtils.random(0, ('9' - '0' + 1) + ('z' - 'a' + 1)) <= '9' - '0') {
-                sb.append((char) MathUtils.random('0', '9' + 1));
-            } else {
-                sb.append((char) MathUtils.random('a', 'z' + 1));
-            }
-        }
-
-        return sb.toString();
-    }
-
-    private static boolean isValidUserID(@Nullable String userID) {
-        if (null == userID || LENGTH_USER_ID != userID.length()) {
-            return false;
-        }
-
-        for (int i = 0; i < LENGTH_USER_ID; i++) {
-            char ch = userID.charAt(i);
-            if (!(ch >= '0' && ch <= '9') && !(ch >= 'a' && ch <= 'z')) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /********************
@@ -506,19 +403,6 @@ public class Settings {
     // DNS-over-HTTPS, domain fronting → NetworkSettings.kt
     // Download delay → DownloadSettings.kt
 
-    private static final String KEY_IS_LOGIN = "is_login";
-
-    private static boolean IS_LOGIN = false;
-
-    public static boolean isLogin() {
-        return getBoolean(KEY_IS_LOGIN, IS_LOGIN);
-    }
-
-    public static void setLoginState(boolean value) {
-        putBoolean(KEY_IS_LOGIN, value);
-    }
-
-
     // Gallery comment, rating display → AppearanceSettings.kt
 
     public static final String KEY_CLOSE_AUTO_UPDATES = "close_auto_updates";
@@ -532,31 +416,6 @@ public class Settings {
     public static void setKeyCloseAutoUpdates(boolean value) {
         putBoolean(KEY_CLOSE_AUTO_UPDATES, value);
     }
-
-    public static final String KEY_SHOW_EH_EVENTS = "show_eh_events";
-
-    private static boolean IS_SHOW_EH_EVENTS = true;
-
-    public static boolean getShowEhEvents() {
-        return getBoolean(KEY_SHOW_EH_EVENTS, IS_SHOW_EH_EVENTS) && isLogin();
-    }
-
-    public static void setKeyShowEhEvents(boolean value) {
-        putBoolean(KEY_SHOW_EH_EVENTS, value);
-    }
-
-    public static final String KEY_SHOW_EH_LIMITS = "show_eh_limits";
-
-    private static boolean IS_SHOW_EH_LIMITS = true;
-
-    public static boolean getShowEhLimits() {
-        return getBoolean(KEY_SHOW_EH_LIMITS, IS_SHOW_EH_LIMITS) && isLogin();
-    }
-
-    public static void setKeyShowEhLimits(boolean value) {
-        putBoolean(KEY_SHOW_EH_LIMITS, value);
-    }
-
 
     // Note: USER_BACKGROUND_IMAGE/USER_AVATAR_IMAGE are still used directly
     public static final String USER_BACKGROUND_IMAGE = "background_image_path";

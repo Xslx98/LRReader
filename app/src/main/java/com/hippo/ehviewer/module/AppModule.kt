@@ -1,9 +1,10 @@
 package com.hippo.ehviewer.module
 
+import android.content.Context
 import androidx.annotation.NonNull
 import com.hippo.ehviewer.Settings
 import com.hippo.lib.yorozuya.IntIdGenerator
-import java.util.Collections
+import java.lang.ref.WeakReference
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -11,10 +12,13 @@ import java.util.concurrent.Executors
  * Application-level utilities: global object registry, temp cache, and thread pool.
  * Extracted from EhApplication to reduce its responsibility scope.
  */
-class AppModule {
+class AppModule(private val context: Context) {
+
+    /** Returns the application context. Use instead of EhApplication.getInstance(). */
+    fun getContext(): Context = context
 
     private val idGenerator = IntIdGenerator()
-    private val globalStuffMap = HashMap<Int, Any>()
+    private val globalStuffMap = HashMap<Int, WeakReference<Any>>()
     private val tempCacheMap = HashMap<String, Any>()
     val executorService: ExecutorService = Executors.newCachedThreadPool()
 
@@ -26,19 +30,19 @@ class AppModule {
 
     fun putGlobalStuff(@NonNull o: Any): Int {
         val id = idGenerator.nextId()
-        globalStuffMap[id] = o
+        globalStuffMap[id] = WeakReference(o)
         Settings.putInt(KEY_GLOBAL_STUFF_NEXT_ID, idGenerator.nextId())
         return id
     }
 
-    fun containGlobalStuff(id: Int): Boolean = globalStuffMap.containsKey(id)
+    fun containGlobalStuff(id: Int): Boolean = globalStuffMap[id]?.get() != null
 
-    fun getGlobalStuff(id: Int): Any? = globalStuffMap[id]
+    fun getGlobalStuff(id: Int): Any? = globalStuffMap[id]?.get()
 
-    fun removeGlobalStuff(id: Int): Any? = globalStuffMap.remove(id)
+    fun removeGlobalStuff(id: Int): Any? = globalStuffMap.remove(id)?.get()
 
     fun removeGlobalStuff(o: Any) {
-        globalStuffMap.values.removeAll(Collections.singleton(o))
+        globalStuffMap.values.removeAll { it.get() == o || it.get() == null }
     }
 
     // --- Temp Cache ---
