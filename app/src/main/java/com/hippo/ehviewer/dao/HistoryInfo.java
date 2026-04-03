@@ -3,6 +3,7 @@ package com.hippo.ehviewer.dao;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.Ignore;
+import androidx.room.Index;
 
 import android.os.Parcel;
 import com.hippo.ehviewer.client.data.GalleryInfo;
@@ -11,7 +12,10 @@ import com.hippo.ehviewer.client.data.GalleryInfo;
  * Entity mapped to table "HISTORY".
  * Primary key is GID (inherited from GalleryInfo).
  */
-@Entity(tableName = "HISTORY", primaryKeys = {"GID"})
+@Entity(tableName = "HISTORY", primaryKeys = {"GID"}, indices = {
+    @Index("SERVER_PROFILE_ID"),
+    @Index("TIME")
+})
 public class HistoryInfo extends GalleryInfo {
 
 	@ColumnInfo(name = "MODE") public int mode;
