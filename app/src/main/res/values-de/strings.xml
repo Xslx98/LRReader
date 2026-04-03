@@ -1015,8 +1015,6 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="settings_about_author_summary" translatable="false">LR Reader Contributors</string>
     <string name="settings_download_clean_invalid_download">Ungültige Downloads bereinigen</string>
     <string name="settings_download_clean_invalid_download_summary">Ungültige Download-Einträge entfernen</string>
-    <string name="settings_eh_lock_cookies_igneous">Cookie igneous-Feld sperren</string>
-    <string name="settings_eh_lock_cookies_igneous_summary">Nicht empfohlen, außer in besonderen Fällen</string>
     <string name="settings_eh_system_theme">Systemdesign</string>
     <string name="settings_read_picture_decoding_method">Bild-Dekodierungsmethode</string>
     <string name="settings_read_picture_decoding_method_native">Open-Source C++ Dekodierungsbibliothek</string>

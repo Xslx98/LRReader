@@ -1077,8 +1077,6 @@
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="settings_download_clean_invalid_download">잘못된 다운로드 정리</string>
     <string name="settings_download_clean_invalid_download_summary">잘못된 다운로드 항목 삭제</string>
-    <string name="settings_eh_lock_cookies_igneous">Cookie igneous 필드 잠금</string>
-    <string name="settings_eh_lock_cookies_igneous_summary">특수한 상황이 아니면 활성화하지 않는 것을 권장합니다</string>
     <string name="settings_eh_system_theme">시스템 테마</string>
     <string name="settings_read_picture_decoding_method">이미지 디코딩 방식</string>
     <string name="settings_read_picture_decoding_method_native">오픈소스 C++ 디코딩 라이브러리</string>
