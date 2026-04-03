@@ -34,13 +34,11 @@
     </FrameLayout>
 
     <!-- Error / empty state -->
-    <TextView
-        android:id="@+id/tip"
+    <include
+        android:id="@+id/error_view"
+        layout="@layout/view_error_state"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center"
-        android:padding="16dp"
-        android:textSize="16sp"
         android:visibility="gone" />
 
     <!-- Category list -->
