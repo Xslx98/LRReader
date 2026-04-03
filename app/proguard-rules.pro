@@ -68,6 +68,11 @@
 # === Scene classes (instantiated via StageLayout reflection) ===
 -keep class com.hippo.ehviewer.ui.scene.** { *; }
 
+# === LRRDownloadWorker: preserve volatile semantics for cancellation flag ===
+-keepclassmembers class com.hippo.ehviewer.download.LRRDownloadWorker {
+    volatile <fields>;
+}
+
 # === UCrop image cropper ===
 -keep class com.yalantis.ucrop.** { *; }
 -dontwarn com.yalantis.ucrop.**
