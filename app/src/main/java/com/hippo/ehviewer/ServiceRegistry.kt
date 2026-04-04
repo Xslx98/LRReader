@@ -3,6 +3,7 @@ package com.hippo.ehviewer
 import android.content.Context
 import com.hippo.ehviewer.module.AppModule
 import com.hippo.ehviewer.module.ClientModule
+import com.hippo.ehviewer.module.CoroutineModule
 import com.hippo.ehviewer.module.DataModule
 import com.hippo.ehviewer.module.NetworkModule
 
@@ -23,6 +24,8 @@ object ServiceRegistry {
         private set
     lateinit var appModule: AppModule
         private set
+    lateinit var coroutineModule: CoroutineModule
+        private set
 
     /**
      * Initialize all modules. Must be called from EhApplication.onCreate()
@@ -30,9 +33,19 @@ object ServiceRegistry {
      */
     fun initialize(context: Context) {
         appModule = AppModule(context).also { it.initialize() }
+        coroutineModule = CoroutineModule()
         networkModule = NetworkModule(context)
         clientModule = ClientModule(context, networkModule)
         dataModule = DataModule(context)
+    }
+
+    /**
+     * Initialize only the coroutine module — for tests that don't need
+     * full ServiceRegistry but need CoroutineBridge to work.
+     */
+    @androidx.annotation.VisibleForTesting
+    fun initializeForTest(coroutine: CoroutineModule) {
+        coroutineModule = coroutine
     }
 
     /**
