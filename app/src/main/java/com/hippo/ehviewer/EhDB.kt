@@ -36,6 +36,7 @@ import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.lib.yorozuya.ObjectUtils
 import com.hippo.lib.yorozuya.collect.SparseJLArray
 
+import androidx.room.withTransaction
 import kotlinx.coroutines.runBlocking
 
 import java.io.File
@@ -329,16 +330,18 @@ object EhDB {
     fun putDownloadDirname(gid: Long, dirname: String) = runBlocking { putDownloadDirnameAsync(gid, dirname) }
 
     suspend fun putDownloadDirnameAsync(gid: Long, dirname: String) {
-        val dao = sDatabase.downloadDao()
-        val raw = dao.loadDirname(gid)
-        if (raw != null) {
-            raw.dirname = dirname
-            dao.updateDirname(raw)
-        } else {
-            val newRaw = DownloadDirname()
-            newRaw.gid = gid
-            newRaw.dirname = dirname
-            dao.insertDirname(newRaw)
+        sDatabase.withTransaction {
+            val dao = sDatabase.downloadDao()
+            val raw = dao.loadDirname(gid)
+            if (raw != null) {
+                raw.dirname = dirname
+                dao.updateDirname(raw)
+            } else {
+                val newRaw = DownloadDirname()
+                newRaw.gid = gid
+                newRaw.dirname = dirname
+                dao.insertDirname(newRaw)
+            }
         }
     }
 
@@ -354,17 +357,19 @@ object EhDB {
         runBlocking { updateDownloadDirnameAsync(removeGid, newGid, dirname) }
 
     suspend fun updateDownloadDirnameAsync(removeGid: Long, newGid: Long, dirname: String) {
-        val dao = sDatabase.downloadDao()
-        dao.deleteDirnameByKey(removeGid)
-        val raw = dao.loadDirname(newGid)
-        if (raw != null) {
-            raw.dirname = dirname
-            dao.updateDirname(raw)
-        } else {
-            val newRaw = DownloadDirname()
-            newRaw.gid = newGid
-            newRaw.dirname = dirname
-            dao.insertDirname(newRaw)
+        sDatabase.withTransaction {
+            val dao = sDatabase.downloadDao()
+            dao.deleteDirnameByKey(removeGid)
+            val raw = dao.loadDirname(newGid)
+            if (raw != null) {
+                raw.dirname = dirname
+                dao.updateDirname(raw)
+            } else {
+                val newRaw = DownloadDirname()
+                newRaw.gid = newGid
+                newRaw.dirname = dirname
+                dao.insertDirname(newRaw)
+            }
         }
     }
 
