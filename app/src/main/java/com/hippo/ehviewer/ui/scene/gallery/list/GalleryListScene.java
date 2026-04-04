@@ -1028,17 +1028,21 @@ public final class GalleryListScene extends BaseScene
             } else {
                 quickSearch.name = text;
             }
-            EhDB.insertQuickSearch(quickSearch);
-            list.add(quickSearch);
-            adapter.notifyDataSetChanged();
-
-            if (0 == list.size()) {
-                tip.setVisibility(View.VISIBLE);
-                listView.setVisibility(View.GONE);
-            } else {
-                tip.setVisibility(View.GONE);
-                listView.setVisibility(View.VISIBLE);
-            }
+            final android.app.Activity a = getActivity();
+            com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+                EhDB.insertQuickSearch(quickSearch);
+                if (a != null) a.runOnUiThread(() -> {
+                    list.add(quickSearch);
+                    adapter.notifyDataSetChanged();
+                    if (0 == list.size()) {
+                        tip.setVisibility(View.VISIBLE);
+                        listView.setVisibility(View.GONE);
+                    } else {
+                        tip.setVisibility(View.GONE);
+                        listView.setVisibility(View.VISIBLE);
+                    }
+                });
+            });
         });
     }
 

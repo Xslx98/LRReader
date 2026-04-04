@@ -63,26 +63,30 @@ public class BookmarksDraw {
         AssertUtils.assertNotNull(context);
 
         List<QuickSearch> quickSearchList = EhDB.getAllQuickSearch();
-        //汉化标签
+        //汉化标签 — tag translation updates are persisted on IO thread
         final boolean judge = AppearanceSettings.getShowTagTranslations();
+        final java.util.List<QuickSearch> toUpdate = new java.util.ArrayList<>();
         if (judge && !quickSearchList.isEmpty()) {
             for (int i = 0; i < quickSearchList.size(); i++) {
                 String name = quickSearchList.get(i).getName();
-                //重设标签名称,并跳过已翻译的标签
                 if (name != null && 2 == name.split(":").length) {
                     quickSearchList.get(i).setName(TagTranslationUtil.getTagCN(name.split(":"), ehTags));
-                    EhDB.updateQuickSearch(quickSearchList.get(i));
+                    toUpdate.add(quickSearchList.get(i));
                 }
             }
         } else if (!judge && !quickSearchList.isEmpty()) {
             for (int i = 0; i < quickSearchList.size(); i++) {
                 String name = quickSearchList.get(i).getName();
-                //重设标签名称,并跳过未翻译的标签
                 if (null != name && 1 == name.split(":").length) {
                     quickSearchList.get(i).setName(quickSearchList.get(i).getKeyword());
-                    EhDB.updateQuickSearch(quickSearchList.get(i));
+                    toUpdate.add(quickSearchList.get(i));
                 }
             }
+        }
+        if (!toUpdate.isEmpty()) {
+            com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+                for (QuickSearch qs : toUpdate) EhDB.updateQuickSearch(qs);
+            });
         }
 
 
