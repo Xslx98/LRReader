@@ -49,8 +49,10 @@ public final class CommonOperations {
     private static void doAddToFavorites(Activity activity, GalleryInfo galleryInfo,
                                          int slot, EhClient.Callback<Void> listener) {
         if (slot == -1) {
-            EhDB.putLocalFavorite(galleryInfo);
-            listener.onSuccess(null);
+            com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+                EhDB.putLocalFavorite(galleryInfo);
+                activity.runOnUiThread(() -> listener.onSuccess(null));
+            });
         } else if (slot >= 0 && slot <= 9) {
             EhClient client = ServiceRegistry.INSTANCE.getClientModule().getEhClient();
             EhRequest request = new EhRequest();
@@ -93,7 +95,8 @@ public final class CommonOperations {
 
     public static void removeFromFavorites(Activity activity, GalleryInfo galleryInfo,
                                            final EhClient.Callback<Void> listener) {
-        EhDB.removeLocalFavorites(galleryInfo.gid);
+        com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() ->
+            EhDB.removeLocalFavorites(galleryInfo.gid));
         EhClient client = ServiceRegistry.INSTANCE.getClientModule().getEhClient();
         EhRequest request = new EhRequest();
         request.setMethod(EhClient.METHOD_ADD_FAVORITES);

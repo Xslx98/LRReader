@@ -200,10 +200,17 @@ public class HistoryScene extends ToolbarScene
         mAdapter = null;
     }
 
-    // Remember to notify
+    // Asynchronously loads history list on IO thread, then updates UI
     private void updateLazyList() {
-        List<HistoryInfo> lazyList = EhDB.getHistoryLazyList();
-        mLazyList = lazyList;
+        com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+            List<HistoryInfo> lazyList = EhDB.getHistoryLazyList();
+            android.app.Activity a = getActivity();
+            if (a != null) a.runOnUiThread(() -> {
+                mLazyList = lazyList;
+                if (mAdapter != null) mAdapter.notifyDataSetChanged();
+                updateView(false);
+            });
+        });
     }
 
     private void updateView(boolean animation) {
@@ -238,10 +245,11 @@ public class HistoryScene extends ToolbarScene
                             return;
                         }
 
-                        EhDB.clearHistoryInfo();
-                        updateLazyList();
-                        mAdapter.notifyDataSetChanged();
-                        updateView(true);
+                        com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+                            EhDB.clearHistoryInfo();
+                            android.app.Activity a = getActivity();
+                            if (a != null) a.runOnUiThread(() -> updateLazyList());
+                        });
                     }
                 }).show();
     }
@@ -450,10 +458,11 @@ public class HistoryScene extends ToolbarScene
             }
 
             HistoryInfo info = mLazyList.get(mPosition);
-            EhDB.deleteHistoryInfo(info);
-            updateLazyList();
-            mAdapter.notifyDataSetChanged();
-            updateView(true);
+            com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+                EhDB.deleteHistoryInfo(info);
+                android.app.Activity a = getActivity();
+                if (a != null) a.runOnUiThread(() -> updateLazyList());
+            });
         }
     }
 

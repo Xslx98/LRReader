@@ -150,7 +150,7 @@ dependencies {
 
     implementation libs.okhttp
     implementation libs.okhttp.dnsoverhttps
-    implementation libs.request.inspector
+    debugImplementation libs.request.inspector
 
     // Room database (replaces GreenDAO)
     implementation libs.room.runtime

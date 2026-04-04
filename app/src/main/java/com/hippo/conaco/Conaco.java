@@ -73,7 +73,11 @@ public class Conaco<V> {
 
         mDiskExecutor = new SerialThreadExecutor(3000L, new LinkedList<>(),
                 new PriorityThreadFactory("Conaco-Disk", Process.THREAD_PRIORITY_BACKGROUND));
-        mNetworkExecutor = new ThreadPoolExecutor(3, 3, 5L, TimeUnit.SECONDS,
+        // Network pool: 5 core / 8 max to match OkHttp's default per-host limit of 5.
+        // LANraragi thumbnails all target the same server, so Conaco was previously the
+        // bottleneck at 3 threads while OkHttp could handle 5 concurrent connections.
+        // Ref: https://github.com/square/okhttp/blob/master/okhttp/src/main/kotlin/okhttp3/Dispatcher.kt
+        mNetworkExecutor = new ThreadPoolExecutor(5, 8, 10L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(),
                 new PriorityThreadFactory("Conaco-Network", Process.THREAD_PRIORITY_BACKGROUND));
 

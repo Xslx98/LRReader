@@ -1805,8 +1805,10 @@ public class DownloadsScene extends ToolbarScene
             boolean checked = mBuilder.isChecked();
             Settings.putRemoveImageFiles(checked);
             if (checked) {
-                // Remove download path
-                EhDB.removeDownloadDirname(mGalleryInfo.gid);
+                // Remove download path (IO thread)
+                final long gid = mGalleryInfo.gid;
+                com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() ->
+                    EhDB.removeDownloadDirname(gid));
                 // Delete file
                 UniFile file = getGalleryDownloadDir(mGalleryInfo);
                 deleteFileAsync(file);
@@ -1850,8 +1852,10 @@ public class DownloadsScene extends ToolbarScene
                 UniFile[] files = new UniFile[mDownloadInfoList.size()];
                 int i = 0;
                 for (DownloadInfo info : mDownloadInfoList) {
-                    // Remove download path
-                    EhDB.removeDownloadDirname(info.gid);
+                    // Remove download path (IO thread)
+                    final long gid = info.gid;
+                    com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() ->
+                        EhDB.removeDownloadDirname(gid));
                     // Put file
                     files[i] = getGalleryDownloadDir(info);
                     i++;
