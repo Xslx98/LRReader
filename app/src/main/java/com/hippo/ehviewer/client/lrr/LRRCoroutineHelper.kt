@@ -1,6 +1,7 @@
 @file:JvmName("LRRCoroutineHelper")
 package com.hippo.ehviewer.client.lrr
 
+import androidx.annotation.WorkerThread
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -17,6 +18,8 @@ import kotlinx.coroutines.runBlocking
  * that Java can call via SAM conversion of the `suspend CoroutineScope.() -> T` block.
  *
  * IMPORTANT: Only call this on a background thread. Never call from the main thread.
+ * The @WorkerThread annotation enables lint enforcement at call sites.
  */
+@WorkerThread
 fun <T> runSuspend(block: suspend kotlinx.coroutines.CoroutineScope.() -> T): T =
     runBlocking { block() }
