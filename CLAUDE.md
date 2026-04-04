@@ -6,7 +6,7 @@
 
 - **Application ID:** `com.lanraragi.reader`
 - **Namespace:** `com.hippo.ehviewer` (legacy, retained from EhViewer)
-- **Current Version:** 1.10.1 (versionCode 11001 — formula: `MAJOR*10000 + MINOR*100 + PATCH`)
+- **Current Version:** 1.10.4 (versionCode 11004 — formula: `MAJOR*10000 + MINOR*100 + PATCH`)
 - **License:** GPLv3
 
 ---
@@ -21,11 +21,11 @@
 | Build | Gradle + AGP 8.13.2 | `./gradlew` + Version Catalog (`libs.versions.toml`) |
 | Network | OkHttp | 4.12.0 |
 | API Serialization | kotlinx-serialization | 1.8.1 (all JSON, Gson removed) |
-| Database | Room + KSP | 2.6.1, schema v9 (exported to `app/schemas/`) |
+| Database | Room + KSP | 2.6.1, schema v11 (exported to `app/schemas/`) |
 | Coroutines | kotlinx-coroutines | 1.10.2 |
 | Lifecycle | AndroidX lifecycle-runtime-ktx | 2.8.7 |
 | Image Decoding | Custom C/JNI (libjpeg-turbo, libpng, libwebp) | CMake |
-| Security | EncryptedSharedPreferences | 1.1.0-alpha06 |
+| Security | EncryptedSharedPreferences | 1.1.0 |
 | UI | Material Design + AndroidX | Material 1.13.0 |
 | Static Analysis | Detekt | 1.23.7 (config: `config/detekt/detekt.yml`) |
 | ABI | arm64-v8a, x86_64 | 64-bit only |
@@ -64,7 +64,7 @@ LRReader/
 │   │   │   │   └── CMakeLists.txt
 │   │   │   ├── res/                   # Resources (11 locale configs)
 │   │   │   └── AndroidManifest.xml
-│   │   └── test/                      # Unit tests (25 files, LRR API + DAO)
+│   │   └── test/                      # Unit tests (32 files, LRR API + DAO + DiffUtil + Coroutine)
 │   ├── build.gradle                   # App-level Gradle config
 │   └── proguard-rules.pro
 ├── config/detekt/detekt.yml           # Detekt static analysis config
@@ -72,9 +72,7 @@ LRReader/
 │   └── libs.versions.toml             # Gradle Version Catalog (all deps here)
 ├── fastlane/                          # Fastlane metadata + screenshots
 ├── .github/workflows/
-│   ├── build.yml                      # CI: build + test + lint + detekt
-│   ├── release.yml                    # CD: signed APK release
-│   └── fastlane.yml                   # Fastlane automation
+│   └── build.yml                      # CI: build + test + lint + detekt
 ├── build.gradle                       # Root Gradle config
 ├── settings.gradle                    # Project structure + repositories
 ├── gradle.properties                  # JVM args, AndroidX settings
@@ -89,9 +87,11 @@ LRReader/
 | `ServiceRegistry.kt` | Central singleton registry replacing old EhApplication service locator |
 | `module/AppModule.kt` | App-level services (crash reporting, analytics) |
 | `module/ClientModule.kt` | LRR API clients + auth |
+| `module/CoroutineModule.kt` | SupervisorJob + CoroutineExceptionHandler scoped coroutines |
 | `module/DataModule.kt` | Room database access |
 | `module/NetworkModule.kt` | OkHttp client configuration + DNS |
-| `EhDB.kt` | Room database initialization |
+| `util/CoroutineBridge.kt` | Java→coroutine bridge (launchIO/launchIOGlobal) |
+| `EhDB.kt` | Room database access layer (blockingDb main-thread detection) |
 | `settings/AppearanceSettings.kt` | UI/theme preferences |
 | `settings/DownloadSettings.kt` | Download preferences |
 | `settings/NetworkSettings.kt` | Network/proxy preferences |
@@ -100,7 +100,7 @@ LRReader/
 | `client/lrr/LRRArchiveApi.kt` | Archive search/list/detail/upload/delete API |
 | `client/lrr/LRRSearchApi.kt` | Search + random endpoint |
 | `client/lrr/LRRCategoryApi.kt` | Category CRUD + archive association |
-| `dao/AppDatabase.kt` | Room database schema (v9, schema exported) |
+| `dao/AppDatabase.kt` | Room database schema (v11, schema exported) |
 | `ui/MainActivity.java` | Main UI entry point + scene routing |
 | `ui/GalleryActivity.java` | Reader/detail view |
 | `ui/scene/GalleryListScene.java` | Gallery browse scene |
@@ -171,6 +171,9 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 
 - All network and database calls use **Kotlin Coroutines**: `suspend fun` + `withContext(Dispatchers.IO)`
 - Use `viewLifecycleOwner.lifecycleScope` for Fragment coroutines
+- **From Java code**, use `CoroutineBridge.launchIO(lifecycleOwner, task)` or `IoThreadPoolExecutor` to move DB/network work off the main thread
+- `EhDB` provides dual API: `suspend fun xxxAsync()` for Kotlin, `@JvmStatic fun xxx()` via `blockingDb` bridge for Java (logs warning if called on main thread)
+- `CoroutineModule` provides `applicationScope` and `ioScope` with `SupervisorJob` + `CoroutineExceptionHandler`
 - Avoid raw `Thread`, `AsyncTask`, or `Handler` in new code
 - Thread pool: `IoThreadPoolExecutor` for parallel image/network work
 
@@ -185,7 +188,7 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 
 - All entities and DAOs in `dao/` package
 - Use KSP (not KAPT) for annotation processing
-- Schema version is v9; exported to `app/schemas/` — always provide a `Migration` when bumping
+- Schema version is v11; exported to `app/schemas/` — always provide a `Migration` when bumping
 - **Never** use `fallbackToDestructiveMigration()` in production code
 - `AppDatabase.kt` is the single Room database instance
 
@@ -206,6 +209,7 @@ New singletons belong in the appropriate module under `module/`:
 
 - `AppModule` — app-wide services (crash, analytics)
 - `ClientModule` — API client instances
+- `CoroutineModule` — scoped coroutines with exception handling
 - `DataModule` — database access objects
 - `NetworkModule` — OkHttp, DNS, proxy
 
@@ -230,12 +234,17 @@ Settings are being migrated from `Settings.java` to typed objects in `settings/`
 
 ## Testing
 
-Unit tests live in `app/src/test/java/`. Coverage includes:
+Unit tests live in `app/src/test/java/`. 32 test files covering:
 
 - All LRR API classes (`LRRArchiveApiTest`, `LRRSearchApiTest`, `LRRCategoryApiTest`, etc.) using `MockWebServer`
 - All LRR data classes (`LRRArchiveTest`, `LRRCategoryTest`, etc.)
 - `RoomMigrationTest` — schema integrity verification
 - `ServerProfileDaoTest` — DAO CRUD verification
+- `GalleryInfoDiffTest` — DiffUtil identity/content equality contracts
+- `ContentHelperDiffUtilTest` — DiffUtil dispatch operations (insert/remove/change)
+- `CoroutineBridgeTest` — Java→coroutine bridge function contracts
+- `EhDBMainThreadCheckTest` — main-thread detection + direct DAO operations
+- `TestServiceRegistryHelper` — test infrastructure for ServiceRegistry mocking
 
 Run tests with:
 ```bash
@@ -251,15 +260,14 @@ Test reports: `app/build/reports/tests/`
 ### GitHub Actions
 
 **`build.yml`** — triggers on push/PR to `main`:
-1. Build (`assembleAppReleaseDebug`)
-2. Unit tests (`testAppReleaseDebugUnitTest`)
-3. Lint (`lintAppReleaseDebug`)
-4. Detekt (continue-on-error)
-5. Upload artifacts: test reports, lint reports, detekt reports, APK
+1. Validate Fastlane metadata
+2. Build (`assembleAppReleaseDebug`)
+3. Unit tests (`testAppReleaseDebugUnitTest`)
+4. Lint (`lintAppReleaseDebug`)
+5. Detekt (continue-on-error)
+6. Upload artifacts: test reports, lint reports, detekt reports, APK
 
-**`release.yml`** — signed release build for distribution
-
-**`fastlane.yml`** — Fastlane-based store publishing
+Releases are managed locally via `gh release create` with pre-signed APKs. No CI-based release workflow.
 
 Firebase Crashlytics is optional: applied only if `app/google-services.json` exists (gitignored).
 
@@ -290,17 +298,21 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 2. **Scene-based navigation:** Uses a custom `Scene` framework (not Jetpack Navigation). UI transitions via `startScene()` / `popScene()`.
 
-3. **ServiceRegistry:** Replaces the old service-locator pattern in `EhApplication`. Initialize modules here; don't add new statics to `EhApplication`.
+3. **ServiceRegistry:** Replaces the old service-locator pattern in `EhApplication`. Initialize modules here; don't add new statics to `EhApplication`. Includes `CoroutineModule` for scoped coroutines.
 
 4. **LRR API surface:** Full LANraragi REST API wrapped in `client/lrr/`. Add new endpoints here as `suspend` functions returning `@Serializable` data classes.
 
-5. **Room schema migrations:** Schema at v9, exported. Write an explicit `Migration` object for every schema change.
+5. **Room schema migrations:** Schema at v11, exported. Write an explicit `Migration` object for every schema change.
 
-6. **Download subsystem:** `LRRDownloadWorker` manages background downloads with retry, format validation, LRU cache (500 MB), and server progress sync. Coordinates with `dao/` for state persistence.
+6. **DiffUtil in ContentLayout:** `ContentHelper.dispatchDiffUpdates()` replaces `notifyDataSetChanged()` for data refresh/search/page-replace paths. Uses `isDuplicate()` for `areItemsTheSame()`.
 
-7. **Multi-server support:** `ServerProfile` entity + `LRRAuthManager` handle per-server credentials. Server selection affects all API calls. Credentials are encrypted.
+7. **EhDB main-thread guard:** All 54 `@JvmStatic` bridge methods use `blockingDb()` which logs a warning if called on the main thread. New UI code should use `CoroutineBridge.launchIO()` or the `suspend` Async variants instead.
 
-8. **EhViewer stubs:** `EhGalleryProvider`, `FavoritesScene`, and `FavoriteListSortDialog` are intentional stubs (empty bodies) left for structural compatibility. Do not delete — but do not add logic to them either.
+8. **Download subsystem:** `LRRDownloadWorker` manages background downloads with retry, format validation, LRU cache (500 MB), and server progress sync. Coordinates with `dao/` for state persistence.
+
+9. **Multi-server support:** `ServerProfile` entity + `LRRAuthManager` handle per-server credentials. Server selection affects all API calls. Credentials are encrypted.
+
+10. **EhViewer stubs:** `EhGalleryProvider`, `FavoritesScene`, and `FavoriteListSortDialog` are intentional stubs (empty bodies) left for structural compatibility. Do not delete — but do not add logic to them either.
 
 ---
 
