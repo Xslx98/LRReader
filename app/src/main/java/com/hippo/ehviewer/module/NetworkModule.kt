@@ -43,20 +43,16 @@ class NetworkModule(private val context: Context) {
             .cache(cache)
             .dns(EhHosts(context))
             .addNetworkInterceptor { chain ->
-                try {
-                    val resp = chain.proceed(chain.request())
-                    // Force cache LRR thumbnail responses for 24 hours
-                    val url = chain.request().url.toString()
-                    if (url.contains("/api/archives/") && url.contains("/thumbnail")) {
-                        resp.newBuilder()
-                            .header("Cache-Control", "public, max-age=86400")
-                            .removeHeader("Pragma")
-                            .build()
-                    } else {
-                        resp
-                    }
-                } catch (e: NullPointerException) {
-                    throw NullPointerException(e.message)
+                val resp = chain.proceed(chain.request())
+                // Force cache LRR thumbnail responses for 24 hours
+                val url = chain.request().url.toString()
+                if (url.contains("/api/archives/") && url.contains("/thumbnail")) {
+                    resp.newBuilder()
+                        .header("Cache-Control", "public, max-age=86400")
+                        .removeHeader("Pragma")
+                        .build()
+                } else {
+                    resp
                 }
             }
             .addNetworkInterceptor { chain ->
