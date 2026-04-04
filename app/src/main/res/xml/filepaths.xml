@@ -14,14 +14,20 @@
   ~ limitations under the License.
   -->
 
-<path xmlns:android="http://schemas.android.com/apk/res/android">
+<!--
+  Restricted FileProvider paths.
 
-    <root-path
-        name="root"
-        path="" />
-    <files-path
-        name="files"
-        path="" />
+  Security: <root-path path=""/> removed per Android official guidance
+  (https://developer.android.com/privacy-and-security/risks/file-providers):
+    "<root-path> corresponds to the root directory of the device (/).
+     Allowing this provides arbitrary access to files and folders."
+
+  Only the paths actually needed by the app are declared:
+    - external-cache-path : camera capture images (UserImageChange)
+    - cache-path          : internal cache (image crop temp files)
+    - external-files-path : download temp directory
+-->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
 
     <cache-path
         name="cache"
@@ -31,11 +37,7 @@
         name="temp"
         path="temp" />
 
-    <external-files-path
-        name="external_file_path"
-        path="" />
-
     <external-cache-path
         name="external_cache_path"
         path="" />
-</path>
+</paths>

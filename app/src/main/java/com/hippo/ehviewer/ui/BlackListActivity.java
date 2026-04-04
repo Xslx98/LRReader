@@ -333,7 +333,14 @@ public class BlackListActivity extends ToolbarActivity {
         private BlackList mTitleHeader;
 
         public BlackListList() {
-            mTitleBlackList = EhDB.getAllBlackList();
+            mTitleBlackList = new java.util.ArrayList<>();
+            com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+                java.util.List<BlackList> result = EhDB.getAllBlackList();
+                runOnUiThread(() -> {
+                    mTitleBlackList = result;
+                    if (null != mAdapter) mAdapter.notifyDataSetChanged();
+                });
+            });
         }
 
         public int size() {
@@ -372,13 +379,15 @@ public class BlackListActivity extends ToolbarActivity {
         }
 
         public void add(BlackList blackList) {
-            EhDB.insertBlackList(blackList);
             mTitleBlackList.add(blackList);
+            com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() ->
+                EhDB.insertBlackList(blackList));
         }
 
         public void delete(BlackList blackList) {
-            EhDB.deleteBlackList(blackList);
             mTitleBlackList.remove(blackList);
+            com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() ->
+                EhDB.deleteBlackList(blackList));
         }
 
     }

@@ -6,6 +6,7 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryDetail
+import com.hippo.ehviewer.util.launchIOGlobal
 
 import com.hippo.ehviewer.ui.scene.EhCallback
 import com.hippo.lib.yorozuya.FileUtils
@@ -25,8 +26,8 @@ class GetGalleryDetailListener(
         // Put gallery detail to cache
         ServiceRegistry.dataModule.galleryDetailCache.put(result.gid, result)
 
-        // Add history
-        EhDB.putHistoryInfo(result)
+        // Add history (off main thread — onSuccess runs on main via onPostExecute)
+        launchIOGlobal(Runnable { EhDB.putHistoryInfo(result) })
 
         // E-Hentai tag sync removed
 

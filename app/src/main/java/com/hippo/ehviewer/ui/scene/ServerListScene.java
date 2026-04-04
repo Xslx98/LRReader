@@ -94,25 +94,38 @@ public final class ServerListScene extends BaseScene {
         Context ctx = getEHContext();
         if (ctx == null) return;
 
-        mProfiles = new ArrayList<>(EhDB.getAllServerProfiles());
-        // Sort: active server first
-        mProfiles.sort((a, b) -> Boolean.compare(b.isActive(), a.isActive()));
-        if (mAdapter != null) mAdapter.notifyDataSetChanged();
-
-        if (mEmptyText != null) {
-            mEmptyText.setVisibility(mProfiles.isEmpty() ? View.VISIBLE : View.GONE);
-        }
+        com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+            java.util.List<com.hippo.ehviewer.dao.ServerProfile> result =
+                new ArrayList<>(EhDB.getAllServerProfiles());
+            result.sort((a, b) -> Boolean.compare(b.isActive(), a.isActive()));
+            requireActivity().runOnUiThread(() -> {
+                mProfiles = result;
+                if (mAdapter != null) mAdapter.notifyDataSetChanged();
+                if (mEmptyText != null) {
+                    mEmptyText.setVisibility(mProfiles.isEmpty() ? View.VISIBLE : View.GONE);
+                }
+            });
+        });
     }
 
     private void switchToProfile(ServerProfile profile) {
         Context ctx = getEHContext();
         if (ctx == null) return;
 
-        // Deactivate all, activate selected (API key is in EncryptedSharedPreferences, not Room)
-        EhDB.deactivateAllProfiles();
-        EhDB.updateServerProfile(new ServerProfile(
-                profile.getId(), profile.getName(), profile.getUrl(),
-                null, true));
+        // DB writes on IO thread, then UI updates on main thread
+        com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+            EhDB.deactivateAllProfiles();
+            EhDB.updateServerProfile(new ServerProfile(
+                    profile.getId(), profile.getName(), profile.getUrl(),
+                    null, true));
+            android.app.Activity a = getActivity();
+            if (a != null) a.runOnUiThread(() -> switchToProfileUiUpdate(profile));
+        });
+    }
+
+    private void switchToProfileUiUpdate(ServerProfile profile) {
+        Context ctx = getEHContext();
+        if (ctx == null) return;
 
         // Update LRRAuthManager
         LRRAuthManager.setServerUrl(profile.getUrl());

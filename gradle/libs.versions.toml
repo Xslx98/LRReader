@@ -20,7 +20,10 @@ lifecycle = "2.8.7"
 preference = "1.2.1"
 recyclerview = "1.4.0"
 room = "2.6.1"
-security-crypto = "1.1.0-alpha06"
+# Upgraded from 1.1.0-alpha06 to stable 1.1.0 (released 2025-07-30).
+# Note: library deprecated in 1.1.0-beta01 — future migration to DataStore+Tink planned.
+# Ref: https://developer.android.com/jetpack/androidx/releases/security
+security-crypto = "1.1.0"
 test-core = "1.6.1"
 webkit = "1.13.0"
 

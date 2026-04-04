@@ -71,7 +71,14 @@ public final class QuickSearchScene extends ToolbarScene {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mQuickSearchList = EhDB.getAllQuickSearch();
+        mQuickSearchList = new java.util.ArrayList<>();
+        com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+            java.util.List<com.hippo.ehviewer.dao.QuickSearch> result = EhDB.getAllQuickSearch();
+            requireActivity().runOnUiThread(() -> {
+                mQuickSearchList = result;
+                if (mAdapter != null) mAdapter.notifyDataSetChanged();
+            });
+        });
     }
 
     @Override

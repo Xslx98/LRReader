@@ -23,6 +23,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.os.Message
 import android.util.Log
 
@@ -51,10 +52,33 @@ import java.util.Date
  * **Dual API**: Every public method exists in two forms:
  * - `suspend fun xxxAsync(...)` — for Kotlin coroutine callers
  * - `@JvmStatic fun xxx(...)` — `runBlocking` bridge for Java callers (safe on IO threads)
+ *
+ * **Main-thread safety**: All `runBlocking` bridges will log a warning if called on the
+ * main thread, as this blocks the UI and risks ANR.
+ * Per official Kotlin docs: "runBlocking... blocks the current thread interruptibly...
+ * designed to bridge regular blocking code... to be used in main functions and in tests."
+ * Per Android docs: "If the main thread is blocked... it can lead to... an Application
+ * Not Responding (ANR) dialog."
+ * Refs:
+ * - https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/run-blocking.html
+ * - https://developer.android.com/kotlin/coroutines
  */
 object EhDB {
 
     private const val TAG = "EhDB"
+
+    /**
+     * Wraps `runBlocking` with a main-thread check. Logs a warning with the caller's
+     * stack trace if invoked on the main thread, to surface potential ANR risks during
+     * development.
+     */
+    private fun <T> blockingDb(block: suspend kotlinx.coroutines.CoroutineScope.() -> T): T {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            Log.w(TAG, "runBlocking called on main thread — risk of ANR",
+                IllegalStateException("EhDB blocking call on main thread"))
+        }
+        return runBlocking { block() }
+    }
 
     // Constants for import progress tracking
     const val DB_LOADING = 0
@@ -263,7 +287,7 @@ object EhDB {
     // ═══════════════════════════════════════════════════════════
 
     @JvmStatic
-    fun getAllDownloadInfo(): List<DownloadInfo> = runBlocking { getAllDownloadInfoAsync() }
+    fun getAllDownloadInfo(): List<DownloadInfo> = blockingDb { getAllDownloadInfoAsync() }
 
     suspend fun getAllDownloadInfoAsync(): List<DownloadInfo> {
         val dao = sDatabase.downloadDao()
@@ -279,7 +303,7 @@ object EhDB {
 
     @JvmStatic
     fun moveDownloadInfo(infos: List<DownloadInfo>, fromPosition: Int, toPosition: Int) =
-        runBlocking { moveDownloadInfoAsync(infos, fromPosition, toPosition) }
+        blockingDb { moveDownloadInfoAsync(infos, fromPosition, toPosition) }
 
     suspend fun moveDownloadInfoAsync(infos: List<DownloadInfo>, fromPosition: Int, toPosition: Int) {
         if (fromPosition == toPosition) return
@@ -302,14 +326,14 @@ object EhDB {
     }
 
     @JvmStatic
-    fun putDownloadInfo(downloadInfo: DownloadInfo) = runBlocking { putDownloadInfoAsync(downloadInfo) }
+    fun putDownloadInfo(downloadInfo: DownloadInfo) = blockingDb { putDownloadInfoAsync(downloadInfo) }
 
     suspend fun putDownloadInfoAsync(downloadInfo: DownloadInfo) {
         sDatabase.downloadDao().insert(downloadInfo)
     }
 
     @JvmStatic
-    fun removeDownloadInfo(gid: Long) = runBlocking { removeDownloadInfoAsync(gid) }
+    fun removeDownloadInfo(gid: Long) = blockingDb { removeDownloadInfoAsync(gid) }
 
     suspend fun removeDownloadInfoAsync(gid: Long) {
         sDatabase.downloadDao().deleteDownloadByKey(gid)
@@ -320,14 +344,14 @@ object EhDB {
     // ═══════════════════════════════════════════════════════════
 
     @JvmStatic
-    fun getDownloadDirname(gid: Long): String? = runBlocking { getDownloadDirnameAsync(gid) }
+    fun getDownloadDirname(gid: Long): String? = blockingDb { getDownloadDirnameAsync(gid) }
 
     suspend fun getDownloadDirnameAsync(gid: Long): String? {
         return sDatabase.downloadDao().loadDirname(gid)?.dirname
     }
 
     @JvmStatic
-    fun putDownloadDirname(gid: Long, dirname: String) = runBlocking { putDownloadDirnameAsync(gid, dirname) }
+    fun putDownloadDirname(gid: Long, dirname: String) = blockingDb { putDownloadDirnameAsync(gid, dirname) }
 
     suspend fun putDownloadDirnameAsync(gid: Long, dirname: String) {
         sDatabase.withTransaction {
@@ -346,7 +370,7 @@ object EhDB {
     }
 
     @JvmStatic
-    fun removeDownloadDirname(gid: Long) = runBlocking { removeDownloadDirnameAsync(gid) }
+    fun removeDownloadDirname(gid: Long) = blockingDb { removeDownloadDirnameAsync(gid) }
 
     suspend fun removeDownloadDirnameAsync(gid: Long) {
         sDatabase.downloadDao().deleteDirnameByKey(gid)
@@ -354,7 +378,7 @@ object EhDB {
 
     @JvmStatic
     fun updateDownloadDirname(removeGid: Long, newGid: Long, dirname: String) =
-        runBlocking { updateDownloadDirnameAsync(removeGid, newGid, dirname) }
+        blockingDb { updateDownloadDirnameAsync(removeGid, newGid, dirname) }
 
     suspend fun updateDownloadDirnameAsync(removeGid: Long, newGid: Long, dirname: String) {
         sDatabase.withTransaction {
@@ -374,7 +398,7 @@ object EhDB {
     }
 
     @JvmStatic
-    fun clearDownloadDirname() = runBlocking { clearDownloadDirnameAsync() }
+    fun clearDownloadDirname() = blockingDb { clearDownloadDirnameAsync() }
 
     suspend fun clearDownloadDirnameAsync() {
         sDatabase.downloadDao().deleteAllDirnames()
@@ -385,14 +409,14 @@ object EhDB {
     // ═══════════════════════════════════════════════════════════
 
     @JvmStatic
-    fun getAllDownloadLabelList(): List<DownloadLabel> = runBlocking { getAllDownloadLabelListAsync() }
+    fun getAllDownloadLabelList(): List<DownloadLabel> = blockingDb { getAllDownloadLabelListAsync() }
 
     suspend fun getAllDownloadLabelListAsync(): List<DownloadLabel> {
         return sDatabase.downloadDao().getAllDownloadLabels()
     }
 
     @JvmStatic
-    fun addDownloadLabel(label: String): DownloadLabel = runBlocking { addDownloadLabelAsync(label) }
+    fun addDownloadLabel(label: String): DownloadLabel = blockingDb { addDownloadLabelAsync(label) }
 
     suspend fun addDownloadLabelAsync(label: String): DownloadLabel {
         val dao = sDatabase.downloadDao()
@@ -406,7 +430,7 @@ object EhDB {
     }
 
     @JvmStatic
-    fun addDownloadLabel(raw: DownloadLabel): DownloadLabel = runBlocking { addDownloadLabelAsync(raw) }
+    fun addDownloadLabel(raw: DownloadLabel): DownloadLabel = blockingDb { addDownloadLabelAsync(raw) }
 
     suspend fun addDownloadLabelAsync(raw: DownloadLabel): DownloadLabel {
         raw.id = null
@@ -416,7 +440,7 @@ object EhDB {
     }
 
     @JvmStatic
-    fun updateDownloadLabel(raw: DownloadLabel) = runBlocking { updateDownloadLabelAsync(raw) }
+    fun updateDownloadLabel(raw: DownloadLabel) = blockingDb { updateDownloadLabelAsync(raw) }
 
     suspend fun updateDownloadLabelAsync(raw: DownloadLabel) {
         sDatabase.downloadDao().updateLabel(raw)
@@ -424,7 +448,7 @@ object EhDB {
 
     @JvmStatic
     fun moveDownloadLabel(fromPosition: Int, toPosition: Int) =
-        runBlocking { moveDownloadLabelAsync(fromPosition, toPosition) }
+        blockingDb { moveDownloadLabelAsync(fromPosition, toPosition) }
 
     suspend fun moveDownloadLabelAsync(fromPosition: Int, toPosition: Int) {
         if (fromPosition == toPosition) return
@@ -447,7 +471,7 @@ object EhDB {
     }
 
     @JvmStatic
-    fun removeDownloadLabel(raw: DownloadLabel) = runBlocking { removeDownloadLabelAsync(raw) }
+    fun removeDownloadLabel(raw: DownloadLabel) = blockingDb { removeDownloadLabelAsync(raw) }
 
     suspend fun removeDownloadLabelAsync(raw: DownloadLabel) {
         sDatabase.downloadDao().deleteLabel(raw)
@@ -458,14 +482,14 @@ object EhDB {
     // ═══════════════════════════════════════════════════════════
 
     @JvmStatic
-    fun getAllLocalFavorites(): List<GalleryInfo> = runBlocking { getAllLocalFavoritesAsync() }
+    fun getAllLocalFavorites(): List<GalleryInfo> = blockingDb { getAllLocalFavoritesAsync() }
 
     suspend fun getAllLocalFavoritesAsync(): List<GalleryInfo> {
         return ArrayList<GalleryInfo>(sDatabase.browsingDao().getAllLocalFavorites())
     }
 
     @JvmStatic
-    fun searchLocalFavorites(query: String): List<GalleryInfo> = runBlocking { searchLocalFavoritesAsync(query) }
+    fun searchLocalFavorites(query: String): List<GalleryInfo> = blockingDb { searchLocalFavoritesAsync(query) }
 
     suspend fun searchLocalFavoritesAsync(query: String): List<GalleryInfo> {
         val escapedQuery = SqlUtils.sqlEscapeString("%$query%")
@@ -473,21 +497,21 @@ object EhDB {
     }
 
     @JvmStatic
-    fun searchLocalFavorites(query: Long): GalleryInfo? = runBlocking { searchLocalFavoritesByIdAsync(query) }
+    fun searchLocalFavorites(query: Long): GalleryInfo? = blockingDb { searchLocalFavoritesByIdAsync(query) }
 
     suspend fun searchLocalFavoritesByIdAsync(query: Long): GalleryInfo? {
         return sDatabase.browsingDao().loadLocalFavorite(query)
     }
 
     @JvmStatic
-    fun removeLocalFavorites(gid: Long) = runBlocking { removeLocalFavoritesAsync(gid) }
+    fun removeLocalFavorites(gid: Long) = blockingDb { removeLocalFavoritesAsync(gid) }
 
     suspend fun removeLocalFavoritesAsync(gid: Long) {
         sDatabase.browsingDao().deleteLocalFavoriteByKey(gid)
     }
 
     @JvmStatic
-    fun removeLocalFavorites(gidArray: LongArray) = runBlocking { removeLocalFavoritesAsync(gidArray) }
+    fun removeLocalFavorites(gidArray: LongArray) = blockingDb { removeLocalFavoritesAsync(gidArray) }
 
     suspend fun removeLocalFavoritesAsync(gidArray: LongArray) {
         val dao = sDatabase.browsingDao()
@@ -497,14 +521,14 @@ object EhDB {
     }
 
     @JvmStatic
-    fun containLocalFavorites(gid: Long): Boolean = runBlocking { containLocalFavoritesAsync(gid) }
+    fun containLocalFavorites(gid: Long): Boolean = blockingDb { containLocalFavoritesAsync(gid) }
 
     suspend fun containLocalFavoritesAsync(gid: Long): Boolean {
         return sDatabase.browsingDao().loadLocalFavorite(gid) != null
     }
 
     @JvmStatic
-    fun putLocalFavorite(galleryInfo: GalleryInfo) = runBlocking { putLocalFavoriteAsync(galleryInfo) }
+    fun putLocalFavorite(galleryInfo: GalleryInfo) = blockingDb { putLocalFavoriteAsync(galleryInfo) }
 
     suspend fun putLocalFavoriteAsync(galleryInfo: GalleryInfo) {
         val dao = sDatabase.browsingDao()
@@ -519,7 +543,7 @@ object EhDB {
     }
 
     @JvmStatic
-    fun putLocalFavorites(galleryInfoList: List<GalleryInfo>) = runBlocking { putLocalFavoritesAsync(galleryInfoList) }
+    fun putLocalFavorites(galleryInfoList: List<GalleryInfo>) = blockingDb { putLocalFavoritesAsync(galleryInfoList) }
 
     suspend fun putLocalFavoritesAsync(galleryInfoList: List<GalleryInfo>) {
         for (gi in galleryInfoList) {
@@ -532,18 +556,18 @@ object EhDB {
     // ═══════════════════════════════════════════════════════════
 
     @JvmStatic
-    fun getAllBlackList(): List<BlackList> = runBlocking { getAllBlackListAsync() }
+    fun getAllBlackList(): List<BlackList> = blockingDb { getAllBlackListAsync() }
 
     suspend fun getAllBlackListAsync(): List<BlackList> = sDatabase.miscDao().getAllBlackList()
 
     @JvmStatic
-    fun inBlackList(badgayname: String): Boolean = runBlocking { inBlackListAsync(badgayname) }
+    fun inBlackList(badgayname: String): Boolean = blockingDb { inBlackListAsync(badgayname) }
 
     suspend fun inBlackListAsync(badgayname: String): Boolean =
         sDatabase.miscDao().countBlackListByName(badgayname) != 0
 
     @JvmStatic
-    fun insertBlackList(blackList: BlackList) = runBlocking { insertBlackListAsync(blackList) }
+    fun insertBlackList(blackList: BlackList) = blockingDb { insertBlackListAsync(blackList) }
 
     suspend fun insertBlackListAsync(blackList: BlackList) {
         blackList.id = null
@@ -552,14 +576,14 @@ object EhDB {
     }
 
     @JvmStatic
-    fun updateBlackList(blackList: BlackList) = runBlocking { updateBlackListAsync(blackList) }
+    fun updateBlackList(blackList: BlackList) = blockingDb { updateBlackListAsync(blackList) }
 
     suspend fun updateBlackListAsync(blackList: BlackList) {
         sDatabase.miscDao().updateBlackList(blackList)
     }
 
     @JvmStatic
-    fun deleteBlackList(blackList: BlackList) = runBlocking { deleteBlackListAsync(blackList) }
+    fun deleteBlackList(blackList: BlackList) = blockingDb { deleteBlackListAsync(blackList) }
 
     suspend fun deleteBlackListAsync(blackList: BlackList) {
         sDatabase.miscDao().deleteBlackList(blackList)
@@ -570,24 +594,24 @@ object EhDB {
     // ═══════════════════════════════════════════════════════════
 
     @JvmStatic
-    fun getAllGalleryTags(): List<GalleryTags> = runBlocking { getAllGalleryTagsAsync() }
+    fun getAllGalleryTags(): List<GalleryTags> = blockingDb { getAllGalleryTagsAsync() }
 
     suspend fun getAllGalleryTagsAsync(): List<GalleryTags> = sDatabase.miscDao().getAllGalleryTags()
 
     @JvmStatic
-    fun inGalleryTags(gid: Long): Boolean = runBlocking { inGalleryTagsAsync(gid) }
+    fun inGalleryTags(gid: Long): Boolean = blockingDb { inGalleryTagsAsync(gid) }
 
     suspend fun inGalleryTagsAsync(gid: Long): Boolean =
         sDatabase.miscDao().countGalleryTagsByGid(gid) != 0
 
     @JvmStatic
-    fun queryGalleryTags(gid: Long): GalleryTags? = runBlocking { queryGalleryTagsAsync(gid) }
+    fun queryGalleryTags(gid: Long): GalleryTags? = blockingDb { queryGalleryTagsAsync(gid) }
 
     suspend fun queryGalleryTagsAsync(gid: Long): GalleryTags? =
         sDatabase.miscDao().queryGalleryTags(gid)
 
     @JvmStatic
-    fun insertGalleryTags(galleryTags: GalleryTags) = runBlocking { insertGalleryTagsAsync(galleryTags) }
+    fun insertGalleryTags(galleryTags: GalleryTags) = blockingDb { insertGalleryTagsAsync(galleryTags) }
 
     suspend fun insertGalleryTagsAsync(galleryTags: GalleryTags) {
         galleryTags.create_time = Date()
@@ -596,7 +620,7 @@ object EhDB {
     }
 
     @JvmStatic
-    fun updateGalleryTags(galleryTags: GalleryTags) = runBlocking { updateGalleryTagsAsync(galleryTags) }
+    fun updateGalleryTags(galleryTags: GalleryTags) = blockingDb { updateGalleryTagsAsync(galleryTags) }
 
     suspend fun updateGalleryTagsAsync(galleryTags: GalleryTags) {
         galleryTags.update_time = Date()
@@ -604,7 +628,7 @@ object EhDB {
     }
 
     @JvmStatic
-    fun deleteGalleryTags(galleryTags: GalleryTags) = runBlocking { deleteGalleryTagsAsync(galleryTags) }
+    fun deleteGalleryTags(galleryTags: GalleryTags) = blockingDb { deleteGalleryTagsAsync(galleryTags) }
 
     suspend fun deleteGalleryTagsAsync(galleryTags: GalleryTags) {
         sDatabase.miscDao().deleteGalleryTags(galleryTags)
@@ -615,13 +639,13 @@ object EhDB {
     // ═══════════════════════════════════════════════════════════
 
     @JvmStatic
-    fun getAllQuickSearch(): List<QuickSearch> = runBlocking { getAllQuickSearchAsync() }
+    fun getAllQuickSearch(): List<QuickSearch> = blockingDb { getAllQuickSearchAsync() }
 
     suspend fun getAllQuickSearchAsync(): List<QuickSearch> =
         sDatabase.browsingDao().getAllQuickSearch()
 
     @JvmStatic
-    fun insertQuickSearch(quickSearch: QuickSearch) = runBlocking { insertQuickSearchAsync(quickSearch) }
+    fun insertQuickSearch(quickSearch: QuickSearch) = blockingDb { insertQuickSearchAsync(quickSearch) }
 
     suspend fun insertQuickSearchAsync(quickSearch: QuickSearch) {
         quickSearch.id = null
@@ -633,7 +657,7 @@ object EhDB {
 
     @JvmStatic
     fun insertQuickSearchList(quickSearchList: List<QuickSearch>) =
-        runBlocking { insertQuickSearchListAsync(quickSearchList) }
+        blockingDb { insertQuickSearchListAsync(quickSearchList) }
 
     suspend fun insertQuickSearchListAsync(quickSearchList: List<QuickSearch>) {
         val dao = sDatabase.browsingDao()
@@ -646,7 +670,7 @@ object EhDB {
 
     @JvmStatic
     fun takeOverQuickSearchList(quickSearchList: List<QuickSearch>) =
-        runBlocking { takeOverQuickSearchListAsync(quickSearchList) }
+        blockingDb { takeOverQuickSearchListAsync(quickSearchList) }
 
     suspend fun takeOverQuickSearchListAsync(quickSearchList: List<QuickSearch>) {
         val dao = sDatabase.browsingDao()
@@ -668,14 +692,14 @@ object EhDB {
     }
 
     @JvmStatic
-    fun updateQuickSearch(quickSearch: QuickSearch) = runBlocking { updateQuickSearchAsync(quickSearch) }
+    fun updateQuickSearch(quickSearch: QuickSearch) = blockingDb { updateQuickSearchAsync(quickSearch) }
 
     suspend fun updateQuickSearchAsync(quickSearch: QuickSearch) {
         sDatabase.browsingDao().updateQuickSearch(quickSearch)
     }
 
     @JvmStatic
-    fun deleteQuickSearch(quickSearch: QuickSearch) = runBlocking { deleteQuickSearchAsync(quickSearch) }
+    fun deleteQuickSearch(quickSearch: QuickSearch) = blockingDb { deleteQuickSearchAsync(quickSearch) }
 
     suspend fun deleteQuickSearchAsync(quickSearch: QuickSearch) {
         sDatabase.browsingDao().deleteQuickSearch(quickSearch)
@@ -683,7 +707,7 @@ object EhDB {
 
     @JvmStatic
     fun moveQuickSearch(fromPosition: Int, toPosition: Int) =
-        runBlocking { moveQuickSearchAsync(fromPosition, toPosition) }
+        blockingDb { moveQuickSearchAsync(fromPosition, toPosition) }
 
     suspend fun moveQuickSearchAsync(fromPosition: Int, toPosition: Int) {
         if (fromPosition == toPosition) return
@@ -710,7 +734,7 @@ object EhDB {
     // ═══════════════════════════════════════════════════════════
 
     @JvmStatic
-    fun getHistoryLazyList(): List<HistoryInfo> = runBlocking { getHistoryLazyListAsync() }
+    fun getHistoryLazyList(): List<HistoryInfo> = blockingDb { getHistoryLazyListAsync() }
 
     suspend fun getHistoryLazyListAsync(): List<HistoryInfo> {
         val profileId = com.hippo.ehviewer.client.lrr.LRRAuthManager.getActiveProfileId()
@@ -721,7 +745,7 @@ object EhDB {
     }
 
     @JvmStatic
-    fun putHistoryInfo(galleryInfo: GalleryInfo) = runBlocking { putHistoryInfoAsync(galleryInfo) }
+    fun putHistoryInfo(galleryInfo: GalleryInfo) = blockingDb { putHistoryInfoAsync(galleryInfo) }
 
     suspend fun putHistoryInfoAsync(galleryInfo: GalleryInfo) {
         val dao = sDatabase.browsingDao()
@@ -734,7 +758,7 @@ object EhDB {
 
     @JvmStatic
     fun putHistoryInfo(historyInfoList: List<HistoryInfo>) =
-        runBlocking { putHistoryInfoListAsync(historyInfoList) }
+        blockingDb { putHistoryInfoListAsync(historyInfoList) }
 
     suspend fun putHistoryInfoListAsync(historyInfoList: List<HistoryInfo>) {
         val dao = sDatabase.browsingDao()
@@ -745,14 +769,14 @@ object EhDB {
     }
 
     @JvmStatic
-    fun deleteHistoryInfo(info: HistoryInfo) = runBlocking { deleteHistoryInfoAsync(info) }
+    fun deleteHistoryInfo(info: HistoryInfo) = blockingDb { deleteHistoryInfoAsync(info) }
 
     suspend fun deleteHistoryInfoAsync(info: HistoryInfo) {
         sDatabase.browsingDao().deleteHistoryByKey(info.gid)
     }
 
     @JvmStatic
-    fun clearHistoryInfo() = runBlocking { clearHistoryInfoAsync() }
+    fun clearHistoryInfo() = blockingDb { clearHistoryInfoAsync() }
 
     suspend fun clearHistoryInfoAsync() {
         sDatabase.browsingDao().deleteAllHistory()
@@ -763,12 +787,12 @@ object EhDB {
     // ═══════════════════════════════════════════════════════════
 
     @JvmStatic
-    fun getAllFilter(): List<Filter> = runBlocking { getAllFilterAsync() }
+    fun getAllFilter(): List<Filter> = blockingDb { getAllFilterAsync() }
 
     suspend fun getAllFilterAsync(): List<Filter> = sDatabase.browsingDao().getAllFilters()
 
     @JvmStatic
-    fun addFilter(filter: Filter) = runBlocking { addFilterAsync(filter) }
+    fun addFilter(filter: Filter) = blockingDb { addFilterAsync(filter) }
 
     suspend fun addFilterAsync(filter: Filter) {
         filter.id = null
@@ -776,14 +800,14 @@ object EhDB {
     }
 
     @JvmStatic
-    fun deleteFilter(filter: Filter) = runBlocking { deleteFilterAsync(filter) }
+    fun deleteFilter(filter: Filter) = blockingDb { deleteFilterAsync(filter) }
 
     suspend fun deleteFilterAsync(filter: Filter) {
         sDatabase.browsingDao().deleteFilter(filter)
     }
 
     @JvmStatic
-    fun triggerFilter(filter: Filter) = runBlocking { triggerFilterAsync(filter) }
+    fun triggerFilter(filter: Filter) = blockingDb { triggerFilterAsync(filter) }
 
     suspend fun triggerFilterAsync(filter: Filter) {
         filter.enable = filter.enable != true
@@ -795,24 +819,24 @@ object EhDB {
     // ═══════════════════════════════════════════════════════════
 
     @JvmStatic
-    fun getAllBookmarks(): List<BookmarkInfo> = runBlocking { getAllBookmarksAsync() }
+    fun getAllBookmarks(): List<BookmarkInfo> = blockingDb { getAllBookmarksAsync() }
 
     suspend fun getAllBookmarksAsync(): List<BookmarkInfo> = sDatabase.miscDao().getAllBookmarks()
 
     @JvmStatic
-    fun insertBookmark(bookmark: BookmarkInfo) = runBlocking { insertBookmarkAsync(bookmark) }
+    fun insertBookmark(bookmark: BookmarkInfo) = blockingDb { insertBookmarkAsync(bookmark) }
 
     suspend fun insertBookmarkAsync(bookmark: BookmarkInfo) {
         sDatabase.miscDao().insertBookmark(bookmark)
     }
 
     @JvmStatic
-    fun loadBookmark(gid: Long): BookmarkInfo? = runBlocking { loadBookmarkAsync(gid) }
+    fun loadBookmark(gid: Long): BookmarkInfo? = blockingDb { loadBookmarkAsync(gid) }
 
     suspend fun loadBookmarkAsync(gid: Long): BookmarkInfo? = sDatabase.miscDao().loadBookmark(gid)
 
     @JvmStatic
-    fun deleteBookmark(gid: Long) = runBlocking { deleteBookmarkAsync(gid) }
+    fun deleteBookmark(gid: Long) = blockingDb { deleteBookmarkAsync(gid) }
 
     suspend fun deleteBookmarkAsync(gid: Long) {
         sDatabase.miscDao().deleteBookmarkByKey(gid)
@@ -823,45 +847,45 @@ object EhDB {
     // ═══════════════════════════════════════════════════════════
 
     @JvmStatic
-    fun getAllServerProfiles(): List<ServerProfile> = runBlocking { getAllServerProfilesAsync() }
+    fun getAllServerProfiles(): List<ServerProfile> = blockingDb { getAllServerProfilesAsync() }
 
     suspend fun getAllServerProfilesAsync(): List<ServerProfile> =
         sDatabase.miscDao().getAllServerProfiles()
 
     @JvmStatic
-    fun getActiveProfile(): ServerProfile? = runBlocking { getActiveProfileAsync() }
+    fun getActiveProfile(): ServerProfile? = blockingDb { getActiveProfileAsync() }
 
     suspend fun getActiveProfileAsync(): ServerProfile? =
         sDatabase.miscDao().getActiveProfile()
 
     @JvmStatic
-    fun findProfileByUrl(url: String): ServerProfile? = runBlocking { findProfileByUrlAsync(url) }
+    fun findProfileByUrl(url: String): ServerProfile? = blockingDb { findProfileByUrlAsync(url) }
 
     suspend fun findProfileByUrlAsync(url: String): ServerProfile? =
         sDatabase.miscDao().findProfileByUrl(url)
 
     @JvmStatic
-    fun insertServerProfile(profile: ServerProfile): Long = runBlocking { insertServerProfileAsync(profile) }
+    fun insertServerProfile(profile: ServerProfile): Long = blockingDb { insertServerProfileAsync(profile) }
 
     suspend fun insertServerProfileAsync(profile: ServerProfile): Long =
         sDatabase.miscDao().insertServerProfile(profile)
 
     @JvmStatic
-    fun updateServerProfile(profile: ServerProfile) = runBlocking { updateServerProfileAsync(profile) }
+    fun updateServerProfile(profile: ServerProfile) = blockingDb { updateServerProfileAsync(profile) }
 
     suspend fun updateServerProfileAsync(profile: ServerProfile) {
         sDatabase.miscDao().updateServerProfile(profile)
     }
 
     @JvmStatic
-    fun deleteServerProfile(profile: ServerProfile) = runBlocking { deleteServerProfileAsync(profile) }
+    fun deleteServerProfile(profile: ServerProfile) = blockingDb { deleteServerProfileAsync(profile) }
 
     suspend fun deleteServerProfileAsync(profile: ServerProfile) {
         sDatabase.miscDao().deleteServerProfile(profile)
     }
 
     @JvmStatic
-    fun deactivateAllProfiles() = runBlocking { deactivateAllProfilesAsync() }
+    fun deactivateAllProfiles() = blockingDb { deactivateAllProfilesAsync() }
 
     suspend fun deactivateAllProfilesAsync() {
         sDatabase.miscDao().deactivateAllProfiles()
