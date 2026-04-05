@@ -170,9 +170,15 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
                     Log.i(TAG, "[PROGRESS] GalleryView ref=${if (gv != null) "OK" else "NULL"}")
                     if (gv != null) {
                         // Post with delay to ensure GL layout is attached
+                        val weakGv = java.lang.ref.WeakReference(gv)
                         Handler(Looper.getMainLooper()).postDelayed({
-                            gv.setCurrentPage(finalPage)
-                            Log.i(TAG, "[PROGRESS] setCurrentPage($finalPage) called")
+                            val view = weakGv.get()
+                            if (view != null && !stopped) {
+                                view.setCurrentPage(finalPage)
+                                Log.i(TAG, "[PROGRESS] setCurrentPage($finalPage) called")
+                            } else {
+                                Log.w(TAG, "[PROGRESS] GalleryView gone before setCurrentPage")
+                            }
                         }, 300)
                     }
                 }
