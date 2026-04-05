@@ -73,4 +73,60 @@ class LRRDatabaseApiTest {
             assertEquals(500, e.code)
         }
     }
+
+    // ── getTagStats (typed) ───────────────────────────────────────
+
+    @Test
+    fun getTagStats_success() = runTest {
+        val statsJson = """[
+            {"namespace":"artist","text":"foo","weight":5},
+            {"namespace":"parody","text":"bar","weight":10}
+        ]"""
+        server.enqueue(MockResponse().setBody(statsJson))
+
+        val result = LRRDatabaseApi.getTagStats(client, baseUrl)
+        assertEquals(2, result.size)
+        assertEquals("artist", result[0].namespace)
+        assertEquals("foo", result[0].text)
+        assertEquals(5, result[0].weight)
+        assertEquals("parody", result[1].namespace)
+        assertEquals("bar", result[1].text)
+        assertEquals(10, result[1].weight)
+
+        val req = server.takeRequest()
+        assertEquals("GET", req.method)
+        assertEquals("/api/database/stats", req.path)
+    }
+
+    @Test
+    fun getTagStats_emptyArray() = runTest {
+        server.enqueue(MockResponse().setBody("[]"))
+
+        val result = LRRDatabaseApi.getTagStats(client, baseUrl)
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun getTagStats_serverError() = runTest {
+        repeat(3) {
+            server.enqueue(MockResponse().setResponseCode(500).setBody("Internal error"))
+        }
+        try {
+            LRRDatabaseApi.getTagStats(client, baseUrl)
+            fail("Should have thrown LRRHttpException")
+        } catch (e: LRRHttpException) {
+            assertEquals(500, e.code)
+        }
+    }
+
+    @Test
+    fun getTagStats_emptyBody() = runTest {
+        server.enqueue(MockResponse().setResponseCode(200).setBody(""))
+        try {
+            LRRDatabaseApi.getTagStats(client, baseUrl)
+            fail("Should have thrown")
+        } catch (_: Exception) {
+            // LRREmptyBodyException or serialization error — both acceptable
+        }
+    }
 }
