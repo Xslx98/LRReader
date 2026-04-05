@@ -41,9 +41,12 @@ import android.widget.ListView
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.EhTagDatabase.Companion.NAMESPACE_TO_PREFIX
+import com.hippo.ehviewer.client.lrr.LRRTagCache
 import com.hippo.ehviewer.settings.AppearanceSettings
+import kotlinx.coroutines.launch
 import com.hippo.lib.yorozuya.AnimationUtils
 import com.hippo.lib.yorozuya.MathUtils
 import com.hippo.lib.yorozuya.SimpleAnimatorListener
@@ -172,6 +175,9 @@ class SearchBar @JvmOverloads constructor(
             mSuggestionList.add(HistorySuggestion(keyword))
         }
 
+        // Track keywords already added to avoid duplicates between local and server tags
+        val existingTagKeys = mutableSetOf<String>()
+
         val ehTagDatabase = EhTagDatabase.getInstance(getContext())
         if (!TextUtils.isEmpty(text) && ehTagDatabase != null) {
             val s = text.split(" ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
@@ -194,12 +200,24 @@ class SearchBar @JvmOverloads constructor(
                     val searchHints = ehTagDatabase.suggest(keyword)
 
                     for (searchHint in searchHints) {
+                        existingTagKeys.add(searchHint.second.lowercase())
                         if (showTranslation) {
                             mSuggestionList.add(TagSuggestion(searchHint.first, searchHint.second))
                         } else {
                             mSuggestionList.add(TagSuggestion(null, searchHint.second))
                         }
                     }
+                }
+            }
+        }
+
+        // LRR server tag suggestions (from in-memory cache, no network call)
+        if (text.isNotEmpty()) {
+            val lrrTags = LRRTagCache.suggest(text)
+            for (tag in lrrTags) {
+                val fullTag = "${tag.namespace}:${tag.text}"
+                if (fullTag.lowercase() !in existingTagKeys) {
+                    mSuggestionList.add(TagSuggestion(null, fullTag))
                 }
             }
         }
@@ -404,6 +422,18 @@ class SearchBar @JvmOverloads constructor(
         // Show ime
         val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.showSoftInput(mEditText, 0)
+        // Pre-populate LRR tag cache if needed (async, won't block UI)
+        if (LRRTagCache.needsRefresh()) {
+            try {
+                ServiceRegistry.coroutineModule.ioScope.launch {
+                    LRRTagCache.getTags()
+                    // Refresh suggestions on the UI thread once cache is ready
+                    post { updateSuggestions(false) }
+                }
+            } catch (_: Exception) {
+                // ServiceRegistry may not be initialized in some edge cases
+            }
+        }
         // update suggestion for show suggestions list
         updateSuggestions()
         // Show suggestions list
