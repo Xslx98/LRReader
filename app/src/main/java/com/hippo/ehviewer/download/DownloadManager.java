@@ -89,7 +89,7 @@ public class DownloadManager {
     private DownloadListener mDownloadListener;
     private final List<DownloadInfoListener> mDownloadInfoListeners;
 
-    private final List<DownloadInfo> mActiveTasks = new ArrayList<>();
+    private final List<DownloadInfo> mActiveTasks = new java.util.concurrent.CopyOnWriteArrayList<>();
     private final Map<DownloadInfo, LRRDownloadWorker> mActiveWorkers = new java.util.concurrent.ConcurrentHashMap<>();
 
     private final ConcurrentPool<NotifyTask> mNotifyTaskPool = new ConcurrentPool<>(5);
@@ -157,7 +157,7 @@ public class DownloadManager {
         }
 
         mWaitList = new LinkedList<>();
-        mDownloadInfoListeners = new ArrayList<>();
+        mDownloadInfoListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
         mSpeedReminder = new DownloadSpeedTracker(new DownloadSpeedTracker.Callback() {
             @Override
             public DownloadInfo getFirstActiveTask() {
