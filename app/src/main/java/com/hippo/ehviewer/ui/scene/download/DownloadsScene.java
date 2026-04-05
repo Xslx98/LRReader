@@ -113,6 +113,7 @@ import com.hippo.lib.yorozuya.collect.LongList;
 import com.hippo.ripple.Ripple;
 import com.hippo.unifile.UniFile;
 import com.hippo.util.DrawableManager;
+import com.hippo.ehviewer.util.FlowBridge;
 import com.hippo.util.IoThreadPoolExecutor;
 import com.hippo.view.ViewTransition;
 import com.hippo.widget.FabLayout;
@@ -721,6 +722,22 @@ public class DownloadsScene extends ToolbarScene
         super.onViewCreated(view, savedInstanceState);
         updateTitle();
         setNavigationIcon(R.drawable.v_arrow_left_dark_x24);
+
+        // Subscribe to Room Flow for reactive download list structure changes.
+        // This handles add/remove/state changes persisted to the database.
+        // Progress updates (speed, downloaded, total) are @Ignore fields and
+        // continue to use the existing DownloadInfoListener callback mechanism.
+        FlowBridge.collectFlow(getViewLifecycleOwner(), EhDB.observeDownloads(), downloads -> {
+            if (mAdapter == null || searching) {
+                return;
+            }
+            // Apply DiffUtil against the last known snapshot
+            List<DownloadInfo> newList = new ArrayList<>(downloads);
+            DiffUtil.DiffResult result = DiffUtil.calculateDiff(
+                    new DownloadInfoDiffCallback(mLastSnapshot, newList));
+            mLastSnapshot = newList;
+            result.dispatchUpdatesTo(mAdapter);
+        });
     }
 
     @Override
