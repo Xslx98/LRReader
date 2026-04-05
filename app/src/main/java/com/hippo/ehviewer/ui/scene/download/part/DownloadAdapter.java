@@ -391,7 +391,8 @@ public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.Downlo
         if (fromPosInList >= 0 && fromPosInList < list.size() &&
                 toPosInList >= 0 && toPosInList < list.size()) {
             // 先更新数据库中的顺序（通过 time 字段）
-            EhDB.moveDownloadInfo(list, fromPosInList, toPosInList);
+            IoThreadPoolExecutor.Companion.getInstance().execute(() ->
+                EhDB.moveDownloadInfo(list, fromPosInList, toPosInList));
 
             // 再尝试更新当前列表的内存顺序
             // 某些场景下（如搜索结果列表）mList 可能是 Arrays.asList(...)

@@ -107,6 +107,7 @@ import com.hippo.scene.SceneFragment;
 import com.hippo.scene.StageActivity;
 import com.hippo.unifile.UniFile;
 import com.hippo.util.BitmapUtils;
+import com.hippo.util.IoThreadPoolExecutor;
 import com.hippo.util.GifHandler;
 import com.hippo.util.PermissionRequester;
 import com.hippo.widget.AvatarImageView;
@@ -869,12 +870,16 @@ public final class MainActivity extends StageActivity
                 break;
             case R.id.nav_server_config:
                 // Show server list if profiles exist, otherwise direct to config
-                int profileCount = EhDB.getAllServerProfiles().size();
-                if (profileCount > 0) {
-                    startScene(new Announcer(ServerListScene.class));
-                } else {
-                    startScene(new Announcer(ServerConfigScene.class));
-                }
+                IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+                    int profileCount = EhDB.getAllServerProfiles().size();
+                    runOnUiThread(() -> {
+                        if (profileCount > 0) {
+                            startScene(new Announcer(ServerListScene.class));
+                        } else {
+                            startScene(new Announcer(ServerConfigScene.class));
+                        }
+                    });
+                });
                 break;
             default:
                 break;
