@@ -135,7 +135,7 @@ class GalleryListSceneDialog(val baseScene: BaseScene) {
         private val tagState: Boolean
     ) :
         EhCallback<GalleryListScene?, UserTagList?>(context, stageId, sceneTag) {
-        override fun isInstance(scene: SceneFragment): Boolean {
+        override fun isInstance(scene: SceneFragment?): Boolean {
             return false
         }
 
