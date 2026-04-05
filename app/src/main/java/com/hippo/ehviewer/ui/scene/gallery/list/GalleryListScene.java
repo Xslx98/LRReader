@@ -27,13 +27,9 @@ import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.InputType;
-import android.text.Spannable;
-import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
-import android.text.style.ImageSpan;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
@@ -82,7 +78,6 @@ import com.hippo.ehviewer.client.EhCacheKeyFactory;
 import com.hippo.ehviewer.client.EhClient;
 import com.hippo.ehviewer.client.EhRequest;
 import com.hippo.ehviewer.client.EhTagDatabase;
-import com.hippo.ehviewer.client.EhUrl;
 import com.hippo.ehviewer.client.EhUtils;
 import com.hippo.ehviewer.client.data.GalleryInfo;
 import com.hippo.ehviewer.client.data.ListUrlBuilder;
@@ -91,11 +86,8 @@ import com.hippo.ehviewer.client.data.userTag.UserTagList;
 import com.hippo.ehviewer.client.exception.EhException;
 import com.hippo.ehviewer.client.lrr.LRRAuthManager;
 import com.hippo.ehviewer.client.lrr.LRRSearchApi;
-import com.hippo.ehviewer.client.lrr.data.LRRArchive;
 import com.hippo.ehviewer.client.lrr.data.LRRSearchResult;
-import com.hippo.ehviewer.client.parser.GalleryDetailUrlParser;
 import com.hippo.ehviewer.client.parser.GalleryListParser;
-import com.hippo.ehviewer.client.parser.GalleryPageUrlParser;
 
 import com.hippo.ehviewer.dao.DownloadInfo;
 import com.hippo.ehviewer.dao.QuickSearch;
@@ -109,7 +101,6 @@ import com.hippo.ehviewer.ui.dialog.SelectItemWithIconAdapter;
 import com.hippo.ehviewer.ui.scene.BaseScene;
 import com.hippo.ehviewer.ui.scene.EhCallback;
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene;
-import com.hippo.ehviewer.ui.scene.ProgressScene;
 import com.hippo.ehviewer.util.TagTranslationUtil;
 import com.hippo.ehviewer.widget.GalleryInfoContentHelper;
 import com.hippo.ehviewer.widget.JumpDateSelector;
@@ -120,7 +111,6 @@ import com.hippo.ripple.Ripple;
 import com.hippo.scene.Announcer;
 import com.hippo.scene.SceneFragment;
 import com.hippo.util.AppHelper;
-import com.hippo.util.DrawableManager;
 import com.hippo.view.ViewTransition;
 import com.hippo.widget.ContentLayout;
 import com.hippo.widget.FabLayout;
@@ -128,7 +118,6 @@ import com.hippo.widget.LoadImageViewNew;
 import com.hippo.widget.SearchBarMover;
 import com.hippo.lib.yorozuya.AnimationUtils;
 import com.hippo.lib.yorozuya.AssertUtils;
-import com.hippo.lib.yorozuya.MathUtils;
 import com.hippo.lib.yorozuya.SimpleAnimatorListener;
 import com.hippo.lib.yorozuya.StringUtils;
 import com.hippo.lib.yorozuya.ViewUtils;
@@ -138,7 +127,6 @@ import java.io.File;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -248,6 +236,9 @@ public final class GalleryListScene extends BaseScene
 
     @Nullable
     private GalleryUploadHelper mUploadHelper;
+
+    @Nullable
+    private GallerySearchHelper mSearchHelper;
 
     @Nullable
     private final Animator.AnimatorListener mActionFabAnimatorListener = new SimpleAnimatorListener() {
@@ -471,88 +462,8 @@ public final class GalleryListScene extends BaseScene
         mFavouriteStatusRouter.removeListener(mFavouriteStatusRouterListener);
     }
 
-    private void setSearchBarHint(Context context, SearchBar searchBar) {
-        Resources resources = context.getResources();
-        Drawable searchImage = DrawableManager.getVectorDrawable(context, R.drawable.v_magnify_x24);
-        SpannableStringBuilder ssb = new SpannableStringBuilder("   ");
-        ssb.append(resources.getString(EhUrl.SITE_EX == AppearanceSettings.getGallerySite() ?
-                R.string.gallery_list_search_bar_hint_exhentai :
-                R.string.gallery_list_search_bar_hint_e_hentai));
-        int textSize = (int) (searchBar.getEditTextTextSize() * 1.25);
-        if (searchImage != null) {
-            searchImage.setBounds(0, 0, textSize, textSize);
-            ssb.setSpan(new ImageSpan(searchImage), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        }
-        searchBar.setEditTextHint(ssb);
-    }
-
-    private void setSearchBarSuggestionProvider(SearchBar searchBar) {
-        searchBar.setSuggestionProvider(text -> {
-            GalleryDetailUrlParser.Result result1 = GalleryDetailUrlParser.parse(text, false);
-            if (result1 != null) {
-                return Collections.singletonList(new GalleryDetailUrlSuggestion(result1.gid, result1.token));
-            }
-            GalleryPageUrlParser.Result result2 = GalleryPageUrlParser.parse(text, false);
-            if (result2 != null) {
-                return Collections.singletonList(new GalleryPageUrlSuggestion(result2.gid, result2.pToken, result2.page));
-            }
-            return null;
-        });
-    }
-
-    @Nullable
-    private static String getSuitableTitleForUrlBuilder(
-            Resources resources, ListUrlBuilder urlBuilder, boolean appName) {
-        String keyword = urlBuilder.getKeyword();
-        int category = urlBuilder.getCategory();
-
-        if (ListUrlBuilder.MODE_NORMAL == urlBuilder.getMode() &&
-                EhUtils.NONE == category &&
-                TextUtils.isEmpty(keyword) &&
-                urlBuilder.getAdvanceSearch() == -1 &&
-                urlBuilder.getMinRating() == -1 &&
-                urlBuilder.getPageFrom() == -1 &&
-                urlBuilder.getPageTo() == -1) {
-            return resources.getString(appName ? R.string.app_name : R.string.homepage);
-        } else if (ListUrlBuilder.MODE_SUBSCRIPTION == urlBuilder.getMode() &&
-                EhUtils.NONE == category &&
-                TextUtils.isEmpty(keyword) &&
-                urlBuilder.getAdvanceSearch() == -1 &&
-                urlBuilder.getMinRating() == -1 &&
-                urlBuilder.getPageFrom() == -1 &&
-                urlBuilder.getPageTo() == -1) {
-            return resources.getString(R.string.subscription);
-        } else if (ListUrlBuilder.MODE_WHATS_HOT == urlBuilder.getMode()) {
-            return resources.getString(R.string.whats_hot);
-        } else if (!TextUtils.isEmpty(keyword)) {
-            return keyword;
-        } else if (MathUtils.hammingWeight(category) == 1) {
-            return EhUtils.getCategory(category);
-        } else {
-            return null;
-        }
-    }
-
-    private String wrapTagKeyword(String keyword) {
-        keyword = keyword.trim();
-
-        int index1 = keyword.indexOf(':');
-        if (index1 == -1 || index1 >= keyword.length() - 1) {
-            // Can't find :, or : is the last char
-            return keyword;
-        }
-        if (keyword.charAt(index1 + 1) == '"') {
-            // The char after : is ", the word must be quoted
-            return keyword;
-        }
-        int index2 = keyword.indexOf(' ');
-        if (index2 <= index1) {
-            // Can't find space, or space is before :
-            return keyword;
-        }
-
-        return keyword.substring(0, index1 + 1) + "\"" + keyword.substring(index1 + 1) + "$\"";
-    }
+    // Search bar hint, suggestion provider, title computation, keyword wrapping,
+    // and LRR search result conversion are delegated to GallerySearchHelper.
 
     // Update search bar title, drawer checked item
     void onUpdateUrlBuilder() {
@@ -570,14 +481,14 @@ public final class GalleryListScene extends BaseScene
         // Update search edit text
         if (!TextUtils.isEmpty(keyword) && null != mSearchBar) {
             if (builder.getMode() == ListUrlBuilder.MODE_TAG) {
-                keyword = wrapTagKeyword(keyword);
+                keyword = GallerySearchHelper.wrapTagKeyword(keyword);
             }
             mSearchBar.setText(keyword);
             mSearchBar.cursorToEnd();
         }
 
         // Update title
-        String title = getSuitableTitleForUrlBuilder(resources, builder, true);
+        String title = GallerySearchHelper.getSuitableTitleForUrlBuilder(resources, builder, true);
         if (null == title) {
             title = resources.getString(R.string.search);
         }
@@ -633,6 +544,28 @@ public final class GalleryListScene extends BaseScene
         mViewTransition = new ViewTransition(contentLayout, mSearchLayout);
 
         mHelper = new GalleryListHelper();
+        mSearchHelper = new GallerySearchHelper(new GallerySearchHelper.Callback() {
+            @Override
+            public Context getHostContext() {
+                return getEHContext();
+            }
+            @Override
+            public Resources getHostResources() {
+                return getResources2();
+            }
+            @Override
+            public void navigateToScene(Announcer announcer) {
+                startScene(announcer);
+            }
+            @Override
+            public int getSearchState() {
+                return mState;
+            }
+            @Override
+            public void setSearchState(int state) {
+                setState(state);
+            }
+        });
         mUploadHelper = new GalleryUploadHelper(new GalleryUploadHelper.Callback() {
             @Override
             public void showTip(String message, int length) {
@@ -693,8 +626,8 @@ public final class GalleryListScene extends BaseScene
         mSearchBar.setRightDrawable(mRightDrawable);
         mSearchBar.setHelper(this);
         mSearchBar.setOnStateChangeListener(this);
-        setSearchBarHint(context, mSearchBar);
-        setSearchBarSuggestionProvider(mSearchBar);
+        GallerySearchHelper.setSearchBarHint(context, mSearchBar);
+        mSearchBar.setSuggestionProvider(mSearchHelper.createSuggestionProvider());
 
         mSearchLayout.setHelper(this);
         mSearchLayout.setPadding(mSearchLayout.getPaddingLeft(), mSearchLayout.getPaddingTop() + paddingTopSB,
@@ -1012,7 +945,7 @@ public final class GalleryListScene extends BaseScene
         }
 
         final EditTextDialogBuilder builder = new EditTextDialogBuilder(context,
-                getSuitableTitleForUrlBuilder(context.getResources(), urlBuilder, false), getString(R.string.quick_search));
+                GallerySearchHelper.getSuitableTitleForUrlBuilder(context.getResources(), urlBuilder, false), getString(R.string.quick_search));
         builder.setTitle(R.string.add_quick_search_dialog_title);
         builder.setPositiveButton(android.R.string.ok, null);
         final AlertDialog dialog = builder.show();
@@ -1156,7 +1089,7 @@ public final class GalleryListScene extends BaseScene
         }
 
         if (userTagList == null || userTagList.userTags == null) {
-            return getSuitableTitleForUrlBuilder(getEHContext().getResources(), urlBuilder, false);
+            return GallerySearchHelper.getSuitableTitleForUrlBuilder(getEHContext().getResources(), urlBuilder, false);
         }
         // Check duplicate
         for (UserTag q : userTagList.userTags) {
@@ -1165,7 +1098,7 @@ public final class GalleryListScene extends BaseScene
                 return null;
             }
         }
-        return getSuitableTitleForUrlBuilder(getEHContext().getResources(), urlBuilder, false);
+        return GallerySearchHelper.getSuitableTitleForUrlBuilder(getEHContext().getResources(), urlBuilder, false);
     }
 
 
@@ -1978,28 +1911,10 @@ public final class GalleryListScene extends BaseScene
                 mHelper.isCurrentTask(taskId)) {
             mHelper.setEmptyString(getString(R.string.gallery_list_empty_hit));
 
-            // Convert LRRArchive list to GalleryInfo list
-            List<GalleryInfo> galleryInfoList = new ArrayList<>();
-            if (result.data != null) {
-                for (LRRArchive archive : result.data) {
-                    galleryInfoList.add(archive.toGalleryInfo());
-                }
-            }
-
-            // Compute pagination
-            int pageSize = galleryInfoList.size();
-            int totalRecords = result.recordsFiltered;
-            int totalPages;
-            int nextPage;
-            if (pageSize > 0) {
-                totalPages = (int) Math.ceil((double) totalRecords / pageSize);
-                nextPage = page + 1 < totalPages ? page + 1 : 0;
-            } else {
-                totalPages = 1;
-                nextPage = 0;
-            }
-
-            mHelper.onGetPageData(taskId, totalPages, nextPage, galleryInfoList);
+            GallerySearchHelper.LRRPaginatedResult paginated =
+                    GallerySearchHelper.convertLRRSearchResult(result, page);
+            mHelper.onGetPageData(taskId, paginated.totalPages,
+                    paginated.nextPage, paginated.galleryInfoList);
         }
     }
 
@@ -2010,88 +1925,8 @@ public final class GalleryListScene extends BaseScene
         }
     }
 
-    private abstract class UrlSuggestion extends SearchBar.Suggestion {
-        @Override
-        public CharSequence getText(float textSize) {
-            Drawable bookImage = DrawableManager.getVectorDrawable(getEHContext(), R.drawable.v_book_open_x24);
-            SpannableStringBuilder ssb = new SpannableStringBuilder("    ");
-            ssb.append(getResources2().getString(R.string.gallery_list_search_bar_open_gallery));
-            int imageSize = (int) (textSize * 1.25);
-            if (bookImage != null) {
-                bookImage.setBounds(0, 0, imageSize, imageSize);
-                ssb.setSpan(new ImageSpan(bookImage), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            }
-            return ssb;
-        }
-
-        @Override
-        public void onClick() {
-            startScene(createAnnouncer());
-
-            if (mState == STATE_SIMPLE_SEARCH) {
-                setState(STATE_NORMAL);
-            } else if (mState == STATE_SEARCH_SHOW_LIST) {
-                setState(STATE_SEARCH);
-            }
-        }
-
-        public abstract Announcer createAnnouncer();
-
-        @Override
-        public void onLongClick() {
-        }
-    }
-
-    private class GalleryDetailUrlSuggestion extends UrlSuggestion {
-        private final long mGid;
-        private final String mToken;
-
-        private GalleryDetailUrlSuggestion(long gid, String token) {
-            mGid = gid;
-            mToken = token;
-        }
-
-        @Override
-        public Announcer createAnnouncer() {
-            Bundle args = new Bundle();
-            args.putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_GID_TOKEN);
-            args.putLong(GalleryDetailScene.KEY_GID, mGid);
-            args.putString(GalleryDetailScene.KEY_TOKEN, mToken);
-            return new Announcer(GalleryDetailScene.class).setArgs(args);
-        }
-
-        @Override
-        public CharSequence getText(TextView textView) {
-            return null;
-        }
-    }
-
-    private class GalleryPageUrlSuggestion extends UrlSuggestion {
-        private final long mGid;
-        private final String mPToken;
-        private final int mPage;
-
-        private GalleryPageUrlSuggestion(long gid, String pToken, int page) {
-            mGid = gid;
-            mPToken = pToken;
-            mPage = page;
-        }
-
-        @Override
-        public Announcer createAnnouncer() {
-            Bundle args = new Bundle();
-            args.putString(ProgressScene.KEY_ACTION, ProgressScene.ACTION_GALLERY_TOKEN);
-            args.putLong(ProgressScene.KEY_GID, mGid);
-            args.putString(ProgressScene.KEY_PTOKEN, mPToken);
-            args.putInt(ProgressScene.KEY_PAGE, mPage);
-            return new Announcer(ProgressScene.class).setArgs(args);
-        }
-
-        @Override
-        public CharSequence getText(TextView textView) {
-            return null;
-        }
-    }
+    // URL suggestion classes (UrlSuggestion, GalleryDetailUrlSuggestion,
+    // GalleryPageUrlSuggestion) moved to GallerySearchHelper.
 
     private class GalleryListAdapter extends GalleryAdapterNew {
 
