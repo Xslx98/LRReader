@@ -28,7 +28,9 @@
 | Security | EncryptedSharedPreferences | 1.1.0 |
 | UI | Material Design + AndroidX | Material 1.13.0 |
 | Static Analysis | Detekt | 1.23.7 (config: `config/detekt/detekt.yml`) |
-| ABI | arm64-v8a, x86_64 | 64-bit only |
+| Paging | Jetpack Paging 3 | 3.3.6 |
+| ViewModel | AndroidX lifecycle-viewmodel-ktx | 2.8.7 |
+| ABI | arm64-v8a | 64-bit ARM only |
 
 ---
 
@@ -97,13 +99,19 @@ LRReader/
 | `settings/NetworkSettings.kt` | Network/proxy preferences |
 | `settings/ReadingSettings.kt` | Reader preferences |
 | `settings/SecuritySettings.kt` | Auth/security preferences |
-| `client/lrr/LRRArchiveApi.kt` | Archive search/list/detail/upload/delete API |
+| `client/lrr/LRRArchiveApi.kt` | Archive search/list/detail/upload/delete/metadata API |
 | `client/lrr/LRRSearchApi.kt` | Search + random endpoint |
 | `client/lrr/LRRCategoryApi.kt` | Category CRUD + archive association |
+| `client/lrr/LRRDatabaseApi.kt` | Tag statistics + database operations |
+| `client/lrr/LRRTagCache.kt` | In-memory tag autocomplete cache (10-min TTL) |
+| `client/lrr/LRRArchivePagingSource.kt` | Paging 3 source for gallery list |
 | `dao/AppDatabase.kt` | Room database schema (v11, schema exported) |
+| `util/FlowBridge.kt` | Java→Kotlin Flow bridge for lifecycle-aware collection |
 | `ui/MainActivity.java` | Main UI entry point + scene routing |
 | `ui/GalleryActivity.java` | Reader/detail view |
 | `ui/scene/GalleryListScene.java` | Gallery browse scene |
+| `ui/scene/gallery/list/GalleryListViewModel.kt` | Paging 3 ViewModel for gallery list |
+| `ui/scene/gallery/detail/TagEditDialog.kt` | Grouped tag editor (chip-style, per-namespace) |
 
 ---
 
@@ -324,6 +332,14 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 13. **GifHandler lifecycle:** `GifHandler` implements `Closeable` with native `destroy()` that calls `DGifCloseFile()` + `free()`. Always `close()` when done — native memory is NOT garbage collected.
 
+14. **Tag autocomplete:** `LRRTagCache` fetches tag statistics from `/api/database/stats` with 10-min TTL. `SearchBar` queries it for inline suggestions alongside local `EhTagDatabase` translations. Cache cleared on server switch via `ServiceRegistry.clearAllCaches()`.
+
+15. **Room Flow observation:** `DownloadRoomDao` provides `Flow<List<DownloadInfo>>` queries. `DownloadsScene` subscribes via `FlowBridge.collectFlow()` for reactive list updates. Flow handles structure changes (add/remove/state); existing callbacks handle real-time download progress (`@Ignore` fields not persisted to Room).
+
+16. **Paging 3 infrastructure:** `LRRArchivePagingSource` + `GalleryListViewModel` provide paginated gallery loading. Not yet wired to GalleryListScene UI (pending Kotlin migration of that Scene). Config: pageSize=100, prefetchDistance=20.
+
+17. **Tag editor:** `TagEditDialog.kt` shows a grouped chip-style editor using the same `RoundSideRectDrawable` visual style as the detail page. Click to edit, long-press to delete, [+] to add per namespace. Supports `AutoCompleteTextView` with `LRRTagCache` suggestions. Entry point: pencil icon in tag display area.
+
 ---
 
 ## What NOT to Do
@@ -337,3 +353,7 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 - Do not use Gson — use `kotlinx-serialization` for all JSON
 - Do not hardcode dependency versions in `build.gradle` — use `libs.versions.toml`
 - Do not add new singletons to `EhApplication` — use `ServiceRegistry` modules
+- Do not add new `blockingDb()` bridges in `EhDB` — Kotlin callers use `suspend` Async versions directly
+- Do not use `notifyDataSetChanged()` on RecyclerView — use DiffUtil or specific `notifyItem*()` calls
+- Do not introduce new visual themes or Material3 components — match existing `RoundSideRectDrawable` + theme attr style
+- Do not add `x86_64` ABI filter — release builds are arm64-v8a only
