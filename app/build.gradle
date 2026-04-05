@@ -125,6 +125,10 @@ dependencies {
     implementation libs.coroutines.android
     // lifecycleScope for Fragment coroutines (viewLifecycleOwner.lifecycleScope)
     implementation libs.lifecycle.runtime.ktx
+    // ViewModel for Paging 3 gallery list
+    implementation libs.lifecycle.viewmodel.ktx
+    // Paging 3 — paginated gallery list loading
+    implementation libs.paging.runtime
     // kotlinx-serialization (LRR data classes)
     implementation libs.serialization.json
 
@@ -167,6 +171,7 @@ dependencies {
     testImplementation libs.okhttp.mockwebserver
     testImplementation libs.coroutines.test
     testImplementation libs.serialization.json
+    testImplementation libs.paging.testing
     testImplementation libs.room.testing
     testImplementation libs.test.core.ktx
 
