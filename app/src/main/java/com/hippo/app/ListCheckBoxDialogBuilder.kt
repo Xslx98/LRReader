@@ -60,7 +60,7 @@ class ListCheckBoxDialogBuilder @SuppressLint("InflateParams") constructor(
         return mDialog!!
     }
 
-    interface OnItemClickListener {
+    fun interface OnItemClickListener {
         fun onItemClick(builder: ListCheckBoxDialogBuilder?, dialog: AlertDialog?, position: Int)
     }
 }
