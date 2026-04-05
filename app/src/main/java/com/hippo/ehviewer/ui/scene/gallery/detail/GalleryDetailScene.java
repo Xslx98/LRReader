@@ -236,6 +236,8 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
     private LinearLayout mTags;
     @Nullable
     private TextView mNoTags;
+    @Nullable
+    private android.widget.ImageButton mEditTagsBtn;
     // Progress
     @Nullable
     private View mProgress;
@@ -566,6 +568,22 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
 
         mTags = (LinearLayout) ViewUtils.$$(belowHeader, R.id.tags);
         mNoTags = (TextView) ViewUtils.$$(mTags, R.id.no_tags);
+        mEditTagsBtn = (android.widget.ImageButton) ViewUtils.$$(mTags, R.id.edit_tags_btn);
+        if (mEditTagsBtn != null) {
+            boolean isLrr = com.hippo.ehviewer.client.lrr.LRRAuthManager.getServerUrl() != null;
+            mEditTagsBtn.setVisibility(isLrr ? View.VISIBLE : View.GONE);
+            mEditTagsBtn.setOnClickListener(v -> {
+                if (mGalleryDetail != null) {
+                    TagEditDialog.show(getActivity2(), mGalleryDetail.token,
+                            mGalleryDetail.tags, () -> {
+                                if (mState != STATE_REFRESH && mState != STATE_REFRESH_HEADER) {
+                                    adjustViewVisibility(STATE_REFRESH, true);
+                                    request();
+                                }
+                            });
+                }
+            });
+        }
 
         mProgress = ViewUtils.$$(mainView, R.id.progress);
 
@@ -639,6 +657,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
 
         mTags = null;
         mNoTags = null;
+        mEditTagsBtn = null;
 
         mProgress = null;
 
@@ -1080,11 +1099,6 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         if (deleteItem != null) {
             deleteItem.setVisible(isLrrConnected);
         }
-        MenuItem editTagsItem = popup.getMenu().findItem(R.id.action_lrr_edit_tags);
-        if (editTagsItem != null) {
-            editTagsItem.setVisible(isLrrConnected);
-        }
-
         popup.setOnMenuItemClickListener(item -> {
             switch (item.getItemId()) {
                 case R.id.action_open_in_other_app:
@@ -1098,18 +1112,6 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                     if (mState != STATE_REFRESH && mState != STATE_REFRESH_HEADER) {
                         adjustViewVisibility(STATE_REFRESH, true);
                         request();
-                    }
-                    break;
-                case R.id.action_lrr_edit_tags:
-                    if (mGalleryDetail != null) {
-                        TagEditDialog.show(getActivity2(), mGalleryDetail.token,
-                                mGalleryDetail.tags, () -> {
-                                    // Refresh the gallery detail from server
-                                    if (mState != STATE_REFRESH && mState != STATE_REFRESH_HEADER) {
-                                        adjustViewVisibility(STATE_REFRESH, true);
-                                        request();
-                                    }
-                                });
                     }
                     break;
                 case R.id.action_lrr_delete:
