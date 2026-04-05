@@ -1150,6 +1150,10 @@
     <string name="lrr_url_download_success">Download queued (Job #%d)</string>
     <string name="lrr_url_download_failed">Download failed: %s</string>
 
+    <!-- LRR Edit Tags -->
+    <string name="lrr_edit_tags">Edit Tags</string>
+    <string name="lrr_tags_updated">Tags updated</string>
+
     <!-- LRR Delete Archive -->
     <string name="lrr_delete_archive">Delete</string>
     <string name="lrr_delete_confirm_title">Delete Archive</string>

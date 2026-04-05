@@ -1074,10 +1074,15 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         PopupMenu popup = new PopupMenu(context, mOtherActions, Gravity.TOP);
         mPopupMenu = popup;
         popup.getMenuInflater().inflate(R.menu.scene_gallery_detail, popup.getMenu());
-        // Show delete menu item only when connected to LANraragi
+        // Show LANraragi-specific menu items only when connected
+        boolean isLrrConnected = com.hippo.ehviewer.client.lrr.LRRAuthManager.getServerUrl() != null;
         MenuItem deleteItem = popup.getMenu().findItem(R.id.action_lrr_delete);
         if (deleteItem != null) {
-            deleteItem.setVisible(com.hippo.ehviewer.client.lrr.LRRAuthManager.getServerUrl() != null);
+            deleteItem.setVisible(isLrrConnected);
+        }
+        MenuItem editTagsItem = popup.getMenu().findItem(R.id.action_lrr_edit_tags);
+        if (editTagsItem != null) {
+            editTagsItem.setVisible(isLrrConnected);
         }
 
         popup.setOnMenuItemClickListener(item -> {
@@ -1093,6 +1098,18 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                     if (mState != STATE_REFRESH && mState != STATE_REFRESH_HEADER) {
                         adjustViewVisibility(STATE_REFRESH, true);
                         request();
+                    }
+                    break;
+                case R.id.action_lrr_edit_tags:
+                    if (mGalleryDetail != null) {
+                        TagEditDialog.show(getActivity2(), mGalleryDetail.token,
+                                mGalleryDetail.tags, () -> {
+                                    // Refresh the gallery detail from server
+                                    if (mState != STATE_REFRESH && mState != STATE_REFRESH_HEADER) {
+                                        adjustViewVisibility(STATE_REFRESH, true);
+                                        request();
+                                    }
+                                });
                     }
                     break;
                 case R.id.action_lrr_delete:
