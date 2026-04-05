@@ -22,7 +22,7 @@ class DataModule(private val context: Context) {
     val downloadManager: DownloadManager by lazy { DownloadManager(context) }
 
     val galleryDetailCache: LruCache<Long, GalleryDetail> by lazy {
-        LruCache<Long, GalleryDetail>(25).also { cache ->
+        LruCache<Long, GalleryDetail>(150).also { cache ->
             favouriteStatusRouter.addListener { gid, slot ->
                 cache[gid]?.let { it.favoriteSlot = slot }
             }
