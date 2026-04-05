@@ -6,7 +6,7 @@
 
 - **Application ID:** `com.lanraragi.reader`
 - **Namespace:** `com.hippo.ehviewer` (legacy, retained from EhViewer)
-- **Current Version:** 1.10.4 (versionCode 11004 — formula: `MAJOR*10000 + MINOR*100 + PATCH`)
+- **Current Version:** 1.10.5 (versionCode 11005 — formula: `MAJOR*10000 + MINOR*100 + PATCH`)
 - **License:** GPLv3
 
 ---
@@ -15,7 +15,7 @@
 
 | Layer | Technology | Version |
 |---|---|---|
-| Languages | Java / Kotlin hybrid | Kotlin 2.1.0 |
+| Languages | Java / Kotlin hybrid (42% Kotlin) | Kotlin 2.1.0 |
 | Android SDK | compileSdk 35, minSdk 28 | Android 9+ |
 | JDK | Java 21 | sourceCompatibility VERSION_21 |
 | Build | Gradle + AGP 8.13.2 | `./gradlew` + Version Catalog (`libs.versions.toml`) |
@@ -157,8 +157,10 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 
 ### Language
 
-- **Prefer Kotlin for all new code.** Java is legacy from EhViewer; do not write new Java unless modifying existing Java files.
-- Mixed project: Java for legacy framework code, Kotlin for all LRR-specific and new features.
+- **All new code must be Kotlin.** Java is legacy from EhViewer; do not write new Java.
+- Core layers (data, API, download, settings, modules, gallery providers) are **100% Kotlin**.
+- UI layer (Scenes, Activities, Adapters) is partially migrated; mid-size Scenes are Kotlin, three large Scenes remain Java.
+- `com.hippo.*` framework (230 files: GLView, Conaco, widgets) stays Java — stable legacy, rarely touched.
 
 ### Style
 
@@ -172,9 +174,11 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 - All network and database calls use **Kotlin Coroutines**: `suspend fun` + `withContext(Dispatchers.IO)`
 - Use `viewLifecycleOwner.lifecycleScope` for Fragment coroutines
 - **From Java code**, use `CoroutineBridge.launchIO(lifecycleOwner, task)` or `IoThreadPoolExecutor` to move DB/network work off the main thread
-- `EhDB` provides dual API: `suspend fun xxxAsync()` for Kotlin, `@JvmStatic fun xxx()` via `blockingDb` bridge for Java (logs warning if called on main thread)
+- `EhDB` provides dual API: `suspend fun xxxAsync()` for Kotlin callers (preferred), `@JvmStatic fun xxx()` via `blockingDb` bridge for remaining Java callers only
 - `CoroutineModule` provides `applicationScope` and `ioScope` with `SupervisorJob` + `CoroutineExceptionHandler`
-- Avoid raw `Thread`, `AsyncTask`, or `Handler` in new code
+- `LRRCoroutineHelper.runSuspend()` has a **runtime main-thread guard** that throws if called on the UI thread
+- **No `AsyncTask` anywhere** — all replaced with `IoThreadPoolExecutor` + `Handler`
+- **No main-thread DB calls** — all `EhDB.*()` calls from UI code are wrapped in `IoThreadPoolExecutor`
 - Thread pool: `IoThreadPoolExecutor` for parallel image/network work
 
 ### Networking (OkHttp)
@@ -304,15 +308,21 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 5. **Room schema migrations:** Schema at v11, exported. Write an explicit `Migration` object for every schema change.
 
-6. **DiffUtil in ContentLayout:** `ContentHelper.dispatchDiffUpdates()` replaces `notifyDataSetChanged()` for data refresh/search/page-replace paths. Uses `isDuplicate()` for `areItemsTheSame()`.
+6. **DiffUtil in ContentLayout and DownloadsScene:** `ContentHelper.dispatchDiffUpdates()` for gallery list updates. `DownloadsScene` uses `DownloadInfoDiffCallback` with `gid`-based identity for `onUpdateAll()`/`onReload()`. Avoid `notifyDataSetChanged()` — use specific notifications or DiffUtil.
 
-7. **EhDB main-thread guard:** All 54 `@JvmStatic` bridge methods use `blockingDb()` which logs a warning if called on the main thread. New UI code should use `CoroutineBridge.launchIO()` or the `suspend` Async variants instead.
+7. **EhDB dual API:** ~22 remaining `@JvmStatic` bridge methods use `blockingDb()` for Java callers (logs warning on main thread). Kotlin callers should use `suspend fun *Async()` versions directly. Dead methods and Kotlin-only bridges have been removed — do not add new `blockingDb` bridges.
 
-8. **Download subsystem:** `LRRDownloadWorker` manages background downloads with retry, format validation, LRU cache (500 MB), and server progress sync. Coordinates with `dao/` for state persistence.
+8. **Download subsystem (Kotlin):** `DownloadManager.kt` (state management), `LRRDownloadWorker.kt` (background downloads with retry, format validation), `DownloadSpeedTracker.kt` (speed monitoring). Listener interfaces extracted to `DownloadInfoListener.java`/`DownloadListener.java`. Thread-safe via `CopyOnWriteArrayList` and `ConcurrentHashMap`. LRU cache (500 MB) for page images.
 
 9. **Multi-server support:** `ServerProfile` entity + `LRRAuthManager` handle per-server credentials. Server selection affects all API calls. Credentials are encrypted.
 
 10. **EhViewer stubs:** `EhGalleryProvider`, `FavoritesScene`, and `FavoriteListSortDialog` are intentional stubs (empty bodies) left for structural compatibility. Do not delete — but do not add logic to them either.
+
+11. **Helper class extraction:** Large Scenes use extracted helpers to reduce line count: `GalleryUploadHelper` (upload/URL download from GalleryListScene), `GallerySearchHelper` (search suggestions/URL building), `DownloadImportHelper` (local archive import from DownloadsScene). Helpers communicate via `Callback` interfaces — follow this pattern for new extractions.
+
+12. **Network tuning:** `NetworkModule.kt` configures `ConnectionPool(10, 5min)`, 200MB HTTP cache, thumbnail 24h cache, deferred `CookieManager.flush()`. Image client has 60s `callTimeout` for large files over slow WAN.
+
+13. **GifHandler lifecycle:** `GifHandler` implements `Closeable` with native `destroy()` that calls `DGifCloseFile()` + `free()`. Always `close()` when done — native memory is NOT garbage collected.
 
 ---
 
