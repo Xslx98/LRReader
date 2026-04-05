@@ -42,7 +42,7 @@ import android.widget.TextView
 import androidx.cardview.widget.CardView
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhTagDatabase
-import com.hippo.ehviewer.client.EhTagDatabase.NAMESPACE_TO_PREFIX
+import com.hippo.ehviewer.client.EhTagDatabase.Companion.NAMESPACE_TO_PREFIX
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.lib.yorozuya.AnimationUtils
 import com.hippo.lib.yorozuya.MathUtils
