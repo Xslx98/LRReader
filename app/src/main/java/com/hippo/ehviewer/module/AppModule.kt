@@ -19,7 +19,7 @@ class AppModule(private val context: Context) {
     private val idGenerator = IntIdGenerator()
     private val globalStuffMap = HashMap<Int, WeakReference<Any>>()
     private val tempCacheMap = HashMap<String, Any>()
-    val executorService: ExecutorService = Executors.newCachedThreadPool()
+    val executorService: ExecutorService = Executors.newFixedThreadPool(4)
 
     fun initialize() {
         idGenerator.setNextId(Settings.getInt(KEY_GLOBAL_STUFF_NEXT_ID, 0))
