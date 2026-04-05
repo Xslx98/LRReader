@@ -31,7 +31,6 @@ import com.hippo.Native
 import com.hippo.a7zip.A7Zip
 import com.hippo.content.ContextLocalWrapper
 import com.hippo.content.RecordingApplication
-import com.hippo.ehviewer.client.EhEngine
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
 import com.hippo.ehviewer.client.lrr.LRRClientProvider
 import com.hippo.ehviewer.settings.DownloadSettings
@@ -151,7 +150,6 @@ class EhApplication : RecordingApplication() {
             }
         }
 
-        EhEngine.initialize()
         LRRClientProvider.init(this)
         BitmapUtils.initialize(this)
         Image.initialize(this)
