@@ -73,7 +73,7 @@ import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemView
 
 import java.io.InputStream;
 import java.util.Collections;
-import java.util.HashMap;
+
 import java.util.List;
 import java.util.Map;
 
@@ -94,7 +94,14 @@ public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.Downlo
 
     private View movedItem = null;
 
-    private final Map<String, Bitmap> thumbnailCache = new HashMap<>();
+    private final android.util.LruCache<String, Bitmap> thumbnailCache = new android.util.LruCache<String, Bitmap>(50) {
+        @Override
+        protected void entryRemoved(boolean evicted, String key, Bitmap oldValue, Bitmap newValue) {
+            if (evicted && oldValue != null && !oldValue.isRecycled()) {
+                oldValue.recycle();
+            }
+        }
+    };
 
     public interface DownloadAdapterCallback {
         int getIndexPage();
@@ -459,9 +466,9 @@ public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.Downlo
         String uriString = archiveUri.toString();
 
         // Check cache first
-        if (thumbnailCache.containsKey(uriString)) {
-            Bitmap cachedThumbnail = thumbnailCache.get(uriString);
-            if (cachedThumbnail != null && !cachedThumbnail.isRecycled()) {
+        Bitmap cachedThumbnail = thumbnailCache.get(uriString);
+        if (cachedThumbnail != null) {
+            if (!cachedThumbnail.isRecycled()) {
                 thumb.setImageBitmap(cachedThumbnail);
                 return;
             } else {
