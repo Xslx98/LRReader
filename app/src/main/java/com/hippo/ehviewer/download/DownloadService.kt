@@ -47,7 +47,7 @@ import com.hippo.lib.yorozuya.collect.SparseJBArray
 import com.hippo.lib.yorozuya.collect.SparseJLArray
 
 @SuppressLint("UnspecifiedImmutableFlag")
-class DownloadService : Service(), DownloadManager.DownloadListener {
+class DownloadService : Service(), DownloadListener {
     private val TAG = "DownloadService"
     private var mNotifyManager: NotificationManager? = null
     private var mDownloadManager: DownloadManager? = null

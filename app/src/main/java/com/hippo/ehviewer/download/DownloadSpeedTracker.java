@@ -44,10 +44,10 @@ class DownloadSpeedTracker implements Runnable {
         @Nullable List<DownloadInfo> getInfoListForLabel(@Nullable String label);
 
         /** @return the active DownloadListener (may be null). */
-        @Nullable DownloadManager.DownloadListener getDownloadListener();
+        @Nullable DownloadListener getDownloadListener();
 
         /** @return all registered DownloadInfoListeners. */
-        List<DownloadManager.DownloadInfoListener> getDownloadInfoListeners();
+        List<DownloadInfoListener> getDownloadInfoListeners();
 
         /** @return the current wait list (passed to onUpdate). */
         LinkedList<DownloadInfo> getWaitList();
@@ -134,13 +134,13 @@ class DownloadSpeedTracker implements Runnable {
                 }
             }
 
-            DownloadManager.DownloadListener listener = mCallback.getDownloadListener();
+            DownloadListener listener = mCallback.getDownloadListener();
             if (listener != null) {
                 listener.onDownload(info);
             }
             List<DownloadInfo> list = mCallback.getInfoListForLabel(info.label);
             if (list != null) {
-                for (DownloadManager.DownloadInfoListener l : mCallback.getDownloadInfoListeners()) {
+                for (DownloadInfoListener l : mCallback.getDownloadInfoListeners()) {
                     l.onUpdate(info, list, mCallback.getWaitList());
                 }
             }
