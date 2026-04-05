@@ -16,9 +16,7 @@
 
 package com.hippo.ehviewer.client;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
-import android.os.AsyncTask;
 import android.util.Log;
 
 import com.hippo.ehviewer.Analytics;
@@ -84,18 +82,17 @@ public class EhClient {
     public void execute(EhRequest request) {
         if (!request.isCancelled()) {
             Task task = new Task(request.getMethod(), request.getCallback());
-            task.executeOnExecutor(mRequestThreadPool, request.getArgs());
+            mRequestThreadPool.execute(task);
             request.task = task;
         } else {
             request.getCallback().onCancel();
         }
     }
 
-    @SuppressLint("StaticFieldLeak") // AsyncTask legacy: callback nulled in stop()/onPostExecute()
-    public class Task extends AsyncTask<Object, Void, Object> {
+    public class Task implements Runnable {
 
         private final int mMethod;
-        private Callback mCallback;
+        private volatile Callback mCallback;
 
         private final AtomicReference<Call> mCall = new AtomicReference<>();
         private final AtomicBoolean mStop = new AtomicBoolean();
@@ -115,26 +112,19 @@ public class EhClient {
             }
         }
 
-
         public void stop() {
             if (!mStop.get()) {
                 mStop.lazySet(true);
 
                 if (mCallback != null) {
-                    // EH-LEGACY: allocates new Runnable per request, acceptable for current usage volume
                     final Callback finalCallback = mCallback;
                     SimpleHandler.getInstance().post(finalCallback::onCancel);
                 }
 
-                Status status = getStatus();
-                if (status == Status.PENDING) {
-                    cancel(false);
-                } else if (status == Status.RUNNING) {
-                    // It is running, cancel call if it is created
-                    Call call = mCall.get();
-                    if (call != null) {
-                        call.cancel();
-                    }
+                // Cancel any in-flight OkHttp call
+                Call call = mCall.get();
+                if (call != null) {
+                    call.cancel();
                 }
 
                 // Clear
@@ -144,16 +134,15 @@ public class EhClient {
         }
 
         @Override
-        protected Object doInBackground(Object... params) {
-            // LANraragi: E-Hentai engine methods removed
-            return null;
+        public void run() {
+            // LANraragi: E-Hentai engine methods removed — no background work
+            final Object result = null;
+            SimpleHandler.getInstance().post(() -> onPostExecute(result));
         }
 
         @SuppressWarnings("unchecked")
-        @Override
-        protected void onPostExecute(Object result) {
+        private void onPostExecute(Object result) {
             if (mCallback != null) {
-                //noinspection StatementWithEmptyBody
                 if (!(result instanceof CancelledException)) {
                     if (result instanceof Throwable) {
                         mCallback.onFailure((Exception) result);
@@ -161,8 +150,6 @@ public class EhClient {
                     } else {
                         mCallback.onSuccess(result);
                     }
-                } else {
-                    // onCancel is called in stop
                 }
             }
 
