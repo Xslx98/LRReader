@@ -35,7 +35,7 @@ android {
         testOptions.unitTests.returnDefaultValues = true
         ndk {
             moduleName "native-lib"
-            abiFilters "arm64-v8a", "x86_64"
+            abiFilters "arm64-v8a"
         }
         externalNativeBuild {
             cmake {
