@@ -1089,4 +1089,13 @@
         <item>desc</item>
     </string-array>
     <string name="error_save_image">画像を保存できませんでした</string>
+    <string name="lrr_edit_tags">タグを編集</string>
+    <string name="lrr_tags_updated">タグが更新されました</string>
+    <string name="lrr_add_tag">タグを追加</string>
+    <string name="lrr_add_namespace">名前空間を追加</string>
+    <string name="lrr_edit_tag">タグを編集</string>
+    <string name="lrr_namespace_hint">例: artist, parody</string>
+    <string name="lrr_tag_hint">タグ名</string>
+    <string name="lrr_save">保存</string>
+    <string name="lrr_empty_namespace">名前空間は空にできません</string>
 </resources>

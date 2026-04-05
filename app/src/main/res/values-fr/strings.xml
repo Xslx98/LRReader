@@ -1151,4 +1151,13 @@ Cette action est irréversible.</string>
         <item>desc</item>
     </string-array>
     <string name="error_save_image">Impossible d\'enregistrer l\'image</string>
+    <string name="lrr_edit_tags">Modifier les tags</string>
+    <string name="lrr_tags_updated">Tags mis à jour</string>
+    <string name="lrr_add_tag">Ajouter un tag</string>
+    <string name="lrr_add_namespace">Ajouter une catégorie</string>
+    <string name="lrr_edit_tag">Modifier le tag</string>
+    <string name="lrr_namespace_hint">ex. artist, parody</string>
+    <string name="lrr_tag_hint">Nom du tag</string>
+    <string name="lrr_save">Enregistrer</string>
+    <string name="lrr_empty_namespace">La catégorie ne peut pas être vide</string>
 </resources>
