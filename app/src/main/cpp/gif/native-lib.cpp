@@ -32,8 +32,17 @@ Java_com_hippo_util_GifHandler_loadPath(JNIEnv *env, jobject instance, jstring p
     int err;
 //用系统函数打开一个gif文件   返回一个结构体，这个结构体为句柄
     GifFileType *gifFileType = DGifOpenFileName(path, &err);
+    if (gifFileType == NULL) {
+        env->ReleaseStringUTFChars(path_, path);
+        return 0;
+    }
     DGifSlurp(gifFileType);
     GifBean *gifBean = (GifBean *) malloc(sizeof(GifBean));
+    if (gifBean == NULL) {
+        DGifCloseFile(gifFileType);
+        env->ReleaseStringUTFChars(path_, path);
+        return 0;
+    }
 
 
 //    清空内存地址
@@ -41,10 +50,17 @@ Java_com_hippo_util_GifHandler_loadPath(JNIEnv *env, jobject instance, jstring p
     gifFileType->UserData = gifBean;
 
     gifBean->dealys = (int *) malloc(sizeof(int) * gifFileType->ImageCount);
+    if (gifBean->dealys == NULL) {
+        DGifCloseFile(gifFileType);
+        free(gifBean);
+        env->ReleaseStringUTFChars(path_, path);
+        return 0;
+    }
     memset(gifBean->dealys, 0, sizeof(int) * gifFileType->ImageCount);
     gifBean->total_frame = gifFileType->ImageCount;
-    ExtensionBlock *ext;
+    ExtensionBlock *ext = NULL;
     for (int i = 0; i < gifFileType->ImageCount; ++i) {
+        ext = NULL;
         SavedImage frame = gifFileType->SavedImages[i];
         for (int j = 0; j < frame.ExtensionBlockCount; ++j) {
             if (frame.ExtensionBlocks[j].Function == GRAPHICS_EXT_FUNC_CODE) {
@@ -121,6 +137,7 @@ int drawFrame(GifFileType *gif, GifBean *gifBean, AndroidBitmapInfo info, void *
 
     }
 
+    if (colorMap == NULL) return 0;
 
     bg = &colorMap->Colors[gif->SBackGroundColor];
 
