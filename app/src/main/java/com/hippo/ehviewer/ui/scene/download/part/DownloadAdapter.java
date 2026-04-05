@@ -584,6 +584,8 @@ public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.Downlo
                                 entry.extract(finalPipe.outputStream);
                             } catch (Exception e) {
                                 Log.w(TAG, "Failed to extract image: " + fileName, e);
+                            } finally {
+                                try { finalPipe.outputStream.close(); } catch (Exception ignored) {}
                             }
                         });
                         extractThread.start();
@@ -591,7 +593,11 @@ public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.Downlo
                         // Decode the image with size limits
                         BitmapFactory.Options options = new BitmapFactory.Options();
                         options.inJustDecodeBounds = true;
-                        BitmapFactory.decodeStream(pipe.inputStream, null, options);
+                        try {
+                            BitmapFactory.decodeStream(pipe.inputStream, null, options);
+                        } finally {
+                            try { pipe.inputStream.close(); } catch (Exception ignored) {}
+                        }
 
                         // Calculate sample size for thumbnail (smaller target size for better performance)
                         int thumbnailSize = 150;
@@ -612,6 +618,8 @@ public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.Downlo
                                 entry.extract(finalPipe1.outputStream);
                             } catch (Exception e) {
                                 Log.w(TAG, "Failed to extract image on second attempt: " + fileName, e);
+                            } finally {
+                                try { finalPipe1.outputStream.close(); } catch (Exception ignored) {}
                             }
                         });
                         extractThread.start();
@@ -620,7 +628,12 @@ public class DownloadAdapter extends RecyclerView.Adapter<DownloadAdapter.Downlo
                         options.inJustDecodeBounds = false;
                         options.inSampleSize = sampleSize;
                         options.inPreferredConfig = Bitmap.Config.RGB_565; // Use less memory
-                        Bitmap bitmap = BitmapFactory.decodeStream(pipe.inputStream, null, options);
+                        Bitmap bitmap;
+                        try {
+                            bitmap = BitmapFactory.decodeStream(pipe.inputStream, null, options);
+                        } finally {
+                            try { pipe.inputStream.close(); } catch (Exception ignored) {}
+                        }
 
                         extractThread.join(3000); // Wait max 3 seconds (reduced from 5)
 
