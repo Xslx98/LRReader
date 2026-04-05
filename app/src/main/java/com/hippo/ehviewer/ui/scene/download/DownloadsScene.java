@@ -263,7 +263,7 @@ public class DownloadsScene extends ToolbarScene
         if (null != mDownloadManager && -1L != (gid = args.getLong(KEY_GID, -1L))) {
             DownloadInfo info = mDownloadManager.getDownloadInfo(gid);
             if (null != info) {
-                mLabel = info.getLabel();
+                mLabel = info.label;
                 updateForLabel();
                 updateView();
 
