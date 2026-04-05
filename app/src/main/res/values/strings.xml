@@ -1200,4 +1200,6 @@
     <string name="lrr_not_found_short">Resource not found</string>
     <string name="lrr_save_and_connect">Save &amp; Connect</string>
     <string name="error_save_image">Failed to save image</string>
+    <string name="reauth_required_title">Re-authentication Required</string>
+    <string name="reauth_required_message">The secure keystore became unavailable. Please re-enter your API key for each server.</string>
 </resources>

@@ -38,6 +38,7 @@ class ServerListScene : BaseScene() {
     private var mRecyclerView: RecyclerView? = null
     private var mEmptyText: TextView? = null
     private var mAdapter: ServerAdapter? = null
+    private var mReauthDialogShown = false
     private var mProfiles: MutableList<ServerProfile> = mutableListOf()
 
     override fun needShowLeftDrawer(): Boolean = true
@@ -74,6 +75,15 @@ class ServerListScene : BaseScene() {
         super.onResume()
         // Refresh list when returning from ServerConfigScene
         loadProfiles()
+        // Prompt user if encrypted keystore is unavailable (credentials lost)
+        if (LRRAuthManager.isNeedsReauthentication() && !mReauthDialogShown) {
+            mReauthDialogShown = true
+            AlertDialog.Builder(requireContext())
+                .setTitle(R.string.reauth_required_title)
+                .setMessage(R.string.reauth_required_message)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+        }
     }
 
     private fun loadProfiles() {
