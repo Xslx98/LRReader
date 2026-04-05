@@ -1168,4 +1168,13 @@
         <item>desc</item>
     </string-array>
     <string name="error_save_image">이미지를 저장할 수 없습니다</string>
+    <string name="lrr_edit_tags">태그 편집</string>
+    <string name="lrr_tags_updated">태그가 업데이트되었습니다</string>
+    <string name="lrr_add_tag">태그 추가</string>
+    <string name="lrr_add_namespace">네임스페이스 추가</string>
+    <string name="lrr_edit_tag">태그 편집</string>
+    <string name="lrr_namespace_hint">예: artist, parody</string>
+    <string name="lrr_tag_hint">태그 이름</string>
+    <string name="lrr_save">저장</string>
+    <string name="lrr_empty_namespace">네임스페이스는 비워둘 수 없습니다</string>
 </resources>

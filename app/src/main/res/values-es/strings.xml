@@ -1145,4 +1145,13 @@ Esta acción no se puede deshacer.</string>
         <item>desc</item>
     </string-array>
     <string name="error_save_image">No se pudo guardar la imagen</string>
+    <string name="lrr_edit_tags">Editar etiquetas</string>
+    <string name="lrr_tags_updated">Etiquetas actualizadas</string>
+    <string name="lrr_add_tag">Añadir etiqueta</string>
+    <string name="lrr_add_namespace">Añadir categoría</string>
+    <string name="lrr_edit_tag">Editar etiqueta</string>
+    <string name="lrr_namespace_hint">ej. artist, parody</string>
+    <string name="lrr_tag_hint">Nombre de etiqueta</string>
+    <string name="lrr_save">Guardar</string>
+    <string name="lrr_empty_namespace">La categoría no puede estar vacía</string>
 </resources>
