@@ -19,6 +19,10 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
+        android:id="@+id/action_lrr_edit_tags"
+        android:title="@string/lrr_edit_tags"/>
+
+    <item
         android:id="@+id/action_refresh"
         android:title="@string/refresh"/>
 
