@@ -170,7 +170,8 @@ public final class ServerListScene extends BaseScene {
                 .setMessage(getString(R.string.lrr_delete_server_confirm, profile.getName()))
                 .setPositiveButton(android.R.string.ok, (d, w) -> {
                     LRRAuthManager.clearApiKeyForProfile(profile.getId());
-                    EhDB.deleteServerProfile(profile);
+                    IoThreadPoolExecutor.Companion.getInstance().execute(() ->
+                        EhDB.deleteServerProfile(profile));
                     mProfiles.remove(position);
                     mAdapter.notifyItemRemoved(position);
                     if (mEmptyText != null) {
