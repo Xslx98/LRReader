@@ -227,7 +227,6 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
                     existing.id,
                     info.name ?: existing.name,
                     resolvedUrl,
-                    null,
                     true
                 )
                 EhDB.updateServerProfile(updated)
@@ -236,7 +235,7 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
             } else {
                 val profileName = info.name ?: "LANraragi"
                 // API key is stored in EncryptedSharedPreferences, not in Room
-                val newProfile = ServerProfile(0, profileName, resolvedUrl, null, true)
+                val newProfile = ServerProfile(0, profileName, resolvedUrl, true)
                 val newId = EhDB.insertServerProfile(newProfile)
                 LRRAuthManager.setApiKeyForProfile(newId, LRRAuthManager.getApiKey())
                 LRRAuthManager.setActiveProfileId(newId)

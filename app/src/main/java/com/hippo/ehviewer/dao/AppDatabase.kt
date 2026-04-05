@@ -46,7 +46,7 @@ import java.security.MessageDigest
         BookmarkInfo::class,
         ServerProfile::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class)
@@ -68,9 +68,37 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "eh.db"
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
                     .build()
                     .also { INSTANCE = it }
+            }
+        }
+
+        /**
+         * v11 → v12: Remove plaintext API_KEY column from SERVER_PROFILES.
+         *
+         * API keys are now stored exclusively in EncryptedSharedPreferences
+         * via LRRAuthManager. The Room column was a security remnant.
+         *
+         * SQLite < 3.35.0 (Android < API 34) doesn't support DROP COLUMN,
+         * so we use the recreate-table pattern for API 28+ compatibility.
+         */
+        private val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE SERVER_PROFILES_NEW (
+                        ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        NAME TEXT NOT NULL,
+                        URL TEXT NOT NULL,
+                        IS_ACTIVE INTEGER NOT NULL DEFAULT 0
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT INTO SERVER_PROFILES_NEW (ID, NAME, URL, IS_ACTIVE)
+                    SELECT ID, NAME, URL, IS_ACTIVE FROM SERVER_PROFILES
+                """.trimIndent())
+                db.execSQL("DROP TABLE SERVER_PROFILES")
+                db.execSQL("ALTER TABLE SERVER_PROFILES_NEW RENAME TO SERVER_PROFILES")
             }
         }
 

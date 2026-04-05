@@ -101,7 +101,6 @@ class ServerListScene : BaseScene() {
                     id = profile.id,
                     name = profile.name,
                     url = profile.url,
-                    apiKey = null,
                     isActive = true
                 )
             )
@@ -301,7 +300,6 @@ class ServerListScene : BaseScene() {
                 id = profile.id,
                 name = newName,
                 url = normalizedUrl,
-                apiKey = null,
                 isActive = profile.isActive
             )
             IoThreadPoolExecutor.instance.execute {
@@ -399,7 +397,6 @@ class ServerListScene : BaseScene() {
                                         id = 0,
                                         name = name,
                                         url = resolvedUrl,
-                                        apiKey = null,
                                         isActive = true
                                     )
                                     val newId = EhDB.insertServerProfile(newProfile)
