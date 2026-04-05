@@ -1,5 +1,6 @@
 package com.hippo.ehviewer.client.lrr
 
+import com.hippo.ehviewer.client.lrr.data.LRRTagStat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -37,6 +38,30 @@ object LRRDatabaseApi {
     @JvmStatic
     suspend fun getDatabaseStats(): String =
         getDatabaseStats(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl())
+
+    /**
+     * GET /api/database/stats — Get tag statistics as typed objects.
+     */
+    @JvmStatic
+    suspend fun getTagStats(
+        client: OkHttpClient,
+        baseUrl: String
+    ): List<LRRTagStat> = withContext(Dispatchers.IO) {
+        val request = Request.Builder()
+            .url("$baseUrl/api/database/stats")
+            .get()
+            .build()
+        client.newCall(request).execute().use { response ->
+            ensureSuccess(response)
+            val body = response.body?.string()
+                ?: throw LRREmptyBodyException()
+            lrrJson.decodeFromString<List<LRRTagStat>>(body)
+        }
+    }
+
+    @JvmStatic
+    suspend fun getTagStats(): List<LRRTagStat> =
+        getTagStats(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl())
 }
 
 /**
