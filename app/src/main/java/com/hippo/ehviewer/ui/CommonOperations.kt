@@ -44,7 +44,7 @@ object CommonOperations {
     ) {
         if (slot == -1) {
             IoThreadPoolExecutor.instance.execute {
-                EhDB.putLocalFavorite(galleryInfo)
+                kotlinx.coroutines.runBlocking { EhDB.putLocalFavoriteAsync(galleryInfo) }
                 activity.runOnUiThread { listener.onSuccess(null) }
             }
         } else if (slot in 0..9) {
@@ -109,7 +109,7 @@ object CommonOperations {
         listener: EhClient.Callback<Void?>
     ) {
         IoThreadPoolExecutor.instance.execute {
-            EhDB.removeLocalFavorites(galleryInfo.gid)
+            kotlinx.coroutines.runBlocking { EhDB.removeLocalFavoritesAsync(galleryInfo.gid) }
         }
         val client = ServiceRegistry.clientModule.ehClient
         val request = EhRequest()
