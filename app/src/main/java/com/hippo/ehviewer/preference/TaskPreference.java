@@ -18,13 +18,13 @@ package com.hippo.ehviewer.preference;
 
 import android.app.Dialog;
 import android.content.Context;
-import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.ProgressBar;
-import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -166,11 +166,13 @@ public abstract class TaskPreference extends DialogPreference {
                 };
     }
 
-    public abstract static class Task extends AsyncTask<Void, int[], Object> {
+    public abstract static class Task implements Runnable {
 
         private final EhApplication mApplication;
         @Nullable
-        private TaskPreference mPreference;
+        private volatile TaskPreference mPreference;
+        private volatile boolean mCancelled;
+        private final Handler mMainHandler = new Handler(Looper.getMainLooper());
 
         public Task(@NonNull Context context) {
             mApplication = (EhApplication) context.getApplicationContext();
@@ -189,23 +191,34 @@ public abstract class TaskPreference extends DialogPreference {
             mPreference = preference;
         }
 
-        @Override
-        protected void onProgressUpdate(int[]... values) {
-            // Expecting one int[] with {current, total}; when total <= 0, show indeterminate
+        public boolean isCancelled() {
+            return mCancelled;
+        }
+
+        public void cancel() {
+            mCancelled = true;
+        }
+
+        /** Subclasses implement their work here. Runs on IO thread. */
+        protected abstract Object doWork();
+
+        /** Call from doWork() to update progress bar. Thread-safe. */
+        @SuppressWarnings("unused")
+        protected void publishProgress(int current, int total) {
+            mMainHandler.post(() -> onProgressUpdate(current, total));
+        }
+
+        private void onProgressUpdate(int current, int total) {
             if (mPreference == null) return;
             Dialog dialog = mPreference.getDialog();
             if (dialog == null) return;
             ProgressBar bar = dialog.findViewById(R.id.task_progress);
             if (bar == null) return;
-            if (values == null || values.length == 0 || values[0] == null || values[0].length < 2) return;
-            int current = values[0][0];
-            int total = values[0][1];
             bar.setVisibility(View.VISIBLE);
             if (total <= 0) {
                 bar.setIndeterminate(true);
             } else {
                 bar.setIndeterminate(false);
-                // Ensure current in bounds
                 if (current < 0) current = 0;
                 if (current > total) current = total;
                 bar.setMax(total);
@@ -213,13 +226,28 @@ public abstract class TaskPreference extends DialogPreference {
             }
         }
 
-        @CallSuper
-        @Override
-        protected void onPostExecute(Object o) {
+        /**
+         * Called on the UI thread after doWork() completes.
+         * Subclasses may override to handle the result (e.g. show a Toast).
+         * Must call super to ensure cleanup.
+         */
+        @SuppressWarnings("unused")
+        protected void onPostExecute(Object result) {
             mApplication.removeGlobalStuff(this);
             if (null != mPreference) {
                 mPreference.onTaskEnd();
             }
+        }
+
+        @Override
+        public void run() {
+            Object result = doWork();
+            mMainHandler.post(() -> onPostExecute(result));
+        }
+
+        /** Execute on the given executor. */
+        public void executeOnExecutor(java.util.concurrent.Executor executor) {
+            executor.execute(this);
         }
     }
 }
