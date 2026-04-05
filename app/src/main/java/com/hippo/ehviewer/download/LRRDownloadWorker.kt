@@ -152,7 +152,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                     Log.e(TAG, "Failed to download page $i (attempt ${attempt + 1})", e)
                     if (attempt == MAX_RETRY - 1) {
                         // Final attempt failed
-                        listener?.onPageFailure(i, e.message, finished, downloaded, total)
+                        listener?.onPageFailure(i, e.message ?: "Unknown error", finished, downloaded, total)
                     }
                 }
             }
