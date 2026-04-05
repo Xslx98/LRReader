@@ -74,7 +74,7 @@ class DownloadManager(private val mContext: Context) {
 
     init {
         // Get all labels
-        val labels = EhDB.getAllDownloadLabelList().toMutableList()
+        val labels = kotlinx.coroutines.runBlocking { EhDB.getAllDownloadLabelListAsync() }.toMutableList()
         mLabelList = labels
 
         // Create list for each label
@@ -88,7 +88,7 @@ class DownloadManager(private val mContext: Context) {
         mDefaultInfoList = LinkedList()
 
         // Get all info
-        val allInfoList = EhDB.getAllDownloadInfo()
+        val allInfoList = kotlinx.coroutines.runBlocking { EhDB.getAllDownloadInfoAsync() }
         mAllInfoList = LinkedList(allInfoList)
 
         // Create all info map
@@ -123,7 +123,7 @@ class DownloadManager(private val mContext: Context) {
                 map[info.label] = list
                 if (!containLabel(info.label) && info.label != null) {
                     // Add label to DB and list
-                    labels.add(EhDB.addDownloadLabel(info.label!!))
+                    labels.add(kotlinx.coroutines.runBlocking { EhDB.addDownloadLabelAsync(info.label!!) })
                 }
             }
             list.add(info)
@@ -245,7 +245,7 @@ class DownloadManager(private val mContext: Context) {
         }
 
         // Reload from DB (filtered by current profile)
-        val allInfoList = EhDB.getAllDownloadInfo()
+        val allInfoList = kotlinx.coroutines.runBlocking { EhDB.getAllDownloadInfoAsync() }
         mAllInfoList.addAll(allInfoList)
         for (info in allInfoList) {
             mAllInfoMap.put(info.gid, info)
@@ -548,7 +548,7 @@ class DownloadManager(private val mContext: Context) {
                 mMap[info.label] = list
                 if (!containLabel(info.label) && info.label != null) {
                     // Add label to DB and list
-                    mLabelList.add(EhDB.addDownloadLabel(info.label!!))
+                    mLabelList.add(kotlinx.coroutines.runBlocking { EhDB.addDownloadLabelAsync(info.label!!) })
                 }
             }
             list.add(info)
@@ -579,7 +579,7 @@ class DownloadManager(private val mContext: Context) {
             val labelString = label.label
             if (!containLabel(labelString)) {
                 mMap[labelString] = LinkedList()
-                mLabelList.add(EhDB.addDownloadLabel(label))
+                mLabelList.add(kotlinx.coroutines.runBlocking { EhDB.addDownloadLabelAsync(label) })
             }
         }
     }
@@ -719,7 +719,7 @@ class DownloadManager(private val mContext: Context) {
         val info = mAllInfoMap.get(gid)
         if (info != null) {
             // Remove from DB
-            EhDB.removeDownloadInfo(info.gid)
+            kotlinx.coroutines.runBlocking { EhDB.removeDownloadInfoAsync(info.gid) }
 
             // Remove all list and map
             mAllInfoList.remove(info)
@@ -755,7 +755,7 @@ class DownloadManager(private val mContext: Context) {
             }
 
             // Remove from DB
-            EhDB.removeDownloadInfo(info.gid)
+            kotlinx.coroutines.runBlocking { EhDB.removeDownloadInfoAsync(info.gid) }
 
             // Remove from all info map
             mAllInfoList.remove(info)
@@ -937,7 +937,7 @@ class DownloadManager(private val mContext: Context) {
             return
         }
 
-        mLabelList.add(EhDB.addDownloadLabel(label))
+        mLabelList.add(kotlinx.coroutines.runBlocking { EhDB.addDownloadLabelAsync(label) })
         mMap[label] = LinkedList()
 
         for (l in mDownloadInfoListeners) {
@@ -950,14 +950,14 @@ class DownloadManager(private val mContext: Context) {
             return
         }
 
-        mLabelList.add(EhDB.addDownloadLabel(label))
+        mLabelList.add(kotlinx.coroutines.runBlocking { EhDB.addDownloadLabelAsync(label) })
         mMap[label] = LinkedList()
     }
 
     fun moveLabel(fromPosition: Int, toPosition: Int) {
         val item = mLabelList.removeAt(fromPosition)
         mLabelList.add(toPosition, item)
-        EhDB.moveDownloadLabel(fromPosition, toPosition)
+        kotlinx.coroutines.runBlocking { EhDB.moveDownloadLabelAsync(fromPosition, toPosition) }
 
         for (l in mDownloadInfoListeners) {
             l.onUpdateLabels()
@@ -972,7 +972,7 @@ class DownloadManager(private val mContext: Context) {
                 found = true
                 raw.label = to
                 // Update in DB
-                EhDB.updateDownloadLabel(raw)
+                kotlinx.coroutines.runBlocking { EhDB.updateDownloadLabelAsync(raw) }
                 break
             }
         }
@@ -1006,7 +1006,7 @@ class DownloadManager(private val mContext: Context) {
             if (label == raw.label) {
                 found = true
                 iterator.remove()
-                EhDB.removeDownloadLabel(raw)
+                kotlinx.coroutines.runBlocking { EhDB.removeDownloadLabelAsync(raw) }
                 break
             }
         }
