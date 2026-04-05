@@ -873,18 +873,27 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
             return;
         }
 
-        if (gd.isFavorited || EhDB.containLocalFavorites(gd.gid)) {
-            mHeart.setVisibility(View.VISIBLE);
-            if (gd.favoriteName == null) {
-                mHeart.setText(R.string.local_favorites);
-            } else {
-                mHeart.setText(gd.favoriteName);
+        IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+            boolean isFav = gd.isFavorited || EhDB.containLocalFavorites(gd.gid);
+            android.app.Activity a = getActivity();
+            if (a != null) {
+                a.runOnUiThread(() -> {
+                    if (mHeart == null || mHeartOutline == null) return;
+                    if (isFav) {
+                        mHeart.setVisibility(View.VISIBLE);
+                        if (gd.favoriteName == null) {
+                            mHeart.setText(R.string.local_favorites);
+                        } else {
+                            mHeart.setText(gd.favoriteName);
+                        }
+                        mHeartOutline.setVisibility(View.GONE);
+                    } else {
+                        mHeart.setVisibility(View.GONE);
+                        mHeartOutline.setVisibility(View.VISIBLE);
+                    }
+                });
             }
-            mHeartOutline.setVisibility(View.GONE);
-        } else {
-            mHeart.setVisibility(View.GONE);
-            mHeartOutline.setVisibility(View.VISIBLE);
-        }
+        });
     }
 
     private void bindViewSecond() {
@@ -1428,7 +1437,8 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                 useNetWorkLoadThumb = true;
                 mDownloadInfo.updateInfo(result);
                 mDownloadInfo.state = mDownloadState;
-                EhDB.putDownloadInfo(mDownloadInfo);
+                IoThreadPoolExecutor.Companion.getInstance().execute(() ->
+                    EhDB.putDownloadInfo(mDownloadInfo));
             }
         }
         adjustViewVisibility(STATE_NORMAL, true);

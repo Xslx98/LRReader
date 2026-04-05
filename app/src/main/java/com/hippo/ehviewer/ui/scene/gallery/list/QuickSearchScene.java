@@ -43,6 +43,7 @@ import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.dao.QuickSearch;
 import com.hippo.ehviewer.ui.scene.ToolbarScene;
 import com.hippo.util.DrawableManager;
+import com.hippo.util.IoThreadPoolExecutor;
 import com.hippo.view.ViewTransition;
 import com.hippo.lib.yorozuya.AssertUtils;
 import com.hippo.lib.yorozuya.ViewUtils;
@@ -195,7 +196,8 @@ public final class QuickSearchScene extends ToolbarScene {
                     .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            EhDB.deleteQuickSearch(quickSearch);
+                            IoThreadPoolExecutor.Companion.getInstance().execute(() ->
+                                EhDB.deleteQuickSearch(quickSearch));
                             mQuickSearchList.remove(position);
                         }
                     })
@@ -262,7 +264,8 @@ public final class QuickSearchScene extends ToolbarScene {
                 return;
             }
 
-            EhDB.moveQuickSearch(fromPosition, toPosition);
+            IoThreadPoolExecutor.Companion.getInstance().execute(() ->
+                EhDB.moveQuickSearch(fromPosition, toPosition));
             final QuickSearch item = mQuickSearchList.remove(fromPosition);
             mQuickSearchList.add(toPosition, item);
         }
