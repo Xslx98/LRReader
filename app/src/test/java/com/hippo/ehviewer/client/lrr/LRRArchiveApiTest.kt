@@ -93,6 +93,47 @@ class LRRArchiveApiTest {
         assertTrue(req.path!!.contains("tags="))
     }
 
+    // ── updateMetadata (form-body PUT) ─────────────────────────────
+
+    @Test
+    fun updateMetadata_sendsCorrectRequest() = runTest {
+        server.enqueue(MockResponse().setBody("""{"operation":"update_metadata","success":1}"""))
+
+        LRRArchiveApi.updateMetadata(client, baseUrl, "abc", tags = "artist:foo, parody:bar")
+
+        val req = server.takeRequest()
+        assertEquals("PUT", req.method)
+        assertEquals("/api/archives/abc/metadata", req.path)
+        val body = req.body.readUtf8()
+        assertTrue(body.contains("tags="))
+        assertTrue(body.contains("artist"))
+    }
+
+    @Test
+    fun updateMetadata_withTitle_sendsTitle() = runTest {
+        server.enqueue(MockResponse().setBody("""{"operation":"update_metadata","success":1}"""))
+
+        LRRArchiveApi.updateMetadata(client, baseUrl, "abc", title = "New Title", tags = "artist:test")
+
+        val req = server.takeRequest()
+        assertEquals("PUT", req.method)
+        val body = req.body.readUtf8()
+        assertTrue(body.contains("title="))
+        assertTrue(body.contains("tags="))
+    }
+
+    @Test
+    fun updateMetadata_serverError_throwsHttpException() = runTest {
+        server.enqueue(MockResponse().setResponseCode(500))
+
+        try {
+            LRRArchiveApi.updateMetadata(client, baseUrl, "abc", tags = "test:tag")
+            fail("Should have thrown")
+        } catch (e: LRRHttpException) {
+            assertEquals(500, e.code)
+        }
+    }
+
     @Test
     fun clearNewFlag_sendsDelete() = runTest {
         server.enqueue(MockResponse().setBody("""{"operation":"clear_new","success":1}"""))
