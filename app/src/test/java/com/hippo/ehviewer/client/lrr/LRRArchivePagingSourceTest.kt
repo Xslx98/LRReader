@@ -10,6 +10,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -42,14 +43,18 @@ class LRRArchivePagingSourceTest {
         filter: String? = null,
         category: String? = null,
         sortby: String? = "date_added",
-        order: String? = "desc"
+        order: String? = "desc",
+        newonly: Boolean = false,
+        untaggedonly: Boolean = false
     ) = LRRArchivePagingSource(
         client = client,
         baseUrl = baseUrl,
         filter = filter,
         category = category,
         sortby = sortby,
-        order = order
+        order = order,
+        newonly = newonly,
+        untaggedonly = untaggedonly
     )
 
     // ---- JSON fixtures ----
@@ -253,5 +258,73 @@ class LRRArchivePagingSourceTest {
         )
         // closestPageToPosition(0) -> page with prevKey=1 -> 1+1 = 2
         assertEquals(2, source.getRefreshKey(state))
+    }
+
+    // ---- newonly / untaggedonly filter edge cases ----
+
+    @Test
+    fun load_withNewOnlyFilter_passesParameter() = runTest {
+        server.enqueue(
+            MockResponse().setBody(searchResultJson(listOf("a1" to "New Archive"), 1))
+        )
+
+        val source = createPagingSource(newonly = true)
+        source.load(
+            PagingSource.LoadParams.Refresh(key = null, loadSize = 100, placeholdersEnabled = false)
+        )
+
+        val request = server.takeRequest()
+        val path = request.path!!
+        assertTrue("Path should contain newonly=true", path.contains("newonly=true"))
+    }
+
+    @Test
+    fun load_withUntaggedOnlyFilter_passesParameter() = runTest {
+        server.enqueue(
+            MockResponse().setBody(searchResultJson(listOf("a1" to "Untagged Archive"), 1))
+        )
+
+        val source = createPagingSource(untaggedonly = true)
+        source.load(
+            PagingSource.LoadParams.Refresh(key = null, loadSize = 100, placeholdersEnabled = false)
+        )
+
+        val request = server.takeRequest()
+        val path = request.path!!
+        assertTrue("Path should contain untaggedonly=true", path.contains("untaggedonly=true"))
+    }
+
+    @Test
+    fun load_withBothNewAndUntaggedFilters_passesBothParameters() = runTest {
+        server.enqueue(
+            MockResponse().setBody(searchResultJson(listOf("a1" to "Archive"), 1))
+        )
+
+        val source = createPagingSource(newonly = true, untaggedonly = true)
+        source.load(
+            PagingSource.LoadParams.Refresh(key = null, loadSize = 100, placeholdersEnabled = false)
+        )
+
+        val request = server.takeRequest()
+        val path = request.path!!
+        assertTrue("Path should contain newonly=true", path.contains("newonly=true"))
+        assertTrue("Path should contain untaggedonly=true", path.contains("untaggedonly=true"))
+    }
+
+    @Test
+    fun load_withoutNewOnlyFilter_omitsParameter() = runTest {
+        server.enqueue(
+            MockResponse().setBody(searchResultJson(listOf("a1" to "Archive"), 1))
+        )
+
+        val source = createPagingSource(newonly = false, untaggedonly = false)
+        source.load(
+            PagingSource.LoadParams.Refresh(key = null, loadSize = 100, placeholdersEnabled = false)
+        )
+
+        val request = server.takeRequest()
+        val path = request.path!!
+        assertFalse("Path should NOT contain newonly", path.contains("newonly"))
+        assertFalse("Path should NOT contain untaggedonly", path.contains("untaggedonly"))
     }
 }
