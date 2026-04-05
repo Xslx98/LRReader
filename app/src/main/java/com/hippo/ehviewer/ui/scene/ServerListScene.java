@@ -137,8 +137,10 @@ public final class ServerListScene extends BaseScene {
         // Clear caches so previous server's content doesn't appear under new server
         ServiceRegistry.INSTANCE.clearAllCaches();
 
-        // Reload download manager
-        ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().reload();
+        // Reload download manager on IO thread (EhDB.getAllDownloadInfo blocks)
+        IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+            ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().reload();
+        });
 
         Toast.makeText(ctx, getString(R.string.lrr_server_switched, profile.getName()),
                 Toast.LENGTH_SHORT).show();
@@ -325,21 +327,21 @@ public final class ServerListScene extends BaseScene {
                 normalizedUrl = "https://" + normalizedUrl;
             }
 
-            // Save to DB (API key is stored in EncryptedSharedPreferences, not Room)
-            ServerProfile updated = new ServerProfile(
+            // Save to DB on IO thread
+            final ServerProfile updated = new ServerProfile(
                     profile.getId(), newName, normalizedUrl,
                     null, profile.isActive());
-            EhDB.updateServerProfile(updated);
-            LRRAuthManager.setApiKeyForProfile(profile.getId(), newKey.isEmpty() ? null : newKey);
+            IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+                EhDB.updateServerProfile(updated);
+                LRRAuthManager.setApiKeyForProfile(profile.getId(), newKey.isEmpty() ? null : newKey);
+                if (profile.isActive()) {
+                    LRRAuthManager.setServerUrl(updated.getUrl());
+                    LRRAuthManager.setApiKey(newKey.isEmpty() ? null : newKey);
+                    LRRAuthManager.setServerName(newName);
+                }
+            });
 
-            // If this is the active profile, update LRRAuthManager too
-            if (profile.isActive()) {
-                LRRAuthManager.setServerUrl(normalizedUrl);
-                LRRAuthManager.setApiKey(newKey.isEmpty() ? null : newKey);
-                LRRAuthManager.setServerName(newName);
-            }
-
-            // Refresh list and dismiss
+            // Refresh list immediately with in-memory data
             mProfiles.set(position, updated);
             mAdapter.notifyItemChanged(position);
             dialog.dismiss();
@@ -413,20 +415,21 @@ public final class ServerListScene extends BaseScene {
                                           boolean usedHttpFallback) {
                         if (getActivity() == null) return;
                         getActivity().runOnUiThread(() -> {
-                            // Save as new profile and switch to it
-                            // API key is stored in EncryptedSharedPreferences, not Room
-                            EhDB.deactivateAllProfiles();
-                            ServerProfile newProfile = new ServerProfile(
-                                    0, name, resolvedUrl, null, true);
-                            long newId = EhDB.insertServerProfile(newProfile);
-                            LRRAuthManager.setApiKeyForProfile(newId, finalKey);
-
+                            // Set auth immediately (in-memory via .apply())
                             LRRAuthManager.setServerUrl(resolvedUrl);
                             LRRAuthManager.setApiKey(finalKey);
                             LRRAuthManager.setServerName(name);
-                            LRRAuthManager.setActiveProfileId(newId);
 
-                            ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().reload();
+                            // DB operations on IO thread
+                            IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+                                EhDB.deactivateAllProfiles();
+                                ServerProfile newProfile = new ServerProfile(
+                                        0, name, resolvedUrl, null, true);
+                                long newId = EhDB.insertServerProfile(newProfile);
+                                LRRAuthManager.setApiKeyForProfile(newId, finalKey);
+                                LRRAuthManager.setActiveProfileId(newId);
+                                ServiceRegistry.INSTANCE.getDataModule().getDownloadManager().reload();
+                            });
 
                             Toast.makeText(ctx, getString(R.string.lrr_connection_success,
                                     info.name, info.version), Toast.LENGTH_SHORT).show();
