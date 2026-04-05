@@ -1,6 +1,7 @@
 package com.hippo.ehviewer
 
 import android.content.Context
+import com.hippo.ehviewer.client.lrr.LRRTagCache
 import com.hippo.ehviewer.module.AppModule
 import com.hippo.ehviewer.module.ClientModule
 import com.hippo.ehviewer.module.CoroutineModule
@@ -56,5 +57,6 @@ object ServiceRegistry {
         try { networkModule.cache.evictAll() } catch (_: Exception) {}
         dataModule.galleryDetailCache.evictAll()
         try { dataModule.spiderInfoCache.clear() } catch (_: Exception) {}
+        LRRTagCache.clear()
     }
 }
