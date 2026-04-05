@@ -42,6 +42,7 @@
             android:layout_gravity="end"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/v_edit_white_x24"
+            android:tint="?attr/textColorThemeAccent"
             android:contentDescription="@string/lrr_edit_tags"
             android:scaleType="centerInside"
             android:padding="4dp"
