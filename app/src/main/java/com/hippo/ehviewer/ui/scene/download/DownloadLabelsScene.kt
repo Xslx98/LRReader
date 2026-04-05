@@ -1,0 +1,328 @@
+/*
+ * Copyright 2016 Hippo Seven
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hippo.ehviewer.ui.scene.download
+
+import android.content.DialogInterface
+import android.graphics.drawable.NinePatchDrawable
+import android.os.Bundle
+import android.text.TextUtils
+import android.view.LayoutInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.h6ah4i.android.widget.advrecyclerview.animator.SwipeDismissItemAnimator
+import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemAdapter
+import com.h6ah4i.android.widget.advrecyclerview.draggable.ItemDraggableRange
+import com.h6ah4i.android.widget.advrecyclerview.draggable.RecyclerViewDragDropManager
+import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemViewHolder
+import com.hippo.app.EditTextDialogBuilder
+import com.hippo.easyrecyclerview.EasyRecyclerView
+import com.hippo.ehviewer.R
+import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.dao.DownloadLabel
+import com.hippo.ehviewer.ui.scene.ToolbarScene
+import com.hippo.util.DrawableManager
+import com.hippo.view.ViewTransition
+import com.hippo.lib.yorozuya.AssertUtils
+import com.hippo.lib.yorozuya.ViewUtils
+
+class DownloadLabelsScene : ToolbarScene() {
+
+    /*---------------
+     Whole life cycle
+     ---------------*/
+    @JvmField
+    var mList: List<DownloadLabel>? = null
+
+    /*---------------
+     View life cycle
+     ---------------*/
+    private var mRecyclerView: EasyRecyclerView? = null
+    private var mViewTransition: ViewTransition? = null
+    private var mAdapter: RecyclerView.Adapter<*>? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        mList = ServiceRegistry.dataModule.downloadManager.labelList
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mList = null
+    }
+
+    override fun onCreateView3(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        val view = inflater.inflate(R.layout.scene_label_list, container, false)
+
+        mRecyclerView = ViewUtils.`$$`(view, R.id.recycler_view) as EasyRecyclerView
+        val tip = ViewUtils.`$$`(view, R.id.tip) as TextView
+        mViewTransition = ViewTransition(mRecyclerView, tip)
+
+        val context = ehContext!!
+        val drawable = DrawableManager.getVectorDrawable(context, R.drawable.big_label)
+        drawable?.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
+        tip.setCompoundDrawables(null, drawable, null, null)
+        tip.setText(R.string.no_download_label)
+
+        // drag & drop manager
+        val dragDropManager = RecyclerViewDragDropManager()
+        dragDropManager.setDraggingItemShadowDrawable(
+            androidx.appcompat.content.res.AppCompatResources.getDrawable(
+                context!!, R.drawable.shadow_8dp
+            ) as NinePatchDrawable
+        )
+
+        var adapter: RecyclerView.Adapter<*> = LabelAdapter()
+        adapter.setHasStableIds(true)
+        adapter = dragDropManager.createWrappedAdapter(adapter) // wrap for dragging
+        mAdapter = adapter
+        val animator = SwipeDismissItemAnimator()
+
+        mRecyclerView!!.layoutManager = LinearLayoutManager(context)
+        mRecyclerView!!.adapter = adapter
+        mRecyclerView!!.itemAnimator = animator
+
+        dragDropManager.attachRecyclerView(mRecyclerView!!)
+
+        updateView()
+
+        return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        setTitle(R.string.download_labels)
+        setNavigationIcon(R.drawable.v_arrow_left_dark_x24)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        mRecyclerView?.stopScroll()
+        mRecyclerView = null
+
+        mViewTransition = null
+        mAdapter = null
+    }
+
+    override fun onNavigationClick(view: View) {
+        onBackPressed()
+    }
+
+    override fun getMenuResId(): Int {
+        return R.menu.scene_download_label
+    }
+
+    override fun onMenuItemClick(item: MenuItem): Boolean {
+        val context = ehContext ?: return false
+
+        when (item.itemId) {
+            R.id.action_add -> {
+                val builder = EditTextDialogBuilder(
+                    context, null, getString(R.string.download_labels)
+                )
+                builder.setTitle(R.string.new_label_title)
+                builder.setPositiveButton(android.R.string.ok, null)
+                val dialog = builder.show()
+                NewLabelDialogHelper(builder, dialog)
+            }
+        }
+        return false
+    }
+
+    private fun updateView() {
+        mViewTransition?.let { vt ->
+            if (mList != null && mList!!.isNotEmpty()) {
+                vt.showView(0)
+            } else {
+                vt.showView(1)
+            }
+        }
+    }
+
+    private inner class NewLabelDialogHelper(
+        private val mBuilder: EditTextDialogBuilder,
+        private val mDialog: AlertDialog
+    ) : View.OnClickListener {
+
+        init {
+            mDialog.getButton(DialogInterface.BUTTON_POSITIVE)?.setOnClickListener(this)
+        }
+
+        override fun onClick(v: View) {
+            val context = ehContext ?: return
+
+            val text = mBuilder.text
+            if (TextUtils.isEmpty(text)) {
+                mBuilder.setError(getString(R.string.label_text_is_empty))
+            } else if (getString(R.string.default_download_label_name) == text) {
+                mBuilder.setError(getString(R.string.label_text_is_invalid))
+            } else if (ServiceRegistry.dataModule.downloadManager.containLabel(text)) {
+                mBuilder.setError(getString(R.string.label_text_exist))
+            } else {
+                mBuilder.setError(null)
+                mDialog.dismiss()
+                ServiceRegistry.dataModule.downloadManager.addLabel(text)
+                if (mAdapter != null && mList != null) {
+                    mAdapter!!.notifyItemInserted(mList!!.size - 1)
+                }
+                mViewTransition?.let { vt ->
+                    if (mList != null && mList!!.isNotEmpty()) {
+                        vt.showView(0)
+                    } else {
+                        vt.showView(1)
+                    }
+                }
+            }
+        }
+    }
+
+    private inner class RenameLabelDialogHelper(
+        private val mBuilder: EditTextDialogBuilder,
+        private val mDialog: AlertDialog,
+        private val mOriginalLabel: String,
+        private val mPosition: Int
+    ) : View.OnClickListener {
+
+        init {
+            mDialog.getButton(DialogInterface.BUTTON_POSITIVE)?.setOnClickListener(this)
+        }
+
+        override fun onClick(v: View) {
+            val context = ehContext ?: return
+
+            val text = mBuilder.text
+            if (TextUtils.isEmpty(text)) {
+                mBuilder.setError(getString(R.string.label_text_is_empty))
+            } else if (getString(R.string.default_download_label_name) == text) {
+                mBuilder.setError(getString(R.string.label_text_is_invalid))
+            } else if (ServiceRegistry.dataModule.downloadManager.containLabel(text)) {
+                mBuilder.setError(getString(R.string.label_text_exist))
+            } else {
+                mBuilder.setError(null)
+                mDialog.dismiss()
+                ServiceRegistry.dataModule.downloadManager.renameLabel(mOriginalLabel, text)
+                mAdapter?.notifyItemChanged(mPosition)
+            }
+        }
+    }
+
+    private inner class LabelHolder(itemView: View) :
+        AbstractDraggableItemViewHolder(itemView), View.OnClickListener {
+
+        val label: TextView = ViewUtils.`$$`(itemView, R.id.label) as TextView
+        val dragHandler: View = ViewUtils.`$$`(itemView, R.id.drag_handler)
+        val delete: View = ViewUtils.`$$`(itemView, R.id.delete)
+
+        init {
+            label.setOnClickListener(this)
+            delete.setOnClickListener(this)
+        }
+
+        override fun onClick(v: View) {
+            val position = adapterPosition
+            val context = ehContext
+            if (context == null || mList == null || mRecyclerView == null) {
+                return
+            }
+
+            if (label === v) {
+                val raw = mList!![position]
+                val builder = EditTextDialogBuilder(
+                    context, raw.label, getString(R.string.download_labels)
+                )
+                builder.setTitle(R.string.rename_label_title)
+                builder.setPositiveButton(android.R.string.ok, null)
+                val dialog = builder.show()
+                RenameLabelDialogHelper(builder, dialog, raw.label ?: "", position)
+            } else if (delete === v) {
+                val downloadLabel = mList!![position]
+                AlertDialog.Builder(context)
+                    .setTitle(R.string.delete_label_title)
+                    .setMessage(getString(R.string.delete_label_message, downloadLabel.label))
+                    .setPositiveButton(android.R.string.ok) { _, _ ->
+                        ServiceRegistry.dataModule.downloadManager.deleteLabel(downloadLabel.label ?: "")
+                    }
+                    .setOnDismissListener {
+                        mAdapter?.notifyDataSetChanged()
+                        updateView()
+                    }
+                    .show()
+            }
+        }
+    }
+
+    private inner class LabelAdapter : RecyclerView.Adapter<LabelHolder>(),
+        DraggableItemAdapter<LabelHolder> {
+
+        private val mInflater: LayoutInflater = layoutInflater2!!
+
+        init {
+            AssertUtils.assertNotNull(mInflater)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LabelHolder {
+            return LabelHolder(mInflater.inflate(R.layout.item_download_label, parent, false))
+        }
+
+        override fun onBindViewHolder(holder: LabelHolder, position: Int) {
+            if (mList != null) {
+                holder.label.text = mList!![position].label
+            }
+        }
+
+        override fun getItemId(position: Int): Long {
+            return if (mList != null) mList!![position].id ?: 0L else 0L
+        }
+
+        override fun getItemCount(): Int {
+            return mList?.size ?: 0
+        }
+
+        override fun onCheckCanStartDrag(holder: LabelHolder, position: Int, x: Int, y: Int): Boolean {
+            return ViewUtils.isViewUnder(holder.dragHandler, x, y, 0)
+        }
+
+        override fun onGetItemDraggableRange(holder: LabelHolder, position: Int): ItemDraggableRange? {
+            return null
+        }
+
+        override fun onMoveItem(fromPosition: Int, toPosition: Int) {
+            val context = ehContext
+            if (context == null || fromPosition == toPosition) {
+                return
+            }
+            ServiceRegistry.dataModule.downloadManager.moveLabel(fromPosition, toPosition)
+        }
+
+        override fun onCheckCanDrop(draggingPosition: Int, dropPosition: Int): Boolean {
+            return true
+        }
+
+        override fun onItemDragStarted(position: Int) {}
+
+        override fun onItemDragFinished(fromPosition: Int, toPosition: Int, result: Boolean) {}
+    }
+}
