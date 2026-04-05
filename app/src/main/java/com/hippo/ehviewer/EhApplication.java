@@ -140,35 +140,43 @@ public class EhApplication extends RecordingApplication {
         // SpiderDen.initialize(this);
         EhDB.initialize(this);
 
-        // Load active server profile into LRRAuthManager
-        try {
-            com.hippo.ehviewer.dao.ServerProfile activeProfile = EhDB.getActiveProfile();
-            if (activeProfile != null) {
-                com.hippo.ehviewer.client.lrr.LRRAuthManager.setActiveProfileId(activeProfile.getId());
-            }
-        } catch (Exception e) {
-            // DB not ready yet on first launch — safe to ignore
-        }
-
-        // One-time migration: move API keys from plaintext Room columns to EncryptedSharedPreferences
-        if (!Settings.getBoolean("api_key_migration_done", false)) {
+        // Move DB queries off the main thread to avoid ANR during cold start.
+        // LRRAuthManager defaults to null URL/key safely; the migration is idempotent.
+        IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+            // Load active server profile into LRRAuthManager
             try {
-                java.util.List<com.hippo.ehviewer.dao.ServerProfile> profiles = EhDB.getAllServerProfiles();
-                for (com.hippo.ehviewer.dao.ServerProfile profile : profiles) {
-                    if (profile.getApiKey() != null && !profile.getApiKey().isEmpty()) {
-                        com.hippo.ehviewer.client.lrr.LRRAuthManager.setApiKeyForProfile(
-                                profile.getId(), profile.getApiKey());
-                        EhDB.updateServerProfile(new com.hippo.ehviewer.dao.ServerProfile(
-                                profile.getId(), profile.getName(), profile.getUrl(),
-                                null, profile.isActive()));
-                    }
+                com.hippo.ehviewer.dao.ServerProfile activeProfile = EhDB.getActiveProfile();
+                if (activeProfile != null) {
+                    com.hippo.ehviewer.client.lrr.LRRAuthManager.setActiveProfileId(activeProfile.getId());
                 }
-                Settings.putBoolean("api_key_migration_done", true);
             } catch (Exception e) {
-                // Migration will retry on next launch
-                android.util.Log.w("EhApplication", "API key migration failed, will retry", e);
+                // DB not ready yet on first launch — safe to ignore
             }
-        }
+
+            // One-time migration: move API keys from plaintext Room columns to EncryptedSharedPreferences
+            if (!Settings.getBoolean("api_key_migration_done", false)) {
+                try {
+                    java.util.List<com.hippo.ehviewer.dao.ServerProfile> profiles = EhDB.getAllServerProfiles();
+                    for (com.hippo.ehviewer.dao.ServerProfile profile : profiles) {
+                        if (profile.getApiKey() != null && !profile.getApiKey().isEmpty()) {
+                            com.hippo.ehviewer.client.lrr.LRRAuthManager.setApiKeyForProfile(
+                                    profile.getId(), profile.getApiKey());
+                            EhDB.updateServerProfile(new com.hippo.ehviewer.dao.ServerProfile(
+                                    profile.getId(), profile.getName(), profile.getUrl(),
+                                    null, profile.isActive()));
+                        }
+                    }
+                    Settings.putBoolean("api_key_migration_done", true);
+                } catch (Exception e) {
+                    // Migration will retry on next launch
+                    android.util.Log.w("EhApplication", "API key migration failed, will retry", e);
+                }
+            }
+
+            if (EhDB.needMerge()) {
+                EhDB.mergeOldDB(EhApplication.this);
+            }
+        });
 
         EhEngine.initialize();
         com.hippo.ehviewer.client.lrr.LRRClientProvider.init(this);
@@ -176,9 +184,6 @@ public class EhApplication extends RecordingApplication {
         Image.initialize(this);
         Native.initialize();
         A7Zip.initialize(this);
-        if (EhDB.needMerge()) {
-            EhDB.mergeOldDB(this);
-        }
 
         // Initialize ServiceRegistry (must be after Settings/EhDB)
         ServiceRegistry.INSTANCE.initialize(this);
