@@ -21,5 +21,9 @@ import kotlinx.coroutines.runBlocking
  * The @WorkerThread annotation enables lint enforcement at call sites.
  */
 @WorkerThread
-fun <T> runSuspend(block: suspend kotlinx.coroutines.CoroutineScope.() -> T): T =
-    runBlocking { block() }
+fun <T> runSuspend(block: suspend kotlinx.coroutines.CoroutineScope.() -> T): T {
+    check(android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) {
+        "runSuspend() must not be called on the main thread — use CoroutineBridge.launchIO() instead"
+    }
+    return runBlocking { block() }
+}
