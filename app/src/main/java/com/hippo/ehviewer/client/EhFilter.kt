@@ -34,7 +34,7 @@ class EhFilter private constructor() {
     val tagNamespaceFilterList: List<Filter> get() = mTagNamespaceFilterList
 
     init {
-        val list = EhDB.getAllFilter()
+        val list = kotlinx.coroutines.runBlocking { EhDB.getAllFilterAsync() }
         for (filter in list) {
             when (filter.mode) {
                 MODE_TITLE -> {
@@ -61,7 +61,7 @@ class EhFilter private constructor() {
     fun addFilter(filter: Filter) {
         // enable filter by default before it is added to database
         filter.enable = true
-        EhDB.addFilter(filter)
+        kotlinx.coroutines.runBlocking { EhDB.addFilterAsync(filter) }
 
         when (filter.mode) {
             MODE_TITLE -> {
@@ -85,12 +85,12 @@ class EhFilter private constructor() {
 
     @Synchronized
     fun triggerFilter(filter: Filter) {
-        EhDB.triggerFilter(filter)
+        kotlinx.coroutines.runBlocking { EhDB.triggerFilterAsync(filter) }
     }
 
     @Synchronized
     fun deleteFilter(filter: Filter) {
-        EhDB.deleteFilter(filter)
+        kotlinx.coroutines.runBlocking { EhDB.deleteFilterAsync(filter) }
 
         when (filter.mode) {
             MODE_TITLE -> mTitleFilterList.remove(filter)
