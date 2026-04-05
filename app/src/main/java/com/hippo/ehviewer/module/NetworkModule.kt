@@ -7,6 +7,7 @@ import com.hippo.ehviewer.Hosts
 import com.hippo.ehviewer.client.EhCookieStore
 import com.hippo.ehviewer.client.EhHosts
 import okhttp3.Cache
+import okhttp3.ConnectionPool
 import okhttp3.OkHttpClient
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -24,7 +25,7 @@ class NetworkModule(private val context: Context) {
     val cookieStore: EhCookieStore by lazy { EhCookieStore(context) }
 
     val cache: Cache by lazy {
-        Cache(File(context.cacheDir, "http_cache"), 100L * 1024L * 1024L)
+        Cache(File(context.cacheDir, "http_cache"), 200L * 1024L * 1024L)
     }
 
     val hosts: Hosts by lazy { Hosts(context, "hosts.db") }
@@ -33,6 +34,7 @@ class NetworkModule(private val context: Context) {
 
     val okHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .connectionPool(ConnectionPool(10, 5, TimeUnit.MINUTES))
             .followRedirects(true)
             .followSslRedirects(true)
             .connectTimeout(10, TimeUnit.SECONDS)
@@ -65,7 +67,10 @@ class NetworkModule(private val context: Context) {
                     for (header in setCookieHeaders) {
                         cookieManager.setCookie(url, header)
                     }
-                    cookieManager.flush()
+                    // Defer flush to avoid blocking the network thread
+                    com.hippo.util.IoThreadPoolExecutor.instance.execute {
+                        cookieManager.flush()
+                    }
                 }
                 response
             }
@@ -80,7 +85,7 @@ class NetworkModule(private val context: Context) {
             .connectTimeout(20, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
             .writeTimeout(20, TimeUnit.SECONDS)
-            .callTimeout(20, TimeUnit.SECONDS)
+            .callTimeout(60, TimeUnit.SECONDS)
             .build()
     }
 
