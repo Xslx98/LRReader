@@ -14,56 +14,52 @@
  * limitations under the License.
  */
 
-package com.hippo.ehviewer.download;
+package com.hippo.ehviewer.download
 
-import androidx.annotation.NonNull;
+import com.hippo.ehviewer.dao.DownloadInfo
+import java.util.LinkedList
 
-import com.hippo.ehviewer.dao.DownloadInfo;
-
-import java.util.LinkedList;
-import java.util.List;
-
-public interface DownloadInfoListener {
+interface DownloadInfoListener {
 
     /**
      * Add the special info to the special position
      */
-    void onAdd(@NonNull DownloadInfo info, @NonNull List<DownloadInfo> list, int position);
+    fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int)
 
     /**
      * delete Old replace new
      */
-    void onReplace(@NonNull DownloadInfo newInfo, @NonNull DownloadInfo oldInfo);
+    fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo)
 
     /**
      * The special info is changed
      */
-    void onUpdate(@NonNull DownloadInfo info, @NonNull List<DownloadInfo> list, LinkedList<DownloadInfo> mWaitList);
+    fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: LinkedList<DownloadInfo>)
 
     /**
      * Maybe all data is changed, but size is the same
      */
-    void onUpdateAll();
+    fun onUpdateAll()
 
     /**
      * Maybe all data is changed, maybe list is changed
      */
-    void onReload();
+    fun onReload()
 
     /**
      * The list is gone, use default list please
      */
-    void onChange();
+    fun onChange()
 
     /**
      * Rename label
      */
-    void onRenameLabel(String from, String to);
+    fun onRenameLabel(from: String, to: String)
 
     /**
      * Remove the special info from the special position
      */
-    void onRemove(@NonNull DownloadInfo info, @NonNull List<DownloadInfo> list, int position);
+    fun onRemove(info: DownloadInfo, list: List<DownloadInfo>, position: Int)
 
-    void onUpdateLabels();
+    fun onUpdateLabels()
 }
