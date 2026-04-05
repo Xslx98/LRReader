@@ -83,7 +83,6 @@ object LRRArchiveApi {
             .put(EMPTY_REQUEST_BODY)
             .build()
         client.newCall(request).execute().use { response ->
-            val body = response.body?.string() ?: ""
             if (!response.isSuccessful) {
                 throw LRRHttpException(response.code)
             }
