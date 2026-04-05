@@ -307,22 +307,24 @@ object EhDB {
 
     suspend fun moveDownloadInfoAsync(infos: List<DownloadInfo>, fromPosition: Int, toPosition: Int) {
         if (fromPosition == toPosition) return
-        val dao = sDatabase.downloadDao()
-        val reverse = fromPosition > toPosition
-        val offset = if (reverse) toPosition else fromPosition
-        val limit = if (reverse) fromPosition - toPosition + 1 else toPosition - fromPosition + 1
-        val list = infos.subList(offset, offset + limit)
-        val step = if (reverse) 1 else -1
-        val start = if (reverse) limit - 1 else 0
-        val end = if (reverse) 0 else limit - 1
-        val toTime = list[end].time
-        var i = end
-        while (if (reverse) i < start else i > start) {
-            list[i].time = list[i + step].time
-            i += step
+        sDatabase.withTransaction {
+            val dao = sDatabase.downloadDao()
+            val reverse = fromPosition > toPosition
+            val offset = if (reverse) toPosition else fromPosition
+            val limit = if (reverse) fromPosition - toPosition + 1 else toPosition - fromPosition + 1
+            val list = infos.subList(offset, offset + limit)
+            val step = if (reverse) 1 else -1
+            val start = if (reverse) limit - 1 else 0
+            val end = if (reverse) 0 else limit - 1
+            val toTime = list[end].time
+            var i = end
+            while (if (reverse) i < start else i > start) {
+                list[i].time = list[i + step].time
+                i += step
+            }
+            list[start].time = toTime
+            dao.updateAll(list)
         }
-        list[start].time = toTime
-        dao.updateAll(list)
     }
 
     @JvmStatic
