@@ -237,7 +237,7 @@ public final class QuickSearchScene extends ToolbarScene {
 
         @Override
         public long getItemId(int position) {
-            return mQuickSearchList != null ? mQuickSearchList.get(position).getId() : 0;
+            return mQuickSearchList != null ? mQuickSearchList.get(position).id : 0;
         }
 
         @Override
