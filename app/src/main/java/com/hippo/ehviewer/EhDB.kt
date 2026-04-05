@@ -32,6 +32,7 @@ import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.lib.yorozuya.collect.SparseJLArray
 
 import androidx.room.withTransaction
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
 
 import java.io.File
@@ -283,6 +284,25 @@ object EhDB {
             }
         }
         return list
+    }
+
+    /**
+     * Returns a [Flow] that emits the current download list whenever the
+     * DOWNLOADS table changes (insert/update/delete of persisted columns).
+     *
+     * Profile-aware: filters by the active server profile when one is set.
+     *
+     * **Important:** `@Ignore` fields (speed, downloaded, total, etc.) are NOT
+     * persisted, so this Flow will NOT fire for progress-only changes.
+     * Use the existing [DownloadInfoListener] callbacks for real-time progress.
+     */
+    @JvmStatic
+    fun observeDownloads(): Flow<List<DownloadInfo>> {
+        val profileId = com.hippo.ehviewer.client.lrr.LRRAuthManager.getActiveProfileId()
+        return if (profileId > 0)
+            sDatabase.downloadDao().observeDownloadsByServer(profileId)
+        else
+            sDatabase.downloadDao().observeAllDownloads()
     }
 
     @JvmStatic
