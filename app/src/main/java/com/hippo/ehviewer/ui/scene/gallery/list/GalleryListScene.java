@@ -90,9 +90,6 @@ import com.hippo.ehviewer.client.data.userTag.UserTag;
 import com.hippo.ehviewer.client.data.userTag.UserTagList;
 import com.hippo.ehviewer.client.exception.EhException;
 import com.hippo.ehviewer.client.lrr.LRRAuthManager;
-import com.hippo.ehviewer.client.lrr.LRRArchiveApi;
-import com.hippo.ehviewer.client.lrr.LRRClientProvider;
-import com.hippo.ehviewer.client.lrr.LRRMiscApi;
 import com.hippo.ehviewer.client.lrr.LRRSearchApi;
 import com.hippo.ehviewer.client.lrr.data.LRRArchive;
 import com.hippo.ehviewer.client.lrr.data.LRRSearchResult;
@@ -102,6 +99,7 @@ import com.hippo.ehviewer.client.parser.GalleryPageUrlParser;
 
 import com.hippo.ehviewer.dao.DownloadInfo;
 import com.hippo.ehviewer.dao.QuickSearch;
+import com.hippo.ehviewer.download.DownloadInfoListener;
 import com.hippo.ehviewer.download.DownloadManager;
 import com.hippo.ehviewer.ui.CommonOperations;
 import com.hippo.ehviewer.ui.GalleryActivity;
@@ -249,6 +247,9 @@ public final class GalleryListScene extends BaseScene
     private SubscriptionDraw mSubscriptionDraw;
 
     @Nullable
+    private GalleryUploadHelper mUploadHelper;
+
+    @Nullable
     private final Animator.AnimatorListener mActionFabAnimatorListener = new SimpleAnimatorListener() {
         @Override
         public void onAnimationEnd(Animator animation) {
@@ -302,7 +303,7 @@ public final class GalleryListScene extends BaseScene
     private ShowcaseView mShowcaseView;
     private GalleryListSceneDialog tagDialog;
     private DownloadManager mDownloadManager;
-    private DownloadManager.DownloadInfoListener mDownloadInfoListener;
+    private DownloadInfoListener mDownloadInfoListener;
     private FavouriteStatusRouter mFavouriteStatusRouter;
     private FavouriteStatusRouter.Listener mFavouriteStatusRouterListener;
 
@@ -362,7 +363,7 @@ public final class GalleryListScene extends BaseScene
         mDownloadManager = ServiceRegistry.INSTANCE.getDataModule().getDownloadManager();
         mFavouriteStatusRouter = ServiceRegistry.INSTANCE.getDataModule().getFavouriteStatusRouter();
 
-        mDownloadInfoListener = new DownloadManager.DownloadInfoListener() {
+        mDownloadInfoListener = new DownloadInfoListener() {
 
             @Override
             public void onAdd(@NonNull DownloadInfo info, @NonNull List<DownloadInfo> list, int position) {
@@ -632,6 +633,40 @@ public final class GalleryListScene extends BaseScene
         mViewTransition = new ViewTransition(contentLayout, mSearchLayout);
 
         mHelper = new GalleryListHelper();
+        mUploadHelper = new GalleryUploadHelper(new GalleryUploadHelper.Callback() {
+            @Override
+            public void showTip(String message, int length) {
+                GalleryListScene.this.showTip(message, length);
+            }
+            @Override
+            public void showTip(int resId, int length) {
+                GalleryListScene.this.showTip(resId, length);
+            }
+            @Override
+            public void refreshList() {
+                if (mHelper != null) mHelper.refresh();
+            }
+            @Override
+            public Activity getHostActivity() {
+                return getActivity2();
+            }
+            @Override
+            public Context getHostContext() {
+                return getContext();
+            }
+            @Override
+            public String getHostString(int resId) {
+                return getString(resId);
+            }
+            @Override
+            public String getHostString(int resId, Object... formatArgs) {
+                return getString(resId, formatArgs);
+            }
+            @Override
+            public void startActivityForResult(Intent intent, int requestCode) {
+                GalleryListScene.this.startActivityForResult(intent, requestCode);
+            }
+        });
         contentLayout.setHelper(mHelper);
         contentLayout.getFastScroller().setOnDragHandlerListener(this);
 
@@ -929,6 +964,7 @@ public final class GalleryListScene extends BaseScene
         mLeftDrawable = null;
         mRightDrawable = null;
         mActionFabDrawable = null;
+        mUploadHelper = null;
     }
 
 
@@ -1453,10 +1489,10 @@ public final class GalleryListScene extends BaseScene
                 onItemClick(null, gInfoL.get((int) (Math.random() * gInfoL.size())));
                 break;
             case 4: // Upload archive (LRR only)
-                showUploadFilePicker();
+                if (mUploadHelper != null) mUploadHelper.showUploadFilePicker();
                 break;
             case 5: // URL download (LRR only)
-                showUrlDownloadDialog();
+                if (mUploadHelper != null) mUploadHelper.showUrlDownloadDialog();
                 break;
         }
 
@@ -1909,145 +1945,11 @@ public final class GalleryListScene extends BaseScene
             }
         } else if (REQUEST_CODE_UPLOAD_ARCHIVE == requestCode) {
             if (Activity.RESULT_OK == resultCode && data != null && data.getData() != null) {
-                handleUploadArchive(data.getData());
+                if (mUploadHelper != null) mUploadHelper.handleUploadResult(data.getData());
             }
         } else {
             super.onActivityResult(requestCode, resultCode, data);
         }
-    }
-
-    /**
-     * Launch file picker for archive upload (ZIP, RAR, CBZ, CB7, etc.).
-     */
-    private void showUploadFilePicker() {
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("*/*");
-        String[] mimeTypes = {
-            "application/zip", "application/x-rar-compressed",
-            "application/x-7z-compressed", "application/x-tar",
-            "application/gzip", "application/octet-stream"
-        };
-        intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        try {
-            startActivityForResult(
-                Intent.createChooser(intent, getString(R.string.lrr_upload_choose_file)),
-                REQUEST_CODE_UPLOAD_ARCHIVE);
-        } catch (Exception e) {
-            showTip(R.string.lrr_upload_no_file_manager, BaseScene.LENGTH_SHORT);
-        }
-    }
-
-    /**
-     * Handle the selected file for archive upload.
-     */
-    private void handleUploadArchive(android.net.Uri uri) {
-        Context context = getContext();
-        if (context == null) return;
-
-        // Copy URI content to temp file
-        IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
-            java.io.File tempFile = null;
-            try {
-                String fileName = getFileNameFromUri(context, uri);
-                if (fileName == null) fileName = "upload_archive";
-                tempFile = new java.io.File(context.getCacheDir(), fileName);
-                try (java.io.InputStream is = context.getContentResolver().openInputStream(uri);
-                     java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile)) {
-                    if (is == null) throw new java.io.IOException("Cannot open file");
-                    byte[] buffer = new byte[8192];
-                    int read;
-                    while ((read = is.read(buffer)) != -1) {
-                        fos.write(buffer, 0, read);
-                    }
-                }
-
-                java.io.File finalTempFile = tempFile;
-                String arcid = (String) com.hippo.ehviewer.client.lrr.LRRCoroutineHelper.runSuspend(
-                    (scope, cont) -> LRRArchiveApi.uploadArchive(
-                        LRRClientProvider.getClient(),
-                        LRRClientProvider.getBaseUrl(),
-                        finalTempFile, null, null, null, cont)
-                );
-
-                Activity activity = getActivity2();
-                if (activity != null) {
-                    activity.runOnUiThread(() -> {
-                        showTip(getString(R.string.lrr_upload_success), BaseScene.LENGTH_LONG);
-                        if (mHelper != null) mHelper.refresh();
-                    });
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Upload failed", e);
-                Activity activity = getActivity2();
-                if (activity != null) {
-                    activity.runOnUiThread(() ->
-                        showTip(getString(R.string.lrr_upload_failed, e.getMessage()),
-                            BaseScene.LENGTH_LONG));
-                }
-            } finally {
-                if (tempFile != null && tempFile.exists()) {
-                    tempFile.delete();
-                }
-            }
-        });
-    }
-
-    /**
-     * Show dialog for URL download on the LANraragi server.
-     */
-    private void showUrlDownloadDialog() {
-        Context context = getContext();
-        if (context == null) return;
-
-        EditTextDialogBuilder builder = new EditTextDialogBuilder(
-            context, null, getString(R.string.lrr_url_download_hint));
-        builder.setTitle(getString(R.string.lrr_url_download_title));
-        builder.setPositiveButton(getString(android.R.string.ok), (dialog, which) -> {
-            String url = builder.getText().trim();
-            if (url.isEmpty()) {
-                showTip(R.string.lrr_url_download_empty, BaseScene.LENGTH_SHORT);
-                return;
-            }
-            IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
-                try {
-                    int jobId = (int) com.hippo.ehviewer.client.lrr.LRRCoroutineHelper.runSuspend(
-                        (scope, cont) -> LRRMiscApi.downloadUrl(
-                            LRRClientProvider.getClient(),
-                            LRRClientProvider.getBaseUrl(),
-                            url, null, cont)
-                    );
-                    Activity activity = getActivity2();
-                    if (activity != null) {
-                        activity.runOnUiThread(() ->
-                            showTip(getString(R.string.lrr_url_download_success, jobId),
-                                BaseScene.LENGTH_LONG));
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "URL download failed", e);
-                    Activity activity = getActivity2();
-                    if (activity != null) {
-                        activity.runOnUiThread(() ->
-                            showTip(getString(R.string.lrr_url_download_failed, e.getMessage()),
-                                BaseScene.LENGTH_LONG));
-                    }
-                }
-            });
-        });
-        builder.show();
-    }
-
-    @Nullable
-    private String getFileNameFromUri(Context context, android.net.Uri uri) {
-        String name = null;
-        try (android.database.Cursor cursor = context.getContentResolver()
-                .query(uri, null, null, null, null)) {
-            if (cursor != null && cursor.moveToFirst()) {
-                int idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
-                if (idx >= 0) name = cursor.getString(idx);
-            }
-        }
-        return name;
     }
 
     private void onGetGalleryListSuccess(GalleryListParser.Result result, int taskId) {
