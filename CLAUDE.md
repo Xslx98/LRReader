@@ -15,7 +15,7 @@
 
 | Layer | Technology | Version |
 |---|---|---|
-| Languages | Java / Kotlin hybrid (42% Kotlin) | Kotlin 2.1.0 |
+| Languages | Java / Kotlin hybrid (69% Kotlin) | Kotlin 2.1.0 |
 | Android SDK | compileSdk 35, minSdk 28 | Android 9+ |
 | JDK | Java 21 | sourceCompatibility VERSION_21 |
 | Build | Gradle + AGP 8.13.2 | `./gradlew` + Version Catalog (`libs.versions.toml`) |
@@ -66,7 +66,7 @@ LRReader/
 │   │   │   │   └── CMakeLists.txt
 │   │   │   ├── res/                   # Resources (11 locale configs)
 │   │   │   └── AndroidManifest.xml
-│   │   └── test/                      # Unit tests (32 files, LRR API + DAO + DiffUtil + Coroutine)
+│   │   └── test/                      # Unit tests (39 files, LRR API + DAO + DiffUtil + Paging + Filter)
 │   ├── build.gradle                   # App-level Gradle config
 │   └── proguard-rules.pro
 ├── config/detekt/detekt.yml           # Detekt static analysis config
@@ -85,7 +85,7 @@ LRReader/
 
 | File | Purpose |
 |---|---|
-| `EhApplication.java` | App entry point; calls `ServiceRegistry.initialize()` |
+| `EhApplication.kt` | App entry point; calls `ServiceRegistry.initialize()` |
 | `ServiceRegistry.kt` | Central singleton registry replacing old EhApplication service locator |
 | `module/AppModule.kt` | App-level services (crash reporting, analytics) |
 | `module/ClientModule.kt` | LRR API clients + auth |
@@ -107,9 +107,11 @@ LRReader/
 | `client/lrr/LRRArchivePagingSource.kt` | Paging 3 source for gallery list |
 | `dao/AppDatabase.kt` | Room database schema (v11, schema exported) |
 | `util/FlowBridge.kt` | Java→Kotlin Flow bridge for lifecycle-aware collection |
-| `ui/MainActivity.java` | Main UI entry point + scene routing |
-| `ui/GalleryActivity.java` | Reader/detail view |
-| `ui/scene/GalleryListScene.java` | Gallery browse scene |
+| `ui/MainActivity.kt` | Main UI entry point + scene routing |
+| `ui/GalleryActivity.kt` | Reader/detail view |
+| `ui/scene/GalleryListScene.kt` | Gallery browse scene (uses PagingSource for LRR search) |
+| `ui/scene/download/DownloadsScene.kt` | Download management (Room Flow + DiffUtil) |
+| `ui/scene/gallery/detail/GalleryDetailScene.kt` | Gallery detail + tag editor entry |
 | `ui/scene/gallery/list/GalleryListViewModel.kt` | Paging 3 ViewModel for gallery list |
 | `ui/scene/gallery/detail/TagEditDialog.kt` | Grouped tag editor (chip-style, per-namespace) |
 
@@ -166,9 +168,9 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 ### Language
 
 - **All new code must be Kotlin.** Java is legacy from EhViewer; do not write new Java.
-- Core layers (data, API, download, settings, modules, gallery providers) are **100% Kotlin**.
-- UI layer (Scenes, Activities, Adapters) is partially migrated; mid-size Scenes are Kotlin, three large Scenes remain Java.
-- `com.hippo.*` framework (230 files: GLView, Conaco, widgets) stays Java — stable legacy, rarely touched.
+- **All `ehviewer` business code is Kotlin** — data, API, download, settings, modules, gallery providers, all Scenes, all Activities, all Adapters.
+- Remaining 76 Java files in `ehviewer` are small widgets, helpers, and E-Hentai legacy stubs.
+- `com.hippo.*` framework (230 files: GLView, Conaco, ContentLayout, widgets) stays Java — stable legacy, rarely touched.
 
 ### Style
 
@@ -229,10 +231,10 @@ Access via `ServiceRegistry.<module>.<service>`. Do not add new statics to `EhAp
 
 ### Settings
 
-Settings are being migrated from `Settings.java` to typed objects in `settings/`:
+Settings are now Kotlin objects in `settings/`:
 
-- `AppearanceSettings`, `DownloadSettings`, `FavoritesSettings`, `NetworkSettings`, `ReadingSettings`, `SecuritySettings`
-- New settings go into the appropriate typed object, not `Settings.java`
+- `Settings.kt` (legacy global), `AppearanceSettings`, `DownloadSettings`, `FavoritesSettings`, `NetworkSettings`, `ReadingSettings`, `SecuritySettings`
+- New settings go into the appropriate typed object
 - API keys use `EncryptedSharedPreferences` via `LRRAuthManager` — never plaintext
 
 ### Package Organization
@@ -246,16 +248,23 @@ Settings are being migrated from `Settings.java` to typed objects in `settings/`
 
 ## Testing
 
-Unit tests live in `app/src/test/java/`. 32 test files covering:
+Unit tests live in `app/src/test/java/`. 39 test files covering:
 
 - All LRR API classes (`LRRArchiveApiTest`, `LRRSearchApiTest`, `LRRCategoryApiTest`, etc.) using `MockWebServer`
 - All LRR data classes (`LRRArchiveTest`, `LRRCategoryTest`, etc.)
+- `LRRTagStatTest` + `LRRTagCacheTest` — tag autocomplete data + cache (18 tests)
+- `LRRArchivePagingSourceTest` — Paging 3 source (16 tests)
+- `DownloadManagerTest` — download state machine, labels, queue, notifications (18 tests)
+- `DownloadSpeedTrackerTest` — speed calculation + remaining time
+- `GalleryInfoParcelTest` — Parcelable round-trip for GalleryInfo + DownloadInfo (11 tests)
+- `TagEditDialogTest` — tag parsing + formatting round-trip (18 tests)
+- `EhFilterTest` — title/tag/uploader/namespace filtering (35 tests)
 - `RoomMigrationTest` — schema integrity verification
 - `ServerProfileDaoTest` — DAO CRUD verification
 - `GalleryInfoDiffTest` — DiffUtil identity/content equality contracts
-- `ContentHelperDiffUtilTest` — DiffUtil dispatch operations (insert/remove/change)
+- `ContentHelperDiffUtilTest` — DiffUtil dispatch operations
 - `CoroutineBridgeTest` — Java→coroutine bridge function contracts
-- `EhDBMainThreadCheckTest` — main-thread detection + direct DAO operations
+- `EhDBMainThreadCheckTest` — main-thread detection
 - `TestServiceRegistryHelper` — test infrastructure for ServiceRegistry mocking
 
 Run tests with:
@@ -320,7 +329,7 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 7. **EhDB dual API:** ~22 remaining `@JvmStatic` bridge methods use `blockingDb()` for Java callers (logs warning on main thread). Kotlin callers should use `suspend fun *Async()` versions directly. Dead methods and Kotlin-only bridges have been removed — do not add new `blockingDb` bridges.
 
-8. **Download subsystem (Kotlin):** `DownloadManager.kt` (state management), `LRRDownloadWorker.kt` (background downloads with retry, format validation), `DownloadSpeedTracker.kt` (speed monitoring). Listener interfaces extracted to `DownloadInfoListener.java`/`DownloadListener.java`. Thread-safe via `CopyOnWriteArrayList` and `ConcurrentHashMap`. LRU cache (500 MB) for page images.
+8. **Download subsystem (100% Kotlin):** `DownloadManager.kt` (state management), `LRRDownloadWorker.kt` (background downloads with retry, format validation), `DownloadSpeedTracker.kt` (speed monitoring), `DownloadInfoListener.kt`/`DownloadListener.kt` (interfaces). Thread-safe via `CopyOnWriteArrayList` and `ConcurrentHashMap`. LRU cache (500 MB) for page images. 18 unit tests cover state machine, labels, queue, and notifications.
 
 9. **Multi-server support:** `ServerProfile` entity + `LRRAuthManager` handle per-server credentials. Server selection affects all API calls. Credentials are encrypted.
 
@@ -336,7 +345,7 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 15. **Room Flow observation:** `DownloadRoomDao` provides `Flow<List<DownloadInfo>>` queries. `DownloadsScene` subscribes via `FlowBridge.collectFlow()` for reactive list updates. Flow handles structure changes (add/remove/state); existing callbacks handle real-time download progress (`@Ignore` fields not persisted to Room).
 
-16. **Paging 3 infrastructure:** `LRRArchivePagingSource` + `GalleryListViewModel` provide paginated gallery loading. Not yet wired to GalleryListScene UI (pending Kotlin migration of that Scene). Config: pageSize=100, prefetchDistance=20.
+16. **Paging 3 integrated:** `LRRArchivePagingSource` used directly by `GalleryListScene.GalleryListHelper.getPageData()` for LRR search. `GalleryListViewModel` provides `Flow<PagingData<GalleryInfo>>` with `SearchParams` invalidation. ContentHelper pagination framework preserved as the adapter layer. Config: pageSize=100, prefetchDistance=20.
 
 17. **Tag editor:** `TagEditDialog.kt` shows a grouped chip-style editor using the same `RoundSideRectDrawable` visual style as the detail page. Click to edit, long-press to delete, [+] to add per namespace. Supports `AutoCompleteTextView` with `LRRTagCache` suggestions. Entry point: pencil icon in tag display area.
 
