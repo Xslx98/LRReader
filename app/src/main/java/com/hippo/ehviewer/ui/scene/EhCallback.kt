@@ -39,9 +39,6 @@ abstract class EhCallback<E : SceneFragment?, T>(
     open val content: Context
         get() = stageActivity ?: application
 
-    // Java-compatible getter
-    open fun getContent(): Context = content
-
     open val application: EhApplication
         get() = mApplication
 
