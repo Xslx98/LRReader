@@ -1153,6 +1153,13 @@
     <!-- LRR Edit Tags -->
     <string name="lrr_edit_tags">Edit Tags</string>
     <string name="lrr_tags_updated">Tags updated</string>
+    <string name="lrr_add_tag">Add tag</string>
+    <string name="lrr_add_namespace">Add namespace</string>
+    <string name="lrr_edit_tag">Edit tag</string>
+    <string name="lrr_namespace_hint">e.g. artist, parody</string>
+    <string name="lrr_tag_hint">Tag name</string>
+    <string name="lrr_save">Save</string>
+    <string name="lrr_empty_namespace">Namespace cannot be empty</string>
 
     <!-- LRR Delete Archive -->
     <string name="lrr_delete_archive">Delete</string>
