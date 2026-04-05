@@ -76,17 +76,17 @@ public class BookmarksDraw {
             final java.util.List<QuickSearch> toUpdate = new java.util.ArrayList<>();
             if (judge && !quickSearchList.isEmpty()) {
                 for (int i = 0; i < quickSearchList.size(); i++) {
-                    String name = quickSearchList.get(i).getName();
+                    String name = quickSearchList.get(i).name;
                     if (name != null && 2 == name.split(":").length) {
-                        quickSearchList.get(i).setName(TagTranslationUtil.getTagCN(name.split(":"), ehTags));
+                        quickSearchList.get(i).name = TagTranslationUtil.getTagCN(name.split(":"), ehTags);
                         toUpdate.add(quickSearchList.get(i));
                     }
                 }
             } else if (!judge && !quickSearchList.isEmpty()) {
                 for (int i = 0; i < quickSearchList.size(); i++) {
-                    String name = quickSearchList.get(i).getName();
+                    String name = quickSearchList.get(i).name;
                     if (null != name && 1 == name.split(":").length) {
-                        quickSearchList.get(i).setName(quickSearchList.get(i).getKeyword());
+                        quickSearchList.get(i).name = quickSearchList.get(i).keyword;
                         toUpdate.add(quickSearchList.get(i));
                     }
                 }
