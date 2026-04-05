@@ -93,8 +93,8 @@ public class Settings {
         sArchiverPre.edit().putString(String.valueOf(downloadId),info.toJson().toString()).apply();
     }
 
-    public static boolean deleteArchiverDownload(long downloadId){
-        return sArchiverPre.edit().remove(String.valueOf(downloadId)).commit();
+    public static void deleteArchiverDownload(long downloadId){
+        sArchiverPre.edit().remove(String.valueOf(downloadId)).apply();
     }
 
     public static long getArchiverDownloadId(long gid){
@@ -105,8 +105,8 @@ public class Settings {
         sArchiverPre.edit().putLong(gid+"DId",downloadId).apply();
     }
 
-    public static boolean deleteArchiverDownloadId(long gid){
-        return sArchiverPre.edit().remove(gid+"DId").commit();
+    public static void deleteArchiverDownloadId(long gid){
+        sArchiverPre.edit().remove(gid+"DId").apply();
     }
 
     public static boolean getBoolean(String key, boolean defValue) {
