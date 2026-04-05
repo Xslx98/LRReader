@@ -114,7 +114,7 @@ class EhApplication : RecordingApplication() {
         IoThreadPoolExecutor.instance.execute {
             // Load active server profile into LRRAuthManager
             try {
-                val activeProfile = EhDB.getActiveProfile()
+                val activeProfile = kotlinx.coroutines.runBlocking { EhDB.getActiveProfileAsync() }
                 if (activeProfile != null) {
                     LRRAuthManager.setActiveProfileId(activeProfile.id)
                 }

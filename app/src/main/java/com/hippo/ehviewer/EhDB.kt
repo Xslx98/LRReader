@@ -273,9 +273,6 @@ object EhDB {
     // DOWNLOADS
     // ═══════════════════════════════════════════════════════════
 
-    @JvmStatic
-    fun getAllDownloadInfo(): List<DownloadInfo> = blockingDb { getAllDownloadInfoAsync() }
-
     suspend fun getAllDownloadInfoAsync(): List<DownloadInfo> {
         val dao = sDatabase.downloadDao()
         val profileId = com.hippo.ehviewer.client.lrr.LRRAuthManager.getActiveProfileId()
@@ -320,9 +317,6 @@ object EhDB {
     suspend fun putDownloadInfoAsync(downloadInfo: DownloadInfo) {
         sDatabase.downloadDao().insert(downloadInfo)
     }
-
-    @JvmStatic
-    fun removeDownloadInfo(gid: Long) = blockingDb { removeDownloadInfoAsync(gid) }
 
     suspend fun removeDownloadInfoAsync(gid: Long) {
         sDatabase.downloadDao().deleteDownloadByKey(gid)
@@ -376,15 +370,9 @@ object EhDB {
     // DOWNLOAD LABELS
     // ═══════════════════════════════════════════════════════════
 
-    @JvmStatic
-    fun getAllDownloadLabelList(): List<DownloadLabel> = blockingDb { getAllDownloadLabelListAsync() }
-
     suspend fun getAllDownloadLabelListAsync(): List<DownloadLabel> {
         return sDatabase.downloadDao().getAllDownloadLabels()
     }
-
-    @JvmStatic
-    fun addDownloadLabel(label: String): DownloadLabel = blockingDb { addDownloadLabelAsync(label) }
 
     suspend fun addDownloadLabelAsync(label: String): DownloadLabel {
         val dao = sDatabase.downloadDao()
@@ -397,9 +385,6 @@ object EhDB {
         return raw
     }
 
-    @JvmStatic
-    fun addDownloadLabel(raw: DownloadLabel): DownloadLabel = blockingDb { addDownloadLabelAsync(raw) }
-
     suspend fun addDownloadLabelAsync(raw: DownloadLabel): DownloadLabel {
         raw.id = null
         val dao = sDatabase.downloadDao()
@@ -407,16 +392,9 @@ object EhDB {
         return raw
     }
 
-    @JvmStatic
-    fun updateDownloadLabel(raw: DownloadLabel) = blockingDb { updateDownloadLabelAsync(raw) }
-
     suspend fun updateDownloadLabelAsync(raw: DownloadLabel) {
         sDatabase.downloadDao().updateLabel(raw)
     }
-
-    @JvmStatic
-    fun moveDownloadLabel(fromPosition: Int, toPosition: Int) =
-        blockingDb { moveDownloadLabelAsync(fromPosition, toPosition) }
 
     suspend fun moveDownloadLabelAsync(fromPosition: Int, toPosition: Int) {
         if (fromPosition == toPosition) return
@@ -438,9 +416,6 @@ object EhDB {
         dao.updateLabels(list)
     }
 
-    @JvmStatic
-    fun removeDownloadLabel(raw: DownloadLabel) = blockingDb { removeDownloadLabelAsync(raw) }
-
     suspend fun removeDownloadLabelAsync(raw: DownloadLabel) {
         sDatabase.downloadDao().deleteLabel(raw)
     }
@@ -448,9 +423,6 @@ object EhDB {
     // ═══════════════════════════════════════════════════════════
     // LOCAL FAVORITES
     // ═══════════════════════════════════════════════════════════
-
-    @JvmStatic
-    fun removeLocalFavorites(gid: Long) = blockingDb { removeLocalFavoritesAsync(gid) }
 
     suspend fun removeLocalFavoritesAsync(gid: Long) {
         sDatabase.browsingDao().deleteLocalFavoriteByKey(gid)
@@ -472,9 +444,6 @@ object EhDB {
     suspend fun containLocalFavoritesAsync(gid: Long): Boolean {
         return sDatabase.browsingDao().loadLocalFavorite(gid) != null
     }
-
-    @JvmStatic
-    fun putLocalFavorite(galleryInfo: GalleryInfo) = blockingDb { putLocalFavoriteAsync(galleryInfo) }
 
     suspend fun putLocalFavoriteAsync(galleryInfo: GalleryInfo) {
         val dao = sDatabase.browsingDao()
@@ -512,6 +481,16 @@ object EhDB {
     suspend fun deleteBlackListAsync(blackList: BlackList) {
         sDatabase.miscDao().deleteBlackList(blackList)
     }
+
+    // ═══════════════════════════════════════════════════════════
+    // GALLERY TAGS
+    // ═══════════════════════════════════════════════════════════
+
+    @JvmStatic
+    fun queryGalleryTags(gid: Long): GalleryTags? = blockingDb { queryGalleryTagsAsync(gid) }
+
+    suspend fun queryGalleryTagsAsync(gid: Long): GalleryTags? =
+        sDatabase.miscDao().queryGalleryTags(gid)
 
     // ═══════════════════════════════════════════════════════════
     // QUICK SEARCH
@@ -629,28 +608,16 @@ object EhDB {
     // FILTER
     // ═══════════════════════════════════════════════════════════
 
-    @JvmStatic
-    fun getAllFilter(): List<Filter> = blockingDb { getAllFilterAsync() }
-
     suspend fun getAllFilterAsync(): List<Filter> = sDatabase.browsingDao().getAllFilters()
-
-    @JvmStatic
-    fun addFilter(filter: Filter) = blockingDb { addFilterAsync(filter) }
 
     suspend fun addFilterAsync(filter: Filter) {
         filter.id = null
         filter.id = sDatabase.browsingDao().insertFilter(filter)
     }
 
-    @JvmStatic
-    fun deleteFilter(filter: Filter) = blockingDb { deleteFilterAsync(filter) }
-
     suspend fun deleteFilterAsync(filter: Filter) {
         sDatabase.browsingDao().deleteFilter(filter)
     }
-
-    @JvmStatic
-    fun triggerFilter(filter: Filter) = blockingDb { triggerFilterAsync(filter) }
 
     suspend fun triggerFilterAsync(filter: Filter) {
         filter.enable = filter.enable != true
@@ -666,9 +633,6 @@ object EhDB {
 
     suspend fun getAllServerProfilesAsync(): List<ServerProfile> =
         sDatabase.miscDao().getAllServerProfiles()
-
-    @JvmStatic
-    fun getActiveProfile(): ServerProfile? = blockingDb { getActiveProfileAsync() }
 
     suspend fun getActiveProfileAsync(): ServerProfile? =
         sDatabase.miscDao().getActiveProfile()
