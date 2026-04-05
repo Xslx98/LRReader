@@ -62,82 +62,85 @@ public class BookmarksDraw {
 
         AssertUtils.assertNotNull(context);
 
-        List<QuickSearch> quickSearchList = EhDB.getAllQuickSearch();
-        //汉化标签 — tag translation updates are persisted on IO thread
-        final boolean judge = AppearanceSettings.getShowTagTranslations();
-        final java.util.List<QuickSearch> toUpdate = new java.util.ArrayList<>();
-        if (judge && !quickSearchList.isEmpty()) {
-            for (int i = 0; i < quickSearchList.size(); i++) {
-                String name = quickSearchList.get(i).getName();
-                if (name != null && 2 == name.split(":").length) {
-                    quickSearchList.get(i).setName(TagTranslationUtil.getTagCN(name.split(":"), ehTags));
-                    toUpdate.add(quickSearchList.get(i));
-                }
-            }
-        } else if (!judge && !quickSearchList.isEmpty()) {
-            for (int i = 0; i < quickSearchList.size(); i++) {
-                String name = quickSearchList.get(i).getName();
-                if (null != name && 1 == name.split(":").length) {
-                    quickSearchList.get(i).setName(quickSearchList.get(i).getKeyword());
-                    toUpdate.add(quickSearchList.get(i));
-                }
-            }
-        }
-        if (!toUpdate.isEmpty()) {
-            com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
-                for (QuickSearch qs : toUpdate) EhDB.updateQuickSearch(qs);
-            });
-        }
-
-
-        final List<QuickSearch> list = quickSearchList;
-
-        final ArrayAdapter<QuickSearch> adapter = new ArrayAdapter<>(context, R.layout.item_simple_list, list);
-        listView.setAdapter(adapter);
-        //快速搜索点击tag事件监听
-        listView.setOnItemClickListener((parent, view1, position, id) -> {
-            if (null == scene.mHelper || null == scene.mUrlBuilder) {
-                return;
-            }
-
-            scene.mUrlBuilder.set(list.get(position));
-            scene.mUrlBuilder.setPageIndex(0);
-            scene.onUpdateUrlBuilder();
-            scene.mHelper.refresh();
-            scene.setState(GalleryListScene.STATE_NORMAL);
-            scene.closeDrawer(Gravity.RIGHT);
-        });
         listView.setOnScrollListener(new ScrollListener());
 
         tip.setText(R.string.quick_search_tip);
         toolbar.setLogo(R.drawable.ic_baseline_bookmarks_24);
         toolbar.setTitle(R.string.quick_search);
         toolbar.inflateMenu(R.menu.drawer_gallery_list);
-        toolbar.setOnMenuItemClickListener(item -> {  //点击增加快速搜索按钮触发
-            int id = item.getItemId();
-            switch (id) {
-                case R.id.action_add:
-                    if (Settings.getQuickSearchTip()) {
-                        scene.showQuickSearchTipDialog(list, adapter, listView, tip);
-                    } else {
-                        scene.showAddQuickSearchDialog(list, adapter, listView, tip);
-                    }
-                    break;
-                case R.id.action_settings:
-                    scene.startScene(new Announcer(QuickSearchScene.class));
-                    break;
-            }
-            return true;
-        });
 
-        if (list.isEmpty()) {
-            tip.setVisibility(View.VISIBLE);
-            listView.setVisibility(View.GONE);
-        } else {
-            tip.setVisibility(View.GONE);
-            listView.setVisibility(View.VISIBLE);
-            resume();
-        }
+        com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(() -> {
+            List<QuickSearch> quickSearchList = EhDB.getAllQuickSearch();
+            //汉化标签 — tag translation updates are persisted on IO thread
+            final boolean judge = AppearanceSettings.getShowTagTranslations();
+            final java.util.List<QuickSearch> toUpdate = new java.util.ArrayList<>();
+            if (judge && !quickSearchList.isEmpty()) {
+                for (int i = 0; i < quickSearchList.size(); i++) {
+                    String name = quickSearchList.get(i).getName();
+                    if (name != null && 2 == name.split(":").length) {
+                        quickSearchList.get(i).setName(TagTranslationUtil.getTagCN(name.split(":"), ehTags));
+                        toUpdate.add(quickSearchList.get(i));
+                    }
+                }
+            } else if (!judge && !quickSearchList.isEmpty()) {
+                for (int i = 0; i < quickSearchList.size(); i++) {
+                    String name = quickSearchList.get(i).getName();
+                    if (null != name && 1 == name.split(":").length) {
+                        quickSearchList.get(i).setName(quickSearchList.get(i).getKeyword());
+                        toUpdate.add(quickSearchList.get(i));
+                    }
+                }
+            }
+            if (!toUpdate.isEmpty()) {
+                for (QuickSearch qs : toUpdate) EhDB.updateQuickSearch(qs);
+            }
+
+            final List<QuickSearch> list = quickSearchList;
+
+            listView.post(() -> {
+                final ArrayAdapter<QuickSearch> adapter = new ArrayAdapter<>(context, R.layout.item_simple_list, list);
+                listView.setAdapter(adapter);
+                //快速搜索点击tag事件监听
+                listView.setOnItemClickListener((parent, view1, position, id) -> {
+                    if (null == scene.mHelper || null == scene.mUrlBuilder) {
+                        return;
+                    }
+
+                    scene.mUrlBuilder.set(list.get(position));
+                    scene.mUrlBuilder.setPageIndex(0);
+                    scene.onUpdateUrlBuilder();
+                    scene.mHelper.refresh();
+                    scene.setState(GalleryListScene.STATE_NORMAL);
+                    scene.closeDrawer(Gravity.RIGHT);
+                });
+
+                toolbar.setOnMenuItemClickListener(item -> {  //点击增加快速搜索按钮触发
+                    int id = item.getItemId();
+                    switch (id) {
+                        case R.id.action_add:
+                            if (Settings.getQuickSearchTip()) {
+                                scene.showQuickSearchTipDialog(list, adapter, listView, tip);
+                            } else {
+                                scene.showAddQuickSearchDialog(list, adapter, listView, tip);
+                            }
+                            break;
+                        case R.id.action_settings:
+                            scene.startScene(new Announcer(QuickSearchScene.class));
+                            break;
+                    }
+                    return true;
+                });
+
+                if (list.isEmpty()) {
+                    tip.setVisibility(View.VISIBLE);
+                    listView.setVisibility(View.GONE);
+                } else {
+                    tip.setVisibility(View.GONE);
+                    listView.setVisibility(View.VISIBLE);
+                    resume();
+                }
+            });
+        });
 
         toolbar.setOnClickListener(l -> {
             scene.drawPager.setCurrentItem(1);
