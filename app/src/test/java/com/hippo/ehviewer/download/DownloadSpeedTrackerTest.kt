@@ -13,11 +13,11 @@ import java.util.LinkedList
 class DownloadSpeedTrackerTest {
 
     private lateinit var activeTask: DownloadInfo
-    private val infoListeners = mutableListOf<DownloadManager.DownloadInfoListener>()
+    private val infoListeners = mutableListOf<DownloadInfoListener>()
     private var capturedDownloadInfo: DownloadInfo? = null
     private val waitList = LinkedList<DownloadInfo>()
 
-    private val fakeListener = object : DownloadManager.DownloadListener {
+    private val fakeListener = object : DownloadListener {
         override fun onGet509() {}
         override fun onStart(info: DownloadInfo) {}
         override fun onDownload(info: DownloadInfo) { capturedDownloadInfo = info }
@@ -38,8 +38,8 @@ class DownloadSpeedTrackerTest {
         val callback = object : DownloadSpeedTracker.Callback {
             override fun getFirstActiveTask(): DownloadInfo = activeTask
             override fun getInfoListForLabel(label: String?): List<DownloadInfo>? = null
-            override fun getDownloadListener(): DownloadManager.DownloadListener = fakeListener
-            override fun getDownloadInfoListeners(): List<DownloadManager.DownloadInfoListener> = infoListeners
+            override fun getDownloadListener(): DownloadListener = fakeListener
+            override fun getDownloadInfoListeners(): List<DownloadInfoListener> = infoListeners
             override fun getWaitList(): LinkedList<DownloadInfo> = waitList
         }
 
