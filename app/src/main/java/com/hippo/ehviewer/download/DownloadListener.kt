@@ -14,39 +14,39 @@
  * limitations under the License.
  */
 
-package com.hippo.ehviewer.download;
+package com.hippo.ehviewer.download
 
-import com.hippo.ehviewer.dao.DownloadInfo;
+import com.hippo.ehviewer.dao.DownloadInfo
 
-public interface DownloadListener {
+interface DownloadListener {
 
     /**
      * Get 509 error
      */
-    void onGet509();
+    fun onGet509()
 
     /**
      * Start download
      */
-    void onStart(DownloadInfo info);
+    fun onStart(info: DownloadInfo)
 
     /**
      * Update download speed
      */
-    void onDownload(DownloadInfo info);
+    fun onDownload(info: DownloadInfo)
 
     /**
      * Update page downloaded
      */
-    void onGetPage(DownloadInfo info);
+    fun onGetPage(info: DownloadInfo)
 
     /**
      * Download done
      */
-    void onFinish(DownloadInfo info);
+    fun onFinish(info: DownloadInfo)
 
     /**
      * Download done
      */
-    void onCancel(DownloadInfo info);
+    fun onCancel(info: DownloadInfo)
 }
