@@ -59,6 +59,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.res.ResourcesCompat;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
@@ -92,6 +93,7 @@ import com.hippo.ehviewer.client.EhUtils;
 import com.hippo.ehviewer.client.data.GalleryInfo;
 import com.hippo.ehviewer.dao.DownloadInfo;
 import com.hippo.ehviewer.dao.DownloadLabel;
+import com.hippo.ehviewer.download.DownloadInfoListener;
 import com.hippo.ehviewer.download.DownloadManager;
 import com.hippo.ehviewer.download.DownloadService;
 import com.hippo.ehviewer.spider.SpiderInfo;
@@ -132,7 +134,7 @@ import java.util.Map;
 import java.util.Objects;
 
 public class DownloadsScene extends ToolbarScene
-        implements DownloadManager.DownloadInfoListener, DownloadSearchCallback,
+        implements DownloadInfoListener, DownloadSearchCallback,
         MyEasyRecyclerView.OnItemClickListener,
         MyEasyRecyclerView.OnItemLongClickListener,
         FabLayout.OnClickFabListener, FabLayout.OnExpandListener, FastScroller.OnDragHandlerListener, SearchBar.Helper, SearchBarMover.Helper, SearchBar.OnStateChangeListener, DownloadAdapter.DownloadAdapterCallback {
@@ -165,6 +167,8 @@ public class DownloadsScene extends ToolbarScene
     private List<DownloadInfo> mList;
     @Nullable
     private List<DownloadInfo> mBackList;
+    @NonNull
+    private List<DownloadInfo> mLastSnapshot = new ArrayList<>();
 
     /*---------------
      List pagination
@@ -342,6 +346,7 @@ public class DownloadsScene extends ToolbarScene
         if (mAdapter != null) {
             mAdapter.notifyDataSetChanged();
         }
+        mLastSnapshot = mList != null ? new ArrayList<>(mList) : new ArrayList<>();
         mBackList = mList;
 //        filterByCategory();
         updateTitle();
@@ -1234,19 +1239,25 @@ public class DownloadsScene extends ToolbarScene
         }
     }
 
-    @SuppressLint("NotifyDataSetChanged")
     @Override
     public void onUpdateAll() {
-        if (mAdapter != null) {
-            mAdapter.notifyDataSetChanged();
+        if (mAdapter != null && mList != null) {
+            List<DownloadInfo> newList = new ArrayList<>(mList);
+            DiffUtil.DiffResult result = DiffUtil.calculateDiff(
+                    new DownloadInfoDiffCallback(mLastSnapshot, newList));
+            mLastSnapshot = newList;
+            result.dispatchUpdatesTo(mAdapter);
         }
     }
 
-    @SuppressLint("NotifyDataSetChanged")
     @Override
     public void onReload() {
-        if (mAdapter != null) {
-            mAdapter.notifyDataSetChanged();
+        if (mAdapter != null && mList != null) {
+            List<DownloadInfo> newList = new ArrayList<>(mList);
+            DiffUtil.DiffResult result = DiffUtil.calculateDiff(
+                    new DownloadInfoDiffCallback(mLastSnapshot, newList));
+            mLastSnapshot = newList;
+            result.dispatchUpdatesTo(mAdapter);
         }
         updateView();
     }
@@ -1980,5 +1991,47 @@ public class DownloadsScene extends ToolbarScene
         updatePaginationIndicator();
         updateView();
         queryUnreadSpiderInfo();
+    }
+
+    /**
+     * DiffUtil callback for DownloadInfo lists.
+     * Uses gid for identity; compares state, legacy, downloaded, total, speed, thumb for content.
+     */
+    private static class DownloadInfoDiffCallback extends DiffUtil.Callback {
+
+        private final List<DownloadInfo> oldList;
+        private final List<DownloadInfo> newList;
+
+        DownloadInfoDiffCallback(List<DownloadInfo> oldList, List<DownloadInfo> newList) {
+            this.oldList = oldList;
+            this.newList = newList;
+        }
+
+        @Override
+        public int getOldListSize() {
+            return oldList.size();
+        }
+
+        @Override
+        public int getNewListSize() {
+            return newList.size();
+        }
+
+        @Override
+        public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+            return oldList.get(oldItemPosition).gid == newList.get(newItemPosition).gid;
+        }
+
+        @Override
+        public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+            DownloadInfo oldItem = oldList.get(oldItemPosition);
+            DownloadInfo newItem = newList.get(newItemPosition);
+            return oldItem.state == newItem.state
+                    && oldItem.legacy == newItem.legacy
+                    && oldItem.downloaded == newItem.downloaded
+                    && oldItem.total == newItem.total
+                    && oldItem.speed == newItem.speed
+                    && ObjectUtils.equal(oldItem.thumb, newItem.thumb);
+        }
     }
 }

@@ -151,7 +151,7 @@ import java.util.concurrent.ExecutorService;
 import okhttp3.OkHttpClient;
 
 public class GalleryDetailScene extends BaseScene implements View.OnClickListener,
-        com.hippo.ehviewer.download.DownloadManager.DownloadInfoListener,
+        com.hippo.ehviewer.download.DownloadInfoListener,
         View.OnLongClickListener {
 
     @IntDef({STATE_INIT, STATE_NORMAL, STATE_REFRESH, STATE_REFRESH_HEADER, STATE_FAILED})
