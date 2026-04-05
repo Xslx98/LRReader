@@ -82,15 +82,15 @@ public class CleanRedundancyPreference extends TaskPreference {
         }
 
         @Override
-        protected Object doInBackground(Void... params) {
+        protected Object doWork() {
             UniFile dir = DownloadSettings.getDownloadLocation();
             if (null == dir) {
-                publishProgress(new int[]{0, 0});
+                publishProgress(0, 0);
                 return 0;
             }
             UniFile[] files = dir.listFiles();
             if (null == files) {
-                publishProgress(new int[]{0, 0});
+                publishProgress(0, 0);
                 return 0;
             }
 
@@ -101,7 +101,7 @@ public class CleanRedundancyPreference extends TaskPreference {
                 if (clearFile(f)) {
                     ++count;
                 }
-                publishProgress(new int[]{i + 1, total});
+                publishProgress(i + 1, total);
             }
 
             return count;

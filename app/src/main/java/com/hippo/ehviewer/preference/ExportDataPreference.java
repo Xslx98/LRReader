@@ -54,7 +54,7 @@ public class ExportDataPreference extends TaskPreference {
     }
 
     @Override
-    protected Object doInBackground(Void... voids) {
+    protected Object doWork() {
       File dir = AppConfig.getExternalDataDir();
       if (dir != null) {
         File file = new File(dir, ReadableTime.getFilenamableTime(System.currentTimeMillis()) + ".db");
