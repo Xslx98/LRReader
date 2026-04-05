@@ -56,21 +56,16 @@ public class LRRAuthInterceptorTest {
         Context ctx = ApplicationProvider.getApplicationContext();
         SharedPreferences prefs = ctx.getSharedPreferences("test_lrr_auth", Context.MODE_PRIVATE);
         prefs.edit().clear().apply();
+        // LRRAuthManager is a Kotlin object — set the field on the singleton INSTANCE
         Field sPrefsField = LRRAuthManager.class.getDeclaredField("sPrefs");
         sPrefsField.setAccessible(true);
-        sPrefsField.set(null, prefs);
+        sPrefsField.set(LRRAuthManager.INSTANCE, prefs);
     }
 
     @After
     public void tearDown() throws IOException {
         server.shutdown();
-        // Clear the test SharedPreferences directly
-        try {
-            Field sPrefsField = LRRAuthManager.class.getDeclaredField("sPrefs");
-            sPrefsField.setAccessible(true);
-            SharedPreferences prefs = (SharedPreferences) sPrefsField.get(null);
-            if (prefs != null) prefs.edit().clear().apply();
-        } catch (Exception ignored) {}
+        LRRAuthManager.clear();
     }
 
     @Test
