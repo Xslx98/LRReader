@@ -162,9 +162,14 @@ public final class MainActivity extends StageActivity
     Handler handlerB = new Handler(Looper.getMainLooper()) {
         @Override
         public void handleMessage(@NonNull Message msg) {
+            if (gifHandler == null || backgroundBit == null || backgroundBit.isRecycled()) return;
             int mNextFrame = gifHandler.updateFrame(backgroundBit);
-            handlerB.sendEmptyMessageDelayed(1, mNextFrame);
-            mHeaderBackground.setImageBitmap(backgroundBit);
+            if (mNextFrame > 0) {
+                handlerB.sendEmptyMessageDelayed(1, mNextFrame);
+            }
+            if (mHeaderBackground != null) {
+                mHeaderBackground.setImageBitmap(backgroundBit);
+            }
         }
     };
 
@@ -447,7 +452,22 @@ public final class MainActivity extends StageActivity
         initBackgroundImageData(headerBackgroundFile);
     }
 
+    private void cleanupBackgroundResources() {
+        handlerB.removeCallbacksAndMessages(null);
+        if (gifHandler != null) {
+            gifHandler.close();
+            gifHandler = null;
+        }
+        if (backgroundBit != null && !backgroundBit.isRecycled()) {
+            backgroundBit.recycle();
+            backgroundBit = null;
+        }
+    }
+
     private void initBackgroundImageData(File file) {
+        // Clean up previous resources
+        cleanupBackgroundResources();
+
         if (file != null) {
             String name = file.getName();
             String[] ns = name.split("\\.");
@@ -469,11 +489,10 @@ public final class MainActivity extends StageActivity
     @Override
     public void backgroundSourceChange(File file) {
         if (file == null) {
-            // Reset to default background
+            cleanupBackgroundResources();
             if (mHeaderBackground != null) {
                 mHeaderBackground.setImageResource(R.drawable.sadpanda_low_poly);
             }
-            backgroundBit = null;
         } else {
             initBackgroundImageData(file);
         }
@@ -563,6 +582,8 @@ public final class MainActivity extends StageActivity
 
     @Override
     protected void onDestroy() {
+        cleanupBackgroundResources();
+
         super.onDestroy();
 
         mDrawerLayout = null;

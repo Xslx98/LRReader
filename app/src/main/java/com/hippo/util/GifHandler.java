@@ -1,8 +1,9 @@
 package com.hippo.util;
 
 import android.graphics.Bitmap;
+import java.io.Closeable;
 
-public class GifHandler {
+public class GifHandler implements Closeable {
 
     private long gifAddr;
 
@@ -18,6 +19,7 @@ public class GifHandler {
     public native int getWidth(long ndkGif);
     public native int getHeight(long ndkGif);
     public native int updateFrame(long ndkGif, Bitmap bitmap);
+    private native void destroy(long ndkGif);
 
     public int getWidth() {
         return getWidth(gifAddr);
@@ -27,6 +29,15 @@ public class GifHandler {
     }
 
     public int updateFrame(Bitmap bitmap) {
-        return updateFrame(gifAddr,bitmap);
+        if (gifAddr == 0) return 0;
+        return updateFrame(gifAddr, bitmap);
+    }
+
+    @Override
+    public void close() {
+        if (gifAddr != 0) {
+            destroy(gifAddr);
+            gifAddr = 0;
+        }
     }
 }
