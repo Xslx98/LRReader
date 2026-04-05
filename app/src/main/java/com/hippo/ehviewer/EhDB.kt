@@ -21,20 +21,14 @@ import com.hippo.ehviewer.settings.AppearanceSettings
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import android.os.Bundle
-import android.os.Handler
 import android.os.Looper
-import android.os.Message
 import android.util.Log
 
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.dao.*
-import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.util.ExceptionUtils
-import com.hippo.util.SqlUtils
 import com.hippo.lib.yorozuya.IOUtils
-import com.hippo.lib.yorozuya.ObjectUtils
 import com.hippo.lib.yorozuya.collect.SparseJLArray
 
 import androidx.room.withTransaction
@@ -44,7 +38,6 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
-import java.util.Date
 
 /**
  * Unified database access layer.
@@ -79,12 +72,6 @@ object EhDB {
         }
         return runBlocking { block() }
     }
-
-    // Constants for import progress tracking
-    const val DB_LOADING = 0
-    const val DB_LOAD_FINISH = 1
-    const val LOADING_STATUS = "loading_status"
-    const val LOADING_PROGRESS = "loading_progress"
 
     @JvmField
     var MAX_HISTORY_COUNT = 100
@@ -379,27 +366,6 @@ object EhDB {
     }
 
     @JvmStatic
-    fun updateDownloadDirname(removeGid: Long, newGid: Long, dirname: String) =
-        blockingDb { updateDownloadDirnameAsync(removeGid, newGid, dirname) }
-
-    suspend fun updateDownloadDirnameAsync(removeGid: Long, newGid: Long, dirname: String) {
-        sDatabase.withTransaction {
-            val dao = sDatabase.downloadDao()
-            dao.deleteDirnameByKey(removeGid)
-            val raw = dao.loadDirname(newGid)
-            if (raw != null) {
-                raw.dirname = dirname
-                dao.updateDirname(raw)
-            } else {
-                val newRaw = DownloadDirname()
-                newRaw.gid = newGid
-                newRaw.dirname = dirname
-                dao.insertDirname(newRaw)
-            }
-        }
-    }
-
-    @JvmStatic
     fun clearDownloadDirname() = blockingDb { clearDownloadDirnameAsync() }
 
     suspend fun clearDownloadDirnameAsync() {
@@ -484,28 +450,6 @@ object EhDB {
     // ═══════════════════════════════════════════════════════════
 
     @JvmStatic
-    fun getAllLocalFavorites(): List<GalleryInfo> = blockingDb { getAllLocalFavoritesAsync() }
-
-    suspend fun getAllLocalFavoritesAsync(): List<GalleryInfo> {
-        return ArrayList<GalleryInfo>(sDatabase.browsingDao().getAllLocalFavorites())
-    }
-
-    @JvmStatic
-    fun searchLocalFavorites(query: String): List<GalleryInfo> = blockingDb { searchLocalFavoritesAsync(query) }
-
-    suspend fun searchLocalFavoritesAsync(query: String): List<GalleryInfo> {
-        val escapedQuery = SqlUtils.sqlEscapeString("%$query%")
-        return ArrayList<GalleryInfo>(sDatabase.browsingDao().searchLocalFavorites(escapedQuery))
-    }
-
-    @JvmStatic
-    fun searchLocalFavorites(query: Long): GalleryInfo? = blockingDb { searchLocalFavoritesByIdAsync(query) }
-
-    suspend fun searchLocalFavoritesByIdAsync(query: Long): GalleryInfo? {
-        return sDatabase.browsingDao().loadLocalFavorite(query)
-    }
-
-    @JvmStatic
     fun removeLocalFavorites(gid: Long) = blockingDb { removeLocalFavoritesAsync(gid) }
 
     suspend fun removeLocalFavoritesAsync(gid: Long) {
@@ -544,15 +488,6 @@ object EhDB {
         }
     }
 
-    @JvmStatic
-    fun putLocalFavorites(galleryInfoList: List<GalleryInfo>) = blockingDb { putLocalFavoritesAsync(galleryInfoList) }
-
-    suspend fun putLocalFavoritesAsync(galleryInfoList: List<GalleryInfo>) {
-        for (gi in galleryInfoList) {
-            putLocalFavoriteAsync(gi)
-        }
-    }
-
     // ═══════════════════════════════════════════════════════════
     // BLACK LIST
     // ═══════════════════════════════════════════════════════════
@@ -561,12 +496,6 @@ object EhDB {
     fun getAllBlackList(): List<BlackList> = blockingDb { getAllBlackListAsync() }
 
     suspend fun getAllBlackListAsync(): List<BlackList> = sDatabase.miscDao().getAllBlackList()
-
-    @JvmStatic
-    fun inBlackList(badgayname: String): Boolean = blockingDb { inBlackListAsync(badgayname) }
-
-    suspend fun inBlackListAsync(badgayname: String): Boolean =
-        sDatabase.miscDao().countBlackListByName(badgayname) != 0
 
     @JvmStatic
     fun insertBlackList(blackList: BlackList) = blockingDb { insertBlackListAsync(blackList) }
@@ -578,62 +507,10 @@ object EhDB {
     }
 
     @JvmStatic
-    fun updateBlackList(blackList: BlackList) = blockingDb { updateBlackListAsync(blackList) }
-
-    suspend fun updateBlackListAsync(blackList: BlackList) {
-        sDatabase.miscDao().updateBlackList(blackList)
-    }
-
-    @JvmStatic
     fun deleteBlackList(blackList: BlackList) = blockingDb { deleteBlackListAsync(blackList) }
 
     suspend fun deleteBlackListAsync(blackList: BlackList) {
         sDatabase.miscDao().deleteBlackList(blackList)
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // GALLERY TAGS
-    // ═══════════════════════════════════════════════════════════
-
-    @JvmStatic
-    fun getAllGalleryTags(): List<GalleryTags> = blockingDb { getAllGalleryTagsAsync() }
-
-    suspend fun getAllGalleryTagsAsync(): List<GalleryTags> = sDatabase.miscDao().getAllGalleryTags()
-
-    @JvmStatic
-    fun inGalleryTags(gid: Long): Boolean = blockingDb { inGalleryTagsAsync(gid) }
-
-    suspend fun inGalleryTagsAsync(gid: Long): Boolean =
-        sDatabase.miscDao().countGalleryTagsByGid(gid) != 0
-
-    @JvmStatic
-    fun queryGalleryTags(gid: Long): GalleryTags? = blockingDb { queryGalleryTagsAsync(gid) }
-
-    suspend fun queryGalleryTagsAsync(gid: Long): GalleryTags? =
-        sDatabase.miscDao().queryGalleryTags(gid)
-
-    @JvmStatic
-    fun insertGalleryTags(galleryTags: GalleryTags) = blockingDb { insertGalleryTagsAsync(galleryTags) }
-
-    suspend fun insertGalleryTagsAsync(galleryTags: GalleryTags) {
-        galleryTags.create_time = Date()
-        galleryTags.update_time = galleryTags.create_time
-        sDatabase.miscDao().insertGalleryTags(galleryTags)
-    }
-
-    @JvmStatic
-    fun updateGalleryTags(galleryTags: GalleryTags) = blockingDb { updateGalleryTagsAsync(galleryTags) }
-
-    suspend fun updateGalleryTagsAsync(galleryTags: GalleryTags) {
-        galleryTags.update_time = Date()
-        sDatabase.miscDao().updateGalleryTags(galleryTags)
-    }
-
-    @JvmStatic
-    fun deleteGalleryTags(galleryTags: GalleryTags) = blockingDb { deleteGalleryTagsAsync(galleryTags) }
-
-    suspend fun deleteGalleryTagsAsync(galleryTags: GalleryTags) {
-        sDatabase.miscDao().deleteGalleryTags(galleryTags)
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -655,42 +532,6 @@ object EhDB {
             quickSearch.time = System.currentTimeMillis()
         }
         quickSearch.id = sDatabase.browsingDao().insertQuickSearch(quickSearch)
-    }
-
-    @JvmStatic
-    fun insertQuickSearchList(quickSearchList: List<QuickSearch>) =
-        blockingDb { insertQuickSearchListAsync(quickSearchList) }
-
-    suspend fun insertQuickSearchListAsync(quickSearchList: List<QuickSearch>) {
-        val dao = sDatabase.browsingDao()
-        for (search in quickSearchList) {
-            search.id = null
-            search.time = System.currentTimeMillis()
-            search.id = dao.insertQuickSearch(search)
-        }
-    }
-
-    @JvmStatic
-    fun takeOverQuickSearchList(quickSearchList: List<QuickSearch>) =
-        blockingDb { takeOverQuickSearchListAsync(quickSearchList) }
-
-    suspend fun takeOverQuickSearchListAsync(quickSearchList: List<QuickSearch>) {
-        val dao = sDatabase.browsingDao()
-        val allList = dao.getAllQuickSearch()
-        for (newSearch in quickSearchList) {
-            var insert = true
-            for (exist in allList) {
-                if (exist.keyword == newSearch.keyword) {
-                    insert = false
-                    break
-                }
-            }
-            if (insert) {
-                newSearch.id = null
-                newSearch.time = System.currentTimeMillis()
-                newSearch.id = dao.insertQuickSearch(newSearch)
-            }
-        }
     }
 
     @JvmStatic
@@ -817,34 +658,6 @@ object EhDB {
     }
 
     // ═══════════════════════════════════════════════════════════
-    // BOOKMARKS
-    // ═══════════════════════════════════════════════════════════
-
-    @JvmStatic
-    fun getAllBookmarks(): List<BookmarkInfo> = blockingDb { getAllBookmarksAsync() }
-
-    suspend fun getAllBookmarksAsync(): List<BookmarkInfo> = sDatabase.miscDao().getAllBookmarks()
-
-    @JvmStatic
-    fun insertBookmark(bookmark: BookmarkInfo) = blockingDb { insertBookmarkAsync(bookmark) }
-
-    suspend fun insertBookmarkAsync(bookmark: BookmarkInfo) {
-        sDatabase.miscDao().insertBookmark(bookmark)
-    }
-
-    @JvmStatic
-    fun loadBookmark(gid: Long): BookmarkInfo? = blockingDb { loadBookmarkAsync(gid) }
-
-    suspend fun loadBookmarkAsync(gid: Long): BookmarkInfo? = sDatabase.miscDao().loadBookmark(gid)
-
-    @JvmStatic
-    fun deleteBookmark(gid: Long) = blockingDb { deleteBookmarkAsync(gid) }
-
-    suspend fun deleteBookmarkAsync(gid: Long) {
-        sDatabase.miscDao().deleteBookmarkByKey(gid)
-    }
-
-    // ═══════════════════════════════════════════════════════════
     // SERVER PROFILES
     // ═══════════════════════════════════════════════════════════
 
@@ -894,7 +707,7 @@ object EhDB {
     }
 
     // ═══════════════════════════════════════════════════════════
-    // EXPORT / IMPORT (Raw SQLite — Room not involved)
+    // EXPORT (Raw SQLite — Room not involved)
     // ═══════════════════════════════════════════════════════════
 
     @JvmStatic
@@ -918,285 +731,4 @@ object EhDB {
         return false
     }
 
-    @JvmStatic
-    fun importDB(context: Context, file: File, handler: Handler): String? {
-        try {
-            val db = SQLiteDatabase.openDatabase(
-                file.path, null, SQLiteDatabase.NO_LOCALIZED_COLLATORS
-            )
-
-            sendImportProgress(handler, 10)
-            val manager = ServiceRegistry.dataModule.downloadManager
-
-            runBlocking {
-                val downloadDao = sDatabase.downloadDao()
-                val browsingDao = sDatabase.browsingDao()
-                val miscDao = sDatabase.miscDao()
-
-                // Download labels
-                try {
-                    val cursor = db.rawQuery("SELECT * FROM DOWNLOAD_LABELS ORDER BY TIME ASC", null)
-                    cursor?.use {
-                        val labelList = mutableListOf<DownloadLabel>()
-                        if (it.moveToFirst()) {
-                            while (!it.isAfterLast) {
-                                val label = DownloadLabel()
-                                label.id = if (it.isNull(0)) null else it.getLong(0)
-                                label.label = if (it.isNull(1)) null else it.getString(1)
-                                label.time = it.getLong(2)
-                                labelList.add(label)
-                                it.moveToNext()
-                            }
-                        }
-                        manager.addDownloadLabel(labelList)
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to import download labels", e)
-                }
-
-                // Downloads
-                try {
-                    val cursor = db.rawQuery("SELECT * FROM DOWNLOADS", null)
-                    cursor?.use {
-                        val downloadList = mutableListOf<DownloadInfo>()
-                        if (it.moveToFirst()) {
-                            while (!it.isAfterLast) {
-                                val info = DownloadInfo()
-                                info.gid = it.getLong(0)
-                                info.token = if (it.isNull(1)) null else it.getString(1)
-                                info.title = if (it.isNull(2)) null else it.getString(2)
-                                info.titleJpn = if (it.isNull(3)) null else it.getString(3)
-                                info.thumb = if (it.isNull(4)) null else it.getString(4)
-                                info.category = it.getInt(5)
-                                info.posted = if (it.isNull(6)) null else it.getString(6)
-                                info.uploader = if (it.isNull(7)) null else it.getString(7)
-                                info.rating = it.getFloat(8)
-                                info.simpleLanguage = if (it.isNull(9)) null else it.getString(9)
-                                info.state = it.getInt(10)
-                                info.legacy = it.getInt(11)
-                                info.time = it.getLong(12)
-                                info.label = if (it.isNull(13)) null else it.getString(13)
-                                if (it.columnCount > 14) {
-                                    info.archiveUri = if (it.isNull(14)) null else it.getString(14)
-                                }
-                                downloadList.add(info)
-                                it.moveToNext()
-                            }
-                        }
-                        manager.addDownload(downloadList)
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to import downloads", e)
-                }
-
-                sendImportProgress(handler, 50)
-
-                // Download dirname
-                try {
-                    val cursor = db.rawQuery("SELECT * FROM DOWNLOAD_DIRNAME", null)
-                    cursor?.use {
-                        if (it.moveToFirst()) {
-                            while (!it.isAfterLast) {
-                                putDownloadDirnameAsync(it.getLong(0), it.getString(1))
-                                it.moveToNext()
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to import download dirnames", e)
-                }
-
-                sendImportProgress(handler, 90)
-
-                // History
-                try {
-                    val cursor = db.rawQuery("SELECT * FROM HISTORY", null)
-                    cursor?.use {
-                        val historyList = mutableListOf<HistoryInfo>()
-                        if (it.moveToFirst()) {
-                            while (!it.isAfterLast) {
-                                val info = HistoryInfo()
-                                info.gid = it.getLong(0)
-                                info.token = if (it.isNull(1)) null else it.getString(1)
-                                info.title = if (it.isNull(2)) null else it.getString(2)
-                                info.titleJpn = if (it.isNull(3)) null else it.getString(3)
-                                info.thumb = if (it.isNull(4)) null else it.getString(4)
-                                info.category = it.getInt(5)
-                                info.posted = if (it.isNull(6)) null else it.getString(6)
-                                info.uploader = if (it.isNull(7)) null else it.getString(7)
-                                info.rating = it.getFloat(8)
-                                info.simpleLanguage = if (it.isNull(9)) null else it.getString(9)
-                                info.mode = it.getInt(10)
-                                info.time = it.getLong(11)
-                                historyList.add(info)
-                                it.moveToNext()
-                            }
-                        }
-                        putHistoryInfoListAsync(historyList)
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to import history", e)
-                }
-
-                // QuickSearch
-                try {
-                    val cursor = db.rawQuery("SELECT * FROM QUICK_SEARCH", null)
-                    cursor?.use {
-                        val currentQuickSearchList = browsingDao.getAllQuickSearch()
-                        if (it.moveToFirst()) {
-                            while (!it.isAfterLast) {
-                                val qs = QuickSearch()
-                                qs.id = if (it.isNull(0)) null else it.getLong(0)
-                                qs.name = if (it.isNull(1)) null else it.getString(1)
-                                qs.mode = it.getInt(2)
-                                qs.category = it.getInt(3)
-                                qs.keyword = if (it.isNull(4)) null else it.getString(4)
-                                qs.advanceSearch = it.getInt(5)
-                                qs.minRating = it.getInt(6)
-                                qs.pageFrom = it.getInt(7)
-                                qs.pageTo = it.getInt(8)
-                                qs.time = it.getLong(9)
-
-                                var duplicate = false
-                                for (q in currentQuickSearchList) {
-                                    if (ObjectUtils.equal(q.name, qs.name)) {
-                                        duplicate = true
-                                        break
-                                    }
-                                }
-                                if (!duplicate) {
-                                    insertQuickSearchAsync(qs)
-                                }
-                                it.moveToNext()
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to import quick search", e)
-                }
-
-                // LocalFavorites
-                try {
-                    val cursor = db.rawQuery("SELECT * FROM LOCAL_FAVORITES", null)
-                    cursor?.use {
-                        if (it.moveToFirst()) {
-                            while (!it.isAfterLast) {
-                                val info = LocalFavoriteInfo()
-                                info.gid = it.getLong(0)
-                                info.token = if (it.isNull(1)) null else it.getString(1)
-                                info.title = if (it.isNull(2)) null else it.getString(2)
-                                info.titleJpn = if (it.isNull(3)) null else it.getString(3)
-                                info.thumb = if (it.isNull(4)) null else it.getString(4)
-                                info.category = it.getInt(5)
-                                info.posted = if (it.isNull(6)) null else it.getString(6)
-                                info.uploader = if (it.isNull(7)) null else it.getString(7)
-                                info.rating = it.getFloat(8)
-                                info.simpleLanguage = if (it.isNull(9)) null else it.getString(9)
-                                info.time = it.getLong(10)
-                                putLocalFavoriteAsync(info)
-                                it.moveToNext()
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to import local favorites", e)
-                }
-
-                // Filter
-                try {
-                    val cursor = db.rawQuery("SELECT * FROM FILTER", null)
-                    cursor?.use {
-                        val currentFilterList = browsingDao.getAllFilters()
-                        if (it.moveToFirst()) {
-                            while (!it.isAfterLast) {
-                                val filter = Filter(
-                                    if (it.isNull(0)) null else it.getLong(0),
-                                    it.getInt(1),
-                                    if (it.isNull(2)) null else it.getString(2),
-                                    if (it.isNull(3)) null else it.getShort(3).toInt() != 0
-                                )
-                                if (!currentFilterList.contains(filter)) {
-                                    addFilterAsync(filter)
-                                }
-                                it.moveToNext()
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to import filters", e)
-                }
-
-                // BlackList
-                try {
-                    val cursor = db.rawQuery("SELECT * FROM \"Black_List\"", null)
-                    cursor?.use {
-                        if (it.moveToFirst()) {
-                            while (!it.isAfterLast) {
-                                val black = BlackList()
-                                black.id = if (it.isNull(0)) null else it.getLong(0)
-                                black.badgayname = if (it.isNull(1)) null else it.getString(1)
-                                black.reason = if (it.isNull(2)) null else it.getString(2)
-                                black.angrywith = if (it.isNull(3)) null else it.getString(3)
-                                black.add_time = if (it.isNull(4)) null else it.getString(4)
-                                black.mode = if (it.isNull(5)) null else it.getInt(5)
-                                insertBlackListAsync(black)
-                                it.moveToNext()
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to import blacklist", e)
-                }
-
-                // GalleryTags
-                try {
-                    val cursor = db.rawQuery("SELECT * FROM \"Gallery_Tags\"", null)
-                    cursor?.use {
-                        if (it.moveToFirst()) {
-                            while (!it.isAfterLast) {
-                                val tags = GalleryTags()
-                                tags.gid = it.getLong(0)
-                                tags.rows = if (it.isNull(1)) null else it.getString(1)
-                                tags.artist = if (it.isNull(2)) null else it.getString(2)
-                                tags.cosplayer = if (it.isNull(3)) null else it.getString(3)
-                                tags.character = if (it.isNull(4)) null else it.getString(4)
-                                tags.female = if (it.isNull(5)) null else it.getString(5)
-                                tags.group = if (it.isNull(6)) null else it.getString(6)
-                                tags.language = if (it.isNull(7)) null else it.getString(7)
-                                tags.male = if (it.isNull(8)) null else it.getString(8)
-                                tags.misc = if (it.isNull(9)) null else it.getString(9)
-                                tags.mixed = if (it.isNull(10)) null else it.getString(10)
-                                tags.other = if (it.isNull(11)) null else it.getString(11)
-                                tags.parody = if (it.isNull(12)) null else it.getString(12)
-                                tags.reclass = if (it.isNull(13)) null else it.getString(13)
-                                tags.create_time = if (it.isNull(14)) null else Date(it.getLong(14))
-                                tags.update_time = if (it.isNull(15)) null else Date(it.getLong(15))
-                                if (!inGalleryTagsAsync(tags.gid)) {
-                                    insertGalleryTagsAsync(tags)
-                                }
-                                it.moveToNext()
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to import gallery tags", e)
-                }
-            }
-
-            db.close()
-            return null
-        } catch (e: Throwable) {
-            ExceptionUtils.throwIfFatal(e)
-            return context.getString(R.string.cant_read_the_file)
-        }
-    }
-
-    private fun sendImportProgress(handler: Handler, progress: Int) {
-        val message = Message()
-        val bundle = Bundle()
-        bundle.putInt(LOADING_PROGRESS, progress)
-        bundle.putInt(LOADING_STATUS, DB_LOADING)
-        message.data = bundle
-        handler.sendMessage(message)
-    }
 }
