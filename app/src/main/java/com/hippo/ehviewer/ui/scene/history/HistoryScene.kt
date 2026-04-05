@@ -419,7 +419,7 @@ class HistoryScene : ToolbarScene(),
 
         override fun onCancel() {}
 
-        override fun isInstance(scene: SceneFragment): Boolean {
+        override fun isInstance(scene: SceneFragment?): Boolean {
             return scene is HistoryScene
         }
     }

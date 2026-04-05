@@ -351,7 +351,7 @@ class GalleryPreviewsScene : ToolbarScene(), EasyRecyclerView.OnItemClickListene
             // empty
         }
 
-        override fun isInstance(scene: SceneFragment): Boolean {
+        override fun isInstance(scene: SceneFragment?): Boolean {
             return scene is GalleryPreviewsScene
         }
     }

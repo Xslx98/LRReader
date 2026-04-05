@@ -239,7 +239,7 @@ class ProgressScene : BaseScene(), View.OnClickListener {
 
         override fun onCancel() {}
 
-        override fun isInstance(scene: SceneFragment): Boolean {
+        override fun isInstance(scene: SceneFragment?): Boolean {
             return scene is ProgressScene
         }
     }
