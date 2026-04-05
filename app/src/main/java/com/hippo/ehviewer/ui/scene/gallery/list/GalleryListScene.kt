@@ -43,6 +43,7 @@ import android.widget.PopupWindow
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.paging.PagingSource
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager.widget.ViewPager
 import com.github.amlcurran.showcaseview.ShowcaseView
@@ -74,9 +75,9 @@ import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.client.data.userTag.UserTag
 import com.hippo.ehviewer.client.data.userTag.UserTagList
 import com.hippo.ehviewer.client.exception.EhException
+import com.hippo.ehviewer.client.lrr.LRRArchivePagingSource
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
-import com.hippo.ehviewer.client.lrr.LRRSearchApi
-import com.hippo.ehviewer.client.lrr.data.LRRSearchResult
+import com.hippo.ehviewer.client.lrr.LRRClientProvider
 import com.hippo.ehviewer.client.parser.GalleryListParser
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.QuickSearch
@@ -112,7 +113,9 @@ import com.hippo.lib.yorozuya.AnimationUtils
 import com.hippo.lib.yorozuya.AssertUtils
 import com.hippo.lib.yorozuya.SimpleAnimatorListener
 import com.hippo.lib.yorozuya.ViewUtils
-import okhttp3.OkHttpClient
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.LinkedList
 import java.util.concurrent.ExecutorService
 
@@ -1660,19 +1663,21 @@ class GalleryListScene : BaseScene(),
     }
 
     /**
-     * LANraragi: handle search result from LRRSearchApi.
+     * LANraragi: handle search result from LRRArchivePagingSource.
      */
-    private fun onGetLRRSearchSuccess(result: LRRSearchResult, taskId: Int, page: Int) {
+    private fun onGetPagingSourceSuccess(
+        data: List<GalleryInfo>, taskId: Int, page: Int, hasMore: Boolean
+    ) {
         if (mHelper != null && mSearchBarMover != null &&
             mHelper!!.isCurrentTask(taskId)
         ) {
             mHelper!!.setEmptyString(getString(R.string.gallery_list_empty_hit))
 
-            val paginated = GallerySearchHelper.convertLRRSearchResult(result, page)
-            mHelper!!.onGetPageData(
-                taskId, paginated.totalPages,
-                paginated.nextPage, paginated.galleryInfoList
-            )
+            // Approximate totalPages/nextPage for ContentHelper.
+            // Exact total is unavailable from PagingSource alone.
+            val totalPages = if (hasMore) page + 2 else page + 1
+            val nextPage = if (hasMore) page + 1 else 0
+            mHelper!!.onGetPageData(taskId, totalPages, nextPage, data)
         }
     }
 
@@ -1706,7 +1711,7 @@ class GalleryListScene : BaseScene(),
         // Default page size for LANraragi pagination.
         // This should match the server's archives_per_page setting.
         override fun getPageData(taskId: Int, type: Int, page: Int) {
-            // LANraragi: fetch archives from LRRSearchApi
+            // LANraragi: fetch archives via LRRArchivePagingSource
             val serverUrl = LRRAuthManager.getServerUrl()
             if (serverUrl.isNullOrEmpty()) return
 
@@ -1725,31 +1730,63 @@ class GalleryListScene : BaseScene(),
                 }
             }
 
-            val start = page * LRR_PAGE_SIZE
-            val client: OkHttpClient = ServiceRegistry.networkModule.okHttpClient
-            val searchFilter = filter
-            val searchCategory = categoryId
             val currentPage = page
 
             // Get sort options from search layout
             val sortBy = mSearchLayout?.sortBy ?: "date_added"
             val sortOrder = mSearchLayout?.sortOrder ?: "desc"
 
-            IoThreadPoolExecutor.instance.execute {
+            // Use LRRArchivePagingSource as a direct data fetcher.
+            // This reuses the same PagingSource that backs GalleryListViewModel,
+            // keeping the existing ContentHelper pagination framework intact.
+            val pagingSource = LRRArchivePagingSource(
+                client = LRRClientProvider.getClient(),
+                baseUrl = LRRClientProvider.getBaseUrl(),
+                filter = filter,
+                category = categoryId,
+                sortby = sortBy,
+                order = sortOrder
+            )
+
+            ServiceRegistry.coroutineModule.ioScope.launch {
                 try {
-                    @Suppress("UNCHECKED_CAST")
-                    val result = com.hippo.ehviewer.client.lrr.runSuspend {
-                        LRRSearchApi.searchArchives(
-                            client, serverUrl, searchFilter, searchCategory,
-                            start, sortBy, sortOrder, false, false, false
+                    val loadResult = pagingSource.load(
+                        PagingSource.LoadParams.Refresh(
+                            key = currentPage,
+                            loadSize = LRR_PAGE_SIZE,
+                            placeholdersEnabled = false
                         )
-                    }
-                    activity?.runOnUiThread {
-                        onGetLRRSearchSuccess(result, taskId, currentPage)
+                    )
+                    when (loadResult) {
+                        is PagingSource.LoadResult.Page -> {
+                            val hasMore = loadResult.nextKey != null
+                            withContext(Dispatchers.Main) {
+                                onGetPagingSourceSuccess(
+                                    loadResult.data, taskId, currentPage, hasMore
+                                )
+                            }
+                        }
+                        is PagingSource.LoadResult.Error -> {
+                            withContext(Dispatchers.Main) {
+                                onGetGalleryListFailure(
+                                    loadResult.throwable as? Exception
+                                        ?: Exception(loadResult.throwable),
+                                    taskId
+                                )
+                            }
+                        }
+                        is PagingSource.LoadResult.Invalid -> {
+                            withContext(Dispatchers.Main) {
+                                onGetGalleryListFailure(
+                                    Exception("PagingSource invalidated"),
+                                    taskId
+                                )
+                            }
+                        }
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "LRR search failed", e)
-                    activity?.runOnUiThread {
+                    Log.e(TAG, "LRR paging search failed", e)
+                    withContext(Dispatchers.Main) {
                         onGetGalleryListFailure(e, taskId)
                     }
                 }
