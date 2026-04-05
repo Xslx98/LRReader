@@ -14,28 +14,28 @@
  * limitations under the License.
  */
 
-package com.hippo.ehviewer;
+package com.hippo.ehviewer
 
-import android.content.Context;
-import android.content.res.Resources;
-import androidx.annotation.NonNull;
-import androidx.annotation.StringRes;
+import android.content.Context
+import android.content.res.Resources
+import androidx.annotation.StringRes
 
-public class GetText {
+object GetText {
 
-    private static Resources sResources;
+    private lateinit var sResources: Resources
 
-    public static void initialize(Context context) {
-        sResources = context.getApplicationContext().getResources();
+    @JvmStatic
+    fun initialize(context: Context) {
+        sResources = context.applicationContext.resources
     }
 
-    @NonNull
-    public static String getString(@StringRes int id) {
-        return sResources.getString(id);
+    @JvmStatic
+    fun getString(@StringRes id: Int): String {
+        return sResources.getString(id)
     }
 
-    @NonNull
-    public static String getString(@StringRes int id, Object... formatArgs) {
-        return sResources.getString(id, formatArgs);
+    @JvmStatic
+    fun getString(@StringRes id: Int, vararg formatArgs: Any?): String {
+        return sResources.getString(id, *formatArgs)
     }
 }
