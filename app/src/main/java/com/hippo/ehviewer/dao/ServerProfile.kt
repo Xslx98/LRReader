@@ -6,8 +6,9 @@ import androidx.room.PrimaryKey
 
 /**
  * Room Entity representing a LANraragi server profile.
- * Stores connection settings (URL, API key) and an active flag
+ * Stores connection settings (URL) and an active flag
  * to identify the currently connected server.
+ * API keys are stored in EncryptedSharedPreferences via LRRAuthManager.
  */
 @Entity(tableName = "SERVER_PROFILES")
 data class ServerProfile(
@@ -20,9 +21,6 @@ data class ServerProfile(
 
     @ColumnInfo(name = "URL")
     val url: String,
-
-    @ColumnInfo(name = "API_KEY")
-    val apiKey: String? = null,
 
     @ColumnInfo(name = "IS_ACTIVE")
     val isActive: Boolean = false

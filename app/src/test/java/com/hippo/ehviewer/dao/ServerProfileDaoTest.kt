@@ -45,7 +45,7 @@ class ServerProfileDaoTest {
 
     @Test
     fun insertAndQuery() = runTest {
-        val profile = ServerProfile(name = "Test", url = "https://test.com", apiKey = "key1")
+        val profile = ServerProfile(name = "Test", url = "https://test.com")
         val id = dao.insertServerProfile(profile)
         assertTrue(id > 0)
 
@@ -53,7 +53,6 @@ class ServerProfileDaoTest {
         assertEquals(1, all.size)
         assertEquals("Test", all[0].name)
         assertEquals("https://test.com", all[0].url)
-        assertEquals("key1", all[0].apiKey)
     }
 
     @Test
@@ -61,14 +60,13 @@ class ServerProfileDaoTest {
         val profile = ServerProfile(name = "Old", url = "https://old.com")
         val id = dao.insertServerProfile(profile)
 
-        val updated = ServerProfile(id = id, name = "New", url = "https://new.com", apiKey = "newkey")
+        val updated = ServerProfile(id = id, name = "New", url = "https://new.com")
         dao.updateServerProfile(updated)
 
         val all = dao.getAllServerProfiles()
         assertEquals(1, all.size)
         assertEquals("New", all[0].name)
         assertEquals("https://new.com", all[0].url)
-        assertEquals("newkey", all[0].apiKey)
     }
 
     @Test

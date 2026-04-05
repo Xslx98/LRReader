@@ -311,7 +311,6 @@ class RoomMigrationTest {
         val profile = ServerProfile(
             name = "My Server",
             url = "http://example.com",
-            apiKey = "test_key",
             isActive = true
         )
         dao.insertServerProfile(profile)

@@ -121,30 +121,6 @@ class EhApplication : RecordingApplication() {
                 // DB not ready yet on first launch — safe to ignore
             }
 
-            // One-time migration: move API keys from plaintext Room columns to EncryptedSharedPreferences
-            if (!Settings.getBoolean("api_key_migration_done", false)) {
-                try {
-                    val profiles = EhDB.getAllServerProfiles()
-                    for (profile in profiles) {
-                        if (!profile.apiKey.isNullOrEmpty()) {
-                            LRRAuthManager.setApiKeyForProfile(
-                                profile.id, profile.apiKey
-                            )
-                            EhDB.updateServerProfile(
-                                com.hippo.ehviewer.dao.ServerProfile(
-                                    profile.id, profile.name, profile.url,
-                                    null, profile.isActive
-                                )
-                            )
-                        }
-                    }
-                    Settings.putBoolean("api_key_migration_done", true)
-                } catch (e: Exception) {
-                    // Migration will retry on next launch
-                    Log.w("EhApplication", "API key migration failed, will retry", e)
-                }
-            }
-
             if (EhDB.needMerge()) {
                 EhDB.mergeOldDB(this@EhApplication)
             }
