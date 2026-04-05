@@ -13,25 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.hippo.ehviewer.ui.fragment
 
-package com.hippo.ehviewer.ui.fragment;
+import android.os.Bundle
+import com.hippo.ehviewer.R
 
-import android.os.Bundle;
-
-import androidx.annotation.Nullable;
-import androidx.preference.PreferenceFragmentCompat;
-
-import com.hippo.ehviewer.R;
-
-public class ReadFragment extends BasePreferenceFragmentCompat {
+class ReadFragment : BasePreferenceFragmentCompat() {
 
     /**
      * 设置->阅读界面
      * xml/read_settings.xml
-     * @param savedInstanceState
      */
-    @Override
-    public void onCreatePreferences(@Nullable Bundle savedInstanceState, @Nullable String rootKey) {
-        addPreferencesFromResource(R.xml.read_settings);
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        addPreferencesFromResource(R.xml.read_settings)
     }
 }
