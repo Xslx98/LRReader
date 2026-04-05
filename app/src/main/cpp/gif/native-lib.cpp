@@ -332,3 +332,19 @@ Java_com_hippo_util_GifHandler_updateFrame__JLandroid_graphics_Bitmap_2(JNIEnv *
     AndroidBitmap_unlockPixels(env, bitmap);
     return gifBean->dealys[gifBean->current_frame];
 }
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_hippo_util_GifHandler_destroy(JNIEnv *env, jobject instance, jlong ndkGif) {
+    if (ndkGif == 0) return;
+    GifFileType *gifFileType = (GifFileType *) ndkGif;
+    GifBean *gifBean = (GifBean *) gifFileType->UserData;
+    if (gifBean != NULL) {
+        if (gifBean->dealys != NULL) {
+            free(gifBean->dealys);
+        }
+        free(gifBean);
+        gifFileType->UserData = NULL;
+    }
+    DGifCloseFile(gifFileType);
+}
