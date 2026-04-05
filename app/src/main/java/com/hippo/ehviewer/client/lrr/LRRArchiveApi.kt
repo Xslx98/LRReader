@@ -9,6 +9,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import okhttp3.FormBody
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
@@ -86,6 +87,41 @@ object LRRArchiveApi {
             if (!response.isSuccessful) {
                 throw LRRHttpException(response.code)
             }
+        }
+    }
+
+    /**
+     * PUT /api/archives/:id/metadata — Update archive title and/or tags via form body.
+     *
+     * Unlike [updateArchiveMetadata] which only sends tags as a query parameter,
+     * this method uses a form-encoded request body and supports updating both
+     * the title and tags in a single call.
+     *
+     * @param title new title, or null to leave unchanged
+     * @param tags  new comma-separated tags, or null to leave unchanged
+     */
+    @JvmStatic
+    suspend fun updateMetadata(
+        client: OkHttpClient,
+        baseUrl: String,
+        arcid: String,
+        title: String? = null,
+        tags: String? = null
+    ): Unit = withContext(Dispatchers.IO) {
+        val formBody = FormBody.Builder()
+        if (title != null) formBody.add("title", title)
+        if (tags != null) formBody.add("tags", tags)
+        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+            .addPathSegments("api/archives")
+            .addPathSegment(arcid)
+            .addPathSegment("metadata")
+            .build()
+        val request = Request.Builder()
+            .url(url)
+            .put(formBody.build())
+            .build()
+        client.newCall(request).execute().use { response ->
+            ensureSuccess(response)
         }
     }
 
@@ -274,6 +310,10 @@ object LRRArchiveApi {
     @JvmStatic
     suspend fun updateArchiveMetadata(arcid: String, tags: String) =
         updateArchiveMetadata(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), arcid, tags)
+
+    @JvmStatic
+    suspend fun updateMetadata(arcid: String, title: String? = null, tags: String? = null) =
+        updateMetadata(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), arcid, title, tags)
 
     @JvmStatic
     suspend fun getFileList(arcid: String): Array<String> =
