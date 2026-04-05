@@ -1,6 +1,7 @@
 package com.hippo.ehviewer.dao
 
 import androidx.room.*
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Room DAO for download-related tables: DOWNLOADS, DOWNLOAD_DIRNAME, DOWNLOAD_LABELS.
@@ -12,6 +13,22 @@ interface DownloadRoomDao {
 
     @Query("SELECT * FROM DOWNLOADS ORDER BY TIME DESC")
     suspend fun getAllDownloadInfo(): List<DownloadInfo>
+
+    /**
+     * Observe all downloads reactively. Room invalidates the Flow whenever the
+     * DOWNLOADS table changes (insert/update/delete).
+     *
+     * Note: Flow-returning Room queries must NOT be `suspend` — Room handles
+     * the background threading internally.
+     */
+    @Query("SELECT * FROM DOWNLOADS ORDER BY TIME DESC")
+    fun observeAllDownloads(): Flow<List<DownloadInfo>>
+
+    /**
+     * Observe downloads filtered by server profile reactively.
+     */
+    @Query("SELECT * FROM DOWNLOADS WHERE SERVER_PROFILE_ID = :profileId ORDER BY TIME DESC")
+    fun observeDownloadsByServer(profileId: Long): Flow<List<DownloadInfo>>
 
     @Query("SELECT * FROM DOWNLOADS WHERE SERVER_PROFILE_ID = :profileId ORDER BY TIME DESC")
     suspend fun getDownloadInfoByServer(profileId: Long): List<DownloadInfo>
