@@ -21,7 +21,6 @@ import static com.hippo.ehviewer.spider.SpiderDen.getGalleryDownloadDir;
 import com.hippo.ehviewer.ui.GalleryOpenHelper;
 import static com.hippo.ehviewer.spider.SpiderInfo.getSpiderInfo;
 import static com.hippo.ehviewer.ui.scene.download.part.DownloadAdapter.DRAG_ENABLE;
-import static com.hippo.util.FileUtils.getFileName;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -239,11 +238,8 @@ public class DownloadsScene extends ToolbarScene
             this::updateReadProcess
     );
 
-    @NonNull
-    private final ActivityResultLauncher<Intent> filePickerLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            this::handleSelectedFile
-    );
+    @Nullable
+    private DownloadImportHelper mImportHelper;
 
     @Override
     public int getNavCheckedItem() {
@@ -296,6 +292,19 @@ public class DownloadsScene extends ToolbarScene
         mDownloadManager = ServiceRegistry.INSTANCE.getDataModule().getDownloadManager();
         mDownloadManager.addDownloadInfoListener(this);
         canPagination = DownloadSettings.getDownloadPagination();
+
+        // Initialize import helper (must happen before onStart per ActivityResultLauncher contract)
+        mImportHelper = new DownloadImportHelper(
+                new DownloadImportHelper.Callback() {
+                    @Override public Context getContext() { return getEHContext(); }
+                    @Override public Activity getActivity() { return getActivity2(); }
+                    @Override public DownloadManager getDownloadManager() { return mDownloadManager; }
+                    @Override public String getString(int resId) { return DownloadsScene.this.getString(resId); }
+                    @Override public void onImportSuccess() { updateForLabel(); updateView(); }
+                },
+                requireActivity().getActivityResultRegistry(),
+                this
+        );
         if (savedInstanceState == null) {
             onInit();
         } else {
@@ -833,7 +842,9 @@ public class DownloadsScene extends ToolbarScene
                 gotoFilterAndSort(id);
                 return true;
             case R.id.import_local_archive:
-                importLocalArchive();
+                if (mImportHelper != null) {
+                    mImportHelper.importLocalArchive();
+                }
                 return true;
 
         }
@@ -1606,188 +1617,10 @@ public class DownloadsScene extends ToolbarScene
         return index;
     }
 
-    private void importLocalArchive() {
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.setType("*/*");
-        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{
-                "application/zip",
-                "application/x-zip-compressed",
-                "application/x-rar-compressed",
-                "application/vnd.rar",
-                "application/x-rar",
-                "application/rar",
-                "application/x-cbz",
-                "application/x-cbr"
-        });
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        // CRITICAL: Add flags to enable persistent URI permissions
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
-
-        try {
-            filePickerLauncher.launch(Intent.createChooser(intent, getString(R.string.import_archive_title)));
-        } catch (Exception e) {
-            Context context = getEHContext();
-            if (context != null) {
-                Toast.makeText(context, R.string.import_archive_failed, Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-    private void handleSelectedFile(ActivityResult result) {
-        if (result.getResultCode() != Activity.RESULT_OK || result.getData() == null) {
-            return;
-        }
-
-        Uri uri = result.getData().getData();
-        if (uri == null) {
-            return;
-        }
-
-        Context context = getEHContext();
-        if (context == null) {
-            return;
-        }
-
-        // CRITICAL: Request persistent URI permission IMMEDIATELY when file is selected
-        // This is the key to solving the permission loss issue after app restart
-        try {
-            context.getContentResolver().takePersistableUriPermission(uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            Log.d(TAG, "Successfully obtained persistent URI permission for: " + uri);
-        } catch (SecurityException e) {
-            Log.e(TAG, "Failed to obtain persistent URI permission for: " + uri, e);
-            Toast.makeText(context, R.string.archive_permission_lost, Toast.LENGTH_LONG).show();
-            return;
-        } catch (Exception e) {
-            Log.e(TAG, "Unexpected error when obtaining URI permission for: " + uri, e);
-            Toast.makeText(context, R.string.import_archive_failed, Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // Show processing dialog
-        Toast.makeText(context, R.string.import_archive_processing, Toast.LENGTH_LONG).show();
-
-        // Process the archive file in background
-        com.hippo.util.IoThreadPoolExecutor.Companion.getInstance().execute(
-                () -> processArchiveFile(uri));
-    }
-
-    private void processArchiveFile(Uri uri) {
-        Context context = getEHContext();
-        if (context == null) {
-            return;
-        }
-
-        try {
-            // Verify URI accessibility (permission should already be granted)
-            try (InputStream inputStream = context.getContentResolver().openInputStream(uri)) {
-                if (inputStream == null) {
-                    runOnUiThread(() ->
-                            Toast.makeText(context, R.string.import_archive_failed, Toast.LENGTH_SHORT).show()
-                    );
-                    return;
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Cannot access file even with persistent permission", e);
-                runOnUiThread(() ->
-                        Toast.makeText(context, R.string.import_archive_failed, Toast.LENGTH_SHORT).show()
-                );
-                return;
-            }
-
-            // Get file name
-            String fileName = getFileName(context, uri);
-            if (fileName == null) {
-                fileName = "imported_archive_" + System.currentTimeMillis();
-            }
-
-            // Validate file format
-            if (!isValidArchiveFormat(fileName)) {
-                runOnUiThread(() ->
-                        Toast.makeText(context, R.string.import_archive_invalid_format, Toast.LENGTH_SHORT).show()
-                );
-                return;
-            }
-
-            // Create DownloadInfo for the archive
-            DownloadInfo downloadInfo = createArchiveDownloadInfo(context, uri, fileName);
-            if (downloadInfo == null) {
-                runOnUiThread(() ->
-                        Toast.makeText(context, R.string.import_archive_failed, Toast.LENGTH_SHORT).show()
-                );
-                return;
-            }
-
-            // Check if already imported
-            if (mDownloadManager != null && mDownloadManager.containDownloadInfo(downloadInfo.gid)) {
-                runOnUiThread(() ->
-                        Toast.makeText(context, R.string.import_archive_already_imported, Toast.LENGTH_SHORT).show()
-                );
-                return;
-            }
-
-            // Add to download manager
-            if (mDownloadManager != null) {
-                List<DownloadInfo> downloadList = new ArrayList<>();
-                downloadList.add(downloadInfo);
-                mDownloadManager.addDownload(downloadList);
-                runOnUiThread(() -> {
-                    Toast.makeText(context, R.string.import_archive_success, Toast.LENGTH_SHORT).show();
-                    updateForLabel();
-                    updateView();
-                });
-            }
-
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to process archive file", e);
-            runOnUiThread(() ->
-                    Toast.makeText(context, R.string.import_archive_failed, Toast.LENGTH_SHORT).show()
-            );
-        }
-    }
-
-    private boolean isValidArchiveFormat(String fileName) {
-        if (fileName == null) return false;
-        String lowerName = fileName.toLowerCase();
-        return lowerName.endsWith(".zip") || lowerName.endsWith(".rar") ||
-                lowerName.endsWith(".cbz") || lowerName.endsWith(".cbr");
-    }
-
-
     public void runOnUiThread(Runnable runnable) {
         Activity activity = getActivity2();
         if (activity != null) {
             activity.runOnUiThread(runnable);
-        }
-    }
-
-    private DownloadInfo createArchiveDownloadInfo(Context context, Uri uri, String fileName) {
-        try {
-            DownloadInfo downloadInfo = new DownloadInfo();
-            downloadInfo.gid = System.currentTimeMillis(); // Use timestamp as unique ID
-            downloadInfo.token = "";
-            downloadInfo.title = fileName.replaceAll("\\.[^.]*$", ""); // Remove extension
-            downloadInfo.titleJpn = null;
-            downloadInfo.thumb = null; // No thumbnail for imported archives
-            downloadInfo.category = EhUtils.UNKNOWN; // Keep as UNKNOWN, will be handled in display logic
-            downloadInfo.posted = null;
-            downloadInfo.uploader = "Local Archive";
-            downloadInfo.rating = -1.0f; // Keep default rating to not affect other downloads
-            downloadInfo.state = DownloadInfo.STATE_FINISH;
-            downloadInfo.legacy = 0;
-            downloadInfo.time = System.currentTimeMillis();
-            downloadInfo.label = null;
-            downloadInfo.total = 0; // Will be set by archive provider
-            downloadInfo.finished = 0;
-
-            // Store the URI in the archiveUri field - this is the key identifier
-            downloadInfo.archiveUri = uri.toString();
-
-            return downloadInfo;
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to create DownloadInfo", e);
-            return null;
         }
     }
 
