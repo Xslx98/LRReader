@@ -1150,4 +1150,13 @@
         <item>desc</item>
     </string-array>
     <string name="error_save_image">ไม่สามารถบันทึกรูปภาพได้</string>
+    <string name="lrr_edit_tags">แก้ไขแท็ก</string>
+    <string name="lrr_tags_updated">อัปเดตแท็กแล้ว</string>
+    <string name="lrr_add_tag">เพิ่มแท็ก</string>
+    <string name="lrr_add_namespace">เพิ่มหมวดหมู่</string>
+    <string name="lrr_edit_tag">แก้ไขแท็ก</string>
+    <string name="lrr_namespace_hint">เช่น artist, parody</string>
+    <string name="lrr_tag_hint">ชื่อแท็ก</string>
+    <string name="lrr_save">บันทึก</string>
+    <string name="lrr_empty_namespace">หมวดหมู่ไม่สามารถเว้นว่างได้</string>
 </resources>

@@ -1084,4 +1084,13 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
         <item>desc</item>
     </string-array>
     <string name="error_save_image">Bild konnte nicht gespeichert werden</string>
+    <string name="lrr_edit_tags">Tags bearbeiten</string>
+    <string name="lrr_tags_updated">Tags aktualisiert</string>
+    <string name="lrr_add_tag">Tag hinzufügen</string>
+    <string name="lrr_add_namespace">Kategorie hinzufügen</string>
+    <string name="lrr_edit_tag">Tag bearbeiten</string>
+    <string name="lrr_namespace_hint">z.B. artist, parody</string>
+    <string name="lrr_tag_hint">Tag-Name</string>
+    <string name="lrr_save">Speichern</string>
+    <string name="lrr_empty_namespace">Kategorie darf nicht leer sein</string>
 </resources>

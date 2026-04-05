@@ -1158,4 +1158,13 @@
         <item>desc</item>
     </string-array>
     <string name="error_save_image">儲存圖片失敗</string>
+    <string name="lrr_edit_tags">編輯標籤</string>
+    <string name="lrr_tags_updated">標籤已更新</string>
+    <string name="lrr_add_tag">新增標籤</string>
+    <string name="lrr_add_namespace">新增分類</string>
+    <string name="lrr_edit_tag">編輯標籤</string>
+    <string name="lrr_namespace_hint">如 artist, parody</string>
+    <string name="lrr_tag_hint">標籤名稱</string>
+    <string name="lrr_save">儲存</string>
+    <string name="lrr_empty_namespace">分類名不能為空</string>
 </resources>
