@@ -48,6 +48,12 @@ interface DownloadRoomDao {
     @Query("DELETE FROM DOWNLOADS WHERE GID = :gid")
     suspend fun deleteDownloadByKey(gid: Long)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(list: List<DownloadInfo>)
+
+    @Query("DELETE FROM DOWNLOADS WHERE GID IN (:gids)")
+    suspend fun deleteByGids(gids: List<Long>)
+
     // --- DOWNLOAD_DIRNAME ---
 
     @Query("SELECT * FROM DOWNLOAD_DIRNAME WHERE GID = :gid")
