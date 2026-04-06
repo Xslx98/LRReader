@@ -324,10 +324,10 @@ class DownloadsScene : ToolbarScene(),
 
         // 同步分页监听器的状态
         myPageChangeListener?.let {
-            it.setIndexPage(_indexPage)
-            it.setPageSize(_pageSize)
-            it.setNeedInitPage(needInitPage)
-            it.setDoNotScroll(doNotScroll)
+            it.indexPage = _indexPage
+            it.pageSize = _pageSize
+            it.isNeedInitPage = needInitPage
+            it.isDoNotScroll = doNotScroll
         }
     }
 
@@ -467,7 +467,7 @@ class DownloadsScene : ToolbarScene(),
         )
 
         // 设置分页监听器的回调
-        myPageChangeListener!!.setPageChangeCallback(object : MyPageChangeListener.PageChangeCallback {
+        myPageChangeListener!!.pageChangeCallback = object : MyPageChangeListener.PageChangeCallback {
             override fun onPageChanged(newIndexPage: Int) {
                 _indexPage = newIndexPage
             }
@@ -475,7 +475,7 @@ class DownloadsScene : ToolbarScene(),
             override fun onPageSizeChanged(newPageSize: Int) {
                 _pageSize = newPageSize
             }
-        })
+        }
         mLayoutManager = AutoStaggeredGridLayoutManager(0, StaggeredGridLayoutManager.VERTICAL)
         mLayoutManager!!.setColumnSize(resources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId()))
         mLayoutManager!!.setStrategy(AutoStaggeredGridLayoutManager.STRATEGY_MIN_SIZE)
@@ -1246,7 +1246,7 @@ class DownloadsScene : ToolbarScene(),
         startSearching()
     }
 
-    protected fun startSearching() {
+    internal fun startSearching() {
         mProgressView.visibility = View.VISIBLE
         mRecyclerView?.visibility = View.GONE
 

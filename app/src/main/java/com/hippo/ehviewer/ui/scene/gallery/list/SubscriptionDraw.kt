@@ -126,7 +126,7 @@ class SubscriptionDraw(
             return
         }
 
-        val adapter = SubscriptionItemAdapter(context, userTagList, ehTags)
+        val adapter = SubscriptionItemAdapter(context, userTagList!!, ehTags)
 
         listView.adapter = adapter
         listView.setOnItemClickListener { _, _, position, _ ->
