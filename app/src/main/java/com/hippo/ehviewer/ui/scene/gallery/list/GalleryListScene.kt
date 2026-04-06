@@ -77,7 +77,6 @@ import com.hippo.widget.FabLayout
 import com.hippo.widget.SearchBarMover
 import com.hippo.lib.yorozuya.AssertUtils
 import com.hippo.lib.yorozuya.ViewUtils
-import java.util.LinkedList
 import java.util.concurrent.ExecutorService
 
 class GalleryListScene : BaseScene(),
@@ -211,7 +210,7 @@ class GalleryListScene : BaseScene(),
                 mAdapter?.notifyDataSetChanged()
             }
             override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {}
-            override fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: LinkedList<DownloadInfo>) {}
+            override fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: List<DownloadInfo>) {}
             override fun onUpdateAll() {}
             override fun onReload() { mAdapter?.notifyDataSetChanged() }
             override fun onChange() { mAdapter?.notifyDataSetChanged() }

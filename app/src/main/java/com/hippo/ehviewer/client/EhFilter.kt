@@ -18,8 +18,10 @@ package com.hippo.ehviewer.client
 
 import android.util.Log
 import com.hippo.ehviewer.EhDB
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.Filter
+import kotlinx.coroutines.launch
 
 class EhFilter private constructor() {
 
@@ -33,36 +35,28 @@ class EhFilter private constructor() {
     val tagFilterList: List<Filter> get() = mTagFilterList
     val tagNamespaceFilterList: List<Filter> get() = mTagNamespaceFilterList
 
-    init {
-        val list = kotlinx.coroutines.runBlocking { EhDB.getAllFilterAsync() }
+    /**
+     * Load filters from database. Called once after construction from a coroutine.
+     * Until this completes, filter lists are empty (nothing is filtered — safe default).
+     */
+    internal suspend fun loadFromDb() {
+        val list = EhDB.getAllFilterAsync()
         for (filter in list) {
-            when (filter.mode) {
-                MODE_TITLE -> {
-                    filter.text = filter.text?.lowercase()
-                    mTitleFilterList.add(filter)
-                }
-                MODE_UPLOADER -> {
-                    mUploaderFilterList.add(filter)
-                }
-                MODE_TAG -> {
-                    filter.text = filter.text?.lowercase()
-                    mTagFilterList.add(filter)
-                }
-                MODE_TAG_NAMESPACE -> {
-                    filter.text = filter.text?.lowercase()
-                    mTagNamespaceFilterList.add(filter)
-                }
-                else -> Log.d(TAG, "Unknown mode: ${filter.mode}")
-            }
+            distributeFilter(filter)
         }
     }
 
+    /**
+     * Load filters from a pre-built list (for testing without DB).
+     */
     @Synchronized
-    fun addFilter(filter: Filter) {
-        // enable filter by default before it is added to database
-        filter.enable = true
-        kotlinx.coroutines.runBlocking { EhDB.addFilterAsync(filter) }
+    internal fun loadFromList(filters: List<Filter>) {
+        for (filter in filters) {
+            distributeFilter(filter)
+        }
+    }
 
+    private fun distributeFilter(filter: Filter) {
         when (filter.mode) {
             MODE_TITLE -> {
                 filter.text = filter.text?.lowercase()
@@ -84,20 +78,33 @@ class EhFilter private constructor() {
     }
 
     @Synchronized
+    fun addFilter(filter: Filter) {
+        filter.enable = true
+        distributeFilter(filter)
+        // Persist to DB in background
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            EhDB.addFilterAsync(filter)
+        }
+    }
+
+    @Synchronized
     fun triggerFilter(filter: Filter) {
-        kotlinx.coroutines.runBlocking { EhDB.triggerFilterAsync(filter) }
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            EhDB.triggerFilterAsync(filter)
+        }
     }
 
     @Synchronized
     fun deleteFilter(filter: Filter) {
-        kotlinx.coroutines.runBlocking { EhDB.deleteFilterAsync(filter) }
-
         when (filter.mode) {
             MODE_TITLE -> mTitleFilterList.remove(filter)
             MODE_UPLOADER -> mUploaderFilterList.remove(filter)
             MODE_TAG -> mTagFilterList.remove(filter)
             MODE_TAG_NAMESPACE -> mTagNamespaceFilterList.remove(filter)
             else -> Log.d(TAG, "Unknown mode: ${filter.mode}")
+        }
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            EhDB.deleteFilterAsync(filter)
         }
     }
 
