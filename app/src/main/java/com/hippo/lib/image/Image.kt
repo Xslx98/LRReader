@@ -17,14 +17,14 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.util.Log
+import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toDrawable
-
+import com.hippo.ehviewer.Analytics
 import java.io.FileInputStream
 import java.nio.channels.FileChannel
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.max
 import kotlin.math.min
-import androidx.core.graphics.createBitmap
-import com.hippo.ehviewer.Analytics
 
 
 class Image private constructor(
@@ -33,13 +33,16 @@ class Image private constructor(
     val hardware: Boolean = false,
     val release: () -> Unit? = {},
 ) {
-    private var mObtainedDrawable: Drawable?
+    private val mDrawableRef = AtomicReference<Drawable?>(null)
     private var mBitmap: Bitmap? = null
     private var mStickerBitmap: Bitmap? = null  // Cached bitmap for non-BitmapDrawable texImage
     private var mReferences = 0
 
+    val animated: Boolean
+    val width: Int
+    val height: Int
+
     init {
-        mObtainedDrawable = null
         source?.let {
             val fileSize = source.channel.size()
             var simpleSize: Int? = null
@@ -54,7 +57,7 @@ class Image private constructor(
                     )
                 )
                 try {
-                    mObtainedDrawable =
+                    mDrawableRef.set(
                         ImageDecoder.decodeDrawable(src) { decoder: ImageDecoder, info: ImageInfo, _: Source ->
                             decoder.allocator =
                                 if (hardware) ALLOCATOR_DEFAULT else ALLOCATOR_SOFTWARE
@@ -69,6 +72,7 @@ class Image private constructor(
                             )
                             // Don't
                         }
+                    )
                 } catch (e: DecodeException) {
                     // ImageDecoder 失败时回退到 BitmapFactory
                     try {
@@ -79,10 +83,11 @@ class Image private constructor(
                                 inSampleSize = simpleSize
                             }
                             val bitmap = BitmapFactory.decodeStream(source, null, option)
-                            mObtainedDrawable =
+                            mDrawableRef.set(
                                 bitmap?.toDrawable(Resources.getSystem())
+                            )
                         } else {
-                            mObtainedDrawable = BitmapDrawable.createFromStream(source, null)
+                            mDrawableRef.set(BitmapDrawable.createFromStream(source, null))
                         }
                     } catch (fallbackException: Exception) {
                         Analytics.recordException(fallbackException)
@@ -96,46 +101,50 @@ class Image private constructor(
                         inSampleSize = simpleSize
                     }
                     val bitmap = BitmapFactory.decodeStream(source, null, option)
-                    mObtainedDrawable =
+                    mDrawableRef.set(
                         BitmapDrawable(Resources.getSystem(), bitmap)
+                    )
                 } else {
-                    mObtainedDrawable = BitmapDrawable.createFromStream(source, null)
+                    mDrawableRef.set(BitmapDrawable.createFromStream(source, null))
                 }
             }
         }
-        if (mObtainedDrawable == null) {
-            mObtainedDrawable = drawable!!
-//            throw IllegalArgumentException("数据解码出错")
+        if (mDrawableRef.get() == null) {
+            mDrawableRef.set(
+                checkNotNull(drawable) { "Image decode failed and no fallback drawable" }
+            )
         }
+
+        // Compute immutable properties from the guaranteed non-null drawable
+        val initDrawable = checkNotNull(mDrawableRef.get()) {
+            "Image has no drawable after initialization"
+        }
+        animated = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            initDrawable is AnimatedImageDrawable
+        } else {
+            initDrawable is AnimationDrawable
+        }
+        width = (initDrawable as? BitmapDrawable)?.bitmap?.width
+            ?: initDrawable.intrinsicWidth
+        height = (initDrawable as? BitmapDrawable)?.bitmap?.height
+            ?: initDrawable.intrinsicHeight
     }
 
-    val animated = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-        mObtainedDrawable is AnimatedImageDrawable
-    } else {
-        mObtainedDrawable is AnimationDrawable
-    }
-    val width =
-        (mObtainedDrawable as? BitmapDrawable)?.bitmap?.width ?: mObtainedDrawable!!.intrinsicWidth
-    val height = (mObtainedDrawable as? BitmapDrawable)?.bitmap?.height
-        ?: mObtainedDrawable!!.intrinsicHeight
     val isRecycled: Boolean
-        get() = mObtainedDrawable == null
+        get() = mDrawableRef.get() == null
 
     private var started = false
 
     @Synchronized
     fun recycle() {
-        if (mObtainedDrawable == null) return
+        val drawable = mDrawableRef.getAndSet(null) ?: return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            if (mObtainedDrawable is AnimatedImageDrawable) {
-                (mObtainedDrawable as AnimatedImageDrawable?)?.stop()
-            }
+            (drawable as? AnimatedImageDrawable)?.stop()
         }
-        if (mObtainedDrawable is BitmapDrawable) {
-            (mObtainedDrawable as BitmapDrawable?)?.bitmap?.recycle()
+        if (drawable is BitmapDrawable) {
+            drawable.bitmap?.recycle()
         }
-        mObtainedDrawable?.callback = null
-        mObtainedDrawable = null
+        drawable.callback = null
         mBitmap?.recycle()
         mBitmap = null
         mStickerBitmap?.recycle()
@@ -156,7 +165,8 @@ class Image private constructor(
     private fun updateBitmap() {
         prepareBitmap()
         val bitmap = mBitmap ?: return
-        mObtainedDrawable!!.draw(Canvas(bitmap))
+        val drawable = mDrawableRef.get() ?: return
+        drawable.draw(Canvas(bitmap))
     }
 
     @Synchronized
@@ -177,19 +187,22 @@ class Image private constructor(
         }
     }
 
+    @Synchronized
     fun getDrawable(): Drawable {
         check(obtain()) { "Recycled!" }
-        return mObtainedDrawable as Drawable
+        return checkNotNull(mDrawableRef.get()) {
+            "Drawable became null after obtain succeeded"
+        }
     }
 
     @Synchronized
     fun texImage(init: Boolean, offsetX: Int, offsetY: Int, width: Int, height: Int) {
         check(!hardware) { "Hardware buffer cannot be used in glgallery" }
         try {
-            val drawable = mObtainedDrawable ?: return  // Recycled — bail out
+            val drawable = mDrawableRef.get() ?: return  // Recycled — bail out
             val bitmap: Bitmap = if (animated) {
                 updateBitmap()
-                mBitmap!!
+                mBitmap ?: return
             } else {
                 if (drawable is BitmapDrawable) {
                     val bmp = drawable.bitmap
@@ -229,7 +242,7 @@ class Image private constructor(
     fun start() {
         if (!started) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                (mObtainedDrawable as AnimatedImageDrawable?)?.start()
+                (mDrawableRef.get() as? AnimatedImageDrawable)?.start()
             }
         }
     }
@@ -244,7 +257,7 @@ class Image private constructor(
     @get:SuppressWarnings("deprecation")
     val isOpaque: Boolean
         get() {
-            return mObtainedDrawable?.opacity == PixelFormat.OPAQUE
+            return mDrawableRef.get()?.opacity == PixelFormat.OPAQUE
         }
 
     companion object {
