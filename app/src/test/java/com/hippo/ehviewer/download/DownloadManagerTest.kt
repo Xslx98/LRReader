@@ -521,6 +521,79 @@ class DownloadManagerTest {
     // Helper: Fake DownloadInfoListener with no-op defaults
     // ═══════════════════════════════════════════════════════════
 
+    // ===============================================================
+    // F. Thread Safety -- assertMainThread coverage
+    // ===============================================================
+
+    @Test
+    fun publicMethods_throwOnBackgroundThread() {
+        val methodsToCheck: List<Pair<String, () -> Unit>> = listOf(
+            "containLabel" to { manager.containLabel("x") },
+            "containDownloadInfo" to { manager.containDownloadInfo(0L) },
+            "labelList" to { manager.labelList },
+            "getLabelCount" to { manager.getLabelCount(null) },
+            "allDownloadInfoList" to { manager.allDownloadInfoList },
+            "defaultDownloadInfoList" to { manager.defaultDownloadInfoList },
+            "getLabelDownloadInfoList" to { manager.getLabelDownloadInfoList(null) },
+            "downloadInfoList" to { manager.downloadInfoList },
+            "getDownloadInfo" to { manager.getDownloadInfo(0L) },
+            "getDownloadState" to { manager.getDownloadState(0L) },
+            "addDownloadInfoListener" to { manager.addDownloadInfoListener(FakeDownloadInfoListener()) },
+            "removeDownloadInfoListener" to { manager.removeDownloadInfoListener(FakeDownloadInfoListener()) },
+            "setDownloadListener" to { manager.setDownloadListener(null) },
+            "isIdle" to { manager.isIdle },
+            "resetAllReadingProgress" to { manager.resetAllReadingProgress() },
+        )
+
+        for ((name, block) in methodsToCheck) {
+            var thrown: Throwable? = null
+            val t = Thread {
+                try {
+                    block()
+                } catch (e: Throwable) {
+                    thrown = e
+                }
+            }
+            t.start()
+            t.join(5000)
+            assertTrue(
+                "$name should throw IllegalStateException on background thread, but threw: $thrown",
+                thrown is IllegalStateException
+            )
+        }
+    }
+
+    @Test
+    fun awaitInit_throwsOnMainThread() {
+        val lazyScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        val uninitManager = DownloadManager(context, lazyScope)
+        try {
+            assertThrows(IllegalStateException::class.java) {
+                uninitManager.awaitInit()
+            }
+        } finally {
+            lazyScope.cancel()
+        }
+    }
+
+    @Test
+    fun collections_arePlainTypes_notConcurrent() {
+        val fields = DownloadManager::class.java.declaredFields
+        val concurrentTypes = listOf(
+            "CopyOnWriteArrayList",
+            "ConcurrentHashMap",
+            "ConcurrentLinkedQueue",
+            "ConcurrentSkipListMap"
+        )
+        for (field in fields) {
+            val typeName = field.type.simpleName
+            assertFalse(
+                "Field '${field.name}' should not use concurrent collection type $typeName",
+                concurrentTypes.any { typeName.contains(it) }
+            )
+        }
+    }
+
     private open class FakeDownloadInfoListener : DownloadInfoListener {
         override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {}
         override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {}
