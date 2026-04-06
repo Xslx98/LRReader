@@ -47,7 +47,7 @@ import java.security.MessageDigest
         BookmarkInfo::class,
         ServerProfile::class
     ],
-    version = 12,
+    version = 13,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class)
@@ -69,9 +69,21 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "eh.db"
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13)
                     .build()
                     .also { INSTANCE = it }
+            }
+        }
+
+        /**
+         * v12 → v13: Add LABEL index on DOWNLOADS table.
+         *
+         * Supports efficient label-based filtering in the download list.
+         */
+        @VisibleForTesting
+        internal val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_DOWNLOADS_LABEL` ON `DOWNLOADS` (`LABEL`)")
             }
         }
 
