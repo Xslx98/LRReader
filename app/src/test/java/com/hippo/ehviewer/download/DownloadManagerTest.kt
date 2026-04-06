@@ -56,21 +56,19 @@ class DownloadManagerTest {
         // Initialize LRRAuthManager — KeyStore unavailable under Robolectric,
         // but sActiveProfileId defaults to 0 which is fine for our tests.
         LRRAuthManager.initialize(context)
-        if (LRRAuthManager.isNeedsReauthentication()) {
-            // Inject plain SharedPreferences so credential methods work.
-            // The method is 'internal' in Kotlin, so its JVM name may be mangled.
-            // Search by prefix to handle both plain and mangled names.
-            val method = LRRAuthManager::class.java.declaredMethods.first {
-                it.name.startsWith("initializeForTesting") &&
-                    it.parameterTypes.size == 1 &&
-                    it.parameterTypes[0] == android.content.SharedPreferences::class.java
-            }
-            method.isAccessible = true
-            method.invoke(
-                null,
-                context.getSharedPreferences("lrr_auth_test", Context.MODE_PRIVATE)
-            )
+        // In Robolectric, EncryptedSharedPreferences always fails — inject plain prefs.
+        // The method is 'internal' in Kotlin, so its JVM name may be mangled.
+        // Search by prefix to handle both plain and mangled names.
+        val method = LRRAuthManager::class.java.declaredMethods.first {
+            it.name.startsWith("initializeForTesting") &&
+                it.parameterTypes.size == 1 &&
+                it.parameterTypes[0] == android.content.SharedPreferences::class.java
         }
+        method.isAccessible = true
+        method.invoke(
+            null,
+            context.getSharedPreferences("lrr_auth_test", Context.MODE_PRIVATE)
+        )
 
         // Create in-memory Room database
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
