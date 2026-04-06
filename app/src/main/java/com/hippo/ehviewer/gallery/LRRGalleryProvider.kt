@@ -198,6 +198,7 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
         super.stop()
         stopped = true
         pageClient = null
+        pageLocks.clear()
 
         // Evict old archive caches if total size exceeds limit
         IoThreadPoolExecutor.instance.execute {
