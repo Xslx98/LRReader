@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.annotation.VisibleForTesting
 import java.nio.ByteBuffer
 import java.security.MessageDigest
 
@@ -83,7 +84,8 @@ abstract class AppDatabase : RoomDatabase() {
          * SQLite < 3.35.0 (Android < API 34) doesn't support DROP COLUMN,
          * so we use the recreate-table pattern for API 28+ compatibility.
          */
-        private val MIGRATION_11_12 = object : Migration(11, 12) {
+        @VisibleForTesting
+        internal val MIGRATION_11_12 = object : Migration(11, 12) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("""
                     CREATE TABLE SERVER_PROFILES_NEW (
@@ -114,7 +116,8 @@ abstract class AppDatabase : RoomDatabase() {
          * Tables with GID only:     DOWNLOAD_DIRNAME (references DOWNLOADS.GID),
          *                           Gallery_Tags (references gallery GIDs)
          */
-        private val MIGRATION_10_11 = object : Migration(10, 11) {
+        @VisibleForTesting
+        internal val MIGRATION_10_11 = object : Migration(10, 11) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_DOWNLOADS_SERVER_PROFILE_ID` ON `DOWNLOADS` (`SERVER_PROFILE_ID`)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_DOWNLOADS_TIME` ON `DOWNLOADS` (`TIME`)")
@@ -123,7 +126,8 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        private val MIGRATION_9_10 = object : Migration(9, 10) {
+        @VisibleForTesting
+        internal val MIGRATION_9_10 = object : Migration(9, 10) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // --- Collect old→new GID mappings from TOKEN-bearing tables ---
                 val downloadsMap = collectGidMap(db, "DOWNLOADS")
