@@ -122,7 +122,7 @@ class BookmarksDraw(
         }
 
         toolbar.setOnClickListener {
-            scene.drawPager.currentItem = 1
+            scene.drawPager?.currentItem = 1
         }
 
         return bookmarksView
