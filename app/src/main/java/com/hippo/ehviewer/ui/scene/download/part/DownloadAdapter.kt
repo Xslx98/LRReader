@@ -316,7 +316,6 @@ class DownloadAdapter(
         return null
     }
 
-    @SuppressLint("NotifyDataSetChanged")
     override fun onMoveItem(fromPosition: Int, toPosition: Int) {
         if (fromPosition == toPosition) {
             return
@@ -340,7 +339,7 @@ class DownloadAdapter(
                 Log.w(TAG, "onMoveItem: list is unmodifiable, only DB order updated", e)
             }
 
-            notifyDataSetChanged()
+            notifyItemMoved(fromPosition, toPosition)
         }
     }
 

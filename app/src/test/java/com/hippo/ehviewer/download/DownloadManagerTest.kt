@@ -46,11 +46,14 @@ class DownloadManagerTest {
         // but sActiveProfileId defaults to 0 which is fine for our tests.
         LRRAuthManager.initialize(context)
         if (LRRAuthManager.isNeedsReauthentication()) {
-            // Inject plain SharedPreferences so credential methods work
-            val method = LRRAuthManager::class.java.getDeclaredMethod(
-                "initializeForTesting",
-                android.content.SharedPreferences::class.java
-            )
+            // Inject plain SharedPreferences so credential methods work.
+            // The method is 'internal' in Kotlin, so its JVM name may be mangled.
+            // Search by prefix to handle both plain and mangled names.
+            val method = LRRAuthManager::class.java.declaredMethods.first {
+                it.name.startsWith("initializeForTesting") &&
+                    it.parameterTypes.size == 1 &&
+                    it.parameterTypes[0] == android.content.SharedPreferences::class.java
+            }
             method.isAccessible = true
             method.invoke(
                 null,
@@ -72,8 +75,9 @@ class DownloadManagerTest {
         // (ensureDownload creates workers that check for a non-null server URL)
         LRRAuthManager.setServerUrl("http://localhost:3000")
 
-        // Create the manager under test
+        // Create the manager under test and wait for async init to complete
         manager = DownloadManager(context)
+        manager.awaitInit()
     }
 
     @After
@@ -116,6 +120,7 @@ class DownloadManagerTest {
         }
 
         val freshManager = DownloadManager(context)
+        freshManager.awaitInit()
 
         assertEquals(2, freshManager.allDownloadInfoList.size)
         assertTrue(freshManager.containDownloadInfo(1001L))
@@ -131,6 +136,7 @@ class DownloadManagerTest {
         }
 
         val freshManager = DownloadManager(context)
+        freshManager.awaitInit()
 
         val labels = freshManager.labelList.map { it.label }
         assertTrue("Comics" in labels)
@@ -262,6 +268,9 @@ class DownloadManagerTest {
 
         val labels = manager.labelList.map { it.label }
         assertTrue("NewLabel" in labels)
+
+        // Wait for async DB write to complete
+        Thread.sleep(200)
 
         // Verify in DB
         val dbLabels = runBlocking { EhDB.getAllDownloadLabelListAsync() }
@@ -417,6 +426,10 @@ class DownloadManagerTest {
 
         // Reload
         manager.reload()
+
+        // Wait for async reload to complete and process Handler callbacks
+        Thread.sleep(200)
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
 
         // After reload, data should still be present (loaded from DB)
         assertEquals(1, manager.allDownloadInfoList.size)
