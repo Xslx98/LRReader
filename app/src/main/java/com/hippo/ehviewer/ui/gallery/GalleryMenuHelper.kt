@@ -18,9 +18,9 @@ package com.hippo.ehviewer.ui.gallery
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.DialogInterface
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.AdapterView
 import android.widget.SeekBar
 import android.widget.Spinner
 import androidx.appcompat.widget.SwitchCompat
@@ -30,13 +30,13 @@ import com.hippo.ehviewer.settings.ReadingSettings
 /**
  * Constructs and manages the reading settings dialog (screen rotation,
  * reading direction, page scaling, lightness, etc.).
- * Extracted from GalleryActivity inner class to reduce its size.
+ * Settings take effect immediately when changed.
  */
 class GalleryMenuHelper @SuppressLint("InflateParams") constructor(
     context: Context,
     private val mCallback: SettingsCallback?,
     lightnessPreviewListener: SeekBar.OnSeekBarChangeListener?
-) : DialogInterface.OnClickListener {
+) {
 
     /** Callback for applying settings changes that require Activity-level access. */
     interface SettingsCallback {
@@ -67,6 +67,8 @@ class GalleryMenuHelper @SuppressLint("InflateParams") constructor(
     private val mReadingFullscreen: SwitchCompat
     private val mCustomScreenLightness: SwitchCompat
     private val mScreenLightness: SeekBar
+
+    private var initialized = false
 
     val isCustomScreenLightnessChecked: Boolean
         get() = mCustomScreenLightness.isChecked
@@ -107,23 +109,71 @@ class GalleryMenuHelper @SuppressLint("InflateParams") constructor(
         mScreenLightness.progress = ReadingSettings.getScreenLightness()
         mScreenLightness.isEnabled = ReadingSettings.getCustomScreenLightness()
 
+        mReverseVolumePage.visibility = if (ReadingSettings.getVolumePage()) View.VISIBLE else View.GONE
+
+        // --- Immediate-apply listeners ---
+
+        val spinnerListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (initialized) applyCurrentSettings()
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+        mScreenRotation.onItemSelectedListener = spinnerListener
+        mReadingDirection.onItemSelectedListener = spinnerListener
+        mScaleMode.onItemSelectedListener = spinnerListener
+        mStartPosition.onItemSelectedListener = spinnerListener
+
+        mStartTransferTime.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+                if (fromUser && initialized) applyCurrentSettings()
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar) {}
+        })
+
         mVolumePage.setOnCheckedChangeListener { _, isChecked ->
             mReverseVolumePage.visibility = if (isChecked) View.VISIBLE else View.GONE
+            if (initialized) applyCurrentSettings()
         }
-
-        mReverseVolumePage.visibility = if (ReadingSettings.getVolumePage()) View.VISIBLE else View.GONE
 
         mCustomScreenLightness.setOnCheckedChangeListener { _, isChecked ->
             mScreenLightness.isEnabled = isChecked
+            if (initialized) applyCurrentSettings()
         }
 
-        // Live brightness preview
-        if (lightnessPreviewListener != null) {
-            mScreenLightness.setOnSeekBarChangeListener(lightnessPreviewListener)
+        val switchListener = { _: Any, _: Boolean ->
+            if (initialized) applyCurrentSettings()
         }
+        mKeepScreenOn.setOnCheckedChangeListener(switchListener)
+        mShowClock.setOnCheckedChangeListener(switchListener)
+        mShowProgress.setOnCheckedChangeListener(switchListener)
+        mShowBattery.setOnCheckedChangeListener(switchListener)
+        mShowPageInterval.setOnCheckedChangeListener(switchListener)
+        mReverseVolumePage.setOnCheckedChangeListener(switchListener)
+        mReadingFullscreen.setOnCheckedChangeListener(switchListener)
+
+        // Brightness: live preview + immediate apply
+        mScreenLightness.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    lightnessPreviewListener?.onProgressChanged(seekBar, progress, fromUser)
+                    if (initialized) applyCurrentSettings()
+                }
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar) {
+                lightnessPreviewListener?.onStartTrackingTouch(seekBar)
+            }
+            override fun onStopTrackingTouch(seekBar: SeekBar) {
+                lightnessPreviewListener?.onStopTrackingTouch(seekBar)
+            }
+        })
+
+        // Mark initialization complete — listeners above will now fire applyCurrentSettings
+        initialized = true
     }
 
-    override fun onClick(dialog: DialogInterface, which: Int) {
+    private fun applyCurrentSettings() {
         val screenRotation = mScreenRotation.selectedItemPosition
         val layoutMode = com.hippo.lib.glgallery.GalleryView.sanitizeLayoutMode(
             mReadingDirection.selectedItemPosition

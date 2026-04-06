@@ -23,11 +23,12 @@ import android.view.MotionEvent
 import androidx.appcompat.widget.AppCompatEditText
 import com.hippo.util.ExceptionUtils
 
-class SearchEditText @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
-) : AppCompatEditText(context, attrs, defStyleAttr) {
+class SearchEditText : AppCompatEditText {
+
+    constructor(context: Context) : super(context)
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
+
 
     private var mListener: SearchEditTextListener? = null
 

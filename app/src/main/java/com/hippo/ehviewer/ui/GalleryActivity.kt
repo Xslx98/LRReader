@@ -680,7 +680,6 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
             )
             val dialog = builder.setTitle(R.string.gallery_menu_title)
                 .setView(helper.view)
-                .setPositiveButton(android.R.string.ok, helper)
                 .show()
             mImageOps.applyImmersiveToDialog(dialog)
         }

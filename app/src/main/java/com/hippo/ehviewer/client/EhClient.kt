@@ -89,8 +89,11 @@ class EhClient(context: Context) {
         private fun onPostExecute(result: Any?) {
             mCallback?.let { callback ->
                 if (result !is CancelledException) {
-                    if (result is Throwable) {
-                        callback.onFailure(result as Exception)
+                    if (result is Exception) {
+                        callback.onFailure(result)
+                        Analytics.recordException(result)
+                    } else if (result is Throwable) {
+                        callback.onFailure(Exception(result))
                         Analytics.recordException(result)
                     } else {
                         callback.onSuccess(result)

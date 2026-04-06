@@ -92,13 +92,14 @@ class ProgressDialog : AlertDialog {
                     super.handleMessage(msg)
 
                     /* Update the number and percent */
-                    val progress = mProgress!!.progress
-                    val max = mProgress!!.max
+                    val progressBar = mProgress ?: return
+                    val progress = progressBar.progress
+                    val max = progressBar.max
                     if (mProgressNumberFormat != null) {
                         val format = mProgressNumberFormat!!
-                        mProgressNumber!!.text = String.format(format, progress, max)
+                        mProgressNumber?.text = String.format(format, progress, max)
                     } else {
-                        mProgressNumber!!.text = ""
+                        mProgressNumber?.text = ""
                     }
                     if (mProgressPercentFormat != null) {
                         val percent = progress.toDouble() / max.toDouble()
@@ -107,21 +108,21 @@ class ProgressDialog : AlertDialog {
                             StyleSpan(Typeface.BOLD),
                             0, tmp.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
                         )
-                        mProgressPercent!!.text = tmp
+                        mProgressPercent?.text = tmp
                     } else {
-                        mProgressPercent!!.text = ""
+                        mProgressPercent?.text = ""
                     }
                 }
             }
             val view = inflater.inflate(R.layout.alert_dialog_progress_material, null)
-            mProgress = view.findViewById<View?>(R.id.progress) as ProgressBar?
-            mProgressNumber = view.findViewById<View?>(R.id.progress_number) as TextView
-            mProgressPercent = view.findViewById<View?>(R.id.progress_percent) as TextView
+            mProgress = view.findViewById<ProgressBar?>(R.id.progress)
+            mProgressNumber = view.findViewById<TextView?>(R.id.progress_number)
+            mProgressPercent = view.findViewById<TextView?>(R.id.progress_percent)
             setView(view)
         } else {
             val view = inflater.inflate(R.layout.progress_dialog_material, null)
-            mProgress = view.findViewById<View?>(R.id.progress) as ProgressBar?
-            mMessageView = view.findViewById<View?>(R.id.message) as TextView
+            mProgress = view.findViewById<ProgressBar?>(R.id.progress)
+            mMessageView = view.findViewById<TextView?>(R.id.message)
             setView(view)
         }
         if (mMax > 0) {
@@ -165,7 +166,7 @@ class ProgressDialog : AlertDialog {
 
     fun setProgress(value: Int) {
         if (mHasStarted) {
-            mProgress!!.progress = value
+            mProgress?.progress = value
             onProgressChanged()
         } else {
             mProgressVal = value
@@ -173,8 +174,9 @@ class ProgressDialog : AlertDialog {
     }
 
     fun setSecondaryProgress(secondaryProgress: Int) {
-        if (mProgress != null) {
-            mProgress!!.setSecondaryProgress(secondaryProgress)
+        val p = mProgress
+        if (p != null) {
+            p.setSecondaryProgress(secondaryProgress)
             onProgressChanged()
         } else {
             mSecondaryProgressVal = secondaryProgress
@@ -182,29 +184,21 @@ class ProgressDialog : AlertDialog {
     }
 
     fun getProgress(): Int {
-        if (mProgress != null) {
-            return mProgress!!.progress
-        }
-        return mProgressVal
+        return mProgress?.progress ?: mProgressVal
     }
 
     fun getSecondaryProgress(): Int {
-        if (mProgress != null) {
-            return mProgress!!.secondaryProgress
-        }
-        return mSecondaryProgressVal
+        return mProgress?.secondaryProgress ?: mSecondaryProgressVal
     }
 
     fun getMax(): Int {
-        if (mProgress != null) {
-            return mProgress!!.max
-        }
-        return mMax
+        return mProgress?.max ?: mMax
     }
 
     fun setMax(max: Int) {
-        if (mProgress != null) {
-            mProgress!!.setMax(max)
+        val p = mProgress
+        if (p != null) {
+            p.setMax(max)
             onProgressChanged()
         } else {
             mMax = max
@@ -212,8 +206,9 @@ class ProgressDialog : AlertDialog {
     }
 
     fun incrementProgressBy(diff: Int) {
-        if (mProgress != null) {
-            mProgress!!.incrementProgressBy(diff)
+        val p = mProgress
+        if (p != null) {
+            p.incrementProgressBy(diff)
             onProgressChanged()
         } else {
             mIncrementBy += diff
@@ -221,8 +216,9 @@ class ProgressDialog : AlertDialog {
     }
 
     fun incrementSecondaryProgressBy(diff: Int) {
-        if (mProgress != null) {
-            mProgress!!.incrementSecondaryProgressBy(diff)
+        val p = mProgress
+        if (p != null) {
+            p.incrementSecondaryProgressBy(diff)
             onProgressChanged()
         } else {
             mIncrementSecondaryBy += diff
@@ -230,34 +226,34 @@ class ProgressDialog : AlertDialog {
     }
 
     fun setProgressDrawable(d: Drawable?) {
-        if (mProgress != null) {
-            mProgress!!.progressDrawable = d
+        val p = mProgress
+        if (p != null) {
+            p.progressDrawable = d
         } else {
             mProgressDrawable = d
         }
     }
 
     fun setIndeterminateDrawable(d: Drawable?) {
-        if (mProgress != null) {
-            mProgress!!.indeterminateDrawable = d
+        val p = mProgress
+        if (p != null) {
+            p.indeterminateDrawable = d
         } else {
             mIndeterminateDrawable = d
         }
     }
 
     fun setIndeterminate(indeterminate: Boolean) {
-        if (mProgress != null) {
-            mProgress!!.isIndeterminate = indeterminate
+        val p = mProgress
+        if (p != null) {
+            p.isIndeterminate = indeterminate
         } else {
             mIndeterminate = indeterminate
         }
     }
 
     fun isIndeterminate(): Boolean {
-        if (mProgress != null) {
-            return mProgress!!.isIndeterminate
-        }
-        return mIndeterminate
+        return mProgress?.isIndeterminate ?: mIndeterminate
     }
 
     override fun setMessage(message: CharSequence?) {
@@ -265,7 +261,7 @@ class ProgressDialog : AlertDialog {
             if (mProgressStyle == STYLE_HORIZONTAL) {
                 super.setMessage(message)
             } else {
-                mMessageView!!.text = message
+                mMessageView?.text = message
             }
         } else {
             mMessage = message
@@ -304,8 +300,9 @@ class ProgressDialog : AlertDialog {
 
     private fun onProgressChanged() {
         if (mProgressStyle == STYLE_HORIZONTAL) {
-            if (mViewUpdateHandler != null && !mViewUpdateHandler!!.hasMessages(0)) {
-                mViewUpdateHandler!!.sendEmptyMessage(0)
+            val handler = mViewUpdateHandler
+            if (handler != null && !handler.hasMessages(0)) {
+                handler.sendEmptyMessage(0)
             }
         }
     }

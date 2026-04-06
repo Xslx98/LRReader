@@ -22,15 +22,15 @@ import android.util.AttributeSet
 import android.widget.RatingBar
 import androidx.appcompat.widget.AppCompatRatingBar
 
-class GalleryRatingBar @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyle: Int = 0
-) : AppCompatRatingBar(context, attrs, defStyle), RatingBar.OnRatingBarChangeListener {
+class GalleryRatingBar : AppCompatRatingBar, RatingBar.OnRatingBarChangeListener {
+
+    constructor(context: Context) : super(context) { init() }
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) { init() }
+    constructor(context: Context, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle) { init() }
 
     private var mListener: OnUserRateListener? = null
 
-    init {
+    private fun init() {
         onRatingBarChangeListener = this
     }
 
