@@ -1025,7 +1025,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             if (mGalleryDetail == null) {
                 return
             }
-            myUpdateDialog!!.showSelectDialog(mGalleryDetail)
+            myUpdateDialog!!.showSelectDialog(mGalleryDetail!!)
         } else if (mRead === v) {
             val galleryInfo: GalleryInfo? = mGalleryInfo ?: mGalleryDetail
             if (galleryInfo != null) {
