@@ -38,6 +38,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.res.ResourcesCompat
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -108,24 +109,28 @@ class DownloadsScene : ToolbarScene(),
      ---------------*/
     private var _downloadManager: DownloadManager? = null
 
-    @JvmField
-    var mLabel: String? = null
-    private var mList: MutableList<DownloadInfo>? = null
-    private var mBackList: List<DownloadInfo>? = null
+    private lateinit var viewModel: DownloadsViewModel
+
+    /** Shortcut delegating to [DownloadsViewModel.currentLabel]. */
+    var mLabel: String?
+        get() = viewModel.currentLabel.value
+        set(value) { viewModel.selectLabel(value) }
+
+    /** Shortcut delegating to [DownloadsViewModel.downloadList]. */
+    private var mList: MutableList<DownloadInfo>?
+        get() = viewModel.downloadList.value
+        set(value) { if (value != null) viewModel.setDownloadList(value) }
+
+    /** Shortcut delegating to [DownloadsViewModel.backList]. */
+    private val mBackList: List<DownloadInfo>?
+        get() = viewModel.backList.value
+
     private var mLastSnapshot: MutableList<DownloadInfo> = ArrayList()
 
     /*---------------
      List pagination
      ---------------*/
-    private var _indexPage = 1
-    private var _pageSize = 1
-    private var canPagination = true
-    private val _paginationSize = 500
-    private val perPageCountChoices = intArrayOf(50, 100, 200, 300, 500)
-
     private var myPageChangeListener: MyPageChangeListener? = null
-
-    private val mSpiderInfoMap: MutableMap<Long, SpiderInfo> = HashMap()
 
     /*---------------
      View life cycle
@@ -154,13 +159,15 @@ class DownloadsScene : ToolbarScene(),
     private var mSearchBarMover: SearchBarMover? = null
     private var mSearchMode = false
 
-    @JvmField
-    var searchKey: String? = null
+    var searchKey: String?
+        get() = viewModel.searchKey.value
+        set(value) { viewModel.setSearchKey(value) }
 
     private var mInitPosition = -1
 
-    @JvmField
-    var searching = false
+    var searching: Boolean
+        get() = viewModel.searching.value
+        set(value) { viewModel.setSearching(value) }
     private var doNotScroll = false
 
     private var needInitPage = false
@@ -193,7 +200,7 @@ class DownloadsScene : ToolbarScene(),
             if (gid != -1L) {
                 val info = dm.getDownloadInfo(gid)
                 if (info != null) {
-                    mLabel = info.label
+                    viewModel.selectLabel(info.label)
                     updateForLabel()
                     updateView()
 
@@ -221,11 +228,12 @@ class DownloadsScene : ToolbarScene(),
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        viewModel = ViewModelProvider(requireActivity())[DownloadsViewModel::class.java]
+
         val context = ehContext
         AssertUtils.assertNotNull(context)
         _downloadManager = ServiceRegistry.dataModule.downloadManager
         _downloadManager!!.addDownloadInfoListener(this)
-        canPagination = DownloadSettings.getDownloadPagination()
 
         // Initialize import helper (must happen before onStart per ActivityResultLauncher contract)
         mImportHelper = DownloadImportHelper(
@@ -307,7 +315,6 @@ class DownloadsScene : ToolbarScene(),
 
     override fun onDestroy() {
         super.onDestroy()
-        mList = null
 
         var manager = _downloadManager
         if (manager == null) {
@@ -329,46 +336,35 @@ class DownloadsScene : ToolbarScene(),
 
     @SuppressLint("NotifyDataSetChanged")
     fun updateForLabel() {
-        val dm = _downloadManager ?: return
-
-        if (mLabel == null) {
-            @Suppress("UNCHECKED_CAST")
-            mList = dm.defaultDownloadInfoList as MutableList<DownloadInfo>
-        } else {
-            @Suppress("UNCHECKED_CAST")
-            mList = dm.getLabelDownloadInfoList(mLabel) as MutableList<DownloadInfo>?
-            if (mList == null) {
-                mLabel = null
-                @Suppress("UNCHECKED_CAST")
-                mList = dm.defaultDownloadInfoList as MutableList<DownloadInfo>
-            }
-        }
+        viewModel.updateForLabel()
 
         mAdapter?.notifyDataSetChanged()
         mLastSnapshot = if (mList != null) ArrayList(mList!!) else ArrayList()
-        mBackList = mList
         updateTitle()
         updatePaginationIndicator()
-        DownloadSettings.putRecentDownloadLabel(mLabel)
         queryUnreadSpiderInfo()
     }
 
     private fun updatePaginationIndicator() {
         val indicator = mPaginationIndicator ?: return
         val list = mList ?: return
-        if (list.size < _paginationSize || !canPagination) {
+        val paginationSize = viewModel.paginationSize
+        val canPagination = viewModel.canPagination
+        val pageSize = viewModel.pageSize.value
+        val indexPage = viewModel.indexPage.value
+        if (list.size < paginationSize || !canPagination) {
             indicator.visibility = View.GONE
             return
         }
         indicator.visibility = View.VISIBLE
         needInitPageSize = true
-        indicator.initPaginationIndicator(_pageSize, perPageCountChoices, list.size, _indexPage)
+        indicator.initPaginationIndicator(pageSize, viewModel.perPageCountChoices, list.size, indexPage)
         indicator.setListener(myPageChangeListener)
 
         // 同步分页监听器的状态
         myPageChangeListener?.let {
-            it.indexPage = _indexPage
-            it.pageSize = _pageSize
+            it.indexPage = indexPage
+            it.pageSize = pageSize
             it.isNeedInitPage = needInitPage
             it.isDoNotScroll = doNotScroll
         }
@@ -397,19 +393,19 @@ class DownloadsScene : ToolbarScene(),
 
     private fun onInit() {
         if (!handleArguments(arguments)) {
-            mLabel = DownloadSettings.getRecentDownloadLabel()
+            // ViewModel already initializes with the recent label from settings
             updateForLabel()
         }
     }
 
     private fun onRestore(savedInstanceState: Bundle) {
-        mLabel = savedInstanceState.getString(KEY_LABEL)
+        viewModel.selectLabel(savedInstanceState.getString(KEY_LABEL))
         updateForLabel()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putString(KEY_LABEL, mLabel)
+        outState.putString(KEY_LABEL, viewModel.currentLabel.value)
     }
 
     @Suppress("DEPRECATION")
@@ -436,7 +432,7 @@ class DownloadsScene : ToolbarScene(),
         }
         mPaginationIndicator = ViewUtils.`$$`(view, R.id.indicator) as PaginationIndicator
 
-        mPaginationIndicator!!.setPerPageCountChoices(perPageCountChoices, getPageSizePos(_pageSize))
+        mPaginationIndicator!!.setPerPageCountChoices(viewModel.perPageCountChoices, getPageSizePos(viewModel.pageSize.value))
 
         mViewTransition = ViewTransition(content, tip)
 
@@ -464,17 +460,17 @@ class DownloadsScene : ToolbarScene(),
 
         // 初始化分页监听器
         myPageChangeListener = MyPageChangeListener(
-            _indexPage, _pageSize, needInitPage, doNotScroll, mOriginalAdapter, mRecyclerView
+            viewModel.indexPage.value, viewModel.pageSize.value, needInitPage, doNotScroll, mOriginalAdapter, mRecyclerView
         )
 
         // 设置分页监听器的回调
         myPageChangeListener!!.pageChangeCallback = object : MyPageChangeListener.PageChangeCallback {
             override fun onPageChanged(newIndexPage: Int) {
-                _indexPage = newIndexPage
+                viewModel.setIndexPage(newIndexPage)
             }
 
             override fun onPageSizeChanged(newPageSize: Int) {
-                _pageSize = newPageSize
+                viewModel.setPageSize(newPageSize)
             }
         }
         mLayoutManager = AutoStaggeredGridLayoutManager(0, StaggeredGridLayoutManager.VERTICAL)
@@ -527,7 +523,7 @@ class DownloadsScene : ToolbarScene(),
             }
         }
 
-        if (mInitPosition >= 0 && _indexPage != 1) {
+        if (mInitPosition >= 0 && viewModel.indexPage.value != 1) {
             initPage(mInitPosition)
             mRecyclerView!!.scrollToPosition(listIndexInPage(mInitPosition))
             mInitPosition = -1
@@ -1066,16 +1062,16 @@ class DownloadsScene : ToolbarScene(),
     }
 
     override fun onChange() {
-        mLabel = null
+        viewModel.resetToDefaultLabel()
         updateForLabel()
         updateView()
     }
 
     override fun onRenameLabel(from: String, to: String) {
-        if (!ObjectUtils.equal(mLabel, from)) {
+        if (!ObjectUtils.equal(viewModel.currentLabel.value, from)) {
             return
         }
-        mLabel = to
+        viewModel.onLabelRenamed(from, to)
         updateForLabel()
         updateView()
     }
@@ -1099,36 +1095,26 @@ class DownloadsScene : ToolbarScene(),
 
     // DownloadAdapterCallback interface implementation
     override val indexPage: Int
-        get() = _indexPage
+        get() = viewModel.indexPage.value
 
     override val pageSize: Int
-        get() = _pageSize
+        get() = viewModel.pageSize.value
 
     override val paginationSize: Int
-        get() = _paginationSize
+        get() = viewModel.paginationSize
 
     override val isCanPagination: Boolean
-        get() = canPagination
+        get() = viewModel.canPagination
 
-    override fun positionInList(position: Int): Int {
-        if (mList != null && mList!!.size > _paginationSize && canPagination) {
-            return position + _pageSize * (_indexPage - 1)
-        }
-        return position
-    }
+    override fun positionInList(position: Int): Int = viewModel.positionInList(position)
 
-    override fun listIndexInPage(position: Int): Int {
-        if (mList != null && mList!!.size > _paginationSize && canPagination) {
-            return position % _pageSize
-        }
-        return position
-    }
+    override fun listIndexInPage(position: Int): Int = viewModel.listIndexInPage(position)
 
     override val list: MutableList<DownloadInfo>?
         get() = mList
 
     override val spiderInfoMap: Map<Long, SpiderInfo>
-        get() = mSpiderInfoMap
+        get() = viewModel.spiderInfoMap.value
 
     override val downloadManager: DownloadManager?
         get() = _downloadManager
@@ -1226,10 +1212,10 @@ class DownloadsScene : ToolbarScene(),
 
                 if (!isImportedArchive && info != null) {
                     // Only process SpiderInfo for regular downloads, not imported archives
-                    mSpiderInfoMap.remove(info.gid)
+                    viewModel.removeSpiderInfo(info.gid)
                     val spiderInfo = SpiderInfo.getSpiderInfo(info)
                     if (spiderInfo != null) {
-                        mSpiderInfoMap[info.gid] = spiderInfo
+                        viewModel.putSpiderInfo(info.gid, spiderInfo)
                     }
                 }
 
@@ -1258,24 +1244,24 @@ class DownloadsScene : ToolbarScene(),
 
     @SuppressLint("NotifyDataSetChanged")
     private fun spiderInfoResultCallBack(resultMap: Map<Long, SpiderInfo>) {
-        mSpiderInfoMap.putAll(resultMap)
+        viewModel.putAllSpiderInfo(resultMap)
         mAdapter?.notifyDataSetChanged()
     }
 
     @SuppressLint("NotifyDataSetChanged")
     private fun initPage(position: Int) {
-        if (mList != null && mList!!.size > _paginationSize && canPagination) {
-            _indexPage = position / _pageSize + 1
+        if (mList != null && mList!!.size > viewModel.paginationSize && viewModel.canPagination) {
+            viewModel.setIndexPage(position / viewModel.pageSize.value + 1)
         }
         doNotScroll = true
-        mPaginationIndicator?.skip2Pos(_indexPage)
-        mRecyclerView!!.scrollToPosition(listIndexInPage(position))
+        mPaginationIndicator?.skip2Pos(viewModel.indexPage.value)
+        mRecyclerView!!.scrollToPosition(viewModel.listIndexInPage(position))
     }
 
     private fun getPageSizePos(pageSize: Int): Int {
         var index = 0
-        for (i in perPageCountChoices.indices) {
-            if (pageSize == perPageCountChoices[i]) {
+        for (i in viewModel.perPageCountChoices.indices) {
+            if (pageSize == viewModel.perPageCountChoices[i]) {
                 index = i
                 break
             }
