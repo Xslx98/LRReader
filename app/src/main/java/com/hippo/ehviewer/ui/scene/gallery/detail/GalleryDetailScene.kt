@@ -99,7 +99,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     private var mOtherActions: ImageView? = null
     private var mActionGroup: ViewGroup? = null
     private var mDownload: TextView? = null
-    private var mHaveNewVersion: TextView? = null
     private var mRead: View? = null
 
     // Below header
@@ -169,7 +168,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         get() = viewModel.state.value
         set(value) { viewModel.setState(value) }
 
-    private var myUpdateDialog: GalleryUpdateDialog? = null
 
     private var useNetWorkLoadThumb: Boolean = false
 
@@ -404,7 +402,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mOtherActions = ViewUtils.`$$`(mHeader, R.id.other_actions) as ImageView
         mActionGroup = ViewUtils.`$$`(mHeader, R.id.action_card) as ViewGroup
         mDownload = ViewUtils.`$$`(mActionGroup, R.id.download) as TextView
-        mHaveNewVersion = ViewUtils.`$$`(mHeader, R.id.new_version) as TextView
         mArchiverDownloadProgress = ViewUtils.`$$`(mHeader, R.id.archiver_download_progress) as ArchiverDownloadProgress
         mRead = ViewUtils.`$$`(mActionGroup, R.id.read)
         Ripple.addRipple(mOtherActions!!, isDarkTheme)
@@ -414,7 +411,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mOtherActions!!.setOnClickListener(this)
         mDownload!!.setOnClickListener(this)
         mDownload!!.setOnLongClickListener(this)
-        mHaveNewVersion!!.setOnClickListener(this)
         mRead!!.setOnClickListener(this)
         mTitle!!.setOnClickListener(this)
 
@@ -496,9 +492,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         }
 
         ServiceRegistry.dataModule.downloadManager.addDownloadInfoListener(mDownloadHelper)
-        if (myUpdateDialog == null) {
-            myUpdateDialog = GalleryUpdateDialog(this, nonNullContext)
-        }
         return view
     }
 
@@ -528,7 +521,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mActionGroup = null
         mDownload = null
 
-        mHaveNewVersion = null
         mRead = null
         mBelowHeader = null
         mArchiverDownloadProgress = null
@@ -741,13 +733,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             return
         }
         val resources = resources2
-        if (gd.newVersions != null && mHaveNewVersion != null && resources != null) {
-            mHaveNewVersion!!.visibility = View.VISIBLE
-            mHaveNewVersion!!.background =
-                ResourcesCompat.getDrawable(resources, R.drawable.new_version_style, null)
-        } else {
-            mHaveNewVersion?.visibility = View.GONE
-        }
         if (mGalleryInfo == null) {
             mThumb!!.load(EhCacheKeyFactory.getThumbKey(gd.gid), gd.thumb)
         } else {
@@ -889,11 +874,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             GalleryListScene.startScene(this, lub)
         } else if (mDownload === v) {
             mDownloadHelper.onDownload()
-        } else if (mHaveNewVersion === v) {
-            if (mGalleryDetail == null) {
-                return
-            }
-            myUpdateDialog!!.showSelectDialog(mGalleryDetail!!)
         } else if (mRead === v) {
             val galleryInfo: GalleryInfo? = mGalleryInfo ?: mGalleryDetail
             if (galleryInfo != null) {
@@ -980,21 +960,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         return false
     }
 
-    fun startUpdateDownload(updateUrl: String) {
-        if (mGalleryDetail == null || mGalleryDetail!!.newVersions == null) {
-            return
-        }
-        adjustViewVisibility(STATE_REFRESH, false)
-        request(updateUrl, GetGalleryDetailListener.RESULT_UPDATE)
-    }
-
-    fun startDownloadAsNew(updateUrl: String) {
-        if (mGalleryDetail == null || mGalleryDetail!!.newVersions == null) {
-            return
-        }
-        adjustViewVisibility(STATE_REFRESH, false)
-        request(updateUrl, GetGalleryDetailListener.RESULT_DETAIL)
-    }
 
     override fun onBackPressed() {
         finish()
@@ -1026,11 +991,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         }
         adjustViewVisibility(STATE_NORMAL, true)
         bindViewSecond()
-        if (myUpdateDialog != null && myUpdateDialog!!.autoDownload) {
-            myUpdateDialog!!.autoDownload = false
-            mDownloadHelper.initDownloadState(-1)
-            mDownloadHelper.onDownload()
-        }
     }
 
     internal fun onGetGalleryDetailFailure(e: Exception) {
