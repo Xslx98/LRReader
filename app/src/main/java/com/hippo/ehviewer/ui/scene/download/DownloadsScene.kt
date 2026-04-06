@@ -301,14 +301,10 @@ class DownloadsScene : ToolbarScene(),
                 override fun updatePaginationIndicator() { this@DownloadsScene.updatePaginationIndicator() }
                 override fun updateView() { this@DownloadsScene.updateView() }
                 override fun queryUnreadSpiderInfo() { this@DownloadsScene.queryUnreadSpiderInfo() }
+                @SuppressLint("NotifyDataSetChanged")
                 override fun notifyListChanged() {
-                    val adapter = mAdapter ?: return
-                    val newList = if (mList != null) ArrayList(mList!!) else ArrayList()
-                    val result = DiffUtil.calculateDiff(
-                        DownloadInfoDiffCallback(mLastSnapshot, newList)
-                    )
-                    mLastSnapshot = newList
-                    result.dispatchUpdatesTo(adapter)
+                    mAdapter?.notifyDataSetChanged()
+                    mLastSnapshot = if (mList != null) ArrayList(mList!!) else ArrayList()
                 }
             }
         )
@@ -341,18 +337,12 @@ class DownloadsScene : ToolbarScene(),
         mActionFabDrawable = null
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     fun updateForLabel() {
         viewModel.updateForLabel()
 
-        val adapter = mAdapter
-        if (adapter != null) {
-            val newList = if (mList != null) ArrayList(mList!!) else ArrayList()
-            val result = DiffUtil.calculateDiff(
-                DownloadInfoDiffCallback(mLastSnapshot, newList)
-            )
-            mLastSnapshot = newList
-            result.dispatchUpdatesTo(adapter)
-        }
+        mAdapter?.notifyDataSetChanged()
+        mLastSnapshot = if (mList != null) ArrayList(mList!!) else ArrayList()
         updateTitle()
         updatePaginationIndicator()
         queryUnreadSpiderInfo()
