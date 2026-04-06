@@ -198,7 +198,10 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
         super.stop()
         stopped = true
         pageClient = null
-        pageLocks.clear()
+        // Note: do NOT call pageLocks.clear() here — IO threads may still hold
+        // lock objects from the map. Clearing would cause computeIfAbsent to create
+        // new lock instances, allowing concurrent downloads of the same page.
+        // The ConcurrentHashMap entries are GC'd with this Provider instance.
 
         // Evict old archive caches if total size exceeds limit
         IoThreadPoolExecutor.instance.execute {
