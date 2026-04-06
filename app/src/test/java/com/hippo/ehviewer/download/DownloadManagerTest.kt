@@ -15,6 +15,7 @@ import com.hippo.ehviewer.module.CoroutineModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.*
@@ -84,13 +85,24 @@ class DownloadManagerTest {
         // (ensureDownload creates workers that check for a non-null server URL)
         LRRAuthManager.setServerUrl("http://localhost:3000")
 
+        // Drain any pending Handler callbacks from prior tests before creating manager
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
         // Create the manager under test with test scope and wait for async init to complete
         manager = DownloadManager(context, testScope)
         kotlinx.coroutines.runBlocking { manager.awaitInitAsync() }
+
+        // Drain the Handler.post from loadDataFromDb() listener notification
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
     }
 
     @After
     fun tearDown() {
+        // Cancel all pending coroutines launched by DownloadManager (DB writes, etc.)
+        // to prevent async operations from leaking into the next test.
+        testScope.cancel()
+        // Drain any pending Handler callbacks (e.g., from async reload)
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
         db.close()
         LRRAuthManager.clear()
     }

@@ -9,6 +9,12 @@ import com.hippo.ehviewer.client.lrr.runSuspend
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.ehviewer.spider.SpiderQueen
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -33,17 +39,20 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
 
     var listener: SpiderQueen.OnSpiderListener? = null
 
-    @Volatile
-    private var workerThread: Thread? = null
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    private var job: Job? = null
 
     @Volatile
     private var cancelled = false
 
     fun start() {
         cancelled = false
-        workerThread = Thread({
+        job = scope.launch {
             try {
                 doDownload()
+            } catch (e: CancellationException) {
+                // Normal cancellation, don't report
             } catch (e: Exception) {
                 if (!cancelled) {
                     Log.e(TAG, "Uncaught exception in download worker", e)
@@ -53,12 +62,12 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                     }
                 }
             }
-        }, "LRRDownload-$arcId").also { it.start() }
+        }
     }
 
     fun cancel() {
         cancelled = true
-        workerThread?.interrupt()
+        job?.cancel()
     }
 
     private fun doDownload() {
@@ -117,7 +126,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         var downloaded = 0
 
         for (i in 0 until total) {
-            if (cancelled || Thread.currentThread().isInterrupted) {
+            if (cancelled) {
                 break
             }
 
