@@ -187,6 +187,7 @@ class Image private constructor(
         }
     }
 
+    @Synchronized
     fun getDrawable(): Drawable {
         check(obtain()) { "Recycled!" }
         return checkNotNull(mDrawableRef.get()) {
@@ -201,7 +202,7 @@ class Image private constructor(
             val drawable = mDrawableRef.get() ?: return  // Recycled — bail out
             val bitmap: Bitmap = if (animated) {
                 updateBitmap()
-                mBitmap!!
+                mBitmap ?: return
             } else {
                 if (drawable is BitmapDrawable) {
                     val bmp = drawable.bitmap
