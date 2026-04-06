@@ -39,8 +39,6 @@ import com.hippo.unifile.UniFile
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import java.io.IOException
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
@@ -76,14 +74,21 @@ class DownloadManager(
     private val mActiveTasks: MutableList<DownloadInfo> = CopyOnWriteArrayList()
     private val mActiveWorkers: MutableMap<DownloadInfo, LRRDownloadWorker> = ConcurrentHashMap()
 
-    /** Mutex protecting all shared state (mAllInfoList, mAllInfoMap, mMap, etc.) */
-    private val mutex = Mutex()
-
     /** Signals when async init is complete. */
     private val mInitDeferred = CompletableDeferred<Unit>()
 
     @Volatile
     private var mInitialized = false
+
+    /**
+     * Assert that the current thread is the main (UI) thread.
+     * All public read/write methods on shared collections must be called from main thread.
+     */
+    private fun assertMainThread() {
+        check(Looper.myLooper() == Looper.getMainLooper()) {
+            "DownloadManager method must be called on the main thread, current: ${Thread.currentThread().name}"
+        }
+    }
 
     init {
         mSpeedReminder = DownloadSpeedTracker(object : DownloadSpeedTracker.Callback {
@@ -129,56 +134,52 @@ class DownloadManager(
         // Get all labels
         val labels = EhDB.getAllDownloadLabelListAsync()
 
-        mutex.withLock {
-            mLabelList.addAll(labels)
-            for (label in labels) {
-                mMap[label.label] = ArrayList()
-                if (label.label != null) {
-                    mLabelSet.add(label.label!!)
-                }
+        mLabelList.addAll(labels)
+        for (label in labels) {
+            mMap[label.label] = ArrayList()
+            if (label.label != null) {
+                mLabelSet.add(label.label!!)
             }
         }
 
         // Get all info
         val allInfoList = EhDB.getAllDownloadInfoAsync()
 
-        mutex.withLock {
-            mAllInfoList.addAll(allInfoList)
+        mAllInfoList.addAll(allInfoList)
 
-            for (info in allInfoList) {
-                val archiveUri = info.archiveUri
-                if (archiveUri != null && archiveUri.startsWith("content://")) {
-                    try {
-                        val uri = Uri.parse(archiveUri)
-                        mContext.contentResolver.takePersistableUriPermission(
-                            uri,
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        )
-                    } catch (e: Exception) {
-                        Log.w("DownloadManager", "Failed to restore URI permission for $archiveUri", e)
-                    }
+        for (info in allInfoList) {
+            val archiveUri = info.archiveUri
+            if (archiveUri != null && archiveUri.startsWith("content://")) {
+                try {
+                    val uri = Uri.parse(archiveUri)
+                    mContext.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (e: Exception) {
+                    Log.w("DownloadManager", "Failed to restore URI permission for $archiveUri", e)
                 }
-
-                // Add to all info map
-                mAllInfoMap[info.gid] = info
-
-                // Add to each label list
-                var list = getInfoListForLabelLocked(info.label)
-                if (list == null) {
-                    list = ArrayList()
-                    mMap[info.label] = list
-                    if (!mLabelSet.contains(info.label) && info.label != null) {
-                        val saved = EhDB.addDownloadLabelAsync(info.label!!)
-                        mLabelList.add(saved)
-                        mLabelSet.add(info.label!!)
-                    }
-                }
-                list.add(info)
             }
 
-            for ((key, value) in mMap) {
-                mLabelCountMap[key] = value.size.toLong()
+            // Add to all info map
+            mAllInfoMap[info.gid] = info
+
+            // Add to each label list
+            var list = getInfoListForLabelLocked(info.label)
+            if (list == null) {
+                list = ArrayList()
+                mMap[info.label] = list
+                if (!mLabelSet.contains(info.label) && info.label != null) {
+                    val saved = EhDB.addDownloadLabelAsync(info.label!!)
+                    mLabelList.add(saved)
+                    mLabelSet.add(info.label!!)
+                }
             }
+            list.add(info)
+        }
+
+        for ((key, value) in mMap) {
+            mLabelCountMap[key] = value.size.toLong()
         }
 
         // Notify listeners on main thread that data is ready
@@ -214,6 +215,7 @@ class DownloadManager(
     }
 
     fun replaceInfo(newInfo: DownloadInfo, oldInfo: DownloadInfo) {
+        assertMainThread()
         for (i in mAllInfoList.indices) {
             if (oldInfo.gid == mAllInfoList[i].gid) {
                 mAllInfoList[i] = newInfo
@@ -239,7 +241,7 @@ class DownloadManager(
     }
 
     /**
-     * Get the info list for a label. Must be called under [mutex] lock.
+     * Get the info list for a label. Used during init (background thread).
      */
     private fun getInfoListForLabelLocked(label: String?): MutableList<DownloadInfo>? {
         return if (label == null) {
@@ -258,6 +260,7 @@ class DownloadManager(
     }
 
     fun containLabel(label: String?): Boolean {
+        assertMainThread()
         if (label == null) {
             return false
         }
@@ -265,6 +268,7 @@ class DownloadManager(
     }
 
     fun containDownloadInfo(gid: Long): Boolean {
+        assertMainThread()
         return mAllInfoMap.containsKey(gid)
     }
 
@@ -285,13 +289,11 @@ class DownloadManager(
 
     /**
      * Reload download data from DB for the current server profile.
-     * Call this after switching servers.
-     *
-     * Runs the DB load on a background thread when called from the main thread
-     * to avoid ANR. When called from a background thread (e.g., tests), runs
-     * synchronously.
+     * Call this after switching servers. Must be called on the main thread.
      */
     fun reload() {
+        assertMainThread()
+
         // Stop any current downloads
         stopAllDownload()
 
@@ -303,35 +305,23 @@ class DownloadManager(
             value.clear()
         }
 
-        val reloadTask = Runnable {
-            val allInfoList = kotlinx.coroutines.runBlocking { EhDB.getAllDownloadInfoAsync() }
-            mAllInfoList.addAll(allInfoList)
-            for (info in allInfoList) {
-                mAllInfoMap[info.gid] = info
-                var list = getInfoListForLabel(info.label)
-                if (list == null) {
-                    list = ArrayList()
-                    mMap[info.label] = list
-                }
-                list.add(info)
-            }
-        }
-
-        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
-            // On main thread: async to avoid ANR
-            scope.launch {
-                reloadTask.run()
-                android.os.Handler(android.os.Looper.getMainLooper()).post {
-                    for (l in mDownloadInfoListeners) {
-                        l.onReload()
+        // Load from DB on background, then post results back to main thread
+        scope.launch {
+            val allInfoList = EhDB.getAllDownloadInfoAsync()
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                mAllInfoList.addAll(allInfoList)
+                for (info in allInfoList) {
+                    mAllInfoMap[info.gid] = info
+                    var list = getInfoListForLabel(info.label)
+                    if (list == null) {
+                        list = ArrayList()
+                        mMap[info.label] = list
                     }
+                    list.add(info)
                 }
-            }
-        } else {
-            // On background thread (including tests): synchronous
-            reloadTask.run()
-            for (l in mDownloadInfoListeners) {
-                l.onReload()
+                for (l in mDownloadInfoListeners) {
+                    l.onReload()
+                }
             }
         }
     }
@@ -347,10 +337,12 @@ class DownloadManager(
         get() = ArrayList(mAllInfoList)
 
     fun getDownloadInfo(gid: Long): DownloadInfo? {
+        assertMainThread()
         return mAllInfoMap[gid]
     }
 
     fun getNoneDownloadInfo(gid: Long): DownloadInfo? {
+        assertMainThread()
         var wasActive = false
         for (info in mActiveTasks) {
             if (info.gid == gid) {
@@ -375,6 +367,7 @@ class DownloadManager(
     }
 
     fun getDownloadState(gid: Long): Int {
+        assertMainThread()
         val info = mAllInfoMap[gid]
         return info?.state ?: DownloadInfo.STATE_INVALID
     }
@@ -425,6 +418,7 @@ class DownloadManager(
     }
 
     fun startDownload(galleryInfo: GalleryInfo, label: String?) {
+        assertMainThread()
         for (active in mActiveTasks) {
             if (active.gid == galleryInfo.gid) return // already downloading
         }
@@ -496,6 +490,7 @@ class DownloadManager(
     }
 
     fun startRangeDownload(gidList: LongList) {
+        assertMainThread()
         var update = false
         val downloadOrder = DownloadSettings.getDownloadOrder()
         if (downloadOrder) {
@@ -558,6 +553,7 @@ class DownloadManager(
     }
 
     fun startAllDownload() {
+        assertMainThread()
         var update = false
         // Start all STATE_NONE and STATE_FAILED item
         val allInfoList = mAllInfoList
@@ -600,6 +596,7 @@ class DownloadManager(
     }
 
     fun addDownload(downloadInfoList: List<DownloadInfo>) {
+        assertMainThread()
         val newLabelsToAdd = mutableListOf<String>()
         for (info in downloadInfoList) {
             if (containDownloadInfo(info.gid)) {
@@ -651,6 +648,7 @@ class DownloadManager(
     }
 
     fun addDownloadLabel(downloadLabelList: List<DownloadLabel>) {
+        assertMainThread()
         val labelsToAdd = mutableListOf<DownloadLabel>()
         for (label in downloadLabelList) {
             val labelString = label.label
@@ -673,6 +671,7 @@ class DownloadManager(
     }
 
     fun addDownload(galleryInfo: GalleryInfo, label: String?, state: Int) {
+        assertMainThread()
         if (containDownloadInfo(galleryInfo.gid)) {
             // Contain
             return
@@ -716,6 +715,7 @@ class DownloadManager(
     }
 
     fun addDownloadInfo(galleryInfo: GalleryInfo, label: String?) {
+        assertMainThread()
         if (containDownloadInfo(galleryInfo.gid)) {
             // Contain
             return
@@ -743,6 +743,7 @@ class DownloadManager(
     }
 
     fun stopDownload(gid: Long) {
+        assertMainThread()
         val info = stopDownloadInternal(gid)
         if (info != null) {
             // Update listener
@@ -758,6 +759,7 @@ class DownloadManager(
     }
 
     fun stopCurrentDownload() {
+        assertMainThread()
         val info = stopCurrentDownloadInternal()
         if (info != null) {
             // Update listener
@@ -773,6 +775,7 @@ class DownloadManager(
     }
 
     fun stopRangeDownload(gidList: LongList) {
+        assertMainThread()
         stopRangeDownloadInternal(gidList)
 
         // Update listener
@@ -785,6 +788,7 @@ class DownloadManager(
     }
 
     fun stopAllDownload() {
+        assertMainThread()
         // Stop all in wait list
         for (info in mWaitList) {
             info.state = DownloadInfo.STATE_NONE
@@ -803,6 +807,7 @@ class DownloadManager(
     }
 
     fun deleteDownload(gid: Long) {
+        assertMainThread()
         stopDownloadInternal(gid)
         val info = mAllInfoMap[gid]
         if (info != null) {
@@ -833,35 +838,36 @@ class DownloadManager(
     }
 
     fun deleteRangeDownload(gidList: LongList) {
+        assertMainThread()
         stopRangeDownloadInternal(gidList)
 
-        val gidsToRemove = mutableListOf<Long>()
+        // Collect gids into a HashSet for O(1) lookup
+        val gidSet = HashSet<Long>(gidList.size())
         for (i in 0 until gidList.size()) {
-            val gid = gidList.get(i)
-            val info = mAllInfoMap[gid]
+            gidSet.add(gidList.get(i))
+        }
+
+        // Collect infos to remove and clear from map
+        val gidsToRemove = mutableListOf<Long>()
+        for (gid in gidSet) {
+            val info = mAllInfoMap.remove(gid)
             if (info == null) {
                 Log.d(TAG, "Can't get download info with gid: $gid")
                 continue
             }
-
             gidsToRemove.add(info.gid)
-
-            // Remove from all info map
-            mAllInfoList.remove(info)
-            mAllInfoMap.remove(info.gid)
 
             // Remove from label list
             val list = getInfoListForLabel(info.label)
             list?.remove(info)
         }
 
+        // O(N) removal from mAllInfoList using removeAll
+        mAllInfoList.removeAll { it.gid in gidSet }
+
         // Remove from DB on background thread
         if (gidsToRemove.isNotEmpty()) {
-            scope.launch {
-                for (gid in gidsToRemove) {
-                    EhDB.removeDownloadInfoAsync(gid)
-                }
-            }
+            scope.launch { EhDB.removeDownloadInfoBatchAsync(gidsToRemove) }
         }
 
         // Update listener
@@ -994,6 +1000,7 @@ class DownloadManager(
      * @param label Not allow new label
      */
     fun changeLabel(list: List<DownloadInfo>, label: String?) {
+        assertMainThread()
         if (label != null && !containLabel(label)) {
             Log.e(TAG, "Not exits label: $label")
             return
@@ -1031,6 +1038,7 @@ class DownloadManager(
     }
 
     fun addLabel(label: String?) {
+        assertMainThread()
         if (label == null || containLabel(label)) {
             return
         }
@@ -1058,17 +1066,27 @@ class DownloadManager(
     }
 
     fun addLabelInSyncThread(label: String?) {
-        if (label == null || containLabel(label)) {
+        if (label == null || mLabelSet.contains(label)) {
             return
         }
 
-        // Already called from sync/background thread — runBlocking is safe here
-        mLabelList.add(kotlinx.coroutines.runBlocking { EhDB.addDownloadLabelAsync(label) })
+        val newLabel = DownloadLabel().apply {
+            this.label = label
+            this.time = System.currentTimeMillis()
+        }
+        mLabelList.add(newLabel)
         mLabelSet.add(label)
         mMap[label] = ArrayList()
+
+        scope.launch {
+            val saved = EhDB.addDownloadLabelAsync(label)
+            newLabel.id = saved.id
+            newLabel.time = saved.time
+        }
     }
 
     fun moveLabel(fromPosition: Int, toPosition: Int) {
+        assertMainThread()
         val item = mLabelList.removeAt(fromPosition)
         mLabelList.add(toPosition, item)
 
@@ -1080,6 +1098,7 @@ class DownloadManager(
     }
 
     fun renameLabel(from: String, to: String) {
+        assertMainThread()
         // Find in label list
         var rawLabel: DownloadLabel? = null
         for (raw in mLabelList) {
@@ -1111,9 +1130,7 @@ class DownloadManager(
         val infosToUpdate = ArrayList(list)
         scope.launch {
             EhDB.updateDownloadLabelAsync(labelToUpdate)
-            for (info in infosToUpdate) {
-                EhDB.putDownloadInfoAsync(info)
-            }
+            EhDB.putDownloadInfoBatchAsync(infosToUpdate)
         }
 
         // Notify listener
@@ -1123,6 +1140,7 @@ class DownloadManager(
     }
 
     fun deleteLabel(label: String) {
+        assertMainThread()
         // Find in label list and remove
         var removedLabel: DownloadLabel? = null
         val iterator = mLabelList.iterator()
@@ -1157,9 +1175,7 @@ class DownloadManager(
         val infosToUpdate = ArrayList(list)
         scope.launch {
             EhDB.removeDownloadLabelAsync(labelToRemove)
-            for (info in infosToUpdate) {
-                EhDB.putDownloadInfoAsync(info)
-            }
+            EhDB.putDownloadInfoBatchAsync(infosToUpdate)
         }
 
         // Notify listener

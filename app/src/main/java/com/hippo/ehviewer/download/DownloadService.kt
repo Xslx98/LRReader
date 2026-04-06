@@ -67,7 +67,7 @@ class DownloadService : Service(), DownloadListener {
         CHANNEL_ID = "$packageName.download"
         mNotifyManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            mNotifyManager!!.createNotificationChannel(
+            mNotifyManager?.createNotificationChannel(
                 NotificationChannel(
                     CHANNEL_ID, getString(R.string.download_service),
                     NotificationManager.IMPORTANCE_LOW
@@ -75,7 +75,7 @@ class DownloadService : Service(), DownloadListener {
             )
         }
         mDownloadManager = ServiceRegistry.dataModule.downloadManager
-        mDownloadManager!!.setDownloadListener(this)
+        mDownloadManager?.setDownloadListener(this)
     }
 
     override fun onDestroy() {
@@ -178,7 +178,8 @@ class DownloadService : Service(), DownloadListener {
         stopAllIntent.setAction(ACTION_STOP_ALL)
         val piStopAll = PendingIntent.getService(this, 0, stopAllIntent, PendingIntent.FLAG_IMMUTABLE)
 
-        mDownloadingBuilder = NotificationCompat.Builder(applicationContext, CHANNEL_ID!!)
+        val channelId = CHANNEL_ID ?: return
+        mDownloadingBuilder = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(android.R.drawable.stat_sys_download)
             .setOngoing(true)
             .setAutoCancel(false)
@@ -190,10 +191,11 @@ class DownloadService : Service(), DownloadListener {
                 piStopAll
             )
             .setShowWhen(false)
-            .setChannelId(CHANNEL_ID!!)
+            .setChannelId(channelId)
 
+        val builder = mDownloadingBuilder ?: return
         mDownloadingDelay =
-            NotificationDelay(this, mNotifyManager, mDownloadingBuilder!!, ID_DOWNLOADING)
+            NotificationDelay(this, mNotifyManager, builder, ID_DOWNLOADING)
     }
 
     private fun ensureDownloadedBuilder() {
@@ -216,7 +218,8 @@ class DownloadService : Service(), DownloadListener {
             activityIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        mDownloadedBuilder = NotificationCompat.Builder(applicationContext, CHANNEL_ID!!)
+        val channelId = CHANNEL_ID ?: return
+        mDownloadedBuilder = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setLargeIcon(BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher))
             .setContentTitle(getString(R.string.stat_download_done_title))
@@ -224,10 +227,11 @@ class DownloadService : Service(), DownloadListener {
             .setOngoing(false)
             .setAutoCancel(true)
             .setContentIntent(piActivity)
-            .setChannelId(CHANNEL_ID!!)
+            .setChannelId(channelId)
 
+        val builder = mDownloadedBuilder ?: return
         mDownloadedDelay =
-            NotificationDelay(this, mNotifyManager, mDownloadedBuilder!!, ID_DOWNLOADED)
+            NotificationDelay(this, mNotifyManager, builder, ID_DOWNLOADED)
     }
 
     private fun ensure509Builder() {
@@ -235,7 +239,8 @@ class DownloadService : Service(), DownloadListener {
             return
         }
 
-        m509dBuilder = NotificationCompat.Builder(applicationContext, CHANNEL_ID!!)
+        val channelId = CHANNEL_ID ?: return
+        m509dBuilder = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(R.drawable.ic_stat_alert)
             .setLargeIcon(BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher))
             .setContentTitle(getString(R.string.stat_509_alert_title))
@@ -243,9 +248,10 @@ class DownloadService : Service(), DownloadListener {
             .setAutoCancel(true)
             .setOngoing(false)
             .setCategory(NotificationCompat.CATEGORY_ERROR)
-            .setChannelId(CHANNEL_ID!!)
+            .setChannelId(channelId)
 
-        m509Delay = NotificationDelay(this, mNotifyManager, m509dBuilder!!, ID_509)
+        val builder = m509dBuilder ?: return
+        m509Delay = NotificationDelay(this, mNotifyManager, builder, ID_509)
     }
 
     override fun onGet509() {
@@ -254,8 +260,9 @@ class DownloadService : Service(), DownloadListener {
         }
 
         ensure509Builder()
-        m509dBuilder!!.setWhen(System.currentTimeMillis())
-        m509Delay!!.show()
+        val builder509 = m509dBuilder ?: return
+        builder509.setWhen(System.currentTimeMillis())
+        m509Delay?.show()
     }
 
     override fun onStart(info: DownloadInfo) {
@@ -276,13 +283,14 @@ class DownloadService : Service(), DownloadListener {
             activityIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        mDownloadingBuilder!!.setContentTitle(EhUtils.getSuitableTitle(info))
+        val dlBuilder = mDownloadingBuilder ?: return
+        dlBuilder.setContentTitle(EhUtils.getSuitableTitle(info))
             .setContentText(null)
             .setContentInfo(null)
             .setProgress(0, 0, true)
             .setContentIntent(piActivity)
 
-        mDownloadingDelay!!.startForeground()
+        mDownloadingDelay?.startForeground()
     }
 
     private fun onUpdate(info: DownloadInfo) {
@@ -306,12 +314,13 @@ class DownloadService : Service(), DownloadListener {
         } else {
             getString(R.string.download_speed_text, text)
         }
-        mDownloadingBuilder!!.setContentTitle(EhUtils.getSuitableTitle(info))
+        val dlBuilder = mDownloadingBuilder ?: return
+        dlBuilder.setContentTitle(EhUtils.getSuitableTitle(info))
             .setContentText(text)
             .setContentInfo(if (info.total == -1 || info.finished == -1) null else info.finished.toString() + "/" + info.total)
             .setProgress(info.total, info.finished, false)
 
-        mDownloadingDelay!!.startForeground()
+        mDownloadingDelay?.startForeground()
     }
 
     override fun onDownload(info: DownloadInfo) {
@@ -328,7 +337,7 @@ class DownloadService : Service(), DownloadListener {
         }
 
         if (null != mDownloadingDelay) {
-            mDownloadingDelay!!.cancel()
+            mDownloadingDelay?.cancel()
         }
 
         ensureDownloadedBuilder()
@@ -425,12 +434,13 @@ class DownloadService : Service(), DownloadListener {
             style = null
         }
 
-        mDownloadedBuilder!!.setContentText(text)
+        val doneBuilder = mDownloadedBuilder ?: return
+        doneBuilder.setContentText(text)
             .setStyle(style)
             .setWhen(System.currentTimeMillis())
             .setNumber(sDownloadedCount)
 
-        mDownloadedDelay!!.show()
+        mDownloadedDelay?.show()
 
         checkStopSelf()
     }
@@ -441,14 +451,14 @@ class DownloadService : Service(), DownloadListener {
         }
 
         if (null != mDownloadingDelay) {
-            mDownloadingDelay!!.cancel()
+            mDownloadingDelay?.cancel()
         }
 
         checkStopSelf()
     }
 
     private fun checkStopSelf() {
-        if (mDownloadManager == null || mDownloadManager!!.isIdle) {
+        if (mDownloadManager?.isIdle != false) {
 //            stopForeground(true);
             stopSelf()
         }
@@ -482,7 +492,7 @@ class DownloadService : Service(), DownloadListener {
                 val now = SystemClock.uptimeMillis()
                 if (now - mLastTime > DELAY) {
                     // Wait long enough, do it now
-                    mNotifyManager!!.notify(mId, mBuilder.build())
+                    mNotifyManager?.notify(mId, mBuilder.build())
                 } else {
                     // Too quick, post delay
                     mOps = OPS_NOTIFY
@@ -500,7 +510,7 @@ class DownloadService : Service(), DownloadListener {
                 val now = SystemClock.uptimeMillis()
                 if (now - mLastTime > DELAY) {
                     // Wait long enough, do it now
-                    mNotifyManager!!.cancel(mId)
+                    mNotifyManager?.cancel(mId)
                 } else {
                     // Too quick, post delay
                     mOps = OPS_CANCEL
@@ -519,13 +529,13 @@ class DownloadService : Service(), DownloadListener {
                     // Wait long enough, do it now
                     if (mService != null) {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                            mService!!.startForeground(
+                            mService?.startForeground(
                                 mId,
                                 mBuilder.build(),
                                 ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
                             )
                         } else {
-                            mService!!.startForeground(mId, mBuilder.build())
+                            mService?.startForeground(mId, mBuilder.build())
                         }
                     }
                 } else {
@@ -540,17 +550,17 @@ class DownloadService : Service(), DownloadListener {
         override fun run() {
             mPosted = false
             when (mOps) {
-                OPS_NOTIFY -> mNotifyManager!!.notify(mId, mBuilder.build())
-                OPS_CANCEL -> mNotifyManager!!.cancel(mId)
+                OPS_NOTIFY -> mNotifyManager?.notify(mId, mBuilder.build())
+                OPS_CANCEL -> mNotifyManager?.cancel(mId)
                 OPS_START_FOREGROUND -> if (mService != null) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                        mService!!.startForeground(
+                        mService?.startForeground(
                             mId,
                             mBuilder.build(),
                             ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
                         )
                     } else {
-                        mService!!.startForeground(mId, mBuilder.build())
+                        mService?.startForeground(mId, mBuilder.build())
                     }
                 }
             }
