@@ -1,6 +1,5 @@
-# R8 code shrinking without obfuscation
-# Only tree-shaking (remove unused code) and optimization, no name mangling
--dontobfuscate
+# R8 code shrinking with obfuscation enabled
+# Tree-shaking + optimization + name mangling for security
 
 # === Strip debug/verbose logs in release (security: prevent accidental data leak) ===
 -assumenosideeffects class android.util.Log {
