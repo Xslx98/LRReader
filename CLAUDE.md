@@ -111,7 +111,8 @@ LRReader/
 | `ui/GalleryActivity.kt` | Reader/detail view |
 | `ui/scene/GalleryListScene.kt` | Gallery browse scene (uses PagingSource for LRR search) |
 | `ui/scene/download/DownloadsScene.kt` | Download management (Room Flow + DiffUtil) |
-| `ui/scene/gallery/detail/GalleryDetailScene.kt` | Gallery detail view (delegates to helpers below) |
+| `ui/scene/gallery/detail/GalleryDetailScene.kt` | Gallery detail view (delegates to helpers + ViewModel) |
+| `ui/scene/gallery/detail/GalleryDetailViewModel.kt` | Gallery detail state: info, detail, loading state |
 | `ui/scene/gallery/detail/GalleryTagHelper.kt` | Tag display, filter dialogs, tag long-press actions |
 | `ui/scene/gallery/detail/GalleryDownloadHelper.kt` | Download state display + DownloadInfoListener |
 | `ui/scene/gallery/detail/GalleryDetailRequestHelper.kt` | LRR metadata fetch + category favorite detection |
@@ -354,6 +355,8 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 17. **Tag editor:** `TagEditDialog.kt` shows a grouped chip-style editor using the same `RoundSideRectDrawable` visual style as the detail page. Click to edit, long-press to delete, [+] to add per namespace. Supports `AutoCompleteTextView` with `LRRTagCache` suggestions. Entry point: pencil icon in tag display area.
 
 18. **DownloadsViewModel:** `DownloadsViewModel.kt` manages download list state (current label, download list, back-list, search key, searching flag, pagination state, spider info cache) as `StateFlow` properties. `DownloadsScene` accesses state via property delegates that read/write ViewModel flows. The ViewModel is scoped to the parent Activity via `ViewModelProvider(requireActivity())` because Scene fragments may be recreated. View references, adapters, DiffUtil dispatch, and dialog/navigation remain in the Scene.
+
+19. **GalleryDetailViewModel:** `GalleryDetailViewModel.kt` manages gallery detail state (galleryInfo, galleryDetail, downloadInfo, gid, token, action, loading state) as `StateFlow` properties. `GalleryDetailScene` accesses state via shortcut property delegates that read/write ViewModel flows. Derived accessors (`getEffectiveGid()`, `getEffectiveToken()`, `getEffectiveUploader()`, `getEffectiveCategory()`, `getEffectiveGalleryInfo()`) centralize the fallback logic (detail > info > args). Cache lookup via `tryLoadFromCache()`. Scoped to Activity like `DownloadsViewModel`.
 
 ---
 
