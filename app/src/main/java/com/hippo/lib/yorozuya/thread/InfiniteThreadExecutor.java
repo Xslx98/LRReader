@@ -25,18 +25,26 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class InfiniteThreadExecutor implements Executor {
 
+    private static final int DEFAULT_MAX_THREADS = 32;
+
     private final long mKeepAliveMillis;
     private final Queue<Runnable> mWorkQueue;
     private final ThreadFactory mThreadFactory;
+    private final int mMaxThreads;
 
     private final AtomicInteger mThreadCount = new AtomicInteger();
     private final Object mLock = new Object();
     private int mEmptyThreadCount;
 
     public InfiniteThreadExecutor(long keepAliveMillis, Queue<Runnable> workQueue, ThreadFactory threadFactory) {
+        this(keepAliveMillis, workQueue, threadFactory, DEFAULT_MAX_THREADS);
+    }
+
+    public InfiniteThreadExecutor(long keepAliveMillis, Queue<Runnable> workQueue, ThreadFactory threadFactory, int maxThreads) {
         mKeepAliveMillis = keepAliveMillis;
         mWorkQueue = workQueue;
         mThreadFactory = threadFactory;
+        mMaxThreads = maxThreads;
     }
 
     @Override
@@ -50,7 +58,9 @@ public class InfiniteThreadExecutor implements Executor {
             }
         }
 
-        mThreadFactory.newThread(new Task()).start();
+        if (mThreadCount.get() < mMaxThreads) {
+            mThreadFactory.newThread(new Task()).start();
+        }
     }
 
     public int getThreadCount() {
