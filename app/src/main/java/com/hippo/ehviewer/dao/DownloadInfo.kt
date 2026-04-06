@@ -19,7 +19,8 @@ import org.json.JSONObject
     primaryKeys = ["GID"],
     indices = [
         Index("SERVER_PROFILE_ID"),
-        Index("TIME")
+        Index("TIME"),
+        Index("LABEL")
     ]
 )
 class DownloadInfo : GalleryInfo {
