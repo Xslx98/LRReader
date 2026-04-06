@@ -21,6 +21,8 @@ object LRRAuthManager {
 
     private const val TAG = "LRRAuthManager"
     private const val PREF_NAME = "lrr_auth_encrypted"
+    private const val PLAIN_PREF_NAME = "lrr_auth_plain"
+    private const val KEY_WAS_CONFIGURED = "was_configured"
     private const val KEY_SERVER_URL = "server_url"
     private const val KEY_API_KEY = "api_key"
     private const val KEY_SERVER_NAME = "server_name"
@@ -42,6 +44,8 @@ object LRRAuthManager {
 
     @JvmStatic
     fun initialize(context: Context) {
+        val plainPrefs = context.applicationContext
+            .getSharedPreferences(PLAIN_PREF_NAME, Context.MODE_PRIVATE)
         try {
             val masterKey = MasterKey.Builder(context.applicationContext)
                 .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
@@ -60,11 +64,12 @@ object LRRAuthManager {
                 .getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
                 .edit().clear().apply()
             sPrefs = null
-            sNeedsReauthentication = true
+            // Only prompt reauth if the user had previously configured a server
+            sNeedsReauthentication = plainPrefs.getBoolean(KEY_WAS_CONFIGURED, false)
         } catch (e: IOException) {
             Log.e(TAG, "I/O error initializing EncryptedSharedPreferences — credentials will not persist", e)
             sPrefs = null
-            sNeedsReauthentication = true
+            sNeedsReauthentication = plainPrefs.getBoolean(KEY_WAS_CONFIGURED, false)
         }
         // Restore active profile (falls back to 0 when sPrefs is null)
         val prefs = sPrefs
@@ -73,6 +78,11 @@ object LRRAuthManager {
         // correctly returns false and prompts the user to re-enroll with PBKDF2.
         if (prefs?.contains("pattern_hash") == true) {
             prefs.edit().remove("pattern_hash").apply()
+        }
+        // Persist "was_configured" flag when a server URL exists, so we can detect
+        // KeyStore corruption vs fresh install on next startup.
+        if (prefs?.getString(KEY_SERVER_URL, null) != null) {
+            plainPrefs.edit().putBoolean(KEY_WAS_CONFIGURED, true).apply()
         }
     }
 

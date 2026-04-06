@@ -5,13 +5,11 @@ import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.core.content.ContextCompat
-import org.json.JSONObject
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.BuildConfig
-import com.hippo.ehviewer.EhApplication
-import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.ui.dialog.UpdateDialog
 import com.hippo.lib.yorozuya.FileUtils
@@ -19,6 +17,9 @@ import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.util.AppHelper.Companion.compareVersion
 import com.hippo.util.ExceptionUtils
 import com.hippo.util.IoThreadPoolExecutor
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okio.buffer
@@ -31,29 +32,36 @@ import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.Volatile
 
-class AppUpdater(private val name: String, source: okio.BufferedSource) {
-    private val updateData: JSONObject
+@Serializable
+data class UpdateContent(
+    @SerialName("title") val title: String = "",
+    @SerialName("content") val content: List<String> = emptyList(),
+    @SerialName("fileDownloadUrl") val fileDownloadUrl: String = ""
+)
 
+@Serializable
+data class UpdateInfo(
+    @SerialName("version") val version: String = "0.0.0",
+    @SerialName("versionCode") val versionCode: Int = 0,
+    @SerialName("mustUpdate") val mustUpdate: Boolean = false,
+    @SerialName("updateContent") val updateContent: UpdateContent = UpdateContent()
+)
+
+class AppUpdater(private val name: String, source: okio.BufferedSource) {
+    internal val updateData: UpdateInfo
 
     init {
-        val jsonObject: JSONObject = try {
-            JSONObject(source.readUtf8())
-        } catch (e: Exception) {
-            JSONObject()
+        updateData = try {
+            updateJson.decodeFromString<UpdateInfo>(source.readUtf8())
+        } catch (_: Exception) {
+            UpdateInfo()
         }
-        updateData = jsonObject
     }
 
     companion object {
         private const val TAG = "AppUpdater"
 
-        const val VERSION: String = "version"
-        const val VERSION_CODE: String = "versionCode"
-        const val FILE_DOWNLOAD_URL: String = "fileDownloadUrl"
-        const val MUST_UPDATE: String = "mustUpdate"
-        const val UPDATE_CONTENT: String = "updateContent"
-        const val TITLE: String = "title"
-        const val CONTENT: String = "content"
+        private val updateJson = Json { ignoreUnknownKeys = true }
 
         @Volatile
         private var instance: AppUpdater? = null
@@ -98,6 +106,13 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
             }
             val dataName = urls[0]
             val dataUrl = urls[1]
+
+            // Reject non-HTTPS update URLs to prevent MITM attacks
+            if (!dataUrl.startsWith("https://")) {
+                Log.w(TAG, "Refusing to fetch update data over non-HTTPS URL: $dataUrl")
+                return
+            }
+
             // Clear tags if name if different
             val tmp = instance
             if (tmp != null && tmp.name != dataName) {
@@ -137,9 +152,15 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
                     }
 
                     val needUpdate: Boolean
-                    // 使用FastJSON的parseObject方法解析JSON内容
-                    val tempUpdateData =
-                        JSONObject(FileUtils.read(tempDataFile))
+                    val tempUpdateData = try {
+                        val jsonText = FileUtils.read(tempDataFile)
+                            ?: throw IOException("Failed to read update file")
+                        updateJson.decodeFromString<UpdateInfo>(jsonText)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to parse update JSON", e)
+                        FileUtils.delete(tempDataFile)
+                        return@execute
+                    }
 
                     // Check new data
                     needUpdate = if (instance != null) {
@@ -163,7 +184,7 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
                         return@execute
                     }
 
-                    // Replace current  current data with  new data
+                    // Replace current data with new data
                     FileUtils.delete(dataFile)
                     tempDataFile.renameTo(dataFile)
 
@@ -184,8 +205,8 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
         }
 
         private fun checkData(
-            updateData: JSONObject?,
-            tempUpdateData: JSONObject,
+            updateData: UpdateInfo?,
+            tempUpdateData: UpdateInfo,
             manualChecking: Boolean
         ): Boolean {
             try {
@@ -193,16 +214,13 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
                 val currentVersionCode = BuildConfig.VERSION_CODE
                 var updateResult: Int
                 if (updateData != null) {
-                    val version1 = updateData.optString(VERSION, "0.0.0")
-                    val version2 = tempUpdateData.optString(VERSION, "0.0.0")
+                    val version1 = updateData.version
+                    val version2 = tempUpdateData.version
                     updateResult = compareVersion(version1, version2)
                     if (updateResult < 0) {
                         return true
                     } else if (updateResult == 0) {
-                        if (updateData.optInt(VERSION_CODE, 0) < tempUpdateData.optInt(
-                                VERSION_CODE, 0
-                            )
-                        ) {
+                        if (updateData.versionCode < tempUpdateData.versionCode) {
                             return true
                         }
                     }
@@ -210,10 +228,10 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
                         return false
                     }
                 }
-                updateResult = compareVersion(currentVersion, tempUpdateData.optString(VERSION, "0.0.0"))
+                updateResult = compareVersion(currentVersion, tempUpdateData.version)
                 return if (updateResult < 0) {
                     true
-                } else currentVersionCode < tempUpdateData.optInt(VERSION_CODE, 0)
+                } else currentVersionCode < tempUpdateData.versionCode
             } catch (e: Exception) {
                 Log.e(TAG, e.message, e)
                 Analytics.recordException(e)
