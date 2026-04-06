@@ -54,7 +54,7 @@ class NetworkModule(private val context: Context) {
                 val url = chain.request().url.toString()
                 if (url.contains("/api/archives/") && url.contains("/thumbnail")) {
                     resp.newBuilder()
-                        .header("Cache-Control", "public, max-age=86400")
+                        .header("Cache-Control", "public, max-age=3600, stale-while-revalidate=82800")
                         .removeHeader("Pragma")
                         .build()
                 } else {
