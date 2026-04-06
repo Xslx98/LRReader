@@ -18,11 +18,14 @@
       via bare LAN IP (e.g., 192.168.x.x:3000) over HTTP. Android's
       network_security_config has no CIDR/wildcard-IP support, so a blanket
       allowance is the only way to support arbitrary LAN addresses.
+
+      User-installed CAs are NOT trusted in release builds to prevent MITM
+      attacks via rogue CAs. Users with self-signed HTTPS setups should
+      import the CA into the system trust store or use the debug build.
     -->
     <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
             <certificates src="system"/>
-            <certificates src="user"/>
         </trust-anchors>
     </base-config>
 
