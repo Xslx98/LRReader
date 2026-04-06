@@ -46,6 +46,7 @@ import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.UrlOpener
+import androidx.lifecycle.ViewModelProvider
 import com.hippo.ehviewer.client.EhCacheKeyFactory
 import com.hippo.ehviewer.client.EhUrl
 import com.hippo.ehviewer.client.EhUtils
@@ -127,18 +128,47 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     private var mViewTransition2: ViewTransition? = null
     private var mPopupMenu: PopupMenu? = null
 
-    private var mAction: String? = null
-    private var mGalleryInfo: GalleryInfo? = null
-    private var mDownloadInfo: DownloadInfo? = null
-    private var mGid: Long = 0
-    private var mToken: String? = null
+    private lateinit var viewModel: GalleryDetailViewModel
 
-    private var mGalleryDetail: GalleryDetail? = null
+    /** Shortcut delegating to [GalleryDetailViewModel.action]. */
+    private var mAction: String?
+        get() = viewModel.action.value
+        set(value) { viewModel.setAction(value) }
+
+    /** Shortcut delegating to [GalleryDetailViewModel.galleryInfo]. */
+    private var mGalleryInfo: GalleryInfo?
+        get() = viewModel.galleryInfo.value
+        set(value) { viewModel.setGalleryInfo(value) }
+
+    /** Shortcut delegating to [GalleryDetailViewModel.downloadInfo]. */
+    private var mDownloadInfo: DownloadInfo?
+        get() = viewModel.downloadInfo.value
+        set(value) { viewModel.setDownloadInfo(value) }
+
+    /** Shortcut delegating to [GalleryDetailViewModel.gid]. */
+    private var mGid: Long
+        get() = viewModel.gid.value
+        set(value) { viewModel.setGid(value) }
+
+    /** Shortcut delegating to [GalleryDetailViewModel.token]. */
+    private var mToken: String?
+        get() = viewModel.token.value
+        set(value) { viewModel.setToken(value) }
+
+    /** Shortcut delegating to [GalleryDetailViewModel.galleryDetail]. */
+    private var mGalleryDetail: GalleryDetail?
+        get() = viewModel.galleryDetail.value
+        set(value) { viewModel.setGalleryDetail(value) }
+
     private var mRequestId: Int = IntIdGenerator.INVALID_ID
 
     private var properties: MutableMap<String, String>? = null
 
-    private var mState: Int = STATE_INIT
+    /** Shortcut delegating to [GalleryDetailViewModel.state]. */
+    private var mState: Int
+        get() = viewModel.state.value
+        set(value) { viewModel.setState(value) }
+
     private var myUpdateDialog: GalleryUpdateDialog? = null
 
     private var useNetWorkLoadThumb: Boolean = false
@@ -234,75 +264,28 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     }
 
     private fun getGalleryDetailUrl(): String? {
-        val gid: Long
-        val token: String?
-        if (mGalleryDetail != null) {
-            gid = mGalleryDetail!!.gid
-            token = mGalleryDetail!!.token
-        } else if (mGalleryInfo != null) {
-            gid = mGalleryInfo!!.gid
-            token = mGalleryInfo!!.token
-        } else if (ACTION_GID_TOKEN == mAction) {
-            gid = mGid
-            token = mToken
-        } else {
-            return null
-        }
+        val gid = viewModel.getEffectiveGid()
+        val token = viewModel.getEffectiveToken()
+        if (gid == -1L) return null
         return EhUrl.getGalleryDetailUrl(gid, token, 0, false)
     }
 
     // -1 for error
-    private fun getGid(): Long {
-        return if (mGalleryDetail != null) {
-            mGalleryDetail!!.gid
-        } else if (mGalleryInfo != null) {
-            mGalleryInfo!!.gid
-        } else if (ACTION_GID_TOKEN == mAction) {
-            mGid
-        } else {
-            -1
-        }
-    }
+    private fun getGid(): Long = viewModel.getEffectiveGid()
 
-    private fun getToken(): String? {
-        return if (mGalleryDetail != null) {
-            mGalleryDetail!!.token
-        } else if (mGalleryInfo != null) {
-            mGalleryInfo!!.token
-        } else if (ACTION_GID_TOKEN == mAction) {
-            mToken
-        } else {
-            null
-        }
-    }
+    private fun getToken(): String? = viewModel.getEffectiveToken()
 
-    private fun getUploader(): String? {
-        return if (mGalleryDetail != null) {
-            mGalleryDetail!!.uploader
-        } else if (mGalleryInfo != null) {
-            mGalleryInfo!!.uploader
-        } else {
-            null
-        }
-    }
+    private fun getUploader(): String? = viewModel.getEffectiveUploader()
 
     // -1 for error
-    private fun getCategory(): Int {
-        return if (mGalleryDetail != null) {
-            mGalleryDetail!!.category
-        } else if (mGalleryInfo != null) {
-            mGalleryInfo!!.category
-        } else {
-            -1
-        }
-    }
+    private fun getCategory(): Int = viewModel.getEffectiveCategory()
 
-    private fun getGalleryInfo(): GalleryInfo? {
-        return mGalleryDetail ?: mGalleryInfo
-    }
+    private fun getGalleryInfo(): GalleryInfo? = viewModel.getEffectiveGalleryInfo()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        viewModel = ViewModelProvider(requireActivity())[GalleryDetailViewModel::class.java]
 
         if (savedInstanceState == null) {
             onInit()
@@ -577,17 +560,10 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         val context = getEHContext()
         AssertUtils.assertNotNull(context)
 
-        if (mGalleryDetail != null) {
-            return true
-        }
-
-        val gid = getGid()
-        if (gid == -1L) {
+        // Try ViewModel cache (checks in-memory detail, then galleryDetailCache)
+        if (!viewModel.tryLoadFromCache()) {
             return false
         }
-
-        // Get from cache
-        mGalleryDetail = ServiceRegistry.dataModule.galleryDetailCache.get(gid)
         if (mGalleryDetail != null) {
             return true
         }
@@ -1075,11 +1051,11 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     companion object {
         private const val REQUEST_CODE_COMMENT_GALLERY = 0
 
-        private const val STATE_INIT = -1
-        private const val STATE_NORMAL = 0
-        private const val STATE_REFRESH = 1
-        private const val STATE_REFRESH_HEADER = 2
-        private const val STATE_FAILED = 3
+        private const val STATE_INIT = GalleryDetailViewModel.STATE_INIT
+        private const val STATE_NORMAL = GalleryDetailViewModel.STATE_NORMAL
+        private const val STATE_REFRESH = GalleryDetailViewModel.STATE_REFRESH
+        private const val STATE_REFRESH_HEADER = GalleryDetailViewModel.STATE_REFRESH_HEADER
+        private const val STATE_FAILED = GalleryDetailViewModel.STATE_FAILED
 
         const val KEY_ACTION = "action"
         const val ACTION_GALLERY_INFO = "action_gallery_info"
