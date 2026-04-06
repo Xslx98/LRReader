@@ -14,6 +14,7 @@ import com.hippo.ehviewer.client.data.GalleryInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -33,7 +34,7 @@ class ArchiverDownloadProgress @JvmOverloads constructor(
     @Volatile
     private var showing = false
     private var pollJob: Job? = null
-    private val scope = CoroutineScope(Dispatchers.Main)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private var reasonString = "Unknown"
 
