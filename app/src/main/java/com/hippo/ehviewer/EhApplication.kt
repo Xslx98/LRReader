@@ -33,6 +33,8 @@ import com.hippo.content.ContextLocalWrapper
 import com.hippo.content.RecordingApplication
 import com.hippo.ehviewer.client.EhFilter
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.hippo.ehviewer.client.lrr.LRRClientProvider
 import com.hippo.ehviewer.settings.DownloadSettings
@@ -110,19 +112,21 @@ class EhApplication : RecordingApplication() {
         // SpiderDen.initialize(this);
         EhDB.initialize(this)
 
-        // Move DB queries off the main thread to avoid ANR during cold start.
-        // LRRAuthManager defaults to null URL/key safely; the migration is idempotent.
-        IoThreadPoolExecutor.instance.execute {
-            // Load active server profile into LRRAuthManager
+        // Load active server profile into LRRAuthManager asynchronously.
+        // ServiceRegistry is not yet initialized, so use a standalone CoroutineScope.
+        CoroutineScope(Dispatchers.IO).launch {
             try {
-                val activeProfile = kotlinx.coroutines.runBlocking { EhDB.getActiveProfileAsync() }
+                val activeProfile = EhDB.getActiveProfileAsync()
                 if (activeProfile != null) {
                     LRRAuthManager.setActiveProfileId(activeProfile.id)
                 }
             } catch (_: Exception) {
                 // DB not ready yet on first launch — safe to ignore
             }
+        }
 
+        // Legacy migration — runs once on first launch after upgrading from old DB format.
+        IoThreadPoolExecutor.instance.execute {
             if (EhDB.needMerge()) {
                 EhDB.mergeOldDB(this@EhApplication)
             }
