@@ -40,7 +40,7 @@ class EhClient(context: Context) {
             mRequestThreadPool.execute(task)
             request.task = task
         } else {
-            request.callback.onCancel()
+            request.callback?.onCancel()
         }
     }
 

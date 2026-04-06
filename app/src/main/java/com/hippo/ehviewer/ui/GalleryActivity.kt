@@ -336,7 +336,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         mGalleryProvider!!.setGLRoot(mGLRootView)
 
         // Setup helpers
-        mInputHandler.setGalleryView(mGalleryView)
+        mInputHandler.galleryView = mGalleryView
         mImageOps.galleryProvider = mGalleryProvider
         mImageOps.galleryInfo = mGalleryInfo
 
@@ -380,7 +380,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         mSliderController.setSystemUiHelper(mSystemUiHelper)
         mSliderController.setGalleryView(mGalleryView)
 
-        mInputHandler.setAutoTransferPanel(autoTransferPanel)
+        mInputHandler.autoTransferPanel = autoTransferPanel
         autoTransferPanel.setOnClickListener { v -> mInputHandler.toggleAutoRead(v) }
 
         val size = mGalleryProvider!!.size()
@@ -390,7 +390,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         }
         if (mGalleryView != null) {
             mSliderController.layoutMode = mGalleryView!!.layoutMode
-            mInputHandler.setLayoutMode(mGalleryView!!.layoutMode)
+            mInputHandler.layoutMode = mGalleryView!!.layoutMode
         }
 
         // Keep screen on
@@ -618,7 +618,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         setScreenLightness(customScreenLightness, screenLightness)
 
         mSliderController.layoutMode = layoutMode
-        mInputHandler.setLayoutMode(layoutMode)
+        mInputHandler.layoutMode = layoutMode
 
         if (oldReadingFullscreen != readingFullscreen) {
             recreate()
@@ -689,7 +689,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
             when (mKey) {
                 NOTIFY_KEY_LAYOUT_MODE -> {
                     mSliderController.layoutMode = mValue
-                    mInputHandler.setLayoutMode(mValue)
+                    mInputHandler.layoutMode = mValue
                 }
                 NOTIFY_KEY_SIZE -> mSliderController.size = mValue
                 NOTIFY_KEY_CURRENT_INDEX -> mSliderController.currentIndex = mValue
