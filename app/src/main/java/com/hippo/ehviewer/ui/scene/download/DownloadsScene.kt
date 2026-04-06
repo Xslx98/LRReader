@@ -25,15 +25,12 @@ import android.graphics.drawable.NinePatchDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import android.util.SparseBooleanArray
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
 import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
@@ -53,7 +50,6 @@ import com.h6ah4i.android.widget.advrecyclerview.animator.DraggableItemAnimator
 import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator
 import com.h6ah4i.android.widget.advrecyclerview.draggable.RecyclerViewDragDropManager
 import com.hippo.android.resource.AttrResources
-import com.hippo.app.CheckBoxDialogBuilder
 import com.hippo.drawable.AddDeleteDrawable
 import com.hippo.drawerlayout.DrawerLayout
 import com.hippo.easyrecyclerview.EasyRecyclerView
@@ -65,9 +61,6 @@ import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.callBack.DownloadSearchCallback
-import com.hippo.ehviewer.client.EhConfig
-import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadInfoListener
@@ -75,12 +68,9 @@ import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.download.DownloadService
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.settings.DownloadSettings
-import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.ehviewer.spider.SpiderInfo
-import com.hippo.ehviewer.sync.DownloadListInfosExecutor
 import com.hippo.ehviewer.ui.GalleryActivity
 import com.hippo.ehviewer.ui.GalleryOpenHelper
-import com.hippo.ehviewer.ui.MainActivity
 import com.hippo.ehviewer.ui.annotation.ViewLifeCircle
 import com.hippo.ehviewer.ui.scene.ToolbarScene
 import com.hippo.ehviewer.ui.scene.download.part.DownloadAdapter
@@ -92,11 +82,8 @@ import com.hippo.ehviewer.widget.SearchBar
 import com.hippo.lib.yorozuya.AssertUtils
 import com.hippo.lib.yorozuya.ObjectUtils
 import com.hippo.lib.yorozuya.ViewUtils
-import com.hippo.lib.yorozuya.collect.LongList
 import com.hippo.ripple.Ripple
-import com.hippo.unifile.UniFile
 import com.hippo.util.DrawableManager
-import com.hippo.util.IoThreadPoolExecutor
 import com.hippo.view.ViewTransition
 import com.hippo.widget.FabLayout
 import com.hippo.widget.ProgressView
@@ -104,10 +91,9 @@ import com.hippo.widget.SearchBarMover
 import com.hippo.widget.recyclerview.AutoStaggeredGridLayoutManager
 import com.sxj.paginationlib.PaginationIndicator
 import java.util.LinkedList
-import java.util.Locale
 
 class DownloadsScene : ToolbarScene(),
-    DownloadInfoListener, DownloadSearchCallback,
+    DownloadInfoListener,
     EasyRecyclerView.OnItemClickListener,
     EasyRecyclerView.OnItemLongClickListener,
     FabLayout.OnClickFabListener, FabLayout.OnExpandListener,
@@ -181,13 +167,14 @@ class DownloadsScene : ToolbarScene(),
     private var needInitPageSize = false
 
     private var mCategorySpinner: Spinner? = null
-    private var mSelectedCategory = EhUtils.ALL_CATEGORY
 
     private val galleryActivityLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result -> updateReadProcess(result) }
 
     private var mImportHelper: DownloadImportHelper? = null
+    private var mLabelHelper: DownloadLabelHelper? = null
+    private var mFilterHelper: DownloadFilterHelper? = null
 
     override fun getNavCheckedItem(): Int = R.id.nav_downloads
 
@@ -255,6 +242,62 @@ class DownloadsScene : ToolbarScene(),
             requireActivity().activityResultRegistry,
             this
         )
+
+        // Initialize label helper for bulk actions (start/stop/delete/move)
+        mLabelHelper = DownloadLabelHelper(
+            object : DownloadLabelHelper.Callback {
+                override fun getContext() = ehContext
+                override fun getActivity() = activity2
+                override fun getString(resId: Int) = this@DownloadsScene.getString(resId)
+                override fun getString(resId: Int, vararg formatArgs: Any) =
+                    this@DownloadsScene.getString(resId, *formatArgs)
+                override fun getDownloadManager() = _downloadManager
+                override fun getList() = mList
+                override fun getCheckedItemPositions() = mRecyclerView?.checkedItemPositions
+                override fun positionInList(position: Int) = this@DownloadsScene.positionInList(position)
+                override fun exitCustomChoiceMode() { mRecyclerView?.outOfCustomChoiceMode() }
+                override fun onClickPrimaryFabForRandom() {
+                    mFabLayout?.let { onClickPrimaryFab(it, null) }
+                }
+                override fun viewRandom() { this@DownloadsScene.viewRandom() }
+                override fun setDragEnable(fab: com.google.android.material.floatingactionbutton.FloatingActionButton) {
+                    this@DownloadsScene.setDragEnable(fab)
+                }
+            }
+        )
+
+        // Initialize filter helper for category filter, sort, and search
+        mFilterHelper = DownloadFilterHelper(
+            object : DownloadFilterHelper.Callback {
+                override fun getContext() = ehContext
+                override fun getString(resId: Int) = this@DownloadsScene.getString(resId)
+                override fun getList() = mList
+                override fun getBackList() = mBackList
+                override fun getDownloadManager() = _downloadManager
+                override fun setList(list: MutableList<DownloadInfo>) { mList = list }
+                override fun isAdded() = this@DownloadsScene.isAdded
+                override fun isSearching() = searching
+                override fun setSearching(searching: Boolean) {
+                    this@DownloadsScene.searching = searching
+                }
+                override fun showProgress() {
+                    mProgressView.visibility = View.VISIBLE
+                    mRecyclerView?.visibility = View.GONE
+                }
+                override fun hideProgress() {
+                    mProgressView.visibility = View.GONE
+                    mRecyclerView?.visibility = View.VISIBLE
+                }
+                override fun updateAdapter() { this@DownloadsScene.updateAdapter() }
+                override fun updateTitle() { this@DownloadsScene.updateTitle() }
+                override fun updatePaginationIndicator() { this@DownloadsScene.updatePaginationIndicator() }
+                override fun updateView() { this@DownloadsScene.updateView() }
+                override fun queryUnreadSpiderInfo() { this@DownloadsScene.queryUnreadSpiderInfo() }
+                @SuppressLint("NotifyDataSetChanged")
+                override fun notifyDataSetChanged() { mAdapter?.notifyDataSetChanged() }
+            }
+        )
+
         if (savedInstanceState == null) {
             onInit()
         } else {
@@ -380,49 +423,7 @@ class DownloadsScene : ToolbarScene(),
         val context = ehContext!!
 
         mCategorySpinner = ViewUtils.`$$`(view, R.id.category_spinner) as Spinner
-        // Initialize category spinner
-        val categoryList = ArrayList<String>()
-        categoryList.add(getString(R.string.category_all))
-        categoryList.add(EhUtils.getCategory(EhConfig.DOUJINSHI)!!.uppercase(Locale.ROOT))
-        categoryList.add(EhUtils.getCategory(EhConfig.MANGA)!!.uppercase(Locale.ROOT))
-        categoryList.add(EhUtils.getCategory(EhConfig.ARTIST_CG)!!.uppercase(Locale.ROOT))
-        categoryList.add(EhUtils.getCategory(EhConfig.GAME_CG)!!.uppercase(Locale.ROOT))
-        categoryList.add(EhUtils.getCategory(EhConfig.WESTERN)!!.uppercase(Locale.ROOT))
-        categoryList.add(EhUtils.getCategory(EhConfig.NON_H)!!.uppercase(Locale.ROOT))
-        categoryList.add(EhUtils.getCategory(EhConfig.IMAGE_SET)!!.uppercase(Locale.ROOT))
-        categoryList.add(EhUtils.getCategory(EhConfig.COSPLAY)!!.uppercase(Locale.ROOT))
-        categoryList.add(EhUtils.getCategory(EhConfig.ASIAN_PORN)!!.uppercase(Locale.ROOT))
-        categoryList.add(EhUtils.getCategory(EhConfig.MISC)!!.uppercase(Locale.ROOT))
-        val categoryAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, categoryList)
-        categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        mCategorySpinner!!.adapter = categoryAdapter
-        mCategorySpinner!!.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val selectedCategory = when (position) {
-                    1 -> EhConfig.DOUJINSHI
-                    2 -> EhConfig.MANGA
-                    3 -> EhConfig.ARTIST_CG
-                    4 -> EhConfig.GAME_CG
-                    5 -> EhConfig.WESTERN
-                    6 -> EhConfig.NON_H
-                    7 -> EhConfig.IMAGE_SET
-                    8 -> EhConfig.COSPLAY
-                    9 -> EhConfig.ASIAN_PORN
-                    10 -> EhConfig.MISC
-                    else -> EhUtils.ALL_CATEGORY
-                }
-                if (selectedCategory != mSelectedCategory) {
-                    mSelectedCategory = selectedCategory
-                    filterByCategory()
-                }
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-                // Do nothing
-            }
-        }
-        // Set default selection
-        mCategorySpinner!!.setSelection(0)
+        mFilterHelper?.initCategorySpinner(mCategorySpinner!!, context)
 
         mProgressView = ViewUtils.`$$`(view, R.id.download_progress_view) as ProgressView
         val content = ViewUtils.`$$`(view, R.id.content)
@@ -971,99 +972,13 @@ class DownloadsScene : ToolbarScene(),
     }
 
     override fun onClickSecondaryFab(view: FabLayout, fab: FloatingActionButton, position: Int) {
-        val context = ehContext
-        val activity = activity2
-        val recyclerView = mRecyclerView
-        if (context == null || activity == null || recyclerView == null) {
-            return
-        }
+        val recyclerView = mRecyclerView ?: return
+        if (ehContext == null || activity2 == null) return
 
         if (position == 0) {
             recyclerView.checkAll()
         } else {
-            val list = mList ?: return
-
-            var gidList: LongList? = null
-            var downloadInfoList: MutableList<DownloadInfo>? = null
-            val collectGid = position == 1 || position == 2 || position == 3 // Start, Stop, Delete
-            val collectDownloadInfo = position == 3 || position == 4 // Delete or Move
-            if (collectGid) {
-                gidList = LongList()
-            }
-            if (collectDownloadInfo) {
-                downloadInfoList = LinkedList()
-            }
-
-            val stateArray: SparseBooleanArray = recyclerView.checkedItemPositions
-            for (i in 0 until stateArray.size()) {
-                if (stateArray.valueAt(i)) {
-                    val info = list[positionInList(stateArray.keyAt(i))]
-                    if (collectDownloadInfo) {
-                        downloadInfoList!!.add(info)
-                    }
-                    if (collectGid) {
-                        gidList!!.add(info.gid)
-                    }
-                }
-            }
-
-            when (position) {
-                1 -> { // Start
-                    if (gidList!!.isEmpty()) return
-                    val intent = Intent(activity, DownloadService::class.java)
-                    intent.action = DownloadService.ACTION_START_RANGE
-                    intent.putExtra(DownloadService.KEY_GID_LIST, gidList)
-                    activity.startService(intent)
-                    // Cancel check mode
-                    recyclerView.outOfCustomChoiceMode()
-                }
-                2 -> { // Stop
-                    if (gidList!!.isEmpty()) return
-                    _downloadManager?.stopRangeDownload(gidList)
-                    // Cancel check mode
-                    recyclerView.outOfCustomChoiceMode()
-                }
-                3 -> { // Delete
-                    if (downloadInfoList!!.isEmpty()) return
-                    val builder = CheckBoxDialogBuilder(
-                        context,
-                        getString(R.string.download_remove_dialog_message_2, gidList!!.size()),
-                        getString(R.string.download_remove_dialog_check_text),
-                        Settings.getRemoveImageFiles()
-                    )
-                    val helper = DeleteRangeDialogHelper(downloadInfoList, gidList, builder)
-                    builder.setTitle(R.string.download_remove_dialog_title)
-                        .setPositiveButton(android.R.string.ok, helper)
-                        .show()
-                }
-                4 -> { // Move
-                    if (downloadInfoList!!.isEmpty()) return
-                    val labelRawList = ServiceRegistry.dataModule.downloadManager.labelList
-                    val labelList = ArrayList<String>(labelRawList.size + 1)
-                    labelList.add(getString(R.string.default_download_label_name))
-                    for (i in labelRawList.indices) {
-                        labelRawList[i].label?.let { labelList.add(it) }
-                    }
-                    val labels = labelList.toTypedArray()
-
-                    val helper = MoveDialogHelper(labels, downloadInfoList)
-
-                    AlertDialog.Builder(context)
-                        .setTitle(R.string.download_move_dialog_title)
-                        .setItems(labels, helper)
-                        .show()
-                }
-                5 -> {
-                    if (mList == null || mList!!.isEmpty()) {
-                        return
-                    }
-                    onClickPrimaryFab(mFabLayout!!, null)
-                    viewRandom()
-                }
-                6 -> {
-                    setDragEnable(fab)
-                }
-            }
+            mLabelHelper?.handleSecondaryFabAction(position, fab)
         }
     }
 
@@ -1247,9 +1162,6 @@ class DownloadsScene : ToolbarScene(),
     }
 
     internal fun startSearching() {
-        mProgressView.visibility = View.VISIBLE
-        mRecyclerView?.visibility = View.GONE
-
         if (mSearchMode) {
             mSearchMode = false
             mSearchBar?.setTitle(searchKey)
@@ -1260,18 +1172,11 @@ class DownloadsScene : ToolbarScene(),
 
         updateForLabel()
 
-        val executor = DownloadListInfosExecutor(mList, searchKey ?: "")
-        executor.setDownloadSearchingListener(this)
-        executor.executeSearching()
+        mFilterHelper?.startSearching(searchKey ?: "")
     }
 
     private fun gotoFilterAndSort(id: Int) {
-        mProgressView.visibility = View.VISIBLE
-        mRecyclerView?.visibility = View.GONE
-
-        val executor = DownloadListInfosExecutor(mBackList, _downloadManager)
-        executor.setDownloadSearchingListener(this)
-        executor.executeFilterAndSort(id)
+        mFilterHelper?.gotoFilterAndSort(id)
     }
 
     private fun updateAdapter() {
@@ -1303,40 +1208,6 @@ class DownloadsScene : ToolbarScene(),
 
     override fun forceShowSearchBar(): Boolean = false
 
-    override fun onDownloadSearchSuccess(list: MutableList<DownloadInfo>) {
-        // 检查 Fragment 是否已附加，如果未附加则忽略回调
-        if (!isAdded) {
-            return
-        }
-        mList = list
-        updateAdapter()
-        mProgressView.visibility = View.GONE
-        mRecyclerView?.visibility = View.VISIBLE
-        searching = false
-        queryUnreadSpiderInfo()
-    }
-
-    override fun onDownloadListHandleSuccess(list: MutableList<DownloadInfo>) {
-        // 检查 Fragment 是否已附加，如果未附加则忽略回调
-        if (!isAdded) {
-            return
-        }
-        mList = list
-        updateAdapter()
-        mProgressView.visibility = View.GONE
-        mRecyclerView?.visibility = View.VISIBLE
-        queryUnreadSpiderInfo()
-    }
-
-    override fun onDownloadSearchFailed(list: MutableList<DownloadInfo>) {
-        Toast.makeText(ehContext, R.string.download_searching_failed, Toast.LENGTH_LONG).show()
-        mList = list
-        updateAdapter()
-        mProgressView.visibility = View.GONE
-        mRecyclerView?.visibility = View.VISIBLE
-        searching = false
-        queryUnreadSpiderInfo()
-    }
 
     @SuppressLint("NotifyDataSetChanged")
     private fun updateReadProcess(result: androidx.activity.result.ActivityResult) {
@@ -1416,89 +1287,6 @@ class DownloadsScene : ToolbarScene(),
         activity2?.runOnUiThread(runnable)
     }
 
-    private inner class DeleteDialogHelper(
-        private val mGalleryInfo: GalleryInfo,
-        private val mBuilder: CheckBoxDialogBuilder
-    ) : DialogInterface.OnClickListener {
-
-        override fun onClick(dialog: DialogInterface, which: Int) {
-            if (which != DialogInterface.BUTTON_POSITIVE) {
-                return
-            }
-
-            // Delete
-            _downloadManager?.deleteDownload(mGalleryInfo.gid)
-
-            // Delete image files
-            val checked = mBuilder.isChecked
-            Settings.putRemoveImageFiles(checked)
-            if (checked) {
-                // Remove download path (IO thread)
-                val gid = mGalleryInfo.gid
-                IoThreadPoolExecutor.instance.execute {
-                    EhDB.removeDownloadDirname(gid)
-                }
-                // Delete file
-                val file = SpiderDen.getGalleryDownloadDir(mGalleryInfo)
-                deleteFileAsync(file)
-            }
-        }
-    }
-
-    private inner class DeleteRangeDialogHelper(
-        private val mDownloadInfoList: List<DownloadInfo>,
-        private val mGidList: LongList,
-        private val mBuilder: CheckBoxDialogBuilder
-    ) : DialogInterface.OnClickListener {
-
-        override fun onClick(dialog: DialogInterface, which: Int) {
-            if (which != DialogInterface.BUTTON_POSITIVE) {
-                return
-            }
-
-            // Cancel check mode
-            mRecyclerView?.outOfCustomChoiceMode()
-
-            // Delete
-            _downloadManager?.deleteRangeDownload(mGidList)
-
-            // Delete image files
-            val checked = mBuilder.isChecked
-            Settings.putRemoveImageFiles(checked)
-            if (checked) {
-                val files = arrayOfNulls<UniFile>(mDownloadInfoList.size)
-                var i = 0
-                for (info in mDownloadInfoList) {
-                    // Remove download path (IO thread)
-                    val gid = info.gid
-                    IoThreadPoolExecutor.instance.execute {
-                        EhDB.removeDownloadDirname(gid)
-                    }
-                    // Put file
-                    files[i] = SpiderDen.getGalleryDownloadDir(info)
-                    i++
-                }
-                // Delete file
-                deleteFileAsync(*files)
-            }
-        }
-    }
-
-    private inner class MoveDialogHelper(
-        private val mLabels: Array<String>,
-        private val mDownloadInfoList: List<DownloadInfo>
-    ) : DialogInterface.OnClickListener {
-
-        override fun onClick(dialog: DialogInterface, which: Int) {
-            // Cancel check mode
-            val context = ehContext ?: return
-            mRecyclerView?.outOfCustomChoiceMode()
-
-            val label = if (which == 0) null else mLabels[which]
-            ServiceRegistry.dataModule.downloadManager.changeLabel(mDownloadInfoList, label)
-        }
-    }
-
     private inner class DownloadChoiceListener : EasyRecyclerView.CustomChoiceListener {
 
         override fun onIntoCustomChoice(view: EasyRecyclerView) {
@@ -1525,26 +1313,6 @@ class DownloadsScene : ToolbarScene(),
                 view.outOfCustomChoiceMode()
             }
         }
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    private fun filterByCategory() {
-        val backList = mBackList ?: return
-        if (mSelectedCategory == EhUtils.ALL_CATEGORY) {
-            mList = ArrayList(backList)
-        } else {
-            mList = ArrayList()
-            for (info in backList) {
-                if (info.category == mSelectedCategory) {
-                    mList!!.add(info)
-                }
-            }
-        }
-        mAdapter?.notifyDataSetChanged()
-        updateTitle()
-        updatePaginationIndicator()
-        updateView()
-        queryUnreadSpiderInfo()
     }
 
     /**
@@ -1588,13 +1356,5 @@ class DownloadsScene : ToolbarScene(),
         const val LOCAL_GALLERY_INFO_CHANGE = 909
 
         private const val ANIMATE_TIME = 300L
-
-        private fun deleteFileAsync(vararg files: UniFile?) {
-            IoThreadPoolExecutor.instance.execute {
-                for (file in files) {
-                    file?.delete()
-                }
-            }
-        }
     }
 }
