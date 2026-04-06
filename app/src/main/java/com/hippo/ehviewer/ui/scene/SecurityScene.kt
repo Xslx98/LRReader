@@ -209,7 +209,7 @@ class SecurityScene : SolidScene(),
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
             SecuritySettings.getEnableFingerprint() &&
             mFingerprintManager != null &&
-            SetSecurityActivity.hasEnrolledFingerprints(mFingerprintManager)
+            SetSecurityActivity.hasEnrolledFingerprints(mFingerprintManager!!)
     }
 
     private val mResetFingerprintRunnable = Runnable {
