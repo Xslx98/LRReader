@@ -146,6 +146,12 @@ class LRRTagCacheTest {
         tagsField.isAccessible = true
         tagsField.set(LRRTagCache, tags)
 
+        val keysField = LRRTagCache::class.java.getDeclaredField("searchKeys")
+
+        keysField.isAccessible = true
+
+        keysField.set(LRRTagCache, tags.map { "${it.namespace}:${it.text}".lowercase() })
+
         val timeField = LRRTagCache::class.java.getDeclaredField("lastFetchTime")
         timeField.isAccessible = true
         timeField.set(LRRTagCache, System.currentTimeMillis())
