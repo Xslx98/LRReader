@@ -46,7 +46,6 @@ jobs:
 
       - name: Detekt
         run: ./gradlew detekt
-        continue-on-error: true
 
       - name: Upload Test Reports
         if: always()
@@ -74,3 +73,20 @@ jobs:
         with:
           name: Build
           path: ./app/build/outputs/apk/
+
+  dependency-submission:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 21
+          cache: gradle
+      - name: Dependency Submission
+        uses: mikepenz/gradle-dependency-submission@v1
+        with:
+          gradle-build-module: ":app"
