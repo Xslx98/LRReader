@@ -17,27 +17,38 @@ import com.hippo.ehviewer.module.NetworkModule
  */
 object ServiceRegistry {
 
-    lateinit var networkModule: NetworkModule
-        private set
-    lateinit var clientModule: ClientModule
-        private set
-    lateinit var dataModule: DataModule
-        private set
-    lateinit var appModule: AppModule
-        private set
-    lateinit var coroutineModule: CoroutineModule
-        private set
+    private var _networkModule: NetworkModule? = null
+    private var _clientModule: ClientModule? = null
+    private var _dataModule: DataModule? = null
+    private var _appModule: AppModule? = null
+    private var _coroutineModule: CoroutineModule? = null
+
+    val networkModule: NetworkModule
+        get() = _networkModule
+            ?: error("ServiceRegistry.networkModule accessed before initialize()")
+    val clientModule: ClientModule
+        get() = _clientModule
+            ?: error("ServiceRegistry.clientModule accessed before initialize()")
+    val dataModule: DataModule
+        get() = _dataModule
+            ?: error("ServiceRegistry.dataModule accessed before initialize()")
+    val appModule: AppModule
+        get() = _appModule
+            ?: error("ServiceRegistry.appModule accessed before initialize()")
+    val coroutineModule: CoroutineModule
+        get() = _coroutineModule
+            ?: error("ServiceRegistry.coroutineModule accessed before initialize()")
 
     /**
      * Initialize all modules. Must be called from EhApplication.onCreate()
      * after Settings and EhDB have been initialized.
      */
     fun initialize(context: Context) {
-        appModule = AppModule(context).also { it.initialize() }
-        coroutineModule = CoroutineModule()
-        networkModule = NetworkModule(context)
-        clientModule = ClientModule(context, networkModule)
-        dataModule = DataModule(context)
+        _appModule = AppModule(context).also { it.initialize() }
+        _coroutineModule = CoroutineModule()
+        _networkModule = NetworkModule(context)
+        _clientModule = ClientModule(context, networkModule)
+        _dataModule = DataModule(context)
     }
 
     /**
@@ -46,7 +57,7 @@ object ServiceRegistry {
      */
     @androidx.annotation.VisibleForTesting
     fun initializeForTest(coroutine: CoroutineModule) {
-        coroutineModule = coroutine
+        _coroutineModule = coroutine
     }
 
     /**
@@ -54,9 +65,9 @@ object ServiceRegistry {
      * so that content from the previous server does not appear in the new one.
      */
     fun clearAllCaches() {
-        try { networkModule.cache.evictAll() } catch (_: Exception) {}
-        dataModule.galleryDetailCache.evictAll()
-        try { dataModule.spiderInfoCache.clear() } catch (_: Exception) {}
+        try { _networkModule?.cache?.evictAll() } catch (_: Exception) {}
+        _dataModule?.galleryDetailCache?.evictAll()
+        try { _dataModule?.spiderInfoCache?.clear() } catch (_: Exception) {}
         LRRTagCache.clear()
     }
 }
