@@ -18,12 +18,8 @@ package com.hippo.ehviewer.client.data
 
 import android.os.Parcel
 import android.os.Parcelable
-import com.hippo.util.DataUtils
 import java.util.Arrays
 
-/**
- * 画廊参数存储对象
- */
 class GalleryDetail : GalleryInfo {
 
     @JvmField
@@ -69,9 +65,6 @@ class GalleryDetail : GalleryInfo {
     var tags: Array<GalleryTagGroup>? = null
 
     @JvmField
-    var comments: GalleryCommentList? = null
-
-    @JvmField
     var previewPages: Int = 0
 
     @JvmField
@@ -82,9 +75,6 @@ class GalleryDetail : GalleryInfo {
 
     @JvmField
     var SpiderInfoPreviewSet: PreviewSet? = null
-
-    @JvmField
-    var newVersions: Array<NewVersion>? = null
 
     constructor()
 
@@ -107,17 +97,10 @@ class GalleryDetail : GalleryInfo {
         } else {
             null
         }
-        comments = `in`.readParcelable(javaClass.classLoader)
         previewPages = `in`.readInt()
         SpiderInfoPreviewPages = `in`.readInt()
         previewSet = `in`.readParcelable(PreviewSet::class.java.classLoader)
         SpiderInfoPreviewSet = `in`.readParcelable(PreviewSet::class.java.classLoader)
-        val newVersionArray = `in`.readParcelableArray(NewVersion::class.java.classLoader)
-        newVersions = if (newVersionArray != null) {
-            Arrays.copyOf(newVersionArray, newVersionArray.size, Array<NewVersion>::class.java)
-        } else {
-            null
-        }
     }
 
     override fun describeContents(): Int = 0
@@ -137,33 +120,10 @@ class GalleryDetail : GalleryInfo {
         dest.writeByte(if (isFavorited) 1.toByte() else 0.toByte())
         dest.writeInt(ratingCount)
         dest.writeParcelableArray(tags, flags)
-        dest.writeParcelable(comments, flags)
         dest.writeInt(previewPages)
         dest.writeInt(SpiderInfoPreviewPages)
         dest.writeParcelable(previewSet, flags)
         dest.writeParcelable(SpiderInfoPreviewSet, flags)
-        dest.writeParcelableArray(newVersions, flags)
-    }
-
-    fun getNewGalleryDetail(index: Int): GalleryDetail {
-        return try {
-            val n = DataUtils.copy<GalleryDetail>(this)!!
-            val versions = newVersions ?: return n
-            val updateUrl = versions[index].versionUrl!!
-            val params = updateUrl.split("/")
-            val length = params.size
-            n.token = params[length - 1]
-            n.gid = params[length - 2].toLong()
-            n.newVersions = null
-            n
-        } catch (_: Exception) {
-            this
-        }
-    }
-
-    fun getUpdateVersionName(): Array<String?> {
-        val versions = newVersions!!
-        return Array(versions.size) { i -> versions[i].versionName }
     }
 
     companion object {
