@@ -203,6 +203,9 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
         // new lock instances, allowing concurrent downloads of the same page.
         // The ConcurrentHashMap entries are GC'd with this Provider instance.
 
+        // Safe to clear: stopped flag prevents new requests from entering onRequest()
+        inflightRequests.clear()
+
         // Evict old archive caches if total size exceeds limit
         IoThreadPoolExecutor.instance.execute {
             cleanupOldCaches(context, MAX_TOTAL_CACHE_BYTES)
@@ -275,6 +278,11 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
             return
         }
 
+        // Skip if this page is already being downloaded
+        if (inflightRequests.putIfAbsent(index, true) != null) {
+            return
+        }
+
         notifyPageWait(index)
 
         // Download and decode on IO thread
@@ -287,6 +295,8 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load page $index: ${e.message}", e)
                 notifyPageFailed(index, e.message)
+            } finally {
+                inflightRequests.remove(index)
             }
         }
     }
@@ -297,6 +307,7 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
         if (cached.exists()) {
             cached.delete()
         }
+        inflightRequests.remove(index)
         onRequest(index)
     }
 
@@ -312,6 +323,9 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
 
     // Per-page lock to prevent concurrent downloads of the same page
     private val pageLocks = ConcurrentHashMap<Int, Any>()
+
+    // Track in-flight page requests to avoid submitting duplicate tasks to the thread pool
+    private val inflightRequests = ConcurrentHashMap<Int, Boolean>()
 
     private fun getPageLock(index: Int): Any = pageLocks.computeIfAbsent(index) { Any() }
 
