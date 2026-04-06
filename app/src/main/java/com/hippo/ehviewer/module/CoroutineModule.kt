@@ -1,11 +1,16 @@
 package com.hippo.ehviewer.module
 
 import android.util.Log
+import com.hippo.ehviewer.Analytics
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 /**
  * Provides properly configured [CoroutineScope] instances for the application.
@@ -29,12 +34,26 @@ class CoroutineModule {
 
     private val tag = "CoroutineModule"
 
+    private val _uncaughtErrors = MutableSharedFlow<Throwable>(
+        extraBufferCapacity = 5,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+
     /**
-     * Global exception handler that logs uncaught coroutine exceptions.
+     * Observable stream of uncaught coroutine exceptions.
+     * UI layers can optionally subscribe to display error notifications.
+     */
+    val uncaughtErrors: SharedFlow<Throwable> = _uncaughtErrors.asSharedFlow()
+
+    /**
+     * Global exception handler that logs uncaught coroutine exceptions,
+     * reports them to Analytics, and emits them on [uncaughtErrors].
      * Installed on all scopes created by this module.
      */
     val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
         Log.e(tag, "Uncaught coroutine exception", throwable)
+        Analytics.recordException(throwable)
+        _uncaughtErrors.tryEmit(throwable)
     }
 
     /**
