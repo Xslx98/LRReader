@@ -16,7 +16,6 @@
 
 package com.hippo.widget;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Rect;
@@ -38,6 +37,7 @@ import java.util.List;
 public class AutoWrapLayout extends ViewGroup {
 
     private final List<Rect> rectList = new ArrayList<>();
+    private final List<Rect> mRectPool = new ArrayList<>();
 
     private Alignment mAlignment;
 
@@ -96,6 +96,13 @@ public class AutoWrapLayout extends ViewGroup {
         return mAlignment;
     }
 
+    private Rect obtainRect() {
+        if (!mRectPool.isEmpty()) {
+            return mRectPool.remove(mRectPool.size() - 1);
+        }
+        return new Rect();
+    }
+
     private void adjustBaseLine(int lineHeight, int startIndex, int endIndex) {
         if (mAlignment == Alignment.TOP)
             return;
@@ -120,7 +127,6 @@ public class AutoWrapLayout extends ViewGroup {
      *
      * horizontal only show child can show or partly show in parent
      */
-    @SuppressLint("DrawAllocation")
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);
@@ -157,7 +163,10 @@ public class AutoWrapLayout extends ViewGroup {
         int lineStartIndex = 0;
         int lineEndIndex; // endIndex + 1
 
+        // Return previous Rects to pool
+        mRectPool.addAll(rectList);
         rectList.clear();
+
         int childCount = getChildCount();
         for (int index = 0; index < childCount; index++) {
             final View child = getChildAt(index);
@@ -210,7 +219,7 @@ public class AutoWrapLayout extends ViewGroup {
                 maxRightNoPadding = rightBound;
             if (bottomBound > maxBottom)
                 maxBottom = bottomBound;
-            Rect rect = new Rect();
+            Rect rect = obtainRect();
             rect.left = left;
             rect.top = top;
             rect.right = right;
