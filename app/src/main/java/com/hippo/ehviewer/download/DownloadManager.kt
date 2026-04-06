@@ -41,8 +41,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.Collections
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CopyOnWriteArrayList
 
 class DownloadManager(
     private val mContext: Context,
@@ -67,12 +65,13 @@ class DownloadManager(
 
     private val mSpeedReminder: DownloadSpeedTracker
 
-    @Volatile
+    // All listener/task collections use plain types -- access is main-thread only.
+    // Worker callbacks dispatch to main thread via SimpleHandler.post (see postEvent).
     private var mDownloadListener: DownloadListener? = null
-    private val mDownloadInfoListeners: MutableList<DownloadInfoListener> = CopyOnWriteArrayList()
+    private val mDownloadInfoListeners: MutableList<DownloadInfoListener> = ArrayList()
 
-    private val mActiveTasks: MutableList<DownloadInfo> = CopyOnWriteArrayList()
-    private val mActiveWorkers: MutableMap<DownloadInfo, LRRDownloadWorker> = ConcurrentHashMap()
+    private val mActiveTasks: MutableList<DownloadInfo> = ArrayList()
+    private val mActiveWorkers: MutableMap<DownloadInfo, LRRDownloadWorker> = HashMap()
 
     /** Signals when async init is complete. */
     private val mInitDeferred = CompletableDeferred<Unit>()
@@ -273,9 +272,13 @@ class DownloadManager(
     }
 
     val labelList: List<DownloadLabel>
-        get() = mLabelList
+        get() {
+            assertMainThread()
+            return mLabelList
+        }
 
     fun getLabelCount(label: String?): Long {
+        assertMainThread()
         return try {
             mLabelCountMap[label] ?: 0L
         } catch (e: NullPointerException) {
@@ -285,7 +288,10 @@ class DownloadManager(
     }
 
     val allDownloadInfoList: List<DownloadInfo>
-        get() = mAllInfoList
+        get() {
+            assertMainThread()
+            return mAllInfoList
+        }
 
     /**
      * Reload download data from DB for the current server profile.
@@ -327,14 +333,21 @@ class DownloadManager(
     }
 
     val defaultDownloadInfoList: List<DownloadInfo>
-        get() = mDefaultInfoList
+        get() {
+            assertMainThread()
+            return mDefaultInfoList
+        }
 
     fun getLabelDownloadInfoList(label: String?): List<DownloadInfo>? {
+        assertMainThread()
         return mMap[label]
     }
 
     val downloadInfoList: List<GalleryInfo>
-        get() = ArrayList(mAllInfoList)
+        get() {
+            assertMainThread()
+            return ArrayList(mAllInfoList)
+        }
 
     fun getDownloadInfo(gid: Long): DownloadInfo? {
         assertMainThread()
@@ -373,14 +386,17 @@ class DownloadManager(
     }
 
     fun addDownloadInfoListener(downloadInfoListener: DownloadInfoListener?) {
+        assertMainThread()
         mDownloadInfoListeners.add(downloadInfoListener!!)
     }
 
     fun removeDownloadInfoListener(downloadInfoListener: DownloadInfoListener?) {
+        assertMainThread()
         mDownloadInfoListeners.remove(downloadInfoListener)
     }
 
     fun setDownloadListener(listener: DownloadListener?) {
+        assertMainThread()
         mDownloadListener = listener
     }
 
@@ -880,6 +896,7 @@ class DownloadManager(
     }
 
     fun resetAllReadingProgress() {
+        assertMainThread()
         val list = ArrayList(mAllInfoList)
 
         scope.launch {
@@ -1065,26 +1082,6 @@ class DownloadManager(
         }
     }
 
-    fun addLabelInSyncThread(label: String?) {
-        if (label == null || mLabelSet.contains(label)) {
-            return
-        }
-
-        val newLabel = DownloadLabel().apply {
-            this.label = label
-            this.time = System.currentTimeMillis()
-        }
-        mLabelList.add(newLabel)
-        mLabelSet.add(label)
-        mMap[label] = ArrayList()
-
-        scope.launch {
-            val saved = EhDB.addDownloadLabelAsync(label)
-            newLabel.id = saved.id
-            newLabel.time = saved.time
-        }
-    }
-
     fun moveLabel(fromPosition: Int, toPosition: Int) {
         assertMainThread()
         val item = mLabelList.removeAt(fromPosition)
@@ -1185,7 +1182,10 @@ class DownloadManager(
     }
 
     val isIdle: Boolean
-        get() = mActiveTasks.isEmpty() && mWaitList.isEmpty()
+        get() {
+            assertMainThread()
+            return mActiveTasks.isEmpty() && mWaitList.isEmpty()
+        }
 
     /**
      * Sealed interface for immutable download events dispatched from worker threads.
