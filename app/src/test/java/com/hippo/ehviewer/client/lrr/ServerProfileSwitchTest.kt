@@ -35,11 +35,10 @@ class ServerProfileSwitchTest {
             .build()
 
         LRRAuthManager.initialize(ctx)
-        if (LRRAuthManager.isNeedsReauthentication()) {
-            LRRAuthManager.initializeForTesting(
-                ctx.getSharedPreferences("profile_switch_test", Context.MODE_PRIVATE)
-            )
-        }
+        // In Robolectric, EncryptedSharedPreferences always fails — inject plain prefs
+        LRRAuthManager.initializeForTesting(
+            ctx.getSharedPreferences("profile_switch_test", Context.MODE_PRIVATE)
+        )
     }
 
     @After
