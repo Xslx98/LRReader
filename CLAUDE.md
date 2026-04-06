@@ -335,7 +335,7 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 10. **EhViewer stubs:** `EhGalleryProvider`, `FavoritesScene`, and `FavoriteListSortDialog` are intentional stubs (empty bodies) left for structural compatibility. Do not delete — but do not add logic to them either.
 
-11. **Helper class extraction:** Large Scenes use extracted helpers to reduce line count: `GalleryUploadHelper` (upload/URL download from GalleryListScene), `GallerySearchHelper` (search suggestions/URL building), `DownloadImportHelper` (local archive import from DownloadsScene). Helpers communicate via `Callback` interfaces — follow this pattern for new extractions.
+11. **Helper class extraction:** Large Scenes use extracted helpers to reduce line count: `GalleryUploadHelper` (upload/URL download from GalleryListScene), `GallerySearchHelper` (search suggestions/URL building), `DownloadImportHelper` (local archive import from DownloadsScene), `DownloadLabelHelper` (bulk actions: start/stop/delete/move from DownloadsScene), `DownloadFilterHelper` (category filter, sort/filter execution, search callbacks from DownloadsScene). Helpers communicate via `Callback` interfaces — follow this pattern for new extractions.
 
 12. **Network tuning:** `NetworkModule.kt` configures `ConnectionPool(10, 5min)`, 200MB HTTP cache, thumbnail 24h cache, deferred `CookieManager.flush()`. Image client has 60s `callTimeout` for large files over slow WAN.
 
