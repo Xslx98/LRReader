@@ -31,7 +31,9 @@ import com.hippo.ehviewer.settings.FavoritesSettings
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.unifile.UniFile
-import com.hippo.util.IoThreadPoolExecutor
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.IOException
 
 object CommonOperations {
@@ -43,9 +45,9 @@ object CommonOperations {
         listener: EhClient.Callback<Void?>
     ) {
         if (slot == -1) {
-            IoThreadPoolExecutor.instance.execute {
-                kotlinx.coroutines.runBlocking { EhDB.putLocalFavoriteAsync(galleryInfo) }
-                activity.runOnUiThread { listener.onSuccess(null) }
+            ServiceRegistry.coroutineModule.ioScope.launch {
+                EhDB.putLocalFavoriteAsync(galleryInfo)
+                withContext(Dispatchers.Main) { listener.onSuccess(null) }
             }
         } else if (slot in 0..9) {
             val client = ServiceRegistry.clientModule.ehClient
@@ -108,8 +110,8 @@ object CommonOperations {
         galleryInfo: GalleryInfo,
         listener: EhClient.Callback<Void?>
     ) {
-        IoThreadPoolExecutor.instance.execute {
-            kotlinx.coroutines.runBlocking { EhDB.removeLocalFavoritesAsync(galleryInfo.gid) }
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            EhDB.removeLocalFavoritesAsync(galleryInfo.gid)
         }
         val client = ServiceRegistry.clientModule.ehClient
         val request = EhRequest()
