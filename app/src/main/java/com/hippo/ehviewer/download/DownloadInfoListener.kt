@@ -17,7 +17,6 @@
 package com.hippo.ehviewer.download
 
 import com.hippo.ehviewer.dao.DownloadInfo
-import java.util.LinkedList
 
 interface DownloadInfoListener {
 
@@ -34,7 +33,7 @@ interface DownloadInfoListener {
     /**
      * The special info is changed
      */
-    fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: LinkedList<DownloadInfo>)
+    fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: List<DownloadInfo>)
 
     /**
      * Maybe all data is changed, but size is the same

@@ -8,7 +8,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.FormBody
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -43,7 +42,7 @@ object LRRArchiveApi {
         arcid: String
     ): LRRArchive = retryOnFailure {
         withContext(Dispatchers.IO) {
-            val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+            val url = parseBaseUrl(baseUrl).newBuilder()
                 .addPathSegments("api/archives")
                 .addPathSegment(arcid)
                 .addPathSegment("metadata")
@@ -72,7 +71,7 @@ object LRRArchiveApi {
         arcid: String,
         tags: String
     ) = withContext(Dispatchers.IO) {
-        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+        val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
             .addPathSegment(arcid)
             .addPathSegment("metadata")
@@ -110,7 +109,7 @@ object LRRArchiveApi {
         val formBody = FormBody.Builder()
         if (title != null) formBody.add("title", title)
         if (tags != null) formBody.add("tags", tags)
-        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+        val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
             .addPathSegment(arcid)
             .addPathSegment("metadata")
@@ -136,7 +135,7 @@ object LRRArchiveApi {
         baseUrl: String,
         arcid: String
     ): Array<String> = withContext(Dispatchers.IO) {
-        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+        val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
             .addPathSegment(arcid)
             .addPathSegment("files")
@@ -168,7 +167,7 @@ object LRRArchiveApi {
         baseUrl: String,
         arcid: String
     ): String = withContext(Dispatchers.IO) {
-        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+        val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
             .addPathSegment(arcid)
             .build()
@@ -243,7 +242,7 @@ object LRRArchiveApi {
      */
     @JvmStatic
     fun getPageUrl(baseUrl: String, arcid: String, pagePath: String): String {
-        return baseUrl.toHttpUrlOrNull()!!.newBuilder()
+        return parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
             .addPathSegment(arcid)
             .addPathSegment("page")
@@ -261,7 +260,7 @@ object LRRArchiveApi {
         baseUrl: String,
         arcid: String
     ) = withContext(Dispatchers.IO) {
-        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+        val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
             .addPathSegment(arcid)
             .addPathSegment("isnew")
@@ -285,7 +284,7 @@ object LRRArchiveApi {
         arcid: String,
         page: Int
     ) = withContext(Dispatchers.IO) {
-        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+        val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
             .addPathSegment(arcid)
             .addPathSegment("progress")

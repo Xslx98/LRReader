@@ -5,7 +5,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
@@ -33,7 +32,8 @@ object LRRMiscApi {
         url: String,
         catid: String? = null
     ): Int = withContext(Dispatchers.IO) {
-        val urlBuilder = "$baseUrl/api/download_url".toHttpUrlOrNull()!!.newBuilder()
+        val urlBuilder = parseBaseUrl(baseUrl).newBuilder()
+            .addPathSegments("api/download_url")
             .addQueryParameter("url", url)
         if (!catid.isNullOrEmpty()) urlBuilder.addQueryParameter("catid", catid)
 

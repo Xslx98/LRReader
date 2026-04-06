@@ -390,6 +390,18 @@ class MainActivity : StageActivity(),
             onRestore(savedState)
         }
         EhTagDatabase.update(this)
+
+        // Prompt user to re-enter credentials if KeyStore became unavailable
+        if (LRRAuthManager.isNeedsReauthentication()) {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.lrr_keystore_failed_title)
+                .setMessage(R.string.lrr_keystore_failed_message)
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    startScene(Announcer(ServerListScene::class.java))
+                }
+                .setCancelable(false)
+                .show()
+        }
     }
 
     override fun onStart() {

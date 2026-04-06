@@ -19,11 +19,11 @@ package com.hippo.ehviewer.download
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.EhDB
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.DownloadLabel
@@ -32,35 +32,40 @@ import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.ehviewer.spider.SpiderInfo
 import com.hippo.ehviewer.spider.SpiderQueen
 import com.hippo.lib.image.Image
-import com.hippo.lib.yorozuya.ConcurrentPool
 import com.hippo.lib.yorozuya.ObjectUtils
 import com.hippo.lib.yorozuya.SimpleHandler
 import com.hippo.lib.yorozuya.collect.LongList
-import com.hippo.lib.yorozuya.collect.SparseJLArray
 import com.hippo.unifile.UniFile
-import com.hippo.util.IoThreadPoolExecutor
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.IOException
 import java.util.Collections
-import java.util.LinkedList
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.CountDownLatch
 
-class DownloadManager(private val mContext: Context) {
+class DownloadManager(
+    private val mContext: Context,
+    private val scope: CoroutineScope = ServiceRegistry.coroutineModule.ioScope
+) {
 
     // All download info list
-    private val mAllInfoList: LinkedList<DownloadInfo> = LinkedList()
-    // All download info map
-    private val mAllInfoMap: SparseJLArray<DownloadInfo> = SparseJLArray(10)
+    private val mAllInfoList: MutableList<DownloadInfo> = ArrayList()
+    // All download info map — O(1) lookup by gid
+    private val mAllInfoMap: HashMap<Long, DownloadInfo> = HashMap()
     // label and info list map, without default label info list
-    private val mMap: MutableMap<String?, LinkedList<DownloadInfo>> = HashMap()
+    private val mMap: MutableMap<String?, MutableList<DownloadInfo>> = HashMap()
     private val mLabelCountMap: MutableMap<String?, Long> = HashMap()
     // All labels without default label
     private val mLabelList: MutableList<DownloadLabel> = mutableListOf()
+    // O(1) label existence check
+    private val mLabelSet: HashSet<String> = HashSet()
     // Store download info with default label
-    private val mDefaultInfoList: LinkedList<DownloadInfo> = LinkedList()
+    private val mDefaultInfoList: MutableList<DownloadInfo> = ArrayList()
     // Store download info wait to start
-    private val mWaitList: LinkedList<DownloadInfo> = LinkedList()
+    private val mWaitList: MutableList<DownloadInfo> = ArrayList()
 
     private val mSpeedReminder: DownloadSpeedTracker
 
@@ -71,10 +76,11 @@ class DownloadManager(private val mContext: Context) {
     private val mActiveTasks: MutableList<DownloadInfo> = CopyOnWriteArrayList()
     private val mActiveWorkers: MutableMap<DownloadInfo, LRRDownloadWorker> = ConcurrentHashMap()
 
-    private val mNotifyTaskPool: ConcurrentPool<NotifyTask> = ConcurrentPool(5)
+    /** Mutex protecting all shared state (mAllInfoList, mAllInfoMap, mMap, etc.) */
+    private val mutex = Mutex()
 
-    /** Signals when async init is complete. Methods that need data will await this. */
-    private val mInitLatch = CountDownLatch(1)
+    /** Signals when async init is complete. */
+    private val mInitDeferred = CompletableDeferred<Unit>()
 
     @Volatile
     private var mInitialized = false
@@ -97,20 +103,20 @@ class DownloadManager(private val mContext: Context) {
                 return mDownloadInfoListeners
             }
 
-            override fun getWaitList(): LinkedList<DownloadInfo> {
+            override fun getWaitList(): List<DownloadInfo> {
                 return mWaitList
             }
         })
 
         // Load data from DB on a background thread to avoid blocking main thread
-        IoThreadPoolExecutor.instance.execute {
+        scope.launch {
             try {
                 loadDataFromDb()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load download data from DB", e)
             } finally {
                 mInitialized = true
-                mInitLatch.countDown()
+                mInitDeferred.complete(Unit)
             }
         }
     }
@@ -119,56 +125,64 @@ class DownloadManager(private val mContext: Context) {
      * Load labels and download info from the database.
      * Called on a background thread during construction.
      */
-    private fun loadDataFromDb() {
+    private suspend fun loadDataFromDb() {
         // Get all labels
-        val labels = kotlinx.coroutines.runBlocking { EhDB.getAllDownloadLabelListAsync() }
-        mLabelList.addAll(labels)
+        val labels = EhDB.getAllDownloadLabelListAsync()
 
-        for (label in labels) {
-            mMap[label.label] = LinkedList()
+        mutex.withLock {
+            mLabelList.addAll(labels)
+            for (label in labels) {
+                mMap[label.label] = ArrayList()
+                if (label.label != null) {
+                    mLabelSet.add(label.label!!)
+                }
+            }
         }
 
         // Get all info
-        val allInfoList = kotlinx.coroutines.runBlocking { EhDB.getAllDownloadInfoAsync() }
-        mAllInfoList.addAll(allInfoList)
+        val allInfoList = EhDB.getAllDownloadInfoAsync()
 
-        for (i in allInfoList.indices) {
-            val info = allInfoList[i]
+        mutex.withLock {
+            mAllInfoList.addAll(allInfoList)
 
-            val archiveUri = info.archiveUri
-            if (archiveUri != null && archiveUri.startsWith("content://")) {
-                try {
-                    val uri = Uri.parse(archiveUri)
-                    mContext.contentResolver.takePersistableUriPermission(
-                        uri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    )
-                } catch (e: Exception) {
-                    Log.w("DownloadManager", "Failed to restore URI permission for $archiveUri", e)
+            for (info in allInfoList) {
+                val archiveUri = info.archiveUri
+                if (archiveUri != null && archiveUri.startsWith("content://")) {
+                    try {
+                        val uri = Uri.parse(archiveUri)
+                        mContext.contentResolver.takePersistableUriPermission(
+                            uri,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        )
+                    } catch (e: Exception) {
+                        Log.w("DownloadManager", "Failed to restore URI permission for $archiveUri", e)
+                    }
                 }
+
+                // Add to all info map
+                mAllInfoMap[info.gid] = info
+
+                // Add to each label list
+                var list = getInfoListForLabelLocked(info.label)
+                if (list == null) {
+                    list = ArrayList()
+                    mMap[info.label] = list
+                    if (!mLabelSet.contains(info.label) && info.label != null) {
+                        val saved = EhDB.addDownloadLabelAsync(info.label!!)
+                        mLabelList.add(saved)
+                        mLabelSet.add(info.label!!)
+                    }
+                }
+                list.add(info)
             }
 
-            // Add to all info map
-            mAllInfoMap.put(info.gid, info)
-
-            // Add to each label list
-            var list = getInfoListForLabel(info.label)
-            if (list == null) {
-                list = LinkedList()
-                mMap[info.label] = list
-                if (!containLabel(info.label) && info.label != null) {
-                    mLabelList.add(kotlinx.coroutines.runBlocking { EhDB.addDownloadLabelAsync(info.label!!) })
-                }
+            for ((key, value) in mMap) {
+                mLabelCountMap[key] = value.size.toLong()
             }
-            list.add(info)
-        }
-
-        for ((key, value) in mMap) {
-            mLabelCountMap[key] = value.size.toLong()
         }
 
         // Notify listeners on main thread that data is ready
-        Handler(Looper.getMainLooper()).post {
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
             for (l in mDownloadInfoListeners) {
                 l.onReload()
             }
@@ -179,10 +193,24 @@ class DownloadManager(private val mContext: Context) {
      * Wait for async initialization to complete. Call this from background threads
      * that need data to be ready before proceeding (e.g., DownloadService).
      * No-op if already initialized. Never call from main thread.
+     * Times out after 10 seconds to prevent permanent blocking.
      */
     fun awaitInit() {
         if (mInitialized) return
-        mInitLatch.await()
+        check(Looper.myLooper() != Looper.getMainLooper()) {
+            "awaitInit() must not be called on the main thread"
+        }
+        kotlinx.coroutines.runBlocking {
+            kotlinx.coroutines.withTimeout(10_000L) { mInitDeferred.await() }
+        }
+    }
+
+    /**
+     * Suspend-friendly version of [awaitInit].
+     */
+    suspend fun awaitInitAsync() {
+        if (mInitialized) return
+        mInitDeferred.await()
     }
 
     fun replaceInfo(newInfo: DownloadInfo, oldInfo: DownloadInfo) {
@@ -203,14 +231,25 @@ class DownloadManager(private val mContext: Context) {
         }
 
         mAllInfoMap.remove(oldInfo.gid)
-        mAllInfoMap.put(newInfo.gid, newInfo)
+        mAllInfoMap[newInfo.gid] = newInfo
 
         for (l in mDownloadInfoListeners) {
             l.onReplace(newInfo, oldInfo)
         }
     }
 
-    private fun getInfoListForLabel(label: String?): LinkedList<DownloadInfo>? {
+    /**
+     * Get the info list for a label. Must be called under [mutex] lock.
+     */
+    private fun getInfoListForLabelLocked(label: String?): MutableList<DownloadInfo>? {
+        return if (label == null) {
+            mDefaultInfoList
+        } else {
+            mMap[label]
+        }
+    }
+
+    private fun getInfoListForLabel(label: String?): MutableList<DownloadInfo>? {
         return if (label == null) {
             mDefaultInfoList
         } else {
@@ -222,16 +261,11 @@ class DownloadManager(private val mContext: Context) {
         if (label == null) {
             return false
         }
-        for (raw in mLabelList) {
-            if (label == raw.label) {
-                return true
-            }
-        }
-        return false
+        return mLabelSet.contains(label)
     }
 
     fun containDownloadInfo(gid: Long): Boolean {
-        return mAllInfoMap.indexOfKey(gid) >= 0
+        return mAllInfoMap.containsKey(gid)
     }
 
     val labelList: List<DownloadLabel>
@@ -239,11 +273,7 @@ class DownloadManager(private val mContext: Context) {
 
     fun getLabelCount(label: String?): Long {
         return try {
-            if (mLabelCountMap.containsKey(label)) {
-                mLabelCountMap[label] ?: 0L
-            } else {
-                0L
-            }
+            mLabelCountMap[label] ?: 0L
         } catch (e: NullPointerException) {
             Analytics.recordException(e)
             0L
@@ -277,21 +307,21 @@ class DownloadManager(private val mContext: Context) {
             val allInfoList = kotlinx.coroutines.runBlocking { EhDB.getAllDownloadInfoAsync() }
             mAllInfoList.addAll(allInfoList)
             for (info in allInfoList) {
-                mAllInfoMap.put(info.gid, info)
+                mAllInfoMap[info.gid] = info
                 var list = getInfoListForLabel(info.label)
                 if (list == null) {
-                    list = LinkedList()
+                    list = ArrayList()
                     mMap[info.label] = list
                 }
                 list.add(info)
             }
         }
 
-        if (Looper.myLooper() == Looper.getMainLooper()) {
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
             // On main thread: async to avoid ANR
-            IoThreadPoolExecutor.instance.execute {
+            scope.launch {
                 reloadTask.run()
-                Handler(Looper.getMainLooper()).post {
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
                     for (l in mDownloadInfoListeners) {
                         l.onReload()
                     }
@@ -317,7 +347,7 @@ class DownloadManager(private val mContext: Context) {
         get() = ArrayList(mAllInfoList)
 
     fun getDownloadInfo(gid: Long): DownloadInfo? {
-        return mAllInfoMap.get(gid)
+        return mAllInfoMap[gid]
     }
 
     fun getNoneDownloadInfo(gid: Long): DownloadInfo? {
@@ -341,11 +371,11 @@ class DownloadManager(private val mContext: Context) {
                 }
             }
         }
-        return mAllInfoMap.get(gid)
+        return mAllInfoMap[gid]
     }
 
     fun getDownloadState(gid: Long): Int {
-        val info = mAllInfoMap.get(gid)
+        val info = mAllInfoMap[gid]
         return info?.state ?: DownloadInfo.STATE_INVALID
     }
 
@@ -364,7 +394,7 @@ class DownloadManager(private val mContext: Context) {
     private fun ensureDownload() {
         val maxConcurrent = DownloadSettings.getConcurrentDownloads()
         while (mActiveTasks.size < maxConcurrent && mWaitList.isNotEmpty()) {
-            val info = mWaitList.removeFirst()
+            val info = mWaitList.removeAt(0)
             val worker = LRRDownloadWorker(mContext, info)
             mActiveTasks.add(info)
             mActiveWorkers[info] = worker
@@ -377,7 +407,7 @@ class DownloadManager(private val mContext: Context) {
             info.downloaded = 0
             info.legacy = -1
             // Update in DB
-            EhDB.putDownloadInfo(info)
+            scope.launch { EhDB.putDownloadInfoAsync(info) }
             // Start speed count
             mSpeedReminder.start()
             // Notify start downloading
@@ -408,7 +438,7 @@ class DownloadManager(private val mContext: Context) {
         }
 
         // Check in download list
-        val existing = mAllInfoMap.get(galleryInfo.gid)
+        val existing = mAllInfoMap[galleryInfo.gid]
 
         if (existing != null) { // Get it in download list
             if (existing.state != DownloadInfo.STATE_WAIT) {
@@ -417,7 +447,7 @@ class DownloadManager(private val mContext: Context) {
                 // Add to wait list
                 mWaitList.add(existing)
                 // Update in DB
-                EhDB.putDownloadInfo(existing)
+                scope.launch { EhDB.putDownloadInfoAsync(existing) }
                 // Notify state update
                 val list = getInfoListForLabel(existing.label)
                 if (list != null) {
@@ -441,17 +471,17 @@ class DownloadManager(private val mContext: Context) {
                 Log.e(TAG, "Can't find download info list with label: $label")
                 return
             }
-            list.addFirst(info)
+            list.add(0, info)
 
             // Add to all download list and map
-            mAllInfoList.addFirst(info)
-            mAllInfoMap.put(galleryInfo.gid, info)
+            mAllInfoList.add(0, info)
+            mAllInfoMap[galleryInfo.gid] = info
 
             // Add to wait list
             mWaitList.add(info)
 
-            // Save to
-            EhDB.putDownloadInfo(info)
+            // Save to DB
+            scope.launch { EhDB.putDownloadInfoAsync(info) }
 
             // Notify
             for (l in mDownloadInfoListeners) {
@@ -461,7 +491,7 @@ class DownloadManager(private val mContext: Context) {
             ensureDownload()
 
             // Add it to history
-            EhDB.putHistoryInfo(info)
+            scope.launch { EhDB.putHistoryInfoAsync(info) }
         }
     }
 
@@ -471,7 +501,7 @@ class DownloadManager(private val mContext: Context) {
         if (downloadOrder) {
             for (i in 0 until gidList.size()) {
                 val gid = gidList.get(i)
-                val info = mAllInfoMap.get(gid)
+                val info = mAllInfoMap[gid]
                 if (info == null) {
                     Log.d(TAG, "Can't get download info with gid: $gid")
                     continue
@@ -487,14 +517,14 @@ class DownloadManager(private val mContext: Context) {
                     // Add to wait list
                     mWaitList.add(info)
                     // Update in DB
-                    EhDB.putDownloadInfo(info)
+                    scope.launch { EhDB.putDownloadInfoAsync(info) }
                 }
             }
         } else {
             var i = gidList.size()
             while (i > 0) {
                 val gid = gidList.get(i - 1)
-                val info = mAllInfoMap.get(gid)
+                val info = mAllInfoMap[gid]
                 if (info == null) {
                     Log.d(TAG, "Can't get download info with gid: $gid")
                     i--
@@ -511,7 +541,7 @@ class DownloadManager(private val mContext: Context) {
                     // Add to wait list
                     mWaitList.add(info)
                     // Update in DB
-                    EhDB.putDownloadInfo(info)
+                    scope.launch { EhDB.putDownloadInfoAsync(info) }
                 }
                 i--
             }
@@ -542,7 +572,7 @@ class DownloadManager(private val mContext: Context) {
                     // Add to wait list
                     waitList.add(info)
                     // Update in DB
-                    EhDB.putDownloadInfo(info)
+                    scope.launch { EhDB.putDownloadInfoAsync(info) }
                 }
             }
         } else {
@@ -552,9 +582,9 @@ class DownloadManager(private val mContext: Context) {
                     // Set state DownloadInfo.STATE_WAIT
                     info.state = DownloadInfo.STATE_WAIT
                     // Add to wait list
-                    waitList.addFirst(info)
+                    waitList.add(0, info)
                     // Update in DB
-                    EhDB.putDownloadInfo(info)
+                    scope.launch { EhDB.putDownloadInfoAsync(info) }
                 }
             }
         }
@@ -584,7 +614,7 @@ class DownloadManager(private val mContext: Context) {
 
             var list = getInfoListForLabel(info.label)
             if (list == null) {
-                list = LinkedList()
+                list = ArrayList()
                 mMap[info.label] = list
                 if (!containLabel(info.label) && info.label != null) {
                     newLabelsToAdd.add(info.label!!)
@@ -594,23 +624,26 @@ class DownloadManager(private val mContext: Context) {
             Collections.sort(list, DATE_DESC_COMPARATOR)
 
             mAllInfoList.add(info)
-            mAllInfoMap.put(info.gid, info)
+            mAllInfoMap[info.gid] = info
         }
 
         Collections.sort(mAllInfoList, DATE_DESC_COMPARATOR)
 
         // Persist to DB on background thread
         val infosToSave = ArrayList(downloadInfoList)
-        IoThreadPoolExecutor.instance.execute {
+        scope.launch {
             for (label in newLabelsToAdd) {
-                mLabelList.add(kotlinx.coroutines.runBlocking { EhDB.addDownloadLabelAsync(label) })
+                val saved = EhDB.addDownloadLabelAsync(label)
+                mLabelList.add(saved)
+                mLabelSet.add(label)
             }
             for (info in infosToSave) {
-                EhDB.putDownloadInfo(info)
+                EhDB.putDownloadInfoAsync(info)
             }
         }
 
-        Handler(Looper.getMainLooper()).post {
+        // Notify on main thread
+        SimpleHandler.getInstance().post {
             for (l in mDownloadInfoListeners) {
                 l.onReload()
             }
@@ -622,14 +655,18 @@ class DownloadManager(private val mContext: Context) {
         for (label in downloadLabelList) {
             val labelString = label.label
             if (!containLabel(labelString)) {
-                mMap[labelString] = LinkedList()
+                mMap[labelString] = ArrayList()
                 labelsToAdd.add(label)
             }
         }
         if (labelsToAdd.isNotEmpty()) {
-            IoThreadPoolExecutor.instance.execute {
+            scope.launch {
                 for (label in labelsToAdd) {
-                    mLabelList.add(kotlinx.coroutines.runBlocking { EhDB.addDownloadLabelAsync(label) })
+                    val saved = EhDB.addDownloadLabelAsync(label)
+                    mLabelList.add(saved)
+                    if (label.label != null) {
+                        mLabelSet.add(label.label!!)
+                    }
                 }
             }
         }
@@ -659,14 +696,14 @@ class DownloadManager(private val mContext: Context) {
             Log.e(TAG, "Can't find download info list with label: $label")
             return
         }
-        list.addFirst(info)
+        list.add(0, info)
 
         // Add to all download list and map
-        mAllInfoList.addFirst(info)
-        mAllInfoMap.put(galleryInfo.gid, info)
+        mAllInfoList.add(0, info)
+        mAllInfoMap[galleryInfo.gid] = info
 
-        // Save to
-        EhDB.putDownloadInfo(info)
+        // Save to DB
+        scope.launch { EhDB.putDownloadInfoAsync(info) }
 
         // Notify
         for (l in mDownloadInfoListeners) {
@@ -698,11 +735,11 @@ class DownloadManager(private val mContext: Context) {
             Log.e(TAG, "Can't find download info list with label: $label")
             return
         }
-        list.addFirst(info)
+        list.add(0, info)
 
-        // Save to
-        EhDB.putDownloadInfo(info)
-        mAllInfoMap.put(galleryInfo.gid, info)
+        // Save to DB
+        scope.launch { EhDB.putDownloadInfoAsync(info) }
+        mAllInfoMap[galleryInfo.gid] = info
     }
 
     fun stopDownload(gid: Long) {
@@ -752,7 +789,7 @@ class DownloadManager(private val mContext: Context) {
         for (info in mWaitList) {
             info.state = DownloadInfo.STATE_NONE
             // Update in DB
-            EhDB.putDownloadInfo(info)
+            scope.launch { EhDB.putDownloadInfoAsync(info) }
         }
         mWaitList.clear()
 
@@ -767,7 +804,7 @@ class DownloadManager(private val mContext: Context) {
 
     fun deleteDownload(gid: Long) {
         stopDownloadInternal(gid)
-        val info = mAllInfoMap.get(gid)
+        val info = mAllInfoMap[gid]
         if (info != null) {
             // Remove all list and map
             mAllInfoList.remove(info)
@@ -778,7 +815,7 @@ class DownloadManager(private val mContext: Context) {
             if (list != null) {
                 val index = list.indexOf(info)
                 if (index >= 0) {
-                    list.remove(info)
+                    list.removeAt(index)
                     // Update listener
                     for (l in mDownloadInfoListeners) {
                         l.onRemove(info, list, index)
@@ -788,9 +825,7 @@ class DownloadManager(private val mContext: Context) {
 
             // Remove from DB on background thread
             val gidToRemove = info.gid
-            IoThreadPoolExecutor.instance.execute {
-                kotlinx.coroutines.runBlocking { EhDB.removeDownloadInfoAsync(gidToRemove) }
-            }
+            scope.launch { EhDB.removeDownloadInfoAsync(gidToRemove) }
 
             // Ensure download
             ensureDownload()
@@ -803,7 +838,7 @@ class DownloadManager(private val mContext: Context) {
         val gidsToRemove = mutableListOf<Long>()
         for (i in 0 until gidList.size()) {
             val gid = gidList.get(i)
-            val info = mAllInfoMap.get(gid)
+            val info = mAllInfoMap[gid]
             if (info == null) {
                 Log.d(TAG, "Can't get download info with gid: $gid")
                 continue
@@ -822,9 +857,9 @@ class DownloadManager(private val mContext: Context) {
 
         // Remove from DB on background thread
         if (gidsToRemove.isNotEmpty()) {
-            IoThreadPoolExecutor.instance.execute {
+            scope.launch {
                 for (gid in gidsToRemove) {
-                    kotlinx.coroutines.runBlocking { EhDB.removeDownloadInfoAsync(gid) }
+                    EhDB.removeDownloadInfoAsync(gid)
                 }
             }
         }
@@ -839,9 +874,9 @@ class DownloadManager(private val mContext: Context) {
     }
 
     fun resetAllReadingProgress() {
-        val list = LinkedList(mAllInfoList)
+        val list = ArrayList(mAllInfoList)
 
-        IoThreadPoolExecutor.instance.execute {
+        scope.launch {
             val galleryInfo = GalleryInfo()
             for (downloadInfo in list) {
                 galleryInfo.gid = downloadInfo.gid
@@ -881,7 +916,7 @@ class DownloadManager(private val mContext: Context) {
                 activeIt.remove()
                 if (mActiveTasks.isEmpty()) mSpeedReminder.stop()
                 info.state = DownloadInfo.STATE_NONE
-                EhDB.putDownloadInfo(info)
+                scope.launch { EhDB.putDownloadInfoAsync(info) }
                 mDownloadListener?.onCancel(info)
                 return info
             }
@@ -896,7 +931,7 @@ class DownloadManager(private val mContext: Context) {
                 // Update state
                 info.state = DownloadInfo.STATE_NONE
                 // Update in DB
-                EhDB.putDownloadInfo(info)
+                scope.launch { EhDB.putDownloadInfoAsync(info) }
                 return info
             }
         }
@@ -917,7 +952,7 @@ class DownloadManager(private val mContext: Context) {
         if (stopped.isEmpty()) return null
         for (info in stopped) {
             info.state = DownloadInfo.STATE_NONE
-            EhDB.putDownloadInfo(info)
+            scope.launch { EhDB.putDownloadInfoAsync(info) }
             mDownloadListener?.onCancel(info)
         }
         return stopped[0]
@@ -949,7 +984,7 @@ class DownloadManager(private val mContext: Context) {
                     // Update state
                     info.state = DownloadInfo.STATE_NONE
                     // Update in DB
-                    EhDB.putDownloadInfo(info)
+                    scope.launch { EhDB.putDownloadInfoAsync(info) }
                 }
             }
         }
@@ -987,7 +1022,7 @@ class DownloadManager(private val mContext: Context) {
             Collections.sort(dstList, DATE_DESC_COMPARATOR)
 
             // Save to DB
-            EhDB.putDownloadInfo(info)
+            scope.launch { EhDB.putDownloadInfoAsync(info) }
         }
 
         for (l in mDownloadInfoListeners) {
@@ -1006,11 +1041,12 @@ class DownloadManager(private val mContext: Context) {
             this.time = System.currentTimeMillis()
         }
         mLabelList.add(newLabel)
-        mMap[label] = LinkedList()
+        mLabelSet.add(label)
+        mMap[label] = ArrayList()
 
         // Persist to DB on background thread
-        IoThreadPoolExecutor.instance.execute {
-            val saved = kotlinx.coroutines.runBlocking { EhDB.addDownloadLabelAsync(label) }
+        scope.launch {
+            val saved = EhDB.addDownloadLabelAsync(label)
             // Update the in-memory label with the DB-assigned ID
             newLabel.id = saved.id
             newLabel.time = saved.time
@@ -1028,16 +1064,15 @@ class DownloadManager(private val mContext: Context) {
 
         // Already called from sync/background thread — runBlocking is safe here
         mLabelList.add(kotlinx.coroutines.runBlocking { EhDB.addDownloadLabelAsync(label) })
-        mMap[label] = LinkedList()
+        mLabelSet.add(label)
+        mMap[label] = ArrayList()
     }
 
     fun moveLabel(fromPosition: Int, toPosition: Int) {
         val item = mLabelList.removeAt(fromPosition)
         mLabelList.add(toPosition, item)
 
-        IoThreadPoolExecutor.instance.execute {
-            kotlinx.coroutines.runBlocking { EhDB.moveDownloadLabelAsync(fromPosition, toPosition) }
-        }
+        scope.launch { EhDB.moveDownloadLabelAsync(fromPosition, toPosition) }
 
         for (l in mDownloadInfoListeners) {
             l.onUpdateLabels()
@@ -1058,6 +1093,10 @@ class DownloadManager(private val mContext: Context) {
             return
         }
 
+        // Update label set
+        mLabelSet.remove(from)
+        mLabelSet.add(to)
+
         val list = mMap.remove(from) ?: return
 
         // Update info label
@@ -1070,10 +1109,10 @@ class DownloadManager(private val mContext: Context) {
         // Persist to DB on background thread
         val labelToUpdate = rawLabel
         val infosToUpdate = ArrayList(list)
-        IoThreadPoolExecutor.instance.execute {
-            kotlinx.coroutines.runBlocking { EhDB.updateDownloadLabelAsync(labelToUpdate) }
+        scope.launch {
+            EhDB.updateDownloadLabelAsync(labelToUpdate)
             for (info in infosToUpdate) {
-                EhDB.putDownloadInfo(info)
+                EhDB.putDownloadInfoAsync(info)
             }
         }
 
@@ -1099,6 +1138,9 @@ class DownloadManager(private val mContext: Context) {
             return
         }
 
+        // Update label set
+        mLabelSet.remove(label)
+
         val list = mMap.remove(label) ?: return
 
         // Update info label
@@ -1113,10 +1155,10 @@ class DownloadManager(private val mContext: Context) {
         // Persist to DB on background thread
         val labelToRemove = removedLabel
         val infosToUpdate = ArrayList(list)
-        IoThreadPoolExecutor.instance.execute {
-            kotlinx.coroutines.runBlocking { EhDB.removeDownloadLabelAsync(labelToRemove) }
+        scope.launch {
+            EhDB.removeDownloadLabelAsync(labelToRemove)
             for (info in infosToUpdate) {
-                EhDB.putDownloadInfo(info)
+                EhDB.putDownloadInfoAsync(info)
             }
         }
 
@@ -1129,204 +1171,154 @@ class DownloadManager(private val mContext: Context) {
     val isIdle: Boolean
         get() = mActiveTasks.isEmpty() && mWaitList.isEmpty()
 
-    private inner class NotifyTask : Runnable {
+    /**
+     * Sealed interface for immutable download events dispatched from worker threads.
+     * Replaces the mutable [NotifyTask] + [ConcurrentPool] pattern.
+     */
+    private sealed interface DownloadEvent {
+        data class OnGetPages(val taskInfo: DownloadInfo, val pages: Int) : DownloadEvent
+        data object OnGet509 : DownloadEvent
+        data class OnPageDownload(
+            val index: Int,
+            val contentLength: Long,
+            val receivedSize: Long,
+            val bytesRead: Int
+        ) : DownloadEvent
+        data class OnPageSuccess(
+            val taskInfo: DownloadInfo,
+            val index: Int,
+            val finished: Int,
+            val downloaded: Int,
+            val total: Int
+        ) : DownloadEvent
+        data class OnPageFailure(
+            val taskInfo: DownloadInfo,
+            val index: Int,
+            val error: String?,
+            val finished: Int,
+            val downloaded: Int,
+            val total: Int
+        ) : DownloadEvent
+        data class OnFinish(
+            val taskInfo: DownloadInfo,
+            val finished: Int,
+            val downloaded: Int,
+            val total: Int
+        ) : DownloadEvent
+    }
 
-        private var mType = 0
-        private var mTaskInfo: DownloadInfo? = null // task identity for task-specific events
-        private var mPages = 0
-        private var mIndex = 0
-        private var mContentLength = 0L
-        private var mReceivedSize = 0L
-        private var mBytesRead = 0
-
-        @Suppress("unused")
-        private var mError: String? = null
-        private var mFinished = 0
-        private var mDownloaded = 0
-        private var mTotal = 0
-
-        fun setOnGetPagesData(taskInfo: DownloadInfo, pages: Int) {
-            mType = TYPE_ON_GET_PAGES
-            mTaskInfo = taskInfo
-            mPages = pages
-        }
-
-        fun setOnGet509Data(index: Int) {
-            mType = TYPE_ON_GET_509
-            mIndex = index
-        }
-
-        fun setOnPageDownloadData(index: Int, contentLength: Long, receivedSize: Long, bytesRead: Int) {
-            mType = TYPE_ON_PAGE_DOWNLOAD
-            mIndex = index
-            mContentLength = contentLength
-            mReceivedSize = receivedSize
-            mBytesRead = bytesRead
-        }
-
-        fun setOnPageSuccessData(taskInfo: DownloadInfo, index: Int, finished: Int, downloaded: Int, total: Int) {
-            mType = TYPE_ON_PAGE_SUCCESS
-            mTaskInfo = taskInfo
-            mIndex = index
-            mFinished = finished
-            mDownloaded = downloaded
-            mTotal = total
-        }
-
-        fun setOnPageFailureDate(taskInfo: DownloadInfo, index: Int, error: String?, finished: Int, downloaded: Int, total: Int) {
-            mType = TYPE_ON_PAGE_FAILURE
-            mTaskInfo = taskInfo
-            mIndex = index
-            mError = error
-            mFinished = finished
-            mDownloaded = downloaded
-            mTotal = total
-        }
-
-        fun setOnFinishDate(taskInfo: DownloadInfo, finished: Int, downloaded: Int, total: Int) {
-            mType = TYPE_ON_FINISH
-            mTaskInfo = taskInfo
-            mFinished = finished
-            mDownloaded = downloaded
-            mTotal = total
-        }
-
-        override fun run() {
-            when (mType) {
-                TYPE_ON_GET_PAGES -> {
-                    val info = mTaskInfo
-                    if (info == null) {
-                        Log.e(TAG, "Task info is null on onGetPages")
-                    } else {
-                        info.total = mPages
-                        val list = getInfoListForLabel(info.label)
-                        if (list != null) {
-                            for (l in mDownloadInfoListeners) {
-                                l.onUpdate(info, list, mWaitList)
-                            }
-                        }
-                    }
-                }
-                TYPE_ON_GET_509 -> {
-                    mDownloadListener?.onGet509()
-                }
-                TYPE_ON_PAGE_DOWNLOAD -> {
-                    mSpeedReminder.onDownload(mIndex, mContentLength, mReceivedSize, mBytesRead)
-                }
-                TYPE_ON_PAGE_SUCCESS -> {
-                    mSpeedReminder.onDone(mIndex)
-                    val info = mTaskInfo
-                    if (info == null) {
-                        Log.e(TAG, "Task info is null on onPageSuccess")
-                    } else {
-                        info.finished = mFinished
-                        info.downloaded = mDownloaded
-                        info.total = mTotal
-                        mDownloadListener?.onGetPage(info)
-                        val list = getInfoListForLabel(info.label)
-                        if (list != null) {
-                            for (l in mDownloadInfoListeners) {
-                                l.onUpdate(info, list, mWaitList)
-                            }
-                        }
-                    }
-                }
-                TYPE_ON_PAGE_FAILURE -> {
-                    mSpeedReminder.onDone(mIndex)
-                    val info = mTaskInfo
-                    if (info == null) {
-                        Log.e(TAG, "Task info is null on onPageFailure")
-                    } else {
-                        info.finished = mFinished
-                        info.downloaded = mDownloaded
-                        info.total = mTotal
-                        val list = getInfoListForLabel(info.label)
-                        if (list != null) {
-                            for (l in mDownloadInfoListeners) {
-                                l.onUpdate(info, list, mWaitList)
-                            }
-                        }
-                    }
-                }
-                TYPE_ON_FINISH -> {
-                    mSpeedReminder.onFinish()
-                    val info = mTaskInfo
-                    if (info == null) {
-                        Log.e(TAG, "Task info is null on onFinish")
-                    } else {
-                        mActiveTasks.remove(info)
-                        mActiveWorkers.remove(info)
-                        if (mActiveTasks.isEmpty()) mSpeedReminder.stop()
-                        // Update state
-                        info.finished = mFinished
-                        info.downloaded = mDownloaded
-                        info.total = mTotal
-                        info.legacy = mTotal - mFinished
-                        if (info.legacy == 0) {
-                            info.state = DownloadInfo.STATE_FINISH
-                        } else {
-                            info.state = DownloadInfo.STATE_FAILED
-                        }
-                        // Update in DB
-                        EhDB.putDownloadInfo(info)
-                        // Notify
-                        mDownloadListener?.onFinish(info)
-                        val list = getInfoListForLabel(info.label)
-                        if (list != null) {
-                            for (l in mDownloadInfoListeners) {
-                                l.onUpdate(info, list, mWaitList)
-                            }
-                        }
-                        // Start next download
-                        ensureDownload()
+    /**
+     * Dispatch a download event on the main thread.
+     * This replaces the old NotifyTask.run() + SimpleHandler.post() pattern.
+     */
+    private fun dispatchEvent(event: DownloadEvent) {
+        when (event) {
+            is DownloadEvent.OnGetPages -> {
+                val info = event.taskInfo
+                info.total = event.pages
+                val list = getInfoListForLabel(info.label)
+                if (list != null) {
+                    for (l in mDownloadInfoListeners) {
+                        l.onUpdate(info, list, mWaitList)
                     }
                 }
             }
-
-            mNotifyTaskPool.push(this)
+            is DownloadEvent.OnGet509 -> {
+                mDownloadListener?.onGet509()
+            }
+            is DownloadEvent.OnPageDownload -> {
+                mSpeedReminder.onDownload(event.index, event.contentLength, event.receivedSize, event.bytesRead)
+            }
+            is DownloadEvent.OnPageSuccess -> {
+                mSpeedReminder.onDone(event.index)
+                val info = event.taskInfo
+                info.finished = event.finished
+                info.downloaded = event.downloaded
+                info.total = event.total
+                mDownloadListener?.onGetPage(info)
+                val list = getInfoListForLabel(info.label)
+                if (list != null) {
+                    for (l in mDownloadInfoListeners) {
+                        l.onUpdate(info, list, mWaitList)
+                    }
+                }
+            }
+            is DownloadEvent.OnPageFailure -> {
+                mSpeedReminder.onDone(event.index)
+                val info = event.taskInfo
+                info.finished = event.finished
+                info.downloaded = event.downloaded
+                info.total = event.total
+                val list = getInfoListForLabel(info.label)
+                if (list != null) {
+                    for (l in mDownloadInfoListeners) {
+                        l.onUpdate(info, list, mWaitList)
+                    }
+                }
+            }
+            is DownloadEvent.OnFinish -> {
+                mSpeedReminder.onFinish()
+                val info = event.taskInfo
+                mActiveTasks.remove(info)
+                mActiveWorkers.remove(info)
+                if (mActiveTasks.isEmpty()) mSpeedReminder.stop()
+                // Update state
+                info.finished = event.finished
+                info.downloaded = event.downloaded
+                info.total = event.total
+                info.legacy = event.total - event.finished
+                if (info.legacy == 0) {
+                    info.state = DownloadInfo.STATE_FINISH
+                } else {
+                    info.state = DownloadInfo.STATE_FAILED
+                }
+                // Update in DB
+                scope.launch { EhDB.putDownloadInfoAsync(info) }
+                // Notify
+                mDownloadListener?.onFinish(info)
+                val list = getInfoListForLabel(info.label)
+                if (list != null) {
+                    for (l in mDownloadInfoListeners) {
+                        l.onUpdate(info, list, mWaitList)
+                    }
+                }
+                // Start next download
+                ensureDownload()
+            }
         }
+    }
+
+    /**
+     * Post a [DownloadEvent] to the main thread for dispatch.
+     */
+    private fun postEvent(event: DownloadEvent) {
+        SimpleHandler.getInstance().post { dispatchEvent(event) }
     }
 
     private inner class PerTaskListener(private val mInfo: DownloadInfo) : SpiderQueen.OnSpiderListener {
 
-        private fun popTask(): NotifyTask {
-            return mNotifyTaskPool.pop() ?: NotifyTask()
-        }
-
         override fun onGetPages(pages: Int) {
-            val task = popTask()
-            task.setOnGetPagesData(mInfo, pages)
-            SimpleHandler.getInstance().post(task)
+            postEvent(DownloadEvent.OnGetPages(mInfo, pages))
         }
 
         override fun onGet509(index: Int) {
-            val task = popTask()
-            task.setOnGet509Data(index)
-            SimpleHandler.getInstance().post(task)
+            postEvent(DownloadEvent.OnGet509)
         }
 
         override fun onPageDownload(index: Int, contentLength: Long, receivedSize: Long, bytesRead: Int) {
-            val task = popTask()
-            task.setOnPageDownloadData(index, contentLength, receivedSize, bytesRead)
-            SimpleHandler.getInstance().post(task)
+            postEvent(DownloadEvent.OnPageDownload(index, contentLength, receivedSize, bytesRead))
         }
 
         override fun onPageSuccess(index: Int, finished: Int, downloaded: Int, total: Int) {
-            val task = popTask()
-            task.setOnPageSuccessData(mInfo, index, finished, downloaded, total)
-            SimpleHandler.getInstance().post(task)
+            postEvent(DownloadEvent.OnPageSuccess(mInfo, index, finished, downloaded, total))
         }
 
         override fun onPageFailure(index: Int, error: String, finished: Int, downloaded: Int, total: Int) {
-            val task = popTask()
-            task.setOnPageFailureDate(mInfo, index, error, finished, downloaded, total)
-            SimpleHandler.getInstance().post(task)
+            postEvent(DownloadEvent.OnPageFailure(mInfo, index, error, finished, downloaded, total))
         }
 
         override fun onFinish(finished: Int, downloaded: Int, total: Int) {
-            val task = popTask()
-            task.setOnFinishDate(mInfo, finished, downloaded, total)
-            SimpleHandler.getInstance().post(task)
+            postEvent(DownloadEvent.OnFinish(mInfo, finished, downloaded, total))
         }
 
         override fun onGetImageSuccess(index: Int, image: Image) {}
@@ -1339,14 +1331,6 @@ class DownloadManager(private val mContext: Context) {
 
         const val DOWNLOAD_INFO_FILENAME = ".ehviewer"
         const val DOWNLOAD_INFO_HEADER = "gid,token,title,title_jpn,thumb,category,posted,uploader,rating,rated,simple_lang,simple_tags,thumb_width,thumb_height,span_size,span_index,span_group_index,favorite_slot,favorite_name,pages"
-
-        // NotifyTask type constants (cannot be in inner class companion in Kotlin)
-        private const val TYPE_ON_GET_PAGES = 0
-        private const val TYPE_ON_GET_509 = 1
-        private const val TYPE_ON_PAGE_DOWNLOAD = 2
-        private const val TYPE_ON_PAGE_SUCCESS = 3
-        private const val TYPE_ON_PAGE_FAILURE = 4
-        private const val TYPE_ON_FINISH = 5
 
         @JvmField
         val DATE_DESC_COMPARATOR: Comparator<DownloadInfo> = Comparator { lhs, rhs ->

@@ -20,7 +20,6 @@ import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.lib.yorozuya.MathUtils
 import com.hippo.lib.yorozuya.SimpleHandler
 import com.hippo.lib.yorozuya.collect.SparseIJArray
-import java.util.LinkedList
 
 /**
  * Calculates and reports download speed and remaining time on a 2-second interval.
@@ -46,7 +45,7 @@ internal class DownloadSpeedTracker(private val callback: Callback) : Runnable {
         fun getDownloadInfoListeners(): List<DownloadInfoListener>
 
         /** @return the current wait list (passed to onUpdate). */
-        fun getWaitList(): LinkedList<DownloadInfo>
+        fun getWaitList(): List<DownloadInfo>
     }
 
     private var stopped = true

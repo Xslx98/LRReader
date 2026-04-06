@@ -91,7 +91,6 @@ import com.hippo.widget.ProgressView
 import com.hippo.widget.SearchBarMover
 import com.hippo.widget.recyclerview.AutoStaggeredGridLayoutManager
 import com.sxj.paginationlib.PaginationIndicator
-import java.util.LinkedList
 
 class DownloadsScene : ToolbarScene(),
     DownloadInfoListener,
@@ -1031,7 +1030,7 @@ class DownloadsScene : ToolbarScene(),
         }
     }
 
-    override fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: LinkedList<DownloadInfo>) {
+    override fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: List<DownloadInfo>) {
         if (mList !== list && !mList!!.contains(info)) {
             return
         }

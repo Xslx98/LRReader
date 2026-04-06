@@ -3,7 +3,6 @@ package com.hippo.ehviewer.client.lrr
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
@@ -40,7 +39,8 @@ object LRRTankoubonApi {
         baseUrl: String,
         page: Int? = null
     ): TankoubonListResult = withContext(Dispatchers.IO) {
-        val urlBuilder = "$baseUrl/api/tankoubons".toHttpUrlOrNull()!!.newBuilder()
+        val urlBuilder = parseBaseUrl(baseUrl).newBuilder()
+            .addPathSegments("api/tankoubons")
         if (page != null && page > 0) urlBuilder.addQueryParameter("page", page.toString())
 
         val request = Request.Builder()

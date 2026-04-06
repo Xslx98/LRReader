@@ -10,9 +10,8 @@ import org.junit.Test
 /**
  * Tests for [EhFilter] filtering logic.
  *
- * Bypasses the singleton/DB-dependent constructor by creating an instance
- * via reflection and populating the internal filter lists directly.
- * This tests the pure filtering functions without database dependencies.
+ * Constructor no longer touches the database, so we can create an instance
+ * via reflection and populate filter lists through [EhFilter.loadFromList].
  */
 class EhFilterTest {
 
@@ -20,77 +19,41 @@ class EhFilterTest {
 
     @Before
     fun setUp() {
-        // Create EhFilter instance via reflection (private constructor)
-        val constructor = EhFilter::class.java.getDeclaredConstructor()
-        constructor.isAccessible = true
-
-        // Temporarily replace EhDB.getAllFilterAsync to return empty list
-        // We achieve this by mocking the sInstance field and setting filter lists directly
-        // First set sInstance to null so getInstance won't return stale
+        // Reset singleton
         val sInstanceField = EhFilter::class.java.getDeclaredField("sInstance")
         sInstanceField.isAccessible = true
         sInstanceField.set(null, null)
 
-        // We can't call the constructor directly because it calls EhDB.
-        // Instead, create a "blank" instance using Unsafe or setAccessible tricks.
-        // Use sun.misc.Unsafe to allocate without calling constructor.
-        val unsafeClass = Class.forName("sun.misc.Unsafe")
-        val unsafeField = unsafeClass.getDeclaredField("theUnsafe")
-        unsafeField.isAccessible = true
-        val unsafe = unsafeField.get(null)
-        val allocateMethod = unsafeClass.getMethod("allocateInstance", Class::class.java)
-        ehFilter = allocateMethod.invoke(unsafe, EhFilter::class.java) as EhFilter
-
-        // Initialize the internal mutable lists (they are null after allocateInstance)
-        val titleListField = EhFilter::class.java.getDeclaredField("mTitleFilterList")
-        titleListField.isAccessible = true
-        titleListField.set(ehFilter, mutableListOf<Filter>())
-
-        val uploaderListField = EhFilter::class.java.getDeclaredField("mUploaderFilterList")
-        uploaderListField.isAccessible = true
-        uploaderListField.set(ehFilter, mutableListOf<Filter>())
-
-        val tagListField = EhFilter::class.java.getDeclaredField("mTagFilterList")
-        tagListField.isAccessible = true
-        tagListField.set(ehFilter, mutableListOf<Filter>())
-
-        val tagNsListField = EhFilter::class.java.getDeclaredField("mTagNamespaceFilterList")
-        tagNsListField.isAccessible = true
-        tagNsListField.set(ehFilter, mutableListOf<Filter>())
+        // Create instance via reflection (private constructor, no DB call)
+        val constructor = EhFilter::class.java.getDeclaredConstructor()
+        constructor.isAccessible = true
+        ehFilter = constructor.newInstance()
     }
 
     // ---- Helpers ----
 
     private fun addTitleFilter(text: String, enabled: Boolean = true) {
-        val field = EhFilter::class.java.getDeclaredField("mTitleFilterList")
-        field.isAccessible = true
-        @Suppress("UNCHECKED_CAST")
-        val list = field.get(ehFilter) as MutableList<Filter>
-        list.add(Filter(mode = EhFilter.MODE_TITLE, text = text.lowercase(), enable = enabled))
+        ehFilter.loadFromList(listOf(
+            Filter(mode = EhFilter.MODE_TITLE, text = text, enable = enabled)
+        ))
     }
 
     private fun addUploaderFilter(text: String, enabled: Boolean = true) {
-        val field = EhFilter::class.java.getDeclaredField("mUploaderFilterList")
-        field.isAccessible = true
-        @Suppress("UNCHECKED_CAST")
-        val list = field.get(ehFilter) as MutableList<Filter>
-        list.add(Filter(mode = EhFilter.MODE_UPLOADER, text = text, enable = enabled))
+        ehFilter.loadFromList(listOf(
+            Filter(mode = EhFilter.MODE_UPLOADER, text = text, enable = enabled)
+        ))
     }
 
     private fun addTagFilter(text: String, enabled: Boolean = true) {
-        val field = EhFilter::class.java.getDeclaredField("mTagFilterList")
-        field.isAccessible = true
-        @Suppress("UNCHECKED_CAST")
-        val list = field.get(ehFilter) as MutableList<Filter>
-        list.add(Filter(mode = EhFilter.MODE_TAG, text = text.lowercase(), enable = enabled))
+        ehFilter.loadFromList(listOf(
+            Filter(mode = EhFilter.MODE_TAG, text = text, enable = enabled)
+        ))
     }
 
     private fun addTagNamespaceFilter(text: String, enabled: Boolean = true) {
-        val field = EhFilter::class.java.getDeclaredField("mTagNamespaceFilterList")
-        field.isAccessible = true
-        @Suppress("UNCHECKED_CAST")
-        val list = field.get(ehFilter) as MutableList<Filter>
-        list.add(Filter(mode = EhFilter.MODE_TAG_NAMESPACE, text = text.lowercase(), enable = enabled))
+        ehFilter.loadFromList(listOf(
+            Filter(mode = EhFilter.MODE_TAG_NAMESPACE, text = text, enable = enabled)
+        ))
     }
 
     private fun makeGalleryInfo(

@@ -25,7 +25,6 @@ import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadInfoListener
 import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.ehviewer.ui.MainActivity
-import java.util.LinkedList
 
 /**
  * Handles download state display, download start/delete actions, and
@@ -132,7 +131,7 @@ class GalleryDownloadHelper(private val callback: Callback) : DownloadInfoListen
     override fun onUpdate(
         info: DownloadInfo,
         list: List<DownloadInfo>,
-        mWaitList: LinkedList<DownloadInfo>
+        mWaitList: List<DownloadInfo>
     ) {
         updateDownloadState()
     }

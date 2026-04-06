@@ -3,7 +3,6 @@ package com.hippo.ehviewer.client.lrr
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -54,7 +53,7 @@ object LRRPluginApi {
         baseUrl: String,
         type: String
     ): List<PluginInfo> = withContext(Dispatchers.IO) {
-        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+        val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegment("api")
             .addPathSegment("plugins")
             .addPathSegment(type)
@@ -86,7 +85,8 @@ object LRRPluginApi {
         archiveId: String? = null,
         arg: String? = null
     ): PluginRunResult = withContext(Dispatchers.IO) {
-        val urlBuilder = "$baseUrl/api/plugins/use".toHttpUrlOrNull()!!.newBuilder()
+        val urlBuilder = parseBaseUrl(baseUrl).newBuilder()
+            .addPathSegments("api/plugins/use")
             .addQueryParameter("plugin", namespace)
         if (!archiveId.isNullOrEmpty()) urlBuilder.addQueryParameter("id", archiveId)
         if (!arg.isNullOrEmpty()) urlBuilder.addQueryParameter("arg", arg)

@@ -1194,6 +1194,8 @@
     <string name="lrr_connect_error_check">Cannot connect to server, please check address and network</string>
     <string name="lrr_dns_error">Cannot resolve server address, please check URL</string>
     <string name="lrr_ssl_error">Secure connection failed, please check server certificate</string>
+    <string name="lrr_keystore_failed_title">Credential Storage Unavailable</string>
+    <string name="lrr_keystore_failed_message">The device keystore is unavailable. Your API key could not be loaded. Please re-enter your server credentials.</string>
     <string name="lrr_auth_failed_short">Authentication failed</string>
     <string name="lrr_server_error_short">Server error</string>
     <string name="lrr_request_failed_short">Request failed</string>

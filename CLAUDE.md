@@ -66,7 +66,7 @@ LRReader/
 │   │   │   │   └── CMakeLists.txt
 │   │   │   ├── res/                   # Resources (11 locale configs)
 │   │   │   └── AndroidManifest.xml
-│   │   └── test/                      # Unit tests (33 files, LRR API + DAO + DiffUtil + Paging + Filter)
+│   │   └── test/                      # Unit tests (42 files, LRR API + DAO + DiffUtil + Paging + Filter + Download)
 │   ├── build.gradle                   # App-level Gradle config
 │   └── proguard-rules.pro
 ├── config/detekt/detekt.yml           # Detekt static analysis config
@@ -85,7 +85,7 @@ LRReader/
 
 | File | Purpose |
 |---|---|
-| `EhApplication.kt` | App entry point; calls `ServiceRegistry.initialize()` |
+| `EhApplication.kt` | App entry point; calls `ServiceRegistry.initialize()`, defers JNI init + EhFilter load to background |
 | `ServiceRegistry.kt` | Central singleton registry replacing old EhApplication service locator |
 | `module/AppModule.kt` | App-level services (crash reporting, analytics) |
 | `module/ClientModule.kt` | LRR API clients + auth |
@@ -99,6 +99,7 @@ LRReader/
 | `settings/NetworkSettings.kt` | Network/proxy preferences |
 | `settings/ReadingSettings.kt` | Reader preferences |
 | `settings/SecuritySettings.kt` | Auth/security preferences |
+| `client/lrr/LRRApiUtils.kt` | Shared utilities: `parseBaseUrl()`, `retryOnFailure()`, `friendlyError()`, JSON/exception defs |
 | `client/lrr/LRRArchiveApi.kt` | Archive search/list/detail/upload/delete/metadata API |
 | `client/lrr/LRRSearchApi.kt` | Search + random endpoint |
 | `client/lrr/LRRCategoryApi.kt` | Category CRUD + archive association |
@@ -194,7 +195,8 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 - `CoroutineModule` provides `applicationScope` and `ioScope` with `SupervisorJob` + `CoroutineExceptionHandler`
 - `LRRCoroutineHelper.runSuspend()` has a **runtime main-thread guard** that throws if called on the UI thread
 - **No `AsyncTask` anywhere** — all replaced with `IoThreadPoolExecutor` + `Handler`
-- **No main-thread DB calls** — all `EhDB.*()` calls from UI code are wrapped in `IoThreadPoolExecutor`
+- **No main-thread DB calls** — all `EhDB.*()` calls from UI code are wrapped in `IoThreadPoolExecutor` or coroutine scopes
+- **No `runBlocking` in new code** — use `scope.launch {}` or `suspend fun` instead. Remaining `runBlocking` calls are legacy bridges for Java callers only.
 - Thread pool: `IoThreadPoolExecutor` for parallel image/network work
 
 ### Networking (OkHttp)
@@ -255,17 +257,17 @@ Settings are now Kotlin objects in `settings/`:
 
 ## Testing
 
-Unit tests live in `app/src/test/java/`. 33 test files covering:
+Unit tests live in `app/src/test/java/`. 42 test files, 405 tests covering:
 
 - All LRR API classes (`LRRArchiveApiTest`, `LRRSearchApiTest`, `LRRCategoryApiTest`, etc.) using `MockWebServer`
 - All LRR data classes (`LRRArchiveTest`, `LRRCategoryTest`, etc.)
 - `LRRTagStatTest` + `LRRTagCacheTest` — tag autocomplete data + cache (18 tests)
 - `LRRArchivePagingSourceTest` — Paging 3 source (16 tests)
-- `DownloadManagerTest` — download state machine, labels, queue, notifications (18 tests)
+- `DownloadManagerTest` — download state machine, labels, queue, notifications (18 tests, uses injected `CoroutineScope`)
 - `DownloadSpeedTrackerTest` — speed calculation + remaining time
 - `GalleryInfoParcelTest` — Parcelable round-trip for GalleryInfo + DownloadInfo (11 tests)
 - `TagEditDialogTest` — tag parsing + formatting round-trip (18 tests)
-- `EhFilterTest` — title/tag/uploader/namespace filtering (35 tests)
+- `EhFilterTest` — title/tag/uploader/namespace filtering (35 tests, uses `loadFromList()` for DB-free setup)
 - `RoomMigrationTest` — schema integrity verification
 - `RoomMigrationPathTest` — migration path tests v9→v10→v11→v12 (11 tests)
 - `ServerProfileDaoTest` — DAO CRUD verification
@@ -331,7 +333,7 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 3. **ServiceRegistry:** Replaces the old service-locator pattern in `EhApplication`. Initialize modules here; don't add new statics to `EhApplication`. Includes `CoroutineModule` for scoped coroutines.
 
-4. **LRR API surface:** Full LANraragi REST API wrapped in `client/lrr/`. Add new endpoints here as `suspend` functions returning `@Serializable` data classes.
+4. **LRR API surface:** Full LANraragi REST API wrapped in `client/lrr/`. Add new endpoints here as `suspend` functions returning `@Serializable` data classes. Use `parseBaseUrl(baseUrl)` from `LRRApiUtils.kt` to build URLs — never `toHttpUrlOrNull()!!`.
 
 5. **Room schema migrations:** Schema at v12, exported. Write an explicit `Migration` object for every schema change.
 
@@ -339,7 +341,7 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 7. **EhDB dual API:** ~22 remaining `@JvmStatic` bridge methods use `blockingDb()` for Java callers (logs warning on main thread). Kotlin callers should use `suspend fun *Async()` versions directly. Dead methods and Kotlin-only bridges have been removed — do not add new `blockingDb` bridges.
 
-8. **Download subsystem (100% Kotlin):** `DownloadManager.kt` (state management), `LRRDownloadWorker.kt` (background downloads with retry, format validation), `DownloadSpeedTracker.kt` (speed monitoring), `DownloadInfoListener.kt`/`DownloadListener.kt` (interfaces). Thread-safe via `CopyOnWriteArrayList` and `ConcurrentHashMap`. LRU cache (500 MB) for page images. 18 unit tests cover state machine, labels, queue, and notifications.
+8. **Download subsystem (100% Kotlin, coroutine-based):** `DownloadManager.kt` (state management via `Mutex` + `CompletableDeferred`), `LRRDownloadWorker.kt` (background downloads with retry, format validation), `DownloadSpeedTracker.kt` (speed monitoring), `DownloadInfoListener.kt`/`DownloadListener.kt` (interfaces). Thread-safe via `Mutex` for shared state, `CopyOnWriteArrayList` for active tasks, `ConcurrentHashMap` for workers. All DB writes use `scope.launch { EhDB.*Async() }` — never `runBlocking`. Worker callbacks use immutable `sealed interface DownloadEvent` (not mutable object pool). `awaitInit()` has 10s timeout + main-thread guard. Constructor accepts `CoroutineScope` for testability. `containLabel()` uses `HashSet` for O(1) lookup. LRU cache (500 MB) for page images. 18 unit tests cover state machine, labels, queue, and notifications.
 
 9. **Multi-server support:** `ServerProfile` entity + `LRRAuthManager` handle per-server credentials. Server selection affects all API calls. Credentials are encrypted.
 
@@ -367,6 +369,14 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 21. **Network security:** `network_security_config.xml` allows cleartext globally (`cleartextTrafficPermitted="true"`) because LANraragi servers are typically accessed via bare LAN IP over HTTP. Android's `<domain-config>` has no CIDR/wildcard-IP support. `LRRAuthInterceptor` ensures the API key is only sent to the configured server host. User-installed CAs are trusted for self-signed HTTPS setups.
 
+22. **EncryptedSharedPreferences recovery:** When Android KeyStore is unavailable (device migration, corruption), `LRRAuthManager.isNeedsReauthentication()` returns true. `MainActivity.onCreate2()` checks this flag and shows an AlertDialog directing the user to `ServerListScene` to re-enter credentials. Without this, the app silently falls back to the initial setup page because `isConfigured()` returns false.
+
+23. **App startup order:** `EhApplication.onCreate()` initializes core services synchronously (Settings, LRRAuthManager, EhDB, ServiceRegistry) then defers heavy work to background: JNI initialization (Image, Native, A7Zip, BitmapUtils) runs on `IoThreadPoolExecutor`, EhFilter loads from DB via `ioScope.launch`. Profile migration and old DB merge also run on background threads.
+
+24. **EhFilter initialization:** `EhFilter` constructor does NOT touch the database. Filters load asynchronously via `suspend fun loadFromDb()` called from `EhApplication` on `ioScope`. Until loaded, filter lists are empty (nothing is filtered — safe default). `addFilter()`/`deleteFilter()` persist to DB via `ioScope.launch`, not `runBlocking`.
+
+25. **ProGuard log stripping:** Release builds strip `Log.v()`, `Log.d()`, `Log.i()`, and `Log.w()` via `-assumenosideeffects`. Only `Log.e()` is preserved for crash diagnostics.
+
 ---
 
 ## What NOT to Do
@@ -381,6 +391,8 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 - Do not hardcode dependency versions in `build.gradle` — use `libs.versions.toml`
 - Do not add new singletons to `EhApplication` — use `ServiceRegistry` modules
 - Do not add new `blockingDb()` bridges in `EhDB` — Kotlin callers use `suspend` Async versions directly
+- Do not use `runBlocking` in new code — use `scope.launch {}` or `suspend fun` instead
+- Do not use `toHttpUrlOrNull()!!` to build LRR API URLs — use `parseBaseUrl()` from `LRRApiUtils.kt`
 - Do not use `notifyDataSetChanged()` on RecyclerView — use DiffUtil or specific `notifyItem*()` calls
 - Do not introduce new visual themes or Material3 components — match existing `RoundSideRectDrawable` + theme attr style
 - Do not add `x86_64` ABI filter to release builds — release is arm64-v8a only (debug includes x86_64 for emulator)

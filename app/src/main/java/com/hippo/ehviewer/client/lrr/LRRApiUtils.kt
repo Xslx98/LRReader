@@ -10,6 +10,7 @@ import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Response
 import java.io.IOException
 import java.nio.ByteBuffer
@@ -36,6 +37,15 @@ internal fun arcidToGid(arcid: String): Long {
     val gid = ByteBuffer.wrap(digest, 0, 8).getLong() and Long.MAX_VALUE
     arcidGidCache.put(arcid, gid)
     return gid
+}
+
+/**
+ * Parse [baseUrl] into an [okhttp3.HttpUrl], throwing a clear [IOException]
+ * instead of crashing with NPE if the URL is malformed.
+ */
+internal fun parseBaseUrl(baseUrl: String): okhttp3.HttpUrl {
+    return baseUrl.toHttpUrlOrNull()
+        ?: throw IOException("Invalid server URL: $baseUrl")
 }
 
 /** Shared Json instance with lenient parsing. */
