@@ -280,7 +280,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
 
         // Get start page
         val startPage: Int = if (savedInstanceState == null) {
-            if (mPage >= 0) mPage else mGalleryProvider!!.startPage
+            if (mPage >= 0) mPage else mGalleryProvider!!.getStartPage()
         } else {
             mSliderController.currentIndex
         }
@@ -331,7 +331,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
             .build()
         mGLRootView!!.setContentPane(mGalleryView)
         mGLRootView!!.setOnGenericMotionListener(mInputHandler::handleGenericMotion)
-        mGalleryProvider!!.setGalleryView(mGalleryView)
+        mGalleryProvider!!.galleryView = mGalleryView
         mGalleryProvider!!.setListener(mGalleryAdapter)
         mGalleryProvider!!.setGLRoot(mGLRootView)
 
