@@ -20,39 +20,49 @@ import android.graphics.Bitmap;
 import android.util.Log;
 import androidx.annotation.Nullable;
 import java.lang.ref.WeakReference;
+import java.util.ArrayDeque;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.Map;
 
 class BitmapPool {
 
     private static final String TAG = BitmapPool.class.getSimpleName();
 
-    private final Set<WeakReference<Bitmap>> mReusableBitmapSet = new LinkedHashSet<>();
+    private final Map<Long, ArrayDeque<WeakReference<Bitmap>>> mPool = new HashMap<>();
+
+    private static long sizeKey(int width, int height) {
+        return ((long) width << 32) | (height & 0xFFFFFFFFL);
+    }
 
     public synchronized void put(@Nullable Bitmap bitmap) {
         if (bitmap != null) {
-            mReusableBitmapSet.add(new WeakReference<>(bitmap));
+            long key = sizeKey(bitmap.getWidth(), bitmap.getHeight());
+            ArrayDeque<WeakReference<Bitmap>> deque = mPool.get(key);
+            if (deque == null) {
+                deque = new ArrayDeque<>();
+                mPool.put(key, deque);
+            }
+            deque.add(new WeakReference<>(bitmap));
         }
     }
 
     @Nullable
     public synchronized Bitmap get(int width, int height) {
-        final Iterator<WeakReference<Bitmap>> iterator = mReusableBitmapSet.iterator();
-        Bitmap item;
-        while (iterator.hasNext()) {
-            item = iterator.next().get();
-            if (item != null) {
-                if (item.getWidth() == width && item.getHeight() == height) {
-                    // Remove from reusable set so it can't be used again.
-                    iterator.remove();
-                    return item;
+        long key = sizeKey(width, height);
+        ArrayDeque<WeakReference<Bitmap>> deque = mPool.get(key);
+        if (deque != null) {
+            while (!deque.isEmpty()) {
+                WeakReference<Bitmap> ref = deque.poll();
+                Bitmap bitmap = ref.get();
+                if (bitmap != null) {
+                    if (deque.isEmpty()) {
+                        mPool.remove(key);
+                    }
+                    return bitmap;
                 }
-            } else {
-                // Remove from the set if the reference has been cleared or
-                // it can't be used.
-                iterator.remove();
             }
+            mPool.remove(key);
         }
 
         // Can not find reusable bitmap
