@@ -60,7 +60,7 @@ class DownloadFilterHelper(private val mCallback: Callback) : DownloadSearchCall
         fun updatePaginationIndicator()
         fun updateView()
         fun queryUnreadSpiderInfo()
-        fun notifyDataSetChanged()
+        fun notifyListChanged()
     }
 
     private var mSelectedCategory = EhUtils.ALL_CATEGORY
@@ -198,7 +198,7 @@ class DownloadFilterHelper(private val mCallback: Callback) : DownloadSearchCall
             }
             mCallback.setList(filtered)
         }
-        mCallback.notifyDataSetChanged()
+        mCallback.notifyListChanged()
         mCallback.updateTitle()
         mCallback.updatePaginationIndicator()
         mCallback.updateView()
