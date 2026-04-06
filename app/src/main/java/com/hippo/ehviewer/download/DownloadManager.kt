@@ -863,11 +863,7 @@ class DownloadManager(
 
         // Remove from DB on background thread
         if (gidsToRemove.isNotEmpty()) {
-            scope.launch {
-                for (gid in gidsToRemove) {
-                    EhDB.removeDownloadInfoAsync(gid)
-                }
-            }
+            scope.launch { EhDB.removeDownloadInfoBatchAsync(gidsToRemove) }
         }
 
         // Update listener
@@ -1130,9 +1126,7 @@ class DownloadManager(
         val infosToUpdate = ArrayList(list)
         scope.launch {
             EhDB.updateDownloadLabelAsync(labelToUpdate)
-            for (info in infosToUpdate) {
-                EhDB.putDownloadInfoAsync(info)
-            }
+            EhDB.putDownloadInfoBatchAsync(infosToUpdate)
         }
 
         // Notify listener
@@ -1177,9 +1171,7 @@ class DownloadManager(
         val infosToUpdate = ArrayList(list)
         scope.launch {
             EhDB.removeDownloadLabelAsync(labelToRemove)
-            for (info in infosToUpdate) {
-                EhDB.putDownloadInfoAsync(info)
-            }
+            EhDB.putDownloadInfoBatchAsync(infosToUpdate)
         }
 
         // Notify listener

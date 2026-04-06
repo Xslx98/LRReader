@@ -342,6 +342,18 @@ object EhDB {
         sDatabase.downloadDao().deleteDownloadByKey(gid)
     }
 
+    suspend fun putDownloadInfoBatchAsync(list: List<DownloadInfo>) {
+        sDatabase.withTransaction {
+            sDatabase.downloadDao().insertAll(list)
+        }
+    }
+
+    suspend fun removeDownloadInfoBatchAsync(gids: List<Long>) {
+        sDatabase.withTransaction {
+            sDatabase.downloadDao().deleteByGids(gids)
+        }
+    }
+
     // ═══════════════════════════════════════════════════════════
     // DOWNLOAD DIRNAME
     // ═══════════════════════════════════════════════════════════
