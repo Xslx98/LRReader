@@ -253,7 +253,7 @@ Settings are now Kotlin objects in `settings/`:
 
 ## Testing
 
-Unit tests live in `app/src/test/java/`. 39 test files covering:
+Unit tests live in `app/src/test/java/`. 40 test files covering:
 
 - All LRR API classes (`LRRArchiveApiTest`, `LRRSearchApiTest`, `LRRCategoryApiTest`, etc.) using `MockWebServer`
 - All LRR data classes (`LRRArchiveTest`, `LRRCategoryTest`, etc.)
@@ -265,6 +265,7 @@ Unit tests live in `app/src/test/java/`. 39 test files covering:
 - `TagEditDialogTest` — tag parsing + formatting round-trip (18 tests)
 - `EhFilterTest` — title/tag/uploader/namespace filtering (35 tests)
 - `RoomMigrationTest` — schema integrity verification
+- `RoomMigrationPathTest` — migration path tests v9→v10→v11→v12 (11 tests)
 - `ServerProfileDaoTest` — DAO CRUD verification
 - `GalleryInfoDiffTest` — DiffUtil identity/content equality contracts
 - `ContentHelperDiffUtilTest` — DiffUtil dispatch operations
