@@ -14,8 +14,6 @@ import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.client.lrr.data.LRRSearchResult
-import com.hippo.ehviewer.client.parser.GalleryDetailUrlParser
-import com.hippo.ehviewer.client.parser.GalleryPageUrlParser
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.ui.scene.ProgressScene
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
@@ -58,22 +56,9 @@ class GallerySearchHelper(private val mCallback: Callback) {
      * and returns navigation suggestions.
      */
     fun createSuggestionProvider(): SearchBar.SuggestionProvider {
+        // LANraragi: E-Hentai URL parsing removed — no URL-based suggestions
         return object : SearchBar.SuggestionProvider {
-            override fun providerSuggestions(text: String): List<SearchBar.Suggestion>? {
-                val result1 = GalleryDetailUrlParser.parse(text, false)
-                if (result1 != null) {
-                    return listOf(
-                        GalleryDetailUrlSuggestion(mCallback, result1.gid, result1.token)
-                    )
-                }
-                val result2 = GalleryPageUrlParser.parse(text, false)
-                if (result2 != null) {
-                    return listOf(
-                        GalleryPageUrlSuggestion(mCallback, result2.gid, result2.pToken, result2.page)
-                    )
-                }
-                return null
-            }
+            override fun providerSuggestions(text: String): List<SearchBar.Suggestion>? = null
         }
     }
 
