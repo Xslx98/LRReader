@@ -301,8 +301,15 @@ class DownloadsScene : ToolbarScene(),
                 override fun updatePaginationIndicator() { this@DownloadsScene.updatePaginationIndicator() }
                 override fun updateView() { this@DownloadsScene.updateView() }
                 override fun queryUnreadSpiderInfo() { this@DownloadsScene.queryUnreadSpiderInfo() }
-                @SuppressLint("NotifyDataSetChanged")
-                override fun notifyDataSetChanged() { mAdapter?.notifyDataSetChanged() }
+                override fun notifyListChanged() {
+                    val adapter = mAdapter ?: return
+                    val newList = if (mList != null) ArrayList(mList!!) else ArrayList()
+                    val result = DiffUtil.calculateDiff(
+                        DownloadInfoDiffCallback(mLastSnapshot, newList)
+                    )
+                    mLastSnapshot = newList
+                    result.dispatchUpdatesTo(adapter)
+                }
             }
         )
 
@@ -334,12 +341,18 @@ class DownloadsScene : ToolbarScene(),
         mActionFabDrawable = null
     }
 
-    @SuppressLint("NotifyDataSetChanged")
     fun updateForLabel() {
         viewModel.updateForLabel()
 
-        mAdapter?.notifyDataSetChanged()
-        mLastSnapshot = if (mList != null) ArrayList(mList!!) else ArrayList()
+        val adapter = mAdapter
+        if (adapter != null) {
+            val newList = if (mList != null) ArrayList(mList!!) else ArrayList()
+            val result = DiffUtil.calculateDiff(
+                DownloadInfoDiffCallback(mLastSnapshot, newList)
+            )
+            mLastSnapshot = newList
+            result.dispatchUpdatesTo(adapter)
+        }
         updateTitle()
         updatePaginationIndicator()
         queryUnreadSpiderInfo()
@@ -1195,7 +1208,6 @@ class DownloadsScene : ToolbarScene(),
     override fun forceShowSearchBar(): Boolean = false
 
 
-    @SuppressLint("NotifyDataSetChanged")
     private fun updateReadProcess(result: androidx.activity.result.ActivityResult) {
         if (result.resultCode == LOCAL_GALLERY_INFO_CHANGE) {
             val data = result.data
@@ -1231,9 +1243,8 @@ class DownloadsScene : ToolbarScene(),
                 }
                 if (position != -1) {
                     mAdapter!!.notifyItemChanged(position)
-                } else {
-                    mAdapter!!.notifyDataSetChanged()
                 }
+                // If item not found in current page, no notification needed
             }
         }
     }
@@ -1242,13 +1253,18 @@ class DownloadsScene : ToolbarScene(),
         // E-Hentai SpiderInfo sync removed -- no-op
     }
 
-    @SuppressLint("NotifyDataSetChanged")
     private fun spiderInfoResultCallBack(resultMap: Map<Long, SpiderInfo>) {
         viewModel.putAllSpiderInfo(resultMap)
-        mAdapter?.notifyDataSetChanged()
+        val adapter = mAdapter ?: return
+        val list = mList ?: return
+        // Content-only change: spider info updated, notify affected items
+        for (i in list.indices) {
+            if (resultMap.containsKey(list[i].gid)) {
+                adapter.notifyItemChanged(i)
+            }
+        }
     }
 
-    @SuppressLint("NotifyDataSetChanged")
     private fun initPage(position: Int) {
         if (mList != null && mList!!.size > viewModel.paginationSize && viewModel.canPagination) {
             viewModel.setIndexPage(position / viewModel.pageSize.value + 1)

@@ -67,11 +67,12 @@ object LRRAuthManager {
             sNeedsReauthentication = true
         }
         // Restore active profile (falls back to 0 when sPrefs is null)
-        sActiveProfileId = sPrefs?.getLong(KEY_ACTIVE_PROFILE_ID, 0L) ?: 0L
+        val prefs = sPrefs
+        sActiveProfileId = prefs?.getLong(KEY_ACTIVE_PROFILE_ID, 0L) ?: 0L
         // Migrate away from v1 SHA-256 pattern hash: remove stale key so hasPattern()
         // correctly returns false and prompts the user to re-enroll with PBKDF2.
-        if (sPrefs?.contains("pattern_hash") == true) {
-            sPrefs!!.edit().remove("pattern_hash").apply()
+        if (prefs?.contains("pattern_hash") == true) {
+            prefs.edit().remove("pattern_hash").apply()
         }
     }
 
@@ -97,13 +98,13 @@ object LRRAuthManager {
 
     @JvmStatic
     fun setServerUrl(url: String) {
-        if (sPrefs == null) return
+        val prefs = sPrefs ?: return
         // Remove trailing slash
         var cleanUrl = url
         if (cleanUrl.endsWith("/")) {
             cleanUrl = cleanUrl.substring(0, cleanUrl.length - 1)
         }
-        sPrefs!!.edit().putString(KEY_SERVER_URL, cleanUrl).apply()
+        prefs.edit().putString(KEY_SERVER_URL, cleanUrl).apply()
     }
 
     /**
@@ -116,8 +117,8 @@ object LRRAuthManager {
 
     @JvmStatic
     fun setApiKey(apiKey: String?) {
-        if (sPrefs == null) return
-        sPrefs!!.edit().putString(KEY_API_KEY, apiKey).apply()
+        val prefs = sPrefs ?: return
+        prefs.edit().putString(KEY_API_KEY, apiKey).apply()
     }
 
     /**
@@ -130,8 +131,8 @@ object LRRAuthManager {
 
     @JvmStatic
     fun setServerName(name: String?) {
-        if (sPrefs == null) return
-        sPrefs!!.edit().putString(KEY_SERVER_NAME, name).apply()
+        val prefs = sPrefs ?: return
+        prefs.edit().putString(KEY_SERVER_NAME, name).apply()
     }
 
     /**
@@ -154,7 +155,8 @@ object LRRAuthManager {
     @JvmStatic
     fun setActiveProfileId(id: Long) {
         sActiveProfileId = id
-        sPrefs?.edit()?.putLong(KEY_ACTIVE_PROFILE_ID, id)?.apply()
+        val prefs = sPrefs ?: return
+        prefs.edit().putLong(KEY_ACTIVE_PROFILE_ID, id).apply()
     }
 
     /**
@@ -175,12 +177,12 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun setApiKeyForProfile(profileId: Long, apiKey: String?) {
-        if (sPrefs == null) return
+        val prefs = sPrefs ?: return
         val prefKey = "api_key_$profileId"
         if (apiKey.isNullOrEmpty()) {
-            sPrefs!!.edit().remove(prefKey).apply()
+            prefs.edit().remove(prefKey).apply()
         } else {
-            sPrefs!!.edit().putString(prefKey, apiKey).apply()
+            prefs.edit().putString(prefKey, apiKey).apply()
         }
     }
 
@@ -193,8 +195,8 @@ object LRRAuthManager {
     /** Remove the stored API key for a profile (e.g., when the profile is deleted). */
     @JvmStatic
     fun clearApiKeyForProfile(profileId: Long) {
-        if (sPrefs == null) return
-        sPrefs!!.edit().remove("api_key_$profileId").apply()
+        val prefs = sPrefs ?: return
+        prefs.edit().remove("api_key_$profileId").apply()
     }
 
     // ── App-lock pattern (PBKDF2WithHmacSHA256 + random salt, never plaintext) ──
@@ -211,9 +213,9 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun setPattern(pattern: String?) {
-        if (sPrefs == null) return
+        val prefs = sPrefs ?: return
         if (pattern.isNullOrEmpty()) {
-            sPrefs!!.edit()
+            prefs.edit()
                 .remove(KEY_PATTERN_HASH_V2)
                 .remove(KEY_PATTERN_SALT)
                 .apply()
@@ -226,7 +228,7 @@ object LRRAuthManager {
         try {
             val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
             val hash = factory.generateSecret(spec).encoded
-            sPrefs!!.edit()
+            prefs.edit()
                 .putString(KEY_PATTERN_HASH_V2, Base64.encodeToString(hash, Base64.NO_WRAP))
                 .putString(KEY_PATTERN_SALT, Base64.encodeToString(salt, Base64.NO_WRAP))
                 .apply()
@@ -245,9 +247,9 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun verifyPattern(input: String?): Boolean {
-        if (sPrefs == null) return false
-        val saltStr = sPrefs!!.getString(KEY_PATTERN_SALT, null) ?: return false
-        val hashStr = sPrefs!!.getString(KEY_PATTERN_HASH_V2, null) ?: return false
+        val prefs = sPrefs ?: return false
+        val saltStr = prefs.getString(KEY_PATTERN_SALT, null) ?: return false
+        val hashStr = prefs.getString(KEY_PATTERN_HASH_V2, null) ?: return false
         val salt = Base64.decode(saltStr, Base64.NO_WRAP)
         val expected = Base64.decode(hashStr, Base64.NO_WRAP)
         val patChars = (input ?: "").toCharArray()

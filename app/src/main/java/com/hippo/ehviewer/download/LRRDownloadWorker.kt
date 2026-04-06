@@ -41,7 +41,19 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
 
     fun start() {
         cancelled = false
-        workerThread = Thread({ doDownload() }, "LRRDownload-$arcId").also { it.start() }
+        workerThread = Thread({
+            try {
+                doDownload()
+            } catch (e: Exception) {
+                if (!cancelled) {
+                    Log.e(TAG, "Uncaught exception in download worker", e)
+                    listener?.run {
+                        onPageFailure(0, "Unexpected error: ${e.message}", 0, 0, 0)
+                        onFinish(0, 0, 0)
+                    }
+                }
+            }
+        }, "LRRDownload-$arcId").also { it.start() }
     }
 
     fun cancel() {
