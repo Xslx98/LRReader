@@ -19,17 +19,20 @@ package com.hippo.util;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class SqlUtils {
 
+    private static final String TAG = "SqlUtils";
+
     public static void exeSQLSafely(SQLiteDatabase db, String sql) {
         try {
             db.execSQL(sql);
         } catch (SQLException e) {
-            // Ignore
+            Log.e(TAG, "Failed to execute SQL: " + sql, e);
         }
     }
 
@@ -40,15 +43,18 @@ public class SqlUtils {
     public static void dropAllTable(SQLiteDatabase db) {
         List<String> tables = new ArrayList<String>();
         Cursor cursor = db.rawQuery("SELECT * FROM sqlite_master WHERE type='table';", null);
-        cursor.moveToFirst();
-        while (!cursor.isAfterLast()) {
-            String tableName = cursor.getString(1);
-            if (!tableName.equals("android_metadata") &&
-                    !tableName.equals("sqlite_sequence"))
-                tables.add(tableName);
-            cursor.moveToNext();
+        try {
+            cursor.moveToFirst();
+            while (!cursor.isAfterLast()) {
+                String tableName = cursor.getString(1);
+                if (!tableName.equals("android_metadata") &&
+                        !tableName.equals("sqlite_sequence"))
+                    tables.add(tableName);
+                cursor.moveToNext();
+            }
+        } finally {
+            cursor.close();
         }
-        cursor.close();
 
         for(String tableName : tables) {
             dropTable(db, tableName);
@@ -76,7 +82,9 @@ public class SqlUtils {
             if (index != -1) {
                 return cursor.getInt(index) != 0;
             }
-        } catch (Exception e) { /* Ignore */ }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to read boolean column: " + column, e);
+        }
         return defValue;
     }
 
@@ -86,7 +94,9 @@ public class SqlUtils {
             if (index != -1) {
                 return cursor.getInt(index);
             }
-        } catch (Exception e) { /* Ignore */ }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to read int column: " + column, e);
+        }
         return defValue;
     }
 
@@ -96,7 +106,9 @@ public class SqlUtils {
             if (index != -1) {
                 return cursor.getLong(index);
             }
-        } catch (Exception e) { /* Ignore */ }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to read long column: " + column, e);
+        }
         return defValue;
     }
 
@@ -106,7 +118,9 @@ public class SqlUtils {
             if (index != -1) {
                 return cursor.getFloat(index);
             }
-        } catch (Exception e) { /* Ignore */ }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to read float column: " + column, e);
+        }
         return defValue;
     }
 
@@ -116,7 +130,9 @@ public class SqlUtils {
             if (index != -1) {
                 return cursor.getString(index);
             }
-        } catch (Exception e) { /* Ignore */ }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to read string column: " + column, e);
+        }
         return defValue;
     }
 }
