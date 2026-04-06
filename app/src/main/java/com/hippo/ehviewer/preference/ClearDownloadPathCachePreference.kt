@@ -22,13 +22,13 @@ import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.preference.MessagePreference
 
-class ClearDownloadPathCachePreference @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
-) : MessagePreference(context, attrs, defStyleAttr) {
+class ClearDownloadPathCachePreference : MessagePreference {
 
-    init {
+    constructor(context: Context) : super(context) { init(context) }
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) { init(context) }
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) { init(context) }
+
+    private fun init(context: Context) {
         setDialogMessage(context.getString(R.string.settings_advanced_clear_download_path_cache_message))
     }
 

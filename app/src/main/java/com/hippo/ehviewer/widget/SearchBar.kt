@@ -53,15 +53,15 @@ import com.hippo.lib.yorozuya.SimpleAnimatorListener
 import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.view.ViewTransition
 
-class SearchBar @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
-) : CardView(context, attrs, defStyleAttr),
+class SearchBar : CardView,
     View.OnClickListener,
     TextView.OnEditorActionListener,
     TextWatcher,
     SearchEditText.SearchEditTextListener {
+
+    constructor(context: Context) : super(context)
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
     companion object {
         private const val STATE_KEY_SUPER = "super"

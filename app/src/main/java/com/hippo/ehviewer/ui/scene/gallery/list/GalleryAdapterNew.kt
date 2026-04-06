@@ -196,36 +196,36 @@ abstract class GalleryAdapterNew(
                 (holder.thumb as TileThumbNew).setThumbSize(gi.thumbWidth, gi.thumbHeight)
                 holder.thumb.load(EhCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
                 // LANraragi doesn't use E-Hentai categories - hide triangle
-                holder.category.visibility = View.GONE
-                holder.simpleLanguage.text = gi.simpleLanguage
+                holder.category?.visibility = View.GONE
+                holder.simpleLanguage?.text = gi.simpleLanguage
             }
             else -> {
                 // TYPE_LIST or default
                 holder.thumb.load(EhCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
-                holder.title.text = EhUtils.getSuitableTitle(gi)
-                holder.uploader.text = gi.uploader
+                holder.title?.text = EhUtils.getSuitableTitle(gi)
+                holder.uploader?.text = gi.uploader
                 if (!AppearanceSettings.getShowGalleryRating()) {
-                    holder.rating.visibility = View.INVISIBLE
+                    holder.rating?.visibility = View.INVISIBLE
                 } else {
-                    holder.rating.setRating(gi.rating)
+                    holder.rating?.setRating(gi.rating)
                 }
 
                 // LANraragi doesn't use E-Hentai categories - hide badge
-                holder.category.visibility = View.GONE
-                holder.posted.text = gi.posted
+                holder.category?.visibility = View.GONE
+                holder.posted?.text = gi.posted
                 if (gi.pages == 0 || !AppearanceSettings.getShowGalleryPages()) {
-                    holder.pages.text = null
-                    holder.pages.visibility = View.GONE
+                    holder.pages?.text = null
+                    holder.pages?.visibility = View.GONE
                 } else {
                     if (showReadProgress) {
                         // Check cache first to avoid repeated file I/O
                         val cachedProgress = mReadProgressCache.get(gi.gid)
                         if (cachedProgress != null) {
                             val text = "${if (cachedProgress > 0) cachedProgress + 1 else 0}/${gi.pages}P"
-                            holder.pages.text = text
+                            holder.pages?.text = text
                         } else {
                             // Show default page count while async progress loads
-                            holder.pages.text = "${gi.pages}P"
+                            holder.pages?.text = "${gi.pages}P"
                             executor.submit {
                                 val startPage = SpiderQueen.findStartPage(mInflater.context, gi)
                                 mReadProgressCache.put(gi.gid, startPage)
@@ -237,25 +237,25 @@ abstract class GalleryAdapterNew(
                                     } else {
                                         "0/${gi.pages}P"
                                     }
-                                    holder.pages.text = text
+                                    holder.pages?.text = text
                                 }
                             }
                         }
                     } else {
-                        holder.pages.text = "${gi.pages}P"
+                        holder.pages?.text = "${gi.pages}P"
                     }
-                    holder.pages.visibility = View.VISIBLE
+                    holder.pages?.visibility = View.VISIBLE
                 }
                 if (TextUtils.isEmpty(gi.simpleLanguage)) {
-                    holder.simpleLanguage.text = null
-                    holder.simpleLanguage.visibility = View.GONE
+                    holder.simpleLanguage?.text = null
+                    holder.simpleLanguage?.visibility = View.GONE
                 } else {
-                    holder.simpleLanguage.text = gi.simpleLanguage
-                    holder.simpleLanguage.visibility = View.VISIBLE
+                    holder.simpleLanguage?.text = gi.simpleLanguage
+                    holder.simpleLanguage?.visibility = View.VISIBLE
                 }
-                holder.favourite.visibility =
+                holder.favourite?.visibility =
                     if (mShowFavourite && gi.favoriteSlot in -1..10) View.VISIBLE else View.GONE
-                holder.downloaded.visibility =
+                holder.downloaded?.visibility =
                     if (mDownloadManager.containDownloadInfo(gi.gid)) View.VISIBLE else View.GONE
             }
         }
@@ -277,15 +277,15 @@ abstract class GalleryAdapterNew(
     ) : RecyclerView.ViewHolder(itemView) {
 
         @JvmField val thumb: LoadImageViewNew = itemView.findViewById(R.id.thumb_new)
-        @JvmField var title: TextView = itemView.findViewById(R.id.title)
-        @JvmField val uploader: TextView = itemView.findViewById(R.id.uploader)
-        @JvmField val rating: SimpleRatingView = itemView.findViewById(R.id.rating)
-        @JvmField val category: TextView = itemView.findViewById(R.id.category)
-        @JvmField val posted: TextView = itemView.findViewById(R.id.posted)
-        @JvmField val pages: TextView = itemView.findViewById(R.id.pages)
-        @JvmField val simpleLanguage: TextView = itemView.findViewById(R.id.simple_language)
-        @JvmField val favourite: ImageView = itemView.findViewById(R.id.favourited)
-        @JvmField val downloaded: ImageView = itemView.findViewById(R.id.downloaded)
+        @JvmField var title: TextView? = itemView.findViewById(R.id.title)
+        @JvmField val uploader: TextView? = itemView.findViewById(R.id.uploader)
+        @JvmField val rating: SimpleRatingView? = itemView.findViewById(R.id.rating)
+        @JvmField val category: TextView? = itemView.findViewById(R.id.category)
+        @JvmField val posted: TextView? = itemView.findViewById(R.id.posted)
+        @JvmField val pages: TextView? = itemView.findViewById(R.id.pages)
+        @JvmField val simpleLanguage: TextView? = itemView.findViewById(R.id.simple_language)
+        @JvmField val favourite: ImageView? = itemView.findViewById(R.id.favourited)
+        @JvmField val downloaded: ImageView? = itemView.findViewById(R.id.downloaded)
 
         init {
             if (mType == 0) {

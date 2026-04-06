@@ -2,39 +2,29 @@
 <!--
   LANraragi Reader — Network Security Configuration
 
-  Security model:
-    base-config  : HTTPS only, system CA only — safe default for any public or cloud server.
-    domain-config: Cleartext HTTP and user-installed CAs allowed for local-network hostnames
-                   (localhost, *.local mDNS, *.lan router names, loopback).
-    debug-overrides: User CA trusted in debug builds for proxy/inspection tools.
+  LANraragi is a self-hosted server typically running on a LAN over plain HTTP.
+  Android's <domain-config> cannot match IP ranges (CIDR), so we must allow
+  cleartext globally for the base-config. The LRRAuthInterceptor ensures that
+  the API key is only sent to the configured server host, mitigating the risk
+  of credential leakage over unencrypted connections to other hosts.
 
-  Limitation: Android <domain-config> matches exact hostnames/IPs; CIDR ranges are not
-  supported. Users connecting via bare LAN IP (e.g., 192.168.1.x) over HTTP must add
-  their specific IP here, or use a *.local / *.lan hostname instead. Dynamic IP handling
-  is addressed at the code layer (LRRUrlHelper).
+  User-installed CAs are trusted so self-signed HTTPS setups (e.g., reverse
+  proxy with a private CA) work without extra configuration.
 -->
 <network-security-config>
 
-    <!-- Default: HTTPS only, system CA only -->
-    <base-config cleartextTrafficPermitted="false">
-        <trust-anchors>
-            <certificates src="system"/>
-        </trust-anchors>
-    </base-config>
-
-    <!-- Local-network hostnames: allow HTTP and user-installed CA for self-signed certs -->
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">localhost</domain>
-        <domain includeSubdomains="false">127.0.0.1</domain>
-        <!-- mDNS .local hostnames (e.g., myserver.local) -->
-        <domain includeSubdomains="true">local</domain>
-        <!-- Common router-assigned .lan suffix -->
-        <domain includeSubdomains="true">lan</domain>
+    <!--
+      Allow cleartext for all hosts: LANraragi servers are commonly accessed
+      via bare LAN IP (e.g., 192.168.x.x:3000) over HTTP. Android's
+      network_security_config has no CIDR/wildcard-IP support, so a blanket
+      allowance is the only way to support arbitrary LAN addresses.
+    -->
+    <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
             <certificates src="system"/>
             <certificates src="user"/>
         </trust-anchors>
-    </domain-config>
+    </base-config>
 
     <!-- Debug builds only: trust user CA for all hosts (Charles, mitmproxy, etc.) -->
     <debug-overrides>

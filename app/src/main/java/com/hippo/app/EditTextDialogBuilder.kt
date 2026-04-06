@@ -62,8 +62,8 @@ class EditTextDialogBuilder @SuppressLint("InflateParams") constructor(
     }
 
     override fun onEditorAction(v: TextView, actionId: Int, event: KeyEvent?): Boolean {
-        if (event != null && mDialog != null) {
-            val button = mDialog!!.getButton(DialogInterface.BUTTON_POSITIVE)
+        if (event != null) {
+            val button = mDialog?.getButton(DialogInterface.BUTTON_POSITIVE)
             button?.performClick()
             return true
         } else {

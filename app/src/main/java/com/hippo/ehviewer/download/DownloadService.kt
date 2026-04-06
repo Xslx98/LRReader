@@ -82,22 +82,14 @@ class DownloadService : Service(), DownloadListener {
         super.onDestroy()
 
         mNotifyManager = null
-        if (mDownloadManager != null) {
-            mDownloadManager!!.setDownloadListener(null)
-            mDownloadManager = null
-        }
+        mDownloadManager?.setDownloadListener(null)
+        mDownloadManager = null
         mDownloadingBuilder = null
         mDownloadedBuilder = null
         m509dBuilder = null
-        if (mDownloadingDelay != null) {
-            mDownloadingDelay!!.release()
-        }
-        if (mDownloadedDelay != null) {
-            mDownloadedDelay!!.release()
-        }
-        if (m509Delay != null) {
-            m509Delay!!.release()
-        }
+        mDownloadingDelay?.release()
+        mDownloadedDelay?.release()
+        m509Delay?.release()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -112,68 +104,60 @@ class DownloadService : Service(), DownloadListener {
     }
 
     private fun handleIntent(intent: Intent?) {
-        var action: String? = null
-        if (intent != null) {
-            action = intent.action
-        }
+        val action = intent?.action
         if (action == null) {
             checkStopSelf()
             return
         }
+        val dm = mDownloadManager
         when (action) {
             ACTION_CLEAR -> clear()
             ACTION_DELETE_RANGE -> {
-                val gidList = intent!!.getParcelableExtra<LongList>(KEY_GID_LIST)
-                if (gidList != null && mDownloadManager != null) {
-                    mDownloadManager!!.deleteRangeDownload(gidList)
+                val gidList = intent.getParcelableExtra<LongList>(KEY_GID_LIST)
+                if (gidList != null && dm != null) {
+                    dm.deleteRangeDownload(gidList)
                 }
             }
 
             ACTION_DELETE -> {
-                val gid = intent!!.getLongExtra(KEY_GID, -1)
-                if (gid != -1L && mDownloadManager != null) {
-                    mDownloadManager!!.deleteDownload(gid)
+                val gid = intent.getLongExtra(KEY_GID, -1)
+                if (gid != -1L && dm != null) {
+                    dm.deleteDownload(gid)
                 }
             }
 
-            ACTION_STOP_ALL -> if (mDownloadManager != null) {
-                mDownloadManager!!.stopAllDownload()
-            }
+            ACTION_STOP_ALL -> dm?.stopAllDownload()
 
             ACTION_STOP_RANGE -> {
-                val gidListS = intent!!.getParcelableExtra<LongList>(KEY_GID_LIST)
-                if (gidListS != null && mDownloadManager != null) {
-                    mDownloadManager!!.stopRangeDownload(gidListS)
+                val gidListS = intent.getParcelableExtra<LongList>(KEY_GID_LIST)
+                if (gidListS != null && dm != null) {
+                    dm.stopRangeDownload(gidListS)
                 }
             }
 
-            ACTION_STOP_CURRENT -> if (mDownloadManager != null) {
-                mDownloadManager!!.stopCurrentDownload()
-            }
+            ACTION_STOP_CURRENT -> dm?.stopCurrentDownload()
 
             ACTION_STOP -> {
-                val gidS = intent!!.getLongExtra(KEY_GID, -1)
-                if (gidS != -1L && mDownloadManager != null) {
-                    mDownloadManager!!.stopDownload(gidS)
+                val gidS = intent.getLongExtra(KEY_GID, -1)
+                if (gidS != -1L && dm != null) {
+                    dm.stopDownload(gidS)
                 }
             }
 
-            ACTION_START_ALL -> if (mDownloadManager != null) {
-                mDownloadManager!!.startAllDownload()
-            }
+            ACTION_START_ALL -> dm?.startAllDownload()
 
             ACTION_START_RANGE -> {
-                val gidListSR = intent!!.getParcelableExtra<LongList>(KEY_GID_LIST)
-                if (gidListSR != null && mDownloadManager != null) {
-                    mDownloadManager!!.startRangeDownload(gidListSR)
+                val gidListSR = intent.getParcelableExtra<LongList>(KEY_GID_LIST)
+                if (gidListSR != null && dm != null) {
+                    dm.startRangeDownload(gidListSR)
                 }
             }
 
             ACTION_START -> {
-                val gi = intent!!.getParcelableExtra<GalleryInfo>(KEY_GALLERY_INFO)
+                val gi = intent.getParcelableExtra<GalleryInfo>(KEY_GALLERY_INFO)
                 val label = intent.getStringExtra(KEY_LABEL)
-                if (gi != null && mDownloadManager != null) {
-                    mDownloadManager!!.startDownload(gi, label)
+                if (gi != null && dm != null) {
+                    dm.startDownload(gi, label)
                 }
             }
         }

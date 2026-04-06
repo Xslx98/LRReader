@@ -25,15 +25,15 @@ import com.hippo.ehviewer.widget.CategoryTable
 import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.preference.DialogPreference
 
-class DefaultCategoryPreference @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
-) : DialogPreference(context, attrs, defStyleAttr) {
+class DefaultCategoryPreference : DialogPreference {
+
+    constructor(context: Context) : super(context) { init() }
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) { init() }
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) { init() }
 
     private var mCategoryTable: CategoryTable? = null
 
-    init {
+    private fun init() {
         setDialogLayoutResource(R.layout.preference_dialog_default_categories)
     }
 
