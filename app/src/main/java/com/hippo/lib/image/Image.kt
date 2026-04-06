@@ -16,6 +16,7 @@ import android.graphics.drawable.AnimationDrawable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
+import android.util.Log
 import androidx.core.graphics.drawable.toDrawable
 
 import java.io.FileInputStream
@@ -144,12 +145,18 @@ class Image private constructor(
 
     private fun prepareBitmap() {
         if (mBitmap != null) return
-        mBitmap = createBitmap(width, height)
+        try {
+            mBitmap = createBitmap(width, height)
+        } catch (e: OutOfMemoryError) {
+            mBitmap = null
+            Log.e(TAG, "OOM creating bitmap ${width}x${height}")
+        }
     }
 
     private fun updateBitmap() {
         prepareBitmap()
-        mObtainedDrawable!!.draw(Canvas(mBitmap!!))
+        val bitmap = mBitmap ?: return
+        mObtainedDrawable!!.draw(Canvas(bitmap))
     }
 
     @Synchronized
@@ -241,6 +248,7 @@ class Image private constructor(
         }
 
     companion object {
+        private const val TAG = "Image"
         var screenWidth: Int = 0
         var screenHeight: Int = 0
 
