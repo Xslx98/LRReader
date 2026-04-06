@@ -16,9 +16,8 @@ import org.robolectric.annotation.Config
  * Uses Robolectric because [LRRAuthManager.initialize] creates [EncryptedSharedPreferences]
  * which requires an Android Context. The test Application is a plain [android.app.Application]
  * so the Android KeyStore is unavailable in this environment — [LRRAuthManager.initialize]
- * will set sPrefs=null and sNeedsReauthentication=true. We recover via
- * [LRRAuthManager.initializeForTesting] which injects a plain SharedPreferences so that all
- * credential round-trip tests remain meaningful.
+ * will set sPrefs=null. We always recover via [LRRAuthManager.initializeForTesting] which
+ * injects a plain SharedPreferences so that all credential round-trip tests remain meaningful.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], application = android.app.Application::class)
@@ -31,13 +30,13 @@ class LRRAuthManagerTest {
         ctx = ApplicationProvider.getApplicationContext()
         LRRAuthManager.initialize(ctx)
         // In Robolectric, Android KeyStore is unavailable so EncryptedSharedPreferences
-        // initialization fails and sPrefs is left null. Inject a plain SharedPreferences
-        // so the remaining tests can exercise credential storage logic.
-        if (LRRAuthManager.isNeedsReauthentication()) {
-            LRRAuthManager.initializeForTesting(
-                ctx.getSharedPreferences("lrr_auth_test", android.content.Context.MODE_PRIVATE)
-            )
-        }
+        // initialization fails and sPrefs is left null. Always inject a plain
+        // SharedPreferences so the remaining tests can exercise credential storage logic.
+        // (With improved degradation detection, isNeedsReauthentication() is false for
+        // fresh installs even when sPrefs is null, so we always inject here.)
+        LRRAuthManager.initializeForTesting(
+            ctx.getSharedPreferences("lrr_auth_test", android.content.Context.MODE_PRIVATE)
+        )
     }
 
     @After
