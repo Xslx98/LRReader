@@ -182,21 +182,21 @@ abstract class GalleryAdapter(
                 (holder.thumb as TileThumb).setThumbSize(gi.thumbWidth, gi.thumbHeight)
                 holder.thumb.load(EhCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
                 // LANraragi doesn't use E-Hentai categories - hide triangle
-                holder.category.visibility = View.GONE
-                holder.simpleLanguage.text = gi.simpleLanguage
+                holder.category?.visibility = View.GONE
+                holder.simpleLanguage?.text = gi.simpleLanguage
             }
             else -> {
                 // TYPE_LIST or default
                 holder.thumb.load(EhCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
-                holder.title.text = EhUtils.getSuitableTitle(gi)
-                holder.uploader.text = gi.uploader
-                holder.rating.setRating(gi.rating)
+                holder.title?.text = EhUtils.getSuitableTitle(gi)
+                holder.uploader?.text = gi.uploader
+                holder.rating?.setRating(gi.rating)
                 // LANraragi doesn't use E-Hentai categories - hide badge
-                holder.category.visibility = View.GONE
-                holder.posted.text = gi.posted
+                holder.category?.visibility = View.GONE
+                holder.posted?.text = gi.posted
                 if (gi.pages == 0 || !AppearanceSettings.getShowGalleryPages()) {
-                    holder.pages.text = null
-                    holder.pages.visibility = View.GONE
+                    holder.pages?.text = null
+                    holder.pages?.visibility = View.GONE
                 } else {
                     executor.submit {
                         val startPage = SpiderQueen.findStartPage(mInflater.context, gi)
@@ -206,22 +206,22 @@ abstract class GalleryAdapter(
                             } else {
                                 "0/${gi.pages}P"
                             }
-                            holder.pages.text = text
+                            holder.pages?.text = text
                         }
                     }
-                    holder.pages.text = "${gi.pages}P"
-                    holder.pages.visibility = View.VISIBLE
+                    holder.pages?.text = "${gi.pages}P"
+                    holder.pages?.visibility = View.VISIBLE
                 }
                 if (TextUtils.isEmpty(gi.simpleLanguage)) {
-                    holder.simpleLanguage.text = null
-                    holder.simpleLanguage.visibility = View.GONE
+                    holder.simpleLanguage?.text = null
+                    holder.simpleLanguage?.visibility = View.GONE
                 } else {
-                    holder.simpleLanguage.text = gi.simpleLanguage
-                    holder.simpleLanguage.visibility = View.VISIBLE
+                    holder.simpleLanguage?.text = gi.simpleLanguage
+                    holder.simpleLanguage?.visibility = View.VISIBLE
                 }
-                holder.favourited.visibility =
+                holder.favourited?.visibility =
                     if (mShowFavourited && gi.favoriteSlot in -1..10) View.VISIBLE else View.GONE
-                holder.downloaded.visibility =
+                holder.downloaded?.visibility =
                     if (mDownloadManager.containDownloadInfo(gi.gid)) View.VISIBLE else View.GONE
             }
         }

@@ -6,7 +6,7 @@
 
 - **Application ID:** `com.lanraragi.reader`
 - **Namespace:** `com.hippo.ehviewer` (legacy, retained from EhViewer)
-- **Current Version:** 1.10.5 (versionCode 11005 — formula: `MAJOR*10000 + MINOR*100 + PATCH`)
+- **Current Version:** 1.11.0 (versionCode 11100 — formula: `MAJOR*10000 + MINOR*100 + PATCH`)
 - **License:** GPLv3
 
 ---
@@ -15,13 +15,13 @@
 
 | Layer | Technology | Version |
 |---|---|---|
-| Languages | Java / Kotlin hybrid (69% Kotlin) | Kotlin 2.1.0 |
+| Languages | Java / Kotlin hybrid (52% Kotlin by file count) | Kotlin 2.1.0 |
 | Android SDK | compileSdk 35, minSdk 28 | Android 9+ |
 | JDK | Java 21 | sourceCompatibility VERSION_21 |
 | Build | Gradle + AGP 8.13.2 | `./gradlew` + Version Catalog (`libs.versions.toml`) |
 | Network | OkHttp | 4.12.0 |
 | API Serialization | kotlinx-serialization | 1.8.1 (all JSON, Gson removed) |
-| Database | Room + KSP | 2.6.1, schema v11 (exported to `app/schemas/`) |
+| Database | Room + KSP | 2.6.1, schema v12 (exported to `app/schemas/`) |
 | Coroutines | kotlinx-coroutines | 1.10.2 |
 | Lifecycle | AndroidX lifecycle-runtime-ktx | 2.8.7 |
 | Image Decoding | Custom C/JNI (libjpeg-turbo, libpng, libwebp) | CMake |
@@ -30,7 +30,7 @@
 | Static Analysis | Detekt | 1.23.7 (config: `config/detekt/detekt.yml`) |
 | Paging | Jetpack Paging 3 | 3.3.6 |
 | ViewModel | AndroidX lifecycle-viewmodel-ktx | 2.8.7 |
-| ABI | arm64-v8a | 64-bit ARM only |
+| ABI | arm64-v8a (release), arm64-v8a + x86_64 (debug) | 64-bit only |
 
 ---
 
@@ -66,7 +66,7 @@ LRReader/
 │   │   │   │   └── CMakeLists.txt
 │   │   │   ├── res/                   # Resources (11 locale configs)
 │   │   │   └── AndroidManifest.xml
-│   │   └── test/                      # Unit tests (39 files, LRR API + DAO + DiffUtil + Paging + Filter)
+│   │   └── test/                      # Unit tests (33 files, LRR API + DAO + DiffUtil + Paging + Filter)
 │   ├── build.gradle                   # App-level Gradle config
 │   └── proguard-rules.pro
 ├── config/detekt/detekt.yml           # Detekt static analysis config
@@ -105,7 +105,7 @@ LRReader/
 | `client/lrr/LRRDatabaseApi.kt` | Tag statistics + database operations |
 | `client/lrr/LRRTagCache.kt` | In-memory tag autocomplete cache (10-min TTL) |
 | `client/lrr/LRRArchivePagingSource.kt` | Paging 3 source for gallery list |
-| `dao/AppDatabase.kt` | Room database schema (v11, schema exported) |
+| `dao/AppDatabase.kt` | Room database schema (v12, schema exported) |
 | `util/FlowBridge.kt` | Java→Kotlin Flow bridge for lifecycle-aware collection |
 | `ui/MainActivity.kt` | Main UI entry point + scene routing |
 | `ui/GalleryActivity.kt` | Reader/detail view |
@@ -119,6 +119,7 @@ LRReader/
 | `ui/scene/gallery/list/GalleryListViewModel.kt` | Paging 3 ViewModel for gallery list |
 | `ui/scene/download/DownloadsViewModel.kt` | Download list state, label, search, pagination ViewModel |
 | `ui/scene/gallery/detail/TagEditDialog.kt` | Grouped tag editor (chip-style, per-namespace) |
+| `ui/gallery/GalleryMenuHelper.kt` | Reader settings dialog (immediate-apply, no confirm button) |
 
 ---
 
@@ -173,8 +174,8 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 ### Language
 
 - **All new code must be Kotlin.** Java is legacy from EhViewer; do not write new Java.
-- **All `ehviewer` business code is Kotlin** — data, API, download, settings, modules, gallery providers, all Scenes, all Activities, all Adapters.
-- Remaining 76 Java files in `ehviewer` are small widgets, helpers, and E-Hentai legacy stubs.
+- **All `ehviewer` business code is Kotlin** — data, API, download, settings, modules, gallery providers, all Scenes, all Activities, all Adapters, all widgets.
+- Remaining 17 Java files in `ehviewer` are small callback interfaces, exception classes, legacy parsers, event classes, and annotations.
 - `com.hippo.*` framework (230 files: GLView, Conaco, ContentLayout, widgets) stays Java — stable legacy, rarely touched.
 
 ### Style
@@ -201,13 +202,14 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 - All LANraragi API calls go through `client/lrr/` package
 - `LRRAuthInterceptor` injects API key per request
 - `LRRClientProvider` supplies the configured `OkHttpClient`
-- DNS-over-HTTPS via `okhttp-dnsoverhttps`; HTTPS-first URL handling enforced
+- DNS-over-HTTPS via `okhttp-dnsoverhttps`
+- Cleartext HTTP allowed globally for LAN IP access; API key scoped to configured server via `LRRAuthInterceptor`
 
 ### Database (Room)
 
 - All entities and DAOs in `dao/` package
 - Use KSP (not KAPT) for annotation processing
-- Schema version is v11; exported to `app/schemas/` — always provide a `Migration` when bumping
+- Schema version is v12; exported to `app/schemas/` — always provide a `Migration` when bumping
 - **Never** use `fallbackToDestructiveMigration()` in production code
 - `AppDatabase.kt` is the single Room database instance
 
@@ -253,7 +255,7 @@ Settings are now Kotlin objects in `settings/`:
 
 ## Testing
 
-Unit tests live in `app/src/test/java/`. 40 test files covering:
+Unit tests live in `app/src/test/java/`. 33 test files covering:
 
 - All LRR API classes (`LRRArchiveApiTest`, `LRRSearchApiTest`, `LRRCategoryApiTest`, etc.) using `MockWebServer`
 - All LRR data classes (`LRRArchiveTest`, `LRRCategoryTest`, etc.)
@@ -291,8 +293,10 @@ Test reports: `app/build/reports/tests/`
 2. Build (`assembleAppReleaseDebug`)
 3. Unit tests (`testAppReleaseDebugUnitTest`)
 4. Lint (`lintAppReleaseDebug`)
-5. Detekt (continue-on-error)
-6. Upload artifacts: test reports, lint reports, detekt reports, APK
+5. Detekt (blocking — build fails on violations)
+6. JaCoCo test coverage report (continue-on-error)
+7. Upload artifacts: test reports, coverage reports, lint reports, detekt reports, APK
+8. Dependency submission (push to `main` only — GitHub dependency graph)
 
 Releases are managed locally via `gh release create` with pre-signed APKs. No CI-based release workflow.
 
@@ -329,7 +333,7 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 4. **LRR API surface:** Full LANraragi REST API wrapped in `client/lrr/`. Add new endpoints here as `suspend` functions returning `@Serializable` data classes.
 
-5. **Room schema migrations:** Schema at v11, exported. Write an explicit `Migration` object for every schema change.
+5. **Room schema migrations:** Schema at v12, exported. Write an explicit `Migration` object for every schema change.
 
 6. **DiffUtil in ContentLayout and DownloadsScene:** `ContentHelper.dispatchDiffUpdates()` for gallery list updates. `DownloadsScene` uses `DownloadInfoDiffCallback` with `gid`-based identity for `onUpdateAll()`/`onReload()`. Avoid `notifyDataSetChanged()` — use specific notifications or DiffUtil.
 
@@ -359,6 +363,10 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 19. **GalleryDetailViewModel:** `GalleryDetailViewModel.kt` manages gallery detail state (galleryInfo, galleryDetail, downloadInfo, gid, token, action, loading state) as `StateFlow` properties. `GalleryDetailScene` accesses state via shortcut property delegates that read/write ViewModel flows. Derived accessors (`getEffectiveGid()`, `getEffectiveToken()`, `getEffectiveUploader()`, `getEffectiveCategory()`, `getEffectiveGalleryInfo()`) centralize the fallback logic (detail > info > args). Cache lookup via `tryLoadFromCache()`. Scoped to Activity like `DownloadsViewModel`.
 
+20. **Reader settings immediate-apply:** `GalleryMenuHelper` applies settings immediately when any control changes (Spinner, SeekBar, Switch) — no confirm button. Uses an `initialized` flag to suppress listener callbacks during initial value loading. Brightness has a live preview listener delegated from `GalleryActivity`.
+
+21. **Network security:** `network_security_config.xml` allows cleartext globally (`cleartextTrafficPermitted="true"`) because LANraragi servers are typically accessed via bare LAN IP over HTTP. Android's `<domain-config>` has no CIDR/wildcard-IP support. `LRRAuthInterceptor` ensures the API key is only sent to the configured server host. User-installed CAs are trusted for self-signed HTTPS setups.
+
 ---
 
 ## What NOT to Do
@@ -375,4 +383,4 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 - Do not add new `blockingDb()` bridges in `EhDB` — Kotlin callers use `suspend` Async versions directly
 - Do not use `notifyDataSetChanged()` on RecyclerView — use DiffUtil or specific `notifyItem*()` calls
 - Do not introduce new visual themes or Material3 components — match existing `RoundSideRectDrawable` + theme attr style
-- Do not add `x86_64` ABI filter — release builds are arm64-v8a only
+- Do not add `x86_64` ABI filter to release builds — release is arm64-v8a only (debug includes x86_64 for emulator)

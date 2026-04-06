@@ -46,7 +46,7 @@ class ListCheckBoxDialogBuilder @SuppressLint("InflateParams") constructor(
         listView.onItemClickListener =
             AdapterView.OnItemClickListener { parent, view, position, id ->
                 listener?.onItemClick(this@ListCheckBoxDialogBuilder, mDialog, position)
-                mDialog!!.dismiss()
+                mDialog?.dismiss()
             }
         mCheckBox.text = checkText
         mCheckBox.isChecked = checked
