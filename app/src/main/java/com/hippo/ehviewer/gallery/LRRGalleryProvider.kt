@@ -23,6 +23,8 @@ import java.io.IOException
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.locks.LockSupport
 
 /**
  * GalleryProvider that fetches page images from a LANraragi server.
@@ -34,16 +36,22 @@ import java.util.concurrent.TimeUnit
  */
 class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo) : GalleryProvider2() {
 
+    /**
+     * Immutable snapshot of provider state. All three fields are read/written atomically
+     * via [stateRef] to eliminate multi-field race conditions (STAB-2).
+     */
+    private data class ProviderState(
+        val paths: Array<String>? = null,
+        val count: Int = GalleryProvider.STATE_WAIT,
+        val stopped: Boolean = false
+    )
+
     private val context: Context = context.applicationContext
     private val arcId: String = galleryInfo.token ?: "" // arcid stored in token by toGalleryInfo()
     private val serverUrl: String = LRRAuthManager.getServerUrl() ?: ""
 
-    // Page paths returned by extractArchive()
-    @Volatile
-    private var pagePaths: Array<String>? = null
-
-    @Volatile
-    private var pageCount: Int = GalleryProvider.STATE_WAIT
+    // Atomic provider state -- replaces individual @Volatile fields for pagePaths/pageCount/stopped
+    private val stateRef = AtomicReference(ProviderState())
 
     @Volatile
     private var errorMessage: String? = null
@@ -58,9 +66,6 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
     // Track start page for reading progress
     private var startPageValue: Int = loadReadingProgress(this.context, galleryInfo.gid)
 
-    // Cooperative stop flag for background tasks
-    @Volatile
-    private var stopped = false
 
     override fun start() {
         super.start()
@@ -102,9 +107,8 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
                         serverUrl, arcId
                     )
                 }
-                pagePaths = pages
-                pageCount = pages.size
-                Log.d(TAG, "Extracted $pageCount pages for $arcId")
+                stateRef.set(ProviderState(paths = pages, count = pages.size))
+                Log.d(TAG, "Extracted ${pages.size} pages for $arcId")
 
                 // Clear "new" flag
                 try {
@@ -173,7 +177,7 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
                         val weakGv = java.lang.ref.WeakReference(gv)
                         Handler(Looper.getMainLooper()).postDelayed({
                             val view = weakGv.get()
-                            if (view != null && !stopped) {
+                            if (view != null && !stateRef.get().stopped) {
                                 view.setCurrentPage(finalPage)
                                 Log.i(TAG, "[PROGRESS] setCurrentPage($finalPage) called")
                             } else {
@@ -188,7 +192,7 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to extract archive: ${e.message}", e)
                 errorMessage = "Failed to load pages: ${e.message}"
-                pageCount = GalleryProvider.STATE_ERROR
+                stateRef.updateAndGet { it.copy(count = GalleryProvider.STATE_ERROR) }
                 notifyDataChanged()
             }
         }
@@ -196,13 +200,8 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
 
     override fun stop() {
         super.stop()
-        stopped = true
+        stateRef.updateAndGet { it.copy(stopped = true) }
         pageClient = null
-        // Note: do NOT call pageLocks.clear() here — IO threads may still hold
-        // lock objects from the map. Clearing would cause computeIfAbsent to create
-        // new lock instances, allowing concurrent downloads of the same page.
-        // The ConcurrentHashMap entries are GC'd with this Provider instance.
-
         // Safe to clear: stopped flag prevents new requests from entering onRequest()
         inflightRequests.clear()
 
@@ -233,7 +232,7 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
         }
     }
 
-    override fun size(): Int = pageCount
+    override fun size(): Int = stateRef.get().count
 
     override fun getImageFilename(index: Int): String {
         return String.format(
@@ -272,7 +271,8 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
     }
 
     override fun onRequest(index: Int) {
-        val paths = pagePaths
+        val state = stateRef.get()
+        val paths = state.paths
         if (paths == null || index < 0 || index >= paths.size) {
             notifyPageFailed(index, "Page not available")
             return
@@ -321,13 +321,14 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
 
     private fun getCacheFile(index: Int): File = File(cacheDir, "page_$index")
 
-    // Per-page lock to prevent concurrent downloads of the same page
-    private val pageLocks = ConcurrentHashMap<Int, Any>()
+    // Striped locks to prevent concurrent downloads of the same page (PERF-6).
+    // Fixed-size array replaces unbounded ConcurrentHashMap<Int, Any>.
+    private val pageLocks = Array(STRIPE_COUNT) { Any() }
 
     // Track in-flight page requests to avoid submitting duplicate tasks to the thread pool
     private val inflightRequests = ConcurrentHashMap<Int, Boolean>()
 
-    private fun getPageLock(index: Int): Any = pageLocks.computeIfAbsent(index) { Any() }
+    private fun getPageLock(index: Int): Any = pageLocks[index.and(STRIPE_COUNT - 1)]
 
     /** Progress callback interface for download progress reporting */
     private fun interface ProgressCallback {
@@ -337,7 +338,7 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
     /**
      * Download a page to cache if not already cached.
      * Uses atomic write (temp file + fsync + rename) to prevent corruption.
-     * Thread-safe: per-page locking prevents concurrent downloads of the same page.
+     * Thread-safe: per-page striped locking prevents concurrent downloads of the same page.
      *
      * @param progressCallback if non-null, called with (index, percent) during download
      */
@@ -350,7 +351,7 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
 
         synchronized(getPageLock(index)) {
             // Check stop flag before downloading
-            if (stopped) return
+            if (stateRef.get().stopped) return
             // Double-check after acquiring lock
             if (cacheFile.exists() && cacheFile.length() > MIN_IMAGE_SIZE) {
                 return
@@ -363,8 +364,12 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
 
             val tmpFile = File(cacheDir, "page_$index.${Thread.currentThread().id}.tmp")
             try {
-                val paths = pagePaths
+                val state = stateRef.get()
+                val paths = state.paths
                     ?: throw IOException("Page paths not loaded yet")
+                if (index >= paths.size) {
+                    throw IOException("Page index $index out of bounds (size=${paths.size})")
+                }
                 val pageUrl = serverUrl + paths[index]
                 // Use shared page client with 30s timeout (created once in start())
                 val currentPageClient = pageClient
@@ -525,10 +530,8 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
             // On retry, wait 1s for network recovery, then force re-download
             if (attempt > 0) {
                 Log.w(TAG, "Retry page $index (attempt ${attempt + 1}), waiting 1s...")
-                try {
-                    Thread.sleep(1000)
-                } catch (_: InterruptedException) {
-                }
+                LockSupport.parkNanos(RETRY_DELAY_NANOS)
+                if (Thread.interrupted()) return // Respect interruption during park
                 if (cacheFile.exists()) {
                     cacheFile.delete()
                 }
@@ -578,12 +581,14 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
      * Downloads sequentially on a single IO thread to avoid overloading the server.
      */
     private fun preloadPages(currentIndex: Int) {
-        if (pagePaths == null) return
+        val state = stateRef.get()
+        if (state.paths == null) return
         IoThreadPoolExecutor.instance.execute {
             for (i in 1..PRELOAD_COUNT) {
-                if (stopped) break
+                val currentState = stateRef.get()
+                if (currentState.stopped) break
                 val preloadIndex = currentIndex + i
-                val paths = pagePaths ?: break
+                val paths = currentState.paths ?: break
                 if (preloadIndex >= paths.size) break
 
                 val cached = getCacheFile(preloadIndex)
@@ -606,6 +611,8 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
         private const val MAX_TOTAL_CACHE_BYTES = 500L * 1024L * 1024L // 500MB total cache limit
         private const val SP_CACHE_ACCESS = "lrr_cache_access" // SharedPreferences name for cache access timestamps
         private const val MIN_IMAGE_SIZE = 1024L // Minimum valid image file size (1KB)
+        private const val STRIPE_COUNT = 32 // Number of striped locks for page downloads (PERF-6)
+        private const val RETRY_DELAY_NANOS = 1_000_000_000L // 1 second in nanos for retry delay
 
         /**
          * Evict oldest archive cache directories until total size is within limit.
