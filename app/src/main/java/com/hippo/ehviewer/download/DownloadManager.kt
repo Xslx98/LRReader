@@ -841,25 +841,29 @@ class DownloadManager(
         assertMainThread()
         stopRangeDownloadInternal(gidList)
 
-        val gidsToRemove = mutableListOf<Long>()
+        // Collect gids into a HashSet for O(1) lookup
+        val gidSet = HashSet<Long>(gidList.size())
         for (i in 0 until gidList.size()) {
-            val gid = gidList.get(i)
-            val info = mAllInfoMap[gid]
+            gidSet.add(gidList.get(i))
+        }
+
+        // Collect infos to remove and clear from map
+        val gidsToRemove = mutableListOf<Long>()
+        for (gid in gidSet) {
+            val info = mAllInfoMap.remove(gid)
             if (info == null) {
                 Log.d(TAG, "Can't get download info with gid: $gid")
                 continue
             }
-
             gidsToRemove.add(info.gid)
-
-            // Remove from all info map
-            mAllInfoList.remove(info)
-            mAllInfoMap.remove(info.gid)
 
             // Remove from label list
             val list = getInfoListForLabel(info.label)
             list?.remove(info)
         }
+
+        // O(N) removal from mAllInfoList using removeAll
+        mAllInfoList.removeAll { it.gid in gidSet }
 
         // Remove from DB on background thread
         if (gidsToRemove.isNotEmpty()) {
