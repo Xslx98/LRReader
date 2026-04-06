@@ -12,11 +12,10 @@ import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
-import org.json.JSONObject
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhRequestBuilder
-import com.hippo.ehviewer.updater.AppUpdater
+import com.hippo.ehviewer.updater.UpdateInfo
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.util.ExceptionUtils
 import okhttp3.OkHttpClient
@@ -72,20 +71,14 @@ class UpdateDialog(private val activity: Activity) {
         }
     }
 
-    fun showUpdateDialog(tempUpdateData: JSONObject) {
+    fun showUpdateDialog(updateInfo: UpdateInfo) {
         try {
-            val version = tempUpdateData.optString(AppUpdater.VERSION, "")
-            val mustUpdate = tempUpdateData.has(AppUpdater.MUST_UPDATE) && tempUpdateData.optBoolean(AppUpdater.MUST_UPDATE, false)
-            val updateContent = tempUpdateData.getJSONObject(AppUpdater.UPDATE_CONTENT)
-            val title = updateContent.optString(AppUpdater.TITLE, "")
-            val contentArr = updateContent.getJSONArray(AppUpdater.CONTENT)
-            val contentSts: Array<String?> = arrayOfNulls(contentArr.length())
-
-            for (index in 0 until contentArr.length()) {
-                contentSts[index] = contentArr.getString(index)
-            }
-
-            val downloadUrl = updateContent.optString(AppUpdater.FILE_DOWNLOAD_URL, "")
+            val version = updateInfo.version
+            val mustUpdate = updateInfo.mustUpdate
+            val content = updateInfo.updateContent
+            val title = content.title
+            val contentSts = content.content.toTypedArray()
+            val downloadUrl = content.fileDownloadUrl
             ContextCompat.getMainExecutor(activity).execute {
                 if (!isActivityAlive()) {
                     return@execute
@@ -96,7 +89,6 @@ class UpdateDialog(private val activity: Activity) {
                     setItems(contentSts) { _, _ ->
                     }
                     setPositiveButton(R.string.update) { dialog, id ->
-//                        gotoGithub(dialog, id)
                         downloadApk(dialog, id, downloadUrl, version)
                     }
                     if (!mustUpdate) {
