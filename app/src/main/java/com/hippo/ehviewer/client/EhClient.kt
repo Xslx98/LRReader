@@ -78,8 +78,11 @@ class EhClient(context: Context) {
 
         override fun run() {
             // LANraragi: E-Hentai engine methods removed -- no background work
-            val result: Any? = null
-            SimpleHandler.getInstance().post { onPostExecute(result) }
+            mCallback?.let { callback ->
+                SimpleHandler.getInstance().post { callback.onCancel() }
+            }
+            mCallback = null
+            mCall.lazySet(null)
         }
 
         @Suppress("UNCHECKED_CAST")
