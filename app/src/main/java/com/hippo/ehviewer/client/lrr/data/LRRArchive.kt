@@ -9,7 +9,7 @@ import com.hippo.ehviewer.client.lrr.LRRAuthManager
 import com.hippo.ehviewer.client.lrr.arcidToGid
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+
 
 /**
  * Represents a LANraragi archive. Maps to the JSON objects returned by
@@ -128,7 +128,7 @@ class LRRArchive() : Parcelable {
 
     /** Constructs the thumbnail URL for this archive. */
     fun getThumbnailUrl(baseUrl: String): String =
-        baseUrl.toHttpUrlOrNull()!!.newBuilder()
+        com.hippo.ehviewer.client.lrr.parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
             .addPathSegment(arcid)
             .addPathSegment("thumbnail")

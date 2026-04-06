@@ -4,8 +4,10 @@
 
 # === Strip debug/verbose logs in release (security: prevent accidental data leak) ===
 -assumenosideeffects class android.util.Log {
-    public static int d(...);
     public static int v(...);
+    public static int d(...);
+    public static int i(...);
+    public static int w(...);
 }
 
 # === JNI / Native ===

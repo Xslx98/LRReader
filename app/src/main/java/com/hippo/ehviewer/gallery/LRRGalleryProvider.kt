@@ -346,7 +346,9 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
 
             val tmpFile = File(cacheDir, "page_$index.${Thread.currentThread().id}.tmp")
             try {
-                val pageUrl = serverUrl + pagePaths!![index]
+                val paths = pagePaths
+                    ?: throw IOException("Page paths not loaded yet")
+                val pageUrl = serverUrl + paths[index]
                 // Use shared page client with 30s timeout (created once in start())
                 val currentPageClient = pageClient
                     ?: ServiceRegistry.networkModule.okHttpClient
@@ -362,9 +364,11 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
                     if (!response.isSuccessful) {
                         throw IOException("HTTP ${response.code}")
                     }
-                    contentLength = response.body!!.contentLength()
+                    val body = response.body
+                        ?: throw IOException("Empty response body for page $index")
+                    contentLength = body.contentLength()
 
-                    response.body!!.byteStream().use { inputStream ->
+                    body.byteStream().use { inputStream ->
                         FileOutputStream(tmpFile).use { fos ->
                             val buffer = ByteArray(BUFFER_SIZE)
                             var read: Int

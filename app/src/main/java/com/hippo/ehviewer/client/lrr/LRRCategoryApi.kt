@@ -6,7 +6,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.FormBody
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
@@ -101,7 +100,7 @@ object LRRCategoryApi {
         if (pinned) {
             formBuilder.add("pinned", "true")
         }
-        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+        val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegment("api")
             .addPathSegment("categories")
             .addPathSegment(categoryId)
@@ -124,7 +123,7 @@ object LRRCategoryApi {
         baseUrl: String,
         categoryId: String
     ) = withContext(Dispatchers.IO) {
-        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+        val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegment("api")
             .addPathSegment("categories")
             .addPathSegment(categoryId)
@@ -148,7 +147,7 @@ object LRRCategoryApi {
         categoryId: String,
         arcid: String
     ) = withContext(Dispatchers.IO) {
-        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+        val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegment("api")
             .addPathSegment("categories")
             .addPathSegment(categoryId)
@@ -173,7 +172,7 @@ object LRRCategoryApi {
         categoryId: String,
         arcid: String
     ) = withContext(Dispatchers.IO) {
-        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+        val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegment("api")
             .addPathSegment("categories")
             .addPathSegment(categoryId)
