@@ -11,6 +11,7 @@ import okhttp3.ConnectionPool
 import okhttp3.OkHttpClient
 import java.io.File
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Manages all network-related singletons: OkHttpClient (main + image),
@@ -21,6 +22,9 @@ import java.util.concurrent.TimeUnit
  *   CookieStore → Cache → Hosts → ProxySelector → OkHttpClient → ImageOkHttpClient
  */
 class NetworkModule(private val context: Context) {
+
+    /** Debounce flag: ensures only one CookieManager.flush() is scheduled at a time. */
+    private val cookieFlushPending = AtomicBoolean(false)
 
     val cookieStore: EhCookieStore by lazy { EhCookieStore(context) }
 
@@ -67,9 +71,16 @@ class NetworkModule(private val context: Context) {
                     for (header in setCookieHeaders) {
                         cookieManager.setCookie(url, header)
                     }
-                    // Defer flush to avoid blocking the network thread
-                    com.hippo.util.IoThreadPoolExecutor.instance.execute {
-                        cookieManager.flush()
+                    // Debounced flush: schedule at most one flush per burst of requests
+                    if (cookieFlushPending.compareAndSet(false, true)) {
+                        com.hippo.util.IoThreadPoolExecutor.instance.execute {
+                            try {
+                                Thread.sleep(3000) // coalesce flushes over 3 seconds
+                                cookieManager.flush()
+                            } finally {
+                                cookieFlushPending.set(false)
+                            }
+                        }
                     }
                 }
                 response
