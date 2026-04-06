@@ -116,6 +116,7 @@ LRReader/
 | `ui/scene/gallery/detail/GalleryDownloadHelper.kt` | Download state display + DownloadInfoListener |
 | `ui/scene/gallery/detail/GalleryDetailRequestHelper.kt` | LRR metadata fetch + category favorite detection |
 | `ui/scene/gallery/list/GalleryListViewModel.kt` | Paging 3 ViewModel for gallery list |
+| `ui/scene/download/DownloadsViewModel.kt` | Download list state, label, search, pagination ViewModel |
 | `ui/scene/gallery/detail/TagEditDialog.kt` | Grouped tag editor (chip-style, per-namespace) |
 
 ---
@@ -351,6 +352,8 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 16. **Paging 3 integrated:** `LRRArchivePagingSource` used directly by `GalleryListScene.GalleryListHelper.getPageData()` for LRR search. `GalleryListViewModel` provides `Flow<PagingData<GalleryInfo>>` with `SearchParams` invalidation. ContentHelper pagination framework preserved as the adapter layer. Config: pageSize=100, prefetchDistance=20.
 
 17. **Tag editor:** `TagEditDialog.kt` shows a grouped chip-style editor using the same `RoundSideRectDrawable` visual style as the detail page. Click to edit, long-press to delete, [+] to add per namespace. Supports `AutoCompleteTextView` with `LRRTagCache` suggestions. Entry point: pencil icon in tag display area.
+
+18. **DownloadsViewModel:** `DownloadsViewModel.kt` manages download list state (current label, download list, back-list, search key, searching flag, pagination state, spider info cache) as `StateFlow` properties. `DownloadsScene` accesses state via property delegates that read/write ViewModel flows. The ViewModel is scoped to the parent Activity via `ViewModelProvider(requireActivity())` because Scene fragments may be recreated. View references, adapters, DiffUtil dispatch, and dialog/navigation remain in the Scene.
 
 ---
 
