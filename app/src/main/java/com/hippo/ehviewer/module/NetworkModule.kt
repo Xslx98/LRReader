@@ -1,6 +1,8 @@
 package com.hippo.ehviewer.module
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.webkit.CookieManager
 import com.hippo.ehviewer.EhProxySelector
 import com.hippo.ehviewer.Hosts
@@ -73,19 +75,19 @@ class NetworkModule(private val context: Context) {
                     }
                     // Debounced flush: schedule at most one flush per burst of requests
                     if (cookieFlushPending.compareAndSet(false, true)) {
-                        com.hippo.util.IoThreadPoolExecutor.instance.execute {
+                        Handler(Looper.getMainLooper()).postDelayed({
                             try {
-                                Thread.sleep(3000) // coalesce flushes over 3 seconds
                                 cookieManager.flush()
                             } finally {
                                 cookieFlushPending.set(false)
                             }
-                        }
+                        }, 3000)
                     }
                 }
                 response
             }
             .proxySelector(proxySelector)
+            .addInterceptor(com.hippo.ehviewer.client.lrr.LRRCleartextWarningInterceptor())
             .addNetworkInterceptor(com.hippo.ehviewer.client.lrr.LRRAuthInterceptor())
             .build()
     }
