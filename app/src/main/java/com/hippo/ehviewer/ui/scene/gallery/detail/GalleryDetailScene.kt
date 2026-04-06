@@ -17,9 +17,7 @@
 package com.hippo.ehviewer.ui.scene.gallery.detail
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.Context
-import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -37,12 +35,10 @@ import android.widget.LinearLayout
 import android.widget.RatingBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.ViewCompat
 import com.hippo.android.resource.AttrResources
-import com.hippo.drawable.RoundSideRectDrawable
 import com.hippo.drawerlayout.DrawerLayout
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.EhApplication
@@ -51,34 +47,22 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.UrlOpener
 import com.hippo.ehviewer.client.EhCacheKeyFactory
-import com.hippo.ehviewer.client.EhFilter
-import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.EhUrl
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
-import com.hippo.ehviewer.client.data.GalleryTagGroup
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.client.data.userTag.UserTagList
 import com.hippo.ehviewer.dao.DownloadInfo
-import com.hippo.ehviewer.dao.Filter
-import com.hippo.ehviewer.download.DownloadInfoListener
-import com.hippo.ehviewer.settings.AppearanceSettings
+import com.hippo.ehviewer.client.lrr.LRRAuthManager
+import com.hippo.ehviewer.client.lrr.data.LRRArchive
 import com.hippo.ehviewer.spider.SpiderQueen
-import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.ehviewer.ui.GalleryActivity
 import com.hippo.ehviewer.ui.GalleryOpenHelper
 import com.hippo.ehviewer.ui.MainActivity
-import com.hippo.ehviewer.ui.annotation.WholeLifeCircle
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
-import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListSceneDialog
-import com.hippo.ehviewer.client.lrr.LRRArchiveApi
-import com.hippo.ehviewer.client.lrr.LRRAuthManager
-import com.hippo.ehviewer.client.lrr.LRRCategoryApi
-import com.hippo.ehviewer.client.lrr.data.LRRArchive
-import com.hippo.ehviewer.client.lrr.runSuspend
 import com.hippo.ehviewer.util.ClipboardUtil
 import com.hippo.ehviewer.widget.ArchiverDownloadProgress
 import com.hippo.lib.yorozuya.AssertUtils
@@ -91,15 +75,12 @@ import com.hippo.util.DrawableManager
 import com.hippo.util.ExceptionUtils
 import com.hippo.util.IoThreadPoolExecutor
 import com.hippo.view.ViewTransition
-import com.hippo.widget.AutoWrapLayout
 import com.hippo.widget.LoadImageView
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.LinkedList
 import java.util.concurrent.ExecutorService
 
 class GalleryDetailScene : BaseScene(), View.OnClickListener,
-    DownloadInfoListener,
     View.OnLongClickListener {
 
     /*---------------
@@ -146,9 +127,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     private var mViewTransition2: ViewTransition? = null
     private var mPopupMenu: PopupMenu? = null
 
-    @WholeLifeCircle
-    private var mDownloadState: Int = 0
-
     private var mAction: String? = null
     private var mGalleryInfo: GalleryInfo? = null
     private var mDownloadInfo: DownloadInfo? = null
@@ -162,7 +140,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
     private var mState: Int = STATE_INIT
     private var myUpdateDialog: GalleryUpdateDialog? = null
-    private var tagDialog: GalleryListSceneDialog? = null
 
     private var useNetWorkLoadThumb: Boolean = false
 
@@ -170,9 +147,50 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     private var activity: MainActivity? = null
 
     private var executorService: ExecutorService? = null
-    private var ehTags: EhTagDatabase? = null
 
     private val handler = Handler(Looper.getMainLooper())
+
+    // Extracted helpers
+    private val downloadHelperCallback = object : GalleryDownloadHelper.Callback {
+        override fun getContext(): Context? = getEHContext()
+        override fun getActivity(): MainActivity? = activity2
+        override fun getGid(): Long = this@GalleryDetailScene.getGid()
+        override fun getGalleryInfo(): GalleryInfo? = this@GalleryDetailScene.getGalleryInfo()
+        override fun getDownloadView(): TextView? = mDownload
+        override fun getString(resId: Int): String = this@GalleryDetailScene.getString(resId)
+        override fun getString(resId: Int, vararg formatArgs: Any): String =
+            this@GalleryDetailScene.getString(resId, *formatArgs)
+    }
+
+    private val tagHelperCallback = object : GalleryTagHelper.Callback {
+        override fun getContext(): Context? = getEHContext()
+        override fun getInflater(): LayoutInflater? = layoutInflater2
+        override fun getTagsLayout(): LinearLayout? = mTags
+        override fun getNoTagsView(): TextView? = mNoTags
+        override fun getString(resId: Int): String = this@GalleryDetailScene.getString(resId)
+        override fun getString(resId: Int, vararg formatArgs: Any): String =
+            this@GalleryDetailScene.getString(resId, *formatArgs)
+        override fun showTip(resId: Int, length: Int) =
+            this@GalleryDetailScene.showTip(resId, length)
+        override fun getUploader(): String? = this@GalleryDetailScene.getUploader()
+        override fun getTagClickListener(): View.OnClickListener = this@GalleryDetailScene
+        override fun getTagLongClickListener(): View.OnLongClickListener = this@GalleryDetailScene
+    }
+
+    private val requestHelperCallback = object : GalleryDetailRequestHelper.Callback {
+        override fun getToken(): String? = this@GalleryDetailScene.getToken()
+        override fun getActivity(): android.app.Activity? =
+            this@GalleryDetailScene.getActivity()
+        override fun getString(resId: Int): String = this@GalleryDetailScene.getString(resId)
+        override fun onGetGalleryDetailSuccess(result: GalleryDetail) =
+            this@GalleryDetailScene.onGetGalleryDetailSuccess(result)
+        override fun onGetGalleryDetailFailure(e: Exception) =
+            this@GalleryDetailScene.onGetGalleryDetailFailure(e)
+    }
+
+    private val mDownloadHelper = GalleryDownloadHelper(downloadHelperCallback)
+    private val mTagHelper = GalleryTagHelper(tagHelperCallback)
+    private val mRequestHelper = GalleryDetailRequestHelper(requestHelperCallback)
 
     private fun handleArgs(args: Bundle?) {
         if (args == null) {
@@ -344,12 +362,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         val context = getEHContext()
         // Get download state
         val gid = getGid()
-        if (gid != -1L) {
-            AssertUtils.assertNotNull(context)
-            mDownloadState = ServiceRegistry.dataModule.downloadManager.getDownloadState(gid)
-        } else {
-            mDownloadState = DownloadInfo.STATE_INVALID
-        }
+        mDownloadHelper.initDownloadState(gid)
 
         val view = inflater.inflate(R.layout.scene_gallery_detail, container, false)
 
@@ -499,7 +512,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             adjustViewVisibility(STATE_FAILED, false)
         }
 
-        ServiceRegistry.dataModule.downloadManager.addDownloadInfoListener(this)
+        ServiceRegistry.dataModule.downloadManager.addDownloadInfoListener(mDownloadHelper)
         if (myUpdateDialog == null) {
             myUpdateDialog = GalleryUpdateDialog(this, nonNullContext)
         }
@@ -515,7 +528,8 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         val context = getEHContext()
         AssertUtils.assertNotNull(context)
-        ServiceRegistry.dataModule.downloadManager.removeDownloadInfoListener(this)
+        ServiceRegistry.dataModule.downloadManager.removeDownloadInfoListener(mDownloadHelper)
+        mTagHelper.destroy()
 
         setDrawerGestureBlocker(null)
 
@@ -596,67 +610,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
     private fun request(): Boolean {
         getEHContext() ?: return false
-
-        // Get arcid from mGalleryInfo.token (set by LRRArchive.toGalleryInfo())
-        val arcid = getToken()
-        val serverUrl = LRRAuthManager.getServerUrl()
-        if (arcid.isNullOrEmpty() || serverUrl.isNullOrEmpty()) {
-            return false
-        }
-
-        val client = ServiceRegistry.networkModule.okHttpClient
-
-        IoThreadPoolExecutor.instance.execute {
-            try {
-                val archive = runSuspend {
-                    LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcid)
-                }
-                val gd = archive.toGalleryDetail()
-
-                // Query LANraragi categories to determine favorite status
-                try {
-                    val categories = runSuspend {
-                        LRRCategoryApi.getCategories(client, serverUrl)
-                    }
-                    val matchedNames = mutableListOf<String>()
-                    for (cat in categories) {
-                        // Only check static categories (dynamic ones have empty archives list)
-                        if (!cat.isDynamic() && cat.archives.contains(arcid)) {
-                            cat.name?.let { matchedNames.add(it) }
-                        }
-                    }
-                    if (matchedNames.isNotEmpty()) {
-                        gd.isFavorited = true
-                        if (matchedNames.size == 1) {
-                            gd.favoriteName = matchedNames[0]
-                        } else {
-                            gd.favoriteName = matchedNames[0] +
-                                getString(R.string.lrr_category_info_suffix) +
-                                matchedNames.size +
-                                getString(R.string.lrr_category_count_suffix)
-                        }
-                    }
-                } catch (catEx: Exception) {
-                    android.util.Log.w(
-                        "GalleryDetailScene",
-                        "Failed to query categories for favorite status",
-                        catEx
-                    )
-                    // Non-fatal: favorite status just won't show
-                }
-
-                // Cache the detail
-                ServiceRegistry.dataModule.galleryDetailCache.put(gd.gid, gd)
-
-                val act = getActivity()
-                act?.runOnUiThread { onGetGalleryDetailSuccess(gd) }
-            } catch (e: Exception) {
-                android.util.Log.e("GalleryDetailScene", "LRR metadata fetch failed", e)
-                val act = getActivity()
-                act?.runOnUiThread { onGetGalleryDetailFailure(e) }
-            }
-        }
-        return true
+        return mRequestHelper.request()
     }
 
     private fun setActionDrawable(text: TextView, drawable: Drawable) {
@@ -763,7 +717,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             mThumb!!.load(EhCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
             mTitle!!.text = EhUtils.getSuitableTitle(gi)
             mUploader!!.text = gi.uploader
-            updateDownloadText()
+            mDownloadHelper.updateDownloadText()
         }
     }
 
@@ -831,7 +785,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         mTitle!!.text = EhUtils.getSuitableTitle(gd)
         mUploader!!.text = gd.uploader
-        updateDownloadText()
+        mDownloadHelper.updateDownloadText()
 
         val galleryInfo = getGalleryInfo()
         bindReadProgress(galleryInfo)
@@ -849,7 +803,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         updateFavoriteDrawable()
         bindArchiverProgress(gd)
-        bindTags(gd.tags)
+        mTagHelper.bindTags(gd.tags)
     }
 
     fun bindArchiverProgress(gd: GalleryDetail) {
@@ -879,68 +833,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             }
             handler.post {
                 mPages?.text = text
-            }
-        }
-    }
-
-    private fun bindTags(tagGroups: Array<GalleryTagGroup>?) {
-        val context = getEHContext()
-        val inflater = layoutInflater2
-        val resources = resources2
-        if (context == null || resources == null || mTags == null || mNoTags == null) {
-            return
-        }
-
-        mTags!!.removeViews(1, mTags!!.childCount - 1)
-        if (tagGroups == null || tagGroups.isEmpty()) {
-            mNoTags!!.visibility = View.VISIBLE
-            return
-        } else {
-            mNoTags!!.visibility = View.GONE
-        }
-
-        ehTags = if (AppearanceSettings.getShowTagTranslations()) {
-            EhTagDatabase.getInstance(context)
-        } else {
-            null
-        }
-
-        val colorTag = AttrResources.getAttrColor(context, R.attr.tagBackgroundColor)
-        val colorName = AttrResources.getAttrColor(context, R.attr.tagGroupBackgroundColor)
-        for (tg in tagGroups) {
-            val ll = inflater.inflate(R.layout.gallery_tag_group, mTags, false) as LinearLayout
-            ll.orientation = LinearLayout.HORIZONTAL
-            mTags!!.addView(ll)
-
-            var readableTagName: String? = null
-            if (ehTags != null) {
-                readableTagName = ehTags!!.getTranslation("n:" + tg.groupName)
-            }
-
-            val tgName = inflater.inflate(R.layout.item_gallery_tag, ll, false) as TextView
-            ll.addView(tgName)
-            tgName.text = readableTagName ?: tg.groupName
-            tgName.background = RoundSideRectDrawable(colorName)
-
-            val prefix = tg.groupName?.let { EhTagDatabase.namespaceToPrefix(it) } ?: ""
-
-            val awl = AutoWrapLayout(context)
-            ll.addView(awl, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-            for (j in 0 until tg.size()) {
-                val tag = inflater.inflate(R.layout.item_gallery_tag, awl, false) as TextView
-                awl.addView(tag)
-                val tagStr = tg.getTagAt(j)
-
-                var readableTag: String? = null
-                if (ehTags != null) {
-                    readableTag = ehTags!!.getTranslation(prefix + tagStr)
-                }
-
-                tag.text = readableTag ?: tagStr
-                tag.background = RoundSideRectDrawable(colorTag)
-                tag.setTag(R.id.tag, tg.groupName + ":" + tagStr)
-                tag.setOnClickListener(this)
-                tag.setOnLongClickListener(this)
             }
         }
     }
@@ -1020,7 +912,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             lub.keyword = uploader
             GalleryListScene.startScene(this, lub)
         } else if (mDownload === v) {
-            onDownload()
+            mDownloadHelper.onDownload()
         } else if (mHaveNewVersion === v) {
             if (mGalleryDetail == null) {
                 return
@@ -1072,59 +964,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         }
     }
 
-    private fun showFilterUploaderDialog() {
-        val context = getEHContext()
-        val uploader = getUploader()
-        if (context == null || uploader == null) {
-            return
-        }
-
-        AlertDialog.Builder(context)
-            .setMessage(getString(R.string.filter_the_uploader, uploader))
-            .setPositiveButton(android.R.string.ok) { _, which ->
-                if (which != DialogInterface.BUTTON_POSITIVE) {
-                    return@setPositiveButton
-                }
-
-                val filter = Filter()
-                filter.mode = EhFilter.MODE_UPLOADER
-                filter.text = uploader
-                EhFilter.getInstance().addFilter(filter)
-
-                showTip(R.string.filter_added, LENGTH_SHORT)
-            }.show()
-    }
-
-    private fun showFilterTagDialog(tag: String) {
-        val context = getEHContext() ?: return
-
-        AlertDialog.Builder(context)
-            .setMessage(getString(R.string.filter_the_tag, tag))
-            .setPositiveButton(android.R.string.ok) { _, which ->
-                if (which != DialogInterface.BUTTON_POSITIVE) {
-                    return@setPositiveButton
-                }
-
-                val filter = Filter()
-                filter.mode = EhFilter.MODE_TAG
-                filter.text = tag
-                EhFilter.getInstance().addFilter(filter)
-
-                showTip(R.string.filter_added, LENGTH_SHORT)
-            }.show()
-    }
-
-    private fun showTagDialog(tag: String) {
-        if (tagDialog == null) {
-            tagDialog = GalleryListSceneDialog(this)
-        }
-        if (ehTags == null) {
-            ehTags = mContext?.let { EhTagDatabase.getInstance(it) }
-        }
-        tagDialog!!.setTagName(tag)
-        tagDialog!!.showTagLongPressDialog(ehTags)
-    }
-
     override fun setTagList(result: UserTagList?) {
         super.setTagList(result)
     }
@@ -1137,9 +976,9 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         }
 
         if (mUploader === v) {
-            showFilterUploaderDialog()
+            mTagHelper.showFilterUploaderDialog()
         } else if (mDownload === v) {
-            onDownload()
+            mDownloadHelper.onDownload()
             return true
         } else if (v === mHeartGroup) {
             // Long press also shows category dialog (same as click)
@@ -1157,36 +996,12 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         } else {
             val tag = v.getTag(R.id.tag) as? String
             if (tag != null) {
-                showTagDialog(tag)
+                mTagHelper.showTagDialog(this, tag)
                 return true
             }
         }
 
         return false
-    }
-
-    private fun onDownload() {
-        val galleryInfo = getGalleryInfo()
-        if (galleryInfo != null) {
-            if (ServiceRegistry.dataModule.downloadManager.getDownloadState(galleryInfo.gid) == DownloadInfo.STATE_INVALID) {
-                CommonOperations.startDownload(activity!!, galleryInfo, false)
-            } else {
-                AlertDialog.Builder(mContext!!)
-                    .setTitle(R.string.download_remove_dialog_title)
-                    .setMessage(
-                        getString(
-                            R.string.download_remove_dialog_message,
-                            galleryInfo.title
-                        )
-                    )
-                    .setPositiveButton(android.R.string.ok) { _, _ ->
-                        ServiceRegistry.dataModule.downloadManager.deleteDownload(
-                            galleryInfo.gid
-                        )
-                    }
-                    .show()
-            }
-        }
     }
 
     fun startUpdateDownload(updateUrl: String) {
@@ -1209,70 +1024,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         finish()
     }
 
-    private fun updateDownloadText() {
-        val download = mDownload ?: return
-        when (mDownloadState) {
-            DownloadInfo.STATE_NONE -> download.setText(R.string.download_state_none)
-            DownloadInfo.STATE_WAIT -> download.setText(R.string.download_state_wait)
-            DownloadInfo.STATE_DOWNLOAD -> download.setText(R.string.download_state_downloading)
-            DownloadInfo.STATE_FINISH -> download.setText(R.string.download_state_downloaded)
-            DownloadInfo.STATE_FAILED -> download.setText(R.string.download_state_failed)
-            else -> download.setText(R.string.download)
-        }
-    }
-
-    private fun updateDownloadState() {
-        val context = getEHContext()
-        val gid = getGid()
-        if (context == null || gid == -1L) {
-            return
-        }
-
-        val downloadState = ServiceRegistry.dataModule.downloadManager.getDownloadState(gid)
-        if (downloadState == mDownloadState) {
-            return
-        }
-        mDownloadState = downloadState
-        updateDownloadText()
-    }
-
-    override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-        updateDownloadState()
-    }
-
-    override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {
-    }
-
-    override fun onUpdate(
-        info: DownloadInfo,
-        list: List<DownloadInfo>,
-        mWaitList: LinkedList<DownloadInfo>
-    ) {
-        updateDownloadState()
-    }
-
-    override fun onUpdateAll() {
-        updateDownloadState()
-    }
-
-    override fun onReload() {
-        updateDownloadState()
-    }
-
-    override fun onChange() {
-        updateDownloadState()
-    }
-
-    override fun onRemove(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-        updateDownloadState()
-    }
-
-    override fun onRenameLabel(from: String, to: String) {
-    }
-
-    override fun onUpdateLabels() {
-    }
-
     internal fun onGetGalleryDetailSuccess(result: GalleryDetail) {
         try {
             onGetGalleryDetailSuccessInternal(result)
@@ -1283,15 +1034,15 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
     private fun onGetGalleryDetailSuccessInternal(result: GalleryDetail) {
         mGalleryDetail = result
-        updateDownloadState()
-        if (mDownloadState != DownloadInfo.STATE_INVALID) {
+        mDownloadHelper.updateDownloadState()
+        if (mDownloadHelper.downloadState != DownloadInfo.STATE_INVALID) {
             val di = mDownloadInfo
             if (di != null && di.thumb != null &&
                 di.thumb != result.thumb && di.gid == result.gid
             ) {
                 useNetWorkLoadThumb = true
                 di.updateInfo(result)
-                di.state = mDownloadState
+                di.state = mDownloadHelper.downloadState
                 IoThreadPoolExecutor.instance.execute {
                     EhDB.putDownloadInfo(di)
                 }
@@ -1301,8 +1052,8 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         bindViewSecond()
         if (myUpdateDialog != null && myUpdateDialog!!.autoDownload) {
             myUpdateDialog!!.autoDownload = false
-            mDownloadState = DownloadInfo.STATE_INVALID
-            onDownload()
+            mDownloadHelper.initDownloadState(-1)
+            mDownloadHelper.onDownload()
         }
     }
 
