@@ -5,6 +5,7 @@ apply plugin: "org.jetbrains.kotlin.plugin.serialization"
 apply plugin: "com.google.devtools.ksp"
 apply plugin: "com.jaredsburrows.license"
 apply plugin: "io.gitlab.arturbosch.detekt"
+apply plugin: "jacoco"
 if (file('google-services.json').exists()) {
     apply plugin: 'com.google.gms.google-services'
     apply plugin: 'com.google.firebase.crashlytics'
@@ -187,4 +188,20 @@ configurations.configureEach {
 
         exclude group: 'com.github.seven332', module: 'okhttp'
     }
+}
+
+tasks.register('jacocoTestReport', JacocoReport) {
+    dependsOn 'testAppReleaseDebugUnitTest'
+    reports {
+        xml.required = true
+        html.required = true
+    }
+    def mainSrc = "${project.projectDir}/src/main/java"
+    def debugTree = fileTree(dir: "${buildDir}/tmp/kotlin-classes/appReleaseDebug",
+        excludes: ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*',
+                   '**/*_MembersInjector.class', '**/Dagger*Component*.*',
+                   '**/*_Factory.class', '**/*_Impl*.class'])
+    sourceDirectories.setFrom(files(mainSrc))
+    classDirectories.setFrom(files(debugTree))
+    executionData.setFrom(fileTree(dir: buildDir, includes: ['jacoco/testAppReleaseDebugUnitTest.exec']))
 }
