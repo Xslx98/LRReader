@@ -111,7 +111,10 @@ LRReader/
 | `ui/GalleryActivity.kt` | Reader/detail view |
 | `ui/scene/GalleryListScene.kt` | Gallery browse scene (uses PagingSource for LRR search) |
 | `ui/scene/download/DownloadsScene.kt` | Download management (Room Flow + DiffUtil) |
-| `ui/scene/gallery/detail/GalleryDetailScene.kt` | Gallery detail + tag editor entry |
+| `ui/scene/gallery/detail/GalleryDetailScene.kt` | Gallery detail view (delegates to helpers below) |
+| `ui/scene/gallery/detail/GalleryTagHelper.kt` | Tag display, filter dialogs, tag long-press actions |
+| `ui/scene/gallery/detail/GalleryDownloadHelper.kt` | Download state display + DownloadInfoListener |
+| `ui/scene/gallery/detail/GalleryDetailRequestHelper.kt` | LRR metadata fetch + category favorite detection |
 | `ui/scene/gallery/list/GalleryListViewModel.kt` | Paging 3 ViewModel for gallery list |
 | `ui/scene/gallery/detail/TagEditDialog.kt` | Grouped tag editor (chip-style, per-namespace) |
 
@@ -335,7 +338,7 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 10. **EhViewer stubs:** `EhGalleryProvider`, `FavoritesScene`, and `FavoriteListSortDialog` are intentional stubs (empty bodies) left for structural compatibility. Do not delete — but do not add logic to them either.
 
-11. **Helper class extraction:** Large Scenes use extracted helpers to reduce line count: `GalleryUploadHelper` (upload/URL download from GalleryListScene), `GallerySearchHelper` (search suggestions/URL building), `DownloadImportHelper` (local archive import from DownloadsScene), `DownloadLabelHelper` (bulk actions: start/stop/delete/move from DownloadsScene), `DownloadFilterHelper` (category filter, sort/filter execution, search callbacks from DownloadsScene). Helpers communicate via `Callback` interfaces — follow this pattern for new extractions.
+11. **Helper class extraction:** Large Scenes use extracted helpers to reduce line count: `GalleryUploadHelper` (upload/URL download from GalleryListScene), `GallerySearchHelper` (search suggestions/URL building), `DownloadImportHelper` (local archive import from DownloadsScene), `DownloadLabelHelper` (bulk actions: start/stop/delete/move from DownloadsScene), `DownloadFilterHelper` (category filter, sort/filter execution, search callbacks from DownloadsScene), `GalleryTagHelper` (tag display/filter/long-press from GalleryDetailScene), `GalleryDownloadHelper` (download state + DownloadInfoListener from GalleryDetailScene), `GalleryDetailRequestHelper` (LRR metadata fetch + category detection from GalleryDetailScene). Helpers communicate via `Callback` interfaces — follow this pattern for new extractions.
 
 12. **Network tuning:** `NetworkModule.kt` configures `ConnectionPool(10, 5min)`, 200MB HTTP cache, thumbnail 24h cache, deferred `CookieManager.flush()`. Image client has 60s `callTimeout` for large files over slow WAN.
 
