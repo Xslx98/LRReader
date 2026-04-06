@@ -44,8 +44,6 @@ import com.hippo.easyrecyclerview.HandlerDrawable;
 import com.hippo.easyrecyclerview.LayoutManagerUtils;
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.R;
-import com.hippo.ehviewer.client.parser.FavoritesParser;
-import com.hippo.ehviewer.client.parser.GalleryListParser;
 import com.hippo.refreshlayout.RefreshLayout;
 import com.hippo.util.DrawableManager;
 import com.hippo.util.ExceptionUtils;
@@ -573,31 +571,7 @@ public class ContentLayout extends FrameLayout {
         protected void onClearData() {
         }
 
-        public void onGetPageData(int taskId, GalleryListParser.Result result, List<E> data) {
-            if (mCurrentTaskType != TYPE_NEXT_PAGE_KEEP_POS && mCurrentTaskType != TYPE_NEXT_PAGE) {
-                firstHref = result.firstHref;
-                prevHref = result.prevHref;
-            }
-            if (mCurrentTaskType != TYPE_PRE_PAGE_KEEP_POS && mCurrentTaskType != TYPE_PRE_PAGE) {
-                nextHref = result.nextHref;
-                lastHref = result.lastHref;
-            }
-            resultCount = result.resultCount;
-            onGetPageData(taskId, result.pages, result.nextPage, data);
-        }
-
-        public void onGetPageData(int taskId, FavoritesParser.Result result, List<E> data) {
-            if (mCurrentTaskType != TYPE_NEXT_PAGE_KEEP_POS && mCurrentTaskType != TYPE_NEXT_PAGE) {
-                firstHref = result.firstHref;
-                prevHref = result.prevHref;
-            }
-            if (mCurrentTaskType != TYPE_PRE_PAGE_KEEP_POS && mCurrentTaskType != TYPE_PRE_PAGE) {
-                nextHref = result.nextHref;
-                lastHref = result.lastHref;
-            }
-            resultCount = result.resultCount;
-            onGetPageData(taskId, result.pages, result.nextPage, data);
-        }
+        // LANraragi: E-Hentai parser overloads removed (GalleryListParser, FavoritesParser)
 
         public void onGetPageData(int taskId, int pages, int nextPage, List<E> data) {
             if (mCurrentTaskId == taskId) {

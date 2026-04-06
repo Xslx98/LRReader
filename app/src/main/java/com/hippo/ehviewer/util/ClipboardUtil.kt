@@ -7,8 +7,6 @@ import android.os.Bundle
 import android.text.TextUtils
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryInfo
-import com.hippo.ehviewer.client.parser.GalleryDetailUrlParser
-import com.hippo.ehviewer.client.parser.GalleryPageUrlParser
 import com.hippo.ehviewer.ui.scene.ProgressScene
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.scene.Announcer
@@ -157,29 +155,7 @@ object ClipboardUtil {
         return ""
     }
 
+    // LANraragi: E-Hentai URL clipboard parsing removed
     @JvmStatic
-    fun createAnnouncerFromClipboardUrl(url: String?): Announcer? {
-        val result1 = GalleryDetailUrlParser.parse(url, false)
-        if (result1 != null) {
-            val args = Bundle().apply {
-                putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_GID_TOKEN)
-                putLong(GalleryDetailScene.KEY_GID, result1.gid)
-                putString(GalleryDetailScene.KEY_TOKEN, result1.token)
-            }
-            return Announcer(GalleryDetailScene::class.java).setArgs(args)
-        }
-
-        val result2 = GalleryPageUrlParser.parse(url, false)
-        if (result2 != null) {
-            val args = Bundle().apply {
-                putString(ProgressScene.KEY_ACTION, ProgressScene.ACTION_GALLERY_TOKEN)
-                putLong(ProgressScene.KEY_GID, result2.gid)
-                putString(ProgressScene.KEY_PTOKEN, result2.pToken)
-                putInt(ProgressScene.KEY_PAGE, result2.page)
-            }
-            return Announcer(ProgressScene::class.java).setArgs(args)
-        }
-
-        return null
-    }
+    fun createAnnouncerFromClipboardUrl(url: String?): Announcer? = null
 }

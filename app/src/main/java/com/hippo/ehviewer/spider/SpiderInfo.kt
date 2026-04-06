@@ -24,7 +24,6 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.exception.ParseException
-import com.hippo.ehviewer.client.parser.GalleryPageUrlParser
 import com.hippo.streampipe.OutputStreamPipe
 import com.hippo.unifile.UniFile
 import com.hippo.util.ExceptionUtils
@@ -294,14 +293,7 @@ class SpiderInfo {
                 }
             }
 
-            if (previewSet != null) {
-                for (i in 0 until previewSet.size()) {
-                    val result = GalleryPageUrlParser.parse(previewSet.getPageUrlAt(i))
-                    if (result != null) {
-                        spiderInfo.pTokenMap!!.put(result.page, result.pToken)
-                    }
-                }
-            }
+            // LANraragi: E-Hentai page URL parsing removed (pTokenMap not populated)
         }
     }
 }
