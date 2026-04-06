@@ -57,15 +57,18 @@ class LRREmptyBodyException : IOException()
 class LRRMissingFieldException(field: String) : IOException("Missing field: $field")
 
 /**
- * Ensure the HTTP response is successful (2xx).
- * Throws [LRRHttpException] carrying the status code if not.
+ * Ensure the HTTP response is successful (2xx) and carries a JSON body.
+ * Throws [LRRHttpException] on non-2xx status, or [IOException] if
+ * the server returned a non-JSON content type (e.g., an HTML error page
+ * from a reverse proxy).
  */
 internal fun ensureSuccess(response: Response) {
     if (!response.isSuccessful) {
-        // Body is not consumed here; the caller's use{} block will close() it.
-        // On error responses this discards the TCP connection rather than returning
-        // it to the pool — acceptable since error rates should be low.
         throw LRRHttpException(response.code)
+    }
+    val contentType = response.body?.contentType()
+    if (contentType != null && !contentType.subtype.contains("json")) {
+        throw IOException("Expected JSON response but got $contentType")
     }
 }
 
