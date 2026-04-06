@@ -41,8 +41,10 @@ class EhFilter private constructor() {
      */
     internal suspend fun loadFromDb() {
         val list = EhDB.getAllFilterAsync()
-        for (filter in list) {
-            distributeFilter(filter)
+        synchronized(this) {
+            for (filter in list) {
+                distributeFilter(filter)
+            }
         }
     }
 
