@@ -5,7 +5,6 @@ import com.hippo.conaco.Conaco
 import com.hippo.ehviewer.ImageBitmapHelper
 import com.hippo.ehviewer.client.EhClient
 import com.hippo.lib.image.Image
-import com.hippo.lib.yorozuya.OSUtils
 import java.io.File
 
 /**
@@ -40,7 +39,9 @@ class ClientModule(
     }
 
     private companion object {
-        fun memoryCacheMaxSize(): Int =
-            minOf(20 * 1024 * 1024, OSUtils.getAppMaxMemory().toInt())
+        fun memoryCacheMaxSize(): Int {
+            val maxMemory = Runtime.getRuntime().maxMemory() / 8
+            return maxMemory.coerceIn(20L * 1024 * 1024, 64L * 1024 * 1024).toInt()
+        }
     }
 }
