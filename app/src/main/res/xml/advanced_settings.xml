@@ -57,7 +57,7 @@
         app:entryValues="@array/read_cache_size_entry_values" />
 
     <com.hippo.preference.ListPreference
-        android:defaultValue="zh-CN"
+        android:defaultValue="system"
         android:key="app_language"
         android:summary="%s"
         android:title="@string/settings_advanced_app_language_title"

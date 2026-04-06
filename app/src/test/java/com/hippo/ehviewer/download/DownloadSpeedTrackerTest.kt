@@ -4,7 +4,6 @@ import com.hippo.ehviewer.dao.DownloadInfo
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
-import java.util.LinkedList
 
 /**
  * Unit tests for [DownloadSpeedTracker].
@@ -15,7 +14,7 @@ class DownloadSpeedTrackerTest {
     private lateinit var activeTask: DownloadInfo
     private val infoListeners = mutableListOf<DownloadInfoListener>()
     private var capturedDownloadInfo: DownloadInfo? = null
-    private val waitList = LinkedList<DownloadInfo>()
+    private val waitList = mutableListOf<DownloadInfo>()
 
     private val fakeListener = object : DownloadListener {
         override fun onGet509() {}
@@ -40,7 +39,7 @@ class DownloadSpeedTrackerTest {
             override fun getInfoListForLabel(label: String?): List<DownloadInfo>? = null
             override fun getDownloadListener(): DownloadListener = fakeListener
             override fun getDownloadInfoListeners(): List<DownloadInfoListener> = infoListeners
-            override fun getWaitList(): LinkedList<DownloadInfo> = waitList
+            override fun getWaitList(): List<DownloadInfo> = waitList
         }
 
         tracker = DownloadSpeedTracker(callback)

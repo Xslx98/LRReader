@@ -3,7 +3,6 @@ package com.hippo.ehviewer.client.lrr
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
@@ -33,7 +32,7 @@ object LRRMinionApi {
         baseUrl: String,
         jobId: String
     ): MinionJobStatus = withContext(Dispatchers.IO) {
-        val url = baseUrl.toHttpUrlOrNull()!!.newBuilder()
+        val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegment("api")
             .addPathSegment("minion")
             .addPathSegment(jobId)

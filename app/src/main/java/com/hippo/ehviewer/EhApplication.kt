@@ -31,7 +31,9 @@ import com.hippo.Native
 import com.hippo.a7zip.A7Zip
 import com.hippo.content.ContextLocalWrapper
 import com.hippo.content.RecordingApplication
+import com.hippo.ehviewer.client.EhFilter
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
+import kotlinx.coroutines.launch
 import com.hippo.ehviewer.client.lrr.LRRClientProvider
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.ui.CommonOperations
@@ -127,15 +129,29 @@ class EhApplication : RecordingApplication() {
         }
 
         LRRClientProvider.init(this)
-        BitmapUtils.initialize(this)
-        Image.initialize(this)
-        Native.initialize()
-        A7Zip.initialize(this)
 
         // Initialize ServiceRegistry (must be after Settings/EhDB)
         ServiceRegistry.initialize(this)
         // Eagerly start network monitoring so isAvailable() is ready before first API call
         ServiceRegistry.networkModule.networkMonitor
+
+        // Load EhFilter from DB asynchronously. Filter lists start empty — safe default.
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            try {
+                EhFilter.getInstance().loadFromDb()
+            } catch (_: Exception) {
+                // Filters will remain empty — nothing gets filtered
+            }
+        }
+
+        // Defer heavy JNI/native initialization to background thread.
+        // These are not needed until the user actually opens a gallery or downloads.
+        IoThreadPoolExecutor.instance.execute {
+            BitmapUtils.initialize(this)
+            Image.initialize(this)
+            Native.initialize()
+            A7Zip.initialize(this)
+        }
 
         if (Settings.getEnableAnalytics()) {
             Analytics.start(this)

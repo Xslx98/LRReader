@@ -3,7 +3,6 @@ package com.hippo.ehviewer.client.lrr
 import com.hippo.ehviewer.client.lrr.data.LRRSearchResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
@@ -33,7 +32,8 @@ object LRRSearchApi {
         groupbyTanks: Boolean = false
     ): LRRSearchResult = retryOnFailure {
         withContext(Dispatchers.IO) {
-            val urlBuilder = "$baseUrl/api/search".toHttpUrlOrNull()!!.newBuilder()
+            val urlBuilder = parseBaseUrl(baseUrl).newBuilder()
+                .addPathSegments("api/search")
             if (!filter.isNullOrEmpty()) urlBuilder.addQueryParameter("filter", filter)
             if (!category.isNullOrEmpty()) urlBuilder.addQueryParameter("category", category)
             if (start > 0) urlBuilder.addQueryParameter("start", start.toString())
@@ -70,7 +70,8 @@ object LRRSearchApi {
         untaggedonly: Boolean = false,
         groupbyTanks: Boolean = false
     ): LRRSearchResult = withContext(Dispatchers.IO) {
-        val urlBuilder = "$baseUrl/api/search/random".toHttpUrlOrNull()!!.newBuilder()
+        val urlBuilder = parseBaseUrl(baseUrl).newBuilder()
+            .addPathSegments("api/search/random")
         if (!filter.isNullOrEmpty()) urlBuilder.addQueryParameter("filter", filter)
         if (count > 0) urlBuilder.addQueryParameter("count", count.toString())
         if (!category.isNullOrEmpty()) urlBuilder.addQueryParameter("category", category)
