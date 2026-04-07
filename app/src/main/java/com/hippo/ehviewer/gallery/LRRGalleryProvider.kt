@@ -13,7 +13,11 @@ import com.hippo.ehviewer.client.lrr.runSuspend
 import com.hippo.lib.glgallery.GalleryProvider
 import com.hippo.lib.image.Image
 import com.hippo.unifile.UniFile
-import com.hippo.util.IoThreadPoolExecutor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -63,12 +67,23 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
     @Volatile
     private var pageClient: OkHttpClient? = null
 
+    // Scope for all background work launched by this provider. Created in
+    // start() and cancelled in stop() so that pending downloads, preloads,
+    // and cache evictions don't outlive the gallery session.
+    // SupervisorJob: one failing job doesn't cancel siblings.
+    @Volatile
+    private var providerScope: CoroutineScope? = null
+
     // Track start page for reading progress
     private var startPageValue: Int = loadReadingProgress(this.context, galleryInfo.gid)
 
 
     override fun start() {
         super.start()
+
+        // Initialize the provider's coroutine scope. Every background launch
+        // in this class is scoped here and cancelled in stop().
+        providerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
         // Prepare cache directory
         cacheDir = File(context.cacheDir, "lrr_pages/$arcId")
@@ -98,7 +113,7 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
         }
 
         // Extract archive on background thread
-        IoThreadPoolExecutor.instance.execute {
+        providerScope?.launch {
             try {
                 val client = ServiceRegistry.networkModule.longReadClient
                 val pages = runSuspend {
@@ -205,10 +220,16 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
         // Safe to clear: stopped flag prevents new requests from entering onRequest()
         inflightRequests.clear()
 
-        // Evict old archive caches if total size exceeds limit
-        IoThreadPoolExecutor.instance.execute {
+        // Evict old archive caches on the application-scoped IO scope so the
+        // cleanup still runs after the provider's own scope is cancelled below.
+        ServiceRegistry.coroutineModule.ioScope.launch {
             cleanupOldCaches(context, MAX_TOTAL_CACHE_BYTES)
         }
+
+        // Cancel all in-flight provider jobs (start extraction, onRequest
+        // downloads, preloads, putStartPage progress sync).
+        providerScope?.cancel()
+        providerScope = null
     }
 
     override fun getStartPage(): Int = startPageValue
@@ -219,8 +240,10 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
         // Persist locally for instant restore on next open
         saveReadingProgress(context, galleryInfo.gid, page)
 
-        // Sync progress to LANraragi server (1-indexed)
-        IoThreadPoolExecutor.instance.execute {
+        // Sync progress to LANraragi server (1-indexed). Use the app-wide IO
+        // scope: putStartPage may be called during stop()/teardown when the
+        // provider scope is already cancelled, and we still want to persist.
+        ServiceRegistry.coroutineModule.ioScope.launch {
             try {
                 val client = ServiceRegistry.networkModule.okHttpClient
                 runSuspend<Unit> {
@@ -285,8 +308,15 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
 
         notifyPageWait(index)
 
-        // Download and decode on IO thread
-        IoThreadPoolExecutor.instance.execute {
+        // Download and decode on IO thread. Launch on the provider scope so
+        // that stop() can cancel pending downloads.
+        val scope = providerScope
+        if (scope == null) {
+            // stop() was called after onRequest arrived — skip silently
+            inflightRequests.remove(index)
+            return
+        }
+        scope.launch {
             try {
                 downloadAndDecodePage(index)
 
@@ -583,7 +613,7 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
     private fun preloadPages(currentIndex: Int) {
         val state = stateRef.get()
         if (state.paths == null) return
-        IoThreadPoolExecutor.instance.execute {
+        providerScope?.launch {
             for (i in 1..PRELOAD_COUNT) {
                 val currentState = stateRef.get()
                 if (currentState.stopped) break
