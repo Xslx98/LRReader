@@ -22,8 +22,11 @@ object LRRServerApi {
     suspend fun getServerInfo(client: OkHttpClient, baseUrl: String): LRRServerInfo =
         retryOnFailure {
             withContext(Dispatchers.IO) {
+                val url = parseBaseUrl(baseUrl).newBuilder()
+                    .addPathSegments("api/info")
+                    .build()
                 val request = Request.Builder()
-                    .url("$baseUrl/api/info")
+                    .url(url)
                     .get()
                     .build()
                 client.newCall(request).execute().use { response ->
