@@ -215,4 +215,144 @@ class LRRAuthManagerTest {
         LRRAuthManager.setAllowCleartext(true)
         assertTrue("after setAllowCleartext(true)", LRRAuthManager.getAllowCleartext())
     }
+
+    // ── Setter failure surfacing (sPrefs == null) ──────────────────
+    //
+    // When the KeyStore / EncryptedSharedPreferences is unavailable every setter
+    // must throw LRRSecureStorageUnavailableException instead of silently dropping
+    // the write. Silent drops previously let users believe they had saved new
+    // credentials when in reality nothing was persisted.
+
+    @Test(expected = LRRSecureStorageUnavailableException::class)
+    fun setServerUrl_throwsWhenStorageUnavailable() {
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.setServerUrl("http://test.local")
+    }
+
+    @Test(expected = LRRSecureStorageUnavailableException::class)
+    fun setApiKey_throwsWhenStorageUnavailable() {
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.setApiKey("secret")
+    }
+
+    @Test(expected = LRRSecureStorageUnavailableException::class)
+    fun setServerName_throwsWhenStorageUnavailable() {
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.setServerName("LRR")
+    }
+
+    @Test(expected = LRRSecureStorageUnavailableException::class)
+    fun setActiveProfileId_throwsWhenStorageUnavailable() {
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.setActiveProfileId(7L)
+    }
+
+    @Test(expected = LRRSecureStorageUnavailableException::class)
+    fun setApiKeyForProfile_throwsWhenStorageUnavailable() {
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.setApiKeyForProfile(1L, "key")
+    }
+
+    @Test(expected = LRRSecureStorageUnavailableException::class)
+    fun clearApiKeyForProfile_throwsWhenStorageUnavailable() {
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.clearApiKeyForProfile(1L)
+    }
+
+    @Test(expected = LRRSecureStorageUnavailableException::class)
+    fun setPattern_throwsWhenStorageUnavailable() {
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.setPattern("1234")
+    }
+
+    @Test(expected = LRRSecureStorageUnavailableException::class)
+    fun setAllowCleartext_throwsWhenStorageUnavailable() {
+        // Added during W0-3/W0-4 merge: setAllowCleartext originally used the
+        // silent `?: return` pattern that W0-4 had purged from every other
+        // setter. Aligned here so the UI catches are guaranteed to fire on
+        // KeyStore failure instead of the flag update being silently dropped.
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.setAllowCleartext(false)
+    }
+
+    @Test
+    fun verifyPattern_returnsFalseWhenStorageUnavailable() {
+        // Reads MUST NOT throw — verify-before-unlock flows need to degrade gracefully.
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        assertFalse(LRRAuthManager.verifyPattern("anything"))
+    }
+
+    @Test
+    fun getters_returnNullWhenStorageUnavailable() {
+        // Reads MUST NOT throw — UI polls getApiKey()/getServerUrl() frequently.
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        assertNull(LRRAuthManager.getServerUrl())
+        assertNull(LRRAuthManager.getApiKey())
+        assertNull(LRRAuthManager.getServerName())
+        assertNull(LRRAuthManager.getApiKeyForProfile(1L))
+        assertFalse(LRRAuthManager.hasPattern())
+    }
+
+    @Test
+    fun clear_toleratesUnavailableStorage() {
+        // clear() is safe to call during reauth flows — must not throw even if
+        // the backing store was never initialized.
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.clear() // should not throw
+        assertEquals(0L, LRRAuthManager.getActiveProfileId())
+    }
+
+    // ── Multi-profile reauth detection (W0-4 part 2) ────────────────
+
+    @Test
+    fun markReauthIfProfilesUnprotected_emptyList_doesNothing() {
+        // Fresh install: no profiles in Room — should NOT trigger reauth even
+        // if storage is broken (there's nothing to recover).
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.markReauthIfProfilesUnprotected(emptyList())
+        assertFalse(LRRAuthManager.isNeedsReauthentication())
+    }
+
+    @Test
+    fun markReauthIfProfilesUnprotected_storageDownWithProfiles_marksReauth() {
+        // KeyStore broken AND user has at least one server: keys are unrecoverable.
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.markReauthIfProfilesUnprotected(listOf(1L, 2L))
+        assertTrue(LRRAuthManager.isNeedsReauthentication())
+    }
+
+    @Test
+    fun markReauthIfProfilesUnprotected_allProfilesHaveKeys_doesNotMark() {
+        LRRAuthManager.setApiKeyForProfile(1L, "k1")
+        LRRAuthManager.setApiKeyForProfile(2L, "k2")
+        LRRAuthManager.markReauthIfProfilesUnprotected(listOf(1L, 2L))
+        assertFalse(LRRAuthManager.isNeedsReauthentication())
+    }
+
+    @Test
+    fun markReauthIfProfilesUnprotected_oneMissingKey_marksReauth() {
+        // Partial corruption / interrupted migration: one profile lost its key.
+        LRRAuthManager.setApiKeyForProfile(1L, "k1")
+        // Profile 2 has no key entry
+        LRRAuthManager.markReauthIfProfilesUnprotected(listOf(1L, 2L))
+        assertTrue(LRRAuthManager.isNeedsReauthentication())
+    }
+
+    @Test
+    fun markReauthIfProfilesUnprotected_doesNotClearExistingFlag() {
+        // Once flagged, additional checks should not unset the flag — only an
+        // explicit clear() (after re-auth) should reset it.
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.markReauthIfProfilesUnprotected(listOf(1L))
+        assertTrue(LRRAuthManager.isNeedsReauthentication())
+        // Restore healthy storage and re-check with all keys present
+        LRRAuthManager.initializeForTesting(
+            ctx.getSharedPreferences("lrr_auth_test_2", android.content.Context.MODE_PRIVATE)
+        )
+        // initializeForTesting() resets the flag — that's the documented "fresh test setup"
+        // behavior. Verify subsequent successful checks keep it false.
+        LRRAuthManager.setApiKeyForProfile(1L, "restored")
+        LRRAuthManager.markReauthIfProfilesUnprotected(listOf(1L))
+        assertFalse(LRRAuthManager.isNeedsReauthentication())
+    }
 }

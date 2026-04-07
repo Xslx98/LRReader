@@ -118,54 +118,61 @@ object LRRUrlHelper {
         rawInput: String,
         callback: ConnectCallback
     ) {
-        if (hasExplicitScheme(rawInput)) {
-            // User typed scheme explicitly -- use as-is
-            LRRAuthManager.setServerUrl(rawInput)
-            try {
-                val info = doConnect(testClient, rawInput)
-                callback.onSuccess(rawInput, info, false)
-            } catch (e: Exception) {
-                callback.onFailure(e)
+        try {
+            if (hasExplicitScheme(rawInput)) {
+                // User typed scheme explicitly -- use as-is
+                LRRAuthManager.setServerUrl(rawInput)
+                try {
+                    val info = doConnect(testClient, rawInput)
+                    callback.onSuccess(rawInput, info, false)
+                } catch (e: Exception) {
+                    callback.onFailure(e)
+                }
+                return
             }
-            return
-        }
 
-        // No explicit scheme -> try HTTPS first
-        val httpsUrl = "https://$rawInput"
-        val httpUrl = "http://$rawInput"
+            // No explicit scheme -> try HTTPS first
+            val httpsUrl = "https://$rawInput"
+            val httpUrl = "http://$rawInput"
 
-        LRRAuthManager.setServerUrl(httpsUrl)
-        try {
-            Log.d(TAG, "Trying HTTPS: $httpsUrl")
-            val info = doConnect(testClient, httpsUrl)
-            callback.onSuccess(httpsUrl, info, false)
-            return
-        } catch (e1: Exception) {
-            Log.d(TAG, "HTTPS failed: ${e1.message}")
-        }
+            LRRAuthManager.setServerUrl(httpsUrl)
+            try {
+                Log.d(TAG, "Trying HTTPS: $httpsUrl")
+                val info = doConnect(testClient, httpsUrl)
+                callback.onSuccess(httpsUrl, info, false)
+                return
+            } catch (e1: Exception) {
+                Log.d(TAG, "HTTPS failed: ${e1.message}")
+            }
 
-        // Fallback to HTTP -- only permitted for private / LAN addresses.
-        // Allowing HTTP on public hosts would expose the Bearer token to
-        // a network-layer attacker that forced the HTTPS failure.
-        if (!isLanAddress(httpUrl)) {
-            LRRAuthManager.setServerUrl(httpsUrl) // restore HTTPS URL
-            callback.onFailure(
-                SecurityException(
-                    "HTTPS connection failed and HTTP is not allowed for non-LAN servers. " +
-                        "Verify the server address and SSL certificate."
+            // Fallback to HTTP -- only permitted for private / LAN addresses.
+            // Allowing HTTP on public hosts would expose the Bearer token to
+            // a network-layer attacker that forced the HTTPS failure.
+            if (!isLanAddress(httpUrl)) {
+                LRRAuthManager.setServerUrl(httpsUrl) // restore HTTPS URL
+                callback.onFailure(
+                    SecurityException(
+                        "HTTPS connection failed and HTTP is not allowed for non-LAN servers. " +
+                            "Verify the server address and SSL certificate."
+                    )
                 )
-            )
-            return
-        }
+                return
+            }
 
-        LRRAuthManager.setServerUrl(httpUrl)
-        try {
-            Log.d(TAG, "Trying HTTP fallback: $httpUrl")
-            val info = doConnect(testClient, httpUrl)
-            callback.onSuccess(httpUrl, info, true)
-        } catch (e2: Exception) {
-            Log.d(TAG, "HTTP fallback also failed: ${e2.message}")
-            callback.onFailure(e2)
+            LRRAuthManager.setServerUrl(httpUrl)
+            try {
+                Log.d(TAG, "Trying HTTP fallback: $httpUrl")
+                val info = doConnect(testClient, httpUrl)
+                callback.onSuccess(httpUrl, info, true)
+            } catch (e2: Exception) {
+                Log.d(TAG, "HTTP fallback also failed: ${e2.message}")
+                callback.onFailure(e2)
+            }
+        } catch (e: LRRSecureStorageUnavailableException) {
+            // KeyStore unavailable — cannot persist server URL for the interceptor.
+            // Route as a connection failure so the caller's UI surfaces the error.
+            Log.e(TAG, "Secure storage unavailable during connect", e)
+            callback.onFailure(e)
         }
     }
 

@@ -111,14 +111,22 @@ class EhApplication : RecordingApplication() {
         // SpiderDen.initialize(this);
         EhDB.initialize(this)
 
-        // Load active server profile into LRRAuthManager asynchronously.
+        // Load active server profile into LRRAuthManager asynchronously, and verify
+        // every profile has its API key still encrypted in storage. If any profile
+        // lost its key (KeyStore down or partial corruption) we flag reauth so the
+        // MainActivity dialog directs the user to re-enter credentials.
         // ServiceRegistry is not yet initialized, so use a standalone CoroutineScope.
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val activeProfile = EhDB.getActiveProfileAsync()
+                val allProfiles = EhDB.getAllServerProfilesAsync()
+                LRRAuthManager.markReauthIfProfilesUnprotected(allProfiles.map { it.id })
+                val activeProfile = allProfiles.firstOrNull { it.isActive }
                 if (activeProfile != null) {
                     LRRAuthManager.setActiveProfileId(activeProfile.id)
                 }
+            } catch (_: com.hippo.ehviewer.client.lrr.LRRSecureStorageUnavailableException) {
+                // KeyStore unavailable — markReauthIfProfilesUnprotected already flagged
+                // it (or initialize() did), and MainActivity will surface the dialog.
             } catch (_: Exception) {
                 // DB not ready yet on first launch — safe to ignore
             }
