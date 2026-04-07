@@ -217,8 +217,11 @@ object LRRArchiveApi {
         if (!tags.isNullOrEmpty()) bodyBuilder.addFormDataPart("tags", tags)
         if (!categoryId.isNullOrEmpty()) bodyBuilder.addFormDataPart("category_id", categoryId)
 
+        val url = parseBaseUrl(baseUrl).newBuilder()
+            .addPathSegments("api/archives/upload")
+            .build()
         val request = Request.Builder()
-            .url("$baseUrl/api/archives/upload")
+            .url(url)
             .put(bodyBuilder.build())
             .build()
         client.newCall(request).execute().use { response ->
