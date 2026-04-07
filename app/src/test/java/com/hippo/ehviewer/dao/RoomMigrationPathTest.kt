@@ -18,7 +18,7 @@ import java.nio.ByteBuffer
 import java.security.MessageDigest
 
 /**
- * Migration path tests for AppDatabase v9 -> v10 -> v11 -> v12 -> v13.
+ * Migration path tests for AppDatabase v9 -> v10 -> v11 -> v12 -> v13 -> v14.
  *
  * These tests exercise the actual migration SQL by:
  * 1. Creating a database at the source version schema
@@ -26,7 +26,7 @@ import java.security.MessageDigest
  * 3. Running the migration object's migrate() method
  * 4. Verifying data integrity and schema changes
  *
- * Unlike RoomMigrationTest (which validates the current v13 schema),
+ * Unlike RoomMigrationTest (which validates the current v14 schema),
  * these tests verify each migration step preserves data correctly.
  *
  * Run with: ./gradlew testAppReleaseDebugUnitTest --tests "*.RoomMigrationPathTest"
@@ -253,6 +253,14 @@ class RoomMigrationPathTest {
         db.execSQL("CREATE INDEX IF NOT EXISTS index_DOWNLOADS_TIME ON DOWNLOADS (TIME)")
         db.execSQL("CREATE INDEX IF NOT EXISTS index_HISTORY_SERVER_PROFILE_ID ON HISTORY (SERVER_PROFILE_ID)")
         db.execSQL("CREATE INDEX IF NOT EXISTS index_HISTORY_TIME ON HISTORY (TIME)")
+    }
+
+    /**
+     * Creates the v13 schema (v12 + LABEL index on DOWNLOADS).
+     */
+    private fun createV13Schema(db: SupportSQLiteDatabase) {
+        createV12Schema(db) // tables identical to v12
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_DOWNLOADS_LABEL ON DOWNLOADS (LABEL)")
     }
 
     // ========== SHA-256 GID computation (mirrors AppDatabase.MIGRATION_9_10) ==========
@@ -618,10 +626,92 @@ class RoomMigrationPathTest {
         }
     }
 
-    // ========== Test 5: Full migration v9 -> v13 ==========
+    // ========== Test 4b: v13 -> v14 (Add ALLOW_CLEARTEXT to SERVER_PROFILES) ==========
 
     @Test
-    fun `migrate all v9 to v13 - full chain preserves data`() {
+    fun `migrate 13 to 14 - ALLOW_CLEARTEXT column added with default 1`() {
+        db = createDatabase(13) { createV13Schema(it) }
+
+        // Insert profiles WITHOUT the new column (v13 schema)
+        db.execSQL(
+            "INSERT INTO SERVER_PROFILES (NAME, URL, IS_ACTIVE) VALUES ('Primary', 'http://lrr.local:3000', 1)"
+        )
+        db.execSQL(
+            "INSERT INTO SERVER_PROFILES (NAME, URL, IS_ACTIVE) VALUES ('Backup', 'https://lrr.example.com', 0)"
+        )
+
+        val columnsBefore = getColumnNames(db, "SERVER_PROFILES")
+        assertFalse("ALLOW_CLEARTEXT should not exist before migration",
+            columnsBefore.contains("ALLOW_CLEARTEXT"))
+
+        AppDatabase.MIGRATION_13_14.migrate(db)
+
+        val columnsAfter = getColumnNames(db, "SERVER_PROFILES")
+        assertTrue("ALLOW_CLEARTEXT should exist after migration",
+            columnsAfter.contains("ALLOW_CLEARTEXT"))
+
+        // Both pre-existing rows should be grandfathered to ALLOW_CLEARTEXT=1
+        db.query("SELECT NAME, URL, IS_ACTIVE, ALLOW_CLEARTEXT FROM SERVER_PROFILES ORDER BY ID").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("Primary", c.getString(0))
+            assertEquals("http://lrr.local:3000", c.getString(1))
+            assertEquals(1, c.getInt(2))
+            assertEquals(1, c.getInt(3))
+
+            assertTrue(c.moveToNext())
+            assertEquals("Backup", c.getString(0))
+            assertEquals("https://lrr.example.com", c.getString(1))
+            assertEquals(0, c.getInt(2))
+            assertEquals(1, c.getInt(3))
+
+            assertFalse("Should only have 2 rows", c.moveToNext())
+        }
+    }
+
+    @Test
+    fun `migrate 13 to 14 - empty SERVER_PROFILES table migrates without error`() {
+        db = createDatabase(13) { createV13Schema(it) }
+
+        AppDatabase.MIGRATION_13_14.migrate(db)
+
+        val columns = getColumnNames(db, "SERVER_PROFILES")
+        assertTrue(columns.contains("ALLOW_CLEARTEXT"))
+
+        db.query("SELECT COUNT(*) FROM SERVER_PROFILES").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(0, c.getInt(0))
+        }
+    }
+
+    @Test
+    fun `migrate 13 to 14 - new inserts can specify ALLOW_CLEARTEXT explicitly`() {
+        db = createDatabase(13) { createV13Schema(it) }
+        AppDatabase.MIGRATION_13_14.migrate(db)
+
+        db.execSQL(
+            "INSERT INTO SERVER_PROFILES (NAME, URL, IS_ACTIVE, ALLOW_CLEARTEXT) " +
+                "VALUES ('NoCleartext', 'http://strict.local', 1, 0)"
+        )
+        db.execSQL(
+            "INSERT INTO SERVER_PROFILES (NAME, URL, IS_ACTIVE, ALLOW_CLEARTEXT) " +
+                "VALUES ('YesCleartext', 'http://lan.local', 0, 1)"
+        )
+
+        db.query("SELECT NAME, ALLOW_CLEARTEXT FROM SERVER_PROFILES ORDER BY NAME").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("NoCleartext", c.getString(0))
+            assertEquals(0, c.getInt(1))
+
+            assertTrue(c.moveToNext())
+            assertEquals("YesCleartext", c.getString(0))
+            assertEquals(1, c.getInt(1))
+        }
+    }
+
+    // ========== Test 5: Full migration v9 -> v14 ==========
+
+    @Test
+    fun `migrate all v9 to v14 - full chain preserves data`() {
         db = createDatabase(9) { createV9Schema(it) }
 
         val token = "full_chain_test_arcid"
@@ -651,11 +741,12 @@ class RoomMigrationPathTest {
             arrayOf<Any>(oldGid)
         )
 
-        // Run all 4 migrations in order
+        // Run all 5 migrations in order
         AppDatabase.MIGRATION_9_10.migrate(db)
         AppDatabase.MIGRATION_10_11.migrate(db)
         AppDatabase.MIGRATION_11_12.migrate(db)
         AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
 
         // Verify GID recomputation (v9->v10)
         db.query("SELECT GID, TOKEN, TITLE, RATING FROM DOWNLOADS").use { c ->
@@ -700,16 +791,17 @@ class RoomMigrationPathTest {
         val columns = getColumnNames(db, "SERVER_PROFILES")
         assertFalse("API_KEY should be removed", columns.contains("API_KEY"))
 
-        db.query("SELECT NAME, URL, IS_ACTIVE FROM SERVER_PROFILES").use { c ->
+        db.query("SELECT NAME, URL, IS_ACTIVE, ALLOW_CLEARTEXT FROM SERVER_PROFILES").use { c ->
             assertTrue(c.moveToFirst())
             assertEquals("TestSrv", c.getString(0))
             assertEquals("http://test.local", c.getString(1))
             assertEquals(1, c.getInt(2))
+            assertEquals(1, c.getInt(3))
         }
     }
 
     @Test
-    fun `migrate all v9 to v13 - empty database succeeds`() {
+    fun `migrate all v9 to v14 - empty database succeeds`() {
         db = createDatabase(9) { createV9Schema(it) }
 
         // Run all migrations on empty database -- should not throw
@@ -717,6 +809,7 @@ class RoomMigrationPathTest {
         AppDatabase.MIGRATION_10_11.migrate(db)
         AppDatabase.MIGRATION_11_12.migrate(db)
         AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
 
         // Verify tables still exist and are queryable
         db.query("SELECT COUNT(*) FROM DOWNLOADS").use { c ->
@@ -730,13 +823,14 @@ class RoomMigrationPathTest {
     }
 
     @Test
-    fun `migrate all v9 to v13 - final schema matches Room v13`() {
+    fun `migrate all v9 to v14 - final schema matches Room v14`() {
         db = createDatabase(9) { createV9Schema(it) }
 
         AppDatabase.MIGRATION_9_10.migrate(db)
         AppDatabase.MIGRATION_10_11.migrate(db)
         AppDatabase.MIGRATION_11_12.migrate(db)
         AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
 
         // Verify all 11 tables exist
         val tables = getTableNames(db)
@@ -748,9 +842,9 @@ class RoomMigrationPathTest {
         )
         assertEquals(expectedTables, tables)
 
-        // Verify SERVER_PROFILES v12 columns: ID, NAME, URL, IS_ACTIVE (no API_KEY)
+        // Verify SERVER_PROFILES v14 columns: ID, NAME, URL, IS_ACTIVE, ALLOW_CLEARTEXT
         val profileCols = getColumnNames(db, "SERVER_PROFILES")
-        assertEquals(setOf("ID", "NAME", "URL", "IS_ACTIVE"), profileCols)
+        assertEquals(setOf("ID", "NAME", "URL", "IS_ACTIVE", "ALLOW_CLEARTEXT"), profileCols)
 
         // Verify v11 indexes on DOWNLOADS and HISTORY
         val indexes = getIndexNames(db)
