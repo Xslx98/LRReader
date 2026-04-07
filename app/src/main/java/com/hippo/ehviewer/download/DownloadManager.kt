@@ -1137,7 +1137,8 @@ class DownloadManager(
             return
         }
 
-        // Create a placeholder label in memory immediately
+        // Create a placeholder label in memory immediately so the UI gets a
+        // synchronous update via onUpdateLabels below.
         val newLabel = DownloadLabel().apply {
             this.label = label
             this.time = System.currentTimeMillis()
@@ -1146,12 +1147,16 @@ class DownloadManager(
         mLabelSet.add(label)
         mMap[label] = ArrayList()
 
-        // Persist to DB on background thread
+        // Persist to DB on background thread, then update the placeholder's
+        // id/time fields back on the main thread. The previous code did the
+        // field assignments inside the IO coroutine, racing with main-thread
+        // readers of the same DownloadLabel object.
         scope.launch {
             val saved = EhDB.addDownloadLabelAsync(label)
-            // Update the in-memory label with the DB-assigned ID
-            newLabel.id = saved.id
-            newLabel.time = saved.time
+            runOnMainThread {
+                newLabel.id = saved.id
+                newLabel.time = saved.time
+            }
         }
 
         for (l in mDownloadInfoListeners) {
