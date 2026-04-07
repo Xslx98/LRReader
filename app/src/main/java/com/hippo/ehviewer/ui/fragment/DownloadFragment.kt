@@ -25,6 +25,7 @@ import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.hippo.ehviewer.EhDB
@@ -38,6 +39,8 @@ import com.hippo.unifile.UniFile
 import com.hippo.util.ExceptionUtils
 import com.hippo.util.IoThreadPoolExecutor
 import com.hippo.yorozuya.IOUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
@@ -365,20 +368,20 @@ class DownloadFragment : PreferenceFragmentCompat(),
         dialog.setCancelable(false)
         dialog.show()
 
-        IoThreadPoolExecutor.instance.execute {
+        lifecycleScope.launch(Dispatchers.IO) {
             val logs = mutableListOf<String>()
             var invalidCount = 0
 
             val downloadDir = DownloadSettings.getDownloadLocation()
             if (downloadDir == null || !downloadDir.isDirectory) {
                 mainHandler.post { dismissAndShowCleanResult(dialog, 0) }
-                return@execute
+                return@launch
             }
 
             val files = downloadDir.listFiles()
             if (files == null) {
                 mainHandler.post { dismissAndShowCleanResult(dialog, 0) }
-                return@execute
+                return@launch
             }
 
             val total = files.size
@@ -427,7 +430,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
                             val gi = downloadManager.getDownloadInfo(gid)
                             if (gi != null) {
                                 gi.state = DownloadInfo.STATE_NONE
-                                EhDB.putDownloadInfo(gi)
+                                EhDB.putDownloadInfoAsync(gi)
                             }
                         }
                         continue
@@ -461,7 +464,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
                             val gi = downloadManager.getDownloadInfo(gid)
                             if (gi != null) {
                                 gi.state = DownloadInfo.STATE_NONE
-                                EhDB.putDownloadInfo(gi)
+                                EhDB.putDownloadInfoAsync(gi)
                             }
                         }
                     }
