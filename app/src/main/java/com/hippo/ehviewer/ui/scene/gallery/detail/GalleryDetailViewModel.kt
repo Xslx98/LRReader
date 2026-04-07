@@ -116,6 +116,33 @@ class GalleryDetailViewModel : ViewModel() {
         _state.value = state
     }
 
+    /**
+     * Clear every per-entry state flow so a fresh navigation does not inherit
+     * the previous gallery's data.
+     *
+     * Why this exists: this ViewModel is scoped via
+     * `ViewModelProvider(requireActivity())`, so the same instance is reused
+     * across `GalleryDetailScene` navigations. The `getEffective*()` accessors
+     * fall back as `detail > info > args`. Without an explicit reset, the
+     * previously loaded `_galleryDetail` shadows the newly written
+     * `_galleryInfo` and every effective gid / token / category returns the
+     * stale gallery — the new detail page renders the old gallery, downloads
+     * its file, etc. The reader path is unaffected because it goes through an
+     * Intent with the GalleryInfo embedded directly, bypassing the ViewModel.
+     *
+     * Must be called by `GalleryDetailScene.handleArgs()` before writing the
+     * new arguments to the flows.
+     */
+    fun resetForNewEntry() {
+        _action.value = null
+        _gid.value = 0L
+        _token.value = null
+        _galleryInfo.value = null
+        _galleryDetail.value = null
+        _downloadInfo.value = null
+        _state.value = STATE_INIT
+    }
+
     // -------------------------------------------------------------------------
     // Derived accessors
     // -------------------------------------------------------------------------
