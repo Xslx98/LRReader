@@ -584,6 +584,111 @@ class DownloadManagerTest {
         }
     }
 
+    /**
+     * Race regression test for W0-1.
+     *
+     * The pre-fix [DownloadManager.loadDataFromDb] wrote directly into the
+     * main-thread-only collections (mLabelList, mLabelSet, mMap, ...) from the
+     * IO coroutine. With a real [Dispatchers.IO] scope this races with any
+     * main-thread reader (such as `containLabel`), and would intermittently
+     * surface as `ConcurrentModificationException`, partial-state reads, or
+     * `HashMap` data corruption.
+     *
+     * Each iteration constructs a fresh manager backed by a real IO dispatcher,
+     * spams the public read API while the IO phase is in flight, drains the
+     * main looper to let the new publish phase post run, then waits for init
+     * and asserts the published state is complete.
+     *
+     * The fix guarantees that the IO phase only touches the database; all
+     * shared-collection writes happen via [DownloadManager.runOnMainThread] on
+     * the test main thread. With the fix this test runs 1000 iterations
+     * without throwing.
+     */
+    @Test
+    fun loadDataFromDb_concurrentReads_isStable_underBackgroundIo() {
+        // Pre-populate the DB once.
+        val labelCount = 50
+        val infoCount = 200
+        val labelStrings = (0 until labelCount).map { "race-label-$it" }
+        runBlocking {
+            for (s in labelStrings) {
+                EhDB.addDownloadLabelAsync(s)
+            }
+            for (i in 0 until infoCount) {
+                val info = DownloadInfo().apply {
+                    gid = 90000L + i
+                    token = "race-token-$i"
+                    title = "race title $i"
+                    label = labelStrings[i % labelCount]
+                    state = DownloadInfo.STATE_NONE
+                    time = System.currentTimeMillis() + i
+                }
+                EhDB.putDownloadInfoAsync(info)
+            }
+        }
+
+        val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        try {
+            repeat(1000) { iteration ->
+                val freshManager = DownloadManager(context, ioScope)
+
+                // Spam main-thread reads while the IO phase is in flight on the
+                // background dispatcher. None of these should throw and none
+                // should observe a partially-mutated collection.
+                for (spin in 0 until 50) {
+                    try {
+                        // Snapshot copies — exercises iteration of the live list.
+                        val labelsSnapshot = freshManager.labelList.toList()
+                        // Existence checks — exercises HashSet read concurrent
+                        // with what used to be a HashSet write.
+                        freshManager.containLabel(labelStrings[spin % labelCount])
+                        freshManager.containDownloadInfo(90000L + spin)
+                        // Sanity assertion: snapshot must never be partially
+                        // populated. It is either empty (publish hasn't run) or
+                        // exactly the full label set.
+                        val size = labelsSnapshot.size
+                        assertTrue(
+                            "iter=$iteration spin=$spin: unexpected partial labelList size $size",
+                            size == 0 || size == labelCount
+                        )
+                    } catch (e: ConcurrentModificationException) {
+                        fail("iter=$iteration spin=$spin: ConcurrentModificationException $e")
+                    }
+                    if (spin % 5 == 0) {
+                        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+                    }
+                }
+
+                // Drain the publish post and confirm init completed cleanly.
+                // We cannot use runBlocking { awaitInitAsync() } here because
+                // it would block the main thread, preventing the main looper
+                // from processing the SimpleHandler.post dispatched by the IO
+                // coroutine — a deadlock. Instead, poll: drain the looper then
+                // sleep briefly until the publish phase has landed.
+                var initDone = false
+                for (attempt in 0 until 500) {
+                    org.robolectric.shadows.ShadowLooper.idleMainLooper()
+                    if (freshManager.labelList.size == labelCount) { initDone = true; break }
+                    Thread.sleep(1)
+                }
+                assertTrue("iter=$iteration: init did not complete within timeout", initDone)
+                assertEquals(
+                    "iter=$iteration: published label count mismatch",
+                    labelCount,
+                    freshManager.labelList.size
+                )
+                assertEquals(
+                    "iter=$iteration: published info count mismatch",
+                    infoCount,
+                    freshManager.allDownloadInfoList.size
+                )
+            }
+        } finally {
+            ioScope.cancel()
+            org.robolectric.shadows.ShadowLooper.idleMainLooper()
+        }
+    }
+
     @Test
     fun collections_arePlainTypes_notConcurrent() {
         val fields = DownloadManager::class.java.declaredFields
