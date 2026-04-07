@@ -7,24 +7,16 @@ import android.content.DialogInterface
 import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
-import com.hippo.ehviewer.EhApplication
-import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.UrlOpener
-import com.hippo.ehviewer.client.EhClient
 import com.hippo.ehviewer.client.EhFilter
-import com.hippo.ehviewer.client.EhRequest
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.EhUrl
-import com.hippo.ehviewer.client.data.userTag.TagPushParam
-import com.hippo.ehviewer.client.data.userTag.UserTagList
 import com.hippo.ehviewer.dao.Filter
 import com.hippo.ehviewer.ui.MainActivity
 import com.hippo.ehviewer.ui.scene.BaseScene
-import com.hippo.ehviewer.ui.scene.EhCallback
 import com.hippo.ehviewer.util.TagTranslationUtil
-import com.hippo.scene.SceneFragment
 
 class GalleryListSceneDialog(val baseScene: BaseScene) {
     val context: Context? = baseScene.context
@@ -98,62 +90,5 @@ class GalleryListSceneDialog(val baseScene: BaseScene) {
         val manager = context!!.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         manager.setPrimaryClip(ClipData.newPlainText(null, tag))
         Toast.makeText(context, R.string.gallery_tag_copy, Toast.LENGTH_LONG).show()
-    }
-
-    private fun requestTag(tagName: String?, tagState: Boolean) {
-        val url = EhUrl.getMyTag()
-
-        if (null == context) {
-            return
-        }
-        val activity = baseScene.activity2 ?: return
-
-        val callback =
-            SubscriptionDetailListener(context, activity.stageId, baseScene.tag, tagState)
-
-        val param = TagPushParam()
-
-        param.tagNameNew = tagName
-        if (tagState) {
-            param.tagWatchNew = "on"
-        } else {
-            param.tagHiddenNew = "on"
-        }
-
-
-        val mRequest = EhRequest()
-            .setMethod(EhClient.METHOD_ADD_TAG)
-            .setArgs(url, param).setCallback(callback)
-
-        ServiceRegistry.clientModule.ehClient.execute(mRequest)
-    }
-
-    private inner class SubscriptionDetailListener(
-        context: Context,
-        stageId: Int,
-        sceneTag: String?,
-        private val tagState: Boolean
-    ) :
-        EhCallback<GalleryListScene?, UserTagList?>(context, stageId, sceneTag) {
-        override fun isInstance(scene: SceneFragment?): Boolean {
-            return false
-        }
-
-        override fun onSuccess(result: UserTagList?) {
-            baseScene.setTagList(result)
-            val state =
-                if (tagState) context!!.getString(R.string.subscription_watched) else context!!.getString(
-                    R.string.subscription_hidden
-                )
-            val msg = context.getString(R.string.subscription_success, state)
-            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-        }
-
-        override fun onFailure(e: Exception) {
-            Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
-        }
-
-        override fun onCancel() {
-        }
     }
 }
