@@ -87,7 +87,11 @@ import com.hippo.scene.StageActivity
 import com.hippo.unifile.UniFile
 import com.hippo.util.BitmapUtils
 import com.hippo.util.GifHandler
+import androidx.lifecycle.lifecycleScope
 import com.hippo.util.IoThreadPoolExecutor
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.hippo.widget.AvatarImageView
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.lib.yorozuya.ResourcesUtils
@@ -790,14 +794,14 @@ class MainActivity : StageActivity(),
             }
             R.id.nav_server_config -> {
                 // Show server list if profiles exist, otherwise direct to config
-                IoThreadPoolExecutor.instance.execute {
-                    val profileCount = EhDB.getAllServerProfiles().size
-                    runOnUiThread {
-                        if (profileCount > 0) {
-                            startScene(Announcer(ServerListScene::class.java))
-                        } else {
-                            startScene(Announcer(ServerConfigScene::class.java))
-                        }
+                lifecycleScope.launch {
+                    val profileCount = withContext(Dispatchers.IO) {
+                        EhDB.getAllServerProfilesAsync().size
+                    }
+                    if (profileCount > 0) {
+                        startScene(Announcer(ServerListScene::class.java))
+                    } else {
+                        startScene(Announcer(ServerConfigScene::class.java))
                     }
                 }
             }

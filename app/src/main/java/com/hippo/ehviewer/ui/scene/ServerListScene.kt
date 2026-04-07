@@ -11,6 +11,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -29,6 +30,9 @@ import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
 import com.hippo.scene.Announcer
 import com.hippo.scene.StageActivity
 import com.hippo.util.IoThreadPoolExecutor
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Server list management scene. Shows all saved server profiles in a list.
@@ -96,24 +100,25 @@ class ServerListScene : BaseScene() {
     private fun loadProfiles() {
         val ctx = getEHContext() ?: return
 
-        IoThreadPoolExecutor.instance.execute {
-            val result = ArrayList(EhDB.getAllServerProfiles())
-            result.sortWith(compareByDescending { it.isActive })
-            requireActivity().runOnUiThread {
-                val adapter = mAdapter
-                if (adapter != null) {
-                    val diff = DiffUtil.calculateDiff(
-                        ServerProfileDiffCallback(mLastSnapshot, result)
-                    )
-                    mProfiles = result
-                    mLastSnapshot = ArrayList(result)
-                    diff.dispatchUpdatesTo(adapter)
-                } else {
-                    mProfiles = result
-                    mLastSnapshot = ArrayList(result)
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                ArrayList(EhDB.getAllServerProfilesAsync()).also { list ->
+                    list.sortWith(compareByDescending { it.isActive })
                 }
-                mEmptyText?.visibility = if (mProfiles.isEmpty()) View.VISIBLE else View.GONE
             }
+            val adapter = mAdapter
+            if (adapter != null) {
+                val diff = DiffUtil.calculateDiff(
+                    ServerProfileDiffCallback(mLastSnapshot, result)
+                )
+                mProfiles = result
+                mLastSnapshot = ArrayList(result)
+                diff.dispatchUpdatesTo(adapter)
+            } else {
+                mProfiles = result
+                mLastSnapshot = ArrayList(result)
+            }
+            mEmptyText?.visibility = if (mProfiles.isEmpty()) View.VISIBLE else View.GONE
         }
     }
 
@@ -121,17 +126,19 @@ class ServerListScene : BaseScene() {
         val ctx = getEHContext() ?: return
 
         // DB writes on IO thread, then UI updates on main thread
-        IoThreadPoolExecutor.instance.execute {
-            EhDB.deactivateAllProfiles()
-            EhDB.updateServerProfile(
-                ServerProfile(
-                    id = profile.id,
-                    name = profile.name,
-                    url = profile.url,
-                    isActive = true
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                EhDB.deactivateAllProfilesAsync()
+                EhDB.updateServerProfileAsync(
+                    ServerProfile(
+                        id = profile.id,
+                        name = profile.name,
+                        url = profile.url,
+                        isActive = true
+                    )
                 )
-            )
-            activity?.runOnUiThread { switchToProfileUiUpdate(profile) }
+            }
+            switchToProfileUiUpdate(profile)
         }
     }
 
@@ -149,7 +156,7 @@ class ServerListScene : BaseScene() {
         ServiceRegistry.clearAllCaches()
 
         // Reload download manager on IO thread (EhDB.getAllDownloadInfo blocks)
-        IoThreadPoolExecutor.instance.execute {
+        lifecycleScope.launch(Dispatchers.IO) {
             ServiceRegistry.dataModule.downloadManager.reload()
         }
 
@@ -183,8 +190,8 @@ class ServerListScene : BaseScene() {
             .setMessage(getString(R.string.lrr_delete_server_confirm, profile.name))
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 LRRAuthManager.clearApiKeyForProfile(profile.id)
-                IoThreadPoolExecutor.instance.execute {
-                    EhDB.deleteServerProfile(profile)
+                ServiceRegistry.coroutineModule.ioScope.launch {
+                    EhDB.deleteServerProfileAsync(profile)
                 }
                 mProfiles.removeAt(position)
                 mLastSnapshot = ArrayList(mProfiles)
@@ -330,8 +337,8 @@ class ServerListScene : BaseScene() {
                 url = normalizedUrl,
                 isActive = profile.isActive
             )
-            IoThreadPoolExecutor.instance.execute {
-                EhDB.updateServerProfile(updated)
+            ServiceRegistry.coroutineModule.ioScope.launch {
+                EhDB.updateServerProfileAsync(updated)
                 LRRAuthManager.setApiKeyForProfile(profile.id, newKey.ifEmpty { null })
                 if (profile.isActive) {
                     LRRAuthManager.setServerUrl(updated.url)
@@ -420,15 +427,15 @@ class ServerListScene : BaseScene() {
                                 LRRAuthManager.setServerName(name)
 
                                 // DB operations on IO thread
-                                IoThreadPoolExecutor.instance.execute {
-                                    EhDB.deactivateAllProfiles()
+                                ServiceRegistry.coroutineModule.ioScope.launch {
+                                    EhDB.deactivateAllProfilesAsync()
                                     val newProfile = ServerProfile(
                                         id = 0,
                                         name = name,
                                         url = resolvedUrl,
                                         isActive = true
                                     )
-                                    val newId = EhDB.insertServerProfile(newProfile)
+                                    val newId = EhDB.insertServerProfileAsync(newProfile)
                                     LRRAuthManager.setApiKeyForProfile(newId, finalKey)
                                     LRRAuthManager.setActiveProfileId(newId)
                                     ServiceRegistry.dataModule.downloadManager.reload()
