@@ -14,6 +14,15 @@ import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
 /**
+ * Thrown by [LRRAuthManager] setters when the Android KeyStore / EncryptedSharedPreferences
+ * backing store is unavailable (e.g., after device migration or KeyStore corruption).
+ *
+ * Callers that write credentials MUST handle this exception and surface a user-visible
+ * error — silently swallowing it leaves users believing their changes were saved.
+ */
+class LRRSecureStorageUnavailableException(message: String) : IOException(message)
+
+/**
  * Manages LANraragi server connection settings (server URL and API key).
  * Stores credentials in EncryptedSharedPreferences for security.
  */
@@ -87,6 +96,19 @@ object LRRAuthManager {
     }
 
     /**
+     * Return the backing [SharedPreferences], or throw [LRRSecureStorageUnavailableException]
+     * if secure storage is unavailable (KeyStore failure / EncryptedSharedPreferences init failure).
+     *
+     * Every setter that persists credentials MUST go through this helper so that failures
+     * are surfaced to callers instead of being silently dropped.
+     */
+    private fun requireSecurePrefs(op: String): SharedPreferences {
+        return sPrefs ?: throw LRRSecureStorageUnavailableException(
+            "Secure credential store unavailable; cannot perform $op"
+        )
+    }
+
+    /**
      * Inject a [SharedPreferences] instance for unit-testing environments where
      * EncryptedSharedPreferences is unavailable (e.g., Robolectric without a real KeyStore).
      * Must NOT be called from production code.
@@ -99,6 +121,17 @@ object LRRAuthManager {
     }
 
     /**
+     * Simulate secure-storage unavailability for unit tests. Clears [sPrefs] so that
+     * every setter throws [LRRSecureStorageUnavailableException] on the next call.
+     * Must NOT be called from production code.
+     */
+    @JvmStatic
+    internal fun simulateStorageUnavailableForTesting() {
+        sPrefs = null
+        sActiveProfileId = 0L
+    }
+
+    /**
      * @return The configured server base URL, e.g., "http://192.168.1.100:3000"
      */
     @JvmStatic
@@ -107,8 +140,9 @@ object LRRAuthManager {
     }
 
     @JvmStatic
+    @Throws(LRRSecureStorageUnavailableException::class)
     fun setServerUrl(url: String) {
-        val prefs = sPrefs ?: return
+        val prefs = requireSecurePrefs("setServerUrl")
         // Remove trailing slash
         var cleanUrl = url
         if (cleanUrl.endsWith("/")) {
@@ -126,8 +160,9 @@ object LRRAuthManager {
     }
 
     @JvmStatic
+    @Throws(LRRSecureStorageUnavailableException::class)
     fun setApiKey(apiKey: String?) {
-        val prefs = sPrefs ?: return
+        val prefs = requireSecurePrefs("setApiKey")
         prefs.edit().putString(KEY_API_KEY, apiKey).apply()
     }
 
@@ -140,8 +175,9 @@ object LRRAuthManager {
     }
 
     @JvmStatic
+    @Throws(LRRSecureStorageUnavailableException::class)
     fun setServerName(name: String?) {
-        val prefs = sPrefs ?: return
+        val prefs = requireSecurePrefs("setServerName")
         prefs.edit().putString(KEY_SERVER_NAME, name).apply()
     }
 
@@ -163,9 +199,10 @@ object LRRAuthManager {
     }
 
     @JvmStatic
+    @Throws(LRRSecureStorageUnavailableException::class)
     fun setActiveProfileId(id: Long) {
         sActiveProfileId = id
-        val prefs = sPrefs ?: return
+        val prefs = requireSecurePrefs("setActiveProfileId")
         prefs.edit().putLong(KEY_ACTIVE_PROFILE_ID, id).apply()
     }
 
@@ -186,8 +223,9 @@ object LRRAuthManager {
      * Use this instead of storing keys in the Room `SERVER_PROFILES` table.
      */
     @JvmStatic
+    @Throws(LRRSecureStorageUnavailableException::class)
     fun setApiKeyForProfile(profileId: Long, apiKey: String?) {
-        val prefs = sPrefs ?: return
+        val prefs = requireSecurePrefs("setApiKeyForProfile")
         val prefKey = "api_key_$profileId"
         if (apiKey.isNullOrEmpty()) {
             prefs.edit().remove(prefKey).apply()
@@ -204,8 +242,9 @@ object LRRAuthManager {
 
     /** Remove the stored API key for a profile (e.g., when the profile is deleted). */
     @JvmStatic
+    @Throws(LRRSecureStorageUnavailableException::class)
     fun clearApiKeyForProfile(profileId: Long) {
-        val prefs = sPrefs ?: return
+        val prefs = requireSecurePrefs("clearApiKeyForProfile")
         prefs.edit().remove("api_key_$profileId").apply()
     }
 
@@ -222,8 +261,9 @@ object LRRAuthManager {
      * Pass null or empty string to clear the pattern.
      */
     @JvmStatic
+    @Throws(LRRSecureStorageUnavailableException::class)
     fun setPattern(pattern: String?) {
-        val prefs = sPrefs ?: return
+        val prefs = requireSecurePrefs("setPattern")
         if (pattern.isNullOrEmpty()) {
             prefs.edit()
                 .remove(KEY_PATTERN_HASH_V2)

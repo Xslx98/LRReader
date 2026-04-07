@@ -23,7 +23,9 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.CheckBox
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.client.lrr.LRRSecureStorageUnavailableException
 import com.hippo.ehviewer.settings.SecuritySettings
 import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.widget.lockpattern.LockPatternView
@@ -85,14 +87,28 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
                 } else {
                     mPatternView!!.patternString
                 }
-                SecuritySettings.setPattern(security)
-                SecuritySettings.putEnableFingerprint(
-                    mFingerprint!!.visibility == View.VISIBLE &&
-                        mFingerprint!!.isChecked && security.isNotEmpty()
-                )
+                try {
+                    SecuritySettings.setPattern(security)
+                    SecuritySettings.putEnableFingerprint(
+                        mFingerprint!!.visibility == View.VISIBLE &&
+                            mFingerprint!!.isChecked && security.isNotEmpty()
+                    )
+                } catch (e: LRRSecureStorageUnavailableException) {
+                    // KeyStore unavailable — show error dialog and keep activity open.
+                    showStorageErrorDialog()
+                    return
+                }
             }
             finish()
         }
+    }
+
+    private fun showStorageErrorDialog() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.lrr_keystore_failed_title)
+            .setMessage(R.string.lrr_secure_storage_write_failed)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
     }
 
     companion object {
