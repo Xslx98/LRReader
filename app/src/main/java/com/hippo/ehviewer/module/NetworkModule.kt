@@ -59,7 +59,7 @@ class NetworkModule(private val context: Context) : INetworkModule {
                 }
             }
             .proxySelector(proxySelector)
-            .addInterceptor(com.hippo.ehviewer.client.lrr.LRRCleartextWarningInterceptor())
+            .addInterceptor(com.hippo.ehviewer.client.lrr.LRRCleartextRejectionInterceptor())
             .addNetworkInterceptor(com.hippo.ehviewer.client.lrr.LRRAuthInterceptor())
             .build()
     }

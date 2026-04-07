@@ -198,4 +198,21 @@ class LRRAuthManagerTest {
         assertEquals(0L, LRRAuthManager.getActiveProfileId())
         assertFalse(LRRAuthManager.hasPattern())
     }
+
+    // ── Allow cleartext flag ────────────────────────────────────────
+
+    @Test
+    fun allowCleartext_defaultsToTrue() {
+        // Default value (no key in prefs)
+        assertTrue("default should be true", LRRAuthManager.getAllowCleartext())
+    }
+
+    @Test
+    fun setAllowCleartext_roundTripsThroughPrefs() {
+        LRRAuthManager.setAllowCleartext(false)
+        assertFalse("after setAllowCleartext(false)", LRRAuthManager.getAllowCleartext())
+
+        LRRAuthManager.setAllowCleartext(true)
+        assertTrue("after setAllowCleartext(true)", LRRAuthManager.getAllowCleartext())
+    }
 }
