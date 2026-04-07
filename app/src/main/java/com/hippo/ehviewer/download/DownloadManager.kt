@@ -89,6 +89,21 @@ class DownloadManager(
         }
     }
 
+    /**
+     * Run [block] on the main (UI) thread. If the caller is already on the main
+     * thread, the block executes inline; otherwise it is posted to the main
+     * looper. Used to publish IO-phase results back into the main-thread-only
+     * collections without deadlocking tests that drive coroutines on
+     * [kotlinx.coroutines.Dispatchers.Unconfined].
+     */
+    private fun runOnMainThread(block: () -> Unit) {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            block()
+        } else {
+            SimpleHandler.getInstance().post(block)
+        }
+    }
+
     init {
         mSpeedReminder = DownloadSpeedTracker(object : DownloadSpeedTracker.Callback {
             override fun getFirstActiveTask(): DownloadInfo? {
@@ -112,41 +127,65 @@ class DownloadManager(
             }
         })
 
-        // Load data from DB on a background thread to avoid blocking main thread
+        // Load data from DB on a background thread to avoid blocking main thread.
+        // The IO segment only reads/writes the DB; the resulting data is published to
+        // the main-thread-only collections via SimpleHandler.post so that no shared
+        // mutable state is touched off the main thread.
         scope.launch {
             try {
                 loadDataFromDb()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load download data from DB", e)
-            } finally {
-                mInitialized = true
-                mInitDeferred.complete(Unit)
+                // Even on failure we must release waiters; publish an empty result.
+                runOnMainThread {
+                    mInitialized = true
+                    mInitDeferred.complete(Unit)
+                }
             }
         }
     }
 
     /**
+     * Holds the result of [loadDataFromDb]'s IO phase before it is published to
+     * main-thread-only collections.
+     */
+    private data class LoadedDownloadData(
+        val labels: List<DownloadLabel>,
+        val extraSavedLabels: List<DownloadLabel>,
+        val labelStrings: Set<String>,
+        val allInfoList: List<DownloadInfo>,
+        val labelToInfoList: Map<String?, MutableList<DownloadInfo>>
+    )
+
+    /**
      * Load labels and download info from the database.
-     * Called on a background thread during construction.
+     *
+     * Runs on a background thread. The IO phase reads the DB and constructs the
+     * results in local variables only. The results are then handed to the main
+     * thread via [SimpleHandler.post], where the shared collections (which are
+     * declared main-thread-only) are populated atomically.
      */
     private suspend fun loadDataFromDb() {
-        // Get all labels
-        val labels = EhDB.getAllDownloadLabelListAsync()
+        // ── IO phase ───────────────────────────────────────────────────
+        val loadedLabels = EhDB.getAllDownloadLabelListAsync()
+        val loadedInfos = EhDB.getAllDownloadInfoAsync()
 
-        mLabelList.addAll(labels)
-        for (label in labels) {
-            mMap[label.label] = ArrayList()
-            if (label.label != null) {
-                mLabelSet.add(label.label!!)
-            }
+        // Build a draft of the per-label info lists in local memory only.
+        val labelStrings: HashSet<String> = HashSet()
+        for (label in loadedLabels) {
+            label.label?.let { labelStrings.add(it) }
         }
 
-        // Get all info
-        val allInfoList = EhDB.getAllDownloadInfoAsync()
+        // mMap uses label-string (nullable) as the key. Preserve insertion order
+        // so the published main-thread state matches what the old code produced.
+        val mapDraft: LinkedHashMap<String?, MutableList<DownloadInfo>> = LinkedHashMap()
+        for (label in loadedLabels) {
+            mapDraft[label.label] = ArrayList()
+        }
 
-        mAllInfoList.addAll(allInfoList)
+        val extraSavedLabels: MutableList<DownloadLabel> = ArrayList()
 
-        for (info in allInfoList) {
+        for (info in loadedInfos) {
             val archiveUri = info.archiveUri
             if (archiveUri != null && archiveUri.startsWith("content://")) {
                 try {
@@ -160,32 +199,65 @@ class DownloadManager(
                 }
             }
 
-            // Add to all info map
-            mAllInfoMap[info.gid] = info
-
-            // Add to each label list
-            var list = getInfoListForLabelLocked(info.label)
+            var list = mapDraft[info.label]
             if (list == null) {
                 list = ArrayList()
-                mMap[info.label] = list
-                if (!mLabelSet.contains(info.label) && info.label != null) {
-                    val saved = EhDB.addDownloadLabelAsync(info.label!!)
-                    mLabelList.add(saved)
-                    mLabelSet.add(info.label!!)
+                mapDraft[info.label] = list
+                val infoLabel = info.label
+                if (infoLabel != null && !labelStrings.contains(infoLabel)) {
+                    // Persist the missing label row in the IO phase so the main-thread
+                    // publish phase has nothing to write to the DB.
+                    val saved = EhDB.addDownloadLabelAsync(infoLabel)
+                    extraSavedLabels.add(saved)
+                    labelStrings.add(infoLabel)
                 }
             }
             list.add(info)
+        }
+
+        val loaded = LoadedDownloadData(
+            labels = loadedLabels,
+            extraSavedLabels = extraSavedLabels,
+            labelStrings = labelStrings,
+            allInfoList = loadedInfos,
+            labelToInfoList = mapDraft
+        )
+
+        // ── Main-thread publish phase ──────────────────────────────────
+        runOnMainThread {
+            publishLoadedData(loaded)
+        }
+    }
+
+    /**
+     * Publish loaded DB data into the main-thread-only collections. Must be
+     * called on the main thread.
+     */
+    private fun publishLoadedData(loaded: LoadedDownloadData) {
+        mLabelList.addAll(loaded.labels)
+        mLabelList.addAll(loaded.extraSavedLabels)
+        mLabelSet.addAll(loaded.labelStrings)
+
+        mAllInfoList.addAll(loaded.allInfoList)
+        for (info in loaded.allInfoList) {
+            mAllInfoMap[info.gid] = info
+        }
+
+        for ((label, list) in loaded.labelToInfoList) {
+            mMap[label] = list
         }
 
         for ((key, value) in mMap) {
             mLabelCountMap[key] = value.size.toLong()
         }
 
-        // Notify listeners on main thread that data is ready
-        android.os.Handler(android.os.Looper.getMainLooper()).post {
-            for (l in mDownloadInfoListeners) {
-                l.onReload()
-            }
+        // Mark initialization complete *after* the shared state is fully published
+        // so that any caller awaiting init sees a consistent snapshot.
+        mInitialized = true
+        mInitDeferred.complete(Unit)
+
+        for (l in mDownloadInfoListeners) {
+            l.onReload()
         }
     }
 
@@ -236,17 +308,6 @@ class DownloadManager(
 
         for (l in mDownloadInfoListeners) {
             l.onReplace(newInfo, oldInfo)
-        }
-    }
-
-    /**
-     * Get the info list for a label. Used during init (background thread).
-     */
-    private fun getInfoListForLabelLocked(label: String?): MutableList<DownloadInfo>? {
-        return if (label == null) {
-            mDefaultInfoList
-        } else {
-            mMap[label]
         }
     }
 

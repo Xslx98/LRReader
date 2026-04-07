@@ -71,9 +71,17 @@ class DownloadManagerTest {
             context.getSharedPreferences("lrr_auth_test", Context.MODE_PRIVATE)
         )
 
-        // Create in-memory Room database
+        // Create in-memory Room database with synchronous executors so that
+        // `suspend` DAO methods (which Room normally dispatches to its query
+        // executor) resume on the calling thread. Combined with the
+        // `Dispatchers.Unconfined` test scope below, this means the IO phase of
+        // [DownloadManager.loadDataFromDb] completes on the test main thread,
+        // which lets the main-thread publish step run inline (no looper drain
+        // required) and lets `awaitInit` return immediately.
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
+            .setQueryExecutor { it.run() }
+            .setTransactionExecutor { it.run() }
             .build()
 
         // Inject into EhDB via reflection (bypass EhDB.initialize which has Settings dependency)
