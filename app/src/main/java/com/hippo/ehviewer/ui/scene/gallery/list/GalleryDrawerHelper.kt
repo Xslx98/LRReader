@@ -18,22 +18,21 @@ import com.hippo.app.EditTextDialogBuilder
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.client.EhClient
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.data.userTag.UserTagList
 import com.hippo.ehviewer.dao.QuickSearch
 import com.hippo.ehviewer.settings.AppearanceSettings
-import com.hippo.ehviewer.ui.MainActivity
 import com.hippo.ehviewer.ui.scene.BaseScene
-import com.hippo.ehviewer.callBack.SubscriptionCallback
 import com.hippo.ehviewer.util.TagTranslationUtil
 import kotlinx.coroutines.launch
 
 /**
- * Handles drawer view creation, bookmarks/subscription, and quick search dialogs
+ * Handles drawer view creation, bookmarks, and quick search dialogs
  * for GalleryListScene. Extracted to reduce GalleryListScene's line count.
+ *
+ * The legacy E-Hentai "subscription" pane (watched/hidden tag list) was
+ * removed along with EhClient — LANraragi has no equivalent concept.
  */
 class GalleryDrawerHelper(private val callback: Callback) {
 
@@ -41,7 +40,6 @@ class GalleryDrawerHelper(private val callback: Callback) {
         fun getHostContext(): Context?
         fun getHostActivity(): Activity?
         fun getScene(): GalleryListScene
-        fun getClient(): EhClient?
         fun getSceneTag(): String?
         fun getUrlBuilder(): ListUrlBuilder?
         fun getEhTags(): EhTagDatabase?
@@ -53,11 +51,9 @@ class GalleryDrawerHelper(private val callback: Callback) {
     }
 
     private var mBookmarksDraw: BookmarksDraw? = null
-    private var mSubscriptionDraw: SubscriptionDraw? = null
     lateinit var drawPager: ViewPager
         private set
     private lateinit var bookmarksView: View
-    private var subscriptionView: View? = null
 
     @SuppressLint("RtlHardcoded", "NonConstantResourceId")
     fun onCreateDrawerView(
@@ -69,11 +65,9 @@ class GalleryDrawerHelper(private val callback: Callback) {
         drawPager = view.findViewById(R.id.drawer_list_pager)
 
         bookmarksView = bookmarksViewBuild(inflater)
-        subscriptionView = subscriptionViewBuild(inflater)
 
         val views: MutableList<View> = ArrayList()
         views.add(bookmarksView)
-        subscriptionView?.let { views.add(it) }
 
         val pagerAdapter = DrawViewPagerAdapter(views)
         drawPager.adapter = pagerAdapter
@@ -88,60 +82,8 @@ class GalleryDrawerHelper(private val callback: Callback) {
         return mBookmarksDraw!!.onCreate(callback.getScene())
     }
 
-    private fun subscriptionViewBuild(inflater: LayoutInflater): View? {
-        val context = callback.getHostContext() ?: return null
-        val client = callback.getClient() ?: return null
-        val activity = callback.getHostActivity() as? MainActivity ?: return null
-        mSubscriptionDraw = SubscriptionDraw(
-            context, inflater, client, callback.getSceneTag() ?: "", callback.getEhTags()
-        )
-        return mSubscriptionDraw!!.onCreate(drawPager, activity, callback.getScene())
-    }
-
     fun onResume() {
         mBookmarksDraw?.resume()
-        mSubscriptionDraw?.resume()
-    }
-
-    // SubscriptionCallback implementations
-
-    fun setTagList(result: UserTagList?) {
-        result?.let { mSubscriptionDraw?.setUserTagList(it) }
-    }
-
-    fun onSubscriptionItemClick(name: String) {
-        callback.onTagClick(name)
-    }
-
-    fun getAddTagName(userTagList: UserTagList?): String? {
-        val context = callback.getHostContext()
-        val urlBuilder = callback.getUrlBuilder()
-        if (context == null || urlBuilder == null) {
-            return null
-        }
-
-        if (ListUrlBuilder.MODE_IMAGE_SEARCH == urlBuilder.mode) {
-            callback.showTip(R.string.image_search_not_quick_search, BaseScene.LENGTH_LONG)
-            return null
-        }
-
-        if (urlBuilder.keyword == null) {
-            return null
-        }
-
-        if (userTagList?.userTags == null) {
-            return GallerySearchHelper.getSuitableTitleForUrlBuilder(context.resources, urlBuilder, false)
-        }
-        for (q in userTagList.userTags) {
-            if (urlBuilder.equalKeyWord(q.tagName)) {
-                callback.showTip(
-                    callback.getString(R.string.duplicate_quick_search, q.tagName ?: ""),
-                    BaseScene.LENGTH_LONG
-                )
-                return null
-            }
-        }
-        return GallerySearchHelper.getSuitableTitleForUrlBuilder(context.resources, urlBuilder, false)
     }
 
     // Quick search dialogs
