@@ -27,7 +27,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import androidx.appcompat.app.AlertDialog
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.client.lrr.LRRSecureStorageUnavailableException
 import com.hippo.ehviewer.settings.SecuritySettings
 import com.hippo.ehviewer.ui.SetSecurityActivity
 import com.hippo.hardware.ShakeDetector
@@ -196,7 +198,17 @@ class SecurityScene : SolidScene(),
     override fun onShake(count: Int) {
         if (count == 10) {
             val activity = activity2 ?: return
-            SecuritySettings.setPattern("")
+            try {
+                SecuritySettings.setPattern("")
+            } catch (e: LRRSecureStorageUnavailableException) {
+                val ctx = ehContext ?: return
+                AlertDialog.Builder(ctx)
+                    .setTitle(R.string.lrr_keystore_failed_title)
+                    .setMessage(R.string.lrr_secure_storage_write_failed)
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show()
+                return
+            }
             if (ehContext != null && isAdded) {
                 startSceneForCheckStep(CHECK_STEP_SECURITY, arguments)
                 finish()

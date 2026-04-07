@@ -26,6 +26,7 @@ import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
+import com.hippo.ehviewer.client.lrr.LRRSecureStorageUnavailableException
 import com.hippo.ehviewer.client.lrr.LRRUrlHelper
 import com.hippo.ehviewer.client.lrr.data.LRRServerInfo
 import com.hippo.ehviewer.client.lrr.friendlyError
@@ -100,6 +101,15 @@ class ServerListScene : BaseScene() {
         }
     }
 
+    private fun showSecureStorageErrorDialog() {
+        val ctx = getEHContext() ?: return
+        AlertDialog.Builder(ctx)
+            .setTitle(R.string.lrr_keystore_failed_title)
+            .setMessage(R.string.lrr_secure_storage_write_failed)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
+    }
+
     private fun loadProfiles() {
         val ctx = getEHContext() ?: return
 
@@ -149,12 +159,17 @@ class ServerListScene : BaseScene() {
         val ctx = getEHContext() ?: return
 
         // Update LRRAuthManager
-        LRRAuthManager.setServerUrl(profile.url)
-        val profileApiKey = LRRAuthManager.getApiKeyForProfile(profile.id)
-        LRRAuthManager.setApiKey(profileApiKey)
-        LRRAuthManager.setServerName(profile.name)
-        LRRAuthManager.setActiveProfileId(profile.id)
-        LRRAuthManager.setAllowCleartext(profile.allowCleartext)
+        try {
+            LRRAuthManager.setServerUrl(profile.url)
+            val profileApiKey = LRRAuthManager.getApiKeyForProfile(profile.id)
+            LRRAuthManager.setApiKey(profileApiKey)
+            LRRAuthManager.setServerName(profile.name)
+            LRRAuthManager.setActiveProfileId(profile.id)
+            LRRAuthManager.setAllowCleartext(profile.allowCleartext)
+        } catch (e: LRRSecureStorageUnavailableException) {
+            showSecureStorageErrorDialog()
+            return
+        }
 
         // Clear caches so previous server's content doesn't appear under new server
         ServiceRegistry.clearAllCaches()
@@ -193,7 +208,12 @@ class ServerListScene : BaseScene() {
             .setTitle(R.string.lrr_delete_server)
             .setMessage(getString(R.string.lrr_delete_server_confirm, profile.name))
             .setPositiveButton(android.R.string.ok) { _, _ ->
-                LRRAuthManager.clearApiKeyForProfile(profile.id)
+                try {
+                    LRRAuthManager.clearApiKeyForProfile(profile.id)
+                } catch (e: LRRSecureStorageUnavailableException) {
+                    showSecureStorageErrorDialog()
+                    return@setPositiveButton
+                }
                 ServiceRegistry.coroutineModule.ioScope.launch {
                     EhDB.deleteServerProfileAsync(profile)
                 }
@@ -367,12 +387,16 @@ class ServerListScene : BaseScene() {
             )
             ServiceRegistry.coroutineModule.ioScope.launch {
                 EhDB.updateServerProfileAsync(updated)
-                LRRAuthManager.setApiKeyForProfile(profile.id, newKey.ifEmpty { null })
-                if (profile.isActive) {
-                    LRRAuthManager.setServerUrl(updated.url)
-                    LRRAuthManager.setApiKey(newKey.ifEmpty { null })
-                    LRRAuthManager.setServerName(newName)
-                    LRRAuthManager.setAllowCleartext(updated.allowCleartext)
+                try {
+                    LRRAuthManager.setApiKeyForProfile(profile.id, newKey.ifEmpty { null })
+                    if (profile.isActive) {
+                        LRRAuthManager.setServerUrl(updated.url)
+                        LRRAuthManager.setApiKey(newKey.ifEmpty { null })
+                        LRRAuthManager.setServerName(newName)
+                        LRRAuthManager.setAllowCleartext(updated.allowCleartext)
+                    }
+                } catch (e: LRRSecureStorageUnavailableException) {
+                    activity?.runOnUiThread { showSecureStorageErrorDialog() }
                 }
             }
 
@@ -456,7 +480,13 @@ class ServerListScene : BaseScene() {
             // Temporarily set auth for the interceptor
             val oldUrl: String? = LRRAuthManager.getServerUrl()
             val oldKey: String? = LRRAuthManager.getApiKey()
-            LRRAuthManager.setApiKey(finalKey)
+            try {
+                LRRAuthManager.setApiKey(finalKey)
+            } catch (e: LRRSecureStorageUnavailableException) {
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
+                showSecureStorageErrorDialog()
+                return@setOnClickListener
+            }
 
             // Build a test client with short timeouts
             val baseClient = ServiceRegistry.networkModule.okHttpClient
@@ -475,15 +505,21 @@ class ServerListScene : BaseScene() {
                         ) {
                             if (activity == null) return
                             activity!!.runOnUiThread {
-                                // Set auth immediately (in-memory via .apply())
-                                LRRAuthManager.setServerUrl(resolvedUrl)
-                                LRRAuthManager.setApiKey(finalKey)
-                                LRRAuthManager.setServerName(name)
-
                                 // DB operations on IO thread
                                 val resolvedIsHttp = resolvedUrl.lowercase().startsWith("http://")
                                 val savedAllowCleartext = if (resolvedIsHttp) profileAllowCleartext else true
-                                LRRAuthManager.setAllowCleartext(savedAllowCleartext)
+
+                                // Set auth immediately (in-memory via .apply())
+                                try {
+                                    LRRAuthManager.setServerUrl(resolvedUrl)
+                                    LRRAuthManager.setApiKey(finalKey)
+                                    LRRAuthManager.setServerName(name)
+                                    LRRAuthManager.setAllowCleartext(savedAllowCleartext)
+                                } catch (e: LRRSecureStorageUnavailableException) {
+                                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
+                                    showSecureStorageErrorDialog()
+                                    return@runOnUiThread
+                                }
                                 ServiceRegistry.coroutineModule.ioScope.launch {
                                     EhDB.deactivateAllProfilesAsync()
                                     val newProfile = ServerProfile(
@@ -494,8 +530,13 @@ class ServerListScene : BaseScene() {
                                         allowCleartext = savedAllowCleartext
                                     )
                                     val newId = EhDB.insertServerProfileAsync(newProfile)
-                                    LRRAuthManager.setApiKeyForProfile(newId, finalKey)
-                                    LRRAuthManager.setActiveProfileId(newId)
+                                    try {
+                                        LRRAuthManager.setApiKeyForProfile(newId, finalKey)
+                                        LRRAuthManager.setActiveProfileId(newId)
+                                    } catch (e: LRRSecureStorageUnavailableException) {
+                                        activity?.runOnUiThread { showSecureStorageErrorDialog() }
+                                        return@launch
+                                    }
                                     ServiceRegistry.dataModule.downloadManager.reload()
                                 }
 
@@ -538,9 +579,16 @@ class ServerListScene : BaseScene() {
                         }
 
                         override fun onFailure(error: Exception) {
-                            // Restore old auth on failure
-                            oldUrl?.let { LRRAuthManager.setServerUrl(it) }
-                            LRRAuthManager.setApiKey(oldKey)
+                            // Restore old auth on failure. If secure storage became
+                            // unavailable mid-flow, we cannot restore — log and continue
+                            // so the UI still surfaces the original connect error.
+                            try {
+                                oldUrl?.let { LRRAuthManager.setServerUrl(it) }
+                                LRRAuthManager.setApiKey(oldKey)
+                            } catch (_: LRRSecureStorageUnavailableException) {
+                                // Secure storage is down — the original connect failure
+                                // already reflects this; proceed with its dialog below.
+                            }
 
                             if (activity == null) return
                             activity!!.runOnUiThread {
