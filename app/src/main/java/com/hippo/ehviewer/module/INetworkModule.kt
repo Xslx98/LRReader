@@ -2,7 +2,6 @@ package com.hippo.ehviewer.module
 
 import com.hippo.ehviewer.EhProxySelector
 import com.hippo.ehviewer.Hosts
-import com.hippo.ehviewer.client.EhCookieStore
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 
@@ -12,9 +11,6 @@ import okhttp3.OkHttpClient
  * mock OkHttp clients and in-memory caches.
  */
 interface INetworkModule {
-
-    /** Persistent cookie store shared by all OkHttp clients in this module. */
-    val cookieStore: EhCookieStore
 
     /** Disk HTTP cache backing [okHttpClient] and derived clients. */
     val cache: Cache
