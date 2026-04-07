@@ -26,8 +26,8 @@ import com.hippo.ehviewer.client.data.Tag
 import com.hippo.lib.yorozuya.FileUtils
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.util.ExceptionUtils
-import com.hippo.util.IoThreadPoolExecutor
 import com.hippo.util.TextUrl
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okio.buffer
@@ -303,11 +303,11 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
                 instance = null
             }
 
-            IoThreadPoolExecutor.instance.execute {
-                if (!lock.tryLock()) return@execute
+            ServiceRegistry.coroutineModule.ioScope.launch {
+                if (!lock.tryLock()) return@launch
 
                 try {
-                    val dir = AppConfig.getFilesDir("tag-translations") ?: return@execute
+                    val dir = AppConfig.getFilesDir("tag-translations") ?: return@launch
 
                     // Check current sha1 and current data
                     val sha1File = File(dir, sha1Name)
@@ -335,28 +335,28 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
                     val tempSha1File = File(dir, "$sha1Name.tmp")
                     if (!save(client, sha1Url, tempSha1File)) {
                         FileUtils.delete(tempSha1File)
-                        return@execute
+                        return@launch
                     }
 
                     // Check new sha1 and current data
                     if (checkData(tempSha1File, dataFile)) {
                         // The data is the same
                         FileUtils.delete(tempSha1File)
-                        return@execute
+                        return@launch
                     }
 
                     // Save new data
                     val tempDataFile = File(dir, "$dataName.tmp")
                     if (!save(client, dataUrl, tempDataFile)) {
                         FileUtils.delete(tempDataFile)
-                        return@execute
+                        return@launch
                     }
 
                     // Check new sha1 and new data
                     if (!checkData(tempSha1File, tempDataFile)) {
                         FileUtils.delete(tempSha1File)
                         FileUtils.delete(tempDataFile)
-                        return@execute
+                        return@launch
                     }
 
                     // Replace current sha1 and current data with new sha1 and new data

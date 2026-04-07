@@ -45,7 +45,6 @@ import com.hippo.lib.yorozuya.SimpleHandler
 import com.hippo.unifile.UniFile
 import com.hippo.util.BitmapUtils
 import com.hippo.util.ExceptionUtils
-import com.hippo.util.IoThreadPoolExecutor
 import com.hippo.util.ReadableTime
 import java.io.File
 import java.util.Locale
@@ -126,7 +125,8 @@ class EhApplication : RecordingApplication() {
         }
 
         // Legacy migration — runs once on first launch after upgrading from old DB format.
-        IoThreadPoolExecutor.instance.execute {
+        // ServiceRegistry is not yet initialized, so use a standalone CoroutineScope.
+        CoroutineScope(Dispatchers.IO).launch {
             if (EhDB.needMerge()) {
                 EhDB.mergeOldDB(this@EhApplication)
             }
@@ -150,11 +150,11 @@ class EhApplication : RecordingApplication() {
 
         // Defer heavy JNI/native initialization to background thread.
         // These are not needed until the user actually opens a gallery or downloads.
-        IoThreadPoolExecutor.instance.execute {
-            BitmapUtils.initialize(this)
-            Image.initialize(this)
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            BitmapUtils.initialize(this@EhApplication)
+            Image.initialize(this@EhApplication)
             Native.initialize()
-            A7Zip.initialize(this)
+            A7Zip.initialize(this@EhApplication)
         }
 
         if (Settings.getEnableAnalytics()) {
@@ -162,7 +162,7 @@ class EhApplication : RecordingApplication() {
         }
 
         // Do io tasks in background thread
-        IoThreadPoolExecutor.instance.execute {
+        ServiceRegistry.coroutineModule.ioScope.launch {
             // Check no media file
             try {
                 val downloadLocation = DownloadSettings.getDownloadLocation()
