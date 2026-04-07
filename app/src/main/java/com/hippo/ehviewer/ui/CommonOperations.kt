@@ -22,12 +22,9 @@ import com.hippo.app.ListCheckBoxDialogBuilder
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.EhClient
-import com.hippo.ehviewer.client.EhRequest
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.download.DownloadService
 import com.hippo.ehviewer.settings.DownloadSettings
-import com.hippo.ehviewer.settings.FavoritesSettings
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.unifile.UniFile
@@ -38,69 +35,31 @@ import java.io.IOException
 
 object CommonOperations {
 
-    private fun doAddToFavorites(
-        activity: Activity,
-        galleryInfo: GalleryInfo,
-        slot: Int,
-        listener: EhClient.Callback<Void?>
-    ) {
-        if (slot == -1) {
-            ServiceRegistry.coroutineModule.ioScope.launch {
-                EhDB.putLocalFavoriteAsync(galleryInfo)
-                withContext(Dispatchers.Main) { listener.onSuccess(null) }
-            }
-        } else if (slot in 0..9) {
-            val client = ServiceRegistry.clientModule.ehClient
-            val request = EhRequest()
-            request.setMethod(EhClient.METHOD_ADD_FAVORITES)
-            request.setArgs(galleryInfo.gid, galleryInfo.token, slot, "")
-            request.setCallback(listener)
-            client.execute(request)
-        } else {
-            listener.onFailure(Exception("Invalid favorite slot: $slot"))
-        }
+    /**
+     * Result callback for [addToFavorites] / [removeFromFavorites].
+     *
+     * Replaces the legacy `EhClient.Callback<Void?>` parameter from EhViewer.
+     * The cloud-favourites slots (1-10) are gone with E-Hentai support, so the
+     * callback only carries success / failure for the local-favourites table.
+     */
+    interface FavoriteListener {
+        fun onSuccess()
+        fun onFailure(e: Exception)
     }
 
     @JvmStatic
     fun addToFavorites(
         activity: Activity,
         galleryInfo: GalleryInfo,
-        listener: EhClient.Callback<Void?>,
-        isDefaultFavSolt: Boolean
+        listener: FavoriteListener
     ) {
-        val slot = FavoritesSettings.getDefaultFavSlot()
-        val favCat = FavoritesSettings.getFavCat()
-        val items = Array<String?>(11) { i ->
-            if (i == 0) activity.getString(R.string.local_favorites) else favCat[i - 1]
-        }
-        if (slot in -1..9 && !isDefaultFavSolt) {
-            val newFavoriteName = if (slot >= 0) items[slot + 1] else null
-            doAddToFavorites(
-                activity, galleryInfo, slot,
-                DelegateFavoriteCallback(listener, galleryInfo, newFavoriteName, slot)
-            )
-        } else {
-            @Suppress("UNCHECKED_CAST")
-            ListCheckBoxDialogBuilder(
-                activity, items as Array<CharSequence>,
-                { builder, _, position ->
-                    val selectedSlot = position - 1
-                    val newFavoriteName = if (selectedSlot in 0..9) items[selectedSlot + 1] else null
-                    doAddToFavorites(
-                        activity, galleryInfo, selectedSlot,
-                        DelegateFavoriteCallback(listener, galleryInfo, newFavoriteName, selectedSlot)
-                    )
-                    if (builder?.isChecked == true) {
-                        FavoritesSettings.putDefaultFavSlot(selectedSlot)
-                    } else {
-                        FavoritesSettings.putDefaultFavSlot(FavoritesSettings.INVALID_DEFAULT_FAV_SLOT)
-                    }
-                },
-                activity.getString(R.string.remember_favorite_collection), false
-            )
-                .setTitle(R.string.add_favorites_dialog_title)
-                .setOnCancelListener { listener.onCancel() }
-                .show()
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            try {
+                EhDB.putLocalFavoriteAsync(galleryInfo)
+                withContext(Dispatchers.Main) { listener.onSuccess() }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { listener.onFailure(e) }
+            }
         }
     }
 
@@ -108,39 +67,15 @@ object CommonOperations {
     fun removeFromFavorites(
         activity: Activity,
         galleryInfo: GalleryInfo,
-        listener: EhClient.Callback<Void?>
+        listener: FavoriteListener
     ) {
         ServiceRegistry.coroutineModule.ioScope.launch {
-            EhDB.removeLocalFavoritesAsync(galleryInfo.gid)
-        }
-        val client = ServiceRegistry.clientModule.ehClient
-        val request = EhRequest()
-        request.setMethod(EhClient.METHOD_ADD_FAVORITES)
-        request.setArgs(galleryInfo.gid, galleryInfo.token, -1, "")
-        request.setCallback(DelegateFavoriteCallback(listener, galleryInfo, null, -2))
-        client.execute(request)
-    }
-
-    private class DelegateFavoriteCallback(
-        private val delegate: EhClient.Callback<Void?>,
-        private val info: GalleryInfo,
-        private val newFavoriteName: String?,
-        private val slot: Int
-    ) : EhClient.Callback<Void?> {
-
-        override fun onSuccess(result: Void?) {
-            info.favoriteName = newFavoriteName
-            info.favoriteSlot = slot
-            delegate.onSuccess(result)
-            ServiceRegistry.dataModule.favouriteStatusRouter.modifyFavourites(info.gid, slot)
-        }
-
-        override fun onFailure(e: Exception) {
-            delegate.onFailure(e)
-        }
-
-        override fun onCancel() {
-            delegate.onCancel()
+            try {
+                EhDB.removeLocalFavoritesAsync(galleryInfo.gid)
+                withContext(Dispatchers.Main) { listener.onSuccess() }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { listener.onFailure(e) }
+            }
         }
     }
 

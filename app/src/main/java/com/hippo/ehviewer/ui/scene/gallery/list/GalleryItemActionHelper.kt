@@ -23,10 +23,8 @@ import com.hippo.ehviewer.ui.GalleryOpenHelper
 import com.hippo.ehviewer.ui.MainActivity
 import com.hippo.ehviewer.ui.dialog.SelectItemWithIconAdapter
 import com.hippo.ehviewer.ui.scene.BaseScene
-import com.hippo.ehviewer.ui.scene.EhCallback
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.scene.Announcer
-import com.hippo.scene.SceneFragment
 import com.hippo.util.AppHelper
 import com.hippo.widget.LoadImageViewNew
 
@@ -44,8 +42,6 @@ class GalleryItemActionHelper(private val callback: Callback) {
         fun startScene(announcer: Announcer)
         fun getString(resId: Int): String
         fun getString(resId: Int, vararg formatArgs: Any): String
-        fun getStageId(): Int
-        fun getSceneTag(): String?
         fun buildChipGroup(gi: GalleryInfo?, chipGroup: ChipGroup): ChipGroup
     }
 
@@ -123,9 +119,6 @@ class GalleryItemActionHelper(private val callback: Callback) {
             toast.show()
         }
 
-        val stageId = callback.getStageId()
-        val sceneTag = callback.getSceneTag()
-
         alertDialog = AlertDialog.Builder(context)
             .setCustomTitle(linearLayout)
             .setAdapter(SelectItemWithIconAdapter(context, items, icons)) { _, which ->
@@ -153,12 +146,12 @@ class GalleryItemActionHelper(private val callback: Callback) {
                         if (favourited) {
                             CommonOperations.removeFromFavorites(
                                 activity, gi,
-                                RemoveFromFavoriteListener(context, stageId, sceneTag)
+                                RemoveFromFavoriteListener(activity)
                             )
                         } else {
                             CommonOperations.addToFavorites(
                                 activity, gi,
-                                AddToFavoriteListener(context, stageId, sceneTag), false
+                                AddToFavoriteListener(activity)
                             )
                         }
                     }
@@ -168,40 +161,28 @@ class GalleryItemActionHelper(private val callback: Callback) {
     }
 
     private class AddToFavoriteListener(
-        context: Context, stageId: Int, sceneTag: String?
-    ) : EhCallback<GalleryListScene, Void?>(context, stageId, sceneTag) {
+        private val activity: Activity
+    ) : CommonOperations.FavoriteListener {
 
-        override fun onSuccess(result: Void?) {
-            showTip(R.string.add_to_favorite_success, BaseScene.LENGTH_SHORT)
+        override fun onSuccess() {
+            (activity as? MainActivity)?.showTip(R.string.add_to_favorite_success, BaseScene.LENGTH_SHORT)
         }
 
         override fun onFailure(e: Exception) {
-            showTip(R.string.add_to_favorite_failure, BaseScene.LENGTH_LONG)
-        }
-
-        override fun onCancel() {}
-
-        override fun isInstance(scene: SceneFragment?): Boolean {
-            return scene is GalleryListScene
+            (activity as? MainActivity)?.showTip(R.string.add_to_favorite_failure, BaseScene.LENGTH_LONG)
         }
     }
 
     private class RemoveFromFavoriteListener(
-        context: Context, stageId: Int, sceneTag: String?
-    ) : EhCallback<GalleryListScene, Void?>(context, stageId, sceneTag) {
+        private val activity: Activity
+    ) : CommonOperations.FavoriteListener {
 
-        override fun onSuccess(result: Void?) {
-            showTip(R.string.remove_from_favorite_success, BaseScene.LENGTH_SHORT)
+        override fun onSuccess() {
+            (activity as? MainActivity)?.showTip(R.string.remove_from_favorite_success, BaseScene.LENGTH_SHORT)
         }
 
         override fun onFailure(e: Exception) {
-            showTip(R.string.remove_from_favorite_failure, BaseScene.LENGTH_LONG)
-        }
-
-        override fun onCancel() {}
-
-        override fun isInstance(scene: SceneFragment?): Boolean {
-            return scene is GalleryListScene
+            (activity as? MainActivity)?.showTip(R.string.remove_from_favorite_failure, BaseScene.LENGTH_LONG)
         }
     }
 }
