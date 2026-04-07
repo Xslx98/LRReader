@@ -11,6 +11,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
@@ -40,6 +41,12 @@ class ServerListScene : BaseScene() {
     private var mAdapter: ServerAdapter? = null
     private var mReauthDialogShown = false
     private var mProfiles: MutableList<ServerProfile> = mutableListOf()
+
+    // Snapshot of the list last dispatched to the adapter. Kept in sync with
+    // mProfiles after EVERY notify*() call (full reload via DiffUtil, single
+    // remove via notifyItemRemoved, single change via notifyItemChanged).
+    // See docs/diffutil-root-cause-analysis.md for the snapshot ownership rule.
+    private var mLastSnapshot: List<ServerProfile> = emptyList()
 
     override fun needShowLeftDrawer(): Boolean = true
 
@@ -93,8 +100,18 @@ class ServerListScene : BaseScene() {
             val result = ArrayList(EhDB.getAllServerProfiles())
             result.sortWith(compareByDescending { it.isActive })
             requireActivity().runOnUiThread {
-                mProfiles = result
-                mAdapter?.notifyDataSetChanged()
+                val adapter = mAdapter
+                if (adapter != null) {
+                    val diff = DiffUtil.calculateDiff(
+                        ServerProfileDiffCallback(mLastSnapshot, result)
+                    )
+                    mProfiles = result
+                    mLastSnapshot = ArrayList(result)
+                    diff.dispatchUpdatesTo(adapter)
+                } else {
+                    mProfiles = result
+                    mLastSnapshot = ArrayList(result)
+                }
                 mEmptyText?.visibility = if (mProfiles.isEmpty()) View.VISIBLE else View.GONE
             }
         }
@@ -170,6 +187,7 @@ class ServerListScene : BaseScene() {
                     EhDB.deleteServerProfile(profile)
                 }
                 mProfiles.removeAt(position)
+                mLastSnapshot = ArrayList(mProfiles)
                 mAdapter?.notifyItemRemoved(position)
                 mEmptyText?.visibility = if (mProfiles.isEmpty()) View.VISIBLE else View.GONE
             }
@@ -324,6 +342,7 @@ class ServerListScene : BaseScene() {
 
             // Refresh list immediately with in-memory data
             mProfiles[position] = updated
+            mLastSnapshot = ArrayList(mProfiles)
             mAdapter?.notifyItemChanged(position)
             dialog.dismiss()
         }
@@ -482,5 +501,31 @@ class ServerListScene : BaseScene() {
         mRecyclerView = null
         mEmptyText = null
         mAdapter = null
+        // Reset snapshot so the next view recreation starts from a clean baseline.
+        mLastSnapshot = emptyList()
+    }
+
+    /**
+     * DiffUtil callback for ServerProfile lists. Identity is the Room PK `id`.
+     * Content compares all fields rendered in onBindViewHolder so that an edit
+     * (rename, URL change, active toggle) repaints the affected row.
+     */
+    private class ServerProfileDiffCallback(
+        private val oldList: List<ServerProfile>,
+        private val newList: List<ServerProfile>
+    ) : DiffUtil.Callback() {
+
+        override fun getOldListSize(): Int = oldList.size
+        override fun getNewListSize(): Int = newList.size
+
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            return oldList[oldItemPosition].id == newList[newItemPosition].id
+        }
+
+        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            val o = oldList[oldItemPosition]
+            val n = newList[newItemPosition]
+            return o.name == n.name && o.url == n.url && o.isActive == n.isActive
+        }
     }
 }
