@@ -24,8 +24,11 @@ object LRRDatabaseApi {
         client: OkHttpClient,
         baseUrl: String
     ): String = withContext(Dispatchers.IO) {
+        val url = parseBaseUrl(baseUrl).newBuilder()
+            .addPathSegments("api/database/stats")
+            .build()
         val request = Request.Builder()
-            .url("$baseUrl/api/database/stats")
+            .url(url)
             .get()
             .build()
         client.newCall(request).execute().use { response ->
@@ -47,8 +50,11 @@ object LRRDatabaseApi {
         client: OkHttpClient,
         baseUrl: String
     ): List<LRRTagStat> = withContext(Dispatchers.IO) {
+        val url = parseBaseUrl(baseUrl).newBuilder()
+            .addPathSegments("api/database/stats")
+            .build()
         val request = Request.Builder()
-            .url("$baseUrl/api/database/stats")
+            .url(url)
             .get()
             .build()
         client.newCall(request).execute().use { response ->
@@ -82,8 +88,11 @@ object LRRShinobuApi {
         client: OkHttpClient,
         baseUrl: String
     ): String = withContext(Dispatchers.IO) {
+        val url = parseBaseUrl(baseUrl).newBuilder()
+            .addPathSegments("api/shinobu")
+            .build()
         val request = Request.Builder()
-            .url("$baseUrl/api/shinobu")
+            .url(url)
             .get()
             .build()
         client.newCall(request).execute().use { response ->
@@ -101,8 +110,11 @@ object LRRShinobuApi {
         client: OkHttpClient,
         baseUrl: String
     ) = withContext(Dispatchers.IO) {
+        val url = parseBaseUrl(baseUrl).newBuilder()
+            .addPathSegments("api/shinobu/restart")
+            .build()
         val request = Request.Builder()
-            .url("$baseUrl/api/shinobu/restart")
+            .url(url)
             .post(EMPTY_REQUEST_BODY)
             .build()
         client.newCall(request).execute().use { response ->

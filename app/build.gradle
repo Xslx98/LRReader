@@ -110,6 +110,45 @@ detekt {
     source.setFrom("src/main/java")
 }
 
+// W0-5: forbid string-concatenated baseUrl in LRR API code.
+// Detekt has no built-in rule for matching arbitrary string-literal
+// patterns, and authoring a custom Detekt rule would be heavyweight
+// for a single regex check. A Gradle verification task is equally
+// effective and runs as part of `check`.
+tasks.register("verifyNoBaseUrlConcat") {
+    group = "verification"
+    description = "Fails the build if any LRR API class concatenates baseUrl into a URL string."
+
+    def lrrSourceDir = file("src/main/java/com/hippo/ehviewer/client/lrr")
+    inputs.dir(lrrSourceDir)
+    // Match: optional ${ } wrap around baseUrl, followed by /api — i.e. URL construction.
+    // Does NOT match: error / log strings like "Invalid server URL: $baseUrl".
+    def forbidden = ~/\$\{?baseUrl\}?\/api/
+
+    doLast {
+        def violations = []
+        fileTree(lrrSourceDir) { include "**/*.kt" }.each { File f ->
+            f.eachLine { String line, int lineNum ->
+                if (forbidden.matcher(line).find()) {
+                    violations << "${f.name}:${lineNum}: ${line.trim()}"
+                }
+            }
+        }
+        if (!violations.isEmpty()) {
+            throw new GradleException(
+                "Forbidden baseUrl string concatenation detected " +
+                "(use parseBaseUrl(baseUrl).newBuilder().addPathSegments(...) instead):\n" +
+                "  " + violations.join("\n  ")
+            )
+        }
+    }
+}
+
+tasks.named("check") { dependsOn("verifyNoBaseUrlConcat") }
+afterEvaluate {
+    tasks.matching { it.name == "preBuild" }.configureEach { dependsOn("verifyNoBaseUrlConcat") }
+}
+
 dependencies {
     implementation libs.material
 
