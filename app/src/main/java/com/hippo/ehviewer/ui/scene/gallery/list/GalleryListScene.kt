@@ -455,8 +455,6 @@ class GalleryListScene : BaseScene(),
             override fun getString(resId: Int): String = this@GalleryListScene.getString(resId)
             override fun getString(resId: Int, vararg formatArgs: Any): String =
                 this@GalleryListScene.getString(resId, *formatArgs)
-            override fun getStageId(): Int = activity2?.stageId ?: 0
-            override fun getSceneTag(): String? = tag
             override fun buildChipGroup(gi: GalleryInfo?, chipGroup: ChipGroup): ChipGroup =
                 mTagChipHelper?.buildChipGroup(gi, chipGroup) ?: chipGroup
         })
