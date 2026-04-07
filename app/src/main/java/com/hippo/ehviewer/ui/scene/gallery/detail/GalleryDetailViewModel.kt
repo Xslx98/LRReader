@@ -1,13 +1,20 @@
 package com.hippo.ehviewer.ui.scene.gallery.detail
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
+import com.hippo.ehviewer.download.DownloadManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.concurrent.ExecutorService
 
 /**
  * ViewModel for [GalleryDetailScene]. Manages gallery detail state, gallery info,
@@ -172,6 +179,49 @@ class GalleryDetailViewModel : ViewModel() {
      */
     fun getEffectiveGalleryInfo(): GalleryInfo? {
         return _galleryDetail.value ?: _galleryInfo.value
+    }
+
+    // -------------------------------------------------------------------------
+    // Service accessors (read-through to ServiceRegistry so the Scene does not
+    // need to import ServiceRegistry directly)
+    // -------------------------------------------------------------------------
+
+    /** The app's [DownloadManager] singleton. */
+    val downloadManager: DownloadManager
+        get() = ServiceRegistry.dataModule.downloadManager
+
+    /** Shared background executor for lightweight off-main-thread work. */
+    val executorService: ExecutorService
+        get() = ServiceRegistry.appModule.executorService
+
+    // -------------------------------------------------------------------------
+    // Data operations (all dispatched on viewModelScope so they outlive the Scene)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Records [info] in the history table. Fire-and-forget; runs on [Dispatchers.IO].
+     */
+    fun recordHistory(info: GalleryInfo) {
+        viewModelScope.launch(Dispatchers.IO) {
+            EhDB.putHistoryInfoAsync(info)
+        }
+    }
+
+    /**
+     * Persists [info] to the downloads table. Fire-and-forget; runs on [Dispatchers.IO].
+     */
+    fun persistDownloadInfo(info: DownloadInfo) {
+        viewModelScope.launch(Dispatchers.IO) {
+            EhDB.putDownloadInfoAsync(info)
+        }
+    }
+
+    /**
+     * Suspends to check whether [gid] is in the local favorites table.
+     * Runs on [Dispatchers.IO].
+     */
+    suspend fun isLocalFavorite(gid: Long): Boolean = withContext(Dispatchers.IO) {
+        EhDB.containLocalFavoritesAsync(gid)
     }
 
     // -------------------------------------------------------------------------
