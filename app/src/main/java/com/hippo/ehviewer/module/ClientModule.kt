@@ -3,21 +3,18 @@ package com.hippo.ehviewer.module
 import android.content.Context
 import com.hippo.conaco.Conaco
 import com.hippo.ehviewer.ImageBitmapHelper
-import com.hippo.ehviewer.client.EhClient
 import com.hippo.lib.image.Image
 import java.io.File
 
 /**
- * Manages client-side singletons: EhClient (API), Conaco (image loader),
- * and ImageBitmapHelper (bitmap decoder).
+ * Manages client-side singletons: Conaco (image loader) and
+ * ImageBitmapHelper (bitmap decoder).
  * Extracted from EhApplication to reduce its responsibility scope.
  */
 class ClientModule(
     private val context: Context,
     private val networkModule: INetworkModule
 ) : IClientModule {
-
-    override val ehClient: EhClient by lazy { EhClient(context) }
 
     override val imageBitmapHelper: ImageBitmapHelper by lazy { ImageBitmapHelper() }
 

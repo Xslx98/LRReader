@@ -8,7 +8,6 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.EhClient
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.lrr.LRRArchivePagingSource
 import com.hippo.ehviewer.client.lrr.LRRClientProvider
@@ -33,10 +32,6 @@ class GalleryListViewModel : ViewModel() {
     // Service accessors (read-through to ServiceRegistry so the Scene does not
     // need to import ServiceRegistry directly)
     // -------------------------------------------------------------------------
-
-    /** The legacy EH client singleton (still used by a few code paths). */
-    val ehClient: EhClient
-        get() = ServiceRegistry.clientModule.ehClient
 
     /** The app's [DownloadManager] singleton. */
     val downloadManager: DownloadManager

@@ -54,7 +54,6 @@ import com.hippo.ehviewer.dao.HistoryInfo
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.ehviewer.ui.scene.BaseScene
-import com.hippo.ehviewer.ui.scene.EhCallback
 import com.hippo.ehviewer.ui.scene.ToolbarScene
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
@@ -62,7 +61,6 @@ import com.hippo.ehviewer.ui.scene.gallery.list.EnterGalleryDetailTransaction
 import com.hippo.ehviewer.widget.SimpleRatingView
 import com.hippo.ripple.Ripple
 import com.hippo.scene.Announcer
-import com.hippo.scene.SceneFragment
 import com.hippo.util.DrawableManager
 import com.hippo.view.ViewTransition
 import kotlinx.coroutines.Dispatchers
@@ -342,10 +340,7 @@ class HistoryScene : ToolbarScene(),
                     1 -> // Favorites
                         CommonOperations.addToFavorites(
                             activity, gi,
-                            AddToFavoriteListener(
-                                context,
-                                activity.stageId, tag
-                            ), false
+                            AddToFavoriteListener(this@HistoryScene)
                         )
                 }
             }.show()
@@ -463,23 +458,15 @@ class HistoryScene : ToolbarScene(),
     }
 
     private class AddToFavoriteListener(
-        context: android.content.Context,
-        stageId: Int,
-        sceneTag: String?
-    ) : EhCallback<HistoryScene, Void?>(context, stageId, sceneTag) {
+        private val scene: HistoryScene
+    ) : CommonOperations.FavoriteListener {
 
-        override fun onSuccess(result: Void?) {
-            showTip(R.string.add_to_favorite_success, LENGTH_SHORT)
+        override fun onSuccess() {
+            scene.showTip(R.string.add_to_favorite_success, LENGTH_SHORT)
         }
 
         override fun onFailure(e: Exception) {
-            showTip(R.string.add_to_favorite_failure, LENGTH_LONG)
-        }
-
-        override fun onCancel() {}
-
-        override fun isInstance(scene: SceneFragment?): Boolean {
-            return scene is HistoryScene
+            scene.showTip(R.string.add_to_favorite_failure, LENGTH_LONG)
         }
     }
 }
