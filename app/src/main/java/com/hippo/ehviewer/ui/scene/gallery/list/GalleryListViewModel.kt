@@ -6,13 +6,18 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import com.hippo.ehviewer.FavouriteStatusRouter
+import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.client.EhClient
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.lrr.LRRArchivePagingSource
 import com.hippo.ehviewer.client.lrr.LRRClientProvider
+import com.hippo.ehviewer.download.DownloadManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import java.util.concurrent.ExecutorService
 
 /**
  * ViewModel for the gallery list screen. Exposes a [Flow] of [PagingData]
@@ -23,6 +28,27 @@ import kotlinx.coroutines.flow.flatMapLatest
  * converted from Java + ContentHelper to Kotlin + PagingDataAdapter.
  */
 class GalleryListViewModel : ViewModel() {
+
+    // -------------------------------------------------------------------------
+    // Service accessors (read-through to ServiceRegistry so the Scene does not
+    // need to import ServiceRegistry directly)
+    // -------------------------------------------------------------------------
+
+    /** The legacy EH client singleton (still used by a few code paths). */
+    val ehClient: EhClient
+        get() = ServiceRegistry.clientModule.ehClient
+
+    /** The app's [DownloadManager] singleton. */
+    val downloadManager: DownloadManager
+        get() = ServiceRegistry.dataModule.downloadManager
+
+    /** The global favourite status router. */
+    val favouriteStatusRouter: FavouriteStatusRouter
+        get() = ServiceRegistry.dataModule.favouriteStatusRouter
+
+    /** Shared background executor for lightweight off-main-thread work. */
+    val executorService: ExecutorService
+        get() = ServiceRegistry.appModule.executorService
 
     /**
      * Encapsulates all search parameters needed to create a [LRRArchivePagingSource].
