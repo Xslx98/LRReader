@@ -23,7 +23,7 @@ import kotlinx.coroutines.runBlocking
 @WorkerThread
 fun <T> runSuspend(block: suspend kotlinx.coroutines.CoroutineScope.() -> T): T {
     check(android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) {
-        "runSuspend() must not be called on the main thread — use CoroutineBridge.launchIO() instead"
+        "runSuspend() must not be called on the main thread — use lifecycleScope.launch(Dispatchers.IO) instead"
     }
     return runBlocking { block() }
 }
