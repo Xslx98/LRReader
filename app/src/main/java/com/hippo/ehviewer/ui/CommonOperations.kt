@@ -38,7 +38,6 @@ object CommonOperations {
     /**
      * Result callback for [addToFavorites] / [removeFromFavorites].
      *
-     * Replaces the legacy `EhClient.Callback<Void?>` parameter from EhViewer.
      * The cloud-favourites slots (1-10) are gone with E-Hentai support, so the
      * callback only carries success / failure for the local-favourites table.
      */
