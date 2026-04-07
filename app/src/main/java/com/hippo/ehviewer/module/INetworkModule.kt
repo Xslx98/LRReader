@@ -15,7 +15,7 @@ interface INetworkModule {
     /** Disk HTTP cache backing [okHttpClient] and derived clients. */
     val cache: Cache
 
-    /** Custom DNS host overrides used by [EhHosts][com.hippo.ehviewer.client.EhHosts]. */
+    /** User-managed host alias table (HostsActivity edits this). */
     val hosts: Hosts
 
     /** Proxy selector respecting Settings-driven proxy configuration. */
