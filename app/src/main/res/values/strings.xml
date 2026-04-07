@@ -1196,6 +1196,7 @@
     <string name="lrr_ssl_error">Secure connection failed, please check server certificate</string>
     <string name="lrr_keystore_failed_title">Credential Storage Unavailable</string>
     <string name="lrr_keystore_failed_message">The device keystore is unavailable. Your API key could not be loaded. Please re-enter your server credentials.</string>
+    <string name="lrr_secure_storage_write_failed">The device keystore is unavailable, so your changes could not be saved securely. Please reboot the device and try again, or reinstall the app if the problem persists.</string>
     <string name="lrr_auth_failed_short">Authentication failed</string>
     <string name="lrr_server_error_short">Server error</string>
     <string name="lrr_request_failed_short">Request failed</string>
