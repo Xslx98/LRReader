@@ -29,6 +29,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -49,6 +50,11 @@ class HostsActivity : ToolbarActivity(),
     private lateinit var hosts: Hosts
     private lateinit var data: List<Pair<String, String>>
 
+    // Snapshot of the list last dispatched to the adapter. Read/written ONLY by
+    // the single dispatch path (notifyHostsChanges + onCreate initial load).
+    // See docs/diffutil-root-cause-analysis.md for the snapshot ownership rule.
+    private var lastSnapshot: List<Pair<String, String>> = emptyList()
+
     private lateinit var recyclerView: EasyRecyclerView
     private lateinit var tip: View
     private lateinit var adapter: HostsAdapter
@@ -58,6 +64,9 @@ class HostsActivity : ToolbarActivity(),
 
         hosts = ServiceRegistry.networkModule.hosts
         data = hosts.getAll()
+        // Initial baseline so the first notifyHostsChanges() diff matches the
+        // adapter's first onBindViewHolder pass.
+        lastSnapshot = data.toList()
 
         setContentView(R.layout.activity_hosts)
         setNavigationIcon(R.drawable.v_arrow_left_dark_x24)
@@ -126,10 +135,34 @@ class HostsActivity : ToolbarActivity(),
     }
 
     private fun notifyHostsChanges() {
-        data = hosts.getAll()
+        val newData = hosts.getAll()
+        val diff = DiffUtil.calculateDiff(HostPairDiffCallback(lastSnapshot, newData))
+        data = newData
+        lastSnapshot = newData.toList()
         recyclerView.visibility = if (data.isEmpty()) View.GONE else View.VISIBLE
         tip.visibility = if (data.isEmpty()) View.VISIBLE else View.GONE
-        adapter.notifyDataSetChanged()
+        diff.dispatchUpdatesTo(adapter)
+    }
+
+    /**
+     * DiffUtil callback for host/IP pair lists. Identity is the host name
+     * (unique key in Hosts). Content is the IP value.
+     */
+    private class HostPairDiffCallback(
+        private val oldList: List<Pair<String, String>>,
+        private val newList: List<Pair<String, String>>
+    ) : DiffUtil.Callback() {
+
+        override fun getOldListSize(): Int = oldList.size
+        override fun getNewListSize(): Int = newList.size
+
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            return oldList[oldItemPosition].first == newList[newItemPosition].first
+        }
+
+        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            return oldList[oldItemPosition].second == newList[newItemPosition].second
+        }
     }
 
     private class HostsHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
