@@ -16,6 +16,8 @@
 package com.hippo.ehviewer.ui.scene.gallery.detail
 
 import android.app.Activity
+import androidx.activity.ComponentActivity
+import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryDetail
@@ -23,7 +25,8 @@ import com.hippo.ehviewer.client.lrr.LRRArchiveApi
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
 import com.hippo.ehviewer.client.lrr.LRRCategoryApi
 import com.hippo.ehviewer.client.lrr.runSuspend
-import com.hippo.util.IoThreadPoolExecutor
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Handles LANraragi metadata fetching and category-based favorite detection,
@@ -54,8 +57,9 @@ class GalleryDetailRequestHelper(private val callback: Callback) {
         }
 
         val client = ServiceRegistry.networkModule.okHttpClient
+        val owner = callback.getActivity() as? ComponentActivity ?: return false
 
-        IoThreadPoolExecutor.instance.execute {
+        owner.lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val archive = runSuspend {
                     LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcid)
