@@ -23,22 +23,22 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Internal dependency order:
  *   CookieStore → Cache → Hosts → ProxySelector → OkHttpClient → ImageOkHttpClient
  */
-class NetworkModule(private val context: Context) {
+class NetworkModule(private val context: Context) : INetworkModule {
 
     /** Debounce flag: ensures only one CookieManager.flush() is scheduled at a time. */
     private val cookieFlushPending = AtomicBoolean(false)
 
-    val cookieStore: EhCookieStore by lazy { EhCookieStore(context) }
+    override val cookieStore: EhCookieStore by lazy { EhCookieStore(context) }
 
-    val cache: Cache by lazy {
+    override val cache: Cache by lazy {
         Cache(File(context.cacheDir, "http_cache"), 200L * 1024L * 1024L)
     }
 
-    val hosts: Hosts by lazy { Hosts(context, "hosts.db") }
+    override val hosts: Hosts by lazy { Hosts(context, "hosts.db") }
 
-    val proxySelector: EhProxySelector by lazy { EhProxySelector() }
+    override val proxySelector: EhProxySelector by lazy { EhProxySelector() }
 
-    val okHttpClient: OkHttpClient by lazy {
+    override val okHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .connectionPool(ConnectionPool(10, 5, TimeUnit.MINUTES))
             .followRedirects(true)
@@ -92,7 +92,7 @@ class NetworkModule(private val context: Context) {
             .build()
     }
 
-    val imageOkHttpClient: OkHttpClient by lazy {
+    override val imageOkHttpClient: OkHttpClient by lazy {
         // Derive from main client to share connection pool, thread pool, and SSL config
         okHttpClient.newBuilder()
             .connectTimeout(20, TimeUnit.SECONDS)
@@ -103,7 +103,7 @@ class NetworkModule(private val context: Context) {
     }
 
     /** Long-read client for archive extraction (large archives can be slow to extract). */
-    val longReadClient: OkHttpClient by lazy {
+    override val longReadClient: OkHttpClient by lazy {
         okHttpClient.newBuilder()
             .readTimeout(120, TimeUnit.SECONDS)
             .callTimeout(10, TimeUnit.MINUTES) // extraction should never exceed 10 min
@@ -111,7 +111,7 @@ class NetworkModule(private val context: Context) {
     }
 
     /** Upload client for file uploads (large write + long read timeouts). */
-    val uploadClient: OkHttpClient by lazy {
+    override val uploadClient: OkHttpClient by lazy {
         okHttpClient.newBuilder()
             .writeTimeout(300, TimeUnit.SECONDS)
             .readTimeout(120, TimeUnit.SECONDS)
@@ -120,5 +120,5 @@ class NetworkModule(private val context: Context) {
     }
 
     /** Live connectivity monitor backed by NetworkCallback. */
-    val networkMonitor: NetworkMonitor by lazy { NetworkMonitor(context) }
+    override val networkMonitor: NetworkMonitor by lazy { NetworkMonitor(context) }
 }
