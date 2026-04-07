@@ -42,9 +42,7 @@ import com.hippo.android.resource.AttrResources
 import com.hippo.drawerlayout.DrawerLayout
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.EhApplication
-import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.UrlOpener
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -75,9 +73,7 @@ import com.hippo.reveal.ViewAnimationUtils
 import com.hippo.ripple.Ripple
 import com.hippo.util.DrawableManager
 import com.hippo.util.ExceptionUtils
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import com.hippo.view.ViewTransition
 import com.hippo.widget.LoadImageView
 import java.text.SimpleDateFormat
@@ -235,9 +231,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             mGalleryInfo = gi
             // Add history
             if (gi != null) {
-                lifecycleScope.launch(Dispatchers.IO) {
-                    EhDB.putHistoryInfoAsync(gi)
-                }
+                viewModel.recordHistory(gi)
             }
         } else if (ACTION_GID_TOKEN == action) {
             mGid = args.getLong(KEY_GID)
@@ -248,17 +242,13 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 mDownloadInfo = di
                 mGalleryInfo = di
                 if (di != null) {
-                    lifecycleScope.launch(Dispatchers.IO) {
-                        EhDB.putHistoryInfoAsync(di)
-                    }
+                    viewModel.recordHistory(di)
                 }
             } catch (e: ClassCastException) {
                 val gi: GalleryInfo? = args.getParcelable(KEY_GALLERY_INFO)
                 mGalleryInfo = gi
                 if (gi != null) {
-                    lifecycleScope.launch(Dispatchers.IO) {
-                        EhDB.putHistoryInfoAsync(gi)
-                    }
+                    viewModel.recordHistory(gi)
                 }
             }
         }
@@ -494,7 +484,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             adjustViewVisibility(STATE_FAILED, false)
         }
 
-        ServiceRegistry.dataModule.downloadManager.addDownloadInfoListener(mDownloadHelper)
+        viewModel.downloadManager.addDownloadInfoListener(mDownloadHelper)
         return view
     }
 
@@ -507,7 +497,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         val context = getEHContext()
         AssertUtils.assertNotNull(context)
-        ServiceRegistry.dataModule.downloadManager.removeDownloadInfoListener(mDownloadHelper)
+        viewModel.downloadManager.removeDownloadInfoListener(mDownloadHelper)
         mTagHelper.destroy()
 
         setDrawerGestureBlocker(null)
@@ -699,9 +689,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         }
 
         lifecycleScope.launch {
-            val isFav = withContext(Dispatchers.IO) {
-                gd.isFavorited || EhDB.containLocalFavoritesAsync(gd.gid)
-            }
+            val isFav = gd.isFavorited || viewModel.isLocalFavorite(gd.gid)
             val a = getActivity()
             a?.runOnUiThread {
                 if (mHeart == null || mHeartOutline == null) return@runOnUiThread
@@ -786,7 +774,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         }
         val ctx = mContext!!
         if (executorService == null) {
-            executorService = ServiceRegistry.appModule.executorService
+            executorService = viewModel.executorService
         }
 
         executorService!!.submit {
@@ -989,9 +977,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 useNetWorkLoadThumb = true
                 di.updateInfo(result)
                 di.state = mDownloadHelper.downloadState
-                lifecycleScope.launch(Dispatchers.IO) {
-                    EhDB.putDownloadInfoAsync(di)
-                }
+                viewModel.persistDownloadInfo(di)
             }
         }
         adjustViewVisibility(STATE_NORMAL, true)
