@@ -13,6 +13,7 @@ import androidx.appcompat.widget.Toolbar
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.dao.QuickSearch
@@ -21,6 +22,7 @@ import com.hippo.ehviewer.util.TagTranslationUtil
 import com.hippo.lib.yorozuya.AssertUtils
 import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.scene.Announcer
+import kotlinx.coroutines.launch
 
 class BookmarksDraw(
     private val context: Context,
@@ -50,8 +52,8 @@ class BookmarksDraw(
         toolbar.setTitle(R.string.quick_search)
         toolbar.inflateMenu(R.menu.drawer_gallery_list)
 
-        com.hippo.util.IoThreadPoolExecutor.instance.execute {
-            val quickSearchList = EhDB.getAllQuickSearch()
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            val quickSearchList = EhDB.getAllQuickSearchAsync()
             // tag translation updates are persisted on IO thread
             val judge = AppearanceSettings.getShowTagTranslations()
             val toUpdate = mutableListOf<QuickSearch>()
@@ -59,7 +61,7 @@ class BookmarksDraw(
                 for (i in quickSearchList.indices) {
                     val name = quickSearchList[i].name
                     if (name != null && name.split(":").size == 2) {
-                        quickSearchList[i].name = TagTranslationUtil.getTagCN(name.split(":").toTypedArray(), this.ehTags)
+                        quickSearchList[i].name = TagTranslationUtil.getTagCN(name.split(":").toTypedArray(), this@BookmarksDraw.ehTags)
                         toUpdate.add(quickSearchList[i])
                     }
                 }
@@ -73,7 +75,7 @@ class BookmarksDraw(
                 }
             }
             if (toUpdate.isNotEmpty()) {
-                for (qs in toUpdate) EhDB.updateQuickSearch(qs)
+                for (qs in toUpdate) EhDB.updateQuickSearchAsync(qs)
             }
 
             val list = quickSearchList
