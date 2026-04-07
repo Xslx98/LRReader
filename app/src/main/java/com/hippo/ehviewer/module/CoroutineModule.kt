@@ -30,7 +30,7 @@ import kotlinx.coroutines.flow.asSharedFlow
  * - The handler is for **logging/cleanup only** — "you cannot recover from the
  *   exception in the CoroutineExceptionHandler" (official docs).
  */
-class CoroutineModule {
+class CoroutineModule : ICoroutineModule {
 
     private val tag = "CoroutineModule"
 
@@ -43,14 +43,14 @@ class CoroutineModule {
      * Observable stream of uncaught coroutine exceptions.
      * UI layers can optionally subscribe to display error notifications.
      */
-    val uncaughtErrors: SharedFlow<Throwable> = _uncaughtErrors.asSharedFlow()
+    override val uncaughtErrors: SharedFlow<Throwable> = _uncaughtErrors.asSharedFlow()
 
     /**
      * Global exception handler that logs uncaught coroutine exceptions,
      * reports them to Analytics, and emits them on [uncaughtErrors].
      * Installed on all scopes created by this module.
      */
-    val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+    override val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
         Log.e(tag, "Uncaught coroutine exception", throwable)
         Analytics.recordException(throwable)
         _uncaughtErrors.tryEmit(throwable)
@@ -66,7 +66,7 @@ class CoroutineModule {
      * viewLifecycleOwner.lifecycleScope.launch(coroutineModule.exceptionHandler) { ... }
      * ```
      */
-    val applicationScope = CoroutineScope(
+    override val applicationScope = CoroutineScope(
         SupervisorJob() + Dispatchers.Main.immediate + exceptionHandler
     )
 
@@ -74,11 +74,11 @@ class CoroutineModule {
      * IO-scoped [CoroutineScope] for background work (network, database, file I/O).
      * Backed by [SupervisorJob] so individual task failures don't cancel the scope.
      */
-    val ioScope = CoroutineScope(
+    override val ioScope = CoroutineScope(
         SupervisorJob() + Dispatchers.IO + exceptionHandler
     )
 
-    fun destroy() {
+    override fun destroy() {
         applicationScope.cancel()
         ioScope.cancel()
     }
