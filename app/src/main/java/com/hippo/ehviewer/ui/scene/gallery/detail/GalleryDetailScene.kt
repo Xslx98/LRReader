@@ -47,6 +47,7 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.UrlOpener
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.client.EhCacheKeyFactory
 import com.hippo.ehviewer.client.EhUrl
 import com.hippo.ehviewer.client.EhUtils
@@ -74,7 +75,9 @@ import com.hippo.reveal.ViewAnimationUtils
 import com.hippo.ripple.Ripple
 import com.hippo.util.DrawableManager
 import com.hippo.util.ExceptionUtils
-import com.hippo.util.IoThreadPoolExecutor
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.hippo.view.ViewTransition
 import com.hippo.widget.LoadImageView
 import java.text.SimpleDateFormat
@@ -232,8 +235,8 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             mGalleryInfo = gi
             // Add history
             if (gi != null) {
-                IoThreadPoolExecutor.instance.execute {
-                    EhDB.putHistoryInfo(gi)
+                lifecycleScope.launch(Dispatchers.IO) {
+                    EhDB.putHistoryInfoAsync(gi)
                 }
             }
         } else if (ACTION_GID_TOKEN == action) {
@@ -245,16 +248,16 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 mDownloadInfo = di
                 mGalleryInfo = di
                 if (di != null) {
-                    IoThreadPoolExecutor.instance.execute {
-                        EhDB.putHistoryInfo(di)
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        EhDB.putHistoryInfoAsync(di)
                     }
                 }
             } catch (e: ClassCastException) {
                 val gi: GalleryInfo? = args.getParcelable(KEY_GALLERY_INFO)
                 mGalleryInfo = gi
                 if (gi != null) {
-                    IoThreadPoolExecutor.instance.execute {
-                        EhDB.putHistoryInfo(gi)
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        EhDB.putHistoryInfoAsync(gi)
                     }
                 }
             }
@@ -695,8 +698,10 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             return
         }
 
-        IoThreadPoolExecutor.instance.execute {
-            val isFav = gd.isFavorited || EhDB.containLocalFavorites(gd.gid)
+        lifecycleScope.launch {
+            val isFav = withContext(Dispatchers.IO) {
+                gd.isFavorited || EhDB.containLocalFavoritesAsync(gd.gid)
+            }
             val a = getActivity()
             a?.runOnUiThread {
                 if (mHeart == null || mHeartOutline == null) return@runOnUiThread
@@ -984,8 +989,8 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 useNetWorkLoadThumb = true
                 di.updateInfo(result)
                 di.state = mDownloadHelper.downloadState
-                IoThreadPoolExecutor.instance.execute {
-                    EhDB.putDownloadInfo(di)
+                lifecycleScope.launch(Dispatchers.IO) {
+                    EhDB.putDownloadInfoAsync(di)
                 }
             }
         }
