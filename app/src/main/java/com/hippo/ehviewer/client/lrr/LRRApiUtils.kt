@@ -67,6 +67,14 @@ class LRREmptyBodyException : IOException()
 class LRRMissingFieldException(field: String) : IOException("Missing field: $field")
 
 /**
+ * Thrown by [LRRAuthInterceptor] when the configured server URL is malformed
+ * (contains userInfo/fragment) or when a request would downgrade the scheme
+ * (HTTP for an HTTPS-configured server or vice versa). In either case the
+ * request is aborted before the API key leaves the device.
+ */
+class LRRPlaintextRefusedException(message: String) : IOException(message)
+
+/**
  * Ensure the HTTP response is successful (2xx) and carries a JSON body.
  * Throws [LRRHttpException] on non-2xx status, or [IOException] if
  * the server returned a non-JSON content type (e.g., an HTML error page
@@ -101,6 +109,7 @@ fun friendlyError(context: Context, e: Exception): String {
         }
         e is LRREmptyBodyException           -> context.getString(R.string.lrr_empty_response)
         e is LRRMissingFieldException        -> context.getString(R.string.lrr_malformed_response)
+        e is LRRPlaintextRefusedException    -> context.getString(R.string.lrr_plaintext_refused)
         e is java.net.SocketTimeoutException -> context.getString(R.string.lrr_timeout_error)
         e is java.net.ConnectException       -> context.getString(R.string.lrr_connect_error_check)
         e is java.net.UnknownHostException   -> context.getString(R.string.lrr_dns_error)

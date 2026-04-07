@@ -1139,6 +1139,7 @@
     <string name="lrr_connect_error_check">서버에 연결할 수 없습니다. 주소와 네트워크를 확인하세요</string>
     <string name="lrr_dns_error">서버 주소를 확인할 수 없습니다. URL을 확인하세요</string>
     <string name="lrr_ssl_error">보안 연결 실패, 서버 인증서를 확인하세요</string>
+    <string name="lrr_plaintext_refused">API 키 전송이 거부되었습니다: 서버 URL이 잘못되었거나 스키마가 일치하지 않습니다</string>
     <string name="lrr_auth_failed_short">인증 실패</string>
     <string name="lrr_server_error_short">서버 오류</string>
     <string name="lrr_request_failed_short">요청 실패</string>

@@ -1155,6 +1155,7 @@
     <string name="lrr_connect_error_check">无法连接到服务器，请检查地址和网络</string>
     <string name="lrr_dns_error">无法解析服务器地址，请检查 URL</string>
     <string name="lrr_ssl_error">安全连接失败，请检查服务器证书</string>
+    <string name="lrr_plaintext_refused">已拒绝发送 API 密钥：服务器 URL 无效或协议不匹配</string>
     <string name="lrr_auth_failed_short">认证失败</string>
     <string name="lrr_server_error_short">服务器错误</string>
     <string name="lrr_request_failed_short">请求失败</string>
