@@ -703,16 +703,26 @@ class DownloadManager(
 
         Collections.sort(mAllInfoList, DATE_DESC_COMPARATOR)
 
-        // Persist to DB on background thread
+        // Persist to DB on background thread. The DB writes happen here, but the
+        // resulting label rows must be published into the main-thread-only
+        // mLabelList/mLabelSet via runOnMainThread, not from the IO segment.
         val infosToSave = ArrayList(downloadInfoList)
+        val labelStringsToPersist = ArrayList(newLabelsToAdd)
         scope.launch {
-            for (label in newLabelsToAdd) {
-                val saved = EhDB.addDownloadLabelAsync(label)
-                mLabelList.add(saved)
-                mLabelSet.add(label)
+            val savedLabels = ArrayList<DownloadLabel>(labelStringsToPersist.size)
+            for (label in labelStringsToPersist) {
+                savedLabels.add(EhDB.addDownloadLabelAsync(label))
             }
             for (info in infosToSave) {
                 EhDB.putDownloadInfoAsync(info)
+            }
+            if (savedLabels.isNotEmpty()) {
+                runOnMainThread {
+                    for (saved in savedLabels) {
+                        mLabelList.add(saved)
+                        saved.label?.let { mLabelSet.add(it) }
+                    }
+                }
             }
         }
 
