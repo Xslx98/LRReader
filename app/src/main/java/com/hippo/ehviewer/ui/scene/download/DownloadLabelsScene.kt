@@ -263,10 +263,15 @@ class DownloadLabelsScene : ToolbarScene() {
                     .setTitle(R.string.delete_label_title)
                     .setMessage(getString(R.string.delete_label_message, downloadLabel.label))
                     .setPositiveButton(android.R.string.ok) { _, _ ->
+                        // DownloadManager.deleteLabel() mutates mLabelList synchronously
+                        // on the main thread (DB persist is fire-and-forget). So by the
+                        // time this lambda returns, mList.size is already smaller and
+                        // notifyItemRemoved(position) is the precise notification to
+                        // dispatch. Doing this in the positive button callback (rather
+                        // than OnDismissListener) also fixes a pre-existing bug where
+                        // a Cancel/back-button dismiss would still fire notifyDataSetChanged.
                         ServiceRegistry.dataModule.downloadManager.deleteLabel(downloadLabel.label ?: "")
-                    }
-                    .setOnDismissListener {
-                        mAdapter?.notifyDataSetChanged()
+                        mAdapter?.notifyItemRemoved(position)
                         updateView()
                     }
                     .show()
