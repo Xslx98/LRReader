@@ -209,11 +209,44 @@ object LRRAuthManager {
     /**
      * @return true if encryption was unavailable during initialize() and the user
      *         should be prompted to re-enter their API key.
-     * TODO: Surface this flag in the server setup/login UI to prompt re-entry.
      */
     @JvmStatic
     fun isNeedsReauthentication(): Boolean {
         return sNeedsReauthentication
+    }
+
+    /**
+     * Inspect every known server profile and mark reauthentication required if any
+     * profile is missing its API key. Should be called from a background thread once
+     * the Room database is ready and the full profile list has been loaded.
+     *
+     * Two failure modes are detected:
+     *
+     *   1. The encrypted backing store is unavailable ([sPrefs] is null) AND the user
+     *      already has at least one profile in Room — every key was lost.
+     *   2. The backing store is available but at least one profile has no entry under
+     *      `api_key_$id` — partial corruption / interrupted migration.
+     *
+     * Both leave the user in a state where the auth interceptor would silently send
+     * requests with no Bearer token; we set [sNeedsReauthentication] so MainActivity /
+     * ServerListScene surface the dialog and direct the user to ServerListScene.
+     */
+    @JvmStatic
+    fun markReauthIfProfilesUnprotected(profileIds: List<Long>) {
+        if (profileIds.isEmpty()) return
+        val prefs = sPrefs
+        if (prefs == null) {
+            // KeyStore is broken AND profiles exist in Room: keys are unrecoverable.
+            sNeedsReauthentication = true
+            return
+        }
+        // KeyStore is up but verify each profile has its api_key entry.
+        for (id in profileIds) {
+            if (!prefs.contains("api_key_$id")) {
+                sNeedsReauthentication = true
+                return
+            }
+        }
     }
 
     // ── Per-profile API key storage (encrypted, keyed by profile ID) ──────────
