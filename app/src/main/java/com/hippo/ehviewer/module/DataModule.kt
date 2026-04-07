@@ -15,13 +15,13 @@ import java.io.File
  * SpiderInfoCache, FavouriteStatusRouter, and user tag list.
  * Extracted from EhApplication to reduce its responsibility scope.
  */
-class DataModule(private val context: Context) {
+class DataModule(private val context: Context) : IDataModule {
 
-    val favouriteStatusRouter: FavouriteStatusRouter by lazy { FavouriteStatusRouter() }
+    override val favouriteStatusRouter: FavouriteStatusRouter by lazy { FavouriteStatusRouter() }
 
-    val downloadManager: DownloadManager by lazy { DownloadManager(context) }
+    override val downloadManager: DownloadManager by lazy { DownloadManager(context) }
 
-    val galleryDetailCache: LruCache<Long, GalleryDetail> by lazy {
+    override val galleryDetailCache: LruCache<Long, GalleryDetail> by lazy {
         LruCache<Long, GalleryDetail>(150).also { cache ->
             favouriteStatusRouter.addListener { gid, slot ->
                 cache[gid]?.let { it.favoriteSlot = slot }
@@ -29,21 +29,21 @@ class DataModule(private val context: Context) {
         }
     }
 
-    val spiderInfoCache: SimpleDiskCache by lazy {
+    override val spiderInfoCache: SimpleDiskCache by lazy {
         SimpleDiskCache(File(context.cacheDir, "spider_info"), 5 * 1024 * 1024) // 5MB
     }
 
     // --- User tag list (in-memory cache) ---
 
     @Volatile
-    var userTagList: UserTagList? = null
+    override var userTagList: UserTagList? = null
         private set
 
-    fun saveUserTagList(@NonNull list: UserTagList) {
+    override fun saveUserTagList(@NonNull list: UserTagList) {
         userTagList = list
     }
 
-    fun clearGalleryDetailCache() {
+    override fun clearGalleryDetailCache() {
         galleryDetailCache.evictAll()
     }
 }
