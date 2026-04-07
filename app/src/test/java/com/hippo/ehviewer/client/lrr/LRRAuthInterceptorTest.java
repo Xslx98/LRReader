@@ -146,7 +146,7 @@ public class LRRAuthInterceptorTest {
      * must throw LRRPlaintextRefusedException before the request leaves the device.
      */
     @Test
-    public void httpsConfigured_httpRequest_throwsPlaintextRefused() {
+    public void httpsConfigured_httpRequest_throwsPlaintextRefused() throws Exception {
         LRRAuthManager.setApiKey("secret");
         // Configure HTTPS for the same host:port that MockWebServer listens on (HTTP).
         HttpUrl mockUrl = server.url("/");
@@ -169,7 +169,7 @@ public class LRRAuthInterceptorTest {
      * Constructed via HttpUrl directly because MockWebServer is HTTP-only.
      */
     @Test
-    public void httpConfigured_httpsRequest_throwsPlaintextRefused() {
+    public void httpConfigured_httpsRequest_throwsPlaintextRefused() throws Exception {
         LRRAuthManager.setApiKey("secret");
         LRRAuthManager.setServerUrl("http://example.local:3000");
 
@@ -191,7 +191,7 @@ public class LRRAuthInterceptorTest {
      * malformed/malicious — every request must abort.
      */
     @Test
-    public void serverUrlWithUserInfo_throwsPlaintextRefused() {
+    public void serverUrlWithUserInfo_throwsPlaintextRefused() throws Exception {
         LRRAuthManager.setApiKey("secret");
         HttpUrl mockUrl = server.url("/");
         LRRAuthManager.setServerUrl(
@@ -217,7 +217,7 @@ public class LRRAuthInterceptorTest {
      * token to either host.
      */
     @Test
-    public void serverUrlWithFragment_throwsPlaintextRefused() {
+    public void serverUrlWithFragment_throwsPlaintextRefused() throws Exception {
         LRRAuthManager.setApiKey("secret");
         HttpUrl mockUrl = server.url("/");
         LRRAuthManager.setServerUrl(
@@ -240,7 +240,7 @@ public class LRRAuthInterceptorTest {
      * userInfo in the URL targeting our server, it must be rejected.
      */
     @Test
-    public void requestUrlWithUserInfo_throwsPlaintextRefused() {
+    public void requestUrlWithUserInfo_throwsPlaintextRefused() throws Exception {
         LRRAuthManager.setApiKey("secret");
         HttpUrl mockUrl = server.url("/");
         LRRAuthManager.setServerUrl("http://" + mockUrl.host() + ":" + mockUrl.port());
@@ -357,7 +357,7 @@ public class LRRAuthInterceptorTest {
      * host="::1" — equal strings → MATCH.
      */
     @Test
-    public void ipv6LiteralHost_match_viaMatcher() {
+    public void ipv6LiteralHost_match_viaMatcher() throws Exception {
         // The interceptor needs LRRAuthManager prefs set; we exercise the matcher
         // directly through the public API by constructing matching HttpUrls and
         // observing that no exception fires when both URLs are well-formed.
@@ -406,7 +406,7 @@ public class LRRAuthInterceptorTest {
      * token. This is a defense against corrupted prefs.
      */
     @Test
-    public void invalidServerUrl_throwsPlaintextRefused() {
+    public void invalidServerUrl_throwsPlaintextRefused() throws Exception {
         LRRAuthManager.setApiKey("k");
         LRRAuthManager.setServerUrl("not-a-valid-url");
 
