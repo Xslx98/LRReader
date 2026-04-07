@@ -46,9 +46,9 @@ import com.hippo.drawable.DrawerArrowDrawable
 import com.hippo.drawerlayout.DrawerLayout
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.easyrecyclerview.FastScroller
+import androidx.lifecycle.ViewModelProvider
 import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.callBack.SubscriptionCallback
 import com.hippo.ehviewer.client.EhClient
@@ -127,6 +127,8 @@ class GalleryListScene : BaseScene(),
     private lateinit var mFavouriteStatusRouter: FavouriteStatusRouter
     private var mFavouriteStatusRouterListener: FavouriteStatusRouter.Listener? = null
 
+    private lateinit var viewModel: GalleryListViewModel
+
     /*---------------
      Extracted helpers
      ---------------*/
@@ -200,10 +202,11 @@ class GalleryListScene : BaseScene(),
 
         val context = ehContext
         AssertUtils.assertNotNull(context)
-        executorService = ServiceRegistry.appModule.executorService
-        mClient = ServiceRegistry.clientModule.ehClient
-        mDownloadManager = ServiceRegistry.dataModule.downloadManager
-        mFavouriteStatusRouter = ServiceRegistry.dataModule.favouriteStatusRouter
+        viewModel = ViewModelProvider(requireActivity())[GalleryListViewModel::class.java]
+        executorService = viewModel.executorService
+        mClient = viewModel.ehClient
+        mDownloadManager = viewModel.downloadManager
+        mFavouriteStatusRouter = viewModel.favouriteStatusRouter
 
         mDownloadInfoListener = object : DownloadInfoListener {
             override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
