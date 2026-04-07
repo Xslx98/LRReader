@@ -60,8 +60,13 @@ object LRRMinionApi {
         client: OkHttpClient,
         baseUrl: String
     ) = withContext(Dispatchers.IO) {
+        val url = parseBaseUrl(baseUrl).newBuilder()
+            .addPathSegment("api")
+            .addPathSegment("minion")
+            .addPathSegment("jobs")
+            .build()
         val request = Request.Builder()
-            .url("$baseUrl/api/minion/jobs")
+            .url(url)
             .delete()
             .build()
         client.newCall(request).execute().use { response ->
