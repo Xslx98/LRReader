@@ -1122,6 +1122,7 @@ Cette action est irréversible.</string>
     <string name="lrr_connect_error_check">Impossible de se connecter au serveur, vérifiez l\'adresse et le réseau</string>
     <string name="lrr_dns_error">Impossible de résoudre l\'adresse du serveur, vérifiez l\'URL</string>
     <string name="lrr_ssl_error">Connexion sécurisée échouée, vérifiez le certificat du serveur</string>
+    <string name="lrr_plaintext_refused">Envoi de la clé API refusé : URL du serveur invalide ou schéma non concordant</string>
     <string name="lrr_auth_failed_short">Authentification échouée</string>
     <string name="lrr_server_error_short">Erreur serveur</string>
     <string name="lrr_request_failed_short">Requête échouée</string>
