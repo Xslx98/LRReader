@@ -44,11 +44,15 @@ import java.io.IOException
  * Unified database access layer.
  *
  * **Dual API**: Every public method exists in two forms:
- * - `suspend fun xxxAsync(...)` — for Kotlin coroutine callers
- * - `@JvmStatic fun xxx(...)` — `runBlocking` bridge for Java callers (safe on IO threads)
+ * - `suspend fun xxxAsync(...)` — for Kotlin coroutine callers (preferred)
+ * - `@JvmStatic fun xxx(...)` — `runBlocking` bridge for remaining Java callers (safe on IO threads)
  *
- * **Main-thread safety**: All `runBlocking` bridges will log a warning if called on the
- * main thread, as this blocks the UI and risks ANR.
+ * **Main-thread safety**: [blockingDb] logs a warning with a full stack trace if invoked on
+ * the main thread, surfacing ANR risks during development. Kotlin callers should always use
+ * the `suspend fun *Async` variants from a coroutine scope — the bridges exist only for
+ * legacy callers (Java code and a few `@JvmStatic` Kotlin helpers like
+ * `SpiderDen.getGalleryDownloadDir`) that are still being migrated.
+ *
  * Per official Kotlin docs: "runBlocking... blocks the current thread interruptibly...
  * designed to bridge regular blocking code... to be used in main functions and in tests."
  * Per Android docs: "If the main thread is blocked... it can lead to... an Application
@@ -62,14 +66,24 @@ object EhDB {
     private const val TAG = "EhDB"
 
     /**
-     * Wraps `runBlocking` with a main-thread check. Logs a warning with the caller's
-     * stack trace if invoked on the main thread, to surface potential ANR risks during
-     * development.
+     * Wraps `runBlocking` with a main-thread check.
+     *
+     * Logs a warning with a full stack trace when called on the main thread, so the
+     * offending caller is easy to track down in logcat. The call is allowed to proceed
+     * in both debug and release builds because [SpiderDen.getGalleryDownloadDir] and
+     * a handful of other `@JvmStatic` helpers still funnel main-thread reads through
+     * here. Throwing here would surface as crashes during ordinary UI flows
+     * (gallery delete, "open offline", etc.). Once those legacy paths have been
+     * migrated to suspend variants, this should be promoted to a hard `throw` in
+     * debug builds (see `docs/review-fix-branches.md` Branch 7 follow-up).
      */
     private fun <T> blockingDb(block: suspend kotlinx.coroutines.CoroutineScope.() -> T): T {
         if (Looper.myLooper() == Looper.getMainLooper()) {
-            Log.w(TAG, "runBlocking called on main thread — risk of ANR",
-                IllegalStateException("EhDB blocking call on main thread"))
+            Log.w(
+                TAG,
+                "runBlocking called on main thread — use the suspend fun *Async variant from a coroutine scope",
+                IllegalStateException("EhDB blocking call on main thread")
+            )
         }
         return runBlocking { block() }
     }
@@ -305,10 +319,6 @@ object EhDB {
             sDatabase.downloadDao().observeAllDownloads()
     }
 
-    @JvmStatic
-    fun moveDownloadInfo(infos: List<DownloadInfo>, fromPosition: Int, toPosition: Int) =
-        blockingDb { moveDownloadInfoAsync(infos, fromPosition, toPosition) }
-
     suspend fun moveDownloadInfoAsync(infos: List<DownloadInfo>, fromPosition: Int, toPosition: Int) {
         if (fromPosition == toPosition) return
         sDatabase.withTransaction {
@@ -384,15 +394,9 @@ object EhDB {
         }
     }
 
-    @JvmStatic
-    fun removeDownloadDirname(gid: Long) = blockingDb { removeDownloadDirnameAsync(gid) }
-
     suspend fun removeDownloadDirnameAsync(gid: Long) {
         sDatabase.downloadDao().deleteDirnameByKey(gid)
     }
-
-    @JvmStatic
-    fun clearDownloadDirname() = blockingDb { clearDownloadDirnameAsync() }
 
     suspend fun clearDownloadDirnameAsync() {
         sDatabase.downloadDao().deleteAllDirnames()
@@ -460,18 +464,12 @@ object EhDB {
         sDatabase.browsingDao().deleteLocalFavoriteByKey(gid)
     }
 
-    @JvmStatic
-    fun removeLocalFavorites(gidArray: LongArray) = blockingDb { removeLocalFavoritesAsync(gidArray) }
-
     suspend fun removeLocalFavoritesAsync(gidArray: LongArray) {
         val dao = sDatabase.browsingDao()
         for (gid in gidArray) {
             dao.deleteLocalFavoriteByKey(gid)
         }
     }
-
-    @JvmStatic
-    fun containLocalFavorites(gid: Long): Boolean = blockingDb { containLocalFavoritesAsync(gid) }
 
     suspend fun containLocalFavoritesAsync(gid: Long): Boolean {
         return sDatabase.browsingDao().loadLocalFavorite(gid) != null
@@ -493,22 +491,13 @@ object EhDB {
     // BLACK LIST
     // ═══════════════════════════════════════════════════════════
 
-    @JvmStatic
-    fun getAllBlackList(): List<BlackList> = blockingDb { getAllBlackListAsync() }
-
     suspend fun getAllBlackListAsync(): List<BlackList> = sDatabase.miscDao().getAllBlackList()
-
-    @JvmStatic
-    fun insertBlackList(blackList: BlackList) = blockingDb { insertBlackListAsync(blackList) }
 
     suspend fun insertBlackListAsync(blackList: BlackList) {
         blackList.id = null
         if (blackList.badgayname == null) return
         sDatabase.miscDao().insertBlackList(blackList)
     }
-
-    @JvmStatic
-    fun deleteBlackList(blackList: BlackList) = blockingDb { deleteBlackListAsync(blackList) }
 
     suspend fun deleteBlackListAsync(blackList: BlackList) {
         sDatabase.miscDao().deleteBlackList(blackList)
@@ -528,14 +517,8 @@ object EhDB {
     // QUICK SEARCH
     // ═══════════════════════════════════════════════════════════
 
-    @JvmStatic
-    fun getAllQuickSearch(): List<QuickSearch> = blockingDb { getAllQuickSearchAsync() }
-
     suspend fun getAllQuickSearchAsync(): List<QuickSearch> =
         sDatabase.browsingDao().getAllQuickSearch()
-
-    @JvmStatic
-    fun insertQuickSearch(quickSearch: QuickSearch) = blockingDb { insertQuickSearchAsync(quickSearch) }
 
     suspend fun insertQuickSearchAsync(quickSearch: QuickSearch) {
         quickSearch.id = null
@@ -545,23 +528,13 @@ object EhDB {
         quickSearch.id = sDatabase.browsingDao().insertQuickSearch(quickSearch)
     }
 
-    @JvmStatic
-    fun updateQuickSearch(quickSearch: QuickSearch) = blockingDb { updateQuickSearchAsync(quickSearch) }
-
     suspend fun updateQuickSearchAsync(quickSearch: QuickSearch) {
         sDatabase.browsingDao().updateQuickSearch(quickSearch)
     }
 
-    @JvmStatic
-    fun deleteQuickSearch(quickSearch: QuickSearch) = blockingDb { deleteQuickSearchAsync(quickSearch) }
-
     suspend fun deleteQuickSearchAsync(quickSearch: QuickSearch) {
         sDatabase.browsingDao().deleteQuickSearch(quickSearch)
     }
-
-    @JvmStatic
-    fun moveQuickSearch(fromPosition: Int, toPosition: Int) =
-        blockingDb { moveQuickSearchAsync(fromPosition, toPosition) }
 
     suspend fun moveQuickSearchAsync(fromPosition: Int, toPosition: Int) {
         if (fromPosition == toPosition) return
@@ -587,9 +560,6 @@ object EhDB {
     // HISTORY
     // ═══════════════════════════════════════════════════════════
 
-    @JvmStatic
-    fun getHistoryLazyList(): List<HistoryInfo> = blockingDb { getHistoryLazyListAsync() }
-
     suspend fun getHistoryLazyListAsync(): List<HistoryInfo> {
         val profileId = com.hippo.ehviewer.client.lrr.LRRAuthManager.getActiveProfileId()
         return if (profileId > 0)
@@ -597,9 +567,6 @@ object EhDB {
         else
             sDatabase.browsingDao().getAllHistory()
     }
-
-    @JvmStatic
-    fun putHistoryInfo(galleryInfo: GalleryInfo) = blockingDb { putHistoryInfoAsync(galleryInfo) }
 
     suspend fun putHistoryInfoAsync(galleryInfo: GalleryInfo) {
         val dao = sDatabase.browsingDao()
@@ -610,10 +577,6 @@ object EhDB {
         dao.trimHistoryTo(maxCount)
     }
 
-    @JvmStatic
-    fun putHistoryInfo(historyInfoList: List<HistoryInfo>) =
-        blockingDb { putHistoryInfoListAsync(historyInfoList) }
-
     suspend fun putHistoryInfoListAsync(historyInfoList: List<HistoryInfo>) {
         val dao = sDatabase.browsingDao()
         for (info in historyInfoList) {
@@ -622,15 +585,9 @@ object EhDB {
         dao.trimHistoryTo(MAX_HISTORY_COUNT)
     }
 
-    @JvmStatic
-    fun deleteHistoryInfo(info: HistoryInfo) = blockingDb { deleteHistoryInfoAsync(info) }
-
     suspend fun deleteHistoryInfoAsync(info: HistoryInfo) {
         sDatabase.browsingDao().deleteHistoryByKey(info.gid)
     }
-
-    @JvmStatic
-    fun clearHistoryInfo() = blockingDb { clearHistoryInfoAsync() }
 
     suspend fun clearHistoryInfoAsync() {
         sDatabase.browsingDao().deleteAllHistory()
@@ -660,43 +617,25 @@ object EhDB {
     // SERVER PROFILES
     // ═══════════════════════════════════════════════════════════
 
-    @JvmStatic
-    fun getAllServerProfiles(): List<ServerProfile> = blockingDb { getAllServerProfilesAsync() }
-
     suspend fun getAllServerProfilesAsync(): List<ServerProfile> =
         sDatabase.miscDao().getAllServerProfiles()
 
     suspend fun getActiveProfileAsync(): ServerProfile? =
         sDatabase.miscDao().getActiveProfile()
 
-    @JvmStatic
-    fun findProfileByUrl(url: String): ServerProfile? = blockingDb { findProfileByUrlAsync(url) }
-
     suspend fun findProfileByUrlAsync(url: String): ServerProfile? =
         sDatabase.miscDao().findProfileByUrl(url)
 
-    @JvmStatic
-    fun insertServerProfile(profile: ServerProfile): Long = blockingDb { insertServerProfileAsync(profile) }
-
     suspend fun insertServerProfileAsync(profile: ServerProfile): Long =
         sDatabase.miscDao().insertServerProfile(profile)
-
-    @JvmStatic
-    fun updateServerProfile(profile: ServerProfile) = blockingDb { updateServerProfileAsync(profile) }
 
     suspend fun updateServerProfileAsync(profile: ServerProfile) {
         sDatabase.miscDao().updateServerProfile(profile)
     }
 
-    @JvmStatic
-    fun deleteServerProfile(profile: ServerProfile) = blockingDb { deleteServerProfileAsync(profile) }
-
     suspend fun deleteServerProfileAsync(profile: ServerProfile) {
         sDatabase.miscDao().deleteServerProfile(profile)
     }
-
-    @JvmStatic
-    fun deactivateAllProfiles() = blockingDb { deactivateAllProfilesAsync() }
 
     suspend fun deactivateAllProfilesAsync() {
         sDatabase.miscDao().deactivateAllProfiles()

@@ -17,14 +17,16 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
 import com.hippo.ehviewer.client.lrr.friendlyError
 import com.hippo.ehviewer.client.lrr.LRRServerApi
-import com.hippo.ehviewer.client.lrr.runSuspend
 import com.hippo.ehviewer.client.lrr.LRRUrlHelper
 import com.hippo.ehviewer.client.lrr.data.LRRServerInfo
 import com.hippo.ehviewer.dao.ServerProfile
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
 import com.hippo.scene.Announcer
-import com.hippo.util.IoThreadPoolExecutor
 import com.hippo.lib.yorozuya.ViewUtils
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 
 /**
@@ -169,23 +171,21 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
         fallbackUrl: String?,
         navigateOnSuccess: Boolean
     ) {
-        IoThreadPoolExecutor.instance.execute {
+        lifecycleScope.launch(Dispatchers.IO) {
             // --- Attempt 1: primary URL ---
             try {
                 Log.d(TAG, "Trying primary URL: $primaryUrl")
-                val info = runSuspend {
-                    LRRServerApi.getServerInfo(client, primaryUrl)
-                }
+                val info = LRRServerApi.getServerInfo(client, primaryUrl)
                 // Success on primary
                 onConnectSuccess(primaryUrl, info, navigateOnSuccess)
-                return@execute
+                return@launch
             } catch (e1: Exception) {
                 Log.d(TAG, "Primary URL failed: ${e1.message}")
 
                 if (fallbackUrl == null) {
                     // No fallback -- report failure
                     onConnectFailure(e1)
-                    return@execute
+                    return@launch
                 }
             }
 
@@ -194,9 +194,7 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
                 Log.d(TAG, "Trying fallback URL: $fallbackUrl")
                 // Update interceptor URL for fallback attempt
                 LRRAuthManager.setServerUrl(fallbackUrl)
-                val info = runSuspend {
-                    LRRServerApi.getServerInfo(client, fallbackUrl)
-                }
+                val info = LRRServerApi.getServerInfo(client, fallbackUrl)
                 // Success on fallback
                 onConnectSuccess(fallbackUrl, info, navigateOnSuccess)
             } catch (e2: Exception) {
@@ -207,9 +205,10 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
     }
 
     /**
-     * Called on worker thread when connection succeeds.
+     * Called from a coroutine on Dispatchers.IO when connection succeeds.
+     * Persists/updates the [ServerProfile] then dispatches the UI updates back to main.
      */
-    private fun onConnectSuccess(
+    private suspend fun onConnectSuccess(
         resolvedUrl: String,
         info: LRRServerInfo,
         navigateOnSuccess: Boolean
@@ -219,8 +218,8 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
 
         // Create or update ServerProfile
         if (activity != null) {
-            val existing = EhDB.findProfileByUrl(resolvedUrl)
-            EhDB.deactivateAllProfiles()
+            val existing = EhDB.findProfileByUrlAsync(resolvedUrl)
+            EhDB.deactivateAllProfilesAsync()
             if (existing != null) {
                 // API key is stored in EncryptedSharedPreferences, not in Room
                 val updated = ServerProfile(
@@ -229,14 +228,14 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
                     resolvedUrl,
                     true
                 )
-                EhDB.updateServerProfile(updated)
+                EhDB.updateServerProfileAsync(updated)
                 LRRAuthManager.setApiKeyForProfile(existing.id, LRRAuthManager.getApiKey())
                 LRRAuthManager.setActiveProfileId(existing.id)
             } else {
                 val profileName = info.name ?: "LANraragi"
                 // API key is stored in EncryptedSharedPreferences, not in Room
                 val newProfile = ServerProfile(0, profileName, resolvedUrl, true)
-                val newId = EhDB.insertServerProfile(newProfile)
+                val newId = EhDB.insertServerProfileAsync(newProfile)
                 LRRAuthManager.setApiKeyForProfile(newId, LRRAuthManager.getApiKey())
                 LRRAuthManager.setActiveProfileId(newId)
             }

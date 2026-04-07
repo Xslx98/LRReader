@@ -26,6 +26,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.h6ah4i.android.widget.advrecyclerview.animator.DraggableItemAnimator
@@ -36,13 +37,16 @@ import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemView
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.QuickSearch
 import com.hippo.ehviewer.ui.scene.ToolbarScene
 import com.hippo.lib.yorozuya.AssertUtils
 import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.util.DrawableManager
-import com.hippo.util.IoThreadPoolExecutor
 import com.hippo.view.ViewTransition
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class QuickSearchScene : ToolbarScene() {
 
@@ -62,12 +66,10 @@ class QuickSearchScene : ToolbarScene() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mQuickSearchList = mutableListOf()
-        IoThreadPoolExecutor.instance.execute {
-            val result = EhDB.getAllQuickSearch()
-            requireActivity().runOnUiThread {
-                mQuickSearchList = result.toMutableList()
-                mAdapter?.notifyDataSetChanged()
-            }
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) { EhDB.getAllQuickSearchAsync() }
+            mQuickSearchList = result.toMutableList()
+            mAdapter?.notifyDataSetChanged()
         }
     }
 
@@ -171,8 +173,8 @@ class QuickSearchScene : ToolbarScene() {
                 .setTitle(R.string.delete_quick_search_title)
                 .setMessage(getString(R.string.delete_quick_search_message, quickSearch.name))
                 .setPositiveButton(android.R.string.ok) { _, _ ->
-                    IoThreadPoolExecutor.instance.execute {
-                        EhDB.deleteQuickSearch(quickSearch)
+                    ServiceRegistry.coroutineModule.ioScope.launch {
+                        EhDB.deleteQuickSearchAsync(quickSearch)
                     }
                     mQuickSearchList!!.removeAt(position)
                 }
@@ -226,8 +228,8 @@ class QuickSearchScene : ToolbarScene() {
                 return
             }
 
-            IoThreadPoolExecutor.instance.execute {
-                EhDB.moveQuickSearch(fromPosition, toPosition)
+            ServiceRegistry.coroutineModule.ioScope.launch {
+                EhDB.moveQuickSearchAsync(fromPosition, toPosition)
             }
             val item = mQuickSearchList!!.removeAt(fromPosition)
             mQuickSearchList!!.add(toPosition, item)

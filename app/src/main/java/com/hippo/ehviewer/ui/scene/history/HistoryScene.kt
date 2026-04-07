@@ -28,6 +28,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.h6ah4i.android.widget.advrecyclerview.animator.SwipeDismissItemAnimator
@@ -62,8 +63,10 @@ import com.hippo.ripple.Ripple
 import com.hippo.scene.Announcer
 import com.hippo.scene.SceneFragment
 import com.hippo.util.DrawableManager
-import com.hippo.util.IoThreadPoolExecutor
 import com.hippo.view.ViewTransition
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.hippo.widget.LoadImageView
 import com.hippo.widget.recyclerview.AutoStaggeredGridLayoutManager
 import com.hippo.lib.yorozuya.AssertUtils
@@ -191,14 +194,11 @@ class HistoryScene : ToolbarScene(),
 
     // Asynchronously loads history list on IO thread, then updates UI
     private fun updateLazyList() {
-        IoThreadPoolExecutor.instance.execute {
-            val lazyList = EhDB.getHistoryLazyList()
-            val a = activity
-            a?.runOnUiThread {
-                mLazyList = lazyList
-                mAdapter?.notifyDataSetChanged()
-                updateView(false)
-            }
+        lifecycleScope.launch {
+            val lazyList = withContext(Dispatchers.IO) { EhDB.getHistoryLazyListAsync() }
+            mLazyList = lazyList
+            mAdapter?.notifyDataSetChanged()
+            updateView(false)
         }
     }
 
@@ -230,10 +230,9 @@ class HistoryScene : ToolbarScene(),
                     return@setPositiveButton
                 }
 
-                IoThreadPoolExecutor.instance.execute {
-                    EhDB.clearHistoryInfo()
-                    val a = activity
-                    a?.runOnUiThread { updateLazyList() }
+                lifecycleScope.launch {
+                    withContext(Dispatchers.IO) { EhDB.clearHistoryInfoAsync() }
+                    updateLazyList()
                 }
             }.show()
     }
@@ -395,10 +394,9 @@ class HistoryScene : ToolbarScene(),
             if (mAdapter == null) return
 
             val info = lazyList[mPosition]
-            IoThreadPoolExecutor.instance.execute {
-                EhDB.deleteHistoryInfo(info)
-                val a = activity
-                a?.runOnUiThread { updateLazyList() }
+            lifecycleScope.launch {
+                withContext(Dispatchers.IO) { EhDB.deleteHistoryInfoAsync(info) }
+                updateLazyList()
             }
         }
     }

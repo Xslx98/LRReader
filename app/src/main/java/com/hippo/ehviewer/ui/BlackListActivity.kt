@@ -29,6 +29,7 @@ import android.widget.ImageView
 import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputLayout
@@ -37,10 +38,11 @@ import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.dao.BlackList
 import com.hippo.util.DrawableManager
-import com.hippo.util.IoThreadPoolExecutor
 import com.hippo.util.TimeUtils
 import com.hippo.view.ViewTransition
 import com.hippo.lib.yorozuya.ViewUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class BlackListActivity : ToolbarActivity() {
 
@@ -282,8 +284,8 @@ class BlackListActivity : ToolbarActivity() {
         private var mTitleHeader: BlackList? = null
 
         init {
-            IoThreadPoolExecutor.instance.execute {
-                val result = EhDB.getAllBlackList()
+            lifecycleScope.launch(Dispatchers.IO) {
+                val result = EhDB.getAllBlackListAsync()
                 runOnUiThread {
                     mTitleBlackList = result.toMutableList()
                     mAdapter?.notifyDataSetChanged()
@@ -320,15 +322,15 @@ class BlackListActivity : ToolbarActivity() {
 
         fun add(blackList: BlackList) {
             mTitleBlackList.add(blackList)
-            IoThreadPoolExecutor.instance.execute {
-                EhDB.insertBlackList(blackList)
+            lifecycleScope.launch(Dispatchers.IO) {
+                EhDB.insertBlackListAsync(blackList)
             }
         }
 
         fun delete(blackList: BlackList) {
             mTitleBlackList.remove(blackList)
-            IoThreadPoolExecutor.instance.execute {
-                EhDB.deleteBlackList(blackList)
+            lifecycleScope.launch(Dispatchers.IO) {
+                EhDB.deleteBlackListAsync(blackList)
             }
         }
     }
