@@ -27,6 +27,7 @@ object LRRAuthManager {
     private const val KEY_API_KEY = "api_key"
     private const val KEY_SERVER_NAME = "server_name"
     private const val KEY_ACTIVE_PROFILE_ID = "active_profile_id"
+    private const val KEY_ALLOW_CLEARTEXT = "allow_cleartext"
     private const val KEY_PATTERN_SALT = "pattern_salt"
     private const val KEY_PATTERN_HASH_V2 = "pattern_hash_v2"
     private const val PBKDF2_ITERATIONS = 100_000
@@ -167,6 +168,27 @@ object LRRAuthManager {
         sActiveProfileId = id
         val prefs = sPrefs ?: return
         prefs.edit().putLong(KEY_ACTIVE_PROFILE_ID, id).apply()
+    }
+
+    /**
+     * @return whether the active server profile permits cleartext (HTTP) requests.
+     *         Defaults to `true` so cold starts and tests don't accidentally
+     *         disable cleartext for users that haven't loaded a profile yet.
+     *         Read by [LRRCleartextRejectionInterceptor] every request.
+     */
+    @JvmStatic
+    fun getAllowCleartext(): Boolean {
+        return sPrefs?.getBoolean(KEY_ALLOW_CLEARTEXT, true) ?: true
+    }
+
+    /**
+     * Cache the active profile's `allowCleartext` flag. Called by ServerListScene
+     * on every profile switch. No-op if encrypted prefs are unavailable.
+     */
+    @JvmStatic
+    fun setAllowCleartext(allow: Boolean) {
+        val prefs = sPrefs ?: return
+        prefs.edit().putBoolean(KEY_ALLOW_CLEARTEXT, allow).apply()
     }
 
     /**
