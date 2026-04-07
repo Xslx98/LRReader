@@ -1055,6 +1055,7 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_connect_error_check">Verbindung zum Server nicht möglich, bitte Adresse und Netzwerk prüfen</string>
     <string name="lrr_dns_error">Serveradresse kann nicht aufgelöst werden, bitte URL prüfen</string>
     <string name="lrr_ssl_error">Sichere Verbindung fehlgeschlagen, bitte Serverzertifikat prüfen</string>
+    <string name="lrr_plaintext_refused">API-Schlüsselübertragung abgelehnt: Server-URL ungültig oder Schema stimmt nicht überein</string>
     <string name="lrr_auth_failed_short">Authentifizierung fehlgeschlagen</string>
     <string name="lrr_server_error_short">Serverfehler</string>
     <string name="lrr_request_failed_short">Anfrage fehlgeschlagen</string>
