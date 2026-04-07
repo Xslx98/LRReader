@@ -21,6 +21,7 @@ import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.EhClient
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.data.ListUrlBuilder
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.userTag.UserTagList
 import com.hippo.ehviewer.dao.QuickSearch
 import com.hippo.ehviewer.settings.AppearanceSettings
@@ -28,7 +29,7 @@ import com.hippo.ehviewer.ui.MainActivity
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.callBack.SubscriptionCallback
 import com.hippo.ehviewer.util.TagTranslationUtil
-import com.hippo.util.IoThreadPoolExecutor
+import kotlinx.coroutines.launch
 
 /**
  * Handles drawer view creation, bookmarks/subscription, and quick search dialogs
@@ -237,8 +238,8 @@ class GalleryDrawerHelper(private val callback: Callback) {
                 quickSearch.name = text
             }
             val activity = callback.getHostActivity()
-            IoThreadPoolExecutor.instance.execute {
-                EhDB.insertQuickSearch(quickSearch)
+            ServiceRegistry.coroutineModule.ioScope.launch {
+                EhDB.insertQuickSearchAsync(quickSearch)
                 activity?.runOnUiThread {
                     @Suppress("UNCHECKED_CAST")
                     (list as MutableList<QuickSearch>).add(quickSearch)

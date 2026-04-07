@@ -12,11 +12,11 @@ import kotlinx.coroutines.withContext
  * Bridge for Java Scene/Activity classes to run blocking work on [Dispatchers.IO]
  * with lifecycle-aware cancellation via [lifecycleScope].
  *
- * Replaces the pattern of calling `EhDB.xxx()` (which wraps `runBlocking`) on the
- * main thread. Instead, Java callers use:
+ * Replaces the pattern of calling a `runBlocking` bridge on the main thread.
+ * Java callers use:
  * ```java
  * CoroutineBridge.launchIO(getViewLifecycleOwner(), () -> {
- *     EhDB.putHistoryInfo(galleryInfo);
+ *     // run blocking work on Dispatchers.IO
  * });
  * ```
  *
