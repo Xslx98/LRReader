@@ -47,7 +47,7 @@ import java.security.MessageDigest
         BookmarkInfo::class,
         ServerProfile::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class)
@@ -69,9 +69,26 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "eh.db"
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14)
                     .build()
                     .also { INSTANCE = it }
+            }
+        }
+
+        /**
+         * v13 → v14: Add ALLOW_CLEARTEXT column to SERVER_PROFILES.
+         *
+         * Per-profile opt-in for plain HTTP. The authoritative cleartext gate
+         * (LRRCleartextRejectionInterceptor) reads this flag via LRRAuthManager
+         * and rejects HTTP requests when it is false.
+         *
+         * Default 1 grandfathers existing profiles to "trusted cleartext" so
+         * existing HTTP LAN setups continue working after the upgrade.
+         */
+        @VisibleForTesting
+        internal val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE SERVER_PROFILES ADD COLUMN ALLOW_CLEARTEXT INTEGER NOT NULL DEFAULT 1")
             }
         }
 
