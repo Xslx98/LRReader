@@ -745,12 +745,18 @@ class DownloadManager(
             }
         }
         if (labelsToAdd.isNotEmpty()) {
+            // The IO segment only writes the DB; the resulting label rows are
+            // published to the main-thread-only mLabelList/mLabelSet via
+            // runOnMainThread.
             scope.launch {
+                val savedLabels = ArrayList<DownloadLabel>(labelsToAdd.size)
                 for (label in labelsToAdd) {
-                    val saved = EhDB.addDownloadLabelAsync(label)
-                    mLabelList.add(saved)
-                    if (label.label != null) {
-                        mLabelSet.add(label.label!!)
+                    savedLabels.add(EhDB.addDownloadLabelAsync(label))
+                }
+                runOnMainThread {
+                    for (saved in savedLabels) {
+                        mLabelList.add(saved)
+                        saved.label?.let { mLabelSet.add(it) }
                     }
                 }
             }
