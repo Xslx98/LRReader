@@ -3,7 +3,6 @@ package com.hippo.ehviewer.module
 import android.content.Context
 import com.hippo.ehviewer.EhProxySelector
 import com.hippo.ehviewer.Hosts
-import com.hippo.ehviewer.client.EhHosts
 import okhttp3.Cache
 import okhttp3.ConnectionPool
 import okhttp3.CookieJar
@@ -13,11 +12,14 @@ import java.util.concurrent.TimeUnit
 
 /**
  * Manages all network-related singletons: OkHttpClient (main + image),
- * HTTP cache, proxy selector, and custom DNS hosts.
+ * HTTP cache, and proxy selector.
  * Extracted from EhApplication to reduce its responsibility scope.
  *
  * Internal dependency order:
  *   Cache → Hosts → ProxySelector → OkHttpClient → ImageOkHttpClient
+ *
+ * DNS uses OkHttp's default [okhttp3.Dns.SYSTEM]; LANraragi servers are
+ * resolved through the platform DNS like any other host.
  *
  * LANraragi uses Bearer-token auth, so the OkHttp client is configured with
  * [CookieJar.NO_COOKIES]: no cookies are stored, sent, or persisted.
@@ -43,7 +45,6 @@ class NetworkModule(private val context: Context) : INetworkModule {
             .callTimeout(30, TimeUnit.SECONDS)
             .cookieJar(CookieJar.NO_COOKIES)
             .cache(cache)
-            .dns(EhHosts(context))
             .addNetworkInterceptor { chain ->
                 val resp = chain.proceed(chain.request())
                 // Force cache LRR thumbnail responses for 24 hours
