@@ -4,7 +4,9 @@ import android.app.Activity
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.BuildConfig
@@ -16,7 +18,8 @@ import com.hippo.lib.yorozuya.FileUtils
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.util.AppHelper.Companion.compareVersion
 import com.hippo.util.ExceptionUtils
-import com.hippo.util.IoThreadPoolExecutor
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -119,12 +122,12 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
                 instance = null
             }
 
-            IoThreadPoolExecutor.instance.execute {
+            (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
                 if (!lock.tryLock()) {
-                    return@execute
+                    return@launch
                 }
                 try {
-                    val dir = AppConfig.getFilesDir("update-json") ?: return@execute
+                    val dir = AppConfig.getFilesDir("update-json") ?: return@launch
 
                     val dataFile = File(dir, dataName)
                     // Read current AppUpdater
@@ -148,7 +151,7 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
                             UpdateDialog(activity).showCheckFailDialog()
                         }
                         FileUtils.delete(tempDataFile)
-                        return@execute
+                        return@launch
                     }
 
                     val needUpdate: Boolean
@@ -159,7 +162,7 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed to parse update JSON", e)
                         FileUtils.delete(tempDataFile)
-                        return@execute
+                        return@launch
                     }
 
                     // Check new data
@@ -181,7 +184,7 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
                                     .show()
                             }
                         }
-                        return@execute
+                        return@launch
                     }
 
                     // Replace current data with new data

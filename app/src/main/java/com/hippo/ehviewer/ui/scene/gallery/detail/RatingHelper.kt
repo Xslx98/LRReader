@@ -6,7 +6,7 @@ import com.hippo.ehviewer.client.lrr.LRRArchiveApi
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
 import com.hippo.ehviewer.client.lrr.data.LRRArchive
 import com.hippo.ehviewer.client.lrr.runSuspend
-import com.hippo.util.IoThreadPoolExecutor
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
@@ -21,9 +21,9 @@ object RatingHelper {
      */
     @JvmStatic
     fun saveRatingToServer(arcid: String, rating: Float, onSuccess: Runnable?) {
-        IoThreadPoolExecutor.instance.execute {
+        ServiceRegistry.coroutineModule.ioScope.launch {
             try {
-                val serverUrl = LRRAuthManager.getServerUrl() ?: return@execute
+                val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
                 val client = ServiceRegistry.networkModule.okHttpClient
 
                 // GET current metadata to get original tags

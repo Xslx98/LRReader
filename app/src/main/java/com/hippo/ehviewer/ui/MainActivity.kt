@@ -88,7 +88,6 @@ import com.hippo.unifile.UniFile
 import com.hippo.util.BitmapUtils
 import com.hippo.util.GifHandler
 import androidx.lifecycle.lifecycleScope
-import com.hippo.util.IoThreadPoolExecutor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

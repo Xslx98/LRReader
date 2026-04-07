@@ -6,6 +6,8 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.lifecycle.lifecycleScope
 import com.hippo.app.EditTextDialogBuilder
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.lrr.LRRArchiveApi
@@ -13,7 +15,8 @@ import com.hippo.ehviewer.client.lrr.LRRClientProvider
 import com.hippo.ehviewer.client.lrr.LRRMiscApi
 import com.hippo.ehviewer.client.lrr.runSuspend
 import com.hippo.ehviewer.ui.scene.BaseScene
-import com.hippo.util.IoThreadPoolExecutor
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -66,8 +69,9 @@ class GalleryUploadHelper(private val mCallback: Callback) {
      */
     fun handleUploadResult(uri: Uri) {
         val context = mCallback.getHostContext() ?: return
+        val owner = mCallback.getHostActivity() as? ComponentActivity ?: return
 
-        IoThreadPoolExecutor.instance.execute {
+        owner.lifecycleScope.launch(Dispatchers.IO) {
             var tempFile: File? = null
             try {
                 var fileName = getFileNameFromUri(context, uri)
@@ -134,7 +138,9 @@ class GalleryUploadHelper(private val mCallback: Callback) {
                 mCallback.showTip(R.string.lrr_url_download_empty, BaseScene.LENGTH_SHORT)
                 return@setPositiveButton
             }
-            IoThreadPoolExecutor.instance.execute {
+            val owner = mCallback.getHostActivity() as? ComponentActivity
+                ?: return@setPositiveButton
+            owner.lifecycleScope.launch(Dispatchers.IO) {
                 try {
                     val jobId = runSuspend {
                         LRRMiscApi.downloadUrl(

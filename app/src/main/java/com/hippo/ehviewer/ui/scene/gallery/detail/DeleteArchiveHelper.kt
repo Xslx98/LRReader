@@ -5,13 +5,16 @@ import android.graphics.Color
 import android.os.CountDownTimer
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.lrr.LRRArchiveApi
 import com.hippo.ehviewer.client.lrr.LRRClientProvider
 import com.hippo.ehviewer.client.lrr.runSuspend
-import com.hippo.util.IoThreadPoolExecutor
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Two-stage confirmation dialog for deleting an archive from the LANraragi server.
@@ -69,7 +72,7 @@ object DeleteArchiveHelper {
     private fun performDelete(activity: Activity, arcid: String?, title: String, callback: Callback?) {
         if (arcid.isNullOrEmpty()) return
 
-        IoThreadPoolExecutor.instance.execute {
+        (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
             try {
                 runSuspend {
                     LRRArchiveApi.deleteArchive(

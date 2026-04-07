@@ -30,12 +30,12 @@ import com.hippo.ehviewer.client.lrr.runSuspend
 import com.hippo.lib.glgallery.GalleryPageView
 import com.hippo.lib.image.Image
 import com.hippo.unifile.UniFile
-import com.hippo.util.IoThreadPoolExecutor
 import com.hippo.util.NaturalComparator
 import com.hippo.lib.yorozuya.FileUtils
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.lib.yorozuya.StringUtils
 import com.hippo.lib.yorozuya.thread.PriorityThread
+import kotlinx.coroutines.launch
 import java.io.FileInputStream
 import java.io.IOException
 import java.util.Stack
@@ -89,7 +89,7 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
         }
         // Sync progress to LANraragi server (1-indexed)
         if (arcId != null && serverUrl != null) {
-            IoThreadPoolExecutor.instance.execute {
+            ServiceRegistry.coroutineModule.ioScope.launch {
                 try {
                     val client = ServiceRegistry.networkModule.okHttpClient
                     runSuspend<Unit> {
@@ -107,7 +107,7 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
 
         // Async: load server progress and jump if newer
         if (arcId != null && serverUrl != null && context != null) {
-            IoThreadPoolExecutor.instance.execute {
+            ServiceRegistry.coroutineModule.ioScope.launch {
                 try {
                     val client = ServiceRegistry.networkModule.okHttpClient
                     val metadata = runSuspend {
