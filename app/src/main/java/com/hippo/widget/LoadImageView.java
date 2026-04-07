@@ -32,7 +32,6 @@ import android.view.View;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.hippo.conaco.Conaco;
 import com.hippo.conaco.ConacoTask;
@@ -40,18 +39,10 @@ import com.hippo.conaco.DataContainer;
 import com.hippo.conaco.Unikery;
 import com.hippo.drawable.PreciselyClipDrawable;
 import com.hippo.ehviewer.ServiceRegistry;
-import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
-import com.hippo.ehviewer.client.EhCacheKeyFactory;
-import com.hippo.ehviewer.client.EhClient;
-import com.hippo.ehviewer.client.EhRequest;
-import com.hippo.ehviewer.client.EhUrl;
-import com.hippo.ehviewer.client.data.GalleryDetail;
-import com.hippo.ehviewer.dao.DownloadInfo;
 import com.hippo.lib.image.Image;
 //import com.hippo.lib.image.ImageBitmap;
 //import com.hippo.lib.image.ImageDrawable;
-import com.hippo.lib.yorozuya.IntIdGenerator;
 import com.hippo.util.DrawableManager;
 
 import java.lang.annotation.Retention;
@@ -76,11 +67,6 @@ public class LoadImageView extends FixedAspectImageView implements Unikery<Image
     private int mRetryType;
     public boolean mFailed;
     private boolean mLoadFromDrawable;
-    private boolean secondTry = false;
-    @Nullable
-    private DownloadInfo downloadInfo = null;
-
-    private int mRequestId = IntIdGenerator.INVALID_ID;
 
     public LoadImageView(Context context) {
         super(context);
@@ -217,13 +203,6 @@ public class LoadImageView extends FixedAspectImageView implements Unikery<Image
         load(key, url, true);
     }
 
-    public void load(String key, String url, boolean useNetwork, DownloadInfo downloadInfo) {
-        this.downloadInfo = downloadInfo;
-        load(key, url, useNetwork);
-    }
-
-
-
     public void load(String key, String url, boolean useNetwork) {
         load(key,url,null,useNetwork);
     }
@@ -356,21 +335,6 @@ public class LoadImageView extends FixedAspectImageView implements Unikery<Image
         } else if (mRetryType == RETRY_TYPE_LONG_CLICK) {
             setOnLongClickListener(this);
         } else {
-            if (secondTry && downloadInfo != null) {
-                Context context = this.getContext();
-                if (ServiceRegistry.INSTANCE.getAppModule().containGlobalStuff(mRequestId)) {
-                    // request exist
-                    return;
-                }
-                String detailUrl = EhUrl.getGalleryDetailUrl(downloadInfo.gid, downloadInfo.token);
-                GalleryDetailCallback callback = new GalleryDetailCallback(context);
-                mRequestId = ServiceRegistry.INSTANCE.getAppModule().putGlobalStuff(callback);
-                EhRequest request = new EhRequest()
-                        .setMethod(EhClient.METHOD_GET_GALLERY_DETAIL)
-                        .setArgs(detailUrl)
-                        .setCallback(callback);
-                ServiceRegistry.INSTANCE.getClientModule().getEhClient().execute(request);
-            }
             // Can't retry, so release
             mKey = null;
             mUrl = null;
@@ -436,39 +400,5 @@ public class LoadImageView extends FixedAspectImageView implements Unikery<Image
     @IntDef({RETRY_TYPE_NONE, RETRY_TYPE_CLICK, RETRY_TYPE_LONG_CLICK})
     @Retention(RetentionPolicy.SOURCE)
     private @interface RetryType {
-    }
-
-    private class GalleryDetailCallback implements EhClient.Callback<GalleryDetail> {
-        private final Context context;
-
-        private GalleryDetailCallback(Context context) {
-            this.context = context;
-        }
-
-        @Override
-        public void onSuccess(GalleryDetail result) {
-            ServiceRegistry.INSTANCE.getAppModule().removeGlobalStuff(this);
-            secondTry = true;
-            if (context == null||result == null || downloadInfo == null) {
-                return;
-            }
-            // Put gallery detail to cache
-            ServiceRegistry.INSTANCE.getDataModule().getGalleryDetailCache().put(result.gid, result);
-            if (downloadInfo.gid == result.gid && !downloadInfo.thumb.equals(result.thumb)) {
-                downloadInfo.updateInfo(result);
-                EhDB.putDownloadInfo(downloadInfo);
-                load(EhCacheKeyFactory.getThumbKey(downloadInfo.gid), downloadInfo.thumb, true);
-            }
-        }
-
-        @Override
-        public void onFailure(Exception e) {
-            ServiceRegistry.INSTANCE.getAppModule().removeGlobalStuff(this);
-        }
-
-        @Override
-        public void onCancel() {
-            ServiceRegistry.INSTANCE.getAppModule().removeGlobalStuff(this);
-        }
     }
 }

@@ -52,7 +52,6 @@ import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.ListUrlBuilder
-import com.hippo.ehviewer.client.data.userTag.UserTagList
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
 import com.hippo.ehviewer.client.lrr.data.LRRArchive
@@ -911,10 +910,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 startActivity(intent)
             }
         }
-    }
-
-    override fun setTagList(result: UserTagList?) {
-        super.setTagList(result)
     }
 
     override fun onLongClick(v: View): Boolean {

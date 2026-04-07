@@ -14,8 +14,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.EhRequestBuilder
 import com.hippo.ehviewer.updater.UpdateInfo
+import com.hippo.okhttp.ChromeRequestBuilder
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.util.ExceptionUtils
 import okhttp3.OkHttpClient
@@ -188,8 +188,7 @@ class UpdateDialog(private val activity: Activity) {
 //    }
 
     private fun save(client: OkHttpClient, url: String, file: File): Boolean {
-//        val request = Request.Builder().url(url).build()
-        val request = EhRequestBuilder(url, null, null).get().build()
+        val request = ChromeRequestBuilder(url).get().build()
         val call = client.newCall(request)
         try {
             call.execute().use { response ->
