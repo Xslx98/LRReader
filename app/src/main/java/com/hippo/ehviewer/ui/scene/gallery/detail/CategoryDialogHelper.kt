@@ -9,7 +9,9 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryDetail
@@ -18,7 +20,8 @@ import com.hippo.ehviewer.client.lrr.LRRCategoryApi
 import com.hippo.ehviewer.client.lrr.data.LRRCategory
 import com.hippo.ehviewer.client.lrr.friendlyError
 import com.hippo.ehviewer.client.lrr.runSuspend
-import com.hippo.util.IoThreadPoolExecutor
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Encapsulates the LANraragi category selection dialog logic.
@@ -48,7 +51,7 @@ object CategoryDialogHelper {
 
         Toast.makeText(activity, R.string.lrr_loading_categories, Toast.LENGTH_SHORT).show()
 
-        IoThreadPoolExecutor.instance.execute {
+        (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val client = ServiceRegistry.networkModule.okHttpClient
                 val categories = runSuspend {
@@ -62,7 +65,7 @@ object CategoryDialogHelper {
                     Handler(Looper.getMainLooper()).post {
                         Toast.makeText(activity, R.string.lrr_no_static_categories, Toast.LENGTH_SHORT).show()
                     }
-                    return@execute
+                    return@launch
                 }
 
                 val names = Array(staticCats.size) { i ->
@@ -136,7 +139,7 @@ object CategoryDialogHelper {
         checked: BooleanArray, originalChecked: BooleanArray,
         arcid: String, serverUrl: String, callback: Callback?
     ) {
-        IoThreadPoolExecutor.instance.execute {
+        (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val c = ServiceRegistry.networkModule.okHttpClient
                 for (i in staticCats.indices) {
@@ -204,7 +207,7 @@ object CategoryDialogHelper {
                     Toast.makeText(activity, R.string.lrr_category_name_empty, Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
-                IoThreadPoolExecutor.instance.execute {
+                (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
                     try {
                         val c = ServiceRegistry.networkModule.okHttpClient
                         val newCatId = runSuspend {
