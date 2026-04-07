@@ -2,7 +2,6 @@ package com.hippo.ehviewer.module
 
 import com.hippo.ehviewer.EhProxySelector
 import com.hippo.ehviewer.Hosts
-import com.hippo.ehviewer.client.EhCookieStore
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 
@@ -13,13 +12,10 @@ import okhttp3.OkHttpClient
  */
 interface INetworkModule {
 
-    /** Persistent cookie store shared by all OkHttp clients in this module. */
-    val cookieStore: EhCookieStore
-
     /** Disk HTTP cache backing [okHttpClient] and derived clients. */
     val cache: Cache
 
-    /** Custom DNS host overrides used by [EhHosts][com.hippo.ehviewer.client.EhHosts]. */
+    /** User-managed host alias table (HostsActivity edits this). */
     val hosts: Hosts
 
     /** Proxy selector respecting Settings-driven proxy configuration. */
