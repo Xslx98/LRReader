@@ -1060,6 +1060,7 @@
     <string name="lrr_connect_error_check">サーバーに接続できません。アドレスとネットワークを確認してください</string>
     <string name="lrr_dns_error">サーバーアドレスを解決できません。URLを確認してください</string>
     <string name="lrr_ssl_error">セキュア接続に失敗しました。サーバー証明書を確認してください</string>
+    <string name="lrr_plaintext_refused">API キーの送信を拒否しました: サーバー URL が無効か、スキームが一致しません</string>
     <string name="lrr_auth_failed_short">認証失敗</string>
     <string name="lrr_server_error_short">サーバーエラー</string>
     <string name="lrr_request_failed_short">リクエスト失敗</string>
