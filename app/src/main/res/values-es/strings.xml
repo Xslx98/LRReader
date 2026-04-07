@@ -1116,6 +1116,7 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_connect_error_check">No se puede conectar al servidor, verifica la dirección y la red</string>
     <string name="lrr_dns_error">No se puede resolver la dirección del servidor, verifica la URL</string>
     <string name="lrr_ssl_error">Conexión segura fallida, verifica el certificado del servidor</string>
+    <string name="lrr_plaintext_refused">Envío de clave API rechazado: la URL del servidor es inválida o el esquema no coincide</string>
     <string name="lrr_auth_failed_short">Autenticación fallida</string>
     <string name="lrr_server_error_short">Error del servidor</string>
     <string name="lrr_request_failed_short">Solicitud fallida</string>

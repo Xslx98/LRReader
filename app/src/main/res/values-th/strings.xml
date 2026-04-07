@@ -1121,6 +1121,7 @@
     <string name="lrr_connect_error_check">ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ โปรดตรวจสอบที่อยู่และเครือข่าย</string>
     <string name="lrr_dns_error">ไม่สามารถแก้ไขที่อยู่เซิร์ฟเวอร์ได้ โปรดตรวจสอบ URL</string>
     <string name="lrr_ssl_error">การเชื่อมต่อที่ปลอดภัยล้มเหลว โปรดตรวจสอบใบรับรองเซิร์ฟเวอร์</string>
+    <string name="lrr_plaintext_refused">ปฏิเสธการส่งคีย์ API: URL ของเซิร์ฟเวอร์ไม่ถูกต้องหรือสคีมไม่ตรงกัน</string>
     <string name="lrr_auth_failed_short">การยืนยันตัวตนล้มเหลว</string>
     <string name="lrr_server_error_short">เซิร์ฟเวอร์ขัดข้อง</string>
     <string name="lrr_request_failed_short">คำขอล้มเหลว</string>

@@ -1129,6 +1129,7 @@
     <string name="lrr_connect_error_check">無法連接至伺服器，請檢查地址和網路</string>
     <string name="lrr_dns_error">無法解析伺服器地址，請檢查網址</string>
     <string name="lrr_ssl_error">安全連線失敗，請檢查伺服器憑證</string>
+    <string name="lrr_plaintext_refused">已拒絕傳送 API 金鑰：伺服器 URL 無效或通訊協定不符</string>
     <string name="lrr_auth_failed_short">驗證失敗</string>
     <string name="lrr_server_error_short">伺服器錯誤</string>
     <string name="lrr_request_failed_short">請求失敗</string>
