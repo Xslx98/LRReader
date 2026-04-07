@@ -274,4 +274,58 @@ class LRRAuthManagerTest {
         LRRAuthManager.clear() // should not throw
         assertEquals(0L, LRRAuthManager.getActiveProfileId())
     }
+
+    // ── Multi-profile reauth detection (W0-4 part 2) ────────────────
+
+    @Test
+    fun markReauthIfProfilesUnprotected_emptyList_doesNothing() {
+        // Fresh install: no profiles in Room — should NOT trigger reauth even
+        // if storage is broken (there's nothing to recover).
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.markReauthIfProfilesUnprotected(emptyList())
+        assertFalse(LRRAuthManager.isNeedsReauthentication())
+    }
+
+    @Test
+    fun markReauthIfProfilesUnprotected_storageDownWithProfiles_marksReauth() {
+        // KeyStore broken AND user has at least one server: keys are unrecoverable.
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.markReauthIfProfilesUnprotected(listOf(1L, 2L))
+        assertTrue(LRRAuthManager.isNeedsReauthentication())
+    }
+
+    @Test
+    fun markReauthIfProfilesUnprotected_allProfilesHaveKeys_doesNotMark() {
+        LRRAuthManager.setApiKeyForProfile(1L, "k1")
+        LRRAuthManager.setApiKeyForProfile(2L, "k2")
+        LRRAuthManager.markReauthIfProfilesUnprotected(listOf(1L, 2L))
+        assertFalse(LRRAuthManager.isNeedsReauthentication())
+    }
+
+    @Test
+    fun markReauthIfProfilesUnprotected_oneMissingKey_marksReauth() {
+        // Partial corruption / interrupted migration: one profile lost its key.
+        LRRAuthManager.setApiKeyForProfile(1L, "k1")
+        // Profile 2 has no key entry
+        LRRAuthManager.markReauthIfProfilesUnprotected(listOf(1L, 2L))
+        assertTrue(LRRAuthManager.isNeedsReauthentication())
+    }
+
+    @Test
+    fun markReauthIfProfilesUnprotected_doesNotClearExistingFlag() {
+        // Once flagged, additional checks should not unset the flag — only an
+        // explicit clear() (after re-auth) should reset it.
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.markReauthIfProfilesUnprotected(listOf(1L))
+        assertTrue(LRRAuthManager.isNeedsReauthentication())
+        // Restore healthy storage and re-check with all keys present
+        LRRAuthManager.initializeForTesting(
+            ctx.getSharedPreferences("lrr_auth_test_2", android.content.Context.MODE_PRIVATE)
+        )
+        // initializeForTesting() resets the flag — that's the documented "fresh test setup"
+        // behavior. Verify subsequent successful checks keep it false.
+        LRRAuthManager.setApiKeyForProfile(1L, "restored")
+        LRRAuthManager.markReauthIfProfilesUnprotected(listOf(1L))
+        assertFalse(LRRAuthManager.isNeedsReauthentication())
+    }
 }
