@@ -2,12 +2,10 @@ package com.hippo.ehviewer.ui.scene.gallery.list
 
 import android.content.Context
 import android.content.res.Resources
-import android.os.Bundle
 import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.text.TextUtils
 import android.text.style.ImageSpan
-import android.widget.TextView
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhUrl
 import com.hippo.ehviewer.client.EhUtils
@@ -15,8 +13,6 @@ import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.client.lrr.data.LRRSearchResult
 import com.hippo.ehviewer.settings.AppearanceSettings
-import com.hippo.ehviewer.ui.scene.ProgressScene
-import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.ehviewer.widget.SearchBar
 import com.hippo.lib.yorozuya.MathUtils
 import com.hippo.scene.Announcer
@@ -60,87 +56,6 @@ class GallerySearchHelper(private val mCallback: Callback) {
         return object : SearchBar.SuggestionProvider {
             override fun providerSuggestions(text: String): List<SearchBar.Suggestion>? = null
         }
-    }
-
-    // -----------------------------------------------------------------------
-    // Suggestion inner classes
-    // -----------------------------------------------------------------------
-
-    /**
-     * Base suggestion class for URL-based gallery navigation.
-     */
-    internal abstract class UrlSuggestion(private val mCallback: Callback) : SearchBar.Suggestion() {
-
-        override fun getText(textSize: Float): CharSequence? {
-            val context = mCallback.getHostContext() ?: return null
-            val resources = mCallback.getHostResources() ?: return null
-            val bookImage = DrawableManager.getVectorDrawable(context, R.drawable.v_book_open_x24)
-            val ssb = SpannableStringBuilder("    ")
-            ssb.append(resources.getString(R.string.gallery_list_search_bar_open_gallery))
-            val imageSize = (textSize * 1.25).toInt()
-            if (bookImage != null) {
-                bookImage.setBounds(0, 0, imageSize, imageSize)
-                ssb.setSpan(ImageSpan(bookImage), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-            }
-            return ssb
-        }
-
-        override fun onClick() {
-            mCallback.navigateToScene(createAnnouncer())
-
-            val state = mCallback.getSearchState()
-            if (state == GalleryListScene.STATE_SIMPLE_SEARCH) {
-                mCallback.setSearchState(GalleryListScene.STATE_NORMAL)
-            } else if (state == GalleryListScene.STATE_SEARCH_SHOW_LIST) {
-                mCallback.setSearchState(GalleryListScene.STATE_SEARCH)
-            }
-        }
-
-        abstract fun createAnnouncer(): Announcer
-
-        override fun onLongClick() {}
-    }
-
-    /**
-     * Suggestion for navigating to a gallery detail page by GID + token.
-     */
-    internal class GalleryDetailUrlSuggestion(
-        callback: Callback,
-        private val mGid: Long,
-        private val mToken: String
-    ) : UrlSuggestion(callback) {
-
-        override fun createAnnouncer(): Announcer {
-            val args = Bundle()
-            args.putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_GID_TOKEN)
-            args.putLong(GalleryDetailScene.KEY_GID, mGid)
-            args.putString(GalleryDetailScene.KEY_TOKEN, mToken)
-            return Announcer(GalleryDetailScene::class.java).setArgs(args)
-        }
-
-        override fun getText(textView: TextView): CharSequence? = null
-    }
-
-    /**
-     * Suggestion for navigating to a gallery page by GID + page token + page number.
-     */
-    internal class GalleryPageUrlSuggestion(
-        callback: Callback,
-        private val mGid: Long,
-        private val mPToken: String,
-        private val mPage: Int
-    ) : UrlSuggestion(callback) {
-
-        override fun createAnnouncer(): Announcer {
-            val args = Bundle()
-            args.putString(ProgressScene.KEY_ACTION, ProgressScene.ACTION_GALLERY_TOKEN)
-            args.putLong(ProgressScene.KEY_GID, mGid)
-            args.putString(ProgressScene.KEY_PTOKEN, mPToken)
-            args.putInt(ProgressScene.KEY_PAGE, mPage)
-            return Announcer(ProgressScene::class.java).setArgs(args)
-        }
-
-        override fun getText(textView: TextView): CharSequence? = null
     }
 
     companion object {

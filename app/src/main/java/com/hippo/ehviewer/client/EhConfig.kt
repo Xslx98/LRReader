@@ -22,21 +22,9 @@ package com.hippo.ehviewer.client
  * exclusively uses LANraragi as its backend.
  *
  * Retained: category bitmask constants, namespace constants, language
- * constants, image size constants, path constants, and cookie keys
- * still referenced by EhCookieStore.
+ * constants, image size constants, and path constants.
  */
 object EhConfig {
-
-    // ==================== Cookie keys (used by EhCookieStore) ====================
-
-    /** The Cookie key of uconfig */
-    const val KEY_UCONFIG = "uconfig"
-
-    /** The Cookie key of lofi resolution */
-    const val KEY_LOFI_RESOLUTION = "xres"
-
-    /** The Cookie key of show warning */
-    const val KEY_CONTENT_WARNING = "nw"
 
     // ==================== Image Size constants ====================
 
@@ -127,11 +115,6 @@ object EhConfig {
     const val OTHER_ORIGINAL = "255"
     const val OTHER_TRANSLATED = "1279"
     const val OTHER_REWRITE = "2303"
-
-    // ==================== Content Warning constants ====================
-
-    const val CONTENT_WARNING_SHOW = "0"
-    const val CONTENT_WARNING_NOT_SHOW = "1"
 
     // ==================== Path constants ====================
 
