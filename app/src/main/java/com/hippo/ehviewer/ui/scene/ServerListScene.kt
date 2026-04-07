@@ -3,11 +3,14 @@ package com.hippo.ehviewer.ui.scene
 import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -16,6 +19,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputEditText
 import com.hippo.ehviewer.EhDB
@@ -150,6 +154,7 @@ class ServerListScene : BaseScene() {
         LRRAuthManager.setApiKey(profileApiKey)
         LRRAuthManager.setServerName(profile.name)
         LRRAuthManager.setActiveProfileId(profile.id)
+        LRRAuthManager.setAllowCleartext(profile.allowCleartext)
 
         // Clear caches so previous server's content doesn't appear under new server
         ServiceRegistry.clearAllCaches()
@@ -272,6 +277,8 @@ class ServerListScene : BaseScene() {
         val nameEdit = dialogView.findViewById<TextInputEditText>(R.id.edit_server_name)
         val urlEdit = dialogView.findViewById<TextInputEditText>(R.id.edit_server_url)
         val apiKeyEdit = dialogView.findViewById<TextInputEditText>(R.id.edit_api_key)
+        val cleartextRow = dialogView.findViewById<LinearLayout>(R.id.cleartext_row)
+        val cleartextCheckbox = dialogView.findViewById<MaterialCheckBox>(R.id.checkbox_allow_cleartext)
 
         // Pre-fill current values
         nameEdit.setText(profile.name)
@@ -280,6 +287,19 @@ class ServerListScene : BaseScene() {
         if (existingKey != null) {
             apiKeyEdit.setText(existingKey)
         }
+        // Pre-fill cleartext checkbox from the existing profile, then show/hide based on the URL scheme.
+        cleartextCheckbox.isChecked = profile.allowCleartext
+        cleartextRow.visibility =
+            if (profile.url.lowercase().startsWith("http://")) View.VISIBLE else View.GONE
+
+        urlEdit.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val text = s?.toString()?.trim().orEmpty().lowercase()
+                cleartextRow.visibility = if (text.startsWith("http://")) View.VISIBLE else View.GONE
+            }
+        })
 
         val dialog = AlertDialog.Builder(ctx)
             .setTitle(R.string.lrr_edit_server)
@@ -329,12 +349,21 @@ class ServerListScene : BaseScene() {
                 normalizedUrl = "https://$normalizedUrl"
             }
 
+            // Validate cleartext consent: http:// URL without the checkbox is rejected.
+            val isHttpUrl = normalizedUrl.lowercase().startsWith("http://")
+            val allowCleartext = cleartextCheckbox.isChecked
+            if (isHttpUrl && !allowCleartext) {
+                Toast.makeText(ctx, R.string.lrr_allow_cleartext_required, Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
             // Save to DB on IO thread
             val updated = ServerProfile(
                 id = profile.id,
                 name = newName,
                 url = normalizedUrl,
-                isActive = profile.isActive
+                isActive = profile.isActive,
+                allowCleartext = if (isHttpUrl) allowCleartext else true
             )
             ServiceRegistry.coroutineModule.ioScope.launch {
                 EhDB.updateServerProfileAsync(updated)
@@ -343,6 +372,7 @@ class ServerListScene : BaseScene() {
                     LRRAuthManager.setServerUrl(updated.url)
                     LRRAuthManager.setApiKey(newKey.ifEmpty { null })
                     LRRAuthManager.setServerName(newName)
+                    LRRAuthManager.setAllowCleartext(updated.allowCleartext)
                 }
             }
 
@@ -366,6 +396,23 @@ class ServerListScene : BaseScene() {
         val nameEdit = dialogView.findViewById<TextInputEditText>(R.id.edit_server_name)
         val urlEdit = dialogView.findViewById<TextInputEditText>(R.id.edit_server_url)
         val apiKeyEdit = dialogView.findViewById<TextInputEditText>(R.id.edit_api_key)
+        val cleartextRow = dialogView.findViewById<LinearLayout>(R.id.cleartext_row)
+        val cleartextCheckbox = dialogView.findViewById<MaterialCheckBox>(R.id.checkbox_allow_cleartext)
+
+        // New profiles default to allowCleartext=true to match the grandfather policy.
+        // The checkbox is only shown for http:// URLs, so for https:// profiles the
+        // flag stays true but is effectively ignored by the interceptor.
+        cleartextCheckbox.isChecked = true
+        cleartextRow.visibility = View.GONE
+
+        urlEdit.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val text = s?.toString()?.trim().orEmpty().lowercase()
+                cleartextRow.visibility = if (text.startsWith("http://")) View.VISIBLE else View.GONE
+            }
+        })
 
         val dialog = AlertDialog.Builder(ctx)
             .setTitle(R.string.lrr_add_server)
@@ -393,6 +440,14 @@ class ServerListScene : BaseScene() {
             // Normalize: trim + strip trailing slashes
             val normalizedInput = LRRUrlHelper.normalizeUrl(url)
             val finalKey: String? = apiKey.ifEmpty { null }
+
+            // Validate cleartext consent before attempting connection.
+            val isHttpUrl = normalizedInput.lowercase().startsWith("http://")
+            if (isHttpUrl && !cleartextCheckbox.isChecked) {
+                Toast.makeText(ctx, R.string.lrr_allow_cleartext_required, Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+            val profileAllowCleartext = if (isHttpUrl) cleartextCheckbox.isChecked else true
 
             // Disable button during connection test
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
@@ -426,13 +481,17 @@ class ServerListScene : BaseScene() {
                                 LRRAuthManager.setServerName(name)
 
                                 // DB operations on IO thread
+                                val resolvedIsHttp = resolvedUrl.lowercase().startsWith("http://")
+                                val savedAllowCleartext = if (resolvedIsHttp) profileAllowCleartext else true
+                                LRRAuthManager.setAllowCleartext(savedAllowCleartext)
                                 ServiceRegistry.coroutineModule.ioScope.launch {
                                     EhDB.deactivateAllProfilesAsync()
                                     val newProfile = ServerProfile(
                                         id = 0,
                                         name = name,
                                         url = resolvedUrl,
-                                        isActive = true
+                                        isActive = true,
+                                        allowCleartext = savedAllowCleartext
                                     )
                                     val newId = EhDB.insertServerProfileAsync(newProfile)
                                     LRRAuthManager.setApiKeyForProfile(newId, finalKey)

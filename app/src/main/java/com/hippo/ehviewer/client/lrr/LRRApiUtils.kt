@@ -101,6 +101,7 @@ class LRROfflineException : IOException("No network connection")
 fun friendlyError(context: Context, e: Exception): String {
     return when {
         e is LRROfflineException                 -> context.getString(R.string.lrr_offline_error)
+        e is LRRCleartextRefusedException        -> context.getString(R.string.lrr_cleartext_refused_error)
         e is LRRHttpException -> when (e.code) {
             401, 403 -> context.getString(R.string.lrr_auth_failed_check_key)
             404      -> context.getString(R.string.lrr_not_found_404)
