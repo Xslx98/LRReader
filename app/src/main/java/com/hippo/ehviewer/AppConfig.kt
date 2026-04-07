@@ -21,8 +21,8 @@ import android.content.Context
 import com.hippo.ehviewer.client.exception.ParseException
 import com.hippo.lib.yorozuya.FileUtils
 import com.hippo.lib.yorozuya.IOUtils
-import com.hippo.util.IoThreadPoolExecutor
 import com.hippo.util.ReadableTime
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -157,9 +157,9 @@ object AppConfig {
             sDeletingOldParseErrorFiles = true
         }
 
-        IoThreadPoolExecutor.instance.execute {
+        ServiceRegistry.coroutineModule.ioScope.launch {
             try {
-                val names = dir.list() ?: return@execute
+                val names = dir.list() ?: return@launch
                 val threeDaysAgo = System.currentTimeMillis() - 3L * 24 * 60 * 60 * 1000
                 for (name in names) {
                     val file = File(dir, name)

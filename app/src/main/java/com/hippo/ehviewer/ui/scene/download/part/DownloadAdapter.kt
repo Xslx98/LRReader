@@ -40,7 +40,6 @@ import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import kotlinx.coroutines.launch
 import com.hippo.ehviewer.client.EhCacheKeyFactory
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.dao.DownloadInfo
@@ -59,9 +58,11 @@ import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.ripple.Ripple
 import com.hippo.scene.Announcer
 import com.hippo.unifile.UniFile
-import com.hippo.util.IoThreadPoolExecutor
 import com.hippo.util.NaturalComparator
 import com.hippo.widget.LoadImageView
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * 下载列表适配器
@@ -397,7 +398,7 @@ class DownloadAdapter(
         thumb.setImageResource(R.drawable.v_archive_hh_primary_x48)
 
         // Load thumbnail in background
-        IoThreadPoolExecutor.instance.execute {
+        mScene.lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val thumbnail = extractFirstImageFromArchive(archiveUri)
                 mScene.runOnUiThread {
