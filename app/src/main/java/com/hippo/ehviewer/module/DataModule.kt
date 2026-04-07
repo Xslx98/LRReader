@@ -1,18 +1,16 @@
 package com.hippo.ehviewer.module
 
 import android.content.Context
-import androidx.annotation.NonNull
 import androidx.collection.LruCache
 import com.hippo.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.client.data.userTag.UserTagList
 import com.hippo.ehviewer.download.DownloadManager
 import java.io.File
 
 /**
  * Manages data-layer singletons: DownloadManager, GalleryDetailCache,
- * SpiderInfoCache, FavouriteStatusRouter, and user tag list.
+ * SpiderInfoCache, and FavouriteStatusRouter.
  * Extracted from EhApplication to reduce its responsibility scope.
  */
 class DataModule(private val context: Context) : IDataModule {
@@ -31,16 +29,6 @@ class DataModule(private val context: Context) : IDataModule {
 
     override val spiderInfoCache: SimpleDiskCache by lazy {
         SimpleDiskCache(File(context.cacheDir, "spider_info"), 5 * 1024 * 1024) // 5MB
-    }
-
-    // --- User tag list (in-memory cache) ---
-
-    @Volatile
-    override var userTagList: UserTagList? = null
-        private set
-
-    override fun saveUserTagList(@NonNull list: UserTagList) {
-        userTagList = list
     }
 
     override fun clearGalleryDetailCache() {

@@ -69,10 +69,7 @@ import com.hippo.ehviewer.ui.scene.gallery.list.FavoritesScene
 import com.hippo.ehviewer.ui.scene.LRRCategoriesScene
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
-import com.hippo.ehviewer.ui.scene.GalleryPreviewsScene
-import com.hippo.ehviewer.ui.scene.gallery.list.SubscriptionsScene
 import com.hippo.ehviewer.ui.scene.history.HistoryScene
-import com.hippo.ehviewer.ui.scene.ProgressScene
 import com.hippo.ehviewer.ui.scene.gallery.list.QuickSearchScene
 import com.hippo.ehviewer.ui.scene.SecurityScene
 import com.hippo.ehviewer.ui.scene.SolidScene
@@ -116,16 +113,13 @@ class MainActivity : StageActivity(),
             registerLaunchMode(ServerListScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
             registerLaunchMode(GalleryListScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TOP)
             registerLaunchMode(QuickSearchScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
-            registerLaunchMode(SubscriptionsScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
             registerLaunchMode(GalleryDetailScene::class.java, SceneFragment.LAUNCH_MODE_STANDARD)
 
-            registerLaunchMode(GalleryPreviewsScene::class.java, SceneFragment.LAUNCH_MODE_STANDARD)
             registerLaunchMode(DownloadsScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
             registerLaunchMode(DownloadLabelsScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
             registerLaunchMode(FavoritesScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
             registerLaunchMode(LRRCategoriesScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
             registerLaunchMode(HistoryScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TOP)
-            registerLaunchMode(ProgressScene::class.java, SceneFragment.LAUNCH_MODE_STANDARD)
         }
     }
 

@@ -32,7 +32,6 @@ import androidx.annotation.StringRes
 import androidx.annotation.StyleRes
 import com.hippo.drawerlayout.DrawerLayout
 import com.hippo.ehviewer.Analytics
-import com.hippo.ehviewer.client.data.userTag.UserTagList
 import com.hippo.ehviewer.ui.MainActivity
 import com.hippo.scene.SceneFragment
 import com.hippo.util.AppHelper
@@ -277,9 +276,6 @@ abstract class BaseScene : SceneFragment() {
             drawerView!!.saveHierarchyState(drawerViewState)
             outState.putSparseParcelableArray(KEY_DRAWER_VIEW_STATE, drawerViewState)
         }
-    }
-
-    open fun setTagList(result: UserTagList?) {
     }
 
     companion object {

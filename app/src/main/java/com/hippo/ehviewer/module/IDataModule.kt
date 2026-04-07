@@ -4,7 +4,6 @@ import androidx.collection.LruCache
 import com.hippo.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.client.data.userTag.UserTagList
 import com.hippo.ehviewer.download.DownloadManager
 
 /**
@@ -25,12 +24,6 @@ interface IDataModule {
 
     /** Small disk cache holding per-gallery spider state for preloading. */
     val spiderInfoCache: SimpleDiskCache
-
-    /** Last-fetched user tag list, or null if never loaded. */
-    val userTagList: UserTagList?
-
-    /** Replaces the cached user tag list. */
-    fun saveUserTagList(list: UserTagList)
 
     /** Evicts every entry from [galleryDetailCache]. */
     fun clearGalleryDetailCache()

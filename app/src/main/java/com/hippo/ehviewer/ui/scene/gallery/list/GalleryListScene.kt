@@ -50,13 +50,10 @@ import androidx.lifecycle.ViewModelProvider
 import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.callBack.SubscriptionCallback
-import com.hippo.ehviewer.client.EhClient
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.ListUrlBuilder
-import com.hippo.ehviewer.client.data.userTag.UserTagList
 import com.hippo.ehviewer.client.exception.EhException
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
 import com.hippo.ehviewer.dao.DownloadInfo
@@ -83,14 +80,13 @@ class GalleryListScene : BaseScene(),
     EasyRecyclerView.OnItemClickListener, EasyRecyclerView.OnItemLongClickListener,
     SearchBar.Helper, SearchBar.OnStateChangeListener, FastScroller.OnDragHandlerListener,
     SearchLayout.Helper, SearchBarMover.Helper, View.OnClickListener, FabLayout.OnClickFabListener,
-    FabLayout.OnExpandListener, SubscriptionCallback {
+    FabLayout.OnExpandListener {
 
     private var showReadProgress = false
 
     /*---------------
      Whole life cycle
      ---------------*/
-    private var mClient: EhClient? = null
     @JvmField
     var mUrlBuilder: ListUrlBuilder? = null
 
@@ -204,7 +200,6 @@ class GalleryListScene : BaseScene(),
         AssertUtils.assertNotNull(context)
         viewModel = ViewModelProvider(requireActivity())[GalleryListViewModel::class.java]
         executorService = viewModel.executorService
-        mClient = viewModel.ehClient
         mDownloadManager = viewModel.downloadManager
         mFavouriteStatusRouter = viewModel.favouriteStatusRouter
 
@@ -265,7 +260,6 @@ class GalleryListScene : BaseScene(),
 
     override fun onDestroy() {
         super.onDestroy()
-        mClient = null
         mUrlBuilder = null
         mDownloadManager.removeDownloadInfoListener(mDownloadInfoListener)
         mFavouriteStatusRouterListener?.let { mFavouriteStatusRouter.removeListener(it) }
@@ -534,7 +528,6 @@ class GalleryListScene : BaseScene(),
             override fun getHostContext(): Context? = ehContext
             override fun getHostActivity(): Activity? = activity2
             override fun getScene(): GalleryListScene = this@GalleryListScene
-            override fun getClient(): EhClient? = mClient
             override fun getSceneTag(): String? = tag
             override fun getUrlBuilder(): ListUrlBuilder? = mUrlBuilder
             override fun getEhTags(): EhTagDatabase? = mTagChipHelper?.getEhTags()
@@ -643,18 +636,6 @@ class GalleryListScene : BaseScene(),
         savedInstanceState: Bundle?
     ): View? {
         return mDrawerHelper?.onCreateDrawerView(inflater, container, savedInstanceState)
-    }
-
-    override fun setTagList(result: UserTagList?) {
-        mDrawerHelper?.setTagList(result)
-    }
-
-    override fun onSubscriptionItemClick(name: String) {
-        mDrawerHelper?.onSubscriptionItemClick(name)
-    }
-
-    override fun getAddTagName(userTagList: UserTagList?): String? {
-        return mDrawerHelper?.getAddTagName(userTagList)
     }
 
     private fun checkDoubleClickExit(): Boolean {
