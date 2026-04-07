@@ -28,6 +28,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.h6ah4i.android.widget.advrecyclerview.animator.SwipeDismissItemAnimator
@@ -81,6 +82,12 @@ class HistoryScene : ToolbarScene(),
     private var mAdapter: RecyclerView.Adapter<*>? = null
     private var mLazyList: List<HistoryInfo>? = null
     private var mLayoutManager: AutoStaggeredGridLayoutManager? = null
+
+    // Snapshot of the list last dispatched to the adapter. Read/written ONLY by
+    // updateLazyList() (the single dispatch path). Used to compute DiffUtil deltas
+    // against the freshly loaded list. See docs/diffutil-root-cause-analysis.md
+    // for why we are careful about snapshot ownership.
+    private var mLastSnapshot: List<HistoryInfo> = emptyList()
 
     override fun getNavCheckedItem(): Int {
         return R.id.nav_history
@@ -178,8 +185,16 @@ class HistoryScene : ToolbarScene(),
 
         if (mLazyList != null) {
             mLazyList = null
+            // Adapter is being torn down with this view; a structural notify is
+            // required so the framework drops cached ViewHolders that referenced
+            // mLazyList. notifyDataSetChanged is acceptable here because there is
+            // no concurrent dispatch path during view destruction.
+            @Suppress("NotifyDataSetChanged")
             mAdapter?.notifyDataSetChanged()
         }
+        // Reset snapshot so the next onCreateView starts from an empty baseline
+        // and the first updateLazyList() dispatch is a clean inserts-only delta.
+        mLastSnapshot = emptyList()
         if (mRecyclerView != null) {
             mRecyclerView!!.stopScroll()
             mRecyclerView = null
@@ -189,16 +204,62 @@ class HistoryScene : ToolbarScene(),
         mAdapter = null
     }
 
-    // Asynchronously loads history list on IO thread, then updates UI
+    // Asynchronously loads history list on IO thread, then updates UI.
+    // Uses DiffUtil for the dispatch. SwipeResultActionClear (swipe-to-dismiss)
+    // calls into this same path after async DB delete completes; the diff-driven
+    // remove of the swiped item should align with the SwipeDismissItemAnimator's
+    // ongoing animation since we keep mLastSnapshot in sync with what the adapter
+    // last saw. setHasStableIds(true) (line 114) helps the animator track items.
     private fun updateLazyList() {
         IoThreadPoolExecutor.instance.execute {
             val lazyList = EhDB.getHistoryLazyList()
             val a = activity
             a?.runOnUiThread {
-                mLazyList = lazyList
-                mAdapter?.notifyDataSetChanged()
+                val adapter = mAdapter
+                val newList = ArrayList(lazyList)
+                if (adapter != null) {
+                    val diff = DiffUtil.calculateDiff(
+                        HistoryInfoDiffCallback(mLastSnapshot, newList)
+                    )
+                    mLazyList = newList
+                    mLastSnapshot = newList
+                    diff.dispatchUpdatesTo(adapter)
+                } else {
+                    mLazyList = newList
+                    mLastSnapshot = newList
+                }
                 updateView(false)
             }
+        }
+    }
+
+    /**
+     * DiffUtil callback for HistoryInfo lists. Identity is `gid` (Room PK).
+     * Content compares all fields rendered in onBindViewHolder so a metadata
+     * refresh repaints the affected rows.
+     */
+    private class HistoryInfoDiffCallback(
+        private val oldList: List<HistoryInfo>,
+        private val newList: List<HistoryInfo>
+    ) : DiffUtil.Callback() {
+
+        override fun getOldListSize(): Int = oldList.size
+        override fun getNewListSize(): Int = newList.size
+
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            return oldList[oldItemPosition].gid == newList[newItemPosition].gid
+        }
+
+        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            val o = oldList[oldItemPosition]
+            val n = newList[newItemPosition]
+            return o.title == n.title &&
+                o.uploader == n.uploader &&
+                o.rating == n.rating &&
+                o.category == n.category &&
+                o.posted == n.posted &&
+                o.simpleLanguage == n.simpleLanguage &&
+                o.thumb == n.thumb
         }
     }
 
