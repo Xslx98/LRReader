@@ -12,6 +12,7 @@ import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -27,7 +28,8 @@ import com.hippo.ehviewer.client.lrr.friendlyError
 import com.hippo.ehviewer.client.lrr.runSuspend
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
 import com.hippo.scene.Announcer
-import com.hippo.util.IoThreadPoolExecutor
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Scene that displays LANraragi categories with full CRUD support.
@@ -118,10 +120,10 @@ class LRRCategoriesScene : BaseScene() {
     private fun fetchCategories() {
         showProgress()
 
-        IoThreadPoolExecutor.instance.execute {
+        lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val ctx = ehContext ?: return@execute
-                val serverUrl = LRRAuthManager.getServerUrl() ?: return@execute
+                val ctx = ehContext ?: return@launch
+                val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
                 val client = ServiceRegistry.networkModule.okHttpClient
 
                 val categories = runSuspend {
@@ -237,10 +239,10 @@ class LRRCategoriesScene : BaseScene() {
     }
 
     private fun createCategory(name: String, search: String?, pinned: Boolean) {
-        IoThreadPoolExecutor.instance.execute {
+        lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val ctx = ehContext ?: return@execute
-                val serverUrl = LRRAuthManager.getServerUrl() ?: return@execute
+                val ctx = ehContext ?: return@launch
+                val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
                 val client = ServiceRegistry.networkModule.okHttpClient
                 runSuspend {
                     LRRCategoryApi.createCategory(client, serverUrl, name, search, pinned)
@@ -263,10 +265,10 @@ class LRRCategoriesScene : BaseScene() {
     }
 
     private fun updateCategory(categoryId: String, name: String, search: String?, pinned: Boolean) {
-        IoThreadPoolExecutor.instance.execute {
+        lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val ctx = ehContext ?: return@execute
-                val serverUrl = LRRAuthManager.getServerUrl() ?: return@execute
+                val ctx = ehContext ?: return@launch
+                val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
                 val client = ServiceRegistry.networkModule.okHttpClient
                 runSuspend {
                     LRRCategoryApi.updateCategory(client, serverUrl, categoryId, name, search, pinned)
@@ -294,10 +296,10 @@ class LRRCategoriesScene : BaseScene() {
             .setTitle(R.string.lrr_category_action_delete)
             .setMessage(getString(R.string.lrr_category_delete_confirm, category.name))
             .setPositiveButton(android.R.string.ok) { _, _ ->
-                IoThreadPoolExecutor.instance.execute {
+                lifecycleScope.launch(Dispatchers.IO) {
                     try {
-                        val innerCtx = ehContext ?: return@execute
-                        val serverUrl = LRRAuthManager.getServerUrl() ?: return@execute
+                        val innerCtx = ehContext ?: return@launch
+                        val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
                         val client = ServiceRegistry.networkModule.okHttpClient
                         runSuspend {
                             LRRCategoryApi.deleteCategory(client, serverUrl, category.id!!)

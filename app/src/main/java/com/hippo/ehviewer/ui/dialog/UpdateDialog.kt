@@ -119,42 +119,6 @@ class UpdateDialog(private val activity: Activity) {
         val intent = Intent(Intent.ACTION_VIEW, uri)
         activity.startActivity(intent)
         dialog?.dismiss()
-//        val title = "Ehviewer$version.apk"
-//        val request = DownloadManager.Request(downloadUrl.toUri())
-//        request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_MOBILE or DownloadManager.Request.NETWORK_WIFI)
-//        request.setAllowedOverRoaming(true)
-//        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
-//        request.setTitle(title)
-//        request.setDescription(activity.getString(R.string.download_archive_started))
-//        request.setVisibleInDownloadsUi(true)
-//        request.setDestinationInExternalPublicDir(
-//            Environment.DIRECTORY_DOWNLOADS,
-//            EhConfig.UPDATE_PATH + title + ".apk"
-//        )
-//        request.allowScanningByMediaScanner()
-//
-//        val downloadManager = activity.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-//        myDownloadId = downloadManager.enqueue(request)
-//        downloadReceiver = DownloadReceiver(this, myDownloadId)
-//        ContextCompat.registerReceiver(
-//            activity,
-//            downloadReceiver,
-//            IntentFilter(DownloadManager.ACTION_VIEW_DOWNLOADS),
-//            ContextCompat.RECEIVER_EXPORTED
-//        )
-//        IoThreadPoolExecutor.getInstance().execute{
-//           try {
-//               lock.tryLock()
-//               val file =File(Environment.DIRECTORY_DOWNLOADS+"/"+EhConfig.UPDATE_PATH + title + ".apk")
-//               if (save(EhApplication.getOkHttpClient(activity),downloadUrl,file)){
-//                   installApp(file)
-//               }else{
-//                   showCheckFailDialog()
-//               }
-//           }catch (e:Exception){
-//               lock.unlock()
-//           }
-//        }
     }
 
     @SuppressLint("UnsafeImplicitIntentLaunch")

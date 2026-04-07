@@ -21,7 +21,6 @@ import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.exception.CancelledException
 import com.hippo.lib.yorozuya.SimpleHandler
-import com.hippo.util.IoThreadPoolExecutor
 import okhttp3.Call
 import okhttp3.OkHttpClient
 import java.util.concurrent.atomic.AtomicBoolean
@@ -29,7 +28,6 @@ import java.util.concurrent.atomic.AtomicReference
 
 class EhClient(context: Context) {
 
-    private val mRequestThreadPool = IoThreadPoolExecutor.instance
     private val mOkHttpClient: OkHttpClient = ServiceRegistry.networkModule.okHttpClient
     private val mImageOkHttpClient: OkHttpClient = ServiceRegistry.networkModule.imageOkHttpClient
 
@@ -37,7 +35,10 @@ class EhClient(context: Context) {
     fun execute(request: EhRequest) {
         if (!request.isCancelled) {
             val task = Task(request.method, request.callback as Callback<Any?>)
-            mRequestThreadPool.execute(task)
+            // LANraragi: E-Hentai engine methods removed -- Task.run() is a no-op
+            // that immediately posts onCancel() to the main thread, so we can run
+            // it inline instead of dispatching to a background executor.
+            task.run()
             request.task = task
         } else {
             request.callback?.onCancel()

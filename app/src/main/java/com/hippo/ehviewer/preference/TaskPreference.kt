@@ -29,10 +29,10 @@ import androidx.appcompat.app.AlertDialog
 import androidx.customview.view.AbsSavedState
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.lib.yorozuya.IntIdGenerator
 import com.hippo.preference.DialogPreference
-import com.hippo.util.IoThreadPoolExecutor
-import java.util.concurrent.Executor
+import kotlinx.coroutines.launch
 
 abstract class TaskPreference : DialogPreference {
 
@@ -54,7 +54,7 @@ abstract class TaskPreference : DialogPreference {
             mTask = onCreateTask().also { task ->
                 task.setPreference(this)
                 mTaskId = (context.applicationContext as EhApplication).putGlobalStuff(task)
-                task.executeOnExecutor(IoThreadPoolExecutor.instance)
+                task.launch()
             }
         }
     }
@@ -192,9 +192,9 @@ abstract class TaskPreference : DialogPreference {
             mMainHandler.post { onPostExecute(result) }
         }
 
-        /** Execute on the given executor. */
-        fun executeOnExecutor(executor: Executor) {
-            executor.execute(this)
+        /** Launch this task on the application-wide IO coroutine scope. */
+        fun launch() {
+            ServiceRegistry.coroutineModule.ioScope.launch { run() }
         }
     }
 }
