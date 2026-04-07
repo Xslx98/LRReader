@@ -15,6 +15,7 @@ import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
+import com.hippo.ehviewer.client.lrr.LRRSecureStorageUnavailableException
 import com.hippo.ehviewer.client.lrr.friendlyError
 import com.hippo.ehviewer.client.lrr.LRRServerApi
 import com.hippo.ehviewer.client.lrr.LRRUrlHelper
@@ -144,21 +145,34 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
 
         // Save API key
         val apiKey = getApiKeyInput()
-        LRRAuthManager.setApiKey(if (!TextUtils.isEmpty(apiKey)) apiKey else null)
+        try {
+            LRRAuthManager.setApiKey(if (!TextUtils.isEmpty(apiKey)) apiKey else null)
+        } catch (e: LRRSecureStorageUnavailableException) {
+            showProgress(false)
+            mConnecting = false
+            showSecureStorageErrorDialog()
+            return
+        }
 
         val client = ServiceRegistry.networkModule.okHttpClient
         val testClient = LRRUrlHelper.buildTestClient(client)
 
-        if (LRRUrlHelper.hasExplicitScheme(rawInput!!)) {
-            // User specified protocol explicitly -- use as-is
-            LRRAuthManager.setServerUrl(rawInput)
-            tryConnect(testClient, rawInput, null, navigateOnSuccess)
-        } else {
-            // No explicit scheme: try HTTPS first, then fall back to HTTP
-            val httpsUrl = "https://$rawInput"
-            val httpUrl = "http://$rawInput"
-            LRRAuthManager.setServerUrl(httpsUrl) // temp set for interceptor
-            tryConnect(testClient, httpsUrl, httpUrl, navigateOnSuccess)
+        try {
+            if (LRRUrlHelper.hasExplicitScheme(rawInput!!)) {
+                // User specified protocol explicitly -- use as-is
+                LRRAuthManager.setServerUrl(rawInput)
+                tryConnect(testClient, rawInput, null, navigateOnSuccess)
+            } else {
+                // No explicit scheme: try HTTPS first, then fall back to HTTP
+                val httpsUrl = "https://$rawInput"
+                val httpUrl = "http://$rawInput"
+                LRRAuthManager.setServerUrl(httpsUrl) // temp set for interceptor
+                tryConnect(testClient, httpsUrl, httpUrl, navigateOnSuccess)
+            }
+        } catch (e: LRRSecureStorageUnavailableException) {
+            showProgress(false)
+            mConnecting = false
+            showSecureStorageErrorDialog()
         }
     }
 
@@ -197,6 +211,9 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
                 val info = LRRServerApi.getServerInfo(client, fallbackUrl)
                 // Success on fallback
                 onConnectSuccess(fallbackUrl, info, navigateOnSuccess)
+            } catch (e: LRRSecureStorageUnavailableException) {
+                Log.e(TAG, "Secure storage unavailable during fallback", e)
+                onConnectFailure(e)
             } catch (e2: Exception) {
                 Log.d(TAG, "Fallback URL also failed: ${e2.message}")
                 onConnectFailure(e2)
@@ -213,32 +230,38 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
         info: LRRServerInfo,
         navigateOnSuccess: Boolean
     ) {
-        LRRAuthManager.setServerUrl(resolvedUrl)
-        LRRAuthManager.setServerName(info.name)
+        try {
+            LRRAuthManager.setServerUrl(resolvedUrl)
+            LRRAuthManager.setServerName(info.name)
 
-        // Create or update ServerProfile
-        if (activity != null) {
-            val existing = EhDB.findProfileByUrlAsync(resolvedUrl)
-            EhDB.deactivateAllProfilesAsync()
-            if (existing != null) {
-                // API key is stored in EncryptedSharedPreferences, not in Room
-                val updated = ServerProfile(
-                    existing.id,
-                    info.name ?: existing.name,
-                    resolvedUrl,
-                    true
-                )
-                EhDB.updateServerProfileAsync(updated)
-                LRRAuthManager.setApiKeyForProfile(existing.id, LRRAuthManager.getApiKey())
-                LRRAuthManager.setActiveProfileId(existing.id)
-            } else {
-                val profileName = info.name ?: "LANraragi"
-                // API key is stored in EncryptedSharedPreferences, not in Room
-                val newProfile = ServerProfile(0, profileName, resolvedUrl, true)
-                val newId = EhDB.insertServerProfileAsync(newProfile)
-                LRRAuthManager.setApiKeyForProfile(newId, LRRAuthManager.getApiKey())
-                LRRAuthManager.setActiveProfileId(newId)
+            // Create or update ServerProfile
+            if (activity != null) {
+                val existing = EhDB.findProfileByUrlAsync(resolvedUrl)
+                EhDB.deactivateAllProfilesAsync()
+                if (existing != null) {
+                    // API key is stored in EncryptedSharedPreferences, not in Room
+                    val updated = ServerProfile(
+                        existing.id,
+                        info.name ?: existing.name,
+                        resolvedUrl,
+                        true
+                    )
+                    EhDB.updateServerProfileAsync(updated)
+                    LRRAuthManager.setApiKeyForProfile(existing.id, LRRAuthManager.getApiKey())
+                    LRRAuthManager.setActiveProfileId(existing.id)
+                } else {
+                    val profileName = info.name ?: "LANraragi"
+                    // API key is stored in EncryptedSharedPreferences, not in Room
+                    val newProfile = ServerProfile(0, profileName, resolvedUrl, true)
+                    val newId = EhDB.insertServerProfileAsync(newProfile)
+                    LRRAuthManager.setApiKeyForProfile(newId, LRRAuthManager.getApiKey())
+                    LRRAuthManager.setActiveProfileId(newId)
+                }
             }
+        } catch (e: LRRSecureStorageUnavailableException) {
+            Log.e(TAG, "Secure storage unavailable on connect success", e)
+            onConnectFailure(e)
+            return
         }
 
         if (activity == null) return
@@ -297,6 +320,11 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
 
             mServerInfoPanel?.visibility = View.GONE
 
+            if (e is LRRSecureStorageUnavailableException) {
+                showSecureStorageErrorDialog()
+                return@runOnUiThread
+            }
+
             val ctx = ehContext
             if (ctx != null) {
                 val msg = friendlyError(ctx, e)
@@ -307,6 +335,15 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
                 ).show()
             }
         }
+    }
+
+    private fun showSecureStorageErrorDialog() {
+        val ctx = ehContext ?: return
+        androidx.appcompat.app.AlertDialog.Builder(ctx)
+            .setTitle(R.string.lrr_keystore_failed_title)
+            .setMessage(R.string.lrr_secure_storage_write_failed)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
     }
 
     private fun redirectToArchiveList() {

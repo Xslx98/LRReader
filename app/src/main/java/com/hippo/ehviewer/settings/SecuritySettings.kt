@@ -1,13 +1,17 @@
 package com.hippo.ehviewer.settings
 
+import android.util.Log
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
+import com.hippo.ehviewer.client.lrr.LRRSecureStorageUnavailableException
 
 /**
  * Security-related settings extracted from Settings.java.
  * Covers secure mode (FLAG_SECURE), password lock, and fingerprint authentication.
  */
 object SecuritySettings {
+
+    private const val TAG = "SecuritySettings"
 
     // --- Secure Mode (FLAG_SECURE) ---
     const val KEY_SEC_SECURITY = "enable_secure"
@@ -36,9 +40,16 @@ object SecuritySettings {
         // One-time migration: hash the legacy plaintext pattern
         val legacy = Settings.getString(KEY_SECURITY, "") ?: ""
         if (legacy.isNotEmpty()) {
-            LRRAuthManager.setPattern(legacy)
-            Settings.putString(KEY_SECURITY, "")
-            return true
+            try {
+                LRRAuthManager.setPattern(legacy)
+                Settings.putString(KEY_SECURITY, "")
+                return true
+            } catch (e: LRRSecureStorageUnavailableException) {
+                // KeyStore unavailable — leave legacy plaintext in place so migration
+                // can retry next launch, and report "no pattern" for this session.
+                Log.w(TAG, "Could not migrate legacy pattern to secure storage", e)
+                return false
+            }
         }
         return false
     }

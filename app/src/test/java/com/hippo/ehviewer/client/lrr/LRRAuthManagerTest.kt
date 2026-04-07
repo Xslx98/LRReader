@@ -198,4 +198,80 @@ class LRRAuthManagerTest {
         assertEquals(0L, LRRAuthManager.getActiveProfileId())
         assertFalse(LRRAuthManager.hasPattern())
     }
+
+    // ── Setter failure surfacing (sPrefs == null) ──────────────────
+    //
+    // When the KeyStore / EncryptedSharedPreferences is unavailable every setter
+    // must throw LRRSecureStorageUnavailableException instead of silently dropping
+    // the write. Silent drops previously let users believe they had saved new
+    // credentials when in reality nothing was persisted.
+
+    @Test(expected = LRRSecureStorageUnavailableException::class)
+    fun setServerUrl_throwsWhenStorageUnavailable() {
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.setServerUrl("http://test.local")
+    }
+
+    @Test(expected = LRRSecureStorageUnavailableException::class)
+    fun setApiKey_throwsWhenStorageUnavailable() {
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.setApiKey("secret")
+    }
+
+    @Test(expected = LRRSecureStorageUnavailableException::class)
+    fun setServerName_throwsWhenStorageUnavailable() {
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.setServerName("LRR")
+    }
+
+    @Test(expected = LRRSecureStorageUnavailableException::class)
+    fun setActiveProfileId_throwsWhenStorageUnavailable() {
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.setActiveProfileId(7L)
+    }
+
+    @Test(expected = LRRSecureStorageUnavailableException::class)
+    fun setApiKeyForProfile_throwsWhenStorageUnavailable() {
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.setApiKeyForProfile(1L, "key")
+    }
+
+    @Test(expected = LRRSecureStorageUnavailableException::class)
+    fun clearApiKeyForProfile_throwsWhenStorageUnavailable() {
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.clearApiKeyForProfile(1L)
+    }
+
+    @Test(expected = LRRSecureStorageUnavailableException::class)
+    fun setPattern_throwsWhenStorageUnavailable() {
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.setPattern("1234")
+    }
+
+    @Test
+    fun verifyPattern_returnsFalseWhenStorageUnavailable() {
+        // Reads MUST NOT throw — verify-before-unlock flows need to degrade gracefully.
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        assertFalse(LRRAuthManager.verifyPattern("anything"))
+    }
+
+    @Test
+    fun getters_returnNullWhenStorageUnavailable() {
+        // Reads MUST NOT throw — UI polls getApiKey()/getServerUrl() frequently.
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        assertNull(LRRAuthManager.getServerUrl())
+        assertNull(LRRAuthManager.getApiKey())
+        assertNull(LRRAuthManager.getServerName())
+        assertNull(LRRAuthManager.getApiKeyForProfile(1L))
+        assertFalse(LRRAuthManager.hasPattern())
+    }
+
+    @Test
+    fun clear_toleratesUnavailableStorage() {
+        // clear() is safe to call during reauth flows — must not throw even if
+        // the backing store was never initialized.
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        LRRAuthManager.clear() // should not throw
+        assertEquals(0L, LRRAuthManager.getActiveProfileId())
+    }
 }

@@ -119,6 +119,9 @@ class EhApplication : RecordingApplication() {
                 if (activeProfile != null) {
                     LRRAuthManager.setActiveProfileId(activeProfile.id)
                 }
+            } catch (_: com.hippo.ehviewer.client.lrr.LRRSecureStorageUnavailableException) {
+                // KeyStore unavailable — isNeedsReauthentication() already flagged during init,
+                // and MainActivity/ServerListScene will surface the dialog. Nothing to do here.
             } catch (_: Exception) {
                 // DB not ready yet on first launch — safe to ignore
             }
