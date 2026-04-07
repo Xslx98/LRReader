@@ -12,6 +12,7 @@ import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
@@ -46,6 +47,11 @@ class LRRCategoriesScene : BaseScene() {
 
     private val mCategories: MutableList<LRRCategory> = mutableListOf()
     private var mAdapter: CategoryAdapter? = null
+
+    // Snapshot of the list last dispatched to the adapter. Read/written ONLY by
+    // fetchCategories() (the single dispatch path — every CRUD op re-fetches).
+    // See docs/diffutil-root-cause-analysis.md for the snapshot ownership rule.
+    private var mLastSnapshot: List<LRRCategory> = emptyList()
 
     override fun getNavCheckedItem(): Int = R.id.nav_favourite
 
@@ -103,6 +109,8 @@ class LRRCategoriesScene : BaseScene() {
         mErrorRetry = null
         mToolbar = null
         mAdapter = null
+        // Reset snapshot so the next view recreation starts from a clean baseline.
+        mLastSnapshot = emptyList()
     }
 
     // ==================== Data Loading ====================
@@ -134,13 +142,28 @@ class LRRCategoriesScene : BaseScene() {
                 pinned.addAll(unpinned)
 
                 activity?.runOnUiThread {
-                    mCategories.clear()
-                    mCategories.addAll(pinned)
+                    // Compute diff against the previously dispatched snapshot
+                    // BEFORE mutating mCategories in place. Then swap in the
+                    // new contents and update the snapshot, then dispatch.
+                    val newList = ArrayList(pinned)
+                    val adapter = mAdapter
+                    if (adapter != null) {
+                        val diff = DiffUtil.calculateDiff(
+                            LRRCategoryDiffCallback(mLastSnapshot, newList)
+                        )
+                        mCategories.clear()
+                        mCategories.addAll(newList)
+                        mLastSnapshot = newList
+                        diff.dispatchUpdatesTo(adapter)
+                    } else {
+                        mCategories.clear()
+                        mCategories.addAll(newList)
+                        mLastSnapshot = newList
+                    }
                     if (mCategories.isEmpty()) {
                         showEmpty(getString(R.string.lrr_categories_empty))
                     } else {
                         showList()
-                        mAdapter?.notifyDataSetChanged()
                     }
                 }
             } catch (e: Exception) {
@@ -448,6 +471,35 @@ class LRRCategoriesScene : BaseScene() {
         val name: TextView = itemView.findViewById(R.id.category_name)
         val count: TextView = itemView.findViewById(R.id.category_count)
         val search: TextView = itemView.findViewById(R.id.category_search)
+    }
+
+    /**
+     * DiffUtil callback for LRRCategory lists. Identity is the category `id`
+     * (LANraragi's CAT-prefixed string id). Content compares everything that
+     * onBindViewHolder reads so the row repaints when name/pinned/search/
+     * archive count change.
+     */
+    private class LRRCategoryDiffCallback(
+        private val oldList: List<LRRCategory>,
+        private val newList: List<LRRCategory>
+    ) : DiffUtil.Callback() {
+
+        override fun getOldListSize(): Int = oldList.size
+        override fun getNewListSize(): Int = newList.size
+
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            return oldList[oldItemPosition].id == newList[newItemPosition].id
+        }
+
+        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            val o = oldList[oldItemPosition]
+            val n = newList[newItemPosition]
+            return o.name == n.name &&
+                o.isPinned() == n.isPinned() &&
+                o.isDynamic() == n.isDynamic() &&
+                o.search == n.search &&
+                o.archives.size == n.archives.size
+        }
     }
 
     companion object {
