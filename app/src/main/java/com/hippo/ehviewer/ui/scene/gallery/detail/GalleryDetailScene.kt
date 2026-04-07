@@ -223,6 +223,12 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             return
         }
 
+        // The ViewModel is Activity-scoped, so the previous gallery's
+        // _galleryDetail / _downloadInfo / state would otherwise shadow the
+        // arguments we are about to write via the detail > info > args
+        // fallback in viewModel.getEffective*().
+        viewModel.resetForNewEntry()
+
         val action = args.getString(KEY_ACTION)
         mAction = action
         if (ACTION_GALLERY_INFO == action) {
