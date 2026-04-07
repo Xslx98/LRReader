@@ -14,14 +14,14 @@ import java.io.File
  */
 class ClientModule(
     private val context: Context,
-    private val networkModule: NetworkModule
-) {
+    private val networkModule: INetworkModule
+) : IClientModule {
 
-    val ehClient: EhClient by lazy { EhClient(context) }
+    override val ehClient: EhClient by lazy { EhClient(context) }
 
-    val imageBitmapHelper: ImageBitmapHelper by lazy { ImageBitmapHelper() }
+    override val imageBitmapHelper: ImageBitmapHelper by lazy { ImageBitmapHelper() }
 
-    val conaco: Conaco<Image> by lazy {
+    override val conaco: Conaco<Image> by lazy {
         Conaco.Builder<Image>().apply {
             hasMemoryCache = true
             memoryCacheMaxSize = memoryCacheMaxSize()
@@ -34,7 +34,7 @@ class ClientModule(
         }.build()
     }
 
-    fun clearMemoryCache() {
+    override fun clearMemoryCache() {
         conaco.beerBelly?.clearMemory()
     }
 
