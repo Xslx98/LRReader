@@ -58,9 +58,7 @@ import com.hippo.easyrecyclerview.FastScroller
 import com.hippo.easyrecyclerview.HandlerDrawable
 import com.hippo.easyrecyclerview.MarginItemDecoration
 import com.hippo.ehviewer.Analytics
-import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
@@ -231,7 +229,7 @@ class DownloadsScene : ToolbarScene(),
 
         val context = ehContext
         AssertUtils.assertNotNull(context)
-        _downloadManager = ServiceRegistry.dataModule.downloadManager
+        _downloadManager = viewModel.downloadManager
         _downloadManager!!.addDownloadInfoListener(this)
 
         // Initialize import helper (must happen before onStart per ActivityResultLauncher contract)
@@ -322,7 +320,7 @@ class DownloadsScene : ToolbarScene(),
         if (manager == null) {
             val context = ehContext
             if (context != null) {
-                manager = ServiceRegistry.dataModule.downloadManager
+                manager = viewModel.downloadManager
             }
         } else {
             _downloadManager = null
@@ -650,7 +648,7 @@ class DownloadsScene : ToolbarScene(),
         // This handles add/remove/state changes persisted to the database.
         // Progress updates (speed, downloaded, total) are @Ignore fields and
         // continue to use the existing DownloadInfoListener callback mechanism.
-        collectFlow(viewLifecycleOwner, EhDB.observeDownloads()) { downloads ->
+        collectFlow(viewLifecycleOwner, viewModel.downloadsFlow) { downloads ->
             if (mAdapter == null || searching) {
                 return@collectFlow
             }

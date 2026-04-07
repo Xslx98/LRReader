@@ -1,12 +1,14 @@
 package com.hippo.ehviewer.ui.scene.download
 
 import androidx.lifecycle.ViewModel
+import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.DownloadLabel
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.spider.SpiderInfo
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,7 +22,20 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 class DownloadsViewModel : ViewModel() {
 
-    private val downloadManager: DownloadManager = ServiceRegistry.dataModule.downloadManager
+    /**
+     * The app's [DownloadManager] singleton. Exposed so [DownloadsScene]
+     * does not need to reference [ServiceRegistry] directly.
+     */
+    val downloadManager: DownloadManager = ServiceRegistry.dataModule.downloadManager
+
+    /**
+     * Room flow of the persisted download list. Emits whenever the underlying
+     * table structure changes (add / remove / state column). Progress updates
+     * (speed, downloaded, total) are `@Ignore` fields and continue to be
+     * delivered via the existing [com.hippo.ehviewer.download.DownloadInfoListener]
+     * callback mechanism.
+     */
+    val downloadsFlow: Flow<List<DownloadInfo>> = EhDB.observeDownloads()
 
     // -------------------------------------------------------------------------
     // Label state
