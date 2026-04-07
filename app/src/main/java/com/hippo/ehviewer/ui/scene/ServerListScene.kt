@@ -29,7 +29,6 @@ import com.hippo.ehviewer.dao.ServerProfile
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
 import com.hippo.scene.Announcer
 import com.hippo.scene.StageActivity
-import com.hippo.util.IoThreadPoolExecutor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -408,7 +407,7 @@ class ServerListScene : BaseScene() {
             val baseClient = ServiceRegistry.networkModule.okHttpClient
             val testClient = LRRUrlHelper.buildTestClient(baseClient)
 
-            IoThreadPoolExecutor.instance.execute {
+            lifecycleScope.launch(Dispatchers.IO) {
                 // Use HTTPS->HTTP fallback logic
                 LRRUrlHelper.connectWithFallback(
                     testClient,

@@ -27,11 +27,14 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.ActivityResultRegistry
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.util.FileUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Encapsulates the local archive import pipeline (file picker, URI permission,
@@ -40,7 +43,7 @@ import com.hippo.util.FileUtils
 class DownloadImportHelper(
     private val mCallback: Callback,
     registry: ActivityResultRegistry,
-    lifecycleOwner: LifecycleOwner
+    private val lifecycleOwner: LifecycleOwner
 ) {
 
     /**
@@ -128,7 +131,7 @@ class DownloadImportHelper(
         Toast.makeText(context, R.string.import_archive_processing, Toast.LENGTH_LONG).show()
 
         // Process the archive file in background
-        com.hippo.util.IoThreadPoolExecutor.instance.execute {
+        lifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             processArchiveFile(uri)
         }
     }

@@ -32,7 +32,6 @@ import com.hippo.ehviewer.download.DownloadService
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.lib.yorozuya.collect.LongList
 import com.hippo.unifile.UniFile
-import com.hippo.util.IoThreadPoolExecutor
 import kotlinx.coroutines.launch
 import java.util.LinkedList
 
@@ -237,7 +236,7 @@ class DownloadLabelHelper(private val mCallback: Callback) {
 
     companion object {
         private fun deleteFileAsync(vararg files: UniFile?) {
-            IoThreadPoolExecutor.instance.execute {
+            ServiceRegistry.coroutineModule.ioScope.launch {
                 for (file in files) {
                     file?.delete()
                 }
