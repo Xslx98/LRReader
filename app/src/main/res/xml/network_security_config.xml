@@ -2,34 +2,44 @@
 <!--
   LANraragi Reader — Network Security Configuration
 
-  LANraragi is a self-hosted server typically running on a LAN over plain HTTP.
-  Android's <domain-config> cannot match IP ranges (CIDR), so we must allow
-  cleartext globally for the base-config. The LRRAuthInterceptor ensures that
-  the API key is only sent to the configured server host, mitigating the risk
-  of credential leakage over unencrypted connections to other hosts.
+  WHY CLEARTEXT IS GLOBALLY ALLOWED HERE:
 
-  User-installed CAs are trusted so self-signed HTTPS setups (e.g., reverse
-  proxy with a private CA) work without extra configuration.
+  LANraragi servers are typically reached via bare LAN IPs over plain HTTP
+  (e.g., http://192.168.1.23:3000). Android's <domain-config> cannot match
+  CIDR ranges or wildcard IPs, and we do not know which IP a given user has
+  configured at install time. We therefore must allow cleartext at the OS
+  level for ALL hosts.
+
+  WHERE THE REAL CLEARTEXT POLICY LIVES:
+
+  The authoritative cleartext gate is `LRRCleartextRejectionInterceptor`
+  (see app/src/main/java/com/hippo/ehviewer/client/lrr/). It throws
+  LRRCleartextRefusedException for any HTTP request that is NOT directed
+  at the currently-configured active LANraragi server, AND additionally
+  requires that profile's `allowCleartext` flag to be true (per-profile
+  user opt-in via the ServerListScene add/edit dialog).
+
+  Net effect at runtime: cleartext only goes out to one specific host,
+  and only when the user explicitly ticked "trust this server over plain
+  HTTP" when they created or edited the profile.
+
+  TRUST ANCHORS (release vs debug):
+    base-config       → system CAs only
+    debug-overrides   → system + user CAs (Charles, mitmproxy, etc.)
+
+  Release builds do NOT trust user-installed CAs. If you need to point a
+  release build at a self-signed HTTPS LANraragi server, install the CA
+  via the system trust store. (A future branch — `security/server-ca-import`
+  — will add an in-app CA import flow.)
 -->
 <network-security-config>
 
-    <!--
-      Allow cleartext for all hosts: LANraragi servers are commonly accessed
-      via bare LAN IP (e.g., 192.168.x.x:3000) over HTTP. Android's
-      network_security_config has no CIDR/wildcard-IP support, so a blanket
-      allowance is the only way to support arbitrary LAN addresses.
-
-      User-installed CAs are NOT trusted in release builds to prevent MITM
-      attacks via rogue CAs. Users with self-signed HTTPS setups should
-      import the CA into the system trust store or use the debug build.
-    -->
     <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
             <certificates src="system"/>
         </trust-anchors>
     </base-config>
 
-    <!-- Debug builds only: trust user CA for all hosts (Charles, mitmproxy, etc.) -->
     <debug-overrides>
         <trust-anchors>
             <certificates src="user"/>

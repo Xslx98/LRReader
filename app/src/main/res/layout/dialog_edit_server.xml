@@ -60,4 +60,30 @@
 
     </com.google.android.material.textfield.TextInputLayout>
 
+    <LinearLayout
+        android:id="@+id/cleartext_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <com.google.android.material.checkbox.MaterialCheckBox
+            android:id="@+id/checkbox_allow_cleartext"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/lrr_allow_cleartext_label" />
+
+        <TextView
+            android:id="@+id/text_cleartext_helper"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:text="@string/lrr_allow_cleartext_helper"
+            android:textSize="12sp"
+            android:textColor="?android:textColorSecondary" />
+
+    </LinearLayout>
+
 </LinearLayout>
