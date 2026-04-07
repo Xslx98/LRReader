@@ -31,8 +31,12 @@ object LRRCategoryApi {
         baseUrl: String
     ): List<LRRCategory> = retryOnFailure {
         withContext(Dispatchers.IO) {
+            val url = parseBaseUrl(baseUrl).newBuilder()
+                .addPathSegment("api")
+                .addPathSegment("categories")
+                .build()
             val request = Request.Builder()
-                .url("$baseUrl/api/categories")
+                .url(url)
                 .get()
                 .build()
             client.newCall(request).execute().use { response ->
@@ -65,8 +69,12 @@ object LRRCategoryApi {
         if (pinned) {
             formBuilder.add("pinned", "true")
         }
+        val url = parseBaseUrl(baseUrl).newBuilder()
+            .addPathSegment("api")
+            .addPathSegment("categories")
+            .build()
         val request = Request.Builder()
-            .url("$baseUrl/api/categories")
+            .url(url)
             .put(formBuilder.build())
             .build()
         client.newCall(request).execute().use { response ->
