@@ -6,58 +6,79 @@ import com.hippo.ehviewer.module.AppModule
 import com.hippo.ehviewer.module.ClientModule
 import com.hippo.ehviewer.module.CoroutineModule
 import com.hippo.ehviewer.module.DataModule
+import com.hippo.ehviewer.module.IAppModule
+import com.hippo.ehviewer.module.IClientModule
+import com.hippo.ehviewer.module.ICoroutineModule
+import com.hippo.ehviewer.module.IDataModule
+import com.hippo.ehviewer.module.INetworkModule
 import com.hippo.ehviewer.module.NetworkModule
 
 /**
  * Central service registry that replaces the Service Locator pattern
  * previously embedded in EhApplication. All singletons are organized
- * into domain-specific modules.
+ * into domain-specific modules and exposed as interface references so
+ * that consumers depend on contracts rather than concrete classes.
  *
  * Must be initialized after Settings.initialize() in EhApplication.onCreate().
  */
 object ServiceRegistry {
 
-    private var _networkModule: NetworkModule? = null
-    private var _clientModule: ClientModule? = null
-    private var _dataModule: DataModule? = null
-    private var _appModule: AppModule? = null
-    private var _coroutineModule: CoroutineModule? = null
+    private var _networkModule: INetworkModule? = null
+    private var _clientModule: IClientModule? = null
+    private var _dataModule: IDataModule? = null
+    private var _appModule: IAppModule? = null
+    private var _coroutineModule: ICoroutineModule? = null
 
-    val networkModule: NetworkModule
+    val networkModule: INetworkModule
         get() = _networkModule
             ?: error("ServiceRegistry.networkModule accessed before initialize()")
-    val clientModule: ClientModule
+    val clientModule: IClientModule
         get() = _clientModule
             ?: error("ServiceRegistry.clientModule accessed before initialize()")
-    val dataModule: DataModule
+    val dataModule: IDataModule
         get() = _dataModule
             ?: error("ServiceRegistry.dataModule accessed before initialize()")
-    val appModule: AppModule
+    val appModule: IAppModule
         get() = _appModule
             ?: error("ServiceRegistry.appModule accessed before initialize()")
-    val coroutineModule: CoroutineModule
+    val coroutineModule: ICoroutineModule
         get() = _coroutineModule
             ?: error("ServiceRegistry.coroutineModule accessed before initialize()")
 
     /**
-     * Initialize all modules. Must be called from EhApplication.onCreate()
-     * after Settings and EhDB have been initialized.
+     * Initialize all modules with their production implementations. Must be called
+     * from EhApplication.onCreate() after Settings and EhDB have been initialized.
      */
     fun initialize(context: Context) {
         _appModule = AppModule(context).also { it.initialize() }
         _coroutineModule = CoroutineModule()
-        _networkModule = NetworkModule(context)
-        _clientModule = ClientModule(context, networkModule)
+        val network = NetworkModule(context)
+        _networkModule = network
+        _clientModule = ClientModule(context, network)
         _dataModule = DataModule(context)
     }
 
     /**
-     * Initialize only the coroutine module — for tests that don't need
-     * full ServiceRegistry but need CoroutineBridge to work.
+     * Install test doubles for any subset of modules. Any module left `null` keeps
+     * whatever was previously installed (typically nothing in a fresh test), allowing
+     * callers to layer mocks on top of a previous [initializeForTest] call.
+     *
+     * Use [com.hippo.ehviewer.TestServiceRegistryHelper] for the common case of
+     * wiring an in-memory database + a `MockWebServer`-backed OkHttp client.
      */
     @androidx.annotation.VisibleForTesting
-    fun initializeForTest(coroutine: CoroutineModule) {
-        _coroutineModule = coroutine
+    fun initializeForTest(
+        coroutine: ICoroutineModule? = CoroutineModule(),
+        network: INetworkModule? = null,
+        client: IClientModule? = null,
+        data: IDataModule? = null,
+        app: IAppModule? = null,
+    ) {
+        if (coroutine != null) _coroutineModule = coroutine
+        if (network != null) _networkModule = network
+        if (client != null) _clientModule = client
+        if (data != null) _dataModule = data
+        if (app != null) _appModule = app
     }
 
     /**
