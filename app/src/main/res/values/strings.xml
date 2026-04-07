@@ -1195,6 +1195,9 @@
     <string name="lrr_dns_error">Cannot resolve server address, please check URL</string>
     <string name="lrr_ssl_error">Secure connection failed, please check server certificate</string>
     <string name="lrr_cleartext_refused_error">Plain HTTP request refused by app policy. Enable \"Trust this server over plain HTTP\" in the server settings or use HTTPS.</string>
+    <string name="lrr_allow_cleartext_label">Trust this server over plain HTTP (LAN only)</string>
+    <string name="lrr_allow_cleartext_helper">Required when the server URL uses http://. Only enable for trusted LAN networks.</string>
+    <string name="lrr_allow_cleartext_required">Plain HTTP requires explicit consent. Tick the box or use HTTPS.</string>
     <string name="lrr_keystore_failed_title">Credential Storage Unavailable</string>
     <string name="lrr_keystore_failed_message">The device keystore is unavailable. Your API key could not be loaded. Please re-enter your server credentials.</string>
     <string name="lrr_auth_failed_short">Authentication failed</string>
