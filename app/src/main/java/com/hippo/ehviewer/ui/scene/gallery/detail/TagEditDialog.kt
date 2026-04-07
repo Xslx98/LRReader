@@ -14,7 +14,9 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.lifecycleScope
 import com.hippo.android.resource.AttrResources
 import com.hippo.drawable.RoundSideRectDrawable
 import com.hippo.ehviewer.R
@@ -24,8 +26,9 @@ import com.hippo.ehviewer.client.lrr.LRRClientProvider
 import com.hippo.ehviewer.client.lrr.LRRTagCache
 import com.hippo.ehviewer.client.lrr.friendlyError
 import com.hippo.ehviewer.client.lrr.runSuspend
-import com.hippo.util.IoThreadPoolExecutor
 import com.hippo.widget.AutoWrapLayout
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Dialog for editing archive tags. Shows tags grouped by namespace using the
@@ -431,7 +434,7 @@ object TagEditDialog {
         tags: String,
         callback: Callback?
     ) {
-        IoThreadPoolExecutor.instance.execute {
+        (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
             try {
                 runSuspend {
                     LRRArchiveApi.updateMetadata(

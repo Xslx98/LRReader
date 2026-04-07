@@ -37,7 +37,6 @@ import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.unifile.UniFile
 import com.hippo.util.ExceptionUtils
-import com.hippo.util.IoThreadPoolExecutor
 import com.hippo.yorozuya.IOUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -296,7 +295,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
         dialog.setCancelable(false)
         dialog.show()
 
-        IoThreadPoolExecutor.instance.execute {
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             var importCount = 0
             try {
                 requireActivity().contentResolver.openInputStream(uri)?.use { inputStream ->
@@ -325,7 +324,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
                     }
                 } ?: run {
                     mainHandler.post { dismissAndShowResult(dialog, 0) }
-                    return@execute
+                    return@launch
                 }
             } catch (e: IOException) {
                 // importCount stays 0
@@ -536,7 +535,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
         }
 
         val activityRef = activity!!
-        IoThreadPoolExecutor.instance.execute {
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             val paths = mutableListOf<String>()
             collectImagePaths(downloadLocation, paths)
             if (paths.isNotEmpty()) {
