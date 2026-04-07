@@ -20,7 +20,9 @@ import android.util.AttributeSet
 import androidx.appcompat.app.AlertDialog
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.preference.MessagePreference
+import kotlinx.coroutines.launch
 
 class ClearDownloadPathCachePreference : MessagePreference {
 
@@ -40,7 +42,9 @@ class ClearDownloadPathCachePreference : MessagePreference {
     override fun onDialogClosed(positiveResult: Boolean) {
         super.onDialogClosed(positiveResult)
         if (positiveResult) {
-            EhDB.clearDownloadDirname()
+            ServiceRegistry.coroutineModule.ioScope.launch {
+                EhDB.clearDownloadDirnameAsync()
+            }
         }
     }
 }

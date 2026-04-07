@@ -33,6 +33,7 @@ import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.lib.yorozuya.collect.LongList
 import com.hippo.unifile.UniFile
 import com.hippo.util.IoThreadPoolExecutor
+import kotlinx.coroutines.launch
 import java.util.LinkedList
 
 /**
@@ -180,8 +181,8 @@ class DownloadLabelHelper(private val mCallback: Callback) {
         Settings.putRemoveImageFiles(deleteFiles)
         if (deleteFiles) {
             val gid = galleryInfo.gid
-            IoThreadPoolExecutor.instance.execute {
-                EhDB.removeDownloadDirname(gid)
+            ServiceRegistry.coroutineModule.ioScope.launch {
+                EhDB.removeDownloadDirnameAsync(gid)
             }
             val file = SpiderDen.getGalleryDownloadDir(galleryInfo)
             deleteFileAsync(file)
@@ -202,8 +203,8 @@ class DownloadLabelHelper(private val mCallback: Callback) {
             var i = 0
             for (info in downloadInfoList) {
                 val gid = info.gid
-                IoThreadPoolExecutor.instance.execute {
-                    EhDB.removeDownloadDirname(gid)
+                ServiceRegistry.coroutineModule.ioScope.launch {
+                    EhDB.removeDownloadDirnameAsync(gid)
                 }
                 files[i] = SpiderDen.getGalleryDownloadDir(info)
                 i++
