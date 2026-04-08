@@ -332,9 +332,6 @@
     <string name="remove_from_favorite_success">移除分類</string>
     <string name="add_to_favorite_failure">新增分類失敗</string>
     <string name="remove_from_favorite_failure">移除分類失敗</string>
-    <string name="filter_the_uploader">封鎖上傳者“%s”？</string>
-    <string name="filter_the_tag">封鎖標籤“%s”？</string>
-    <string name="filter_added">已新增封鎖項</string>
     <string name="copy_tag">複製</string>
 
     <!-- Rating -->
@@ -478,19 +475,8 @@
     <string name="clear_all">全部清除</string>
     <string name="clear_all_history">清除所有閲讀紀錄？</string>
 
-    <!-- Filter -->
-    <string name="filter">封鎖畫廊</string>
-    <string name="no_filter">這裏是封鎖列表</string>
-    <string name="filter_title">標題</string>
-    <string name="filter_uploader">上傳者</string>
-    <string name="filter_tag">標籤</string>
-    <string name="filter_tag_namespace">標籤組</string>
-    <string name="delete_filter">刪除封鎖項“%s”？</string>
     <string name="tip">提示</string>
-    <string name="add_filter">新增封鎖項目</string>
     <string name="show_definition">顯示定義</string>
-    <string name="filter_text">封鎖項文字</string>
-    <string name="filter_tip">該封鎖系統會在 LANraragi 網站封鎖系統的基礎上繼續封鎖畫廊。\n\n標題封鎖項：排除標題含有該關鍵字的畫廊。\n\n上傳者封鎖項：排除該上傳者上傳的畫廊。\n\n標籤封鎖項：排除包含該標籤的畫廊，這會使獲取畫廊列表花費更多時間。\n\n標籤組封鎖項：排除包含該標籤組的畫廊，這會使獲取畫廊列表花費更多時間。</string>
 
     <!-- Set Security -->
     <string name="set_pattern_protection">設定圖形解鎖</string>
@@ -585,8 +571,6 @@
     <string name="settings_eh_show_tag_translations_summary">以翻譯後的標籤代替原文標籤（需花費時間下載數據檔案）</string>
     <string name="settings_eh_tag_translations_source">補充翻譯（由 EhTagTranslator 提供）</string>
     <string name="settings_eh_tag_translations_source_url">https://github.com/Mapaler/EhTagTranslator/wiki</string>
-    <string name="settings_eh_filter">封鎖畫廊</string>
-    <string name="settings_eh_filter_summary">根據標題、上傳者、標籤封鎖畫廊</string>
     <string name="settings_eh_cellular_network_warning">流動網絡警告</string>
 
     <string name="settings_read">閲讀</string>

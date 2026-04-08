@@ -280,9 +280,6 @@ Bloquear comentarista: ocultar los comentarios de este usuario. Puede tardar má
     <string name="remove_from_favorite_success">Eliminado de categorías</string>
     <string name="add_to_favorite_failure">No se ha podido Agregar a categoría</string>
     <string name="remove_from_favorite_failure">Error al borrar de categorías</string>
-    <string name="filter_the_uploader">¿Bloquear el uploader \"%s\"?</string>
-    <string name="filter_the_tag">¿Bloquear la etiqueta \"%s\"?</string>
-    <string name="filter_added">Bloqueador añadido</string>
     <string name="copy_tag">Copiar etiqueta</string>
 
     <!-- Rating -->
@@ -425,19 +422,8 @@ Bloquear comentarista: ocultar los comentarios de este usuario. Puede tardar má
     <string name="clear_all">Limpiar todo</string>
     <string name="clear_all_history">¿Limpiar historial?</string>
 
-    <!-- Filter -->
-    <string name="filter">Bloquear galería</string>
-    <string name="no_filter">Los bloqueadores se mostrarán aquí</string>
-    <string name="filter_title">Título</string>
-    <string name="filter_uploader">Uploader</string>
-    <string name="filter_tag">Etiqueta</string>
-    <string name="filter_tag_namespace">Espacio de nombres de etiqueta</string>
-    <string name="delete_filter">¿Eliminar bloqueador \"%s\"?</string>
     <string name="tip">Consejo</string>
-    <string name="add_filter">Añadir bloqueador</string>
     <string name="show_definition">Mostrar definición</string>
-    <string name="filter_text">Texto del bloqueador</string>
-    <string name="filter_tip">Este sistema de bloqueo filtra el resultado del sistema de bloqueo del sitio web LANraragi.\n\nBloqueador de título: excluye la galería cuyo título contiene la palabra.\n\nBloqueador de uploader: excluye la galería que fue subida por el uploader.\n\nBloqueador de etiqueta: excluye la galería que contiene la etiqueta, toma más tiempo obtener la lista de galerías.\n\nBloqueador de espacio de nombres de etiqueta: excluye la galería que contiene el espacio de nombres de etiqueta, toma más tiempo obtener la lista de galerías.</string>
 
     <!-- Set Security -->
     <string name="set_pattern_protection">Establecer protección por patrón</string>
@@ -500,8 +486,6 @@ Bloquear comentarista: ocultar los comentarios de este usuario. Puede tardar má
     <string name="settings_eh_show_tag_translations_summary">Mostrar traducciones de etiquetas en lugar del texto original (Toma tiempo descargar el archivo de datos)</string>
     <string name="settings_eh_tag_translations_source">Marcador de posición</string>
     <string name="settings_eh_tag_translations_source_url">https://placeholder</string>
-    <string name="settings_eh_filter">Bloquear galería</string>
-    <string name="settings_eh_filter_summary">Bloquear galería por título, uploader y etiquetas</string>
     <string name="settings_eh_cellular_network_warning">Advertencia de redes móviles</string>
 
     <string name="settings_read">Lectura</string>
