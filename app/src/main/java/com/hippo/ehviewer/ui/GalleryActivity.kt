@@ -43,7 +43,6 @@ import com.hippo.ehviewer.event.AppEventBus
 import com.hippo.ehviewer.event.GalleryActivityEvent
 import com.hippo.ehviewer.gallery.ArchiveGalleryProvider
 import com.hippo.ehviewer.gallery.DirGalleryProvider
-import com.hippo.ehviewer.gallery.EhGalleryProvider
 import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.gallery.LRRGalleryProvider
 import com.hippo.ehviewer.ui.gallery.GalleryImageOperations
@@ -76,7 +75,6 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
 
     companion object {
         const val ACTION_DIR = "dir"
-        const val ACTION_EH = "eh"
         const val ACTION_LRR = "lrr"
 
         const val KEY_ACTION = "action"
@@ -155,12 +153,6 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                     } else {
                         DirGalleryProvider(uniFile)
                     }
-                }
-            }
-            ACTION_EH -> {
-                val galleryInfo = mGalleryInfo
-                if (galleryInfo != null) {
-                    mGalleryProvider = EhGalleryProvider(this, galleryInfo)
                 }
             }
             ACTION_LRR -> {

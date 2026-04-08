@@ -906,15 +906,13 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 return
             }
 
-            val galleryInfo = getGalleryInfo()
-            val index = v.getTag(R.id.index)
-            if (galleryInfo != null && index is Int) {
-                val intent = Intent(mContext, GalleryActivity::class.java)
-                intent.action = GalleryActivity.ACTION_EH
-                intent.putExtra(GalleryActivity.KEY_GALLERY_INFO, galleryInfo)
-                intent.putExtra(GalleryActivity.KEY_PAGE, index)
-                startActivity(intent)
-            }
+            // The v.getTag(R.id.index) path was an EhViewer-era preview-thumbnail
+            // click handler that opened the gallery reader at a specific page via
+            // GalleryActivity.ACTION_EH. The preview grid has been dead since the
+            // LRR conversion (LRRArchive hardcodes previewPages = 0 and nothing
+            // ever calls setTag(R.id.index, ...) on any view), so this branch is
+            // unreachable and has been removed as a follow-up to the
+            // EhGalleryProvider investigation (2026-04-08).
         }
     }
 
