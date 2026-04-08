@@ -18,7 +18,7 @@ import java.nio.ByteBuffer
 import java.security.MessageDigest
 
 /**
- * Migration path tests for AppDatabase v9 -> v10 -> v11 -> v12 -> v13 -> v14 -> v15 -> v16.
+ * Migration path tests for AppDatabase v9 -> v10 -> v11 -> v12 -> v13 -> v14 -> v15 -> v16 -> v17.
  *
  * These tests exercise the actual migration SQL by:
  * 1. Creating a database at the source version schema
@@ -26,7 +26,7 @@ import java.security.MessageDigest
  * 3. Running the migration object's migrate() method
  * 4. Verifying data integrity and schema changes
  *
- * Unlike RoomMigrationTest (which validates the current v16 schema),
+ * Unlike RoomMigrationTest (which validates the current v17 schema),
  * these tests verify each migration step preserves data correctly.
  *
  * Run with: ./gradlew testAppReleaseDebugUnitTest --tests "*.RoomMigrationPathTest"
@@ -814,10 +814,71 @@ class RoomMigrationPathTest {
         assertFalse(getTableNames(db).contains("Black_List"))
     }
 
-    // ========== Test 5: Full migration v9 -> v16 ==========
+    // ========== Test 4e: v16 -> v17 (Drop BOOKMARKS table) ==========
 
     @Test
-    fun `migrate all v9 to v16 - full chain preserves data`() {
+    fun `migrate 16 to 17 - BOOKMARKS table is dropped`() {
+        // Build a v16 schema by chaining migrations from v9.
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
+
+        // Seed a couple of BOOKMARKS rows so we can verify they vanish on drop.
+        // v9 BOOKMARKS schema: GID PK, TOKEN, TITLE, PAGE NOT NULL, TIME NOT NULL,
+        // CATEGORY NOT NULL, RATING NOT NULL, plus optional TITLE_JPN/THUMB/etc.
+        db.execSQL(
+            "INSERT INTO BOOKMARKS (GID, TOKEN, TITLE, PAGE, TIME, CATEGORY, RATING) " +
+                "VALUES (1001, 'bm_token_1', 'Doomed Bookmark 1', 42, 1700000000000, 0, 0.0)"
+        )
+        db.execSQL(
+            "INSERT INTO BOOKMARKS (GID, TOKEN, TITLE, PAGE, TIME, CATEGORY, RATING) " +
+                "VALUES (1002, 'bm_token_2', 'Doomed Bookmark 2', 17, 1700000001000, 0, 0.0)"
+        )
+
+        assertTrue("BOOKMARKS must exist before v16→v17 migration",
+            getTableNames(db).contains("BOOKMARKS"))
+
+        AppDatabase.MIGRATION_16_17.migrate(db)
+
+        assertFalse("BOOKMARKS must be gone after v16→v17 migration",
+            getTableNames(db).contains("BOOKMARKS"))
+
+        // Other tables remain intact.
+        val tables = getTableNames(db)
+        assertTrue(tables.contains("DOWNLOADS"))
+        assertTrue(tables.contains("HISTORY"))
+        assertTrue(tables.contains("SERVER_PROFILES"))
+    }
+
+    @Test
+    fun `migrate 16 to 17 - missing BOOKMARKS table is a no-op`() {
+        // Some users may be on a v16 schema where BOOKMARKS was already dropped manually
+        // (e.g. via DB editor). DROP TABLE IF EXISTS guarantees idempotency.
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
+        db.execSQL("DROP TABLE BOOKMARKS")
+
+        // Should not throw.
+        AppDatabase.MIGRATION_16_17.migrate(db)
+
+        assertFalse(getTableNames(db).contains("BOOKMARKS"))
+    }
+
+    // ========== Test 5: Full migration v9 -> v17 ==========
+
+    @Test
+    fun `migrate all v9 to v17 - full chain preserves data`() {
         db = createDatabase(9) { createV9Schema(it) }
 
         val token = "full_chain_test_arcid"
@@ -847,7 +908,7 @@ class RoomMigrationPathTest {
             arrayOf<Any>(oldGid)
         )
 
-        // Run all 7 migrations in order
+        // Run all 8 migrations in order
         AppDatabase.MIGRATION_9_10.migrate(db)
         AppDatabase.MIGRATION_10_11.migrate(db)
         AppDatabase.MIGRATION_11_12.migrate(db)
@@ -855,6 +916,7 @@ class RoomMigrationPathTest {
         AppDatabase.MIGRATION_13_14.migrate(db)
         AppDatabase.MIGRATION_14_15.migrate(db)
         AppDatabase.MIGRATION_15_16.migrate(db)
+        AppDatabase.MIGRATION_16_17.migrate(db)
 
         // Verify GID recomputation (v9->v10)
         db.query("SELECT GID, TOKEN, TITLE, RATING FROM DOWNLOADS").use { c ->
@@ -909,7 +971,7 @@ class RoomMigrationPathTest {
     }
 
     @Test
-    fun `migrate all v9 to v16 - empty database succeeds`() {
+    fun `migrate all v9 to v17 - empty database succeeds`() {
         db = createDatabase(9) { createV9Schema(it) }
 
         // Run all migrations on empty database -- should not throw
@@ -920,6 +982,7 @@ class RoomMigrationPathTest {
         AppDatabase.MIGRATION_13_14.migrate(db)
         AppDatabase.MIGRATION_14_15.migrate(db)
         AppDatabase.MIGRATION_15_16.migrate(db)
+        AppDatabase.MIGRATION_16_17.migrate(db)
 
         // Verify tables still exist and are queryable
         db.query("SELECT COUNT(*) FROM DOWNLOADS").use { c ->
@@ -933,7 +996,7 @@ class RoomMigrationPathTest {
     }
 
     @Test
-    fun `migrate all v9 to v16 - final schema matches Room v16`() {
+    fun `migrate all v9 to v17 - final schema matches Room v17`() {
         db = createDatabase(9) { createV9Schema(it) }
 
         AppDatabase.MIGRATION_9_10.migrate(db)
@@ -943,15 +1006,16 @@ class RoomMigrationPathTest {
         AppDatabase.MIGRATION_13_14.migrate(db)
         AppDatabase.MIGRATION_14_15.migrate(db)
         AppDatabase.MIGRATION_15_16.migrate(db)
+        AppDatabase.MIGRATION_16_17.migrate(db)
 
-        // Verify all 9 tables exist (FILTER was dropped in v14→v15,
-        // Black_List was dropped in v15→v16)
+        // Verify all 8 tables exist (FILTER dropped in v14→v15,
+        // Black_List dropped in v15→v16, BOOKMARKS dropped in v16→v17)
         val tables = getTableNames(db)
         val expectedTables = setOf(
             "DOWNLOADS", "DOWNLOAD_LABELS", "DOWNLOAD_DIRNAME",
             "HISTORY", "LOCAL_FAVORITES", "QUICK_SEARCH",
             "Gallery_Tags",
-            "BOOKMARKS", "SERVER_PROFILES"
+            "SERVER_PROFILES"
         )
         assertEquals(expectedTables, tables)
 
