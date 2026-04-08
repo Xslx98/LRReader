@@ -6,7 +6,7 @@
 
 - **Application ID:** `com.lanraragi.reader`
 - **Namespace:** `com.hippo.ehviewer` (legacy, retained from EhViewer)
-- **Current Version:** 1.11.0 (versionCode 11100 — formula: `MAJOR*10000 + MINOR*100 + PATCH`)
+- **Current Version:** 1.11.3 (versionCode 11103 — formula: `MAJOR*10000 + MINOR*100 + PATCH`)
 - **License:** GPLv3
 
 ---
