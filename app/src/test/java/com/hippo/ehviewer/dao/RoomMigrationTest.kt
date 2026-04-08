@@ -52,7 +52,7 @@ class RoomMigrationTest {
     // ========== Schema Integrity Tests ==========
 
     @Test
-    fun `schema has all 9 expected tables`() {
+    fun `schema has all 8 expected tables`() {
         val cursor = sqliteDb.query(
             "SELECT name FROM sqlite_master WHERE type='table' " +
                 "AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'room_%' " +
@@ -68,7 +68,7 @@ class RoomMigrationTest {
             "DOWNLOADS", "DOWNLOAD_LABELS", "DOWNLOAD_DIRNAME",
             "HISTORY", "LOCAL_FAVORITES", "QUICK_SEARCH",
             "Gallery_Tags",
-            "BOOKMARKS", "SERVER_PROFILES"
+            "SERVER_PROFILES"
         )
         assertEquals(expectedTables, tables)
     }
@@ -258,23 +258,6 @@ class RoomMigrationTest {
     }
 
     // ========== MiscRoomDao CRUD Tests ==========
-
-    @Test
-    fun `MiscDao bookmark insert and query`() = runBlocking {
-        val dao = db.miscDao()
-        val bookmark = BookmarkInfo().apply {
-            gid = 6001L
-            token = "bm_token"
-            title = "Bookmarked Gallery"
-            page = 42
-            time = System.currentTimeMillis()
-        }
-        dao.insertBookmark(bookmark)
-
-        val result = dao.loadBookmark(6001L)
-        assertNotNull(result)
-        assertEquals(42, result!!.page)
-    }
 
     @Test
     fun `MiscDao serverProfile CRUD`() = runBlocking {
