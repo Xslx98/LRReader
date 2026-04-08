@@ -21,7 +21,7 @@
 | Build | Gradle + AGP 8.13.2 | `./gradlew` + Version Catalog (`libs.versions.toml`) |
 | Network | OkHttp | 4.12.0 |
 | API Serialization | kotlinx-serialization | 1.8.1 (all JSON, Gson removed) |
-| Database | Room + KSP | 2.6.1, schema v16 (exported to `app/schemas/`) |
+| Database | Room + KSP | 2.6.1, schema v18 (exported to `app/schemas/`) |
 | Coroutines | kotlinx-coroutines | 1.10.2 |
 | Lifecycle | AndroidX lifecycle-runtime-ktx | 2.8.7 |
 | Image Decoding | Custom C/JNI (libjpeg-turbo, libpng, libwebp) | CMake |
@@ -106,7 +106,7 @@ LRReader/
 | `client/lrr/LRRDatabaseApi.kt` | Tag statistics + database operations |
 | `client/lrr/LRRTagCache.kt` | In-memory tag autocomplete cache (10-min TTL) |
 | `client/lrr/LRRArchivePagingSource.kt` | Paging 3 source for gallery list |
-| `dao/AppDatabase.kt` | Room database schema (v16, schema exported) |
+| `dao/AppDatabase.kt` | Room database schema (v18, schema exported) |
 | `util/FlowBridge.kt` | Java→Kotlin Flow bridge for lifecycle-aware collection |
 | `ui/MainActivity.kt` | Main UI entry point + scene routing |
 | `ui/GalleryActivity.kt` | Reader/detail view |
@@ -211,7 +211,7 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 
 - All entities and DAOs in `dao/` package
 - Use KSP (not KAPT) for annotation processing
-- Schema version is v16; exported to `app/schemas/` — always provide a `Migration` when bumping
+- Schema version is v18; exported to `app/schemas/` — always provide a `Migration` when bumping
 - **Never** use `fallbackToDestructiveMigration()` in production code
 - `AppDatabase.kt` is the single Room database instance
 
@@ -267,8 +267,8 @@ Unit tests live in `app/src/test/java/`, covering:
 - `DownloadSpeedTrackerTest` — speed calculation + remaining time
 - `GalleryInfoParcelTest` — Parcelable round-trip for GalleryInfo + DownloadInfo (11 tests)
 - `TagEditDialogTest` — tag parsing + formatting round-trip (18 tests)
-- `RoomMigrationTest` — schema integrity verification (validates current v16 schema)
-- `RoomMigrationPathTest` — migration path tests v9→v10→v11→v12→v13→v14→v15→v16
+- `RoomMigrationTest` — schema integrity verification (validates current v18 schema)
+- `RoomMigrationPathTest` — migration path tests v9→v10→v11→v12→v13→v14→v15→v16→v17→v18
 - `ServerProfileDaoTest` — DAO CRUD verification
 - `GalleryInfoDiffTest` — DiffUtil identity/content equality contracts
 - `ContentHelperDiffUtilTest` — DiffUtil dispatch operations
@@ -334,11 +334,11 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 4. **LRR API surface:** Full LANraragi REST API wrapped in `client/lrr/`. Add new endpoints here as `suspend` functions returning `@Serializable` data classes. Use `parseBaseUrl(baseUrl)` from `LRRApiUtils.kt` to build URLs — never `toHttpUrlOrNull()!!`.
 
-5. **Room schema migrations:** Schema at v16, exported. Write an explicit `Migration` object for every schema change.
+5. **Room schema migrations:** Schema at v18, exported. Write an explicit `Migration` object for every schema change.
 
 6. **DiffUtil in ContentLayout and DownloadsScene:** `ContentHelper.dispatchDiffUpdates()` for gallery list updates. `DownloadsScene` uses `DownloadInfoDiffCallback` with `gid`-based identity for `onUpdateAll()`/`onReload()`. Avoid `notifyDataSetChanged()` — use specific notifications or DiffUtil.
 
-7. **EhDB dual API:** 3 remaining `@JvmStatic` `blockingDb()` bridge methods exist as a legacy compatibility layer. Inventory (per W1-2, 2026-04-07): `getDownloadDirname` (1 caller), `putDownloadDirname` (3 callers), `queryGalleryTags` (1 caller). The fourth historical bridge `putDownloadInfo` was deleted as a dead-bridge follow-up. All 5 live call sites are Kotlin (`SpiderDen.kt`, `DownloadListInfosExecutor.kt`) and already run off the main thread, so the eventual W3 migration to `*Async` variants is mechanical. **Behaviour after W1-2**: `blockingDb()` hard-throws `IllegalStateException` in **debug** builds when called from the main thread, forcing offenders to be migrated; **release** builds only `Log.w` (which W1-6's R8 `-assumenosideeffects` rule then strips entirely, making release a silent passthrough). Kotlin callers must use the `suspend fun *Async()` variants from a coroutine scope. Do NOT add new `blockingDb` bridges.
+7. **EhDB dual API:** 2 remaining `@JvmStatic` `blockingDb()` bridge methods exist as a legacy compatibility layer. Inventory (updated after C5, 2026-04-08): `getDownloadDirname` (1 caller) and `putDownloadDirname` (3 callers) — both called from `SpiderDen.kt` during download directory resolution, all Kotlin and all already off the main thread. The historical bridges `putDownloadInfo` (dead bridge, removed) and `queryGalleryTags` (dead cache, removed in C5 along with the Gallery_Tags entity) are gone. **Behaviour after W1-2**: `blockingDb()` hard-throws `IllegalStateException` in **debug** builds when called from the main thread, forcing offenders to be migrated; **release** builds only `Log.w` (which W1-6's R8 `-assumenosideeffects` rule then strips entirely, making release a silent passthrough). Kotlin callers must use the `suspend fun *Async()` variants from a coroutine scope. Do NOT add new `blockingDb` bridges.
 
 8. **Download subsystem (100% Kotlin, coroutine-based):** `DownloadManager.kt` (state management via `Mutex` + `CompletableDeferred`), `LRRDownloadWorker.kt` (background downloads with retry, format validation), `DownloadSpeedTracker.kt` (speed monitoring), `DownloadInfoListener.kt`/`DownloadListener.kt` (interfaces). Thread-safe via `Mutex` for shared state, `CopyOnWriteArrayList` for active tasks, `ConcurrentHashMap` for workers. All DB writes use `scope.launch { EhDB.*Async() }` — never `runBlocking`. Worker callbacks use immutable `sealed interface DownloadEvent` (not mutable object pool). `awaitInit()` has 10s timeout + main-thread guard. Constructor accepts `CoroutineScope` for testability. `containLabel()` uses `HashSet` for O(1) lookup. LRU cache (500 MB) for page images. 18 unit tests cover state machine, labels, queue, and notifications.
 
@@ -372,11 +372,16 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 23. **App startup order:** `EhApplication.onCreate()` initializes core services synchronously (Settings, LRRAuthManager, EhDB, ServiceRegistry) then defers heavy work to background: JNI initialization (Image, Native, A7Zip, BitmapUtils) runs on `IoThreadPoolExecutor`. Profile migration and old DB merge also run on background threads via `AppModule.bootScope` (W1-1).
 
-24. **EhFilter + BlackList subsystems removed:** Two dead EhViewer-era blocking subsystems have been deleted:
-    - **EhFilter** (C2, audit 2026-04-07): user-defined title/uploader/tag blacklist. The consumption path had already been severed during the EhViewer→LRR conversion (filters were written but never read). Deleted: `EhFilter`, `Filter` Room entity, `EhFilterTest`, UI entry points, string resources. Room v14→v15 dropped the `FILTER` table.
-    - **BlackList** (C3, audit 2026-04-07): user-defined bad-uploader blacklist with its own management Activity. Investigation found `BlackListActivity` was fully unreachable — no Intent, menu item or preference ever launched it. Deleted: `BlackListActivity`, `BlackList` Room entity, `BlackListTest`, layouts (`activity_blacklist.xml`, `dialog_add_blacklist.xml`), AndroidManifest declaration, DAO, EhDB API, string resources, arrays, ids. Room v15→v16 dropped the `Black_List` table. Side benefit: finally deleted the 9-year-old EhViewer-era homophobic-slur column-mapped field name.
+24. **Legacy EhViewer subsystems removed:** Over the course of cleanups C2 through C6, several dead EhViewer-era subsystems were deleted from the codebase. Investigation uncovered each of these as either (a) structurally severed during the EhViewer→LRR conversion with no consumer ever reconnected, or (b) a stub left "for structural compatibility" whose structural compatibility argument had decayed to zero live references:
+    - **EhFilter** (C2, 2026-04-07): user-defined title/uploader/tag blacklist. Filters were written to `FILTER` table but the consumption path (`filterTitle`/`filterTag`/`filterUploader`) had zero callers. Deleted: `EhFilter`, `Filter` entity, `EhFilterTest`, UI entry points, string resources. Room v14→v15 dropped `FILTER`.
+    - **BlackList** (C3, 2026-04-07): user-defined bad-uploader blacklist. `BlackListActivity` was fully unreachable — no Intent/menu/preference ever launched it. Deleted: Activity, entity, layouts, manifest declaration, DAO, EhDB API, strings, arrays, ids. Room v15→v16 dropped `Black_List`. Side benefit: finally deleted the 9-year-old EhViewer-era homophobic-slur column-mapped field name.
+    - **BookmarkInfo** (C4, 2026-04-08): per-gallery "reader bookmark" entity. Zero callers for any of its DAO methods anywhere outside the DAO; not even wrapped in `EhDB.kt`. Deleted: entity + DAO section. Room v16→v17 dropped `BOOKMARKS`.
+    - **GalleryTags** (C5, 2026-04-08): per-gallery tag cache. Dead cache — `insertGalleryTags`/`updateGalleryTags` had zero callers, so the table was never populated; the single reader (`queryGalleryTags` via `DownloadListInfosExecutor.searchTagList`) always got null. Real tag data is populated directly into `DownloadInfo.tgList` by `LRRArchive.toGalleryInfo()` from the LRR API response. Deleted: entity + DAO section + `EhDB.queryGalleryTags` blockingDb bridge + the dead `searchTagList`/`parserList` helpers in `DownloadListInfosExecutor`. Room v17→v18 dropped `Gallery_Tags`. Also brought the `@JvmStatic blockingDb` bridge count from 3 to 2.
+    - **Stubs** (C6, 2026-04-08): `FavoritesScene` (empty scene, only referenced via dead `registerLaunchMode`), `FavoriteListSortDialog` (literally an empty class), and `EhGalleryProvider` (stub provider whose `ACTION_EH` trigger path at `GalleryDetailScene` was confirmed dead — `R.id.index` is declared but never set by any code, preview grid is never populated from LRR metadata). Deleted the classes, the `ACTION_EH` constant + branch in `GalleryActivity`, and the dead click handler in `GalleryDetailScene`.
 
-    LR Reader is a private library client where users curate stored content directly — there is no use case for in-app personal blocklists. If you find any surviving references to `EhFilter`, `BlackList`, `Filter::class`, `BlackList::class`, `filterTitle/filterTag/filterUploader`, `R.string.filter_*`, `R.string.blacklist*`, or the dead orphan test fixture `EhNews.html`, they are bugs from an incomplete revert; remove them.
+    LR Reader is a private library client where users curate stored content directly — there is no use case for in-app personal blocklists, per-gallery bookmarks, or EhViewer-era favourites. If you find any surviving references to `EhFilter`, `BlackList`, `BookmarkInfo`, `GalleryTags`, `FavoritesScene`, `FavoriteListSortDialog`, `EhGalleryProvider`, `ACTION_EH`, `Filter::class`, `BlackList::class`, `BookmarkInfo::class`, `GalleryTags::class`, `R.string.filter_*`, `R.string.blacklist*`, or the dead orphan test fixture `EhNews.html`, they are bugs from an incomplete revert; remove them.
+
+    **Remaining cosmetic cleanup (not blocking):** `gallery_detail_previews.xml` layout file + its `<include>` in `gallery_detail_content.xml` and `R.id.index` in `values/ids.xml` are leftover resources that are no longer referenced by any code after EhGalleryProvider removal. Safe to delete in a future UI-resources sweep.
 
 25. **ProGuard log stripping:** Release builds strip `Log.v()`, `Log.d()`, `Log.i()`, and `Log.w()` via `-assumenosideeffects`. Only `Log.e()` is preserved for crash diagnostics.
 
