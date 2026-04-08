@@ -52,7 +52,7 @@ class RoomMigrationTest {
     // ========== Schema Integrity Tests ==========
 
     @Test
-    fun `schema has all 8 expected tables`() {
+    fun `schema has all 7 expected tables`() {
         val cursor = sqliteDb.query(
             "SELECT name FROM sqlite_master WHERE type='table' " +
                 "AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'room_%' " +
@@ -67,7 +67,6 @@ class RoomMigrationTest {
         val expectedTables = setOf(
             "DOWNLOADS", "DOWNLOAD_LABELS", "DOWNLOAD_DIRNAME",
             "HISTORY", "LOCAL_FAVORITES", "QUICK_SEARCH",
-            "Gallery_Tags",
             "SERVER_PROFILES"
         )
         assertEquals(expectedTables, tables)
@@ -286,22 +285,6 @@ class RoomMigrationTest {
 
         val all = dao.getAllServerProfiles()
         assertTrue(all.none { it.isActive })
-    }
-
-    @Test
-    fun `MiscDao galleryTags insert and query`() = runBlocking {
-        val dao = db.miscDao()
-        val tags = GalleryTags().apply {
-            gid = 7001L
-            artist = "test_artist"
-            language = "chinese"
-        }
-        dao.insertGalleryTags(tags)
-
-        val result = dao.queryGalleryTags(7001L)
-        assertNotNull(result)
-        assertEquals("test_artist", result!!.artist)
-        assertEquals("chinese", result.language)
     }
 
     // ========== Migration Testing Guide ==========
