@@ -33,8 +33,7 @@ import com.hippo.content.ContextLocalWrapper
 import com.hippo.content.RecordingApplication
 import com.hippo.ehviewer.client.EhFilter
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import com.hippo.ehviewer.module.AppModule
 import kotlinx.coroutines.launch
 import com.hippo.ehviewer.client.lrr.LRRClientProvider
 import com.hippo.ehviewer.settings.DownloadSettings
@@ -86,6 +85,12 @@ class EhApplication : RecordingApplication() {
     override fun onCreate() {
         instance = this
 
+        // Touch AppModule.bootScope so that bootCEH/bootScope/activeProfileIdDeferred
+        // are constructed before any other initialization that might want to launch
+        // boot-time work. ServiceRegistry is not yet initialized at this point — any
+        // coroutines launched from onCreate() before that point must use bootScope.
+        AppModule.bootScope
+
         val handler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
             try {
@@ -115,26 +120,33 @@ class EhApplication : RecordingApplication() {
         // every profile has its API key still encrypted in storage. If any profile
         // lost its key (KeyStore down or partial corruption) we flag reauth so the
         // MainActivity dialog directs the user to re-enter credentials.
-        // ServiceRegistry is not yet initialized, so use a standalone CoroutineScope.
-        CoroutineScope(Dispatchers.IO).launch {
+        // ServiceRegistry is not yet initialized, so use AppModule.bootScope which
+        // is supervised and routes uncaught exceptions through bootCEH.
+        AppModule.bootScope.launch {
+            var resolvedId: Long? = null
             try {
                 val allProfiles = EhDB.getAllServerProfilesAsync()
                 LRRAuthManager.markReauthIfProfilesUnprotected(allProfiles.map { it.id })
                 val activeProfile = allProfiles.firstOrNull { it.isActive }
                 if (activeProfile != null) {
                     LRRAuthManager.setActiveProfileId(activeProfile.id)
+                    resolvedId = activeProfile.id
                 }
             } catch (_: com.hippo.ehviewer.client.lrr.LRRSecureStorageUnavailableException) {
                 // KeyStore unavailable — markReauthIfProfilesUnprotected already flagged
                 // it (or initialize() did), and MainActivity will surface the dialog.
             } catch (_: Exception) {
                 // DB not ready yet on first launch — safe to ignore
+            } finally {
+                // Always complete the deferred so awaiters never hang, even on the
+                // failure path. complete() is a no-op if already completed.
+                AppModule.activeProfileIdDeferred.complete(resolvedId)
             }
         }
 
         // Legacy migration — runs once on first launch after upgrading from old DB format.
-        // ServiceRegistry is not yet initialized, so use a standalone CoroutineScope.
-        CoroutineScope(Dispatchers.IO).launch {
+        // ServiceRegistry is not yet initialized, so use AppModule.bootScope.
+        AppModule.bootScope.launch {
             if (EhDB.needMerge()) {
                 EhDB.mergeOldDB(this@EhApplication)
             }
