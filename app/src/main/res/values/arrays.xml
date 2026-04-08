@@ -298,10 +298,6 @@
         <item>@string/add_to_favourites</item>
     </string-array>
 
-    <string-array name="blacklist_entries">
-        <item>@string/blacklist_id</item>
-    </string-array>
-
     <string-array name="tag_menu_entries">
         <item>@string/show_definition</item>
     </string-array>

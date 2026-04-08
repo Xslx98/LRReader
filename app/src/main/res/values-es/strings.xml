@@ -17,18 +17,6 @@
 <!-- 西班牙 -->
 <resources>
     <!--  black list  -->
-    <string name="blacklist_id">ID de usuario</string>
-    <string name="blacklist">Lista negra</string>
-    <string name="join_in_blacklist">Añadir a lista negra</string>
-    <string name="add_blacklist">Añadir usuario bloqueado</string>
-    <string name="blacklist_tip">Este sistema de bloqueo bloquea comentarios basándose en el sistema de comentarios de LANraragi.
-
-Bloquear comentarista: ocultar los comentarios de este usuario. Puede tardar más en cargar la lista de galerías.</string>
-    <string name="blacklist_text">Bloquear usuario</string>
-    <string name="delete_blacklist">¿Desbloquear usuario \"%s\"?</string>
-    <string name="blacklist_reason_text">Razón del bloqueo</string>
-    <string name="settings_eh_blacklist">Lista negra de comentarios</string>
-    <string name="settings_eh_blacklist_summary">Bloquear comentarios por nombre de cuenta</string>
     <string name="settings_advanced_dns_over_http_title">DNS seguro (DoH)</string>
     <string name="settings_advanced_dns_over_http_summary">Solucionar contaminación DNS en ciertas regiones</string>
     <string name="settings_advanced_domain_fronting_title">Domain fronting</string>
