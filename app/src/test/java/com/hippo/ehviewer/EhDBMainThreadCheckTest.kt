@@ -74,9 +74,11 @@ class EhDBMainThreadCheckTest {
      * W1-2 acceptance: any `@JvmStatic` blockingDb-bridged method must throw
      * [IllegalStateException] when invoked on the main thread in debug builds.
      *
-     * `EhDB.queryGalleryTags(...)` is one of four remaining bridges (the others being
-     * `getDownloadDirname`, `putDownloadDirname`, and `putDownloadInfo` — see
-     * `docs/blockingdb-callsites.md`). The guard inside `blockingDb` runs *before*
+     * `EhDB.queryGalleryTags(...)` is one of three remaining bridges (the others being
+     * `getDownloadDirname` and `putDownloadDirname` — see
+     * `docs/blockingdb-callsites.md`). The fourth historical bridge `putDownloadInfo`
+     * was deleted as a dead bridge follow-up to W1-2's inventory. The guard inside
+     * `blockingDb` runs *before*
      * `runBlocking { ... }`, so the test does not need `EhDB.initialize()` or a real
      * `sDatabase` — the throw fires first.
      */
