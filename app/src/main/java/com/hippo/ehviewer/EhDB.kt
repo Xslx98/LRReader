@@ -120,8 +120,16 @@ object EhDB {
     @JvmStatic
     fun needMerge(): Boolean = sHasOldDB
 
-    @JvmStatic
-    fun mergeOldDB(context: Context) {
+    /**
+     * Migrates data from the legacy SQLite database into the current Room database.
+     *
+     * Suspending function — must be called from a coroutine. The caller in
+     * [EhApplication.onCreate] already runs this on a `Dispatchers.IO`-backed
+     * `CoroutineScope`, so no `withContext(Dispatchers.IO)` wrap is required at
+     * this level. The DAO calls below are themselves suspending and Room dispatches
+     * them to its own background executor.
+     */
+    suspend fun mergeOldDB(context: Context) {
         val oldDBHelper = OldDBHelper(context)
         val oldDB: SQLiteDatabase
         try {
@@ -131,149 +139,147 @@ object EhDB {
             return
         }
 
-        runBlocking {
-            val downloadDao = sDatabase.downloadDao()
-            val browsingDao = sDatabase.browsingDao()
+        val downloadDao = sDatabase.downloadDao()
+        val browsingDao = sDatabase.browsingDao()
 
-            // Get GalleryInfo list
-            val map = SparseJLArray<GalleryInfo>()
-            try {
-                val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_GALLERY}", null)
-                cursor?.use {
-                    if (it.moveToFirst()) {
-                        while (!it.isAfterLast) {
-                            val gi = GalleryInfo()
-                            gi.gid = it.getInt(0).toLong()
-                            gi.token = it.getString(1)
-                            gi.title = it.getString(2)
-                            gi.posted = it.getString(3)
-                            gi.category = it.getInt(4)
-                            gi.thumb = it.getString(5)
-                            gi.uploader = it.getString(6)
-                            try {
-                                gi.rating = it.getFloat(7)
-                            } catch (e: Throwable) {
-                                ExceptionUtils.throwIfFatal(e)
-                                gi.rating = -1.0f
-                            }
-                            map.put(gi.gid, gi)
-                            it.moveToNext()
+        // Get GalleryInfo list
+        val map = SparseJLArray<GalleryInfo>()
+        try {
+            val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_GALLERY}", null)
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    while (!it.isAfterLast) {
+                        val gi = GalleryInfo()
+                        gi.gid = it.getInt(0).toLong()
+                        gi.token = it.getString(1)
+                        gi.title = it.getString(2)
+                        gi.posted = it.getString(3)
+                        gi.category = it.getInt(4)
+                        gi.thumb = it.getString(5)
+                        gi.uploader = it.getString(6)
+                        try {
+                            gi.rating = it.getFloat(7)
+                        } catch (e: Throwable) {
+                            ExceptionUtils.throwIfFatal(e)
+                            gi.rating = -1.0f
                         }
+                        map.put(gi.gid, gi)
+                        it.moveToNext()
                     }
                 }
-            } catch (e: Throwable) {
-                ExceptionUtils.throwIfFatal(e)
             }
+        } catch (e: Throwable) {
+            ExceptionUtils.throwIfFatal(e)
+        }
 
-            // Merge local favorites
-            try {
-                val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_LOCAL_FAVOURITE}", null)
-                cursor?.use {
-                    if (it.moveToFirst()) {
-                        var i = 0L
-                        while (!it.isAfterLast) {
-                            val gid = it.getInt(0).toLong()
-                            val gi = map.get(gid) ?: run {
-                                Log.e(TAG, "Can't get GalleryInfo with gid: $gid")
-                                it.moveToNext()
-                                return@use
-                            }
-                            val info = LocalFavoriteInfo(gi)
-                            info.time = i
-                            browsingDao.insertLocalFavorite(info)
+        // Merge local favorites
+        try {
+            val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_LOCAL_FAVOURITE}", null)
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    var i = 0L
+                    while (!it.isAfterLast) {
+                        val gid = it.getInt(0).toLong()
+                        val gi = map.get(gid) ?: run {
+                            Log.e(TAG, "Can't get GalleryInfo with gid: $gid")
                             it.moveToNext()
-                            i++
+                            return@use
                         }
+                        val info = LocalFavoriteInfo(gi)
+                        info.time = i
+                        browsingDao.insertLocalFavorite(info)
+                        it.moveToNext()
+                        i++
                     }
                 }
-            } catch (e: Throwable) {
-                ExceptionUtils.throwIfFatal(e)
             }
+        } catch (e: Throwable) {
+            ExceptionUtils.throwIfFatal(e)
+        }
 
-            // Merge quick search
-            try {
-                val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_TAG}", null)
-                cursor?.use {
-                    if (it.moveToFirst()) {
-                        while (!it.isAfterLast) {
-                            val quickSearch = QuickSearch()
-                            val mode = it.getInt(2)
-                            var search = it.getString(4)
-                            val tag = it.getString(7)
-                            if (mode == ListUrlBuilder.MODE_UPLOADER && search != null && search.startsWith("uploader:")) {
-                                search = search.substring("uploader:".length)
-                            }
-                            quickSearch.time = it.getInt(0).toLong()
-                            quickSearch.name = it.getString(1)
-                            quickSearch.mode = mode
-                            quickSearch.category = it.getInt(3)
-                            quickSearch.keyword = if (mode == ListUrlBuilder.MODE_TAG) tag else search
-                            quickSearch.advanceSearch = it.getInt(5)
-                            quickSearch.minRating = it.getInt(6)
-                            browsingDao.insertQuickSearch(quickSearch)
-                            it.moveToNext()
+        // Merge quick search
+        try {
+            val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_TAG}", null)
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    while (!it.isAfterLast) {
+                        val quickSearch = QuickSearch()
+                        val mode = it.getInt(2)
+                        var search = it.getString(4)
+                        val tag = it.getString(7)
+                        if (mode == ListUrlBuilder.MODE_UPLOADER && search != null && search.startsWith("uploader:")) {
+                            search = search.substring("uploader:".length)
                         }
+                        quickSearch.time = it.getInt(0).toLong()
+                        quickSearch.name = it.getString(1)
+                        quickSearch.mode = mode
+                        quickSearch.category = it.getInt(3)
+                        quickSearch.keyword = if (mode == ListUrlBuilder.MODE_TAG) tag else search
+                        quickSearch.advanceSearch = it.getInt(5)
+                        quickSearch.minRating = it.getInt(6)
+                        browsingDao.insertQuickSearch(quickSearch)
+                        it.moveToNext()
                     }
                 }
-            } catch (e: Throwable) {
-                ExceptionUtils.throwIfFatal(e)
             }
+        } catch (e: Throwable) {
+            ExceptionUtils.throwIfFatal(e)
+        }
 
-            // Merge download info
-            try {
-                val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_DOWNLOAD}", null)
-                cursor?.use {
-                    if (it.moveToFirst()) {
-                        var i = 0L
-                        while (!it.isAfterLast) {
-                            val gid = it.getInt(0).toLong()
-                            val gi = map.get(gid) ?: run {
-                                Log.e(TAG, "Can't get GalleryInfo with gid: $gid")
-                                it.moveToNext()
-                                return@use
-                            }
-                            val info = DownloadInfo(gi)
-                            var state = it.getInt(2)
-                            val legacy = it.getInt(3)
-                            if (state == DownloadInfo.STATE_FINISH && legacy > 0) {
-                                state = DownloadInfo.STATE_FAILED
-                            }
-                            info.state = state
-                            info.legacy = legacy
-                            info.time = if (it.columnCount == 5) it.getLong(4) else i
-                            downloadDao.insert(info)
+        // Merge download info
+        try {
+            val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_DOWNLOAD}", null)
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    var i = 0L
+                    while (!it.isAfterLast) {
+                        val gid = it.getInt(0).toLong()
+                        val gi = map.get(gid) ?: run {
+                            Log.e(TAG, "Can't get GalleryInfo with gid: $gid")
                             it.moveToNext()
-                            i++
+                            return@use
                         }
+                        val info = DownloadInfo(gi)
+                        var state = it.getInt(2)
+                        val legacy = it.getInt(3)
+                        if (state == DownloadInfo.STATE_FINISH && legacy > 0) {
+                            state = DownloadInfo.STATE_FAILED
+                        }
+                        info.state = state
+                        info.legacy = legacy
+                        info.time = if (it.columnCount == 5) it.getLong(4) else i
+                        downloadDao.insert(info)
+                        it.moveToNext()
+                        i++
                     }
                 }
-            } catch (e: Throwable) {
-                ExceptionUtils.throwIfFatal(e)
             }
+        } catch (e: Throwable) {
+            ExceptionUtils.throwIfFatal(e)
+        }
 
-            // Merge history
-            try {
-                val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_HISTORY}", null)
-                cursor?.use {
-                    if (it.moveToFirst()) {
-                        while (!it.isAfterLast) {
-                            val gid = it.getInt(0).toLong()
-                            val gi = map.get(gid) ?: run {
-                                Log.e(TAG, "Can't get GalleryInfo with gid: $gid")
-                                it.moveToNext()
-                                return@use
-                            }
-                            val info = HistoryInfo(gi)
-                            info.mode = it.getInt(1)
-                            info.time = it.getLong(2)
-                            browsingDao.insertHistory(info)
+        // Merge history
+        try {
+            val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_HISTORY}", null)
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    while (!it.isAfterLast) {
+                        val gid = it.getInt(0).toLong()
+                        val gi = map.get(gid) ?: run {
+                            Log.e(TAG, "Can't get GalleryInfo with gid: $gid")
                             it.moveToNext()
+                            return@use
                         }
+                        val info = HistoryInfo(gi)
+                        info.mode = it.getInt(1)
+                        info.time = it.getLong(2)
+                        browsingDao.insertHistory(info)
+                        it.moveToNext()
                     }
                 }
-            } catch (e: Throwable) {
-                ExceptionUtils.throwIfFatal(e)
             }
+        } catch (e: Throwable) {
+            ExceptionUtils.throwIfFatal(e)
         }
 
         try {
