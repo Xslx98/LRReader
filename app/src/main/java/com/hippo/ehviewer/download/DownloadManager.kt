@@ -262,27 +262,28 @@ class DownloadManager(
     }
 
     /**
-     * Wait for async initialization to complete. Call this from background threads
-     * that need data to be ready before proceeding (e.g., DownloadService).
-     * No-op if already initialized. Never call from main thread.
-     * Times out after 10 seconds to prevent permanent blocking.
+     * Wait for async initialization to complete. Call this from a coroutine
+     * launched on a background dispatcher (e.g., [DownloadService] launches
+     * this from its service-scoped IO coroutine after [android.app.Service.startForeground]
+     * has already been invoked with a placeholder notification, so the 5-second
+     * foreground-service ANR window is satisfied before we suspend here).
+     *
+     * No-op if already initialized. Guarded against main-thread invocation to
+     * preserve the historical invariant — even though `suspend` means this
+     * function would not strictly block the UI thread, suspending the main
+     * dispatcher while init is in flight would still prevent the IO→main
+     * publish post (see [publishLoadedData]) from running, deadlocking the
+     * caller. The guard makes misuse fail fast.
+     *
+     * Times out after [timeoutMs] (default 10 seconds) to prevent permanent
+     * waiting if the IO phase wedges.
      */
-    fun awaitInit() {
+    suspend fun awaitInitAsync(timeoutMs: Long = 10_000L) {
         if (mInitialized) return
         check(Looper.myLooper() != Looper.getMainLooper()) {
-            "awaitInit() must not be called on the main thread"
+            "awaitInitAsync() must not be called on the main thread"
         }
-        kotlinx.coroutines.runBlocking {
-            kotlinx.coroutines.withTimeout(10_000L) { mInitDeferred.await() }
-        }
-    }
-
-    /**
-     * Suspend-friendly version of [awaitInit].
-     */
-    suspend fun awaitInitAsync() {
-        if (mInitialized) return
-        mInitDeferred.await()
+        kotlinx.coroutines.withTimeout(timeoutMs) { mInitDeferred.await() }
     }
 
     fun replaceInfo(newInfo: DownloadInfo, oldInfo: DownloadInfo) {
