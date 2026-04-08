@@ -40,6 +40,10 @@ class LRRAuthInterceptor : Interceptor {
 
         val serverUrl = LRRAuthManager.getServerUrl()
         if (serverUrl.isNullOrEmpty()) {
+            // Surface at error level so the line survives R8 log stripping in release.
+            // No host is included: the intent is only to flag the missing-config state,
+            // not to leak which host the caller was trying to reach.
+            Log.e(TAG, "LRR auth interceptor: request without base URL configured")
             return chain.proceed(original)
         }
 
