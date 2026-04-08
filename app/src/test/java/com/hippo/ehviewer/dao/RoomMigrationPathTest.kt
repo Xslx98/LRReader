@@ -18,7 +18,7 @@ import java.nio.ByteBuffer
 import java.security.MessageDigest
 
 /**
- * Migration path tests for AppDatabase v9 -> v10 -> v11 -> v12 -> v13 -> v14 -> v15 -> v16 -> v17.
+ * Migration path tests for AppDatabase v9 -> v10 -> v11 -> v12 -> v13 -> v14 -> v15 -> v16 -> v17 -> v18.
  *
  * These tests exercise the actual migration SQL by:
  * 1. Creating a database at the source version schema
@@ -26,7 +26,7 @@ import java.security.MessageDigest
  * 3. Running the migration object's migrate() method
  * 4. Verifying data integrity and schema changes
  *
- * Unlike RoomMigrationTest (which validates the current v17 schema),
+ * Unlike RoomMigrationTest (which validates the current v18 schema),
  * these tests verify each migration step preserves data correctly.
  *
  * Run with: ./gradlew testAppReleaseDebugUnitTest --tests "*.RoomMigrationPathTest"
@@ -875,10 +875,71 @@ class RoomMigrationPathTest {
         assertFalse(getTableNames(db).contains("BOOKMARKS"))
     }
 
-    // ========== Test 5: Full migration v9 -> v17 ==========
+    // ========== Test 4f: v17 -> v18 (Drop Gallery_Tags table) ==========
 
     @Test
-    fun `migrate all v9 to v17 - full chain preserves data`() {
+    fun `migrate 17 to 18 - Gallery_Tags table is dropped`() {
+        // Build a v17 schema by chaining migrations from v9.
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
+        AppDatabase.MIGRATION_16_17.migrate(db)
+
+        // Seed a couple of Gallery_Tags rows so we can verify they vanish on drop.
+        db.execSQL(
+            "INSERT INTO Gallery_Tags (GID, ARTIST, LANGUAGE) " +
+                "VALUES (5001, 'doomed_artist_1', 'chinese')"
+        )
+        db.execSQL(
+            "INSERT INTO Gallery_Tags (GID, ARTIST, LANGUAGE) " +
+                "VALUES (5002, 'doomed_artist_2', 'japanese')"
+        )
+
+        assertTrue("Gallery_Tags must exist before v17→v18 migration",
+            getTableNames(db).contains("Gallery_Tags"))
+
+        AppDatabase.MIGRATION_17_18.migrate(db)
+
+        assertFalse("Gallery_Tags must be gone after v17→v18 migration",
+            getTableNames(db).contains("Gallery_Tags"))
+
+        // Other tables remain intact.
+        val tables = getTableNames(db)
+        assertTrue(tables.contains("DOWNLOADS"))
+        assertTrue(tables.contains("HISTORY"))
+        assertTrue(tables.contains("SERVER_PROFILES"))
+    }
+
+    @Test
+    fun `migrate 17 to 18 - missing Gallery_Tags table is a no-op`() {
+        // Some users may be on a v17 schema where Gallery_Tags was already dropped
+        // manually. DROP TABLE IF EXISTS guarantees idempotency.
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
+        AppDatabase.MIGRATION_16_17.migrate(db)
+        db.execSQL("DROP TABLE Gallery_Tags")
+
+        // Should not throw.
+        AppDatabase.MIGRATION_17_18.migrate(db)
+
+        assertFalse(getTableNames(db).contains("Gallery_Tags"))
+    }
+
+    // ========== Test 5: Full migration v9 -> v18 ==========
+
+    @Test
+    fun `migrate all v9 to v18 - full chain preserves data`() {
         db = createDatabase(9) { createV9Schema(it) }
 
         val token = "full_chain_test_arcid"
@@ -908,7 +969,7 @@ class RoomMigrationPathTest {
             arrayOf<Any>(oldGid)
         )
 
-        // Run all 8 migrations in order
+        // Run all 9 migrations in order
         AppDatabase.MIGRATION_9_10.migrate(db)
         AppDatabase.MIGRATION_10_11.migrate(db)
         AppDatabase.MIGRATION_11_12.migrate(db)
@@ -917,6 +978,7 @@ class RoomMigrationPathTest {
         AppDatabase.MIGRATION_14_15.migrate(db)
         AppDatabase.MIGRATION_15_16.migrate(db)
         AppDatabase.MIGRATION_16_17.migrate(db)
+        AppDatabase.MIGRATION_17_18.migrate(db)
 
         // Verify GID recomputation (v9->v10)
         db.query("SELECT GID, TOKEN, TITLE, RATING FROM DOWNLOADS").use { c ->
@@ -940,12 +1002,11 @@ class RoomMigrationPathTest {
             assertEquals(3.5, c.getDouble(2), 0.001)
         }
 
-        db.query("SELECT GID, ARTIST, LANGUAGE FROM Gallery_Tags").use { c ->
-            assertTrue(c.moveToFirst())
-            assertEquals(expectedGid, c.getLong(0))
-            assertEquals("mangaka", c.getString(1))
-            assertEquals("japanese", c.getString(2))
-        }
+        // NOTE: the old `SELECT ... FROM Gallery_Tags` assertion was removed
+        // when Gallery_Tags was dropped in v17→v18 (C5). The table no longer
+        // exists at the end of the chain, so we cannot query it here. The
+        // Gallery_Tags GID recomputation (v9→v10) is still exercised in the
+        // separate `migrate 9 to 10` tests earlier in this file.
 
         // Verify indexes exist (v10->v11)
         val indexes = getIndexNames(db)
@@ -971,7 +1032,7 @@ class RoomMigrationPathTest {
     }
 
     @Test
-    fun `migrate all v9 to v17 - empty database succeeds`() {
+    fun `migrate all v9 to v18 - empty database succeeds`() {
         db = createDatabase(9) { createV9Schema(it) }
 
         // Run all migrations on empty database -- should not throw
@@ -983,6 +1044,7 @@ class RoomMigrationPathTest {
         AppDatabase.MIGRATION_14_15.migrate(db)
         AppDatabase.MIGRATION_15_16.migrate(db)
         AppDatabase.MIGRATION_16_17.migrate(db)
+        AppDatabase.MIGRATION_17_18.migrate(db)
 
         // Verify tables still exist and are queryable
         db.query("SELECT COUNT(*) FROM DOWNLOADS").use { c ->
@@ -996,7 +1058,7 @@ class RoomMigrationPathTest {
     }
 
     @Test
-    fun `migrate all v9 to v17 - final schema matches Room v17`() {
+    fun `migrate all v9 to v18 - final schema matches Room v18`() {
         db = createDatabase(9) { createV9Schema(it) }
 
         AppDatabase.MIGRATION_9_10.migrate(db)
@@ -1007,14 +1069,15 @@ class RoomMigrationPathTest {
         AppDatabase.MIGRATION_14_15.migrate(db)
         AppDatabase.MIGRATION_15_16.migrate(db)
         AppDatabase.MIGRATION_16_17.migrate(db)
+        AppDatabase.MIGRATION_17_18.migrate(db)
 
-        // Verify all 8 tables exist (FILTER dropped in v14→v15,
-        // Black_List dropped in v15→v16, BOOKMARKS dropped in v16→v17)
+        // Verify all 7 tables exist (FILTER dropped in v14→v15,
+        // Black_List dropped in v15→v16, BOOKMARKS dropped in v16→v17,
+        // Gallery_Tags dropped in v17→v18)
         val tables = getTableNames(db)
         val expectedTables = setOf(
             "DOWNLOADS", "DOWNLOAD_LABELS", "DOWNLOAD_DIRNAME",
             "HISTORY", "LOCAL_FAVORITES", "QUICK_SEARCH",
-            "Gallery_Tags",
             "SERVER_PROFILES"
         )
         assertEquals(expectedTables, tables)

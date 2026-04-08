@@ -74,13 +74,12 @@ class EhDBMainThreadCheckTest {
      * W1-2 acceptance: any `@JvmStatic` blockingDb-bridged method must throw
      * [IllegalStateException] when invoked on the main thread in debug builds.
      *
-     * `EhDB.queryGalleryTags(...)` is one of three remaining bridges (the others being
-     * `getDownloadDirname` and `putDownloadDirname` — see
-     * `docs/blockingdb-callsites.md`). The fourth historical bridge `putDownloadInfo`
-     * was deleted as a dead bridge follow-up to W1-2's inventory. The guard inside
-     * `blockingDb` runs *before*
-     * `runBlocking { ... }`, so the test does not need `EhDB.initialize()` or a real
-     * `sDatabase` — the throw fires first.
+     * After the C4/C5 cleanups, two `@JvmStatic blockingDb` bridges remain in
+     * [EhDB]: `getDownloadDirname` and `putDownloadDirname`. The fourth and
+     * third historical bridges (`putDownloadInfo` and `queryGalleryTags`) were
+     * deleted as dead-bridge / dead-cache follow-ups. The guard inside
+     * `blockingDb` runs *before* `runBlocking { ... }`, so the test does not
+     * need `EhDB.initialize()` or a real `sDatabase` — the throw fires first.
      */
     @Test
     fun blockingDb_mainThreadThrowsInDebug() {
@@ -95,10 +94,10 @@ class EhDBMainThreadCheckTest {
         )
 
         val ex = assertThrows(IllegalStateException::class.java) {
-            // Any @JvmStatic blockingDb-bridged method works; queryGalleryTags is the
-            // simplest single-arg call site. The guard throws before runBlocking is
-            // invoked, so we do not need EhDB.initialize() or a live sDatabase.
-            EhDB.queryGalleryTags(0L)
+            // Any @JvmStatic blockingDb-bridged method works; getDownloadDirname is
+            // the simplest single-arg call site. The guard throws before runBlocking
+            // is invoked, so we do not need EhDB.initialize() or a live sDatabase.
+            EhDB.getDownloadDirname(0L)
         }
         assertTrue(
             "Exception message should mention main thread",
