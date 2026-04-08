@@ -43,21 +43,21 @@ class EhFragment : BasePreferenceFragmentCompat(),
     override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
         val key = preference.key
         if (AppearanceSettings.KEY_THEME == key) {
-            (activity!!.application as EhApplication).recreate()
+            (requireActivity().application as EhApplication).recreate()
             return true
         } else if (AppearanceSettings.KEY_APPLY_NAV_BAR_THEME_COLOR == key) {
-            (activity!!.application as EhApplication).recreate()
+            (requireActivity().application as EhApplication).recreate()
             return true
         } else if (AppearanceSettings.KEY_LIST_MODE == key) {
-            activity!!.setResult(Activity.RESULT_OK)
+            requireActivity().setResult(Activity.RESULT_OK)
             return true
         } else if (AppearanceSettings.KEY_THEME_AUTO_SWITCH == key && java.lang.Boolean.TRUE == newValue) {
-            if (AppearanceSettings.getDarkModeStatus(context!!)) {
+            if (AppearanceSettings.getDarkModeStatus(requireContext())) {
                 AppearanceSettings.putTheme(AppearanceSettings.THEME_DARK)
             } else {
                 AppearanceSettings.putTheme(AppearanceSettings.THEME_LIGHT)
             }
-            (activity!!.application as EhApplication).recreate()
+            (requireActivity().application as EhApplication).recreate()
             return true
         }
         return true

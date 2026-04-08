@@ -265,7 +265,7 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
         }
 
         if (activity == null) return
-        activity!!.runOnUiThread {
+        requireActivity().runOnUiThread {
             mConnecting = false
             hideProgress()
 
@@ -314,7 +314,7 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
      */
     private fun onConnectFailure(e: Exception) {
         if (activity == null) return
-        activity!!.runOnUiThread {
+        requireActivity().runOnUiThread {
             mConnecting = false
             hideProgress()
 

@@ -55,7 +55,7 @@ class AdvancedFragment : BasePreferenceFragmentCompat(),
     }
 
     private fun clearMemoryCache(): Boolean {
-        (activity!!.application as EhApplication).clearMemoryCache()
+        (requireActivity().application as EhApplication).clearMemoryCache()
         Runtime.getRuntime().gc()
         return false
     }
@@ -83,7 +83,7 @@ class AdvancedFragment : BasePreferenceFragmentCompat(),
     override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
         val key = preference.key
         if (KEY_APP_LANGUAGE == key) {
-            (activity!!.application as EhApplication).recreate()
+            (requireActivity().application as EhApplication).recreate()
             return true
         }
         return false
