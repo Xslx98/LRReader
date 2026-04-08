@@ -23,11 +23,9 @@ import android.util.Log
 import androidx.preference.PreferenceManager
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.settings.AppearanceSettings
-import com.hippo.ehviewer.settings.NetworkSettings
 import com.hippo.lib.yorozuya.NumberUtils
 import java.io.File
 import java.util.Date
-import java.util.Locale
 
 object Settings {
 
@@ -46,7 +44,6 @@ object Settings {
         if (AppearanceSettings.getDarkModeStatus(context) && AppearanceSettings.isThemeAutoSwitchAvailable()) {
             AppearanceSettings.putTheme(AppearanceSettings.THEME_DARK)
         }
-        fixDefaultValue()
     }
 
     /** Exposed for modular settings objects. */
@@ -56,21 +53,6 @@ object Settings {
     /** Exposed for modular settings objects that need batch editor access. */
     @JvmStatic
     fun getPreferences(): SharedPreferences = sSettingsPre
-
-    private fun fixDefaultValue() {
-        // Enable builtin hosts if the country is CN
-        if (!sSettingsPre.contains(NetworkSettings.KEY_BUILT_IN_HOSTS)) {
-            if ("CN" == Locale.getDefault().country) {
-                NetworkSettings.putBuiltInHosts(true)
-                NetworkSettings.putBuiltEXHosts(true)
-            }
-        }
-        if (!sSettingsPre.contains(NetworkSettings.KEY_DOMAIN_FRONTING)) {
-            if ("CN" == Locale.getDefault().country) {
-                NetworkSettings.putDF(true)
-            }
-        }
-    }
 
     @JvmStatic
     fun getArchiverDownload(downloadId: Long): GalleryInfo? {
