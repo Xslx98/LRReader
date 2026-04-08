@@ -17,18 +17,6 @@
 <!-- French translations by UShimamura -->
 <resources>
     <!--  black list  -->
-    <string name="blacklist_id">ID utilisateur</string>
-    <string name="blacklist">Liste noire</string>
-    <string name="join_in_blacklist">Ajouter à la liste noire</string>
-    <string name="add_blacklist">Ajouter un utilisateur bloqué</string>
-    <string name="blacklist_tip">Ce système de blocage bloque les commentaires basé sur le système de commentaires LANraragi.
-
-Bloquer le commentateur : masquer les commentaires de cet utilisateur. Le chargement de la liste de galeries peut être plus long.</string>
-    <string name="blacklist_text">Bloquer l\'utilisateur</string>
-    <string name="delete_blacklist">Débloquer l\'utilisateur \"%s\" ?</string>
-    <string name="blacklist_reason_text">Raison du blocage</string>
-    <string name="settings_eh_blacklist">Liste noire de commentaires</string>
-    <string name="settings_eh_blacklist_summary">Bloquer les commentaires par nom de compte</string>
     <string name="settings_advanced_dns_over_http_title">DNS sécurisé (DoH)</string>
     <string name="settings_advanced_dns_over_http_summary">Résoudre la pollution DNS dans certaines régions</string>
     <string name="settings_advanced_domain_fronting_title">Masquage de domaine</string>

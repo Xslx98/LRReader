@@ -16,18 +16,6 @@
   -->
 <resources>
     <!--  black list  -->
-    <string name="blacklist_id">ユーザーID</string>
-    <string name="blacklist">ブラックリスト</string>
-    <string name="join_in_blacklist">ブラックリストに追加</string>
-    <string name="add_blacklist">ブロックユーザー追加</string>
-    <string name="blacklist_tip">このブロック機能はLANraragiのコメントシステムに基づいてコメントをブロックします。
-
-コメント者ブロック：このコメント者のコメントを非表示にします。ギャラリーリストの読み込みに時間がかかる場合があります。</string>
-    <string name="blacklist_text">ユーザーをブロック</string>
-    <string name="delete_blacklist">ユーザー\"%s\"のブロックを解除しますか？</string>
-    <string name="blacklist_reason_text">ブロック理由</string>
-    <string name="settings_eh_blacklist">コメントブラックリスト</string>
-    <string name="settings_eh_blacklist_summary">アカウント名でコメントをブロック</string>
     <string name="settings_advanced_dns_over_http_title">セキュアDNS (DoH)</string>
     <string name="settings_advanced_dns_over_http_summary">特定地域のDNS汚染を修正</string>
     <string name="settings_advanced_domain_fronting_title">ドメインフロンティング</string>

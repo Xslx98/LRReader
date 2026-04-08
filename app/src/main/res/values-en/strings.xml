@@ -836,18 +836,12 @@
 
 
     <!-- Auto-generated missing translations -->
-    <string name="add_blacklist">Add Blocked User</string>
     <string name="add_favorites_dialog_message">Add category %s ?</string>
     <string name="add_widget">Add widget</string>
     <string name="all_time_top_list">All Time TopList</string>
     <string name="app_widget_description">This is an app widget description</string>
     <string name="appwidget_text">EXAMPLE</string>
     <string name="archiver_dialog_cost">Download Cost:  %s</string>
-    <string name="blacklist">Blacklist</string>
-    <string name="blacklist_id">User ID</string>
-    <string name="blacklist_reason_text">Block Reason</string>
-    <string name="blacklist_text">Block User</string>
-    <string name="blacklist_tip">This blocking system works on top of the LANraragi website comment system to further block comments.\n\nCommenter Block: exclude comments uploaded by this commenter. This may take more time to load the gallery list.</string>
     <string name="cancel">Cancel</string>
     <string name="category_all">All</string>
     <string name="change_avatar_message">The avatar modification is limited to this software and cannot be synchronized to LANraragi or other similar software.</string>
@@ -858,7 +852,6 @@
     <string name="copy_tag">Copy</string>
     <string name="current_moderation_power">Current Moderation Power %s</string>
     <string name="default_sort">Default</string>
-    <string name="delete_blacklist">Unblock user \"%s\"?</string>
     <string name="download_filter_by_status">Filter by status</string>
     <string name="download_search">Search in download list</string>
     <string name="download_search_gallery">Search gallery</string>
@@ -899,7 +892,6 @@
     <string name="gallery_tag_copy">tag copied</string>
     <string name="image_save_success">Picture saved successfully</string>
     <string name="ip_base_limits">IP-based limits</string>
-    <string name="join_in_blacklist">Add to Blacklist</string>
     <string name="limit_unneed_reset">There is currently no need to reset quotas, please try again after refreshing~</string>
     <string name="lrr_add_server">Add Server</string>
     <string name="lrr_api_key_helper">Enter the API Key from LANraragi settings (not the web login password)</string>
@@ -1014,8 +1006,6 @@
     <string name="settings_download_import_no_items">No items to import</string>
     <string name="settings_download_import_succeed">Successfully imported %d download items</string>
     <string name="settings_download_restore_download_items_get_gallery_info">Restore download items in gallery</string>
-    <string name="settings_eh_blacklist">Comment Blacklist</string>
-    <string name="settings_eh_blacklist_summary">Block comments by account name</string>
     <string name="settings_eh_show_eh_event">Show EH events</string>
     <string name="settings_eh_show_gallery_comment">Show Gallery Comment</string>
     <string name="settings_eh_system_theme">System Theme</string>

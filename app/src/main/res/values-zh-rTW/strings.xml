@@ -797,16 +797,6 @@
     <string name="yesterday_top_list">昨天</string>
 
     <!--  black list  -->
-    <string name="blacklist_id">使用者ID</string>
-    <string name="blacklist">黑名單</string>
-    <string name="join_in_blacklist">加入黑名單</string>
-    <string name="add_blacklist">添加封鎖用戶</string>
-    <string name="blacklist_tip">該封鎖系統會在 LANraragi 網站評論系統的基礎上繼續封鎖評論。\n\n評論者封鎖項：排除該評論者上傳的評論。這會使載入圖庫列表花費更多時間。</string>
-    <string name="blacklist_text">封鎖用戶</string>
-    <string name="delete_blacklist">取消封鎖用戶“%s”？</string>
-    <string name="blacklist_reason_text">封鎖原因</string>
-    <string name="settings_eh_blacklist">評論黑名單</string>
-    <string name="settings_eh_blacklist_summary">根據帳號名稱封鎖他人評論</string>
     <string name="settings_advanced_dns_over_http_title">安全 DNS（DoH）</string>
     <string name="settings_advanced_dns_over_http_summary">解決某些地區的 DNS 汙染問題</string>
     <string name="settings_advanced_domain_fronting_title">域名前置</string>
