@@ -52,7 +52,7 @@ class RoomMigrationTest {
     // ========== Schema Integrity Tests ==========
 
     @Test
-    fun `schema has all 11 expected tables`() {
+    fun `schema has all 10 expected tables`() {
         val cursor = sqliteDb.query(
             "SELECT name FROM sqlite_master WHERE type='table' " +
                 "AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'room_%' " +
@@ -67,7 +67,7 @@ class RoomMigrationTest {
         val expectedTables = setOf(
             "DOWNLOADS", "DOWNLOAD_LABELS", "DOWNLOAD_DIRNAME",
             "HISTORY", "LOCAL_FAVORITES", "QUICK_SEARCH",
-            "FILTER", "Black_List", "Gallery_Tags",
+            "Black_List", "Gallery_Tags",
             "BOOKMARKS", "SERVER_PROFILES"
         )
         assertEquals(expectedTables, tables)
@@ -270,20 +270,6 @@ class RoomMigrationTest {
 
         val all = dao.getAllQuickSearch()
         assertTrue(all.any { it.name == "Test Search" })
-    }
-
-    @Test
-    fun `BrowsingDao filter insert and query`() = runBlocking {
-        val dao = db.browsingDao()
-        val filter = Filter().apply {
-            mode = 0 // title filter mode
-            text = "test_filter"
-            enable = true
-        }
-        dao.insertFilter(filter)
-
-        val all = dao.getAllFilters()
-        assertTrue(all.any { it.text == "test_filter" })
     }
 
     // ========== MiscRoomDao CRUD Tests ==========
