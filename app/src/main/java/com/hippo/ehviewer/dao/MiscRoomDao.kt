@@ -3,7 +3,7 @@ package com.hippo.ehviewer.dao
 import androidx.room.*
 
 /**
- * Room DAO for misc tables: Gallery_Tags, BOOKMARKS, SERVER_PROFILES.
+ * Room DAO for misc tables: Gallery_Tags, SERVER_PROFILES.
  */
 @Dao
 interface MiscRoomDao {
@@ -27,20 +27,6 @@ interface MiscRoomDao {
 
     @Delete
     suspend fun deleteGalleryTags(galleryTags: GalleryTags)
-
-    // --- BOOKMARKS ---
-
-    @Query("SELECT * FROM BOOKMARKS ORDER BY TIME DESC")
-    suspend fun getAllBookmarks(): List<BookmarkInfo>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertBookmark(bookmark: BookmarkInfo)
-
-    @Query("SELECT * FROM BOOKMARKS WHERE GID = :gid")
-    suspend fun loadBookmark(gid: Long): BookmarkInfo?
-
-    @Query("DELETE FROM BOOKMARKS WHERE GID = :gid")
-    suspend fun deleteBookmarkByKey(gid: Long)
 
     // --- SERVER_PROFILES ---
 

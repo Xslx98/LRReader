@@ -42,10 +42,9 @@ import java.security.MessageDigest
         LocalFavoriteInfo::class,
         QuickSearch::class,
         GalleryTags::class,
-        BookmarkInfo::class,
         ServerProfile::class
     ],
-    version = 16,
+    version = 17,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class)
@@ -67,9 +66,30 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "eh.db"
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17)
                     .build()
                     .also { INSTANCE = it }
+            }
+        }
+
+        /**
+         * v16 → v17: Drop the BOOKMARKS table.
+         *
+         * BookmarkInfo was an EhViewer-era per-gallery "reader bookmark" entity
+         * (remembering which page you were on in a gallery). It had zero callers
+         * in the LR Reader codebase — no UI scene, no EhDB wrapper methods,
+         * not even a single insert/query from anywhere outside the DAO. The
+         * DAO methods existed but were never invoked; the BOOKMARKS table
+         * has been silently inert for as long as the LRR conversion has
+         * existed.
+         *
+         * Drops cleanly — no FK references and the only indexed column is
+         * the primary key which vanishes with the table.
+         */
+        @VisibleForTesting
+        internal val MIGRATION_16_17 = object : Migration(16, 17) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DROP TABLE IF EXISTS BOOKMARKS")
             }
         }
 
