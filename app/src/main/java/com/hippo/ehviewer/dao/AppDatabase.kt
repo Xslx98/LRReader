@@ -41,12 +41,11 @@ import java.security.MessageDigest
         HistoryInfo::class,
         LocalFavoriteInfo::class,
         QuickSearch::class,
-        BlackList::class,
         GalleryTags::class,
         BookmarkInfo::class,
         ServerProfile::class
     ],
-    version = 15,
+    version = 16,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class)
@@ -68,9 +67,30 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "eh.db"
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16)
                     .build()
                     .also { INSTANCE = it }
+            }
+        }
+
+        /**
+         * v15 → v16: Drop the Black_List table.
+         *
+         * The BlackList subsystem (an EhViewer-era "bad uploader" personal
+         * blocklist) was deleted as a follow-up to C2 (EhFilter removal).
+         * BlackListActivity was unreachable from anywhere in the app — no
+         * Intent, no menu item, no preference — so the data was already
+         * orphaned in the sense that no UI could reach it. The Activity,
+         * Room entity, DAO methods, layouts, strings, ids and AndroidManifest
+         * declaration were all removed in the same change as this migration.
+         *
+         * On upgrade we drop the table — there were no FK references and
+         * the only index (BADGAYNAME) goes away with the table.
+         */
+        @VisibleForTesting
+        internal val MIGRATION_15_16 = object : Migration(15, 16) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DROP TABLE IF EXISTS Black_List")
             }
         }
 

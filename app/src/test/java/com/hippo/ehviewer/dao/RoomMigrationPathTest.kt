@@ -18,7 +18,7 @@ import java.nio.ByteBuffer
 import java.security.MessageDigest
 
 /**
- * Migration path tests for AppDatabase v9 -> v10 -> v11 -> v12 -> v13 -> v14 -> v15.
+ * Migration path tests for AppDatabase v9 -> v10 -> v11 -> v12 -> v13 -> v14 -> v15 -> v16.
  *
  * These tests exercise the actual migration SQL by:
  * 1. Creating a database at the source version schema
@@ -26,7 +26,7 @@ import java.security.MessageDigest
  * 3. Running the migration object's migrate() method
  * 4. Verifying data integrity and schema changes
  *
- * Unlike RoomMigrationTest (which validates the current v15 schema),
+ * Unlike RoomMigrationTest (which validates the current v16 schema),
  * these tests verify each migration step preserves data correctly.
  *
  * Run with: ./gradlew testAppReleaseDebugUnitTest --tests "*.RoomMigrationPathTest"
@@ -757,10 +757,67 @@ class RoomMigrationPathTest {
         assertFalse(getTableNames(db).contains("FILTER"))
     }
 
-    // ========== Test 5: Full migration v9 -> v15 ==========
+    // ========== Test 4d: v15 -> v16 (Drop Black_List table) ==========
 
     @Test
-    fun `migrate all v9 to v15 - full chain preserves data`() {
+    fun `migrate 15 to 16 - Black_List table is dropped`() {
+        // Build a v15 schema by chaining migrations from v9.
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+
+        // Seed a couple of Black_List rows so we can verify they vanish on drop.
+        db.execSQL(
+            "INSERT INTO Black_List (BADGAYNAME, REASON, ANGRYWITH, ADD_TIME, MODE) " +
+                "VALUES ('doomed_uploader', 'spam', 'me', '2025-01-01', 0)"
+        )
+        db.execSQL(
+            "INSERT INTO Black_List (BADGAYNAME, REASON, ANGRYWITH, ADD_TIME, MODE) " +
+                "VALUES ('another_doomed', 'lowq', 'me', '2025-01-02', 0)"
+        )
+
+        assertTrue("Black_List must exist before v15→v16 migration",
+            getTableNames(db).contains("Black_List"))
+
+        AppDatabase.MIGRATION_15_16.migrate(db)
+
+        assertFalse("Black_List must be gone after v15→v16 migration",
+            getTableNames(db).contains("Black_List"))
+
+        // Other tables remain intact.
+        val tables = getTableNames(db)
+        assertTrue(tables.contains("DOWNLOADS"))
+        assertTrue(tables.contains("HISTORY"))
+        assertTrue(tables.contains("SERVER_PROFILES"))
+    }
+
+    @Test
+    fun `migrate 15 to 16 - missing Black_List table is a no-op`() {
+        // Some users may be on a v15 schema where Black_List was already dropped manually
+        // (e.g. via DB editor). DROP TABLE IF EXISTS guarantees idempotency.
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+        db.execSQL("DROP TABLE Black_List")
+
+        // Should not throw.
+        AppDatabase.MIGRATION_15_16.migrate(db)
+
+        assertFalse(getTableNames(db).contains("Black_List"))
+    }
+
+    // ========== Test 5: Full migration v9 -> v16 ==========
+
+    @Test
+    fun `migrate all v9 to v16 - full chain preserves data`() {
         db = createDatabase(9) { createV9Schema(it) }
 
         val token = "full_chain_test_arcid"
@@ -790,13 +847,14 @@ class RoomMigrationPathTest {
             arrayOf<Any>(oldGid)
         )
 
-        // Run all 6 migrations in order
+        // Run all 7 migrations in order
         AppDatabase.MIGRATION_9_10.migrate(db)
         AppDatabase.MIGRATION_10_11.migrate(db)
         AppDatabase.MIGRATION_11_12.migrate(db)
         AppDatabase.MIGRATION_12_13.migrate(db)
         AppDatabase.MIGRATION_13_14.migrate(db)
         AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
 
         // Verify GID recomputation (v9->v10)
         db.query("SELECT GID, TOKEN, TITLE, RATING FROM DOWNLOADS").use { c ->
@@ -851,7 +909,7 @@ class RoomMigrationPathTest {
     }
 
     @Test
-    fun `migrate all v9 to v15 - empty database succeeds`() {
+    fun `migrate all v9 to v16 - empty database succeeds`() {
         db = createDatabase(9) { createV9Schema(it) }
 
         // Run all migrations on empty database -- should not throw
@@ -861,6 +919,7 @@ class RoomMigrationPathTest {
         AppDatabase.MIGRATION_12_13.migrate(db)
         AppDatabase.MIGRATION_13_14.migrate(db)
         AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
 
         // Verify tables still exist and are queryable
         db.query("SELECT COUNT(*) FROM DOWNLOADS").use { c ->
@@ -874,7 +933,7 @@ class RoomMigrationPathTest {
     }
 
     @Test
-    fun `migrate all v9 to v15 - final schema matches Room v15`() {
+    fun `migrate all v9 to v16 - final schema matches Room v16`() {
         db = createDatabase(9) { createV9Schema(it) }
 
         AppDatabase.MIGRATION_9_10.migrate(db)
@@ -883,13 +942,15 @@ class RoomMigrationPathTest {
         AppDatabase.MIGRATION_12_13.migrate(db)
         AppDatabase.MIGRATION_13_14.migrate(db)
         AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
 
-        // Verify all 10 tables exist (FILTER was dropped in v14→v15)
+        // Verify all 9 tables exist (FILTER was dropped in v14→v15,
+        // Black_List was dropped in v15→v16)
         val tables = getTableNames(db)
         val expectedTables = setOf(
             "DOWNLOADS", "DOWNLOAD_LABELS", "DOWNLOAD_DIRNAME",
             "HISTORY", "LOCAL_FAVORITES", "QUICK_SEARCH",
-            "Black_List", "Gallery_Tags",
+            "Gallery_Tags",
             "BOOKMARKS", "SERVER_PROFILES"
         )
         assertEquals(expectedTables, tables)
@@ -898,13 +959,12 @@ class RoomMigrationPathTest {
         val profileCols = getColumnNames(db, "SERVER_PROFILES")
         assertEquals(setOf("ID", "NAME", "URL", "IS_ACTIVE", "ALLOW_CLEARTEXT"), profileCols)
 
-        // Verify v11 indexes on DOWNLOADS and HISTORY
+        // Verify v11 indexes on DOWNLOADS and HISTORY (Black_List index gone with table)
         val indexes = getIndexNames(db)
         assertTrue(indexes.contains("index_DOWNLOADS_SERVER_PROFILE_ID"))
         assertTrue(indexes.contains("index_DOWNLOADS_TIME"))
         assertTrue(indexes.contains("index_HISTORY_SERVER_PROFILE_ID"))
         assertTrue(indexes.contains("index_HISTORY_TIME"))
-        assertTrue(indexes.contains("index_Black_List_BADGAYNAME"))
         // Verify v13 LABEL index
         assertTrue(indexes.contains("index_DOWNLOADS_LABEL"))
     }
