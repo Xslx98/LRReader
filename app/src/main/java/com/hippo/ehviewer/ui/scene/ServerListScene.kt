@@ -331,8 +331,8 @@ class ServerListScene : BaseScene() {
         // Prevent the dialog's keyboard from resizing the underlying Activity layout.
         // Save the original mode so we can restore it when the dialog is dismissed.
         val originalSoftInputMode: Int = if (activity?.window != null) {
-            val mode = activity!!.window.attributes.softInputMode
-            activity!!.window.setSoftInputMode(
+            val mode = requireActivity().window.attributes.softInputMode
+            requireActivity().window.setSoftInputMode(
                 WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
             )
             mode
@@ -504,7 +504,7 @@ class ServerListScene : BaseScene() {
                             usedHttpFallback: Boolean
                         ) {
                             if (activity == null) return
-                            activity!!.runOnUiThread {
+                            requireActivity().runOnUiThread {
                                 // DB operations on IO thread
                                 val resolvedIsHttp = resolvedUrl.lowercase().startsWith("http://")
                                 val savedAllowCleartext = if (resolvedIsHttp) profileAllowCleartext else true
@@ -591,7 +591,7 @@ class ServerListScene : BaseScene() {
                             }
 
                             if (activity == null) return
-                            activity!!.runOnUiThread {
+                            requireActivity().runOnUiThread {
                                 dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
                                 Toast.makeText(
                                     ctx,

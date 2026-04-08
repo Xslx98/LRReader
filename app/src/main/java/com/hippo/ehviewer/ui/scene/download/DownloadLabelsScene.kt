@@ -90,7 +90,7 @@ class DownloadLabelsScene : ToolbarScene() {
         val dragDropManager = RecyclerViewDragDropManager()
         dragDropManager.setDraggingItemShadowDrawable(
             androidx.appcompat.content.res.AppCompatResources.getDrawable(
-                context!!, R.drawable.shadow_8dp
+                requireContext(), R.drawable.shadow_8dp
             ) as NinePatchDrawable
         )
 

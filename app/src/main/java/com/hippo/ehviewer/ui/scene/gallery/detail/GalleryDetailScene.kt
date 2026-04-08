@@ -383,7 +383,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             }
         })
 
-        val nonNullContext = context!!
+        val nonNullContext = requireContext()
         val drawable = DrawableManager.getVectorDrawable(nonNullContext, R.drawable.big_sad_pandroid)
         drawable?.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
         mTip!!.setCompoundDrawables(null, drawable, null, null)
@@ -558,7 +558,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             return true
         }
 
-        val application = context!!.applicationContext as EhApplication
+        val application = requireContext().applicationContext as EhApplication
         if (application.containGlobalStuff(mRequestId)) {
             // request exist
             return true
@@ -812,9 +812,9 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             return
         }
 
-        val context = getEHContext()
-        AssertUtils.assertNotNull(context)
-        val popup = PopupMenu(context!!, mOtherActions!!, Gravity.TOP)
+        val ctx = getEHContext()
+        AssertUtils.assertNotNull(ctx)
+        val popup = PopupMenu(ctx!!, mOtherActions!!, Gravity.TOP)
         mPopupMenu = popup
         popup.menuInflater.inflate(R.menu.scene_gallery_detail, popup.menu)
         // Show LANraragi-specific menu items only when connected
@@ -875,14 +875,14 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         } else if (mRead === v) {
             val galleryInfo: GalleryInfo? = mGalleryInfo ?: mGalleryDetail
             if (galleryInfo != null) {
-                val intent = GalleryOpenHelper.buildReadIntent(activity!!, galleryInfo)
+                val intent = GalleryOpenHelper.buildReadIntent(requireActivity(), galleryInfo)
                 startActivity(intent)
             }
         } else if (mHeartGroup === v) {
             // LANraragi: Show category selection dialog
             if (mGalleryDetail != null) {
                 CategoryDialogHelper.showCategoryDialog(
-                    activity!!, mGalleryDetail!!
+                    requireActivity(), mGalleryDetail!!
                 ) { isFavorited, favoriteName ->
                     if (mGalleryDetail != null) {
                         mGalleryDetail!!.isFavorited = isFavorited
@@ -932,7 +932,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             // Long press also shows category dialog (same as click)
             if (mGalleryDetail != null) {
                 CategoryDialogHelper.showCategoryDialog(
-                    activity!!, mGalleryDetail!!
+                    requireActivity(), mGalleryDetail!!
                 ) { isFavorited, favoriteName ->
                     if (mGalleryDetail != null) {
                         mGalleryDetail!!.isFavorited = isFavorited
