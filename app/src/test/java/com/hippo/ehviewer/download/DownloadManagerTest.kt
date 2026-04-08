@@ -572,12 +572,19 @@ class DownloadManagerTest {
     }
 
     @Test
-    fun awaitInit_throwsOnMainThread() {
+    fun awaitInitAsync_throwsOnMainThread() {
+        // Use a real IO dispatcher so init is not already complete by the time
+        // we try to await it from the main thread.
         val lazyScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val uninitManager = DownloadManager(context, lazyScope)
         try {
             assertThrows(IllegalStateException::class.java) {
-                uninitManager.awaitInit()
+                // Robolectric runs tests on the main looper, so launching a
+                // runBlocking here executes awaitInitAsync on the main thread
+                // and the guard inside the suspend function must fire.
+                kotlinx.coroutines.runBlocking {
+                    uninitManager.awaitInitAsync()
+                }
             }
         } finally {
             lazyScope.cancel()

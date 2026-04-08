@@ -45,6 +45,12 @@ import com.hippo.lib.yorozuya.SimpleHandler
 import com.hippo.lib.yorozuya.collect.LongList
 import com.hippo.lib.yorozuya.collect.SparseJBArray
 import com.hippo.lib.yorozuya.collect.SparseJLArray
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @SuppressLint("UnspecifiedImmutableFlag")
 class DownloadService : Service(), DownloadListener {
@@ -58,6 +64,17 @@ class DownloadService : Service(), DownloadListener {
     private var mDownloadedDelay: NotificationDelay? = null
     private var m509Delay: NotificationDelay? = null
 
+    /**
+     * Service-scoped CoroutineScope for background awaits (notably
+     * [DownloadManager.awaitInitAsync]). Cancelled in [onDestroy] to clean
+     * up any in-flight init wait. Runs on [Dispatchers.IO] so the await
+     * does not pin the main thread.
+     */
+    private val serviceScope = CoroutineScope(
+        SupervisorJob() +
+            Dispatchers.IO +
+            ServiceRegistry.coroutineModule.exceptionHandler
+    )
 
     private var CHANNEL_ID: String? = null
 
@@ -81,6 +98,7 @@ class DownloadService : Service(), DownloadListener {
     override fun onDestroy() {
         super.onDestroy()
 
+        serviceScope.cancel()
         mNotifyManager = null
         mDownloadManager?.setDownloadListener(null)
         mDownloadManager = null
@@ -92,15 +110,82 @@ class DownloadService : Service(), DownloadListener {
         m509Delay?.release()
     }
 
+    /**
+     * Handle a start command.
+     *
+     * Foreground services must call [Service.startForeground] within 5 seconds
+     * of being started or Android will ANR/kill the process. On a cold launch,
+     * [DownloadManager] has not finished its async DB load yet, and the shared
+     * mutable collections that [handleIntent] reaches into (via
+     * [DownloadManager.deleteDownload], [DownloadManager.startDownload], etc.)
+     * are only safe to touch after [DownloadManager.awaitInitAsync] resumes.
+     *
+     * To keep both invariants we:
+     *   1. Call [startForeground] immediately with a placeholder notification
+     *      so the 5-second window is satisfied regardless of how slow init is.
+     *   2. Launch a coroutine on [serviceScope] that awaits init and then
+     *      dispatches the intent on the main thread (the [DownloadManager]
+     *      mutators are all `assertMainThread`-guarded).
+     */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        try {
-            if (intent != null) {
-                handleIntent(intent)
+        // 1. Satisfy the foreground-service ANR window before anything else.
+        startForegroundPlaceholder()
+
+        // 2. Await init off the main thread, then hand the intent back to
+        //    main-thread handleIntent which is where the DownloadManager
+        //    mutators live.
+        val dm = mDownloadManager
+        if (intent != null) {
+            serviceScope.launch {
+                try {
+                    dm?.awaitInitAsync()
+                } catch (e: Exception) {
+                    Log.e(TAG, "awaitInitAsync failed; processing intent anyway", e)
+                }
+                withContext(Dispatchers.Main) {
+                    try {
+                        handleIntent(intent)
+                    } catch (e: NullPointerException) {
+                        Log.e(TAG, "Unexpected NPE in handleIntent — intent=$intent", e)
+                    }
+                }
             }
-        } catch (e: NullPointerException) {
-            Log.e(TAG, "Unexpected NPE in onStartCommand — intent=$intent", e)
         }
         return START_STICKY
+    }
+
+    /**
+     * Show a placeholder foreground notification reusing the downloading
+     * notification channel / id so that the real progress notification (set
+     * up lazily by [ensureDownloadingBuilder] on the first [onStart] callback)
+     * can simply replace it without a channel or id collision.
+     */
+    private fun startForegroundPlaceholder() {
+        val channelId = CHANNEL_ID ?: return
+        val notification = NotificationCompat.Builder(applicationContext, channelId)
+            .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setContentTitle(getString(R.string.download_service))
+            .setContentText(getString(R.string.please_wait))
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+            .setProgress(0, 0, true)
+            .setShowWhen(false)
+            .setChannelId(channelId)
+            .build()
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(
+                    ID_DOWNLOADING,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                )
+            } else {
+                startForeground(ID_DOWNLOADING, notification)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "startForeground(placeholder) failed", e)
+        }
     }
 
     private fun handleIntent(intent: Intent?) {
