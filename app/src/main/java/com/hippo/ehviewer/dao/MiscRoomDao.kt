@@ -3,30 +3,10 @@ package com.hippo.ehviewer.dao
 import androidx.room.*
 
 /**
- * Room DAO for misc tables: Gallery_Tags, SERVER_PROFILES.
+ * Room DAO for misc tables: SERVER_PROFILES.
  */
 @Dao
 interface MiscRoomDao {
-
-    // --- Gallery_Tags ---
-
-    @Query("SELECT * FROM Gallery_Tags ORDER BY GID ASC")
-    suspend fun getAllGalleryTags(): List<GalleryTags>
-
-    @Query("SELECT COUNT(*) FROM Gallery_Tags WHERE GID = :gid")
-    suspend fun countGalleryTagsByGid(gid: Long): Int
-
-    @Query("SELECT * FROM Gallery_Tags WHERE GID = :gid LIMIT 1")
-    suspend fun queryGalleryTags(gid: Long): GalleryTags?
-
-    @Insert
-    suspend fun insertGalleryTags(galleryTags: GalleryTags)
-
-    @Update
-    suspend fun updateGalleryTags(galleryTags: GalleryTags)
-
-    @Delete
-    suspend fun deleteGalleryTags(galleryTags: GalleryTags)
 
     // --- SERVER_PROFILES ---
 

@@ -499,16 +499,6 @@ object EhDB {
     }
 
     // ═══════════════════════════════════════════════════════════
-    // GALLERY TAGS
-    // ═══════════════════════════════════════════════════════════
-
-    @JvmStatic
-    fun queryGalleryTags(gid: Long): GalleryTags? = blockingDb { queryGalleryTagsAsync(gid) }
-
-    suspend fun queryGalleryTagsAsync(gid: Long): GalleryTags? =
-        sDatabase.miscDao().queryGalleryTags(gid)
-
-    // ═══════════════════════════════════════════════════════════
     // QUICK SEARCH
     // ═══════════════════════════════════════════════════════════
 

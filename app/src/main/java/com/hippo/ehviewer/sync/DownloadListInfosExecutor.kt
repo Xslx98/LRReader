@@ -7,7 +7,6 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.callBack.DownloadSearchCallback
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.dao.DownloadInfo
-import com.hippo.ehviewer.dao.GalleryTags
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.unifile.UniFile
@@ -160,10 +159,13 @@ class DownloadListInfosExecutor {
     }
 
     private fun matchTag(searchKey: String, info: DownloadInfo): Boolean {
-        val currentList = info.tgList
-        if (currentList == null || currentList.isEmpty()) {
-            info.tgList = searchTagList(info.gid)
-        }
+        // info.tgList is populated from the LRR API response by
+        // LRRArchive.toGalleryInfo() when the archive is fetched. The
+        // pre-LRR EhViewer path would fall back to a Gallery_Tags Room
+        // cache via searchTagList(gid), but that cache was dead code
+        // (insertGalleryTags/updateGalleryTags had zero callers) and
+        // was removed in the C5 cleanup (2026-04-08) along with the
+        // EhDB.queryGalleryTags blockingDb bridge.
         val tagList = info.tgList ?: return false
 
         val searchTags = searchKey.split("  ")
@@ -177,40 +179,6 @@ class DownloadListInfosExecutor {
         }
 
         return result
-    }
-
-    private fun searchTagList(gid: Long): ArrayList<String>? {
-        val tags: GalleryTags = EhDB.queryGalleryTags(gid) ?: return null
-
-        val tagList = ArrayList<String>()
-
-        tagList.addAll(parserList("artist", tags.artist))
-        tagList.addAll(parserList("rows", tags.rows))
-        tagList.addAll(parserList("cosplayer", tags.cosplayer))
-        tagList.addAll(parserList("character", tags.character))
-        tagList.addAll(parserList("female", tags.female))
-        tagList.addAll(parserList("group", tags.group))
-        tagList.addAll(parserList("language", tags.language))
-        tagList.addAll(parserList("male", tags.male))
-        tagList.addAll(parserList("misc", tags.misc))
-        tagList.addAll(parserList("mixed", tags.mixed))
-        tagList.addAll(parserList("other", tags.other))
-        tagList.addAll(parserList("parody", tags.parody))
-        tagList.addAll(parserList("reclass", tags.reclass))
-
-        return tagList
-    }
-
-    private fun parserList(name: String?, content: String?): ArrayList<String> {
-        if (name == null || content == null) {
-            return ArrayList()
-        }
-        val list = ArrayList<String>()
-        val tagNames = content.split(",")
-        for (s in tagNames) {
-            list.add("$name:$s")
-        }
-        return list
     }
 
     /**
