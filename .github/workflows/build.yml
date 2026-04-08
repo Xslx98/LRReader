@@ -47,6 +47,49 @@ jobs:
       - name: Detekt
         run: ./gradlew detekt
 
+      - name: Verify Log.v/d/i/w stripped from release DEX
+        # W1-6: enforce that ProGuard/R8 actually strips android.util.Log.v/d/i/w
+        # call sites in the release build. This is pure verification of the
+        # -assumenosideeffects rules in app/proguard-rules.pro; any regression
+        # (a rule accidentally dropped, or a new log sneaking in that R8 cannot
+        # prove side-effect-free) will fail the build here.
+        #
+        # We run the R8 minify task directly instead of assembleAppReleaseRelease
+        # because signing keys are not available in CI. The minified DEX is
+        # emitted at a well-known intermediate path and is the same DEX that
+        # would ship in the signed APK.
+        #
+        # Local reproduction (from repo root):
+        #   ./gradlew :app:minifyAppReleaseReleaseWithR8
+        #   BT=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n1)
+        #   "${BT}dexdump" -d \
+        #     app/build/intermediates/dex/appReleaseRelease/minifyAppReleaseReleaseWithR8/classes.dex \
+        #     | grep -E 'Landroid/util/Log;\.[wdiv]:'
+        # (empty output = pass; any match = fail)
+        run: |
+          set -euo pipefail
+          ./gradlew :app:minifyAppReleaseReleaseWithR8
+          DEX="app/build/intermediates/dex/appReleaseRelease/minifyAppReleaseReleaseWithR8/classes.dex"
+          if [ ! -f "$DEX" ]; then
+            echo "::error::Expected R8-minified classes.dex not found at $DEX"
+            exit 1
+          fi
+          BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n1)
+          DEXDUMP="${BUILD_TOOLS}dexdump"
+          if [ ! -x "$DEXDUMP" ]; then
+            echo "::error::dexdump not found at $DEXDUMP"
+            exit 1
+          fi
+          # Any call to Landroid/util/Log;.[wdiv]: in the minified DEX means R8
+          # did NOT strip it. Log.e is allowed (not stripped by design).
+          VIOLATIONS=$("$DEXDUMP" -d "$DEX" | grep -E 'Landroid/util/Log;\.[wdiv]:' || true)
+          if [ -n "$VIOLATIONS" ]; then
+            echo "::error::Release DEX contains un-stripped Log.v/d/i/w call sites:"
+            echo "$VIOLATIONS" | head -20
+            exit 1
+          fi
+          echo "OK: release DEX contains no Log.v/d/i/w call sites."
+
       - name: Test Coverage
         run: ./gradlew app:jacocoTestReport
         continue-on-error: true
