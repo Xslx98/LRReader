@@ -16,7 +16,6 @@
 package com.hippo.ehviewer.ui.scene.gallery.detail
 
 import android.content.Context
-import android.content.DialogInterface
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -26,10 +25,8 @@ import androidx.appcompat.app.AlertDialog
 import com.hippo.android.resource.AttrResources
 import com.hippo.drawable.RoundSideRectDrawable
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.EhFilter
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.data.GalleryTagGroup
-import com.hippo.ehviewer.dao.Filter
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListSceneDialog
 import com.hippo.widget.AutoWrapLayout
@@ -132,55 +129,7 @@ class GalleryTagHelper(private val callback: Callback) {
     }
 
     /**
-     * Show a dialog to filter the current uploader.
-     */
-    fun showFilterUploaderDialog() {
-        val context = callback.getContext()
-        val uploader = callback.getUploader()
-        if (context == null || uploader == null) {
-            return
-        }
-
-        AlertDialog.Builder(context)
-            .setMessage(callback.getString(R.string.filter_the_uploader, uploader))
-            .setPositiveButton(android.R.string.ok) { _, which ->
-                if (which != DialogInterface.BUTTON_POSITIVE) {
-                    return@setPositiveButton
-                }
-
-                val filter = Filter()
-                filter.mode = EhFilter.MODE_UPLOADER
-                filter.text = uploader
-                EhFilter.getInstance().addFilter(filter)
-
-                callback.showTip(R.string.filter_added, LENGTH_SHORT)
-            }.show()
-    }
-
-    /**
-     * Show a dialog to filter the given tag.
-     */
-    fun showFilterTagDialog(tag: String) {
-        val context = callback.getContext() ?: return
-
-        AlertDialog.Builder(context)
-            .setMessage(callback.getString(R.string.filter_the_tag, tag))
-            .setPositiveButton(android.R.string.ok) { _, which ->
-                if (which != DialogInterface.BUTTON_POSITIVE) {
-                    return@setPositiveButton
-                }
-
-                val filter = Filter()
-                filter.mode = EhFilter.MODE_TAG
-                filter.text = tag
-                EhFilter.getInstance().addFilter(filter)
-
-                callback.showTip(R.string.filter_added, LENGTH_SHORT)
-            }.show()
-    }
-
-    /**
-     * Show the tag long-press dialog with options (search, filter, copy, etc.).
+     * Show the tag long-press dialog with options (open definition, copy, etc.).
      */
     fun showTagDialog(baseScene: com.hippo.ehviewer.ui.scene.BaseScene, tag: String) {
         if (tagDialog == null) {
@@ -202,6 +151,5 @@ class GalleryTagHelper(private val callback: Callback) {
     }
 
     companion object {
-        private const val LENGTH_SHORT = 0
     }
 }
