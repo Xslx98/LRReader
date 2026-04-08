@@ -17,18 +17,33 @@
 package com.hippo.ehviewer.client
 
 import android.util.Log
+import androidx.annotation.VisibleForTesting
+import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.Filter
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
-class EhFilter private constructor() {
+class EhFilter @VisibleForTesting internal constructor() {
 
     private val mTitleFilterList = mutableListOf<Filter>()
     private val mUploaderFilterList = mutableListOf<Filter>()
     private val mTagFilterList = mutableListOf<Filter>()
     private val mTagNamespaceFilterList = mutableListOf<Filter>()
+
+    /**
+     * Completed when [loadFromDb] finishes (success OR failure path). All filter
+     * consumers should call [awaitReady] before reading filter lists to avoid the
+     * brief startup window where filters are empty (safe default = nothing filtered).
+     *
+     * Marked `@Volatile` so [loadFromList] can replace it after a synchronous
+     * test load without racing other readers.
+     */
+    @Volatile
+    private var readyDeferred: CompletableDeferred<Unit> = CompletableDeferred()
 
     val titleFilterList: List<Filter> get() = mTitleFilterList
     val uploaderFilterList: List<Filter> get() = mUploaderFilterList
@@ -36,26 +51,71 @@ class EhFilter private constructor() {
     val tagNamespaceFilterList: List<Filter> get() = mTagNamespaceFilterList
 
     /**
+     * Returns true once [loadFromDb] has finished (or [loadFromList] was used).
+     * Useful for diagnostics; consumers should prefer [awaitReady].
+     */
+    val isReady: Boolean
+        get() = readyDeferred.isCompleted
+
+    /**
      * Load filters from database. Called once after construction from a coroutine.
      * Until this completes, filter lists are empty (nothing is filtered — safe default).
+     *
+     * Uses try/finally so [readyDeferred] completes on BOTH success and failure paths;
+     * otherwise [awaitReady] callers would hang forever on a DB error.
      */
     internal suspend fun loadFromDb() {
-        val list = EhDB.getAllFilterAsync()
-        synchronized(this) {
-            for (filter in list) {
-                distributeFilter(filter)
+        try {
+            val list = EhDB.getAllFilterAsync()
+            synchronized(this) {
+                for (filter in list) {
+                    distributeFilter(filter)
+                }
+            }
+        } finally {
+            readyDeferred.complete(Unit)
+        }
+    }
+
+    /**
+     * Suspend until filter loading has completed, or until [timeoutMs] elapses.
+     *
+     * Returns normally on success (filters loaded). On timeout, logs a warning,
+     * reports the timeout to [Analytics], and **returns without throwing** —
+     * filter lists are simply left in their current (likely empty) state and the
+     * caller proceeds with the safe default of "nothing filtered". Timing out the
+     * filter load must NOT break gallery list rendering; pass-through is the safe
+     * behaviour.
+     *
+     * Idempotent: if loading is already complete this returns immediately without
+     * suspending.
+     */
+    suspend fun awaitReady(timeoutMs: Long = DEFAULT_AWAIT_READY_TIMEOUT_MS) {
+        if (readyDeferred.isCompleted) return
+        val result = withTimeoutOrNull(timeoutMs) { readyDeferred.await() }
+        if (result == null) {
+            Log.w(TAG, "EhFilter.awaitReady() timed out after ${timeoutMs}ms — proceeding with empty filters")
+            try {
+                Analytics.recordException(
+                    IllegalStateException("EhFilter.awaitReady timeout after ${timeoutMs}ms")
+                )
+            } catch (_: Throwable) {
+                // Analytics is best-effort; never let reporting failures break the caller.
             }
         }
     }
 
     /**
      * Load filters from a pre-built list (for testing without DB).
+     * Also completes [readyDeferred] so [awaitReady] returns immediately
+     * after this call.
      */
     @Synchronized
     internal fun loadFromList(filters: List<Filter>) {
         for (filter in filters) {
             distributeFilter(filter)
         }
+        readyDeferred.complete(Unit)
     }
 
     private fun distributeFilter(filter: Filter) {
@@ -228,6 +288,9 @@ class EhFilter private constructor() {
 
     companion object {
         private const val TAG = "EhFilter"
+
+        /** Default budget for [awaitReady] — DB load on cold start typically takes <100ms. */
+        const val DEFAULT_AWAIT_READY_TIMEOUT_MS = 1000L
 
         const val MODE_TITLE = 0
         const val MODE_UPLOADER = 1
