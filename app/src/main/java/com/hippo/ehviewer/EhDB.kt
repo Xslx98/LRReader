@@ -499,22 +499,6 @@ object EhDB {
     }
 
     // ═══════════════════════════════════════════════════════════
-    // BLACK LIST
-    // ═══════════════════════════════════════════════════════════
-
-    suspend fun getAllBlackListAsync(): List<BlackList> = sDatabase.miscDao().getAllBlackList()
-
-    suspend fun insertBlackListAsync(blackList: BlackList) {
-        blackList.id = null
-        if (blackList.badgayname == null) return
-        sDatabase.miscDao().insertBlackList(blackList)
-    }
-
-    suspend fun deleteBlackListAsync(blackList: BlackList) {
-        sDatabase.miscDao().deleteBlackList(blackList)
-    }
-
-    // ═══════════════════════════════════════════════════════════
     // GALLERY TAGS
     // ═══════════════════════════════════════════════════════════
 
