@@ -21,7 +21,7 @@
 | Build | Gradle + AGP 8.13.2 | `./gradlew` + Version Catalog (`libs.versions.toml`) |
 | Network | OkHttp | 4.12.0 |
 | API Serialization | kotlinx-serialization | 1.8.1 (all JSON, Gson removed) |
-| Database | Room + KSP | 2.6.1, schema v12 (exported to `app/schemas/`) |
+| Database | Room + KSP | 2.6.1, schema v15 (exported to `app/schemas/`) |
 | Coroutines | kotlinx-coroutines | 1.10.2 |
 | Lifecycle | AndroidX lifecycle-runtime-ktx | 2.8.7 |
 | Image Decoding | Custom C/JNI (libjpeg-turbo, libpng, libwebp) | CMake |
@@ -85,7 +85,7 @@ LRReader/
 
 | File | Purpose |
 |---|---|
-| `EhApplication.kt` | App entry point; calls `ServiceRegistry.initialize()`, defers JNI init + EhFilter load to background |
+| `EhApplication.kt` | App entry point; calls `ServiceRegistry.initialize()`, defers JNI init to background |
 | `ServiceRegistry.kt` | Central singleton registry replacing old EhApplication service locator |
 | `module/AppModule.kt` | App-level services (crash reporting, analytics) |
 | `module/ClientModule.kt` | LRR API clients + auth |
@@ -106,7 +106,7 @@ LRReader/
 | `client/lrr/LRRDatabaseApi.kt` | Tag statistics + database operations |
 | `client/lrr/LRRTagCache.kt` | In-memory tag autocomplete cache (10-min TTL) |
 | `client/lrr/LRRArchivePagingSource.kt` | Paging 3 source for gallery list |
-| `dao/AppDatabase.kt` | Room database schema (v12, schema exported) |
+| `dao/AppDatabase.kt` | Room database schema (v15, schema exported) |
 | `util/FlowBridge.kt` | Java→Kotlin Flow bridge for lifecycle-aware collection |
 | `ui/MainActivity.kt` | Main UI entry point + scene routing |
 | `ui/GalleryActivity.kt` | Reader/detail view |
@@ -114,7 +114,7 @@ LRReader/
 | `ui/scene/download/DownloadsScene.kt` | Download management (Room Flow + DiffUtil) |
 | `ui/scene/gallery/detail/GalleryDetailScene.kt` | Gallery detail view (delegates to helpers + ViewModel) |
 | `ui/scene/gallery/detail/GalleryDetailViewModel.kt` | Gallery detail state: info, detail, loading state |
-| `ui/scene/gallery/detail/GalleryTagHelper.kt` | Tag display, filter dialogs, tag long-press actions |
+| `ui/scene/gallery/detail/GalleryTagHelper.kt` | Tag display, tag long-press actions |
 | `ui/scene/gallery/detail/GalleryDownloadHelper.kt` | Download state display + DownloadInfoListener |
 | `ui/scene/gallery/detail/GalleryDetailRequestHelper.kt` | LRR metadata fetch + category favorite detection |
 | `ui/scene/gallery/list/GalleryListViewModel.kt` | Paging 3 ViewModel for gallery list |
@@ -211,7 +211,7 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 
 - All entities and DAOs in `dao/` package
 - Use KSP (not KAPT) for annotation processing
-- Schema version is v12; exported to `app/schemas/` — always provide a `Migration` when bumping
+- Schema version is v15; exported to `app/schemas/` — always provide a `Migration` when bumping
 - **Never** use `fallbackToDestructiveMigration()` in production code
 - `AppDatabase.kt` is the single Room database instance
 
@@ -257,7 +257,7 @@ Settings are now Kotlin objects in `settings/`:
 
 ## Testing
 
-Unit tests live in `app/src/test/java/`. 42 test files, 405 tests covering:
+Unit tests live in `app/src/test/java/`, covering:
 
 - All LRR API classes (`LRRArchiveApiTest`, `LRRSearchApiTest`, `LRRCategoryApiTest`, etc.) using `MockWebServer`
 - All LRR data classes (`LRRArchiveTest`, `LRRCategoryTest`, etc.)
@@ -267,9 +267,8 @@ Unit tests live in `app/src/test/java/`. 42 test files, 405 tests covering:
 - `DownloadSpeedTrackerTest` — speed calculation + remaining time
 - `GalleryInfoParcelTest` — Parcelable round-trip for GalleryInfo + DownloadInfo (11 tests)
 - `TagEditDialogTest` — tag parsing + formatting round-trip (18 tests)
-- `EhFilterTest` — title/tag/uploader/namespace filtering (35 tests, uses `loadFromList()` for DB-free setup)
-- `RoomMigrationTest` — schema integrity verification
-- `RoomMigrationPathTest` — migration path tests v9→v10→v11→v12 (11 tests)
+- `RoomMigrationTest` — schema integrity verification (validates current v15 schema)
+- `RoomMigrationPathTest` — migration path tests v9→v10→v11→v12→v13→v14→v15
 - `ServerProfileDaoTest` — DAO CRUD verification
 - `GalleryInfoDiffTest` — DiffUtil identity/content equality contracts
 - `ContentHelperDiffUtilTest` — DiffUtil dispatch operations
@@ -335,7 +334,7 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 4. **LRR API surface:** Full LANraragi REST API wrapped in `client/lrr/`. Add new endpoints here as `suspend` functions returning `@Serializable` data classes. Use `parseBaseUrl(baseUrl)` from `LRRApiUtils.kt` to build URLs — never `toHttpUrlOrNull()!!`.
 
-5. **Room schema migrations:** Schema at v12, exported. Write an explicit `Migration` object for every schema change.
+5. **Room schema migrations:** Schema at v15, exported. Write an explicit `Migration` object for every schema change.
 
 6. **DiffUtil in ContentLayout and DownloadsScene:** `ContentHelper.dispatchDiffUpdates()` for gallery list updates. `DownloadsScene` uses `DownloadInfoDiffCallback` with `gid`-based identity for `onUpdateAll()`/`onReload()`. Avoid `notifyDataSetChanged()` — use specific notifications or DiffUtil.
 
@@ -371,9 +370,9 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 22. **EncryptedSharedPreferences recovery:** When Android KeyStore is unavailable (device migration, corruption), `LRRAuthManager.isNeedsReauthentication()` returns true. `MainActivity.onCreate2()` checks this flag and shows an AlertDialog directing the user to `ServerListScene` to re-enter credentials. Without this, the app silently falls back to the initial setup page because `isConfigured()` returns false.
 
-23. **App startup order:** `EhApplication.onCreate()` initializes core services synchronously (Settings, LRRAuthManager, EhDB, ServiceRegistry) then defers heavy work to background: JNI initialization (Image, Native, A7Zip, BitmapUtils) runs on `IoThreadPoolExecutor`, EhFilter loads from DB via `ioScope.launch`. Profile migration and old DB merge also run on background threads.
+23. **App startup order:** `EhApplication.onCreate()` initializes core services synchronously (Settings, LRRAuthManager, EhDB, ServiceRegistry) then defers heavy work to background: JNI initialization (Image, Native, A7Zip, BitmapUtils) runs on `IoThreadPoolExecutor`. Profile migration and old DB merge also run on background threads via `AppModule.bootScope` (W1-1).
 
-24. **EhFilter initialization:** `EhFilter` constructor does NOT touch the database. Filters load asynchronously via `suspend fun loadFromDb()` called from `EhApplication` on `ioScope`. Until loaded, filter lists are empty (nothing is filtered — safe default). `addFilter()`/`deleteFilter()` persist to DB via `ioScope.launch`, not `runBlocking`.
+24. **EhFilter subsystem removed:** The user-blacklist subsystem (`EhFilter`, `Filter` Room entity, `EhFilterTest`, all UI entry points and string resources) was deleted in the C2 branch as a W1-3 follow-up. LR Reader is a private library client where users curate stored content directly — there is no use case for "block but keep stored". If you find references to `EhFilter`, `Filter::class`, `filterTitle/filterTag/filterUploader`, or `R.string.filter_*` that survived, they are bugs from an incomplete revert; remove them. Room schema v14→v15 dropped the `FILTER` table.
 
 25. **ProGuard log stripping:** Release builds strip `Log.v()`, `Log.d()`, `Log.i()`, and `Log.w()` via `-assumenosideeffects`. Only `Log.e()` is preserved for crash diagnostics.
 
