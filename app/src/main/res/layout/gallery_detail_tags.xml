@@ -17,6 +17,7 @@
 
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/tags"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -35,14 +36,14 @@
             android:textColor="?attr/textColorThemeAccent"
             android:text="@string/no_tags"/>
 
-        <ImageButton
+        <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/edit_tags_btn"
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:layout_gravity="end"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/v_edit_white_x24"
-            android:tint="?attr/textColorThemeAccent"
+            app:tint="?attr/textColorThemeAccent"
             android:contentDescription="@string/lrr_edit_tags"
             android:scaleType="centerInside"
             android:padding="4dp"

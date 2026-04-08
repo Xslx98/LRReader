@@ -530,11 +530,10 @@ class DownloadFragment : PreferenceFragmentCompat(),
      * Trigger MediaStore re-scan for all image files in the download directory.
      */
     private fun triggerMediaScan(downloadLocation: UniFile?) {
-        if (downloadLocation == null || activity == null) {
+        if (downloadLocation == null) {
             return
         }
-
-        val activityRef = activity!!
+        val activityRef = activity ?: return
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             val paths = mutableListOf<String>()
             collectImagePaths(downloadLocation, paths)
