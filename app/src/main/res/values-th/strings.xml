@@ -434,22 +434,8 @@
     <string name="clear_all">ลบทั้งหมด</string>
     <string name="clear_all_history">จะลบประวัติทั้งหมดเลยหรือไม่?</string>
 
-    <!-- Filter -->
-    <string name="filter">บล็อกแกลเลอรี่</string>
-    <string name="no_filter">ตัวบล็อกจะแสดงอยู่ตรงนี้</string>
-    <string name="filter_title">ชื่อเรื่อง</string>
-    <string name="filter_uploader">ผู้อัพโหลด</string>
-    <string name="filter_tag">แท็ก</string>
-    <string name="filter_tag_namespace">ชื่อของแท็ก</string>
-    <string name="delete_filter">ลบตัวบล็อก \"%s\" หรือไม่?</string>
     <string name="tip">คำแนะนำ</string>
-    <string name="add_filter">เพิ่มตัวบล็อก</string>
     <string name="show_definition">แสดงความหมาย</string>
-    <string name="filter_text">ข้อความตัวบล็อก</string>
-    <string name="filter_tip">ระบบบล็อกนี้จะกรองผลลัพธ์ของระบบบล็อกของเว็บไซต์ LANraragi\n\nบล็อกชื่อเรื่อง: แยกแกลเลอรี่ที่มีชื่อเรื่องประกอบด้วยคำนั้น\n\nบล็อกผู้อัพโหลด: แยกแกลเลอรี่ที่ถูกอัพโหลดโดยผู้อัพโหลดนั้น\n\nบล็อกแท็ก: แยกแกลเลอรี่ที่มีแท็กนั้น ซึ่งจะใช้เวลามากขึ้นในการรับรายการแกลเลอรี่\n\nบล็อกเนมสเปซแท็ก: แยกแกลเลอรี่ที่มีเนมสเปซแท็กนั้น ซึ่งจะใช้เวลามากขึ้นในการรับรายการแกลเลอรี่</string>
-    <string name="filter_the_uploader">บล็อกผู้อัพโหลด \"%s\" หรือไม่?</string>
-    <string name="filter_the_tag">บล็อกแท็ก \"%s\" หรือไม่?</string>
-    <string name="filter_added">เพิ่มตัวบล็อกแล้ว</string>
     <string name="copy_tag">คัดลอกแท็ก</string>
 
     <!-- Set Security -->
@@ -538,8 +524,6 @@
     <string name="settings_eh_tag_translations_source">Placeholder</string>
     <string name="settings_eh_tag_translations_source_url">https://placeholder</string>
     <string name="settings_eh_cellular_network_warning">เตือนการใช้เครือข่ายมือถือ</string>
-    <string name="settings_eh_filter">บล็อกแกลเลอรี่</string>
-    <string name="settings_eh_filter_summary">บล็อกแกลเลอรี่ตามชื่อเรื่อง ผู้อัพโหลด และแท็ก</string>
 
     <string name="settings_read">การอ่าน</string>
     <string name="settings_read_screen_rotation">ทิศทางของหน้าจอ</string>

@@ -297,9 +297,6 @@
     <string name="remove_from_favorite_success">카테고리에서 제거했습니다.</string>
     <string name="add_to_favorite_failure">카테고리에 추가하지 못했습니다.</string>
     <string name="remove_from_favorite_failure">카테고리에서 제거하지 못했습니다.</string>
-    <string name="filter_the_uploader">업로더 \"%s\"을(를) 차단하시겠습니까?</string>
-    <string name="filter_the_tag">태그 \"%s\"을(를) 차단하시겠습니까?</string>
-    <string name="filter_added">차단 항목 추가됨</string>
     <string name="copy_tag">태그 복사</string>
 
     <!-- Rating -->
@@ -442,19 +439,8 @@
     <string name="clear_all">모두 지우기</string>
     <string name="clear_all_history">모든 방문 기록을 지우시겠습니까?</string>
 
-    <!-- Filter -->
-    <string name="filter">갤러리 차단</string>
-    <string name="no_filter">차단 목록</string>
-    <string name="filter_title">제목</string>
-    <string name="filter_uploader">업로더</string>
-    <string name="filter_tag">태그</string>
-    <string name="filter_tag_namespace">태그 네임스페이스</string>
-    <string name="delete_filter">차단 항목 \'%s\' 을(를) 삭제하시겠습니까?</string>
     <string name="tip">팁</string>
-    <string name="add_filter">차단 항목 추가</string>
     <string name="show_definition">정의 표시</string>
-    <string name="filter_text">차단 항목 텍스트</string>
-    <string name="filter_tip">본 차단 시스템은 LANraragi 웹 사이트 차단 시스템을 기반으로 갤러리를 계속 차단합니다. \n\n 제목 차단 항목: 키워드를 포함하는 갤러리를 제외합니다. \n\n 게시자 차단 항목: 게시자가 업로드한 갤러리를 제외합니다. \n\n 태그 차단 항목: 태그를 포함하는 갤러리를 제외합니다. \n\n 태그 그룹 차단 항목: 태그 그룹을 포함하는 갤러리를 제외합니다. 갤러리 목록을 가져오는 데 더 많은 시간이 걸립니다.</string>
 
     <!-- Set Security -->
     <string name="set_pattern_protection">패턴 보호 사용</string>
@@ -549,8 +535,6 @@
     <string name="settings_eh_show_tag_translations_summary">영어 태그 대신 번역된 태그를 표시합니다. 데이터 파일을 다운로드하는데 시간이 걸립 수 있습니다.</string>
     <string name="settings_eh_tag_translations_source">Placeholder</string>
     <string name="settings_eh_tag_translations_source_url">https://placeholder</string>
-    <string name="settings_eh_filter">갤러리 차단</string>
-    <string name="settings_eh_filter_summary">제목, 게시자, 태그에 따라 갤러리 차단</string>
     <string name="settings_eh_cellular_network_warning">모바일 데이터 경고</string>
 
     <string name="settings_read">읽기</string>
