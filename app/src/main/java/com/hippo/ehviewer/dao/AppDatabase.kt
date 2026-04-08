@@ -41,13 +41,12 @@ import java.security.MessageDigest
         HistoryInfo::class,
         LocalFavoriteInfo::class,
         QuickSearch::class,
-        Filter::class,
         BlackList::class,
         GalleryTags::class,
         BookmarkInfo::class,
         ServerProfile::class
     ],
-    version = 14,
+    version = 15,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class)
@@ -69,9 +68,30 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "eh.db"
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
                     .build()
                     .also { INSTANCE = it }
+            }
+        }
+
+        /**
+         * v14 → v15: Drop the FILTER table.
+         *
+         * The EhFilter subsystem (user-defined title/uploader/tag blacklist) was a
+         * holdover from EhViewer's public-site model. LR Reader is a private library
+         * client where users curate stored content directly, so an in-app blacklist
+         * has no use case. The class, DAO, entity and UI entry points were removed
+         * in the same change as this migration.
+         *
+         * On upgrade we simply drop the table — any user-configured filters were
+         * already dead data because the consumption path had been severed during
+         * the EhViewer→LRR conversion (see W1-3 落地说明 in
+         * docs/audit-2026-04-06.md). No data worth preserving.
+         */
+        @VisibleForTesting
+        internal val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DROP TABLE IF EXISTS FILTER")
             }
         }
 

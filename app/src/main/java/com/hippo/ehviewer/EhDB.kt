@@ -605,26 +605,6 @@ object EhDB {
     }
 
     // ═══════════════════════════════════════════════════════════
-    // FILTER
-    // ═══════════════════════════════════════════════════════════
-
-    suspend fun getAllFilterAsync(): List<Filter> = sDatabase.browsingDao().getAllFilters()
-
-    suspend fun addFilterAsync(filter: Filter) {
-        filter.id = null
-        filter.id = sDatabase.browsingDao().insertFilter(filter)
-    }
-
-    suspend fun deleteFilterAsync(filter: Filter) {
-        sDatabase.browsingDao().deleteFilter(filter)
-    }
-
-    suspend fun triggerFilterAsync(filter: Filter) {
-        filter.enable = filter.enable != true
-        sDatabase.browsingDao().updateFilter(filter)
-    }
-
-    // ═══════════════════════════════════════════════════════════
     // SERVER PROFILES
     // ═══════════════════════════════════════════════════════════
 
