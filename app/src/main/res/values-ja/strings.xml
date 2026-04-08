@@ -265,9 +265,6 @@
     <string name="remove_from_favorite_success">カテゴリから削除しました。</string>
     <string name="add_to_favorite_failure">カテゴリに追加失敗しました。</string>
     <string name="remove_from_favorite_failure">カテゴリからの削除に失敗しました。</string>
-    <string name="filter_the_uploader">アップローダ「%s」をブロックしますか？</string>
-    <string name="filter_the_tag">タグ「%s」をブロックしますか？</string>
-    <string name="filter_added">ブロックアイテムを追加しました。</string>
     <string name="copy_tag">タグをコピー</string>
     <!-- Rating -->
     <string name="rating10">良すぎてたまらない</string>
@@ -403,19 +400,8 @@
     <string name="no_history">閲覧履歴はここに表示されます</string>
     <string name="clear_all">すべて削除</string>
     <string name="clear_all_history">閲覧履歴をすべて削除しますか？</string>
-    <!-- Filter -->
-    <string name="filter">ギャラリーをブロック</string>
-    <string name="no_filter">フィルターはここに表示されます</string>
-    <string name="filter_title">タイトル</string>
-    <string name="filter_uploader">アップローダー</string>
-    <string name="filter_tag">タグ</string>
-    <string name="filter_tag_namespace">タグの名前空間</string>
-    <string name="delete_filter">ブロックアイテム「%s」を削除しますか？</string>
     <string name="tip">ヒント</string>
-    <string name="add_filter">ブロックアイテムを追加</string>
     <string name="show_definition">ヘルプを表示</string>
-    <string name="filter_text">ブロックテキスト</string>
-    <string name="filter_tip">ブロックアイテムに対応するものはLANraragiのギャラリーリストから除外します。\n\nタイトルをブロック: ブロックテキストを含むギャラリーを除外します。\n\nアップローダブロック: そのアップローダのギャラリーを除外します。\n\nタグをブロック: そのタグを含むギャラリーを除外します。ギャラリーリストをロードするのにもっと時間がかかる事があります。\n\nタグ名前空間をブロック: そのタグ名前空間を含むギャラリーを除外します。ギャラリーリストをロードするのにもっと時間がかかる事があります。</string>
     <!-- Set Security -->
     <string name="set_pattern_protection">パターン保護を設定</string>
     <string name="set_pattern_protection_tip">パターンを描いてパターン保護を設定します。\n空白のまま続行してパターン保護をクリアします。</string>
@@ -501,8 +487,6 @@
     <string name="settings_eh_show_tag_translations_summary">原文ではなく中国語のタグ翻訳を表示します(データファイルのダウンロードに時間がかかります)</string>
     <string name="settings_eh_tag_translations_source">プレースホルダー</string>
     <string name="settings_eh_tag_translations_source_url">https://placeholder</string>
-    <string name="settings_eh_filter">ギャラリーをブロックする</string>
-    <string name="settings_eh_filter_summary">タイトル、アップローダー、タグで望ましくないギャラリーを除外します</string>
     <string name="settings_eh_cellular_network_warning">モバイルネットワークの警告</string>
     <string name="settings_read">閲覧</string>
     <string name="settings_read_screen_rotation">画面の向き</string>
