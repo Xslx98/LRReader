@@ -100,7 +100,7 @@ class QuickSearchScene : ToolbarScene() {
         // drag & drop manager
         val dragDropManager = RecyclerViewDragDropManager()
         dragDropManager.setDraggingItemShadowDrawable(
-            AppCompatResources.getDrawable(context!!, R.drawable.shadow_8dp) as NinePatchDrawable
+            AppCompatResources.getDrawable(requireContext(), R.drawable.shadow_8dp) as NinePatchDrawable
         )
 
         var adapter: RecyclerView.Adapter<*> = QuickSearchAdapter()
@@ -169,7 +169,7 @@ class QuickSearchScene : ToolbarScene() {
             }
 
             val quickSearch = mQuickSearchList!![position]
-            AlertDialog.Builder(context!!)
+            AlertDialog.Builder(requireContext())
                 .setTitle(R.string.delete_quick_search_title)
                 .setMessage(getString(R.string.delete_quick_search_message, quickSearch.name))
                 .setPositiveButton(android.R.string.ok) { _, _ ->
