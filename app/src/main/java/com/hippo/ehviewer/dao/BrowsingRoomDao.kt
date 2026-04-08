@@ -3,7 +3,7 @@ package com.hippo.ehviewer.dao
 import androidx.room.*
 
 /**
- * Room DAO for browsing-related tables: HISTORY, LOCAL_FAVORITES, QUICK_SEARCH, FILTER.
+ * Room DAO for browsing-related tables: HISTORY, LOCAL_FAVORITES, QUICK_SEARCH.
  */
 @Dao
 interface BrowsingRoomDao {
@@ -73,18 +73,4 @@ interface BrowsingRoomDao {
 
     @Query("SELECT * FROM QUICK_SEARCH ORDER BY TIME ASC LIMIT :limit OFFSET :offset")
     suspend fun getQuickSearchRange(offset: Int, limit: Int): List<QuickSearch>
-
-    // --- FILTER ---
-
-    @Query("SELECT * FROM FILTER")
-    suspend fun getAllFilters(): List<Filter>
-
-    @Insert
-    suspend fun insertFilter(filter: Filter): Long
-
-    @Update
-    suspend fun updateFilter(filter: Filter)
-
-    @Delete
-    suspend fun deleteFilter(filter: Filter)
 }

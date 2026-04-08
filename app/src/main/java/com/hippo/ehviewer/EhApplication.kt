@@ -31,7 +31,6 @@ import com.hippo.Native
 import com.hippo.a7zip.A7Zip
 import com.hippo.content.ContextLocalWrapper
 import com.hippo.content.RecordingApplication
-import com.hippo.ehviewer.client.EhFilter
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
 import com.hippo.ehviewer.module.AppModule
 import kotlinx.coroutines.launch
@@ -158,18 +157,6 @@ class EhApplication : RecordingApplication() {
         ServiceRegistry.initialize(this)
         // Eagerly start network monitoring so isAvailable() is ready before first API call
         ServiceRegistry.networkModule.networkMonitor
-
-        // Load EhFilter from DB asynchronously. Filter lists start empty — safe default.
-        // EhFilter.loadFromDb() uses try/finally internally to complete its readiness
-        // deferred even if the DB call throws, so awaitReady() callers never hang.
-        ServiceRegistry.coroutineModule.ioScope.launch {
-            try {
-                EhFilter.getInstance().loadFromDb()
-            } catch (_: Exception) {
-                // Filters remain empty — nothing gets filtered. Readiness deferred
-                // is already completed inside loadFromDb()'s finally block.
-            }
-        }
 
         // Defer heavy JNI/native initialization to background thread.
         // These are not needed until the user actually opens a gallery or downloads.

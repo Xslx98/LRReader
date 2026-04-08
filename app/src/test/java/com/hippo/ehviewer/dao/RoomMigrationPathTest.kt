@@ -18,7 +18,7 @@ import java.nio.ByteBuffer
 import java.security.MessageDigest
 
 /**
- * Migration path tests for AppDatabase v9 -> v10 -> v11 -> v12 -> v13 -> v14.
+ * Migration path tests for AppDatabase v9 -> v10 -> v11 -> v12 -> v13 -> v14 -> v15.
  *
  * These tests exercise the actual migration SQL by:
  * 1. Creating a database at the source version schema
@@ -26,7 +26,7 @@ import java.security.MessageDigest
  * 3. Running the migration object's migrate() method
  * 4. Verifying data integrity and schema changes
  *
- * Unlike RoomMigrationTest (which validates the current v14 schema),
+ * Unlike RoomMigrationTest (which validates the current v15 schema),
  * these tests verify each migration step preserves data correctly.
  *
  * Run with: ./gradlew testAppReleaseDebugUnitTest --tests "*.RoomMigrationPathTest"
@@ -708,10 +708,59 @@ class RoomMigrationPathTest {
         }
     }
 
-    // ========== Test 5: Full migration v9 -> v14 ==========
+    // ========== Test 4c: v14 -> v15 (Drop FILTER table) ==========
 
     @Test
-    fun `migrate all v9 to v14 - full chain preserves data`() {
+    fun `migrate 14 to 15 - FILTER table is dropped`() {
+        // Build a v14 schema by chaining migrations from v9.
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+
+        // Seed a couple of FILTER rows so we can verify they vanish on drop.
+        db.execSQL("INSERT INTO FILTER (MODE, TEXT, ENABLE) VALUES (0, 'doomed_title', 1)")
+        db.execSQL("INSERT INTO FILTER (MODE, TEXT, ENABLE) VALUES (2, 'doomed_tag', 1)")
+
+        assertTrue("FILTER must exist before v14→v15 migration",
+            getTableNames(db).contains("FILTER"))
+
+        AppDatabase.MIGRATION_14_15.migrate(db)
+
+        assertFalse("FILTER must be gone after v14→v15 migration",
+            getTableNames(db).contains("FILTER"))
+
+        // Other tables remain intact.
+        val tables = getTableNames(db)
+        assertTrue(tables.contains("DOWNLOADS"))
+        assertTrue(tables.contains("HISTORY"))
+        assertTrue(tables.contains("SERVER_PROFILES"))
+    }
+
+    @Test
+    fun `migrate 14 to 15 - missing FILTER table is a no-op`() {
+        // Some users may be on a v14 schema where FILTER was already dropped manually
+        // (e.g. via DB editor). DROP TABLE IF EXISTS guarantees idempotency.
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        db.execSQL("DROP TABLE FILTER")
+
+        // Should not throw.
+        AppDatabase.MIGRATION_14_15.migrate(db)
+
+        assertFalse(getTableNames(db).contains("FILTER"))
+    }
+
+    // ========== Test 5: Full migration v9 -> v15 ==========
+
+    @Test
+    fun `migrate all v9 to v15 - full chain preserves data`() {
         db = createDatabase(9) { createV9Schema(it) }
 
         val token = "full_chain_test_arcid"
@@ -741,12 +790,13 @@ class RoomMigrationPathTest {
             arrayOf<Any>(oldGid)
         )
 
-        // Run all 5 migrations in order
+        // Run all 6 migrations in order
         AppDatabase.MIGRATION_9_10.migrate(db)
         AppDatabase.MIGRATION_10_11.migrate(db)
         AppDatabase.MIGRATION_11_12.migrate(db)
         AppDatabase.MIGRATION_12_13.migrate(db)
         AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
 
         // Verify GID recomputation (v9->v10)
         db.query("SELECT GID, TOKEN, TITLE, RATING FROM DOWNLOADS").use { c ->
@@ -801,7 +851,7 @@ class RoomMigrationPathTest {
     }
 
     @Test
-    fun `migrate all v9 to v14 - empty database succeeds`() {
+    fun `migrate all v9 to v15 - empty database succeeds`() {
         db = createDatabase(9) { createV9Schema(it) }
 
         // Run all migrations on empty database -- should not throw
@@ -810,6 +860,7 @@ class RoomMigrationPathTest {
         AppDatabase.MIGRATION_11_12.migrate(db)
         AppDatabase.MIGRATION_12_13.migrate(db)
         AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
 
         // Verify tables still exist and are queryable
         db.query("SELECT COUNT(*) FROM DOWNLOADS").use { c ->
@@ -823,7 +874,7 @@ class RoomMigrationPathTest {
     }
 
     @Test
-    fun `migrate all v9 to v14 - final schema matches Room v14`() {
+    fun `migrate all v9 to v15 - final schema matches Room v15`() {
         db = createDatabase(9) { createV9Schema(it) }
 
         AppDatabase.MIGRATION_9_10.migrate(db)
@@ -831,13 +882,14 @@ class RoomMigrationPathTest {
         AppDatabase.MIGRATION_11_12.migrate(db)
         AppDatabase.MIGRATION_12_13.migrate(db)
         AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
 
-        // Verify all 11 tables exist
+        // Verify all 10 tables exist (FILTER was dropped in v14→v15)
         val tables = getTableNames(db)
         val expectedTables = setOf(
             "DOWNLOADS", "DOWNLOAD_LABELS", "DOWNLOAD_DIRNAME",
             "HISTORY", "LOCAL_FAVORITES", "QUICK_SEARCH",
-            "FILTER", "Black_List", "Gallery_Tags",
+            "Black_List", "Gallery_Tags",
             "BOOKMARKS", "SERVER_PROFILES"
         )
         assertEquals(expectedTables, tables)
