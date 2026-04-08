@@ -311,7 +311,6 @@
 
     <string-array name="tag_menu_entries">
         <item>@string/show_definition</item>
-        <item>@string/add_filter</item>
     </string-array>
 
     <string-array name="app_language_entries">
