@@ -21,7 +21,7 @@
 | Build | Gradle + AGP 8.13.2 | `./gradlew` + Version Catalog (`libs.versions.toml`) |
 | Network | OkHttp | 4.12.0 |
 | API Serialization | kotlinx-serialization | 1.8.1 (all JSON, Gson removed) |
-| Database | Room + KSP | 2.6.1, schema v15 (exported to `app/schemas/`) |
+| Database | Room + KSP | 2.6.1, schema v16 (exported to `app/schemas/`) |
 | Coroutines | kotlinx-coroutines | 1.10.2 |
 | Lifecycle | AndroidX lifecycle-runtime-ktx | 2.8.7 |
 | Image Decoding | Custom C/JNI (libjpeg-turbo, libpng, libwebp) | CMake |
@@ -106,7 +106,7 @@ LRReader/
 | `client/lrr/LRRDatabaseApi.kt` | Tag statistics + database operations |
 | `client/lrr/LRRTagCache.kt` | In-memory tag autocomplete cache (10-min TTL) |
 | `client/lrr/LRRArchivePagingSource.kt` | Paging 3 source for gallery list |
-| `dao/AppDatabase.kt` | Room database schema (v15, schema exported) |
+| `dao/AppDatabase.kt` | Room database schema (v16, schema exported) |
 | `util/FlowBridge.kt` | Java→Kotlin Flow bridge for lifecycle-aware collection |
 | `ui/MainActivity.kt` | Main UI entry point + scene routing |
 | `ui/GalleryActivity.kt` | Reader/detail view |
@@ -211,7 +211,7 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 
 - All entities and DAOs in `dao/` package
 - Use KSP (not KAPT) for annotation processing
-- Schema version is v15; exported to `app/schemas/` — always provide a `Migration` when bumping
+- Schema version is v16; exported to `app/schemas/` — always provide a `Migration` when bumping
 - **Never** use `fallbackToDestructiveMigration()` in production code
 - `AppDatabase.kt` is the single Room database instance
 
@@ -267,8 +267,8 @@ Unit tests live in `app/src/test/java/`, covering:
 - `DownloadSpeedTrackerTest` — speed calculation + remaining time
 - `GalleryInfoParcelTest` — Parcelable round-trip for GalleryInfo + DownloadInfo (11 tests)
 - `TagEditDialogTest` — tag parsing + formatting round-trip (18 tests)
-- `RoomMigrationTest` — schema integrity verification (validates current v15 schema)
-- `RoomMigrationPathTest` — migration path tests v9→v10→v11→v12→v13→v14→v15
+- `RoomMigrationTest` — schema integrity verification (validates current v16 schema)
+- `RoomMigrationPathTest` — migration path tests v9→v10→v11→v12→v13→v14→v15→v16
 - `ServerProfileDaoTest` — DAO CRUD verification
 - `GalleryInfoDiffTest` — DiffUtil identity/content equality contracts
 - `ContentHelperDiffUtilTest` — DiffUtil dispatch operations
@@ -334,7 +334,7 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 4. **LRR API surface:** Full LANraragi REST API wrapped in `client/lrr/`. Add new endpoints here as `suspend` functions returning `@Serializable` data classes. Use `parseBaseUrl(baseUrl)` from `LRRApiUtils.kt` to build URLs — never `toHttpUrlOrNull()!!`.
 
-5. **Room schema migrations:** Schema at v15, exported. Write an explicit `Migration` object for every schema change.
+5. **Room schema migrations:** Schema at v16, exported. Write an explicit `Migration` object for every schema change.
 
 6. **DiffUtil in ContentLayout and DownloadsScene:** `ContentHelper.dispatchDiffUpdates()` for gallery list updates. `DownloadsScene` uses `DownloadInfoDiffCallback` with `gid`-based identity for `onUpdateAll()`/`onReload()`. Avoid `notifyDataSetChanged()` — use specific notifications or DiffUtil.
 
@@ -372,7 +372,11 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 23. **App startup order:** `EhApplication.onCreate()` initializes core services synchronously (Settings, LRRAuthManager, EhDB, ServiceRegistry) then defers heavy work to background: JNI initialization (Image, Native, A7Zip, BitmapUtils) runs on `IoThreadPoolExecutor`. Profile migration and old DB merge also run on background threads via `AppModule.bootScope` (W1-1).
 
-24. **EhFilter subsystem removed:** The user-blacklist subsystem (`EhFilter`, `Filter` Room entity, `EhFilterTest`, all UI entry points and string resources) was deleted in the C2 branch as a W1-3 follow-up. LR Reader is a private library client where users curate stored content directly — there is no use case for "block but keep stored". If you find references to `EhFilter`, `Filter::class`, `filterTitle/filterTag/filterUploader`, or `R.string.filter_*` that survived, they are bugs from an incomplete revert; remove them. Room schema v14→v15 dropped the `FILTER` table.
+24. **EhFilter + BlackList subsystems removed:** Two dead EhViewer-era blocking subsystems have been deleted:
+    - **EhFilter** (C2, audit 2026-04-07): user-defined title/uploader/tag blacklist. The consumption path had already been severed during the EhViewer→LRR conversion (filters were written but never read). Deleted: `EhFilter`, `Filter` Room entity, `EhFilterTest`, UI entry points, string resources. Room v14→v15 dropped the `FILTER` table.
+    - **BlackList** (C3, audit 2026-04-07): user-defined bad-uploader blacklist with its own management Activity. Investigation found `BlackListActivity` was fully unreachable — no Intent, menu item or preference ever launched it. Deleted: `BlackListActivity`, `BlackList` Room entity, `BlackListTest`, layouts (`activity_blacklist.xml`, `dialog_add_blacklist.xml`), AndroidManifest declaration, DAO, EhDB API, string resources, arrays, ids. Room v15→v16 dropped the `Black_List` table. Side benefit: finally deleted the 9-year-old EhViewer-era homophobic-slur column-mapped field name.
+
+    LR Reader is a private library client where users curate stored content directly — there is no use case for in-app personal blocklists. If you find any surviving references to `EhFilter`, `BlackList`, `Filter::class`, `BlackList::class`, `filterTitle/filterTag/filterUploader`, `R.string.filter_*`, `R.string.blacklist*`, or the dead orphan test fixture `EhNews.html`, they are bugs from an incomplete revert; remove them.
 
 25. **ProGuard log stripping:** Release builds strip `Log.v()`, `Log.d()`, `Log.i()`, and `Log.w()` via `-assumenosideeffects`. Only `Log.e()` is preserved for crash diagnostics.
 
