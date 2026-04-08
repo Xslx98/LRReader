@@ -93,7 +93,7 @@ LRReader/
 | `module/DataModule.kt` | Room database access |
 | `module/NetworkModule.kt` | OkHttp client configuration + DNS |
 | `util/CoroutineBridge.kt` | Java→coroutine bridge (launchIO/launchIOGlobal) |
-| `EhDB.kt` | Room database access layer (blockingDb main-thread detection) |
+| `EhDB.kt` | Room database access layer (`blockingDb` hard-throws on main thread in debug builds) |
 | `settings/AppearanceSettings.kt` | UI/theme preferences |
 | `settings/DownloadSettings.kt` | Download preferences |
 | `settings/NetworkSettings.kt` | Network/proxy preferences |
@@ -191,12 +191,12 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 - All network and database calls use **Kotlin Coroutines**: `suspend fun` + `withContext(Dispatchers.IO)`
 - Use `viewLifecycleOwner.lifecycleScope` for Fragment coroutines
 - **From Java code**, use `CoroutineBridge.launchIO(lifecycleOwner, task)` or `IoThreadPoolExecutor` to move DB/network work off the main thread
-- `EhDB` provides dual API: `suspend fun xxxAsync()` for Kotlin callers (preferred), `@JvmStatic fun xxx()` via `blockingDb` bridge for remaining Java callers only
+- `EhDB` provides dual API: `suspend fun xxxAsync()` for Kotlin callers (preferred), `@JvmStatic fun xxx()` via `blockingDb` bridge for the few remaining legacy callers (currently all Kotlin — see item 7 below for the inventory)
 - `CoroutineModule` provides `applicationScope` and `ioScope` with `SupervisorJob` + `CoroutineExceptionHandler`
 - `LRRCoroutineHelper.runSuspend()` has a **runtime main-thread guard** that throws if called on the UI thread
 - **No `AsyncTask` anywhere** — all replaced with `IoThreadPoolExecutor` + `Handler`
 - **No main-thread DB calls** — all `EhDB.*()` calls from UI code are wrapped in `IoThreadPoolExecutor` or coroutine scopes
-- **No `runBlocking` in new code** — use `scope.launch {}` or `suspend fun` instead. Remaining `runBlocking` calls are legacy bridges for Java callers only.
+- **No `runBlocking` in new code** — use `scope.launch {}` or `suspend fun` instead. The only surviving production `runBlocking` is inside `EhDB.blockingDb()` (legacy bridge, see item 7) and `EhDB.mergeOldDB()` (W1-7 will convert to suspend).
 - Thread pool: `IoThreadPoolExecutor` for parallel image/network work
 
 ### Networking (OkHttp)
@@ -339,7 +339,7 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 6. **DiffUtil in ContentLayout and DownloadsScene:** `ContentHelper.dispatchDiffUpdates()` for gallery list updates. `DownloadsScene` uses `DownloadInfoDiffCallback` with `gid`-based identity for `onUpdateAll()`/`onReload()`. Avoid `notifyDataSetChanged()` — use specific notifications or DiffUtil.
 
-7. **EhDB dual API:** ~22 remaining `@JvmStatic` bridge methods use `blockingDb()` for Java callers (logs warning on main thread). Kotlin callers should use `suspend fun *Async()` versions directly. Dead methods and Kotlin-only bridges have been removed — do not add new `blockingDb` bridges.
+7. **EhDB dual API:** 4 remaining `@JvmStatic` `blockingDb()` bridge methods exist as a legacy compatibility layer. Inventory (per W1-2, 2026-04-07): `getDownloadDirname` (1 caller), `putDownloadDirname` (3 callers), `queryGalleryTags` (1 caller), `putDownloadInfo` (0 callers — **dead bridge**, safe to delete). All 5 live call sites are Kotlin (`SpiderDen.kt`, `DownloadListInfosExecutor.kt`) and already run off the main thread, so the eventual W3 migration to `*Async` variants is mechanical. **Behaviour after W1-2**: `blockingDb()` hard-throws `IllegalStateException` in **debug** builds when called from the main thread, forcing offenders to be migrated; **release** builds only `Log.w` (which W1-6's R8 `-assumenosideeffects` rule then strips entirely, making release a silent passthrough). Kotlin callers must use the `suspend fun *Async()` variants from a coroutine scope. Do NOT add new `blockingDb` bridges.
 
 8. **Download subsystem (100% Kotlin, coroutine-based):** `DownloadManager.kt` (state management via `Mutex` + `CompletableDeferred`), `LRRDownloadWorker.kt` (background downloads with retry, format validation), `DownloadSpeedTracker.kt` (speed monitoring), `DownloadInfoListener.kt`/`DownloadListener.kt` (interfaces). Thread-safe via `Mutex` for shared state, `CopyOnWriteArrayList` for active tasks, `ConcurrentHashMap` for workers. All DB writes use `scope.launch { EhDB.*Async() }` — never `runBlocking`. Worker callbacks use immutable `sealed interface DownloadEvent` (not mutable object pool). `awaitInit()` has 10s timeout + main-thread guard. Constructor accepts `CoroutineScope` for testability. `containLabel()` uses `HashSet` for O(1) lookup. LRU cache (500 MB) for page images. 18 unit tests cover state machine, labels, queue, and notifications.
 
