@@ -41,10 +41,9 @@ import java.security.MessageDigest
         HistoryInfo::class,
         LocalFavoriteInfo::class,
         QuickSearch::class,
-        GalleryTags::class,
         ServerProfile::class
     ],
-    version = 17,
+    version = 18,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class)
@@ -66,9 +65,35 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "eh.db"
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18)
                     .build()
                     .also { INSTANCE = it }
+            }
+        }
+
+        /**
+         * v17 → v18: Drop the Gallery_Tags table.
+         *
+         * Gallery_Tags was an EhViewer-era per-gallery tag cache. Investigation
+         * showed it was a dead cache: `insertGalleryTags` and `updateGalleryTags`
+         * had ZERO callers anywhere in the codebase, so the table was never
+         * populated. The only reader was `EhDB.queryGalleryTags` called once
+         * from `DownloadListInfosExecutor.searchTagList` — which always got
+         * null back and handled it as "no cache, no match". Meanwhile, real
+         * tag data for LRR archives is populated directly into
+         * `DownloadInfo.tgList` by `LRRArchive.toGalleryInfo()` from the LRR
+         * API response, not via this cache table. The cache path was severed
+         * during the LRR conversion and never reconnected.
+         *
+         * Deleting this table also lets us remove the last meaningful
+         * `@JvmStatic blockingDb` bridge (`EhDB.queryGalleryTags`), bringing
+         * the inventory down from 3 to 2 (only `getDownloadDirname` and
+         * `putDownloadDirname` remain).
+         */
+        @VisibleForTesting
+        internal val MIGRATION_17_18 = object : Migration(17, 18) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DROP TABLE IF EXISTS Gallery_Tags")
             }
         }
 
