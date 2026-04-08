@@ -355,9 +355,6 @@ object EhDB {
         }
     }
 
-    @JvmStatic
-    fun putDownloadInfo(downloadInfo: DownloadInfo) = blockingDb { putDownloadInfoAsync(downloadInfo) }
-
     suspend fun putDownloadInfoAsync(downloadInfo: DownloadInfo) {
         sDatabase.downloadDao().insert(downloadInfo)
     }
