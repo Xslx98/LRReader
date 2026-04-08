@@ -177,10 +177,10 @@ class EhFilterReadyGateTest {
         )
         assertTrue("Filter must be ready after loadFromList", ehFilter.isReady)
 
-        val startTime = currentTime
+        val startTime = testScheduler.currentTime
         // Use a tiny non-zero timeout to prove this returns without consuming budget.
         ehFilter.awaitReady(timeoutMs = 50L)
-        val elapsed = currentTime - startTime
+        val elapsed = testScheduler.currentTime - startTime
 
         assertEquals(
             "awaitReady should return immediately (0ms virtual time) when already ready",
