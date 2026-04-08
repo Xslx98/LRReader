@@ -52,7 +52,7 @@ class RoomMigrationTest {
     // ========== Schema Integrity Tests ==========
 
     @Test
-    fun `schema has all 10 expected tables`() {
+    fun `schema has all 9 expected tables`() {
         val cursor = sqliteDb.query(
             "SELECT name FROM sqlite_master WHERE type='table' " +
                 "AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'room_%' " +
@@ -67,7 +67,7 @@ class RoomMigrationTest {
         val expectedTables = setOf(
             "DOWNLOADS", "DOWNLOAD_LABELS", "DOWNLOAD_DIRNAME",
             "HISTORY", "LOCAL_FAVORITES", "QUICK_SEARCH",
-            "Black_List", "Gallery_Tags",
+            "Gallery_Tags",
             "BOOKMARKS", "SERVER_PROFILES"
         )
         assertEquals(expectedTables, tables)
@@ -112,21 +112,6 @@ class RoomMigrationTest {
         assertTrue(cur2.moveToFirst())
         assertEquals(0, cur2.getInt(0))
         cur2.close()
-    }
-
-    @Test
-    fun `Black_List table has BADGAYNAME index`() {
-        val cursor = sqliteDb.query("PRAGMA index_list('Black_List')")
-        val indices = mutableListOf<String>()
-        while (cursor.moveToNext()) {
-            indices.add(cursor.getString(cursor.getColumnIndexOrThrow("name")))
-        }
-        cursor.close()
-
-        assertTrue(
-            "Expected index on BADGAYNAME",
-            indices.any { it.contains("BADGAYNAME") }
-        )
     }
 
     // ========== DownloadRoomDao CRUD Tests ==========
@@ -334,20 +319,6 @@ class RoomMigrationTest {
         assertNotNull(result)
         assertEquals("test_artist", result!!.artist)
         assertEquals("chinese", result.language)
-    }
-
-    @Test
-    fun `MiscDao blackList insert and query`() = runBlocking {
-        val dao = db.miscDao()
-        val bl = BlackList().apply {
-            badgayname = "test_user"
-            reason = "spam"
-            mode = 0
-        }
-        dao.insertBlackList(bl)
-
-        val all = dao.getAllBlackList()
-        assertTrue(all.any { it.badgayname == "test_user" })
     }
 
     // ========== Migration Testing Guide ==========
