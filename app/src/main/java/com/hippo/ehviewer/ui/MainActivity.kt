@@ -65,7 +65,6 @@ import com.hippo.ehviewer.ui.scene.ServerConfigScene
 import com.hippo.ehviewer.ui.scene.ServerListScene
 import com.hippo.ehviewer.ui.scene.download.DownloadLabelsScene
 import com.hippo.ehviewer.ui.scene.download.DownloadsScene
-import com.hippo.ehviewer.ui.scene.gallery.list.FavoritesScene
 import com.hippo.ehviewer.ui.scene.LRRCategoriesScene
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
@@ -117,7 +116,6 @@ class MainActivity : StageActivity(),
 
             registerLaunchMode(DownloadsScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
             registerLaunchMode(DownloadLabelsScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
-            registerLaunchMode(FavoritesScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
             registerLaunchMode(LRRCategoriesScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
             registerLaunchMode(HistoryScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TOP)
         }
