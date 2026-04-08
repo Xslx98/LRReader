@@ -3,27 +3,10 @@ package com.hippo.ehviewer.dao
 import androidx.room.*
 
 /**
- * Room DAO for misc tables: Black_List, Gallery_Tags, BOOKMARKS.
+ * Room DAO for misc tables: Gallery_Tags, BOOKMARKS, SERVER_PROFILES.
  */
 @Dao
 interface MiscRoomDao {
-
-    // --- Black_List ---
-
-    @Query("SELECT * FROM Black_List ORDER BY ADD_TIME ASC")
-    suspend fun getAllBlackList(): List<BlackList>
-
-    @Query("SELECT COUNT(*) FROM Black_List WHERE BADGAYNAME = :name")
-    suspend fun countBlackListByName(name: String): Int
-
-    @Insert
-    suspend fun insertBlackList(blackList: BlackList)
-
-    @Update
-    suspend fun updateBlackList(blackList: BlackList)
-
-    @Delete
-    suspend fun deleteBlackList(blackList: BlackList)
 
     // --- Gallery_Tags ---
 
