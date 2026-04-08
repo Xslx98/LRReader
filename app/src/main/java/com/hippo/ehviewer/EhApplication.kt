@@ -160,11 +160,14 @@ class EhApplication : RecordingApplication() {
         ServiceRegistry.networkModule.networkMonitor
 
         // Load EhFilter from DB asynchronously. Filter lists start empty — safe default.
+        // EhFilter.loadFromDb() uses try/finally internally to complete its readiness
+        // deferred even if the DB call throws, so awaitReady() callers never hang.
         ServiceRegistry.coroutineModule.ioScope.launch {
             try {
                 EhFilter.getInstance().loadFromDb()
             } catch (_: Exception) {
-                // Filters will remain empty — nothing gets filtered
+                // Filters remain empty — nothing gets filtered. Readiness deferred
+                // is already completed inside loadFromDb()'s finally block.
             }
         }
 
