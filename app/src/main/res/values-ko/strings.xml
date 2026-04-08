@@ -17,18 +17,6 @@
 <!-- 한국어 -->
 <resources>
     <!--  black list  -->
-    <string name="blacklist_id">사용자 ID</string>
-    <string name="blacklist">차단 목록</string>
-    <string name="join_in_blacklist">차단 목록에 추가</string>
-    <string name="add_blacklist">차단 사용자 추가</string>
-    <string name="blacklist_tip">이 차단 시스템은 LANraragi 댓글 시스템을 기반으로 댓글을 차단합니다.
-
-댓글 작성자 차단: 해당 작성자의 댓글을 숨깁니다. 갤러리 목록 로딩 시간이 길어질 수 있습니다.</string>
-    <string name="blacklist_text">사용자 차단</string>
-    <string name="delete_blacklist">사용자 \"%s\" 차단을 해제하시겠습니까?</string>
-    <string name="blacklist_reason_text">차단 사유</string>
-    <string name="settings_eh_blacklist">댓글 차단 목록</string>
-    <string name="settings_eh_blacklist_summary">계정 이름으로 댓글 차단</string>
     <string name="settings_advanced_dns_over_http_title">보안 DNS (DoH)</string>
     <string name="settings_advanced_dns_over_http_summary">특정 지역의 DNS 오염 해결</string>
     <string name="settings_advanced_domain_fronting_title">도메인 프론팅</string>

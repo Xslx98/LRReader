@@ -17,16 +17,6 @@
 <!-- 泰语 -->
 <resources>
     <!--  black list  -->
-    <string name="blacklist_id">ID ผู้ใช้</string>
-    <string name="blacklist">รายการบล็อก</string>
-    <string name="join_in_blacklist">เพิ่มเข้าในรายชื่อดำ</string>
-    <string name="add_blacklist">เพิ่มผู้ใช้ที่บล็อก</string>
-    <string name="blacklist_tip">ระบบบล็อกนี้จะบล็อกความคิดเห็นต่อจากระบบบล็อกความคิดเห็นของเว็บไซต์ LANraragi\n\nบล็อกผู้แสดงความคิดเห็น: แยกความคิดเห็นที่ผู้ใช้คนนั้นอัพโหลดออกไป ซึ่งจะทำให้การโหลดรายการแกลเลอรี่ใช้เวลามากขึ้น</string>
-    <string name="blacklist_text">บล็อกผู้ใช้</string>
-    <string name="delete_blacklist">ยกเลิกการบล็อกผู้ใช้ \"%s\" หรือไม่?</string>
-    <string name="blacklist_reason_text">เหตุผลในการบล็อก</string>
-    <string name="settings_eh_blacklist">รายชื่อดำความคิดเห็น</string>
-    <string name="settings_eh_blacklist_summary">บล็อกความคิดเห็นของผู้อื่นตามชื่อบัญชี</string>
     <string name="settings_advanced_dns_over_http_title">DNS ปลอดภัย (DoH)</string>
     <string name="settings_advanced_dns_over_http_summary">แก้ปัญหาการปนเปื้อน DNS ในบางพื้นที่</string>
     <string name="settings_advanced_domain_fronting_title">โดเมนฟรอนติ้ง</string>

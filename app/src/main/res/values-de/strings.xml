@@ -19,18 +19,6 @@
 <resources>
 
     <!--  black list  -->
-    <string name="blacklist_id">Benutzer-ID</string>
-    <string name="blacklist">Sperrliste</string>
-    <string name="join_in_blacklist">Zur Sperrliste hinzufügen</string>
-    <string name="add_blacklist">Blockierten Benutzer hinzufügen</string>
-    <string name="blacklist_tip">Dieses Sperrsystem blockiert Kommentare basierend auf dem LANraragi-Kommentarsystem.
-
-Kommentator blockieren: Kommentare dieses Benutzers ausblenden. Das Laden der Galerieliste kann länger dauern.</string>
-    <string name="blacklist_text">Benutzer blockieren</string>
-    <string name="delete_blacklist">Benutzer \"%s\" entsperren?</string>
-    <string name="blacklist_reason_text">Sperrgrund</string>
-    <string name="settings_eh_blacklist">Kommentar-Sperrliste</string>
-    <string name="settings_eh_blacklist_summary">Kommentare nach Kontoname blockieren</string>
     <string name="settings_advanced_dns_over_http_title">Sicheres DNS (DoH)</string>
     <string name="settings_advanced_dns_over_http_summary">DNS-Verschmutzung in bestimmten Regionen beheben</string>
     <string name="settings_advanced_domain_fronting_title">Domain Fronting</string>

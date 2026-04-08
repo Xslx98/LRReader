@@ -16,16 +16,6 @@
 
 <resources>
     <!--  black list  -->
-    <string name="blacklist_id">User ID</string>
-    <string name="blacklist">Blacklist</string>
-    <string name="join_in_blacklist">Add to Blacklist</string>
-    <string name="add_blacklist">Add Blocked User</string>
-    <string name="blacklist_tip">This blocking system works on top of the LANraragi website comment system to further block comments.\n\nCommenter Block: exclude comments uploaded by this commenter. This may take more time to load the gallery list.</string>
-    <string name="blacklist_text">Block User</string>
-    <string name="delete_blacklist">Unblock user \"%s\"?</string>
-    <string name="blacklist_reason_text">Block Reason</string>
-    <string name="settings_eh_blacklist">Comment Blacklist</string>
-    <string name="settings_eh_blacklist_summary">Block comments by account name</string>
     <string name="settings_advanced_dns_over_http_title">Secure DNS (DoH)</string>
     <string name="settings_advanced_dns_over_http_summary">Fix DNS pollution in certain regions</string>
     <string name="settings_advanced_domain_fronting_title">Domain Fronting</string>

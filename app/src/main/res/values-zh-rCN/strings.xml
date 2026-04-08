@@ -649,16 +649,6 @@
     <string name="settings_about_beta_update_channel_summary">测试版可能在你的设备上出现不可预知的错误</string>
 
     <!--  black list  -->
-    <string name="blacklist_id">用户ID</string>
-    <string name="blacklist">黑名单</string>
-    <string name="join_in_blacklist">加入黑名单</string>
-    <string name="add_blacklist">添加屏蔽用户</string>
-    <string name="blacklist_tip">该屏蔽系统会在 LANraragi 网站评论系统的基础上继续屏蔽评论。\n\n评论者屏蔽项：排除该评论者上传的评论。这会使加载画廊列表花费更多时间。</string>
-    <string name="blacklist_text">屏蔽用户</string>
-    <string name="delete_blacklist">取消屏蔽用户“%s”？</string>
-    <string name="blacklist_reason_text">屏蔽原因</string>
-    <string name="settings_eh_blacklist">评论黑名单</string>
-    <string name="settings_eh_blacklist_summary">根据账号名称屏蔽他人评论</string>
     <string name="settings_advanced_dns_over_http_title">安全 DNS（DoH）</string>
     <string name="settings_advanced_dns_over_http_summary">解决某些地区的 DNS 污染问题</string>
     <string name="settings_advanced_domain_fronting_title">域名前置</string>
