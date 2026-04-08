@@ -925,9 +925,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             return false
         }
 
-        if (mUploader === v) {
-            mTagHelper.showFilterUploaderDialog()
-        } else if (mDownload === v) {
+        if (mDownload === v) {
             mDownloadHelper.onDownload()
             return true
         } else if (v === mHeartGroup) {
