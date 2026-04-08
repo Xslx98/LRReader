@@ -47,11 +47,11 @@ import java.io.IOException
  * - `suspend fun xxxAsync(...)` — for Kotlin coroutine callers (preferred)
  * - `@JvmStatic fun xxx(...)` — `runBlocking` bridge for remaining Java callers (safe on IO threads)
  *
- * **Main-thread safety**: [blockingDb] logs a warning with a full stack trace if invoked on
- * the main thread, surfacing ANR risks during development. Kotlin callers should always use
- * the `suspend fun *Async` variants from a coroutine scope — the bridges exist only for
- * legacy callers (Java code and a few `@JvmStatic` Kotlin helpers like
- * `SpiderDen.getGalleryDownloadDir`) that are still being migrated.
+ * **Main-thread safety**: [blockingDb] hard-throws on the main thread in **debug** builds
+ * (forcing offenders to be migrated to the `*Async` variants) and degrades to a logged
+ * warning in **release** builds — which the R8 `-assumenosideeffects` rule then strips
+ * entirely, so release behavior is silent passthrough. Kotlin callers should always use
+ * the `suspend fun *Async` variants from a coroutine scope.
  *
  * Per official Kotlin docs: "runBlocking... blocks the current thread interruptibly...
  * designed to bridge regular blocking code... to be used in main functions and in tests."
@@ -68,22 +68,30 @@ object EhDB {
     /**
      * Wraps `runBlocking` with a main-thread check.
      *
-     * Logs a warning with a full stack trace when called on the main thread, so the
-     * offending caller is easy to track down in logcat. The call is allowed to proceed
-     * in both debug and release builds because [SpiderDen.getGalleryDownloadDir] and
-     * a handful of other `@JvmStatic` helpers still funnel main-thread reads through
-     * here. Throwing here would surface as crashes during ordinary UI flows
-     * (gallery delete, "open offline", etc.). Once those legacy paths have been
-     * migrated to suspend variants, this should be promoted to a hard `throw` in
-     * debug builds (see `docs/review-fix-branches.md` Branch 7 follow-up).
+     * - **Debug builds** ([BuildConfig.DEBUG] = true): hard-throws an [IllegalStateException]
+     *   with a full stack trace when called on the main thread. This is intentional: it forces
+     *   the remaining `@JvmStatic` callers (e.g. [com.hippo.ehviewer.spider.SpiderDen.getGalleryDownloadDir],
+     *   [com.hippo.ehviewer.sync.DownloadListInfosExecutor]) to migrate off the bridge during
+     *   development before they ship. The inventory of remaining callers lives in
+     *   `docs/blockingdb-callsites.md` (W1-2).
+     * - **Release builds**: only logs `Log.w` and continues. Because the project's ProGuard rules
+     *   strip `Log.v/d/i/w` via `-assumenosideeffects`, this becomes a silent passthrough in
+     *   release — release-channel users do NOT crash on a borderline ANR. This trade-off is
+     *   deliberate: the migration is forced in dev/CI without regressing existing users.
      */
     private fun <T> blockingDb(block: suspend kotlinx.coroutines.CoroutineScope.() -> T): T {
         if (Looper.myLooper() == Looper.getMainLooper()) {
-            Log.w(
-                TAG,
-                "runBlocking called on main thread — use the suspend fun *Async variant from a coroutine scope",
-                IllegalStateException("EhDB blocking call on main thread")
+            val callsite = IllegalStateException(
+                "EhDB.blockingDb called on main thread — migrate this caller to the suspend " +
+                    "fun *Async variant (run from a coroutine scope on Dispatchers.IO)."
             )
+            if (BuildConfig.DEBUG) {
+                // Hard error in debug: forces the caller to be migrated.
+                throw callsite
+            }
+            // Release: log only. R8 strips Log.w via -assumenosideeffects, so this is a no-op
+            // in shipped builds. Existing users do not crash on a borderline ANR.
+            Log.w(TAG, "runBlocking called on main thread — see suspend fun *Async variants", callsite)
         }
         return runBlocking { block() }
     }
