@@ -56,6 +56,7 @@ import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
 import com.hippo.ehviewer.client.lrr.data.LRRArchive
 import com.hippo.ehviewer.spider.SpiderQueen
+import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.ehviewer.ui.GalleryActivity
 import com.hippo.ehviewer.ui.GalleryOpenHelper
 import com.hippo.ehviewer.ui.MainActivity
@@ -176,47 +177,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
     private val handler = Handler(Looper.getMainLooper())
 
-    // Extracted helpers
-    private val downloadHelperCallback = object : GalleryDownloadHelper.Callback {
-        override fun getContext(): Context? = getEHContext()
-        override fun getActivity(): MainActivity? = activity2
-        override fun getGid(): Long = this@GalleryDetailScene.getGid()
-        override fun getGalleryInfo(): GalleryInfo? = this@GalleryDetailScene.getGalleryInfo()
-        override fun getDownloadView(): TextView? = mDownload
-        override fun getString(resId: Int): String = this@GalleryDetailScene.getString(resId)
-        override fun getString(resId: Int, vararg formatArgs: Any): String =
-            this@GalleryDetailScene.getString(resId, *formatArgs)
-    }
 
-    private val tagHelperCallback = object : GalleryTagHelper.Callback {
-        override fun getContext(): Context? = getEHContext()
-        override fun getInflater(): LayoutInflater? = layoutInflater2
-        override fun getTagsLayout(): LinearLayout? = mTags
-        override fun getNoTagsView(): TextView? = mNoTags
-        override fun getString(resId: Int): String = this@GalleryDetailScene.getString(resId)
-        override fun getString(resId: Int, vararg formatArgs: Any): String =
-            this@GalleryDetailScene.getString(resId, *formatArgs)
-        override fun showTip(resId: Int, length: Int) =
-            this@GalleryDetailScene.showTip(resId, length)
-        override fun getUploader(): String? = this@GalleryDetailScene.getUploader()
-        override fun getTagClickListener(): View.OnClickListener = this@GalleryDetailScene
-        override fun getTagLongClickListener(): View.OnLongClickListener = this@GalleryDetailScene
-    }
-
-    private val requestHelperCallback = object : GalleryDetailRequestHelper.Callback {
-        override fun getToken(): String? = this@GalleryDetailScene.getToken()
-        override fun getActivity(): android.app.Activity? =
-            this@GalleryDetailScene.getActivity()
-        override fun getString(resId: Int): String = this@GalleryDetailScene.getString(resId)
-        override fun onGetGalleryDetailSuccess(result: GalleryDetail) =
-            this@GalleryDetailScene.onGetGalleryDetailSuccess(result)
-        override fun onGetGalleryDetailFailure(e: Exception) =
-            this@GalleryDetailScene.onGetGalleryDetailFailure(e)
-    }
-
-    private val mDownloadHelper = GalleryDownloadHelper(downloadHelperCallback)
-    private val mTagHelper = GalleryTagHelper(tagHelperCallback)
-    private val mRequestHelper = GalleryDetailRequestHelper(requestHelperCallback)
 
     private fun handleArgs(args: Bundle?) {
         if (args == null) {
@@ -341,7 +302,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         val context = getEHContext()
         // Get download state
         val gid = getGid()
-        mDownloadHelper.initDownloadState(gid)
+        viewModel.initDownloadState(gid)
 
         val view = inflater.inflate(R.layout.scene_gallery_detail, container, false)
 
@@ -489,12 +450,32 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             adjustViewVisibility(STATE_FAILED, false)
         }
 
-        viewModel.downloadManager.addDownloadInfoListener(mDownloadHelper)
+        viewModel.downloadManager.addDownloadInfoListener(viewModel.downloadInfoListener)
         return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Observe gallery detail updates from ViewModel (replaces RequestHelper callback)
+        lifecycleScope.launch {
+            viewModel.galleryDetail.collect { detail ->
+                if (detail != null && mState != STATE_NORMAL) {
+                    onGetGalleryDetailSuccess(detail)
+                }
+            }
+        }
+        lifecycleScope.launch {
+            viewModel.detailError.collect { e ->
+                onGetGalleryDetailFailure(e)
+            }
+        }
+        // Observe download state changes from ViewModel (replaces DownloadHelper listener)
+        lifecycleScope.launch {
+            viewModel.downloadState.collect {
+                updateDownloadText()
+            }
+        }
     }
 
     override fun onDestroyView() {
@@ -502,8 +483,8 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         val context = getEHContext()
         AssertUtils.assertNotNull(context)
-        viewModel.downloadManager.removeDownloadInfoListener(mDownloadHelper)
-        mTagHelper.destroy()
+        viewModel.downloadManager.removeDownloadInfoListener(viewModel.downloadInfoListener)
+        GalleryTagHelper.destroy()
 
         setDrawerGestureBlocker(null)
 
@@ -576,7 +557,10 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
     private fun request(): Boolean {
         getEHContext() ?: return false
-        return mRequestHelper.request()
+        return viewModel.requestGalleryDetail(
+            getString(R.string.lrr_category_info_suffix),
+            getString(R.string.lrr_category_count_suffix)
+        )
     }
 
     private fun setActionDrawable(text: TextView, drawable: Drawable) {
@@ -683,7 +667,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             mThumb!!.load(EhCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
             mTitle!!.text = EhUtils.getSuitableTitle(gi)
             mUploader!!.text = gi.uploader
-            mDownloadHelper.updateDownloadText()
+            updateDownloadText()
         }
     }
 
@@ -744,7 +728,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         mTitle!!.text = EhUtils.getSuitableTitle(gd)
         mUploader!!.text = gd.uploader
-        mDownloadHelper.updateDownloadText()
+        updateDownloadText()
 
         val galleryInfo = getGalleryInfo()
         bindReadProgress(galleryInfo)
@@ -762,7 +746,11 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         updateFavoriteDrawable()
         bindArchiverProgress(gd)
-        mTagHelper.bindTags(gd.tags)
+        val ctx = getEHContext()
+        val inf = layoutInflater2
+        if (ctx != null && inf != null && mTags != null && mNoTags != null) {
+            GalleryTagHelper.bindTags(ctx, inf, mTags!!, mNoTags!!, gd.tags, this, this)
+        }
     }
 
     fun bindArchiverProgress(gd: GalleryDetail) {
@@ -871,7 +859,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             lub.keyword = uploader
             GalleryListScene.startScene(this, lub)
         } else if (mDownload === v) {
-            mDownloadHelper.onDownload()
+            onDownloadClick()
         } else if (mRead === v) {
             val galleryInfo: GalleryInfo? = mGalleryInfo ?: mGalleryDetail
             if (galleryInfo != null) {
@@ -924,7 +912,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         }
 
         if (mDownload === v) {
-            mDownloadHelper.onDownload()
+            onDownloadClick()
             return true
         } else if (v === mHeartGroup) {
             // Long press also shows category dialog (same as click)
@@ -942,7 +930,10 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         } else {
             val tag = v.getTag(R.id.tag) as? String
             if (tag != null) {
-                mTagHelper.showTagDialog(this, tag)
+                val tagCtx = getEHContext()
+                if (tagCtx != null) {
+                    GalleryTagHelper.showTagDialog(this, tagCtx, tag)
+                }
                 return true
             }
         }
@@ -955,6 +946,48 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         finish()
     }
 
+    /**
+     * Updates the download button text based on the current download state
+     * from the ViewModel.
+     */
+    private fun updateDownloadText() {
+        val download = mDownload ?: return
+        when (viewModel.downloadState.value) {
+            DownloadInfo.STATE_NONE -> download.setText(R.string.download_state_none)
+            DownloadInfo.STATE_WAIT -> download.setText(R.string.download_state_wait)
+            DownloadInfo.STATE_DOWNLOAD -> download.setText(R.string.download_state_downloading)
+            DownloadInfo.STATE_FINISH -> download.setText(R.string.download_state_downloaded)
+            DownloadInfo.STATE_FAILED -> download.setText(R.string.download_state_failed)
+            else -> download.setText(R.string.download)
+        }
+    }
+
+    /**
+     * Handles download button click: start a new download or show delete dialog.
+     */
+    private fun onDownloadClick() {
+        val galleryInfo = getGalleryInfo() ?: return
+        val act = activity2 ?: return
+        val ctx = getEHContext() ?: return
+
+        if (viewModel.downloadManager.getDownloadState(galleryInfo.gid) == DownloadInfo.STATE_INVALID) {
+            CommonOperations.startDownload(act, galleryInfo, false)
+        } else {
+            androidx.appcompat.app.AlertDialog.Builder(ctx)
+                .setTitle(R.string.download_remove_dialog_title)
+                .setMessage(
+                    getString(
+                        R.string.download_remove_dialog_message,
+                        galleryInfo.title ?: ""
+                    )
+                )
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    viewModel.downloadManager.deleteDownload(galleryInfo.gid)
+                }
+                .show()
+        }
+    }
+
     internal fun onGetGalleryDetailSuccess(result: GalleryDetail) {
         try {
             onGetGalleryDetailSuccessInternal(result)
@@ -965,15 +998,16 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
     private fun onGetGalleryDetailSuccessInternal(result: GalleryDetail) {
         mGalleryDetail = result
-        mDownloadHelper.updateDownloadState()
-        if (mDownloadHelper.downloadState != DownloadInfo.STATE_INVALID) {
+        viewModel.refreshDownloadState()
+        val dlState = viewModel.downloadState.value
+        if (dlState != DownloadInfo.STATE_INVALID) {
             val di = mDownloadInfo
             if (di != null && di.thumb != null &&
                 di.thumb != result.thumb && di.gid == result.gid
             ) {
                 useNetWorkLoadThumb = true
                 di.updateInfo(result)
-                di.state = mDownloadHelper.downloadState
+                di.state = dlState
                 viewModel.persistDownloadInfo(di)
             }
         }

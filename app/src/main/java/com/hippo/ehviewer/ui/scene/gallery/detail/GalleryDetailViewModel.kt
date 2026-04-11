@@ -3,14 +3,23 @@ package com.hippo.ehviewer.ui.scene.gallery.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hippo.ehviewer.EhDB
+import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.lrr.LRRArchiveApi
+import com.hippo.ehviewer.client.lrr.LRRAuthManager
+import com.hippo.ehviewer.client.lrr.LRRCategoryApi
+import com.hippo.ehviewer.client.lrr.runSuspend
 import com.hippo.ehviewer.dao.DownloadInfo
+import com.hippo.ehviewer.download.DownloadInfoListener
 import com.hippo.ehviewer.download.DownloadManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -30,6 +39,7 @@ class GalleryDetailViewModel : ViewModel() {
     // -------------------------------------------------------------------------
 
     companion object {
+        private const val TAG = "GalleryDetailVM"
         const val STATE_INIT = -1
         const val STATE_NORMAL = 0
         const val STATE_REFRESH = 1
@@ -140,6 +150,7 @@ class GalleryDetailViewModel : ViewModel() {
         _galleryInfo.value = null
         _galleryDetail.value = null
         _downloadInfo.value = null
+        _downloadState.value = DownloadInfo.STATE_INVALID
         _state.value = STATE_INIT
     }
 
@@ -209,6 +220,63 @@ class GalleryDetailViewModel : ViewModel() {
     }
 
     // -------------------------------------------------------------------------
+    // Detail request error (one-shot event)
+    // -------------------------------------------------------------------------
+
+    private val _detailError = MutableSharedFlow<Exception>(extraBufferCapacity = 1)
+
+    /** Emitted once when a gallery detail fetch fails. Observe to show error UI. */
+    val detailError: SharedFlow<Exception> = _detailError.asSharedFlow()
+
+    // -------------------------------------------------------------------------
+    // Download state tracking
+    // -------------------------------------------------------------------------
+
+    private val _downloadState = MutableStateFlow(DownloadInfo.STATE_INVALID)
+
+    /** Current download state for the displayed gallery. */
+    val downloadState: StateFlow<Int> = _downloadState.asStateFlow()
+
+    /**
+     * Initialize download state for the given gid.
+     */
+    fun initDownloadState(gid: Long) {
+        _downloadState.value = if (gid != -1L) {
+            downloadManager.getDownloadState(gid)
+        } else {
+            DownloadInfo.STATE_INVALID
+        }
+    }
+
+    /**
+     * Re-query the current download state from [DownloadManager].
+     */
+    fun refreshDownloadState() {
+        val gid = getEffectiveGid()
+        if (gid == -1L) return
+        _downloadState.value = downloadManager.getDownloadState(gid)
+    }
+
+    /** [DownloadInfoListener] that updates [_downloadState] on any change. */
+    val downloadInfoListener: DownloadInfoListener = object : DownloadInfoListener {
+        override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
+            refreshDownloadState()
+        }
+        override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {}
+        override fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: List<DownloadInfo>) {
+            refreshDownloadState()
+        }
+        override fun onUpdateAll() { refreshDownloadState() }
+        override fun onReload() { refreshDownloadState() }
+        override fun onChange() { refreshDownloadState() }
+        override fun onRemove(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
+            refreshDownloadState()
+        }
+        override fun onRenameLabel(from: String, to: String) {}
+        override fun onUpdateLabels() {}
+    }
+
+    // -------------------------------------------------------------------------
     // Service accessors (read-through to ServiceRegistry so the Scene does not
     // need to import ServiceRegistry directly)
     // -------------------------------------------------------------------------
@@ -249,6 +317,81 @@ class GalleryDetailViewModel : ViewModel() {
      */
     suspend fun isLocalFavorite(gid: Long): Boolean = withContext(Dispatchers.IO) {
         EhDB.containLocalFavoritesAsync(gid)
+    }
+
+    // -------------------------------------------------------------------------
+    // Detail request (LRR metadata fetch + category favorite detection)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Fetches archive metadata from LANraragi and queries categories for
+     * favorite status. On success, updates [_galleryDetail]. On failure,
+     * emits to [_detailError].
+     *
+     * @param categoryInfoSuffix localized string for " etc." suffix
+     * @param categoryCountSuffix localized string for " categories" suffix
+     * @return true if the request was dispatched, false if prerequisites are missing
+     */
+    fun requestGalleryDetail(
+        categoryInfoSuffix: String,
+        categoryCountSuffix: String
+    ): Boolean {
+        val arcid = getEffectiveToken()
+        val serverUrl = LRRAuthManager.getServerUrl()
+        if (arcid.isNullOrEmpty() || serverUrl.isNullOrEmpty()) {
+            return false
+        }
+
+        val client = ServiceRegistry.networkModule.okHttpClient
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val archive = runSuspend {
+                    LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcid)
+                }
+                val gd = archive.toGalleryDetail()
+
+                // Query LANraragi categories to determine favorite status
+                try {
+                    val categories = runSuspend {
+                        LRRCategoryApi.getCategories(client, serverUrl)
+                    }
+                    val matchedNames = mutableListOf<String>()
+                    for (cat in categories) {
+                        if (!cat.isDynamic() && cat.archives.contains(arcid)) {
+                            cat.name?.let { matchedNames.add(it) }
+                        }
+                    }
+                    if (matchedNames.isNotEmpty()) {
+                        gd.isFavorited = true
+                        if (matchedNames.size == 1) {
+                            gd.favoriteName = matchedNames[0]
+                        } else {
+                            gd.favoriteName = matchedNames[0] +
+                                categoryInfoSuffix +
+                                matchedNames.size +
+                                categoryCountSuffix
+                        }
+                    }
+                } catch (catEx: Exception) {
+                    android.util.Log.w(
+                        TAG,
+                        "Failed to query categories for favorite status",
+                        catEx
+                    )
+                    // Non-fatal: favorite status just won't show
+                }
+
+                // Cache the detail
+                ServiceRegistry.dataModule.galleryDetailCache.put(gd.gid, gd)
+
+                _galleryDetail.value = gd
+            } catch (e: Exception) {
+                android.util.Log.e(TAG, "LRR metadata fetch failed", e)
+                _detailError.tryEmit(e)
+            }
+        }
+        return true
     }
 
     // -------------------------------------------------------------------------
