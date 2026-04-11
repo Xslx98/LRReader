@@ -25,8 +25,8 @@ import android.widget.TextView
 import android.widget.Toast
 import com.hippo.content.FileProvider
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.callBack.ImageChangeCallBack
+import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.callBack.PermissionCallBack
 import com.hippo.ehviewer.ui.MainActivity
 import com.hippo.util.FileUtils
@@ -47,9 +47,9 @@ class UserImageChange(
 ) : PermissionCallBack {
 
     private val key: String = if (dialogType == CHANGE_AVATAR) {
-        Settings.USER_AVATAR_IMAGE
+        AppearanceSettings.USER_AVATAR_IMAGE
     } else {
-        Settings.USER_BACKGROUND_IMAGE
+        AppearanceSettings.USER_BACKGROUND_IMAGE
     }
 
     private var popupWindow: PopupWindow? = null
@@ -251,12 +251,12 @@ class UserImageChange(
         }
 
         // Delete old saved image (only if it's different from the new persistent file)
-        val oldFile = Settings.getUserImageFile(key)
+        val oldFile = AppearanceSettings.getUserImageFile(key)
         if (oldFile != null && oldFile.absolutePath != persistentFile.absolutePath) {
             oldFile.delete()
         }
 
-        Settings.saveFilePath(key, persistentFile.absolutePath)
+        AppearanceSettings.saveFilePath(key, persistentFile.absolutePath)
         if (dialogType == CHANGE_BACKGROUND) {
             imageChangeCallBack.backgroundSourceChange(persistentFile)
         } else if (avatar != null) {
@@ -268,11 +268,11 @@ class UserImageChange(
         popupWindow?.dismiss()
 
         // Delete saved image file
-        val oldFile = Settings.getUserImageFile(key)
+        val oldFile = AppearanceSettings.getUserImageFile(key)
         oldFile?.delete()
 
         // Clear saved path
-        Settings.saveFilePath(key, "")
+        AppearanceSettings.saveFilePath(key, "")
 
         if (dialogType == CHANGE_BACKGROUND) {
             imageChangeCallBack.backgroundSourceChange(null)
@@ -285,7 +285,7 @@ class UserImageChange(
     }
 
     private fun saveImageFromCamera(avatar: AvatarImageView?) {
-        Settings.saveFilePath(key, outputImage!!.path)
+        AppearanceSettings.saveFilePath(key, outputImage!!.path)
         if (dialogType == CHANGE_BACKGROUND) {
             imageChangeCallBack.backgroundSourceChange(File(outputImage!!.path))
         } else {
@@ -340,7 +340,7 @@ class UserImageChange(
             return
         }
 
-        val oldFile = Settings.getUserImageFile(key)
+        val oldFile = AppearanceSettings.getUserImageFile(key)
         oldFile?.delete()
 
         val newFile = File(imagePath)
@@ -354,7 +354,7 @@ class UserImageChange(
         }
         FileUtils.copyFile(newFile, toFile)
         val newImagePath = toFile.path
-        Settings.saveFilePath(key, newImagePath)
+        AppearanceSettings.saveFilePath(key, newImagePath)
         if (dialogType == CHANGE_BACKGROUND) {
             imageChangeCallBack.backgroundSourceChange(File(newImagePath))
         } else {

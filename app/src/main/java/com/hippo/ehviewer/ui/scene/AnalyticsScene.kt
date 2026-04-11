@@ -24,7 +24,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.settings.PrivacySettings
 import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.text.LinkMovementMethod2
 
@@ -64,13 +64,13 @@ class AnalyticsScene : SolidScene(), View.OnClickListener {
         val context = getEHContext() ?: return
 
         if (mReject === v) {
-            Settings.putEnableAnalytics(false)
+            PrivacySettings.putEnableAnalytics(false)
         } else if (mAccept === v) {
-            Settings.putEnableAnalytics(true)
+            PrivacySettings.putEnableAnalytics(true)
             // Start Analytics
             Analytics.start(context)
         }
-        Settings.putAskAnalytics(false)
+        PrivacySettings.putAskAnalytics(false)
 
         // Start new scene and finish it self
         val activity = activity2

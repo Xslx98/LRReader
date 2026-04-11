@@ -4,14 +4,14 @@ import android.os.Bundle
 import androidx.preference.Preference
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.settings.PrivacySettings
 import com.hippo.ehviewer.settings.SecuritySettings
 
 class PrivacyFragment : BasePreferenceFragmentCompat(), Preference.OnPreferenceChangeListener {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         addPreferencesFromResource(R.xml.privacy_settings)
-        findPreference<Preference>(Settings.KEY_ENABLE_ANALYTICS)?.onPreferenceChangeListener = this
+        findPreference<Preference>(PrivacySettings.KEY_ENABLE_ANALYTICS)?.onPreferenceChangeListener = this
     }
 
     override fun onResume() {
@@ -27,7 +27,7 @@ class PrivacyFragment : BasePreferenceFragmentCompat(), Preference.OnPreferenceC
 
     override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
         val key = preference.key
-        if (Settings.KEY_ENABLE_ANALYTICS == key) {
+        if (PrivacySettings.KEY_ENABLE_ANALYTICS == key) {
             if (newValue is Boolean && newValue) {
                 activity?.let { Analytics.start(it) }
             }

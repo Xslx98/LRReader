@@ -36,6 +36,8 @@ import com.hippo.ehviewer.module.AppModule
 import kotlinx.coroutines.launch
 import com.hippo.ehviewer.client.lrr.LRRClientProvider
 import com.hippo.ehviewer.settings.DownloadSettings
+import com.hippo.ehviewer.settings.GuideSettings
+import com.hippo.ehviewer.settings.PrivacySettings
 import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.lib.image.Image
 import com.hippo.lib.yorozuya.FileUtils
@@ -94,7 +96,7 @@ class EhApplication : RecordingApplication() {
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
             try {
                 // Always save crash file if onCreate() is not done
-                if (!initialized || Settings.getSaveCrashLog()) {
+                if (!initialized || PrivacySettings.getSaveCrashLog()) {
                     Crash.saveCrashLog(instance, e)
                 }
             } catch (_: Throwable) {
@@ -167,7 +169,7 @@ class EhApplication : RecordingApplication() {
             A7Zip.initialize(this@EhApplication)
         }
 
-        if (Settings.getEnableAnalytics()) {
+        if (PrivacySettings.getEnableAnalytics()) {
             Analytics.start(this)
         }
 
@@ -270,7 +272,7 @@ class EhApplication : RecordingApplication() {
     private fun update() {
         val version = Settings.getVersionCode()
         if (version < 52) {
-            Settings.putGuideGallery(true)
+            GuideSettings.putGuideGallery(true)
         }
     }
 
