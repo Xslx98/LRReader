@@ -2,10 +2,10 @@ package com.hippo.ehviewer.ui.scene.gallery.detail
 
 import android.util.Log
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.lrr.LRRArchiveApi
-import com.hippo.ehviewer.client.lrr.LRRAuthManager
-import com.hippo.ehviewer.client.lrr.data.LRRArchive
-import com.hippo.ehviewer.client.lrr.runSuspend
+import com.lanraragi.reader.client.api.LRRArchiveApi
+import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.data.LRRArchive
+import com.lanraragi.reader.client.api.runSuspend
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
