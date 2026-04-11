@@ -197,34 +197,42 @@ class EhApplication : RecordingApplication() {
             } catch (_: Exception) {
             }
 
-            // Migrate downloads from old app-private path to user-visible location
-            try {
-                val oldBase = File(getExternalFilesDir(null), "download")
-                if (oldBase.exists() && oldBase.isDirectory) {
-                    val newBase = DownloadSettings.getDownloadLocation()
-                    if (newBase != null && "file" == newBase.uri.scheme) {
-                        val newBaseFile = File(newBase.uri.path!!)
-                        val children = oldBase.listFiles()
-                        if (children != null) {
-                            for (child in children) {
-                                if (child.isDirectory) {
-                                    val dest = File(newBaseFile, child.name)
-                                    if (!dest.exists()) {
-                                        if (child.renameTo(dest)) {
-                                            Log.i(TAG, "Migrated download dir: " + child.name)
+            // Migrate downloads from old app-private path to user-visible location.
+            // Skip if a previous run already completed migration successfully.
+            if (!Settings.getBoolean(KEY_DOWNLOAD_MIGRATION_DONE, false)) {
+                try {
+                    val oldBase = File(getExternalFilesDir(null), "download")
+                    if (oldBase.exists() && oldBase.isDirectory) {
+                        val newBase = DownloadSettings.getDownloadLocation()
+                        if (newBase != null && "file" == newBase.uri.scheme) {
+                            val newBaseFile = File(newBase.uri.path!!)
+                            val children = oldBase.listFiles()
+                            if (children != null) {
+                                for (child in children) {
+                                    if (child.isDirectory) {
+                                        val dest = File(newBaseFile, child.name)
+                                        if (!dest.exists()) {
+                                            if (child.renameTo(dest)) {
+                                                Log.i(TAG, "Migrated download dir: " + child.name)
+                                            }
                                         }
                                     }
                                 }
                             }
+                            val remaining = oldBase.list()
+                            if (remaining == null || remaining.isEmpty()) {
+                                oldBase.delete()
+                                Settings.putBoolean(KEY_DOWNLOAD_MIGRATION_DONE, true)
+                            }
+                            // If remaining dirs exist, do NOT set flag — retry next startup
                         }
-                        val remaining = oldBase.list()
-                        if (remaining == null || remaining.isEmpty()) {
-                            oldBase.delete()
-                        }
+                    } else {
+                        // oldBase doesn't exist (fresh install or already cleaned up)
+                        Settings.putBoolean(KEY_DOWNLOAD_MIGRATION_DONE, true)
                     }
+                } catch (t: Exception) {
+                    Log.w(TAG, "Download directory migration failed", t)
                 }
-            } catch (t: Exception) {
-                Log.w(TAG, "Download directory migration failed", t)
             }
         }
 
@@ -381,6 +389,8 @@ class EhApplication : RecordingApplication() {
         private val TAG = EhApplication::class.java.simpleName
 
         const val BETA: Boolean = false
+
+        private const val KEY_DOWNLOAD_MIGRATION_DONE = "download_migration_v1_done"
 
         private const val DEBUG_PRINT_NATIVE_MEMORY = false
         private const val DEBUG_PRINT_IMAGE_COUNT = false
