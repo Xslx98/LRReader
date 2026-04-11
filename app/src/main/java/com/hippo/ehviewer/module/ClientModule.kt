@@ -3,6 +3,8 @@ package com.hippo.ehviewer.module
 import android.content.Context
 import com.hippo.conaco.Conaco
 import com.hippo.ehviewer.ImageBitmapHelper
+import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.client.lrr.LRRTagCache
 import com.hippo.lib.image.Image
 import java.io.File
 
@@ -15,6 +17,10 @@ class ClientModule(
     private val context: Context,
     private val networkModule: INetworkModule
 ) : IClientModule {
+
+    init {
+        ServiceRegistry.registerCacheable(LRRTagCache)
+    }
 
     override val imageBitmapHelper: ImageBitmapHelper by lazy { ImageBitmapHelper() }
 
