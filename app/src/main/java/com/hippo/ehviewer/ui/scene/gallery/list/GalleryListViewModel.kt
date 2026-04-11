@@ -16,7 +16,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
-import java.util.concurrent.ExecutorService
 
 /**
  * ViewModel for the gallery list screen. Exposes a [Flow] of [PagingData]
@@ -40,10 +39,6 @@ class GalleryListViewModel : ViewModel() {
     /** The global favourite status router. */
     val favouriteStatusRouter: FavouriteStatusRouter
         get() = ServiceRegistry.dataModule.favouriteStatusRouter
-
-    /** Shared background executor for lightweight off-main-thread work. */
-    val executorService: ExecutorService
-        get() = ServiceRegistry.appModule.executorService
 
     /**
      * Encapsulates all search parameters needed to create a [LRRArchivePagingSource].
