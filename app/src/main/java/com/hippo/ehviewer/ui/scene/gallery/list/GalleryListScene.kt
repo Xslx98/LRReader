@@ -187,7 +187,6 @@ class GalleryListScene : BaseScene(),
         mSearchBarMover?.showSearchBar()
     }
 
-    @SuppressLint("NotifyDataSetChanged")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -199,23 +198,28 @@ class GalleryListScene : BaseScene(),
 
         mDownloadInfoListener = object : DownloadInfoListener {
             override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-                mAdapter?.notifyDataSetChanged()
+                // Download status icon may appear on matching gallery items — refresh all visible
+                mAdapter?.notifyItemRangeChanged(0, mAdapter?.itemCount ?: 0)
             }
             override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {}
             override fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: List<DownloadInfo>) {}
             override fun onUpdateAll() {}
-            override fun onReload() { mAdapter?.notifyDataSetChanged() }
-            override fun onChange() { mAdapter?.notifyDataSetChanged() }
+            override fun onReload() {
+                mAdapter?.notifyItemRangeChanged(0, mAdapter?.itemCount ?: 0)
+            }
+            override fun onChange() {
+                mAdapter?.notifyItemRangeChanged(0, mAdapter?.itemCount ?: 0)
+            }
             override fun onRenameLabel(from: String, to: String) {}
             override fun onRemove(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-                mAdapter?.notifyDataSetChanged()
+                mAdapter?.notifyItemRangeChanged(0, mAdapter?.itemCount ?: 0)
             }
             override fun onUpdateLabels() {}
         }
         mDownloadManager.addDownloadInfoListener(mDownloadInfoListener)
 
         mFavouriteStatusRouterListener = FavouriteStatusRouter.Listener { _, _ ->
-            mAdapter?.notifyDataSetChanged()
+            mAdapter?.notifyItemRangeChanged(0, mAdapter?.itemCount ?: 0)
         }
         mFavouriteStatusRouter.addListener(mFavouriteStatusRouterListener!!)
 
@@ -409,7 +413,6 @@ class GalleryListScene : BaseScene(),
         return view
     }
 
-    @SuppressLint("NotifyDataSetChanged")
     private fun initHelpers(context: Context) {
         mFilterHelper = GalleryFilterHelper(object : GalleryFilterHelper.Callback {
             override fun getFilterFab(): FloatingActionButton? = mFloatingActionButton
@@ -482,8 +485,9 @@ class GalleryListScene : BaseScene(),
             override fun getUrlBuilder(): ListUrlBuilder? = mUrlBuilder
             override fun getSortBy(): String = mSearchLayout?.sortBy ?: "date_added"
             override fun getSortOrder(): String = mSearchLayout?.sortOrder ?: "desc"
-            @SuppressLint("NotifyDataSetChanged")
-            override fun notifyAdapterDataSetChanged() { mAdapter?.notifyDataSetChanged() }
+            override fun notifyAdapterDataSetChanged() {
+                mAdapter?.notifyItemRangeChanged(0, mAdapter?.itemCount ?: 0)
+            }
             override fun notifyAdapterItemRangeRemoved(positionStart: Int, itemCount: Int) {
                 mAdapter?.notifyItemRangeRemoved(positionStart, itemCount)
             }
