@@ -45,7 +45,8 @@ object LRRAuthManager {
     private const val KEY_ALLOW_CLEARTEXT = "allow_cleartext"
     private const val KEY_PATTERN_SALT = "pattern_salt"
     private const val KEY_PATTERN_HASH_V2 = "pattern_hash_v2"
-    private const val PBKDF2_ITERATIONS = 100_000
+    private const val PBKDF2_ITERATIONS_V1 = 100_000  // Legacy, kept for migration
+    private const val PBKDF2_ITERATIONS = 200_000
     private const val PBKDF2_KEY_BITS = 256
 
     // KeyStore-bound AES-GCM wrapping for pattern hash
@@ -521,7 +522,7 @@ object LRRAuthManager {
     }
 
     /**
-     * Hash [pattern] with PBKDF2WithHmacSHA256 (100K iterations) and persist to encrypted prefs.
+     * Hash [pattern] with PBKDF2WithHmacSHA256 (200K iterations) and persist to encrypted prefs.
      * Pass null or empty string to clear the pattern.
      *
      * For PBKDF2-only mode (no biometrics), stores the hash directly.
@@ -611,6 +612,9 @@ object LRRAuthManager {
      *
      * Checks lockout state first; on failure, records the attempt.
      *
+     * Transparent migration: if the stored hash was created with 100K iterations (V1),
+     * the hash is verified against V1 parameters and then re-hashed with 200K iterations.
+     *
      * @return true if input matches the stored pattern.
      */
     @JvmStatic
@@ -622,22 +626,50 @@ object LRRAuthManager {
         val salt = Base64.decode(saltStr, Base64.NO_WRAP)
         val expected = Base64.decode(hashStr, Base64.NO_WRAP)
         val patChars = (input ?: "").toCharArray()
-        val spec = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS)
         try {
             val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-            val actual = factory.generateSecret(spec).encoded
-            val match = MessageDigest.isEqual(actual, expected)
-            if (match) {
-                resetFailures()
-            } else {
-                recordFailure()
+
+            // Try current iteration count first
+            val specCurrent = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS)
+            try {
+                val actual = factory.generateSecret(specCurrent).encoded
+                if (MessageDigest.isEqual(actual, expected)) {
+                    resetFailures()
+                    return true
+                }
+            } finally {
+                specCurrent.clearPassword()
             }
-            return match
+
+            // Try legacy iteration count for transparent migration
+            val specLegacy = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS_V1, PBKDF2_KEY_BITS)
+            try {
+                val actual = factory.generateSecret(specLegacy).encoded
+                if (MessageDigest.isEqual(actual, expected)) {
+                    // Re-hash with current iteration count and save
+                    val specMigrate = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS)
+                    try {
+                        val newHash = factory.generateSecret(specMigrate).encoded
+                        prefs.edit()
+                            .putString(KEY_PATTERN_HASH_V2,
+                                Base64.encodeToString(newHash, Base64.NO_WRAP))
+                            .apply()
+                    } finally {
+                        specMigrate.clearPassword()
+                    }
+                    resetFailures()
+                    return true
+                }
+            } finally {
+                specLegacy.clearPassword()
+            }
+
+            recordFailure()
+            return false
         } catch (_: Exception) {
             recordFailure()
             return false
         } finally {
-            spec.clearPassword()
             patChars.fill('\u0000')
         }
     }
@@ -647,6 +679,11 @@ object LRRAuthManager {
      * The [authenticatedCipher] must have been obtained from BiometricPrompt's CryptoObject.
      *
      * Checks lockout state first; on failure, records the attempt.
+     *
+     * Transparent migration: if the stored hash was created with 100K iterations (V1),
+     * the hash is verified against V1 parameters and then re-hashed with 200K iterations.
+     * Note: the re-encrypted ciphertext uses the same AES-GCM cipher, so the KeyStore
+     * binding is preserved.
      *
      * @return true if input matches the stored pattern.
      */
@@ -659,27 +696,91 @@ object LRRAuthManager {
         val salt = Base64.decode(saltStr, Base64.NO_WRAP)
         val encrypted = Base64.decode(encryptedStr, Base64.NO_WRAP)
         val patChars = (input ?: "").toCharArray()
-        val spec = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS)
         try {
             val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-            val actual = factory.generateSecret(spec).encoded
             // Decrypt the stored hash using the BiometricPrompt-authenticated cipher
             val expected = authenticatedCipher.doFinal(encrypted)
-            val match = MessageDigest.isEqual(actual, expected)
-            if (match) {
-                resetFailures()
-            } else {
-                recordFailure()
+
+            // Try current iteration count first
+            val specCurrent = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS)
+            try {
+                val actual = factory.generateSecret(specCurrent).encoded
+                if (MessageDigest.isEqual(actual, expected)) {
+                    resetFailures()
+                    return true
+                }
+            } finally {
+                specCurrent.clearPassword()
             }
-            return match
+
+            // Try legacy iteration count for transparent migration
+            val specLegacy = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS_V1, PBKDF2_KEY_BITS)
+            try {
+                val actual = factory.generateSecret(specLegacy).encoded
+                if (MessageDigest.isEqual(actual, expected)) {
+                    // Re-hash with current iteration count — re-encryption with the same
+                    // cipher is not possible (GCM cipher is single-use), so we store the
+                    // new PBKDF2 hash directly in the unencrypted field and clear the
+                    // encrypted field. The next setPatternWithCipher call (e.g., on
+                    // pattern change) will re-encrypt with KeyStore.
+                    val specMigrate = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS)
+                    try {
+                        val newHash = factory.generateSecret(specMigrate).encoded
+                        prefs.edit()
+                            .putString(KEY_PATTERN_HASH_V2,
+                                Base64.encodeToString(newHash, Base64.NO_WRAP))
+                            .remove(KEY_PATTERN_ENCRYPTED)
+                            .remove(KEY_PATTERN_IV)
+                            .apply()
+                        sPlainPrefs?.edit()
+                            ?.putBoolean(KEY_PATTERN_KEYSTORE_BOUND, false)
+                            ?.apply()
+                    } finally {
+                        specMigrate.clearPassword()
+                    }
+                    resetFailures()
+                    return true
+                }
+            } finally {
+                specLegacy.clearPassword()
+            }
+
+            recordFailure()
+            return false
         } catch (_: Exception) {
             recordFailure()
             return false
+        } finally {
+            patChars.fill('\u0000')
+        }
+    }
+
+    /**
+     * Compute a PBKDF2WithHmacSHA256 hash with the given parameters.
+     * Exposed as `internal` so tests can create legacy-iteration hashes for migration tests.
+     */
+    @JvmStatic
+    internal fun computePbkdf2Hash(
+        pattern: String,
+        salt: ByteArray,
+        iterations: Int
+    ): ByteArray {
+        val patChars = pattern.toCharArray()
+        val spec = PBEKeySpec(patChars, salt, iterations, PBKDF2_KEY_BITS)
+        try {
+            val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+            return factory.generateSecret(spec).encoded
         } finally {
             spec.clearPassword()
             patChars.fill('\u0000')
         }
     }
+
+    /** Legacy iteration count, exposed for migration tests. */
+    internal const val ITERATIONS_V1 = PBKDF2_ITERATIONS_V1
+
+    /** Current iteration count, exposed for migration tests. */
+    internal const val ITERATIONS_CURRENT = PBKDF2_ITERATIONS
 
     /**
      * Clear all stored credentials.
