@@ -2,6 +2,7 @@ package com.hippo.ehviewer.client.lrr
 
 import android.util.Log
 import com.hippo.ehviewer.client.lrr.data.LRRTagStat
+import com.hippo.ehviewer.module.Cacheable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -12,7 +13,7 @@ import kotlinx.coroutines.sync.withLock
  * fast tag suggestions in the search bar. A 10-minute TTL triggers a
  * background refresh on the next access after expiration.
  */
-object LRRTagCache {
+object LRRTagCache : Cacheable {
 
     private const val TAG = "LRRTagCache"
 
@@ -109,5 +110,9 @@ object LRRTagCache {
         tags = emptyList()
         searchKeys = emptyList()
         lastFetchTime = 0
+    }
+
+    override fun clearCache() {
+        clear()
     }
 }

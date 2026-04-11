@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit
  * LANraragi uses Bearer-token auth, so the OkHttp client is configured with
  * [CookieJar.NO_COOKIES]: no cookies are stored, sent, or persisted.
  */
-class NetworkModule(private val context: Context) : INetworkModule {
+class NetworkModule(private val context: Context) : INetworkModule, Cacheable {
 
     override val cache: Cache by lazy {
         Cache(File(context.cacheDir, "http_cache"), 200L * 1024L * 1024L)
@@ -97,4 +97,8 @@ class NetworkModule(private val context: Context) : INetworkModule {
 
     /** Live connectivity monitor backed by NetworkCallback. */
     override val networkMonitor: NetworkMonitor by lazy { NetworkMonitor(context) }
+
+    override fun clearCache() {
+        try { cache.evictAll() } catch (_: Exception) {}
+    }
 }
