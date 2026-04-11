@@ -7,6 +7,7 @@ import androidx.room.Entity
 import androidx.room.Ignore
 import androidx.room.Index
 import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.data.GalleryInfoEntity
 import org.json.JSONException
 import org.json.JSONObject
 
@@ -23,7 +24,7 @@ import org.json.JSONObject
         Index("LABEL")
     ]
 )
-class DownloadInfo : GalleryInfo {
+class DownloadInfo : GalleryInfoEntity {
 
     @JvmField
     @ColumnInfo(name = "STATE")
