@@ -66,7 +66,7 @@
 # === Settings fragments (instantiated via PreferenceActivity headers reflection) ===
 -keep class com.hippo.ehviewer.ui.fragment.** { *; }
 
-# === Scene classes (instantiated via StageLayout reflection) ===
+# === Scene classes (instantiated via SceneFactory registry) ===
 -keep class com.hippo.ehviewer.ui.scene.** { *; }
 
 # === LRRDownloadWorker: preserve volatile semantics for cancellation flag ===
