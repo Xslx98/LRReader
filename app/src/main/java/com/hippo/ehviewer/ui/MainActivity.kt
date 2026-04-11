@@ -77,6 +77,7 @@ import com.hippo.ehviewer.widget.EhDrawerLayout
 import com.hippo.io.UniFileInputStreamPipe
 import com.hippo.network.Network
 import com.hippo.scene.Announcer
+import com.hippo.scene.SceneFactory
 import com.hippo.scene.SceneFragment
 import com.hippo.scene.StageActivity
 import com.hippo.unifile.UniFile
@@ -119,6 +120,19 @@ class MainActivity : StageActivity(),
             registerLaunchMode(DownloadLabelsScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
             registerLaunchMode(LRRCategoriesScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
             registerLaunchMode(HistoryScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TOP)
+
+            // Scene factory registrations (replaces reflection-based newInstance())
+            SceneFactory.register(SecurityScene::class.java.name) { SecurityScene() }
+            SceneFactory.register(AnalyticsScene::class.java.name) { AnalyticsScene() }
+            SceneFactory.register(ServerConfigScene::class.java.name) { ServerConfigScene() }
+            SceneFactory.register(ServerListScene::class.java.name) { ServerListScene() }
+            SceneFactory.register(GalleryListScene::class.java.name) { GalleryListScene() }
+            SceneFactory.register(QuickSearchScene::class.java.name) { QuickSearchScene() }
+            SceneFactory.register(GalleryDetailScene::class.java.name) { GalleryDetailScene() }
+            SceneFactory.register(DownloadsScene::class.java.name) { DownloadsScene() }
+            SceneFactory.register(DownloadLabelsScene::class.java.name) { DownloadLabelsScene() }
+            SceneFactory.register(LRRCategoriesScene::class.java.name) { LRRCategoriesScene() }
+            SceneFactory.register(HistoryScene::class.java.name) { HistoryScene() }
         }
     }
 
