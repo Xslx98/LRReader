@@ -48,6 +48,8 @@ class DownloadManager(
     internal val eventBus: DownloadEventBus = DownloadEventBus()
 ) {
 
+    internal val repo = DownloadRepository(mContext, scope)
+
     // All download info list
     private val mAllInfoList: MutableList<DownloadInfo> = ArrayList()
     // All download info map — O(1) lookup by gid
