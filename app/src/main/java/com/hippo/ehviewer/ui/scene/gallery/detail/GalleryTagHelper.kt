@@ -21,62 +21,49 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import com.hippo.android.resource.AttrResources
 import com.hippo.drawable.RoundSideRectDrawable
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.data.GalleryTagGroup
 import com.hippo.ehviewer.settings.AppearanceSettings
+import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListSceneDialog
 import com.hippo.widget.AutoWrapLayout
 
 /**
- * Handles tag display, tag filtering dialogs, and tag long-press actions
- * extracted from GalleryDetailScene to reduce its line count.
+ * Stateless utility for tag display and tag long-press actions,
+ * extracted from GalleryDetailScene. All methods take explicit parameters;
+ * no Callback interface.
  */
-class GalleryTagHelper(private val callback: Callback) {
+object GalleryTagHelper {
 
-    interface Callback {
-        fun getContext(): Context?
-        fun getInflater(): LayoutInflater?
-        fun getTagsLayout(): LinearLayout?
-        fun getNoTagsView(): TextView?
-        fun getString(resId: Int): String
-        fun getString(resId: Int, vararg formatArgs: Any): String
-        fun showTip(resId: Int, length: Int)
-        fun getUploader(): String?
-        fun getTagClickListener(): View.OnClickListener
-        fun getTagLongClickListener(): View.OnLongClickListener
-    }
-
+    /** Cached [EhTagDatabase] instance from the last [bindTags] call. */
     private var ehTags: EhTagDatabase? = null
+
+    /** Cached [GalleryListSceneDialog] instance for tag long-press. */
     private var tagDialog: GalleryListSceneDialog? = null
 
     fun getEhTags(): EhTagDatabase? = ehTags
 
-    fun setTagDialog(dialog: GalleryListSceneDialog?) {
-        tagDialog = dialog
-    }
-
     /**
      * Populate the tags LinearLayout with tag group chips.
      */
-    fun bindTags(tagGroups: Array<GalleryTagGroup>?) {
-        val context = callback.getContext()
-        val inflater = callback.getInflater()
-        val mTags = callback.getTagsLayout()
-        val mNoTags = callback.getNoTagsView()
-        if (context == null || inflater == null || mTags == null || mNoTags == null) {
-            return
-        }
-
-        mTags.removeViews(1, mTags.childCount - 1)
+    fun bindTags(
+        context: Context,
+        inflater: LayoutInflater,
+        tagsLayout: LinearLayout,
+        noTagsView: TextView,
+        tagGroups: Array<GalleryTagGroup>?,
+        clickListener: View.OnClickListener,
+        longClickListener: View.OnLongClickListener
+    ) {
+        tagsLayout.removeViews(1, tagsLayout.childCount - 1)
         if (tagGroups == null || tagGroups.isEmpty()) {
-            mNoTags.visibility = View.VISIBLE
+            noTagsView.visibility = View.VISIBLE
             return
         } else {
-            mNoTags.visibility = View.GONE
+            noTagsView.visibility = View.GONE
         }
 
         ehTags = if (AppearanceSettings.getShowTagTranslations()) {
@@ -87,13 +74,11 @@ class GalleryTagHelper(private val callback: Callback) {
 
         val colorTag = AttrResources.getAttrColor(context, R.attr.tagBackgroundColor)
         val colorName = AttrResources.getAttrColor(context, R.attr.tagGroupBackgroundColor)
-        val clickListener = callback.getTagClickListener()
-        val longClickListener = callback.getTagLongClickListener()
 
         for (tg in tagGroups) {
-            val ll = inflater.inflate(R.layout.gallery_tag_group, mTags, false) as LinearLayout
+            val ll = inflater.inflate(R.layout.gallery_tag_group, tagsLayout, false) as LinearLayout
             ll.orientation = LinearLayout.HORIZONTAL
-            mTags.addView(ll)
+            tagsLayout.addView(ll)
 
             var readableTagName: String? = null
             if (ehTags != null) {
@@ -131,12 +116,12 @@ class GalleryTagHelper(private val callback: Callback) {
     /**
      * Show the tag long-press dialog with options (open definition, copy, etc.).
      */
-    fun showTagDialog(baseScene: com.hippo.ehviewer.ui.scene.BaseScene, tag: String) {
+    fun showTagDialog(baseScene: BaseScene, context: Context, tag: String) {
         if (tagDialog == null) {
             tagDialog = GalleryListSceneDialog(baseScene)
         }
         if (ehTags == null) {
-            ehTags = callback.getContext()?.let { EhTagDatabase.getInstance(it) }
+            ehTags = EhTagDatabase.getInstance(context)
         }
         tagDialog!!.setTagName(tag)
         tagDialog!!.showTagLongPressDialog(ehTags)
@@ -148,8 +133,5 @@ class GalleryTagHelper(private val callback: Callback) {
     fun destroy() {
         ehTags = null
         tagDialog = null
-    }
-
-    companion object {
     }
 }
