@@ -7,7 +7,7 @@ import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.data.GalleryInfo
-import com.hippo.ehviewer.client.lrr.LRRAuthManager
+import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.DownloadLabel

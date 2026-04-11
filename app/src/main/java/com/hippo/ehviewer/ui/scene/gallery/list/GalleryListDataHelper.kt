@@ -9,9 +9,9 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.ListUrlBuilder
-import com.hippo.ehviewer.client.lrr.LRRArchivePagingSource
-import com.hippo.ehviewer.client.lrr.LRRAuthManager
-import com.hippo.ehviewer.client.lrr.LRRClientProvider
+import com.lanraragi.reader.client.api.LRRArchivePagingSource
+import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.LRRClientProvider
 import com.hippo.ehviewer.widget.GalleryInfoContentHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

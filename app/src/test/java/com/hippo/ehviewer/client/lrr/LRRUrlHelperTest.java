@@ -1,5 +1,6 @@
 package com.hippo.ehviewer.client.lrr;
 
+import com.lanraragi.reader.client.api.*;
 import org.junit.Test;
 import static org.junit.Assert.*;
 

@@ -1,5 +1,7 @@
 package com.hippo.ehviewer.client.lrr
 
+import com.lanraragi.reader.client.api.*
+import com.lanraragi.reader.client.api.data.*
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.test.core.app.ApplicationProvider

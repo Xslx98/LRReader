@@ -1,4 +1,4 @@
-package com.hippo.ehviewer.client.lrr.data
+package com.lanraragi.reader.client.api.data
 
 import kotlinx.serialization.Serializable
 
