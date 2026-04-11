@@ -1,7 +1,7 @@
 package com.hippo.widget
 
 import androidx.recyclerview.widget.DiffUtil
-import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.data.GalleryInfoUi
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -19,15 +19,15 @@ import org.junit.Test
  */
 class ContentHelperDiffUtilTest {
 
-    private fun makeInfo(gid: Long, title: String = "title$gid"): GalleryInfo {
-        return GalleryInfo().apply {
+    private fun makeInfo(gid: Long, title: String = "title$gid"): GalleryInfoUi {
+        return GalleryInfoUi().apply {
             this.gid = gid
             this.title = title
             this.posted = "2025-01-01"
         }
     }
 
-    private fun computeDiff(oldList: List<GalleryInfo>, newList: List<GalleryInfo>): DiffUtil.DiffResult {
+    private fun computeDiff(oldList: List<GalleryInfoUi>, newList: List<GalleryInfoUi>): DiffUtil.DiffResult {
         return DiffUtil.calculateDiff(object : DiffUtil.Callback() {
             override fun getOldListSize() = oldList.size
             override fun getNewListSize() = newList.size
@@ -86,7 +86,7 @@ class ContentHelperDiffUtilTest {
 
     @Test
     fun emptyToFilled_allInserts() {
-        val old = emptyList<GalleryInfo>()
+        val old = emptyList<GalleryInfoUi>()
         val new = listOf(makeInfo(1), makeInfo(2))
         val ops = mutableListOf<String>()
         computeDiff(old, new).dispatchUpdatesTo(object : androidx.recyclerview.widget.ListUpdateCallback {
@@ -102,7 +102,7 @@ class ContentHelperDiffUtilTest {
     @Test
     fun filledToEmpty_allRemoves() {
         val old = listOf(makeInfo(1), makeInfo(2))
-        val new = emptyList<GalleryInfo>()
+        val new = emptyList<GalleryInfoUi>()
         val ops = mutableListOf<String>()
         computeDiff(old, new).dispatchUpdatesTo(object : androidx.recyclerview.widget.ListUpdateCallback {
             override fun onInserted(position: Int, count: Int) { ops.add("insert") }

@@ -1,7 +1,6 @@
 package com.hippo.ehviewer.client.lrr
 
 import androidx.paging.PagingSource
-import com.hippo.ehviewer.client.data.GalleryInfo
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
