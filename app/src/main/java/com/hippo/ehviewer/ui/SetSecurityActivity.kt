@@ -19,18 +19,39 @@ package com.hippo.ehviewer.ui
 import android.hardware.fingerprint.FingerprintManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.CheckBox
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.client.lrr.LRRAuthManager
 import com.hippo.ehviewer.client.lrr.LRRSecureStorageUnavailableException
 import com.hippo.ehviewer.settings.SecuritySettings
 import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.widget.lockpattern.LockPatternView
 
 class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
+
+    companion object {
+        private const val TAG = "SetSecurityActivity"
+
+        @RequiresApi(api = Build.VERSION_CODES.M)
+        @JvmStatic
+        fun hasEnrolledFingerprints(fingerprintManager: FingerprintManager): Boolean {
+            return try {
+                @Suppress("DEPRECATION")
+                fingerprintManager.isHardwareDetected && fingerprintManager.hasEnrolledFingerprints()
+            } catch (e: Exception) {
+                false
+            }
+        }
+    }
 
     private var mPatternView: LockPatternView? = null
     private var mCancel: View? = null
@@ -87,20 +108,128 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
                 } else {
                     mPatternView!!.patternString
                 }
-                try {
-                    SecuritySettings.setPattern(security)
-                    SecuritySettings.putEnableFingerprint(
-                        mFingerprint!!.visibility == View.VISIBLE &&
-                            mFingerprint!!.isChecked && security.isNotEmpty()
-                    )
-                } catch (e: LRRSecureStorageUnavailableException) {
-                    // KeyStore unavailable — show error dialog and keep activity open.
-                    showStorageErrorDialog()
-                    return
-                }
+                savePattern(security)
+            }
+        }
+    }
+
+    private fun savePattern(security: String) {
+        if (security.isEmpty()) {
+            // Clearing the pattern — no biometric needed
+            try {
+                SecuritySettings.setPattern("")
+                SecuritySettings.putEnableFingerprint(false)
+            } catch (e: LRRSecureStorageUnavailableException) {
+                showStorageErrorDialog()
+                return
             }
             finish()
+            return
         }
+
+        // Check if strong biometrics are available for KeyStore binding
+        if (canUseKeystoreBinding()) {
+            setPatternWithKeystoreBinding(security)
+        } else {
+            // No biometrics: PBKDF2-only flow
+            setPatternPbkdf2Only(security)
+        }
+    }
+
+    private fun canUseKeystoreBinding(): Boolean {
+        val biometricManager = BiometricManager.from(this)
+        return biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
+            BiometricManager.BIOMETRIC_SUCCESS
+    }
+
+    private fun setPatternPbkdf2Only(security: String) {
+        try {
+            SecuritySettings.setPattern(security)
+            SecuritySettings.putEnableFingerprint(
+                mFingerprint!!.visibility == View.VISIBLE &&
+                    mFingerprint!!.isChecked && security.isNotEmpty()
+            )
+        } catch (e: LRRSecureStorageUnavailableException) {
+            showStorageErrorDialog()
+            return
+        }
+        finish()
+    }
+
+    private fun setPatternWithKeystoreBinding(security: String) {
+        // Generate the KeyStore key first
+        try {
+            LRRAuthManager.generatePatternKeystoreKey()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to generate KeyStore key, falling back to PBKDF2", e)
+            setPatternPbkdf2Only(security)
+            return
+        }
+
+        // Get an encrypt cipher to present to BiometricPrompt
+        val cipher: javax.crypto.Cipher
+        try {
+            cipher = LRRAuthManager.getEncryptCipher()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get encrypt cipher, falling back to PBKDF2", e)
+            LRRAuthManager.deletePatternKeystoreKey()
+            setPatternPbkdf2Only(security)
+            return
+        }
+
+        val executor = ContextCompat.getMainExecutor(this)
+        val prompt = BiometricPrompt(this, executor,
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    val authCipher = result.cryptoObject?.cipher
+                    if (authCipher == null) {
+                        Log.e(TAG, "BiometricPrompt returned null cipher")
+                        setPatternPbkdf2Only(security)
+                        return
+                    }
+                    try {
+                        LRRAuthManager.setPatternWithCipher(security, authCipher)
+                        SecuritySettings.putEnableFingerprint(
+                            mFingerprint!!.visibility == View.VISIBLE &&
+                                mFingerprint!!.isChecked && security.isNotEmpty()
+                        )
+                    } catch (e: LRRSecureStorageUnavailableException) {
+                        showStorageErrorDialog()
+                        return
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to set pattern with cipher, falling back", e)
+                        LRRAuthManager.deletePatternKeystoreKey()
+                        setPatternPbkdf2Only(security)
+                        return
+                    }
+                    finish()
+                }
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    if (errorCode == BiometricPrompt.ERROR_USER_CANCELED ||
+                        errorCode == BiometricPrompt.ERROR_NEGATIVE_BUTTON ||
+                        errorCode == BiometricPrompt.ERROR_CANCELED) {
+                        // User cancelled — fall back to PBKDF2-only silently
+                        setPatternPbkdf2Only(security)
+                    } else {
+                        Toast.makeText(this@SetSecurityActivity, errString, Toast.LENGTH_SHORT).show()
+                        LRRAuthManager.deletePatternKeystoreKey()
+                        setPatternPbkdf2Only(security)
+                    }
+                }
+
+                override fun onAuthenticationFailed() {
+                    // Biometric didn't match — user can retry via the prompt
+                }
+            })
+
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle(getString(R.string.settings_privacy_pattern_protection_title))
+            .setDescription(getString(R.string.biometric_prompt_pattern_set))
+            .setNegativeButtonText(getString(android.R.string.cancel))
+            .build()
+
+        prompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher))
     }
 
     private fun showStorageErrorDialog() {
@@ -109,18 +238,5 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
             .setMessage(R.string.lrr_secure_storage_write_failed)
             .setPositiveButton(android.R.string.ok, null)
             .show()
-    }
-
-    companion object {
-        @RequiresApi(api = Build.VERSION_CODES.M)
-        @JvmStatic
-        fun hasEnrolledFingerprints(fingerprintManager: FingerprintManager): Boolean {
-            return try {
-                @Suppress("DEPRECATION")
-                fingerprintManager.isHardwareDetected && fingerprintManager.hasEnrolledFingerprints()
-            } catch (e: Exception) {
-                false
-            }
-        }
     }
 }
