@@ -15,18 +15,15 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Tests for the blockingDb() main-thread guard in EhDB and direct async DAO operations.
+ * Tests for EhDB async DAO operations.
  *
- * **W1-2**: [EhDB.blockingDb] now hard-throws on the main thread in debug builds (which is
- * what the unit-test variant `appReleaseDebug` builds against, so `BuildConfig.DEBUG == true`
- * here). The release-only `Log.w` fallback is not exercised by this test because we cannot
- * flip `BuildConfig.DEBUG` from a unit test.
+ * **History:** Prior to W3-5 (2026-04-11), this test verified the `blockingDb()` main-thread
+ * guard. That guard and all `@JvmStatic blockingDb`-bridged methods have been deleted — EhDB
+ * now exposes only `suspend fun *Async()` methods. The test has been updated to verify the
+ * async methods work correctly via Room's in-memory database.
  *
- * Uses in-memory Room directly (bypassing EhDB.initialize() which requires
- * Settings to be initialized). The throw fires before runBlocking is invoked, so the
- * `mainThreadThrows` test does not need a real `EhDB.sDatabase` instance.
- *
- * Ref: https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/run-blocking.html
+ * Uses in-memory Room directly (bypassing EhDB.initialize() which requires Settings to be
+ * initialized).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30], application = android.app.Application::class)
@@ -71,41 +68,58 @@ class EhDBMainThreadCheckTest {
     }
 
     /**
-     * W1-2 acceptance: any `@JvmStatic` blockingDb-bridged method must throw
-     * [IllegalStateException] when invoked on the main thread in debug builds.
+     * Verifies that `getDownloadDirname` and `putDownloadDirname` @JvmStatic bridges
+     * no longer exist on [EhDB]. This is a compile-time guarantee — if someone re-adds
+     * a `blockingDb` bridge, this test will fail to compile.
      *
-     * After the C4/C5 cleanups, two `@JvmStatic blockingDb` bridges remain in
-     * [EhDB]: `getDownloadDirname` and `putDownloadDirname`. The fourth and
-     * third historical bridges (`putDownloadInfo` and `queryGalleryTags`) were
-     * deleted as dead-bridge / dead-cache follow-ups. The guard inside
-     * `blockingDb` runs *before* `runBlocking { ... }`, so the test does not
-     * need `EhDB.initialize()` or a real `sDatabase` — the throw fires first.
+     * At runtime, we verify the async variants work correctly via the DAO.
      */
     @Test
-    fun blockingDb_mainThreadThrowsInDebug() {
-        assertTrue(
-            "BuildConfig.DEBUG must be true under appReleaseDebugUnitTest",
-            BuildConfig.DEBUG
+    fun blockingDbBridges_removed() {
+        // Compile-time proof: EhDB has no getDownloadDirname or putDownloadDirname methods.
+        // If someone re-adds them, the reflection check below will fail the assertion.
+        val ehdbMethods = EhDB::class.java.declaredMethods.map { it.name }
+        assertFalse(
+            "getDownloadDirname blockingDb bridge should not exist",
+            ehdbMethods.contains("getDownloadDirname")
         )
-        assertEquals(
-            "Test must run on the main looper for this guard to fire",
-            Looper.getMainLooper(),
-            Looper.myLooper()
+        assertFalse(
+            "putDownloadDirname blockingDb bridge should not exist",
+            ehdbMethods.contains("putDownloadDirname")
         )
+    }
 
-        val ex = assertThrows(IllegalStateException::class.java) {
-            // Any @JvmStatic blockingDb-bridged method works; getDownloadDirname is
-            // the simplest single-arg call site. The guard throws before runBlocking
-            // is invoked, so we do not need EhDB.initialize() or a live sDatabase.
-            EhDB.getDownloadDirname(0L)
-        }
-        assertTrue(
-            "Exception message should mention main thread",
-            ex.message?.contains("main thread") == true
-        )
-        assertTrue(
-            "Exception message should point at the suspend variant",
-            ex.message?.contains("Async") == true
-        )
+    /**
+     * Verifies the async dirname DAO round-trip works correctly.
+     */
+    @Test
+    fun directDao_downloadDirname_roundTrip() = runTest {
+        val dao = db.downloadDao()
+
+        // Initially null
+        val initial = dao.loadDirname(42L)
+        assertNull("Fresh DB should have no dirname for gid 42", initial)
+
+        // Insert
+        val entry = com.hippo.ehviewer.dao.DownloadDirname()
+        entry.gid = 42L
+        entry.dirname = "42-test-gallery"
+        dao.insertDirname(entry)
+
+        // Read back
+        val loaded = dao.loadDirname(42L)
+        assertNotNull("Should find dirname after insert", loaded)
+        assertEquals("42-test-gallery", loaded!!.dirname)
+
+        // Update
+        loaded.dirname = "42-test-gallery-sanitized"
+        dao.updateDirname(loaded)
+        val updated = dao.loadDirname(42L)
+        assertEquals("42-test-gallery-sanitized", updated!!.dirname)
+
+        // Delete
+        dao.deleteDirnameByKey(42L)
+        val deleted = dao.loadDirname(42L)
+        assertNull("Should be null after delete", deleted)
     }
 }
