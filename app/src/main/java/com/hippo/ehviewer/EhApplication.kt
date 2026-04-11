@@ -209,8 +209,9 @@ class EhApplication : RecordingApplication() {
                     val oldBase = File(getExternalFilesDir(null), "download")
                     if (oldBase.exists() && oldBase.isDirectory) {
                         val newBase = DownloadSettings.getDownloadLocation()
-                        if (newBase != null && "file" == newBase.uri.scheme) {
-                            val newBaseFile = File(newBase.uri.path!!)
+                        val path = newBase?.uri?.path
+                        if (newBase != null && "file" == newBase.uri.scheme && path != null) {
+                            val newBaseFile = File(path)
                             val children = oldBase.listFiles()
                             if (children != null) {
                                 for (child in children) {
