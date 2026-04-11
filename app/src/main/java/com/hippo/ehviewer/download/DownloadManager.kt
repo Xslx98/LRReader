@@ -183,7 +183,10 @@ class DownloadManager(
             mapDraft[label.label] = ArrayList()
         }
 
-        val extraSavedLabels: MutableList<DownloadLabel> = ArrayList()
+        // Collect orphan label strings referenced by downloads but absent from
+        // the label table. These will be batch-inserted in a single DB transaction
+        // after the loop, instead of N individual addDownloadLabelAsync() calls.
+        val orphanLabelStrings: MutableList<String> = ArrayList()
 
         for (info in loadedInfos) {
             val archiveUri = info.archiveUri
@@ -205,15 +208,16 @@ class DownloadManager(
                 mapDraft[info.label] = list
                 val infoLabel = info.label
                 if (infoLabel != null && !labelStrings.contains(infoLabel)) {
-                    // Persist the missing label row in the IO phase so the main-thread
-                    // publish phase has nothing to write to the DB.
-                    val saved = EhDB.addDownloadLabelAsync(infoLabel)
-                    extraSavedLabels.add(saved)
+                    orphanLabelStrings.add(infoLabel)
                     labelStrings.add(infoLabel)
                 }
             }
             list.add(info)
         }
+
+        // Batch-insert all orphan labels in a single DB transaction — O(1) roundtrip
+        // instead of O(N) individual inserts.
+        val extraSavedLabels = EhDB.addDownloadLabelsAsync(orphanLabelStrings)
 
         val loaded = LoadedDownloadData(
             labels = loadedLabels,

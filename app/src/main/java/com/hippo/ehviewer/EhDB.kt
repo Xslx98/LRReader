@@ -432,6 +432,33 @@ object EhDB {
         return raw
     }
 
+    /**
+     * Batch-insert multiple orphan label strings in a single transaction.
+     *
+     * Returns the list of [DownloadLabel] entities with their assigned IDs.
+     * Used by [com.hippo.ehviewer.download.DownloadManager.loadDataFromDb] to
+     * replace N individual [addDownloadLabelAsync] calls with a single O(1)
+     * DB roundtrip.
+     */
+    suspend fun addDownloadLabelsAsync(labels: List<String>): List<DownloadLabel> {
+        if (labels.isEmpty()) return emptyList()
+        val dao = sDatabase.downloadDao()
+        val now = System.currentTimeMillis()
+        val entities = labels.mapIndexed { index, label ->
+            DownloadLabel().apply {
+                this.label = label
+                this.time = now + index
+            }
+        }
+        val ids = sDatabase.withTransaction {
+            dao.insertLabels(entities)
+        }
+        for (i in entities.indices) {
+            entities[i].id = ids[i]
+        }
+        return entities
+    }
+
     suspend fun addDownloadLabelAsync(raw: DownloadLabel): DownloadLabel {
         raw.id = null
         val dao = sDatabase.downloadDao()
