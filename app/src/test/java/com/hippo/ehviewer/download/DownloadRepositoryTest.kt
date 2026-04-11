@@ -80,7 +80,7 @@ class DownloadRepositoryTest {
         LRRAuthManager.setServerUrl("http://localhost:3000")
 
         // Create the repository and wait for init to complete
-        repo = DownloadRepository(context, testScope)
+        repo = DownloadRepository(context, testScope, Dispatchers.Unconfined)
         repo.startLoading {}
         // With Unconfined dispatcher the load completes synchronously
         org.robolectric.shadows.ShadowLooper.idleMainLooper()

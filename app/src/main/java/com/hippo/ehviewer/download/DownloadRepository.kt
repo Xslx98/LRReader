@@ -19,7 +19,6 @@ package com.hippo.ehviewer.download
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.hippo.ehviewer.EhDB
@@ -27,7 +26,9 @@ import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.DownloadLabel
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.Collections
 
@@ -40,10 +41,9 @@ import java.util.Collections
  */
 class DownloadRepository(
     private val context: Context,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main
 ) {
-
-    private val mainHandler = Handler(Looper.getMainLooper())
 
     // ═══════════════════════════════════════════════════════════
     // Collections — internal so DownloadManager facade can access
@@ -92,13 +92,14 @@ class DownloadRepository(
 
     /**
      * Run [block] on the main (UI) thread. If the caller is already on the main
-     * thread, the block executes inline; otherwise it is posted to the main looper.
+     * thread, the block executes inline; otherwise it is dispatched via
+     * [mainDispatcher].
      */
     internal fun runOnMainThread(block: () -> Unit) {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             block()
         } else {
-            mainHandler.post(block)
+            scope.launch(mainDispatcher) { block() }
         }
     }
 
