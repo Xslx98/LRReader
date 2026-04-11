@@ -21,7 +21,6 @@ import com.hippo.ehviewer.settings.AppearanceSettings
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import android.os.Looper
 import android.util.Log
 
 import com.hippo.ehviewer.client.data.GalleryInfo
@@ -33,7 +32,6 @@ import com.hippo.lib.yorozuya.collect.SparseJLArray
 
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.runBlocking
 
 import java.io.File
 import java.io.FileInputStream
@@ -43,58 +41,17 @@ import java.io.IOException
 /**
  * Unified database access layer.
  *
- * **Dual API**: Every public method exists in two forms:
- * - `suspend fun xxxAsync(...)` — for Kotlin coroutine callers (preferred)
- * - `@JvmStatic fun xxx(...)` — `runBlocking` bridge for remaining Java callers (safe on IO threads)
+ * All public methods are `suspend fun` — call from a coroutine scope
+ * (typically `Dispatchers.IO` or `ServiceRegistry.coroutineModule.ioScope`).
  *
- * **Main-thread safety**: [blockingDb] hard-throws on the main thread in **debug** builds
- * (forcing offenders to be migrated to the `*Async` variants) and degrades to a logged
- * warning in **release** builds — which the R8 `-assumenosideeffects` rule then strips
- * entirely, so release behavior is silent passthrough. Kotlin callers should always use
- * the `suspend fun *Async` variants from a coroutine scope.
- *
- * Per official Kotlin docs: "runBlocking... blocks the current thread interruptibly...
- * designed to bridge regular blocking code... to be used in main functions and in tests."
- * Per Android docs: "If the main thread is blocked... it can lead to... an Application
- * Not Responding (ANR) dialog."
- * Refs:
- * - https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/run-blocking.html
- * - https://developer.android.com/kotlin/coroutines
+ * The legacy `blockingDb()` bridge and its `@JvmStatic` wrappers have been
+ * removed (W3-5, 2026-04-11). The only remaining production `runBlocking`
+ * usage is in [com.hippo.ehviewer.spider.SpiderDen.getGalleryDownloadDir],
+ * which calls `*Async` methods directly.
  */
 object EhDB {
 
     private const val TAG = "EhDB"
-
-    /**
-     * Wraps `runBlocking` with a main-thread check.
-     *
-     * - **Debug builds** ([BuildConfig.DEBUG] = true): hard-throws an [IllegalStateException]
-     *   with a full stack trace when called on the main thread. This is intentional: it forces
-     *   the remaining `@JvmStatic` callers (e.g. [com.hippo.ehviewer.spider.SpiderDen.getGalleryDownloadDir],
-     *   [com.hippo.ehviewer.sync.DownloadListInfosExecutor]) to migrate off the bridge during
-     *   development before they ship. The inventory of remaining callers lives in
-     *   `docs/blockingdb-callsites.md` (W1-2).
-     * - **Release builds**: only logs `Log.w` and continues. Because the project's ProGuard rules
-     *   strip `Log.v/d/i/w` via `-assumenosideeffects`, this becomes a silent passthrough in
-     *   release — release-channel users do NOT crash on a borderline ANR. This trade-off is
-     *   deliberate: the migration is forced in dev/CI without regressing existing users.
-     */
-    private fun <T> blockingDb(block: suspend kotlinx.coroutines.CoroutineScope.() -> T): T {
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            val callsite = IllegalStateException(
-                "EhDB.blockingDb called on main thread — migrate this caller to the suspend " +
-                    "fun *Async variant (run from a coroutine scope on Dispatchers.IO)."
-            )
-            if (BuildConfig.DEBUG) {
-                // Hard error in debug: forces the caller to be migrated.
-                throw callsite
-            }
-            // Release: log only. R8 strips Log.w via -assumenosideeffects, so this is a no-op
-            // in shipped builds. Existing users do not crash on a borderline ANR.
-            Log.w(TAG, "runBlocking called on main thread — see suspend fun *Async variants", callsite)
-        }
-        return runBlocking { block() }
-    }
 
     @JvmField
     var MAX_HISTORY_COUNT = 100
@@ -379,15 +336,9 @@ object EhDB {
     // DOWNLOAD DIRNAME
     // ═══════════════════════════════════════════════════════════
 
-    @JvmStatic
-    fun getDownloadDirname(gid: Long): String? = blockingDb { getDownloadDirnameAsync(gid) }
-
     suspend fun getDownloadDirnameAsync(gid: Long): String? {
         return sDatabase.downloadDao().loadDirname(gid)?.dirname
     }
-
-    @JvmStatic
-    fun putDownloadDirname(gid: Long, dirname: String) = blockingDb { putDownloadDirnameAsync(gid, dirname) }
 
     suspend fun putDownloadDirnameAsync(gid: Long, dirname: String) {
         sDatabase.withTransaction {
