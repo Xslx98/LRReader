@@ -4,6 +4,7 @@ import com.hippo.ehviewer.dao.DownloadInfo
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import java.lang.ref.WeakReference
 
 /**
  * Unit tests for [DownloadSpeedTracker].
@@ -38,7 +39,8 @@ class DownloadSpeedTrackerTest {
             override fun getFirstActiveTask(): DownloadInfo = activeTask
             override fun getInfoListForLabel(label: String?): List<DownloadInfo>? = null
             override fun getDownloadListener(): DownloadListener = fakeListener
-            override fun getDownloadInfoListeners(): List<DownloadInfoListener> = infoListeners
+            override fun getDownloadInfoListeners(): List<WeakReference<DownloadInfoListener>> =
+                infoListeners.map { WeakReference(it) }
             override fun getWaitList(): List<DownloadInfo> = waitList
         }
 
