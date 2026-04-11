@@ -24,8 +24,8 @@ import com.hippo.app.CheckBoxDialogBuilder
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.download.DownloadService
@@ -142,7 +142,7 @@ class DownloadLabelHelper(private val mCallback: Callback) {
             context,
             mCallback.getString(R.string.download_remove_dialog_message, galleryInfo.title ?: ""),
             mCallback.getString(R.string.download_remove_dialog_check_text),
-            Settings.getRemoveImageFiles()
+            DownloadSettings.getRemoveImageFiles()
         )
         builder.setTitle(R.string.download_remove_dialog_title)
             .setPositiveButton(android.R.string.ok) { _, which ->
@@ -165,7 +165,7 @@ class DownloadLabelHelper(private val mCallback: Callback) {
             context,
             mCallback.getString(R.string.download_remove_dialog_message_2, gidList.size()),
             mCallback.getString(R.string.download_remove_dialog_check_text),
-            Settings.getRemoveImageFiles()
+            DownloadSettings.getRemoveImageFiles()
         )
         builder.setTitle(R.string.download_remove_dialog_title)
             .setPositiveButton(android.R.string.ok) { _, _ ->
@@ -177,7 +177,7 @@ class DownloadLabelHelper(private val mCallback: Callback) {
     private fun onDeleteSingle(galleryInfo: GalleryInfo, deleteFiles: Boolean) {
         mCallback.getDownloadManager()?.deleteDownload(galleryInfo.gid)
 
-        Settings.putRemoveImageFiles(deleteFiles)
+        DownloadSettings.putRemoveImageFiles(deleteFiles)
         if (deleteFiles) {
             val gid = galleryInfo.gid
             ServiceRegistry.coroutineModule.ioScope.launch {
@@ -196,7 +196,7 @@ class DownloadLabelHelper(private val mCallback: Callback) {
         mCallback.exitCustomChoiceMode()
         mCallback.getDownloadManager()?.deleteRangeDownload(gidList)
 
-        Settings.putRemoveImageFiles(deleteFiles)
+        DownloadSettings.putRemoveImageFiles(deleteFiles)
         if (deleteFiles) {
             val files = arrayOfNulls<UniFile>(downloadInfoList.size)
             var i = 0
