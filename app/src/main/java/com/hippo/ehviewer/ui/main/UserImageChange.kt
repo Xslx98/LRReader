@@ -129,10 +129,12 @@ class UserImageChange(
     private fun startCamera() {
         checkNotNull(popupWindow)
         popupWindow!!.dismiss()
+        val cameraDir = File(activity.externalCacheDir, "camera")
+        cameraDir.mkdirs()
         outputImage = if (dialogType == CHANGE_BACKGROUND) {
-            File(activity.externalCacheDir, "background_image.jpg")
+            File(cameraDir, "background_image.jpg")
         } else {
-            File(activity.externalCacheDir, "avatar_image.jpg")
+            File(cameraDir, "avatar_image.jpg")
         }
         imageUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             // 大于等于版本24（7.0）的场合
