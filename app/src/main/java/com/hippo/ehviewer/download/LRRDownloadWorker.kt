@@ -273,7 +273,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
             if (uniDir != null && uniDir.ensureDir()) {
                 val uri = uniDir.uri
                 if ("file" == uri.scheme) {
-                    return File(uri.path!!)
+                    return File(uri.path ?: return null)
                 }
             }
         } catch (e: Exception) {
