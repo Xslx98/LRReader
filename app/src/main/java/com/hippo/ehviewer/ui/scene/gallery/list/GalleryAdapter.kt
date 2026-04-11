@@ -18,8 +18,6 @@ package com.hippo.ehviewer.ui.scene.gallery.list
 
 import android.annotation.SuppressLint
 import android.content.res.Resources
-import android.os.Handler
-import android.os.Looper
 import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
@@ -36,21 +34,18 @@ import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.settings.AppearanceSettings
-import com.hippo.ehviewer.spider.SpiderQueen
 import com.hippo.ehviewer.ui.scene.GalleryHolder
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
 import com.hippo.ehviewer.widget.TileThumb
 import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.widget.recyclerview.AutoStaggeredGridLayoutManager
-import java.util.concurrent.ExecutorService
 
 abstract class GalleryAdapter(
     private val mInflater: LayoutInflater,
     private val mResources: Resources,
     private val mRecyclerView: RecyclerView,
     type: Int,
-    private var mShowFavourited: Boolean,
-    private val executor: ExecutorService
+    private var mShowFavourited: Boolean
 ) : RecyclerView.Adapter<GalleryHolder>() {
 
     @IntDef(TYPE_LIST, TYPE_GRID)
@@ -66,8 +61,6 @@ abstract class GalleryAdapter(
     private var mType = TYPE_INVALID
 
     private val mDownloadManager: DownloadManager
-
-    private val handler = Handler(Looper.getMainLooper())
 
     init {
         mRecyclerView.adapter = this
@@ -198,18 +191,8 @@ abstract class GalleryAdapter(
                     holder.pages?.text = null
                     holder.pages?.visibility = View.GONE
                 } else {
-                    executor.submit {
-                        val startPage = SpiderQueen.findStartPage(mInflater.context, gi)
-                        handler.post {
-                            val text = if (startPage > 0) {
-                                "${startPage + 1}/${gi.pages}P"
-                            } else {
-                                "0/${gi.pages}P"
-                            }
-                            holder.pages?.text = text
-                        }
-                    }
-                    holder.pages?.text = "${gi.pages}P"
+                    val displayProgress = if (gi.progress > 0) gi.progress else 1
+                    holder.pages?.text = "${displayProgress}/${gi.pages}P"
                     holder.pages?.visibility = View.VISIBLE
                 }
                 if (TextUtils.isEmpty(gi.simpleLanguage)) {

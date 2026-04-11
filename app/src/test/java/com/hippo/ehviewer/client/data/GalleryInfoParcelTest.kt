@@ -46,6 +46,7 @@ class GalleryInfoParcelTest {
             favoriteName = "Favorites"
             tgList = arrayListOf("artist:author1", "parody:series1")
             serverProfileId = 99L
+            progress = 15
         }
 
         val parcel = Parcel.obtain()
@@ -76,6 +77,7 @@ class GalleryInfoParcelTest {
             assertNotNull(restored.tgList)
             assertEquals(original.tgList, restored.tgList)
             assertEquals(original.serverProfileId, restored.serverProfileId)
+            assertEquals(original.progress, restored.progress)
         } finally {
             parcel.recycle()
         }
@@ -141,6 +143,7 @@ class GalleryInfoParcelTest {
             // Default favoriteSlot is -2
             assertEquals(-2, restored.favoriteSlot)
             assertEquals(0L, restored.serverProfileId)
+            assertEquals(0, restored.progress)
         } finally {
             parcel.recycle()
         }
