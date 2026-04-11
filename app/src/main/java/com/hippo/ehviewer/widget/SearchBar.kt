@@ -44,7 +44,7 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.EhTagDatabase.Companion.NAMESPACE_TO_PREFIX
-import com.hippo.ehviewer.client.lrr.LRRTagCache
+import com.lanraragi.reader.client.api.LRRTagCache
 import com.hippo.ehviewer.settings.AppearanceSettings
 import kotlinx.coroutines.launch
 import com.hippo.lib.yorozuya.AnimationUtils

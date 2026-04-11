@@ -119,7 +119,7 @@ tasks.register("verifyNoBaseUrlConcat") {
     group = "verification"
     description = "Fails the build if any LRR API class concatenates baseUrl into a URL string."
 
-    def lrrSourceDir = file("src/main/java/com/hippo/ehviewer/client/lrr")
+    def lrrSourceDir = file("src/main/java/com/lanraragi/reader/client/api")
     inputs.dir(lrrSourceDir)
     // Match: optional ${ } wrap around baseUrl, followed by /api — i.e. URL construction.
     // Does NOT match: error / log strings like "Invalid server URL: $baseUrl".

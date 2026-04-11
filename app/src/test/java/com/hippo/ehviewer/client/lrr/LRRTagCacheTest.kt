@@ -1,6 +1,7 @@
 package com.hippo.ehviewer.client.lrr
 
-import com.hippo.ehviewer.client.lrr.data.LRRTagStat
+import com.lanraragi.reader.client.api.*
+import com.lanraragi.reader.client.api.data.*
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test

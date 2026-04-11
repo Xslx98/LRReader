@@ -1,5 +1,7 @@
 package com.hippo.ehviewer.client.lrr.data
 
+import com.lanraragi.reader.client.api.*
+import com.lanraragi.reader.client.api.data.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.junit.Assert.*

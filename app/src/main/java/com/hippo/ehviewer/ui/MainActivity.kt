@@ -57,7 +57,7 @@ import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.callBack.ImageChangeCallBack
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.data.ListUrlBuilder
-import com.hippo.ehviewer.client.lrr.LRRAuthManager
+import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.ui.main.UserImageChange
 import com.hippo.ehviewer.ui.scene.AnalyticsScene
 import com.hippo.ehviewer.ui.scene.BaseScene

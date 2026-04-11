@@ -2,8 +2,8 @@ package com.hippo.ehviewer.settings
 
 import android.util.Log
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.client.lrr.LRRAuthManager
-import com.hippo.ehviewer.client.lrr.LRRSecureStorageUnavailableException
+import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 
 /**
  * Security-related settings extracted from Settings.java.

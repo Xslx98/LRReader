@@ -1,12 +1,12 @@
-package com.hippo.ehviewer.client.lrr.data
+package com.lanraragi.reader.client.api.data
 
 import android.os.Parcel
 import android.os.Parcelable
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.GalleryTagGroup
-import com.hippo.ehviewer.client.lrr.LRRAuthManager
-import com.hippo.ehviewer.client.lrr.arcidToGid
+import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.arcidToGid
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -128,7 +128,7 @@ class LRRArchive() : Parcelable {
 
     /** Constructs the thumbnail URL for this archive. */
     fun getThumbnailUrl(baseUrl: String): String =
-        com.hippo.ehviewer.client.lrr.parseBaseUrl(baseUrl).newBuilder()
+        com.lanraragi.reader.client.api.parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
             .addPathSegment(arcid)
             .addPathSegment("thumbnail")

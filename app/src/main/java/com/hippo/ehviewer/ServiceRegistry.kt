@@ -1,7 +1,7 @@
 package com.hippo.ehviewer
 
 import android.content.Context
-import com.hippo.ehviewer.client.lrr.LRRTagCache
+import com.lanraragi.reader.client.api.LRRTagCache
 import com.hippo.ehviewer.module.AppModule
 import com.hippo.ehviewer.module.ClientModule
 import com.hippo.ehviewer.module.CoroutineModule
