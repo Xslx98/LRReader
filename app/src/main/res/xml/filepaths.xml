@@ -15,29 +15,21 @@
   -->
 
 <!--
-  Restricted FileProvider paths.
+  Restricted FileProvider paths — only directories actually shared via
+  FileProvider.getUriForFile() are declared.
 
-  Security: <root-path path=""/> removed per Android official guidance
-  (https://developer.android.com/privacy-and-security/risks/file-providers):
-    "<root-path> corresponds to the root directory of the device (/).
-     Allowing this provides arbitrary access to files and folders."
+  Security: empty path="" entries that exposed entire cache trees have been
+  replaced with specific subdirectory paths.  cache-path and external-files-path
+  entries removed because no code passes internal-cache or external-files paths
+  to FileProvider.getUriForFile().
 
-  Only the paths actually needed by the app are declared:
-    - external-cache-path : camera capture images (UserImageChange)
-    - cache-path          : internal cache (image crop temp files)
-    - external-files-path : download temp directory
+  See: https://developer.android.com/privacy-and-security/risks/file-providers
 -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <cache-path
-        name="cache"
-        path="" />
-
-    <external-files-path
-        name="temp"
-        path="temp" />
-
+    <!-- Camera capture images passed to ACTION_IMAGE_CAPTURE via
+         FileProvider.getUriForFile() in UserImageChange.kt -->
     <external-cache-path
-        name="external_cache_path"
-        path="" />
+        name="camera"
+        path="camera" />
 </paths>
