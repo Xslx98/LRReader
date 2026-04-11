@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.concurrent.ExecutorService
 
 /**
  * ViewModel for [GalleryDetailScene]. Manages gallery detail state, gallery info,
@@ -216,10 +215,6 @@ class GalleryDetailViewModel : ViewModel() {
     /** The app's [DownloadManager] singleton. */
     val downloadManager: DownloadManager
         get() = ServiceRegistry.dataModule.downloadManager
-
-    /** Shared background executor for lightweight off-main-thread work. */
-    val executorService: ExecutorService
-        get() = ServiceRegistry.appModule.executorService
 
     // -------------------------------------------------------------------------
     // Data operations (all dispatched on viewModelScope so they outlive the Scene)
