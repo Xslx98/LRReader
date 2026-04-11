@@ -9,7 +9,7 @@ import android.text.style.ImageSpan
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhUrl
 import com.hippo.ehviewer.client.EhUtils
-import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.client.lrr.data.LRRSearchResult
 import com.hippo.ehviewer.settings.AppearanceSettings
@@ -42,7 +42,7 @@ class GallerySearchHelper(private val mCallback: Callback) {
      * Result holder for LRR search result conversion.
      */
     class LRRPaginatedResult(
-        @JvmField val galleryInfoList: List<GalleryInfo>,
+        @JvmField val galleryInfoList: List<GalleryInfoUi>,
         @JvmField val totalPages: Int,
         @JvmField val nextPage: Int
     )
@@ -161,9 +161,9 @@ class GallerySearchHelper(private val mCallback: Callback) {
          */
         @JvmStatic
         fun convertLRRSearchResult(result: LRRSearchResult, page: Int): LRRPaginatedResult {
-            val galleryInfoList = mutableListOf<GalleryInfo>()
+            val galleryInfoList = mutableListOf<GalleryInfoUi>()
             result.data?.forEach { archive ->
-                galleryInfoList.add(archive.toGalleryInfo())
+                galleryInfoList.add(archive.toGalleryInfoUi())
             }
 
             val pageSize = galleryInfoList.size

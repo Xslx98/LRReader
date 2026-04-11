@@ -4,9 +4,11 @@ import android.os.Parcel
 import android.os.Parcelable
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.client.data.GalleryTagGroup
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
 import com.hippo.ehviewer.client.lrr.arcidToGid
+import com.hippo.ehviewer.mapper.toEntity
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -32,11 +34,10 @@ class LRRArchive() : Parcelable {
     // ----- Bridge to GalleryInfo -----
 
     /**
-     * Convert this LRRArchive into a GalleryInfo that the existing
-     * Ehviewer adapter chain can render without modification.
+     * Convert this LRRArchive into a [GalleryInfoUi] for the UI/adapter layer.
      */
-    fun toGalleryInfo(): GalleryInfo {
-        val gi = GalleryInfo()
+    fun toGalleryInfoUi(): GalleryInfoUi {
+        val gi = GalleryInfoUi()
         gi.gid = arcidToGid(arcid)
         gi.token = arcid
         gi.title = title
@@ -66,6 +67,12 @@ class LRRArchive() : Parcelable {
 
         return gi
     }
+
+    /**
+     * Backward-compat bridge: converts to [GalleryInfoEntity] via [toGalleryInfoUi].
+     * Use this when the caller needs a persistence-layer entity (e.g. DB writes).
+     */
+    fun toGalleryInfo(): GalleryInfo = toGalleryInfoUi().toEntity()
 
     /**
      * Convert this LRRArchive into a GalleryDetail for the detail scene.
