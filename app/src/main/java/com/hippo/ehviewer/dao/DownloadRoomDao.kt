@@ -91,6 +91,9 @@ interface DownloadRoomDao {
     @Query("SELECT * FROM DOWNLOAD_LABELS WHERE LABEL = :label LIMIT 1")
     suspend fun findLabelByName(label: String): DownloadLabel?
 
+    @Insert
+    suspend fun insertLabels(labels: List<DownloadLabel>): List<Long>
+
     @Query("SELECT * FROM DOWNLOAD_LABELS ORDER BY TIME ASC LIMIT :limit OFFSET :offset")
     suspend fun getLabelsRange(offset: Int, limit: Int): List<DownloadLabel>
 }
