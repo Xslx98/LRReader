@@ -112,12 +112,16 @@ LRReader/
 | `ui/MainActivity.kt` | Main UI entry point + scene routing |
 | `ui/GalleryActivity.kt` | Reader/detail view |
 | `ui/scene/GalleryListScene.kt` | Gallery browse scene (uses PagingSource for LRR search) |
-| `ui/scene/download/DownloadsScene.kt` | Download management (Room Flow + DiffUtil) |
+| `ui/scene/download/DownloadsScene.kt` | Download management (observes ViewModel SharedFlow, no direct DownloadManager access) |
 | `ui/scene/gallery/detail/GalleryDetailScene.kt` | Gallery detail view (observes GalleryDetailViewModel) |
 | `ui/scene/gallery/detail/GalleryDetailViewModel.kt` | Gallery detail state + metadata fetch + download state + DownloadInfoListener (W3-2) |
 | `ui/scene/gallery/detail/GalleryTagHelper.kt` | Stateless tag display utility object (W3-2: Callback eliminated) |
 | `ui/scene/gallery/list/GalleryListViewModel.kt` | Paging 3 ViewModel for gallery list (`Flow<PagingData<GalleryInfoUi>>`) |
-| `ui/scene/download/DownloadsViewModel.kt` | Download list state, labels, filter/sort, search, import, bulk ops (W3-2) |
+| `ui/scene/download/DownloadsViewModel.kt` | Download list state, labels, filter/sort, search, import, bulk ops, DownloadInfoListener (W3-2, W6-4) |
+| `download/DownloadManager.kt` | Download facade — thin delegation to Repository/Scheduler/EventBus (W6-2) |
+| `download/DownloadRepository.kt` | Download collection management + DB persistence (W6-2) |
+| `download/DownloadScheduler.kt` | Download worker scheduling + state machine (W6-2) |
+| `download/DownloadEventBus.kt` | Download listener registration + event dispatch (W6-2) |
 | `mapper/GalleryInfoMapper.kt` | GalleryInfo↔GalleryInfoUi conversion (W3-3) |
 | `ui/scene/gallery/detail/TagEditDialog.kt` | Grouped tag editor (chip-style, per-namespace) |
 | `ui/gallery/GalleryMenuHelper.kt` | Reader settings dialog (immediate-apply, no confirm button) |
@@ -263,8 +267,11 @@ Unit tests live in `app/src/test/java/`, covering:
 - All LRR data classes (`LRRArchiveTest`, `LRRCategoryTest`, etc.)
 - `LRRTagStatTest` + `LRRTagCacheTest` — tag autocomplete data + cache (18 tests)
 - `LRRArchivePagingSourceTest` — Paging 3 source (16 tests)
-- `DownloadManagerTest` — download state machine, labels, queue, notifications, sort order invariants (24 tests, uses injected `CoroutineScope`)
+- `DownloadManagerTest` — download facade state machine, labels, queue, notifications, sort order invariants (29 tests, uses injected `CoroutineScope`)
 - `DownloadManagerOrphanLabelBatchTest` — orphan label batch insert verification (5 tests)
+- `DownloadEventBusTest` — listener registration/dispatch, WeakReference cleanup (8 tests, W6-2)
+- `DownloadRepositoryTest` — collection management, label CRUD, info mutations, sorted insertion (12 tests, W6-2)
+- `DownloadSchedulerTest` — worker scheduling, stop operations, concurrency limit, event dispatch (10 tests, W6-2)
 - `DownloadSpeedTrackerTest` — speed calculation + remaining time
 - `GalleryInfoParcelTest` — Parcelable round-trip for GalleryInfo + DownloadInfo (11 tests)
 - `TagEditDialogTest` — tag parsing + formatting round-trip (18 tests)
@@ -340,11 +347,17 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 5. **Room schema migrations:** Schema at v18, exported. Write an explicit `Migration` object for every schema change.
 
-6. **DiffUtil in ContentLayout and DownloadsScene:** `ContentHelper.dispatchDiffUpdates()` for gallery list updates. `DownloadsScene` uses `DownloadInfoDiffCallback` with `gid`-based identity for `onUpdateAll()`/`onReload()`. Avoid `notifyDataSetChanged()` — use specific notifications or DiffUtil.
+6. **DiffUtil in ContentLayout and DownloadsScene:** `ContentHelper.dispatchDiffUpdates()` for gallery list updates. `DownloadsScene` uses `DownloadInfoDiffCallback` with `gid`-based identity for diff updates received via `DownloadsViewModel.onDiffUpdate` SharedFlow (W6-4). Avoid `notifyDataSetChanged()` — use specific notifications or DiffUtil.
 
 7. **EhDB — all suspend, no bridges (W3-5, 2026-04-11):** The legacy `blockingDb()` wrapper and all `@JvmStatic` bridge methods (`getDownloadDirname`, `putDownloadDirname`) have been deleted. `EhDB` now exposes only `suspend fun *Async()` methods. The 4 former call sites in `SpiderDen.getGalleryDownloadDir()` now call `EhDB.getDownloadDirnameAsync()` / `EhDB.putDownloadDirnameAsync()` directly via a localized `runBlocking` in SpiderDen (necessary because `getGalleryDownloadDir` has 8+ non-suspend callers across the codebase; making it `suspend` would touch too many files). All those callers are already off the main thread. Do NOT add `blockingDb` bridges back to `EhDB` — use `suspend fun` variants from a coroutine scope. The localized `runBlocking` in `SpiderDen.getGalleryDownloadDir()` is the only remaining production `runBlocking` usage; a future refactor can make it `suspend` once its callers are migrated.
 
-8. **Download subsystem (100% Kotlin, coroutine-based):** `DownloadManager.kt` (state management via `Mutex` + `CompletableDeferred`), `LRRDownloadWorker.kt` (background downloads with retry, format validation), `DownloadSpeedTracker.kt` (speed monitoring), `DownloadInfoListener.kt`/`DownloadListener.kt` (interfaces). Thread-safe via `Mutex` for shared state, `CopyOnWriteArrayList` for active tasks, `ConcurrentHashMap` for workers. All DB writes use `scope.launch { EhDB.*Async() }` — never `runBlocking`. Worker callbacks use immutable `sealed interface DownloadEvent` (not mutable object pool). `awaitInit()` has 10s timeout + main-thread guard. Constructor accepts `CoroutineScope` for testability. `containLabel()` uses `HashSet` for O(1) lookup. LRU cache (500 MB) for page images. Orphan labels are batch-inserted in a single `withTransaction` (W2-1). All `Collections.sort` replaced with `insertSorted()` binary insertion for O(log N) maintenance of `DATE_DESC` order (W2-2). 29 unit tests cover state machine, labels, queue, notifications, orphan label batching, and sort order invariants.
+8. **Download subsystem (100% Kotlin, coroutine-based, W6-2 decomposed):** The download subsystem is decomposed into four classes with clear single responsibilities:
+    - **`DownloadManager.kt`** (~340 lines) — thin facade that preserves the public API and orchestrates the three components below. All external callers (`DownloadsViewModel`, `DownloadService`, `GalleryListScene`, etc.) interact only with this facade.
+    - **`DownloadRepository.kt`** (~750 lines) — owns all in-memory collections (`allInfoList`, `allInfoMap`, `labelInfoMap`, `labelList`, `labelSet`, `defaultInfoList`, `labelCountMap`), DB load/reload lifecycle (`startLoading`, `initDeferred`), label CRUD (`addLabel`, `renameLabel`, `deleteLabel`, `changeLabel`, `moveLabel`), info mutations (`addInfo`, `removeInfo`, `replaceInfo`, `addInfoSorted`, `removeInfoBatch`), and DB persistence helpers (`persistInfo`, `persistHistory`). Companion has `DATE_DESC_COMPARATOR` and `insertSorted()`.
+    - **`DownloadScheduler.kt`** (~440 lines) — owns worker lifecycle (`waitList`, `activeTasks`, `activeWorkers`), state machine (`ensureDownload`, `stopDownload`, `stopAllDownload`, `stopRangeDownload`), `DownloadEvent` sealed interface, `dispatchEvent`/`postEvent`, and `PerTaskListener` (bridges `SpiderQueen.OnSpiderListener` to `DownloadEvent`).
+    - **`DownloadEventBus.kt`** (~100 lines) — owns `DownloadInfoListener` registration/dispatch (`WeakReference` list, `forEachListener` with GC cleanup), `DownloadListener` single-listener, and `postToMain` handler dispatch.
+    
+    `LRRDownloadWorker.kt` (background downloads with retry, format validation) and `DownloadSpeedTracker.kt` (speed monitoring) are unchanged. All DB writes use `scope.launch { EhDB.*Async() }` — never `runBlocking`. Worker callbacks use immutable `sealed interface DownloadEvent` (not mutable object pool). `awaitInit()` has 10s timeout + main-thread guard. Constructor accepts `CoroutineScope` for testability. `containLabel()` uses `HashSet` for O(1) lookup. LRU cache (500 MB) for page images. Orphan labels are batch-inserted in a single `withTransaction` (W2-1). All `Collections.sort` replaced with `insertSorted()` binary insertion for O(log N) maintenance of `DATE_DESC` order (W2-2). 59 unit tests across 4 test files cover facade API, repository collections, scheduler state machine, event bus dispatch, labels, queue, notifications, orphan label batching, and sort order invariants.
 
 9. **Multi-server support:** `ServerProfile` entity + `LRRAuthManager` handle per-server credentials. Server selection affects all API calls. Credentials are encrypted.
 
@@ -358,13 +371,13 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 14. **Tag autocomplete:** `LRRTagCache` fetches tag statistics from `/api/database/stats` with 10-min TTL. `SearchBar` queries it for inline suggestions alongside local `EhTagDatabase` translations. Cache cleared on server switch via `ServiceRegistry.clearAllCaches()`.
 
-15. **Room Flow observation:** `DownloadRoomDao` provides `Flow<List<DownloadInfo>>` queries. `DownloadsScene` subscribes via `FlowBridge.collectFlow()` for reactive list updates. Flow handles structure changes (add/remove/state); existing callbacks handle real-time download progress (`@Ignore` fields not persisted to Room).
+15. **Room Flow observation:** `DownloadRoomDao` provides `Flow<List<DownloadInfo>>` queries. `DownloadsScene` subscribes via `FlowBridge.collectFlow()` for reactive list updates. Flow handles structure changes (add/remove/state); real-time download progress (`@Ignore` fields not persisted to Room) is delivered via `DownloadsViewModel`'s `DownloadInfoListener` → SharedFlow pipeline (W6-4).
 
 16. **Paging 3 integrated:** `LRRArchivePagingSource` returns `PagingData<GalleryInfoUi>` (W3-3). `GalleryListViewModel` provides `Flow<PagingData<GalleryInfoUi>>` with `SearchParams` invalidation. ContentHelper pagination framework preserved as the adapter layer. Config: pageSize=50, prefetchDistance=10 (W2-5, halved from 100/20 to reduce OOM risk).
 
 17. **Tag editor:** `TagEditDialog.kt` shows a grouped chip-style editor using the same `RoundSideRectDrawable` visual style as the detail page. Click to edit, long-press to delete, [+] to add per namespace. Supports `AutoCompleteTextView` with `LRRTagCache` suggestions. Entry point: pencil icon in tag display area.
 
-18. **DownloadsViewModel:** `DownloadsViewModel.kt` manages download list state (current label, download list, back-list, search key, searching flag, pagination state, spider info cache) as `StateFlow` properties. After W3-2: also owns filter/sort execution (from DownloadFilterHelper), bulk download operations (delete/move/start/stop from DownloadLabelHelper), and archive import processing (from DownloadImportHelper). One-shot UI events via `SharedFlow` (`filterSearchDone`, `importToast`, `importSuccess`, `listChanged`). `DownloadsScene` accesses state via property delegates. Scoped to parent Activity.
+18. **DownloadsViewModel:** `DownloadsViewModel.kt` manages download list state (current label, download list, back-list, search key, searching flag, pagination state, spider info cache) as `StateFlow` properties. After W3-2: also owns filter/sort execution (from DownloadFilterHelper), bulk download operations (delete/move/start/stop from DownloadLabelHelper), and archive import processing (from DownloadImportHelper). After W6-4: also implements `DownloadInfoListener` — registers in `init`, unregisters in `onCleared`, and dispatches events to Scene via `SharedFlow` (`onItemAdded`, `onItemRemoved`, `onItemUpdated`, `onDiffUpdate`, `onReplaced`, `onLabelRenamed`, `onLabelDeleted`, `onLabelsChanged`). `DownloadsScene` no longer implements `DownloadInfoListener` or holds a direct `DownloadManager` reference — it observes ViewModel SharedFlows via `collectFlow()` in `onViewCreated`. Scoped to parent Activity.
 
 19. **GalleryDetailViewModel:** `GalleryDetailViewModel.kt` manages gallery detail state (galleryInfo, galleryDetail, downloadInfo, gid, token, action, loading state) as `StateFlow` properties. After W3-2: also owns async LRR metadata fetch (`requestGalleryDetail()` from GalleryDetailRequestHelper), download state tracking (`downloadState` StateFlow + `DownloadInfoListener` from GalleryDownloadHelper), and error events (`detailError` SharedFlow). Derived accessors centralize the fallback logic (detail > info > args). Scoped to parent Activity.
 
@@ -397,6 +410,10 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 29. **Cacheable interface (W3-1, 2026-04-11):** `interface Cacheable { fun clearCache() }` in `module/` package. `NetworkModule`, `DataModule` implement it and self-register via `ServiceRegistry.registerCacheable()`. `LRRTagCache` implements `Cacheable` and is registered via `ClientModule.init`. `ServiceRegistry.clearAllCaches()` iterates registered cacheables — no hardcoded cache calls, no imports from `client.lrr`. 6 unit tests in `CacheableTest.kt`.
 
+30. **DownloadManager decomposition (W6-2, 2026-04-11):** `DownloadManager.kt` was a 1448-line God Class with 6 types of responsibility. Decomposed into 4 classes: `DownloadEventBus` (listener dispatch), `DownloadRepository` (collection management + DB persistence), `DownloadScheduler` (worker lifecycle + state machine), and `DownloadManager` (thin facade, ~340 lines). Public API unchanged — all external callers see only `DownloadManager`. Components are `internal` to the `download/` package. `DownloadSpeedTracker.Callback` routes through the three components. 30 new unit tests across `DownloadEventBusTest` (8), `DownloadRepositoryTest` (12), `DownloadSchedulerTest` (10). Do NOT bypass the facade — external code should import `DownloadManager`, never `DownloadRepository`/`DownloadScheduler`/`DownloadEventBus` directly.
+
+31. **DownloadsScene listener migration (W6-4, 2026-04-11):** `DownloadsScene` no longer implements `DownloadInfoListener` or holds a `_downloadManager` field. `DownloadsViewModel` implements `DownloadInfoListener`, registers in `init {}`, unregisters in `onCleared()`. The 9 listener callbacks emit to SharedFlow events (`onItemAdded`, `onItemRemoved`, `onItemUpdated`, `onDiffUpdate`, `onReplaced`, `onLabelRenamed`, `onLabelDeleted`, `onLabelsChanged`). Scene observes these in `onViewCreated` via `collectFlow()`. `getMDownloadManager()` returns `viewModel.downloadManager` (non-null). Do NOT re-add `DownloadInfoListener` to Scenes — listener logic belongs in ViewModels (see also W3-2 item 11).
+
 ---
 
 ## What NOT to Do
@@ -421,3 +438,5 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 - Do not use `GalleryInfo` / `GalleryInfoEntity` in UI-layer code that only displays gallery data — use `GalleryInfoUi` (W3-3); use `GalleryInfoEntity` (via `GalleryInfo` typealias) only at persistence boundaries
 - Do not reintroduce Helper Callback interfaces — business logic goes in ViewModels, Scenes observe StateFlow/SharedFlow (W3-2)
 - Do not import from `com.hippo.ehviewer.client.lrr` — use `com.lanraragi.reader.client.api` (W3-7)
+- Do not import `DownloadRepository`, `DownloadScheduler`, or `DownloadEventBus` from outside the `download/` package — use `DownloadManager` facade only (W6-2)
+- Do not add `DownloadInfoListener` implementation to Scene classes — listener logic belongs in ViewModels, Scenes observe SharedFlow (W6-4)
