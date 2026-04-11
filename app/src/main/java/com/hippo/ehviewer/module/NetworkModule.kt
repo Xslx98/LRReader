@@ -47,7 +47,11 @@ class NetworkModule(private val context: Context) : INetworkModule {
             .cache(cache)
             .addNetworkInterceptor { chain ->
                 val resp = chain.proceed(chain.request())
-                // Force cache LRR thumbnail responses for 24 hours
+                // LANraragi does not send Cache-Control headers on thumbnail
+                // responses, so inject them here.
+                // URL pattern: {baseUrl}/api/archives/{arcid}/thumbnail (no query params)
+                // max-age=3600 → fresh for 1 h; stale-while-revalidate=82800 → serve
+                // stale while revalidating for the remaining 23 h (24 h total).
                 val url = chain.request().url.toString()
                 if (url.contains("/api/archives/") && url.contains("/thumbnail")) {
                     resp.newBuilder()
