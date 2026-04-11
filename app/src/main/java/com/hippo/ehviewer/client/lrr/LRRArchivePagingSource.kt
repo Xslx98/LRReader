@@ -2,7 +2,7 @@ package com.hippo.ehviewer.client.lrr
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.data.GalleryInfoUi
 import okhttp3.OkHttpClient
 
 /**
@@ -29,9 +29,9 @@ class LRRArchivePagingSource(
     private val order: String?,
     private val newonly: Boolean = false,
     private val untaggedonly: Boolean = false
-) : PagingSource<Int, GalleryInfo>() {
+) : PagingSource<Int, GalleryInfoUi>() {
 
-    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, GalleryInfo> {
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, GalleryInfoUi> {
         val page = params.key ?: 0
         return try {
             val start = page * params.loadSize
@@ -45,7 +45,7 @@ class LRRArchivePagingSource(
                 newonly = newonly,
                 untaggedonly = untaggedonly
             )
-            val items = result.data.map { it.toGalleryInfo() }
+            val items = result.data.map { it.toGalleryInfoUi() }
             LoadResult.Page(
                 data = items,
                 prevKey = if (page > 0) page - 1 else null,
@@ -56,7 +56,7 @@ class LRRArchivePagingSource(
         }
     }
 
-    override fun getRefreshKey(state: PagingState<Int, GalleryInfo>): Int? {
+    override fun getRefreshKey(state: PagingState<Int, GalleryInfoUi>): Int? {
         return state.anchorPosition?.let { anchorPosition ->
             state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
                 ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)

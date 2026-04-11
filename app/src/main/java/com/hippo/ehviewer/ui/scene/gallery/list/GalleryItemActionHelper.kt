@@ -15,7 +15,8 @@ import com.google.android.material.chip.ChipGroup
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhCacheKeyFactory
 import com.hippo.ehviewer.client.EhUtils
-import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.data.GalleryInfoUi
+import com.hippo.ehviewer.mapper.toEntity
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.ui.CommonOperations
@@ -42,7 +43,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
         fun startScene(announcer: Announcer)
         fun getString(resId: Int): String
         fun getString(resId: Int, vararg formatArgs: Any): String
-        fun buildChipGroup(gi: GalleryInfo?, chipGroup: ChipGroup): ChipGroup
+        fun buildChipGroup(gi: GalleryInfoUi?, chipGroup: ChipGroup): ChipGroup
     }
 
     var alertDialog: AlertDialog? = null
@@ -51,7 +52,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
         alertDialog?.dismiss()
     }
 
-    fun onItemClick(view: View?, gi: GalleryInfo?): Boolean {
+    fun onItemClick(view: View?, gi: GalleryInfoUi?): Boolean {
         if (gi == null) {
             return true
         }
@@ -59,7 +60,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
 
         val args = android.os.Bundle()
         args.putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_GALLERY_INFO)
-        args.putParcelable(GalleryDetailScene.KEY_GALLERY_INFO, gi)
+        args.putParcelable(GalleryDetailScene.KEY_GALLERY_INFO, gi.toEntity())
         val announcer = Announcer(GalleryDetailScene::class.java).setArgs(args)
         if (view != null) {
             val thumb: View? = view.findViewById(R.id.thumb)
@@ -71,7 +72,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
         return true
     }
 
-    fun onItemLongClick(gi: GalleryInfo?, view: View): Boolean {
+    fun onItemLongClick(gi: GalleryInfoUi?, view: View): Boolean {
         val context = callback.getHostContext()
         val activity = callback.getHostActivity()
         if (context == null || activity == null) {
@@ -124,7 +125,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
             .setAdapter(SelectItemWithIconAdapter(context, items, icons)) { _, which ->
                 when (which) {
                     0 -> { // Read
-                        val intent = GalleryOpenHelper.buildReadIntent(activity, gi)
+                        val intent = GalleryOpenHelper.buildReadIntent(activity, gi.toEntity())
                         activity.startActivity(intent)
                     }
                     1 -> { // Download
@@ -138,19 +139,20 @@ class GalleryItemActionHelper(private val callback: Callback) {
                                 .show()
                         } else {
                             (activity as? MainActivity)?.let {
-                                CommonOperations.startDownload(it, gi, false)
+                                CommonOperations.startDownload(it, gi.toEntity(), false)
                             }
                         }
                     }
                     2 -> { // Favorites
+                        val entity = gi.toEntity()
                         if (favourited) {
                             CommonOperations.removeFromFavorites(
-                                activity, gi,
+                                activity, entity,
                                 RemoveFromFavoriteListener(activity)
                             )
                         } else {
                             CommonOperations.addToFavorites(
-                                activity, gi,
+                                activity, entity,
                                 AddToFavoriteListener(activity)
                             )
                         }

@@ -17,11 +17,11 @@
 package com.hippo.ehviewer.ui.scene
 
 import android.util.Log
-import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.data.GalleryInfoUi
 import java.util.Arrays
 
 // KNOWN-ISSUE (P2): GridLayoutManager ignores SpaceGroupIndex; custom span calculation needed
-class ThumbSpanHelper(private val mData: List<GalleryInfo>) {
+class ThumbSpanHelper(private val mData: List<GalleryInfoUi>) {
 
     companion object {
         private const val MIN_ARRAY_LENGTH = 50

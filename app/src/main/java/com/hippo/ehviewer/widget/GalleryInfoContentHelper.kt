@@ -21,14 +21,14 @@ import android.os.Bundle
 import android.os.Parcelable
 import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.lib.yorozuya.IntIdGenerator
 import com.hippo.widget.ContentLayout
 
 @SuppressLint("UseSparseArrays")
-abstract class GalleryInfoContentHelper : ContentLayout.ContentHelper<GalleryInfo>() {
+abstract class GalleryInfoContentHelper : ContentLayout.ContentHelper<GalleryInfoUi>() {
 
-    private var map: MutableMap<Long, GalleryInfo> = HashMap()
+    private var map: MutableMap<Long, GalleryInfoUi> = HashMap()
     private val listener: FavouriteStatusRouter.Listener
 
     init {
@@ -45,21 +45,21 @@ abstract class GalleryInfoContentHelper : ContentLayout.ContentHelper<GalleryInf
         ServiceRegistry.dataModule.favouriteStatusRouter.removeListener(listener)
     }
 
-    override fun onAddData(data: GalleryInfo) {
+    override fun onAddData(data: GalleryInfoUi) {
         map[data.gid] = data
     }
 
-    override fun onAddData(data: List<GalleryInfo>) {
+    override fun onAddData(data: List<GalleryInfoUi>) {
         for (info in data) {
             map[info.gid] = info
         }
     }
 
-    override fun onRemoveData(data: GalleryInfo) {
+    override fun onRemoveData(data: GalleryInfoUi) {
         map.remove(data.gid)
     }
 
-    override fun onRemoveData(data: List<GalleryInfo>) {
+    override fun onRemoveData(data: List<GalleryInfoUi>) {
         for (info in data) {
             map.remove(info.gid)
         }

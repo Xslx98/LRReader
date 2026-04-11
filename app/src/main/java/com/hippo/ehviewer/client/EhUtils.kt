@@ -20,6 +20,7 @@ import android.text.TextUtils
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.data.GalleryInfoUi
 import java.util.regex.Pattern
 
 object EhUtils {
@@ -136,7 +137,22 @@ object EhUtils {
     }
 
     @JvmStatic
+    fun getSuitableTitle(gi: GalleryInfoUi): String? {
+        if (AppearanceSettings.getShowJpnTitle()) {
+            return if (TextUtils.isEmpty(gi.titleJpn)) gi.title else gi.titleJpn
+        } else {
+            return if (TextUtils.isEmpty(gi.title)) gi.titleJpn else gi.title
+        }
+    }
+
+    @JvmStatic
     fun judgeSuitableTitle(gi: GalleryInfo, key: String): Boolean {
+        val titleB = gi.titleJpn + "" + gi.title
+        return titleB.contains(key)
+    }
+
+    @JvmStatic
+    fun judgeSuitableTitle(gi: GalleryInfoUi, key: String): Boolean {
         val titleB = gi.titleJpn + "" + gi.title
         return titleB.contains(key)
     }
