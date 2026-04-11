@@ -407,8 +407,8 @@ class DownloadManager(
                     }
                     list.add(info)
                 }
-                for (l in mDownloadInfoListeners) {
-                    l.onReload()
+                forEachListener {
+                    it.onReload()
                 }
             }
         }
@@ -541,8 +541,8 @@ class DownloadManager(
                 // Notify state update
                 val list = getInfoListForLabel(existing.label)
                 if (list != null) {
-                    for (l in mDownloadInfoListeners) {
-                        l.onUpdate(existing, list, mWaitList)
+                    forEachListener {
+                        it.onUpdate(existing, list, mWaitList)
                     }
                 }
                 // Make sure download is running
@@ -738,8 +738,8 @@ class DownloadManager(
 
         // Notify on main thread
         SimpleHandler.getInstance().post {
-            for (l in mDownloadInfoListeners) {
-                l.onReload()
+            forEachListener {
+                it.onReload()
             }
         }
     }
@@ -915,8 +915,8 @@ class DownloadManager(
                 if (index >= 0) {
                     list.removeAt(index)
                     // Update listener
-                    for (l in mDownloadInfoListeners) {
-                        l.onRemove(info, list, index)
+                    forEachListener {
+                        it.onRemove(info, list, index)
                     }
                 }
             }
@@ -1154,8 +1154,8 @@ class DownloadManager(
             }
         }
 
-        for (l in mDownloadInfoListeners) {
-            l.onUpdateLabels()
+        forEachListener {
+            it.onUpdateLabels()
         }
     }
 
@@ -1166,8 +1166,8 @@ class DownloadManager(
 
         scope.launch { EhDB.moveDownloadLabelAsync(fromPosition, toPosition) }
 
-        for (l in mDownloadInfoListeners) {
-            l.onUpdateLabels()
+        forEachListener {
+            it.onUpdateLabels()
         }
     }
 
@@ -1208,8 +1208,8 @@ class DownloadManager(
         }
 
         // Notify listener
-        for (l in mDownloadInfoListeners) {
-            l.onRenameLabel(from, to)
+        forEachListener {
+            it.onRenameLabel(from, to)
         }
     }
 
@@ -1250,8 +1250,8 @@ class DownloadManager(
         }
 
         // Notify listener
-        for (l in mDownloadInfoListeners) {
-            l.onChange()
+        forEachListener {
+            it.onChange()
         }
     }
 
@@ -1308,8 +1308,8 @@ class DownloadManager(
                 info.total = event.pages
                 val list = getInfoListForLabel(info.label)
                 if (list != null) {
-                    for (l in mDownloadInfoListeners) {
-                        l.onUpdate(info, list, mWaitList)
+                    forEachListener {
+                        it.onUpdate(info, list, mWaitList)
                     }
                 }
             }
@@ -1328,8 +1328,8 @@ class DownloadManager(
                 mDownloadListener?.onGetPage(info)
                 val list = getInfoListForLabel(info.label)
                 if (list != null) {
-                    for (l in mDownloadInfoListeners) {
-                        l.onUpdate(info, list, mWaitList)
+                    forEachListener {
+                        it.onUpdate(info, list, mWaitList)
                     }
                 }
             }
@@ -1341,8 +1341,8 @@ class DownloadManager(
                 info.total = event.total
                 val list = getInfoListForLabel(info.label)
                 if (list != null) {
-                    for (l in mDownloadInfoListeners) {
-                        l.onUpdate(info, list, mWaitList)
+                    forEachListener {
+                        it.onUpdate(info, list, mWaitList)
                     }
                 }
             }
@@ -1368,8 +1368,8 @@ class DownloadManager(
                 mDownloadListener?.onFinish(info)
                 val list = getInfoListForLabel(info.label)
                 if (list != null) {
-                    for (l in mDownloadInfoListeners) {
-                        l.onUpdate(info, list, mWaitList)
+                    forEachListener {
+                        it.onUpdate(info, list, mWaitList)
                     }
                 }
                 // Start next download
