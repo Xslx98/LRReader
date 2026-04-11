@@ -93,7 +93,7 @@ LRReader/
 | `module/DataModule.kt` | Room database access |
 | `module/NetworkModule.kt` | OkHttp client configuration + DNS |
 | `util/CoroutineBridge.kt` | Java→coroutine bridge (launchIO/launchIOGlobal) |
-| `EhDB.kt` | Room database access layer (`blockingDb` hard-throws on main thread in debug builds) |
+| `EhDB.kt` | Room database access layer (all suspend, no `blockingDb` bridges) |
 | `settings/AppearanceSettings.kt` | UI/theme preferences |
 | `settings/DownloadSettings.kt` | Download preferences |
 | `settings/NetworkSettings.kt` | Network/proxy preferences |
@@ -191,12 +191,12 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 - All network and database calls use **Kotlin Coroutines**: `suspend fun` + `withContext(Dispatchers.IO)`
 - Use `viewLifecycleOwner.lifecycleScope` for Fragment coroutines
 - **From Java code**, use `CoroutineBridge.launchIO(lifecycleOwner, task)` or `IoThreadPoolExecutor` to move DB/network work off the main thread
-- `EhDB` provides dual API: `suspend fun xxxAsync()` for Kotlin callers (preferred), `@JvmStatic fun xxx()` via `blockingDb` bridge for the few remaining legacy callers (currently all Kotlin — see item 7 below for the inventory)
+- `EhDB` provides only `suspend fun xxxAsync()` methods — the legacy `blockingDb` bridge and all `@JvmStatic` wrappers have been removed (W3-5)
 - `CoroutineModule` provides `applicationScope` and `ioScope` with `SupervisorJob` + `CoroutineExceptionHandler`
 - `LRRCoroutineHelper.runSuspend()` has a **runtime main-thread guard** that throws if called on the UI thread
 - **No `AsyncTask` anywhere** — all replaced with `IoThreadPoolExecutor` + `Handler`
 - **No main-thread DB calls** — all `EhDB.*()` calls from UI code are wrapped in `IoThreadPoolExecutor` or coroutine scopes
-- **No `runBlocking` in new code** — use `scope.launch {}` or `suspend fun` instead. The only surviving production `runBlocking` is inside `EhDB.blockingDb()` (legacy bridge, see item 7) and `EhDB.mergeOldDB()` (W1-7 will convert to suspend).
+- **No `runBlocking` in new code** — use `scope.launch {}` or `suspend fun` instead. The only surviving production `runBlocking` is inside `SpiderDen.getGalleryDownloadDir()` (localized bridge for 8+ non-suspend callers, see item 7).
 - Thread pool: `IoThreadPoolExecutor` for parallel image/network work
 
 ### Networking (OkHttp)
@@ -273,7 +273,7 @@ Unit tests live in `app/src/test/java/`, covering:
 - `GalleryInfoDiffTest` — DiffUtil identity/content equality contracts
 - `ContentHelperDiffUtilTest` — DiffUtil dispatch operations
 - `CoroutineBridgeTest` — Java→coroutine bridge function contracts
-- `EhDBMainThreadCheckTest` — main-thread detection
+- `EhDBMainThreadCheckTest` — blockingDb bridge removal verification + async dirname DAO round-trip
 - `TestServiceRegistryHelper` — test infrastructure for ServiceRegistry mocking
 
 Run tests with:
@@ -338,7 +338,7 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 6. **DiffUtil in ContentLayout and DownloadsScene:** `ContentHelper.dispatchDiffUpdates()` for gallery list updates. `DownloadsScene` uses `DownloadInfoDiffCallback` with `gid`-based identity for `onUpdateAll()`/`onReload()`. Avoid `notifyDataSetChanged()` — use specific notifications or DiffUtil.
 
-7. **EhDB dual API:** 2 remaining `@JvmStatic` `blockingDb()` bridge methods exist as a legacy compatibility layer. Inventory (updated after C5, 2026-04-08): `getDownloadDirname` (1 caller) and `putDownloadDirname` (3 callers) — both called from `SpiderDen.kt` during download directory resolution, all Kotlin and all already off the main thread. The historical bridges `putDownloadInfo` (dead bridge, removed) and `queryGalleryTags` (dead cache, removed in C5 along with the Gallery_Tags entity) are gone. **Behaviour after W1-2**: `blockingDb()` hard-throws `IllegalStateException` in **debug** builds when called from the main thread, forcing offenders to be migrated; **release** builds only `Log.w` (which W1-6's R8 `-assumenosideeffects` rule then strips entirely, making release a silent passthrough). Kotlin callers must use the `suspend fun *Async()` variants from a coroutine scope. Do NOT add new `blockingDb` bridges.
+7. **EhDB — all suspend, no bridges (W3-5, 2026-04-11):** The legacy `blockingDb()` wrapper and all `@JvmStatic` bridge methods (`getDownloadDirname`, `putDownloadDirname`) have been deleted. `EhDB` now exposes only `suspend fun *Async()` methods. The 4 former call sites in `SpiderDen.getGalleryDownloadDir()` now call `EhDB.getDownloadDirnameAsync()` / `EhDB.putDownloadDirnameAsync()` directly via a localized `runBlocking` in SpiderDen (necessary because `getGalleryDownloadDir` has 8+ non-suspend callers across the codebase; making it `suspend` would touch too many files). All those callers are already off the main thread. Do NOT add `blockingDb` bridges back to `EhDB` — use `suspend fun` variants from a coroutine scope. The localized `runBlocking` in `SpiderDen.getGalleryDownloadDir()` is the only remaining production `runBlocking` usage; a future refactor can make it `suspend` once its callers are migrated.
 
 8. **Download subsystem (100% Kotlin, coroutine-based):** `DownloadManager.kt` (state management via `Mutex` + `CompletableDeferred`), `LRRDownloadWorker.kt` (background downloads with retry, format validation), `DownloadSpeedTracker.kt` (speed monitoring), `DownloadInfoListener.kt`/`DownloadListener.kt` (interfaces). Thread-safe via `Mutex` for shared state, `CopyOnWriteArrayList` for active tasks, `ConcurrentHashMap` for workers. All DB writes use `scope.launch { EhDB.*Async() }` — never `runBlocking`. Worker callbacks use immutable `sealed interface DownloadEvent` (not mutable object pool). `awaitInit()` has 10s timeout + main-thread guard. Constructor accepts `CoroutineScope` for testability. `containLabel()` uses `HashSet` for O(1) lookup. LRU cache (500 MB) for page images. 18 unit tests cover state machine, labels, queue, and notifications.
 
@@ -398,7 +398,7 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 - Do not use Gson — use `kotlinx-serialization` for all JSON
 - Do not hardcode dependency versions in `build.gradle` — use `libs.versions.toml`
 - Do not add new singletons to `EhApplication` — use `ServiceRegistry` modules
-- Do not add new `blockingDb()` bridges in `EhDB` — Kotlin callers use `suspend` Async versions directly
+- Do not add `blockingDb()` bridges or `@JvmStatic` wrappers to `EhDB` — they have been removed (W3-5); use `suspend fun *Async()` variants from a coroutine scope
 - Do not use `runBlocking` in new code — use `scope.launch {}` or `suspend fun` instead
 - Do not use `toHttpUrlOrNull()!!` to build LRR API URLs — use `parseBaseUrl()` from `LRRApiUtils.kt`
 - Do not use `notifyDataSetChanged()` on RecyclerView — use DiffUtil or specific `notifyItem*()` calls
