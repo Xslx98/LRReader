@@ -102,7 +102,7 @@ public abstract class StageActivity extends EhActivity {
             return false;
         }
 
-        Class clazz;
+        Class<?> clazz;
         try {
             clazz = Class.forName(clazzStr);
         } catch (ClassNotFoundException e) {
@@ -256,16 +256,7 @@ public abstract class StageActivity extends EhActivity {
     }
 
     private SceneFragment newSceneInstance(Class<?> clazz) {
-        try {
-            return (SceneFragment) clazz.newInstance();
-        } catch (InstantiationException e) {
-            throw new IllegalStateException("Can't instance " + clazz.getName(), e);
-        } catch (IllegalAccessException e) {
-            throw new IllegalStateException("The constructor of " +
-                    clazz.getName() + " is not visible", e);
-        } catch (ClassCastException e) {
-            throw new IllegalStateException(clazz.getName() + " can not cast to scene", e);
-        }
+        return SceneFactory.INSTANCE.create(clazz.getName());
     }
 
     public void startScene(Announcer announcer) {
