@@ -7,6 +7,7 @@ import androidx.room.Entity
 import androidx.room.Ignore
 import androidx.room.Index
 import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.data.GalleryInfoEntity
 
 /**
  * Entity mapped to table "HISTORY".
@@ -17,7 +18,7 @@ import com.hippo.ehviewer.client.data.GalleryInfo
     primaryKeys = ["GID"],
     indices = [Index("SERVER_PROFILE_ID"), Index("TIME")]
 )
-class HistoryInfo : GalleryInfo {
+class HistoryInfo : GalleryInfoEntity {
 
     @ColumnInfo(name = "MODE")
     @JvmField

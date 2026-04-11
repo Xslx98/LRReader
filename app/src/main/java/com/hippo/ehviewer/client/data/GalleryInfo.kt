@@ -26,7 +26,18 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.util.regex.Pattern
 
-open class GalleryInfo : Parcelable {
+/**
+ * Backward-compatibility alias. New code should use [GalleryInfoEntity] (for Room /
+ * persistence) or [GalleryInfoUi] (for UI display).
+ */
+typealias GalleryInfo = GalleryInfoEntity
+
+/**
+ * Room entity base class. Holds the columns persisted to the DOWNLOADS / HISTORY /
+ * LOCAL_FAVORITES tables via inheritance, plus transient (`@Ignore`) fields used
+ * during API ↔ DB bridging. For pure UI display, prefer [GalleryInfoUi].
+ */
+open class GalleryInfoEntity : Parcelable {
 
     @JvmField
     @ColumnInfo(name = "GID")
@@ -387,18 +398,18 @@ open class GalleryInfo : Parcelable {
         )
 
         @JvmField
-        val CREATOR: Parcelable.Creator<GalleryInfo> = object : Parcelable.Creator<GalleryInfo> {
-            override fun createFromParcel(source: Parcel): GalleryInfo = GalleryInfo(source)
-            override fun newArray(size: Int): Array<GalleryInfo?> = arrayOfNulls(size)
+        val CREATOR: Parcelable.Creator<GalleryInfoEntity> = object : Parcelable.Creator<GalleryInfoEntity> {
+            override fun createFromParcel(source: Parcel): GalleryInfoEntity = GalleryInfoEntity(source)
+            override fun newArray(size: Int): Array<GalleryInfoEntity?> = arrayOfNulls(size)
         }
 
         @JvmStatic
-        fun fromCSV(csv: String): GalleryInfo? {
+        fun fromCSV(csv: String): GalleryInfoEntity? {
             val values = csv.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
             if (values.size < 20) {
                 return null
             }
-            val gi = GalleryInfo()
+            val gi = GalleryInfoEntity()
             try {
                 gi.gid = values[0].toLong()
                 gi.token = values[1]
@@ -428,8 +439,8 @@ open class GalleryInfo : Parcelable {
         }
 
         @JvmStatic
-        fun galleryInfoFromJson(obj: JSONObject): GalleryInfo {
-            val galleryInfo = GalleryInfo()
+        fun galleryInfoFromJson(obj: JSONObject): GalleryInfoEntity {
+            val galleryInfo = GalleryInfoEntity()
             galleryInfo.posted = obj.optString("posted", null)
             galleryInfo.category = obj.optInt("category", 0)
             galleryInfo.favoriteName = obj.optString("favoriteName", null)
