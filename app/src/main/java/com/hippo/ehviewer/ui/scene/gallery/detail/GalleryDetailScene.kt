@@ -21,8 +21,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -55,7 +53,7 @@ import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
 import com.hippo.ehviewer.client.lrr.data.LRRArchive
-import com.hippo.ehviewer.spider.SpiderQueen
+import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.ui.GalleryActivity
 import com.hippo.ehviewer.ui.GalleryOpenHelper
 import com.hippo.ehviewer.ui.MainActivity
@@ -79,7 +77,6 @@ import com.hippo.view.ViewTransition
 import com.hippo.widget.LoadImageView
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.concurrent.ExecutorService
 
 class GalleryDetailScene : BaseScene(), View.OnClickListener,
     View.OnLongClickListener {
@@ -173,10 +170,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
     private var mContext: Context? = null
     private var activity: MainActivity? = null
-
-    private var executorService: ExecutorService? = null
-
-    private val handler = Handler(Looper.getMainLooper())
 
     // Extracted helpers
     private val downloadHelperCallback = object : GalleryDownloadHelper.Callback {
@@ -499,6 +492,17 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         super.onViewCreated(view, savedInstanceState)
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Sync local reading progress back to the in-memory model
+        val info = getGalleryInfo() ?: return
+        val localPage = GalleryProvider2.loadReadingProgress(requireContext(), info.gid) + 1
+        if (localPage > info.progress) {
+            info.progress = localPage
+        }
+        bindReadProgress(info)
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
 
@@ -773,29 +777,8 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
     private fun bindReadProgress(info: GalleryInfo?) {
         if (info == null) return
-        if (mContext == null) {
-            mContext = getEHContext()
-            if (mContext == null) {
-                return
-            }
-        }
-        val ctx = mContext!!
-        if (executorService == null) {
-            executorService = viewModel.executorService
-        }
-
-        executorService!!.submit {
-            val startPage = SpiderQueen.findStartPage(ctx, info)
-            val pages = info.pages
-            val text: String = if (startPage > 0) {
-                "${startPage + 1}/${pages}P"
-            } else {
-                "0/${pages}P"
-            }
-            handler.post {
-                mPages?.text = text
-            }
-        }
+        val displayProgress = if (info.progress > 0) info.progress else 1
+        mPages?.text = "${displayProgress}/${info.pages}P"
     }
 
     private fun setTransitionName() {

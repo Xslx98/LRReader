@@ -42,6 +42,7 @@ class LRRArchive() : Parcelable {
         gi.title = title
         gi.titleJpn = null
         gi.pages = pagecount
+        gi.progress = progress
 
         val serverUrl = LRRAuthManager.getServerUrl()
         gi.thumb = if (serverUrl != null) getThumbnailUrl(serverUrl) else ""
@@ -77,6 +78,7 @@ class LRRArchive() : Parcelable {
         gd.title = title
         gd.titleJpn = null
         gd.pages = pagecount
+        gd.progress = progress
 
         val serverUrl = LRRAuthManager.getServerUrl()
         gd.thumb = if (serverUrl != null) getThumbnailUrl(serverUrl) else ""
