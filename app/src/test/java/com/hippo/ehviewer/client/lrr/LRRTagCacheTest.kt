@@ -140,18 +140,21 @@ class LRRTagCacheTest {
 
     /**
      * Populate the cache directly for testing without network calls.
-     * Uses reflection since the tags field is private.
+     * Uses reflection since the snapshot field is private.
      */
     private fun populateCache(tags: List<LRRTagStat>) {
-        val tagsField = LRRTagCache::class.java.getDeclaredField("tags")
-        tagsField.isAccessible = true
-        tagsField.set(LRRTagCache, tags)
+        val keys = tags.map { "${it.namespace}:${it.text}".lowercase() }
 
-        val keysField = LRRTagCache::class.java.getDeclaredField("searchKeys")
+        // Build a CacheSnapshot via reflection (private data class)
+        val snapshotClass = LRRTagCache::class.java.declaredClasses
+            .first { it.simpleName == "CacheSnapshot" }
+        val snapshotConstructor = snapshotClass.declaredConstructors.first()
+        snapshotConstructor.isAccessible = true
+        val snapshotInstance = snapshotConstructor.newInstance(tags, keys)
 
-        keysField.isAccessible = true
-
-        keysField.set(LRRTagCache, tags.map { "${it.namespace}:${it.text}".lowercase() })
+        val snapshotField = LRRTagCache::class.java.getDeclaredField("snapshot")
+        snapshotField.isAccessible = true
+        snapshotField.set(LRRTagCache, snapshotInstance)
 
         val timeField = LRRTagCache::class.java.getDeclaredField("lastFetchTime")
         timeField.isAccessible = true

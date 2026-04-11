@@ -17,12 +17,13 @@ object LRRTagCache : Cacheable {
 
     private const val TAG = "LRRTagCache"
 
-    @Volatile
-    private var tags: List<LRRTagStat> = emptyList()
+    private data class CacheSnapshot(
+        val tags: List<LRRTagStat>,
+        val searchKeys: List<String>
+    )
 
-    /** Precomputed lowercase search keys: "${namespace}:${text}".lowercase() per tag. */
     @Volatile
-    private var searchKeys: List<String> = emptyList()
+    private var snapshot: CacheSnapshot = CacheSnapshot(emptyList(), emptyList())
 
     @Volatile
     private var lastFetchTime: Long = 0
@@ -49,8 +50,8 @@ object LRRTagCache : Cacheable {
                 if (needsRefresh()) {
                     try {
                         val fetched = LRRDatabaseApi.getTagStats()
-                        searchKeys = fetched.map { "${it.namespace}:${it.text}".lowercase() }
-                        tags = fetched
+                        val keys = fetched.map { "${it.namespace}:${it.text}".lowercase() }
+                        snapshot = CacheSnapshot(fetched, keys)
                         lastFetchTime = System.currentTimeMillis()
                     } catch (e: Exception) {
                         Log.w(TAG, "Failed to fetch tag stats: ${e.message}")
@@ -59,19 +60,19 @@ object LRRTagCache : Cacheable {
                 }
             }
         }
-        return tags
+        return snapshot.tags
     }
 
     /**
      * @return true if the cache has been populated at least once.
      */
-    fun isPopulated(): Boolean = tags.isNotEmpty()
+    fun isPopulated(): Boolean = snapshot.tags.isNotEmpty()
 
     /**
      * @return true if the cache needs a refresh (empty or expired).
      */
     fun needsRefresh(): Boolean =
-        tags.isEmpty() || System.currentTimeMillis() - lastFetchTime > TTL_MS
+        snapshot.tags.isEmpty() || System.currentTimeMillis() - lastFetchTime > TTL_MS
 
     /**
      * Synchronous, in-memory filter of cached tags.
@@ -85,8 +86,9 @@ object LRRTagCache : Cacheable {
     fun suggest(keyword: String, limit: Int = 20): List<LRRTagStat> {
         if (keyword.isBlank()) return emptyList()
         val lower = keyword.lowercase()
-        val currentTags = tags
-        val currentKeys = searchKeys
+        val snap = snapshot
+        val currentTags = snap.tags
+        val currentKeys = snap.searchKeys
         val results = mutableListOf<LRRTagStat>()
         for (i in currentTags.indices) {
             val tag = currentTags[i]
@@ -97,7 +99,7 @@ object LRRTagCache : Cacheable {
         }
         results.sortByDescending { it.weight }
         if (results.size > limit) {
-            return results.subList(0, limit)
+            return results.take(limit)
         }
         return results
     }
@@ -107,8 +109,7 @@ object LRRTagCache : Cacheable {
      * tags from the previous server do not appear as suggestions.
      */
     fun clear() {
-        tags = emptyList()
-        searchKeys = emptyList()
+        snapshot = CacheSnapshot(emptyList(), emptyList())
         lastFetchTime = 0
     }
 
