@@ -1,26 +1,22 @@
 package com.hippo.ehviewer.sync
 
-import android.os.Handler
-import android.os.Looper
-import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.callBack.DownloadSearchCallback
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.unifile.UniFile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Arrays
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 class DownloadListInfosExecutor {
 
     @Suppress("unused")
     private val TAG = "DownloadSearchingExecutor"
-
-    private val service: ExecutorService = Executors.newSingleThreadExecutor()
-    private val handler: Handler = Handler(Looper.getMainLooper())
 
     private var mDownloadSearchCallback: DownloadSearchCallback? = null
 
@@ -47,16 +43,16 @@ class DownloadListInfosExecutor {
     }
 
     fun executeSearching() {
-        service.execute {
+        ServiceRegistry.coroutineModule.ioScope.launch {
             resultList = searchingInBackground()
-            handler.post {
+            withContext(Dispatchers.Main) {
                 mDownloadSearchCallback?.onDownloadSearchSuccess(resultList)
             }
         }
     }
 
     fun executeFilterAndSort(id: Int) {
-        service.execute {
+        ServiceRegistry.coroutineModule.ioScope.launch {
             resultList = when (id) {
                 R.id.download_done -> filterDownloadState(DownloadInfo.STATE_FINISH)
                 R.id.not_started -> filterDownloadState(DownloadInfo.STATE_NONE)
@@ -77,13 +73,13 @@ class DownloadListInfosExecutor {
                 else -> mList
             }
 
-            handler.post {
+            withContext(Dispatchers.Main) {
                 mDownloadSearchCallback?.onDownloadSearchSuccess(resultList)
             }
         }
     }
 
-    private fun sortByType(type: Int): List<DownloadInfo> {
+    private suspend fun sortByType(type: Int): List<DownloadInfo> {
         if (mList == null) {
             return ArrayList()
         }
@@ -184,7 +180,7 @@ class DownloadListInfosExecutor {
     /**
      * Calculate the total size of the download directory
      */
-    private fun calculateDownloadDirSize(info: DownloadInfo): Long {
+    private suspend fun calculateDownloadDirSize(info: DownloadInfo): Long {
         return try {
             val downloadDir = SpiderDen.getGalleryDownloadDir(info)
             if (downloadDir == null || !downloadDir.isDirectory) {
