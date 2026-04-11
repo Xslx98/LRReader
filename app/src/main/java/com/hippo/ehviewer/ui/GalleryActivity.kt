@@ -118,6 +118,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
 
     private var mMaskView: ColorView? = null
     private var mClock: View? = null
+    private var mProgress: View? = null
     private var mBattery: View? = null
 
     private var canFinish = false
@@ -353,10 +354,10 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         // Header views
         mMaskView = ViewUtils.`$$`(this, R.id.mask) as ColorView
         mClock = ViewUtils.`$$`(this, R.id.clock)
-        val progressView = ViewUtils.`$$`(this, R.id.progress) as TextView
+        mProgress = ViewUtils.`$$`(this, R.id.progress) as TextView
         mBattery = ViewUtils.`$$`(this, R.id.battery)
         mClock!!.visibility = if (ReadingSettings.getShowClock()) View.VISIBLE else View.GONE
-        progressView.visibility = if (ReadingSettings.getShowProgress()) View.VISIBLE else View.GONE
+        mProgress!!.visibility = if (ReadingSettings.getShowProgress()) View.VISIBLE else View.GONE
         mBattery!!.visibility = if (ReadingSettings.getShowBattery()) View.VISIBLE else View.GONE
 
         // Slider controller
@@ -367,7 +368,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         val seekBar = ViewUtils.`$$`(seekBarPanel, R.id.seek_bar) as ReversibleSeekBar
 
         mSliderController.setViews(
-            seekBarPanel, autoTransferPanel, leftText, rightText, seekBar, progressView
+            seekBarPanel, autoTransferPanel, leftText, rightText, seekBar, mProgress as TextView
         )
         mSliderController.setSystemUiHelper(mSystemUiHelper)
         mSliderController.setGalleryView(mGalleryView)
@@ -467,6 +468,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
 
         mMaskView = null
         mClock = null
+        mProgress = null
         mBattery = null
 
         super.onDestroy()
@@ -598,6 +600,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
         mClock?.visibility = if (showClock) View.VISIBLE else View.GONE
+        mProgress?.visibility = if (showProgress) View.VISIBLE else View.GONE
         mBattery?.visibility = if (showBattery) View.VISIBLE else View.GONE
 
         mGalleryView!!.setPagerInterval(
