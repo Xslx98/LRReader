@@ -19,9 +19,13 @@ import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.mapper.toEntity
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadManager
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.ehviewer.ui.GalleryOpenHelper
 import com.hippo.ehviewer.ui.MainActivity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.hippo.ehviewer.ui.dialog.SelectItemWithIconAdapter
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
@@ -125,8 +129,12 @@ class GalleryItemActionHelper(private val callback: Callback) {
             .setAdapter(SelectItemWithIconAdapter(context, items, icons)) { _, which ->
                 when (which) {
                     0 -> { // Read
-                        val intent = GalleryOpenHelper.buildReadIntent(activity, gi.toEntity())
-                        activity.startActivity(intent)
+                        ServiceRegistry.coroutineModule.ioScope.launch {
+                            val intent = GalleryOpenHelper.buildReadIntent(activity, gi.toEntity())
+                            withContext(Dispatchers.Main) {
+                                activity.startActivity(intent)
+                            }
+                        }
                     }
                     1 -> { // Download
                         if (downloaded) {

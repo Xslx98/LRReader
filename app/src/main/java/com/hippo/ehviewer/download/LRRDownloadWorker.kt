@@ -70,7 +70,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         job?.cancel()
     }
 
-    private fun doDownload() {
+    private suspend fun doDownload() {
         val client = ServiceRegistry.networkModule.okHttpClient
         // Use longer timeout for page downloads (large archives may need extraction time)
         val pageClient = client.newBuilder()
@@ -265,7 +265,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         }
     }
 
-    private fun getDownloadDir(): File? {
+    private suspend fun getDownloadDir(): File? {
         // Use the same download location as SpiderDen (DownloadSettings.getDownloadLocation())
         // so downloaded files are visible in the user-configured directory
         try {

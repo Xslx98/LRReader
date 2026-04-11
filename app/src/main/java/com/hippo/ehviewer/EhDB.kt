@@ -45,9 +45,9 @@ import java.io.IOException
  * (typically `Dispatchers.IO` or `ServiceRegistry.coroutineModule.ioScope`).
  *
  * The legacy `blockingDb()` bridge and its `@JvmStatic` wrappers have been
- * removed (W3-5, 2026-04-11). The only remaining production `runBlocking`
- * usage is in [com.hippo.ehviewer.spider.SpiderDen.getGalleryDownloadDir],
- * which calls `*Async` methods directly.
+ * removed (W3-5, 2026-04-11). There is zero production `runBlocking` usage;
+ * [com.hippo.ehviewer.spider.SpiderDen.getGalleryDownloadDir] was converted
+ * to a `suspend fun` in W5-3 (2026-04-11).
  */
 object EhDB {
 

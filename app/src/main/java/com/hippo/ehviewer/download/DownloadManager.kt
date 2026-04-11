@@ -40,6 +40,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.IOException
+import java.lang.ref.WeakReference
 import java.util.Collections
 
 class DownloadManager(
@@ -68,7 +69,7 @@ class DownloadManager(
     // All listener/task collections use plain types -- access is main-thread only.
     // Worker callbacks dispatch to main thread via SimpleHandler.post (see postEvent).
     private var mDownloadListener: DownloadListener? = null
-    private val mDownloadInfoListeners: MutableList<DownloadInfoListener> = ArrayList()
+    private val mDownloadInfoListeners: MutableList<WeakReference<DownloadInfoListener>> = ArrayList()
 
     private val mActiveTasks: MutableList<DownloadInfo> = ArrayList()
     private val mActiveWorkers: MutableMap<DownloadInfo, LRRDownloadWorker> = HashMap()
@@ -86,6 +87,25 @@ class DownloadManager(
     private fun assertMainThread() {
         check(Looper.myLooper() == Looper.getMainLooper()) {
             "DownloadManager method must be called on the main thread, current: ${Thread.currentThread().name}"
+        }
+    }
+
+    /**
+     * Iterates over [mDownloadInfoListeners], unwrapping each [WeakReference]
+     * and skipping GC'd entries. Periodically cleans up null refs.
+     */
+    private inline fun forEachListener(action: (DownloadInfoListener) -> Unit) {
+        var hasNull = false
+        for (ref in mDownloadInfoListeners) {
+            val listener = ref.get()
+            if (listener != null) {
+                action(listener)
+            } else {
+                hasNull = true
+            }
+        }
+        if (hasNull) {
+            mDownloadInfoListeners.removeAll { it.get() == null }
         }
     }
 
@@ -118,7 +138,7 @@ class DownloadManager(
                 return mDownloadListener
             }
 
-            override fun getDownloadInfoListeners(): List<DownloadInfoListener> {
+            override fun getDownloadInfoListeners(): List<WeakReference<DownloadInfoListener>> {
                 return mDownloadInfoListeners
             }
 
@@ -260,9 +280,7 @@ class DownloadManager(
         mInitialized = true
         mInitDeferred.complete(Unit)
 
-        for (l in mDownloadInfoListeners) {
-            l.onReload()
-        }
+        forEachListener { it.onReload() }
     }
 
     /**
@@ -311,9 +329,7 @@ class DownloadManager(
         mAllInfoMap.remove(oldInfo.gid)
         mAllInfoMap[newInfo.gid] = newInfo
 
-        for (l in mDownloadInfoListeners) {
-            l.onReplace(newInfo, oldInfo)
-        }
+        forEachListener { it.onReplace(newInfo, oldInfo) }
     }
 
     private fun getInfoListForLabel(label: String?): MutableList<DownloadInfo>? {
@@ -453,12 +469,12 @@ class DownloadManager(
 
     fun addDownloadInfoListener(downloadInfoListener: DownloadInfoListener?) {
         assertMainThread()
-        mDownloadInfoListeners.add(downloadInfoListener!!)
+        mDownloadInfoListeners.add(WeakReference(downloadInfoListener!!))
     }
 
     fun removeDownloadInfoListener(downloadInfoListener: DownloadInfoListener?) {
         assertMainThread()
-        mDownloadInfoListeners.remove(downloadInfoListener)
+        mDownloadInfoListeners.removeAll { it.get() == null || it.get() === downloadInfoListener }
     }
 
     fun setDownloadListener(listener: DownloadListener?) {
@@ -490,9 +506,7 @@ class DownloadManager(
             // Notify state update
             val list = getInfoListForLabel(info.label)
             if (list != null) {
-                for (l in mDownloadInfoListeners) {
-                    l.onUpdate(info, list, mWaitList)
-                }
+                forEachListener { it.onUpdate(info, list, mWaitList) }
             }
             // Start the worker
             worker.start()
@@ -560,9 +574,7 @@ class DownloadManager(
             scope.launch { EhDB.putDownloadInfoAsync(info) }
 
             // Notify
-            for (l in mDownloadInfoListeners) {
-                l.onAdd(info, list, list.size - 1)
-            }
+            forEachListener { it.onAdd(info, list, list.size - 1) }
             // Make sure download is running
             ensureDownload()
 
@@ -626,9 +638,7 @@ class DownloadManager(
 
         if (update) {
             // Notify Listener
-            for (l in mDownloadInfoListeners) {
-                l.onUpdateAll()
-            }
+            forEachListener { it.onUpdateAll() }
             // Ensure download
             ensureDownload()
         }
@@ -669,9 +679,7 @@ class DownloadManager(
 
         if (update) {
             // Notify Listener
-            for (l in mDownloadInfoListeners) {
-                l.onUpdateAll()
-            }
+            forEachListener { it.onUpdateAll() }
             // Ensure download
             ensureDownload()
         }
@@ -800,9 +808,7 @@ class DownloadManager(
         scope.launch { EhDB.putDownloadInfoAsync(info) }
 
         // Notify
-        for (l in mDownloadInfoListeners) {
-            l.onAdd(info, list, list.size - 1)
-        }
+        forEachListener { it.onAdd(info, list, list.size - 1) }
     }
 
     fun addDownload(galleryInfo: GalleryInfo, label: String?) {
@@ -844,9 +850,7 @@ class DownloadManager(
             // Update listener
             val list = getInfoListForLabel(info.label)
             if (list != null) {
-                for (l in mDownloadInfoListeners) {
-                    l.onUpdate(info, list, mWaitList)
-                }
+                forEachListener { it.onUpdate(info, list, mWaitList) }
             }
             // Ensure download
             ensureDownload()
@@ -860,9 +864,7 @@ class DownloadManager(
             // Update listener
             val list = getInfoListForLabel(info.label)
             if (list != null) {
-                for (l in mDownloadInfoListeners) {
-                    l.onUpdate(info, list, mWaitList)
-                }
+                forEachListener { it.onUpdate(info, list, mWaitList) }
             }
             // Ensure download
             ensureDownload()
@@ -874,9 +876,7 @@ class DownloadManager(
         stopRangeDownloadInternal(gidList)
 
         // Update listener
-        for (l in mDownloadInfoListeners) {
-            l.onUpdateAll()
-        }
+        forEachListener { it.onUpdateAll() }
 
         // Ensure download
         ensureDownload()
@@ -896,9 +896,7 @@ class DownloadManager(
         stopCurrentDownloadInternal()
 
         // Notify mDownloadInfoListener
-        for (l in mDownloadInfoListeners) {
-            l.onUpdateAll()
-        }
+        forEachListener { it.onUpdateAll() }
     }
 
     fun deleteDownload(gid: Long) {
@@ -966,9 +964,7 @@ class DownloadManager(
         }
 
         // Update listener
-        for (l in mDownloadInfoListeners) {
-            l.onReload()
-        }
+        forEachListener { it.onReload() }
 
         // Ensure download
         ensureDownload()
@@ -1127,9 +1123,7 @@ class DownloadManager(
             scope.launch { EhDB.putDownloadInfoAsync(info) }
         }
 
-        for (l in mDownloadInfoListeners) {
-            l.onReload()
-        }
+        forEachListener { it.onReload() }
     }
 
     fun addLabel(label: String?) {

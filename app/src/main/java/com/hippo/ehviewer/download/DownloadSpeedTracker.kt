@@ -20,6 +20,7 @@ import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.lib.yorozuya.MathUtils
 import com.hippo.lib.yorozuya.SimpleHandler
 import com.hippo.lib.yorozuya.collect.SparseIJArray
+import java.lang.ref.WeakReference
 
 /**
  * Calculates and reports download speed and remaining time on a 2-second interval.
@@ -41,8 +42,8 @@ internal class DownloadSpeedTracker(private val callback: Callback) : Runnable {
         /** @return the active DownloadListener (may be null). */
         fun getDownloadListener(): DownloadListener?
 
-        /** @return all registered DownloadInfoListeners. */
-        fun getDownloadInfoListeners(): List<DownloadInfoListener>
+        /** @return all registered DownloadInfoListeners (weak references). */
+        fun getDownloadInfoListeners(): List<WeakReference<DownloadInfoListener>>
 
         /** @return the current wait list (passed to onUpdate). */
         fun getWaitList(): List<DownloadInfo>
@@ -126,8 +127,8 @@ internal class DownloadSpeedTracker(private val callback: Callback) : Runnable {
             callback.getDownloadListener()?.onDownload(info)
             val list = callback.getInfoListForLabel(info.label)
             if (list != null) {
-                for (l in callback.getDownloadInfoListeners()) {
-                    l.onUpdate(info, list, callback.getWaitList())
+                for (ref in callback.getDownloadInfoListeners()) {
+                    ref.get()?.onUpdate(info, list, callback.getWaitList())
                 }
             }
         }
