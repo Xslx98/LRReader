@@ -590,6 +590,23 @@ object EhDB {
 
     @JvmStatic
     fun exportDB(context: Context, file: File): Boolean {
+        // Reject symlinks — canonical path must match absolute path
+        val canonical = try { file.canonicalPath } catch (_: IOException) { return false }
+        val absolute = file.absolutePath
+        if (canonical != absolute) {
+            Log.e(TAG, "exportDB: symlink detected, rejected")
+            return false
+        }
+
+        // Restrict target to app-scoped external directories
+        val externalDir = context.getExternalFilesDir(null)?.canonicalPath
+        val cacheDir = context.externalCacheDir?.canonicalPath
+        if ((externalDir == null || !canonical.startsWith(externalDir)) &&
+            (cacheDir == null || !canonical.startsWith(cacheDir))) {
+            Log.e(TAG, "exportDB: target path outside app scope, rejected")
+            return false
+        }
+
         val dbFile = context.getDatabasePath("eh.db")
         if (dbFile == null || !dbFile.isFile) return false
         var inputStream: java.io.InputStream? = null
@@ -600,7 +617,7 @@ object EhDB {
             IOUtils.copy(inputStream, outputStream)
             return true
         } catch (e: IOException) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to export DB", e)
         } finally {
             IOUtils.closeQuietly(inputStream)
             IOUtils.closeQuietly(outputStream)
