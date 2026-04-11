@@ -69,7 +69,6 @@ import com.hippo.ehviewer.util.ClipboardUtil
 import com.hippo.ehviewer.widget.ArchiverDownloadProgress
 import com.hippo.lib.yorozuya.AssertUtils
 import com.hippo.lib.yorozuya.IntIdGenerator
-import com.hippo.lib.yorozuya.SimpleHandler
 import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.reveal.ViewAnimationUtils
 import com.hippo.ripple.Ripple
@@ -85,6 +84,8 @@ import java.util.Date
 
 class GalleryDetailScene : BaseScene(), View.OnClickListener,
     View.OnLongClickListener {
+
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     /*---------------
      View life cycle
@@ -662,7 +663,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme)
         ) {
             if (!createCircularReveal()) {
-                SimpleHandler.getInstance().post { createCircularReveal() }
+                mainHandler.post { createCircularReveal() }
             }
         }
     }

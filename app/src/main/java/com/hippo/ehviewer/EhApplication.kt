@@ -40,8 +40,9 @@ import com.hippo.ehviewer.settings.GuideSettings
 import com.hippo.ehviewer.settings.PrivacySettings
 import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.lib.image.Image
+import android.os.Handler
+import android.os.Looper
 import com.hippo.lib.yorozuya.FileUtils
-import com.hippo.lib.yorozuya.SimpleHandler
 import com.hippo.unifile.UniFile
 import com.hippo.util.BitmapUtils
 import com.hippo.util.ExceptionUtils
@@ -50,6 +51,8 @@ import java.io.File
 import java.util.Locale
 
 class EhApplication : RecordingApplication() {
+
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private val mActivityList = mutableListOf<Activity>()
 
@@ -294,7 +297,7 @@ class EhApplication : RecordingApplication() {
                         )
                     )
                 }
-                SimpleHandler.getInstance().postDelayed(this, DEBUG_PRINT_INTERVAL)
+                mainHandler.postDelayed(this, DEBUG_PRINT_INTERVAL)
             }
         }.run()
     }

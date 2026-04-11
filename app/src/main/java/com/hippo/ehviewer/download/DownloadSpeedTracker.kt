@@ -16,9 +16,10 @@
 
 package com.hippo.ehviewer.download
 
+import android.os.Handler
+import android.os.Looper
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.lib.yorozuya.MathUtils
-import com.hippo.lib.yorozuya.SimpleHandler
 import com.hippo.lib.yorozuya.collect.SparseIJArray
 import java.lang.ref.WeakReference
 
@@ -30,6 +31,8 @@ import java.lang.ref.WeakReference
  * direct reference to DownloadManager.
  */
 internal class DownloadSpeedTracker(private val callback: Callback) : Runnable {
+
+    private val handler = Handler(Looper.getMainLooper())
 
     /** Supplies the data DownloadSpeedTracker needs from DownloadManager. */
     interface Callback {
@@ -59,7 +62,7 @@ internal class DownloadSpeedTracker(private val callback: Callback) : Runnable {
     fun start() {
         if (stopped) {
             stopped = false
-            SimpleHandler.getInstance().post(this)
+            handler.post(this)
         }
     }
 
@@ -70,7 +73,7 @@ internal class DownloadSpeedTracker(private val callback: Callback) : Runnable {
             oldSpeed = -1
             contentLengthMap.clear()
             receivedSizeMap.clear()
-            SimpleHandler.getInstance().removeCallbacks(this)
+            handler.removeCallbacks(this)
         }
     }
 
@@ -136,7 +139,7 @@ internal class DownloadSpeedTracker(private val callback: Callback) : Runnable {
         bytesRead = 0
 
         if (!stopped) {
-            SimpleHandler.getInstance().postDelayed(this, 2000)
+            handler.postDelayed(this, 2000)
         }
     }
 }

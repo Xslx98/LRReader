@@ -21,6 +21,8 @@ import android.content.pm.ActivityInfo
 import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.StrictMode
 import android.util.Log
 import android.view.KeyEvent
@@ -63,7 +65,6 @@ import com.hippo.widget.ColorView
 import com.hippo.lib.yorozuya.ConcurrentPool
 import com.hippo.lib.yorozuya.MathUtils
 import com.hippo.lib.yorozuya.ResourcesUtils
-import com.hippo.lib.yorozuya.SimpleHandler
 import com.hippo.lib.yorozuya.ViewUtils
 import java.io.File
 import javax.microedition.khronos.egl.EGL10
@@ -102,6 +103,8 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
             else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
     }
+
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private var mAction: String? = null
     private var mFilename: String? = null
@@ -495,7 +498,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
 
-        SimpleHandler.getInstance().postDelayed({
+        mainHandler.postDelayed({
             if (hasFocus && mSystemUiHelper != null) {
                 if (mSliderController.isShowSystemUi) {
                     mSystemUiHelper!!.show()
@@ -531,7 +534,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
             task = NotifyTask()
         }
         task.setData(NOTIFY_KEY_CURRENT_INDEX, index)
-        SimpleHandler.getInstance().post(task)
+        mainHandler.post(task)
     }
 
     override fun onTapSliderArea() {
@@ -540,7 +543,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
             task = NotifyTask()
         }
         task.setData(NOTIFY_KEY_TAP_SLIDER_AREA, 0)
-        SimpleHandler.getInstance().post(task)
+        mainHandler.post(task)
     }
 
     override fun onTapMenuArea() {
@@ -549,7 +552,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
             task = NotifyTask()
         }
         task.setData(NOTIFY_KEY_TAP_MENU_AREA, 0)
-        SimpleHandler.getInstance().post(task)
+        mainHandler.post(task)
     }
 
     override fun onTapErrorText(index: Int) {
@@ -558,7 +561,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
             task = NotifyTask()
         }
         task.setData(NOTIFY_KEY_TAP_ERROR_TEXT, index)
-        SimpleHandler.getInstance().post(task)
+        mainHandler.post(task)
     }
 
     override fun onLongPressPage(index: Int) {
@@ -567,7 +570,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
             task = NotifyTask()
         }
         task.setData(NOTIFY_KEY_LONG_PRESS_PAGE, index)
-        SimpleHandler.getInstance().post(task)
+        mainHandler.post(task)
     }
 
     override fun onAutoTransferDone() {
@@ -713,7 +716,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                     task = NotifyTask()
                 }
                 task.setData(NOTIFY_KEY_SIZE, size)
-                SimpleHandler.getInstance().post(task)
+                mainHandler.post(task)
             }
         }
     }

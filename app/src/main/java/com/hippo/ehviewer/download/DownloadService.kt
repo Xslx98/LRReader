@@ -25,7 +25,9 @@ import android.content.pm.ServiceInfo
 import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import androidx.annotation.IntDef
@@ -38,7 +40,6 @@ import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.util.ReadableTime
 import com.hippo.lib.yorozuya.FileUtils
-import com.hippo.lib.yorozuya.SimpleHandler
 import com.hippo.lib.yorozuya.collect.LongList
 import com.hippo.lib.yorozuya.collect.SparseJBArray
 import com.hippo.lib.yorozuya.collect.SparseJLArray
@@ -556,6 +557,7 @@ class DownloadService : Service(), DownloadListener {
         @Retention(AnnotationRetention.SOURCE)
         private annotation class Ops
 
+        private val handler = Handler(Looper.getMainLooper())
         private var mLastTime: Long = 0
         private var mPosted = false
 
@@ -579,7 +581,7 @@ class DownloadService : Service(), DownloadListener {
                     // Too quick, post delay
                     mOps = OPS_NOTIFY
                     mPosted = true
-                    SimpleHandler.getInstance().postDelayed(this, DELAY)
+                    handler.postDelayed(this, DELAY)
                 }
                 mLastTime = now
             }
@@ -597,7 +599,7 @@ class DownloadService : Service(), DownloadListener {
                     // Too quick, post delay
                     mOps = OPS_CANCEL
                     mPosted = true
-                    SimpleHandler.getInstance().postDelayed(this, DELAY)
+                    handler.postDelayed(this, DELAY)
                 }
             }
         }
@@ -624,7 +626,7 @@ class DownloadService : Service(), DownloadListener {
                     // Too quick, post delay
                     mOps = OPS_START_FOREGROUND
                     mPosted = true
-                    SimpleHandler.getInstance().postDelayed(this, DELAY)
+                    handler.postDelayed(this, DELAY)
                 }
             }
         }
