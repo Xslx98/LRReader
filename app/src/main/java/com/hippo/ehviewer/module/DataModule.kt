@@ -13,7 +13,7 @@ import java.io.File
  * SpiderInfoCache, and FavouriteStatusRouter.
  * Extracted from EhApplication to reduce its responsibility scope.
  */
-class DataModule(private val context: Context) : IDataModule {
+class DataModule(private val context: Context) : IDataModule, Cacheable {
 
     override val favouriteStatusRouter: FavouriteStatusRouter by lazy { FavouriteStatusRouter() }
 
@@ -33,5 +33,10 @@ class DataModule(private val context: Context) : IDataModule {
 
     override fun clearGalleryDetailCache() {
         galleryDetailCache.evictAll()
+    }
+
+    override fun clearCache() {
+        galleryDetailCache.evictAll()
+        try { spiderInfoCache.clear() } catch (_: Exception) {}
     }
 }
