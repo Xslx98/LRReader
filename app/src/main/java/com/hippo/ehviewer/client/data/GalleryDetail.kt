@@ -20,7 +20,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import java.util.Arrays
 
-class GalleryDetail : GalleryInfo {
+class GalleryDetail : GalleryInfoEntity {
 
     @JvmField
     var apiUid: Long = -1L
