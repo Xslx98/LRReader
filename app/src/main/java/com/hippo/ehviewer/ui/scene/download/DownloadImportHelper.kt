@@ -19,7 +19,6 @@ package com.hippo.ehviewer.ui.scene.download
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.ActivityResult
@@ -27,36 +26,20 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.ActivityResultRegistry
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.EhUtils
-import com.hippo.ehviewer.dao.DownloadInfo
-import com.hippo.ehviewer.download.DownloadManager
-import com.hippo.util.FileUtils
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 /**
- * Encapsulates the local archive import pipeline (file picker, URI permission,
- * archive validation, and DownloadInfo creation) extracted from DownloadsScene.
+ * Manages the file picker ActivityResultLauncher for local archive imports.
+ * The actual archive processing is handled by [DownloadsViewModel.processArchiveImport].
+ *
+ * No Callback interface — uses an explicit [onFileSelected] function parameter.
  */
 class DownloadImportHelper(
-    private val mCallback: Callback,
     registry: ActivityResultRegistry,
-    private val lifecycleOwner: LifecycleOwner
+    lifecycleOwner: LifecycleOwner,
+    private val contextProvider: () -> Context?,
+    private val onFileSelected: (android.net.Uri) -> Unit
 ) {
-
-    /**
-     * Callback interface so the helper can interact with its host
-     * (DownloadsScene) without a direct dependency.
-     */
-    interface Callback {
-        fun getContext(): Context?
-        fun getActivity(): Activity?
-        fun getDownloadManager(): DownloadManager?
-        fun getString(resId: Int): String?
-        fun onImportSuccess()
-    }
 
     private val mFilePickerLauncher: ActivityResultLauncher<Intent> = registry.register(
         REGISTRY_KEY,
@@ -86,13 +69,13 @@ class DownloadImportHelper(
                 "application/x-cbr"
             ))
             addCategory(Intent.CATEGORY_OPENABLE)
-            // Enable persistent URI permissions
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
         }
 
         try {
-            val title = mCallback.getString(R.string.import_archive_title)
+            val context = contextProvider()
+            val title = context?.getString(R.string.import_archive_title)
             mFilePickerLauncher.launch(Intent.createChooser(intent, title))
         } catch (e: Exception) {
             showToast(R.string.import_archive_failed)
@@ -109,7 +92,7 @@ class DownloadImportHelper(
         }
 
         val uri = result.data?.data ?: return
-        val context = mCallback.getContext() ?: return
+        val context = contextProvider() ?: return
 
         // Request persistent URI permission immediately when file is selected
         try {
@@ -127,126 +110,15 @@ class DownloadImportHelper(
             return
         }
 
-        // Show processing dialog
+        // Show processing toast
         Toast.makeText(context, R.string.import_archive_processing, Toast.LENGTH_LONG).show()
 
-        // Process the archive file in background
-        lifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-            processArchiveFile(uri)
-        }
-    }
-
-    private fun processArchiveFile(uri: Uri) {
-        val context = mCallback.getContext() ?: return
-
-        try {
-            // Verify URI accessibility (permission should already be granted)
-            try {
-                context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                    // Stream is accessible
-                } ?: run {
-                    runOnUiThread {
-                        Toast.makeText(context, R.string.import_archive_failed, Toast.LENGTH_SHORT).show()
-                    }
-                    return
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Cannot access file even with persistent permission", e)
-                runOnUiThread {
-                    Toast.makeText(context, R.string.import_archive_failed, Toast.LENGTH_SHORT).show()
-                }
-                return
-            }
-
-            // Get file name
-            val fileName: String = FileUtils.getFileName(context, uri)
-                ?: "imported_archive_${System.currentTimeMillis()}"
-
-            // Validate file format
-            if (!isValidArchiveFormat(fileName)) {
-                runOnUiThread {
-                    Toast.makeText(context, R.string.import_archive_invalid_format, Toast.LENGTH_SHORT).show()
-                }
-                return
-            }
-
-            // Create DownloadInfo for the archive
-            val downloadInfo = createArchiveDownloadInfo(uri, fileName)
-            if (downloadInfo == null) {
-                runOnUiThread {
-                    Toast.makeText(context, R.string.import_archive_failed, Toast.LENGTH_SHORT).show()
-                }
-                return
-            }
-
-            // Check if already imported
-            val downloadManager = mCallback.getDownloadManager()
-            if (downloadManager != null && downloadManager.containDownloadInfo(downloadInfo.gid)) {
-                runOnUiThread {
-                    Toast.makeText(context, R.string.import_archive_already_imported, Toast.LENGTH_SHORT).show()
-                }
-                return
-            }
-
-            // Add to download manager
-            if (downloadManager != null) {
-                val downloadList = ArrayList<DownloadInfo>()
-                downloadList.add(downloadInfo)
-                downloadManager.addDownload(downloadList)
-                runOnUiThread {
-                    Toast.makeText(context, R.string.import_archive_success, Toast.LENGTH_SHORT).show()
-                    mCallback.onImportSuccess()
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to process archive file", e)
-            runOnUiThread {
-                Toast.makeText(context, R.string.import_archive_failed, Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    private fun isValidArchiveFormat(fileName: String?): Boolean {
-        if (fileName == null) return false
-        val lowerName = fileName.lowercase()
-        return lowerName.endsWith(".zip") || lowerName.endsWith(".rar") ||
-                lowerName.endsWith(".cbz") || lowerName.endsWith(".cbr")
-    }
-
-    private fun createArchiveDownloadInfo(uri: Uri, fileName: String): DownloadInfo? {
-        return try {
-            DownloadInfo().apply {
-                gid = System.currentTimeMillis() // Use timestamp as unique ID
-                token = ""
-                title = fileName.replace("\\.[^.]*$".toRegex(), "") // Remove extension
-                titleJpn = null
-                thumb = null // No thumbnail for imported archives
-                category = EhUtils.UNKNOWN // Keep as UNKNOWN, will be handled in display logic
-                posted = null
-                uploader = "Local Archive"
-                rating = -1.0f // Keep default rating to not affect other downloads
-                state = DownloadInfo.STATE_FINISH
-                legacy = 0
-                time = System.currentTimeMillis()
-                label = null
-                total = 0 // Will be set by archive provider
-                finished = 0
-
-                // Store the URI in the archiveUri field - this is the key identifier
-                archiveUri = uri.toString()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to create DownloadInfo", e)
-            null
-        }
-    }
-
-    private fun runOnUiThread(runnable: Runnable) {
-        mCallback.getActivity()?.runOnUiThread(runnable)
+        // Delegate to ViewModel via the callback
+        onFileSelected(uri)
     }
 
     private fun showToast(resId: Int) {
-        val context = mCallback.getContext()
+        val context = contextProvider()
         if (context != null) {
             Toast.makeText(context, resId, Toast.LENGTH_SHORT).show()
         }
