@@ -38,8 +38,8 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.lrr.LRRAuthManager
-import com.hippo.ehviewer.client.lrr.LRRSecureStorageUnavailableException
+import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.hippo.ehviewer.settings.SecuritySettings
 import com.hippo.ehviewer.ui.SetSecurityActivity
 import com.hippo.hardware.ShakeDetector

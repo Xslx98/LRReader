@@ -1,5 +1,7 @@
-package com.hippo.ehviewer.client.lrr
+package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.client.api.*
+import com.lanraragi.reader.client.api.data.*
 import androidx.paging.PagingConfig
 import androidx.paging.PagingSource
 import androidx.paging.PagingState

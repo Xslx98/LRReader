@@ -11,7 +11,7 @@ import com.hippo.ehviewer.client.EhUrl
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.client.data.ListUrlBuilder
-import com.hippo.ehviewer.client.lrr.data.LRRSearchResult
+import com.lanraragi.reader.client.api.data.LRRSearchResult
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.widget.SearchBar
 import com.hippo.lib.yorozuya.MathUtils

@@ -54,8 +54,8 @@ import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.dao.DownloadInfo
-import com.hippo.ehviewer.client.lrr.LRRAuthManager
-import com.hippo.ehviewer.client.lrr.data.LRRArchive
+import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.data.LRRArchive
 import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.spider.SpiderQueen
 import com.hippo.ehviewer.ui.CommonOperations

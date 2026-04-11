@@ -1,7 +1,7 @@
-package com.hippo.ehviewer.client.lrr
+package com.lanraragi.reader.client.api
 
 import android.util.Log
-import com.hippo.ehviewer.client.lrr.data.LRRServerInfo
+import com.lanraragi.reader.client.api.data.LRRServerInfo
 import okhttp3.OkHttpClient
 import java.net.URI
 import java.util.concurrent.TimeUnit
