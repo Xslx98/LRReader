@@ -35,9 +35,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import com.hippo.android.resource.AttrResources
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.settings.ReadingSettings
 import com.hippo.ehviewer.settings.AppearanceSettings
+import com.hippo.ehviewer.settings.GuideSettings
+import com.hippo.ehviewer.settings.ReadingSettings
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.event.AppEventBus
 import com.hippo.ehviewer.event.GalleryActivityEvent
@@ -414,7 +414,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
             }
         }
 
-        if (Settings.getGuideGallery()) {
+        if (GuideSettings.getGuideGallery()) {
             val mainLayout = ViewUtils.`$$`(this, R.id.main) as FrameLayout
             mainLayout.addView(GalleryGuideView(this))
         }
