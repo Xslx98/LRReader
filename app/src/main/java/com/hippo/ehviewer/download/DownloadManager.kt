@@ -174,11 +174,15 @@ class DownloadManager(
         val infosToSave = ArrayList(downloadInfoList)
         val labelsToPersist = ArrayList(newLabels)
         scope.launch {
-            val savedLabels = ArrayList<DownloadLabel>(labelsToPersist.size)
-            for (l in labelsToPersist) savedLabels.add(EhDB.addDownloadLabelAsync(l))
-            for (info in infosToSave) EhDB.putDownloadInfoAsync(info)
-            if (savedLabels.isNotEmpty()) {
-                repo.runOnMainThread { for (s in savedLabels) { repo.labelList.add(s); s.label?.let { repo.labelSet.add(it) } } }
+            try {
+                val savedLabels = ArrayList<DownloadLabel>(labelsToPersist.size)
+                for (l in labelsToPersist) savedLabels.add(EhDB.addDownloadLabelAsync(l))
+                for (info in infosToSave) EhDB.putDownloadInfoAsync(info)
+                if (savedLabels.isNotEmpty()) {
+                    repo.runOnMainThread { for (s in savedLabels) { repo.labelList.add(s); s.label?.let { repo.labelSet.add(it) } } }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to persist imported downloads", e)
             }
         }
         eventBus.postToMain { eventBus.forEachListener { it.onReload() } }
@@ -189,9 +193,13 @@ class DownloadManager(
         val toAdd = repo.importLabelBatch(downloadLabelList)
         if (toAdd.isNotEmpty()) {
             scope.launch {
-                val saved = ArrayList<DownloadLabel>(toAdd.size)
-                for (l in toAdd) saved.add(EhDB.addDownloadLabelAsync(l))
-                repo.runOnMainThread { for (s in saved) { repo.labelList.add(s); s.label?.let { repo.labelSet.add(it) } } }
+                try {
+                    val saved = ArrayList<DownloadLabel>(toAdd.size)
+                    for (l in toAdd) saved.add(EhDB.addDownloadLabelAsync(l))
+                    repo.runOnMainThread { for (s in saved) { repo.labelList.add(s); s.label?.let { repo.labelSet.add(it) } } }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to persist imported download labels", e)
+                }
             }
         }
     }
@@ -273,15 +281,19 @@ class DownloadManager(
         repo.assertMainThread()
         val list = ArrayList(repo.allInfoList)
         scope.launch {
-            val gi = GalleryInfo()
-            for (di in list) {
-                gi.gid = di.gid; gi.token = di.token; gi.title = di.title; gi.thumb = di.thumb
-                gi.category = di.category; gi.posted = di.posted; gi.uploader = di.uploader; gi.rating = di.rating
-                val dir = SpiderDen.getGalleryDownloadDir(gi) ?: continue
-                val file = dir.findFile(".ehviewer") ?: continue
-                val si = SpiderInfo.read(file) ?: continue
-                si.startPage = 0
-                try { si.write(file.openOutputStream()) } catch (e: IOException) { Log.e(TAG, "Can't write SpiderInfo", e) }
+            try {
+                val gi = GalleryInfo()
+                for (di in list) {
+                    gi.gid = di.gid; gi.token = di.token; gi.title = di.title; gi.thumb = di.thumb
+                    gi.category = di.category; gi.posted = di.posted; gi.uploader = di.uploader; gi.rating = di.rating
+                    val dir = SpiderDen.getGalleryDownloadDir(gi) ?: continue
+                    val file = dir.findFile(".ehviewer") ?: continue
+                    val si = SpiderInfo.read(file) ?: continue
+                    si.startPage = 0
+                    try { si.write(file.openOutputStream()) } catch (e: IOException) { Log.e(TAG, "Can't write SpiderInfo", e) }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to reset reading progress", e)
             }
         }
     }

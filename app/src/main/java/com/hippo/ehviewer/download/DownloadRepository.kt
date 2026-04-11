@@ -22,7 +22,6 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
@@ -272,12 +271,7 @@ class DownloadRepository(
 
     fun getLabelCount(label: String?): Long {
         assertMainThread()
-        return try {
-            labelCountMap[label] ?: 0L
-        } catch (e: NullPointerException) {
-            Analytics.recordException(e)
-            0L
-        }
+        return labelCountMap[label] ?: 0L
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -510,27 +504,57 @@ class DownloadRepository(
 
     /** Persist [info] to the downloads table on a background thread. */
     fun persistInfo(info: DownloadInfo) {
-        scope.launch { EhDB.putDownloadInfoAsync(info) }
+        scope.launch {
+            try {
+                EhDB.putDownloadInfoAsync(info)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to persist download info gid=${info.gid}", e)
+            }
+        }
     }
 
     /** Persist [info] to the history table on a background thread. */
     fun persistHistory(info: DownloadInfo) {
-        scope.launch { EhDB.putHistoryInfoAsync(info) }
+        scope.launch {
+            try {
+                EhDB.putHistoryInfoAsync(info)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to persist history info gid=${info.gid}", e)
+            }
+        }
     }
 
     /** Remove download info from the DB by gid on a background thread. */
     fun removeInfoFromDb(gid: Long) {
-        scope.launch { EhDB.removeDownloadInfoAsync(gid) }
+        scope.launch {
+            try {
+                EhDB.removeDownloadInfoAsync(gid)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to remove download info gid=$gid from DB", e)
+            }
+        }
     }
 
     /** Batch-remove download infos from the DB on a background thread. */
     fun removeInfoBatchFromDb(gids: List<Long>) {
-        scope.launch { EhDB.removeDownloadInfoBatchAsync(gids) }
+        scope.launch {
+            try {
+                EhDB.removeDownloadInfoBatchAsync(gids)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to batch-remove download infos from DB", e)
+            }
+        }
     }
 
     /** Batch-persist download infos on a background thread. */
     fun persistInfoBatch(list: List<DownloadInfo>) {
-        scope.launch { EhDB.putDownloadInfoBatchAsync(list) }
+        scope.launch {
+            try {
+                EhDB.putDownloadInfoBatchAsync(list)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to batch-persist download infos", e)
+            }
+        }
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -552,19 +576,24 @@ class DownloadRepository(
         }
 
         scope.launch {
-            val reloadedInfos = EhDB.getAllDownloadInfoAsync()
-            runOnMainThread {
-                allInfoList.addAll(reloadedInfos)
-                for (info in reloadedInfos) {
-                    allInfoMap[info.gid] = info
-                    var list = getInfoListForLabel(info.label)
-                    if (list == null) {
-                        list = ArrayList()
-                        labelInfoMap[info.label] = list
+            try {
+                val reloadedInfos = EhDB.getAllDownloadInfoAsync()
+                runOnMainThread {
+                    allInfoList.addAll(reloadedInfos)
+                    for (info in reloadedInfos) {
+                        allInfoMap[info.gid] = info
+                        var list = getInfoListForLabel(info.label)
+                        if (list == null) {
+                            list = ArrayList()
+                            labelInfoMap[info.label] = list
+                        }
+                        list.add(info)
                     }
-                    list.add(info)
+                    onComplete()
                 }
-                onComplete()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to reload download data from DB", e)
+                runOnMainThread { onComplete() }
             }
         }
     }
@@ -592,10 +621,14 @@ class DownloadRepository(
         labelInfoMap[label] = ArrayList()
 
         scope.launch {
-            val saved = EhDB.addDownloadLabelAsync(label)
-            runOnMainThread {
-                newLabel.id = saved.id
-                newLabel.time = saved.time
+            try {
+                val saved = EhDB.addDownloadLabelAsync(label)
+                runOnMainThread {
+                    newLabel.id = saved.id
+                    newLabel.time = saved.time
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to persist new label: $label", e)
             }
         }
 
@@ -606,7 +639,13 @@ class DownloadRepository(
         assertMainThread()
         val item = labelList.removeAt(fromPosition)
         labelList.add(toPosition, item)
-        scope.launch { EhDB.moveDownloadLabelAsync(fromPosition, toPosition) }
+        scope.launch {
+            try {
+                EhDB.moveDownloadLabelAsync(fromPosition, toPosition)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to persist label move from=$fromPosition to=$toPosition", e)
+            }
+        }
     }
 
     /**
@@ -638,8 +677,12 @@ class DownloadRepository(
         val labelToUpdate = rawLabel
         val infosToUpdate = ArrayList(list)
         scope.launch {
-            EhDB.updateDownloadLabelAsync(labelToUpdate)
-            EhDB.putDownloadInfoBatchAsync(infosToUpdate)
+            try {
+                EhDB.updateDownloadLabelAsync(labelToUpdate)
+                EhDB.putDownloadInfoBatchAsync(infosToUpdate)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to persist label rename from=$from to=$to", e)
+            }
         }
 
         return list
@@ -676,8 +719,12 @@ class DownloadRepository(
         val labelToRemove = removedLabel
         val infosToUpdate = ArrayList(list)
         scope.launch {
-            EhDB.removeDownloadLabelAsync(labelToRemove)
-            EhDB.putDownloadInfoBatchAsync(infosToUpdate)
+            try {
+                EhDB.removeDownloadLabelAsync(labelToRemove)
+                EhDB.putDownloadInfoBatchAsync(infosToUpdate)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to persist label deletion: $label", e)
+            }
         }
 
         return list
@@ -714,7 +761,13 @@ class DownloadRepository(
             info.label = label
             insertSorted(dstList, info)
 
-            scope.launch { EhDB.putDownloadInfoAsync(info) }
+            scope.launch {
+                try {
+                    EhDB.putDownloadInfoAsync(info)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to persist label change for gid=${info.gid}", e)
+                }
+            }
         }
     }
 
