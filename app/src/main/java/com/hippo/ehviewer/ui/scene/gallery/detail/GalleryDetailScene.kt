@@ -72,7 +72,9 @@ import com.hippo.reveal.ViewAnimationUtils
 import com.hippo.ripple.Ripple
 import com.hippo.util.DrawableManager
 import com.hippo.util.ExceptionUtils
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.hippo.view.ViewTransition
 import com.hippo.widget.LoadImageView
 import java.text.SimpleDateFormat
@@ -875,8 +877,12 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         } else if (mRead === v) {
             val galleryInfo: GalleryInfo? = mGalleryInfo ?: mGalleryDetail
             if (galleryInfo != null) {
-                val intent = GalleryOpenHelper.buildReadIntent(requireActivity(), galleryInfo)
-                startActivity(intent)
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val intent = withContext(Dispatchers.IO) {
+                        GalleryOpenHelper.buildReadIntent(requireActivity(), galleryInfo)
+                    }
+                    startActivity(intent)
+                }
             }
         } else if (mHeartGroup === v) {
             // LANraragi: Show category selection dialog

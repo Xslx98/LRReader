@@ -207,9 +207,9 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
         }
     }
 
-    private fun showSlider(sliderPanel: View, @Suppress("UNUSED_PARAMETER") animator: ObjectAnimator?) {
-        if (mSeekBarPanelAnimator != null) {
-            mSeekBarPanelAnimator!!.cancel()
+    private fun showSlider(sliderPanel: View, animator: ObjectAnimator?) {
+        if (animator != null) {
+            animator.cancel()
         }
         val newAnimator: ObjectAnimator
         if (sliderPanel === mAutoTransferPanel) {
