@@ -102,6 +102,8 @@ class MainActivity : StageActivity(),
         private const val PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE = 0
         private const val REQUEST_CODE_SETTINGS = 0
         private const val KEY_NAV_CHECKED_ITEM = "nav_checked_item"
+        /** Max dimension for user avatar/background decode to prevent OOM. */
+        private const val MAX_IMAGE_DIMENSION = 1024
 
         init {
             registerLaunchMode(SecurityScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
@@ -435,7 +437,7 @@ class MainActivity : StageActivity(),
                 val nextFrame = gifHandler!!.updateFrame(backgroundBit)
                 handlerB.sendEmptyMessageDelayed(1, nextFrame.toLong())
             } else {
-                backgroundBit = BitmapFactory.decodeFile(file.path)
+                backgroundBit = decodeSampledBitmap(file.path)
                 mHeaderBackground!!.setImageBitmap(backgroundBit)
             }
         }
@@ -460,7 +462,7 @@ class MainActivity : StageActivity(),
         if (mAvatar == null) return
         val userAvatarFile = AppearanceSettings.getUserImageFile(AppearanceSettings.USER_AVATAR_IMAGE)
         if (userAvatarFile != null) {
-            val bitmap = BitmapFactory.decodeFile(userAvatarFile.path)
+            val bitmap = decodeSampledBitmap(userAvatarFile.path)
             if (bitmap != null) {
                 mAvatar!!.load(BitmapDrawable(mAvatar!!.resources, bitmap))
             } else {
@@ -619,13 +621,29 @@ class MainActivity : StageActivity(),
         }
     }
 
+    /**
+     * Decode a file with inSampleSize to avoid OOM on large images.
+     */
+    private fun decodeSampledBitmap(path: String, maxDim: Int = MAX_IMAGE_DIMENSION): Bitmap? {
+        val options = BitmapFactory.Options()
+        options.inJustDecodeBounds = true
+        BitmapFactory.decodeFile(path, options)
+        var sampleSize = 1
+        while (options.outWidth / sampleSize > maxDim || options.outHeight / sampleSize > maxDim) {
+            sampleSize *= 2
+        }
+        options.inJustDecodeBounds = false
+        options.inSampleSize = sampleSize
+        return BitmapFactory.decodeFile(path, options)
+    }
+
     fun updateProfile() {
         if (mAvatar != null) {
             val avatarUrl = AppearanceSettings.getAvatar()
             if (TextUtils.isEmpty(avatarUrl)) {
                 val userAvatarFile = AppearanceSettings.getUserImageFile(AppearanceSettings.USER_AVATAR_IMAGE)
                 if (userAvatarFile != null) {
-                    val bitmap = BitmapFactory.decodeFile(userAvatarFile.path)
+                    val bitmap = decodeSampledBitmap(userAvatarFile.path)
                     val drawable = BitmapDrawable(mAvatar!!.resources, bitmap)
                     mAvatar!!.load(drawable)
                 } else {
