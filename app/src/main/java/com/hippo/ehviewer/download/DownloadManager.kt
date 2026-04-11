@@ -71,6 +71,8 @@ class DownloadManager(
     private val mActiveTasks: MutableList<DownloadInfo> = ArrayList()
     private val mActiveWorkers: MutableMap<DownloadInfo, LRRDownloadWorker> = HashMap()
 
+    internal lateinit var scheduler: DownloadScheduler
+
     /** Signals when async init is complete. */
     private val mInitDeferred = CompletableDeferred<Unit>()
 
@@ -124,6 +126,8 @@ class DownloadManager(
                 return mWaitList
             }
         })
+
+        scheduler = DownloadScheduler(mContext, scope, repo, eventBus, mSpeedReminder)
 
         // Load data from DB on a background thread to avoid blocking main thread.
         // The IO segment only reads/writes the DB; the resulting data is published to
