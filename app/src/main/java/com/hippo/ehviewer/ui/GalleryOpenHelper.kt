@@ -51,7 +51,7 @@ object GalleryOpenHelper {
         if (uniDir != null) {
             val uri = uniDir.uri
             if ("file" == uri.scheme) {
-                val dir = File(uri.path!!)
+                val dir = File(uri.path ?: return null)
                 if (dir.isDirectory) {
                     return dir
                 }
