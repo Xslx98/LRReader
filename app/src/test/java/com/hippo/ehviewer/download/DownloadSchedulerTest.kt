@@ -80,7 +80,7 @@ class DownloadSchedulerTest {
         ShadowLooper.idleMainLooper()
 
         // Create real collaborators
-        repo = DownloadRepository(context, testScope)
+        repo = DownloadRepository(context, testScope, Dispatchers.Unconfined)
         eventBus = DownloadEventBus()
 
         speedTracker = DownloadSpeedTracker(object : DownloadSpeedTracker.Callback {
