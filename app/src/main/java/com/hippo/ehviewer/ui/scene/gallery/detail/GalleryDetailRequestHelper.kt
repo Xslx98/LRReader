@@ -21,10 +21,10 @@ import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.client.lrr.LRRArchiveApi
-import com.hippo.ehviewer.client.lrr.LRRAuthManager
-import com.hippo.ehviewer.client.lrr.LRRCategoryApi
-import com.hippo.ehviewer.client.lrr.runSuspend
+import com.lanraragi.reader.client.api.LRRArchiveApi
+import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.LRRCategoryApi
+import com.lanraragi.reader.client.api.runSuspend
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 

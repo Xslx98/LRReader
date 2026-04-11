@@ -25,7 +25,7 @@ import android.widget.CheckBox
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.lrr.LRRSecureStorageUnavailableException
+import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.hippo.ehviewer.settings.SecuritySettings
 import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.widget.lockpattern.LockPatternView

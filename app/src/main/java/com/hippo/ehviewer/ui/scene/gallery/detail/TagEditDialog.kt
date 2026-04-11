@@ -21,11 +21,11 @@ import com.hippo.android.resource.AttrResources
 import com.hippo.drawable.RoundSideRectDrawable
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.data.GalleryTagGroup
-import com.hippo.ehviewer.client.lrr.LRRArchiveApi
-import com.hippo.ehviewer.client.lrr.LRRClientProvider
-import com.hippo.ehviewer.client.lrr.LRRTagCache
-import com.hippo.ehviewer.client.lrr.friendlyError
-import com.hippo.ehviewer.client.lrr.runSuspend
+import com.lanraragi.reader.client.api.LRRArchiveApi
+import com.lanraragi.reader.client.api.LRRClientProvider
+import com.lanraragi.reader.client.api.LRRTagCache
+import com.lanraragi.reader.client.api.friendlyError
+import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.widget.AutoWrapLayout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

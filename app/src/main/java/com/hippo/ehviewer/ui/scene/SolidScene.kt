@@ -18,7 +18,7 @@ package com.hippo.ehviewer.ui.scene
 
 import android.os.Bundle
 import android.util.Log
-import com.hippo.ehviewer.client.lrr.LRRAuthManager
+import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
 import com.hippo.scene.Announcer
 

@@ -304,7 +304,7 @@ object EhDB {
 
     suspend fun getAllDownloadInfoAsync(): List<DownloadInfo> {
         val dao = sDatabase.downloadDao()
-        val profileId = com.hippo.ehviewer.client.lrr.LRRAuthManager.getActiveProfileId()
+        val profileId = com.lanraragi.reader.client.api.LRRAuthManager.getActiveProfileId()
         val list = if (profileId > 0) dao.getDownloadInfoByServer(profileId) else dao.getAllDownloadInfo()
         for (info in list) {
             if (info.state == DownloadInfo.STATE_WAIT || info.state == DownloadInfo.STATE_DOWNLOAD) {
@@ -326,7 +326,7 @@ object EhDB {
      */
     @JvmStatic
     fun observeDownloads(): Flow<List<DownloadInfo>> {
-        val profileId = com.hippo.ehviewer.client.lrr.LRRAuthManager.getActiveProfileId()
+        val profileId = com.lanraragi.reader.client.api.LRRAuthManager.getActiveProfileId()
         return if (profileId > 0)
             sDatabase.downloadDao().observeDownloadsByServer(profileId)
         else
@@ -546,7 +546,7 @@ object EhDB {
     // ═══════════════════════════════════════════════════════════
 
     suspend fun getHistoryLazyListAsync(): List<HistoryInfo> {
-        val profileId = com.hippo.ehviewer.client.lrr.LRRAuthManager.getActiveProfileId()
+        val profileId = com.lanraragi.reader.client.api.LRRAuthManager.getActiveProfileId()
         return if (profileId > 0)
             sDatabase.browsingDao().getHistoryByServer(profileId)
         else

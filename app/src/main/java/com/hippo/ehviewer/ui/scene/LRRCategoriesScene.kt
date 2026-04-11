@@ -21,11 +21,11 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.ListUrlBuilder
-import com.hippo.ehviewer.client.lrr.LRRAuthManager
-import com.hippo.ehviewer.client.lrr.LRRCategoryApi
-import com.hippo.ehviewer.client.lrr.data.LRRCategory
-import com.hippo.ehviewer.client.lrr.friendlyError
-import com.hippo.ehviewer.client.lrr.runSuspend
+import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.LRRCategoryApi
+import com.lanraragi.reader.client.api.data.LRRCategory
+import com.lanraragi.reader.client.api.friendlyError
+import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
 import com.hippo.scene.Announcer
 import kotlinx.coroutines.Dispatchers

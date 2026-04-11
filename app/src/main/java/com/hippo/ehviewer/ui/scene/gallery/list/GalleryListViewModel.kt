@@ -9,8 +9,8 @@ import androidx.paging.cachedIn
 import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryInfo
-import com.hippo.ehviewer.client.lrr.LRRArchivePagingSource
-import com.hippo.ehviewer.client.lrr.LRRClientProvider
+import com.lanraragi.reader.client.api.LRRArchivePagingSource
+import com.lanraragi.reader.client.api.LRRClientProvider
 import com.hippo.ehviewer.download.DownloadManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow

@@ -38,7 +38,7 @@
 -dontwarn okio.**
 
 # === LANraragi data models (used by kotlinx-serialization) ===
--keep class com.hippo.ehviewer.client.lrr.data.** { *; }
+-keep class com.lanraragi.reader.client.api.data.** { *; }
 -keep class com.hippo.ehviewer.client.data.** { *; }
 
 # === A7Zip JNI (external library: a7zip_XJ:extract-lite) ===

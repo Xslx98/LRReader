@@ -7,9 +7,9 @@ import android.util.Log
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryInfo
-import com.hippo.ehviewer.client.lrr.LRRArchiveApi
-import com.hippo.ehviewer.client.lrr.LRRAuthManager
-import com.hippo.ehviewer.client.lrr.runSuspend
+import com.lanraragi.reader.client.api.LRRArchiveApi
+import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.lib.glgallery.GalleryProvider
 import com.hippo.lib.image.Image
 import com.hippo.unifile.UniFile

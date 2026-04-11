@@ -1,5 +1,5 @@
 @file:JvmName("LRRCoroutineHelper")
-package com.hippo.ehviewer.client.lrr
+package com.lanraragi.reader.client.api
 
 import androidx.annotation.WorkerThread
 import kotlinx.coroutines.runBlocking

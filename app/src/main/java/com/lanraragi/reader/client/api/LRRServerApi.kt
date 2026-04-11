@@ -1,6 +1,6 @@
-package com.hippo.ehviewer.client.lrr
+package com.lanraragi.reader.client.api
 
-import com.hippo.ehviewer.client.lrr.data.LRRServerInfo
+import com.lanraragi.reader.client.api.data.LRRServerInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient

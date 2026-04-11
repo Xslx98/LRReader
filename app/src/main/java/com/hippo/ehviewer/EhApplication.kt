@@ -31,10 +31,10 @@ import com.hippo.Native
 import com.hippo.a7zip.A7Zip
 import com.hippo.content.ContextLocalWrapper
 import com.hippo.content.RecordingApplication
-import com.hippo.ehviewer.client.lrr.LRRAuthManager
+import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.module.AppModule
 import kotlinx.coroutines.launch
-import com.hippo.ehviewer.client.lrr.LRRClientProvider
+import com.lanraragi.reader.client.api.LRRClientProvider
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.lib.image.Image
@@ -131,7 +131,7 @@ class EhApplication : RecordingApplication() {
                     LRRAuthManager.setActiveProfileId(activeProfile.id)
                     resolvedId = activeProfile.id
                 }
-            } catch (_: com.hippo.ehviewer.client.lrr.LRRSecureStorageUnavailableException) {
+            } catch (_: com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException) {
                 // KeyStore unavailable — markReauthIfProfilesUnprotected already flagged
                 // it (or initialize() did), and MainActivity will surface the dialog.
             } catch (_: Exception) {

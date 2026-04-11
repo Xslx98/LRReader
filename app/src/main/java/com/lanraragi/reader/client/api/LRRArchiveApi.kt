@@ -1,7 +1,7 @@
-package com.hippo.ehviewer.client.lrr
+package com.lanraragi.reader.client.api
 
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.lrr.data.LRRArchive
+import com.lanraragi.reader.client.api.data.LRRArchive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
