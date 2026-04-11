@@ -1,8 +1,8 @@
 package com.hippo.ehviewer
 
 import android.content.Context
-import com.hippo.ehviewer.client.lrr.LRRTagCache
 import com.hippo.ehviewer.module.AppModule
+import com.hippo.ehviewer.module.Cacheable
 import com.hippo.ehviewer.module.ClientModule
 import com.hippo.ehviewer.module.CoroutineModule
 import com.hippo.ehviewer.module.DataModule
@@ -29,6 +29,8 @@ object ServiceRegistry {
     private var _appModule: IAppModule? = null
     private var _coroutineModule: ICoroutineModule? = null
 
+    private val cacheables = mutableListOf<Cacheable>()
+
     val networkModule: INetworkModule
         get() = _networkModule
             ?: error("ServiceRegistry.networkModule accessed before initialize()")
@@ -50,12 +52,17 @@ object ServiceRegistry {
      * from EhApplication.onCreate() after Settings and EhDB have been initialized.
      */
     fun initialize(context: Context) {
+        cacheables.clear()
         _appModule = AppModule(context).also { it.initialize() }
         _coroutineModule = CoroutineModule()
         val network = NetworkModule(context)
         _networkModule = network
+        registerCacheable(network)
+        // ClientModule.init registers LRRTagCache as a Cacheable
         _clientModule = ClientModule(context, network)
-        _dataModule = DataModule(context)
+        val data = DataModule(context)
+        _dataModule = data
+        registerCacheable(data)
     }
 
     /**
@@ -74,6 +81,7 @@ object ServiceRegistry {
         data: IDataModule? = null,
         app: IAppModule? = null,
     ) {
+        cacheables.clear()
         if (coroutine != null) _coroutineModule = coroutine
         if (network != null) _networkModule = network
         if (client != null) _clientModule = client
@@ -82,13 +90,23 @@ object ServiceRegistry {
     }
 
     /**
+     * Register a [Cacheable] whose [Cacheable.clearCache] will be called
+     * by [clearAllCaches]. Modules call this during their initialization
+     * to register caches they own, following the open/closed principle.
+     */
+    fun registerCacheable(cacheable: Cacheable) {
+        cacheables.add(cacheable)
+    }
+
+    /**
      * Clear all in-memory and disk caches. Call when switching server profiles
      * so that content from the previous server does not appear in the new one.
+     *
+     * Iterates all [Cacheable] instances registered via [registerCacheable].
      */
     fun clearAllCaches() {
-        try { _networkModule?.cache?.evictAll() } catch (_: Exception) {}
-        _dataModule?.galleryDetailCache?.evictAll()
-        try { _dataModule?.spiderInfoCache?.clear() } catch (_: Exception) {}
-        LRRTagCache.clear()
+        for (cacheable in cacheables) {
+            cacheable.clearCache()
+        }
     }
 }
