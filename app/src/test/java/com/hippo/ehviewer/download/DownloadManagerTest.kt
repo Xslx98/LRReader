@@ -714,6 +714,211 @@ class DownloadManagerTest {
         }
     }
 
+    // ═══════════════════════════════════════════════════════════
+    // G. Sort Order Invariants (binary-insertion correctness)
+    // ═══════════════════════════════════════════════════════════
+
+    @Test
+    fun addDownloadBatch_producesDateDescSortedAllList() {
+        // Add items with deliberately non-sorted timestamps
+        val timestamps = listOf(500L, 100L, 900L, 300L, 700L)
+        val infos = timestamps.mapIndexed { i, ts ->
+            DownloadInfo().apply {
+                gid = (7000 + i).toLong()
+                token = "tok_sort_$i"
+                title = "Sort Test $i"
+                state = DownloadInfo.STATE_NONE
+                time = ts
+            }
+        }
+        manager.addDownload(infos)
+        // Drain the handler post from addDownload
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        val allList = manager.allDownloadInfoList
+        assertEquals(5, allList.size)
+        // Verify DATE_DESC order: newest first
+        for (i in 0 until allList.size - 1) {
+            assertTrue(
+                "allDownloadInfoList not in DATE_DESC order at index $i: " +
+                    "${allList[i].time} should >= ${allList[i + 1].time}",
+                allList[i].time >= allList[i + 1].time
+            )
+        }
+        // Verify exact expected order by gid
+        assertEquals(listOf(7002L, 7004L, 7000L, 7003L, 7001L), allList.map { it.gid })
+    }
+
+    @Test
+    fun addDownloadBatch_producesDateDescSortedPerLabelList() {
+        manager.addLabel("SortLabel")
+
+        val timestamps = listOf(200L, 800L, 400L, 600L)
+        val infos = timestamps.mapIndexed { i, ts ->
+            DownloadInfo().apply {
+                gid = (7100 + i).toLong()
+                token = "tok_lsort_$i"
+                title = "Label Sort $i"
+                label = "SortLabel"
+                state = DownloadInfo.STATE_NONE
+                time = ts
+            }
+        }
+        manager.addDownload(infos)
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        val labelList = manager.getLabelDownloadInfoList("SortLabel")!!
+        assertEquals(4, labelList.size)
+        for (i in 0 until labelList.size - 1) {
+            assertTrue(
+                "Per-label list not in DATE_DESC order at index $i",
+                labelList[i].time >= labelList[i + 1].time
+            )
+        }
+    }
+
+    @Test
+    fun changeLabel_maintainsSortOrder() {
+        manager.addLabel("SourceLabel")
+        manager.addLabel("DestLabel")
+
+        // Add items to DestLabel with known timestamps
+        val destInfos = listOf(900L, 300L).mapIndexed { i, ts ->
+            DownloadInfo().apply {
+                gid = (7200 + i).toLong()
+                token = "tok_dest_$i"
+                title = "Dest $i"
+                label = "DestLabel"
+                state = DownloadInfo.STATE_NONE
+                time = ts
+            }
+        }
+        manager.addDownload(destInfos)
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        // Add an item to SourceLabel that should land between the two dest items
+        val sourceInfo = DownloadInfo().apply {
+            gid = 7210L
+            token = "tok_src"
+            title = "Source Item"
+            label = "SourceLabel"
+            state = DownloadInfo.STATE_NONE
+            time = 600L
+        }
+        manager.addDownload(listOf(sourceInfo))
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        // Move the source item to DestLabel
+        manager.changeLabel(listOf(manager.getDownloadInfo(7210L)!!), "DestLabel")
+
+        val destList = manager.getLabelDownloadInfoList("DestLabel")!!
+        assertEquals(3, destList.size)
+        for (i in 0 until destList.size - 1) {
+            assertTrue(
+                "DestLabel list not in DATE_DESC order at index $i: " +
+                    "${destList[i].time} should >= ${destList[i + 1].time}",
+                destList[i].time >= destList[i + 1].time
+            )
+        }
+        // Verify the moved item landed in the middle (time=600 between 900 and 300)
+        assertEquals(7210L, destList[1].gid)
+    }
+
+    @Test
+    fun deleteLabel_maintainsSortOrderInDefaultList() {
+        manager.addLabel("ToDelete")
+
+        // Add items to default list with known timestamps
+        val defaultGallery = GalleryInfo().apply {
+            gid = 7300L
+            token = "tok_def"
+            title = "Default Item"
+        }
+        manager.addDownload(defaultGallery, null, DownloadInfo.STATE_NONE)
+        // Manually set time for deterministic ordering
+        manager.getDownloadInfo(7300L)!!.time = 500L
+
+        // Add items to the label that will be deleted
+        val labelInfos = listOf(800L, 200L).mapIndexed { i, ts ->
+            DownloadInfo().apply {
+                gid = (7310 + i).toLong()
+                token = "tok_del_$i"
+                title = "Delete Label Item $i"
+                label = "ToDelete"
+                state = DownloadInfo.STATE_NONE
+                time = ts
+            }
+        }
+        manager.addDownload(labelInfos)
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        // Delete the label — items should merge into default list in sorted order
+        manager.deleteLabel("ToDelete")
+
+        val defaultList = manager.defaultDownloadInfoList
+        assertEquals(3, defaultList.size)
+        for (i in 0 until defaultList.size - 1) {
+            assertTrue(
+                "Default list not in DATE_DESC order at index $i: " +
+                    "${defaultList[i].time} should >= ${defaultList[i + 1].time}",
+                defaultList[i].time >= defaultList[i + 1].time
+            )
+        }
+    }
+
+    @Test
+    fun insertSorted_handlesEqualTimestamps() {
+        // Add items with the same timestamp — should not crash or corrupt order
+        val infos = (0..4).map { i ->
+            DownloadInfo().apply {
+                gid = (7400 + i).toLong()
+                token = "tok_eq_$i"
+                title = "Equal Time $i"
+                state = DownloadInfo.STATE_NONE
+                time = 1000L // all same timestamp
+            }
+        }
+        manager.addDownload(infos)
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        val allList = manager.allDownloadInfoList
+        assertEquals(5, allList.size)
+        // All timestamps equal — just verify no crash and all items present
+        val gids = allList.map { it.gid }.toSet()
+        assertEquals(setOf(7400L, 7401L, 7402L, 7403L, 7404L), gids)
+    }
+
+    @Test
+    fun insertSorted_companionHelper_correctInsertionPoints() {
+        // Directly test the companion insertSorted helper
+        val list = mutableListOf<DownloadInfo>()
+
+        // Insert in random order and verify sorted after each
+        val timestamps = listOf(500L, 900L, 100L, 700L, 300L)
+        for ((i, ts) in timestamps.withIndex()) {
+            val info = DownloadInfo().apply {
+                gid = (7500 + i).toLong()
+                token = "tok_helper_$i"
+                title = "Helper $i"
+                time = ts
+            }
+            DownloadManager.insertSorted(list, info)
+
+            // After every insertion, list must be in DATE_DESC order
+            for (j in 0 until list.size - 1) {
+                assertTrue(
+                    "List not sorted after inserting time=$ts at step $i, index $j: " +
+                        "${list[j].time} should >= ${list[j + 1].time}",
+                    list[j].time >= list[j + 1].time
+                )
+            }
+        }
+
+        assertEquals(5, list.size)
+        // Expected order: 900, 700, 500, 300, 100
+        assertEquals(listOf(900L, 700L, 500L, 300L, 100L), list.map { it.time })
+    }
+
     private open class FakeDownloadInfoListener : DownloadInfoListener {
         override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {}
         override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {}

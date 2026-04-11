@@ -699,14 +699,11 @@ class DownloadManager(
                     newLabelsToAdd.add(info.label!!)
                 }
             }
-            list.add(info)
-            Collections.sort(list, DATE_DESC_COMPARATOR)
+            insertSorted(list, info)
 
-            mAllInfoList.add(info)
+            insertSorted(mAllInfoList, info)
             mAllInfoMap[info.gid] = info
         }
-
-        Collections.sort(mAllInfoList, DATE_DESC_COMPARATOR)
 
         // Persist to DB on background thread. The DB writes happen here, but the
         // resulting label rows must be published into the main-thread-only
@@ -1123,9 +1120,8 @@ class DownloadManager(
             }
 
             srcList.remove(info)
-            dstList.add(info)
             info.label = label
-            Collections.sort(dstList, DATE_DESC_COMPARATOR)
+            insertSorted(dstList, info)
 
             // Save to DB
             scope.launch { EhDB.putDownloadInfoAsync(info) }
@@ -1245,14 +1241,11 @@ class DownloadManager(
 
         val list = mMap.remove(label) ?: return
 
-        // Update info label
+        // Update info label and insert into default list in sorted order
         for (info in list) {
             info.label = null
-            mDefaultInfoList.add(info)
+            insertSorted(mDefaultInfoList, info)
         }
-
-        // Sort
-        Collections.sort(mDefaultInfoList, DATE_DESC_COMPARATOR)
 
         // Persist to DB on background thread
         val labelToRemove = removedLabel
@@ -1443,6 +1436,17 @@ class DownloadManager(
                 dif < 0 -> 1
                 else -> 0
             }
+        }
+
+        /**
+         * Insert [item] into a list that is already sorted by [DATE_DESC_COMPARATOR].
+         * Uses binary search to find the correct insertion point in O(log N),
+         * avoiding a full O(N log N) re-sort.
+         */
+        internal fun insertSorted(list: MutableList<DownloadInfo>, item: DownloadInfo) {
+            val index = Collections.binarySearch(list, item, DATE_DESC_COMPARATOR)
+            val insertionPoint = if (index < 0) -(index + 1) else index
+            list.add(insertionPoint, item)
         }
     }
 }
