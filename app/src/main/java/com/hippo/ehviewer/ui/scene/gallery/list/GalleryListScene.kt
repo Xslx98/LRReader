@@ -216,7 +216,7 @@ class GalleryListScene : BaseScene(),
             }
             override fun onUpdateLabels() {}
         }
-        mDownloadManager.addDownloadInfoListener(mDownloadInfoListener)
+        mDownloadInfoListener?.let { mDownloadManager.addDownloadInfoListener(it) }
 
         mFavouriteStatusRouterListener = FavouriteStatusRouter.Listener { _, _ ->
             mAdapter?.notifyItemRangeChanged(0, mAdapter?.itemCount ?: 0)
@@ -258,7 +258,7 @@ class GalleryListScene : BaseScene(),
     override fun onDestroy() {
         super.onDestroy()
         mUrlBuilder = null
-        mDownloadManager.removeDownloadInfoListener(mDownloadInfoListener)
+        mDownloadInfoListener?.let { mDownloadManager.removeDownloadInfoListener(it) }
         mFavouriteStatusRouterListener?.let { mFavouriteStatusRouter.removeListener(it) }
     }
 

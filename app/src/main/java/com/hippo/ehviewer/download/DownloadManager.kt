@@ -93,8 +93,8 @@ class DownloadManager(
 
     // ── Listener methods ──────────────────────────────────────
 
-    fun addDownloadInfoListener(downloadInfoListener: DownloadInfoListener?) { eventBus.addDownloadInfoListener(downloadInfoListener!!) }
-    fun removeDownloadInfoListener(downloadInfoListener: DownloadInfoListener?) { eventBus.removeDownloadInfoListener(downloadInfoListener!!) }
+    fun addDownloadInfoListener(listener: DownloadInfoListener) { eventBus.addDownloadInfoListener(listener) }
+    fun removeDownloadInfoListener(listener: DownloadInfoListener) { eventBus.removeDownloadInfoListener(listener) }
     fun setDownloadListener(listener: DownloadListener?) { eventBus.setDownloadListener(listener) }
 
     // ── Download lifecycle ────────────────────────────────────
