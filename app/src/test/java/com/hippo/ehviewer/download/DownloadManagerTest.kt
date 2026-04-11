@@ -669,7 +669,7 @@ class DownloadManagerTest {
                 // Drain the publish post and confirm init completed cleanly.
                 // We cannot use runBlocking { awaitInitAsync() } here because
                 // it would block the main thread, preventing the main looper
-                // from processing the SimpleHandler.post dispatched by the IO
+                // from processing the mainHandler.post dispatched by the IO
                 // coroutine — a deadlock. Instead, poll: drain the looper then
                 // sleep briefly until the publish phase has landed.
                 var initDone = false

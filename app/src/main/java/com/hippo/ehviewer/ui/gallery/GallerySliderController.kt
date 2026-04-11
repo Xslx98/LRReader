@@ -25,9 +25,10 @@ import android.widget.TextView
 import com.hippo.ehviewer.widget.ReversibleSeekBar
 import com.hippo.lib.glgallery.GalleryView
 import com.hippo.util.SystemUiHelper
+import android.os.Handler
+import android.os.Looper
 import com.hippo.lib.yorozuya.AnimationUtils
 import com.hippo.lib.yorozuya.SimpleAnimatorListener
-import com.hippo.lib.yorozuya.SimpleHandler
 
 /**
  * Controls the page seek bar panel and auto-transfer button animations,
@@ -35,6 +36,8 @@ import com.hippo.lib.yorozuya.SimpleHandler
  * Extracted from GalleryActivity to reduce its responsibility scope.
  */
 class GallerySliderController : SeekBar.OnSeekBarChangeListener {
+
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     companion object {
         private const val SLIDER_ANIMATION_DURING = 150L
@@ -177,11 +180,11 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
     }
 
     override fun onStartTrackingTouch(seekBar: SeekBar) {
-        SimpleHandler.getInstance().removeCallbacks(mHideSliderRunnable)
+        mainHandler.removeCallbacks(mHideSliderRunnable)
     }
 
     override fun onStopTrackingTouch(seekBar: SeekBar) {
-        SimpleHandler.getInstance().postDelayed(mHideSliderRunnable, HIDE_SLIDER_DELAY)
+        mainHandler.postDelayed(mHideSliderRunnable, HIDE_SLIDER_DELAY)
         val progress = seekBar.progress
         if (progress != currentIndex && mGalleryView != null) {
             mGalleryView!!.setCurrentPage(progress)
@@ -195,7 +198,7 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
         val autoTransferPanel = mAutoTransferPanel ?: return
         if (size <= 0 || currentIndex < 0) return
 
-        SimpleHandler.getInstance().removeCallbacks(mHideSliderRunnable)
+        mainHandler.removeCallbacks(mHideSliderRunnable)
 
         if (seekBarPanel.visibility == View.VISIBLE) {
             hideSlider(seekBarPanel, mSeekBarPanelAnimator)
@@ -203,7 +206,7 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
         } else {
             showSlider(seekBarPanel, mSeekBarPanelAnimator)
             showSlider(autoTransferPanel, mAutoTransferAnimator)
-            SimpleHandler.getInstance().postDelayed(mHideSliderRunnable, HIDE_SLIDER_DELAY)
+            mainHandler.postDelayed(mHideSliderRunnable, HIDE_SLIDER_DELAY)
         }
     }
 
@@ -272,7 +275,7 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
 
     /** Remove pending hide-slider callbacks. Call from Activity.onDestroy(). */
     fun removeCallbacks() {
-        SimpleHandler.getInstance().removeCallbacks(mHideSliderRunnable)
+        mainHandler.removeCallbacks(mHideSliderRunnable)
     }
 
     /** Release view references. Call from Activity.onDestroy(). */

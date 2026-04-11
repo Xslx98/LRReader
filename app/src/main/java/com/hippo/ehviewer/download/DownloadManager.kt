@@ -19,6 +19,7 @@ package com.hippo.ehviewer.download
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.hippo.ehviewer.Analytics
@@ -33,7 +34,6 @@ import com.hippo.ehviewer.spider.SpiderInfo
 import com.hippo.ehviewer.spider.SpiderQueen
 import com.hippo.lib.image.Image
 import com.hippo.lib.yorozuya.ObjectUtils
-import com.hippo.lib.yorozuya.SimpleHandler
 import com.hippo.lib.yorozuya.collect.LongList
 import com.hippo.unifile.UniFile
 import kotlinx.coroutines.CompletableDeferred
@@ -47,6 +47,8 @@ class DownloadManager(
     private val mContext: Context,
     private val scope: CoroutineScope = ServiceRegistry.coroutineModule.ioScope
 ) {
+
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     // All download info list
     private val mAllInfoList: MutableList<DownloadInfo> = ArrayList()
@@ -67,7 +69,7 @@ class DownloadManager(
     private val mSpeedReminder: DownloadSpeedTracker
 
     // All listener/task collections use plain types -- access is main-thread only.
-    // Worker callbacks dispatch to main thread via SimpleHandler.post (see postEvent).
+    // Worker callbacks dispatch to main thread via mainHandler.post (see postEvent).
     private var mDownloadListener: DownloadListener? = null
     private val mDownloadInfoListeners: MutableList<WeakReference<DownloadInfoListener>> = ArrayList()
 
@@ -120,7 +122,7 @@ class DownloadManager(
         if (Looper.myLooper() == Looper.getMainLooper()) {
             block()
         } else {
-            SimpleHandler.getInstance().post(block)
+            mainHandler.post(block)
         }
     }
 
@@ -149,7 +151,7 @@ class DownloadManager(
 
         // Load data from DB on a background thread to avoid blocking main thread.
         // The IO segment only reads/writes the DB; the resulting data is published to
-        // the main-thread-only collections via SimpleHandler.post so that no shared
+        // the main-thread-only collections via mainHandler.post so that no shared
         // mutable state is touched off the main thread.
         scope.launch {
             try {
@@ -182,7 +184,7 @@ class DownloadManager(
      *
      * Runs on a background thread. The IO phase reads the DB and constructs the
      * results in local variables only. The results are then handed to the main
-     * thread via [SimpleHandler.post], where the shared collections (which are
+     * thread via [mainHandler.post], where the shared collections (which are
      * declared main-thread-only) are populated atomically.
      */
     private suspend fun loadDataFromDb() {
@@ -737,7 +739,7 @@ class DownloadManager(
         }
 
         // Notify on main thread
-        SimpleHandler.getInstance().post {
+        mainHandler.post {
             forEachListener {
                 it.onReload()
             }
@@ -1299,7 +1301,7 @@ class DownloadManager(
 
     /**
      * Dispatch a download event on the main thread.
-     * This replaces the old NotifyTask.run() + SimpleHandler.post() pattern.
+     * This replaces the old NotifyTask.run() + mainHandler.post() pattern.
      */
     private fun dispatchEvent(event: DownloadEvent) {
         when (event) {
@@ -1382,7 +1384,7 @@ class DownloadManager(
      * Post a [DownloadEvent] to the main thread for dispatch.
      */
     private fun postEvent(event: DownloadEvent) {
-        SimpleHandler.getInstance().post { dispatchEvent(event) }
+        mainHandler.post { dispatchEvent(event) }
     }
 
     private inner class PerTaskListener(private val mInfo: DownloadInfo) : SpiderQueen.OnSpiderListener {
