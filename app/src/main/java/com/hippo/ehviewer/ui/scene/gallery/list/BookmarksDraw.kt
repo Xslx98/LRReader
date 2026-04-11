@@ -14,7 +14,7 @@ import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.settings.GuideSettings
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.dao.QuickSearch
 import com.hippo.ehviewer.settings.AppearanceSettings
@@ -99,7 +99,7 @@ class BookmarksDraw(
                 toolbar.setOnMenuItemClickListener { item ->
                     when (item.itemId) {
                         R.id.action_add -> {
-                            if (Settings.getQuickSearchTip()) {
+                            if (GuideSettings.getQuickSearchTip()) {
                                 scene.showQuickSearchTipDialog(list, adapter, listView, tip)
                             } else {
                                 scene.showAddQuickSearchDialog(list, adapter, listView, tip)
