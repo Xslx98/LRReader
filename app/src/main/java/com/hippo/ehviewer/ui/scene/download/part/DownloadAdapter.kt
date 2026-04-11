@@ -79,7 +79,7 @@ class DownloadAdapter(
 
     private var movedItem: View? = null
 
-    private val thumbnailCache = object : android.util.LruCache<String, Bitmap>(50) {
+    private val thumbnailCache = object : android.util.LruCache<String, Bitmap>(200) {
         override fun entryRemoved(evicted: Boolean, key: String, oldValue: Bitmap, newValue: Bitmap?) {
             if (evicted && !oldValue.isRecycled) {
                 oldValue.recycle()
@@ -256,39 +256,43 @@ class DownloadAdapter(
         }
     }
 
+    private fun setVisibility(view: View, visibility: Int) {
+        if (view.visibility != visibility) view.visibility = visibility
+    }
+
     private fun bindState(holder: DownloadHolder, info: DownloadInfo, state: String) {
-        holder.uploader.visibility = View.VISIBLE
-        holder.rating.visibility = View.VISIBLE
-        holder.readProgress.visibility = View.VISIBLE
-        holder.state.visibility = View.VISIBLE
-        holder.progressBar.visibility = View.GONE
-        holder.percent.visibility = View.GONE
-        holder.speed.visibility = View.GONE
+        setVisibility(holder.uploader, View.VISIBLE)
+        setVisibility(holder.rating, View.VISIBLE)
+        setVisibility(holder.readProgress, View.VISIBLE)
+        setVisibility(holder.state, View.VISIBLE)
+        setVisibility(holder.progressBar, View.GONE)
+        setVisibility(holder.percent, View.GONE)
+        setVisibility(holder.speed, View.GONE)
         if (info.state == DownloadInfo.STATE_WAIT || info.state == DownloadInfo.STATE_DOWNLOAD) {
-            holder.start.visibility = View.GONE
-            holder.stop.visibility = View.VISIBLE
+            setVisibility(holder.start, View.GONE)
+            setVisibility(holder.stop, View.VISIBLE)
         } else {
-            holder.start.visibility = View.VISIBLE
-            holder.stop.visibility = View.GONE
+            setVisibility(holder.start, View.VISIBLE)
+            setVisibility(holder.stop, View.GONE)
         }
         holder.state.text = state
     }
 
     @SuppressLint("SetTextI18n")
     private fun bindProgress(holder: DownloadHolder, info: DownloadInfo) {
-        holder.uploader.visibility = View.GONE
-        holder.rating.visibility = View.GONE
-        holder.readProgress.visibility = View.GONE
-        holder.state.visibility = View.GONE
-        holder.progressBar.visibility = View.VISIBLE
-        holder.percent.visibility = View.VISIBLE
-        holder.speed.visibility = View.VISIBLE
+        setVisibility(holder.uploader, View.GONE)
+        setVisibility(holder.rating, View.GONE)
+        setVisibility(holder.readProgress, View.GONE)
+        setVisibility(holder.state, View.GONE)
+        setVisibility(holder.progressBar, View.VISIBLE)
+        setVisibility(holder.percent, View.VISIBLE)
+        setVisibility(holder.speed, View.VISIBLE)
         if (info.state == DownloadInfo.STATE_WAIT || info.state == DownloadInfo.STATE_DOWNLOAD) {
-            holder.start.visibility = View.GONE
-            holder.stop.visibility = View.VISIBLE
+            setVisibility(holder.start, View.GONE)
+            setVisibility(holder.stop, View.VISIBLE)
         } else {
-            holder.start.visibility = View.VISIBLE
-            holder.stop.visibility = View.GONE
+            setVisibility(holder.start, View.VISIBLE)
+            setVisibility(holder.stop, View.GONE)
         }
 
         if (info.total <= 0 || info.finished < 0) {
@@ -493,11 +497,10 @@ class DownloadAdapter(
                     fileName.endsWith(".gif") || fileName.endsWith(".webp")
                 ) {
                     try {
-                        // Create a pipe to extract the image
-                        var pipe = Pipe(8 * 1024)
-
-                        // Extract in another thread with timeout
-                        var extractThread = Thread {
+                        // Extract image bytes once into memory
+                        val baos = java.io.ByteArrayOutputStream(64 * 1024)
+                        val pipe = Pipe(8 * 1024)
+                        val extractThread = Thread {
                             try {
                                 entry.extract(pipe.outputStream)
                             } catch (e: Exception) {
@@ -507,15 +510,22 @@ class DownloadAdapter(
                             }
                         }
                         extractThread.start()
-
-                        // Decode the image with size limits
-                        val options = BitmapFactory.Options()
-                        options.inJustDecodeBounds = true
                         try {
-                            BitmapFactory.decodeStream(pipe.inputStream, null, options)
+                            pipe.inputStream.copyTo(baos)
                         } finally {
                             try { pipe.inputStream.close() } catch (_: Exception) {}
                         }
+                        extractThread.join(3000)
+                        val imageBytes = baos.toByteArray()
+                        if (imageBytes.isEmpty()) {
+                            Log.w(TAG, "Empty extraction result for $fileName")
+                            continue
+                        }
+
+                        // Decode bounds from cached bytes
+                        val options = BitmapFactory.Options()
+                        options.inJustDecodeBounds = true
+                        BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, options)
 
                         // Calculate sample size for thumbnail
                         val thumbnailSize = 150
@@ -528,31 +538,11 @@ class DownloadAdapter(
                             }
                         }
 
-                        // Recreate pipe for actual decoding
-                        pipe = Pipe(8 * 1024)
-                        extractThread = Thread {
-                            try {
-                                entry.extract(pipe.outputStream)
-                            } catch (e: Exception) {
-                                Log.w(TAG, "Failed to extract image on second attempt: $fileName", e)
-                            } finally {
-                                try { pipe.outputStream.close() } catch (_: Exception) {}
-                            }
-                        }
-                        extractThread.start()
-
-                        // Decode with sample size
+                        // Decode actual bitmap from cached bytes
                         options.inJustDecodeBounds = false
                         options.inSampleSize = sampleSize
                         options.inPreferredConfig = Bitmap.Config.RGB_565
-                        val bitmap: Bitmap?
-                        try {
-                            bitmap = BitmapFactory.decodeStream(pipe.inputStream, null, options)
-                        } finally {
-                            try { pipe.inputStream.close() } catch (_: Exception) {}
-                        }
-
-                        extractThread.join(3000)
+                        val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, options)
 
                         if (bitmap != null && !bitmap.isRecycled) {
                             Log.d(TAG, "Successfully extracted thumbnail from $fileName")
