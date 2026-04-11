@@ -386,9 +386,9 @@ class DownloadsViewModel : ViewModel() {
             val gid = galleryInfo.gid
             ServiceRegistry.coroutineModule.ioScope.launch {
                 EhDB.removeDownloadDirnameAsync(gid)
+                val file = SpiderDen.getGalleryDownloadDir(galleryInfo)
+                file?.delete()
             }
-            val file = SpiderDen.getGalleryDownloadDir(galleryInfo)
-            deleteFileAsync(file)
         }
     }
 
@@ -404,17 +404,15 @@ class DownloadsViewModel : ViewModel() {
         downloadManager.deleteRangeDownload(gidList)
         DownloadSettings.putRemoveImageFiles(deleteFiles)
         if (deleteFiles) {
-            val files = arrayOfNulls<UniFile>(downloadInfoList.size)
-            var i = 0
-            for (info in downloadInfoList) {
-                val gid = info.gid
-                ServiceRegistry.coroutineModule.ioScope.launch {
-                    EhDB.removeDownloadDirnameAsync(gid)
+            // Snapshot the list to avoid concurrent modification
+            val infos = ArrayList(downloadInfoList)
+            ServiceRegistry.coroutineModule.ioScope.launch {
+                for (info in infos) {
+                    EhDB.removeDownloadDirnameAsync(info.gid)
+                    val file = SpiderDen.getGalleryDownloadDir(info)
+                    file?.delete()
                 }
-                files[i] = SpiderDen.getGalleryDownloadDir(info)
-                i++
             }
-            deleteFileAsync(*files)
         }
     }
 

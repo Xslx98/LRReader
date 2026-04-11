@@ -22,7 +22,7 @@ object GalleryOpenHelper {
      * @return Intent ready for startActivity()
      */
     @JvmStatic
-    fun buildReadIntent(context: Context, galleryInfo: GalleryInfo): Intent {
+    suspend fun buildReadIntent(context: Context, galleryInfo: GalleryInfo): Intent {
         val intent = Intent(context, GalleryActivity::class.java)
 
         // Check if local downloaded files exist
@@ -46,7 +46,7 @@ object GalleryOpenHelper {
      * Uses SpiderDen.getGalleryDownloadDir() for consistency with LRRDownloadWorker.
      */
     @JvmStatic
-    fun getLocalDownloadDir(context: Context, info: GalleryInfo): File? {
+    suspend fun getLocalDownloadDir(context: Context, info: GalleryInfo): File? {
         val uniDir = SpiderDen.getGalleryDownloadDir(info)
         if (uniDir != null) {
             val uri = uniDir.uri

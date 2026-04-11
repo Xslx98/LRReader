@@ -37,7 +37,6 @@ import com.hippo.lib.yorozuya.FileUtils
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.lib.yorozuya.MathUtils
 import com.hippo.lib.yorozuya.Utilities
-import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.io.IOException
 import java.util.Locale
@@ -45,12 +44,21 @@ import java.util.Locale
 class SpiderDen(galleryInfo: GalleryInfo) {
 
     @JvmField
-    val mDownloadDir: UniFile? = getGalleryDownloadDir(galleryInfo)
+    var mDownloadDir: UniFile? = null
+        private set
 
     @Volatile
     private var mMode: Int = SpiderQueen.MODE_READ
 
     private var mGid: Long = galleryInfo.gid
+
+    /**
+     * Initializes the download directory by resolving it from DB/filesystem.
+     * Must be called after construction from a coroutine context.
+     */
+    suspend fun initDownloadDir(galleryInfo: GalleryInfo) {
+        mDownloadDir = getGalleryDownloadDir(galleryInfo)
+    }
 
     fun setMGid(mGid: Long) {
         this.mGid = mGid
@@ -258,27 +266,19 @@ class SpiderDen(galleryInfo: GalleryInfo) {
         /**
          * Resolves the download directory for the given gallery.
          *
-         * Uses [runBlocking] to call the suspend [EhDB] methods because this
-         * static utility is called from 8+ non-suspend sites across the codebase
-         * (LRRDownloadWorker, DownloadManager, GalleryOpenHelper, ThumbDataContainer,
-         * DownloadListInfosExecutor, SpiderInfo, DownloadLabelHelper, SpiderDen
-         * constructor). All callers are already off the main thread — making this
-         * method `suspend` and propagating upward would touch too many files.
-         *
-         * This is the **only** remaining production `runBlocking` usage in the
-         * codebase (EhDB.blockingDb has been deleted). A future refactor can make
-         * this method `suspend` once its callers are migrated to coroutine contexts.
+         * This is a suspend function that calls [EhDB] methods directly.
+         * All callers must be in a coroutine context.
          */
         @JvmStatic
-        fun getGalleryDownloadDir(galleryInfo: GalleryInfo): UniFile? {
+        suspend fun getGalleryDownloadDir(galleryInfo: GalleryInfo): UniFile? {
             val dir = DownloadSettings.getDownloadLocation() ?: return null
 
             // Read from DB
-            var dirname = runBlocking { EhDB.getDownloadDirnameAsync(galleryInfo.gid) }
+            var dirname = EhDB.getDownloadDirnameAsync(galleryInfo.gid)
             if (dirname != null) {
                 // Some dirname may be invalid in some version
                 dirname = FileUtils.sanitizeFilename(dirname)
-                runBlocking { EhDB.putDownloadDirnameAsync(galleryInfo.gid, dirname) }
+                EhDB.putDownloadDirnameAsync(galleryInfo.gid, dirname)
             }
 
             // Find it
@@ -299,7 +299,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
                             }
                         }
                         if (dirname != null) {
-                            runBlocking { EhDB.putDownloadDirnameAsync(galleryInfo.gid, dirname) }
+                            EhDB.putDownloadDirnameAsync(galleryInfo.gid, dirname)
                         }
                     }
                 } catch (e: Exception) {
@@ -312,7 +312,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
             // Create it
             if (dirname == null) {
                 dirname = FileUtils.sanitizeFilename("${galleryInfo.gid}-${EhUtils.getSuitableTitle(galleryInfo)}")
-                runBlocking { EhDB.putDownloadDirnameAsync(galleryInfo.gid, dirname) }
+                EhDB.putDownloadDirnameAsync(galleryInfo.gid, dirname)
             }
 
             return dir.subFile(dirname)

@@ -17,25 +17,48 @@ package com.hippo.ehviewer.ui.scene.download.part
 
 import com.hippo.conaco.DataContainer
 import com.hippo.conaco.ProgressNotifier
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.io.UniFileInputStreamPipe
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.streampipe.InputStreamPipe
 import com.hippo.unifile.UniFile
+import kotlinx.coroutines.launch
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.util.concurrent.CompletableFuture
 
 /**
  * 缩略图数据容器
+ *
+ * Implements the Java [DataContainer] interface whose methods cannot be
+ * made `suspend`. The download directory resolution (which requires a
+ * suspend call to [SpiderDen.getGalleryDownloadDir]) is started eagerly
+ * in a coroutine at construction time and the result is delivered via
+ * [CompletableFuture]. The DataContainer callbacks are always invoked
+ * from Conaco's background I/O threads, so blocking on the future is
+ * safe and does not use `runBlocking`.
  */
 class ThumbDataContainer(private val mInfo: DownloadInfo) : DataContainer {
     private var mFile: UniFile? = null
 
+    /** Eagerly resolve download dir in background coroutine. */
+    private val downloadDirFuture: CompletableFuture<UniFile?> = CompletableFuture<UniFile?>().also { future ->
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            try {
+                future.complete(SpiderDen.getGalleryDownloadDir(mInfo))
+            } catch (e: Exception) {
+                future.complete(null)
+            }
+        }
+    }
+
     private fun ensureFile() {
         if (mFile == null) {
-            val dir = SpiderDen.getGalleryDownloadDir(mInfo)
+            // Called from Conaco's background I/O threads, blocking is safe
+            val dir = downloadDirFuture.get()
             if (dir != null && dir.isDirectory()) {
                 mFile = dir.createFile(".thumb")
             }
