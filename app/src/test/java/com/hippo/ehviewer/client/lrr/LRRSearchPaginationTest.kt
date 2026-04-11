@@ -1,5 +1,7 @@
 package com.hippo.ehviewer.client.lrr
 
+import com.lanraragi.reader.client.api.*
+import com.lanraragi.reader.client.api.data.*
 import androidx.paging.PagingSource
 import com.hippo.ehviewer.client.data.GalleryInfo
 import kotlinx.coroutines.test.runTest

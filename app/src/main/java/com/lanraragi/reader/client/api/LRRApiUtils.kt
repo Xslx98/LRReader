@@ -1,4 +1,4 @@
-package com.hippo.ehviewer.client.lrr
+package com.lanraragi.reader.client.api
 
 import android.content.Context
 import android.util.Log
@@ -121,7 +121,7 @@ fun friendlyError(context: Context, e: Exception): String {
 
 /**
  * Retry a suspending block on transient failures (IOException, 5xx).
- * Uses exponential backoff: 500ms → 1000ms.
+ * Uses exponential backoff: 500ms -> 1000ms.
  *
  * @param maxRetries maximum number of retry attempts (default: 2)
  * @param block the suspend function to execute with retry
