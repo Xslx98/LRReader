@@ -53,7 +53,6 @@ import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.client.data.ListUrlBuilder
-import com.hippo.ehviewer.client.exception.EhException
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.QuickSearch
@@ -130,6 +129,7 @@ class GalleryListScene : BaseScene(),
     private var mItemActionHelper: GalleryItemActionHelper? = null
     private var mUploadHelper: GalleryUploadHelper? = null
     private var mSearchHelper: GallerySearchHelper? = null
+    private var mListSearchHelper: GalleryListSearchHelper? = null
     private var mDrawerHelper: GalleryDrawerHelper? = null
 
     private val mOnScrollListener: RecyclerView.OnScrollListener = object : RecyclerView.OnScrollListener() {
@@ -507,6 +507,20 @@ class GalleryListScene : BaseScene(),
             override fun setSearchState(state: Int) { mStateHelper?.setState(state) }
         })
 
+        mListSearchHelper = GalleryListSearchHelper(object : GalleryListSearchHelper.Callback {
+            override fun getSearchBar(): SearchBar? = mSearchBar
+            override fun getSearchLayout(): SearchLayout? = mSearchLayout
+            override fun getUrlBuilder(): ListUrlBuilder? = mUrlBuilder
+            override fun getContentHelper(): GalleryListDataHelper? = mHelper
+            override fun getStateHelper(): GalleryStateHelper? = mStateHelper
+            override fun getRecyclerView(): RecyclerView? = mRecyclerView
+            override fun onUpdateUrlBuilder() = this@GalleryListScene.onUpdateUrlBuilder()
+            override fun showTip(message: String, length: Int) = this@GalleryListScene.showTip(message, length)
+            @SuppressLint("RtlHardcoded")
+            override fun toggleDrawer(gravity: Int) = this@GalleryListScene.toggleDrawer(gravity)
+            override fun hideSoftInput() = this@GalleryListScene.hideSoftInput()
+        })
+
         mUploadHelper = GalleryUploadHelper(object : GalleryUploadHelper.Callback {
             override fun showTip(message: String, length: Int) = this@GalleryListScene.showTip(message, length)
             override fun showTip(resId: Int, length: Int) = this@GalleryListScene.showTip(resId, length)
@@ -600,6 +614,7 @@ class GalleryListScene : BaseScene(),
         mRightDrawable = null
         mActionFabDrawable = null
         mUploadHelper = null
+        mListSearchHelper = null
     }
 
     // Delegation methods for BookmarksDraw (which references scene directly)
@@ -682,48 +697,24 @@ class GalleryListScene : BaseScene(),
             return
         }
 
-        val currentState = mStateHelper?.state ?: GalleryStateHelper.STATE_NORMAL
-        val handle = when (currentState) {
-            GalleryStateHelper.STATE_SIMPLE_SEARCH, GalleryStateHelper.STATE_SEARCH -> {
-                mStateHelper?.setState(GalleryStateHelper.STATE_NORMAL)
-                true
-            }
-            GalleryStateHelper.STATE_SEARCH_SHOW_LIST -> {
-                mStateHelper?.setState(GalleryStateHelper.STATE_SEARCH)
-                true
-            }
-            else -> checkDoubleClickExit()
-        }
-
-        if (!handle) {
+        val handle = mListSearchHelper?.handleSearchBackPress() ?: false
+        if (!handle && !checkDoubleClickExit()) {
             finish()
         }
     }
 
-    // EasyRecyclerView click listeners — delegate to helpers
+    override fun onItemClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean =
+        mItemActionHelper?.onItemClick(view, mHelper?.getDataAtEx(position)) ?: false
 
-    override fun onItemClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean {
-        return mItemActionHelper?.onItemClick(view, mHelper?.getDataAtEx(position)) ?: false
-    }
+    override fun onItemLongClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean =
+        mItemActionHelper?.onItemLongClick(mHelper?.getDataAtEx(position), view) ?: false
 
-    override fun onItemLongClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean {
-        return mItemActionHelper?.onItemLongClick(mHelper?.getDataAtEx(position), view) ?: false
-    }
-
-    // View.OnClickListener — search fab
     override fun onClick(v: View) {
-        val currentState = mStateHelper?.state ?: GalleryStateHelper.STATE_NORMAL
-        if (GalleryStateHelper.STATE_NORMAL != currentState && mSearchBar != null) {
-            mSearchBar!!.applySearch(false)
-            hideSoftInput()
-        }
+        mListSearchHelper?.onSearchFabClick()
     }
-
-    // FabLayout listeners
 
     override fun onClickPrimaryFab(view: FabLayout, fab: FloatingActionButton) {
-        val currentState = mStateHelper?.state ?: GalleryStateHelper.STATE_NORMAL
-        if (GalleryStateHelper.STATE_NORMAL == currentState) {
+        if ((mStateHelper?.state ?: GalleryStateHelper.STATE_NORMAL) == GalleryStateHelper.STATE_NORMAL) {
             view.toggle()
         }
     }
@@ -765,86 +756,35 @@ class GalleryListScene : BaseScene(),
         mStateHelper?.onFabExpand(expanded)
     }
 
-    // SearchBar.Helper callbacks
+    // SearchBar.Helper callbacks — delegated to GalleryListSearchHelper
 
     override fun onClickTitle() {
-        val currentState = mStateHelper?.state ?: GalleryStateHelper.STATE_NORMAL
-        if (currentState == GalleryStateHelper.STATE_NORMAL) {
-            mStateHelper?.setState(GalleryStateHelper.STATE_SIMPLE_SEARCH)
-        }
+        mListSearchHelper?.onClickTitle()
     }
 
     @SuppressLint("RtlHardcoded")
     override fun onClickLeftIcon() {
-        if (mSearchBar == null) return
-        if (mSearchBar!!.getState() == SearchBar.STATE_NORMAL) {
-            toggleDrawer(Gravity.LEFT)
-        } else {
-            mStateHelper?.setState(GalleryStateHelper.STATE_NORMAL)
-        }
+        mListSearchHelper?.onClickLeftIcon()
     }
 
     override fun onClickRightIcon() {
-        if (mSearchBar == null) return
-        val currentState = mStateHelper?.state ?: GalleryStateHelper.STATE_NORMAL
-        if (mSearchBar!!.getState() == SearchBar.STATE_NORMAL) {
-            mStateHelper?.setState(GalleryStateHelper.STATE_SEARCH)
-        } else {
-            mSearchBar!!.setText("")
-        }
+        mListSearchHelper?.onClickRightIcon()
     }
 
     override fun onSearchEditTextClick() {
-        val currentState = mStateHelper?.state ?: GalleryStateHelper.STATE_NORMAL
-        if (currentState == GalleryStateHelper.STATE_SEARCH) {
-            mStateHelper?.setState(GalleryStateHelper.STATE_SEARCH_SHOW_LIST)
-        }
+        mListSearchHelper?.onSearchEditTextClick()
     }
 
     override fun onApplySearch(query: String) {
-        val urlBuilder = mUrlBuilder ?: return
-        if (mHelper == null || mSearchLayout == null) return
-
-        val cleanQuery = query.replace("\r", "").replace("\n", "")
-        val currentState = mStateHelper?.state ?: GalleryStateHelper.STATE_NORMAL
-
-        if (currentState == GalleryStateHelper.STATE_SEARCH ||
-            currentState == GalleryStateHelper.STATE_SEARCH_SHOW_LIST
-        ) {
-            try {
-                mSearchLayout!!.formatListUrlBuilder(urlBuilder, cleanQuery)
-            } catch (e: EhException) {
-                showTip(e.message ?: "", LENGTH_LONG)
-                return
-            }
-        } else {
-            val oldMode = urlBuilder.mode
-            val newMode = if (oldMode == ListUrlBuilder.MODE_SUBSCRIPTION) {
-                ListUrlBuilder.MODE_SUBSCRIPTION
-            } else {
-                ListUrlBuilder.MODE_NORMAL
-            }
-            urlBuilder.reset()
-            urlBuilder.mode = newMode
-            urlBuilder.keyword = cleanQuery
-        }
-        onUpdateUrlBuilder()
-        mHelper!!.refresh()
-        mStateHelper?.setState(GalleryStateHelper.STATE_NORMAL)
+        mListSearchHelper?.onApplySearch(query)
     }
 
-    override fun onSearchEditTextBackPressed() {
-        onBackPressed()
-    }
-
-    // SearchBar.OnStateChangeListener
+    override fun onSearchEditTextBackPressed() = onBackPressed()
 
     @SuppressLint("RtlHardcoded")
     override fun onStateChange(searchBar: SearchBar, newState: Int, oldState: Int, animation: Boolean) {
         mStateHelper?.onSearchBarStateChange(newState, oldState, animation)
     }
-
-    // FastScroller.OnDragHandlerListener
 
     @SuppressLint("RtlHardcoded")
     override fun onStartDragHandler() {
@@ -857,11 +797,7 @@ class GalleryListScene : BaseScene(),
         mSearchBarMover?.returnSearchBarPosition()
     }
 
-    // SearchLayout.Helper
-
-    override fun onChangeSearchMode() {
-        mSearchBarMover?.showSearchBar()
-    }
+    override fun onChangeSearchMode() = mSearchBarMover?.showSearchBar() ?: Unit
 
     override fun onSelectImage() {
         val intent = Intent()
@@ -873,34 +809,16 @@ class GalleryListScene : BaseScene(),
         )
     }
 
-    override fun onSortChanged() {
-        mHelper?.refresh()
-    }
+    override fun onSortChanged() = mHelper?.refresh() ?: Unit
 
-    // SearchBarMover.Helper
+    override fun isValidView(recyclerView: RecyclerView): Boolean =
+        mListSearchHelper?.isValidView(recyclerView) ?: false
 
-    override fun isValidView(recyclerView: RecyclerView): Boolean {
-        val currentState = mStateHelper?.state ?: GalleryStateHelper.STATE_NORMAL
-        return (currentState == GalleryStateHelper.STATE_NORMAL && recyclerView === mRecyclerView) ||
-                (currentState == GalleryStateHelper.STATE_SEARCH && recyclerView === mSearchLayout)
-    }
+    override fun getValidRecyclerView(): RecyclerView? =
+        mListSearchHelper?.getValidRecyclerView()
 
-    override fun getValidRecyclerView(): RecyclerView? {
-        val currentState = mStateHelper?.state ?: GalleryStateHelper.STATE_NORMAL
-        return if (currentState == GalleryStateHelper.STATE_NORMAL ||
-            currentState == GalleryStateHelper.STATE_SIMPLE_SEARCH
-        ) {
-            mRecyclerView
-        } else {
-            mSearchLayout
-        }
-    }
-
-    override fun forceShowSearchBar(): Boolean {
-        val currentState = mStateHelper?.state ?: GalleryStateHelper.STATE_NORMAL
-        return currentState == GalleryStateHelper.STATE_SIMPLE_SEARCH ||
-                currentState == GalleryStateHelper.STATE_SEARCH_SHOW_LIST
-    }
+    override fun forceShowSearchBar(): Boolean =
+        mListSearchHelper?.forceShowSearchBar() ?: false
 
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
