@@ -256,12 +256,15 @@ class DownloadsScene : ToolbarScene(),
         mActionFabDrawable = null
     }
 
-    @SuppressLint("NotifyDataSetChanged")
     fun updateForLabel() {
         viewModel.updateForLabel()
 
-        mAdapter?.notifyDataSetChanged()
-        mLastSnapshot = if (mList != null) ArrayList(mList!!) else ArrayList()
+        val newList = if (mList != null) ArrayList(mList!!) else ArrayList()
+        val result = DiffUtil.calculateDiff(
+            DownloadInfoDiffCallback(mLastSnapshot, newList)
+        )
+        mLastSnapshot = newList
+        mAdapter?.let { result.dispatchUpdatesTo(it) }
         updateTitle()
         updatePaginationIndicator()
         queryUnreadSpiderInfo()
@@ -605,9 +608,12 @@ class DownloadsScene : ToolbarScene(),
         // Observe category filter list changes
         collectFlow(viewLifecycleOwner, viewModel.listChanged) {
             mList = viewModel.downloadList.value
-            @SuppressLint("NotifyDataSetChanged")
-            mAdapter?.notifyDataSetChanged()
-            mLastSnapshot = if (mList != null) ArrayList(mList!!) else ArrayList()
+            val newList = if (mList != null) ArrayList(mList!!) else ArrayList()
+            val result = DiffUtil.calculateDiff(
+                DownloadInfoDiffCallback(mLastSnapshot, newList)
+            )
+            mLastSnapshot = newList
+            mAdapter?.let { result.dispatchUpdatesTo(it) }
             updateTitle()
             updatePaginationIndicator()
             updateView()
