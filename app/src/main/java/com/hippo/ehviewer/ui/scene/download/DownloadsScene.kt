@@ -20,9 +20,7 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Color
-import android.graphics.Point
 import android.graphics.drawable.ColorDrawable
-import android.graphics.drawable.NinePatchDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -33,7 +31,6 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewTreeObserver
 import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
@@ -49,14 +46,7 @@ import kotlinx.coroutines.withContext
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.github.amlcurran.showcaseview.ShowcaseView
-import com.github.amlcurran.showcaseview.SimpleShowcaseEventListener
-import com.github.amlcurran.showcaseview.targets.PointTarget
-import com.github.amlcurran.showcaseview.targets.ViewTarget
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.h6ah4i.android.widget.advrecyclerview.animator.DraggableItemAnimator
-import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator
-import com.h6ah4i.android.widget.advrecyclerview.draggable.RecyclerViewDragDropManager
 import com.hippo.android.resource.AttrResources
 import com.hippo.drawable.AddDeleteDrawable
 import com.hippo.drawerlayout.DrawerLayout
@@ -66,7 +56,6 @@ import com.hippo.easyrecyclerview.HandlerDrawable
 import com.hippo.easyrecyclerview.MarginItemDecoration
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.EhConfig
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryInfo
@@ -75,7 +64,6 @@ import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.download.DownloadService
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.settings.DownloadSettings
-import com.hippo.ehviewer.settings.GuideSettings
 import com.hippo.ehviewer.spider.SpiderInfo
 import com.hippo.ehviewer.ui.GalleryActivity
 import com.hippo.ehviewer.ui.GalleryOpenHelper
@@ -146,10 +134,10 @@ class DownloadsScene : ToolbarScene(),
     private var mOriginalAdapter: DownloadAdapter? = null
     private var mLayoutManager: AutoStaggeredGridLayoutManager? = null
 
-    // 拖拽管理器
-    private var mDragDropManager: RecyclerViewDragDropManager? = null
-
-    private var mShowcaseView: ShowcaseView? = null
+    // Helpers
+    private var mDragDropHelper: DownloadDragDropHelper? = null
+    private var mGuideHelper: DownloadGuideHelper? = null
+    private var mPaginationHelper: DownloadPaginationHelper? = null
 
     private lateinit var mProgressView: ProgressView
 
@@ -172,10 +160,6 @@ class DownloadsScene : ToolbarScene(),
     var searching: Boolean
         get() = viewModel.searching.value
         set(value) { viewModel.setSearching(value) }
-    private var doNotScroll = false
-
-    private var needInitPage = false
-    private var needInitPageSize = false
 
     private var mCategorySpinner: Spinner? = null
 
@@ -271,28 +255,7 @@ class DownloadsScene : ToolbarScene(),
     }
 
     private fun updatePaginationIndicator() {
-        val indicator = mPaginationIndicator ?: return
-        val list = mList ?: return
-        val paginationSize = viewModel.paginationSize
-        val canPagination = viewModel.canPagination
-        val pageSize = viewModel.pageSize.value
-        val indexPage = viewModel.indexPage.value
-        if (list.size < paginationSize || !canPagination) {
-            indicator.visibility = View.GONE
-            return
-        }
-        indicator.visibility = View.VISIBLE
-        needInitPageSize = true
-        indicator.initPaginationIndicator(pageSize, viewModel.perPageCountChoices, list.size, indexPage)
-        indicator.setListener(myPageChangeListener)
-
-        // 同步分页监听器的状态
-        myPageChangeListener?.let {
-            it.indexPage = indexPage
-            it.pageSize = pageSize
-            it.isNeedInitPage = needInitPage
-            it.isDoNotScroll = doNotScroll
-        }
+        mPaginationHelper?.updatePaginationIndicator(mPaginationIndicator, mList, myPageChangeListener)
     }
 
     @SuppressLint("StringFormatMatches")
@@ -352,12 +315,17 @@ class DownloadsScene : ToolbarScene(),
         val fastScroller = ViewUtils.`$$`(content, R.id.fast_scroller) as FastScroller
         mFabLayout = ViewUtils.`$$`(view, R.id.fab_layout) as FabLayout
         val tip = ViewUtils.`$$`(view, R.id.tip) as TextView
+        // Initialize helpers
+        mGuideHelper = DownloadGuideHelper(this)
+        mPaginationHelper = DownloadPaginationHelper(viewModel)
+        mDragDropHelper = DownloadDragDropHelper()
+
         if (mPaginationIndicator != null) {
-            needInitPage = true
+            mPaginationHelper!!.needInitPage = true
         }
         mPaginationIndicator = ViewUtils.`$$`(view, R.id.indicator) as PaginationIndicator
 
-        mPaginationIndicator!!.setPerPageCountChoices(viewModel.perPageCountChoices, getPageSizePos(viewModel.pageSize.value))
+        mPaginationIndicator!!.setPerPageCountChoices(viewModel.perPageCountChoices, mPaginationHelper!!.getPageSizePos(viewModel.pageSize.value))
 
         mViewTransition = ViewTransition(content, tip)
 
@@ -366,26 +334,18 @@ class DownloadsScene : ToolbarScene(),
         val drawable = DrawableManager.getVectorDrawable(context, R.drawable.big_download)
         drawable?.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
         tip.setCompoundDrawables(null, drawable, null, null)
-        // 初始化拖拽管理器
-        mDragDropManager = RecyclerViewDragDropManager()
-        try {
-            mDragDropManager!!.setDraggingItemShadowDrawable(
-                context.resources.getDrawable(R.drawable.shadow_8dp) as NinePatchDrawable
-            )
-        } catch (e: Exception) {
-            // 忽略硬件位图相关错误
-            Log.w("DownloadsScene", "Error setting drag shadow: ${e.message}")
-        }
-
+        // Initialize drag-drop via helper
         mOriginalAdapter = DownloadAdapter(this, this)
         mOriginalAdapter!!.setHasStableIds(true)
-        mAdapter = mDragDropManager!!.createWrappedAdapter(mOriginalAdapter!!) // 包装适配器以支持拖拽
-        mDragDropManager!!.isCheckCanDropEnabled = false
+        mAdapter = mDragDropHelper!!.setup(context, mOriginalAdapter!!)
         mRecyclerView!!.adapter = mAdapter
 
-        // 初始化分页监听器
+        // Initialize pagination listener
+        val paginationHelper = mPaginationHelper!!
         myPageChangeListener = MyPageChangeListener(
-            viewModel.indexPage.value, viewModel.pageSize.value, needInitPage, doNotScroll, mOriginalAdapter, mRecyclerView
+            viewModel.indexPage.value, viewModel.pageSize.value,
+            paginationHelper.needInitPage, paginationHelper.doNotScroll,
+            mOriginalAdapter, mRecyclerView
         )
 
         // 设置分页监听器的回调
@@ -402,18 +362,10 @@ class DownloadsScene : ToolbarScene(),
         mLayoutManager!!.setColumnSize(resources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId()))
         mLayoutManager!!.setStrategy(AutoStaggeredGridLayoutManager.STRATEGY_MIN_SIZE)
 
-        // 设置拖拽动画器
-        val animator: GeneralItemAnimator = DraggableItemAnimator()
-        mRecyclerView!!.itemAnimator = animator
+        // Configure drag-related RecyclerView properties
+        mDragDropHelper?.configureRecyclerView(mRecyclerView!!)
 
         mRecyclerView!!.setItemViewCacheSize(100)
-        try {
-            mRecyclerView!!.isDrawingCacheEnabled = true
-            mRecyclerView!!.drawingCacheQuality = View.DRAWING_CACHE_QUALITY_HIGH
-        } catch (e: Exception) {
-            // 忽略硬件位图相关错误
-            Log.w("DownloadsScene", "Error setting drawing cache: ${e.message}")
-        }
         mRecyclerView!!.layoutManager = mLayoutManager
         mRecyclerView!!.selector = Ripple.generateRippleDrawable(
             context,
@@ -426,11 +378,6 @@ class DownloadsScene : ToolbarScene(),
         mRecyclerView!!.setOnItemLongClickListener(this)
         mRecyclerView!!.setChoiceMode(EasyRecyclerView.CHOICE_MODE_MULTIPLE_CUSTOM)
         mRecyclerView!!.setCustomCheckedListener(DownloadChoiceListener())
-        // Cancel change animation
-        val itemAnimator = mRecyclerView!!.itemAnimator
-        if (itemAnimator is GeneralItemAnimator) {
-            itemAnimator.setSupportsChangeAnimations(false)
-        }
         val interval = resources.getDimensionPixelOffset(R.dimen.gallery_list_interval)
         val paddingH = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_h)
         val paddingV = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_v)
@@ -438,18 +385,11 @@ class DownloadsScene : ToolbarScene(),
         mRecyclerView!!.addItemDecoration(decoration)
         decoration.applyPaddings(mRecyclerView)
 
-        // 将拖拽管理器附加到RecyclerView
-        if (mDragDropManager != null) {
-            try {
-                mDragDropManager!!.attachRecyclerView(mRecyclerView!!)
-            } catch (e: Exception) {
-                // 忽略硬件位图相关错误
-                Log.w("DownloadsScene", "Error attaching drag manager: ${e.message}")
-            }
-        }
+        // Attach drag-drop manager to RecyclerView
+        mDragDropHelper?.attachToRecyclerView(mRecyclerView!!)
 
         if (mInitPosition >= 0 && viewModel.indexPage.value != 1) {
-            initPage(mInitPosition)
+            mPaginationHelper?.initPage(mInitPosition, mList, mRecyclerView, mPaginationIndicator)
             mRecyclerView!!.scrollToPosition(listIndexInPage(mInitPosition))
             mInitPosition = -1
         }
@@ -483,85 +423,7 @@ class DownloadsScene : ToolbarScene(),
     }
 
     private fun guide() {
-        if (GuideSettings.getGuideDownloadThumb() && mRecyclerView != null) {
-            mRecyclerView!!.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
-                override fun onGlobalLayout() {
-                    if (GuideSettings.getGuideDownloadThumb()) {
-                        guideDownloadThumb()
-                    }
-                    if (mRecyclerView != null) {
-                        ViewUtils.removeOnGlobalLayoutListener(mRecyclerView!!.viewTreeObserver, this)
-                    }
-                }
-            })
-        } else {
-            guideDownloadLabels()
-        }
-    }
-
-    @Suppress("DEPRECATION")
-    private fun guideDownloadThumb() {
-        val activity = activity2
-        if (activity == null || !GuideSettings.getGuideDownloadThumb() || mLayoutManager == null || mRecyclerView == null) {
-            guideDownloadLabels()
-            return
-        }
-        val position = mLayoutManager!!.findFirstCompletelyVisibleItemPositions(null)[0]
-        if (position < 0) {
-            guideDownloadLabels()
-            return
-        }
-        val holder = mRecyclerView!!.findViewHolderForAdapterPosition(position)
-        if (holder == null) {
-            guideDownloadLabels()
-            return
-        }
-
-        mShowcaseView = ShowcaseView.Builder(activity)
-            .withMaterialShowcase()
-            .setStyle(R.style.Guide)
-            .setTarget(ViewTarget((holder as DownloadAdapter.DownloadHolder).thumb))
-            .blockAllTouches()
-            .setContentTitle(R.string.guide_download_thumb_title)
-            .setContentText(R.string.guide_download_thumb_text)
-            .replaceEndButton(R.layout.button_guide)
-            .setShowcaseEventListener(object : SimpleShowcaseEventListener() {
-                override fun onShowcaseViewDidHide(showcaseView: ShowcaseView) {
-                    mShowcaseView = null
-                    ViewUtils.removeFromParent(showcaseView)
-                    GuideSettings.putGuideDownloadThumb(false)
-                    guideDownloadLabels()
-                }
-            }).build()
-    }
-
-    @Suppress("DEPRECATION")
-    private fun guideDownloadLabels() {
-        val activity = activity2
-        if (activity == null || !GuideSettings.getGuideDownloadLabels()) {
-            return
-        }
-
-        val display = activity.windowManager.defaultDisplay
-        val point = Point()
-        display.getSize(point)
-
-        mShowcaseView = ShowcaseView.Builder(activity)
-            .withMaterialShowcase()
-            .setStyle(R.style.Guide)
-            .setTarget(PointTarget(point.x, point.y / 3))
-            .blockAllTouches()
-            .setContentTitle(R.string.guide_download_labels_title)
-            .setContentText(R.string.guide_download_labels_text)
-            .replaceEndButton(R.layout.button_guide)
-            .setShowcaseEventListener(object : SimpleShowcaseEventListener() {
-                override fun onShowcaseViewDidHide(showcaseView: ShowcaseView) {
-                    mShowcaseView = null
-                    ViewUtils.removeFromParent(showcaseView)
-                    GuideSettings.putGuideDownloadLabels(false)
-                    openDrawer(Gravity.RIGHT)
-                }
-            }).build()
+        mGuideHelper?.guide(mRecyclerView, mLayoutManager)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -710,10 +572,12 @@ class DownloadsScene : ToolbarScene(),
     override fun onDestroyView() {
         super.onDestroyView()
 
-        if (mShowcaseView != null) {
-            ViewUtils.removeFromParent(mShowcaseView)
-            mShowcaseView = null
-        }
+        mGuideHelper?.cleanup()
+        mGuideHelper = null
+        mDragDropHelper?.cleanup()
+        mDragDropHelper = null
+        mPaginationHelper = null
+
         if (mRecyclerView != null) {
             mRecyclerView!!.stopScroll()
             mRecyclerView = null
@@ -728,7 +592,6 @@ class DownloadsScene : ToolbarScene(),
         mAdapter = null
         mOriginalAdapter = null
         mLayoutManager = null
-        mDragDropManager = null
     }
 
     override fun onNavigationClick(view: View) {
@@ -883,7 +746,7 @@ class DownloadsScene : ToolbarScene(),
     }
 
     override fun onBackPressed() {
-        if (mShowcaseView != null) {
+        if (mGuideHelper?.showcaseView != null) {
             return
         }
 
@@ -1316,23 +1179,7 @@ class DownloadsScene : ToolbarScene(),
     }
 
     private fun initPage(position: Int) {
-        if (mList != null && mList!!.size > viewModel.paginationSize && viewModel.canPagination) {
-            viewModel.setIndexPage(position / viewModel.pageSize.value + 1)
-        }
-        doNotScroll = true
-        mPaginationIndicator?.skip2Pos(viewModel.indexPage.value)
-        mRecyclerView!!.scrollToPosition(viewModel.listIndexInPage(position))
-    }
-
-    private fun getPageSizePos(pageSize: Int): Int {
-        var index = 0
-        for (i in viewModel.perPageCountChoices.indices) {
-            if (pageSize == viewModel.perPageCountChoices[i]) {
-                index = i
-                break
-            }
-        }
-        return index
+        mPaginationHelper?.initPage(position, mList, mRecyclerView, mPaginationIndicator)
     }
 
     fun runOnUiThread(runnable: Runnable) {
@@ -1367,35 +1214,6 @@ class DownloadsScene : ToolbarScene(),
         }
     }
 
-    /**
-     * DiffUtil callback for DownloadInfo lists.
-     * Uses gid for identity; compares state, legacy, downloaded, total, speed, thumb for content.
-     */
-    private class DownloadInfoDiffCallback(
-        private val oldList: List<DownloadInfo>,
-        private val newList: List<DownloadInfo>
-    ) : DiffUtil.Callback() {
-
-        override fun getOldListSize(): Int = oldList.size
-
-        override fun getNewListSize(): Int = newList.size
-
-        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-            return oldList[oldItemPosition].gid == newList[newItemPosition].gid
-        }
-
-        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-            val oldItem = oldList[oldItemPosition]
-            val newItem = newList[newItemPosition]
-            return oldItem.state == newItem.state &&
-                oldItem.legacy == newItem.legacy &&
-                oldItem.downloaded == newItem.downloaded &&
-                oldItem.total == newItem.total &&
-                oldItem.speed == newItem.speed &&
-                ObjectUtils.equal(oldItem.thumb, newItem.thumb)
-        }
-    }
-
     companion object {
         private val TAG = DownloadsScene::class.java.simpleName
 
@@ -1408,5 +1226,34 @@ class DownloadsScene : ToolbarScene(),
         const val LOCAL_GALLERY_INFO_CHANGE = 909
 
         private const val ANIMATE_TIME = 300L
+    }
+}
+
+/**
+ * DiffUtil callback for DownloadInfo lists.
+ * Uses gid for identity; compares state, legacy, downloaded, total, speed, thumb for content.
+ */
+internal class DownloadInfoDiffCallback(
+    private val oldList: List<DownloadInfo>,
+    private val newList: List<DownloadInfo>
+) : DiffUtil.Callback() {
+
+    override fun getOldListSize(): Int = oldList.size
+
+    override fun getNewListSize(): Int = newList.size
+
+    override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+        return oldList[oldItemPosition].gid == newList[newItemPosition].gid
+    }
+
+    override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+        val oldItem = oldList[oldItemPosition]
+        val newItem = newList[newItemPosition]
+        return oldItem.state == newItem.state &&
+            oldItem.legacy == newItem.legacy &&
+            oldItem.downloaded == newItem.downloaded &&
+            oldItem.total == newItem.total &&
+            oldItem.speed == newItem.speed &&
+            ObjectUtils.equal(oldItem.thumb, newItem.thumb)
     }
 }
