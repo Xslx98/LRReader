@@ -71,7 +71,6 @@ import com.hippo.ehviewer.client.EhConfig
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
-import com.hippo.ehviewer.download.DownloadInfoListener
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.download.DownloadService
 import com.hippo.ehviewer.settings.AppearanceSettings
@@ -102,7 +101,6 @@ import com.hippo.widget.recyclerview.AutoStaggeredGridLayoutManager
 import com.sxj.paginationlib.PaginationIndicator
 
 class DownloadsScene : ToolbarScene(),
-    DownloadInfoListener,
     EasyRecyclerView.OnItemClickListener,
     EasyRecyclerView.OnItemLongClickListener,
     FabLayout.OnClickFabListener, FabLayout.OnExpandListener,
@@ -115,8 +113,6 @@ class DownloadsScene : ToolbarScene(),
     /*---------------
      Whole life cycle
      ---------------*/
-    private var _downloadManager: DownloadManager? = null
-
     private lateinit var viewModel: DownloadsViewModel
 
     /** Shortcut delegating to [DownloadsViewModel.currentLabel]. */
@@ -200,28 +196,26 @@ class DownloadsScene : ToolbarScene(),
             DownloadService.Companion.clear()
         }
 
-        val dm = _downloadManager
-        if (dm != null) {
-            val gid = args.getLong(KEY_GID, -1L)
-            if (gid != -1L) {
-                val info = dm.getDownloadInfo(gid)
-                if (info != null) {
-                    viewModel.selectLabel(info.label)
-                    updateForLabel()
-                    updateView()
+        val dm = viewModel.downloadManager
+        val gid = args.getLong(KEY_GID, -1L)
+        if (gid != -1L) {
+            val info = dm.getDownloadInfo(gid)
+            if (info != null) {
+                viewModel.selectLabel(info.label)
+                updateForLabel()
+                updateView()
 
-                    // Get position
-                    val list = mList
-                    if (list != null) {
-                        val position = list.indexOf(info)
-                        if (position >= 0 && mRecyclerView != null) {
-                            initPage(position)
-                        } else {
-                            mInitPosition = position
-                        }
+                // Get position
+                val list = mList
+                if (list != null) {
+                    val position = list.indexOf(info)
+                    if (position >= 0 && mRecyclerView != null) {
+                        initPage(position)
+                    } else {
+                        mInitPosition = position
                     }
-                    return true
                 }
+                return true
             }
         }
         return false
@@ -238,8 +232,6 @@ class DownloadsScene : ToolbarScene(),
 
         val context = ehContext
         AssertUtils.assertNotNull(context)
-        _downloadManager = viewModel.downloadManager
-        _downloadManager!!.addDownloadInfoListener(this)
 
         // Initialize import helper (must happen before onStart per ActivityResultLauncher contract)
         mImportHelper = DownloadImportHelper(
@@ -261,22 +253,6 @@ class DownloadsScene : ToolbarScene(),
 
     override fun onDestroy() {
         super.onDestroy()
-
-        var manager = _downloadManager
-        if (manager == null) {
-            val context = ehContext
-            if (context != null) {
-                manager = viewModel.downloadManager
-            }
-        } else {
-            _downloadManager = null
-        }
-
-        if (manager != null) {
-            manager.removeDownloadInfoListener(this)
-        } else {
-            Log.e(TAG, "Can't removeDownloadInfoListener")
-        }
         mActionFabDrawable = null
     }
 
@@ -648,6 +624,58 @@ class DownloadsScene : ToolbarScene(),
             updateForLabel()
             updateView()
         }
+
+        // ── Observe DownloadInfoListener events from ViewModel ──
+
+        collectFlow(viewLifecycleOwner, viewModel.onItemAdded) { (position, _) ->
+            mAdapter?.notifyItemInserted(position)
+            downloadLabelDraw?.updateDownloadLabels()
+            updateView()
+        }
+
+        collectFlow(viewLifecycleOwner, viewModel.onItemRemoved) { (position, _) ->
+            mAdapter?.notifyItemRemoved(listIndexInPage(position))
+            updateView()
+        }
+
+        collectFlow(viewLifecycleOwner, viewModel.onItemUpdated) { index ->
+            if (index >= 0 && mAdapter != null) {
+                mAdapter!!.notifyItemChanged(listIndexInPage(index))
+            }
+        }
+
+        collectFlow(viewLifecycleOwner, viewModel.onDiffUpdate) { newList ->
+            if (mAdapter == null) return@collectFlow
+            val result = DiffUtil.calculateDiff(
+                DownloadInfoDiffCallback(mLastSnapshot, newList)
+            )
+            mLastSnapshot = ArrayList(newList)
+            result.dispatchUpdatesTo(mAdapter!!)
+            updateView()
+        }
+
+        collectFlow(viewLifecycleOwner, viewModel.onReplaced) { newInfo ->
+            updateForLabel()
+            updateView()
+            val index = mList?.indexOf(newInfo) ?: -1
+            if (index >= 0 && mAdapter != null) {
+                mAdapter!!.notifyItemChanged(listIndexInPage(index))
+            }
+        }
+
+        collectFlow(viewLifecycleOwner, viewModel.labelRenamedEvent) { (_, _) ->
+            updateForLabel()
+            updateView()
+        }
+
+        collectFlow(viewLifecycleOwner, viewModel.onLabelDeleted) {
+            updateForLabel()
+            updateView()
+        }
+
+        collectFlow(viewLifecycleOwner, viewModel.onLabelsChanged) {
+            downloadLabelDraw?.updateDownloadLabels()
+        }
     }
 
     override fun onResume() {
@@ -706,7 +734,7 @@ class DownloadsScene : ToolbarScene(),
                 return true
             }
             R.id.action_stop_all -> {
-                _downloadManager?.stopAllDownload()
+                viewModel.downloadManager.stopAllDownload()
                 return true
             }
             R.id.action_reset_reading_progress -> {
@@ -719,7 +747,7 @@ class DownloadsScene : ToolbarScene(),
                     .setMessage(R.string.reset_reading_progress_message)
                     .setNegativeButton(android.R.string.cancel, null)
                     .setPositiveButton(android.R.string.ok) { _, _ ->
-                        _downloadManager?.resetAllReadingProgress()
+                        viewModel.downloadManager.resetAllReadingProgress()
                     }.show()
                 return true
             }
@@ -1054,92 +1082,10 @@ class DownloadsScene : ToolbarScene(),
         galleryActivityLauncher.launch(intent)
     }
 
-    override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-        if (mList !== list) {
-            return
-        }
-        mAdapter?.notifyItemInserted(position)
-        downloadLabelDraw?.updateDownloadLabels()
-        updateView()
-    }
-
-    override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {
-        if (mList == null) {
-            return
-        }
-        updateForLabel()
-        updateView()
-
-        val index = mList!!.indexOf(newInfo)
-        if (index >= 0 && mAdapter != null) {
-            mAdapter!!.notifyItemChanged(listIndexInPage(index))
-        }
-    }
-
-    override fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: List<DownloadInfo>) {
-        if (mList !== list && !mList!!.contains(info)) {
-            return
-        }
-        val index = mList!!.indexOf(info)
-        if (index >= 0 && mAdapter != null) {
-            mAdapter!!.notifyItemChanged(listIndexInPage(index))
-        }
-    }
-
-    override fun onUpdateAll() {
-        if (mAdapter != null && mList != null) {
-            val newList = ArrayList(mList!!)
-            val result = DiffUtil.calculateDiff(
-                DownloadInfoDiffCallback(mLastSnapshot, newList)
-            )
-            mLastSnapshot = newList
-            result.dispatchUpdatesTo(mAdapter!!)
-        }
-    }
-
-    override fun onReload() {
-        if (mAdapter != null && mList != null) {
-            val newList = ArrayList(mList!!)
-            val result = DiffUtil.calculateDiff(
-                DownloadInfoDiffCallback(mLastSnapshot, newList)
-            )
-            mLastSnapshot = newList
-            result.dispatchUpdatesTo(mAdapter!!)
-        }
-        updateView()
-    }
-
-    override fun onChange() {
-        viewModel.resetToDefaultLabel()
-        updateForLabel()
-        updateView()
-    }
-
-    override fun onRenameLabel(from: String, to: String) {
-        if (!ObjectUtils.equal(viewModel.currentLabel.value, from)) {
-            return
-        }
-        viewModel.onLabelRenamed(from, to)
-        updateForLabel()
-        updateView()
-    }
-
-    override fun onRemove(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-        if (mList !== list) {
-            return
-        }
-        mAdapter?.notifyItemRemoved(listIndexInPage(position))
-        updateView()
-    }
-
-    override fun onUpdateLabels() {
-        // No-op: label updates are handled by DownloadLabelDraw
-    }
-
     /**
-     * Returns the DownloadManager instance. Called from DownloadLabelDraw.java.
+     * Returns the DownloadManager instance. Called from DownloadLabelDraw.kt.
      */
-    fun getMDownloadManager(): DownloadManager? = _downloadManager
+    fun getMDownloadManager(): DownloadManager = viewModel.downloadManager
 
     // DownloadAdapterCallback interface implementation
     override val indexPage: Int
@@ -1165,7 +1111,7 @@ class DownloadsScene : ToolbarScene(),
         get() = viewModel.spiderInfoMap.value
 
     override val downloadManager: DownloadManager?
-        get() = _downloadManager
+        get() = viewModel.downloadManager
 
     override val recyclerView: EasyRecyclerView?
         get() = mRecyclerView

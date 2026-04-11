@@ -16,6 +16,7 @@ import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.util.FileUtils
 import kotlinx.coroutines.Dispatchers
 import com.hippo.ehviewer.dao.DownloadLabel
+import com.hippo.ehviewer.download.DownloadInfoListener
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.ehviewer.spider.SpiderInfo
@@ -38,7 +39,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * The Scene observes [StateFlow] properties and updates the UI accordingly.
  * View references, adapters, dialog display, and navigation remain in the Scene.
  */
-class DownloadsViewModel : ViewModel() {
+class DownloadsViewModel : ViewModel(), DownloadInfoListener {
 
     /**
      * The app's [DownloadManager] singleton. Exposed so [DownloadsScene]
@@ -50,10 +51,51 @@ class DownloadsViewModel : ViewModel() {
      * Room flow of the persisted download list. Emits whenever the underlying
      * table structure changes (add / remove / state column). Progress updates
      * (speed, downloaded, total) are `@Ignore` fields and continue to be
-     * delivered via the existing [com.hippo.ehviewer.download.DownloadInfoListener]
-     * callback mechanism.
+     * delivered via the [DownloadInfoListener] callback mechanism, forwarded
+     * to the Scene as SharedFlow events below.
      */
     val downloadsFlow: Flow<List<DownloadInfo>> = EhDB.observeDownloads()
+
+    // -------------------------------------------------------------------------
+    // DownloadInfoListener → SharedFlow events for UI
+    // -------------------------------------------------------------------------
+
+    private val _onItemAdded = MutableSharedFlow<Pair<Int, List<DownloadInfo>>>(extraBufferCapacity = 1)
+    val onItemAdded: SharedFlow<Pair<Int, List<DownloadInfo>>> = _onItemAdded.asSharedFlow()
+
+    private val _onItemRemoved = MutableSharedFlow<Pair<Int, List<DownloadInfo>>>(extraBufferCapacity = 1)
+    val onItemRemoved: SharedFlow<Pair<Int, List<DownloadInfo>>> = _onItemRemoved.asSharedFlow()
+
+    private val _onItemUpdated = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+    val onItemUpdated: SharedFlow<Int> = _onItemUpdated.asSharedFlow()
+
+    private val _onDiffUpdate = MutableSharedFlow<List<DownloadInfo>>(extraBufferCapacity = 1)
+    val onDiffUpdate: SharedFlow<List<DownloadInfo>> = _onDiffUpdate.asSharedFlow()
+
+    private val _onLabelsChanged = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val onLabelsChanged: SharedFlow<Unit> = _onLabelsChanged.asSharedFlow()
+
+    private val _onReplaced = MutableSharedFlow<DownloadInfo>(extraBufferCapacity = 1)
+    val onReplaced: SharedFlow<DownloadInfo> = _onReplaced.asSharedFlow()
+
+    private val _labelRenamedEvent = MutableSharedFlow<Pair<String, String>>(extraBufferCapacity = 1)
+    val labelRenamedEvent: SharedFlow<Pair<String, String>> = _labelRenamedEvent.asSharedFlow()
+
+    private val _onLabelDeleted = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val onLabelDeleted: SharedFlow<Unit> = _onLabelDeleted.asSharedFlow()
+
+    // -------------------------------------------------------------------------
+    // Lifecycle: register/unregister listener
+    // -------------------------------------------------------------------------
+
+    init {
+        downloadManager.addDownloadInfoListener(this)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        downloadManager.removeDownloadInfoListener(this)
+    }
 
     // -------------------------------------------------------------------------
     // Label state
@@ -358,7 +400,7 @@ class DownloadsViewModel : ViewModel() {
      * Handles a label rename event. If the current label matches [from],
      * updates the selection to [to]. Call [updateForLabel] afterwards.
      */
-    fun onLabelRenamed(from: String, to: String) {
+    fun handleLabelRenamed(from: String, to: String) {
         if (_currentLabel.value == from) {
             _currentLabel.value = to
         }
@@ -529,6 +571,58 @@ class DownloadsViewModel : ViewModel() {
             Log.e(TAG, "Failed to create DownloadInfo", e)
             null
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // DownloadInfoListener implementation
+    // -------------------------------------------------------------------------
+
+    override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
+        if (_downloadList.value !== list) return
+        _onItemAdded.tryEmit(Pair(position, list))
+    }
+
+    override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {
+        if (_downloadList.value.isEmpty()) return
+        updateForLabel()
+        _onReplaced.tryEmit(newInfo)
+    }
+
+    override fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: List<DownloadInfo>) {
+        val currentList = _downloadList.value
+        if (currentList !== list && !currentList.contains(info)) return
+        val index = currentList.indexOf(info)
+        if (index >= 0) {
+            _onItemUpdated.tryEmit(index)
+        }
+    }
+
+    override fun onUpdateAll() {
+        _onDiffUpdate.tryEmit(ArrayList(_downloadList.value))
+    }
+
+    override fun onReload() {
+        _onDiffUpdate.tryEmit(ArrayList(_downloadList.value))
+    }
+
+    override fun onChange() {
+        resetToDefaultLabel()
+        _onLabelDeleted.tryEmit(Unit)
+    }
+
+    override fun onRenameLabel(from: String, to: String) {
+        if (_currentLabel.value != from) return
+        handleLabelRenamed(from, to)
+        _labelRenamedEvent.tryEmit(Pair(from, to))
+    }
+
+    override fun onRemove(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
+        if (_downloadList.value !== list) return
+        _onItemRemoved.tryEmit(Pair(position, list))
+    }
+
+    override fun onUpdateLabels() {
+        _onLabelsChanged.tryEmit(Unit)
     }
 
     companion object {
