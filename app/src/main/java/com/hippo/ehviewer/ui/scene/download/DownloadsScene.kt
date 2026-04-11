@@ -16,6 +16,7 @@
 package com.hippo.ehviewer.ui.scene.download
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Color
@@ -26,6 +27,8 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.Gravity
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
@@ -59,6 +62,9 @@ import com.hippo.easyrecyclerview.HandlerDrawable
 import com.hippo.easyrecyclerview.MarginItemDecoration
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.client.EhConfig
+import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadInfoListener
@@ -79,6 +85,7 @@ import com.hippo.ehviewer.util.collectFlow
 import com.hippo.ehviewer.widget.MyEasyRecyclerView
 import com.hippo.ehviewer.widget.SearchBar
 import com.hippo.lib.yorozuya.AssertUtils
+import com.hippo.lib.yorozuya.collect.LongList
 import com.hippo.lib.yorozuya.ObjectUtils
 import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.ripple.Ripple
@@ -177,8 +184,6 @@ class DownloadsScene : ToolbarScene(),
     ) { result -> updateReadProcess(result) }
 
     private var mImportHelper: DownloadImportHelper? = null
-    private var mLabelHelper: DownloadLabelHelper? = null
-    private var mFilterHelper: DownloadFilterHelper? = null
 
     override fun getNavCheckedItem(): Int = R.id.nav_downloads
 
@@ -234,75 +239,12 @@ class DownloadsScene : ToolbarScene(),
 
         // Initialize import helper (must happen before onStart per ActivityResultLauncher contract)
         mImportHelper = DownloadImportHelper(
-            object : DownloadImportHelper.Callback {
-                override fun getContext() = ehContext
-                override fun getActivity() = activity2
-                override fun getDownloadManager() = _downloadManager
-                override fun getString(resId: Int) = this@DownloadsScene.getString(resId)
-                override fun onImportSuccess() {
-                    updateForLabel()
-                    updateView()
-                }
-            },
             requireActivity().activityResultRegistry,
-            this
-        )
-
-        // Initialize label helper for bulk actions (start/stop/delete/move)
-        mLabelHelper = DownloadLabelHelper(
-            object : DownloadLabelHelper.Callback {
-                override fun getContext() = ehContext
-                override fun getActivity() = activity2
-                override fun getString(resId: Int) = this@DownloadsScene.getString(resId)
-                override fun getString(resId: Int, vararg formatArgs: Any) =
-                    this@DownloadsScene.getString(resId, *formatArgs)
-                override fun getDownloadManager() = _downloadManager
-                override fun getList() = mList
-                override fun getCheckedItemPositions() = mRecyclerView?.checkedItemPositions
-                override fun positionInList(position: Int) = this@DownloadsScene.positionInList(position)
-                override fun exitCustomChoiceMode() { mRecyclerView?.outOfCustomChoiceMode() }
-                override fun onClickPrimaryFabForRandom() {
-                    mFabLayout?.let { onClickPrimaryFab(it, null) }
-                }
-                override fun viewRandom() { this@DownloadsScene.viewRandom() }
-                override fun setDragEnable(fab: com.google.android.material.floatingactionbutton.FloatingActionButton) {
-                    this@DownloadsScene.setDragEnable(fab)
-                }
-            }
-        )
-
-        // Initialize filter helper for category filter, sort, and search
-        mFilterHelper = DownloadFilterHelper(
-            object : DownloadFilterHelper.Callback {
-                override fun getContext() = ehContext
-                override fun getString(resId: Int) = this@DownloadsScene.getString(resId)
-                override fun getList() = mList
-                override fun getBackList() = mBackList
-                override fun getDownloadManager() = _downloadManager
-                override fun setList(list: MutableList<DownloadInfo>) { mList = list }
-                override fun isAdded() = this@DownloadsScene.isAdded
-                override fun isSearching() = searching
-                override fun setSearching(searching: Boolean) {
-                    this@DownloadsScene.searching = searching
-                }
-                override fun showProgress() {
-                    mProgressView.visibility = View.VISIBLE
-                    mRecyclerView?.visibility = View.GONE
-                }
-                override fun hideProgress() {
-                    mProgressView.visibility = View.GONE
-                    mRecyclerView?.visibility = View.VISIBLE
-                }
-                override fun updateAdapter() { this@DownloadsScene.updateAdapter() }
-                override fun updateTitle() { this@DownloadsScene.updateTitle() }
-                override fun updatePaginationIndicator() { this@DownloadsScene.updatePaginationIndicator() }
-                override fun updateView() { this@DownloadsScene.updateView() }
-                override fun queryUnreadSpiderInfo() { this@DownloadsScene.queryUnreadSpiderInfo() }
-                @SuppressLint("NotifyDataSetChanged")
-                override fun notifyListChanged() {
-                    mAdapter?.notifyDataSetChanged()
-                    mLastSnapshot = if (mList != null) ArrayList(mList!!) else ArrayList()
-                }
+            this,
+            contextProvider = { ehContext },
+            onFileSelected = { uri ->
+                val ctx = ehContext ?: return@DownloadImportHelper
+                viewModel.processArchiveImport(ctx, uri)
             }
         )
 
@@ -419,7 +361,7 @@ class DownloadsScene : ToolbarScene(),
         val context = ehContext!!
 
         mCategorySpinner = ViewUtils.`$$`(view, R.id.category_spinner) as Spinner
-        mFilterHelper?.initCategorySpinner(mCategorySpinner!!, context)
+        initCategorySpinner(mCategorySpinner!!, context)
 
         mProgressView = ViewUtils.`$$`(view, R.id.download_progress_view) as ProgressView
         val content = ViewUtils.`$$`(view, R.id.content)
@@ -659,6 +601,48 @@ class DownloadsScene : ToolbarScene(),
             )
             mLastSnapshot = newList
             result.dispatchUpdatesTo(mAdapter!!)
+        }
+
+        // Observe filter loading state
+        collectFlow(viewLifecycleOwner, viewModel.filterLoading) { loading ->
+            if (loading) {
+                mProgressView.visibility = View.VISIBLE
+                mRecyclerView?.visibility = View.GONE
+            } else {
+                mProgressView.visibility = View.GONE
+                mRecyclerView?.visibility = View.VISIBLE
+            }
+        }
+
+        // Observe filter/sort/search completion
+        collectFlow(viewLifecycleOwner, viewModel.filterSearchDone) {
+            if (!isAdded) return@collectFlow
+            mList = viewModel.downloadList.value
+            updateAdapter()
+            queryUnreadSpiderInfo()
+        }
+
+        // Observe category filter list changes
+        collectFlow(viewLifecycleOwner, viewModel.listChanged) {
+            mList = viewModel.downloadList.value
+            @SuppressLint("NotifyDataSetChanged")
+            mAdapter?.notifyDataSetChanged()
+            mLastSnapshot = if (mList != null) ArrayList(mList!!) else ArrayList()
+            updateTitle()
+            updatePaginationIndicator()
+            updateView()
+            queryUnreadSpiderInfo()
+        }
+
+        // Observe import toast events
+        collectFlow(viewLifecycleOwner, viewModel.importToast) { resId ->
+            Toast.makeText(ehContext ?: return@collectFlow, resId, Toast.LENGTH_SHORT).show()
+        }
+
+        // Observe import success events
+        collectFlow(viewLifecycleOwner, viewModel.importSuccess) {
+            updateForLabel()
+            updateView()
         }
     }
 
@@ -969,12 +953,67 @@ class DownloadsScene : ToolbarScene(),
 
     override fun onClickSecondaryFab(view: FabLayout, fab: FloatingActionButton, position: Int) {
         val recyclerView = mRecyclerView ?: return
-        if (ehContext == null || activity2 == null) return
+        val context = ehContext ?: return
+        val act = activity2 ?: return
+        val list = mList ?: return
 
         if (position == 0) {
             recyclerView.checkAll()
-        } else {
-            mLabelHelper?.handleSecondaryFabAction(position, fab)
+            return
+        }
+
+        var gidList: LongList? = null
+        var downloadInfoList: MutableList<DownloadInfo>? = null
+        val collectGid = position == 1 || position == 2 || position == 3
+        val collectDownloadInfo = position == 3 || position == 4
+        if (collectGid) gidList = LongList()
+        if (collectDownloadInfo) downloadInfoList = java.util.LinkedList()
+
+        val stateArray = recyclerView.checkedItemPositions ?: return
+        for (i in 0 until stateArray.size()) {
+            if (stateArray.valueAt(i)) {
+                val info = list[positionInList(stateArray.keyAt(i))]
+                if (collectDownloadInfo) downloadInfoList!!.add(info)
+                if (collectGid) gidList!!.add(info.gid)
+            }
+        }
+
+        when (position) {
+            1 -> { // Start
+                if (gidList!!.isEmpty()) return
+                val intent = Intent(act, DownloadService::class.java)
+                intent.action = DownloadService.ACTION_START_RANGE
+                intent.putExtra(DownloadService.KEY_GID_LIST, gidList)
+                act.startService(intent)
+                recyclerView.outOfCustomChoiceMode()
+            }
+            2 -> { // Stop
+                if (gidList!!.isEmpty()) return
+                viewModel.stopRangeDownloads(gidList)
+                recyclerView.outOfCustomChoiceMode()
+            }
+            3 -> { // Delete
+                if (downloadInfoList!!.isEmpty()) return
+                DownloadLabelHelper.showDeleteRangeDialog(context, gidList!!.size()) { deleteFiles ->
+                    recyclerView.outOfCustomChoiceMode()
+                    viewModel.deleteRangeDownloads(downloadInfoList, gidList, deleteFiles)
+                }
+            }
+            4 -> { // Move
+                if (downloadInfoList!!.isEmpty()) return
+                DownloadLabelHelper.showMoveDialog(context) { label ->
+                    recyclerView.outOfCustomChoiceMode()
+                    viewModel.moveDownloads(downloadInfoList, label)
+                }
+            }
+            5 -> { // Random
+                if (list.isEmpty()) return
+                mFabLayout?.let { onClickPrimaryFab(it, null) }
+                viewRandom()
+            }
+            6 -> { // Drag toggle
+                setDragEnable(fab)
+            }
         }
     }
 
@@ -1158,11 +1197,56 @@ class DownloadsScene : ToolbarScene(),
 
         updateForLabel()
 
-        mFilterHelper?.startSearching(searchKey ?: "")
+        viewModel.startSearching(searchKey ?: "")
     }
 
     private fun gotoFilterAndSort(id: Int) {
-        mFilterHelper?.gotoFilterAndSort(id)
+        viewModel.gotoFilterAndSort(id)
+    }
+
+    private fun initCategorySpinner(spinner: Spinner, context: Context) {
+        val categoryList = ArrayList<String>()
+        categoryList.add(getString(R.string.category_all))
+        categoryList.add(EhUtils.getCategory(EhConfig.DOUJINSHI)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(EhUtils.getCategory(EhConfig.MANGA)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(EhUtils.getCategory(EhConfig.ARTIST_CG)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(EhUtils.getCategory(EhConfig.GAME_CG)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(EhUtils.getCategory(EhConfig.WESTERN)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(EhUtils.getCategory(EhConfig.NON_H)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(EhUtils.getCategory(EhConfig.IMAGE_SET)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(EhUtils.getCategory(EhConfig.COSPLAY)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(EhUtils.getCategory(EhConfig.ASIAN_PORN)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(EhUtils.getCategory(EhConfig.MISC)!!.uppercase(java.util.Locale.ROOT))
+
+        val categoryAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, categoryList)
+        categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinner.adapter = categoryAdapter
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val selectedCategory = when (position) {
+                    1 -> EhConfig.DOUJINSHI
+                    2 -> EhConfig.MANGA
+                    3 -> EhConfig.ARTIST_CG
+                    4 -> EhConfig.GAME_CG
+                    5 -> EhConfig.WESTERN
+                    6 -> EhConfig.NON_H
+                    7 -> EhConfig.IMAGE_SET
+                    8 -> EhConfig.COSPLAY
+                    9 -> EhConfig.ASIAN_PORN
+                    10 -> EhConfig.MISC
+                    else -> EhUtils.ALL_CATEGORY
+                }
+                if (selectedCategory != viewModel.selectedCategory.value) {
+                    viewModel.setSelectedCategory(selectedCategory)
+                    viewModel.filterByCategory()
+                }
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+                // Do nothing
+            }
+        }
+        spinner.setSelection(0)
     }
 
     private fun updateAdapter() {
