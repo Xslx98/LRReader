@@ -168,6 +168,6 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
 
     companion object {
         private const val TAG = "GalleryListDataHelper"
-        const val LRR_PAGE_SIZE = 100
+        const val LRR_PAGE_SIZE = 50
     }
 }
