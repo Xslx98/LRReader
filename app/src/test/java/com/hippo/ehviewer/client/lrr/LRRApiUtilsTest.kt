@@ -296,6 +296,42 @@ class LRRApiUtilsTest {
     }
 
     @Test
+    fun retryOnFailure_alwaysFails_rethrowsLastException() = runTest {
+        val expectedException = IOException("persistent failure")
+        var callCount = 0
+        try {
+            retryOnFailure(maxRetries = 2) {
+                callCount++
+                throw expectedException
+            }
+            fail("Should have thrown")
+        } catch (e: IOException) {
+            assertSame("Should rethrow the exact last exception instance", expectedException, e)
+        }
+        advanceUntilIdle()
+        assertEquals(3, callCount) // 1 initial + 2 retries
+    }
+
+    @Test
+    fun retryOnFailure_lastExceptionAlwaysNonNull_fallbackNeverReached() = runTest {
+        // Document that the fallback IOException("Retry exhausted...") is unreachable
+        // under current control flow: repeat() guarantees at least one catch executes
+        // before the throw line, so lastException is always non-null.
+        var callCount = 0
+        try {
+            retryOnFailure(maxRetries = 0) {
+                callCount++
+                throw IOException("single attempt")
+            }
+            fail("Should have thrown")
+        } catch (e: IOException) {
+            // If the fallback were reached, the message would be "Retry exhausted after 1 attempts"
+            assertEquals("single attempt", e.message)
+        }
+        assertEquals(1, callCount) // maxRetries=0 means 1 attempt total
+    }
+
+    @Test
     fun retryOnFailure_retriesOn503() = runTest {
         var callCount = 0
         try {

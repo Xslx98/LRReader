@@ -149,5 +149,5 @@ internal suspend fun <T> retryOnFailure(
             }
         }
     }
-    throw lastException!!
+    throw lastException ?: IOException("Retry exhausted after ${maxRetries + 1} attempts")
 }
