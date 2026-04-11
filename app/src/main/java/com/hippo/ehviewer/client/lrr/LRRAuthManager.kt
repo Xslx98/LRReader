@@ -2,15 +2,21 @@ package com.hippo.ehviewer.client.lrr
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
 import android.util.Base64
 import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import java.io.IOException
 import java.security.GeneralSecurityException
+import java.security.KeyStore
 import java.security.MessageDigest
 import java.security.SecureRandom
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
 import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 
 /**
@@ -42,8 +48,28 @@ object LRRAuthManager {
     private const val PBKDF2_ITERATIONS = 100_000
     private const val PBKDF2_KEY_BITS = 256
 
+    // KeyStore-bound AES-GCM wrapping for pattern hash
+    private const val KEYSTORE_ALIAS_PATTERN = "lrr_pattern_key"
+    private const val KEY_PATTERN_ENCRYPTED = "pattern_encrypted"
+    private const val KEY_PATTERN_IV = "pattern_iv"
+    private const val KEY_PATTERN_KEYSTORE_BOUND = "pattern_keystore_bound"
+    private const val AES_GCM_TAG_BITS = 128
+
+    // Persistent failure lockout (stored in plain SharedPreferences)
+    private const val KEY_PATTERN_FAIL_COUNT = "pattern_fail_count"
+    private const val KEY_PATTERN_LOCKOUT_UNTIL = "pattern_lockout_until"
+    private const val LOCKOUT_THRESHOLD_FIRST = 5
+    private const val LOCKOUT_THRESHOLD_SECOND = 10
+    private const val LOCKOUT_DURATION_FIRST_MS = 30_000L  // 30 seconds
+    private const val LOCKOUT_DURATION_SECOND_MS = 300_000L  // 5 minutes
+
     @Volatile
     private var sPrefs: SharedPreferences? = null
+
+    /** Plain (unencrypted) SharedPreferences for lockout state and flags that must
+     *  survive KeyStore failures. */
+    @Volatile
+    private var sPlainPrefs: SharedPreferences? = null
 
     @Volatile
     private var sActiveProfileId: Long = 0
@@ -52,10 +78,14 @@ object LRRAuthManager {
     @Volatile
     private var sNeedsReauthentication: Boolean = false
 
+    /** Overridable clock source for testing lockout logic. */
+    internal var clockMillis: () -> Long = { System.currentTimeMillis() }
+
     @JvmStatic
     fun initialize(context: Context) {
         val plainPrefs = context.applicationContext
             .getSharedPreferences(PLAIN_PREF_NAME, Context.MODE_PRIVATE)
+        sPlainPrefs = plainPrefs
         try {
             val masterKey = MasterKey.Builder(context.applicationContext)
                 .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
@@ -117,8 +147,10 @@ object LRRAuthManager {
     @JvmStatic
     internal fun initializeForTesting(prefs: SharedPreferences) {
         sPrefs = prefs
+        sPlainPrefs = prefs
         sNeedsReauthentication = false
         sActiveProfileId = prefs.getLong(KEY_ACTIVE_PROFILE_ID, 0L)
+        clockMillis = { System.currentTimeMillis() }
     }
 
     /**
@@ -130,6 +162,7 @@ object LRRAuthManager {
     internal fun simulateStorageUnavailableForTesting() {
         sPrefs = null
         sActiveProfileId = 0L
+        // Keep sPlainPrefs alive — lockout state must survive KeyStore failures.
     }
 
     /**
@@ -306,17 +339,190 @@ object LRRAuthManager {
         prefs.edit().remove("api_key_$profileId").apply()
     }
 
-    // ── App-lock pattern (PBKDF2WithHmacSHA256 + random salt, never plaintext) ──
+    // ── Persistent failure lockout ──────────────────────────────────────
+
+    /**
+     * @return true if the pattern is currently locked out due to too many failed attempts.
+     */
+    @JvmStatic
+    fun isLockedOut(): Boolean {
+        val plain = sPlainPrefs ?: return false
+        val lockoutUntil = plain.getLong(KEY_PATTERN_LOCKOUT_UNTIL, 0L)
+        if (lockoutUntil == 0L) return false
+        return clockMillis() < lockoutUntil
+    }
+
+    /**
+     * @return the remaining lockout duration in milliseconds, or 0 if not locked out.
+     */
+    @JvmStatic
+    fun getLockoutRemainingMs(): Long {
+        val plain = sPlainPrefs ?: return 0L
+        val lockoutUntil = plain.getLong(KEY_PATTERN_LOCKOUT_UNTIL, 0L)
+        if (lockoutUntil == 0L) return 0L
+        val remaining = lockoutUntil - clockMillis()
+        return if (remaining > 0) remaining else 0L
+    }
+
+    /**
+     * Record a failed pattern attempt. Increments the persistent counter and sets
+     * lockout timestamps at thresholds (5 failures = 30s, 10 failures = 5min).
+     */
+    @JvmStatic
+    fun recordFailure() {
+        val plain = sPlainPrefs ?: return
+        val count = plain.getInt(KEY_PATTERN_FAIL_COUNT, 0) + 1
+        val editor = plain.edit().putInt(KEY_PATTERN_FAIL_COUNT, count)
+        when {
+            count >= LOCKOUT_THRESHOLD_SECOND -> {
+                editor.putLong(
+                    KEY_PATTERN_LOCKOUT_UNTIL,
+                    clockMillis() + LOCKOUT_DURATION_SECOND_MS
+                )
+            }
+            count >= LOCKOUT_THRESHOLD_FIRST -> {
+                editor.putLong(
+                    KEY_PATTERN_LOCKOUT_UNTIL,
+                    clockMillis() + LOCKOUT_DURATION_FIRST_MS
+                )
+            }
+        }
+        editor.apply()
+    }
+
+    /**
+     * Reset the failure counter and lockout timestamp. Called on successful verification.
+     */
+    @JvmStatic
+    fun resetFailures() {
+        val plain = sPlainPrefs ?: return
+        plain.edit()
+            .remove(KEY_PATTERN_FAIL_COUNT)
+            .remove(KEY_PATTERN_LOCKOUT_UNTIL)
+            .apply()
+    }
+
+    /**
+     * @return the current failure count (for UI display).
+     */
+    @JvmStatic
+    fun getFailureCount(): Int {
+        return sPlainPrefs?.getInt(KEY_PATTERN_FAIL_COUNT, 0) ?: 0
+    }
+
+    // ── KeyStore-bound AES-GCM pattern wrapping ─────────────────────────
+
+    /**
+     * @return true if the stored pattern hash is bound to Android KeyStore via AES-GCM.
+     * When true, [verifyPatternWithCipher] must be used instead of [verifyPattern].
+     */
+    @JvmStatic
+    fun isPatternKeystoreBound(): Boolean {
+        return sPlainPrefs?.getBoolean(KEY_PATTERN_KEYSTORE_BOUND, false) == true
+    }
+
+    /**
+     * Generate or retrieve the KeyStore-backed AES key for pattern hash encryption.
+     * The key requires user authentication via BiometricPrompt to use.
+     *
+     * @throws GeneralSecurityException if KeyStore operations fail
+     */
+    @JvmStatic
+    @Throws(GeneralSecurityException::class)
+    fun generatePatternKeystoreKey() {
+        val keyStore = KeyStore.getInstance("AndroidKeyStore")
+        keyStore.load(null)
+        if (keyStore.containsAlias(KEYSTORE_ALIAS_PATTERN)) return
+
+        val keyGen = KeyGenerator.getInstance(
+            KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore"
+        )
+        val spec = KeyGenParameterSpec.Builder(
+            KEYSTORE_ALIAS_PATTERN,
+            KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+        )
+            .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+            .setKeySize(256)
+            .setUserAuthenticationRequired(true)
+            .setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG)
+            .build()
+        keyGen.init(spec)
+        keyGen.generateKey()
+    }
+
+    /**
+     * Delete the KeyStore-backed AES key for pattern hash encryption.
+     * Called when clearing the pattern or when falling back to PBKDF2-only.
+     */
+    @JvmStatic
+    fun deletePatternKeystoreKey() {
+        try {
+            val keyStore = KeyStore.getInstance("AndroidKeyStore")
+            keyStore.load(null)
+            if (keyStore.containsAlias(KEYSTORE_ALIAS_PATTERN)) {
+                keyStore.deleteEntry(KEYSTORE_ALIAS_PATTERN)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to delete pattern KeyStore key", e)
+        }
+    }
+
+    /**
+     * Create a [Cipher] in ENCRYPT mode initialized with the KeyStore-backed AES key.
+     * Must be called to create a CryptoObject for BiometricPrompt during [setPattern].
+     *
+     * @throws GeneralSecurityException if the KeyStore key is unavailable
+     */
+    @JvmStatic
+    @Throws(GeneralSecurityException::class)
+    fun getEncryptCipher(): Cipher {
+        val keyStore = KeyStore.getInstance("AndroidKeyStore")
+        keyStore.load(null)
+        val key = keyStore.getKey(KEYSTORE_ALIAS_PATTERN, null)
+            ?: throw GeneralSecurityException("Pattern KeyStore key not found")
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, key)
+        return cipher
+    }
+
+    /**
+     * Create a [Cipher] in DECRYPT mode initialized with the KeyStore-backed AES key
+     * and the IV stored alongside the encrypted pattern hash.
+     * Must be called to create a CryptoObject for BiometricPrompt during [verifyPatternWithCipher].
+     *
+     * @throws GeneralSecurityException if the KeyStore key or stored IV is unavailable
+     */
+    @JvmStatic
+    @Throws(GeneralSecurityException::class)
+    fun getDecryptCipher(): Cipher {
+        val prefs = sPrefs ?: throw GeneralSecurityException("Secure storage unavailable")
+        val ivStr = prefs.getString(KEY_PATTERN_IV, null)
+            ?: throw GeneralSecurityException("Pattern IV not found")
+        val iv = Base64.decode(ivStr, Base64.NO_WRAP)
+        val keyStore = KeyStore.getInstance("AndroidKeyStore")
+        keyStore.load(null)
+        val key = keyStore.getKey(KEYSTORE_ALIAS_PATTERN, null)
+            ?: throw GeneralSecurityException("Pattern KeyStore key not found")
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(AES_GCM_TAG_BITS, iv))
+        return cipher
+    }
+
+    // ── App-lock pattern (PBKDF2WithHmacSHA256 + optional KeyStore AES-GCM) ──
 
     /** @return true if an app-lock pattern has been stored. */
     @JvmStatic
     fun hasPattern(): Boolean {
-        return sPrefs?.contains(KEY_PATTERN_HASH_V2) == true
+        val prefs = sPrefs ?: return false
+        return prefs.contains(KEY_PATTERN_HASH_V2) || prefs.contains(KEY_PATTERN_ENCRYPTED)
     }
 
     /**
      * Hash [pattern] with PBKDF2WithHmacSHA256 (100K iterations) and persist to encrypted prefs.
      * Pass null or empty string to clear the pattern.
+     *
+     * For PBKDF2-only mode (no biometrics), stores the hash directly.
      */
     @JvmStatic
     @Throws(LRRSecureStorageUnavailableException::class)
@@ -326,7 +532,12 @@ object LRRAuthManager {
             prefs.edit()
                 .remove(KEY_PATTERN_HASH_V2)
                 .remove(KEY_PATTERN_SALT)
+                .remove(KEY_PATTERN_ENCRYPTED)
+                .remove(KEY_PATTERN_IV)
                 .apply()
+            sPlainPrefs?.edit()?.remove(KEY_PATTERN_KEYSTORE_BOUND)?.apply()
+            deletePatternKeystoreKey()
+            resetFailures()
             return
         }
         val salt = ByteArray(16)
@@ -339,7 +550,10 @@ object LRRAuthManager {
             prefs.edit()
                 .putString(KEY_PATTERN_HASH_V2, Base64.encodeToString(hash, Base64.NO_WRAP))
                 .putString(KEY_PATTERN_SALT, Base64.encodeToString(salt, Base64.NO_WRAP))
+                .remove(KEY_PATTERN_ENCRYPTED)
+                .remove(KEY_PATTERN_IV)
                 .apply()
+            sPlainPrefs?.edit()?.putBoolean(KEY_PATTERN_KEYSTORE_BOUND, false)?.apply()
         } catch (e: Exception) {
             throw RuntimeException("PBKDF2WithHmacSHA256 not available on this device", e)
         } finally {
@@ -349,12 +563,57 @@ object LRRAuthManager {
     }
 
     /**
+     * Hash [pattern] with PBKDF2, then encrypt the hash with the [authenticatedCipher]
+     * (which was unlocked via BiometricPrompt). Stores the encrypted hash + IV.
+     *
+     * @param pattern the raw pattern string
+     * @param authenticatedCipher a Cipher obtained from BiometricPrompt's CryptoObject
+     */
+    @JvmStatic
+    @Throws(LRRSecureStorageUnavailableException::class)
+    fun setPatternWithCipher(pattern: String?, authenticatedCipher: Cipher) {
+        val prefs = requireSecurePrefs("setPatternWithCipher")
+        if (pattern.isNullOrEmpty()) {
+            setPattern(null)
+            return
+        }
+        val salt = ByteArray(16)
+        SecureRandom().nextBytes(salt)
+        val patChars = pattern.toCharArray()
+        val spec = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS)
+        try {
+            val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+            val hash = factory.generateSecret(spec).encoded
+            // Encrypt the PBKDF2 hash with the KeyStore-backed AES-GCM cipher
+            val encrypted = authenticatedCipher.doFinal(hash)
+            val iv = authenticatedCipher.iv
+            prefs.edit()
+                .putString(KEY_PATTERN_ENCRYPTED, Base64.encodeToString(encrypted, Base64.NO_WRAP))
+                .putString(KEY_PATTERN_IV, Base64.encodeToString(iv, Base64.NO_WRAP))
+                .putString(KEY_PATTERN_SALT, Base64.encodeToString(salt, Base64.NO_WRAP))
+                .remove(KEY_PATTERN_HASH_V2)
+                .apply()
+            sPlainPrefs?.edit()?.putBoolean(KEY_PATTERN_KEYSTORE_BOUND, true)?.apply()
+        } catch (e: Exception) {
+            throw RuntimeException("Failed to encrypt pattern hash with KeyStore cipher", e)
+        } finally {
+            spec.clearPassword()
+            patChars.fill('\u0000')
+        }
+    }
+
+    /**
      * Verify [input] against the stored PBKDF2 hash using a timing-safe comparison.
+     * Only works for non-KeyStore-bound patterns. For KeyStore-bound patterns,
+     * use [verifyPatternWithCipher].
+     *
+     * Checks lockout state first; on failure, records the attempt.
      *
      * @return true if input matches the stored pattern.
      */
     @JvmStatic
     fun verifyPattern(input: String?): Boolean {
+        if (isLockedOut()) return false
         val prefs = sPrefs ?: return false
         val saltStr = prefs.getString(KEY_PATTERN_SALT, null) ?: return false
         val hashStr = prefs.getString(KEY_PATTERN_HASH_V2, null) ?: return false
@@ -365,8 +624,54 @@ object LRRAuthManager {
         try {
             val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
             val actual = factory.generateSecret(spec).encoded
-            return MessageDigest.isEqual(actual, expected)
+            val match = MessageDigest.isEqual(actual, expected)
+            if (match) {
+                resetFailures()
+            } else {
+                recordFailure()
+            }
+            return match
         } catch (_: Exception) {
+            recordFailure()
+            return false
+        } finally {
+            spec.clearPassword()
+            patChars.fill('\u0000')
+        }
+    }
+
+    /**
+     * Verify [input] against the stored KeyStore-encrypted PBKDF2 hash.
+     * The [authenticatedCipher] must have been obtained from BiometricPrompt's CryptoObject.
+     *
+     * Checks lockout state first; on failure, records the attempt.
+     *
+     * @return true if input matches the stored pattern.
+     */
+    @JvmStatic
+    fun verifyPatternWithCipher(input: String?, authenticatedCipher: Cipher): Boolean {
+        if (isLockedOut()) return false
+        val prefs = sPrefs ?: return false
+        val saltStr = prefs.getString(KEY_PATTERN_SALT, null) ?: return false
+        val encryptedStr = prefs.getString(KEY_PATTERN_ENCRYPTED, null) ?: return false
+        val salt = Base64.decode(saltStr, Base64.NO_WRAP)
+        val encrypted = Base64.decode(encryptedStr, Base64.NO_WRAP)
+        val patChars = (input ?: "").toCharArray()
+        val spec = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS)
+        try {
+            val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+            val actual = factory.generateSecret(spec).encoded
+            // Decrypt the stored hash using the BiometricPrompt-authenticated cipher
+            val expected = authenticatedCipher.doFinal(encrypted)
+            val match = MessageDigest.isEqual(actual, expected)
+            if (match) {
+                resetFailures()
+            } else {
+                recordFailure()
+            }
+            return match
+        } catch (_: Exception) {
+            recordFailure()
             return false
         } finally {
             spec.clearPassword()
@@ -380,6 +685,12 @@ object LRRAuthManager {
     @JvmStatic
     fun clear() {
         sPrefs?.edit()?.clear()?.apply()
+        sPlainPrefs?.edit()
+            ?.remove(KEY_PATTERN_KEYSTORE_BOUND)
+            ?.remove(KEY_PATTERN_FAIL_COUNT)
+            ?.remove(KEY_PATTERN_LOCKOUT_UNTIL)
+            ?.apply()
+        deletePatternKeystoreKey()
         sActiveProfileId = 0
         sNeedsReauthentication = false
     }
