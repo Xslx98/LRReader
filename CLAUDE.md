@@ -242,8 +242,8 @@ Access via `ServiceRegistry.<module>.<service>`. Do not add new statics to `EhAp
 
 Settings are now Kotlin objects in `settings/`:
 
-- `Settings.kt` (legacy global), `AppearanceSettings`, `DownloadSettings`, `FavoritesSettings`, `NetworkSettings`, `ReadingSettings`, `SecuritySettings`
-- New settings go into the appropriate typed object
+- `Settings.kt` (utility: `getContext()`, `getPreferences()`, generic accessors only — field-specific accessors removed in W3-4), `AppearanceSettings`, `DownloadSettings`, `FavoritesSettings`, `NetworkSettings`, `ReadingSettings`, `SecuritySettings`, `UpdateSettings`, `GuideSettings`, `PrivacySettings`
+- New settings go into the appropriate typed object; do not add field-specific accessors to `Settings.kt`
 - API keys use `EncryptedSharedPreferences` via `LRRAuthManager` — never plaintext
 
 ### Package Organization
@@ -330,7 +330,7 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 2. **Scene-based navigation:** Uses a custom `Scene` framework (not Jetpack Navigation). UI transitions via `startScene()` / `popScene()`.
 
-3. **ServiceRegistry:** Replaces the old service-locator pattern in `EhApplication`. Initialize modules here; don't add new statics to `EhApplication`. Includes `CoroutineModule` for scoped coroutines.
+3. **ServiceRegistry:** Replaces the old service-locator pattern in `EhApplication`. Initialize modules here; don't add new statics to `EhApplication`. Includes `CoroutineModule` for scoped coroutines. Cache clearing uses the `Cacheable` interface (W3-1): modules implement `Cacheable` and self-register via `ServiceRegistry.registerCacheable()`, so `clearAllCaches()` iterates registered instances instead of hardcoding calls. ServiceRegistry has zero imports from `client.lrr`.
 
 4. **LRR API surface:** Full LANraragi REST API wrapped in `client/lrr/`. Add new endpoints here as `suspend` functions returning `@Serializable` data classes. Use `parseBaseUrl(baseUrl)` from `LRRApiUtils.kt` to build URLs — never `toHttpUrlOrNull()!!`.
 
@@ -385,6 +385,12 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 25. **ProGuard log stripping:** Release builds strip `Log.v()`, `Log.d()`, `Log.i()`, and `Log.w()` via `-assumenosideeffects`. Only `Log.e()` is preserved for crash diagnostics.
 
+26. **GalleryInfo data model split (W3-3, 2026-04-11):** `GalleryInfo` class renamed to `GalleryInfoEntity` (Room entity base with `@ColumnInfo` fields), with `typealias GalleryInfo = GalleryInfoEntity` for backward compatibility. New `GalleryInfoUi` class (Parcelable, no Room annotations) for UI display. Mapper functions in `mapper/GalleryInfoMapper.kt`: `GalleryInfo.toUi()`, `GalleryInfoUi.toEntity()`. The gallery list pipeline (PagingSource → ContentHelper → Adapter → Scene) uses `GalleryInfoUi`. Detail/download code at persistence boundaries uses `GalleryInfoEntity` / `DownloadInfo`. `LRRArchive.toGalleryInfoUi()` returns the UI type; `toGalleryInfo()` wraps it for DB callers.
+
+27. **Pattern lock KeyStore binding (W3-6, 2026-04-11):** `LRRAuthManager` pattern lock now wraps the PBKDF2 hash with KeyStore-bound AES-GCM via `BiometricPrompt` on devices with strong biometrics. Failure lockout persisted in plain SharedPreferences (survives KeyStore failures): 5 failures → 30s lock, 10 → 5min. Devices without biometrics fall back to PBKDF2-only. Methods: `setPatternWithCipher()`, `verifyPatternWithCipher()`, `isPatternKeystoreBound()`, `isLockedOut()`, `recordFailure()`, `resetFailures()`. Controllable `clockMillis` lambda for test determinism. 22 unit tests in `PatternLockoutTest.kt`.
+
+28. **Cacheable interface (W3-1, 2026-04-11):** `interface Cacheable { fun clearCache() }` in `module/` package. `NetworkModule`, `DataModule` implement it and self-register via `ServiceRegistry.registerCacheable()`. `LRRTagCache` implements `Cacheable` and is registered via `ClientModule.init`. `ServiceRegistry.clearAllCaches()` iterates registered cacheables — no hardcoded cache calls, no imports from `client.lrr`. 6 unit tests in `CacheableTest.kt`.
+
 ---
 
 ## What NOT to Do
@@ -404,3 +410,6 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 - Do not use `notifyDataSetChanged()` on RecyclerView — use DiffUtil or specific `notifyItem*()` calls
 - Do not introduce new visual themes or Material3 components — match existing `RoundSideRectDrawable` + theme attr style
 - Do not add `x86_64` ABI filter to release builds — release is arm64-v8a only (debug includes x86_64 for emulator)
+- Do not add field-specific accessors to `Settings.kt` — it now contains only utility methods (`getContext`, `getPreferences`, generic typed accessors); new settings go into the appropriate modular settings object (`AppearanceSettings`, `DownloadSettings`, `UpdateSettings`, `GuideSettings`, `PrivacySettings`, etc.) (W3-4)
+- Do not hardcode cache-clear calls in `ServiceRegistry.clearAllCaches()` — implement `Cacheable` and register via `ServiceRegistry.registerCacheable()` (W3-1)
+- Do not use `GalleryInfo` / `GalleryInfoEntity` in UI-layer code that only displays gallery data — use `GalleryInfoUi` (W3-3); use `GalleryInfoEntity` (via `GalleryInfo` typealias) only at persistence boundaries
