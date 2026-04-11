@@ -42,6 +42,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -906,9 +910,14 @@ class DownloadsScene : ToolbarScene(),
                 intent.data = archiveUri
             } else {
                 // Use GalleryOpenHelper to prefer local files over server
-                intent = GalleryOpenHelper.buildReadIntent(activity, downloadInfo)
+                // buildReadIntent is suspend (resolves download dir from DB)
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val readIntent = withContext(Dispatchers.IO) {
+                        GalleryOpenHelper.buildReadIntent(activity, downloadInfo)
+                    }
+                    galleryActivityLauncher.launch(readIntent)
+                }
             }
-            galleryActivityLauncher.launch(intent)
             return true
         }
     }
@@ -1296,9 +1305,14 @@ class DownloadsScene : ToolbarScene(),
                 if (!isImportedArchive && info != null) {
                     // Only process SpiderInfo for regular downloads, not imported archives
                     viewModel.removeSpiderInfo(info.gid)
-                    val spiderInfo = SpiderInfo.getSpiderInfo(info)
-                    if (spiderInfo != null) {
-                        viewModel.putSpiderInfo(info.gid, spiderInfo)
+                    val gid = info.gid
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        val spiderInfo = withContext(Dispatchers.IO) {
+                            SpiderInfo.getSpiderInfo(info)
+                        }
+                        if (spiderInfo != null) {
+                            viewModel.putSpiderInfo(gid, spiderInfo)
+                        }
                     }
                 }
 
