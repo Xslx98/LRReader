@@ -204,9 +204,9 @@ class LRRAuthManagerTest {
     // ── Allow cleartext flag ────────────────────────────────────────
 
     @Test
-    fun allowCleartext_defaultsToTrue() {
-        // Default value (no key in prefs)
-        assertTrue("default should be true", LRRAuthManager.getAllowCleartext())
+    fun allowCleartext_defaultsToFalse() {
+        // Default value (no key in prefs) — fail-closed when no profile has been loaded
+        assertFalse("default should be false (fail-closed)", LRRAuthManager.getAllowCleartext())
     }
 
     @Test
@@ -216,6 +216,26 @@ class LRRAuthManagerTest {
 
         LRRAuthManager.setAllowCleartext(true)
         assertTrue("after setAllowCleartext(true)", LRRAuthManager.getAllowCleartext())
+    }
+
+    @Test
+    fun allowCleartext_returnsFalseWhenStorageUnavailable() {
+        // When sPrefs is null (KeyStore broken), getAllowCleartext() must fail-closed
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+        assertFalse(
+            "getAllowCleartext must return false when secure storage is unavailable",
+            LRRAuthManager.getAllowCleartext()
+        )
+    }
+
+    @Test
+    fun allowCleartext_explicitTrue_returnsTrue() {
+        // When the profile explicitly sets cleartext=true, it should be respected
+        LRRAuthManager.setAllowCleartext(true)
+        assertTrue(
+            "getAllowCleartext must return true when explicitly set",
+            LRRAuthManager.getAllowCleartext()
+        )
     }
 
     // ── Setter failure surfacing (sPrefs == null) ──────────────────
