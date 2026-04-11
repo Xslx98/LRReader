@@ -76,6 +76,14 @@ open class GalleryInfo : Parcelable {
     @Ignore
     var pages: Int = 0
 
+    /**
+     * Server-reported reading progress (1-indexed page number).
+     * 0 means unread.
+     */
+    @JvmField
+    @Ignore
+    var progress: Int = 0
+
     @JvmField
     @Ignore
     var thumbWidth: Int = 0
@@ -145,6 +153,7 @@ open class GalleryInfo : Parcelable {
         @Suppress("UNCHECKED_CAST")
         tgList = `in`.readArrayList(String::class.java.classLoader) as? ArrayList<String>
         serverProfileId = `in`.readLong()
+        progress = `in`.readInt()
     }
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
@@ -169,6 +178,7 @@ open class GalleryInfo : Parcelable {
         dest.writeString(favoriteName)
         dest.writeList(tgList)
         dest.writeLong(serverProfileId)
+        dest.writeInt(progress)
     }
 
     override fun describeContents(): Int = 0
@@ -293,6 +303,7 @@ open class GalleryInfo : Parcelable {
         i.favoriteSlot = favoriteSlot
         i.favoriteName = favoriteName
         i.tgList = tgList
+        i.progress = progress
         if (info != null) {
             i.state = info.state
             i.legacy = info.legacy
