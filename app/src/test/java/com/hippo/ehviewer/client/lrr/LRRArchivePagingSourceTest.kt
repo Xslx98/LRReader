@@ -3,7 +3,7 @@ package com.hippo.ehviewer.client.lrr
 import androidx.paging.PagingConfig
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.data.GalleryInfoUi
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
@@ -232,7 +232,7 @@ class LRRArchivePagingSourceTest {
     @Test
     fun getRefreshKey_returnsNullWhenNoAnchor() {
         val source = createPagingSource()
-        val state = PagingState<Int, GalleryInfo>(
+        val state = PagingState<Int, GalleryInfoUi>(
             pages = emptyList(),
             anchorPosition = null,
             config = PagingConfig(pageSize = 50),
@@ -244,7 +244,7 @@ class LRRArchivePagingSourceTest {
     @Test
     fun getRefreshKey_returnsKeyFromClosestPage() {
         val source = createPagingSource()
-        val galleryInfo = GalleryInfo().apply { title = "Test" }
+        val galleryInfo = GalleryInfoUi().apply { title = "Test" }
         val page = PagingSource.LoadResult.Page(
             data = listOf(galleryInfo),
             prevKey = 1,
