@@ -36,9 +36,6 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
-import com.hippo.ehviewer.ui.MainActivity
-import com.hippo.ehviewer.ui.scene.download.DownloadsScene
-import com.hippo.scene.StageActivity
 import com.hippo.util.ReadableTime
 import com.hippo.lib.yorozuya.FileUtils
 import com.hippo.lib.yorozuya.SimpleHandler
@@ -293,11 +290,11 @@ class DownloadService : Service(), DownloadListener {
         val piClear = PendingIntent.getService(this, 0, clearIntent, PendingIntent.FLAG_IMMUTABLE)
 
         val bundle = Bundle()
-        bundle.putString(DownloadsScene.KEY_ACTION, DownloadsScene.ACTION_CLEAR_DOWNLOAD_SERVICE)
-        val activityIntent = Intent(this, MainActivity::class.java)
-        activityIntent.setAction(StageActivity.ACTION_START_SCENE)
-        activityIntent.putExtra(StageActivity.KEY_SCENE_NAME, DownloadsScene::class.java.name)
-        activityIntent.putExtra(StageActivity.KEY_SCENE_ARGS, bundle)
+        bundle.putString(SCENE_KEY_ACTION, SCENE_ACTION_CLEAR)
+        val activityIntent = Intent().setClassName(packageName, TARGET_ACTIVITY)
+        activityIntent.setAction(ACTION_START_SCENE)
+        activityIntent.putExtra(KEY_SCENE_NAME, TARGET_SCENE)
+        activityIntent.putExtra(KEY_SCENE_ARGS, bundle)
         val piActivity = PendingIntent.getActivity(
             this@DownloadService, 0,
             activityIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -358,11 +355,11 @@ class DownloadService : Service(), DownloadListener {
         ensureDownloadingBuilder()
 
         val bundle = Bundle()
-        bundle.putLong(DownloadsScene.KEY_GID, info.gid)
-        val activityIntent = Intent(this, MainActivity::class.java)
-        activityIntent.setAction(StageActivity.ACTION_START_SCENE)
-        activityIntent.putExtra(StageActivity.KEY_SCENE_NAME, DownloadsScene::class.java.name)
-        activityIntent.putExtra(StageActivity.KEY_SCENE_ARGS, bundle)
+        bundle.putLong(SCENE_KEY_GID, info.gid)
+        val activityIntent = Intent().setClassName(packageName, TARGET_ACTIVITY)
+        activityIntent.setAction(ACTION_START_SCENE)
+        activityIntent.putExtra(KEY_SCENE_NAME, TARGET_SCENE)
+        activityIntent.putExtra(KEY_SCENE_ARGS, bundle)
         val piActivity = PendingIntent.getActivity(
             this@DownloadService, 0,
             activityIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -680,6 +677,17 @@ class DownloadService : Service(), DownloadListener {
         private const val ID_DOWNLOADING = 1
         private const val ID_DOWNLOADED = 2
         private const val ID_509 = 3
+
+        // Intent targets — string constants to avoid importing UI layer classes.
+        // Values must match the actual constants in the respective UI classes.
+        private const val TARGET_ACTIVITY = "com.hippo.ehviewer.ui.MainActivity"
+        private const val ACTION_START_SCENE = "start_scene"
+        private const val KEY_SCENE_NAME = "stage_activity_scene_name"
+        private const val KEY_SCENE_ARGS = "stage_activity_scene_args"
+        private const val TARGET_SCENE = "com.hippo.ehviewer.ui.scene.download.DownloadsScene"
+        private const val SCENE_KEY_ACTION = "action"
+        private const val SCENE_ACTION_CLEAR = "clear_download_service"
+        private const val SCENE_KEY_GID = "gid"
 
         private val sItemStateArray =
             SparseJBArray()
