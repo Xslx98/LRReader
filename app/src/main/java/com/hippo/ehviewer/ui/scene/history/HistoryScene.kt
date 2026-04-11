@@ -28,8 +28,8 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.h6ah4i.android.widget.advrecyclerview.animator.SwipeDismissItemAnimator
@@ -46,14 +46,11 @@ import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.easyrecyclerview.FastScroller
 import com.hippo.easyrecyclerview.HandlerDrawable
 import com.hippo.easyrecyclerview.MarginItemDecoration
-import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhCacheKeyFactory
 import com.hippo.ehviewer.client.EhUtils
-import com.hippo.ehviewer.dao.HistoryInfo
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.ui.CommonOperations
-import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.ui.scene.ToolbarScene
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
@@ -63,17 +60,20 @@ import com.hippo.ripple.Ripple
 import com.hippo.scene.Announcer
 import com.hippo.util.DrawableManager
 import com.hippo.view.ViewTransition
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import com.hippo.widget.LoadImageView
 import com.hippo.widget.recyclerview.AutoStaggeredGridLayoutManager
 import com.hippo.lib.yorozuya.AssertUtils
 import com.hippo.lib.yorozuya.ViewUtils
+import kotlinx.coroutines.launch
 
 class HistoryScene : ToolbarScene(),
     EasyRecyclerView.OnItemClickListener,
     EasyRecyclerView.OnItemLongClickListener {
+
+    /*---------------
+     ViewModel
+     ---------------*/
+    private lateinit var viewModel: HistoryViewModel
 
     /*---------------
      View life cycle
@@ -81,14 +81,7 @@ class HistoryScene : ToolbarScene(),
     private var mRecyclerView: EasyRecyclerView? = null
     private var mViewTransition: ViewTransition? = null
     private var mAdapter: RecyclerView.Adapter<*>? = null
-    private var mLazyList: List<HistoryInfo>? = null
     private var mLayoutManager: AutoStaggeredGridLayoutManager? = null
-
-    // Snapshot of the list last dispatched to the adapter. Read/written ONLY by
-    // updateLazyList() (the single dispatch path). Used to compute DiffUtil deltas
-    // against the freshly loaded list. See docs/diffutil-root-cause-analysis.md
-    // for why we are careful about snapshot ownership.
-    private var mLastSnapshot: List<HistoryInfo> = emptyList()
 
     override fun getNavCheckedItem(): Int {
         return R.id.nav_history
@@ -99,6 +92,8 @@ class HistoryScene : ToolbarScene(),
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        viewModel = ViewModelProvider(requireActivity())[HistoryViewModel::class.java]
+
         val view = inflater.inflate(R.layout.scene_history, container, false)
         val content = ViewUtils.`$$`(view, R.id.content)
         mRecyclerView = ViewUtils.`$$`(content, R.id.recycler_view) as EasyRecyclerView
@@ -159,7 +154,16 @@ class HistoryScene : ToolbarScene(),
         handlerDrawable.setColor(AttrResources.getAttrColor(context, R.attr.widgetColorThemeAccent))
         fastScroller.setHandlerDrawable(handlerDrawable)
 
-        updateLazyList()
+        // Observe ViewModel list updates for DiffUtil dispatch
+        lifecycleScope.launch {
+            viewModel.listUpdate.collect { update ->
+                val adapterRef = mAdapter ?: return@collect
+                update.diffResult.dispatchUpdatesTo(adapterRef)
+                updateView(false)
+            }
+        }
+
+        viewModel.loadHistory()
         updateView(false)
 
         return view
@@ -184,18 +188,17 @@ class HistoryScene : ToolbarScene(),
     override fun onDestroyView() {
         super.onDestroyView()
 
-        if (mLazyList != null) {
-            mLazyList = null
+        if (viewModel.historyList.value.isNotEmpty()) {
             // Adapter is being torn down with this view; a structural notify is
             // required so the framework drops cached ViewHolders that referenced
-            // mLazyList. notifyDataSetChanged is acceptable here because there is
-            // no concurrent dispatch path during view destruction.
+            // the history list. notifyDataSetChanged is acceptable here because
+            // there is no concurrent dispatch path during view destruction.
             @Suppress("NotifyDataSetChanged")
             mAdapter?.notifyDataSetChanged()
         }
         // Reset snapshot so the next onCreateView starts from an empty baseline
-        // and the first updateLazyList() dispatch is a clean inserts-only delta.
-        mLastSnapshot = emptyList()
+        // and the first loadHistory() dispatch is a clean inserts-only delta.
+        viewModel.resetSnapshot()
         if (mRecyclerView != null) {
             mRecyclerView!!.stopScroll()
             mRecyclerView = null
@@ -203,62 +206,6 @@ class HistoryScene : ToolbarScene(),
 
         mViewTransition = null
         mAdapter = null
-    }
-
-    // Asynchronously loads history list on IO thread, then updates UI.
-    // Uses DiffUtil for the dispatch. SwipeResultActionClear (swipe-to-dismiss)
-    // calls into this same path after async DB delete completes; the diff-driven
-    // remove of the swiped item should align with the SwipeDismissItemAnimator's
-    // ongoing animation since we keep mLastSnapshot in sync with what the adapter
-    // last saw. setHasStableIds(true) (line 114) helps the animator track items.
-    private fun updateLazyList() {
-        lifecycleScope.launch {
-            val lazyList = withContext(Dispatchers.IO) { EhDB.getHistoryLazyListAsync() }
-            val adapter = mAdapter
-            val newList = ArrayList(lazyList)
-            if (adapter != null) {
-                val diff = DiffUtil.calculateDiff(
-                    HistoryInfoDiffCallback(mLastSnapshot, newList)
-                )
-                mLazyList = newList
-                mLastSnapshot = newList
-                diff.dispatchUpdatesTo(adapter)
-            } else {
-                mLazyList = newList
-                mLastSnapshot = newList
-            }
-            updateView(false)
-        }
-    }
-
-    /**
-     * DiffUtil callback for HistoryInfo lists. Identity is `gid` (Room PK).
-     * Content compares all fields rendered in onBindViewHolder so a metadata
-     * refresh repaints the affected rows.
-     */
-    private class HistoryInfoDiffCallback(
-        private val oldList: List<HistoryInfo>,
-        private val newList: List<HistoryInfo>
-    ) : DiffUtil.Callback() {
-
-        override fun getOldListSize(): Int = oldList.size
-        override fun getNewListSize(): Int = newList.size
-
-        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-            return oldList[oldItemPosition].gid == newList[newItemPosition].gid
-        }
-
-        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-            val o = oldList[oldItemPosition]
-            val n = newList[newItemPosition]
-            return o.title == n.title &&
-                o.uploader == n.uploader &&
-                o.rating == n.rating &&
-                o.category == n.category &&
-                o.posted == n.posted &&
-                o.simpleLanguage == n.simpleLanguage &&
-                o.thumb == n.thumb
-        }
     }
 
     private fun updateView(animation: Boolean) {
@@ -284,15 +231,11 @@ class HistoryScene : ToolbarScene(),
     private fun showClearAllDialog() {
         AlertDialog.Builder(ehContext!!)
             .setMessage(R.string.clear_all_history)
-            .setPositiveButton(R.string.clear_all) { dialog, which ->
+            .setPositiveButton(R.string.clear_all) { _, which ->
                 if (DialogInterface.BUTTON_POSITIVE != which || mAdapter == null) {
                     return@setPositiveButton
                 }
-
-                lifecycleScope.launch {
-                    withContext(Dispatchers.IO) { EhDB.clearHistoryInfoAsync() }
-                    updateLazyList()
-                }
+                viewModel.clearAllHistory()
             }.show()
     }
 
@@ -311,11 +254,12 @@ class HistoryScene : ToolbarScene(),
     }
 
     override fun onItemClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean {
-        val lazyList = mLazyList ?: return false
+        val list = viewModel.historyList.value
+        if (list.isEmpty() || position >= list.size) return false
 
         val args = Bundle()
         args.putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_GALLERY_INFO)
-        args.putParcelable(GalleryDetailScene.KEY_GALLERY_INFO, lazyList[position])
+        args.putParcelable(GalleryDetailScene.KEY_GALLERY_INFO, list[position])
         val announcer = Announcer(GalleryDetailScene::class.java).setArgs(args)
         val thumb = view.findViewById<View>(R.id.thumb)
         if (thumb != null) {
@@ -328,9 +272,10 @@ class HistoryScene : ToolbarScene(),
     override fun onItemLongClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean {
         val context = ehContext ?: return false
         val activity = activity2 ?: return false
-        val lazyList = mLazyList ?: return false
+        val list = viewModel.historyList.value
+        if (list.isEmpty() || position >= list.size) return false
 
-        val gi = lazyList[position]
+        val gi = list[position]
         AlertDialog.Builder(context)
             .setTitle(EhUtils.getSuitableTitle(gi))
             .setItems(R.array.gallery_list_menu_entries) { _, which ->
@@ -379,7 +324,8 @@ class HistoryScene : ToolbarScene(),
         }
 
         override fun getItemId(position: Int): Long {
-            return mLazyList?.get(position)?.gid ?: super.getItemId(position)
+            val list = viewModel.historyList.value
+            return if (position < list.size) list[position].gid else super.getItemId(position)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HistoryHolder {
@@ -394,9 +340,10 @@ class HistoryScene : ToolbarScene(),
         }
 
         override fun onBindViewHolder(holder: HistoryHolder, position: Int) {
-            val lazyList = mLazyList ?: return
+            val list = viewModel.historyList.value
+            if (position >= list.size) return
 
-            val gi = lazyList[position]
+            val gi = list[position]
             holder.thumb.load(EhCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
             holder.title.text = EhUtils.getSuitableTitle(gi)
             holder.uploader.text = gi.uploader
@@ -421,7 +368,7 @@ class HistoryScene : ToolbarScene(),
         }
 
         override fun getItemCount(): Int {
-            return mLazyList?.size ?: 0
+            return viewModel.historyList.value.size
         }
 
         override fun onGetSwipeReactionType(holder: HistoryHolder, position: Int, x: Int, y: Int): Int {
@@ -446,14 +393,10 @@ class HistoryScene : ToolbarScene(),
 
         override fun onPerformAction() {
             super.onPerformAction()
-            val lazyList = mLazyList ?: return
-            if (mAdapter == null) return
+            val list = viewModel.historyList.value
+            if (mAdapter == null || mPosition >= list.size) return
 
-            val info = lazyList[mPosition]
-            lifecycleScope.launch {
-                withContext(Dispatchers.IO) { EhDB.deleteHistoryInfoAsync(info) }
-                updateLazyList()
-            }
+            viewModel.deleteHistoryItem(list[mPosition])
         }
     }
 
