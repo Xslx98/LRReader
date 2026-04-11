@@ -16,15 +16,13 @@
 
 package com.hippo.ehviewer.ui
 
-import android.hardware.fingerprint.FingerprintManager
-import android.os.Build
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.CheckBox
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
@@ -41,15 +39,11 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
     companion object {
         private const val TAG = "SetSecurityActivity"
 
-        @RequiresApi(api = Build.VERSION_CODES.M)
         @JvmStatic
-        fun hasEnrolledFingerprints(fingerprintManager: FingerprintManager): Boolean {
-            return try {
-                @Suppress("DEPRECATION")
-                fingerprintManager.isHardwareDetected && fingerprintManager.hasEnrolledFingerprints()
-            } catch (e: Exception) {
-                false
-            }
+        fun canAuthenticateBiometric(context: Context): Boolean {
+            val biometricManager = BiometricManager.from(context)
+            return biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
+                BiometricManager.BIOMETRIC_SUCCESS
         }
     }
 
@@ -71,12 +65,9 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
         // Pattern is stored as a hash and cannot be recovered for display.
         // The view starts empty regardless of whether a pattern was previously set.
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val fingerprintManager = getSystemService(FingerprintManager::class.java)
-            if (fingerprintManager != null && hasEnrolledFingerprints(fingerprintManager)) {
-                mFingerprint!!.visibility = View.VISIBLE
-                mFingerprint!!.isChecked = SecuritySettings.getEnableFingerprint()
-            }
+        if (canAuthenticateBiometric(this)) {
+            mFingerprint!!.visibility = View.VISIBLE
+            mFingerprint!!.isChecked = SecuritySettings.getEnableFingerprint()
         }
 
         mCancel!!.setOnClickListener(this)
