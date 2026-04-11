@@ -56,8 +56,13 @@ abstract class GalleryAdapter(
     private val mPaddingTopSB: Int = mResources.getDimensionPixelOffset(R.dimen.gallery_padding_top_search_bar)
     private var mListDecoration: MarginItemDecoration? = null
     private var mGirdDecoration: MarginItemDecoration? = null
-    private val mListThumbWidth: Int
-    private val mListThumbHeight: Int
+    private val mListThumbHeight: Int by lazy {
+        @SuppressLint("InflateParams")
+        val calculator = mInflater.inflate(R.layout.item_gallery_list_thumb_height, null)
+        ViewUtils.measureView(calculator, 1024, ViewGroup.LayoutParams.WRAP_CONTENT)
+        calculator.measuredHeight
+    }
+    private val mListThumbWidth: Int by lazy { mListThumbHeight * 2 / 3 }
     private var mType = TYPE_INVALID
 
     private val mDownloadManager: DownloadManager
@@ -65,12 +70,6 @@ abstract class GalleryAdapter(
     init {
         mRecyclerView.adapter = this
         mRecyclerView.layoutManager = mLayoutManager
-
-        @SuppressLint("InflateParams")
-        val calculator = mInflater.inflate(R.layout.item_gallery_list_thumb_height, null)
-        ViewUtils.measureView(calculator, 1024, ViewGroup.LayoutParams.WRAP_CONTENT)
-        mListThumbHeight = calculator.measuredHeight
-        mListThumbWidth = mListThumbHeight * 2 / 3
 
         setType(type)
 
