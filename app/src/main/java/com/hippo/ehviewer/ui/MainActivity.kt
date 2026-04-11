@@ -90,7 +90,6 @@ import kotlinx.coroutines.withContext
 import com.hippo.widget.AvatarImageView
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.lib.yorozuya.ResourcesUtils
-import com.hippo.lib.yorozuya.SimpleHandler
 import com.hippo.lib.yorozuya.ViewUtils
 import java.io.File
 import java.io.FileOutputStream
@@ -139,6 +138,8 @@ class MainActivity : StageActivity(),
     /*---------------
      Whole life cycle
      ---------------*/
+    private val mainHandler = Handler(Looper.getMainLooper())
+
     private var mDrawerLayout: EhDrawerLayout? = null
     private var mNavView: NavigationView? = null
     private var mRightDrawer: FrameLayout? = null
@@ -561,7 +562,7 @@ class MainActivity : StageActivity(),
     }
 
     private fun checkClipboardUrl() {
-        SimpleHandler.getInstance().postDelayed({
+        mainHandler.postDelayed({
             if (!isSolid()) {
                 checkClipboardUrlInternal()
             }
