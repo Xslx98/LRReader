@@ -242,13 +242,15 @@ object LRRAuthManager {
 
     /**
      * @return whether the active server profile permits cleartext (HTTP) requests.
-     *         Defaults to `true` so cold starts and tests don't accidentally
-     *         disable cleartext for users that haven't loaded a profile yet.
+     *         Defaults to `false` (fail-closed) so that when the KeyStore is unavailable
+     *         (sPrefs == null) or no profile has been loaded yet, cleartext is blocked.
+     *         ServerListScene calls [setAllowCleartext] on every profile switch, so
+     *         legitimate cleartext users are unaffected once a profile loads.
      *         Read by [LRRCleartextRejectionInterceptor] every request.
      */
     @JvmStatic
     fun getAllowCleartext(): Boolean {
-        return sPrefs?.getBoolean(KEY_ALLOW_CLEARTEXT, true) ?: true
+        return sPrefs?.getBoolean(KEY_ALLOW_CLEARTEXT, false) ?: false
     }
 
     /**
