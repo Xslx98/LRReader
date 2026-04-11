@@ -6,13 +6,14 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Ignore
 import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.data.GalleryInfoEntity
 
 /**
  * Entity mapped to table "LOCAL_FAVORITES".
  * Primary key is GID (inherited from GalleryInfo).
  */
 @Entity(tableName = "LOCAL_FAVORITES", primaryKeys = ["GID"])
-class LocalFavoriteInfo : GalleryInfo {
+class LocalFavoriteInfo : GalleryInfoEntity {
 
     @ColumnInfo(name = "TIME")
     @JvmField
