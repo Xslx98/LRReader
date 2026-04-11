@@ -37,8 +37,7 @@ class DownloadLabelDraw(
                     true
                 }
                 R.id.action_default_download_label -> {
-                    val dm = scene.getMDownloadManager() ?: return@setOnMenuItemClickListener true
-
+                    val dm = scene.getMDownloadManager()
                     val list = dm.labelList
                     val items = arrayOfNulls<String>(list.size + 2)
                     items[0] = scene.getString(R.string.let_me_select)
