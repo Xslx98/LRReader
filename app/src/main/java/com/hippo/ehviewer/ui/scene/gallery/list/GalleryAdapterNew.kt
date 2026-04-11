@@ -18,8 +18,6 @@ package com.hippo.ehviewer.ui.scene.gallery.list
 
 import android.annotation.SuppressLint
 import android.content.res.Resources
-import android.os.Handler
-import android.os.Looper
 import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
@@ -27,7 +25,6 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.annotation.IntDef
-import androidx.collection.LruCache
 import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -39,23 +36,19 @@ import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.settings.AppearanceSettings
-import com.hippo.ehviewer.spider.SpiderQueen
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
 import com.hippo.ehviewer.widget.SimpleRatingView
 import com.hippo.ehviewer.widget.TileThumbNew
 import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.widget.LoadImageViewNew
 import com.hippo.widget.recyclerview.AutoStaggeredGridLayoutManager
-import java.util.concurrent.ExecutorService
 
 abstract class GalleryAdapterNew(
     private val mInflater: LayoutInflater,
     private val mResources: Resources,
     private val mRecyclerView: RecyclerView,
     type: Int,
-    private var mShowFavourite: Boolean,
-    private val executor: ExecutorService,
-    private val showReadProgress: Boolean
+    private var mShowFavourite: Boolean
 ) : RecyclerView.Adapter<GalleryAdapterNew.GalleryHolder>() {
 
     @IntDef(TYPE_LIST, TYPE_GRID)
@@ -72,11 +65,6 @@ abstract class GalleryAdapterNew(
     private var myOnThumbItemClickListener: OnThumbItemClickListener? = null
 
     private val mDownloadManager: DownloadManager
-
-    private val handler = Handler(Looper.getMainLooper())
-
-    // Cache for read progress to avoid repeated file I/O during scrolling
-    private val mReadProgressCache = LruCache<Long, Int>(200)
 
     init {
         mRecyclerView.adapter = this
@@ -217,33 +205,8 @@ abstract class GalleryAdapterNew(
                     holder.pages?.text = null
                     holder.pages?.visibility = View.GONE
                 } else {
-                    if (showReadProgress) {
-                        // Check cache first to avoid repeated file I/O
-                        val cachedProgress = mReadProgressCache.get(gi.gid)
-                        if (cachedProgress != null) {
-                            val text = "${if (cachedProgress > 0) cachedProgress + 1 else 0}/${gi.pages}P"
-                            holder.pages?.text = text
-                        } else {
-                            // Show default page count while async progress loads
-                            holder.pages?.text = "${gi.pages}P"
-                            executor.submit {
-                                val startPage = SpiderQueen.findStartPage(mInflater.context, gi)
-                                mReadProgressCache.put(gi.gid, startPage)
-                                handler.post {
-                                    // Only update if this ViewHolder still shows the same item
-                                    if (holder.bindingAdapterPosition == RecyclerView.NO_POSITION) return@post
-                                    val text = if (startPage > 0) {
-                                        "${startPage + 1}/${gi.pages}P"
-                                    } else {
-                                        "0/${gi.pages}P"
-                                    }
-                                    holder.pages?.text = text
-                                }
-                            }
-                        }
-                    } else {
-                        holder.pages?.text = "${gi.pages}P"
-                    }
+                    val displayProgress = if (gi.progress > 0) gi.progress else 1
+                    holder.pages?.text = "${displayProgress}/${gi.pages}P"
                     holder.pages?.visibility = View.VISIBLE
                 }
                 if (TextUtils.isEmpty(gi.simpleLanguage)) {

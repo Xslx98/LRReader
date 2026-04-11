@@ -61,7 +61,6 @@ import com.hippo.ehviewer.dao.QuickSearch
 import com.hippo.ehviewer.download.DownloadInfoListener
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.settings.AppearanceSettings
-import com.hippo.ehviewer.settings.ReadingSettings
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.widget.SearchBar
 import com.hippo.ehviewer.widget.SearchLayout
@@ -74,15 +73,12 @@ import com.hippo.widget.FabLayout
 import com.hippo.widget.SearchBarMover
 import com.hippo.lib.yorozuya.AssertUtils
 import com.hippo.lib.yorozuya.ViewUtils
-import java.util.concurrent.ExecutorService
 
 class GalleryListScene : BaseScene(),
     EasyRecyclerView.OnItemClickListener, EasyRecyclerView.OnItemLongClickListener,
     SearchBar.Helper, SearchBar.OnStateChangeListener, FastScroller.OnDragHandlerListener,
     SearchLayout.Helper, SearchBarMover.Helper, View.OnClickListener, FabLayout.OnClickFabListener,
     FabLayout.OnExpandListener {
-
-    private var showReadProgress = false
 
     /*---------------
      Whole life cycle
@@ -107,8 +103,6 @@ class GalleryListScene : BaseScene(),
     private var mRightDrawable: AddDeleteDrawable? = null
     private var mSearchBarMover: SearchBarMover? = null
     private var mActionFabDrawable: AddDeleteDrawable? = null
-
-    private lateinit var executorService: ExecutorService
 
     private var mHideActionFabSlop = 0
 
@@ -199,7 +193,6 @@ class GalleryListScene : BaseScene(),
         val context = ehContext
         AssertUtils.assertNotNull(context)
         viewModel = ViewModelProvider(requireActivity())[GalleryListViewModel::class.java]
-        executorService = viewModel.executorService
         mDownloadManager = viewModel.downloadManager
         mFavouriteStatusRouter = viewModel.favouriteStatusRouter
 
@@ -230,7 +223,6 @@ class GalleryListScene : BaseScene(),
         } else {
             onRestore(savedInstanceState)
         }
-        showReadProgress = ReadingSettings.getShowReadProgress()
     }
 
     fun onInit() {
@@ -925,7 +917,7 @@ class GalleryListScene : BaseScene(),
     private inner class GalleryListAdapter(
         inflater: LayoutInflater,
         resources: Resources, recyclerView: RecyclerView, type: Int
-    ) : GalleryAdapterNew(inflater, resources, recyclerView, type, true, executorService, showReadProgress) {
+    ) : GalleryAdapterNew(inflater, resources, recyclerView, type, true) {
 
         override fun getItemCount(): Int {
             return mHelper?.size() ?: 0

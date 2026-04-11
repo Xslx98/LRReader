@@ -48,3 +48,7 @@ bugs/
 .superpowers/
 .venv/
 .claude/
+
+# MemPalace local config (per-machine, not for repo)
+mempalace.yaml
+entities.json
