@@ -43,7 +43,6 @@ import java.util.Locale
 
 class SpiderDen(galleryInfo: GalleryInfo) {
 
-    @JvmField
     var mDownloadDir: UniFile? = null
         private set
 
@@ -72,19 +71,21 @@ class SpiderDen(galleryInfo: GalleryInfo) {
     }
 
     private fun ensureDownloadDir(): Boolean {
-        return mDownloadDir != null && mDownloadDir.ensureDir()
+        val dir = mDownloadDir
+        return dir != null && dir.ensureDir()
     }
 
     fun isReady(): Boolean {
         return when (mMode) {
             SpiderQueen.MODE_READ -> sCache != null
-            SpiderQueen.MODE_DOWNLOAD -> mDownloadDir != null && mDownloadDir.isDirectory
+            SpiderQueen.MODE_DOWNLOAD -> { val dir = mDownloadDir; dir != null && dir.isDirectory }
             else -> false
         }
     }
 
     fun getDownloadDir(): UniFile? {
-        return if (mDownloadDir != null && mDownloadDir.isDirectory) mDownloadDir else null
+        val dir = mDownloadDir
+        return if (dir != null && dir.isDirectory) dir else null
     }
 
     fun getDownloadDirName(): UniFile? {
