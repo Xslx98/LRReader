@@ -1,18 +1,30 @@
 package com.hippo.ehviewer.settings
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.net.Uri
 import androidx.annotation.Nullable
 import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.unifile.UniFile
 import com.hippo.util.ExceptionUtils
 
 /**
  * Download-related settings extracted from Settings.java.
- * Covers download location, labels, preloading, ordering, pagination, delay, and timeout.
+ * Covers download location, labels, preloading, ordering, pagination, delay, timeout,
+ * archiver download cache, and delete-with-files preference.
  */
 object DownloadSettings {
+
+    private lateinit var sArchiverPre: SharedPreferences
+
+    /** Must be called from [Settings.initialize] after context is available. */
+    @JvmStatic
+    fun initialize(context: Context) {
+        sArchiverPre = context.getSharedPreferences("archiver_cache", Context.MODE_PRIVATE)
+    }
 
     // --- Download Location (URI components) ---
     const val KEY_DOWNLOAD_SAVE_SCHEME = "image_scheme"
@@ -158,4 +170,55 @@ object DownloadSettings {
 
     @JvmStatic
     fun setDownloadTimeout(value: Int) = Settings.putIntToStr(KEY_DOWNLOAD_TIMEOUT, value)
+
+    // --- Remove Image Files (delete-with-files checkbox default) ---
+    private const val KEY_REMOVE_IMAGE_FILES = "include_pic"
+    private const val DEFAULT_REMOVE_IMAGE_FILES = true
+
+    @JvmStatic
+    fun getRemoveImageFiles(): Boolean = Settings.getBoolean(KEY_REMOVE_IMAGE_FILES, DEFAULT_REMOVE_IMAGE_FILES)
+
+    @JvmStatic
+    fun putRemoveImageFiles(value: Boolean) = Settings.putBoolean(KEY_REMOVE_IMAGE_FILES, value)
+
+    // --- Archiver Download Cache ---
+    // Uses a separate SharedPreferences ("archiver_cache") for system DownloadManager mappings.
+
+    @JvmStatic
+    fun getArchiverDownload(downloadId: Long): GalleryInfo? {
+        val s = sArchiverPre.getString(downloadId.toString(), "") ?: ""
+        if (s.isEmpty()) {
+            return null
+        }
+        return try {
+            GalleryInfo.galleryInfoFromJson(org.json.JSONObject(s))
+        } catch (e: org.json.JSONException) {
+            null
+        }
+    }
+
+    @JvmStatic
+    fun putArchiverDownload(downloadId: Long, info: GalleryInfo) {
+        sArchiverPre.edit().putString(downloadId.toString(), info.toJson().toString()).apply()
+    }
+
+    @JvmStatic
+    fun deleteArchiverDownload(downloadId: Long) {
+        sArchiverPre.edit().remove(downloadId.toString()).apply()
+    }
+
+    @JvmStatic
+    fun getArchiverDownloadId(gid: Long): Long {
+        return sArchiverPre.getLong("${gid}DId", -1L)
+    }
+
+    @JvmStatic
+    fun putArchiverDownloadId(gid: Long, downloadId: Long) {
+        sArchiverPre.edit().putLong("${gid}DId", downloadId).apply()
+    }
+
+    @JvmStatic
+    fun deleteArchiverDownloadId(gid: Long) {
+        sArchiverPre.edit().remove("${gid}DId").apply()
+    }
 }

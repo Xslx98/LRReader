@@ -59,7 +59,6 @@ import com.hippo.easyrecyclerview.HandlerDrawable
 import com.hippo.easyrecyclerview.MarginItemDecoration
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadInfoListener
@@ -67,6 +66,7 @@ import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.download.DownloadService
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.settings.DownloadSettings
+import com.hippo.ehviewer.settings.GuideSettings
 import com.hippo.ehviewer.spider.SpiderInfo
 import com.hippo.ehviewer.ui.GalleryActivity
 import com.hippo.ehviewer.ui.GalleryOpenHelper
@@ -558,10 +558,10 @@ class DownloadsScene : ToolbarScene(),
     }
 
     private fun guide() {
-        if (Settings.getGuideDownloadThumb() && mRecyclerView != null) {
+        if (GuideSettings.getGuideDownloadThumb() && mRecyclerView != null) {
             mRecyclerView!!.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
                 override fun onGlobalLayout() {
-                    if (Settings.getGuideDownloadThumb()) {
+                    if (GuideSettings.getGuideDownloadThumb()) {
                         guideDownloadThumb()
                     }
                     if (mRecyclerView != null) {
@@ -577,7 +577,7 @@ class DownloadsScene : ToolbarScene(),
     @Suppress("DEPRECATION")
     private fun guideDownloadThumb() {
         val activity = activity2
-        if (activity == null || !Settings.getGuideDownloadThumb() || mLayoutManager == null || mRecyclerView == null) {
+        if (activity == null || !GuideSettings.getGuideDownloadThumb() || mLayoutManager == null || mRecyclerView == null) {
             guideDownloadLabels()
             return
         }
@@ -604,7 +604,7 @@ class DownloadsScene : ToolbarScene(),
                 override fun onShowcaseViewDidHide(showcaseView: ShowcaseView) {
                     mShowcaseView = null
                     ViewUtils.removeFromParent(showcaseView)
-                    Settings.putGuideDownloadThumb(false)
+                    GuideSettings.putGuideDownloadThumb(false)
                     guideDownloadLabels()
                 }
             }).build()
@@ -613,7 +613,7 @@ class DownloadsScene : ToolbarScene(),
     @Suppress("DEPRECATION")
     private fun guideDownloadLabels() {
         val activity = activity2
-        if (activity == null || !Settings.getGuideDownloadLabels()) {
+        if (activity == null || !GuideSettings.getGuideDownloadLabels()) {
             return
         }
 
@@ -633,7 +633,7 @@ class DownloadsScene : ToolbarScene(),
                 override fun onShowcaseViewDidHide(showcaseView: ShowcaseView) {
                     mShowcaseView = null
                     ViewUtils.removeFromParent(showcaseView)
-                    Settings.puttGuideDownloadLabels(false)
+                    GuideSettings.putGuideDownloadLabels(false)
                     openDrawer(Gravity.RIGHT)
                 }
             }).build()

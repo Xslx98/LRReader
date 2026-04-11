@@ -49,7 +49,6 @@ import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.settings.SecuritySettings
 import com.hippo.ehviewer.settings.NetworkSettings
 import com.hippo.ehviewer.settings.DownloadSettings
@@ -405,7 +404,7 @@ class MainActivity : StageActivity(),
     }
 
     private fun initUserImage() {
-        val headerBackgroundFile = Settings.getUserImageFile(Settings.USER_BACKGROUND_IMAGE)
+        val headerBackgroundFile = AppearanceSettings.getUserImageFile(AppearanceSettings.USER_BACKGROUND_IMAGE)
         initBackgroundImageData(headerBackgroundFile)
     }
 
@@ -459,7 +458,7 @@ class MainActivity : StageActivity(),
      */
     fun loadAvatar() {
         if (mAvatar == null) return
-        val userAvatarFile = Settings.getUserImageFile(Settings.USER_AVATAR_IMAGE)
+        val userAvatarFile = AppearanceSettings.getUserImageFile(AppearanceSettings.USER_AVATAR_IMAGE)
         if (userAvatarFile != null) {
             val bitmap = BitmapFactory.decodeFile(userAvatarFile.path)
             if (bitmap != null) {
@@ -622,9 +621,9 @@ class MainActivity : StageActivity(),
 
     fun updateProfile() {
         if (mAvatar != null) {
-            val avatarUrl = Settings.getAvatar()
+            val avatarUrl = AppearanceSettings.getAvatar()
             if (TextUtils.isEmpty(avatarUrl)) {
-                val userAvatarFile = Settings.getUserImageFile(Settings.USER_AVATAR_IMAGE)
+                val userAvatarFile = AppearanceSettings.getUserImageFile(AppearanceSettings.USER_AVATAR_IMAGE)
                 if (userAvatarFile != null) {
                     val bitmap = BitmapFactory.decodeFile(userAvatarFile.path)
                     val drawable = BitmapDrawable(mAvatar!!.resources, bitmap)
@@ -638,7 +637,7 @@ class MainActivity : StageActivity(),
         }
 
         if (mDisplayName != null) {
-            var displayName = Settings.getDisplayName()
+            var displayName = AppearanceSettings.getDisplayName()
             if (TextUtils.isEmpty(displayName)) {
                 displayName = getString(R.string.default_display_name)
             }
