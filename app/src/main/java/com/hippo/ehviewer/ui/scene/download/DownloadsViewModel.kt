@@ -33,6 +33,23 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
+ * Sealed interface representing all download-related UI events forwarded from
+ * [DownloadInfoListener] callbacks. [DownloadsScene] observes
+ * [DownloadsViewModel.downloadEvent] and dispatches via `when`.
+ */
+sealed interface DownloadUiEvent {
+    data class ItemAdded(val info: DownloadInfo, val list: List<DownloadInfo>, val position: Int) : DownloadUiEvent
+    data class ItemRemoved(val info: DownloadInfo, val list: List<DownloadInfo>, val position: Int) : DownloadUiEvent
+    data class ItemUpdated(val info: DownloadInfo, val list: List<DownloadInfo>, val waitList: List<DownloadInfo>) : DownloadUiEvent
+    data class DiffUpdate(val tag: String) : DownloadUiEvent
+    data class Replaced(val newInfo: DownloadInfo, val oldInfo: DownloadInfo) : DownloadUiEvent
+    data class LabelRenamed(val from: String, val to: String) : DownloadUiEvent
+    data object LabelDeleted : DownloadUiEvent
+    data object LabelsChanged : DownloadUiEvent
+    data object Reloaded : DownloadUiEvent
+}
+
+/**
  * ViewModel for [DownloadsScene]. Manages download list state, label selection,
  * pagination, search/filter state, and spider info cache.
  *
@@ -57,32 +74,13 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     val downloadsFlow: Flow<List<DownloadInfo>> = EhDB.observeDownloads()
 
     // -------------------------------------------------------------------------
-    // DownloadInfoListener → SharedFlow events for UI
+    // DownloadInfoListener → sealed DownloadUiEvent forwarding
     // -------------------------------------------------------------------------
 
-    private val _onItemAdded = MutableSharedFlow<Pair<Int, List<DownloadInfo>>>(extraBufferCapacity = 1)
-    val onItemAdded: SharedFlow<Pair<Int, List<DownloadInfo>>> = _onItemAdded.asSharedFlow()
+    private val _downloadEvent = MutableSharedFlow<DownloadUiEvent>(extraBufferCapacity = 16)
 
-    private val _onItemRemoved = MutableSharedFlow<Pair<Int, List<DownloadInfo>>>(extraBufferCapacity = 1)
-    val onItemRemoved: SharedFlow<Pair<Int, List<DownloadInfo>>> = _onItemRemoved.asSharedFlow()
-
-    private val _onItemUpdated = MutableSharedFlow<Int>(extraBufferCapacity = 1)
-    val onItemUpdated: SharedFlow<Int> = _onItemUpdated.asSharedFlow()
-
-    private val _onDiffUpdate = MutableSharedFlow<List<DownloadInfo>>(extraBufferCapacity = 1)
-    val onDiffUpdate: SharedFlow<List<DownloadInfo>> = _onDiffUpdate.asSharedFlow()
-
-    private val _onLabelsChanged = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-    val onLabelsChanged: SharedFlow<Unit> = _onLabelsChanged.asSharedFlow()
-
-    private val _onReplaced = MutableSharedFlow<DownloadInfo>(extraBufferCapacity = 1)
-    val onReplaced: SharedFlow<DownloadInfo> = _onReplaced.asSharedFlow()
-
-    private val _labelRenamedEvent = MutableSharedFlow<Pair<String, String>>(extraBufferCapacity = 1)
-    val labelRenamedEvent: SharedFlow<Pair<String, String>> = _labelRenamedEvent.asSharedFlow()
-
-    private val _onLabelDeleted = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-    val onLabelDeleted: SharedFlow<Unit> = _onLabelDeleted.asSharedFlow()
+    /** Single event stream for all [DownloadInfoListener] callbacks. */
+    val downloadEvent: SharedFlow<DownloadUiEvent> = _downloadEvent.asSharedFlow()
 
     // -------------------------------------------------------------------------
     // Lifecycle: register/unregister listener
@@ -574,55 +572,43 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     }
 
     // -------------------------------------------------------------------------
-    // DownloadInfoListener implementation
+    // DownloadInfoListener implementation → sealed event emission
     // -------------------------------------------------------------------------
 
     override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-        if (_downloadList.value !== list) return
-        _onItemAdded.tryEmit(Pair(position, list))
+        _downloadEvent.tryEmit(DownloadUiEvent.ItemAdded(info, list, position))
     }
 
     override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {
-        if (_downloadList.value.isEmpty()) return
-        updateForLabel()
-        _onReplaced.tryEmit(newInfo)
+        _downloadEvent.tryEmit(DownloadUiEvent.Replaced(newInfo, oldInfo))
     }
 
     override fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: List<DownloadInfo>) {
-        val currentList = _downloadList.value
-        if (currentList !== list && !currentList.contains(info)) return
-        val index = currentList.indexOf(info)
-        if (index >= 0) {
-            _onItemUpdated.tryEmit(index)
-        }
+        _downloadEvent.tryEmit(DownloadUiEvent.ItemUpdated(info, list, mWaitList))
     }
 
     override fun onUpdateAll() {
-        _onDiffUpdate.tryEmit(ArrayList(_downloadList.value))
+        _downloadEvent.tryEmit(DownloadUiEvent.DiffUpdate("updateAll"))
     }
 
     override fun onReload() {
-        _onDiffUpdate.tryEmit(ArrayList(_downloadList.value))
+        _downloadEvent.tryEmit(DownloadUiEvent.Reloaded)
     }
 
     override fun onChange() {
-        resetToDefaultLabel()
-        _onLabelDeleted.tryEmit(Unit)
+        _downloadEvent.tryEmit(DownloadUiEvent.LabelDeleted)
     }
 
     override fun onRenameLabel(from: String, to: String) {
-        if (_currentLabel.value != from) return
-        handleLabelRenamed(from, to)
-        _labelRenamedEvent.tryEmit(Pair(from, to))
+        _downloadEvent.tryEmit(DownloadUiEvent.LabelRenamed(from, to))
     }
 
     override fun onRemove(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-        if (_downloadList.value !== list) return
-        _onItemRemoved.tryEmit(Pair(position, list))
+        _downloadEvent.tryEmit(DownloadUiEvent.ItemRemoved(info, list, position))
     }
 
     override fun onUpdateLabels() {
-        _onLabelsChanged.tryEmit(Unit)
+        _downloadEvent.tryEmit(DownloadUiEvent.LabelsChanged)
     }
 
     companion object {

@@ -631,56 +631,69 @@ class DownloadsScene : ToolbarScene(),
             updateView()
         }
 
-        // ── Observe DownloadInfoListener events from ViewModel ──
+        // ── Observe DownloadInfoListener events from ViewModel (sealed dispatch) ──
 
-        collectFlow(viewLifecycleOwner, viewModel.onItemAdded) { (position, _) ->
-            mAdapter?.notifyItemInserted(position)
-            downloadLabelDraw?.updateDownloadLabels()
-            updateView()
-        }
-
-        collectFlow(viewLifecycleOwner, viewModel.onItemRemoved) { (position, _) ->
-            mAdapter?.notifyItemRemoved(listIndexInPage(position))
-            updateView()
-        }
-
-        collectFlow(viewLifecycleOwner, viewModel.onItemUpdated) { index ->
-            if (index >= 0 && mAdapter != null) {
-                mAdapter!!.notifyItemChanged(listIndexInPage(index))
+        collectFlow(viewLifecycleOwner, viewModel.downloadEvent) { event ->
+            when (event) {
+                is DownloadUiEvent.ItemAdded -> {
+                    if (mList !== event.list) return@collectFlow
+                    mAdapter?.notifyItemInserted(event.position)
+                    downloadLabelDraw?.updateDownloadLabels()
+                    updateView()
+                }
+                is DownloadUiEvent.ItemRemoved -> {
+                    if (mList !== event.list) return@collectFlow
+                    mAdapter?.notifyItemRemoved(listIndexInPage(event.position))
+                    updateView()
+                }
+                is DownloadUiEvent.ItemUpdated -> {
+                    if (mList !== event.list && mList?.contains(event.info) != true) return@collectFlow
+                    val index = mList?.indexOf(event.info) ?: return@collectFlow
+                    if (index >= 0 && mAdapter != null) {
+                        mAdapter!!.notifyItemChanged(listIndexInPage(index))
+                    }
+                }
+                is DownloadUiEvent.DiffUpdate -> {
+                    if (mAdapter != null && mList != null) {
+                        val newList = ArrayList(mList!!)
+                        val result = DiffUtil.calculateDiff(DownloadInfoDiffCallback(mLastSnapshot, newList))
+                        mLastSnapshot = newList
+                        result.dispatchUpdatesTo(mAdapter!!)
+                    }
+                    updateView()
+                }
+                is DownloadUiEvent.Replaced -> {
+                    if (mList == null) return@collectFlow
+                    updateForLabel()
+                    updateView()
+                    val index = mList!!.indexOf(event.newInfo)
+                    if (index >= 0 && mAdapter != null) {
+                        mAdapter!!.notifyItemChanged(listIndexInPage(index))
+                    }
+                }
+                is DownloadUiEvent.LabelRenamed -> {
+                    viewModel.handleLabelRenamed(event.from, event.to)
+                    updateForLabel()
+                    updateView()
+                }
+                is DownloadUiEvent.LabelDeleted -> {
+                    viewModel.resetToDefaultLabel()
+                    updateForLabel()
+                    updateView()
+                }
+                is DownloadUiEvent.Reloaded -> {
+                    if (mAdapter != null && mList != null) {
+                        val newList = ArrayList(mList!!)
+                        val result = DiffUtil.calculateDiff(DownloadInfoDiffCallback(mLastSnapshot, newList))
+                        mLastSnapshot = newList
+                        result.dispatchUpdatesTo(mAdapter!!)
+                    }
+                    updateView()
+                }
+                is DownloadUiEvent.LabelsChanged -> {
+                    downloadLabelDraw?.updateDownloadLabels()
+                }
             }
-        }
-
-        collectFlow(viewLifecycleOwner, viewModel.onDiffUpdate) { newList ->
-            if (mAdapter == null) return@collectFlow
-            val result = DiffUtil.calculateDiff(
-                DownloadInfoDiffCallback(mLastSnapshot, newList)
-            )
-            mLastSnapshot = ArrayList(newList)
-            result.dispatchUpdatesTo(mAdapter!!)
-            updateView()
-        }
-
-        collectFlow(viewLifecycleOwner, viewModel.onReplaced) { newInfo ->
-            updateForLabel()
-            updateView()
-            val index = mList?.indexOf(newInfo) ?: -1
-            if (index >= 0 && mAdapter != null) {
-                mAdapter!!.notifyItemChanged(listIndexInPage(index))
-            }
-        }
-
-        collectFlow(viewLifecycleOwner, viewModel.labelRenamedEvent) { (_, _) ->
-            updateForLabel()
-            updateView()
-        }
-
-        collectFlow(viewLifecycleOwner, viewModel.onLabelDeleted) {
-            updateForLabel()
-            updateView()
-        }
-
-        collectFlow(viewLifecycleOwner, viewModel.onLabelsChanged) {
-            downloadLabelDraw?.updateDownloadLabels()
         }
     }
 
