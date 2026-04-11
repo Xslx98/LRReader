@@ -204,9 +204,10 @@ class LRRAuthManagerTest {
     // ── Allow cleartext flag ────────────────────────────────────────
 
     @Test
-    fun allowCleartext_defaultsToFalse() {
-        // Default value (no key in prefs) — fail-closed when no profile has been loaded
-        assertFalse("default should be false (fail-closed)", LRRAuthManager.getAllowCleartext())
+    fun allowCleartext_defaultsToTrueWhenPrefsAvailable() {
+        // Default value (no key in prefs, sPrefs available) — existing HTTP profiles
+        // never wrote this key explicitly, so default must be true for compatibility
+        assertTrue("default should be true when sPrefs available", LRRAuthManager.getAllowCleartext())
     }
 
     @Test
