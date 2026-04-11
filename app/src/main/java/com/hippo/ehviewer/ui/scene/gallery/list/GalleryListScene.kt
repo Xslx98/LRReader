@@ -51,7 +51,7 @@ import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.EhUtils
-import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.client.exception.EhException
 import com.hippo.ehviewer.client.lrr.LRRAuthManager
@@ -336,7 +336,7 @@ class GalleryListScene : BaseScene(),
             mRecyclerView!!, AppearanceSettings.getListMode()
         )
         mAdapter!!.setThumbItemClickListener(object : GalleryAdapterNew.OnThumbItemClickListener {
-            override fun onThumbItemClick(position: Int, view: View, gi: GalleryInfo?) {
+            override fun onThumbItemClick(position: Int, view: View, gi: GalleryInfoUi?) {
                 mTagChipHelper?.onThumbItemClick(position, view, gi)
             }
         })
@@ -448,7 +448,7 @@ class GalleryListScene : BaseScene(),
             override fun getString(resId: Int): String = this@GalleryListScene.getString(resId)
             override fun getString(resId: Int, vararg formatArgs: Any): String =
                 this@GalleryListScene.getString(resId, *formatArgs)
-            override fun buildChipGroup(gi: GalleryInfo?, chipGroup: ChipGroup): ChipGroup =
+            override fun buildChipGroup(gi: GalleryInfoUi?, chipGroup: ChipGroup): ChipGroup =
                 mTagChipHelper?.buildChipGroup(gi, chipGroup) ?: chipGroup
         })
 
@@ -468,9 +468,9 @@ class GalleryListScene : BaseScene(),
             }
             override fun onUpdateUrlBuilder() = this@GalleryListScene.onUpdateUrlBuilder()
             override fun setState(state: Int) { mStateHelper?.setState(state) }
-            override fun onItemClick(view: View?, gi: GalleryInfo?): Boolean =
+            override fun onItemClick(view: View?, gi: GalleryInfoUi?): Boolean =
                 mItemActionHelper?.onItemClick(view, gi) ?: false
-            override fun onItemLongClick(gi: GalleryInfo?, view: View): Boolean =
+            override fun onItemLongClick(gi: GalleryInfoUi?, view: View): Boolean =
                 mItemActionHelper?.onItemLongClick(gi, view) ?: false
             override fun dismissItemDialog() { mItemActionHelper?.dismissDialog() }
             override fun getBaseScene(): BaseScene = this@GalleryListScene
@@ -924,7 +924,7 @@ class GalleryListScene : BaseScene(),
             return mHelper?.size() ?: 0
         }
 
-        override fun getDataAt(position: Int): GalleryInfo? {
+        override fun getDataAt(position: Int): GalleryInfoUi? {
             return mHelper?.getDataAtEx(position)
         }
     }

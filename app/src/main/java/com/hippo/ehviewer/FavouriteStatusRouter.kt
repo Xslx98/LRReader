@@ -16,7 +16,7 @@
 package com.hippo.ehviewer
 
 import android.annotation.SuppressLint
-import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.lib.yorozuya.IntIdGenerator
 
 class FavouriteStatusRouter {
@@ -24,18 +24,18 @@ class FavouriteStatusRouter {
     private val idGenerator = IntIdGenerator(Settings.getInt(KEY_DATA_MAP_NEXT_ID, 0))
 
     @SuppressLint("UseSparseArrays")
-    private val maps = HashMap<Int, MutableMap<Long, GalleryInfo>>()
+    private val maps = HashMap<Int, MutableMap<Long, GalleryInfoUi>>()
 
     private val listeners = mutableListOf<Listener>()
 
-    fun saveDataMap(map: MutableMap<Long, GalleryInfo>): Int {
+    fun saveDataMap(map: MutableMap<Long, GalleryInfoUi>): Int {
         val id = idGenerator.nextId()
         maps[id] = map
         Settings.putInt(KEY_DATA_MAP_NEXT_ID, idGenerator.nextId())
         return id
     }
 
-    fun restoreDataMap(id: Int): MutableMap<Long, GalleryInfo>? {
+    fun restoreDataMap(id: Int): MutableMap<Long, GalleryInfoUi>? {
         return maps.remove(id)
     }
 

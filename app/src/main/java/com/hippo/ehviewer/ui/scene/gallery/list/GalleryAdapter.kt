@@ -31,7 +31,7 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.EhCacheKeyFactory
 import com.hippo.ehviewer.client.EhUtils
-import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.ui.scene.GalleryHolder
@@ -165,7 +165,7 @@ abstract class GalleryAdapter(
 
     override fun getItemViewType(position: Int): Int = mType
 
-    abstract fun getDataAt(position: Int): GalleryInfo?
+    abstract fun getDataAt(position: Int): GalleryInfoUi?
 
     override fun onBindViewHolder(holder: GalleryHolder, position: Int) {
         val gi = getDataAt(position) ?: return

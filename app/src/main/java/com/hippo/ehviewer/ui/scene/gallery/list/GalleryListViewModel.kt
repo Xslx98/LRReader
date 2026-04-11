@@ -8,7 +8,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.client.lrr.LRRArchivePagingSource
 import com.hippo.ehviewer.client.lrr.LRRClientProvider
 import com.hippo.ehviewer.download.DownloadManager
@@ -55,8 +55,8 @@ class GalleryListViewModel : ViewModel() {
     private val searchParams = MutableStateFlow(SearchParams())
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val galleryFlow: Flow<PagingData<GalleryInfo>> = searchParams.flatMapLatest { params ->
-        Pager(
+    val galleryFlow: Flow<PagingData<GalleryInfoUi>> = searchParams.flatMapLatest { params ->
+        Pager<Int, GalleryInfoUi>(
             config = PagingConfig(
                 pageSize = PAGE_SIZE,
                 enablePlaceholders = false,

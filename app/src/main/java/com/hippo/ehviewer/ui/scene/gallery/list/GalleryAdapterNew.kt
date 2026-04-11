@@ -33,7 +33,7 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.EhCacheKeyFactory
 import com.hippo.ehviewer.client.EhUtils
-import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
@@ -174,7 +174,7 @@ abstract class GalleryAdapterNew(
 
     override fun getItemViewType(position: Int): Int = mType
 
-    open fun getDataAt(position: Int): GalleryInfo? = null
+    open fun getDataAt(position: Int): GalleryInfoUi? = null
 
     override fun onBindViewHolder(holder: GalleryHolder, position: Int) {
         val gi = getDataAt(position) ?: return
@@ -230,7 +230,7 @@ abstract class GalleryAdapterNew(
     }
 
     interface OnThumbItemClickListener {
-        fun onThumbItemClick(position: Int, view: View, gi: GalleryInfo?)
+        fun onThumbItemClick(position: Int, view: View, gi: GalleryInfoUi?)
     }
 
     inner class GalleryHolder(
