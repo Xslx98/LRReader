@@ -12,7 +12,7 @@ import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.BuildConfig
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.settings.UpdateSettings
 import com.hippo.ehviewer.ui.dialog.UpdateDialog
 import com.hippo.lib.yorozuya.FileUtils
 import com.hippo.lib.yorozuya.IOUtils
@@ -104,7 +104,7 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
             }
 
 
-            if (!Settings.getIsUpdateTime() && !manualChecking) {
+            if (!UpdateSettings.getIsUpdateTime() && !manualChecking) {
                 return
             }
             val dataName = urls[0]
@@ -200,7 +200,7 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
                         // Ignore
                     }
                     UpdateDialog(activity).showUpdateDialog(tempUpdateData)
-                    Settings.putUpdateTime(Date().time)
+                    UpdateSettings.putUpdateTime(Date().time)
                 } finally {
                     lock.unlock()
                 }

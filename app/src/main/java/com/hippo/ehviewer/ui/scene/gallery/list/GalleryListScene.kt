@@ -49,7 +49,6 @@ import com.hippo.easyrecyclerview.FastScroller
 import androidx.lifecycle.ViewModelProvider
 import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryInfo
@@ -61,6 +60,8 @@ import com.hippo.ehviewer.dao.QuickSearch
 import com.hippo.ehviewer.download.DownloadInfoListener
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.settings.AppearanceSettings
+import com.hippo.ehviewer.settings.GuideSettings
+import com.hippo.ehviewer.settings.ReadingSettings
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.widget.SearchBar
 import com.hippo.ehviewer.widget.SearchLayout
@@ -532,7 +533,7 @@ class GalleryListScene : BaseScene(),
 
     private fun guideQuickSearch() {
         val activity = activity2
-        if (activity == null || !Settings.getGuideQuickSearch()) {
+        if (activity == null || !GuideSettings.getGuideQuickSearch()) {
             return
         }
 
@@ -554,7 +555,7 @@ class GalleryListScene : BaseScene(),
                 override fun onShowcaseViewDidHide(showcaseView: ShowcaseView) {
                     mShowcaseView = null
                     ViewUtils.removeFromParent(showcaseView)
-                    Settings.putGuideQuickSearch(false)
+                    GuideSettings.putGuideQuickSearch(false)
                     openDrawer(Gravity.RIGHT)
                 }
             }).build()
