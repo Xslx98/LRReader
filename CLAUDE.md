@@ -113,13 +113,12 @@ LRReader/
 | `ui/GalleryActivity.kt` | Reader/detail view |
 | `ui/scene/GalleryListScene.kt` | Gallery browse scene (uses PagingSource for LRR search) |
 | `ui/scene/download/DownloadsScene.kt` | Download management (Room Flow + DiffUtil) |
-| `ui/scene/gallery/detail/GalleryDetailScene.kt` | Gallery detail view (delegates to helpers + ViewModel) |
-| `ui/scene/gallery/detail/GalleryDetailViewModel.kt` | Gallery detail state: info, detail, loading state |
-| `ui/scene/gallery/detail/GalleryTagHelper.kt` | Tag display, tag long-press actions |
-| `ui/scene/gallery/detail/GalleryDownloadHelper.kt` | Download state display + DownloadInfoListener |
-| `ui/scene/gallery/detail/GalleryDetailRequestHelper.kt` | LRR metadata fetch + category favorite detection |
-| `ui/scene/gallery/list/GalleryListViewModel.kt` | Paging 3 ViewModel for gallery list |
-| `ui/scene/download/DownloadsViewModel.kt` | Download list state, label, search, pagination ViewModel |
+| `ui/scene/gallery/detail/GalleryDetailScene.kt` | Gallery detail view (observes GalleryDetailViewModel) |
+| `ui/scene/gallery/detail/GalleryDetailViewModel.kt` | Gallery detail state + metadata fetch + download state + DownloadInfoListener (W3-2) |
+| `ui/scene/gallery/detail/GalleryTagHelper.kt` | Stateless tag display utility object (W3-2: Callback eliminated) |
+| `ui/scene/gallery/list/GalleryListViewModel.kt` | Paging 3 ViewModel for gallery list (`Flow<PagingData<GalleryInfoUi>>`) |
+| `ui/scene/download/DownloadsViewModel.kt` | Download list state, labels, filter/sort, search, import, bulk ops (W3-2) |
+| `mapper/GalleryInfoMapper.kt` | GalleryInfo↔GalleryInfoUi conversion (W3-3) |
 | `ui/scene/gallery/detail/TagEditDialog.kt` | Grouped tag editor (chip-style, per-namespace) |
 | `ui/gallery/GalleryMenuHelper.kt` | Reader settings dialog (immediate-apply, no confirm button) |
 
@@ -177,7 +176,7 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 
 - **All new code must be Kotlin.** Java is legacy from EhViewer; do not write new Java.
 - **All `ehviewer` business code is Kotlin** — data, API, download, settings, modules, gallery providers, all Scenes, all Activities, all Adapters, all widgets.
-- Remaining 17 Java files in `ehviewer` are small callback interfaces, exception classes, legacy parsers, event classes, and annotations.
+- Remaining 16 Java files in `ehviewer` are small callback interfaces, exception classes, legacy parsers, and annotations (`GalleryActivityEvent` converted to Kotlin in W3-3).
 - `com.hippo.*` framework (230 files: GLView, Conaco, ContentLayout, widgets) stays Java — stable legacy, rarely touched.
 
 ### Style
@@ -264,7 +263,8 @@ Unit tests live in `app/src/test/java/`, covering:
 - All LRR data classes (`LRRArchiveTest`, `LRRCategoryTest`, etc.)
 - `LRRTagStatTest` + `LRRTagCacheTest` — tag autocomplete data + cache (18 tests)
 - `LRRArchivePagingSourceTest` — Paging 3 source (16 tests)
-- `DownloadManagerTest` — download state machine, labels, queue, notifications (18 tests, uses injected `CoroutineScope`)
+- `DownloadManagerTest` — download state machine, labels, queue, notifications, sort order invariants (24 tests, uses injected `CoroutineScope`)
+- `DownloadManagerOrphanLabelBatchTest` — orphan label batch insert verification (5 tests)
 - `DownloadSpeedTrackerTest` — speed calculation + remaining time
 - `GalleryInfoParcelTest` — Parcelable round-trip for GalleryInfo + DownloadInfo (11 tests)
 - `TagEditDialogTest` — tag parsing + formatting round-trip (18 tests)
@@ -275,6 +275,9 @@ Unit tests live in `app/src/test/java/`, covering:
 - `ContentHelperDiffUtilTest` — DiffUtil dispatch operations
 - `CoroutineBridgeTest` — Java→coroutine bridge function contracts
 - `EhDBMainThreadCheckTest` — blockingDb bridge removal verification + async dirname DAO round-trip
+- `ClientModuleTest` — memory cache tier boundary verification (8 tests)
+- `CacheableTest` — Cacheable self-registration pattern in ServiceRegistry (6 tests, W3-1)
+- `PatternLockoutTest` — pattern lock failure lockout logic with controllable clock (22 tests, W3-6)
 - `TestServiceRegistryHelper` — test infrastructure for ServiceRegistry mocking
 
 Run tests with:
@@ -331,7 +334,7 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 2. **Scene-based navigation:** Uses a custom `Scene` framework (not Jetpack Navigation). UI transitions via `startScene()` / `popScene()`.
 
-3. **ServiceRegistry:** Replaces the old service-locator pattern in `EhApplication`. Initialize modules here; don't add new statics to `EhApplication`. Includes `CoroutineModule` for scoped coroutines. Cache clearing uses the `Cacheable` interface (W3-1): modules implement `Cacheable` and self-register via `ServiceRegistry.registerCacheable()`, so `clearAllCaches()` iterates registered instances instead of hardcoding calls. ServiceRegistry has zero imports from `client.lrr`.
+3. **ServiceRegistry:** Replaces the old service-locator pattern in `EhApplication`. Initialize modules here; don't add new statics to `EhApplication`. Includes `CoroutineModule` for scoped coroutines. Cache clearing uses the `Cacheable` interface (W3-1): modules implement `Cacheable` and self-register via `ServiceRegistry.registerCacheable()`, so `clearAllCaches()` iterates registered instances instead of hardcoding calls. ServiceRegistry has zero imports from the LRR API package.
 
 4. **LRR API surface:** Full LANraragi REST API wrapped in `client/api/`. Add new endpoints here as `suspend` functions returning `@Serializable` data classes. Use `parseBaseUrl(baseUrl)` from `LRRApiUtils.kt` to build URLs — never `toHttpUrlOrNull()!!`.
 
@@ -341,15 +344,15 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 7. **EhDB — all suspend, no bridges (W3-5, 2026-04-11):** The legacy `blockingDb()` wrapper and all `@JvmStatic` bridge methods (`getDownloadDirname`, `putDownloadDirname`) have been deleted. `EhDB` now exposes only `suspend fun *Async()` methods. The 4 former call sites in `SpiderDen.getGalleryDownloadDir()` now call `EhDB.getDownloadDirnameAsync()` / `EhDB.putDownloadDirnameAsync()` directly via a localized `runBlocking` in SpiderDen (necessary because `getGalleryDownloadDir` has 8+ non-suspend callers across the codebase; making it `suspend` would touch too many files). All those callers are already off the main thread. Do NOT add `blockingDb` bridges back to `EhDB` — use `suspend fun` variants from a coroutine scope. The localized `runBlocking` in `SpiderDen.getGalleryDownloadDir()` is the only remaining production `runBlocking` usage; a future refactor can make it `suspend` once its callers are migrated.
 
-8. **Download subsystem (100% Kotlin, coroutine-based):** `DownloadManager.kt` (state management via `Mutex` + `CompletableDeferred`), `LRRDownloadWorker.kt` (background downloads with retry, format validation), `DownloadSpeedTracker.kt` (speed monitoring), `DownloadInfoListener.kt`/`DownloadListener.kt` (interfaces). Thread-safe via `Mutex` for shared state, `CopyOnWriteArrayList` for active tasks, `ConcurrentHashMap` for workers. All DB writes use `scope.launch { EhDB.*Async() }` — never `runBlocking`. Worker callbacks use immutable `sealed interface DownloadEvent` (not mutable object pool). `awaitInit()` has 10s timeout + main-thread guard. Constructor accepts `CoroutineScope` for testability. `containLabel()` uses `HashSet` for O(1) lookup. LRU cache (500 MB) for page images. 18 unit tests cover state machine, labels, queue, and notifications.
+8. **Download subsystem (100% Kotlin, coroutine-based):** `DownloadManager.kt` (state management via `Mutex` + `CompletableDeferred`), `LRRDownloadWorker.kt` (background downloads with retry, format validation), `DownloadSpeedTracker.kt` (speed monitoring), `DownloadInfoListener.kt`/`DownloadListener.kt` (interfaces). Thread-safe via `Mutex` for shared state, `CopyOnWriteArrayList` for active tasks, `ConcurrentHashMap` for workers. All DB writes use `scope.launch { EhDB.*Async() }` — never `runBlocking`. Worker callbacks use immutable `sealed interface DownloadEvent` (not mutable object pool). `awaitInit()` has 10s timeout + main-thread guard. Constructor accepts `CoroutineScope` for testability. `containLabel()` uses `HashSet` for O(1) lookup. LRU cache (500 MB) for page images. Orphan labels are batch-inserted in a single `withTransaction` (W2-1). All `Collections.sort` replaced with `insertSorted()` binary insertion for O(log N) maintenance of `DATE_DESC` order (W2-2). 29 unit tests cover state machine, labels, queue, notifications, orphan label batching, and sort order invariants.
 
 9. **Multi-server support:** `ServerProfile` entity + `LRRAuthManager` handle per-server credentials. Server selection affects all API calls. Credentials are encrypted.
 
-10. **EhViewer stubs:** `EhGalleryProvider`, `FavoritesScene`, and `FavoriteListSortDialog` are intentional stubs (empty bodies) left for structural compatibility. Do not delete — but do not add logic to them either.
+10. **EhViewer stubs removed (C6, 2026-04-08):** `EhGalleryProvider`, `FavoritesScene`, and `FavoriteListSortDialog` were deleted after investigation confirmed zero live callers. See item 24 for full cleanup history.
 
-11. **Helper class extraction:** Large Scenes use extracted helpers to reduce line count: `GalleryUploadHelper` (upload/URL download from GalleryListScene), `GallerySearchHelper` (search suggestions/URL building), `DownloadImportHelper` (local archive import from DownloadsScene), `DownloadLabelHelper` (bulk actions: start/stop/delete/move from DownloadsScene), `DownloadFilterHelper` (category filter, sort/filter execution, search callbacks from DownloadsScene), `GalleryTagHelper` (tag display/filter/long-press from GalleryDetailScene), `GalleryDownloadHelper` (download state + DownloadInfoListener from GalleryDetailScene), `GalleryDetailRequestHelper` (LRR metadata fetch + category detection from GalleryDetailScene). Helpers communicate via `Callback` interfaces — follow this pattern for new extractions.
+11. **Helper→ViewModel migration (W3-2, 2026-04-11):** Business logic formerly in Helper classes has been moved into ViewModels. All Callback interfaces eliminated. Deleted: `GalleryDetailRequestHelper` (→ `GalleryDetailViewModel.requestGalleryDetail()`), `GalleryDownloadHelper` (→ `GalleryDetailViewModel` download state StateFlow + DownloadInfoListener), `DownloadFilterHelper` (→ `DownloadsViewModel` filter/sort/search). Converted to stateless utilities: `GalleryTagHelper` (object with explicit parameters), `DownloadLabelHelper` (dialog-only utility, bulk ops in ViewModel), `DownloadImportHelper` (launcher-only, processing in ViewModel). Remaining helpers that were already stateless: `GalleryUploadHelper`, `GallerySearchHelper`. Scenes observe ViewModel StateFlow/SharedFlow — do NOT reintroduce Callback interfaces.
 
-12. **Network tuning:** `NetworkModule.kt` configures `ConnectionPool(10, 5min)`, 200MB HTTP cache, thumbnail 24h cache, deferred `CookieManager.flush()`. Image client has 60s `callTimeout` for large files over slow WAN.
+12. **Network tuning:** `NetworkModule.kt` configures `ConnectionPool(10, 5min)`, 200MB HTTP cache. Thumbnail responses get injected `Cache-Control: public, max-age=3600, stale-while-revalidate=82800` (1h fresh + 23h stale, 24h total) because LANraragi sends no caching headers (W2-8). `CookieJar.NO_COOKIES` — no cookies stored or sent (LANraragi uses Bearer token auth). Image client has 60s `callTimeout` for large files over slow WAN.
 
 13. **GifHandler lifecycle:** `GifHandler` implements `Closeable` with native `destroy()` that calls `DGifCloseFile()` + `free()`. Always `close()` when done — native memory is NOT garbage collected.
 
@@ -357,13 +360,13 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 15. **Room Flow observation:** `DownloadRoomDao` provides `Flow<List<DownloadInfo>>` queries. `DownloadsScene` subscribes via `FlowBridge.collectFlow()` for reactive list updates. Flow handles structure changes (add/remove/state); existing callbacks handle real-time download progress (`@Ignore` fields not persisted to Room).
 
-16. **Paging 3 integrated:** `LRRArchivePagingSource` used directly by `GalleryListScene.GalleryListHelper.getPageData()` for LRR search. `GalleryListViewModel` provides `Flow<PagingData<GalleryInfo>>` with `SearchParams` invalidation. ContentHelper pagination framework preserved as the adapter layer. Config: pageSize=100, prefetchDistance=20.
+16. **Paging 3 integrated:** `LRRArchivePagingSource` returns `PagingData<GalleryInfoUi>` (W3-3). `GalleryListViewModel` provides `Flow<PagingData<GalleryInfoUi>>` with `SearchParams` invalidation. ContentHelper pagination framework preserved as the adapter layer. Config: pageSize=50, prefetchDistance=10 (W2-5, halved from 100/20 to reduce OOM risk).
 
 17. **Tag editor:** `TagEditDialog.kt` shows a grouped chip-style editor using the same `RoundSideRectDrawable` visual style as the detail page. Click to edit, long-press to delete, [+] to add per namespace. Supports `AutoCompleteTextView` with `LRRTagCache` suggestions. Entry point: pencil icon in tag display area.
 
-18. **DownloadsViewModel:** `DownloadsViewModel.kt` manages download list state (current label, download list, back-list, search key, searching flag, pagination state, spider info cache) as `StateFlow` properties. `DownloadsScene` accesses state via property delegates that read/write ViewModel flows. The ViewModel is scoped to the parent Activity via `ViewModelProvider(requireActivity())` because Scene fragments may be recreated. View references, adapters, DiffUtil dispatch, and dialog/navigation remain in the Scene.
+18. **DownloadsViewModel:** `DownloadsViewModel.kt` manages download list state (current label, download list, back-list, search key, searching flag, pagination state, spider info cache) as `StateFlow` properties. After W3-2: also owns filter/sort execution (from DownloadFilterHelper), bulk download operations (delete/move/start/stop from DownloadLabelHelper), and archive import processing (from DownloadImportHelper). One-shot UI events via `SharedFlow` (`filterSearchDone`, `importToast`, `importSuccess`, `listChanged`). `DownloadsScene` accesses state via property delegates. Scoped to parent Activity.
 
-19. **GalleryDetailViewModel:** `GalleryDetailViewModel.kt` manages gallery detail state (galleryInfo, galleryDetail, downloadInfo, gid, token, action, loading state) as `StateFlow` properties. `GalleryDetailScene` accesses state via shortcut property delegates that read/write ViewModel flows. Derived accessors (`getEffectiveGid()`, `getEffectiveToken()`, `getEffectiveUploader()`, `getEffectiveCategory()`, `getEffectiveGalleryInfo()`) centralize the fallback logic (detail > info > args). Cache lookup via `tryLoadFromCache()`. Scoped to Activity like `DownloadsViewModel`.
+19. **GalleryDetailViewModel:** `GalleryDetailViewModel.kt` manages gallery detail state (galleryInfo, galleryDetail, downloadInfo, gid, token, action, loading state) as `StateFlow` properties. After W3-2: also owns async LRR metadata fetch (`requestGalleryDetail()` from GalleryDetailRequestHelper), download state tracking (`downloadState` StateFlow + `DownloadInfoListener` from GalleryDownloadHelper), and error events (`detailError` SharedFlow). Derived accessors centralize the fallback logic (detail > info > args). Scoped to parent Activity.
 
 20. **Reader settings immediate-apply:** `GalleryMenuHelper` applies settings immediately when any control changes (Spinner, SeekBar, Switch) — no confirm button. Uses an `initialized` flag to suppress listener callbacks during initial value loading. Brightness has a live preview listener delegated from `GalleryActivity`.
 
@@ -377,7 +380,7 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
     - **EhFilter** (C2, 2026-04-07): user-defined title/uploader/tag blacklist. Filters were written to `FILTER` table but the consumption path (`filterTitle`/`filterTag`/`filterUploader`) had zero callers. Deleted: `EhFilter`, `Filter` entity, `EhFilterTest`, UI entry points, string resources. Room v14→v15 dropped `FILTER`.
     - **BlackList** (C3, 2026-04-07): user-defined bad-uploader blacklist. `BlackListActivity` was fully unreachable — no Intent/menu/preference ever launched it. Deleted: Activity, entity, layouts, manifest declaration, DAO, EhDB API, strings, arrays, ids. Room v15→v16 dropped `Black_List`. Side benefit: finally deleted the 9-year-old EhViewer-era homophobic-slur column-mapped field name.
     - **BookmarkInfo** (C4, 2026-04-08): per-gallery "reader bookmark" entity. Zero callers for any of its DAO methods anywhere outside the DAO; not even wrapped in `EhDB.kt`. Deleted: entity + DAO section. Room v16→v17 dropped `BOOKMARKS`.
-    - **GalleryTags** (C5, 2026-04-08): per-gallery tag cache. Dead cache — `insertGalleryTags`/`updateGalleryTags` had zero callers, so the table was never populated; the single reader (`queryGalleryTags` via `DownloadListInfosExecutor.searchTagList`) always got null. Real tag data is populated directly into `DownloadInfo.tgList` by `LRRArchive.toGalleryInfo()` from the LRR API response. Deleted: entity + DAO section + `EhDB.queryGalleryTags` blockingDb bridge + the dead `searchTagList`/`parserList` helpers in `DownloadListInfosExecutor`. Room v17→v18 dropped `Gallery_Tags`. Also brought the `@JvmStatic blockingDb` bridge count from 3 to 2.
+    - **GalleryTags** (C5, 2026-04-08): per-gallery tag cache. Dead cache — `insertGalleryTags`/`updateGalleryTags` had zero callers, so the table was never populated; the single reader (`queryGalleryTags` via `DownloadListInfosExecutor.searchTagList`) always got null. Real tag data is populated directly into `DownloadInfo.tgList` by `LRRArchive.toGalleryInfoUi()` from the LRR API response. Deleted: entity + DAO section + `EhDB.queryGalleryTags` blockingDb bridge + the dead `searchTagList`/`parserList` helpers in `DownloadListInfosExecutor`. Room v17→v18 dropped `Gallery_Tags`. Also brought the `@JvmStatic blockingDb` bridge count from 3 to 2.
     - **Stubs** (C6, 2026-04-08): `FavoritesScene` (empty scene, only referenced via dead `registerLaunchMode`), `FavoriteListSortDialog` (literally an empty class), and `EhGalleryProvider` (stub provider whose `ACTION_EH` trigger path at `GalleryDetailScene` was confirmed dead — `R.id.index` is declared but never set by any code, preview grid is never populated from LRR metadata). Deleted the classes, the `ACTION_EH` constant + branch in `GalleryActivity`, and the dead click handler in `GalleryDetailScene`.
 
     LR Reader is a private library client where users curate stored content directly — there is no use case for in-app personal blocklists, per-gallery bookmarks, or EhViewer-era favourites. If you find any surviving references to `EhFilter`, `BlackList`, `BookmarkInfo`, `GalleryTags`, `FavoritesScene`, `FavoriteListSortDialog`, `EhGalleryProvider`, `ACTION_EH`, `Filter::class`, `BlackList::class`, `BookmarkInfo::class`, `GalleryTags::class`, `R.string.filter_*`, `R.string.blacklist*`, or the dead orphan test fixture `EhNews.html`, they are bugs from an incomplete revert; remove them.
@@ -390,7 +393,9 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 27. **Pattern lock KeyStore binding (W3-6, 2026-04-11):** `LRRAuthManager` pattern lock now wraps the PBKDF2 hash with KeyStore-bound AES-GCM via `BiometricPrompt` on devices with strong biometrics. Failure lockout persisted in plain SharedPreferences (survives KeyStore failures): 5 failures → 30s lock, 10 → 5min. Devices without biometrics fall back to PBKDF2-only. Methods: `setPatternWithCipher()`, `verifyPatternWithCipher()`, `isPatternKeystoreBound()`, `isLockedOut()`, `recordFailure()`, `resetFailures()`. Controllable `clockMillis` lambda for test determinism. 22 unit tests in `PatternLockoutTest.kt`.
 
-28. **Cacheable interface (W3-1, 2026-04-11):** `interface Cacheable { fun clearCache() }` in `module/` package. `NetworkModule`, `DataModule` implement it and self-register via `ServiceRegistry.registerCacheable()`. `LRRTagCache` implements `Cacheable` and is registered via `ClientModule.init`. `ServiceRegistry.clearAllCaches()` iterates registered cacheables — no hardcoded cache calls, no imports from `client.lrr`. 6 unit tests in `CacheableTest.kt`.
+28. **Package rename stage 1 (W3-7, 2026-04-11):** `com.hippo.ehviewer.client.lrr.*` → `com.lanraragi.reader.client.api.*`. All 25 source files moved, all imports updated across 80+ files, ProGuard rules updated, Gradle `verifyNoBaseUrlConcat` task path updated. SharedPreferences keys unchanged (user data preserved). Test file directory structure (`app/src/test/java/com/hippo/ehviewer/client/lrr/`) NOT moved (test infrastructure, not published — may move in Stage 2).
+
+29. **Cacheable interface (W3-1, 2026-04-11):** `interface Cacheable { fun clearCache() }` in `module/` package. `NetworkModule`, `DataModule` implement it and self-register via `ServiceRegistry.registerCacheable()`. `LRRTagCache` implements `Cacheable` and is registered via `ClientModule.init`. `ServiceRegistry.clearAllCaches()` iterates registered cacheables — no hardcoded cache calls, no imports from `client.lrr`. 6 unit tests in `CacheableTest.kt`.
 
 ---
 
@@ -414,3 +419,5 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 - Do not add field-specific accessors to `Settings.kt` — it now contains only utility methods (`getContext`, `getPreferences`, generic typed accessors); new settings go into the appropriate modular settings object (`AppearanceSettings`, `DownloadSettings`, `UpdateSettings`, `GuideSettings`, `PrivacySettings`, etc.) (W3-4)
 - Do not hardcode cache-clear calls in `ServiceRegistry.clearAllCaches()` — implement `Cacheable` and register via `ServiceRegistry.registerCacheable()` (W3-1)
 - Do not use `GalleryInfo` / `GalleryInfoEntity` in UI-layer code that only displays gallery data — use `GalleryInfoUi` (W3-3); use `GalleryInfoEntity` (via `GalleryInfo` typealias) only at persistence boundaries
+- Do not reintroduce Helper Callback interfaces — business logic goes in ViewModels, Scenes observe StateFlow/SharedFlow (W3-2)
+- Do not import from `com.hippo.ehviewer.client.lrr` — use `com.lanraragi.reader.client.api` (W3-7)
