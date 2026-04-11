@@ -13,11 +13,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import java.lang.ref.WeakReference
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 /**
- * Application-level utilities: global object registry, temp cache, and thread pool.
+ * Application-level utilities: global object registry and temp cache.
  * Extracted from EhApplication to reduce its responsibility scope.
  *
  * Also hosts the early-boot [bootScope]/[bootCEH] used by [EhApplication.onCreate]
@@ -33,7 +31,6 @@ class AppModule(private val context: Context) : IAppModule {
     private val idGenerator = IntIdGenerator()
     private val globalStuffMap = HashMap<Int, WeakReference<Any>>()
     private val tempCacheMap = HashMap<String, Any>()
-    override val executorService: ExecutorService = Executors.newFixedThreadPool(4)
 
     override fun initialize() {
         idGenerator.setNextId(Settings.getInt(KEY_GLOBAL_STUFF_NEXT_ID, 0))
