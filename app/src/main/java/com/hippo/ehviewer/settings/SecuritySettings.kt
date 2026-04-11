@@ -63,9 +63,25 @@ object SecuritySettings {
 
     /**
      * Verify [input] against the stored hash using a timing-safe comparison.
+     * For non-KeyStore-bound patterns only. See [LRRAuthManager.verifyPatternWithCipher]
+     * for KeyStore-bound pattern verification.
      */
     @JvmStatic
     fun verifyPattern(input: String?): Boolean = LRRAuthManager.verifyPattern(input)
+
+    // --- Lockout ---
+
+    /** @return true if the pattern is currently locked out due to too many failures. */
+    @JvmStatic
+    fun isLockedOut(): Boolean = LRRAuthManager.isLockedOut()
+
+    /** @return remaining lockout duration in milliseconds, or 0. */
+    @JvmStatic
+    fun getLockoutRemainingMs(): Long = LRRAuthManager.getLockoutRemainingMs()
+
+    /** @return true if the stored pattern is bound to Android KeyStore via AES-GCM. */
+    @JvmStatic
+    fun isPatternKeystoreBound(): Boolean = LRRAuthManager.isPatternKeystoreBound()
 
     // --- Fingerprint ---
     const val KEY_ENABLE_FINGERPRINT = "enable_fingerprint"
