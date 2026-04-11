@@ -23,6 +23,7 @@ import android.util.Log
 import androidx.preference.PreferenceManager
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.settings.AppearanceSettings
+import com.hippo.ehviewer.settings.ReadingSettings
 import com.hippo.lib.yorozuya.NumberUtils
 import java.io.File
 import java.util.Date
@@ -44,6 +45,7 @@ object Settings {
         if (AppearanceSettings.getDarkModeStatus(context) && AppearanceSettings.isThemeAutoSwitchAvailable()) {
             AppearanceSettings.putTheme(AppearanceSettings.THEME_DARK)
         }
+        ReadingSettings.initialize()
     }
 
     /** Exposed for modular settings objects. */
