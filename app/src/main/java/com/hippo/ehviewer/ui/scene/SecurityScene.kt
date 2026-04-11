@@ -19,10 +19,7 @@ package com.hippo.ehviewer.ui.scene
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorManager
-import android.hardware.fingerprint.FingerprintManager
-import android.os.Build
 import android.os.Bundle
-import android.os.CancellationSignal
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -41,7 +38,6 @@ import com.hippo.ehviewer.R
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.hippo.ehviewer.settings.SecuritySettings
-import com.hippo.ehviewer.ui.SetSecurityActivity
 import com.hippo.hardware.ShakeDetector
 import com.hippo.widget.lockpattern.LockPatternUtils
 import com.hippo.widget.lockpattern.LockPatternView
@@ -68,9 +64,7 @@ class SecurityScene : SolidScene(),
     private var mSensorManager: SensorManager? = null
     private var mAccelerometer: Sensor? = null
     private var mShakeDetector: ShakeDetector? = null
-    private var mFingerprintManager: FingerprintManager? = null
-
-    private var mFingerprintCancellationSignal: CancellationSignal? = null
+    private var mBiometricPrompt: BiometricPrompt? = null
 
     private var mRetryTimes = 0
 
@@ -99,9 +93,6 @@ class SecurityScene : SolidScene(),
                 mShakeDetector!!.setOnShakeListener(this)
             }
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            mFingerprintManager = context.getSystemService(FingerprintManager::class.java)
-        }
 
         mRetryTimes = if (savedInstanceState == null) {
             MAX_RETRY_TIMES
@@ -118,7 +109,6 @@ class SecurityScene : SolidScene(),
         mShakeDetector = null
     }
 
-    @Suppress("DEPRECATION")
     override fun onResume() {
         super.onResume()
 
@@ -127,27 +117,12 @@ class SecurityScene : SolidScene(),
         }
 
         if (isFingerprintAuthAvailable()) {
-            mFingerprintCancellationSignal = CancellationSignal()
-            mFingerprintManager!!.authenticate(null, mFingerprintCancellationSignal, 0,
-                object : FingerprintManager.AuthenticationCallback() {
-                    override fun onAuthenticationError(errMsgId: Int, errString: CharSequence) {
-                        fingerprintError(true)
-                    }
-
-                    override fun onAuthenticationFailed() {
-                        fingerprintError(false)
-                    }
-
-                    override fun onAuthenticationSucceeded(result: FingerprintManager.AuthenticationResult) {
-                        mFingerprintIcon.setImageResource(R.drawable.fingerprint_success)
-                        mFingerprintIcon.postDelayed({
-                            if (ehContext != null && isAdded) {
-                                startSceneForCheckStep(CHECK_STEP_SECURITY, arguments)
-                                finish()
-                            }
-                        }, SUCCESS_DELAY_MILLIS)
-                    }
-                }, null)
+            val promptInfo = BiometricPrompt.PromptInfo.Builder()
+                .setTitle(getString(R.string.settings_privacy_pattern_protection_title))
+                .setNegativeButtonText(getString(android.R.string.cancel))
+                .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+                .build()
+            mBiometricPrompt?.authenticate(promptInfo)
         }
 
         // Update lockout UI on resume
@@ -163,10 +138,7 @@ class SecurityScene : SolidScene(),
         if (mShakeDetector != null) {
             mSensorManager!!.unregisterListener(mShakeDetector)
         }
-        if (isFingerprintAuthAvailable() && mFingerprintCancellationSignal != null) {
-            mFingerprintCancellationSignal!!.cancel()
-            mFingerprintCancellationSignal = null
-        }
+        mBiometricPrompt?.cancelAuthentication()
         mHandler.removeCallbacks(mLockoutUpdateRunnable)
     }
 
@@ -191,6 +163,29 @@ class SecurityScene : SolidScene(),
             mFingerprintIcon.setImageResource(R.drawable.ic_fp_40px)
         }
 
+        // Set up BiometricPrompt for fingerprint unlock
+        val executor = ContextCompat.getMainExecutor(requireContext())
+        mBiometricPrompt = BiometricPrompt(this, executor,
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    fingerprintError(true)
+                }
+
+                override fun onAuthenticationFailed() {
+                    fingerprintError(false)
+                }
+
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    mFingerprintIcon.setImageResource(R.drawable.fingerprint_success)
+                    mFingerprintIcon.postDelayed({
+                        if (ehContext != null && isAdded) {
+                            startSceneForCheckStep(CHECK_STEP_SECURITY, arguments)
+                            finish()
+                        }
+                    }, SUCCESS_DELAY_MILLIS)
+                }
+            })
+
         // Find or create a lockout message view. The layout may not have this view,
         // so we look for it by id and only use it if present.
         mLockoutText = view.findViewById(R.id.lockout_text)
@@ -202,6 +197,7 @@ class SecurityScene : SolidScene(),
         super.onDestroyView()
 
         mPatternView = null
+        mBiometricPrompt = null
         mLockoutText = null
         mHandler.removeCallbacks(mLockoutUpdateRunnable)
     }
@@ -349,12 +345,12 @@ class SecurityScene : SolidScene(),
         }
     }
 
-    @Suppress("DEPRECATION")
     private fun isFingerprintAuthAvailable(): Boolean {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-            SecuritySettings.getEnableFingerprint() &&
-            mFingerprintManager != null &&
-            SetSecurityActivity.hasEnrolledFingerprints(mFingerprintManager!!)
+        if (!SecuritySettings.getEnableFingerprint()) return false
+        val context = ehContext ?: return false
+        val biometricManager = BiometricManager.from(context)
+        return biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
+            BiometricManager.BIOMETRIC_SUCCESS
     }
 
     private val mResetFingerprintRunnable = Runnable {
