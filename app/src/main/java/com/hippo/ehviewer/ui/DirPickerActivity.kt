@@ -70,7 +70,7 @@ class DirPickerActivity : ToolbarActivity(),
             @Suppress("DEPRECATION")
             val fileUri = intent.getParcelableExtra<Uri>(KEY_FILE_URI)
             if (fileUri != null) {
-                return File(fileUri.path!!)
+                return File(fileUri.path ?: return null)
             }
         }
         return null
