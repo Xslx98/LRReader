@@ -24,6 +24,7 @@ import android.os.Looper
 import android.util.Log
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.EhDB
+import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.DownloadLabel
 import kotlinx.coroutines.CompletableDeferred
@@ -365,6 +366,142 @@ class DownloadRepository(
         }
         allInfoMap.remove(oldInfo.gid)
         allInfoMap[newInfo.gid] = newInfo
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // Batch import helpers
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Import a batch of [DownloadInfo] objects (e.g., from file import).
+     * Inserts into collections in sorted order, creates missing per-label
+     * lists, and persists to DB. Returns the set of new label strings that
+     * need to be persisted.
+     */
+    fun importInfoBatch(infos: List<DownloadInfo>): List<String> {
+        assertMainThread()
+        val newLabels = mutableListOf<String>()
+        for (info in infos) {
+            if (containDownloadInfo(info.gid)) continue
+            if (DownloadInfo.STATE_WAIT == info.state || DownloadInfo.STATE_DOWNLOAD == info.state) {
+                info.state = DownloadInfo.STATE_NONE
+            }
+            var list = getInfoListForLabel(info.label)
+            if (list == null) {
+                list = ArrayList()
+                labelInfoMap[info.label] = list
+                if (!containLabel(info.label) && info.label != null) {
+                    newLabels.add(info.label!!)
+                }
+            }
+            insertSorted(list, info)
+            insertSorted(allInfoList, info)
+            allInfoMap[info.gid] = info
+        }
+        return newLabels
+    }
+
+    /**
+     * Import a batch of [DownloadLabel] objects. Skips duplicates.
+     * Returns the labels that need to be persisted (not yet in labelSet).
+     */
+    fun importLabelBatch(labels: List<DownloadLabel>): List<DownloadLabel> {
+        assertMainThread()
+        val toAdd = mutableListOf<DownloadLabel>()
+        for (label in labels) {
+            val s = label.label
+            if (!containLabel(s)) {
+                labelInfoMap[s] = ArrayList()
+                toAdd.add(label)
+            }
+        }
+        return toAdd
+    }
+
+    /**
+     * Add a single download (from UI). Returns the per-label list the info
+     * was added to, or null if the label list was not found.
+     */
+    fun addSingleDownload(galleryInfo: GalleryInfo, label: String?, state: Int): Pair<DownloadInfo, MutableList<DownloadInfo>>? {
+        assertMainThread()
+        if (containDownloadInfo(galleryInfo.gid)) return null
+
+        val info = DownloadInfo(galleryInfo)
+        info.label = label
+        info.state = state
+        info.time = System.currentTimeMillis()
+
+        val list = getInfoListForLabel(info.label)
+        if (!labelCountMap.containsKey(label)) {
+            labelCountMap[label] = 1L
+        } else {
+            labelCountMap[label] = (labelCountMap[label] ?: 0L) + 1L
+        }
+        if (list == null) {
+            Log.e(TAG, "Can't find download info list with label: $label")
+            return null
+        }
+        list.add(0, info)
+        allInfoList.add(0, info)
+        allInfoMap[galleryInfo.gid] = info
+        persistInfo(info)
+        return Pair(info, list)
+    }
+
+    /**
+     * Add download info without notifying (for sync/import). Returns true if added.
+     */
+    fun addInfoOnly(galleryInfo: GalleryInfo, label: String?): Boolean {
+        assertMainThread()
+        if (containDownloadInfo(galleryInfo.gid)) return false
+        val info = DownloadInfo(galleryInfo)
+        info.label = label
+        info.state = DownloadInfo.STATE_NONE
+        if (info.time == 0L) info.time = System.currentTimeMillis()
+        val list = getInfoListForLabel(info.label) ?: run {
+            Log.e(TAG, "Can't find download info list with label: $label")
+            return false
+        }
+        list.add(0, info)
+        persistInfo(info)
+        allInfoMap[galleryInfo.gid] = info
+        return true
+    }
+
+    /**
+     * Remove download info from collections and DB by gid.
+     * Returns (info, label-list, index-in-label-list) or null.
+     */
+    fun deleteInfo(gid: Long): Triple<DownloadInfo, MutableList<DownloadInfo>, Int>? {
+        assertMainThread()
+        val info = allInfoMap[gid] ?: return null
+        allInfoList.remove(info)
+        allInfoMap.remove(info.gid)
+        val list = getInfoListForLabel(info.label)
+        val index = if (list != null) {
+            val idx = list.indexOf(info)
+            if (idx >= 0) list.removeAt(idx)
+            idx
+        } else -1
+        removeInfoFromDb(info.gid)
+        return Triple(info, list ?: ArrayList(), index)
+    }
+
+    /**
+     * Remove a range of download infos from collections and DB.
+     */
+    fun deleteInfoRange(gidSet: Set<Long>) {
+        assertMainThread()
+        val gidsToRemove = mutableListOf<Long>()
+        for (gid in gidSet) {
+            val info = allInfoMap.remove(gid)
+            if (info != null) {
+                gidsToRemove.add(info.gid)
+                getInfoListForLabel(info.label)?.remove(info)
+            }
+        }
+        allInfoList.removeAll { it.gid in gidSet }
+        if (gidsToRemove.isNotEmpty()) removeInfoBatchFromDb(gidsToRemove)
     }
 
     // ═══════════════════════════════════════════════════════════

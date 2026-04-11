@@ -224,8 +224,12 @@ class DownloadSchedulerTest {
         scheduler.waitList.add(info)
 
         scheduler.ensureDownload()
-        ShadowLooper.idleMainLooper()
 
+        // Assert BEFORE idleMainLooper: ensureDownload synchronously adds to
+        // activeTasks and starts the worker. In Robolectric, the worker may
+        // fail immediately on Dispatchers.IO (no real server), posting an
+        // OnFinish event to the main handler. Draining the looper would
+        // dispatch that event and remove the info from activeTasks.
         assertTrue("Wait list should be empty after ensure", scheduler.waitList.isEmpty())
         assertEquals("Active tasks should have 1 entry", 1, scheduler.activeTasks.size)
         assertEquals(info, scheduler.activeTasks[0])
@@ -242,7 +246,7 @@ class DownloadSchedulerTest {
         }
 
         scheduler.ensureDownload()
-        ShadowLooper.idleMainLooper()
+        // Assert before draining looper — see ensureDownload_promotesWaitToActive comment.
 
         // With default concurrency of 1, only 1 should be active
         val maxConcurrent = com.hippo.ehviewer.settings.DownloadSettings.getConcurrentDownloads()
@@ -263,7 +267,7 @@ class DownloadSchedulerTest {
         val info = makeInfo(1L)
         scheduler.waitList.add(info)
         scheduler.ensureDownload()
-        ShadowLooper.idleMainLooper()
+        // Assert before draining looper — see ensureDownload_promotesWaitToActive comment.
 
         assertFalse("Should not be idle with active task", scheduler.isIdle)
 
