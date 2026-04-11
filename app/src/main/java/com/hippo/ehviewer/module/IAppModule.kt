@@ -1,7 +1,6 @@
 package com.hippo.ehviewer.module
 
 import android.content.Context
-import java.util.concurrent.ExecutorService
 
 /**
  * Abstraction over [AppModule] to allow ServiceRegistry consumers to depend on the
@@ -11,9 +10,6 @@ interface IAppModule {
 
     /** Returns the application context held by this module. */
     fun getContext(): Context
-
-    /** Shared [ExecutorService] for miscellaneous fire-and-forget parallel work. */
-    val executorService: ExecutorService
 
     /**
      * One-time setup for module-managed persistent state (e.g. restoring id generator
