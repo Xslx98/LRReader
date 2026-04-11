@@ -17,12 +17,12 @@ import com.hippo.app.CheckBoxDialogBuilder
 import com.hippo.app.EditTextDialogBuilder
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.QuickSearch
 import com.hippo.ehviewer.settings.AppearanceSettings
+import com.hippo.ehviewer.settings.GuideSettings
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.util.TagTranslationUtil
 import kotlinx.coroutines.launch
@@ -100,7 +100,7 @@ class GalleryDrawerHelper(private val callback: Callback) {
         builder.setTitle(R.string.readme)
         builder.setPositiveButton(android.R.string.ok) { _, _ ->
             if (builder.isChecked) {
-                Settings.putQuickSearchTip(false)
+                GuideSettings.putQuickSearchTip(false)
             }
             showAddQuickSearchDialog(list, adapter, listView, tip)
         }.show()

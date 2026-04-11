@@ -7,6 +7,7 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
+import java.io.File
 import java.util.Locale
 
 /**
@@ -180,4 +181,43 @@ object AppearanceSettings {
 
     @JvmStatic
     fun setHistoryInfoSize(value: Int) = Settings.putIntToStr(KEY_HISTORY_INFO_SIZE, value)
+
+    // --- Display Name ---
+    private const val KEY_DISPLAY_NAME = "display_name"
+
+    @JvmStatic
+    fun getDisplayName(): String? = Settings.getString(KEY_DISPLAY_NAME, null)
+
+    @JvmStatic
+    fun putDisplayName(value: String?) = Settings.putString(KEY_DISPLAY_NAME, value)
+
+    // --- Avatar URL ---
+    private const val KEY_AVATAR = "avatar"
+
+    @JvmStatic
+    fun getAvatar(): String? = Settings.getString(KEY_AVATAR, null)
+
+    @JvmStatic
+    fun putAvatar(value: String?) = Settings.putString(KEY_AVATAR, value)
+
+    // --- User Image Paths (background + avatar overlay) ---
+    @JvmField
+    val USER_BACKGROUND_IMAGE = "background_image_path"
+    @JvmField
+    val USER_AVATAR_IMAGE = "avatar_image_path"
+
+    @JvmStatic
+    fun getUserImageFile(key: String): File? {
+        val path = Settings.getString(key, "") ?: ""
+        if (path.isEmpty()) {
+            return null
+        }
+        val file = File(path)
+        return if (file.exists()) file else null
+    }
+
+    @JvmStatic
+    fun saveFilePath(key: String, path: String?) {
+        Settings.putString(key, path)
+    }
 }

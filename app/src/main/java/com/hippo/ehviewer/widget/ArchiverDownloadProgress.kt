@@ -9,8 +9,8 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.settings.DownloadSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -53,7 +53,7 @@ class ArchiverDownloadProgress @JvmOverloads constructor(
     fun initThread(galleryInfo: GalleryInfo?) {
         if (galleryInfo == null) return
         if (showing) return
-        val dId = Settings.getArchiverDownloadId(galleryInfo.gid)
+        val dId = DownloadSettings.getArchiverDownloadId(galleryInfo.gid)
         if (dId == -1L) return
 
         showing = true

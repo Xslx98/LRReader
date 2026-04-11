@@ -26,7 +26,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import com.hippo.android.resource.AttrResources
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.settings.GuideSettings
 import com.hippo.lib.yorozuya.ViewUtils
 
 class GalleryGuideView @JvmOverloads constructor(
@@ -178,7 +178,7 @@ class GalleryGuideView @JvmOverloads constructor(
                 bind()
             }
             else -> {
-                Settings.putGuideGallery(false)
+                GuideSettings.putGuideGallery(false)
                 ViewUtils.removeFromParent(this)
             }
         }
