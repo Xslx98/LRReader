@@ -235,7 +235,7 @@ class LRRArchivePagingSourceTest {
         val state = PagingState<Int, GalleryInfo>(
             pages = emptyList(),
             anchorPosition = null,
-            config = PagingConfig(pageSize = 100),
+            config = PagingConfig(pageSize = 50),
             leadingPlaceholderCount = 0
         )
         assertNull(source.getRefreshKey(state))
@@ -253,7 +253,7 @@ class LRRArchivePagingSourceTest {
         val state = PagingState(
             pages = listOf(page),
             anchorPosition = 0,
-            config = PagingConfig(pageSize = 100),
+            config = PagingConfig(pageSize = 50),
             leadingPlaceholderCount = 0
         )
         // closestPageToPosition(0) -> page with prevKey=1 -> 1+1 = 2

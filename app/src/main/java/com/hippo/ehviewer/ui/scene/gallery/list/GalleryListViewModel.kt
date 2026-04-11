@@ -85,10 +85,10 @@ class GalleryListViewModel : ViewModel() {
     }
 
     companion object {
-        /** Matches the LANraragi default page size and GalleryListScene.LRR_PAGE_SIZE. */
-        const val PAGE_SIZE = 100
+        /** Page size for gallery list. Kept smaller than LANraragi default (100) to reduce memory. */
+        const val PAGE_SIZE = 50
 
         /** Number of items before the end to start loading the next page. */
-        const val PREFETCH_DISTANCE = 20
+        const val PREFETCH_DISTANCE = 10
     }
 }
