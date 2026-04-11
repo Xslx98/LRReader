@@ -1,6 +1,7 @@
-package com.hippo.ehviewer.client.lrr.data
+package com.lanraragi.reader.client.api.data
 
-import com.hippo.ehviewer.client.lrr.lrrJson
+import com.lanraragi.reader.client.api.*
+import com.lanraragi.reader.client.api.data.*
 import org.junit.Assert.*
 import org.junit.Test
 

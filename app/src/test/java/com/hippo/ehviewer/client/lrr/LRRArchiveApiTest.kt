@@ -1,4 +1,4 @@
-package com.hippo.ehviewer.client.lrr
+package com.lanraragi.reader.client.api
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -11,7 +11,8 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import com.hippo.ehviewer.client.lrr.LRRHttpException
+import com.lanraragi.reader.client.api.*
+import com.lanraragi.reader.client.api.data.*
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 

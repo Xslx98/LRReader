@@ -1,4 +1,4 @@
-package com.hippo.ehviewer.client.lrr
+package com.lanraragi.reader.client.api
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider

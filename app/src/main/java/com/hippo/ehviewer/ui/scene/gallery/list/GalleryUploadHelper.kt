@@ -10,10 +10,10 @@ import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.hippo.app.EditTextDialogBuilder
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.lrr.LRRArchiveApi
-import com.hippo.ehviewer.client.lrr.LRRClientProvider
-import com.hippo.ehviewer.client.lrr.LRRMiscApi
-import com.hippo.ehviewer.client.lrr.runSuspend
+import com.lanraragi.reader.client.api.LRRArchiveApi
+import com.lanraragi.reader.client.api.LRRClientProvider
+import com.lanraragi.reader.client.api.LRRMiscApi
+import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.ehviewer.ui.scene.BaseScene
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

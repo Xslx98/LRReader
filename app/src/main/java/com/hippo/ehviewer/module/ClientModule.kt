@@ -4,7 +4,7 @@ import android.content.Context
 import com.hippo.conaco.Conaco
 import com.hippo.ehviewer.ImageBitmapHelper
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.lrr.LRRTagCache
+import com.lanraragi.reader.client.api.LRRTagCache
 import com.hippo.lib.image.Image
 import java.io.File
 

@@ -42,9 +42,10 @@ LRReader/
 │   ├── schemas/                   # Room schema exports (per version)
 │   ├── src/
 │   │   ├── main/
+│   │   │   ├── java/com/lanraragi/reader/
+│   │   │   │   └── client/api/        # LANraragi REST API client (PRIMARY)
+│   │   │   │       └── data/          # LRR @Serializable data classes
 │   │   │   ├── java/com/hippo/ehviewer/
-│   │   │   │   ├── client/lrr/        # LANraragi REST API client (PRIMARY)
-│   │   │   │   │   └── data/          # LRR @Serializable data classes
 │   │   │   │   ├── client/parser/     # HTML/JSON parsers (legacy EH)
 │   │   │   │   ├── client/exception/  # Custom API exceptions
 │   │   │   │   ├── dao/               # Room DB entities + DAOs
@@ -99,13 +100,13 @@ LRReader/
 | `settings/NetworkSettings.kt` | Network/proxy preferences |
 | `settings/ReadingSettings.kt` | Reader preferences |
 | `settings/SecuritySettings.kt` | Auth/security preferences |
-| `client/lrr/LRRApiUtils.kt` | Shared utilities: `parseBaseUrl()`, `retryOnFailure()`, `friendlyError()`, JSON/exception defs |
-| `client/lrr/LRRArchiveApi.kt` | Archive search/list/detail/upload/delete/metadata API |
-| `client/lrr/LRRSearchApi.kt` | Search + random endpoint |
-| `client/lrr/LRRCategoryApi.kt` | Category CRUD + archive association |
-| `client/lrr/LRRDatabaseApi.kt` | Tag statistics + database operations |
-| `client/lrr/LRRTagCache.kt` | In-memory tag autocomplete cache (10-min TTL) |
-| `client/lrr/LRRArchivePagingSource.kt` | Paging 3 source for gallery list |
+| `client/api/LRRApiUtils.kt` | Shared utilities: `parseBaseUrl()`, `retryOnFailure()`, `friendlyError()`, JSON/exception defs |
+| `client/api/LRRArchiveApi.kt` | Archive search/list/detail/upload/delete/metadata API |
+| `client/api/LRRSearchApi.kt` | Search + random endpoint |
+| `client/api/LRRCategoryApi.kt` | Category CRUD + archive association |
+| `client/api/LRRDatabaseApi.kt` | Tag statistics + database operations |
+| `client/api/LRRTagCache.kt` | In-memory tag autocomplete cache (10-min TTL) |
+| `client/api/LRRArchivePagingSource.kt` | Paging 3 source for gallery list |
 | `dao/AppDatabase.kt` | Room database schema (v18, schema exported) |
 | `util/FlowBridge.kt` | Java→Kotlin Flow bridge for lifecycle-aware collection |
 | `ui/MainActivity.kt` | Main UI entry point + scene routing |
@@ -201,7 +202,7 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 
 ### Networking (OkHttp)
 
-- All LANraragi API calls go through `client/lrr/` package
+- All LANraragi API calls go through `client/api/` package
 - `LRRAuthInterceptor` injects API key per request
 - `LRRClientProvider` supplies the configured `OkHttpClient`
 - DNS-over-HTTPS via `okhttp-dnsoverhttps`
@@ -217,7 +218,7 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 
 ### Serialization
 
-- **All JSON (LRR API responses and new code):** `kotlinx-serialization` with `@Serializable` data classes in `client/lrr/data/`
+- **All JSON (LRR API responses and new code):** `kotlinx-serialization` with `@Serializable` data classes in `client/api/data/`
 - Gson has been removed from the project — do not re-add it
 
 ### Dependency Management
@@ -248,8 +249,8 @@ Settings are now Kotlin objects in `settings/`:
 
 ### Package Organization
 
-- LRR API code → `client/lrr/`
-- LRR data classes → `client/lrr/data/`
+- LRR API code → `client/api/`
+- LRR data classes → `client/api/data/`
 - UI scenes → `ui/scene/`; fragments → `ui/fragment/`
 - Business logic stays out of Activities/Fragments
 
@@ -332,7 +333,7 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 3. **ServiceRegistry:** Replaces the old service-locator pattern in `EhApplication`. Initialize modules here; don't add new statics to `EhApplication`. Includes `CoroutineModule` for scoped coroutines. Cache clearing uses the `Cacheable` interface (W3-1): modules implement `Cacheable` and self-register via `ServiceRegistry.registerCacheable()`, so `clearAllCaches()` iterates registered instances instead of hardcoding calls. ServiceRegistry has zero imports from `client.lrr`.
 
-4. **LRR API surface:** Full LANraragi REST API wrapped in `client/lrr/`. Add new endpoints here as `suspend` functions returning `@Serializable` data classes. Use `parseBaseUrl(baseUrl)` from `LRRApiUtils.kt` to build URLs — never `toHttpUrlOrNull()!!`.
+4. **LRR API surface:** Full LANraragi REST API wrapped in `client/api/`. Add new endpoints here as `suspend` functions returning `@Serializable` data classes. Use `parseBaseUrl(baseUrl)` from `LRRApiUtils.kt` to build URLs — never `toHttpUrlOrNull()!!`.
 
 5. **Room schema migrations:** Schema at v18, exported. Write an explicit `Migration` object for every schema change.
 

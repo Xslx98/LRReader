@@ -1,7 +1,7 @@
-package com.hippo.ehviewer.client.lrr
+package com.lanraragi.reader.client.api
 
 import android.util.Log
-import com.hippo.ehviewer.client.lrr.data.LRRTagStat
+import com.lanraragi.reader.client.api.data.LRRTagStat
 import com.hippo.ehviewer.module.Cacheable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

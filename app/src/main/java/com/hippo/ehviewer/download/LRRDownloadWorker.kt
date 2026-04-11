@@ -3,9 +3,9 @@ package com.hippo.ehviewer.download
 import android.content.Context
 import android.util.Log
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.lrr.LRRArchiveApi
-import com.hippo.ehviewer.client.lrr.LRRAuthManager
-import com.hippo.ehviewer.client.lrr.runSuspend
+import com.lanraragi.reader.client.api.LRRArchiveApi
+import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.ehviewer.spider.SpiderQueen

@@ -1,5 +1,7 @@
-package com.hippo.ehviewer.client.lrr
+package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.client.api.*
+import com.lanraragi.reader.client.api.data.*
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
@@ -8,7 +10,7 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
-import com.hippo.ehviewer.client.lrr.LRRHttpException
+
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
