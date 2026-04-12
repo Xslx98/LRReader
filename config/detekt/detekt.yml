@@ -40,6 +40,8 @@ naming:
 
 potential-bugs:
   active: true
+  UnsafeCallOnNullableType:
+    active: true
 
 performance:
   active: true
