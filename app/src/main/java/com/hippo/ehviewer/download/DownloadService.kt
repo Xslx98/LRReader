@@ -22,6 +22,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
@@ -73,6 +74,10 @@ class DownloadService : Service(), DownloadListener {
             Dispatchers.IO +
             ServiceRegistry.coroutineModule.exceptionHandler
     )
+
+    private val cachedLargeIcon: Bitmap by lazy {
+        BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)
+    }
 
     private var CHANNEL_ID: String? = null
 
@@ -304,7 +309,7 @@ class DownloadService : Service(), DownloadListener {
         val channelId = CHANNEL_ID ?: return
         mDownloadedBuilder = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
-            .setLargeIcon(BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher))
+            .setLargeIcon(cachedLargeIcon)
             .setContentTitle(getString(R.string.stat_download_done_title))
             .setDeleteIntent(piClear)
             .setOngoing(false)
@@ -325,7 +330,7 @@ class DownloadService : Service(), DownloadListener {
         val channelId = CHANNEL_ID ?: return
         m509dBuilder = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(R.drawable.ic_stat_alert)
-            .setLargeIcon(BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher))
+            .setLargeIcon(cachedLargeIcon)
             .setContentTitle(getString(R.string.stat_509_alert_title))
             .setContentText(getString(R.string.stat_509_alert_text))
             .setAutoCancel(true)
