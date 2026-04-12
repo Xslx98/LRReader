@@ -954,6 +954,7 @@
     <string name="lrr_connect">Connecter</string>
     <string name="lrr_connection_failed">Connexion échouée : %1$s</string>
     <string name="lrr_security_warning">⚠️ Avertissement de sécurité : Connexion HTTP non chiffrée vers une adresse publique. La clé API peut être interceptée. HTTPS est fortement recommandé.</string>
+    <string name="lrr_https_fallback_warning">⚠️ La connexion HTTPS a échoué. Connecté en HTTP non chiffré. Envisagez de configurer HTTPS sur le serveur.</string>
     <string name="lrr_connection_success">Connecté à %1$s (v%2$s)</string>
     <string name="lrr_delete_archive">Supprimer l\'archive</string>
     <string name="lrr_delete_confirm_button">Supprimer</string>

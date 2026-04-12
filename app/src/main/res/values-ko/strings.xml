@@ -997,6 +997,7 @@
     <string name="lrr_connect">연결</string>
     <string name="lrr_connection_failed">연결 실패: %1$s</string>
     <string name="lrr_security_warning">⚠️ 보안 경고: 공용 주소에 암호화되지 않은 HTTP 연결을 사용하고 있습니다. API 키가 가로채질 수 있습니다. HTTPS 사용을 강력히 권장합니다.</string>
+    <string name="lrr_https_fallback_warning">⚠️ HTTPS 연결에 실패했습니다. HTTP 평문으로 연결되었습니다. 서버에서 HTTPS 설정을 권장합니다.</string>
     <string name="lrr_connection_success">%1$s에 연결됨 (v%2$s)</string>
     <string name="lrr_delete_archive">아카이브 삭제</string>
     <string name="lrr_delete_confirm_button">삭제</string>

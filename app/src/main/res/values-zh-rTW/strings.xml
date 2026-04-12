@@ -1027,6 +1027,7 @@
     <string name="lrr_connect">連線</string>
     <string name="lrr_connection_failed">連線失敗: %1$s</string>
     <string name="lrr_security_warning">⚠️ 安全警告：正在使用 HTTP 明文連線公開地址，API Key 可能被竊聽。強烈建議配置 HTTPS。</string>
+    <string name="lrr_https_fallback_warning">⚠️ HTTPS 連線失敗，已回退到 HTTP 明文連線。建議在伺服器上配置 HTTPS。</string>
     <string name="lrr_connection_success">已連線到 %1$s (v%2$s)</string>
     <string name="lrr_delete_archive">刪除檔案</string>
     <string name="lrr_delete_confirm_button">刪除</string>

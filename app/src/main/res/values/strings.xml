@@ -1152,6 +1152,7 @@
     <string name="lrr_no_preview_tags">No preview tags</string>
     <string name="lrr_title_copied">Title copied</string>
     <string name="lrr_security_warning">⚠️ Security Warning: Using unencrypted HTTP for a public address. API Key may be intercepted. HTTPS is strongly recommended.</string>
+    <string name="lrr_https_fallback_warning">⚠️ HTTPS connection failed. Connected via plain HTTP instead. Consider configuring HTTPS on the server.</string>
     <string name="lrr_download_failed_invalid">Download failed: invalid file, tap to retry</string>
     <string name="lrr_download_failed_not_image">Download failed: not an image format, tap to retry</string>
     <string name="lrr_decode_failed">Image decode failed, tap to retry</string>
