@@ -88,7 +88,7 @@ class SpiderInfo {
             }
             writer.flush()
         } catch (e: IOException) {
-            // Ignore
+            Log.w(TAG, "Failed to write spider info", e)
         } finally {
             IOUtils.closeQuietly(writer)
             IOUtils.closeQuietly(os)
@@ -113,7 +113,7 @@ class SpiderInfo {
                 write(file.openOutputStream())
             } catch (e: Throwable) {
                 ExceptionUtils.throwIfFatal(e)
-                // Ignore
+                Log.w(TAG, "Failed to write spider info to download dir", e)
             }
             // Read from cache
             val pipe: OutputStreamPipe = ServiceRegistry.dataModule
@@ -123,7 +123,7 @@ class SpiderInfo {
                 pipe.obtain()
                 write(pipe.open())
             } catch (e: IOException) {
-                // Ignore
+                Log.w(TAG, "Failed to write spider info to cache", e)
             } finally {
                 pipe.close()
                 pipe.release()
@@ -148,6 +148,7 @@ class SpiderInfo {
                 inputStream = file.openInputStream()
                 read(inputStream)
             } catch (e: IOException) {
+                Log.w(TAG, "Failed to read spider info from file", e)
                 null
             } finally {
                 IOUtils.closeQuietly(inputStream)
@@ -234,9 +235,9 @@ class SpiderInfo {
                     }
                 }
             } catch (e: IOException) {
-                // Ignore
+                Log.w(TAG, "Failed to parse spider info from input stream", e)
             } catch (e: NumberFormatException) {
-                // Ignore
+                Log.w(TAG, "Invalid number format in spider info", e)
             }
 
             return if (spiderInfo == null || spiderInfo.gid == -1L || spiderInfo.token == null ||

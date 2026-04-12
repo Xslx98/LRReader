@@ -24,6 +24,7 @@ import com.hippo.ehviewer.dao.DownloadInfo
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
+import android.util.Log
 import java.util.regex.Pattern
 
 /**
@@ -325,6 +326,8 @@ open class GalleryInfoEntity : Parcelable {
     }
 
     companion object {
+        private val TAG = GalleryInfoEntity::class.java.simpleName
+
         /** ISO 639-1 */
         const val S_LANG_JA: String = "JA"
         const val S_LANG_EN: String = "EN"
@@ -457,7 +460,8 @@ open class GalleryInfoEntity : Parcelable {
                         simpleTagsArr.getString(i)
                     }
                     galleryInfo.simpleTags = tags
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to deserialize simpleTags from JSON", e)
                 }
             }
             galleryInfo.spanGroupIndex = obj.optInt("spanGroupIndex", 0)
@@ -471,7 +475,8 @@ open class GalleryInfoEntity : Parcelable {
                         list.add(tgArray.getString(i))
                     }
                     galleryInfo.tgList = list
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to deserialize tgList from JSON", e)
                 }
             }
             galleryInfo.thumb = obj.optString("thumb", null)
