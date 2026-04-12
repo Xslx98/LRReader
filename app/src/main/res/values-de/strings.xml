@@ -939,6 +939,7 @@
     <string name="lrr_connect">Verbinden</string>
     <string name="lrr_connection_failed">Verbindung fehlgeschlagen: %1$s</string>
     <string name="lrr_security_warning">⚠️ Sicherheitswarnung: Unverschlüsselte HTTP-Verbindung zu einer öffentlichen Adresse. API-Schlüssel kann abgefangen werden. HTTPS wird dringend empfohlen.</string>
+    <string name="lrr_https_fallback_warning">⚠️ HTTPS-Verbindung fehlgeschlagen. Verbindung über unverschlüsseltes HTTP hergestellt. Erwägen Sie, HTTPS auf dem Server zu konfigurieren.</string>
     <string name="lrr_connection_success">Verbunden mit %1$s (v%2$s)</string>
     <string name="lrr_delete_archive">Archiv löschen</string>
     <string name="lrr_delete_confirm_button">Löschen</string>

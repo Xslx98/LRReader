@@ -120,13 +120,33 @@ object LRRUrlHelper {
     ) {
         try {
             if (hasExplicitScheme(rawInput)) {
-                // User typed scheme explicitly -- use as-is
                 LRRAuthManager.setServerUrl(rawInput)
                 try {
                     val info = doConnect(testClient, rawInput)
                     callback.onSuccess(rawInput, info, false)
+                    return
                 } catch (e: Exception) {
-                    callback.onFailure(e)
+                    Log.d(TAG, "Explicit URL failed: ${e.message}")
+                    // Explicit http:// — no fallback, report failure directly
+                    if (!rawInput.lowercase().startsWith("https://")) {
+                        callback.onFailure(e)
+                        return
+                    }
+                    // Explicit https:// failed — try HTTP fallback (LAN only)
+                    val httpUrl = "http://" + rawInput.substring("https://".length)
+                    if (!isLanAddress(httpUrl)) {
+                        callback.onFailure(e)
+                        return
+                    }
+                    LRRAuthManager.setServerUrl(httpUrl)
+                    try {
+                        Log.d(TAG, "Trying HTTP fallback for explicit HTTPS: $httpUrl")
+                        val info = doConnect(testClient, httpUrl)
+                        callback.onSuccess(httpUrl, info, true)
+                    } catch (e2: Exception) {
+                        Log.d(TAG, "HTTP fallback also failed: ${e2.message}")
+                        callback.onFailure(e2)
+                    }
                 }
                 return
             }
@@ -146,8 +166,6 @@ object LRRUrlHelper {
             }
 
             // Fallback to HTTP -- only permitted for private / LAN addresses.
-            // Allowing HTTP on public hosts would expose the Bearer token to
-            // a network-layer attacker that forced the HTTPS failure.
             if (!isLanAddress(httpUrl)) {
                 LRRAuthManager.setServerUrl(httpsUrl) // restore HTTPS URL
                 callback.onFailure(
@@ -169,8 +187,6 @@ object LRRUrlHelper {
                 callback.onFailure(e2)
             }
         } catch (e: LRRSecureStorageUnavailableException) {
-            // KeyStore unavailable — cannot persist server URL for the interceptor.
-            // Route as a connection failure so the caller's UI surfaces the error.
             Log.e(TAG, "Secure storage unavailable during connect", e)
             callback.onFailure(e)
         }

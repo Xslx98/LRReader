@@ -107,6 +107,7 @@ class GalleryListScene : BaseScene(),
     private var mHideActionFabSlop = 0
 
     private var mHasFirstRefresh = false
+    private var mLastServerConfigVersion = LRRAuthManager.serverConfigVersion
     private var mNavCheckedId = 0
     private var mPressBackTime: Long = 0
     private var mRestoredState = GalleryStateHelper.STATE_NORMAL
@@ -669,6 +670,13 @@ class GalleryListScene : BaseScene(),
             mAdapter!!.refreshColumnSize()
         }
         mDrawerHelper?.onResume()
+
+        // Auto-refresh when active server config changed (edit/switch/add)
+        val currentVersion = LRRAuthManager.serverConfigVersion
+        if (currentVersion != mLastServerConfigVersion) {
+            mLastServerConfigVersion = currentVersion
+            mHelper?.refresh()
+        }
     }
 
     override fun onBackPressed() {

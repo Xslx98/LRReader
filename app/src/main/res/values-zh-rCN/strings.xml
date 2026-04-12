@@ -1114,6 +1114,7 @@
     <string name="lrr_no_preview_tags">暂无预览标签</string>
     <string name="lrr_title_copied">标题文本已复制</string>
     <string name="lrr_security_warning">⚠️ 安全警告：正在使用 HTTP 明文连接公网地址，API Key 可能被窃听。强烈建议配置 HTTPS。</string>
+    <string name="lrr_https_fallback_warning">⚠️ HTTPS 连接失败，已回退到 HTTP 明文连接。建议在服务器上配置 HTTPS。</string>
     <string name="lrr_download_failed_invalid">下载失败：文件无效，请点击重试</string>
     <string name="lrr_download_failed_not_image">下载失败：非图片格式，请点击重试</string>
     <string name="lrr_decode_failed">图片解码失败，请点击重试</string>
