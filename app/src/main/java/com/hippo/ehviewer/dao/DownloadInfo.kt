@@ -8,6 +8,7 @@ import androidx.room.Ignore
 import androidx.room.Index
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.GalleryInfoEntity
+import android.util.Log
 import org.json.JSONException
 import org.json.JSONObject
 
@@ -163,12 +164,15 @@ class DownloadInfo : GalleryInfoEntity {
             jsonObject.put("time", time)
             jsonObject.put("total", total)
             jsonObject.put("archiveUri", archiveUri)
-        } catch (_: JSONException) {
+        } catch (e: JSONException) {
+            Log.w(TAG, "Failed to serialize DownloadInfo to JSON", e)
         }
         return jsonObject
     }
 
     companion object {
+        private val TAG = DownloadInfo::class.java.simpleName
+
         const val STATE_INVALID: Int = -1
         const val STATE_NONE: Int = 0
         const val STATE_WAIT: Int = 1

@@ -116,8 +116,8 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         if (!noMedia.exists()) {
             try {
                 noMedia.createNewFile()
-            } catch (_: IOException) {
-                // ignored
+            } catch (e: IOException) {
+                Log.w(TAG, "Failed to create .nomedia file", e)
             }
         }
 
@@ -349,7 +349,8 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                         }
                     }
                 }
-            } catch (_: IOException) {
+            } catch (e: IOException) {
+                Log.w(TAG, "Failed to validate image file", e)
                 false
             }
         }
