@@ -16,7 +16,6 @@
 
 package com.hippo.ehviewer.ui.scene.gallery.list
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.drawable.NinePatchDrawable
 import android.os.Bundle
@@ -62,14 +61,15 @@ class QuickSearchScene : ToolbarScene() {
     private var mViewTransition: ViewTransition? = null
     private var mAdapter: RecyclerView.Adapter<*>? = null
 
-    @SuppressLint("NotifyDataSetChanged")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mQuickSearchList = mutableListOf()
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) { EhDB.getAllQuickSearchAsync() }
             mQuickSearchList = result.toMutableList()
-            mAdapter?.notifyDataSetChanged()
+            if (result.isNotEmpty()) {
+                mAdapter?.notifyItemRangeInserted(0, result.size)
+            }
         }
     }
 
@@ -160,7 +160,6 @@ class QuickSearchScene : ToolbarScene() {
             delete.setOnClickListener(this)
         }
 
-        @SuppressLint("NotifyDataSetChanged")
         override fun onClick(v: View) {
             val position = adapterPosition
             val context = ehContext
@@ -177,9 +176,7 @@ class QuickSearchScene : ToolbarScene() {
                         EhDB.deleteQuickSearchAsync(quickSearch)
                     }
                     mQuickSearchList!!.removeAt(position)
-                }
-                .setOnDismissListener {
-                    mAdapter?.notifyDataSetChanged()
+                    mAdapter?.notifyItemRemoved(position)
                     updateView()
                 }
                 .show()
