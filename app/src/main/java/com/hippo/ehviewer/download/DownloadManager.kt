@@ -290,7 +290,11 @@ class DownloadManager(
                     val file = dir.findFile(".ehviewer") ?: continue
                     val si = SpiderInfo.read(file) ?: continue
                     si.startPage = 0
-                    try { si.write(file.openOutputStream()) } catch (e: IOException) { Log.e(TAG, "Can't write SpiderInfo", e) }
+                    try {
+                        file.openOutputStream()?.use { os -> si.write(os) }
+                    } catch (e: IOException) {
+                        Log.e(TAG, "Can't write SpiderInfo", e)
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to reset reading progress", e)
