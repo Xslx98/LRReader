@@ -14,7 +14,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -23,6 +27,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Downloads all pages of a LANraragi archive to the download directory.
@@ -121,72 +126,84 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
             }
         }
 
-        // Step 3: Download each page
-        var finished = 0
-        var downloaded = 0
+        // Step 3: Download pages in parallel
+        // LANraragi's /api/archives/:id/page supports concurrent requests and
+        // extracts pages on-the-fly if the background Minion job hasn't reached
+        // them yet. Hypnotoad (4 workers × 1000 connections) handles this fine.
+        val finished = AtomicInteger(0)
+        val downloaded = AtomicInteger(0)
+        val semaphore = Semaphore(PARALLEL_PAGES)
 
-        for (i in 0 until total) {
-            if (cancelled) {
-                break
-            }
+        val jobs = pagePaths.indices.map { i ->
+            scope.async {
+                if (cancelled) return@async
 
-            // Determine file extension from path
-            val pagePath = pagePaths[i]
-            val ext = getExtension(pagePath)
-            val pageFile = File(downloadDir, "%04d%s".format(i + 1, ext))
+                val pagePath = pagePaths[i]
+                val ext = getExtension(pagePath)
+                val pageFile = File(downloadDir, "%04d%s".format(i + 1, ext))
 
-            // Skip if already downloaded and valid
-            if (pageFile.exists() && pageFile.length() > MIN_IMAGE_SIZE && validateImageFile(pageFile)) {
-                finished++
-                downloaded++
-                listener?.onPageSuccess(i, finished, downloaded, total)
-                continue
-            }
-
-            // Download the page with retry
-            var success = false
-            for (attempt in 0 until MAX_RETRY) {
-                if (cancelled) break
-
-                // On retry, delete potentially corrupt file
-                if (attempt > 0) {
-                    Log.w(TAG, "Retry page $i (attempt ${attempt + 1})")
-                    if (pageFile.exists()) {
-                        pageFile.delete()
-                    }
+                // Skip if already downloaded and valid
+                if (pageFile.exists() && pageFile.length() > MIN_IMAGE_SIZE && validateImageFile(pageFile)) {
+                    val f = finished.incrementAndGet()
+                    val d = downloaded.incrementAndGet()
+                    listener?.onPageSuccess(i, f, d, total)
+                    return@async
                 }
 
-                try {
-                    downloadPage(pageClient, pagePath, pageFile, i, total)
-                    // Validate after download
-                    if (!pageFile.exists() || pageFile.length() < MIN_IMAGE_SIZE) {
-                        if (pageFile.exists()) pageFile.delete()
-                        throw IOException("Downloaded file too small or missing")
+                // Acquire semaphore slot — limits concurrent HTTP requests
+                semaphore.withPermit {
+                    if (cancelled) return@withPermit
+
+                    var success = false
+                    for (attempt in 0 until MAX_RETRY) {
+                        if (cancelled) break
+
+                        if (attempt > 0) {
+                            Log.w(TAG, "Retry page $i (attempt ${attempt + 1})")
+                            if (pageFile.exists()) pageFile.delete()
+                        }
+
+                        try {
+                            downloadPage(pageClient, pagePath, pageFile, i, total)
+                            if (!pageFile.exists() || pageFile.length() < MIN_IMAGE_SIZE) {
+                                if (pageFile.exists()) pageFile.delete()
+                                throw IOException("Downloaded file too small or missing")
+                            }
+                            if (!validateImageFile(pageFile)) {
+                                pageFile.delete()
+                                throw IOException("Downloaded file is not a valid image")
+                            }
+                            success = true
+                            break
+                        } catch (e: IOException) {
+                            Log.e(TAG, "Failed to download page $i (attempt ${attempt + 1})", e)
+                            if (attempt == MAX_RETRY - 1) {
+                                listener?.onPageFailure(
+                                    i, e.message ?: "Unknown error",
+                                    finished.get(), downloaded.get(), total
+                                )
+                            }
+                        }
                     }
-                    if (!validateImageFile(pageFile)) {
-                        pageFile.delete()
-                        throw IOException("Downloaded file is not a valid image")
-                    }
-                    success = true
-                    break
-                } catch (e: IOException) {
-                    Log.e(TAG, "Failed to download page $i (attempt ${attempt + 1})", e)
-                    if (attempt == MAX_RETRY - 1) {
-                        // Final attempt failed
-                        listener?.onPageFailure(i, e.message ?: "Unknown error", finished, downloaded, total)
+
+                    if (success) {
+                        val f = finished.incrementAndGet()
+                        val d = downloaded.incrementAndGet()
+                        listener?.onPageSuccess(i, f, d, total)
                     }
                 }
-            }
-
-            if (success) {
-                finished++
-                downloaded++
-                listener?.onPageSuccess(i, finished, downloaded, total)
             }
         }
 
+        // Wait for all page downloads to complete (or cancellation)
+        try {
+            jobs.awaitAll()
+        } catch (_: CancellationException) {
+            // Normal cancellation via cancel()
+        }
+
         // Step 4: Report finish
-        listener?.onFinish(finished, downloaded, total)
+        listener?.onFinish(finished.get(), downloaded.get(), total)
     }
 
     @Throws(IOException::class)
@@ -238,8 +255,10 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                                 listener?.onPageDownload(index, contentLength, totalRead, read)
                             }
                         }
-                        // Flush to disk before rename to prevent reading incomplete data
-                        fos.fd.sync()
+                        // fos.close() (via use{}) flushes to OS buffer cache.
+                        // Explicit fsync removed: rename-after-close is sufficient
+                        // for download integrity; the OS flushes to disk on its
+                        // own schedule. This avoids 2-50ms latency per page.
                     }
                 }
             }
@@ -289,10 +308,11 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
 
     companion object {
         private const val TAG = "LRRDownloadWorker"
-        private const val BUFFER_SIZE = 65536          // 64KB for LAN
+        private const val BUFFER_SIZE = 262144         // 256KB — reduces syscall overhead on LAN
         private const val MIN_IMAGE_SIZE = 1024L       // 1KB minimum valid image
         private const val MAX_RETRY = 2                // Try up to 2 times per page
         private const val MAX_PAGE_SIZE = 200L * 1024 * 1024 // 200MB per page
+        private const val PARALLEL_PAGES = 4           // Concurrent page downloads per archive
 
         /**
          * Validate that a file starts with a known image format magic bytes.
