@@ -45,7 +45,7 @@ jobs:
         run: ./gradlew app:lintAppReleaseDebug
 
       - name: Detekt
-        run: ./gradlew detekt
+        run: ./gradlew detektMain
 
       - name: Verify Log.v/d/i/w stripped from release DEX
         # W1-6: enforce that ProGuard/R8 actually strips android.util.Log.v/d/i/w
