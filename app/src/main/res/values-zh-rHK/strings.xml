@@ -1121,6 +1121,10 @@
     <string name="lrr_dns_error">無法解析伺服器地址，請檢查網址</string>
     <string name="lrr_ssl_error">安全連線失敗，請檢查伺服器憑證</string>
     <string name="lrr_plaintext_refused">已拒絕傳送 API 金鑰：伺服器 URL 無效或協定不符</string>
+    <string name="lrr_cleartext_refused_error">應用程式政策已拒絕 HTTP 明文請求。請喺伺服器設定入面啟用「信任呢個伺服器嘅 HTTP 明文連線」，或者改用 HTTPS。</string>
+    <string name="lrr_allow_cleartext_label">信任呢個伺服器嘅 HTTP 明文連線（僅限區域網路）</string>
+    <string name="lrr_allow_cleartext_helper">當伺服器網址使用 http:// 時需要啟用。請只喺受信任嘅區域網路入面開啟。</string>
+    <string name="lrr_allow_cleartext_required">使用 HTTP 明文連線需要明確授權。請剔選核取方塊或者改用 HTTPS。</string>
     <string name="lrr_auth_failed_short">驗證失敗</string>
     <string name="lrr_server_error_short">伺服器錯誤</string>
     <string name="lrr_request_failed_short">請求失敗</string>
@@ -1159,4 +1163,9 @@
     <string name="lrr_tag_hint">標籤名稱</string>
     <string name="lrr_save">儲存</string>
     <string name="lrr_empty_namespace">分類名不能為空</string>
+    <string name="lrr_keystore_failed_title">憑證儲存不可用</string>
+    <string name="lrr_keystore_failed_message">裝置金鑰庫不可用，無法載入 API Key。請重新輸入伺服器憑證。</string>
+    <string name="lrr_secure_storage_write_failed">裝置金鑰庫不可用，無法安全儲存變更。請重新啟動裝置後重試，若問題持續請重新安裝應用程式。</string>
+    <string name="reauth_required_title">需要重新驗證</string>
+    <string name="reauth_required_message">安全金鑰庫已失效，請為每個伺服器重新輸入 API Key。</string>
 </resources>

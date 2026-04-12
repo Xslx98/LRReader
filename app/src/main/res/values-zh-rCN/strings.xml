@@ -1130,6 +1130,10 @@
     <string name="lrr_dns_error">无法解析服务器地址，请检查 URL</string>
     <string name="lrr_ssl_error">安全连接失败，请检查服务器证书</string>
     <string name="lrr_plaintext_refused">已拒绝发送 API 密钥：服务器 URL 无效或协议不匹配</string>
+    <string name="lrr_cleartext_refused_error">应用策略已拒绝 HTTP 明文请求。请在服务器设置中启用「信任此服务器的 HTTP 明文连接」，或改用 HTTPS。</string>
+    <string name="lrr_allow_cleartext_label">信任此服务器的 HTTP 明文连接（仅限局域网）</string>
+    <string name="lrr_allow_cleartext_helper">当服务器地址使用 http:// 时需要启用。请仅在受信任的局域网中开启。</string>
+    <string name="lrr_allow_cleartext_required">使用 HTTP 明文连接需要明确授权。请勾选复选框或改用 HTTPS。</string>
     <string name="lrr_auth_failed_short">认证失败</string>
     <string name="lrr_server_error_short">服务器错误</string>
     <string name="lrr_request_failed_short">请求失败</string>
@@ -1159,4 +1163,9 @@
     <string name="lrr_tag_hint">标签名称</string>
     <string name="lrr_save">保存</string>
     <string name="lrr_empty_namespace">分类名不能为空</string>
+    <string name="lrr_keystore_failed_title">凭据存储不可用</string>
+    <string name="lrr_keystore_failed_message">设备密钥库不可用，无法加载 API Key。请重新输入服务器凭据。</string>
+    <string name="lrr_secure_storage_write_failed">设备密钥库不可用，无法安全保存更改。请重启设备后重试，若问题持续请重新安装应用。</string>
+    <string name="reauth_required_title">需要重新认证</string>
+    <string name="reauth_required_message">安全密钥库已失效，请为每个服务器重新输入 API Key。</string>
 </resources>

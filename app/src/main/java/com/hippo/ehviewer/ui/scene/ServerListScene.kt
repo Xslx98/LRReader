@@ -174,10 +174,8 @@ class ServerListScene : BaseScene() {
         // Clear caches so previous server's content doesn't appear under new server
         ServiceRegistry.clearAllCaches()
 
-        // Reload download manager on IO thread (EhDB.getAllDownloadInfo blocks)
-        lifecycleScope.launch(Dispatchers.IO) {
-            ServiceRegistry.dataModule.downloadManager.reload()
-        }
+        // Reload download manager on main thread (repo.assertMainThread)
+        ServiceRegistry.dataModule.downloadManager.reload()
 
         Toast.makeText(
             ctx,
@@ -395,6 +393,10 @@ class ServerListScene : BaseScene() {
                         LRRAuthManager.setServerName(newName)
                         LRRAuthManager.setAllowCleartext(updated.allowCleartext)
                     }
+                    // Re-check reauth flag: if all profiles now have key entries, clear it
+                    LRRAuthManager.markReauthIfProfilesUnprotected(
+                        EhDB.getAllServerProfilesAsync().map { it.id }
+                    )
                 } catch (e: LRRSecureStorageUnavailableException) {
                     activity?.runOnUiThread { showSecureStorageErrorDialog() }
                 }
@@ -423,10 +425,9 @@ class ServerListScene : BaseScene() {
         val cleartextRow = dialogView.findViewById<LinearLayout>(R.id.cleartext_row)
         val cleartextCheckbox = dialogView.findViewById<MaterialCheckBox>(R.id.checkbox_allow_cleartext)
 
-        // New profiles default to allowCleartext=true to match the grandfather policy.
-        // The checkbox is only shown for http:// URLs, so for https:// profiles the
-        // flag stays true but is effectively ignored by the interceptor.
-        cleartextCheckbox.isChecked = true
+        // New profiles: checkbox unchecked so users must explicitly opt in to HTTP.
+        // For https:// profiles the flag is set to true on save (interceptor ignores it).
+        cleartextCheckbox.isChecked = false
         cleartextRow.visibility = View.GONE
 
         urlEdit.addTextChangedListener(object : TextWatcher {
@@ -537,7 +538,10 @@ class ServerListScene : BaseScene() {
                                         activity?.runOnUiThread { showSecureStorageErrorDialog() }
                                         return@launch
                                     }
-                                    ServiceRegistry.dataModule.downloadManager.reload()
+                                    // reload() requires main thread
+                                    activity?.runOnUiThread {
+                                        ServiceRegistry.dataModule.downloadManager.reload()
+                                    }
                                 }
 
                                 Toast.makeText(
@@ -551,7 +555,7 @@ class ServerListScene : BaseScene() {
                                 ).show()
 
                                 // Warn if connected via HTTP on a public address
-                                if (usedHttpFallback && !LRRUrlHelper.isLanAddress(resolvedUrl)) {
+                                if (resolvedUrl.lowercase().startsWith("http://") && !LRRUrlHelper.isLanAddress(resolvedUrl)) {
                                     Toast.makeText(
                                         ctx,
                                         R.string.lrr_security_warning,

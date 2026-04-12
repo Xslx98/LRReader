@@ -1095,6 +1095,10 @@ Cette action est irréversible.</string>
     <string name="lrr_dns_error">Impossible de résoudre l\'adresse du serveur, vérifiez l\'URL</string>
     <string name="lrr_ssl_error">Connexion sécurisée échouée, vérifiez le certificat du serveur</string>
     <string name="lrr_plaintext_refused">Envoi de la clé API refusé : URL du serveur invalide ou schéma non concordant</string>
+    <string name="lrr_cleartext_refused_error">Requête HTTP en clair refusée par la politique de l\'application. Activez « Faire confiance à ce serveur en HTTP non chiffré » dans les paramètres du serveur ou utilisez HTTPS.</string>
+    <string name="lrr_allow_cleartext_label">Faire confiance à ce serveur en HTTP non chiffré (LAN uniquement)</string>
+    <string name="lrr_allow_cleartext_helper">Requis lorsque l\'URL du serveur utilise http://. N\'activez que sur les réseaux LAN de confiance.</string>
+    <string name="lrr_allow_cleartext_required">Le HTTP non chiffré nécessite un consentement explicite. Cochez la case ou utilisez HTTPS.</string>
     <string name="lrr_auth_failed_short">Authentification échouée</string>
     <string name="lrr_server_error_short">Erreur serveur</string>
     <string name="lrr_request_failed_short">Requête échouée</string>
@@ -1133,4 +1137,9 @@ Cette action est irréversible.</string>
     <string name="lrr_tag_hint">Nom du tag</string>
     <string name="lrr_save">Enregistrer</string>
     <string name="lrr_empty_namespace">La catégorie ne peut pas être vide</string>
+    <string name="lrr_keystore_failed_title">Stockage des identifiants indisponible</string>
+    <string name="lrr_keystore_failed_message">Le magasin de clés de l\'appareil est indisponible. Votre clé API n\'a pas pu être chargée. Veuillez saisir à nouveau vos identifiants de serveur.</string>
+    <string name="lrr_secure_storage_write_failed">Le magasin de clés de l\'appareil est indisponible, vos modifications n\'ont pas pu être enregistrées en toute sécurité. Veuillez redémarrer l\'appareil et réessayer, ou réinstaller l\'application si le problème persiste.</string>
+    <string name="reauth_required_title">Ré-authentification requise</string>
+    <string name="reauth_required_message">Le magasin de clés sécurisé est devenu indisponible. Veuillez saisir à nouveau la clé API de chaque serveur.</string>
 </resources>
