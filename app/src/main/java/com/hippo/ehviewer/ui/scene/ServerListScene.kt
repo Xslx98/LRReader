@@ -26,6 +26,7 @@ import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.LRRServerApi
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.client.api.data.LRRServerInfo
@@ -383,11 +384,12 @@ class ServerListScene : BaseScene() {
                 isActive = profile.isActive,
                 allowCleartext = if (isHttpUrl) allowCleartext else true
             )
+            val isActive = profile.isActive
             ServiceRegistry.coroutineModule.ioScope.launch {
                 EhDB.updateServerProfileAsync(updated)
                 try {
                     LRRAuthManager.setApiKeyForProfile(profile.id, newKey.ifEmpty { null })
-                    if (profile.isActive) {
+                    if (isActive) {
                         LRRAuthManager.setServerUrl(updated.url)
                         LRRAuthManager.setApiKey(newKey.ifEmpty { null })
                         LRRAuthManager.setServerName(newName)
@@ -399,6 +401,12 @@ class ServerListScene : BaseScene() {
                     )
                 } catch (e: LRRSecureStorageUnavailableException) {
                     activity?.runOnUiThread { showSecureStorageErrorDialog() }
+                    return@launch
+                }
+
+                // Verify connection for the active profile after saving
+                if (isActive) {
+                    verifyActiveProfile(normalizedUrl)
                 }
             }
 
@@ -609,6 +617,27 @@ class ServerListScene : BaseScene() {
                         }
                     }
                 )
+            }
+        }
+    }
+
+    /**
+     * Test connection to the active server after profile edits.
+     * Called from a background thread; shows a Toast on failure.
+     */
+    private suspend fun verifyActiveProfile(url: String) {
+        val ctx = getEHContext() ?: return
+        val testClient = LRRUrlHelper.buildTestClient(ServiceRegistry.networkModule.okHttpClient)
+        try {
+            LRRServerApi.getServerInfo(testClient, url)
+        } catch (e: Exception) {
+            val msg = friendlyError(ctx, e)
+            activity?.runOnUiThread {
+                Toast.makeText(
+                    ctx,
+                    getString(R.string.lrr_connection_failed, msg),
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }

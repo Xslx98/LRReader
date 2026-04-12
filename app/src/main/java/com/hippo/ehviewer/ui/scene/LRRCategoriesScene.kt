@@ -5,7 +5,6 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.RadioGroup
@@ -44,7 +43,7 @@ class LRRCategoriesScene : BaseScene() {
     private var mErrorIcon: ImageView? = null
     private var mErrorTitle: TextView? = null
     private var mErrorMessage: TextView? = null
-    private var mErrorRetry: Button? = null
+    private var mErrorRetry: TextView? = null
     private var mToolbar: MaterialToolbar? = null
 
     private val mCategories: MutableList<LRRCategory> = mutableListOf()
