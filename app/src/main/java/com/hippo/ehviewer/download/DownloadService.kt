@@ -75,7 +75,7 @@ class DownloadService : Service(), DownloadListener {
             ServiceRegistry.coroutineModule.exceptionHandler
     )
 
-    private val cachedLargeIcon: Bitmap by lazy {
+    private val cachedLargeIcon: Bitmap? by lazy {
         BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)
     }
 
