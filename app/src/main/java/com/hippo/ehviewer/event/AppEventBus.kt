@@ -19,4 +19,5 @@ object AppEventBus {
     fun postGalleryActivityEvent(event: GalleryActivityEvent) {
         _galleryActivityEvent.tryEmit(event)
     }
+
 }
