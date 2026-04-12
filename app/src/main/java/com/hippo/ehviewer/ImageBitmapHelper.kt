@@ -35,7 +35,8 @@ class ImageBitmapHelper : ValueHelper<Image> {
     override fun decode(isPipe: InputStreamPipe, hardware: Boolean): Image? {
         return try {
             isPipe.obtain()
-            val inputStream = isPipe.open() as FileInputStream
+            val inputStream = isPipe.open()
+            if (inputStream !is FileInputStream) return null
             Image.decode(inputStream, hardware)
         } catch (e: OutOfMemoryError) {
             Analytics.recordException(e)
