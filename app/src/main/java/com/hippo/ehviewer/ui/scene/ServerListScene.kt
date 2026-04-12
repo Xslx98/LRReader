@@ -167,6 +167,7 @@ class ServerListScene : BaseScene() {
             LRRAuthManager.setServerName(profile.name)
             LRRAuthManager.setActiveProfileId(profile.id)
             LRRAuthManager.setAllowCleartext(profile.allowCleartext)
+            LRRAuthManager.bumpServerConfigVersion()
         } catch (e: LRRSecureStorageUnavailableException) {
             showSecureStorageErrorDialog()
             return
@@ -361,60 +362,107 @@ class ServerListScene : BaseScene() {
                 return@setOnClickListener
             }
 
-            // Normalize URL: add protocol if missing, strip trailing slashes
-            var normalizedUrl = LRRUrlHelper.normalizeUrl(newUrl)
-            if (!LRRUrlHelper.hasExplicitScheme(normalizedUrl)) {
-                // Default to https:// for bare hostnames
-                normalizedUrl = "https://$normalizedUrl"
-            }
+            val normalizedInput = LRRUrlHelper.normalizeUrl(newUrl)
 
-            // Validate cleartext consent: http:// URL without the checkbox is rejected.
-            val isHttpUrl = normalizedUrl.lowercase().startsWith("http://")
-            val allowCleartext = cleartextCheckbox.isChecked
-            if (isHttpUrl && !allowCleartext) {
+            // Validate cleartext consent for explicit http:// URLs
+            if (normalizedInput.lowercase().startsWith("http://")
+                && !cleartextCheckbox.isChecked
+            ) {
                 Toast.makeText(ctx, R.string.lrr_allow_cleartext_required, Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
 
-            // Save to DB on IO thread
-            val updated = ServerProfile(
-                id = profile.id,
-                name = newName,
-                url = normalizedUrl,
-                isActive = profile.isActive,
-                allowCleartext = if (isHttpUrl) allowCleartext else true
-            )
-            val isActive = profile.isActive
-            ServiceRegistry.coroutineModule.ioScope.launch {
-                EhDB.updateServerProfileAsync(updated)
-                try {
-                    LRRAuthManager.setApiKeyForProfile(profile.id, newKey.ifEmpty { null })
-                    if (isActive) {
-                        LRRAuthManager.setServerUrl(updated.url)
-                        LRRAuthManager.setApiKey(newKey.ifEmpty { null })
-                        LRRAuthManager.setServerName(newName)
-                        LRRAuthManager.setAllowCleartext(updated.allowCleartext)
+            // Helper: persist profile with the resolved URL and dismiss
+            fun saveAndDismiss(resolvedUrl: String) {
+                val isHttpUrl = resolvedUrl.lowercase().startsWith("http://")
+                val updated = ServerProfile(
+                    id = profile.id,
+                    name = newName,
+                    url = resolvedUrl,
+                    isActive = profile.isActive,
+                    // HTTP fallback: allow cleartext for the resolved HTTP URL
+                    allowCleartext = if (isHttpUrl) true else true
+                )
+                val isActive = profile.isActive
+                ServiceRegistry.coroutineModule.ioScope.launch {
+                    EhDB.updateServerProfileAsync(updated)
+                    try {
+                        LRRAuthManager.setApiKeyForProfile(profile.id, newKey.ifEmpty { null })
+                        if (isActive) {
+                            LRRAuthManager.setServerUrl(updated.url)
+                            LRRAuthManager.setApiKey(newKey.ifEmpty { null })
+                            LRRAuthManager.setServerName(newName)
+                            LRRAuthManager.setAllowCleartext(updated.allowCleartext)
+                            LRRAuthManager.bumpServerConfigVersion()
+                        }
+                        LRRAuthManager.markReauthIfProfilesUnprotected(
+                            EhDB.getAllServerProfilesAsync().map { it.id }
+                        )
+                    } catch (e: LRRSecureStorageUnavailableException) {
+                        activity?.runOnUiThread { showSecureStorageErrorDialog() }
+                        return@launch
                     }
-                    // Re-check reauth flag: if all profiles now have key entries, clear it
-                    LRRAuthManager.markReauthIfProfilesUnprotected(
-                        EhDB.getAllServerProfilesAsync().map { it.id }
-                    )
-                } catch (e: LRRSecureStorageUnavailableException) {
-                    activity?.runOnUiThread { showSecureStorageErrorDialog() }
-                    return@launch
                 }
-
-                // Verify connection for the active profile after saving
-                if (isActive) {
-                    verifyActiveProfile(normalizedUrl)
-                }
+                mProfiles[position] = updated
+                mLastSnapshot = ArrayList(mProfiles)
+                mAdapter?.notifyItemChanged(position)
+                dialog.dismiss()
             }
 
-            // Refresh list immediately with in-memory data
-            mProfiles[position] = updated
-            mLastSnapshot = ArrayList(mProfiles)
-            mAdapter?.notifyItemChanged(position)
-            dialog.dismiss()
+            // Always test connection before saving
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
+            Toast.makeText(ctx, R.string.lrr_test_connection, Toast.LENGTH_SHORT).show()
+
+            try {
+                LRRAuthManager.setApiKey(newKey.ifEmpty { null })
+            } catch (e: LRRSecureStorageUnavailableException) {
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
+                showSecureStorageErrorDialog()
+                return@setOnClickListener
+            }
+
+            lifecycleScope.launch(Dispatchers.IO) {
+                val testClient = LRRUrlHelper.buildTestClient(
+                    ServiceRegistry.networkModule.okHttpClient
+                )
+                LRRUrlHelper.connectWithFallback(
+                    testClient,
+                    normalizedInput,
+                    object : LRRUrlHelper.ConnectCallback {
+                        override fun onSuccess(
+                            resolvedUrl: String,
+                            info: LRRServerInfo,
+                            usedHttpFallback: Boolean
+                        ) {
+                            activity?.runOnUiThread {
+                                urlEdit.setText(resolvedUrl)
+                                saveAndDismiss(resolvedUrl)
+                                if (usedHttpFallback) {
+                                    Toast.makeText(
+                                        ctx,
+                                        R.string.lrr_https_fallback_warning,
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }
+                        }
+
+                        override fun onFailure(error: Exception) {
+                            activity?.runOnUiThread {
+                                dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
+                                Toast.makeText(
+                                    ctx,
+                                    getString(
+                                        R.string.lrr_connection_failed,
+                                        friendlyError(ctx, error)
+                                    ),
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                    }
+                )
+            }
         }
     }
 
@@ -524,6 +572,7 @@ class ServerListScene : BaseScene() {
                                     LRRAuthManager.setApiKey(finalKey)
                                     LRRAuthManager.setServerName(name)
                                     LRRAuthManager.setAllowCleartext(savedAllowCleartext)
+                                    LRRAuthManager.bumpServerConfigVersion()
                                 } catch (e: LRRSecureStorageUnavailableException) {
                                     dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
                                     showSecureStorageErrorDialog()
@@ -562,8 +611,14 @@ class ServerListScene : BaseScene() {
                                     Toast.LENGTH_SHORT
                                 ).show()
 
-                                // Warn if connected via HTTP on a public address
-                                if (resolvedUrl.lowercase().startsWith("http://") && !LRRUrlHelper.isLanAddress(resolvedUrl)) {
+                                // Warn on HTTP fallback or insecure public address
+                                if (usedHttpFallback) {
+                                    Toast.makeText(
+                                        ctx,
+                                        R.string.lrr_https_fallback_warning,
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                } else if (resolvedUrl.lowercase().startsWith("http://") && !LRRUrlHelper.isLanAddress(resolvedUrl)) {
                                     Toast.makeText(
                                         ctx,
                                         R.string.lrr_security_warning,

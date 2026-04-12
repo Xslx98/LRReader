@@ -79,6 +79,22 @@ object LRRAuthManager {
     @Volatile
     private var sNeedsReauthentication: Boolean = false
 
+    /**
+     * Monotonically increasing counter bumped whenever the active server profile
+     * is modified (URL, API key, name, cleartext flag). Observers compare against
+     * their last-seen value to detect changes and trigger a refresh.
+     */
+    @Volatile
+    @JvmStatic
+    var serverConfigVersion: Long = 0L
+        private set
+
+    /** Bump the config version. Call after any active-profile credential write. */
+    @JvmStatic
+    fun bumpServerConfigVersion() {
+        serverConfigVersion++
+    }
+
     /** Overridable clock source for testing lockout logic. */
     internal var clockMillis: () -> Long = { System.currentTimeMillis() }
 
