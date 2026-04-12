@@ -1089,6 +1089,10 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_dns_error">No se puede resolver la dirección del servidor, verifica la URL</string>
     <string name="lrr_ssl_error">Conexión segura fallida, verifica el certificado del servidor</string>
     <string name="lrr_plaintext_refused">Envío de clave API rechazado: la URL del servidor es inválida o el esquema no coincide</string>
+    <string name="lrr_cleartext_refused_error">Solicitud HTTP sin cifrar rechazada por la política de la aplicación. Habilite \"Confiar en este servidor por HTTP sin cifrar\" en la configuración del servidor o use HTTPS.</string>
+    <string name="lrr_allow_cleartext_label">Confiar en este servidor por HTTP sin cifrar (solo LAN)</string>
+    <string name="lrr_allow_cleartext_helper">Necesario cuando la URL del servidor usa http://. Active solo en redes LAN de confianza.</string>
+    <string name="lrr_allow_cleartext_required">HTTP sin cifrar requiere consentimiento explícito. Marque la casilla o use HTTPS.</string>
     <string name="lrr_auth_failed_short">Autenticación fallida</string>
     <string name="lrr_server_error_short">Error del servidor</string>
     <string name="lrr_request_failed_short">Solicitud fallida</string>
@@ -1127,4 +1131,9 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_tag_hint">Nombre de etiqueta</string>
     <string name="lrr_save">Guardar</string>
     <string name="lrr_empty_namespace">La categoría no puede estar vacía</string>
+    <string name="lrr_keystore_failed_title">Almacenamiento de credenciales no disponible</string>
+    <string name="lrr_keystore_failed_message">El almacén de claves del dispositivo no está disponible. No se pudo cargar la clave API. Por favor, vuelva a introducir las credenciales del servidor.</string>
+    <string name="lrr_secure_storage_write_failed">El almacén de claves del dispositivo no está disponible, por lo que los cambios no se pudieron guardar de forma segura. Reinicie el dispositivo e inténtelo de nuevo, o reinstale la aplicación si el problema persiste.</string>
+    <string name="reauth_required_title">Se requiere re-autenticación</string>
+    <string name="reauth_required_message">El almacén de claves seguro dejó de estar disponible. Por favor, vuelva a introducir la clave API de cada servidor.</string>
 </resources>

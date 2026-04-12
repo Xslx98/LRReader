@@ -1094,6 +1094,10 @@
     <string name="lrr_dns_error">Cannot resolve server address, please check URL</string>
     <string name="lrr_ssl_error">Secure connection failed, please check server certificate</string>
     <string name="lrr_plaintext_refused">Refused to send API key: server URL is invalid or scheme does not match</string>
+    <string name="lrr_cleartext_refused_error">Plain HTTP request refused by app policy. Enable \"Trust this server over plain HTTP\" in the server settings or use HTTPS.</string>
+    <string name="lrr_allow_cleartext_label">Trust this server over plain HTTP (LAN only)</string>
+    <string name="lrr_allow_cleartext_helper">Required when the server URL uses http://. Only enable for trusted LAN networks.</string>
+    <string name="lrr_allow_cleartext_required">Plain HTTP requires explicit consent. Tick the box or use HTTPS.</string>
     <string name="lrr_auth_failed_short">Authentication failed</string>
     <string name="lrr_server_error_short">Server error</string>
     <string name="lrr_request_failed_short">Request failed</string>
@@ -1108,4 +1112,9 @@
     <string name="lrr_tag_hint">Tag name</string>
     <string name="lrr_save">Save</string>
     <string name="lrr_empty_namespace">Namespace cannot be empty</string>
+    <string name="lrr_keystore_failed_title">Credential Storage Unavailable</string>
+    <string name="lrr_keystore_failed_message">The device keystore is unavailable. Your API key could not be loaded. Please re-enter your server credentials.</string>
+    <string name="lrr_secure_storage_write_failed">The device keystore is unavailable, so your changes could not be saved securely. Please reboot the device and try again, or reinstall the app if the problem persists.</string>
+    <string name="reauth_required_title">Re-authentication Required</string>
+    <string name="reauth_required_message">The secure keystore became unavailable. Please re-enter your API key for each server.</string>
 </resources>
