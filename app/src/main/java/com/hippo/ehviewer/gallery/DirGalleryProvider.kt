@@ -77,7 +77,8 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
         this.gid = galleryInfo.gid
         this.arcId = galleryInfo.token // LANraragi arcid
         this.serverUrl = LRRAuthManager.getServerUrl()
-        this.startPageValue = loadReadingProgress(this.context!!, gid)
+        val ctx = this.context ?: return
+        this.startPageValue = loadReadingProgress(ctx, gid)
     }
 
     override fun getStartPage(): Int = startPageValue
@@ -141,8 +142,10 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
                             val gv = galleryView
                             if (gv != null) {
                                 Handler(Looper.getMainLooper()).postDelayed({
-                                    gv.setCurrentPage(resolvedPage)
-                                    Log.i(TAG, "[PROGRESS] setCurrentPage($resolvedPage) called")
+                                    if (galleryView != null) {
+                                        gv.setCurrentPage(resolvedPage)
+                                        Log.i(TAG, "[PROGRESS] setCurrentPage($resolvedPage) called")
+                                    }
                                 }, 300)
                             }
                         }
@@ -153,9 +156,10 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
             }
         }
 
-        bgThread = PriorityThread(this, "$TAG-${sIdGenerator.incrementAndGet()}",
+        val thread = PriorityThread(this, "$TAG-${sIdGenerator.incrementAndGet()}",
                 Process.THREAD_PRIORITY_BACKGROUND)
-        bgThread!!.start()
+        bgThread = thread
+        thread.start()
     }
 
     override fun stop() {
@@ -291,7 +295,12 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
             var inputStream: java.io.InputStream? = null
             try {
                 inputStream = files[index].openInputStream()
-                val image = Image.decode(inputStream as FileInputStream, false)
+                if (inputStream !is FileInputStream) {
+                    decodingIndex.lazySet(GalleryPageView.INVALID_INDEX)
+                    notifyPageFailed(index, GetText.getString(R.string.error_reading_failed))
+                    continue
+                }
+                val image = Image.decode(inputStream, false)
                 decodingIndex.lazySet(GalleryPageView.INVALID_INDEX)
                 if (image != null) {
                     notifyPageSucceed(index, image)
