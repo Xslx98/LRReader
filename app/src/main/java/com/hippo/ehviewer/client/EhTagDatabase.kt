@@ -26,6 +26,7 @@ import com.hippo.ehviewer.client.data.Tag
 import com.hippo.lib.yorozuya.FileUtils
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.util.ExceptionUtils
+import android.util.Log
 import com.hippo.util.TextUrl
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
@@ -153,6 +154,8 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
     }
 
     companion object {
+        private val TAG = EhTagDatabase::class.java.simpleName
+
         @JvmField
         val NAMESPACE_TO_PREFIX: Map<String, String> = mapOf(
             "rows" to "n:",
@@ -233,7 +236,8 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
                     source.readFully(content)
                     content
                 }
-            } catch (_: java.io.IOException) {
+            } catch (e: java.io.IOException) {
+                Log.w(TAG, "Failed to read tag database file content", e)
                 null
             }
         }
@@ -249,9 +253,11 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
                     }
                     digest.digest()
                 }
-            } catch (_: java.io.IOException) {
+            } catch (e: java.io.IOException) {
+                Log.w(TAG, "Failed to compute SHA-1 for tag database file", e)
                 null
-            } catch (_: NoSuchAlgorithmException) {
+            } catch (e: NoSuchAlgorithmException) {
+                Log.w(TAG, "SHA-1 algorithm not available", e)
                 null
             }
         }
@@ -323,7 +329,8 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
                             dataFile.source().buffer().use { source ->
                                 instance = EhTagDatabase(dataName, source)
                             }
-                        } catch (_: java.io.IOException) {
+                        } catch (e: java.io.IOException) {
+                            Log.w(TAG, "Failed to read existing tag database", e)
                             FileUtils.delete(sha1File)
                             FileUtils.delete(dataFile)
                         }
@@ -370,8 +377,8 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
                         dataFile.source().buffer().use { source ->
                             instance = EhTagDatabase(dataName, source)
                         }
-                    } catch (_: java.io.IOException) {
-                        // Ignore
+                    } catch (e: java.io.IOException) {
+                        Log.w(TAG, "Failed to read updated tag database", e)
                     }
                 } finally {
                     lock.unlock()
