@@ -123,6 +123,8 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         set(value) { viewModel.setGalleryDetail(value) }
 
     private var mRequestId: Int = IntIdGenerator.INVALID_ID
+    /** Rating when the scene was opened, used to detect changes on exit. */
+    private var mInitialRating: Float = Float.NaN
 
     private var properties: MutableMap<String, String>? = null
 
@@ -351,22 +353,36 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             mHeaderBinder?.updateFavoriteDrawable(gd)
         }
 
-        // Make rating bar interactive: touch/drag to rate, release to confirm
+        // Make rating bar interactive. LANraragi only supports integer
+        // ratings (1-5), but we keep stepSize=0.5 for smooth drag feedback.
+        // The value is ceiled to an integer on touch release.
         rating.setIsIndicator(false)
+        rating.stepSize = 0.5f
         rating.onRatingBarChangeListener =
             RatingBar.OnRatingBarChangeListener { _, ratingValue, fromUser ->
                 if (!fromUser || mGalleryDetail == null) return@OnRatingBarChangeListener
-                val gd = mGalleryDetail!!
-                val arcid = gd.token ?: return@OnRatingBarChangeListener
-
-                // Update local UI immediately
-                gd.rating = ratingValue
-                gd.rated = true
-                ratingText.text = LRRArchive.buildRatingEmoji(Math.round(ratingValue))
-
-                // Write to LANraragi server
-                RatingHelper.saveRatingToServer(arcid, ratingValue, null)
+                // Live preview: show the emoji for the rounded value while dragging
+                ratingText.text = LRRArchive.buildRatingEmoji(
+                    kotlin.math.ceil(ratingValue).toInt()
+                )
             }
+        @android.annotation.SuppressLint("ClickableViewAccessibility")
+        rating.setOnTouchListener { _, event ->
+            if (event.action == android.view.MotionEvent.ACTION_UP
+                || event.action == android.view.MotionEvent.ACTION_CANCEL
+            ) {
+                val gd = mGalleryDetail ?: return@setOnTouchListener false
+                val arcid = gd.token ?: return@setOnTouchListener false
+                // Ceil to integer: 0.5→1, 1.5→2, 4.5→5, etc.
+                val finalRating = kotlin.math.ceil(rating.rating).coerceIn(0f, 5f)
+                rating.rating = finalRating
+                gd.rating = finalRating
+                gd.rated = true
+                ratingText.text = LRRArchive.buildRatingEmoji(finalRating.toInt())
+                RatingHelper.saveRatingToServer(arcid, finalRating, null)
+            }
+            false // Don't consume — let RatingBar handle the touch
+        }
 
         mEditTagsBtn = ViewUtils.`$$`(tags, R.id.edit_tags_btn) as? android.widget.ImageButton
         mEditTagsBtn?.let { btn ->
@@ -621,6 +637,13 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
 
     override fun onBackPressed() {
+        val gd = mGalleryDetail
+        if (gd != null && !mInitialRating.isNaN() && gd.rating != mInitialRating) {
+            val data = android.os.Bundle()
+            data.putLong(KEY_GID, gd.gid)
+            data.putFloat(KEY_RATING_RESULT, gd.rating)
+            setResult(RESULT_OK, data)
+        }
         finish()
     }
 
@@ -635,6 +658,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
     private fun onGetGalleryDetailSuccessInternal(result: GalleryDetail) {
         mGalleryDetail = result
+        if (mInitialRating.isNaN()) mInitialRating = result.rating
         viewModel.refreshDownloadState()
         val dlState = viewModel.downloadState.value
         if (dlState != DownloadInfo.STATE_INVALID) {
@@ -685,6 +709,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         const val KEY_GID = "gid"
         const val KEY_TOKEN = "token"
         const val KEY_PAGE = "page"
+        const val KEY_RATING_RESULT = "rating_result"
 
         private const val KEY_GALLERY_DETAIL = "gallery_detail"
         private const val KEY_REQUEST_ID = "request_id"

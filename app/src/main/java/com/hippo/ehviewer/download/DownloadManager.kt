@@ -58,7 +58,60 @@ class DownloadManager(
             override fun getWaitList(): List<DownloadInfo> = scheduler.waitList
         })
         scheduler = DownloadScheduler(mContext, scope, repo, eventBus, mSpeedReminder)
-        repo.startLoading { eventBus.forEachListener { it.onReload() } }
+        repo.startLoading {
+            eventBus.forEachListener { it.onReload() }
+            syncRatingsFromServer()
+        }
+    }
+
+    /**
+     * After initial load from DB, fetch current ratings from the server
+     * for all downloaded archives and update local DB where they differ.
+     * Runs entirely in the background; UI updates via DownloadInfoListener
+     * are fired for any item whose rating changed.
+     */
+    private fun syncRatingsFromServer() {
+        scope.launch {
+            try {
+                val serverUrl = com.lanraragi.reader.client.api.LRRAuthManager.getServerUrl() ?: return@launch
+                val client = ServiceRegistry.networkModule.okHttpClient
+
+                // Snapshot the list on main thread
+                val infos = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    ArrayList(repo.allInfoList)
+                }
+                if (infos.isEmpty()) return@launch
+
+                // Fetch metadata for each archive and compare ratings
+                for (info in infos) {
+                    val arcid = info.token ?: continue
+                    try {
+                        val archive = com.lanraragi.reader.client.api.LRRArchiveApi
+                            .getArchiveMetadata(client, serverUrl, arcid)
+                        val serverRating = com.lanraragi.reader.client.api.data.LRRArchive
+                            .parseRatingFromTags(archive.tags)
+                        // Only update if server has a meaningful rating that
+                        // differs from the local value. -1 = no rating tag on
+                        // server, 0 = unrated locally; treat both as "unrated".
+                        val localEffective = if (info.rating <= 0) -1f else info.rating
+                        val serverEffective = if (serverRating <= 0) -1f else serverRating
+                        if (serverEffective != localEffective) {
+                            info.rating = if (serverRating < 0) 0f else serverRating
+                            EhDB.putDownloadInfoAsync(info)
+                        }
+                    } catch (e: Exception) {
+                        // Skip this archive on error, continue with next
+                    }
+                }
+
+                // Notify UI on main thread
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    eventBus.forEachListener { it.onChange() }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Background rating sync failed", e)
+            }
+        }
     }
 
     suspend fun awaitInitAsync(timeoutMs: Long = 10_000L) {

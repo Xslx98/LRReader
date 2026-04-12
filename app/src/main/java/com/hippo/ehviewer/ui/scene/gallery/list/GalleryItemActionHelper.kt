@@ -30,6 +30,7 @@ import com.hippo.ehviewer.ui.dialog.SelectItemWithIconAdapter
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.scene.Announcer
+import com.hippo.scene.SceneFragment
 import com.hippo.util.AppHelper
 import com.hippo.widget.LoadImageViewNew
 
@@ -39,11 +40,16 @@ import com.hippo.widget.LoadImageViewNew
  */
 class GalleryItemActionHelper(private val callback: Callback) {
 
+    companion object {
+        const val REQUEST_CODE_GALLERY_DETAIL = 100
+    }
+
     interface Callback {
         fun getHostContext(): Context?
         fun getHostActivity(): Activity?
         fun getLayoutInflater(): LayoutInflater
         fun getDownloadManager(): DownloadManager
+        fun getSceneFragment(): SceneFragment
         fun startScene(announcer: Announcer)
         fun getString(resId: Int): String
         fun getString(resId: Int, vararg formatArgs: Any): String
@@ -66,6 +72,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
         args.putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_GALLERY_INFO)
         args.putParcelable(GalleryDetailScene.KEY_GALLERY_INFO, gi.toEntity())
         val announcer = Announcer(GalleryDetailScene::class.java).setArgs(args)
+            .setRequestCode(callback.getSceneFragment(), REQUEST_CODE_GALLERY_DETAIL)
         if (view != null) {
             val thumb: View? = view.findViewById(R.id.thumb)
             if (thumb != null) {
