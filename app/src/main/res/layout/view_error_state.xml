@@ -37,12 +37,15 @@
         android:gravity="center"
         android:visibility="gone" />
 
-    <Button
+    <TextView
         android:id="@+id/error_retry"
         style="@style/ButtonInCard"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
+        android:background="?selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
         android:text="@string/lrr_retry"
         android:visibility="gone" />
 
