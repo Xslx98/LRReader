@@ -16,7 +16,6 @@
 
 package com.hippo.ehviewer.ui.scene.download.part
 
-import android.annotation.SuppressLint
 import androidx.recyclerview.widget.RecyclerView
 import com.sxj.paginationlib.PaginationIndicator
 
@@ -46,29 +45,43 @@ class MyPageChangeListener @JvmOverloads constructor(
         if (indexPage == currentPagePos) {
             return
         }
+
+        val oldItemCount = adapter?.itemCount ?: 0
         indexPage = currentPagePos
 
         // 通过回调更新主类的状态
         pageChangeCallback?.onPageChanged(indexPage)
 
-        notifyAdapter()
+        notifyAdapter(oldItemCount)
     }
 
     override fun onPerPageCountChanged(perPageCount: Int) {
         if (pageSize == perPageCount) {
             return
         }
+
+        val oldItemCount = adapter?.itemCount ?: 0
         pageSize = perPageCount
 
         // 通过回调更新主类的状态
         pageChangeCallback?.onPageSizeChanged(pageSize)
 
-        notifyAdapter()
+        notifyAdapter(oldItemCount)
     }
 
-    @SuppressLint("NotifyDataSetChanged")
-    fun notifyAdapter() {
-        adapter?.notifyDataSetChanged()
+    fun notifyAdapter(oldItemCount: Int = adapter?.itemCount ?: 0) {
+        adapter?.let { a ->
+            val newItemCount = a.itemCount
+            val commonCount = minOf(oldItemCount, newItemCount)
+            if (commonCount > 0) {
+                a.notifyItemRangeChanged(0, commonCount)
+            }
+            if (newItemCount > oldItemCount) {
+                a.notifyItemRangeInserted(oldItemCount, newItemCount - oldItemCount)
+            } else if (oldItemCount > newItemCount) {
+                a.notifyItemRangeRemoved(newItemCount, oldItemCount - newItemCount)
+            }
+        }
         recyclerView?.let {
             if (isDoNotScroll) {
                 isDoNotScroll = false
