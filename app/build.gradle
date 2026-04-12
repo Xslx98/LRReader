@@ -28,8 +28,8 @@ android {
         minSdkVersion 28
         targetSdkVersion 35
         // versionCode = MAJOR * 10000 + MINOR * 100 + PATCH
-        versionCode 11104
-        versionName "1.11.4"
+        versionCode 11105
+        versionName "1.11.5"
         vectorDrawables.useSupportLibrary = true
         resourceConfigurations += ['en', 'zh', 'zh-rCN', 'zh-rHK', 'zh-rTW', 'es', 'ja', 'ko', 'fr', 'de', 'th']
         testOptions.unitTests.includeAndroidResources = true
