@@ -62,6 +62,7 @@ import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.settings.GuideSettings
 import com.hippo.ehviewer.settings.ReadingSettings
 import com.hippo.ehviewer.ui.scene.BaseScene
+import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.ehviewer.widget.SearchBar
 import com.hippo.ehviewer.widget.SearchLayout
 import com.hippo.refreshlayout.RefreshLayout
@@ -263,6 +264,27 @@ class GalleryListScene : BaseScene(),
         mFavouriteStatusRouterListener?.let { mFavouriteStatusRouter.removeListener(it) }
     }
 
+    override fun onSceneResult(requestCode: Int, resultCode: Int, data: android.os.Bundle?) {
+        if (requestCode == GalleryItemActionHelper.REQUEST_CODE_GALLERY_DETAIL
+            && resultCode == RESULT_OK && data != null
+        ) {
+            val gid = data.getLong(GalleryDetailScene.KEY_GID, -1)
+            val rating = data.getFloat(GalleryDetailScene.KEY_RATING_RESULT, -1f)
+            if (gid >= 0 && rating >= 0) {
+                val list = mHelper?.getData() ?: return
+                for (i in list.indices) {
+                    if (list[i].gid == gid) {
+                        list[i].rating = rating
+                        list[i].rated = true
+                        mAdapter?.notifyItemChanged(i)
+                        break
+                    }
+                }
+            }
+        }
+        super.onSceneResult(requestCode, resultCode, data)
+    }
+
     fun onUpdateUrlBuilder() {
         val builder = mUrlBuilder
         val resources = resources2
@@ -448,6 +470,7 @@ class GalleryListScene : BaseScene(),
             override fun getHostActivity(): Activity? = activity2
             override fun getLayoutInflater(): LayoutInflater = this@GalleryListScene.layoutInflater
             override fun getDownloadManager(): DownloadManager = mDownloadManager
+            override fun getSceneFragment() = this@GalleryListScene
             override fun startScene(announcer: Announcer) = this@GalleryListScene.startScene(announcer)
             override fun getString(resId: Int): String = this@GalleryListScene.getString(resId)
             override fun getString(resId: Int, vararg formatArgs: Any): String =
