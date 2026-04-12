@@ -221,12 +221,19 @@ class DownloadRepository(
         }
 
         for ((label, list) in loaded.labelToInfoList) {
-            labelInfoMap[label] = list
+            if (label == null) {
+                // null-label downloads go into the dedicated defaultInfoList,
+                // which getInfoListForLabel(null) returns.
+                defaultInfoList.addAll(list)
+            } else {
+                labelInfoMap[label] = list
+            }
         }
 
         for ((key, value) in labelInfoMap) {
             labelCountMap[key] = value.size.toLong()
         }
+        labelCountMap[null] = defaultInfoList.size.toLong()
 
         initialized = true
         initDeferred.complete(Unit)
