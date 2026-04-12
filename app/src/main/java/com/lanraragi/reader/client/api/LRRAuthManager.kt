@@ -308,6 +308,8 @@ object LRRAuthManager {
                 return
             }
         }
+        // All profiles accounted for — clear any stale reauth flag.
+        sNeedsReauthentication = false
     }
 
     // ── Per-profile API key storage (encrypted, keyed by profile ID) ──────────
@@ -321,17 +323,15 @@ object LRRAuthManager {
     fun setApiKeyForProfile(profileId: Long, apiKey: String?) {
         val prefs = requireSecurePrefs("setApiKeyForProfile")
         val prefKey = "api_key_$profileId"
-        if (apiKey.isNullOrEmpty()) {
-            prefs.edit().remove(prefKey).apply()
-        } else {
-            prefs.edit().putString(prefKey, apiKey).apply()
-        }
+        // Store empty string (not remove) so markReauthIfProfilesUnprotected can
+        // distinguish "intentionally no key" from "key lost due to KeyStore failure".
+        prefs.edit().putString(prefKey, apiKey ?: "").apply()
     }
 
-    /** @return the API key for the given profile, or null if none stored. */
+    /** @return the API key for the given profile, or null if none stored / empty. */
     @JvmStatic
     fun getApiKeyForProfile(profileId: Long): String? {
-        return sPrefs?.getString("api_key_$profileId", null)
+        return sPrefs?.getString("api_key_$profileId", null)?.ifEmpty { null }
     }
 
     /** Remove the stored API key for a profile (e.g., when the profile is deleted). */

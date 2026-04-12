@@ -1096,6 +1096,10 @@
     <string name="lrr_dns_error">ไม่สามารถแก้ไขที่อยู่เซิร์ฟเวอร์ได้ โปรดตรวจสอบ URL</string>
     <string name="lrr_ssl_error">การเชื่อมต่อที่ปลอดภัยล้มเหลว โปรดตรวจสอบใบรับรองเซิร์ฟเวอร์</string>
     <string name="lrr_plaintext_refused">ปฏิเสธการส่งคีย์ API: URL ของเซิร์ฟเวอร์ไม่ถูกต้องหรือสคีมไม่ตรงกัน</string>
+    <string name="lrr_cleartext_refused_error">คำขอ HTTP แบบข้อความธรรมดาถูกปฏิเสธโดยนโยบายแอป เปิดใช้งาน \"เชื่อถือเซิร์ฟเวอร์นี้ผ่าน HTTP แบบข้อความธรรมดา\" ในการตั้งค่าเซิร์ฟเวอร์ หรือใช้ HTTPS</string>
+    <string name="lrr_allow_cleartext_label">เชื่อถือเซิร์ฟเวอร์นี้ผ่าน HTTP แบบข้อความธรรมดา (LAN เท่านั้น)</string>
+    <string name="lrr_allow_cleartext_helper">จำเป็นเมื่อ URL ของเซิร์ฟเวอร์ใช้ http:// เปิดใช้งานเฉพาะในเครือข่าย LAN ที่เชื่อถือได้เท่านั้น</string>
+    <string name="lrr_allow_cleartext_required">HTTP แบบข้อความธรรมดาต้องได้รับความยินยอมอย่างชัดแจ้ง ทำเครื่องหมายในช่องหรือใช้ HTTPS</string>
     <string name="lrr_auth_failed_short">การยืนยันตัวตนล้มเหลว</string>
     <string name="lrr_server_error_short">เซิร์ฟเวอร์ขัดข้อง</string>
     <string name="lrr_request_failed_short">คำขอล้มเหลว</string>
@@ -1134,4 +1138,9 @@
     <string name="lrr_tag_hint">ชื่อแท็ก</string>
     <string name="lrr_save">บันทึก</string>
     <string name="lrr_empty_namespace">หมวดหมู่ไม่สามารถเว้นว่างได้</string>
+    <string name="lrr_keystore_failed_title">ที่เก็บข้อมูลรับรองไม่พร้อมใช้งาน</string>
+    <string name="lrr_keystore_failed_message">คีย์สโตร์ของอุปกรณ์ไม่พร้อมใช้งาน ไม่สามารถโหลด API Key ได้ กรุณากรอกข้อมูลรับรองเซิร์ฟเวอร์อีกครั้ง</string>
+    <string name="lrr_secure_storage_write_failed">คีย์สโตร์ของอุปกรณ์ไม่พร้อมใช��งาน จึงไม่สามารถบันทึกการเปลี่ยนแปลงอย่างปลอดภัยได้ กรุณารีสตาร์ทอุปกรณ์แล้วลองอีกครั้ง หรือติดตั้งแอปใหม่หากปัญหายังคงอยู่</string>
+    <string name="reauth_required_title">ต้องยืนยันตัวตนใหม่</string>
+    <string name="reauth_required_message">คีย์สโตร์ความปลอดภัยไม่พร้อมใช้งาน กรุณากรอก API Key ของแต่ละเซิร์ฟเวอร์อีกครั้ง</string>
 </resources>
