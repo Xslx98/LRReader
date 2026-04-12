@@ -79,7 +79,8 @@ class DownloadAdapter(
 
     private var movedItem: View? = null
 
-    private val thumbnailCache = object : android.util.LruCache<String, Bitmap>(200) {
+    private val thumbnailCache = object : android.util.LruCache<String, Bitmap>(5 * 1024 * 1024) { // 5MB
+        override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
         override fun entryRemoved(evicted: Boolean, key: String, oldValue: Bitmap, newValue: Bitmap?) {
             if (evicted && !oldValue.isRecycled) {
                 oldValue.recycle()
