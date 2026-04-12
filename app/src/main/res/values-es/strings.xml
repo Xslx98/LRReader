@@ -1003,6 +1003,7 @@
     <string name="lrr_connect">Conectar</string>
     <string name="lrr_connection_failed">Conexión fallida: %1$s</string>
     <string name="lrr_security_warning">⚠️ Advertencia de seguridad: Conexión HTTP sin cifrar a una dirección pública. La clave API puede ser interceptada. Se recomienda encarecidamente HTTPS.</string>
+    <string name="lrr_https_fallback_warning">⚠️ La conexión HTTPS falló. Se conectó mediante HTTP sin cifrar. Considere configurar HTTPS en el servidor.</string>
     <string name="lrr_connection_success">Conectado a %1$s (v%2$s)</string>
     <string name="lrr_delete_archive">Eliminar archivo</string>
     <string name="lrr_delete_confirm_button">Eliminar</string>
