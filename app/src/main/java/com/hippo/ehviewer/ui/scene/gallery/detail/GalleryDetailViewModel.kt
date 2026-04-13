@@ -293,7 +293,7 @@ class GalleryDetailViewModel : ViewModel() {
      */
     fun recordHistory(info: GalleryInfo) {
         viewModelScope.launch(Dispatchers.IO) {
-            EhDB.putHistoryInfoAsync(info)
+            ServiceRegistry.dataModule.historyRepository.putHistoryInfo(info)
         }
     }
 
