@@ -340,11 +340,15 @@ class DownloadAdapter(
             }
 
             // 再尝试更新当前列表的内存顺序
-            try {
-                val item = list.removeAt(fromPosInList)
-                list.add(toPosInList, item)
-            } catch (e: UnsupportedOperationException) {
-                Log.w(TAG, "onMoveItem: list is unmodifiable, only DB order updated", e)
+            // list is declared as List<DownloadInfo> (unmodifiable from facade),
+            // but the underlying instance may be mutable during drag-drop.
+            // Use safe cast; if unmodifiable, only DB order is updated.
+            val mutableList = list as? MutableList<DownloadInfo>
+            if (mutableList != null) {
+                val item = mutableList.removeAt(fromPosInList)
+                mutableList.add(toPosInList, item)
+            } else {
+                Log.w(TAG, "onMoveItem: list is unmodifiable, only DB order updated")
             }
 
             notifyItemMoved(fromPosition, toPosition)
