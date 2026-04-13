@@ -89,7 +89,8 @@ class AppModule(private val context: Context) : IAppModule {
             saveCrashLog = { t ->
                 val ctx: Context? = try {
                     EhApplication.instance
-                } catch (_: Throwable) {
+                } catch (e: Throwable) {
+                    Log.w(BOOT_TAG, "Retrieve EhApplication instance for crash log", e)
                     null
                 }
                 if (ctx != null) Crash.saveCrashLog(ctx, t)
