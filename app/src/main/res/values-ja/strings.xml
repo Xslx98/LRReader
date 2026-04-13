@@ -1048,7 +1048,7 @@
         <item>最終閲覧日</item>
         <item>アーティスト</item>
         <item>グループ</item>
-        <item>パロディ</item>
+        <item>評価</item>
     </string-array>
     <string-array name="lrr_sort_by_values">
         <item>title</item>
@@ -1056,7 +1056,7 @@
         <item>lastread</item>
         <item>artist</item>
         <item>group</item>
-        <item>parody</item>
+        <item>rating</item>
     </string-array>
     <string-array name="lrr_sort_order_entries">
         <item>昇順</item>
