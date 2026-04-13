@@ -36,7 +36,6 @@ internal object GalleryListHelperFactory {
 
     data class Result(
         val filterHelper: GalleryFilterHelper,
-        val goToHelper: GalleryGoToHelper,
         val stateHelper: GalleryStateHelper,
         val itemActionHelper: GalleryItemActionHelper,
         val tagChipHelper: GalleryTagChipHelper,
@@ -57,16 +56,6 @@ internal object GalleryListHelperFactory {
     fun create(scene: GalleryListScene, context: Context): Result {
         val filterHelper = GalleryFilterHelper(object : GalleryFilterHelper.Callback {
             override fun getFilterFab(): FloatingActionButton? = scene.floatingActionButton
-        })
-
-        val goToHelper = GalleryGoToHelper(object : GalleryGoToHelper.Callback {
-            override fun getHostContext(): Context? = scene.ehContext
-            override fun getContentHelper() = scene.mHelper
-            override fun getUrlBuilder(): ListUrlBuilder? = scene.mUrlBuilder
-            override fun getLayoutInflater(): LayoutInflater = scene.layoutInflater
-            override fun getString(resId: Int): String = scene.getString(resId)
-            override fun getString(resId: Int, vararg formatArgs: Any): String =
-                scene.getString(resId, *formatArgs)
         })
 
         val stateHelper = GalleryStateHelper(object : GalleryStateHelper.Callback {
@@ -189,10 +178,8 @@ internal object GalleryListHelperFactory {
             stateHelper = { scene.stateHelper },
             contentHelper = { scene.mHelper },
             filterHelper = { scene.filterHelper },
-            goToHelper = { scene.goToHelper },
             itemActionHelper = { scene.itemActionHelper },
             uploadHelper = { scene.uploadHelper },
-            urlBuilder = { scene.mUrlBuilder }
         )
 
         val drawerHelper = GalleryDrawerHelper(object : GalleryDrawerHelper.Callback {
@@ -212,7 +199,6 @@ internal object GalleryListHelperFactory {
 
         return Result(
             filterHelper = filterHelper,
-            goToHelper = goToHelper,
             stateHelper = stateHelper,
             itemActionHelper = itemActionHelper,
             tagChipHelper = tagChipHelper,
