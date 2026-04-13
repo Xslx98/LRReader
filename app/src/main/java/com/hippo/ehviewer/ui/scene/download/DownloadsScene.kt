@@ -99,7 +99,7 @@ class DownloadsScene : ToolbarScene(),
         set(value) { viewModel.selectLabel(value) }
 
     /** Shortcut delegating to [DownloadsViewModel.downloadList]. */
-    private var mList: MutableList<DownloadInfo>?
+    private var mList: List<DownloadInfo>?
         get() = viewModel.downloadList.value
         set(value) { if (value != null) viewModel.setDownloadList(value) }
 
@@ -484,18 +484,18 @@ class DownloadsScene : ToolbarScene(),
         collectFlow(viewLifecycleOwner, viewModel.downloadEvent) { event ->
             when (event) {
                 is DownloadUiEvent.ItemAdded -> {
-                    if (mList !== event.list) return@collectFlow
+                    if (viewModel.currentLabel.value != event.info.label) return@collectFlow
                     mAdapter?.notifyItemInserted(event.position)
                     downloadLabelDraw?.updateDownloadLabels()
                     updateView()
                 }
                 is DownloadUiEvent.ItemRemoved -> {
-                    if (mList !== event.list) return@collectFlow
+                    if (viewModel.currentLabel.value != event.info.label) return@collectFlow
                     mAdapter?.notifyItemRemoved(listIndexInPage(event.position))
                     updateView()
                 }
                 is DownloadUiEvent.ItemUpdated -> {
-                    if (mList !== event.list && mList?.contains(event.info) != true) return@collectFlow
+                    if (viewModel.currentLabel.value != event.info.label && mList?.contains(event.info) != true) return@collectFlow
                     val index = mList?.indexOf(event.info) ?: return@collectFlow
                     if (index >= 0 && mAdapter != null) {
                         mAdapter!!.notifyItemChanged(listIndexInPage(index))
@@ -789,7 +789,7 @@ class DownloadsScene : ToolbarScene(),
 
     override fun listIndexInPage(position: Int): Int = viewModel.listIndexInPage(position)
 
-    override val list: MutableList<DownloadInfo>?
+    override val list: List<DownloadInfo>?
         get() = mList
 
     override val spiderInfoMap: Map<Long, SpiderInfo>

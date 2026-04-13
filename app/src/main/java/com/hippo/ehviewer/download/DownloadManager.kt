@@ -33,6 +33,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.lang.ref.WeakReference
+import java.util.Collections
 
 /**
  * Thin facade over [DownloadRepository], [DownloadScheduler], and
@@ -136,12 +137,22 @@ class DownloadManager(
     val isIdle: Boolean get() = scheduler.isIdle
 
     val labelList: List<DownloadLabel> get() { repo.assertMainThread(); return repo.labelList }
-    val allDownloadInfoList: List<DownloadInfo> get() { repo.assertMainThread(); return repo.allInfoList }
-    val defaultDownloadInfoList: List<DownloadInfo> get() { repo.assertMainThread(); return repo.defaultInfoList }
+    val allDownloadInfoList: List<DownloadInfo> get() {
+        repo.assertMainThread()
+        return Collections.unmodifiableList(repo.allInfoList)
+    }
+
+    val defaultDownloadInfoList: List<DownloadInfo> get() {
+        repo.assertMainThread()
+        return Collections.unmodifiableList(repo.defaultInfoList)
+    }
+
     val downloadInfoList: List<GalleryInfo> get() { repo.assertMainThread(); return ArrayList(repo.allInfoList) }
 
     fun getLabelDownloadInfoList(label: String?): List<DownloadInfo>? {
-        repo.assertMainThread(); return repo.labelInfoMap[label]
+        repo.assertMainThread()
+        val list = repo.labelInfoMap[label] ?: return null
+        return Collections.unmodifiableList(list)
     }
 
     // ── Listener methods ──────────────────────────────────────
