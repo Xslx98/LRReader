@@ -5,7 +5,7 @@ import android.content.res.Configuration
 import androidx.annotation.DimenRes
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.client.EhUtils
+import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
 import java.io.File
 import java.util.Locale
@@ -129,7 +129,7 @@ object AppearanceSettings {
 
     // --- Default Categories ---
     const val KEY_DEFAULT_CATEGORIES = "default_categories"
-    @JvmField val DEFAULT_DEFAULT_CATEGORIES = EhUtils.ALL_CATEGORY
+    @JvmField val DEFAULT_DEFAULT_CATEGORIES = LRRUtils.ALL_CATEGORY
 
     @JvmStatic
     fun getDefaultCategories(): Int = Settings.getInt(KEY_DEFAULT_CATEGORIES, DEFAULT_DEFAULT_CATEGORIES)

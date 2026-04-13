@@ -13,8 +13,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.chip.ChipGroup
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.EhCacheKeyFactory
-import com.hippo.ehviewer.client.EhUtils
+import com.hippo.ehviewer.client.LRRCacheKeyFactory
+import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.mapper.toEntity
 import com.hippo.ehviewer.dao.DownloadInfo
@@ -117,15 +117,15 @@ class GalleryItemActionHelper(private val callback: Callback) {
         linearLayout.setOnClickListener { onItemClick(view, gi) }
 
         val imageViewNew: LoadImageViewNew = linearLayout.findViewById(R.id.dialog_thumb)
-        imageViewNew.load(EhCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
+        imageViewNew.load(LRRCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
         imageViewNew.setOnClickListener { onItemClick(view, gi) }
 
         callback.buildChipGroup(gi, linearLayout.findViewById(R.id.tab_tag_flow))
 
         val textView: TextView = linearLayout.findViewById(R.id.title_text)
-        textView.text = EhUtils.getSuitableTitle(gi)
+        textView.text = LRRUtils.getSuitableTitle(gi)
         textView.setOnClickListener {
-            AppHelper.copyPlainText(EhUtils.getSuitableTitle(gi), context)
+            AppHelper.copyPlainText(LRRUtils.getSuitableTitle(gi), context)
             val toast = Toast.makeText(context, R.string.lrr_title_copied, Toast.LENGTH_SHORT)
             toast.setGravity(Gravity.CENTER, 0, 0)
             toast.show()
