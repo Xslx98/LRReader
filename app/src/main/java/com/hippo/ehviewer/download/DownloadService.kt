@@ -36,7 +36,7 @@ import androidx.core.app.NotificationCompat
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.EhUtils
+import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.util.ReadableTime
@@ -372,7 +372,7 @@ class DownloadService : Service(), DownloadListener {
         )
 
         val dlBuilder = mDownloadingBuilder ?: return
-        dlBuilder.setContentTitle(EhUtils.getSuitableTitle(info))
+        dlBuilder.setContentTitle(LRRUtils.getSuitableTitle(info))
             .setContentText(null)
             .setContentInfo(null)
             .setProgress(0, 0, true)
@@ -403,7 +403,7 @@ class DownloadService : Service(), DownloadListener {
             getString(R.string.download_speed_text, text)
         }
         val dlBuilder = mDownloadingBuilder ?: return
-        dlBuilder.setContentTitle(EhUtils.getSuitableTitle(info))
+        dlBuilder.setContentTitle(LRRUtils.getSuitableTitle(info))
             .setContentText(text)
             .setContentInfo(if (info.total == -1 || info.finished == -1) null else info.finished.toString() + "/" + info.total)
             .setProgress(info.total, info.finished, false)
@@ -435,7 +435,7 @@ class DownloadService : Service(), DownloadListener {
         val index = sItemStateArray.indexOfKey(gid)
         if (index < 0) { // Not contain
             sItemStateArray.put(gid, finish)
-            sItemTitleArray.put(gid, EhUtils.getSuitableTitle(info))
+            sItemTitleArray.put(gid, LRRUtils.getSuitableTitle(info))
             sDownloadedCount++
             if (finish) {
                 sFinishedCount++
@@ -445,7 +445,7 @@ class DownloadService : Service(), DownloadListener {
         } else { // Contain
             val oldFinish = sItemStateArray.valueAt(index)
             sItemStateArray.put(gid, finish)
-            sItemTitleArray.put(gid, EhUtils.getSuitableTitle(info))
+            sItemTitleArray.put(gid, LRRUtils.getSuitableTitle(info))
             if (oldFinish && !finish) {
                 sFinishedCount--
                 sFailedCount++

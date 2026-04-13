@@ -31,8 +31,8 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.hippo.easyrecyclerview.MarginItemDecoration
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.EhCacheKeyFactory
-import com.hippo.ehviewer.client.EhUtils
+import com.hippo.ehviewer.client.LRRCacheKeyFactory
+import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.settings.AppearanceSettings
@@ -181,15 +181,15 @@ abstract class GalleryAdapterNew(
         when (mType) {
             TYPE_GRID -> {
                 (holder.thumb as TileThumbNew).setThumbSize(gi.thumbWidth, gi.thumbHeight)
-                holder.thumb.load(EhCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
+                holder.thumb.load(LRRCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
                 // LANraragi doesn't use E-Hentai categories - hide triangle
                 holder.category?.visibility = View.GONE
                 holder.simpleLanguage?.text = gi.simpleLanguage
             }
             else -> {
                 // TYPE_LIST or default
-                holder.thumb.load(EhCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
-                holder.title?.text = EhUtils.getSuitableTitle(gi)
+                holder.thumb.load(LRRCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
+                holder.title?.text = LRRUtils.getSuitableTitle(gi)
                 holder.uploader?.text = gi.uploader
                 if (!AppearanceSettings.getShowGalleryRating()) {
                     holder.rating?.visibility = View.INVISIBLE

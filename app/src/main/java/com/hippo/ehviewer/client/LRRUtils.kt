@@ -23,7 +23,7 @@ import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.GalleryInfoUi
 import java.util.regex.Pattern
 
-object EhUtils {
+object LRRUtils {
     @JvmField
     val NONE: Int = -1 // Use it for homepage
     const val UNKNOWN: Int = 0x400

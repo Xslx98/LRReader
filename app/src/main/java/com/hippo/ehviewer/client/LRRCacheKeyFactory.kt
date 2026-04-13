@@ -16,7 +16,7 @@
 
 package com.hippo.ehviewer.client
 
-object EhCacheKeyFactory {
+object LRRCacheKeyFactory {
 
     @JvmStatic
     fun getThumbKey(gid: Long): String =

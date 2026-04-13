@@ -8,7 +8,7 @@ import android.text.TextUtils
 import android.text.style.ImageSpan
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.LRRUrl
-import com.hippo.ehviewer.client.EhUtils
+import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.lanraragi.reader.client.api.data.LRRSearchResult
@@ -74,7 +74,7 @@ class GallerySearchHelper(private val mCallback: Callback) {
 
             return when {
                 urlBuilder.mode == ListUrlBuilder.MODE_NORMAL &&
-                        EhUtils.NONE == category &&
+                        LRRUtils.NONE == category &&
                         TextUtils.isEmpty(keyword) &&
                         urlBuilder.advanceSearch == -1 &&
                         urlBuilder.minRating == -1 &&
@@ -83,7 +83,7 @@ class GallerySearchHelper(private val mCallback: Callback) {
                     resources.getString(if (appName) R.string.app_name else R.string.homepage)
 
                 urlBuilder.mode == ListUrlBuilder.MODE_SUBSCRIPTION &&
-                        EhUtils.NONE == category &&
+                        LRRUtils.NONE == category &&
                         TextUtils.isEmpty(keyword) &&
                         urlBuilder.advanceSearch == -1 &&
                         urlBuilder.minRating == -1 &&
@@ -96,7 +96,7 @@ class GallerySearchHelper(private val mCallback: Callback) {
 
                 !TextUtils.isEmpty(keyword) -> keyword
 
-                MathUtils.hammingWeight(category) == 1 -> EhUtils.getCategory(category)
+                MathUtils.hammingWeight(category) == 1 -> LRRUtils.getCategory(category)
 
                 else -> null
             }

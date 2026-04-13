@@ -26,7 +26,7 @@ import android.widget.Spinner
 import androidx.appcompat.app.AlertDialog
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhConfig
-import com.hippo.ehviewer.client.EhUtils
+import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.widget.SearchBar
 import com.hippo.util.DrawableManager
 import com.hippo.widget.SearchBarMover
@@ -154,16 +154,16 @@ internal class DownloadSearchHelper(private val callback: Callback) {
     fun initCategorySpinner(spinner: Spinner, context: Context) {
         val categoryList = ArrayList<String>()
         categoryList.add(callback.getString(R.string.category_all))
-        categoryList.add(EhUtils.getCategory(EhConfig.DOUJINSHI)!!.uppercase(java.util.Locale.ROOT))
-        categoryList.add(EhUtils.getCategory(EhConfig.MANGA)!!.uppercase(java.util.Locale.ROOT))
-        categoryList.add(EhUtils.getCategory(EhConfig.ARTIST_CG)!!.uppercase(java.util.Locale.ROOT))
-        categoryList.add(EhUtils.getCategory(EhConfig.GAME_CG)!!.uppercase(java.util.Locale.ROOT))
-        categoryList.add(EhUtils.getCategory(EhConfig.WESTERN)!!.uppercase(java.util.Locale.ROOT))
-        categoryList.add(EhUtils.getCategory(EhConfig.NON_H)!!.uppercase(java.util.Locale.ROOT))
-        categoryList.add(EhUtils.getCategory(EhConfig.IMAGE_SET)!!.uppercase(java.util.Locale.ROOT))
-        categoryList.add(EhUtils.getCategory(EhConfig.COSPLAY)!!.uppercase(java.util.Locale.ROOT))
-        categoryList.add(EhUtils.getCategory(EhConfig.ASIAN_PORN)!!.uppercase(java.util.Locale.ROOT))
-        categoryList.add(EhUtils.getCategory(EhConfig.MISC)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.DOUJINSHI)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.MANGA)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.ARTIST_CG)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.GAME_CG)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.WESTERN)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.NON_H)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.IMAGE_SET)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.COSPLAY)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.ASIAN_PORN)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.MISC)!!.uppercase(java.util.Locale.ROOT))
 
         val categoryAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, categoryList)
         categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
@@ -181,7 +181,7 @@ internal class DownloadSearchHelper(private val callback: Callback) {
                     8 -> EhConfig.COSPLAY
                     9 -> EhConfig.ASIAN_PORN
                     10 -> EhConfig.MISC
-                    else -> EhUtils.ALL_CATEGORY
+                    else -> LRRUtils.ALL_CATEGORY
                 }
                 if (selectedCategory != callback.viewModel.selectedCategory.value) {
                     callback.viewModel.setSelectedCategory(selectedCategory)
