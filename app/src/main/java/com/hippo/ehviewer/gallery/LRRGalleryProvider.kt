@@ -1,8 +1,6 @@
 package com.hippo.ehviewer.gallery
 
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
@@ -17,7 +15,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -182,23 +182,27 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
                 // Notify UI that data is ready
                 notifyDataChanged()
 
-                // Jump GalleryView to the resolved page via main-thread Handler
+                // Jump GalleryView to the resolved page via coroutine + Dispatchers.Main
                 // (getStartPage() was read synchronously before this async callback)
                 if (finalPage > 0) {
                     val gv = galleryView
                     Log.i(TAG, "[PROGRESS] GalleryView ref=${if (gv != null) "OK" else "NULL"}")
                     if (gv != null) {
-                        // Post with delay to ensure GL layout is attached
-                        val weakGv = java.lang.ref.WeakReference(gv)
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            val view = weakGv.get()
-                            if (view != null && !stateRef.get().stopped) {
-                                view.setCurrentPage(finalPage)
-                                Log.i(TAG, "[PROGRESS] setCurrentPage($finalPage) called")
-                            } else {
-                                Log.w(TAG, "[PROGRESS] GalleryView gone before setCurrentPage")
+                        // Delay to ensure GL layout is attached; launched on
+                        // providerScope so stop() cancellation prevents stale View access.
+                        providerScope?.launch {
+                            delay(300)
+                            if (stateRef.get().stopped) return@launch
+                            val gvRef = galleryView ?: return@launch
+                            withContext(Dispatchers.Main) {
+                                if (!stateRef.get().stopped) {
+                                    gvRef.setCurrentPage(finalPage)
+                                    Log.i(TAG, "[PROGRESS] setCurrentPage($finalPage) called")
+                                } else {
+                                    Log.w(TAG, "[PROGRESS] GalleryView gone before setCurrentPage")
+                                }
                             }
-                        }, 300)
+                        }
                     }
                 }
 
