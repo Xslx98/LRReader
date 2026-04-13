@@ -13,7 +13,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.UrlOpener
-import com.hippo.ehviewer.client.EhUrl
+import com.hippo.ehviewer.client.LRRUrl
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.ListUrlBuilder
@@ -234,7 +234,7 @@ internal class DetailActionHandler(
         val gid = viewModel.getEffectiveGid()
         val token = viewModel.getEffectiveToken()
         if (gid == -1L) return null
-        return EhUrl.getGalleryDetailUrl(gid, token, 0, false)
+        return LRRUrl.getGalleryDetailUrl(gid, token, 0, false)
     }
 
     fun destroy() {

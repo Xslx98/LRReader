@@ -21,7 +21,7 @@ import android.os.Parcelable
 import android.text.TextUtils
 import androidx.annotation.IntDef
 import com.hippo.ehviewer.client.EhConfig
-import com.hippo.ehviewer.client.EhUrl
+import com.hippo.ehviewer.client.LRRUrl
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.dao.QuickSearch
 import com.hippo.ehviewer.widget.AdvanceSearchTable
@@ -356,7 +356,7 @@ class ListUrlBuilder : Cloneable, Parcelable {
     fun build(): String {
         return when (mode) {
             MODE_UPLOADER -> buildString {
-                append(EhUrl.getHost())
+                append(LRRUrl.getHost())
                 append("uploader/")
                 try {
                     append(URLEncoder.encode(keyword, "UTF-8"))
@@ -368,7 +368,7 @@ class ListUrlBuilder : Cloneable, Parcelable {
             }
 
             MODE_TAG -> buildString {
-                append(EhUrl.getHost())
+                append(LRRUrl.getHost())
                 append("tag/")
                 try {
                     append(URLEncoder.encode(keyword, "UTF-8"))
@@ -380,7 +380,7 @@ class ListUrlBuilder : Cloneable, Parcelable {
             }
 
             MODE_FILTER -> buildString {
-                append(EhUrl.getHost())
+                append(LRRUrl.getHost())
                 append("?")
                 if (pageIndex != 0) {
                     append("page=").append(pageIndex).append('&')
@@ -392,12 +392,12 @@ class ListUrlBuilder : Cloneable, Parcelable {
                 }
             }
 
-            MODE_WHATS_HOT -> EhUrl.getPopularUrl()
+            MODE_WHATS_HOT -> LRRUrl.getPopularUrl()
 
-            MODE_IMAGE_SEARCH -> EhUrl.getImageSearchUrl()
+            MODE_IMAGE_SEARCH -> LRRUrl.getImageSearchUrl()
 
             MODE_TOP_LIST -> buildString {
-                append(EhUrl.getTopListUrl())
+                append(LRRUrl.getTopListUrl())
                 append("?")
                 append(follow)
                 if (pageIndex != 0) {
@@ -414,7 +414,7 @@ class ListUrlBuilder : Cloneable, Parcelable {
 
             else -> {
                 // MODE_NORMAL, MODE_SUBSCRIPTION
-                val url = if (mode == MODE_NORMAL) EhUrl.getHost() else EhUrl.getWatchedUrl()
+                val url = if (mode == MODE_NORMAL) LRRUrl.getHost() else LRRUrl.getWatchedUrl()
                 val ub = UrlBuilder(url)
                 if (category != EhUtils.NONE) {
                     ub.addQuery("f_cats", category.inv() and EhConfig.ALL_CATEGORY)

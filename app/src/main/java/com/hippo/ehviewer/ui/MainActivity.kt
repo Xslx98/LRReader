@@ -73,7 +73,7 @@ import com.hippo.ehviewer.ui.scene.gallery.list.QuickSearchScene
 import com.hippo.ehviewer.ui.scene.SecurityScene
 import com.hippo.ehviewer.ui.scene.SolidScene
 import com.hippo.ehviewer.ui.splash.SplashActivity
-import com.hippo.ehviewer.client.EhUrlOpener
+import com.hippo.ehviewer.client.LRRUrlOpener
 import com.hippo.ehviewer.widget.EhDrawerLayout
 import com.hippo.io.UniFileInputStreamPipe
 import com.hippo.network.Network
@@ -246,7 +246,7 @@ class MainActivity : StageActivity(),
         val action = intent.action
         if (Intent.ACTION_VIEW == action) {
             val uri = intent.data ?: return false
-            val announcer = EhUrlOpener.parseUrl(uri.toString())
+            val announcer = LRRUrlOpener.parseUrl(uri.toString())
             if (announcer != null) {
                 startScene(processAnnouncer(announcer))
                 return true
