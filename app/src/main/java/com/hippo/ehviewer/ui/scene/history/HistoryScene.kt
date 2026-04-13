@@ -79,10 +79,10 @@ class HistoryScene : ToolbarScene(),
     /*---------------
      View life cycle
      ---------------*/
-    private var mRecyclerView: EasyRecyclerView? = null
+    private lateinit var mRecyclerView: EasyRecyclerView
     private var mViewTransition: ViewTransition? = null
     private var mAdapter: RecyclerView.Adapter<*>? = null
-    private var mLayoutManager: AutoStaggeredGridLayoutManager? = null
+    private lateinit var mLayoutManager: AutoStaggeredGridLayoutManager
 
     override fun getNavCheckedItem(): Int {
         return R.id.nav_history
@@ -107,7 +107,7 @@ class HistoryScene : ToolbarScene(),
         val resources = context!!.resources
 
         val drawable = DrawableManager.getVectorDrawable(context, R.drawable.big_history)
-        drawable!!.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
+        drawable?.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
         tip.setCompoundDrawables(null, drawable, null, null)
 
         val guardManager = RecyclerViewTouchActionGuardManager()
@@ -118,37 +118,37 @@ class HistoryScene : ToolbarScene(),
         adapter.setHasStableIds(true)
         adapter = swipeManager.createWrappedAdapter(adapter)
         mAdapter = adapter
-        mRecyclerView!!.adapter = mAdapter
+        mRecyclerView.adapter = mAdapter
         val animator = SwipeDismissItemAnimator()
         animator.supportsChangeAnimations = false
-        mRecyclerView!!.itemAnimator = animator
+        mRecyclerView.itemAnimator = animator
         mLayoutManager = AutoStaggeredGridLayoutManager(
             0, StaggeredGridLayoutManager.VERTICAL
         )
-        mLayoutManager!!.setColumnSize(
+        mLayoutManager.setColumnSize(
             resources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId())
         )
-        mLayoutManager!!.setStrategy(AutoStaggeredGridLayoutManager.STRATEGY_MIN_SIZE)
-        mRecyclerView!!.layoutManager = mLayoutManager
-        mRecyclerView!!.setSelector(
+        mLayoutManager.setStrategy(AutoStaggeredGridLayoutManager.STRATEGY_MIN_SIZE)
+        mRecyclerView.layoutManager = mLayoutManager
+        mRecyclerView.setSelector(
             Ripple.generateRippleDrawable(
                 context,
                 !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme),
                 ColorDrawable(Color.TRANSPARENT)
             )
         )
-        mRecyclerView!!.setDrawSelectorOnTop(true)
-        mRecyclerView!!.clipToPadding = false
-        mRecyclerView!!.setOnItemClickListener(this)
-        mRecyclerView!!.setOnItemLongClickListener(this)
+        mRecyclerView.setDrawSelectorOnTop(true)
+        mRecyclerView.clipToPadding = false
+        mRecyclerView.setOnItemClickListener(this)
+        mRecyclerView.setOnItemLongClickListener(this)
         val interval = resources.getDimensionPixelOffset(R.dimen.gallery_list_interval)
         val paddingH = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_h)
         val paddingV = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_v)
         val decoration = MarginItemDecoration(interval, paddingH, paddingV, paddingH, paddingV)
-        mRecyclerView!!.addItemDecoration(decoration)
+        mRecyclerView.addItemDecoration(decoration)
         decoration.applyPaddings(mRecyclerView)
-        guardManager.attachRecyclerView(mRecyclerView!!)
-        swipeManager.attachRecyclerView(mRecyclerView!!)
+        guardManager.attachRecyclerView(mRecyclerView)
+        swipeManager.attachRecyclerView(mRecyclerView)
 
         fastScroller.attachToRecyclerView(mRecyclerView)
         val handlerDrawable = HandlerDrawable()
@@ -179,10 +179,10 @@ class HistoryScene : ToolbarScene(),
     override fun onResume() {
         super.onResume()
         // Refresh column size to pick up detail_size changes from settings
-        if (mLayoutManager != null) {
+        if (::mLayoutManager.isInitialized) {
             val columnWidth = resources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId())
-            mLayoutManager!!.setColumnSize(columnWidth)
-            mRecyclerView?.requestLayout()
+            mLayoutManager.setColumnSize(columnWidth)
+            mRecyclerView.requestLayout()
         }
     }
 
@@ -200,24 +200,20 @@ class HistoryScene : ToolbarScene(),
         // Reset snapshot so the next onCreateView starts from an empty baseline
         // and the first loadHistory() dispatch is a clean inserts-only delta.
         viewModel.resetSnapshot()
-        if (mRecyclerView != null) {
-            mRecyclerView!!.stopScroll()
-            mRecyclerView = null
-        }
+        mRecyclerView.stopScroll()
 
         mViewTransition = null
         mAdapter = null
     }
 
     private fun updateView(animation: Boolean) {
-        if (mAdapter == null || mViewTransition == null) {
-            return
-        }
+        val adapter = mAdapter ?: return
+        val viewTransition = mViewTransition ?: return
 
-        if (mAdapter!!.itemCount == 0) {
-            mViewTransition!!.showView(1, animation)
+        if (adapter.itemCount == 0) {
+            viewTransition.showView(1, animation)
         } else {
-            mViewTransition!!.showView(0, animation)
+            viewTransition.showView(0, animation)
         }
     }
 
