@@ -40,7 +40,7 @@ import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.EhCacheKeyFactory
+import com.hippo.ehviewer.client.LRRCacheKeyFactory
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadManager
@@ -168,7 +168,7 @@ class DownloadAdapter(
                 loadArchiveThumbnail(holder.thumb, Uri.parse(archiveUri))
             } else {
                 holder.thumb.load(
-                    EhCacheKeyFactory.getThumbKey(info.gid), info.thumb,
+                    LRRCacheKeyFactory.getThumbKey(info.gid), info.thumb,
                     ThumbDataContainer(info), true, false
                 )
             }
