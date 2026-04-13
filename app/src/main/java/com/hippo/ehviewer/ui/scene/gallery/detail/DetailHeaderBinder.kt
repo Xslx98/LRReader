@@ -13,8 +13,8 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.hippo.android.resource.AttrResources
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.EhCacheKeyFactory
-import com.hippo.ehviewer.client.EhUtils
+import com.hippo.ehviewer.client.LRRCacheKeyFactory
+import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.lanraragi.reader.client.api.data.LRRArchive
@@ -109,8 +109,8 @@ internal class DetailHeaderBinder(
         if (action == GalleryDetailScene.ACTION_GALLERY_INFO ||
             action == GalleryDetailScene.ACTION_DOWNLOAD_GALLERY_INFO
         ) {
-            thumb.load(EhCacheKeyFactory.getThumbKey(galleryInfo.gid), galleryInfo.thumb)
-            title.text = EhUtils.getSuitableTitle(galleryInfo)
+            thumb.load(LRRCacheKeyFactory.getThumbKey(galleryInfo.gid), galleryInfo.thumb)
+            title.text = LRRUtils.getSuitableTitle(galleryInfo)
             uploader.text = galleryInfo.uploader
         }
     }
@@ -124,17 +124,17 @@ internal class DetailHeaderBinder(
         longClickListener: View.OnLongClickListener
     ) {
         if (galleryInfo == null) {
-            thumb.load(EhCacheKeyFactory.getThumbKey(gd.gid), gd.thumb)
+            thumb.load(LRRCacheKeyFactory.getThumbKey(gd.gid), gd.thumb)
         } else {
             if (useNetWorkLoadThumb) {
-                thumb.load(EhCacheKeyFactory.getThumbKey(gd.gid), gd.thumb)
+                thumb.load(LRRCacheKeyFactory.getThumbKey(gd.gid), gd.thumb)
                 useNetWorkLoadThumb = false
             } else {
-                thumb.load(EhCacheKeyFactory.getThumbKey(gd.gid), gd.thumb, false)
+                thumb.load(LRRCacheKeyFactory.getThumbKey(gd.gid), gd.thumb, false)
             }
         }
 
-        title.text = EhUtils.getSuitableTitle(gd)
+        title.text = LRRUtils.getSuitableTitle(gd)
         uploader.text = gd.uploader
 
         val info = galleryInfo ?: gd

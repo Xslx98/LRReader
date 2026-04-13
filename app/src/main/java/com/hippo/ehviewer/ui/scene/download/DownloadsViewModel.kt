@@ -10,7 +10,7 @@ import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.callBack.DownloadSearchCallback
-import com.hippo.ehviewer.client.EhUtils
+import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.util.FileUtils
@@ -236,7 +236,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     // Category filter state
     // -------------------------------------------------------------------------
 
-    private val _selectedCategory = MutableStateFlow(EhUtils.ALL_CATEGORY)
+    private val _selectedCategory = MutableStateFlow(LRRUtils.ALL_CATEGORY)
 
     /** The currently selected category filter. */
     val selectedCategory: StateFlow<Int> = _selectedCategory.asStateFlow()
@@ -322,7 +322,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     fun filterByCategory() {
         val backList = _backList.value
         val category = _selectedCategory.value
-        if (category == EhUtils.ALL_CATEGORY) {
+        if (category == LRRUtils.ALL_CATEGORY) {
             _downloadList.value = ArrayList(backList)
         } else {
             val filtered = ArrayList<DownloadInfo>()
@@ -549,7 +549,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
                 title = fileName.replace("\\.[^.]*$".toRegex(), "")
                 titleJpn = null
                 thumb = null
-                category = EhUtils.UNKNOWN
+                category = LRRUtils.UNKNOWN
                 posted = null
                 uploader = "Local Archive"
                 rating = -1.0f

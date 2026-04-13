@@ -10,7 +10,7 @@ import com.hippo.ehviewer.FavouriteStatusRouter
 import java.io.File
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.client.EhUtils
+import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.dao.DownloadInfo
@@ -153,7 +153,7 @@ class DownloadsViewModelTest {
 
     @Test
     fun initialState_selectedCategoryIsAll() {
-        assertEquals(EhUtils.ALL_CATEGORY, vm.selectedCategory.value)
+        assertEquals(LRRUtils.ALL_CATEGORY, vm.selectedCategory.value)
     }
 
     @Test
@@ -243,7 +243,7 @@ class DownloadsViewModelTest {
         (backListField.get(vm) as kotlinx.coroutines.flow.MutableStateFlow<List<DownloadInfo>>)
             .value = listOf(info1, info2)
 
-        vm.setSelectedCategory(EhUtils.ALL_CATEGORY)
+        vm.setSelectedCategory(LRRUtils.ALL_CATEGORY)
         vm.filterByCategory()
 
         assertEquals(2, vm.downloadList.value.size)
