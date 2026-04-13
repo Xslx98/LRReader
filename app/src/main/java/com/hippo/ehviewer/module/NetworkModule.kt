@@ -1,6 +1,7 @@
 package com.hippo.ehviewer.module
 
 import android.content.Context
+import android.util.Log
 import com.hippo.ehviewer.EhProxySelector
 import com.hippo.ehviewer.Hosts
 import okhttp3.Cache
@@ -25,6 +26,10 @@ import java.util.concurrent.TimeUnit
  * [CookieJar.NO_COOKIES]: no cookies are stored, sent, or persisted.
  */
 class NetworkModule(private val context: Context) : INetworkModule, Cacheable {
+
+    companion object {
+        private const val TAG = "NetworkModule"
+    }
 
     override val cache: Cache by lazy {
         Cache(File(context.cacheDir, "http_cache"), 200L * 1024L * 1024L)
@@ -99,6 +104,6 @@ class NetworkModule(private val context: Context) : INetworkModule, Cacheable {
     override val networkMonitor: NetworkMonitor by lazy { NetworkMonitor(context) }
 
     override fun clearCache() {
-        try { cache.evictAll() } catch (_: Exception) {}
+        try { cache.evictAll() } catch (e: Exception) { Log.w(TAG, "Failed to evict HTTP cache", e) }
     }
 }
