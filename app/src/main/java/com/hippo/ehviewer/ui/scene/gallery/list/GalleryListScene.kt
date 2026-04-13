@@ -34,52 +34,43 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.TextView
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.github.amlcurran.showcaseview.ShowcaseView
 import com.github.amlcurran.showcaseview.SimpleShowcaseEventListener
 import com.github.amlcurran.showcaseview.targets.PointTarget
-import com.google.android.material.chip.ChipGroup
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.hippo.android.resource.AttrResources
 import com.hippo.drawable.AddDeleteDrawable
 import com.hippo.drawable.DrawerArrowDrawable
-import com.hippo.drawerlayout.DrawerLayout
 import com.hippo.easyrecyclerview.EasyRecyclerView
-import com.hippo.easyrecyclerview.FastScroller
-import androidx.lifecycle.ViewModelProvider
-import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.client.data.ListUrlBuilder
-import com.lanraragi.reader.client.api.LRRAuthManager
-import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.QuickSearch
-import com.hippo.ehviewer.download.DownloadInfoListener
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.settings.GuideSettings
-import com.hippo.ehviewer.settings.ReadingSettings
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.ehviewer.widget.SearchBar
 import com.hippo.ehviewer.widget.SearchLayout
+import com.hippo.lib.yorozuya.AssertUtils
+import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.refreshlayout.RefreshLayout
 import com.hippo.ripple.Ripple
 import com.hippo.scene.Announcer
+import com.hippo.ehviewer.util.collectFlow
 import com.hippo.view.ViewTransition
 import com.hippo.widget.ContentLayout
 import com.hippo.widget.FabLayout
 import com.hippo.widget.SearchBarMover
-import com.hippo.lib.yorozuya.AssertUtils
-import com.hippo.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.client.api.LRRAuthManager
 
 class GalleryListScene : BaseScene(),
     EasyRecyclerView.OnItemClickListener, EasyRecyclerView.OnItemLongClickListener,
-    SearchBar.Helper, SearchBar.OnStateChangeListener, FastScroller.OnDragHandlerListener,
-    SearchLayout.Helper, SearchBarMover.Helper, View.OnClickListener, FabLayout.OnClickFabListener,
-    FabLayout.OnExpandListener {
+    View.OnClickListener {
 
     /*---------------
      Whole life cycle
@@ -88,22 +79,25 @@ class GalleryListScene : BaseScene(),
     var mUrlBuilder: ListUrlBuilder? = null
 
     /*---------------
-     View life cycle
+     View life cycle — internal visibility for GalleryListHelperFactory
      ---------------*/
-    private var mRecyclerView: EasyRecyclerView? = null
-    private var mSearchLayout: SearchLayout? = null
-    private var mSearchBar: SearchBar? = null
-    private var mSearchFab: View? = null
-    private var mFabLayout: FabLayout? = null
-    private var mFloatingActionButton: FloatingActionButton? = null
-    private var mViewTransition: ViewTransition? = null
-    private var mAdapter: GalleryListAdapter? = null
+    internal var recyclerView: EasyRecyclerView? = null
+    internal var searchLayout: SearchLayout? = null
+    internal var searchBar: SearchBar? = null
+    internal var searchFab: View? = null
+    internal var fabLayout: FabLayout? = null
+    internal var floatingActionButton: FloatingActionButton? = null
+    internal var viewTransition: ViewTransition? = null
+    private var mAdapterImpl: GalleryListAdapter? = null
+
+    /** Exposes the adapter as its base type so GalleryListHelperFactory can call notify methods. */
+    internal val adapter: GalleryAdapterNew? get() = mAdapterImpl
     @JvmField
     var mHelper: GalleryListDataHelper? = null
-    private var mLeftDrawable: DrawerArrowDrawable? = null
-    private var mRightDrawable: AddDeleteDrawable? = null
-    private var mSearchBarMover: SearchBarMover? = null
-    private var mActionFabDrawable: AddDeleteDrawable? = null
+    internal var leftDrawable: DrawerArrowDrawable? = null
+    internal var rightDrawable: AddDeleteDrawable? = null
+    internal var searchBarMover: SearchBarMover? = null
+    internal var actionFabDrawable: AddDeleteDrawable? = null
 
     private var mHideActionFabSlop = 0
 
@@ -114,34 +108,34 @@ class GalleryListScene : BaseScene(),
     private var mRestoredState = GalleryStateHelper.STATE_NORMAL
 
     private var mShowcaseView: ShowcaseView? = null
-    private lateinit var mDownloadManager: DownloadManager
-    private var mDownloadInfoListener: DownloadInfoListener? = null
-    private lateinit var mFavouriteStatusRouter: FavouriteStatusRouter
-    private var mFavouriteStatusRouterListener: FavouriteStatusRouter.Listener? = null
+    internal lateinit var downloadManager: DownloadManager
+        private set
 
     private lateinit var viewModel: GalleryListViewModel
 
     /*---------------
-     Extracted helpers
+     Extracted helpers — internal visibility for GalleryListHelperFactory
      ---------------*/
-    private var mFilterHelper: GalleryFilterHelper? = null
-    private var mGoToHelper: GalleryGoToHelper? = null
-    private var mStateHelper: GalleryStateHelper? = null
-    private var mTagChipHelper: GalleryTagChipHelper? = null
-    private var mItemActionHelper: GalleryItemActionHelper? = null
-    private var mUploadHelper: GalleryUploadHelper? = null
+    internal var filterHelper: GalleryFilterHelper? = null
+    internal var goToHelper: GalleryGoToHelper? = null
+    internal var stateHelper: GalleryStateHelper? = null
+    internal var tagChipHelper: GalleryTagChipHelper? = null
+    internal var itemActionHelper: GalleryItemActionHelper? = null
+    internal var uploadHelper: GalleryUploadHelper? = null
     private var mSearchHelper: GallerySearchHelper? = null
-    private var mListSearchHelper: GalleryListSearchHelper? = null
+    internal var listSearchHelper: GalleryListSearchHelper? = null
     private var mDrawerHelper: GalleryDrawerHelper? = null
+    private var mFabHelper: GalleryFabHelper? = null
+    private var searchBarHelper: GallerySearchBarHelper? = null
 
     private val mOnScrollListener: RecyclerView.OnScrollListener = object : RecyclerView.OnScrollListener() {
         override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {}
 
         override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
             if (dy >= mHideActionFabSlop) {
-                mStateHelper?.hideActionFab()
+                stateHelper?.hideActionFab()
             } else if (dy <= -mHideActionFabSlop / 2) {
-                mStateHelper?.showActionFab()
+                stateHelper?.showActionFab()
             }
         }
     }
@@ -185,8 +179,8 @@ class GalleryListScene : BaseScene(),
         handleArgs(args)
         onUpdateUrlBuilder()
         mHelper?.refresh()
-        mStateHelper?.setState(GalleryStateHelper.STATE_NORMAL)
-        mSearchBarMover?.showSearchBar()
+        stateHelper?.setState(GalleryStateHelper.STATE_NORMAL)
+        searchBarMover?.showSearchBar()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -195,46 +189,37 @@ class GalleryListScene : BaseScene(),
         val context = ehContext
         AssertUtils.assertNotNull(context)
         viewModel = ViewModelProvider(requireActivity())[GalleryListViewModel::class.java]
-        mDownloadManager = viewModel.downloadManager
-        mFavouriteStatusRouter = viewModel.favouriteStatusRouter
+        downloadManager = viewModel.downloadManager
 
-        mDownloadInfoListener = object : DownloadInfoListener {
-            override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-                // Download status icon may appear on matching gallery items — refresh all visible
-                mAdapter?.notifyItemRangeChanged(0, mAdapter?.itemCount ?: 0)
-            }
-            override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {}
-            override fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: List<DownloadInfo>) {
-                // Only refresh the specific item that changed instead of the entire list
-                val adapter = mAdapter ?: return
-                val count = adapter.itemCount
-                for (i in 0 until count) {
-                    val gi = adapter.getDataAt(i)
-                    if (gi != null && gi.gid == info.gid) {
-                        adapter.notifyItemChanged(i)
-                        break
+        // Start observing download + favourite changes in the ViewModel.
+        // The ViewModel owns the listeners and unregisters them in onCleared().
+        viewModel.startObservingDownloads()
+        viewModel.startObservingFavourites()
+
+        // Observe download events to refresh adapter items
+        collectFlow(this, viewModel.downloadEvent) { event ->
+            when (event) {
+                is GalleryListViewModel.DownloadEvent.ItemUpdated -> {
+                    val adapter = adapter ?: return@collectFlow
+                    val count = adapter.itemCount
+                    for (i in 0 until count) {
+                        val gi = adapter.getDataAt(i)
+                        if (gi != null && gi.gid == event.gid) {
+                            adapter.notifyItemChanged(i)
+                            break
+                        }
                     }
                 }
+                is GalleryListViewModel.DownloadEvent.BulkChanged -> {
+                    adapter?.notifyItemRangeChanged(0, adapter?.itemCount ?: 0)
+                }
             }
-            override fun onUpdateAll() {}
-            override fun onReload() {
-                mAdapter?.notifyItemRangeChanged(0, mAdapter?.itemCount ?: 0)
-            }
-            override fun onChange() {
-                mAdapter?.notifyItemRangeChanged(0, mAdapter?.itemCount ?: 0)
-            }
-            override fun onRenameLabel(from: String, to: String) {}
-            override fun onRemove(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-                mAdapter?.notifyItemRangeChanged(0, mAdapter?.itemCount ?: 0)
-            }
-            override fun onUpdateLabels() {}
         }
-        mDownloadInfoListener?.let { mDownloadManager.addDownloadInfoListener(it) }
 
-        mFavouriteStatusRouterListener = FavouriteStatusRouter.Listener { _, _ ->
-            mAdapter?.notifyItemRangeChanged(0, mAdapter?.itemCount ?: 0)
+        // Observe favourite status changes to refresh all visible items
+        collectFlow(this, viewModel.favouriteStatusChanged) {
+            adapter?.notifyItemRangeChanged(0, adapter?.itemCount ?: 0)
         }
-        mFavouriteStatusRouter.addListener(mFavouriteStatusRouterListener!!)
 
         if (savedInstanceState == null) {
             onInit()
@@ -265,14 +250,14 @@ class GalleryListScene : BaseScene(),
         }
         outState.putBoolean(KEY_HAS_FIRST_REFRESH, hasFirstRefresh)
         outState.putParcelable(KEY_LIST_URL_BUILDER, mUrlBuilder)
-        outState.putInt(KEY_STATE, mStateHelper?.state ?: GalleryStateHelper.STATE_NORMAL)
+        outState.putInt(KEY_STATE, stateHelper?.state ?: GalleryStateHelper.STATE_NORMAL)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         mUrlBuilder = null
-        mDownloadInfoListener?.let { mDownloadManager.removeDownloadInfoListener(it) }
-        mFavouriteStatusRouterListener?.let { mFavouriteStatusRouter.removeListener(it) }
+        // DownloadInfoListener and FavouriteStatusRouter.Listener are managed by the
+        // ViewModel and unregistered in its onCleared() — no cleanup needed here.
     }
 
     override fun onSceneResult(requestCode: Int, resultCode: Int, data: android.os.Bundle?) {
@@ -287,7 +272,7 @@ class GalleryListScene : BaseScene(),
                     if (list[i].gid == gid) {
                         list[i].rating = rating
                         list[i].rated = true
-                        mAdapter?.notifyItemChanged(i)
+                        adapter?.notifyItemChanged(i)
                         break
                     }
                 }
@@ -299,26 +284,26 @@ class GalleryListScene : BaseScene(),
     fun onUpdateUrlBuilder() {
         val builder = mUrlBuilder
         val resources = resources2
-        if (resources == null || builder == null || mSearchLayout == null) {
+        if (resources == null || builder == null || searchLayout == null) {
             return
         }
 
         var keyword = builder.keyword
         val category = builder.category
 
-        if (!keyword.isNullOrEmpty() && mSearchBar != null) {
+        if (!keyword.isNullOrEmpty() && searchBar != null) {
             if (builder.mode == ListUrlBuilder.MODE_TAG) {
                 keyword = GallerySearchHelper.wrapTagKeyword(keyword)
             }
-            mSearchBar!!.setText(keyword)
-            mSearchBar!!.cursorToEnd()
+            searchBar!!.setText(keyword)
+            searchBar!!.cursorToEnd()
         }
 
         var title = GallerySearchHelper.getSuitableTitleForUrlBuilder(resources, builder, true)
         if (title == null) {
             title = resources.getString(R.string.search)
         }
-        mSearchBar?.setTitle(title)
+        searchBar?.setTitle(title)
 
         val checkedItemId = if (ListUrlBuilder.MODE_NORMAL == builder.mode &&
             EhUtils.NONE == category &&
@@ -346,47 +331,47 @@ class GalleryListScene : BaseScene(),
 
         val mainLayout = ViewUtils.`$$`(view, R.id.main_layout)
         val contentLayout = ViewUtils.`$$`(mainLayout, R.id.content_layout) as ContentLayout
-        mRecyclerView = contentLayout.recyclerView
+        recyclerView = contentLayout.recyclerView
         val fastScroller = contentLayout.fastScroller
         val refreshLayout: RefreshLayout = contentLayout.refreshLayout
-        mSearchLayout = ViewUtils.`$$`(mainLayout, R.id.search_layout) as SearchLayout
-        mSearchBar = ViewUtils.`$$`(mainLayout, R.id.search_bar) as SearchBar
-        mFabLayout = ViewUtils.`$$`(mainLayout, R.id.fab_layout) as FabLayout
-        mFloatingActionButton = ViewUtils.`$$`(mFabLayout, R.id.tag_filter) as FloatingActionButton
+        searchLayout = ViewUtils.`$$`(mainLayout, R.id.search_layout) as SearchLayout
+        searchBar = ViewUtils.`$$`(mainLayout, R.id.search_bar) as SearchBar
+        fabLayout = ViewUtils.`$$`(mainLayout, R.id.fab_layout) as FabLayout
+        floatingActionButton = ViewUtils.`$$`(fabLayout, R.id.tag_filter) as FloatingActionButton
 
-        mSearchFab = ViewUtils.`$$`(mainLayout, R.id.search_fab)
+        searchFab = ViewUtils.`$$`(mainLayout, R.id.search_fab)
 
         val paddingTopSB = resources.getDimensionPixelOffset(R.dimen.gallery_padding_top_search_bar)
         val paddingBottomFab = resources.getDimensionPixelOffset(R.dimen.gallery_padding_bottom_fab)
 
-        mViewTransition = ViewTransition(contentLayout, mSearchLayout)
+        viewTransition = ViewTransition(contentLayout, searchLayout)
 
         // Initialize helpers
         initHelpers(context)
 
-        mFilterHelper!!.updateFilterIcon(mFilterHelper!!.filterTagList.size)
+        filterHelper!!.updateFilterIcon(filterHelper!!.filterTagList.size)
 
         contentLayout.setHelper(mHelper)
-        contentLayout.fastScroller.setOnDragHandlerListener(this)
+        contentLayout.fastScroller.setOnDragHandlerListener(searchBarHelper)
 
-        mAdapter = GalleryListAdapter(
+        mAdapterImpl = GalleryListAdapter(
             inflater, resources,
-            mRecyclerView!!, AppearanceSettings.getListMode()
+            recyclerView!!, AppearanceSettings.getListMode()
         )
-        mAdapter!!.setThumbItemClickListener(object : GalleryAdapterNew.OnThumbItemClickListener {
+        mAdapterImpl!!.setThumbItemClickListener(object : GalleryAdapterNew.OnThumbItemClickListener {
             override fun onThumbItemClick(position: Int, view: View, gi: GalleryInfoUi?) {
-                mTagChipHelper?.onThumbItemClick(position, view, gi)
+                tagChipHelper?.onThumbItemClick(position, view, gi)
             }
         })
-        mRecyclerView!!.selector = Ripple.generateRippleDrawable(
+        recyclerView!!.selector = Ripple.generateRippleDrawable(
             context, !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme),
             ColorDrawable(Color.TRANSPARENT)
         )
-        mRecyclerView!!.setDrawSelectorOnTop(true)
-        mRecyclerView!!.setClipToPadding(false)
-        mRecyclerView!!.setOnItemClickListener(this)
-        mRecyclerView!!.setOnItemLongClickListener(this)
-        mRecyclerView!!.addOnScrollListener(mOnScrollListener)
+        recyclerView!!.setDrawSelectorOnTop(true)
+        recyclerView!!.setClipToPadding(false)
+        recyclerView!!.setOnItemClickListener(this)
+        recyclerView!!.setOnItemLongClickListener(this)
+        recyclerView!!.addOnScrollListener(mOnScrollListener)
         fastScroller.setPadding(
             fastScroller.paddingLeft, fastScroller.paddingTop + paddingTopSB,
             fastScroller.paddingRight, fastScroller.paddingBottom
@@ -394,47 +379,47 @@ class GalleryListScene : BaseScene(),
 
         refreshLayout.setHeaderTranslationY(paddingTopSB.toFloat())
 
-        mLeftDrawable = DrawerArrowDrawable(context, AttrResources.getAttrColor(context, R.attr.drawableColorPrimary))
-        mRightDrawable = AddDeleteDrawable(context, AttrResources.getAttrColor(context, R.attr.drawableColorPrimary))
-        mSearchBar!!.setLeftDrawable(mLeftDrawable)
-        mSearchBar!!.setRightDrawable(mRightDrawable)
-        mSearchBar!!.setHelper(this)
-        mSearchBar!!.setOnStateChangeListener(this)
-        GallerySearchHelper.setSearchBarHint(context, mSearchBar!!)
-        mSearchBar!!.setSuggestionProvider(mSearchHelper!!.createSuggestionProvider())
+        leftDrawable = DrawerArrowDrawable(context, AttrResources.getAttrColor(context, R.attr.drawableColorPrimary))
+        rightDrawable = AddDeleteDrawable(context, AttrResources.getAttrColor(context, R.attr.drawableColorPrimary))
+        searchBar!!.setLeftDrawable(leftDrawable)
+        searchBar!!.setRightDrawable(rightDrawable)
+        searchBar!!.setHelper(searchBarHelper)
+        searchBar!!.setOnStateChangeListener(searchBarHelper)
+        GallerySearchHelper.setSearchBarHint(context, searchBar!!)
+        searchBar!!.setSuggestionProvider(mSearchHelper!!.createSuggestionProvider())
 
-        mSearchLayout!!.setHelper(this)
-        mSearchLayout!!.setPadding(
-            mSearchLayout!!.paddingLeft, mSearchLayout!!.paddingTop + paddingTopSB,
-            mSearchLayout!!.paddingRight, mSearchLayout!!.paddingBottom + paddingBottomFab
+        searchLayout!!.setHelper(searchBarHelper)
+        searchLayout!!.setPadding(
+            searchLayout!!.paddingLeft, searchLayout!!.paddingTop + paddingTopSB,
+            searchLayout!!.paddingRight, searchLayout!!.paddingBottom + paddingBottomFab
         )
 
-        mFabLayout!!.setAutoCancel(true)
-        mFabLayout!!.isExpanded = false
-        mFabLayout!!.setHidePrimaryFab(false)
-        mFabLayout!!.setOnClickFabListener(this)
-        mFabLayout!!.setOnExpandListener(this)
-        addAboveSnackView(mFabLayout!!)
+        fabLayout!!.setAutoCancel(true)
+        fabLayout!!.isExpanded = false
+        fabLayout!!.setHidePrimaryFab(false)
+        fabLayout!!.setOnClickFabListener(mFabHelper)
+        fabLayout!!.setOnExpandListener(mFabHelper)
+        addAboveSnackView(fabLayout!!)
 
-        mActionFabDrawable = AddDeleteDrawable(context, resources.getColor(R.color.primary_drawable_dark, null))
-        mFabLayout!!.primaryFab.setImageDrawable(mActionFabDrawable)
+        actionFabDrawable = AddDeleteDrawable(context, resources.getColor(R.color.primary_drawable_dark, null))
+        fabLayout!!.primaryFab.setImageDrawable(actionFabDrawable)
 
-        mSearchFab!!.setOnClickListener(this)
+        searchFab!!.setOnClickListener(this)
 
         if (LRRAuthManager.getServerUrl() == null) {
             val fabUpload: FloatingActionButton? = mainLayout.findViewById(R.id.fab_upload)
             val fabUrlDownload: FloatingActionButton? = mainLayout.findViewById(R.id.fab_url_download)
-            if (fabUpload != null) mFabLayout!!.removeView(fabUpload)
-            if (fabUrlDownload != null) mFabLayout!!.removeView(fabUrlDownload)
+            if (fabUpload != null) fabLayout!!.removeView(fabUpload)
+            if (fabUrlDownload != null) fabLayout!!.removeView(fabUrlDownload)
         }
 
-        mSearchBarMover = SearchBarMover(this, mSearchBar, mRecyclerView, mSearchLayout)
+        searchBarMover = SearchBarMover(searchBarHelper, searchBar, recyclerView, searchLayout)
 
         onUpdateUrlBuilder()
 
         // Restore state
-        mStateHelper?.setState(GalleryStateHelper.STATE_NORMAL, false)
-        mStateHelper?.setState(mRestoredState, false)
+        stateHelper?.setState(GalleryStateHelper.STATE_NORMAL, false)
+        stateHelper?.setState(mRestoredState, false)
         mRestoredState = GalleryStateHelper.STATE_NORMAL
 
         if (!mHasFirstRefresh) {
@@ -448,140 +433,19 @@ class GalleryListScene : BaseScene(),
     }
 
     private fun initHelpers(context: Context) {
-        mFilterHelper = GalleryFilterHelper(object : GalleryFilterHelper.Callback {
-            override fun getFilterFab(): FloatingActionButton? = mFloatingActionButton
-        })
-
-        mGoToHelper = GalleryGoToHelper(object : GalleryGoToHelper.Callback {
-            override fun getHostContext(): Context? = ehContext
-            override fun getContentHelper() = mHelper
-            override fun getUrlBuilder(): ListUrlBuilder? = mUrlBuilder
-            override fun getLayoutInflater(): LayoutInflater = this@GalleryListScene.layoutInflater
-            override fun getString(resId: Int): String = this@GalleryListScene.getString(resId)
-            override fun getString(resId: Int, vararg formatArgs: Any): String =
-                this@GalleryListScene.getString(resId, *formatArgs)
-        })
-
-        mStateHelper = GalleryStateHelper(object : GalleryStateHelper.Callback {
-            override fun getSearchBar(): SearchBar? = mSearchBar
-            override fun getSearchBarMover(): SearchBarMover? = mSearchBarMover
-            override fun getViewTransition(): ViewTransition? = mViewTransition
-            override fun getSearchLayout(): SearchLayout? = mSearchLayout
-            override fun getFabLayout(): FabLayout? = mFabLayout
-            override fun getSearchFab(): View? = mSearchFab
-            override fun getActionFabDrawable(): AddDeleteDrawable? = mActionFabDrawable
-            override fun getLeftDrawable(): DrawerArrowDrawable? = mLeftDrawable
-            override fun getRightDrawable(): AddDeleteDrawable? = mRightDrawable
-            override fun setDrawerLockMode(mode: Int, gravity: Int) =
-                this@GalleryListScene.setDrawerLockMode(mode, gravity)
-        })
-
-        mItemActionHelper = GalleryItemActionHelper(object : GalleryItemActionHelper.Callback {
-            override fun getHostContext(): Context? = ehContext
-            override fun getHostActivity(): Activity? = activity2
-            override fun getLayoutInflater(): LayoutInflater = this@GalleryListScene.layoutInflater
-            override fun getDownloadManager(): DownloadManager = mDownloadManager
-            override fun getSceneFragment() = this@GalleryListScene
-            override fun startScene(announcer: Announcer) = this@GalleryListScene.startScene(announcer)
-            override fun getString(resId: Int): String = this@GalleryListScene.getString(resId)
-            override fun getString(resId: Int, vararg formatArgs: Any): String =
-                this@GalleryListScene.getString(resId, *formatArgs)
-            override fun buildChipGroup(gi: GalleryInfoUi?, chipGroup: ChipGroup): ChipGroup =
-                mTagChipHelper?.buildChipGroup(gi, chipGroup) ?: chipGroup
-        })
-
-        mTagChipHelper = GalleryTagChipHelper(object : GalleryTagChipHelper.Callback {
-            override fun getHostContext(): Context? = ehContext
-            override fun requireContext(): Context = this@GalleryListScene.requireContext()
-            override fun getLayoutInflater(): LayoutInflater = this@GalleryListScene.layoutInflater
-            override fun isDrawersVisible(): Boolean = this@GalleryListScene.isDrawersVisible()
-            override fun closeDrawer(gravity: Int) = this@GalleryListScene.closeDrawer(gravity)
-            override fun getUrlBuilder(): ListUrlBuilder? = mUrlBuilder
-            override fun getContentHelper() = mHelper
-            override fun isFilterOpen(): Boolean = mFilterHelper?.filterOpen ?: false
-            override fun buildFilterSearch(tagName: String): String =
-                mFilterHelper?.searchTagBuild(tagName) ?: tagName
-            override fun updateFilterDisplay() {
-                mFilterHelper?.updateFilterIcon(mFilterHelper?.filterTagList?.size ?: 0)
-            }
-            override fun onUpdateUrlBuilder() = this@GalleryListScene.onUpdateUrlBuilder()
-            override fun setState(state: Int) { mStateHelper?.setState(state) }
-            override fun onItemClick(view: View?, gi: GalleryInfoUi?): Boolean =
-                mItemActionHelper?.onItemClick(view, gi) ?: false
-            override fun onItemLongClick(gi: GalleryInfoUi?, view: View): Boolean =
-                mItemActionHelper?.onItemLongClick(gi, view) ?: false
-            override fun dismissItemDialog() { mItemActionHelper?.dismissDialog() }
-            override fun getBaseScene(): BaseScene = this@GalleryListScene
-        })
-        mTagChipHelper!!.setEhTags(EhTagDatabase.getInstance(context))
-
-        mHelper = GalleryListDataHelper(object : GalleryListDataHelper.Callback {
-            override fun getHostContext(): Context? = ehContext
-            override fun getUrlBuilder(): ListUrlBuilder? = mUrlBuilder
-            override fun getSortBy(): String = mSearchLayout?.sortBy ?: "date_added"
-            override fun getSortOrder(): String = mSearchLayout?.sortOrder ?: "desc"
-            override fun notifyAdapterDataSetChanged() {
-                mAdapter?.notifyItemRangeChanged(0, mAdapter?.itemCount ?: 0)
-            }
-            override fun notifyAdapterItemRangeRemoved(positionStart: Int, itemCount: Int) {
-                mAdapter?.notifyItemRangeRemoved(positionStart, itemCount)
-            }
-            override fun notifyAdapterItemRangeInserted(positionStart: Int, itemCount: Int) {
-                mAdapter?.notifyItemRangeInserted(positionStart, itemCount)
-            }
-            override fun showSearchBar() { mSearchBarMover?.showSearchBar() }
-            override fun showActionFab() { mStateHelper?.showActionFab() }
-            override fun getString(resId: Int): String = this@GalleryListScene.getString(resId)
-        })
-
-        mSearchHelper = GallerySearchHelper(object : GallerySearchHelper.Callback {
-            override fun getHostContext(): Context? = ehContext
-            override fun getHostResources(): Resources? = resources2
-            override fun navigateToScene(announcer: Announcer) = startScene(announcer)
-            override fun getSearchState(): Int = mStateHelper?.state ?: GalleryStateHelper.STATE_NORMAL
-            override fun setSearchState(state: Int) { mStateHelper?.setState(state) }
-        })
-
-        mListSearchHelper = GalleryListSearchHelper(object : GalleryListSearchHelper.Callback {
-            override fun getSearchBar(): SearchBar? = mSearchBar
-            override fun getSearchLayout(): SearchLayout? = mSearchLayout
-            override fun getUrlBuilder(): ListUrlBuilder? = mUrlBuilder
-            override fun getContentHelper(): GalleryListDataHelper? = mHelper
-            override fun getStateHelper(): GalleryStateHelper? = mStateHelper
-            override fun getRecyclerView(): RecyclerView? = mRecyclerView
-            override fun onUpdateUrlBuilder() = this@GalleryListScene.onUpdateUrlBuilder()
-            override fun showTip(message: String, length: Int) = this@GalleryListScene.showTip(message, length)
-            @SuppressLint("RtlHardcoded")
-            override fun toggleDrawer(gravity: Int) = this@GalleryListScene.toggleDrawer(gravity)
-            override fun hideSoftInput() = this@GalleryListScene.hideSoftInput()
-        })
-
-        mUploadHelper = GalleryUploadHelper(object : GalleryUploadHelper.Callback {
-            override fun showTip(message: String, length: Int) = this@GalleryListScene.showTip(message, length)
-            override fun showTip(resId: Int, length: Int) = this@GalleryListScene.showTip(resId, length)
-            override fun refreshList() { mHelper?.refresh() }
-            override fun getHostActivity(): Activity? = activity2
-            override fun getHostContext(): Context? = context
-            override fun getHostString(resId: Int): String = getString(resId)
-            override fun getHostString(resId: Int, vararg formatArgs: Any): String = getString(resId, *formatArgs)
-            override fun startActivityForResult(intent: Intent, requestCode: Int) =
-                this@GalleryListScene.startActivityForResult(intent, requestCode)
-        })
-
-        mDrawerHelper = GalleryDrawerHelper(object : GalleryDrawerHelper.Callback {
-            override fun getHostContext(): Context? = ehContext
-            override fun getHostActivity(): Activity? = activity2
-            override fun getScene(): GalleryListScene = this@GalleryListScene
-            override fun getSceneTag(): String? = tag
-            override fun getUrlBuilder(): ListUrlBuilder? = mUrlBuilder
-            override fun getEhTags(): EhTagDatabase? = mTagChipHelper?.getEhTags()
-            override fun showTip(resId: Int, length: Int) = this@GalleryListScene.showTip(resId, length)
-            override fun showTip(message: String, length: Int) = this@GalleryListScene.showTip(message, length)
-            override fun getString(resId: Int): String = this@GalleryListScene.getString(resId)
-            override fun getString(resId: Int, vararg formatArgs: Any): String =
-                this@GalleryListScene.getString(resId, *formatArgs)
-            override fun onTagClick(tagName: String) { mTagChipHelper?.onTagClick(tagName) }
-        })
+        val result = GalleryListHelperFactory.create(this, context)
+        filterHelper = result.filterHelper
+        goToHelper = result.goToHelper
+        stateHelper = result.stateHelper
+        itemActionHelper = result.itemActionHelper
+        tagChipHelper = result.tagChipHelper
+        mHelper = result.dataHelper
+        mSearchHelper = result.searchHelper
+        listSearchHelper = result.listSearchHelper
+        uploadHelper = result.uploadHelper
+        searchBarHelper = result.searchBarHelper
+        mFabHelper = result.fabHelper
+        mDrawerHelper = result.drawerHelper
     }
 
     private fun guideQuickSearch() {
@@ -621,9 +485,9 @@ class GalleryListScene : BaseScene(),
             ViewUtils.removeFromParent(mShowcaseView)
             mShowcaseView = null
         }
-        if (mSearchBarMover != null) {
-            mSearchBarMover!!.cancelAnimation()
-            mSearchBarMover = null
+        if (searchBarMover != null) {
+            searchBarMover!!.cancelAnimation()
+            searchBarMover = null
         }
         if (mHelper != null) {
             mHelper!!.destroy()
@@ -631,25 +495,27 @@ class GalleryListScene : BaseScene(),
                 mHasFirstRefresh = false
             }
         }
-        if (mRecyclerView != null) {
-            mRecyclerView!!.stopScroll()
-            mRecyclerView = null
+        if (recyclerView != null) {
+            recyclerView!!.stopScroll()
+            recyclerView = null
         }
-        if (mFabLayout != null) {
-            removeAboveSnackView(mFabLayout!!)
-            mFabLayout = null
+        if (fabLayout != null) {
+            removeAboveSnackView(fabLayout!!)
+            fabLayout = null
         }
 
-        mAdapter = null
-        mSearchLayout = null
-        mSearchBar = null
-        mSearchFab = null
-        mViewTransition = null
-        mLeftDrawable = null
-        mRightDrawable = null
-        mActionFabDrawable = null
-        mUploadHelper = null
-        mListSearchHelper = null
+        mAdapterImpl = null
+        searchLayout = null
+        searchBar = null
+        searchFab = null
+        viewTransition = null
+        leftDrawable = null
+        rightDrawable = null
+        actionFabDrawable = null
+        uploadHelper = null
+        listSearchHelper = null
+        mFabHelper = null
+        searchBarHelper = null
     }
 
     // Delegation methods for BookmarksDraw (which references scene directly)
@@ -672,7 +538,7 @@ class GalleryListScene : BaseScene(),
     val drawPager get() = mDrawerHelper?.drawPager
 
     fun setState(state: Int) {
-        mStateHelper?.setState(state)
+        stateHelper?.setState(state)
     }
 
     @SuppressLint("RtlHardcoded", "NonConstantResourceId")
@@ -699,9 +565,9 @@ class GalleryListScene : BaseScene(),
 
     override fun onResume() {
         super.onResume()
-        if (mAdapter != null) {
-            mAdapter!!.setType(AppearanceSettings.getListMode())
-            mAdapter!!.refreshColumnSize()
+        if (adapter != null) {
+            adapter!!.setType(AppearanceSettings.getListMode())
+            adapter!!.refreshColumnSize()
         }
         mDrawerHelper?.onResume()
 
@@ -714,17 +580,17 @@ class GalleryListScene : BaseScene(),
     }
 
     override fun onBackPressed() {
-        mTagChipHelper?.dismissPopup()
+        tagChipHelper?.dismissPopup()
         if (mShowcaseView != null) {
             return
         }
 
-        if (mFabLayout != null && mFabLayout!!.isExpanded) {
-            mFabLayout!!.isExpanded = false
+        if (fabLayout != null && fabLayout!!.isExpanded) {
+            fabLayout!!.isExpanded = false
             return
         }
 
-        val filterHelper = mFilterHelper
+        val filterHelper = filterHelper
         if (filterHelper != null && filterHelper.filterOpen && filterHelper.removeLastFilterTag()) {
             mUrlBuilder!!.set(
                 filterHelper.listToString(filterHelper.filterTagList),
@@ -735,142 +601,38 @@ class GalleryListScene : BaseScene(),
             mUrlBuilder!!.pageIndex = 0
             onUpdateUrlBuilder()
             mHelper!!.refresh()
-            mStateHelper?.setState(GalleryStateHelper.STATE_NORMAL)
+            stateHelper?.setState(GalleryStateHelper.STATE_NORMAL)
             return
         }
 
-        val handle = mListSearchHelper?.handleSearchBackPress() ?: false
+        val handle = listSearchHelper?.handleSearchBackPress() ?: false
         if (!handle && !checkDoubleClickExit()) {
             finish()
         }
     }
 
     override fun onItemClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean =
-        mItemActionHelper?.onItemClick(view, mHelper?.getDataAtEx(position)) ?: false
+        itemActionHelper?.onItemClick(view, mHelper?.getDataAtEx(position)) ?: false
 
     override fun onItemLongClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean =
-        mItemActionHelper?.onItemLongClick(mHelper?.getDataAtEx(position), view) ?: false
+        itemActionHelper?.onItemLongClick(mHelper?.getDataAtEx(position), view) ?: false
 
     override fun onClick(v: View) {
-        mListSearchHelper?.onSearchFabClick()
+        listSearchHelper?.onSearchFabClick()
     }
 
-    override fun onClickPrimaryFab(view: FabLayout, fab: FloatingActionButton) {
-        if ((mStateHelper?.state ?: GalleryStateHelper.STATE_NORMAL) == GalleryStateHelper.STATE_NORMAL) {
-            view.toggle()
-        }
-    }
-
-    override fun onClickSecondaryFab(view: FabLayout, fab: FloatingActionButton, position: Int) {
-        if (mHelper == null) return
-
-        when (position) {
-            0 -> { // Toggle multi-tag search
-                mFilterHelper?.toggleFilter()
-            }
-            1 -> { // Go to
-                if (mHelper!!.canGoTo()) {
-                    if (mUrlBuilder != null && mUrlBuilder!!.mode == ListUrlBuilder.MODE_TOP_LIST) return
-                    mGoToHelper?.showGoToDialog()
-                }
-            }
-            2 -> { // Refresh
-                mHelper!!.refresh()
-            }
-            3 -> { // Random
-                val gInfoL = mHelper!!.data
-                if (gInfoL.isNullOrEmpty()) return
-                mItemActionHelper?.onItemClick(null, gInfoL[(Math.random() * gInfoL.size).toInt()])
-            }
-            4 -> { // Upload archive (LRR only)
-                mUploadHelper?.showUploadFilePicker()
-            }
-            5 -> { // URL download (LRR only)
-                mUploadHelper?.showUrlDownloadDialog()
-            }
-        }
-
-        view.isExpanded = false
-    }
-
-    @SuppressLint("RtlHardcoded")
-    override fun onExpand(expanded: Boolean) {
-        mStateHelper?.onFabExpand(expanded)
-    }
-
-    // SearchBar.Helper callbacks — delegated to GalleryListSearchHelper
-
-    override fun onClickTitle() {
-        mListSearchHelper?.onClickTitle()
-    }
-
-    @SuppressLint("RtlHardcoded")
-    override fun onClickLeftIcon() {
-        mListSearchHelper?.onClickLeftIcon()
-    }
-
-    override fun onClickRightIcon() {
-        mListSearchHelper?.onClickRightIcon()
-    }
-
-    override fun onSearchEditTextClick() {
-        mListSearchHelper?.onSearchEditTextClick()
-    }
-
-    override fun onApplySearch(query: String) {
-        mListSearchHelper?.onApplySearch(query)
-    }
-
-    override fun onSearchEditTextBackPressed() = onBackPressed()
-
-    @SuppressLint("RtlHardcoded")
-    override fun onStateChange(searchBar: SearchBar, newState: Int, oldState: Int, animation: Boolean) {
-        mStateHelper?.onSearchBarStateChange(newState, oldState, animation)
-    }
-
-    @SuppressLint("RtlHardcoded")
-    override fun onStartDragHandler() {
-        setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)
-    }
-
-    @SuppressLint("RtlHardcoded")
-    override fun onEndDragHandler() {
-        setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)
-        mSearchBarMover?.returnSearchBarPosition()
-    }
-
-    override fun onChangeSearchMode() = mSearchBarMover?.showSearchBar() ?: Unit
-
-    override fun onSelectImage() {
-        val intent = Intent()
-        intent.type = "image/*"
-        intent.action = Intent.ACTION_GET_CONTENT
-        startActivityForResult(
-            Intent.createChooser(intent, getString(R.string.select_image)),
-            REQUEST_CODE_SELECT_IMAGE
-        )
-    }
-
-    override fun onSortChanged() = mHelper?.refresh() ?: Unit
-
-    override fun isValidView(recyclerView: RecyclerView): Boolean =
-        mListSearchHelper?.isValidView(recyclerView) ?: false
-
-    override fun getValidRecyclerView(): RecyclerView? =
-        mListSearchHelper?.getValidRecyclerView()
-
-    override fun forceShowSearchBar(): Boolean =
-        mListSearchHelper?.forceShowSearchBar() ?: false
+    // SearchBar, SearchLayout, SearchBarMover, FastScroller callbacks are
+    // handled by GallerySearchBarHelper (registered in initHelpers)
 
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (REQUEST_CODE_SELECT_IMAGE == requestCode) {
-            if (Activity.RESULT_OK == resultCode && mSearchLayout != null && data != null) {
-                mSearchLayout!!.setImageUri(data.data)
+            if (Activity.RESULT_OK == resultCode && searchLayout != null && data != null) {
+                searchLayout!!.setImageUri(data.data)
             }
         } else if (REQUEST_CODE_UPLOAD_ARCHIVE == requestCode) {
             if (Activity.RESULT_OK == resultCode && data?.data != null) {
-                mUploadHelper?.handleUploadResult(data.data!!)
+                uploadHelper?.handleUploadResult(data.data!!)
             }
         } else {
             super.onActivityResult(requestCode, resultCode, data)
