@@ -18,6 +18,7 @@ package com.hippo.ehviewer.ui.gallery
 
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -190,7 +191,8 @@ class GalleryInputHandler(private val mCallback: Callback) {
                         }
                     }
                 }, initialDelay, waitTime, TimeUnit.SECONDS)
-            } catch (_: IllegalArgumentException) {
+            } catch (e: IllegalArgumentException) {
+                Log.d(TAG, "Schedule auto-read timer", e)
             }
         }
     }
@@ -210,5 +212,9 @@ class GalleryInputHandler(private val mCallback: Callback) {
             }
         }
         mTransferService = null
+    }
+
+    companion object {
+        private const val TAG = "GalleryInputHandler"
     }
 }

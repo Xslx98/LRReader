@@ -18,6 +18,7 @@ package com.hippo.ehviewer.ui.fragment
 import android.app.Activity
 import android.app.ProgressDialog
 import android.content.Intent
+import android.util.Log
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Bundle
@@ -520,8 +521,8 @@ class DownloadFragment : PreferenceFragmentCompat(),
                         os.write("$log\n".toByteArray(StandardCharsets.UTF_8))
                     }
                 }
-            } catch (_: IOException) {
-                // Ignore
+            } catch (e: IOException) {
+                Log.w(TAG, "Save clean log file", e)
             }
         }
     }
@@ -578,6 +579,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
     }
 
     companion object {
+        private const val TAG = "DownloadFragment"
         const val REQUEST_CODE_PICK_IMAGE_DIR = 0
         const val REQUEST_CODE_PICK_IMAGE_DIR_L = 1
         private const val REQUEST_CODE_PICK_DOWNLOAD_IMPORT_FILE = 2

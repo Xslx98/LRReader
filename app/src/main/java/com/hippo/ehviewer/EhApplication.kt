@@ -137,7 +137,8 @@ class EhApplication : RecordingApplication() {
                     LRRAuthManager.setActiveProfileId(activeProfile.id)
                     resolvedId = activeProfile.id
                 }
-            } catch (_: com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException) {
+            } catch (e: com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException) {
+                Log.w(TAG, "KeyStore unavailable during profile load", e)
                 // KeyStore unavailable — markReauthIfProfilesUnprotected already flagged
                 // it (or initialize() did), and MainActivity will surface the dialog.
             } catch (e: Exception) {
@@ -251,8 +252,8 @@ class EhApplication : RecordingApplication() {
         try {
             val pi = packageManager.getPackageInfo(packageName, 0)
             Settings.putVersionCode(pi.versionCode)
-        } catch (_: PackageManager.NameNotFoundException) {
-            // Ignore
+        } catch (e: PackageManager.NameNotFoundException) {
+            Log.w(TAG, "Retrieve package info for version code", e)
         }
 
         if (DEBUG_PRINT_NATIVE_MEMORY || DEBUG_PRINT_IMAGE_COUNT) {
