@@ -204,7 +204,18 @@ class GalleryListScene : BaseScene(),
                 mAdapter?.notifyItemRangeChanged(0, mAdapter?.itemCount ?: 0)
             }
             override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {}
-            override fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: List<DownloadInfo>) {}
+            override fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: List<DownloadInfo>) {
+                // Only refresh the specific item that changed instead of the entire list
+                val adapter = mAdapter ?: return
+                val count = adapter.itemCount
+                for (i in 0 until count) {
+                    val gi = adapter.getDataAt(i)
+                    if (gi != null && gi.gid == info.gid) {
+                        adapter.notifyItemChanged(i)
+                        break
+                    }
+                }
+            }
             override fun onUpdateAll() {}
             override fun onReload() {
                 mAdapter?.notifyItemRangeChanged(0, mAdapter?.itemCount ?: 0)
