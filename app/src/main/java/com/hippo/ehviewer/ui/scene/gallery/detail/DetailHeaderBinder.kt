@@ -20,7 +20,6 @@ import com.hippo.ehviewer.client.data.GalleryInfo
 import com.lanraragi.reader.client.api.data.LRRArchive
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
 import com.hippo.ehviewer.widget.ArchiverDownloadProgress
-import com.hippo.lib.yorozuya.SimpleHandler
 import com.hippo.reveal.ViewAnimationUtils
 import com.hippo.util.DrawableManager
 import com.hippo.widget.LoadImageView
@@ -98,7 +97,7 @@ internal class DetailHeaderBinder(
      */
     fun createCircularRevealOrPost(): Boolean {
         return if (!createCircularReveal()) {
-            SimpleHandler.getInstance().post { createCircularReveal() }
+            colorBg.post { createCircularReveal() }
             false
         } else {
             true

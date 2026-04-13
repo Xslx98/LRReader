@@ -43,7 +43,7 @@ import java.security.MessageDigest
         QuickSearch::class,
         ServerProfile::class
     ],
-    version = 18,
+    version = 19,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class)
@@ -65,7 +65,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "eh.db"
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19)
                     .build()
                     .also { INSTANCE = it }
             }
@@ -94,6 +94,21 @@ abstract class AppDatabase : RoomDatabase() {
         internal val MIGRATION_17_18 = object : Migration(17, 18) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("DROP TABLE IF EXISTS Gallery_Tags")
+            }
+        }
+
+        /**
+         * v18 → v19: Add indexes to LOCAL_FAVORITES, QUICK_SEARCH, and DOWNLOAD_LABELS.
+         *
+         * These tables are queried with ORDER BY TIME in several DAO methods.
+         * Adding indexes on TIME improves sort performance as the dataset grows.
+         */
+        @VisibleForTesting
+        internal val MIGRATION_18_19 = object : Migration(18, 19) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_LOCAL_FAVORITES_TIME` ON `LOCAL_FAVORITES` (`TIME`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_QUICK_SEARCH_TIME` ON `QUICK_SEARCH` (`TIME`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_DOWNLOAD_LABELS_TIME` ON `DOWNLOAD_LABELS` (`TIME`)")
             }
         }
 
