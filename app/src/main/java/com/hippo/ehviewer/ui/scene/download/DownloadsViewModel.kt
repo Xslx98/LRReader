@@ -274,24 +274,21 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
 
     /** Internal callback that routes results back to ViewModel state flows. */
     private val filterCallback = object : DownloadSearchCallback {
-        override fun onDownloadSearchSuccess(list: MutableList<DownloadInfo>?) {
-            list ?: return
-            _downloadList.value = list
+        override fun onDownloadSearchSuccess(mList: List<DownloadInfo>) {
+            _downloadList.value = mList
             _filterLoading.value = false
             _searching.value = false
             _filterSearchDone.tryEmit(Unit)
         }
 
-        override fun onDownloadListHandleSuccess(list: MutableList<DownloadInfo>?) {
-            list ?: return
-            _downloadList.value = list
+        override fun onDownloadListHandleSuccess(mList: List<DownloadInfo>) {
+            _downloadList.value = mList
             _filterLoading.value = false
             _filterSearchDone.tryEmit(Unit)
         }
 
-        override fun onDownloadSearchFailed(list: MutableList<DownloadInfo>?) {
-            list ?: return
-            _downloadList.value = list
+        override fun onDownloadSearchFailed(mList: List<DownloadInfo>) {
+            _downloadList.value = mList
             _filterLoading.value = false
             _searching.value = false
             _filterSearchDone.tryEmit(Unit)
