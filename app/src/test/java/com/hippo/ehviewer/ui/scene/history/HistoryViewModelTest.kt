@@ -8,7 +8,9 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.AppDatabase
+import com.hippo.ehviewer.dao.HistoryRepository
 import com.hippo.ehviewer.module.CoroutineModule
+import com.hippo.ehviewer.module.IDataModule
 import com.lanraragi.reader.client.api.LRRAuthManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +56,28 @@ class HistoryViewModelTest {
         ServiceRegistry.initializeForTest(CoroutineModule())
 
         LRRAuthManager.initialize(context)
+        // Initialize DB early so we can wire HistoryRepository before ViewModel creation
+        db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
+            .allowMainThreadQueries()
+            .setQueryExecutor { it.run() }
+            .setTransactionExecutor { it.run() }
+            .build()
+
+        val dbField = EhDB::class.java.getDeclaredField("sDatabase")
+        dbField.isAccessible = true
+        dbField.set(EhDB, db)
+
+        // Provide a DataModule with HistoryRepository so the ViewModel can resolve it
+        ServiceRegistry.initializeForTest(
+            data = object : IDataModule {
+                override val historyRepository get() = HistoryRepository(db.browsingDao())
+                override val downloadManager get() = throw NotImplementedError("not needed")
+                override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
+                override val galleryDetailCache get() = throw NotImplementedError("not needed")
+                override val spiderInfoCache get() = throw NotImplementedError("not needed")
+                override fun clearGalleryDetailCache() {}
+            }
+        )
         val method = LRRAuthManager::class.java.declaredMethods.first {
             it.name.startsWith("initializeForTesting") &&
                 it.parameterTypes.size == 1 &&
@@ -64,16 +88,6 @@ class HistoryViewModelTest {
             null,
             context.getSharedPreferences("lrr_auth_hist_test", Context.MODE_PRIVATE)
         )
-
-        db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
-            .allowMainThreadQueries()
-            .setQueryExecutor { it.run() }
-            .setTransactionExecutor { it.run() }
-            .build()
-
-        val dbField = EhDB::class.java.getDeclaredField("sDatabase")
-        dbField.isAccessible = true
-        dbField.set(EhDB, db)
     }
 
     @After
