@@ -117,7 +117,6 @@ class GalleryListScene : BaseScene(),
      Extracted helpers — internal visibility for GalleryListHelperFactory
      ---------------*/
     internal var filterHelper: GalleryFilterHelper? = null
-    internal var goToHelper: GalleryGoToHelper? = null
     internal var stateHelper: GalleryStateHelper? = null
     internal var tagChipHelper: GalleryTagChipHelper? = null
     internal var itemActionHelper: GalleryItemActionHelper? = null
@@ -435,7 +434,6 @@ class GalleryListScene : BaseScene(),
     private fun initHelpers(context: Context) {
         val result = GalleryListHelperFactory.create(this, context)
         filterHelper = result.filterHelper
-        goToHelper = result.goToHelper
         stateHelper = result.stateHelper
         itemActionHelper = result.itemActionHelper
         tagChipHelper = result.tagChipHelper
