@@ -56,7 +56,8 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
     init {
         updateData = try {
             updateJson.decodeFromString<UpdateInfo>(source.readUtf8())
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to parse update JSON, using defaults", e)
             UpdateInfo()
         }
     }
@@ -137,6 +138,7 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
                                 instance = AppUpdater(dataName, source)
                             }
                         } catch (e: IOException) {
+                            Log.w(TAG, "Failed to read existing update data file", e)
                             FileUtils.delete(dataFile)
                         }
                     }
@@ -197,7 +199,7 @@ class AppUpdater(private val name: String, source: okio.BufferedSource) {
                             instance = AppUpdater(dataName, source)
                         }
                     } catch (e: IOException) {
-                        // Ignore
+                        Log.w(TAG, "Failed to read updated data file", e)
                     }
                     UpdateDialog(activity).showUpdateDialog(tempUpdateData)
                     UpdateSettings.putUpdateTime(Date().time)
