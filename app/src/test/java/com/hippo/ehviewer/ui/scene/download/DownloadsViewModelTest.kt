@@ -99,6 +99,8 @@ class DownloadsViewModelTest {
             data = object : IDataModule {
                 override val downloadManager: DownloadManager get() = manager
                 override val favouriteStatusRouter get() = FavouriteStatusRouter()
+                override val historyRepository get() =
+                    com.hippo.ehviewer.dao.HistoryRepository(db.browsingDao())
                 override val galleryDetailCache get() = LruCache<Long, GalleryDetail>(10)
                 override val spiderInfoCache: SimpleDiskCache get() =
                     SimpleDiskCache(
