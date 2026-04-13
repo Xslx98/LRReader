@@ -1,7 +1,6 @@
 package com.hippo.ehviewer.ui.scene.gallery.list
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.widget.FabLayout
 
 /**
@@ -19,10 +18,8 @@ internal class GalleryFabHelper(
     private val stateHelper: () -> GalleryStateHelper?,
     private val contentHelper: () -> GalleryListDataHelper?,
     private val filterHelper: () -> GalleryFilterHelper?,
-    private val goToHelper: () -> GalleryGoToHelper?,
     private val itemActionHelper: () -> GalleryItemActionHelper?,
     private val uploadHelper: () -> GalleryUploadHelper?,
-    private val urlBuilder: () -> ListUrlBuilder?
 ) : FabLayout.OnClickFabListener, FabLayout.OnExpandListener {
 
     override fun onClickPrimaryFab(view: FabLayout, fab: FloatingActionButton) {
@@ -40,17 +37,10 @@ internal class GalleryFabHelper(
             0 -> { // Toggle multi-tag search
                 filterHelper()?.toggleFilter()
             }
-            1 -> { // Go to
-                if (helper.canGoTo()) {
-                    val builder = urlBuilder()
-                    if (builder != null && builder.mode == ListUrlBuilder.MODE_TOP_LIST) return
-                    goToHelper()?.showGoToDialog()
-                }
-            }
-            2 -> { // Refresh
+            1 -> { // Refresh
                 helper.refresh()
             }
-            3 -> { // Random
+            2 -> { // Random
                 val gInfoL = helper.data
                 if (gInfoL.isNullOrEmpty()) return
                 itemActionHelper()?.onItemClick(
@@ -58,10 +48,10 @@ internal class GalleryFabHelper(
                     gInfoL[(Math.random() * gInfoL.size).toInt()]
                 )
             }
-            4 -> { // Upload archive (LRR only)
+            3 -> { // Upload archive (LRR only)
                 uploadHelper()?.showUploadFilePicker()
             }
-            5 -> { // URL download (LRR only)
+            4 -> { // URL download (LRR only)
                 uploadHelper()?.showUrlDownloadDialog()
             }
         }

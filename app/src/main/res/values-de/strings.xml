@@ -987,7 +987,7 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="reset_to_default">Auf Standard zurücksetzen</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="search_sp_suffix" />
-    <string name="settings_about_author_summary" translatable="false">LR Reader Contributors</string>
+    <string name="settings_about_author_summary" translatable="false">Xslx98</string>
     <string name="settings_download_clean_invalid_download">Ungültige Downloads bereinigen</string>
     <string name="settings_download_clean_invalid_download_summary">Ungültige Download-Einträge entfernen</string>
     <string name="settings_eh_system_theme">Systemdesign</string>
