@@ -81,11 +81,11 @@ class GalleryListScene : BaseScene(),
     /*---------------
      View life cycle — internal visibility for GalleryListHelperFactory
      ---------------*/
-    internal var recyclerView: EasyRecyclerView? = null
-    internal var searchLayout: SearchLayout? = null
-    internal var searchBar: SearchBar? = null
-    internal var searchFab: View? = null
-    internal var fabLayout: FabLayout? = null
+    internal lateinit var recyclerView: EasyRecyclerView
+    internal lateinit var searchLayout: SearchLayout
+    internal lateinit var searchBar: SearchBar
+    internal lateinit var searchFab: View
+    internal lateinit var fabLayout: FabLayout
     internal var floatingActionButton: FloatingActionButton? = null
     internal var viewTransition: ViewTransition? = null
     private var mAdapterImpl: GalleryListAdapter? = null
@@ -144,32 +144,33 @@ class GalleryListScene : BaseScene(),
     }
 
     private fun handleArgs(args: Bundle?) {
-        if (args == null || mUrlBuilder == null) {
+        val urlBuilder = mUrlBuilder
+        if (args == null || urlBuilder == null) {
             return
         }
 
         val action = args.getString(KEY_ACTION)
         when {
             ACTION_HOMEPAGE == action -> {
-                mUrlBuilder!!.reset()
+                urlBuilder.reset()
             }
             ACTION_SUBSCRIPTION == action -> {
-                mUrlBuilder!!.reset()
-                mUrlBuilder!!.mode = ListUrlBuilder.MODE_SUBSCRIPTION
+                urlBuilder.reset()
+                urlBuilder.mode = ListUrlBuilder.MODE_SUBSCRIPTION
             }
             ACTION_WHATS_HOT == action -> {
-                mUrlBuilder!!.reset()
-                mUrlBuilder!!.mode = ListUrlBuilder.MODE_WHATS_HOT
+                urlBuilder.reset()
+                urlBuilder.mode = ListUrlBuilder.MODE_WHATS_HOT
             }
             ACTION_LIST_URL_BUILDER == action -> {
                 val builder: ListUrlBuilder? = args.getParcelable(KEY_LIST_URL_BUILDER)
                 if (builder != null) {
-                    mUrlBuilder!!.set(builder)
+                    urlBuilder.set(builder)
                 }
             }
             ACTION_TOP_LIST == action -> {
-                mUrlBuilder!!.reset()
-                mUrlBuilder!!.mode = ListUrlBuilder.MODE_NORMAL
+                urlBuilder.reset()
+                urlBuilder.mode = ListUrlBuilder.MODE_NORMAL
             }
         }
     }
@@ -242,7 +243,7 @@ class GalleryListScene : BaseScene(),
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
-        val hasFirstRefresh = if (mHelper != null && 1 == mHelper!!.shownViewIndex) {
+        val hasFirstRefresh = if (mHelper != null && 1 == mHelper?.shownViewIndex) {
             false
         } else {
             mHasFirstRefresh
@@ -283,26 +284,26 @@ class GalleryListScene : BaseScene(),
     fun onUpdateUrlBuilder() {
         val builder = mUrlBuilder
         val resources = resources2
-        if (resources == null || builder == null || searchLayout == null) {
+        if (resources == null || builder == null || !::searchLayout.isInitialized) {
             return
         }
 
         var keyword = builder.keyword
         val category = builder.category
 
-        if (!keyword.isNullOrEmpty() && searchBar != null) {
+        if (!keyword.isNullOrEmpty() && ::searchBar.isInitialized) {
             if (builder.mode == ListUrlBuilder.MODE_TAG) {
                 keyword = GallerySearchHelper.wrapTagKeyword(keyword)
             }
-            searchBar!!.setText(keyword)
-            searchBar!!.cursorToEnd()
+            searchBar.setText(keyword)
+            searchBar.cursorToEnd()
         }
 
         var title = GallerySearchHelper.getSuitableTitleForUrlBuilder(resources, builder, true)
         if (title == null) {
             title = resources.getString(R.string.search)
         }
-        searchBar?.setTitle(title)
+        if (::searchBar.isInitialized) searchBar.setTitle(title)
 
         val checkedItemId = if (ListUrlBuilder.MODE_NORMAL == builder.mode &&
             EhUtils.NONE == category &&
@@ -348,29 +349,29 @@ class GalleryListScene : BaseScene(),
         // Initialize helpers
         initHelpers(context)
 
-        filterHelper!!.updateFilterIcon(filterHelper!!.filterTagList.size)
+        filterHelper?.updateFilterIcon(filterHelper?.filterTagList?.size ?: 0)
 
         contentLayout.setHelper(mHelper)
         contentLayout.fastScroller.setOnDragHandlerListener(searchBarHelper)
 
         mAdapterImpl = GalleryListAdapter(
             inflater, resources,
-            recyclerView!!, AppearanceSettings.getListMode()
+            recyclerView, AppearanceSettings.getListMode()
         )
-        mAdapterImpl!!.setThumbItemClickListener(object : GalleryAdapterNew.OnThumbItemClickListener {
+        mAdapterImpl?.setThumbItemClickListener(object : GalleryAdapterNew.OnThumbItemClickListener {
             override fun onThumbItemClick(position: Int, view: View, gi: GalleryInfoUi?) {
                 tagChipHelper?.onThumbItemClick(position, view, gi)
             }
         })
-        recyclerView!!.selector = Ripple.generateRippleDrawable(
+        recyclerView.selector = Ripple.generateRippleDrawable(
             context, !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme),
             ColorDrawable(Color.TRANSPARENT)
         )
-        recyclerView!!.setDrawSelectorOnTop(true)
-        recyclerView!!.setClipToPadding(false)
-        recyclerView!!.setOnItemClickListener(this)
-        recyclerView!!.setOnItemLongClickListener(this)
-        recyclerView!!.addOnScrollListener(mOnScrollListener)
+        recyclerView.setDrawSelectorOnTop(true)
+        recyclerView.setClipToPadding(false)
+        recyclerView.setOnItemClickListener(this)
+        recyclerView.setOnItemLongClickListener(this)
+        recyclerView.addOnScrollListener(mOnScrollListener)
         fastScroller.setPadding(
             fastScroller.paddingLeft, fastScroller.paddingTop + paddingTopSB,
             fastScroller.paddingRight, fastScroller.paddingBottom
@@ -380,36 +381,36 @@ class GalleryListScene : BaseScene(),
 
         leftDrawable = DrawerArrowDrawable(context, AttrResources.getAttrColor(context, R.attr.drawableColorPrimary))
         rightDrawable = AddDeleteDrawable(context, AttrResources.getAttrColor(context, R.attr.drawableColorPrimary))
-        searchBar!!.setLeftDrawable(leftDrawable)
-        searchBar!!.setRightDrawable(rightDrawable)
-        searchBar!!.setHelper(searchBarHelper)
-        searchBar!!.setOnStateChangeListener(searchBarHelper)
-        GallerySearchHelper.setSearchBarHint(context, searchBar!!)
-        searchBar!!.setSuggestionProvider(mSearchHelper!!.createSuggestionProvider())
+        searchBar.setLeftDrawable(leftDrawable)
+        searchBar.setRightDrawable(rightDrawable)
+        searchBar.setHelper(searchBarHelper)
+        searchBar.setOnStateChangeListener(searchBarHelper)
+        GallerySearchHelper.setSearchBarHint(context, searchBar)
+        mSearchHelper?.let { searchBar.setSuggestionProvider(it.createSuggestionProvider()) }
 
-        searchLayout!!.setHelper(searchBarHelper)
-        searchLayout!!.setPadding(
-            searchLayout!!.paddingLeft, searchLayout!!.paddingTop + paddingTopSB,
-            searchLayout!!.paddingRight, searchLayout!!.paddingBottom + paddingBottomFab
+        searchLayout.setHelper(searchBarHelper)
+        searchLayout.setPadding(
+            searchLayout.paddingLeft, searchLayout.paddingTop + paddingTopSB,
+            searchLayout.paddingRight, searchLayout.paddingBottom + paddingBottomFab
         )
 
-        fabLayout!!.setAutoCancel(true)
-        fabLayout!!.isExpanded = false
-        fabLayout!!.setHidePrimaryFab(false)
-        fabLayout!!.setOnClickFabListener(mFabHelper)
-        fabLayout!!.setOnExpandListener(mFabHelper)
-        addAboveSnackView(fabLayout!!)
+        fabLayout.setAutoCancel(true)
+        fabLayout.isExpanded = false
+        fabLayout.setHidePrimaryFab(false)
+        fabLayout.setOnClickFabListener(mFabHelper)
+        fabLayout.setOnExpandListener(mFabHelper)
+        addAboveSnackView(fabLayout)
 
         actionFabDrawable = AddDeleteDrawable(context, resources.getColor(R.color.primary_drawable_dark, null))
-        fabLayout!!.primaryFab.setImageDrawable(actionFabDrawable)
+        fabLayout.primaryFab.setImageDrawable(actionFabDrawable)
 
-        searchFab!!.setOnClickListener(this)
+        searchFab.setOnClickListener(this)
 
         if (LRRAuthManager.getServerUrl() == null) {
             val fabUpload: FloatingActionButton? = mainLayout.findViewById(R.id.fab_upload)
             val fabUrlDownload: FloatingActionButton? = mainLayout.findViewById(R.id.fab_url_download)
-            if (fabUpload != null) fabLayout!!.removeView(fabUpload)
-            if (fabUrlDownload != null) fabLayout!!.removeView(fabUrlDownload)
+            if (fabUpload != null) fabLayout.removeView(fabUpload)
+            if (fabUrlDownload != null) fabLayout.removeView(fabUrlDownload)
         }
 
         searchBarMover = SearchBarMover(searchBarHelper, searchBar, recyclerView, searchLayout)
@@ -423,7 +424,7 @@ class GalleryListScene : BaseScene(),
 
         if (!mHasFirstRefresh) {
             mHasFirstRefresh = true
-            mHelper!!.firstRefresh()
+            mHelper?.firstRefresh()
         }
 
         guideQuickSearch()
@@ -483,29 +484,23 @@ class GalleryListScene : BaseScene(),
             ViewUtils.removeFromParent(mShowcaseView)
             mShowcaseView = null
         }
-        if (searchBarMover != null) {
-            searchBarMover!!.cancelAnimation()
-            searchBarMover = null
-        }
-        if (mHelper != null) {
-            mHelper!!.destroy()
-            if (1 == mHelper!!.shownViewIndex) {
+        searchBarMover?.cancelAnimation()
+        searchBarMover = null
+        val helper = mHelper
+        if (helper != null) {
+            helper.destroy()
+            if (1 == helper.shownViewIndex) {
                 mHasFirstRefresh = false
             }
         }
-        if (recyclerView != null) {
-            recyclerView!!.stopScroll()
-            recyclerView = null
+        if (::recyclerView.isInitialized) {
+            recyclerView.stopScroll()
         }
-        if (fabLayout != null) {
-            removeAboveSnackView(fabLayout!!)
-            fabLayout = null
+        if (::fabLayout.isInitialized) {
+            removeAboveSnackView(fabLayout)
         }
 
         mAdapterImpl = null
-        searchLayout = null
-        searchBar = null
-        searchFab = null
         viewTransition = null
         leftDrawable = null
         rightDrawable = null
@@ -563,9 +558,9 @@ class GalleryListScene : BaseScene(),
 
     override fun onResume() {
         super.onResume()
-        if (adapter != null) {
-            adapter!!.setType(AppearanceSettings.getListMode())
-            adapter!!.refreshColumnSize()
+        adapter?.let {
+            it.setType(AppearanceSettings.getListMode())
+            it.refreshColumnSize()
         }
         mDrawerHelper?.onResume()
 
@@ -583,22 +578,23 @@ class GalleryListScene : BaseScene(),
             return
         }
 
-        if (fabLayout != null && fabLayout!!.isExpanded) {
-            fabLayout!!.isExpanded = false
+        if (::fabLayout.isInitialized && fabLayout.isExpanded) {
+            fabLayout.isExpanded = false
             return
         }
 
         val filterHelper = filterHelper
-        if (filterHelper != null && filterHelper.filterOpen && filterHelper.removeLastFilterTag()) {
-            mUrlBuilder!!.set(
+        val urlBuilder = mUrlBuilder
+        if (filterHelper != null && urlBuilder != null && filterHelper.filterOpen && filterHelper.removeLastFilterTag()) {
+            urlBuilder.set(
                 filterHelper.listToString(filterHelper.filterTagList),
                 ListUrlBuilder.MODE_FILTER
             )
             filterHelper.updateFilterIcon(filterHelper.filterTagList.size)
 
-            mUrlBuilder!!.pageIndex = 0
+            urlBuilder.pageIndex = 0
             onUpdateUrlBuilder()
-            mHelper!!.refresh()
+            mHelper?.refresh()
             stateHelper?.setState(GalleryStateHelper.STATE_NORMAL)
             return
         }
@@ -625,12 +621,13 @@ class GalleryListScene : BaseScene(),
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (REQUEST_CODE_SELECT_IMAGE == requestCode) {
-            if (Activity.RESULT_OK == resultCode && searchLayout != null && data != null) {
-                searchLayout!!.setImageUri(data.data)
+            if (Activity.RESULT_OK == resultCode && ::searchLayout.isInitialized && data != null) {
+                searchLayout.setImageUri(data.data)
             }
         } else if (REQUEST_CODE_UPLOAD_ARCHIVE == requestCode) {
-            if (Activity.RESULT_OK == resultCode && data?.data != null) {
-                uploadHelper?.handleUploadResult(data.data!!)
+            val uri = data?.data
+            if (Activity.RESULT_OK == resultCode && uri != null) {
+                uploadHelper?.handleUploadResult(uri)
             }
         } else {
             super.onActivityResult(requestCode, resultCode, data)
