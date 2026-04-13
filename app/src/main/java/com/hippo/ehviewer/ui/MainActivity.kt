@@ -18,6 +18,7 @@ package com.hippo.ehviewer.ui
 
 import android.annotation.SuppressLint
 import android.content.ClipboardManager
+import android.util.Log
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -99,6 +100,7 @@ class MainActivity : StageActivity(),
     NavigationView.OnNavigationItemSelectedListener, ImageChangeCallBack, DrawerLayout.DrawerListener {
 
     companion object {
+        private const val TAG = "MainActivity"
         private const val PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE = 0
         private const val REQUEST_CODE_SETTINGS = 0
         private const val KEY_NAV_CHECKED_ITEM = "nav_checked_item"
@@ -818,13 +820,17 @@ class MainActivity : StageActivity(),
             R.id.nav_server_config -> {
                 // Show server list if profiles exist, otherwise direct to config
                 lifecycleScope.launch {
-                    val profileCount = withContext(Dispatchers.IO) {
-                        EhDB.getAllServerProfilesAsync().size
-                    }
-                    if (profileCount > 0) {
-                        startScene(Announcer(ServerListScene::class.java))
-                    } else {
-                        startScene(Announcer(ServerConfigScene::class.java))
+                    try {
+                        val profileCount = withContext(Dispatchers.IO) {
+                            EhDB.getAllServerProfilesAsync().size
+                        }
+                        if (profileCount > 0) {
+                            startScene(Announcer(ServerListScene::class.java))
+                        } else {
+                            startScene(Announcer(ServerConfigScene::class.java))
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to load server profiles", e)
                     }
                 }
             }

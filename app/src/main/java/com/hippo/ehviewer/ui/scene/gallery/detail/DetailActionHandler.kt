@@ -2,6 +2,7 @@ package com.hippo.ehviewer.ui.scene.gallery.detail
 
 import android.content.Context
 import android.text.TextUtils
+import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.widget.ImageView
@@ -128,10 +129,14 @@ internal class DetailActionHandler(
                 val galleryInfo: GalleryInfo? = viewModel.galleryInfo.value ?: viewModel.galleryDetail.value
                 if (galleryInfo != null) {
                     lifecycleOwner.lifecycleScope.launch {
-                        val intent = withContext(Dispatchers.IO) {
-                            GalleryOpenHelper.buildReadIntent(activity, galleryInfo)
+                        try {
+                            val intent = withContext(Dispatchers.IO) {
+                                GalleryOpenHelper.buildReadIntent(activity, galleryInfo)
+                            }
+                            scene.startActivity(intent)
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to build read intent", e)
                         }
-                        scene.startActivity(intent)
                     }
                 }
             }
@@ -236,5 +241,9 @@ internal class DetailActionHandler(
         popupMenu = null
         otherActions = null
         download = null
+    }
+
+    companion object {
+        private const val TAG = "DetailActionHandler"
     }
 }

@@ -2,6 +2,7 @@ package com.hippo.ehviewer.ui.scene.gallery.detail
 
 import android.content.Context
 import android.graphics.drawable.Drawable
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -161,20 +162,24 @@ internal class DetailHeaderBinder(
     fun updateFavoriteDrawable(gd: GalleryDetail?) {
         if (gd == null) return
         lifecycleOwner.lifecycleScope.launch {
-            val isFav = gd.isFavorited || viewModel.isLocalFavorite(gd.gid)
-            heart.post {
-                if (isFav) {
-                    heart.visibility = View.VISIBLE
-                    if (gd.favoriteName == null) {
-                        heart.setText(R.string.local_favorites)
+            try {
+                val isFav = gd.isFavorited || viewModel.isLocalFavorite(gd.gid)
+                heart.post {
+                    if (isFav) {
+                        heart.visibility = View.VISIBLE
+                        if (gd.favoriteName == null) {
+                            heart.setText(R.string.local_favorites)
+                        } else {
+                            heart.text = gd.favoriteName
+                        }
+                        heartOutline.visibility = View.GONE
                     } else {
-                        heart.text = gd.favoriteName
+                        heart.visibility = View.GONE
+                        heartOutline.visibility = View.VISIBLE
                     }
-                    heartOutline.visibility = View.GONE
-                } else {
-                    heart.visibility = View.GONE
-                    heartOutline.visibility = View.VISIBLE
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to update favorite drawable", e)
             }
         }
     }
@@ -195,5 +200,9 @@ internal class DetailHeaderBinder(
             ViewCompat.setTransitionName(title, TransitionNameFactory.getTitleTransitionName(gid))
             ViewCompat.setTransitionName(uploader, TransitionNameFactory.getUploaderTransitionName(gid))
         }
+    }
+
+    companion object {
+        private const val TAG = "DetailHeaderBinder"
     }
 }

@@ -13,6 +13,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.textfield.TextInputLayout
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.LRRUrlHelper
@@ -82,23 +83,23 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
         }
 
         // Observe ViewModel events
-        lifecycleScope.launch {
+        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
             viewModel.connectSuccess.collect { result ->
                 handleConnectSuccess(result)
             }
         }
-        lifecycleScope.launch {
+        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
             viewModel.connectFailure.collect { e ->
                 handleConnectFailure(e)
             }
         }
-        lifecycleScope.launch {
+        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
             viewModel.secureStorageError.collect {
                 hideProgress()
                 showSecureStorageErrorDialog()
             }
         }
-        lifecycleScope.launch {
+        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
             viewModel.connecting.collect { isConnecting ->
                 if (!isConnecting) {
                     hideProgress()
