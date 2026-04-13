@@ -4,6 +4,7 @@ import androidx.collection.LruCache
 import com.hippo.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.client.data.GalleryDetail
+import com.hippo.ehviewer.dao.HistoryRepository
 import com.hippo.ehviewer.download.DownloadManager
 
 /**
@@ -18,6 +19,9 @@ interface IDataModule {
 
     /** Global download state manager and persistence gateway. */
     val downloadManager: DownloadManager
+
+    /** History domain repository backed by [com.hippo.ehviewer.dao.BrowsingRoomDao]. */
+    val historyRepository: HistoryRepository
 
     /** LRU cache for [GalleryDetail] objects keyed by gid. */
     val galleryDetailCache: LruCache<Long, GalleryDetail>
