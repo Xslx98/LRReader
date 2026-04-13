@@ -9,6 +9,7 @@ import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicLong
 import java.security.GeneralSecurityException
 import java.security.KeyStore
 import java.security.MessageDigest
@@ -84,15 +85,16 @@ object LRRAuthManager {
      * is modified (URL, API key, name, cleartext flag). Observers compare against
      * their last-seen value to detect changes and trigger a refresh.
      */
-    @Volatile
+    private val _serverConfigVersion = AtomicLong(0L)
+
     @JvmStatic
-    var serverConfigVersion: Long = 0L
-        private set
+    val serverConfigVersion: Long
+        get() = _serverConfigVersion.get()
 
     /** Bump the config version. Call after any active-profile credential write. */
     @JvmStatic
     fun bumpServerConfigVersion() {
-        serverConfigVersion++
+        _serverConfigVersion.incrementAndGet()
     }
 
     /** Overridable clock source for testing lockout logic. */
