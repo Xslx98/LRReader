@@ -75,8 +75,8 @@ class EhApplication : RecordingApplication() {
                     else -> null
                 }
             }
-        } catch (_: Exception) {
-            // First launch or preference not yet available — use system locale
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to read language preference, using system locale", e)
         }
 
         if (locale == null) {
@@ -102,7 +102,8 @@ class EhApplication : RecordingApplication() {
                 if (!initialized || PrivacySettings.getSaveCrashLog()) {
                     Crash.saveCrashLog(instance, e)
                 }
-            } catch (_: Throwable) {
+            } catch (e: Throwable) {
+                Log.e(TAG, "Failed to save crash log", e)
             }
 
             handler?.uncaughtException(t, e)
@@ -139,8 +140,8 @@ class EhApplication : RecordingApplication() {
             } catch (_: com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException) {
                 // KeyStore unavailable — markReauthIfProfilesUnprotected already flagged
                 // it (or initialize() did), and MainActivity will surface the dialog.
-            } catch (_: Exception) {
-                // DB not ready yet on first launch — safe to ignore
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to load server profiles during init", e)
             } finally {
                 // Always complete the deferred so awaiters never hang, even on the
                 // failure path. complete() is a no-op if already completed.
@@ -199,7 +200,8 @@ class EhApplication : RecordingApplication() {
 
             try {
                 AppConfig.deleteOldParseErrorFiles()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to delete old parse error files", e)
             }
 
             // Migrate downloads from old app-private path to user-visible location.

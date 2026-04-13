@@ -1,6 +1,7 @@
 package com.hippo.ehviewer.module
 
 import android.content.Context
+import android.util.Log
 import androidx.collection.LruCache
 import com.hippo.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.FavouriteStatusRouter
@@ -14,6 +15,10 @@ import java.io.File
  * Extracted from EhApplication to reduce its responsibility scope.
  */
 class DataModule(private val context: Context) : IDataModule, Cacheable {
+
+    companion object {
+        private const val TAG = "DataModule"
+    }
 
     override val favouriteStatusRouter: FavouriteStatusRouter by lazy { FavouriteStatusRouter() }
 
@@ -37,6 +42,6 @@ class DataModule(private val context: Context) : IDataModule, Cacheable {
 
     override fun clearCache() {
         galleryDetailCache.evictAll()
-        try { spiderInfoCache.clear() } catch (_: Exception) {}
+        try { spiderInfoCache.clear() } catch (e: Exception) { Log.w(TAG, "Failed to clear spider info cache", e) }
     }
 }

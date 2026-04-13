@@ -28,6 +28,7 @@ import android.text.Editable
 import android.text.TextUtils
 import android.text.TextWatcher
 import android.util.AttributeSet
+import android.util.Log
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
@@ -64,6 +65,8 @@ class SearchBar : CardView,
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
     companion object {
+        private const val TAG = "SearchBar"
+
         private const val STATE_KEY_SUPER = "super"
         private const val STATE_KEY_STATE = "state"
 
@@ -430,8 +433,8 @@ class SearchBar : CardView,
                     // Refresh suggestions on the UI thread once cache is ready
                     post { updateSuggestions(false) }
                 }
-            } catch (_: Exception) {
-                // ServiceRegistry may not be initialized in some edge cases
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to pre-populate LRR tag cache", e)
             }
         }
         // update suggestion for show suggestions list
