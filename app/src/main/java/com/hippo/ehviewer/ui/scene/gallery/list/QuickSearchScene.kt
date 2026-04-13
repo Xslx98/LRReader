@@ -19,6 +19,7 @@ package com.hippo.ehviewer.ui.scene.gallery.list
 import android.content.Context
 import android.graphics.drawable.NinePatchDrawable
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -65,10 +66,14 @@ class QuickSearchScene : ToolbarScene() {
         super.onCreate(savedInstanceState)
         mQuickSearchList = mutableListOf()
         lifecycleScope.launch {
-            val result = withContext(Dispatchers.IO) { EhDB.getAllQuickSearchAsync() }
-            mQuickSearchList = result.toMutableList()
-            if (result.isNotEmpty()) {
-                mAdapter?.notifyItemRangeInserted(0, result.size)
+            try {
+                val result = withContext(Dispatchers.IO) { EhDB.getAllQuickSearchAsync() }
+                mQuickSearchList = result.toMutableList()
+                if (result.isNotEmpty()) {
+                    mAdapter?.notifyItemRangeInserted(0, result.size)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to load quick searches", e)
             }
         }
     }
@@ -237,5 +242,9 @@ class QuickSearchScene : ToolbarScene() {
         override fun onItemDragStarted(position: Int) {}
 
         override fun onItemDragFinished(fromPosition: Int, toPosition: Int, result: Boolean) {}
+    }
+
+    companion object {
+        private const val TAG = "QuickSearchScene"
     }
 }

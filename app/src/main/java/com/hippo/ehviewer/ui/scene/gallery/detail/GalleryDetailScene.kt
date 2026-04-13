@@ -33,6 +33,7 @@ import com.hippo.drawerlayout.DrawerLayout
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.ServiceRegistry
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.client.data.GalleryDetail
@@ -432,20 +433,20 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         super.onViewCreated(view, savedInstanceState)
 
         // Observe gallery detail updates from ViewModel (replaces RequestHelper callback)
-        lifecycleScope.launch {
+        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
             viewModel.galleryDetail.collect { detail ->
                 if (detail != null && mState != STATE_NORMAL) {
                     onGetGalleryDetailSuccess(detail)
                 }
             }
         }
-        lifecycleScope.launch {
+        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
             viewModel.detailError.collect { e ->
                 onGetGalleryDetailFailure(e)
             }
         }
         // Observe download state changes from ViewModel (replaces DownloadHelper listener)
-        lifecycleScope.launch {
+        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
             viewModel.downloadState.collect {
                 mActionHandler?.updateDownloadText()
             }
