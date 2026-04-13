@@ -48,7 +48,7 @@ import com.hippo.easyrecyclerview.HandlerDrawable
 import com.hippo.easyrecyclerview.MarginItemDecoration
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.EhCacheKeyFactory
+import com.hippo.ehviewer.client.LRRCacheKeyFactory
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.ui.CommonOperations
@@ -345,7 +345,7 @@ class HistoryScene : ToolbarScene(),
             if (position >= list.size) return
 
             val gi = list[position]
-            holder.thumb.load(EhCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
+            holder.thumb.load(LRRCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
             holder.title.text = EhUtils.getSuitableTitle(gi)
             holder.uploader.text = gi.uploader
             holder.rating.setRating(gi.rating)
