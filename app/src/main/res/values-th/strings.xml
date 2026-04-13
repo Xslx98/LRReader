@@ -1111,7 +1111,7 @@
         <item>อ่านล่าสุด</item>
         <item>ศิลปิน</item>
         <item>กลุ่ม</item>
-        <item>พาโรดี</item>
+        <item>คะแนน</item>
     </string-array>
     <string-array name="lrr_sort_by_values">
         <item>title</item>
@@ -1119,7 +1119,7 @@
         <item>lastread</item>
         <item>artist</item>
         <item>group</item>
-        <item>parody</item>
+        <item>rating</item>
     </string-array>
     <string-array name="lrr_sort_order_entries">
         <item>จากน้อยไปมาก</item>

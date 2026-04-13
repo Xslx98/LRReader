@@ -1136,7 +1136,7 @@
         <item>上次閱讀</item>
         <item>藝術家</item>
         <item>群組</item>
-        <item>仿作</item>
+        <item>評分</item>
     </string-array>
     <string-array name="lrr_sort_by_values">
         <item>title</item>
@@ -1144,7 +1144,7 @@
         <item>lastread</item>
         <item>artist</item>
         <item>group</item>
-        <item>parody</item>
+        <item>rating</item>
     </string-array>
     <string-array name="lrr_sort_order_entries">
         <item>升序</item>

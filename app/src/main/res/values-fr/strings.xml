@@ -1110,7 +1110,7 @@ Cette action est irréversible.</string>
         <item>Dernière lecture</item>
         <item>Artiste</item>
         <item>Groupe</item>
-        <item>Parodie</item>
+        <item>Note</item>
     </string-array>
     <string-array name="lrr_sort_by_values">
         <item>title</item>
@@ -1118,7 +1118,7 @@ Cette action est irréversible.</string>
         <item>lastread</item>
         <item>artist</item>
         <item>group</item>
-        <item>parody</item>
+        <item>rating</item>
     </string-array>
     <string-array name="lrr_sort_order_entries">
         <item>Ascendant</item>

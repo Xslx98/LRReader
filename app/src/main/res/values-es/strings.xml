@@ -1104,7 +1104,7 @@ Esta acción no se puede deshacer.</string>
         <item>Última lectura</item>
         <item>Artista</item>
         <item>Grupo</item>
-        <item>Parodia</item>
+        <item>Valoración</item>
     </string-array>
     <string-array name="lrr_sort_by_values">
         <item>title</item>
@@ -1112,7 +1112,7 @@ Esta acción no se puede deshacer.</string>
         <item>lastread</item>
         <item>artist</item>
         <item>group</item>
-        <item>parody</item>
+        <item>rating</item>
     </string-array>
     <string-array name="lrr_sort_order_entries">
         <item>Ascendente</item>
