@@ -23,7 +23,7 @@ import android.net.Uri
 import android.provider.Browser
 import android.text.TextUtils
 import android.widget.Toast
-import com.hippo.ehviewer.client.EhUrlOpener
+import com.hippo.ehviewer.client.LRRUrlOpener
 import com.hippo.ehviewer.ui.MainActivity
 import com.hippo.scene.StageActivity
 import com.hippo.util.ExceptionUtils
@@ -44,7 +44,7 @@ object UrlOpener {
         val uri = Uri.parse(url)
 
         if (ehUrl) {
-            val announcer = EhUrlOpener.parseUrl(url)
+            val announcer = LRRUrlOpener.parseUrl(url)
             if (announcer != null) {
                 val intent = Intent(context, MainActivity::class.java).apply {
                     action = StageActivity.ACTION_START_SCENE
