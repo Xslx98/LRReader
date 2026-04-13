@@ -18,12 +18,12 @@ import org.robolectric.annotation.Config
  * Room database schema integrity and DAO CRUD tests.
  *
  * These tests ensure:
- * 1. The Room-managed schema creates all 11 tables correctly
+ * 1. The Room-managed schema creates all 7 tables correctly
  * 2. Column defaults (e.g., SERVER_PROFILE_ID) work as expected
  * 3. Basic CRUD operations work for all 3 DAOs
  * 4. Data roundtrip through Room Entity ↔ SQLite is correct
  *
- * When future migrations are added (v9 → v10, etc.), add migration-specific
+ * When future migrations are added, add migration-specific
  * tests using MigrationTestHelper with androidTest instrumentation.
  *
  * Run with: ./gradlew testAppReleaseDebugUnitTest --tests "*.RoomMigrationTest"
@@ -111,6 +111,25 @@ class RoomMigrationTest {
         assertTrue(cur2.moveToFirst())
         assertEquals(0, cur2.getInt(0))
         cur2.close()
+    }
+
+    @Test
+    fun `schema has v19 indexes on LOCAL_FAVORITES, QUICK_SEARCH, DOWNLOAD_LABELS`() {
+        val cursor = sqliteDb.query(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name NOT LIKE 'sqlite_%'"
+        )
+        val indexes = mutableSetOf<String>()
+        while (cursor.moveToNext()) {
+            indexes.add(cursor.getString(0))
+        }
+        cursor.close()
+
+        assertTrue("index_LOCAL_FAVORITES_TIME should exist",
+            indexes.contains("index_LOCAL_FAVORITES_TIME"))
+        assertTrue("index_QUICK_SEARCH_TIME should exist",
+            indexes.contains("index_QUICK_SEARCH_TIME"))
+        assertTrue("index_DOWNLOAD_LABELS_TIME should exist",
+            indexes.contains("index_DOWNLOAD_LABELS_TIME"))
     }
 
     // ========== DownloadRoomDao CRUD Tests ==========
