@@ -47,6 +47,7 @@ import com.hippo.easyrecyclerview.FastScroller
 import com.hippo.easyrecyclerview.HandlerDrawable
 import com.hippo.easyrecyclerview.MarginItemDecoration
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.EhCacheKeyFactory
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.settings.AppearanceSettings
@@ -155,7 +156,7 @@ class HistoryScene : ToolbarScene(),
         fastScroller.setHandlerDrawable(handlerDrawable)
 
         // Observe ViewModel list updates for DiffUtil dispatch
-        lifecycleScope.launch {
+        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
             viewModel.listUpdate.collect { update ->
                 val adapterRef = mAdapter ?: return@collect
                 update.diffResult.dispatchUpdatesTo(adapterRef)
