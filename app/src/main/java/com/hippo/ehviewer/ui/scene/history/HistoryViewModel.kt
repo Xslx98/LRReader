@@ -4,8 +4,9 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.DiffUtil
-import com.hippo.ehviewer.EhDB
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.HistoryInfo
+import com.hippo.ehviewer.dao.HistoryRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +25,9 @@ import kotlinx.coroutines.withContext
  * adapter updates. View references, adapters, and navigation remain in the Scene.
  */
 class HistoryViewModel : ViewModel() {
+
+    private val historyRepository: HistoryRepository =
+        ServiceRegistry.dataModule.historyRepository
 
     // -------------------------------------------------------------------------
     // History list state
@@ -76,7 +80,7 @@ class HistoryViewModel : ViewModel() {
     fun loadHistory() {
         viewModelScope.launch {
             try {
-                val lazyList = withContext(Dispatchers.IO) { EhDB.getHistoryLazyListAsync() }
+                val lazyList = withContext(Dispatchers.IO) { historyRepository.getHistoryLazyList() }
                 val newList = ArrayList(lazyList)
                 val diff = DiffUtil.calculateDiff(
                     HistoryInfoDiffCallback(lastSnapshot, newList)
@@ -110,7 +114,7 @@ class HistoryViewModel : ViewModel() {
     fun deleteHistoryItem(info: HistoryInfo) {
         viewModelScope.launch {
             try {
-                withContext(Dispatchers.IO) { EhDB.deleteHistoryInfoAsync(info) }
+                withContext(Dispatchers.IO) { historyRepository.deleteHistoryInfo(info) }
                 loadHistory()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to delete history item", e)
@@ -124,7 +128,7 @@ class HistoryViewModel : ViewModel() {
     fun clearAllHistory() {
         viewModelScope.launch {
             try {
-                withContext(Dispatchers.IO) { EhDB.clearHistoryInfoAsync() }
+                withContext(Dispatchers.IO) { historyRepository.clearHistory() }
                 loadHistory()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to clear history", e)
