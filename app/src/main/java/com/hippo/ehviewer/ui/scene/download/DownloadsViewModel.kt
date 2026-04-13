@@ -112,10 +112,10 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     // Download list state
     // -------------------------------------------------------------------------
 
-    private val _downloadList = MutableStateFlow<MutableList<DownloadInfo>>(mutableListOf())
+    private val _downloadList = MutableStateFlow<List<DownloadInfo>>(emptyList())
 
     /** The current (possibly filtered/sorted) list of downloads for the active label. */
-    val downloadList: StateFlow<MutableList<DownloadInfo>> = _downloadList.asStateFlow()
+    val downloadList: StateFlow<List<DownloadInfo>> = _downloadList.asStateFlow()
 
     private val _backList = MutableStateFlow<List<DownloadInfo>>(emptyList())
 
@@ -184,18 +184,17 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
      * Refreshes the download list for the current label from [DownloadManager].
      * Also resets the back-list (unfiltered source) and persists the label choice.
      */
-    @Suppress("UNCHECKED_CAST")
     fun updateForLabel() {
         val label = _currentLabel.value
 
-        val list: MutableList<DownloadInfo> = if (label == null) {
-            downloadManager.defaultDownloadInfoList as MutableList<DownloadInfo>
+        val list: List<DownloadInfo> = if (label == null) {
+            downloadManager.defaultDownloadInfoList
         } else {
-            val labelList = downloadManager.getLabelDownloadInfoList(label) as? MutableList<DownloadInfo>
+            val labelList = downloadManager.getLabelDownloadInfoList(label)
             if (labelList == null) {
                 // Label no longer exists, fall back to default
                 _currentLabel.value = null
-                downloadManager.defaultDownloadInfoList as MutableList<DownloadInfo>
+                downloadManager.defaultDownloadInfoList
             } else {
                 labelList
             }
@@ -229,7 +228,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     /**
      * Replaces the current download list.
      */
-    fun setDownloadList(list: MutableList<DownloadInfo>) {
+    fun setDownloadList(list: List<DownloadInfo>) {
         _downloadList.value = list
     }
 
