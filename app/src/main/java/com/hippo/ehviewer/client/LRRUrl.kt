@@ -24,7 +24,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 /**
  * appurl请求设置
  */
-object EhUrl {
+object LRRUrl {
 
     const val SITE_E = 0
     const val SITE_EX = 1
