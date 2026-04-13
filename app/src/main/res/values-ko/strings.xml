@@ -1127,7 +1127,7 @@
         <item>마지막으로 읽은</item>
         <item>아티스트</item>
         <item>그룹</item>
-        <item>패러디</item>
+        <item>평점</item>
     </string-array>
     <string-array name="lrr_sort_by_values">
         <item>title</item>
@@ -1135,7 +1135,7 @@
         <item>lastread</item>
         <item>artist</item>
         <item>group</item>
-        <item>parody</item>
+        <item>rating</item>
     </string-array>
     <string-array name="lrr_sort_order_entries">
         <item>오름차순</item>
