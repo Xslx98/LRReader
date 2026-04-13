@@ -1,5 +1,6 @@
 package com.hippo.ehviewer.ui.scene.history
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.DiffUtil
@@ -74,14 +75,18 @@ class HistoryViewModel : ViewModel() {
      */
     fun loadHistory() {
         viewModelScope.launch {
-            val lazyList = withContext(Dispatchers.IO) { EhDB.getHistoryLazyListAsync() }
-            val newList = ArrayList(lazyList)
-            val diff = DiffUtil.calculateDiff(
-                HistoryInfoDiffCallback(lastSnapshot, newList)
-            )
-            _historyList.value = newList
-            lastSnapshot = newList
-            _listUpdate.tryEmit(ListUpdate(newList, diff))
+            try {
+                val lazyList = withContext(Dispatchers.IO) { EhDB.getHistoryLazyListAsync() }
+                val newList = ArrayList(lazyList)
+                val diff = DiffUtil.calculateDiff(
+                    HistoryInfoDiffCallback(lastSnapshot, newList)
+                )
+                _historyList.value = newList
+                lastSnapshot = newList
+                _listUpdate.tryEmit(ListUpdate(newList, diff))
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to load history", e)
+            }
         }
     }
 
@@ -104,8 +109,12 @@ class HistoryViewModel : ViewModel() {
      */
     fun deleteHistoryItem(info: HistoryInfo) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) { EhDB.deleteHistoryInfoAsync(info) }
-            loadHistory()
+            try {
+                withContext(Dispatchers.IO) { EhDB.deleteHistoryInfoAsync(info) }
+                loadHistory()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to delete history item", e)
+            }
         }
     }
 
@@ -114,9 +123,17 @@ class HistoryViewModel : ViewModel() {
      */
     fun clearAllHistory() {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) { EhDB.clearHistoryInfoAsync() }
-            loadHistory()
+            try {
+                withContext(Dispatchers.IO) { EhDB.clearHistoryInfoAsync() }
+                loadHistory()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to clear history", e)
+            }
         }
+    }
+
+    companion object {
+        private const val TAG = "HistoryViewModel"
     }
 
     // -------------------------------------------------------------------------
