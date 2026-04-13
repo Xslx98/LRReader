@@ -44,8 +44,8 @@ import java.io.IOException
  * All public methods are `suspend fun` — call from a coroutine scope
  * (typically `Dispatchers.IO` or `ServiceRegistry.coroutineModule.ioScope`).
  *
- * The legacy `blockingDb()` bridge and its `@JvmStatic` wrappers have been
- * removed (W3-5, 2026-04-11). There is zero production `runBlocking` usage;
+ * The legacy `blockingDb()` bridge and all `@JvmStatic` annotations have been
+ * removed (W3-5/W18-3). There is zero production `runBlocking` usage;
  * [com.hippo.ehviewer.spider.SpiderDen.getGalleryDownloadDir] was converted
  * to a `suspend fun` in W5-3 (2026-04-11).
  */
@@ -75,14 +75,12 @@ object EhDB {
         }
     }
 
-    @JvmStatic
     fun initialize(context: Context) {
         sHasOldDB = context.getDatabasePath("data").exists()
         sDatabase = AppDatabase.getInstance(context)
         MAX_HISTORY_COUNT = AppearanceSettings.getHistoryInfoSize()
     }
 
-    @JvmStatic
     fun needMerge(): Boolean = sHasOldDB
 
     /**
@@ -281,7 +279,6 @@ object EhDB {
      * persisted, so this Flow will NOT fire for progress-only changes.
      * Use the existing [DownloadInfoListener] callbacks for real-time progress.
      */
-    @JvmStatic
     fun observeDownloads(): Flow<List<DownloadInfo>> {
         val profileId = com.lanraragi.reader.client.api.LRRAuthManager.getActiveProfileId()
         return if (profileId > 0)
@@ -598,7 +595,6 @@ object EhDB {
     // EXPORT (Raw SQLite — Room not involved)
     // ═══════════════════════════════════════════════════════════
 
-    @JvmStatic
     fun exportDB(context: Context, file: File): Boolean {
         // Reject symlinks — canonical path must match absolute path
         val canonical = try { file.canonicalPath } catch (_: IOException) { return false }
