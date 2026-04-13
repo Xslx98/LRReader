@@ -1076,7 +1076,7 @@
         <item>Last Read</item>
         <item>Artist</item>
         <item>Group</item>
-        <item>Parody</item>
+        <item>Rating</item>
     </string-array>
 
     <string-array name="lrr_sort_by_values">
@@ -1085,7 +1085,7 @@
         <item>lastread</item>
         <item>artist</item>
         <item>group</item>
-        <item>parody</item>
+        <item>rating</item>
     </string-array>
 
     <string-array name="lrr_sort_order_entries">

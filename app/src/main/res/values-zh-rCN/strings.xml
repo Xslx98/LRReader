@@ -962,7 +962,7 @@
         <item>最后阅读</item>
         <item>作者</item>
         <item>社团</item>
-        <item>原作</item>
+        <item>评分</item>
     </string-array>
 
     <string-array name="lrr_sort_order_entries">
@@ -1148,7 +1148,7 @@
         <item>lastread</item>
         <item>artist</item>
         <item>group</item>
-        <item>parody</item>
+        <item>rating</item>
     </string-array>
     <string-array name="lrr_sort_order_values">
         <item>asc</item>
