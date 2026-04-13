@@ -19,7 +19,9 @@ package com.hippo.ehviewer
 import com.hippo.conaco.ValueHelper
 import com.hippo.lib.image.Image
 import com.hippo.streampipe.InputStreamPipe
+import java.io.File
 import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.io.IOException
 
 class ImageBitmapHelper : ValueHelper<Image> {
@@ -36,8 +38,24 @@ class ImageBitmapHelper : ValueHelper<Image> {
         return try {
             isPipe.obtain()
             val inputStream = isPipe.open()
-            if (inputStream !is FileInputStream) return null
-            Image.decode(inputStream, hardware)
+            if (inputStream is FileInputStream) {
+                Image.decode(inputStream, hardware)
+            } else {
+                // Non-FileInputStream (e.g., SAF content:// URI) — copy to temp file
+                val tmpFile = File.createTempFile("ibh_", ".tmp")
+                try {
+                    inputStream.use { inp ->
+                        FileOutputStream(tmpFile).use { fos ->
+                            inp.copyTo(fos)
+                        }
+                    }
+                    FileInputStream(tmpFile).use { fis ->
+                        Image.decode(fis, hardware)
+                    }
+                } finally {
+                    tmpFile.delete()
+                }
+            }
         } catch (e: OutOfMemoryError) {
             Analytics.recordException(e)
             null
