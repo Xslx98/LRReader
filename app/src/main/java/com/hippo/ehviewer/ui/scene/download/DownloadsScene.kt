@@ -18,6 +18,7 @@ package com.hippo.ehviewer.ui.scene.download
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
@@ -710,10 +711,14 @@ class DownloadsScene : ToolbarScene(),
                 // Use GalleryOpenHelper to prefer local files over server
                 // buildReadIntent is suspend (resolves download dir from DB)
                 viewLifecycleOwner.lifecycleScope.launch {
-                    val readIntent = withContext(Dispatchers.IO) {
-                        GalleryOpenHelper.buildReadIntent(activity, downloadInfo)
+                    try {
+                        val readIntent = withContext(Dispatchers.IO) {
+                            GalleryOpenHelper.buildReadIntent(activity, downloadInfo)
+                        }
+                        galleryActivityLauncher.launch(readIntent)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to build read intent", e)
                     }
-                    galleryActivityLauncher.launch(readIntent)
                 }
             }
             return true
@@ -867,11 +872,15 @@ class DownloadsScene : ToolbarScene(),
                     viewModel.removeSpiderInfo(info.gid)
                     val gid = info.gid
                     viewLifecycleOwner.lifecycleScope.launch {
-                        val spiderInfo = withContext(Dispatchers.IO) {
-                            SpiderInfo.getSpiderInfo(info)
-                        }
-                        if (spiderInfo != null) {
-                            viewModel.putSpiderInfo(gid, spiderInfo)
+                        try {
+                            val spiderInfo = withContext(Dispatchers.IO) {
+                                SpiderInfo.getSpiderInfo(info)
+                            }
+                            if (spiderInfo != null) {
+                                viewModel.putSpiderInfo(gid, spiderInfo)
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to load spider info", e)
                         }
                     }
                 }
