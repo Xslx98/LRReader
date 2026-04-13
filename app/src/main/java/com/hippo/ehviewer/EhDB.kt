@@ -522,38 +522,48 @@ object EhDB {
     // ═══════════════════════════════════════════════════════════
     // HISTORY
     // ═══════════════════════════════════════════════════════════
+    // Deprecated — use ServiceRegistry.dataModule.historyRepository instead.
+    // These methods delegate to HistoryRepository and will be removed in a
+    // future release once all callers have migrated.
 
+    @Deprecated(
+        "Use HistoryRepository via ServiceRegistry.dataModule.historyRepository",
+        ReplaceWith("ServiceRegistry.dataModule.historyRepository.getHistoryLazyList()")
+    )
     suspend fun getHistoryLazyListAsync(): List<HistoryInfo> {
-        val profileId = com.lanraragi.reader.client.api.LRRAuthManager.getActiveProfileId()
-        return if (profileId > 0)
-            sDatabase.browsingDao().getHistoryByServer(profileId)
-        else
-            sDatabase.browsingDao().getAllHistory()
+        return ServiceRegistry.dataModule.historyRepository.getHistoryLazyList()
     }
 
+    @Deprecated(
+        "Use HistoryRepository via ServiceRegistry.dataModule.historyRepository",
+        ReplaceWith("ServiceRegistry.dataModule.historyRepository.putHistoryInfo(galleryInfo)")
+    )
     suspend fun putHistoryInfoAsync(galleryInfo: GalleryInfo) {
-        val dao = sDatabase.browsingDao()
-        val info = HistoryInfo(galleryInfo)
-        info.time = System.currentTimeMillis()
-        dao.insertHistory(info)
-        val maxCount = if (MAX_HISTORY_COUNT < 1) 100 else MAX_HISTORY_COUNT
-        dao.trimHistoryTo(maxCount)
+        ServiceRegistry.dataModule.historyRepository.putHistoryInfo(galleryInfo)
     }
 
+    @Deprecated(
+        "Use HistoryRepository via ServiceRegistry.dataModule.historyRepository",
+        ReplaceWith("ServiceRegistry.dataModule.historyRepository.putHistoryInfoList(historyInfoList)")
+    )
     suspend fun putHistoryInfoListAsync(historyInfoList: List<HistoryInfo>) {
-        val dao = sDatabase.browsingDao()
-        for (info in historyInfoList) {
-            dao.insertHistory(info)
-        }
-        dao.trimHistoryTo(MAX_HISTORY_COUNT)
+        ServiceRegistry.dataModule.historyRepository.putHistoryInfoList(historyInfoList)
     }
 
+    @Deprecated(
+        "Use HistoryRepository via ServiceRegistry.dataModule.historyRepository",
+        ReplaceWith("ServiceRegistry.dataModule.historyRepository.deleteHistoryInfo(info)")
+    )
     suspend fun deleteHistoryInfoAsync(info: HistoryInfo) {
-        sDatabase.browsingDao().deleteHistoryByKey(info.gid)
+        ServiceRegistry.dataModule.historyRepository.deleteHistoryInfo(info)
     }
 
+    @Deprecated(
+        "Use HistoryRepository via ServiceRegistry.dataModule.historyRepository",
+        ReplaceWith("ServiceRegistry.dataModule.historyRepository.clearHistory()")
+    )
     suspend fun clearHistoryInfoAsync() {
-        sDatabase.browsingDao().deleteAllHistory()
+        ServiceRegistry.dataModule.historyRepository.clearHistory()
     }
 
     // ═══════════════════════════════════════════════════════════
