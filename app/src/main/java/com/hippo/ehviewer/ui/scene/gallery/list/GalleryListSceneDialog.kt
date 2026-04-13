@@ -10,7 +10,7 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.UrlOpener
 import com.hippo.ehviewer.client.EhTagDatabase
-import com.hippo.ehviewer.client.EhUrl
+import com.hippo.ehviewer.client.LRRUrl
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.util.TagTranslationUtil
 
@@ -40,7 +40,7 @@ class GalleryListSceneDialog(val baseScene: BaseScene) {
             .setItems(R.array.tag_menu_entries) { _: DialogInterface?, which: Int ->
                 when (which) {
                     0 -> UrlOpener.openUrl(
-                        context, EhUrl.getTagDefinitionUrl(temp), false
+                        context, LRRUrl.getTagDefinitionUrl(temp), false
                     )
                 }
             }
