@@ -21,8 +21,8 @@ import android.graphics.BitmapFactory
 import android.webkit.MimeTypeMap
 import com.hippo.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.EhDB
-import com.hippo.ehviewer.client.EhCacheKeyFactory
-import com.hippo.ehviewer.client.EhUtils
+import com.hippo.ehviewer.client.LRRCacheKeyFactory
+import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.settings.DownloadSettings
@@ -94,7 +94,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
 
     private fun containInCache(index: Int): Boolean {
         val cache = sCache ?: return false
-        val key = EhCacheKeyFactory.getImageKey(mGid, index)
+        val key = LRRCacheKeyFactory.getImageKey(mGid, index)
         return cache.contain(key)
     }
 
@@ -114,7 +114,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
     private fun copyFromCacheToDownloadDir(index: Int): Boolean {
         val cache = sCache ?: return false
         val dir = getDownloadDir() ?: return false
-        val key = EhCacheKeyFactory.getImageKey(mGid, index)
+        val key = LRRCacheKeyFactory.getImageKey(mGid, index)
         val pipe = cache.getInputStreamPipe(key) ?: return false
 
         var os: java.io.OutputStream? = null
@@ -160,7 +160,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
 
     private fun removeFromCache(index: Int): Boolean {
         val cache = sCache ?: return false
-        val key = EhCacheKeyFactory.getImageKey(mGid, index)
+        val key = LRRCacheKeyFactory.getImageKey(mGid, index)
         return cache.remove(key)
     }
 
@@ -185,7 +185,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
 
     private fun openCacheOutputStreamPipe(index: Int): OutputStreamPipe? {
         val cache = sCache ?: return null
-        val key = EhCacheKeyFactory.getImageKey(mGid, index)
+        val key = LRRCacheKeyFactory.getImageKey(mGid, index)
         return cache.getOutputStreamPipe(key)
     }
 
@@ -217,7 +217,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
 
     private fun openCacheInputStreamPipe(index: Int): InputStreamPipe? {
         val cache = sCache ?: return null
-        val key = EhCacheKeyFactory.getImageKey(mGid, index)
+        val key = LRRCacheKeyFactory.getImageKey(mGid, index)
         return cache.getInputStreamPipe(key)
     }
 
@@ -312,7 +312,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
 
             // Create it
             if (dirname == null) {
-                dirname = FileUtils.sanitizeFilename("${galleryInfo.gid}-${EhUtils.getSuitableTitle(galleryInfo)}")
+                dirname = FileUtils.sanitizeFilename("${galleryInfo.gid}-${LRRUtils.getSuitableTitle(galleryInfo)}")
                 EhDB.putDownloadDirnameAsync(galleryInfo.gid, dirname)
             }
 

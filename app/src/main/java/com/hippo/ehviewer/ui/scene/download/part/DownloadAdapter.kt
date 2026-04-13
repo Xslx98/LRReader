@@ -40,8 +40,8 @@ import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.EhCacheKeyFactory
-import com.hippo.ehviewer.client.EhUtils
+import com.hippo.ehviewer.client.LRRCacheKeyFactory
+import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.download.DownloadService
@@ -158,7 +158,7 @@ class DownloadAdapter(
             val archiveUri = info.archiveUri
             val isImportedArchive = archiveUri != null && archiveUri.startsWith("content://")
 
-            var title = EhUtils.getSuitableTitle(info)
+            var title = LRRUtils.getSuitableTitle(info)
             // Add special prefix for imported archives
             if (isImportedArchive) {
                 title = "📦 $title"
@@ -168,7 +168,7 @@ class DownloadAdapter(
                 loadArchiveThumbnail(holder.thumb, Uri.parse(archiveUri))
             } else {
                 holder.thumb.load(
-                    EhCacheKeyFactory.getThumbKey(info.gid), info.thumb,
+                    LRRCacheKeyFactory.getThumbKey(info.gid), info.thumb,
                     ThumbDataContainer(info), true, false
                 )
             }
@@ -199,7 +199,7 @@ class DownloadAdapter(
             }
 
             val category = holder.category
-            var newCategoryText = EhUtils.getCategory(info.category)
+            var newCategoryText = LRRUtils.getCategory(info.category)
             if ("unknown".equals(newCategoryText, ignoreCase = true)) {
                 category.visibility = View.GONE
             } else if (isImportedArchive) {
@@ -209,7 +209,7 @@ class DownloadAdapter(
                 category.visibility = View.VISIBLE
             } else {
                 category.text = newCategoryText
-                category.setBackgroundColor(EhUtils.getCategoryColor(info.category))
+                category.setBackgroundColor(LRRUtils.getCategoryColor(info.category))
                 category.visibility = View.VISIBLE
             }
             bindForState(holder, info)
