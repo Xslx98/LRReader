@@ -33,10 +33,10 @@ import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemAdapter
 import com.h6ah4i.android.widget.advrecyclerview.draggable.ItemDraggableRange
 import com.h6ah4i.android.widget.advrecyclerview.draggable.RecyclerViewDragDropManager
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemViewHolder
+import androidx.lifecycle.ViewModelProvider
 import com.hippo.app.EditTextDialogBuilder
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.DownloadLabel
 import com.hippo.ehviewer.ui.scene.ToolbarScene
 import com.hippo.util.DrawableManager
@@ -49,6 +49,8 @@ class DownloadLabelsScene : ToolbarScene() {
     /*---------------
      Whole life cycle
      ---------------*/
+    private lateinit var viewModel: DownloadLabelsViewModel
+
     @JvmField
     var mList: List<DownloadLabel>? = null
 
@@ -61,7 +63,8 @@ class DownloadLabelsScene : ToolbarScene() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mList = ServiceRegistry.dataModule.downloadManager.labelList
+        viewModel = ViewModelProvider(this)[DownloadLabelsViewModel::class.java]
+        mList = viewModel.labels
     }
 
     override fun onDestroy() {
@@ -179,12 +182,12 @@ class DownloadLabelsScene : ToolbarScene() {
                 mBuilder.setError(getString(R.string.label_text_is_empty))
             } else if (getString(R.string.default_download_label_name) == text) {
                 mBuilder.setError(getString(R.string.label_text_is_invalid))
-            } else if (ServiceRegistry.dataModule.downloadManager.containLabel(text)) {
+            } else if (viewModel.containsLabel(text)) {
                 mBuilder.setError(getString(R.string.label_text_exist))
             } else {
                 mBuilder.setError(null)
                 mDialog.dismiss()
-                ServiceRegistry.dataModule.downloadManager.addLabel(text)
+                viewModel.addLabel(text)
                 if (mAdapter != null && mList != null) {
                     mAdapter!!.notifyItemInserted(mList!!.size - 1)
                 }
@@ -218,12 +221,12 @@ class DownloadLabelsScene : ToolbarScene() {
                 mBuilder.setError(getString(R.string.label_text_is_empty))
             } else if (getString(R.string.default_download_label_name) == text) {
                 mBuilder.setError(getString(R.string.label_text_is_invalid))
-            } else if (ServiceRegistry.dataModule.downloadManager.containLabel(text)) {
+            } else if (viewModel.containsLabel(text)) {
                 mBuilder.setError(getString(R.string.label_text_exist))
             } else {
                 mBuilder.setError(null)
                 mDialog.dismiss()
-                ServiceRegistry.dataModule.downloadManager.renameLabel(mOriginalLabel, text)
+                viewModel.renameLabel(mOriginalLabel, text)
                 mAdapter?.notifyItemChanged(mPosition)
             }
         }
@@ -270,7 +273,7 @@ class DownloadLabelsScene : ToolbarScene() {
                         // dispatch. Doing this in the positive button callback (rather
                         // than OnDismissListener) also fixes a pre-existing bug where
                         // a Cancel/back-button dismiss would still fire notifyDataSetChanged.
-                        ServiceRegistry.dataModule.downloadManager.deleteLabel(downloadLabel.label ?: "")
+                        viewModel.deleteLabel(downloadLabel.label ?: "")
                         mAdapter?.notifyItemRemoved(position)
                         updateView()
                     }
@@ -319,7 +322,7 @@ class DownloadLabelsScene : ToolbarScene() {
             if (context == null || fromPosition == toPosition) {
                 return
             }
-            ServiceRegistry.dataModule.downloadManager.moveLabel(fromPosition, toPosition)
+            viewModel.moveLabel(fromPosition, toPosition)
         }
 
         override fun onCheckCanDrop(draggingPosition: Int, dropPosition: Int): Boolean {
