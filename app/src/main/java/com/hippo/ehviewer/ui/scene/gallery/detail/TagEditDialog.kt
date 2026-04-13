@@ -381,6 +381,8 @@ object TagEditDialog {
                     .map { it.text }
                 adapter.clear()
                 adapter.addAll(suggestions)
+                // ArrayAdapter only supports notifyDataSetChanged() — no granular notifications
+                @Suppress("NotifyDataSetChanged")
                 adapter.notifyDataSetChanged()
             }
         })

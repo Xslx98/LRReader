@@ -230,6 +230,8 @@ class SearchBar : CardView,
         } else {
             addListHeader()
         }
+        // BaseAdapter only supports notifyDataSetChanged() — no granular notifications
+        @Suppress("NotifyDataSetChanged")
         mSuggestionAdapter.notifyDataSetChanged()
 
         if (scrollToTop) {
