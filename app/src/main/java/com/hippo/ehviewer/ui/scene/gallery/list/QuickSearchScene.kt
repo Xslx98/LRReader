@@ -16,16 +16,15 @@
 
 package com.hippo.ehviewer.ui.scene.gallery.list
 
-import android.content.Context
 import android.graphics.drawable.NinePatchDrawable
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -35,25 +34,20 @@ import com.h6ah4i.android.widget.advrecyclerview.draggable.ItemDraggableRange
 import com.h6ah4i.android.widget.advrecyclerview.draggable.RecyclerViewDragDropManager
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemViewHolder
 import com.hippo.easyrecyclerview.EasyRecyclerView
-import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.dao.QuickSearch
 import com.hippo.ehviewer.ui.scene.ToolbarScene
 import com.hippo.lib.yorozuya.AssertUtils
 import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.util.DrawableManager
 import com.hippo.view.ViewTransition
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class QuickSearchScene : ToolbarScene() {
 
     /*---------------
      Whole life cycle
      ---------------*/
-    private var mQuickSearchList: MutableList<QuickSearch>? = null
+    private lateinit var viewModel: QuickSearchViewModel
 
     /*---------------
      View life cycle
@@ -62,32 +56,13 @@ class QuickSearchScene : ToolbarScene() {
     private var mViewTransition: ViewTransition? = null
     private var mAdapter: RecyclerView.Adapter<*>? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        mQuickSearchList = mutableListOf()
-        lifecycleScope.launch {
-            try {
-                val result = withContext(Dispatchers.IO) { EhDB.getAllQuickSearchAsync() }
-                mQuickSearchList = result.toMutableList()
-                if (result.isNotEmpty()) {
-                    mAdapter?.notifyItemRangeInserted(0, result.size)
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to load quick searches", e)
-            }
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        mQuickSearchList = null
-    }
-
     override fun onCreateView3(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        viewModel = ViewModelProvider(requireActivity())[QuickSearchViewModel::class.java]
+
         val view = inflater.inflate(R.layout.scene_label_list, container, false)
 
         mRecyclerView = ViewUtils.`$$`(view, R.id.recycler_view) as EasyRecyclerView
@@ -120,6 +95,20 @@ class QuickSearchScene : ToolbarScene() {
 
         dragDropManager.attachRecyclerView(mRecyclerView!!)
 
+        // Observe ViewModel quick search list for initial load
+        lifecycleScope.launch {
+            var previousSize = 0
+            viewModel.quickSearches.collect { list ->
+                val adapterRef = mAdapter ?: return@collect
+                if (previousSize == 0 && list.isNotEmpty()) {
+                    adapterRef.notifyItemRangeInserted(0, list.size)
+                }
+                previousSize = list.size
+                updateView()
+            }
+        }
+
+        viewModel.loadQuickSearches()
         updateView()
 
         return view
@@ -146,7 +135,8 @@ class QuickSearchScene : ToolbarScene() {
 
     private fun updateView() {
         mViewTransition?.let {
-            if (mQuickSearchList != null && mQuickSearchList!!.size > 0) {
+            val list = viewModel.quickSearches.value
+            if (list.isNotEmpty()) {
                 it.showView(0)
             } else {
                 it.showView(1)
@@ -167,20 +157,19 @@ class QuickSearchScene : ToolbarScene() {
 
         override fun onClick(v: View) {
             val position = adapterPosition
-            val context = ehContext
-            if (position == RecyclerView.NO_POSITION || mQuickSearchList == null) {
+            if (position == RecyclerView.NO_POSITION) {
                 return
             }
 
-            val quickSearch = mQuickSearchList!![position]
+            val list = viewModel.quickSearches.value
+            if (position >= list.size) return
+
+            val quickSearch = list[position]
             AlertDialog.Builder(requireContext())
                 .setTitle(R.string.delete_quick_search_title)
                 .setMessage(getString(R.string.delete_quick_search_message, quickSearch.name))
                 .setPositiveButton(android.R.string.ok) { _, _ ->
-                    ServiceRegistry.coroutineModule.ioScope.launch {
-                        EhDB.deleteQuickSearchAsync(quickSearch)
-                    }
-                    mQuickSearchList!!.removeAt(position)
+                    viewModel.deleteQuickSearch(quickSearch)
                     mAdapter?.notifyItemRemoved(position)
                     updateView()
                 }
@@ -201,17 +190,19 @@ class QuickSearchScene : ToolbarScene() {
         }
 
         override fun onBindViewHolder(holder: QuickSearchHolder, position: Int) {
-            if (mQuickSearchList != null) {
-                holder.label.text = mQuickSearchList!![position].name
+            val list = viewModel.quickSearches.value
+            if (position < list.size) {
+                holder.label.text = list[position].name
             }
         }
 
         override fun getItemId(position: Int): Long {
-            return if (mQuickSearchList != null) mQuickSearchList!![position].id ?: 0 else 0
+            val list = viewModel.quickSearches.value
+            return if (position < list.size) list[position].id ?: 0 else 0
         }
 
         override fun getItemCount(): Int {
-            return mQuickSearchList?.size ?: 0
+            return viewModel.quickSearches.value.size
         }
 
         override fun onCheckCanStartDrag(holder: QuickSearchHolder, position: Int, x: Int, y: Int): Boolean {
@@ -226,15 +217,7 @@ class QuickSearchScene : ToolbarScene() {
             if (fromPosition == toPosition) {
                 return
             }
-            if (mQuickSearchList == null) {
-                return
-            }
-
-            ServiceRegistry.coroutineModule.ioScope.launch {
-                EhDB.moveQuickSearchAsync(fromPosition, toPosition)
-            }
-            val item = mQuickSearchList!!.removeAt(fromPosition)
-            mQuickSearchList!!.add(toPosition, item)
+            viewModel.moveQuickSearch(fromPosition, toPosition)
         }
 
         override fun onCheckCanDrop(draggingPosition: Int, dropPosition: Int): Boolean = true
