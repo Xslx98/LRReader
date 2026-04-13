@@ -3,6 +3,7 @@ package com.hippo.ehviewer.dao
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Ignore
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import org.json.JSONException
 import org.json.JSONObject
@@ -10,7 +11,7 @@ import org.json.JSONObject
 /**
  * Entity mapped to table "QUICK_SEARCH".
  */
-@Entity(tableName = "QUICK_SEARCH")
+@Entity(tableName = "QUICK_SEARCH", indices = [Index("TIME")])
 class QuickSearch(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "_id")
