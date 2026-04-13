@@ -8,8 +8,10 @@ import com.hippo.ehviewer.EhProxySelector
 import com.hippo.ehviewer.Hosts
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.AppDatabase
+import com.hippo.ehviewer.dao.ProfileRepository
 import com.hippo.ehviewer.dao.ServerProfile
 import com.hippo.ehviewer.module.IAppModule
+import com.hippo.ehviewer.module.IDataModule
 import com.hippo.ehviewer.module.INetworkModule
 import com.hippo.ehviewer.module.NetworkMonitor
 import com.lanraragi.reader.client.api.LRRAuthManager
@@ -107,9 +109,20 @@ class ServerListViewModelTest {
             override fun removeTempCache(key: String): Any? = null
         }
 
+        val testDataModule = object : IDataModule {
+            override val profileRepository get() = ProfileRepository(db.miscDao())
+            override val historyRepository get() = throw NotImplementedError("not needed")
+            override val downloadManager get() = throw NotImplementedError("not needed")
+            override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
+            override val galleryDetailCache get() = throw NotImplementedError("not needed")
+            override val spiderInfoCache get() = throw NotImplementedError("not needed")
+            override fun clearGalleryDetailCache() {}
+        }
+
         ServiceRegistry.initializeForTest(
             network = testNetworkModule,
-            app = testAppModule
+            app = testAppModule,
+            data = testDataModule
         )
 
         eventScope = CoroutineScope(Dispatchers.Default + SupervisorJob())

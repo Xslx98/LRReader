@@ -15,6 +15,7 @@ import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadManager
+import com.hippo.ehviewer.dao.ProfileRepository
 import com.hippo.ehviewer.module.CoroutineModule
 import com.hippo.ehviewer.module.IDataModule
 import com.lanraragi.reader.client.api.LRRAuthManager
@@ -101,6 +102,7 @@ class DownloadsViewModelTest {
                 override val favouriteStatusRouter get() = FavouriteStatusRouter()
                 override val historyRepository get() =
                     com.hippo.ehviewer.dao.HistoryRepository(db.browsingDao())
+                override val profileRepository get() = ProfileRepository(db.miscDao())
                 override val galleryDetailCache get() = LruCache<Long, GalleryDetail>(10)
                 override val spiderInfoCache: SimpleDiskCache get() =
                     SimpleDiskCache(
