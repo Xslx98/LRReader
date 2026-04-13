@@ -1,7 +1,6 @@
 package com.hippo.ehviewer.ui.scene
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,29 +10,27 @@ import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.ListUrlBuilder
-import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.LRRCategoryApi
+import com.hippo.ehviewer.ui.scene.LRRCategoriesViewModel.CategoriesUiEvent
+import com.hippo.ehviewer.util.collectFlow
 import com.lanraragi.reader.client.api.data.LRRCategory
-import com.lanraragi.reader.client.api.friendlyError
-import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
 import com.hippo.scene.Announcer
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 /**
  * Scene that displays LANraragi categories with full CRUD support.
  * Pinned categories appear first. Clicking a category navigates
  * to GalleryListScene filtered by that category.
+ *
+ * Business logic (API calls) is delegated to [LRRCategoriesViewModel].
+ * This Scene retains view construction, adapter, dialogs, and navigation.
  */
 class LRRCategoriesScene : BaseScene() {
 
@@ -49,8 +46,10 @@ class LRRCategoriesScene : BaseScene() {
     private val mCategories: MutableList<LRRCategory> = mutableListOf()
     private var mAdapter: CategoryAdapter? = null
 
+    private lateinit var viewModel: LRRCategoriesViewModel
+
     // Snapshot of the list last dispatched to the adapter. Read/written ONLY by
-    // fetchCategories() (the single dispatch path — every CRUD op re-fetches).
+    // the categories observer (the single dispatch path — every CRUD op re-fetches).
     // See docs/diffutil-root-cause-analysis.md for the snapshot ownership rule.
     private var mLastSnapshot: List<LRRCategory> = emptyList()
 
@@ -62,6 +61,8 @@ class LRRCategoriesScene : BaseScene() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.scene_lrr_categories, container, false)
+
+        viewModel = ViewModelProvider(requireActivity())[LRRCategoriesViewModel::class.java]
 
         mToolbar = view.findViewById(R.id.toolbar)
         mProgress = view.findViewById(R.id.progress)
@@ -94,7 +95,55 @@ class LRRCategoriesScene : BaseScene() {
             adapter = mAdapter
         }
 
-        fetchCategories()
+        // Observe category list from ViewModel
+        collectFlow(viewLifecycleOwner, viewModel.categories) { newList ->
+            val adapter = mAdapter
+            if (adapter != null) {
+                val diff = DiffUtil.calculateDiff(
+                    LRRCategoryDiffCallback(mLastSnapshot, newList)
+                )
+                mCategories.clear()
+                mCategories.addAll(newList)
+                mLastSnapshot = ArrayList(newList)
+                diff.dispatchUpdatesTo(adapter)
+            } else {
+                mCategories.clear()
+                mCategories.addAll(newList)
+                mLastSnapshot = ArrayList(newList)
+            }
+            if (mCategories.isEmpty() && !viewModel.isLoading.value) {
+                showEmpty(getString(R.string.lrr_categories_empty))
+            } else if (mCategories.isNotEmpty()) {
+                showList()
+            }
+        }
+
+        // Observe loading state
+        collectFlow(viewLifecycleOwner, viewModel.isLoading) { loading ->
+            if (loading) {
+                showProgress()
+            }
+        }
+
+        // Observe one-shot UI events (success/error toasts)
+        collectFlow(viewLifecycleOwner, viewModel.uiEvent) { event ->
+            val ctx = ehContext ?: return@collectFlow
+            when (event) {
+                is CategoriesUiEvent.ShowError -> {
+                    // If the list is empty, show the error view; otherwise just toast
+                    if (mCategories.isEmpty()) {
+                        showError(event.message)
+                    } else {
+                        Toast.makeText(ctx, event.message, Toast.LENGTH_SHORT).show()
+                    }
+                }
+                is CategoriesUiEvent.ShowSuccess -> {
+                    Toast.makeText(ctx, event.messageResId, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        viewModel.loadCategories()
 
         return view
     }
@@ -112,68 +161,6 @@ class LRRCategoriesScene : BaseScene() {
         mAdapter = null
         // Reset snapshot so the next view recreation starts from a clean baseline.
         mLastSnapshot = emptyList()
-    }
-
-    // ==================== Data Loading ====================
-
-    private fun fetchCategories() {
-        showProgress()
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val ctx = ehContext ?: return@launch
-                val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
-                val client = ServiceRegistry.networkModule.okHttpClient
-
-                val categories = runSuspend {
-                    LRRCategoryApi.getCategories(client, serverUrl)
-                }
-
-                // Sort: pinned first, then by name
-                val pinned = mutableListOf<LRRCategory>()
-                val unpinned = mutableListOf<LRRCategory>()
-                for (cat in categories) {
-                    if (cat.name.isNullOrEmpty()) continue
-                    if (cat.isPinned()) {
-                        pinned.add(cat)
-                    } else {
-                        unpinned.add(cat)
-                    }
-                }
-                pinned.addAll(unpinned)
-
-                activity?.runOnUiThread {
-                    // Compute diff against the previously dispatched snapshot
-                    // BEFORE mutating mCategories in place. Then swap in the
-                    // new contents and update the snapshot, then dispatch.
-                    val newList = ArrayList(pinned)
-                    val adapter = mAdapter
-                    if (adapter != null) {
-                        val diff = DiffUtil.calculateDiff(
-                            LRRCategoryDiffCallback(mLastSnapshot, newList)
-                        )
-                        mCategories.clear()
-                        mCategories.addAll(newList)
-                        mLastSnapshot = newList
-                        diff.dispatchUpdatesTo(adapter)
-                    } else {
-                        mCategories.clear()
-                        mCategories.addAll(newList)
-                        mLastSnapshot = newList
-                    }
-                    if (mCategories.isEmpty()) {
-                        showEmpty(getString(R.string.lrr_categories_empty))
-                    } else {
-                        showList()
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to load categories", e)
-                activity?.runOnUiThread {
-                    showError(friendlyError(ehContext ?: return@runOnUiThread, e))
-                }
-            }
-        }
     }
 
     // ==================== CRUD Operations ====================
@@ -228,65 +215,13 @@ class LRRCategoriesScene : BaseScene() {
                 val pinned = pinnedSwitch.isChecked
 
                 if (category != null) {
-                    updateCategory(category.id!!, name, search, pinned)
+                    viewModel.editCategory(category.id!!, name, search, pinned)
                 } else {
-                    createCategory(name, search, pinned)
+                    viewModel.createCategory(name, search, pinned)
                 }
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
-    }
-
-    private fun createCategory(name: String, search: String?, pinned: Boolean) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val ctx = ehContext ?: return@launch
-                val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
-                val client = ServiceRegistry.networkModule.okHttpClient
-                runSuspend {
-                    LRRCategoryApi.createCategory(client, serverUrl, name, search, pinned)
-                }
-                activity?.runOnUiThread {
-                    Toast.makeText(ehContext, R.string.lrr_category_created, Toast.LENGTH_SHORT).show()
-                    fetchCategories()
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to create category", e)
-                activity?.runOnUiThread {
-                    Toast.makeText(
-                        ehContext,
-                        friendlyError(ehContext ?: return@runOnUiThread, e),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-    }
-
-    private fun updateCategory(categoryId: String, name: String, search: String?, pinned: Boolean) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val ctx = ehContext ?: return@launch
-                val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
-                val client = ServiceRegistry.networkModule.okHttpClient
-                runSuspend {
-                    LRRCategoryApi.updateCategory(client, serverUrl, categoryId, name, search, pinned)
-                }
-                activity?.runOnUiThread {
-                    Toast.makeText(ehContext, R.string.lrr_category_updated, Toast.LENGTH_SHORT).show()
-                    fetchCategories()
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to update category", e)
-                activity?.runOnUiThread {
-                    Toast.makeText(
-                        ehContext,
-                        friendlyError(ehContext ?: return@runOnUiThread, e),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
     }
 
     private fun deleteCategory(category: LRRCategory) {
@@ -295,29 +230,7 @@ class LRRCategoriesScene : BaseScene() {
             .setTitle(R.string.lrr_category_action_delete)
             .setMessage(getString(R.string.lrr_category_delete_confirm, category.name))
             .setPositiveButton(android.R.string.ok) { _, _ ->
-                lifecycleScope.launch(Dispatchers.IO) {
-                    try {
-                        val innerCtx = ehContext ?: return@launch
-                        val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
-                        val client = ServiceRegistry.networkModule.okHttpClient
-                        runSuspend {
-                            LRRCategoryApi.deleteCategory(client, serverUrl, category.id!!)
-                        }
-                        activity?.runOnUiThread {
-                            Toast.makeText(ehContext, R.string.lrr_category_deleted, Toast.LENGTH_SHORT).show()
-                            fetchCategories()
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to delete category", e)
-                        activity?.runOnUiThread {
-                            Toast.makeText(
-                                ehContext,
-                                friendlyError(ehContext ?: return@runOnUiThread, e),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
-                }
+                viewModel.deleteCategory(category.id!!)
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
@@ -347,7 +260,7 @@ class LRRCategoriesScene : BaseScene() {
                 when (which) {
                     0 -> showCategoryDialog(category) // Edit
                     1 -> deleteCategory(category) // Delete
-                    2 -> updateCategory( // Pin/Unpin
+                    2 -> viewModel.editCategory( // Pin/Unpin
                         category.id!!,
                         category.name!!,
                         category.search,
@@ -385,7 +298,7 @@ class LRRCategoriesScene : BaseScene() {
             }
             mErrorRetry?.apply {
                 visibility = View.VISIBLE
-                setOnClickListener { fetchCategories() }
+                setOnClickListener { viewModel.loadCategories() }
             }
         }
     }
