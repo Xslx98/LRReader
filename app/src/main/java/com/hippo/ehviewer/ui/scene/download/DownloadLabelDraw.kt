@@ -1,5 +1,6 @@
 package com.hippo.ehviewer.ui.scene.download
 
+import android.content.Context
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -10,15 +11,37 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.Toolbar
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.lib.yorozuya.ObjectUtils
+import com.hippo.scene.Announcer
 
+/**
+ * Manages the drawer view showing download labels.
+ * Refactored in W16-1 to use a [Callback] interface instead of direct Scene references.
+ */
 class DownloadLabelDraw(
     private val inflater: LayoutInflater,
     private val container: ViewGroup?,
-    private val scene: DownloadsScene
+    private val callback: Callback
 ) {
-    private val context = scene.ehContext!!
+
+    interface Callback {
+        val ehContext: Context?
+        val currentLabel: String?
+        val searching: Boolean
+        val searchKey: String?
+        val downloadManager: DownloadManager
+        fun getString(resId: Int): String
+        fun startScene(announcer: Announcer)
+        fun selectLabel(label: String?)
+        fun updateForLabel()
+        fun startSearching()
+        fun updateView()
+        fun closeDrawer(gravity: Int)
+    }
+
+    private val context: Context = callback.ehContext!!
 
     private lateinit var view: View
     private lateinit var toolbar: Toolbar
@@ -33,15 +56,15 @@ class DownloadLabelDraw(
         toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_settings -> {
-                    scene.startScene(com.hippo.scene.Announcer(DownloadLabelsScene::class.java))
+                    callback.startScene(Announcer(DownloadLabelsScene::class.java))
                     true
                 }
                 R.id.action_default_download_label -> {
-                    val dm = scene.getMDownloadManager()
+                    val dm = callback.downloadManager
                     val list = dm.labelList
                     val items = arrayOfNulls<String>(list.size + 2)
-                    items[0] = scene.getString(R.string.let_me_select)
-                    items[1] = scene.getString(R.string.default_download_label_name)
+                    items[0] = callback.getString(R.string.let_me_select)
+                    items[1] = callback.getString(R.string.default_download_label_name)
                     for (i in list.indices) {
                         items[i + 2] = list[i].label
                     }
@@ -67,7 +90,7 @@ class DownloadLabelDraw(
         val list = downloadManager.labelList
         val labels = ArrayList<String>(list.size + 1)
         // Add default label name
-        labels.add(scene.getString(R.string.default_download_label_name))
+        labels.add(callback.getString(R.string.default_download_label_name))
         for (raw in list) {
             labels.add(raw.label ?: "")
         }
@@ -86,28 +109,14 @@ class DownloadLabelDraw(
 
         listView = view.findViewById(R.id.list_view)
         val adapter = DownloadLabelAdapter(
-            scene.ehContext!!,
+            context,
             R.layout.item_download_label_list,
             downloadLabelList
         )
         listView.adapter = adapter
 
         listView.setOnItemClickListener { _, _, position, _ ->
-            if (scene.searching) {
-                Toast.makeText(context, R.string.download_searching, Toast.LENGTH_LONG).show()
-                return@setOnItemClickListener
-            }
-            val label = if (position == 0) null else labels[position]
-            if (!ObjectUtils.equal(label, scene.mLabel)) {
-                scene.mLabel = label
-                scene.updateForLabel()
-                if (!scene.searchKey.isNullOrEmpty()) {
-                    scene.startSearching()
-                } else {
-                    scene.updateView()
-                }
-                scene.closeDrawer(Gravity.RIGHT)
-            }
+            onLabelItemClick(position, labels)
         }
         return view
     }
@@ -117,7 +126,7 @@ class DownloadLabelDraw(
         val list = downloadManager.labelList
         val labels = ArrayList<String>(list.size + 1)
         // Add default label name
-        labels.add(scene.getString(R.string.default_download_label_name))
+        labels.add(callback.getString(R.string.default_download_label_name))
         for (raw in list) {
             labels.add(raw.label ?: "")
         }
@@ -135,28 +144,32 @@ class DownloadLabelDraw(
         }
 
         val adapter = DownloadLabelAdapter(
-            scene.ehContext!!,
+            context,
             R.layout.item_download_label_list,
             downloadLabelList
         )
         listView.adapter = adapter
 
         listView.setOnItemClickListener { _, _, position, _ ->
-            if (scene.searching) {
-                Toast.makeText(context, R.string.download_searching, Toast.LENGTH_LONG).show()
-                return@setOnItemClickListener
+            onLabelItemClick(position, labels)
+        }
+    }
+
+    private fun onLabelItemClick(position: Int, labels: List<String>) {
+        if (callback.searching) {
+            Toast.makeText(context, R.string.download_searching, Toast.LENGTH_LONG).show()
+            return
+        }
+        val label = if (position == 0) null else labels[position]
+        if (!ObjectUtils.equal(label, callback.currentLabel)) {
+            callback.selectLabel(label)
+            callback.updateForLabel()
+            if (!callback.searchKey.isNullOrEmpty()) {
+                callback.startSearching()
+            } else {
+                callback.updateView()
             }
-            val label = if (position == 0) null else labels[position]
-            if (!ObjectUtils.equal(label, scene.mLabel)) {
-                scene.mLabel = label
-                scene.updateForLabel()
-                if (!scene.searchKey.isNullOrEmpty()) {
-                    scene.startSearching()
-                } else {
-                    scene.updateView()
-                }
-                scene.closeDrawer(Gravity.RIGHT)
-            }
+            callback.closeDrawer(Gravity.RIGHT)
         }
     }
 }
