@@ -13,7 +13,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.chip.ChipGroup
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.EhCacheKeyFactory
+import com.hippo.ehviewer.client.LRRCacheKeyFactory
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.mapper.toEntity
@@ -117,7 +117,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
         linearLayout.setOnClickListener { onItemClick(view, gi) }
 
         val imageViewNew: LoadImageViewNew = linearLayout.findViewById(R.id.dialog_thumb)
-        imageViewNew.load(EhCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
+        imageViewNew.load(LRRCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
         imageViewNew.setOnClickListener { onItemClick(view, gi) }
 
         callback.buildChipGroup(gi, linearLayout.findViewById(R.id.tab_tag_flow))
