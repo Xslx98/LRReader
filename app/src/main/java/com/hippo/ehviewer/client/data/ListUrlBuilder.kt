@@ -19,6 +19,7 @@ package com.hippo.ehviewer.client.data
 import android.os.Parcel
 import android.os.Parcelable
 import android.text.TextUtils
+import android.util.Log
 import androidx.annotation.IntDef
 import com.hippo.ehviewer.client.EhConfig
 import com.hippo.ehviewer.client.LRRUrl
@@ -292,8 +293,10 @@ class ListUrlBuilder : Cloneable, Parcelable {
                 "f_search" -> {
                     try {
                         parsedKeyword = URLDecoder.decode(value, "utf-8")
-                    } catch (_: UnsupportedEncodingException) {
-                    } catch (_: IllegalArgumentException) {
+                    } catch (e: UnsupportedEncodingException) {
+                        Log.d(TAG, "Decode search keyword", e)
+                    } catch (e: IllegalArgumentException) {
+                        Log.d(TAG, "Decode search keyword", e)
                     }
                 }
                 "advsearch" -> if ("1" == value) enableAdvanceSearch = true
@@ -360,7 +363,8 @@ class ListUrlBuilder : Cloneable, Parcelable {
                 append("uploader/")
                 try {
                     append(URLEncoder.encode(keyword, "UTF-8"))
-                } catch (_: UnsupportedEncodingException) {
+                } catch (e: UnsupportedEncodingException) {
+                    Log.d(TAG, "Encode uploader keyword", e)
                 }
                 if (pageIndex != 0) {
                     append('/').append(pageIndex)
@@ -372,7 +376,8 @@ class ListUrlBuilder : Cloneable, Parcelable {
                 append("tag/")
                 try {
                     append(URLEncoder.encode(keyword, "UTF-8"))
-                } catch (_: UnsupportedEncodingException) {
+                } catch (e: UnsupportedEncodingException) {
+                    Log.d(TAG, "Encode tag keyword", e)
                 }
                 if (pageIndex != 0) {
                     append('/').append(pageIndex)
@@ -388,7 +393,8 @@ class ListUrlBuilder : Cloneable, Parcelable {
                 append("f_search=")
                 try {
                     append(URLEncoder.encode(keyword, "UTF-8"))
-                } catch (_: UnsupportedEncodingException) {
+                } catch (e: UnsupportedEncodingException) {
+                    Log.d(TAG, "Encode filter keyword", e)
                 }
             }
 
@@ -423,7 +429,8 @@ class ListUrlBuilder : Cloneable, Parcelable {
                 keyword?.trim()?.takeIf { it.isNotEmpty() }?.let {
                     try {
                         ub.addQuery("f_search", URLEncoder.encode(keyword, "UTF-8"))
-                    } catch (_: UnsupportedEncodingException) {
+                    } catch (e: UnsupportedEncodingException) {
+                        Log.d(TAG, "Encode search keyword", e)
                     }
                 }
                 // Page index
@@ -479,6 +486,7 @@ class ListUrlBuilder : Cloneable, Parcelable {
     }
 
     companion object {
+        private const val TAG = "ListUrlBuilder"
         private val PATTERN_SEEK_DATE = Pattern.compile("seek=(\\d+)-(\\d+)-(\\d+)")
         private val PATTERN_JUMP_NODE = Pattern.compile("jump=(\\d)[ymwd]")
 

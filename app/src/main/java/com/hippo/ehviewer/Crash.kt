@@ -74,8 +74,8 @@ object Crash {
                     }
                 }
             }
-        } catch (_: Throwable) {
-            // Ignore
+        } catch (e: Throwable) {
+            System.err.println("Crash collectInfo: retrieve top activity: ${e.message}")
         }
         fw.write("======== Runtime ========\r\n")
         fw.write("TopActivity="); fw.write(avoidNull(topActivityClazzName)); fw.write("\r\n")
@@ -152,7 +152,8 @@ object Crash {
             getThrowableInfo(t, fw)
             fw.write("\r\n")
             fw.flush()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            System.err.println("Crash saveCrashLog: write crash file: ${e.message}")
             file.delete()
         } finally {
             IOUtils.closeQuietly(fw)
