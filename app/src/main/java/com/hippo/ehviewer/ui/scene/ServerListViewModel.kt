@@ -3,7 +3,6 @@ package com.hippo.ehviewer.ui.scene
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.ServerProfile
 import com.lanraragi.reader.client.api.LRRAuthManager
@@ -31,6 +30,8 @@ import kotlinx.coroutines.withContext
  * in the Scene.
  */
 class ServerListViewModel : ViewModel() {
+
+    private val profileRepository = ServiceRegistry.dataModule.profileRepository
 
     // -------------------------------------------------------------------------
     // State
@@ -85,7 +86,7 @@ class ServerListViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val result = withContext(Dispatchers.IO) {
-                    ArrayList(EhDB.getAllServerProfilesAsync()).also { list ->
+                    ArrayList(profileRepository.getAllProfiles()).also { list ->
                         list.sortWith(compareByDescending { it.isActive })
                     }
                 }
@@ -104,8 +105,8 @@ class ServerListViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    EhDB.deactivateAllProfilesAsync()
-                    EhDB.updateServerProfileAsync(
+                    profileRepository.deactivateAll()
+                    profileRepository.update(
                         ServerProfile(
                             id = profile.id,
                             name = profile.name,
@@ -136,7 +137,7 @@ class ServerListViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    EhDB.deleteServerProfileAsync(profile)
+                    profileRepository.delete(profile)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to delete profile", e)
@@ -220,7 +221,7 @@ class ServerListViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    EhDB.updateServerProfileAsync(updated)
+                    profileRepository.update(updated)
                     try {
                         LRRAuthManager.setApiKeyForProfile(profile.id, newKey.ifEmpty { null })
                         if (isActive) {
@@ -231,7 +232,7 @@ class ServerListViewModel : ViewModel() {
                             LRRAuthManager.bumpServerConfigVersion()
                         }
                         LRRAuthManager.markReauthIfProfilesUnprotected(
-                            EhDB.getAllServerProfilesAsync().map { it.id }
+                            profileRepository.getAllProfiles().map { it.id }
                         )
                     } catch (e: LRRSecureStorageUnavailableException) {
                         _uiEvent.emit(ServerListUiEvent.SecureStorageError)
@@ -344,7 +345,7 @@ class ServerListViewModel : ViewModel() {
                 }
 
                 val newId = withContext(Dispatchers.IO) {
-                    EhDB.deactivateAllProfilesAsync()
+                    profileRepository.deactivateAll()
                     val newProfile = ServerProfile(
                         id = 0,
                         name = name,
@@ -352,7 +353,7 @@ class ServerListViewModel : ViewModel() {
                         isActive = true,
                         allowCleartext = savedAllowCleartext
                     )
-                    val id = EhDB.insertServerProfileAsync(newProfile)
+                    val id = profileRepository.insert(newProfile)
                     try {
                         LRRAuthManager.setApiKeyForProfile(id, finalKey)
                         LRRAuthManager.setActiveProfileId(id)
