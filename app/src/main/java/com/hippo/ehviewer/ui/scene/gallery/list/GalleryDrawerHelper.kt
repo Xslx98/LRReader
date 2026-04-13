@@ -185,6 +185,8 @@ class GalleryDrawerHelper(private val callback: Callback) {
                 activity?.runOnUiThread {
                     @Suppress("UNCHECKED_CAST")
                     (list as MutableList<QuickSearch>).add(quickSearch)
+                    // ArrayAdapter only supports notifyDataSetChanged() — no granular notifications
+                    @Suppress("NotifyDataSetChanged")
                     adapter.notifyDataSetChanged()
                     if (list.isEmpty()) {
                         tip.visibility = View.VISIBLE
