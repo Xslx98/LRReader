@@ -108,7 +108,8 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
         if (!noMedia.exists()) {
             try {
                 noMedia.createNewFile()
-            } catch (_: IOException) {
+            } catch (e: IOException) {
+                Log.d(TAG, "Create .nomedia file", e)
             }
         }
 
@@ -130,7 +131,8 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
                     runSuspend<Unit> {
                         LRRArchiveApi.clearNewFlag(client, serverUrl, arcId)
                     }
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    Log.w(TAG, "Clear new flag for archive $arcId", e)
                 }
 
                 // Load server-side reading progress
@@ -550,7 +552,8 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
                 )
                 false
             }
-        } catch (_: IOException) {
+        } catch (e: IOException) {
+            Log.d(TAG, "Validate image file", e)
             false
         }
     }
