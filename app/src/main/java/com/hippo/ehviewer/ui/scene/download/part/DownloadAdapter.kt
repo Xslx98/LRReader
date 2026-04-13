@@ -95,7 +95,7 @@ class DownloadAdapter(
         val isCanPagination: Boolean
         fun positionInList(position: Int): Int
         fun listIndexInPage(position: Int): Int
-        val list: MutableList<DownloadInfo>?
+        val list: List<DownloadInfo>?
         val spiderInfoMap: Map<Long, SpiderInfo>
         val downloadManager: DownloadManager?
         val recyclerView: EasyRecyclerView?
