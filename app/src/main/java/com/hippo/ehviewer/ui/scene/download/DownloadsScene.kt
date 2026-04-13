@@ -105,12 +105,12 @@ class DownloadsScene : ToolbarScene(),
     /*---------------
      View life cycle
      ---------------*/
-    private var mRecyclerView: MyEasyRecyclerView? = null
+    private lateinit var mRecyclerView: MyEasyRecyclerView
     private var mViewTransition: ViewTransition? = null
-    private var mFabLayout: FabLayout? = null
+    private lateinit var mFabLayout: FabLayout
     private var mAdapter: RecyclerView.Adapter<*>? = null
     private var mOriginalAdapter: DownloadAdapter? = null
-    private var mLayoutManager: AutoStaggeredGridLayoutManager? = null
+    private lateinit var mLayoutManager: AutoStaggeredGridLayoutManager
 
     // Helpers
     private var mDragDropHelper: DownloadDragDropHelper? = null
@@ -169,7 +169,7 @@ class DownloadsScene : ToolbarScene(),
                 val list = mList
                 if (list != null) {
                     val position = list.indexOf(info)
-                    if (position >= 0 && mRecyclerView != null) {
+                    if (position >= 0 && ::mRecyclerView.isInitialized) {
                         mPaginationHelper?.initPage(position, mList, mRecyclerView, mPaginationIndicator)
                     } else {
                         mInitPosition = position
@@ -219,7 +219,7 @@ class DownloadsScene : ToolbarScene(),
     fun updateForLabel() {
         viewModel.updateForLabel()
 
-        dispatchDiffUpdate(if (mList != null) ArrayList(mList!!) else ArrayList())
+        dispatchDiffUpdate(mList?.let { ArrayList(it) } ?: ArrayList())
         updateTitle()
         updatePaginationIndicator()
     }
@@ -283,7 +283,7 @@ class DownloadsScene : ToolbarScene(),
         mSelectionHelper = DownloadSelectionHelper(SelectionHelperCallback())
 
         mCategorySpinner = ViewUtils.`$$`(view, R.id.category_spinner) as Spinner
-        mSearchHelper!!.initCategorySpinner(mCategorySpinner!!, context)
+        mSearchHelper?.initCategorySpinner(mCategorySpinner!!, context)
 
         mProgressView = ViewUtils.`$$`(view, R.id.download_progress_view) as ProgressView
         val content = ViewUtils.`$$`(view, R.id.content)
@@ -297,11 +297,11 @@ class DownloadsScene : ToolbarScene(),
         mDragDropHelper = DownloadDragDropHelper()
 
         if (mPaginationIndicator != null) {
-            mPaginationHelper!!.needInitPage = true
+            mPaginationHelper?.needInitPage = true
         }
         mPaginationIndicator = ViewUtils.`$$`(view, R.id.indicator) as PaginationIndicator
 
-        mPaginationIndicator!!.setPerPageCountChoices(viewModel.perPageCountChoices, mPaginationHelper!!.getPageSizePos(viewModel.pageSize.value))
+        mPaginationIndicator?.setPerPageCountChoices(viewModel.perPageCountChoices, mPaginationHelper?.getPageSizePos(viewModel.pageSize.value) ?: 0)
 
         mViewTransition = ViewTransition(content, tip)
 
@@ -311,13 +311,14 @@ class DownloadsScene : ToolbarScene(),
         drawable?.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
         tip.setCompoundDrawables(null, drawable, null, null)
         // Initialize drag-drop via helper
-        mOriginalAdapter = DownloadAdapter(this, this)
-        mOriginalAdapter!!.setHasStableIds(true)
-        mAdapter = mDragDropHelper!!.setup(context, mOriginalAdapter!!)
-        mRecyclerView!!.adapter = mAdapter
+        val originalAdapter = DownloadAdapter(this, this)
+        mOriginalAdapter = originalAdapter
+        originalAdapter.setHasStableIds(true)
+        mAdapter = mDragDropHelper?.setup(context, originalAdapter) ?: originalAdapter
+        mRecyclerView.adapter = mAdapter
 
         // Initialize pagination listener
-        val paginationHelper = mPaginationHelper!!
+        val paginationHelper = mPaginationHelper ?: return null
         myPageChangeListener = MyPageChangeListener(
             viewModel.indexPage.value, viewModel.pageSize.value,
             paginationHelper.needInitPage, paginationHelper.doNotScroll,
@@ -325,7 +326,7 @@ class DownloadsScene : ToolbarScene(),
         )
 
         // 设置分页监听器的回调
-        myPageChangeListener!!.pageChangeCallback = object : MyPageChangeListener.PageChangeCallback {
+        myPageChangeListener?.pageChangeCallback = object : MyPageChangeListener.PageChangeCallback {
             override fun onPageChanged(newIndexPage: Int) {
                 viewModel.setIndexPage(newIndexPage)
             }
@@ -335,38 +336,38 @@ class DownloadsScene : ToolbarScene(),
             }
         }
         mLayoutManager = AutoStaggeredGridLayoutManager(0, StaggeredGridLayoutManager.VERTICAL)
-        mLayoutManager!!.setColumnSize(resources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId()))
-        mLayoutManager!!.setStrategy(AutoStaggeredGridLayoutManager.STRATEGY_MIN_SIZE)
+        mLayoutManager.setColumnSize(resources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId()))
+        mLayoutManager.setStrategy(AutoStaggeredGridLayoutManager.STRATEGY_MIN_SIZE)
 
         // Configure drag-related RecyclerView properties
-        mDragDropHelper?.configureRecyclerView(mRecyclerView!!)
+        mDragDropHelper?.configureRecyclerView(mRecyclerView)
 
-        mRecyclerView!!.setItemViewCacheSize(100)
-        mRecyclerView!!.layoutManager = mLayoutManager
-        mRecyclerView!!.selector = Ripple.generateRippleDrawable(
+        mRecyclerView.setItemViewCacheSize(100)
+        mRecyclerView.layoutManager = mLayoutManager
+        mRecyclerView.selector = Ripple.generateRippleDrawable(
             context,
             !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme),
             ColorDrawable(Color.TRANSPARENT)
         )
-        mRecyclerView!!.setDrawSelectorOnTop(true)
-        mRecyclerView!!.clipToPadding = false
-        mRecyclerView!!.setOnItemClickListener(this)
-        mRecyclerView!!.setOnItemLongClickListener(this)
-        mRecyclerView!!.setChoiceMode(EasyRecyclerView.CHOICE_MODE_MULTIPLE_CUSTOM)
-        mRecyclerView!!.setCustomCheckedListener(mSelectionHelper!!.choiceListener)
+        mRecyclerView.setDrawSelectorOnTop(true)
+        mRecyclerView.clipToPadding = false
+        mRecyclerView.setOnItemClickListener(this)
+        mRecyclerView.setOnItemLongClickListener(this)
+        mRecyclerView.setChoiceMode(EasyRecyclerView.CHOICE_MODE_MULTIPLE_CUSTOM)
+        mRecyclerView.setCustomCheckedListener(mSelectionHelper?.choiceListener)
         val interval = resources.getDimensionPixelOffset(R.dimen.gallery_list_interval)
         val paddingH = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_h)
         val paddingV = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_v)
         val decoration = MarginItemDecoration(interval, paddingH, paddingV, paddingH, paddingV)
-        mRecyclerView!!.addItemDecoration(decoration)
+        mRecyclerView.addItemDecoration(decoration)
         decoration.applyPaddings(mRecyclerView)
 
         // Attach drag-drop manager to RecyclerView
-        mDragDropHelper?.attachToRecyclerView(mRecyclerView!!)
+        mDragDropHelper?.attachToRecyclerView(mRecyclerView)
 
         if (mInitPosition >= 0 && viewModel.indexPage.value != 1) {
             mPaginationHelper?.initPage(mInitPosition, mList, mRecyclerView, mPaginationIndicator)
-            mRecyclerView!!.scrollToPosition(listIndexInPage(mInitPosition))
+            mRecyclerView.scrollToPosition(listIndexInPage(mInitPosition))
             mInitPosition = -1
         }
 
@@ -376,20 +377,20 @@ class DownloadsScene : ToolbarScene(),
         fastScroller.setHandlerDrawable(handlerDrawable)
         fastScroller.setOnDragHandlerListener(this)
 
-        mFabLayout!!.setExpanded(false, true)
-        mFabLayout!!.setHidePrimaryFab(false)
-        mFabLayout!!.setAutoCancel(false)
-        mFabLayout!!.setOnClickFabListener(this)
-        mFabLayout!!.setOnExpandListener(this)
+        mFabLayout.setExpanded(false, true)
+        mFabLayout.setHidePrimaryFab(false)
+        mFabLayout.setAutoCancel(false)
+        mFabLayout.setOnClickFabListener(this)
+        mFabLayout.setOnExpandListener(this)
         mActionFabDrawable = AddDeleteDrawable(context, resources.getColor(R.color.primary_drawable_dark, null))
-        mFabLayout!!.primaryFab.setImageDrawable(mActionFabDrawable)
-        val fab = mFabLayout!!.getSecondaryFabAt(6)
+        mFabLayout.primaryFab.setImageDrawable(mActionFabDrawable)
+        val fab = mFabLayout.getSecondaryFabAt(6)
         if (DRAG_ENABLE) {
             fab.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.v_mobile_hand_left_x24, context.theme))
         } else {
             fab.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.v_mobile_hand_left_off_x24, context.theme))
         }
-        addAboveSnackView(mFabLayout as View)
+        addAboveSnackView(mFabLayout)
 
         updateView()
 
@@ -419,10 +420,10 @@ class DownloadsScene : ToolbarScene(),
         collectFlow(viewLifecycleOwner, viewModel.filterLoading) { loading ->
             if (loading) {
                 mProgressView.visibility = View.VISIBLE
-                mRecyclerView?.visibility = View.GONE
+                mRecyclerView.visibility = View.GONE
             } else {
                 mProgressView.visibility = View.GONE
-                mRecyclerView?.visibility = View.VISIBLE
+                mRecyclerView.visibility = View.VISIBLE
             }
         }
 
@@ -436,7 +437,7 @@ class DownloadsScene : ToolbarScene(),
         // Observe category filter list changes
         collectFlow(viewLifecycleOwner, viewModel.listChanged) {
             mList = viewModel.downloadList.value
-            dispatchDiffUpdate(if (mList != null) ArrayList(mList!!) else ArrayList())
+            dispatchDiffUpdate(mList?.let { ArrayList(it) } ?: ArrayList())
             updateTitle()
             updatePaginationIndicator()
             updateView()
@@ -471,23 +472,24 @@ class DownloadsScene : ToolbarScene(),
                 is DownloadUiEvent.ItemUpdated -> {
                     if (viewModel.currentLabel.value != event.info.label && mList?.contains(event.info) != true) return@collectFlow
                     val index = mList?.indexOf(event.info) ?: return@collectFlow
-                    if (index >= 0 && mAdapter != null) {
-                        mAdapter!!.notifyItemChanged(listIndexInPage(index))
+                    if (index >= 0) {
+                        mAdapter?.notifyItemChanged(listIndexInPage(index))
                     }
                 }
                 is DownloadUiEvent.DiffUpdate -> {
-                    if (mAdapter != null && mList != null) {
-                        dispatchDiffUpdate(ArrayList(mList!!))
+                    val list = mList
+                    if (mAdapter != null && list != null) {
+                        dispatchDiffUpdate(ArrayList(list))
                     }
                     updateView()
                 }
                 is DownloadUiEvent.Replaced -> {
-                    if (mList == null) return@collectFlow
+                    val list = mList ?: return@collectFlow
                     updateForLabel()
                     updateView()
-                    val index = mList!!.indexOf(event.newInfo)
-                    if (index >= 0 && mAdapter != null) {
-                        mAdapter!!.notifyItemChanged(listIndexInPage(index))
+                    val index = list.indexOf(event.newInfo)
+                    if (index >= 0) {
+                        mAdapter?.notifyItemChanged(listIndexInPage(index))
                     }
                 }
                 is DownloadUiEvent.LabelRenamed -> {
@@ -501,8 +503,9 @@ class DownloadsScene : ToolbarScene(),
                     updateView()
                 }
                 is DownloadUiEvent.Reloaded -> {
-                    if (mAdapter != null && mList != null) {
-                        dispatchDiffUpdate(ArrayList(mList!!))
+                    val list = mList
+                    if (mAdapter != null && list != null) {
+                        dispatchDiffUpdate(ArrayList(list))
                     }
                     updateView()
                 }
@@ -516,10 +519,10 @@ class DownloadsScene : ToolbarScene(),
     override fun onResume() {
         super.onResume()
         // Refresh column size to pick up detail_size changes from settings
-        if (mLayoutManager != null) {
+        if (::mLayoutManager.isInitialized) {
             val columnWidth = resources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId())
-            mLayoutManager!!.setColumnSize(columnWidth)
-            mRecyclerView?.requestLayout()
+            mLayoutManager.setColumnSize(columnWidth)
+            mRecyclerView.requestLayout()
         }
     }
 
@@ -536,20 +539,16 @@ class DownloadsScene : ToolbarScene(),
         mGalleryOpenHelper = null
         mSelectionHelper = null
 
-        if (mRecyclerView != null) {
-            mRecyclerView!!.stopScroll()
-            mRecyclerView = null
+        if (::mRecyclerView.isInitialized) {
+            mRecyclerView.stopScroll()
         }
-        if (mFabLayout != null) {
-            removeAboveSnackView(mFabLayout as View)
-            mFabLayout = null
+        if (::mFabLayout.isInitialized) {
+            removeAboveSnackView(mFabLayout)
         }
 
-        mRecyclerView = null
         mViewTransition = null
         mAdapter = null
         mOriginalAdapter = null
-        mLayoutManager = null
     }
 
     override fun onNavigationClick(view: View) {
@@ -561,7 +560,7 @@ class DownloadsScene : ToolbarScene(),
     @SuppressLint("NonConstantResourceId")
     override fun onMenuItemClick(item: MenuItem): Boolean {
         val activity = activity2
-        if (activity == null || mRecyclerView == null || mRecyclerView!!.isInCustomChoice) return false
+        if (activity == null || !::mRecyclerView.isInitialized || mRecyclerView.isInCustomChoice) return false
         return handleMenuAction(item.itemId, activity)
     }
 
@@ -584,12 +583,11 @@ class DownloadsScene : ToolbarScene(),
     }
 
     fun updateView() {
-        if (mViewTransition != null) {
-            if (mList == null || mList!!.isEmpty()) {
-                mViewTransition!!.showView(1)
-            } else {
-                mViewTransition!!.showView(0)
-            }
+        val viewTransition = mViewTransition ?: return
+        if (mList.isNullOrEmpty()) {
+            viewTransition.showView(1)
+        } else {
+            viewTransition.showView(0)
         }
     }
 
@@ -605,10 +603,8 @@ class DownloadsScene : ToolbarScene(),
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        if (downloadLabelDraw == null) {
-            downloadLabelDraw = DownloadLabelDraw(inflater, container, LabelDrawCallback())
-        }
-        return downloadLabelDraw!!.createView()
+        val draw = downloadLabelDraw ?: DownloadLabelDraw(inflater, container, LabelDrawCallback()).also { downloadLabelDraw = it }
+        return draw.createView()
     }
 
     override fun onBackPressed() {
@@ -616,8 +612,8 @@ class DownloadsScene : ToolbarScene(),
             return
         }
 
-        if (mRecyclerView != null && mRecyclerView!!.isInCustomChoice) {
-            mRecyclerView!!.outOfCustomChoiceMode()
+        if (::mRecyclerView.isInitialized && mRecyclerView.isInCustomChoice) {
+            mRecyclerView.outOfCustomChoiceMode()
         } else {
             super.onBackPressed()
         }
@@ -630,13 +626,13 @@ class DownloadsScene : ToolbarScene(),
 
     override fun onEndDragHandler() {
         // Restore right drawer
-        if (mRecyclerView != null && !mRecyclerView!!.isInCustomChoice) {
+        if (::mRecyclerView.isInitialized && !mRecyclerView.isInCustomChoice) {
             setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)
         }
     }
 
     override fun onItemClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean {
-        if (activity2 == null || mRecyclerView == null) return false
+        if (activity2 == null || !::mRecyclerView.isInitialized) return false
         return mGalleryOpenHelper?.onItemClick(position) ?: false
     }
 
@@ -683,7 +679,7 @@ class DownloadsScene : ToolbarScene(),
         get() = viewModel.downloadManager
 
     override val recyclerView: EasyRecyclerView?
-        get() = mRecyclerView
+        get() = if (::mRecyclerView.isInitialized) mRecyclerView else null
 
     override fun onClickTitle() {
         mSearchHelper?.enterSearchMode(true)
@@ -715,11 +711,14 @@ class DownloadsScene : ToolbarScene(),
         if (!isAdded) {
             return
         }
-        mOriginalAdapter = DownloadAdapter(this, this)
-        mOriginalAdapter!!.setHasStableIds(true)
+        val newAdapter = DownloadAdapter(this, this)
+        mOriginalAdapter = newAdapter
+        newAdapter.setHasStableIds(true)
         // 避免重复创建包装适配器，直接使用原始适配器
         mAdapter = mOriginalAdapter
-        mRecyclerView?.adapter = mAdapter
+        if (::mRecyclerView.isInitialized) {
+            mRecyclerView.adapter = mAdapter
+        }
     }
 
     override fun onSearchEditTextBackPressed() {
@@ -732,7 +731,7 @@ class DownloadsScene : ToolbarScene(),
 
     override fun isValidView(recyclerView: RecyclerView): Boolean = false
 
-    override fun getValidRecyclerView(): RecyclerView? = mRecyclerView
+    override fun getValidRecyclerView(): RecyclerView? = if (::mRecyclerView.isInitialized) mRecyclerView else null
 
     override fun forceShowSearchBar(): Boolean = false
 
@@ -747,7 +746,7 @@ class DownloadsScene : ToolbarScene(),
         override val activity2: android.app.Activity? get() = this@DownloadsScene.activity2
         override val viewModel: DownloadsViewModel get() = this@DownloadsScene.viewModel
         override val mList: List<DownloadInfo>? get() = this@DownloadsScene.mList
-        override val mRecyclerView: EasyRecyclerView? get() = this@DownloadsScene.mRecyclerView
+        override val mRecyclerView: EasyRecyclerView? get() = this@DownloadsScene.recyclerView
         override val mAdapter: RecyclerView.Adapter<*>? get() = this@DownloadsScene.mAdapter
         override val viewLifecycleOwner get() = this@DownloadsScene.viewLifecycleOwner
         override fun positionInList(position: Int): Int = this@DownloadsScene.positionInList(position)
@@ -756,8 +755,8 @@ class DownloadsScene : ToolbarScene(),
     }
 
     private inner class SelectionHelperCallback : DownloadSelectionHelper.Callback {
-        override val mRecyclerView: EasyRecyclerView? get() = this@DownloadsScene.mRecyclerView
-        override val mFabLayout: FabLayout? get() = this@DownloadsScene.mFabLayout
+        override val mRecyclerView: EasyRecyclerView? get() = this@DownloadsScene.recyclerView
+        override val mFabLayout: FabLayout? get() = if (this@DownloadsScene::mFabLayout.isInitialized) this@DownloadsScene.mFabLayout else null
         override val actionFabDrawable: AddDeleteDrawable? get() = mActionFabDrawable
         override val longClickListener: EasyRecyclerView.OnItemLongClickListener get() = this@DownloadsScene
         override fun setDrawerLockMode(lockMode: Int, gravity: Int) =
@@ -795,8 +794,8 @@ class DownloadsScene : ToolbarScene(),
         override val activity2: android.app.Activity? get() = this@DownloadsScene.activity2
         override val viewModel: DownloadsViewModel get() = this@DownloadsScene.viewModel
         override val mList: List<DownloadInfo>? get() = this@DownloadsScene.mList
-        override val mRecyclerView: EasyRecyclerView? get() = this@DownloadsScene.mRecyclerView
-        override val mFabLayout: FabLayout? get() = this@DownloadsScene.mFabLayout
+        override val mRecyclerView: EasyRecyclerView? get() = this@DownloadsScene.recyclerView
+        override val mFabLayout: FabLayout? get() = if (this@DownloadsScene::mFabLayout.isInitialized) this@DownloadsScene.mFabLayout else null
         override fun positionInList(position: Int): Int = this@DownloadsScene.positionInList(position)
         override fun onClickPrimaryFab(view: FabLayout, fab: FloatingActionButton?) =
             this@DownloadsScene.onClickPrimaryFab(view, fab)
