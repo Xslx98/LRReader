@@ -14,23 +14,9 @@
  * limitations under the License.
  */
 
-package com.hippo.ehviewer.ui.annotation;
+package com.hippo.ehviewer.client.exception
 
-import android.app.Fragment;
-import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.ViewGroup;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-/**
- * Created in {@link Fragment#onCreateView(LayoutInflater, ViewGroup, Bundle)},
- * destroyed in {@link Fragment#onDestroyView()}.
- */
-@Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.FIELD})
-public @interface ViewLifeCircle {
+open class EhException : Exception {
+    constructor(detailMessage: String?) : super(detailMessage)
+    constructor(detailMessage: String?, cause: Throwable?) : super(detailMessage, cause)
 }
