@@ -36,7 +36,9 @@ import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.lib.yorozuya.StringUtils
 import com.hippo.lib.yorozuya.thread.PriorityThread
 import kotlinx.coroutines.launch
+import java.io.File
 import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.io.IOException
 import java.util.Stack
 import java.util.concurrent.atomic.AtomicInteger
@@ -292,15 +294,37 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
                 continue
             }
 
-            var inputStream: java.io.InputStream? = null
             try {
-                inputStream = files[index].openInputStream()
-                if (inputStream !is FileInputStream) {
-                    decodingIndex.lazySet(GalleryPageView.INVALID_INDEX)
-                    notifyPageFailed(index, GetText.getString(R.string.error_reading_failed))
-                    continue
+                val inputStream = files[index].openInputStream()
+                val image = if (inputStream is FileInputStream) {
+                    try {
+                        Image.decode(inputStream, false)
+                    } finally {
+                        IOUtils.closeQuietly(inputStream)
+                    }
+                } else {
+                    // Non-FileInputStream (e.g., SAF content:// URI) — copy to temp file
+                    val ctx = context
+                    if (ctx == null) {
+                        IOUtils.closeQuietly(inputStream)
+                        decodingIndex.lazySet(GalleryPageView.INVALID_INDEX)
+                        notifyPageFailed(index, GetText.getString(R.string.error_reading_failed))
+                        continue
+                    }
+                    val tmpFile = File.createTempFile("dir_page_", ".tmp", ctx.cacheDir)
+                    try {
+                        inputStream.use { inp ->
+                            FileOutputStream(tmpFile).use { fos ->
+                                inp.copyTo(fos)
+                            }
+                        }
+                        FileInputStream(tmpFile).use { fis ->
+                            Image.decode(fis, false)
+                        }
+                    } finally {
+                        tmpFile.delete()
+                    }
                 }
-                val image = Image.decode(inputStream, false)
                 decodingIndex.lazySet(GalleryPageView.INVALID_INDEX)
                 if (image != null) {
                     notifyPageSucceed(index, image)
@@ -310,8 +334,6 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
             } catch (e: IOException) {
                 decodingIndex.lazySet(GalleryPageView.INVALID_INDEX)
                 notifyPageFailed(index, GetText.getString(R.string.error_reading_failed))
-            } finally {
-                IOUtils.closeQuietly(inputStream)
             }
             decodingIndex.lazySet(GalleryPageView.INVALID_INDEX)
         }
