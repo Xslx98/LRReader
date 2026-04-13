@@ -5,6 +5,7 @@ import com.hippo.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.dao.HistoryRepository
+import com.hippo.ehviewer.dao.ProfileRepository
 import com.hippo.ehviewer.download.DownloadManager
 
 /**
@@ -22,6 +23,9 @@ interface IDataModule {
 
     /** History domain repository backed by [com.hippo.ehviewer.dao.BrowsingRoomDao]. */
     val historyRepository: HistoryRepository
+
+    /** Server profile domain repository backed by [com.hippo.ehviewer.dao.MiscRoomDao]. */
+    val profileRepository: ProfileRepository
 
     /** LRU cache for [GalleryDetail] objects keyed by gid. */
     val galleryDetailCache: LruCache<Long, GalleryDetail>
