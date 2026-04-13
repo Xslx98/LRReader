@@ -261,6 +261,8 @@ class SearchLayout @JvmOverloads constructor(
                 searchAdapter.notifyItemRangeRemoved(0, oldItemCount - 1)
                 searchAdapter.notifyItemRangeInserted(0, newItemCount - 1)
             } else {
+                // Intentional non-animated fallback; animated branch uses granular notifications
+                @Suppress("NotifyDataSetChanged")
                 searchAdapter.notifyDataSetChanged()
             }
 
