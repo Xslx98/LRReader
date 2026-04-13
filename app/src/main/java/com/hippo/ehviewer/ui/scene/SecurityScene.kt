@@ -22,7 +22,6 @@ import android.hardware.SensorManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -34,28 +33,31 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.ViewModelProvider
 import com.hippo.ehviewer.R
-import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.hippo.ehviewer.settings.SecuritySettings
+import com.hippo.ehviewer.ui.scene.SecurityViewModel.SecurityUiEvent
+import com.hippo.ehviewer.util.collectFlow
 import com.hippo.hardware.ShakeDetector
 import com.hippo.widget.lockpattern.LockPatternUtils
 import com.hippo.widget.lockpattern.LockPatternView
 import com.hippo.lib.yorozuya.AssertUtils
 import com.hippo.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 
 class SecurityScene : SolidScene(),
     LockPatternView.OnPatternListener, ShakeDetector.OnShakeListener {
 
     companion object {
         private const val TAG = "SecurityScene"
-        private const val MAX_RETRY_TIMES = 5
         private const val ERROR_TIMEOUT_MILLIS = 1200L
         private const val SUCCESS_DELAY_MILLIS = 100L
         private const val LOCKOUT_UPDATE_INTERVAL_MS = 1000L
 
         private const val KEY_RETRY_TIMES = "retry_times"
     }
+
+    private lateinit var viewModel: SecurityViewModel
 
     private var mPatternView: LockPatternView? = null
     private lateinit var mFingerprintIcon: ImageView
@@ -66,13 +68,12 @@ class SecurityScene : SolidScene(),
     private var mShakeDetector: ShakeDetector? = null
     private var mBiometricPrompt: BiometricPrompt? = null
 
-    private var mRetryTimes = 0
-
     private val mHandler = Handler(Looper.getMainLooper())
     private val mLockoutUpdateRunnable = object : Runnable {
         override fun run() {
+            viewModel.refreshLockout()
             updateLockoutUi()
-            if (SecuritySettings.isLockedOut()) {
+            if (viewModel.lockoutState.value.isLockedOut) {
                 mHandler.postDelayed(this, LOCKOUT_UPDATE_INTERVAL_MS)
             }
         }
@@ -82,6 +83,8 @@ class SecurityScene : SolidScene(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        viewModel = ViewModelProvider(requireActivity())[SecurityViewModel::class.java]
 
         val context = ehContext
         AssertUtils.assertNotNull(context)
@@ -94,10 +97,8 @@ class SecurityScene : SolidScene(),
             }
         }
 
-        mRetryTimes = if (savedInstanceState == null) {
-            MAX_RETRY_TIMES
-        } else {
-            savedInstanceState.getInt(KEY_RETRY_TIMES)
+        if (savedInstanceState != null) {
+            viewModel.restoreRetryTimes(savedInstanceState.getInt(KEY_RETRY_TIMES))
         }
     }
 
@@ -126,8 +127,9 @@ class SecurityScene : SolidScene(),
         }
 
         // Update lockout UI on resume
+        viewModel.refreshLockout()
         updateLockoutUi()
-        if (SecuritySettings.isLockedOut()) {
+        if (viewModel.lockoutState.value.isLockedOut) {
             mHandler.postDelayed(mLockoutUpdateRunnable, LOCKOUT_UPDATE_INTERVAL_MS)
         }
     }
@@ -144,7 +146,7 @@ class SecurityScene : SolidScene(),
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt(KEY_RETRY_TIMES, mRetryTimes)
+        outState.putInt(KEY_RETRY_TIMES, viewModel.retryTimes.value)
     }
 
     override fun onCreateView2(
@@ -190,6 +192,11 @@ class SecurityScene : SolidScene(),
         // so we look for it by id and only use it if present.
         mLockoutText = view.findViewById(R.id.lockout_text)
 
+        // Observe ViewModel events
+        collectFlow(viewLifecycleOwner, viewModel.uiEvent) { event ->
+            handleUiEvent(event)
+        }
+
         return view
     }
 
@@ -202,6 +209,10 @@ class SecurityScene : SolidScene(),
         mHandler.removeCallbacks(mLockoutUpdateRunnable)
     }
 
+    // -------------------------------------------------------------------------
+    // Pattern listener
+    // -------------------------------------------------------------------------
+
     override fun onPatternStart() {}
 
     override fun onPatternCleared() {}
@@ -209,46 +220,69 @@ class SecurityScene : SolidScene(),
     override fun onPatternCellAdded(pattern: List<LockPatternView.Cell>) {}
 
     override fun onPatternDetected(pattern: List<LockPatternView.Cell>) {
-        val activity = activity2 ?: return
         val patternView = mPatternView ?: return
 
         // Check lockout before attempting verification
-        if (SecuritySettings.isLockedOut()) {
+        if (viewModel.lockoutState.value.isLockedOut) {
             patternView.setDisplayMode(LockPatternView.DisplayMode.Wrong)
+            viewModel.refreshLockout()
             updateLockoutUi()
             return
         }
 
         val enteredPattern = LockPatternUtils.patternToString(pattern)
+        viewModel.onPatternDetected(enteredPattern)
+    }
 
-        if (SecuritySettings.isPatternKeystoreBound()) {
-            // KeyStore-bound pattern: need BiometricPrompt to unlock the decrypt cipher
-            verifyWithBiometric(enteredPattern)
-        } else {
-            // PBKDF2-only pattern: verify directly
-            if (SecuritySettings.verifyPattern(enteredPattern)) {
-                onPatternVerified()
-            } else {
-                onPatternFailed(patternView)
+    // -------------------------------------------------------------------------
+    // ViewModel event handling
+    // -------------------------------------------------------------------------
+
+    private fun handleUiEvent(event: SecurityUiEvent) {
+        when (event) {
+            is SecurityUiEvent.PatternVerified -> {
+                if (ehContext != null && isAdded) {
+                    startSceneForCheckStep(CHECK_STEP_SECURITY, arguments)
+                    finish()
+                }
+            }
+
+            is SecurityUiEvent.PatternFailed -> {
+                val patternView = mPatternView ?: return
+                patternView.setDisplayMode(LockPatternView.DisplayMode.Wrong)
+                updateLockoutUi()
+                if (viewModel.lockoutState.value.isLockedOut) {
+                    mHandler.postDelayed(mLockoutUpdateRunnable, LOCKOUT_UPDATE_INTERVAL_MS)
+                }
+            }
+
+            is SecurityUiEvent.RetriesExhausted -> {
+                val patternView = mPatternView ?: return
+                patternView.setDisplayMode(LockPatternView.DisplayMode.Wrong)
+                updateLockoutUi()
+                if (viewModel.lockoutState.value.isLockedOut) {
+                    mHandler.postDelayed(mLockoutUpdateRunnable, LOCKOUT_UPDATE_INTERVAL_MS)
+                }
+                finish()
+            }
+
+            is SecurityUiEvent.NeedBiometricVerification -> {
+                verifyWithBiometric(event.pattern)
             }
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Biometric verification (requires Fragment for BiometricPrompt)
+    // -------------------------------------------------------------------------
+
     private fun verifyWithBiometric(enteredPattern: String) {
         val activity = activity2 ?: return
-        val patternView = mPatternView ?: return
 
-        val cipher: javax.crypto.Cipher
-        try {
-            cipher = LRRAuthManager.getDecryptCipher()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to get decrypt cipher, falling back to PBKDF2", e)
-            // KeyStore key invalidated (e.g., new biometrics enrolled) — fall back
-            if (SecuritySettings.verifyPattern(enteredPattern)) {
-                onPatternVerified()
-            } else {
-                onPatternFailed(patternView)
-            }
+        val cipher = viewModel.getDecryptCipher()
+        if (cipher == null) {
+            // KeyStore key invalidated — fall back to PBKDF2
+            viewModel.onBiometricCipherUnavailable(enteredPattern)
             return
         }
 
@@ -258,18 +292,15 @@ class SecurityScene : SolidScene(),
         val prompt = BiometricPrompt(fragmentActivity, executor,
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                    val authCipher = result.cryptoObject?.cipher
-                    if (authCipher != null &&
-                        LRRAuthManager.verifyPatternWithCipher(enteredPattern, authCipher)) {
-                        onPatternVerified()
-                    } else {
-                        onPatternFailed(patternView)
-                    }
+                    viewModel.onBiometricVerificationResult(
+                        enteredPattern,
+                        result.cryptoObject?.cipher
+                    )
                 }
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     // User cancelled or hardware error — don't count as pattern failure
-                    patternView.clearPattern()
+                    mPatternView?.clearPattern()
                     if (errorCode != BiometricPrompt.ERROR_USER_CANCELED &&
                         errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON &&
                         errorCode != BiometricPrompt.ERROR_CANCELED) {
@@ -292,37 +323,25 @@ class SecurityScene : SolidScene(),
         prompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher))
     }
 
-    private fun onPatternVerified() {
-        if (ehContext != null && isAdded) {
-            startSceneForCheckStep(CHECK_STEP_SECURITY, arguments)
-            finish()
-        }
-    }
-
-    private fun onPatternFailed(patternView: LockPatternView) {
-        patternView.setDisplayMode(LockPatternView.DisplayMode.Wrong)
-        mRetryTimes--
-        updateLockoutUi()
-        if (SecuritySettings.isLockedOut()) {
-            mHandler.postDelayed(mLockoutUpdateRunnable, LOCKOUT_UPDATE_INTERVAL_MS)
-        }
-        if (mRetryTimes <= 0) {
-            finish()
-        }
-    }
+    // -------------------------------------------------------------------------
+    // Lockout UI
+    // -------------------------------------------------------------------------
 
     private fun updateLockoutUi() {
-        val remainingMs = SecuritySettings.getLockoutRemainingMs()
-        if (remainingMs > 0) {
-            val seconds = ((remainingMs + 999) / 1000).toInt()
+        val state = viewModel.lockoutState.value
+        if (state.isLockedOut) {
             mPatternView?.isEnabled = false
             mLockoutText?.visibility = View.VISIBLE
-            mLockoutText?.text = getString(R.string.pattern_lockout_message, seconds)
+            mLockoutText?.text = getString(R.string.pattern_lockout_message, state.remainingSeconds)
         } else {
             mPatternView?.isEnabled = true
             mLockoutText?.visibility = View.GONE
         }
     }
+
+    // -------------------------------------------------------------------------
+    // Shake detector
+    // -------------------------------------------------------------------------
 
     override fun onShake(count: Int) {
         if (count == 10) {
@@ -345,6 +364,10 @@ class SecurityScene : SolidScene(),
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Fingerprint helpers
+    // -------------------------------------------------------------------------
+
     private fun isFingerprintAuthAvailable(): Boolean {
         if (!SecuritySettings.getEnableFingerprint()) return false
         val context = ehContext ?: return false
@@ -358,7 +381,7 @@ class SecurityScene : SolidScene(),
     }
 
     private fun fingerprintError(unrecoverable: Boolean) {
-        // Do not decrease mRetryTimes here since Android system will handle it :)
+        // Do not decrease retry times here since Android system will handle it :)
         mFingerprintIcon.setImageResource(R.drawable.fingerprint_error)
         mFingerprintIcon.removeCallbacks(mResetFingerprintRunnable)
         if (unrecoverable) {
