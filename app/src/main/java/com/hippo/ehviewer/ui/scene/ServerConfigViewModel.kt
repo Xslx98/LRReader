@@ -3,7 +3,6 @@ package com.hippo.ehviewer.ui.scene
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.ServerProfile
 import com.lanraragi.reader.client.api.LRRAuthManager
@@ -29,6 +28,8 @@ import kotlinx.coroutines.launch
  * in the Scene.
  */
 class ServerConfigViewModel : ViewModel() {
+
+    private val profileRepository = ServiceRegistry.dataModule.profileRepository
 
     // -------------------------------------------------------------------------
     // Connection state
@@ -177,8 +178,8 @@ class ServerConfigViewModel : ViewModel() {
             LRRAuthManager.setServerName(info.name)
 
             // Create or update ServerProfile
-            val existing = EhDB.findProfileByUrlAsync(resolvedUrl)
-            EhDB.deactivateAllProfilesAsync()
+            val existing = profileRepository.findByUrl(resolvedUrl)
+            profileRepository.deactivateAll()
             if (existing != null) {
                 // API key is stored in EncryptedSharedPreferences, not in Room
                 val updated = ServerProfile(
@@ -187,14 +188,14 @@ class ServerConfigViewModel : ViewModel() {
                     resolvedUrl,
                     true
                 )
-                EhDB.updateServerProfileAsync(updated)
+                profileRepository.update(updated)
                 LRRAuthManager.setApiKeyForProfile(existing.id, LRRAuthManager.getApiKey())
                 LRRAuthManager.setActiveProfileId(existing.id)
             } else {
                 val profileName = info.name ?: "LANraragi"
                 // API key is stored in EncryptedSharedPreferences, not in Room
                 val newProfile = ServerProfile(0, profileName, resolvedUrl, true)
-                val newId = EhDB.insertServerProfileAsync(newProfile)
+                val newId = profileRepository.insert(newProfile)
                 LRRAuthManager.setApiKeyForProfile(newId, LRRAuthManager.getApiKey())
                 LRRAuthManager.setActiveProfileId(newId)
             }

@@ -7,7 +7,9 @@ import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.dao.AppDatabase
+import com.hippo.ehviewer.dao.ProfileRepository
 import com.hippo.ehviewer.module.CoroutineModule
+import com.hippo.ehviewer.module.IDataModule
 import com.hippo.ehviewer.module.INetworkModule
 import com.hippo.ehviewer.module.NetworkMonitor
 import com.hippo.ehviewer.EhProxySelector
@@ -93,9 +95,20 @@ class ServerConfigViewModelTest {
         // Create a minimal INetworkModule providing our test client
         val networkModule = createTestNetworkModule(testClient)
 
+        val testDataModule = object : IDataModule {
+            override val profileRepository get() = ProfileRepository(db.miscDao())
+            override val historyRepository get() = throw NotImplementedError("not needed")
+            override val downloadManager get() = throw NotImplementedError("not needed")
+            override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
+            override val galleryDetailCache get() = throw NotImplementedError("not needed")
+            override val spiderInfoCache get() = throw NotImplementedError("not needed")
+            override fun clearGalleryDetailCache() {}
+        }
+
         ServiceRegistry.initializeForTest(
             coroutine = CoroutineModule(),
-            network = networkModule
+            network = networkModule,
+            data = testDataModule
         )
 
         // NetworkMonitor starts with count=0 under Robolectric (no active network).
