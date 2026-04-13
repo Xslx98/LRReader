@@ -22,7 +22,7 @@ import android.webkit.MimeTypeMap
 import com.hippo.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
-import com.hippo.ehviewer.client.EhUtils
+import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.settings.DownloadSettings
@@ -312,7 +312,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
 
             // Create it
             if (dirname == null) {
-                dirname = FileUtils.sanitizeFilename("${galleryInfo.gid}-${EhUtils.getSuitableTitle(galleryInfo)}")
+                dirname = FileUtils.sanitizeFilename("${galleryInfo.gid}-${LRRUtils.getSuitableTitle(galleryInfo)}")
                 EhDB.putDownloadDirnameAsync(galleryInfo.gid, dirname)
             }
 

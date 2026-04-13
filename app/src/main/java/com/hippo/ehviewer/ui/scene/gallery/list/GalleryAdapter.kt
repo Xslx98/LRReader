@@ -30,7 +30,7 @@ import com.hippo.easyrecyclerview.MarginItemDecoration
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
-import com.hippo.ehviewer.client.EhUtils
+import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.settings.AppearanceSettings
@@ -180,7 +180,7 @@ abstract class GalleryAdapter(
             else -> {
                 // TYPE_LIST or default
                 holder.thumb.load(LRRCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
-                holder.title?.text = EhUtils.getSuitableTitle(gi)
+                holder.title?.text = LRRUtils.getSuitableTitle(gi)
                 holder.uploader?.text = gi.uploader
                 holder.rating?.setRating(gi.rating)
                 // LANraragi doesn't use E-Hentai categories - hide badge
