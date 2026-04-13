@@ -7,7 +7,7 @@ import android.text.SpannableStringBuilder
 import android.text.TextUtils
 import android.text.style.ImageSpan
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.EhUrl
+import com.hippo.ehviewer.client.LRRUrl
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.client.data.ListUrlBuilder
@@ -138,7 +138,7 @@ class GallerySearchHelper(private val mCallback: Callback) {
             val ssb = SpannableStringBuilder("   ")
             ssb.append(
                 resources.getString(
-                    if (EhUrl.SITE_EX == AppearanceSettings.getGallerySite())
+                    if (LRRUrl.SITE_EX == AppearanceSettings.getGallerySite())
                         R.string.gallery_list_search_bar_hint_exhentai
                     else
                         R.string.gallery_list_search_bar_hint_e_hentai

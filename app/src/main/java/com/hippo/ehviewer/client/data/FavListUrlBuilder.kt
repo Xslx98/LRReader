@@ -20,7 +20,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import android.text.TextUtils
 import android.util.Log
-import com.hippo.ehviewer.client.EhUrl
+import com.hippo.ehviewer.client.LRRUrl
 import com.hippo.ehviewer.widget.GalleryInfoContentHelper
 import com.hippo.network.UrlBuilder
 import com.hippo.widget.ContentLayout.ContentHelper.GOTO_FIRST_PAGE
@@ -70,7 +70,7 @@ class FavListUrlBuilder : Parcelable {
     }
 
     fun build(): String {
-        val ub = UrlBuilder(EhUrl.getFavoritesUrl())
+        val ub = UrlBuilder(LRRUrl.getFavoritesUrl())
         if (isValidFavCat(favCat)) {
             ub.addQuery("favcat", favCat.toString())
         }

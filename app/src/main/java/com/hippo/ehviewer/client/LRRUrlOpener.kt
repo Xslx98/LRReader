@@ -6,10 +6,10 @@ package com.hippo.ehviewer.client
 import com.hippo.scene.Announcer
 
 /**
- * EhUrlOpener — STUB. E-Hentai URL parsing has been removed.
+ * LRRUrlOpener — STUB. E-Hentai URL parsing has been removed.
  * LANraragi does not use E-Hentai URLs.
  */
-object EhUrlOpener {
+object LRRUrlOpener {
     @JvmStatic
     fun parseUrl(url: String?): Announcer? {
         // LANraragi: E-Hentai URL parsing removed
