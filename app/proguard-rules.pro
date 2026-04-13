@@ -57,17 +57,17 @@
 -keep class com.hippo.Native { *; }
 -keep class com.hippo.util.GifHandler { *; }
 
-# === Custom views referenced in XML ===
--keep class com.hippo.ehviewer.widget.** { *; }
--keep class com.hippo.ehviewer.preference.** { *; }
--keep class com.hippo.widget.** { *; }
--keep class com.hippo.preference.** { *; }
+# === Custom views referenced in XML (need constructors for inflation) ===
+-keep class com.hippo.ehviewer.widget.** { <init>(...); }
+-keep class com.hippo.ehviewer.preference.** { <init>(...); }
+-keep class com.hippo.widget.** { <init>(...); }
+-keep class com.hippo.preference.** { <init>(...); }
 
 # === Settings fragments (instantiated via PreferenceActivity headers reflection) ===
--keep class com.hippo.ehviewer.ui.fragment.** { *; }
+-keep class com.hippo.ehviewer.ui.fragment.** { <init>(); }
 
 # === Scene classes (instantiated via SceneFactory registry) ===
--keep class com.hippo.ehviewer.ui.scene.** { *; }
+-keep class com.hippo.ehviewer.ui.scene.** { <init>(); }
 
 # === LRRDownloadWorker: preserve volatile semantics for cancellation flag ===
 -keepclassmembers class com.hippo.ehviewer.download.LRRDownloadWorker {
