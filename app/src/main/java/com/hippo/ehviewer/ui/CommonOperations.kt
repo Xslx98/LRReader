@@ -18,6 +18,7 @@ package com.hippo.ehviewer.ui
 
 import android.app.Activity
 import android.content.Intent
+import android.util.Log
 import com.hippo.app.ListCheckBoxDialogBuilder
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
@@ -34,6 +35,8 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 
 object CommonOperations {
+
+    private const val TAG = "CommonOperations"
 
     /**
      * Result callback for [addToFavorites] / [removeFromFavorites].
@@ -185,8 +188,8 @@ object CommonOperations {
         var inputStream: java.io.InputStream? = null
         try {
             inputStream = noMedia.openInputStream()
-        } catch (_: IOException) {
-            // Ignore
+        } catch (e: IOException) {
+            Log.w(TAG, "Failed to open .nomedia input stream", e)
         } finally {
             IOUtils.closeQuietly(inputStream)
         }
