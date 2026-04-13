@@ -49,7 +49,7 @@ import com.hippo.easyrecyclerview.MarginItemDecoration
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
-import com.hippo.ehviewer.client.EhUtils
+import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.ehviewer.ui.scene.ToolbarScene
@@ -278,7 +278,7 @@ class HistoryScene : ToolbarScene(),
 
         val gi = list[position]
         AlertDialog.Builder(context)
-            .setTitle(EhUtils.getSuitableTitle(gi))
+            .setTitle(LRRUtils.getSuitableTitle(gi))
             .setItems(R.array.gallery_list_menu_entries) { _, which ->
                 when (which) {
                     0 -> // Download
@@ -346,14 +346,14 @@ class HistoryScene : ToolbarScene(),
 
             val gi = list[position]
             holder.thumb.load(LRRCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
-            holder.title.text = EhUtils.getSuitableTitle(gi)
+            holder.title.text = LRRUtils.getSuitableTitle(gi)
             holder.uploader.text = gi.uploader
             holder.rating.setRating(gi.rating)
             val category = holder.category
-            val newCategoryText = EhUtils.getCategory(gi.category)
+            val newCategoryText = LRRUtils.getCategory(gi.category)
             if (newCategoryText != category.text.toString()) {
                 category.text = newCategoryText
-                category.setBackgroundColor(EhUtils.getCategoryColor(gi.category))
+                category.setBackgroundColor(LRRUtils.getCategoryColor(gi.category))
             }
             holder.posted.text = gi.posted
             holder.simpleLanguage.text = gi.simpleLanguage

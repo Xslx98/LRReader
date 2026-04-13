@@ -45,7 +45,7 @@ import com.hippo.drawable.AddDeleteDrawable
 import com.hippo.drawable.DrawerArrowDrawable
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.EhUtils
+import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.dao.QuickSearch
@@ -305,7 +305,7 @@ class GalleryListScene : BaseScene(),
         searchBar?.setTitle(title)
 
         val checkedItemId = if (ListUrlBuilder.MODE_NORMAL == builder.mode &&
-            EhUtils.NONE == category &&
+            LRRUtils.NONE == category &&
             TextUtils.isEmpty(keyword)
         ) {
             R.id.nav_homepage

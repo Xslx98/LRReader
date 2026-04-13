@@ -3,7 +3,7 @@ package com.hippo.ehviewer.sync
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.callBack.DownloadSearchCallback
-import com.hippo.ehviewer.client.EhUtils
+import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.spider.SpiderDen
@@ -144,7 +144,7 @@ class DownloadListInfosExecutor {
         val cache = ArrayList<DownloadInfo>()
 
         for (info in mList) {
-            if (EhUtils.judgeSuitableTitle(info, mSearchKey)) {
+            if (LRRUtils.judgeSuitableTitle(info, mSearchKey)) {
                 cache.add(info)
             } else if (matchTag(mSearchKey, info)) {
                 cache.add(info)
