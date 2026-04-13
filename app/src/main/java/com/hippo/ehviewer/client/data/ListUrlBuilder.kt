@@ -22,7 +22,7 @@ import android.text.TextUtils
 import androidx.annotation.IntDef
 import com.hippo.ehviewer.client.EhConfig
 import com.hippo.ehviewer.client.LRRUrl
-import com.hippo.ehviewer.client.EhUtils
+import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.dao.QuickSearch
 import com.hippo.ehviewer.widget.AdvanceSearchTable
 import com.hippo.ehviewer.widget.GalleryInfoContentHelper
@@ -56,7 +56,7 @@ class ListUrlBuilder : Cloneable, Parcelable {
     var pageIndex: Int = 0
 
     @JvmField
-    var category: Int = EhUtils.NONE
+    var category: Int = LRRUtils.NONE
 
     @JvmField
     var keyword: String? = null
@@ -112,7 +112,7 @@ class ListUrlBuilder : Cloneable, Parcelable {
     fun reset() {
         mode = MODE_NORMAL
         pageIndex = 0
-        category = EhUtils.NONE
+        category = LRRUtils.NONE
         keyword = null
         advanceSearch = -1
         minRating = -1
@@ -416,7 +416,7 @@ class ListUrlBuilder : Cloneable, Parcelable {
                 // MODE_NORMAL, MODE_SUBSCRIPTION
                 val url = if (mode == MODE_NORMAL) LRRUrl.getHost() else LRRUrl.getWatchedUrl()
                 val ub = UrlBuilder(url)
-                if (category != EhUtils.NONE) {
+                if (category != LRRUtils.NONE) {
                     ub.addQuery("f_cats", category.inv() and EhConfig.ALL_CATEGORY)
                 }
                 // Search key
