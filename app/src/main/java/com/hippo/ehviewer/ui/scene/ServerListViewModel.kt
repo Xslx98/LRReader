@@ -307,8 +307,8 @@ class ServerListViewModel : ViewModel() {
                         try {
                             oldUrl?.let { LRRAuthManager.setServerUrl(it) }
                             LRRAuthManager.setApiKey(oldKey)
-                        } catch (_: LRRSecureStorageUnavailableException) {
-                            // Secure storage down — proceed with original failure
+                        } catch (e: LRRSecureStorageUnavailableException) {
+                            Log.w(TAG, "Restore auth after connection failure", e)
                         }
                         _uiEvent.tryEmit(
                             ServerListUiEvent.AddConnectionFailed(error.message ?: "Unknown error")

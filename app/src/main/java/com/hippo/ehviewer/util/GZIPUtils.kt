@@ -1,6 +1,7 @@
 package com.hippo.ehviewer.util
 
 import android.util.Base64
+import android.util.Log
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -8,6 +9,8 @@ import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 
 object GZIPUtils {
+
+    private const val TAG = "GZIPUtils"
 
     /**
      * 使用gzip进行压缩
@@ -62,9 +65,9 @@ object GZIPUtils {
         } catch (e: IOException) {
             e.printStackTrace()
         } finally {
-            try { ginzip?.close() } catch (_: IOException) {}
-            try { inStream?.close() } catch (_: IOException) {}
-            try { out.close() } catch (_: IOException) {}
+            try { ginzip?.close() } catch (e: IOException) { Log.d(TAG, "Close GZIPInputStream", e) }
+            try { inStream?.close() } catch (e: IOException) { Log.d(TAG, "Close ByteArrayInputStream", e) }
+            try { out.close() } catch (e: IOException) { Log.d(TAG, "Close ByteArrayOutputStream", e) }
         }
         return decompressed
     }

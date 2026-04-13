@@ -18,6 +18,7 @@ package com.hippo.ehviewer
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log
 import com.hippo.ehviewer.client.exception.ParseException
 import com.hippo.lib.yorozuya.FileUtils
 import com.hippo.lib.yorozuya.IOUtils
@@ -30,6 +31,7 @@ import java.nio.charset.StandardCharsets
 
 object AppConfig {
 
+    private const val TAG = "AppConfig"
     private const val APP_DIRNAME = "LRReader"
 
     private const val DOWNLOAD = "download"
@@ -136,8 +138,8 @@ object AppConfig {
                 os.write(body.toByteArray(StandardCharsets.UTF_8))
             }
             os.flush()
-        } catch (_: IOException) {
-            // Ignore
+        } catch (e: IOException) {
+            Log.w(TAG, "Save parse error body", e)
         } finally {
             IOUtils.closeQuietly(os)
         }
@@ -167,7 +169,8 @@ object AppConfig {
                         file.delete()
                     }
                 }
-            } catch (_: OutOfMemoryError) {
+            } catch (e: OutOfMemoryError) {
+                Log.w(TAG, "Delete old parse error files ran out of memory", e)
                 // 内存不足时静默放弃，并尝试删除整个目录，避免崩溃
                 dir.delete()
             } finally {
