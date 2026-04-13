@@ -18,10 +18,8 @@ package com.hippo.ehviewer.ui.scene.download
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -34,10 +32,6 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -51,14 +45,11 @@ import com.hippo.easyrecyclerview.HandlerDrawable
 import com.hippo.easyrecyclerview.MarginItemDecoration
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.download.DownloadService
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.spider.SpiderInfo
-import com.hippo.ehviewer.ui.GalleryActivity
-import com.hippo.ehviewer.ui.GalleryOpenHelper
 import com.hippo.ehviewer.ui.scene.ToolbarScene
 import com.hippo.ehviewer.ui.scene.download.part.DownloadAdapter
 import com.hippo.ehviewer.ui.scene.download.part.DownloadAdapter.Companion.DRAG_ENABLE
@@ -70,6 +61,7 @@ import com.hippo.lib.yorozuya.AssertUtils
 import com.hippo.lib.yorozuya.ObjectUtils
 import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.ripple.Ripple
+import com.hippo.scene.Announcer
 import com.hippo.util.DrawableManager
 import com.hippo.view.ViewTransition
 import com.hippo.widget.FabLayout
@@ -103,10 +95,6 @@ class DownloadsScene : ToolbarScene(),
         get() = viewModel.downloadList.value
         set(value) { if (value != null) viewModel.setDownloadList(value) }
 
-    /** Shortcut delegating to [DownloadsViewModel.backList]. */
-    private val mBackList: List<DownloadInfo>?
-        get() = viewModel.backList.value
-
     private var mLastSnapshot: MutableList<DownloadInfo> = ArrayList()
 
     /*---------------
@@ -130,6 +118,8 @@ class DownloadsScene : ToolbarScene(),
     private var mPaginationHelper: DownloadPaginationHelper? = null
     private var mSearchHelper: DownloadSearchHelper? = null
     private var mBatchOpsHelper: DownloadBatchOpsHelper? = null
+    private var mGalleryOpenHelper: DownloadGalleryOpenHelper? = null
+    private var mSelectionHelper: DownloadSelectionHelper? = null
 
     private lateinit var mProgressView: ProgressView
 
@@ -151,7 +141,7 @@ class DownloadsScene : ToolbarScene(),
 
     private val galleryActivityLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
-    ) { result -> updateReadProcess(result) }
+    ) { result -> mGalleryOpenHelper?.updateReadProcess(result) }
 
     private var mImportHelper: DownloadImportHelper? = null
 
@@ -229,15 +219,9 @@ class DownloadsScene : ToolbarScene(),
     fun updateForLabel() {
         viewModel.updateForLabel()
 
-        val newList = if (mList != null) ArrayList(mList!!) else ArrayList()
-        val result = DiffUtil.calculateDiff(
-            DownloadInfoDiffCallback(mLastSnapshot, newList)
-        )
-        mLastSnapshot = newList
-        mAdapter?.let { result.dispatchUpdatesTo(it) }
+        dispatchDiffUpdate(if (mList != null) ArrayList(mList!!) else ArrayList())
         updateTitle()
         updatePaginationIndicator()
-
     }
 
     private fun updatePaginationIndicator() {
@@ -292,9 +276,11 @@ class DownloadsScene : ToolbarScene(),
 
         val context = ehContext!!
 
-        // Initialize search + batch-ops helpers
+        // Initialize search + batch-ops + gallery-open helpers
         mSearchHelper = DownloadSearchHelper(SearchHelperCallback())
         mBatchOpsHelper = DownloadBatchOpsHelper(BatchOpsHelperCallback())
+        mGalleryOpenHelper = DownloadGalleryOpenHelper(GalleryOpenHelperCallback())
+        mSelectionHelper = DownloadSelectionHelper(SelectionHelperCallback())
 
         mCategorySpinner = ViewUtils.`$$`(view, R.id.category_spinner) as Spinner
         mSearchHelper!!.initCategorySpinner(mCategorySpinner!!, context)
@@ -367,7 +353,7 @@ class DownloadsScene : ToolbarScene(),
         mRecyclerView!!.setOnItemClickListener(this)
         mRecyclerView!!.setOnItemLongClickListener(this)
         mRecyclerView!!.setChoiceMode(EasyRecyclerView.CHOICE_MODE_MULTIPLE_CUSTOM)
-        mRecyclerView!!.setCustomCheckedListener(DownloadChoiceListener())
+        mRecyclerView!!.setCustomCheckedListener(mSelectionHelper!!.choiceListener)
         val interval = resources.getDimensionPixelOffset(R.dimen.gallery_list_interval)
         val paddingH = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_h)
         val paddingV = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_v)
@@ -426,12 +412,7 @@ class DownloadsScene : ToolbarScene(),
                 return@collectFlow
             }
             // Apply DiffUtil against the last known snapshot
-            val newList = ArrayList(downloads)
-            val result = DiffUtil.calculateDiff(
-                DownloadInfoDiffCallback(mLastSnapshot, newList)
-            )
-            mLastSnapshot = newList
-            result.dispatchUpdatesTo(mAdapter!!)
+            dispatchDiffUpdate(ArrayList(downloads))
         }
 
         // Observe filter loading state
@@ -450,22 +431,15 @@ class DownloadsScene : ToolbarScene(),
             if (!isAdded) return@collectFlow
             mList = viewModel.downloadList.value
             updateAdapter()
-    
         }
 
         // Observe category filter list changes
         collectFlow(viewLifecycleOwner, viewModel.listChanged) {
             mList = viewModel.downloadList.value
-            val newList = if (mList != null) ArrayList(mList!!) else ArrayList()
-            val result = DiffUtil.calculateDiff(
-                DownloadInfoDiffCallback(mLastSnapshot, newList)
-            )
-            mLastSnapshot = newList
-            mAdapter?.let { result.dispatchUpdatesTo(it) }
+            dispatchDiffUpdate(if (mList != null) ArrayList(mList!!) else ArrayList())
             updateTitle()
             updatePaginationIndicator()
             updateView()
-    
         }
 
         // Observe import toast events
@@ -503,10 +477,7 @@ class DownloadsScene : ToolbarScene(),
                 }
                 is DownloadUiEvent.DiffUpdate -> {
                     if (mAdapter != null && mList != null) {
-                        val newList = ArrayList(mList!!)
-                        val result = DiffUtil.calculateDiff(DownloadInfoDiffCallback(mLastSnapshot, newList))
-                        mLastSnapshot = newList
-                        result.dispatchUpdatesTo(mAdapter!!)
+                        dispatchDiffUpdate(ArrayList(mList!!))
                     }
                     updateView()
                 }
@@ -531,10 +502,7 @@ class DownloadsScene : ToolbarScene(),
                 }
                 is DownloadUiEvent.Reloaded -> {
                     if (mAdapter != null && mList != null) {
-                        val newList = ArrayList(mList!!)
-                        val result = DiffUtil.calculateDiff(DownloadInfoDiffCallback(mLastSnapshot, newList))
-                        mLastSnapshot = newList
-                        result.dispatchUpdatesTo(mAdapter!!)
+                        dispatchDiffUpdate(ArrayList(mList!!))
                     }
                     updateView()
                 }
@@ -565,6 +533,8 @@ class DownloadsScene : ToolbarScene(),
         mPaginationHelper = null
         mSearchHelper = null
         mBatchOpsHelper = null
+        mGalleryOpenHelper = null
+        mSelectionHelper = null
 
         if (mRecyclerView != null) {
             mRecyclerView!!.stopScroll()
@@ -623,13 +593,20 @@ class DownloadsScene : ToolbarScene(),
         }
     }
 
+    /** Applies DiffUtil against [mLastSnapshot] and dispatches updates to [mAdapter]. */
+    private fun dispatchDiffUpdate(newList: MutableList<DownloadInfo>) {
+        val result = DiffUtil.calculateDiff(DownloadInfoDiffCallback(mLastSnapshot, newList))
+        mLastSnapshot = newList
+        mAdapter?.let { result.dispatchUpdatesTo(it) }
+    }
+
     override fun onCreateDrawerView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         if (downloadLabelDraw == null) {
-            downloadLabelDraw = DownloadLabelDraw(inflater, container, this)
+            downloadLabelDraw = DownloadLabelDraw(inflater, container, LabelDrawCallback())
         }
         return downloadLabelDraw!!.createView()
     }
@@ -659,118 +636,25 @@ class DownloadsScene : ToolbarScene(),
     }
 
     override fun onItemClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean {
-        val activity = activity2
-        val recyclerView = mRecyclerView
-        if (activity == null || recyclerView == null) {
-            return false
-        }
-
-        if (recyclerView.isInCustomChoice) {
-            recyclerView.toggleItemChecked(position)
-            return true
-        } else {
-            val list = mList ?: return false
-            if (position < 0 || position >= list.size) {
-                return false
-            }
-
-            val downloadInfo = list[positionInList(position)]
-            var intent = Intent(activity, GalleryActivity::class.java)
-            // Check if this is an imported archive
-            if (downloadInfo.archiveUri != null && downloadInfo.archiveUri!!.startsWith("content://")) {
-                // This is an imported archive, ensure URI permission is available
-                val archiveUri = Uri.parse(downloadInfo.archiveUri)
-                try {
-                    // Test if we can access the URI
-                    ehContext!!.contentResolver.openInputStream(archiveUri)?.use { testStream ->
-                        @Suppress("SENSELESS_COMPARISON")
-                        if (testStream == null) {
-                            Toast.makeText(ehContext, R.string.archive_not_accessible, Toast.LENGTH_SHORT).show()
-                            return true
-                        }
-                    }
-                } catch (e: SecurityException) {
-                    // Try to restore permission
-                    try {
-                        ehContext!!.contentResolver.takePersistableUriPermission(
-                            archiveUri,
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        )
-                    } catch (ex: Exception) {
-                        Toast.makeText(ehContext, R.string.archive_permission_lost, Toast.LENGTH_LONG).show()
-                        Analytics.recordException(ex)
-                        return true
-                    }
-                } catch (e: Exception) {
-                    Toast.makeText(ehContext, R.string.archive_not_accessible, Toast.LENGTH_SHORT).show()
-                    return true
-                }
-                intent.action = Intent.ACTION_VIEW
-                intent.data = archiveUri
-            } else {
-                // Use GalleryOpenHelper to prefer local files over server
-                // buildReadIntent is suspend (resolves download dir from DB)
-                viewLifecycleOwner.lifecycleScope.launch {
-                    try {
-                        val readIntent = withContext(Dispatchers.IO) {
-                            GalleryOpenHelper.buildReadIntent(activity, downloadInfo)
-                        }
-                        galleryActivityLauncher.launch(readIntent)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to build read intent", e)
-                    }
-                }
-            }
-            return true
-        }
+        if (activity2 == null || mRecyclerView == null) return false
+        return mGalleryOpenHelper?.onItemClick(position) ?: false
     }
 
-    override fun onItemLongClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean {
-        val recyclerView = mRecyclerView ?: return false
-
-        if (!recyclerView.isInCustomChoice) {
-            recyclerView.intoCustomChoiceMode()
-        }
-        recyclerView.toggleItemChecked(position)
-
-        return true
-    }
+    override fun onItemLongClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean =
+        mSelectionHelper?.onItemLongClick(position) ?: false
 
     @SuppressLint("RtlHardcoded")
     override fun onExpand(expanded: Boolean) {
-        val actionFabDrawable = mActionFabDrawable ?: return
-
-        if (expanded) {
-            setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)
-            setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)
-            actionFabDrawable.setDelete(ANIMATE_TIME)
-        } else {
-            setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.LEFT)
-            setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)
-            actionFabDrawable.setAdd(ANIMATE_TIME)
-        }
+        mSelectionHelper?.onExpand(expanded)
     }
 
     override fun onClickPrimaryFab(view: FabLayout, fab: FloatingActionButton?) {
-        if (mRecyclerView != null && mRecyclerView!!.isInCustomChoice) {
-            mRecyclerView!!.outOfCustomChoiceMode()
-            return
-        }
-        if (mRecyclerView != null && !mRecyclerView!!.isInCustomChoice) {
-            mRecyclerView!!.intoCustomChoiceMode()
-            return
-        }
-        view.toggle()
+        mSelectionHelper?.onClickPrimaryFab(view, fab)
     }
 
     override fun onClickSecondaryFab(view: FabLayout, fab: FloatingActionButton, position: Int) {
         mBatchOpsHelper?.onClickSecondaryFab(fab, position)
     }
-
-    /**
-     * Returns the DownloadManager instance. Called from DownloadLabelDraw.kt.
-     */
-    fun getMDownloadManager(): DownloadManager = viewModel.downloadManager
 
     // DownloadAdapterCallback interface implementation
     override val indexPage: Int
@@ -852,90 +736,48 @@ class DownloadsScene : ToolbarScene(),
 
     override fun forceShowSearchBar(): Boolean = false
 
-
-    private fun updateReadProcess(result: androidx.activity.result.ActivityResult) {
-        if (result.resultCode == LOCAL_GALLERY_INFO_CHANGE) {
-            val data = result.data
-            if (data != null) {
-                @Suppress("DEPRECATION")
-                val info = data.getParcelableExtra<GalleryInfo>("info")
-
-                // Check if this is an imported archive - skip SpiderInfo processing
-                var isImportedArchive = false
-                if (info is DownloadInfo) {
-                    isImportedArchive = info.archiveUri != null &&
-                        info.archiveUri!!.startsWith("content://")
-                }
-
-                if (!isImportedArchive && info != null) {
-                    // Only process SpiderInfo for regular downloads, not imported archives
-                    viewModel.removeSpiderInfo(info.gid)
-                    val gid = info.gid
-                    viewLifecycleOwner.lifecycleScope.launch {
-                        try {
-                            val spiderInfo = withContext(Dispatchers.IO) {
-                                SpiderInfo.getSpiderInfo(info)
-                            }
-                            if (spiderInfo != null) {
-                                viewModel.putSpiderInfo(gid, spiderInfo)
-                            }
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Failed to load spider info", e)
-                        }
-                    }
-                }
-
-                var position = -1
-                if (mList == null || mAdapter == null || info == null) {
-                    return
-                }
-                for (i in mList!!.indices) {
-                    if (mList!![i].gid == info.gid) {
-                        position = listIndexInPage(i)
-                        break
-                    }
-                }
-                if (position != -1) {
-                    mAdapter!!.notifyItemChanged(position)
-                }
-                // If item not found in current page, no notification needed
-            }
-        }
-    }
-
     fun runOnUiThread(runnable: Runnable) {
         activity2?.runOnUiThread(runnable)
     }
 
-    private inner class DownloadChoiceListener : EasyRecyclerView.CustomChoiceListener {
+    // ── Callback implementations for helpers ──
 
-        override fun onIntoCustomChoice(view: EasyRecyclerView) {
-            if (mRecyclerView != null) {
-                mRecyclerView!!.setOnItemLongClickListener(null)
-                mRecyclerView!!.isLongClickable = false
-            }
-            mFabLayout?.setExpanded(true)
-            // Lock drawer
-            setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)
-            setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)
-        }
-
-        override fun onOutOfCustomChoice(view: EasyRecyclerView) {
-            mRecyclerView?.setOnItemLongClickListener(this@DownloadsScene)
-            mFabLayout?.setExpanded(false)
-            // Unlock drawer
-            setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.LEFT)
-            setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)
-        }
-
-        override fun onItemCheckedStateChanged(view: EasyRecyclerView, position: Int, id: Long, checked: Boolean) {
-            if (view.checkedItemCount == 0) {
-                view.outOfCustomChoiceMode()
-            }
-        }
+    private inner class GalleryOpenHelperCallback : DownloadGalleryOpenHelper.Callback {
+        override val ehContext: Context? get() = this@DownloadsScene.ehContext
+        override val activity2: android.app.Activity? get() = this@DownloadsScene.activity2
+        override val viewModel: DownloadsViewModel get() = this@DownloadsScene.viewModel
+        override val mList: List<DownloadInfo>? get() = this@DownloadsScene.mList
+        override val mRecyclerView: EasyRecyclerView? get() = this@DownloadsScene.mRecyclerView
+        override val mAdapter: RecyclerView.Adapter<*>? get() = this@DownloadsScene.mAdapter
+        override val viewLifecycleOwner get() = this@DownloadsScene.viewLifecycleOwner
+        override fun positionInList(position: Int): Int = this@DownloadsScene.positionInList(position)
+        override fun listIndexInPage(position: Int): Int = this@DownloadsScene.listIndexInPage(position)
+        override fun launchGallery(intent: Intent) = galleryActivityLauncher.launch(intent)
     }
 
-    // ── Callback implementations for helpers ──
+    private inner class SelectionHelperCallback : DownloadSelectionHelper.Callback {
+        override val mRecyclerView: EasyRecyclerView? get() = this@DownloadsScene.mRecyclerView
+        override val mFabLayout: FabLayout? get() = this@DownloadsScene.mFabLayout
+        override val actionFabDrawable: AddDeleteDrawable? get() = mActionFabDrawable
+        override val longClickListener: EasyRecyclerView.OnItemLongClickListener get() = this@DownloadsScene
+        override fun setDrawerLockMode(lockMode: Int, gravity: Int) =
+            this@DownloadsScene.setDrawerLockMode(lockMode, gravity)
+    }
+
+    private inner class LabelDrawCallback : DownloadLabelDraw.Callback {
+        override val ehContext: Context? get() = this@DownloadsScene.ehContext
+        override val currentLabel: String? get() = this@DownloadsScene.mLabel
+        override val searching: Boolean get() = this@DownloadsScene.searching
+        override val searchKey: String? get() = this@DownloadsScene.searchKey
+        override val downloadManager: DownloadManager get() = this@DownloadsScene.viewModel.downloadManager
+        override fun getString(resId: Int): String = this@DownloadsScene.getString(resId)
+        override fun startScene(announcer: Announcer) = this@DownloadsScene.startScene(announcer)
+        override fun selectLabel(label: String?) { this@DownloadsScene.mLabel = label }
+        override fun updateForLabel() = this@DownloadsScene.updateForLabel()
+        override fun startSearching() = this@DownloadsScene.startSearching()
+        override fun updateView() = this@DownloadsScene.updateView()
+        override fun closeDrawer(gravity: Int) = this@DownloadsScene.closeDrawer(gravity)
+    }
 
     private inner class SearchHelperCallback : DownloadSearchHelper.Callback {
         override val ehContext: Context? get() = this@DownloadsScene.ehContext
@@ -972,8 +814,6 @@ class DownloadsScene : ToolbarScene(),
         const val ACTION_CLEAR_DOWNLOAD_SERVICE = "clear_download_service"
 
         const val LOCAL_GALLERY_INFO_CHANGE = 909
-
-        private const val ANIMATE_TIME = 300L
     }
 }
 
