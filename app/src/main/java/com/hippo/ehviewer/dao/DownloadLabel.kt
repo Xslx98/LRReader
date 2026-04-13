@@ -3,9 +3,10 @@ package com.hippo.ehviewer.dao
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Ignore
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "DOWNLOAD_LABELS")
+@Entity(tableName = "DOWNLOAD_LABELS", indices = [Index("TIME")])
 class DownloadLabel(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "_id")

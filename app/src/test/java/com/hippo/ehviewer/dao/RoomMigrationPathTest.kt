@@ -18,7 +18,7 @@ import java.nio.ByteBuffer
 import java.security.MessageDigest
 
 /**
- * Migration path tests for AppDatabase v9 -> v10 -> v11 -> v12 -> v13 -> v14 -> v15 -> v16 -> v17 -> v18.
+ * Migration path tests for AppDatabase v9 -> v10 -> v11 -> v12 -> v13 -> v14 -> v15 -> v16 -> v17 -> v18 -> v19.
  *
  * These tests exercise the actual migration SQL by:
  * 1. Creating a database at the source version schema
@@ -936,10 +936,123 @@ class RoomMigrationPathTest {
         assertFalse(getTableNames(db).contains("Gallery_Tags"))
     }
 
-    // ========== Test 5: Full migration v9 -> v18 ==========
+    // ========== Test 4g: v18 -> v19 (Add indexes to LOCAL_FAVORITES, QUICK_SEARCH, DOWNLOAD_LABELS) ==========
 
     @Test
-    fun `migrate all v9 to v18 - full chain preserves data`() {
+    fun `migrate 18 to 19 - three TIME indexes created`() {
+        // Build a v18 schema by chaining migrations from v9.
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
+        AppDatabase.MIGRATION_16_17.migrate(db)
+        AppDatabase.MIGRATION_17_18.migrate(db)
+
+        // Verify indexes do NOT exist yet
+        val indexesBefore = getIndexNames(db)
+        assertFalse("index_LOCAL_FAVORITES_TIME should not exist before migration",
+            indexesBefore.contains("index_LOCAL_FAVORITES_TIME"))
+        assertFalse("index_QUICK_SEARCH_TIME should not exist before migration",
+            indexesBefore.contains("index_QUICK_SEARCH_TIME"))
+        assertFalse("index_DOWNLOAD_LABELS_TIME should not exist before migration",
+            indexesBefore.contains("index_DOWNLOAD_LABELS_TIME"))
+
+        AppDatabase.MIGRATION_18_19.migrate(db)
+
+        // Verify all 3 indexes now exist
+        val indexesAfter = getIndexNames(db)
+        assertTrue("index_LOCAL_FAVORITES_TIME should exist after migration",
+            indexesAfter.contains("index_LOCAL_FAVORITES_TIME"))
+        assertTrue("index_QUICK_SEARCH_TIME should exist after migration",
+            indexesAfter.contains("index_QUICK_SEARCH_TIME"))
+        assertTrue("index_DOWNLOAD_LABELS_TIME should exist after migration",
+            indexesAfter.contains("index_DOWNLOAD_LABELS_TIME"))
+    }
+
+    @Test
+    fun `migrate 18 to 19 - existing data preserved after index creation`() {
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
+        AppDatabase.MIGRATION_16_17.migrate(db)
+        AppDatabase.MIGRATION_17_18.migrate(db)
+
+        val now = System.currentTimeMillis()
+
+        // Seed data into affected tables
+        db.execSQL(
+            "INSERT INTO LOCAL_FAVORITES (GID, TIME, CATEGORY, RATING) VALUES (7001, ?, 0, 4.0)",
+            arrayOf(now)
+        )
+        db.execSQL(
+            "INSERT INTO QUICK_SEARCH (NAME, MODE, CATEGORY, KEYWORD, ADVANCE_SEARCH, MIN_RATING, PAGE_FROM, PAGE_TO, TIME) " +
+                "VALUES ('Test QS', 0, 0, 'test', 0, 0, 0, 0, ?)",
+            arrayOf(now)
+        )
+        db.execSQL(
+            "INSERT INTO DOWNLOAD_LABELS (LABEL, TIME) VALUES ('Test Label', ?)",
+            arrayOf(now)
+        )
+
+        AppDatabase.MIGRATION_18_19.migrate(db)
+
+        // Verify data is preserved
+        db.query("SELECT GID, TIME FROM LOCAL_FAVORITES").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(7001L, c.getLong(0))
+            assertEquals(now, c.getLong(1))
+        }
+
+        db.query("SELECT NAME, KEYWORD FROM QUICK_SEARCH").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("Test QS", c.getString(0))
+            assertEquals("test", c.getString(1))
+        }
+
+        db.query("SELECT LABEL FROM DOWNLOAD_LABELS").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("Test Label", c.getString(0))
+        }
+    }
+
+    @Test
+    fun `migrate 18 to 19 - idempotent when indexes already exist`() {
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
+        AppDatabase.MIGRATION_16_17.migrate(db)
+        AppDatabase.MIGRATION_17_18.migrate(db)
+
+        // Manually create one index before migration
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_LOCAL_FAVORITES_TIME` ON `LOCAL_FAVORITES` (`TIME`)")
+
+        // Should not throw (CREATE INDEX IF NOT EXISTS).
+        AppDatabase.MIGRATION_18_19.migrate(db)
+
+        val indexes = getIndexNames(db)
+        assertTrue(indexes.contains("index_LOCAL_FAVORITES_TIME"))
+        assertTrue(indexes.contains("index_QUICK_SEARCH_TIME"))
+        assertTrue(indexes.contains("index_DOWNLOAD_LABELS_TIME"))
+    }
+
+    // ========== Test 5: Full migration v9 -> v19 ==========
+
+    @Test
+    fun `migrate all v9 to v19 - full chain preserves data`() {
         db = createDatabase(9) { createV9Schema(it) }
 
         val token = "full_chain_test_arcid"
@@ -969,7 +1082,7 @@ class RoomMigrationPathTest {
             arrayOf<Any>(oldGid)
         )
 
-        // Run all 9 migrations in order
+        // Run all 10 migrations in order
         AppDatabase.MIGRATION_9_10.migrate(db)
         AppDatabase.MIGRATION_10_11.migrate(db)
         AppDatabase.MIGRATION_11_12.migrate(db)
@@ -979,6 +1092,7 @@ class RoomMigrationPathTest {
         AppDatabase.MIGRATION_15_16.migrate(db)
         AppDatabase.MIGRATION_16_17.migrate(db)
         AppDatabase.MIGRATION_17_18.migrate(db)
+        AppDatabase.MIGRATION_18_19.migrate(db)
 
         // Verify GID recomputation (v9->v10)
         db.query("SELECT GID, TOKEN, TITLE, RATING FROM DOWNLOADS").use { c ->
@@ -1018,6 +1132,11 @@ class RoomMigrationPathTest {
         // Verify LABEL index (v12->v13)
         assertTrue(indexes.contains("index_DOWNLOADS_LABEL"))
 
+        // Verify v19 TIME indexes
+        assertTrue(indexes.contains("index_LOCAL_FAVORITES_TIME"))
+        assertTrue(indexes.contains("index_QUICK_SEARCH_TIME"))
+        assertTrue(indexes.contains("index_DOWNLOAD_LABELS_TIME"))
+
         // Verify API_KEY removed from SERVER_PROFILES (v11->v12)
         val columns = getColumnNames(db, "SERVER_PROFILES")
         assertFalse("API_KEY should be removed", columns.contains("API_KEY"))
@@ -1032,7 +1151,7 @@ class RoomMigrationPathTest {
     }
 
     @Test
-    fun `migrate all v9 to v18 - empty database succeeds`() {
+    fun `migrate all v9 to v19 - empty database succeeds`() {
         db = createDatabase(9) { createV9Schema(it) }
 
         // Run all migrations on empty database -- should not throw
@@ -1045,6 +1164,7 @@ class RoomMigrationPathTest {
         AppDatabase.MIGRATION_15_16.migrate(db)
         AppDatabase.MIGRATION_16_17.migrate(db)
         AppDatabase.MIGRATION_17_18.migrate(db)
+        AppDatabase.MIGRATION_18_19.migrate(db)
 
         // Verify tables still exist and are queryable
         db.query("SELECT COUNT(*) FROM DOWNLOADS").use { c ->
@@ -1058,7 +1178,7 @@ class RoomMigrationPathTest {
     }
 
     @Test
-    fun `migrate all v9 to v18 - final schema matches Room v18`() {
+    fun `migrate all v9 to v19 - final schema matches Room v19`() {
         db = createDatabase(9) { createV9Schema(it) }
 
         AppDatabase.MIGRATION_9_10.migrate(db)
@@ -1070,6 +1190,7 @@ class RoomMigrationPathTest {
         AppDatabase.MIGRATION_15_16.migrate(db)
         AppDatabase.MIGRATION_16_17.migrate(db)
         AppDatabase.MIGRATION_17_18.migrate(db)
+        AppDatabase.MIGRATION_18_19.migrate(db)
 
         // Verify all 7 tables exist (FILTER dropped in v14→v15,
         // Black_List dropped in v15→v16, BOOKMARKS dropped in v16→v17,
@@ -1094,6 +1215,10 @@ class RoomMigrationPathTest {
         assertTrue(indexes.contains("index_HISTORY_TIME"))
         // Verify v13 LABEL index
         assertTrue(indexes.contains("index_DOWNLOADS_LABEL"))
+        // Verify v19 TIME indexes
+        assertTrue(indexes.contains("index_LOCAL_FAVORITES_TIME"))
+        assertTrue(indexes.contains("index_QUICK_SEARCH_TIME"))
+        assertTrue(indexes.contains("index_DOWNLOAD_LABELS_TIME"))
     }
 
     // ========== Utility functions ==========
