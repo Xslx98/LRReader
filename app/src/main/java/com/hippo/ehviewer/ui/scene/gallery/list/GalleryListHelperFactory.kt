@@ -114,8 +114,8 @@ internal object GalleryListHelperFactory {
         val dataHelper = GalleryListDataHelper(object : GalleryListDataHelper.Callback {
             override fun getHostContext(): Context? = scene.ehContext
             override fun getUrlBuilder(): ListUrlBuilder? = scene.mUrlBuilder
-            override fun getSortBy(): String = scene.searchLayout?.sortBy ?: "date_added"
-            override fun getSortOrder(): String = scene.searchLayout?.sortOrder ?: "desc"
+            override fun getSortBy(): String = scene.searchLayout.sortBy
+            override fun getSortOrder(): String = scene.searchLayout.sortOrder
             override fun notifyAdapterDataSetChanged() {
                 scene.adapter?.notifyItemRangeChanged(0, scene.adapter?.itemCount ?: 0)
             }
