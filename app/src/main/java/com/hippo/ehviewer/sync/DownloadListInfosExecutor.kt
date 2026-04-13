@@ -46,7 +46,7 @@ class DownloadListInfosExecutor {
         ServiceRegistry.coroutineModule.ioScope.launch {
             resultList = searchingInBackground()
             withContext(Dispatchers.Main) {
-                mDownloadSearchCallback?.onDownloadSearchSuccess(resultList)
+                resultList?.let { mDownloadSearchCallback?.onDownloadSearchSuccess(it) }
             }
         }
     }
@@ -74,7 +74,7 @@ class DownloadListInfosExecutor {
             }
 
             withContext(Dispatchers.Main) {
-                mDownloadSearchCallback?.onDownloadSearchSuccess(resultList)
+                resultList?.let { mDownloadSearchCallback?.onDownloadSearchSuccess(it) }
             }
         }
     }
