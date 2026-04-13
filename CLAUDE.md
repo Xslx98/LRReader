@@ -6,7 +6,7 @@
 
 - **Application ID:** `com.lanraragi.reader`
 - **Namespace:** `com.hippo.ehviewer` (legacy, retained from EhViewer)
-- **Current Version:** 1.11.4 (versionCode 11104 — formula: `MAJOR*10000 + MINOR*100 + PATCH`)
+- **Current Version:** 1.11.6 (versionCode 11106 — formula: `MAJOR*10000 + MINOR*100 + PATCH`)
 - **License:** GPLv3
 
 ---
@@ -107,7 +107,8 @@ LRReader/
 | `client/api/LRRDatabaseApi.kt` | Tag statistics + database operations |
 | `client/api/LRRTagCache.kt` | In-memory tag autocomplete cache (10-min TTL) |
 | `client/api/LRRArchivePagingSource.kt` | Paging 3 source for gallery list |
-| `dao/AppDatabase.kt` | Room database schema (v18, schema exported) |
+| `dao/AppDatabase.kt` | Room database schema (v19, schema exported) |
+| `dao/HistoryRepository.kt` | History domain Repository backed by BrowsingRoomDao (W17-3) |
 | `util/FlowBridge.kt` | Java→Kotlin Flow bridge for lifecycle-aware collection |
 | `ui/MainActivity.kt` | Main UI entry point + scene routing |
 | `ui/GalleryActivity.kt` | Reader/detail view |
@@ -121,9 +122,18 @@ LRReader/
 | `ui/scene/gallery/detail/DetailActionHandler.kt` | Action button click handling extracted from GalleryDetailScene (W9-3) |
 | `ui/scene/gallery/detail/GalleryDetailViewModel.kt` | Gallery detail state + metadata fetch + download state + DownloadInfoListener (W3-2) |
 | `ui/scene/gallery/detail/GalleryTagHelper.kt` | Stateless tag display utility object (W3-2: Callback eliminated) |
-| `ui/scene/gallery/list/GalleryListViewModel.kt` | Paging 3 ViewModel for gallery list (`Flow<PagingData<GalleryInfoUi>>`) |
+| `ui/scene/gallery/list/GalleryListViewModel.kt` | Paging 3 ViewModel for gallery list + download state observation (W15-2) |
+| `ui/scene/gallery/list/QuickSearchViewModel.kt` | Quick search CRUD ViewModel (W14-3) |
+| `ui/scene/gallery/list/GalleryFabHelper.kt` | FabLayout callback logic extracted from GalleryListScene (W15-2) |
+| `ui/scene/gallery/list/GallerySearchBarHelper.kt` | SearchBar/FastScroller/SearchLayout callbacks (W15-2) |
+| `ui/scene/gallery/list/GalleryListHelperFactory.kt` | Factory wiring all 12 helpers for GalleryListScene (W15-2) |
 | `ui/scene/gallery/list/GalleryListSearchHelper.kt` | SearchBar interaction + query construction extracted from GalleryListScene (W9-3) |
 | `ui/scene/download/DownloadsViewModel.kt` | Download list state, labels, filter/sort, search, import, bulk ops, sealed DownloadUiEvent (W9-1) |
+| `ui/scene/download/DownloadGalleryOpenHelper.kt` | Gallery item click + read-process update extracted from DownloadsScene (W16-1) |
+| `ui/scene/download/DownloadSelectionHelper.kt` | Selection mode + FAB handling extracted from DownloadsScene (W16-1) |
+| `ui/scene/LRRCategoriesViewModel.kt` | Category CRUD ViewModel (W14-2) |
+| `ui/scene/ServerListViewModel.kt` | Server profile CRUD + connection verification ViewModel (W15-1) |
+| `ui/scene/ServerListDialogHelper.kt` | Profile add/edit/delete dialog builders (W15-1) |
 | `download/DownloadManager.kt` | Download facade — thin delegation to Repository/Scheduler/EventBus (W6-2) |
 | `download/DownloadRepository.kt` | Download collection management + DB persistence, injected CoroutineDispatcher (W6-2, W8-3) |
 | `download/DownloadScheduler.kt` | Download worker scheduling + state machine (W6-2) |
@@ -221,7 +231,7 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 
 - All entities and DAOs in `dao/` package
 - Use KSP (not KAPT) for annotation processing
-- Schema version is v18; exported to `app/schemas/` — always provide a `Migration` when bumping
+- Schema version is v19; exported to `app/schemas/` — always provide a `Migration` when bumping
 - **Never** use `fallbackToDestructiveMigration()` in production code
 - `AppDatabase.kt` is the single Room database instance
 
@@ -267,7 +277,7 @@ Settings are now Kotlin objects in `settings/`:
 
 ## Testing
 
-Unit tests live in `app/src/test/java/`, covering:
+Unit tests live in `app/src/test/java/` (52 files, 573 test methods), covering:
 
 - All LRR API classes (`LRRArchiveApiTest`, `LRRSearchApiTest`, `LRRCategoryApiTest`, etc.) using `MockWebServer`
 - All LRR data classes (`LRRArchiveTest`, `LRRCategoryTest`, etc.)
@@ -281,8 +291,8 @@ Unit tests live in `app/src/test/java/`, covering:
 - `DownloadSpeedTrackerTest` — speed calculation + remaining time
 - `GalleryInfoParcelTest` — Parcelable round-trip for GalleryInfo + DownloadInfo (11 tests)
 - `TagEditDialogTest` — tag parsing + formatting round-trip (18 tests)
-- `RoomMigrationTest` — schema integrity verification (validates current v18 schema)
-- `RoomMigrationPathTest` — migration path tests v9→v10→v11→v12→v13→v14→v15→v16→v17→v18
+- `RoomMigrationTest` — schema integrity verification (validates current v19 schema)
+- `RoomMigrationPathTest` — migration path tests v9→v10→v11→v12→v13→v14→v15→v16→v17→v18→v19
 - `ServerProfileDaoTest` — DAO CRUD verification
 - `GalleryInfoDiffTest` — DiffUtil identity/content equality contracts
 - `ContentHelperDiffUtilTest` — DiffUtil dispatch operations
@@ -290,6 +300,12 @@ Unit tests live in `app/src/test/java/`, covering:
 - `EhDBMainThreadCheckTest` — blockingDb bridge removal verification + async dirname DAO round-trip
 - `ClientModuleTest` — memory cache tier boundary verification (8 tests)
 - `CacheableTest` — Cacheable self-registration pattern in ServiceRegistry (6 tests, W3-1)
+- `DownloadsViewModelTest` — label switching, search, pagination, sealed event forwarding (31 tests, W17-1)
+- `HistoryViewModelTest` — history load/delete/clear, DiffUtil integration (8 tests, W17-1)
+- `ServerConfigViewModelTest` — WAN detection, connection verify, profile persistence (12 tests, W17-1)
+- `LRRCategoriesViewModelTest` — category CRUD via MockWebServer, pinned sort, loading state (11 tests, W17-2)
+- `QuickSearchViewModelTest` — quick search load/delete/reorder via in-memory Room (6 tests, W17-2)
+- `ServerListViewModelTest` — profile CRUD, activation, connection verify (10 tests, W17-2)
 - `PatternLockoutTest` — pattern lock failure lockout logic with controllable clock + PBKDF2 migration (29 tests, W3-6 + W8-2)
 - `TestServiceRegistryHelper` — test infrastructure for ServiceRegistry mocking
 
@@ -339,98 +355,6 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 - JNI module name: `native-lib`
 - Only touch for image decoding bugs or new format support
 
----
-
-## Key Architectural Notes
-
-1. **EhViewer heritage:** The `com.hippo.*` namespace and scene-based navigation are retained from EhViewer. Do not rename packages without understanding all transitive references.
-
-2. **Scene-based navigation:** Uses a custom `Scene` framework (not Jetpack Navigation). UI transitions via `startScene()` / `popScene()`.
-
-3. **ServiceRegistry:** Replaces the old service-locator pattern in `EhApplication`. Initialize modules here; don't add new statics to `EhApplication`. Includes `CoroutineModule` for scoped coroutines. Cache clearing uses the `Cacheable` interface (W3-1): modules implement `Cacheable` and self-register via `ServiceRegistry.registerCacheable()`, so `clearAllCaches()` iterates registered instances instead of hardcoding calls. ServiceRegistry has zero imports from the LRR API package.
-
-4. **LRR API surface:** Full LANraragi REST API wrapped in `client/api/`. Add new endpoints here as `suspend` functions returning `@Serializable` data classes. Use `parseBaseUrl(baseUrl)` from `LRRApiUtils.kt` to build URLs — never `toHttpUrlOrNull()!!`.
-
-5. **Room schema migrations:** Schema at v18, exported. Write an explicit `Migration` object for every schema change.
-
-6. **DiffUtil in ContentLayout and DownloadsScene:** `ContentHelper.dispatchDiffUpdates()` for gallery list updates. `DownloadsScene` uses `DownloadInfoDiffCallback` with `gid`-based identity for diff updates received via `DownloadsViewModel.downloadEvent` sealed flow (W8-1 replaced all `notifyDataSetChanged` in DownloadsScene with DiffUtil; W5-1 did the same for GalleryListScene). Avoid `notifyDataSetChanged()` — use specific notifications or DiffUtil.
-
-7. **EhDB — all suspend, no bridges (W3-5, 2026-04-11):** The legacy `blockingDb()` wrapper and all `@JvmStatic` bridge methods have been deleted. `EhDB` now exposes only `suspend fun *Async()` methods. `SpiderDen.getGalleryDownloadDir()` was migrated to `suspend fun` in W5-3, eliminating the last production `runBlocking`. The only remaining `runBlocking` is in `LRRCoroutineHelper.runSuspend()` — a Java→Kotlin bridge utility with `@WorkerThread` + runtime main-thread guard. Do NOT add `blockingDb` bridges back to `EhDB`.
-
-8. **Download subsystem (100% Kotlin, coroutine-based, W6-2 decomposed):** The download subsystem is decomposed into four classes with clear single responsibilities:
-    - **`DownloadManager.kt`** (~340 lines) — thin facade that preserves the public API and orchestrates the three components below. All external callers (`DownloadsViewModel`, `DownloadService`, `GalleryListScene`, etc.) interact only with this facade.
-    - **`DownloadRepository.kt`** (~750 lines) — owns all in-memory collections (`allInfoList`, `allInfoMap`, `labelInfoMap`, `labelList`, `labelSet`, `defaultInfoList`, `labelCountMap`), DB load/reload lifecycle (`startLoading`, `initDeferred`), label CRUD (`addLabel`, `renameLabel`, `deleteLabel`, `changeLabel`, `moveLabel`), info mutations (`addInfo`, `removeInfo`, `replaceInfo`, `addInfoSorted`, `removeInfoBatch`), and DB persistence helpers (`persistInfo`, `persistHistory`). Companion has `DATE_DESC_COMPARATOR` and `insertSorted()`.
-    - **`DownloadScheduler.kt`** (~440 lines) — owns worker lifecycle (`waitList`, `activeTasks`, `activeWorkers`), state machine (`ensureDownload`, `stopDownload`, `stopAllDownload`, `stopRangeDownload`), `DownloadEvent` sealed interface, `dispatchEvent`/`postEvent`, and `PerTaskListener` (bridges `SpiderQueen.OnSpiderListener` to `DownloadEvent`).
-    - **`DownloadEventBus.kt`** (~100 lines) — owns `DownloadInfoListener` registration/dispatch (`WeakReference` list, `forEachListener` with GC cleanup), `DownloadListener` single-listener, and `postToMain` handler dispatch.
-    
-    `LRRDownloadWorker.kt` (background downloads with retry, format validation) and `DownloadSpeedTracker.kt` (speed monitoring) are unchanged. All DB writes use `scope.launch { try { EhDB.*Async() } catch { Log.e } }` — every fire-and-forget launch block has try-catch (W7-4). Worker callbacks use immutable `sealed interface DownloadEvent` (not mutable object pool). `awaitInit()` has 10s timeout + main-thread guard. `DownloadRepository` accepts `CoroutineScope` + `CoroutineDispatcher` for testability (W8-3 removed Handler dependency). `containLabel()` uses `HashSet` for O(1) lookup. LRU cache (500 MB) for page images. Orphan labels are batch-inserted in a single `withTransaction` (W2-1). All `Collections.sort` replaced with `insertSorted()` binary insertion for O(log N) maintenance of `DATE_DESC` order (W2-2). 59 unit tests across 4 test files cover facade API, repository collections, scheduler state machine, event bus dispatch, labels, queue, notifications, orphan label batching, and sort order invariants.
-
-9. **Multi-server support:** `ServerProfile` entity + `LRRAuthManager` handle per-server credentials. Server selection affects all API calls. Credentials are encrypted.
-
-10. **EhViewer stubs removed (C6, 2026-04-08):** `EhGalleryProvider`, `FavoritesScene`, and `FavoriteListSortDialog` were deleted after investigation confirmed zero live callers. See item 24 for full cleanup history.
-
-11. **Helper→ViewModel migration (W3-2, 2026-04-11):** Business logic formerly in Helper classes has been moved into ViewModels. All Callback interfaces eliminated. Deleted: `GalleryDetailRequestHelper` (→ `GalleryDetailViewModel.requestGalleryDetail()`), `GalleryDownloadHelper` (→ `GalleryDetailViewModel` download state StateFlow + DownloadInfoListener), `DownloadFilterHelper` (→ `DownloadsViewModel` filter/sort/search). Converted to stateless utilities: `GalleryTagHelper` (object with explicit parameters), `DownloadLabelHelper` (dialog-only utility, bulk ops in ViewModel), `DownloadImportHelper` (launcher-only, processing in ViewModel). Remaining helpers that were already stateless: `GalleryUploadHelper`, `GallerySearchHelper`. Scenes observe ViewModel StateFlow/SharedFlow — do NOT reintroduce Callback interfaces.
-
-12. **Network tuning:** `NetworkModule.kt` configures `ConnectionPool(10, 5min)`, 200MB HTTP cache. Thumbnail responses get injected `Cache-Control: public, max-age=3600, stale-while-revalidate=82800` (1h fresh + 23h stale, 24h total) because LANraragi sends no caching headers (W2-8). `CookieJar.NO_COOKIES` — no cookies stored or sent (LANraragi uses Bearer token auth). Image client has 60s `callTimeout` for large files over slow WAN.
-
-13. **GifHandler lifecycle:** `GifHandler` implements `Closeable` with native `destroy()` that calls `DGifCloseFile()` + `free()`. Always `close()` when done — native memory is NOT garbage collected.
-
-14. **Tag autocomplete:** `LRRTagCache` fetches tag statistics from `/api/database/stats` with 10-min TTL. `SearchBar` queries it for inline suggestions alongside local `EhTagDatabase` translations. Cache cleared on server switch via `ServiceRegistry.clearAllCaches()`.
-
-15. **Room Flow observation:** `DownloadRoomDao` provides `Flow<List<DownloadInfo>>` queries. `DownloadsScene` subscribes via `FlowBridge.collectFlow()` for reactive list updates. Flow handles structure changes (add/remove/state); real-time download progress (`@Ignore` fields not persisted to Room) is delivered via `DownloadsViewModel`'s `DownloadInfoListener` → sealed `DownloadUiEvent` SharedFlow pipeline (W9-1).
-
-16. **Paging 3 integrated:** `LRRArchivePagingSource` returns `PagingData<GalleryInfoUi>` (W3-3). `GalleryListViewModel` provides `Flow<PagingData<GalleryInfoUi>>` with `SearchParams` invalidation. ContentHelper pagination framework preserved as the adapter layer. Config: pageSize=50, prefetchDistance=10 (W2-5, halved from 100/20 to reduce OOM risk).
-
-17. **Tag editor:** `TagEditDialog.kt` shows a grouped chip-style editor using the same `RoundSideRectDrawable` visual style as the detail page. Click to edit, long-press to delete, [+] to add per namespace. Supports `AutoCompleteTextView` with `LRRTagCache` suggestions. Entry point: pencil icon in tag display area.
-
-18. **DownloadsViewModel + sealed DownloadUiEvent (W9-1, 2026-04-11):** `DownloadsViewModel.kt` manages download list state (current label, download list, back-list, search key, searching flag, pagination state, spider info cache) as `StateFlow` properties. Also owns filter/sort execution, bulk download operations, archive import processing, and `DownloadInfoListener` implementation. After W9-1: the 9 individual SharedFlows were merged into a single `sealed interface DownloadUiEvent` with 9 event types (`ItemAdded`, `ItemRemoved`, `ItemUpdated`, `DiffUpdate`, `Replaced`, `LabelRenamed`, `LabelDeleted`, `LabelsChanged`, `Reloaded`), emitted through one `SharedFlow<DownloadUiEvent>`. `DownloadsScene` observes via a single `collectFlow(viewModel.downloadEvent) { when(event) { ... } }` dispatch. Do NOT split back into individual SharedFlows.
-
-19. **GalleryDetailViewModel:** `GalleryDetailViewModel.kt` manages gallery detail state (galleryInfo, galleryDetail, downloadInfo, gid, token, action, loading state) as `StateFlow` properties. After W3-2: also owns async LRR metadata fetch (`requestGalleryDetail()` from GalleryDetailRequestHelper), download state tracking (`downloadState` StateFlow + `DownloadInfoListener` from GalleryDownloadHelper), and error events (`detailError` SharedFlow). Derived accessors centralize the fallback logic (detail > info > args). Scoped to parent Activity.
-
-20. **Reader settings immediate-apply:** `GalleryMenuHelper` applies settings immediately when any control changes (Spinner, SeekBar, Switch) — no confirm button. Uses an `initialized` flag to suppress listener callbacks during initial value loading. Brightness has a live preview listener delegated from `GalleryActivity`.
-
-21. **Network security:** `network_security_config.xml` allows cleartext globally (`cleartextTrafficPermitted="true"`) because LANraragi servers are typically accessed via bare LAN IP over HTTP. Android's `<domain-config>` has no CIDR/wildcard-IP support. `LRRCleartextRejectionInterceptor` enforces application-layer cleartext policy (per-profile opt-in, host:port match, scheme downgrade rejection). `LRRAuthInterceptor` ensures the API key is only sent to the configured server host. `getAllowCleartext()` defaults to `true` when sPrefs is available (backward-compatible for existing HTTP profiles) but returns `false` when sPrefs is null / KeyStore unavailable (fail-closed, W7-1). User-installed CAs are trusted for self-signed HTTPS setups.
-
-22. **EncryptedSharedPreferences recovery:** When Android KeyStore is unavailable (device migration, corruption), `LRRAuthManager.isNeedsReauthentication()` returns true. `MainActivity.onCreate2()` checks this flag and shows an AlertDialog directing the user to `ServerListScene` to re-enter credentials. Without this, the app silently falls back to the initial setup page because `isConfigured()` returns false.
-
-23. **App startup order:** `EhApplication.onCreate()` initializes core services synchronously (Settings, LRRAuthManager, EhDB, ServiceRegistry) then defers heavy work to background: JNI initialization (Image, Native, A7Zip, BitmapUtils) runs on `IoThreadPoolExecutor`. Profile migration and old DB merge also run on background threads via `AppModule.bootScope` (W1-1).
-
-24. **Legacy EhViewer subsystems removed:** Over the course of cleanups C2 through C6, several dead EhViewer-era subsystems were deleted from the codebase. Investigation uncovered each of these as either (a) structurally severed during the EhViewer→LRR conversion with no consumer ever reconnected, or (b) a stub left "for structural compatibility" whose structural compatibility argument had decayed to zero live references:
-    - **EhFilter** (C2, 2026-04-07): user-defined title/uploader/tag blacklist. Filters were written to `FILTER` table but the consumption path (`filterTitle`/`filterTag`/`filterUploader`) had zero callers. Deleted: `EhFilter`, `Filter` entity, `EhFilterTest`, UI entry points, string resources. Room v14→v15 dropped `FILTER`.
-    - **BlackList** (C3, 2026-04-07): user-defined bad-uploader blacklist. `BlackListActivity` was fully unreachable — no Intent/menu/preference ever launched it. Deleted: Activity, entity, layouts, manifest declaration, DAO, EhDB API, strings, arrays, ids. Room v15→v16 dropped `Black_List`. Side benefit: finally deleted the 9-year-old EhViewer-era homophobic-slur column-mapped field name.
-    - **BookmarkInfo** (C4, 2026-04-08): per-gallery "reader bookmark" entity. Zero callers for any of its DAO methods anywhere outside the DAO; not even wrapped in `EhDB.kt`. Deleted: entity + DAO section. Room v16→v17 dropped `BOOKMARKS`.
-    - **GalleryTags** (C5, 2026-04-08): per-gallery tag cache. Dead cache — `insertGalleryTags`/`updateGalleryTags` had zero callers, so the table was never populated; the single reader (`queryGalleryTags` via `DownloadListInfosExecutor.searchTagList`) always got null. Real tag data is populated directly into `DownloadInfo.tgList` by `LRRArchive.toGalleryInfoUi()` from the LRR API response. Deleted: entity + DAO section + `EhDB.queryGalleryTags` blockingDb bridge + the dead `searchTagList`/`parserList` helpers in `DownloadListInfosExecutor`. Room v17→v18 dropped `Gallery_Tags`. Also brought the `@JvmStatic blockingDb` bridge count from 3 to 2.
-    - **Stubs** (C6, 2026-04-08): `FavoritesScene` (empty scene, only referenced via dead `registerLaunchMode`), `FavoriteListSortDialog` (literally an empty class), and `EhGalleryProvider` (stub provider whose `ACTION_EH` trigger path at `GalleryDetailScene` was confirmed dead — `R.id.index` is declared but never set by any code, preview grid is never populated from LRR metadata). Deleted the classes, the `ACTION_EH` constant + branch in `GalleryActivity`, and the dead click handler in `GalleryDetailScene`.
-
-    LR Reader is a private library client where users curate stored content directly — there is no use case for in-app personal blocklists, per-gallery bookmarks, or EhViewer-era favourites. If you find any surviving references to `EhFilter`, `BlackList`, `BookmarkInfo`, `GalleryTags`, `FavoritesScene`, `FavoriteListSortDialog`, `EhGalleryProvider`, `ACTION_EH`, `Filter::class`, `BlackList::class`, `BookmarkInfo::class`, `GalleryTags::class`, `R.string.filter_*`, `R.string.blacklist*`, or the dead orphan test fixture `EhNews.html`, they are bugs from an incomplete revert; remove them.
-
-    **Remaining cosmetic cleanup (not blocking):** `gallery_detail_previews.xml` layout file + its `<include>` in `gallery_detail_content.xml` and `R.id.index` in `values/ids.xml` are leftover resources that are no longer referenced by any code after EhGalleryProvider removal. Safe to delete in a future UI-resources sweep.
-
-25. **ProGuard log stripping:** Release builds strip `Log.v()`, `Log.d()`, `Log.i()`, and `Log.w()` via `-assumenosideeffects`. Only `Log.e()` is preserved for crash diagnostics.
-
-26. **GalleryInfo data model split (W3-3, 2026-04-11):** `GalleryInfo` class renamed to `GalleryInfoEntity` (Room entity base with `@ColumnInfo` fields), with `typealias GalleryInfo = GalleryInfoEntity` for backward compatibility. New `GalleryInfoUi` class (Parcelable, no Room annotations) for UI display. Mapper functions in `mapper/GalleryInfoMapper.kt`: `GalleryInfo.toUi()`, `GalleryInfoUi.toEntity()`. The gallery list pipeline (PagingSource → ContentHelper → Adapter → Scene) uses `GalleryInfoUi`. Detail/download code at persistence boundaries uses `GalleryInfoEntity` / `DownloadInfo`. `LRRArchive.toGalleryInfoUi()` returns the UI type; `toGalleryInfo()` wraps it for DB callers.
-
-27. **Pattern lock KeyStore binding (W3-6 + W8-2, 2026-04-11):** `LRRAuthManager` pattern lock wraps the PBKDF2 hash with KeyStore-bound AES-GCM via `BiometricPrompt` on devices with strong biometrics. PBKDF2 iterations raised from 100K to 200K (W8-2), with transparent migration: `verifyPattern()`/`verifyPatternWithCipher()` try 200K first, fall back to 100K, and on legacy match re-hash + save with 200K. KeyStore-bound patterns downgrade to PBKDF2-only during migration (GCM cipher is single-use). Failure lockout persisted in plain SharedPreferences: 5 failures → 30s lock, 10 → 5min. Devices without biometrics fall back to PBKDF2-only. Controllable `clockMillis` lambda for test determinism. 29 unit tests in `PatternLockoutTest.kt` (7 migration tests added in W8-2).
-
-28. **Package rename stage 1 (W3-7, 2026-04-11):** `com.hippo.ehviewer.client.lrr.*` → `com.lanraragi.reader.client.api.*`. All 25 source files moved, all imports updated across 80+ files, ProGuard rules updated, Gradle `verifyNoBaseUrlConcat` task path updated. SharedPreferences keys unchanged (user data preserved). Test file directory structure (`app/src/test/java/com/hippo/ehviewer/client/lrr/`) NOT moved (test infrastructure, not published — may move in Stage 2).
-
-29. **Cacheable interface (W3-1, 2026-04-11):** `interface Cacheable { fun clearCache() }` in `module/` package. `NetworkModule`, `DataModule` implement it and self-register via `ServiceRegistry.registerCacheable()`. `LRRTagCache` implements `Cacheable` and is registered via `ClientModule.init`. `ServiceRegistry.clearAllCaches()` iterates registered cacheables — no hardcoded cache calls, no imports from `client.lrr`. 6 unit tests in `CacheableTest.kt`.
-
-30. **DownloadManager decomposition (W6-2, 2026-04-11):** `DownloadManager.kt` was a 1448-line God Class with 6 types of responsibility. Decomposed into 4 classes: `DownloadEventBus` (listener dispatch), `DownloadRepository` (collection management + DB persistence), `DownloadScheduler` (worker lifecycle + state machine), and `DownloadManager` (thin facade, ~340 lines). Public API unchanged — all external callers see only `DownloadManager`. Components are `internal` to the `download/` package. `DownloadSpeedTracker.Callback` routes through the three components. 30 new unit tests across `DownloadEventBusTest` (8), `DownloadRepositoryTest` (12), `DownloadSchedulerTest` (10). Do NOT bypass the facade — external code should import `DownloadManager`, never `DownloadRepository`/`DownloadScheduler`/`DownloadEventBus` directly.
-
-31. **DownloadsScene listener migration (W6-4 → W9-1, 2026-04-11):** `DownloadsScene` no longer implements `DownloadInfoListener` or holds a `_downloadManager` field. `DownloadsViewModel` implements `DownloadInfoListener`, registers in `init {}`, unregisters in `onCleared()`. After W9-1: the 9 individual SharedFlows were merged into a single `sealed interface DownloadUiEvent` (see item 18). Scene observes via one `collectFlow(viewModel.downloadEvent) { when ... }` dispatch. Do NOT re-add `DownloadInfoListener` to Scenes — listener logic belongs in ViewModels (see also W3-2 item 11). Do NOT split the sealed event back into individual SharedFlows.
-
-32. **Scene decomposition (W9-2 + W9-3, 2026-04-11):** Three God Scenes were decomposed by extracting helper classes:
-    - **`DownloadsScene`** (1393→1259 lines): extracted `DownloadGuideHelper` (showcase overlays), `DownloadPaginationHelper` (page navigation), `DownloadDragDropHelper` (item reordering). Scene retains core view setup + ViewModel observation.
-    - **`GalleryDetailScene`** (1054→694 lines): extracted `DetailHeaderBinder` (header view binding, thumbnail, circular reveal) and `DetailActionHandler` (action button click handling).
-    - **`GalleryListScene`** (974→892 lines): extracted `GalleryListSearchHelper` (SearchBar interaction, query construction). `GalleryDrawerHelper` already existed for drawer logic.
-    
-    Extracted helpers are `internal` classes in the same package. Scene creates them in `onCreateView` and delegates. Do NOT move business logic back into Scene classes — keep Scene as coordinator.
-
-33. **Download subsystem resilience (W7-4, 2026-04-11):** All 15 `scope.launch { EhDB.*() }` blocks across `DownloadRepository` (12) and `DownloadManager` (3) now have `try-catch(e: Exception) { Log.e(...) }`. DB failures no longer silently propagate to the global CoroutineExceptionHandler. `getLabelCount()` no longer defensively catches NPE (all `labelCountMap` writes confirmed on main thread). `DownloadManager.addDownloadInfoListener`/`removeDownloadInfoListener` accept non-nullable `DownloadInfoListener` parameter (W7-2, `!!` eliminated).
-
----
-
 ## What NOT to Do
 
 - Do not write new Java; use Kotlin for all new code
@@ -458,3 +382,6 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 - Do not split `DownloadUiEvent` sealed interface back into individual SharedFlows — the single-flow dispatch pattern is intentional (W9-1)
 - Do not move extracted helper logic back into Scene classes — keep Scenes as coordinators, helpers own the logic (W9-2, W9-3)
 - Do not add fire-and-forget `scope.launch { EhDB.*() }` without try-catch — all DB persistence launches must handle exceptions (W7-4)
+- Do not use `EhUrl` / `EhUrlOpener` — renamed to `LRRUrl` / `LRRUrlOpener` (W14-1)
+- Do not call `EhDB` history methods directly from UI layer — use `HistoryRepository` via `ServiceRegistry.dataModule.historyRepository` (W17-3); EhDB history methods are `@Deprecated`
+- Do not add new Scene classes without a corresponding ViewModel — all 8 functional Scenes now have ViewModels (W14-W15)
