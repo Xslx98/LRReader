@@ -6,6 +6,8 @@ import androidx.collection.LruCache
 import com.hippo.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.client.data.GalleryDetail
+import com.hippo.ehviewer.dao.AppDatabase
+import com.hippo.ehviewer.dao.HistoryRepository
 import com.hippo.ehviewer.download.DownloadManager
 import java.io.File
 
@@ -23,6 +25,10 @@ class DataModule(private val context: Context) : IDataModule, Cacheable {
     override val favouriteStatusRouter: FavouriteStatusRouter by lazy { FavouriteStatusRouter() }
 
     override val downloadManager: DownloadManager by lazy { DownloadManager(context) }
+
+    override val historyRepository: HistoryRepository by lazy {
+        HistoryRepository(AppDatabase.getInstance(context).browsingDao())
+    }
 
     override val galleryDetailCache: LruCache<Long, GalleryDetail> by lazy {
         LruCache<Long, GalleryDetail>(150).also { cache ->
