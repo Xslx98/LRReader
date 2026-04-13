@@ -198,8 +198,8 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         // Wait for all page downloads to complete (or cancellation)
         try {
             jobs.awaitAll()
-        } catch (_: CancellationException) {
-            // Normal cancellation via cancel()
+        } catch (e: CancellationException) {
+            Log.d(TAG, "Download cancelled", e)
         }
 
         // Step 4: Report finish

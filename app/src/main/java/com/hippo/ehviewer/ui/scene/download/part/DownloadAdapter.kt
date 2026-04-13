@@ -511,14 +511,14 @@ class DownloadAdapter(
                             } catch (e: Exception) {
                                 Log.w(TAG, "Failed to extract image: $fileName", e)
                             } finally {
-                                try { pipe.outputStream.close() } catch (_: Exception) {}
+                                try { pipe.outputStream.close() } catch (e: Exception) { Log.d(TAG, "Close pipe output stream", e) }
                             }
                         }
                         extractThread.start()
                         try {
                             pipe.inputStream.copyTo(baos)
                         } finally {
-                            try { pipe.inputStream.close() } catch (_: Exception) {}
+                            try { pipe.inputStream.close() } catch (e: Exception) { Log.d(TAG, "Close pipe input stream", e) }
                         }
                         extractThread.join(3000)
                         val imageBytes = baos.toByteArray()

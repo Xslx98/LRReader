@@ -19,6 +19,7 @@ package com.hippo.ehviewer
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.net.Uri
 import android.provider.Browser
 import android.text.TextUtils
@@ -30,6 +31,8 @@ import com.hippo.util.ExceptionUtils
 
 object UrlOpener {
 
+    private const val TAG = "UrlOpener"
+
     @JvmStatic
     @SuppressLint("UnsafeImplicitIntentLaunch")
     fun openUrl(context: Context, url: String?, ehUrl: Boolean) {
@@ -37,7 +40,8 @@ object UrlOpener {
             if (TextUtils.isEmpty(url)) {
                 return
             }
-        } catch (_: VerifyError) {
+        } catch (e: VerifyError) {
+            Log.w(TAG, "Verify URL emptiness", e)
             return
         }
 
