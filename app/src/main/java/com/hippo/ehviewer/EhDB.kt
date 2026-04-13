@@ -566,27 +566,58 @@ object EhDB {
     // ═══════════════════════════════════════════════════════════
     // SERVER PROFILES
     // ═══════════════════════════════════════════════════════════
+    // Deprecated — use ServiceRegistry.dataModule.profileRepository instead.
+    // These methods delegate to the DAO directly and will be removed in a
+    // future release once all callers have migrated.
 
+    @Deprecated(
+        "Use ProfileRepository.getAllProfiles() via ServiceRegistry.dataModule.profileRepository",
+        ReplaceWith("ServiceRegistry.dataModule.profileRepository.getAllProfiles()")
+    )
     suspend fun getAllServerProfilesAsync(): List<ServerProfile> =
         sDatabase.miscDao().getAllServerProfiles()
 
+    @Deprecated(
+        "Use ProfileRepository.getActiveProfile() via ServiceRegistry.dataModule.profileRepository",
+        ReplaceWith("ServiceRegistry.dataModule.profileRepository.getActiveProfile()")
+    )
     suspend fun getActiveProfileAsync(): ServerProfile? =
         sDatabase.miscDao().getActiveProfile()
 
+    @Deprecated(
+        "Use ProfileRepository.findByUrl() via ServiceRegistry.dataModule.profileRepository",
+        ReplaceWith("ServiceRegistry.dataModule.profileRepository.findByUrl(url)")
+    )
     suspend fun findProfileByUrlAsync(url: String): ServerProfile? =
         sDatabase.miscDao().findProfileByUrl(url)
 
+    @Deprecated(
+        "Use ProfileRepository.insert() via ServiceRegistry.dataModule.profileRepository",
+        ReplaceWith("ServiceRegistry.dataModule.profileRepository.insert(profile)")
+    )
     suspend fun insertServerProfileAsync(profile: ServerProfile): Long =
         sDatabase.miscDao().insertServerProfile(profile)
 
+    @Deprecated(
+        "Use ProfileRepository.update() via ServiceRegistry.dataModule.profileRepository",
+        ReplaceWith("ServiceRegistry.dataModule.profileRepository.update(profile)")
+    )
     suspend fun updateServerProfileAsync(profile: ServerProfile) {
         sDatabase.miscDao().updateServerProfile(profile)
     }
 
+    @Deprecated(
+        "Use ProfileRepository.delete() via ServiceRegistry.dataModule.profileRepository",
+        ReplaceWith("ServiceRegistry.dataModule.profileRepository.delete(profile)")
+    )
     suspend fun deleteServerProfileAsync(profile: ServerProfile) {
         sDatabase.miscDao().deleteServerProfile(profile)
     }
 
+    @Deprecated(
+        "Use ProfileRepository.deactivateAll() via ServiceRegistry.dataModule.profileRepository",
+        ReplaceWith("ServiceRegistry.dataModule.profileRepository.deactivateAll()")
+    )
     suspend fun deactivateAllProfilesAsync() {
         sDatabase.miscDao().deactivateAllProfiles()
     }

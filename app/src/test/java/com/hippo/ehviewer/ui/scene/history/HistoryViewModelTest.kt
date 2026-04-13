@@ -9,6 +9,7 @@ import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.dao.HistoryRepository
+import com.hippo.ehviewer.dao.ProfileRepository
 import com.hippo.ehviewer.module.CoroutineModule
 import com.hippo.ehviewer.module.IDataModule
 import com.lanraragi.reader.client.api.LRRAuthManager
@@ -71,6 +72,7 @@ class HistoryViewModelTest {
         ServiceRegistry.initializeForTest(
             data = object : IDataModule {
                 override val historyRepository get() = HistoryRepository(db.browsingDao())
+                override val profileRepository get() = ProfileRepository(db.miscDao())
                 override val downloadManager get() = throw NotImplementedError("not needed")
                 override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
                 override val galleryDetailCache get() = throw NotImplementedError("not needed")
