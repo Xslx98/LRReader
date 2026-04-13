@@ -601,7 +601,10 @@ object EhDB {
     @JvmStatic
     fun exportDB(context: Context, file: File): Boolean {
         // Reject symlinks — canonical path must match absolute path
-        val canonical = try { file.canonicalPath } catch (_: IOException) { return false }
+        val canonical = try { file.canonicalPath } catch (e: IOException) {
+            Log.w(TAG, "Resolve canonical path for export", e)
+            return false
+        }
         val absolute = file.absolutePath
         if (canonical != absolute) {
             Log.e(TAG, "exportDB: symlink detected, rejected")
