@@ -311,7 +311,7 @@ class GalleryDetailViewModel : ViewModel() {
      * Runs on [Dispatchers.IO].
      */
     suspend fun isLocalFavorite(gid: Long): Boolean = withContext(Dispatchers.IO) {
-        EhDB.containLocalFavoritesAsync(gid)
+        ServiceRegistry.dataModule.favoritesRepository.containsLocalFavorite(gid)
     }
 
     // -------------------------------------------------------------------------
