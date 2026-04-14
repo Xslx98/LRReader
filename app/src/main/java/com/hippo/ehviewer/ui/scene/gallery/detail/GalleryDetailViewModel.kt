@@ -302,7 +302,7 @@ class GalleryDetailViewModel : ViewModel() {
      */
     fun persistDownloadInfo(info: DownloadInfo) {
         viewModelScope.launch(Dispatchers.IO) {
-            EhDB.putDownloadInfoAsync(info)
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
         }
     }
 

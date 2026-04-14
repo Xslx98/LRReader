@@ -19,7 +19,6 @@ package com.hippo.ehviewer.download
 import android.content.Context
 import android.os.Looper
 import android.util.Log
-import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
@@ -98,7 +97,7 @@ class DownloadManager(
                         val serverEffective = if (serverRating <= 0) -1f else serverRating
                         if (serverEffective != localEffective) {
                             info.rating = if (serverRating < 0) 0f else serverRating
-                            EhDB.putDownloadInfoAsync(info)
+                            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
                         }
                     } catch (e: Exception) {
                         // Skip this archive on error, continue with next
@@ -240,8 +239,8 @@ class DownloadManager(
         scope.launch {
             try {
                 val savedLabels = ArrayList<DownloadLabel>(labelsToPersist.size)
-                for (l in labelsToPersist) savedLabels.add(EhDB.addDownloadLabelAsync(l))
-                for (info in infosToSave) EhDB.putDownloadInfoAsync(info)
+                for (l in labelsToPersist) savedLabels.add(ServiceRegistry.dataModule.downloadDbRepository.addDownloadLabel(l))
+                for (info in infosToSave) ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
                 if (savedLabels.isNotEmpty()) {
                     repo.runOnMainThread { for (s in savedLabels) { repo.labelList.add(s); s.label?.let { repo.labelSet.add(it) } } }
                 }
@@ -259,7 +258,7 @@ class DownloadManager(
             scope.launch {
                 try {
                     val saved = ArrayList<DownloadLabel>(toAdd.size)
-                    for (l in toAdd) saved.add(EhDB.addDownloadLabelAsync(l))
+                    for (l in toAdd) saved.add(ServiceRegistry.dataModule.downloadDbRepository.addDownloadLabel(l))
                     repo.runOnMainThread { for (s in saved) { repo.labelList.add(s); s.label?.let { repo.labelSet.add(it) } } }
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to persist imported download labels", e)

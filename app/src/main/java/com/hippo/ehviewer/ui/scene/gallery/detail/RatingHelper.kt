@@ -1,7 +1,6 @@
 package com.hippo.ehviewer.ui.scene.gallery.detail
 
 import android.util.Log
-import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.download.DownloadManager
 import com.lanraragi.reader.client.api.LRRArchiveApi
@@ -76,7 +75,7 @@ object RatingHelper {
         } ?: return
         info.rating = rating
         try {
-            EhDB.putDownloadInfoAsync(info)
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
         } catch (e: Exception) {
             Log.w("RatingHelper", "Failed to persist rating to download DB", e)
         }
