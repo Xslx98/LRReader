@@ -160,14 +160,14 @@ class MainActivity : StageActivity(),
 
     private val handlerB: Handler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
-            if (gifHandler == null || backgroundBit == null || backgroundBit!!.isRecycled) return
-            val mNextFrame = gifHandler!!.updateFrame(backgroundBit)
+            val gif = gifHandler ?: return
+            val bg = backgroundBit ?: return
+            if (bg.isRecycled) return
+            val mNextFrame = gif.updateFrame(bg)
             if (mNextFrame > 0) {
                 sendEmptyMessageDelayed(1, mNextFrame.toLong())
             }
-            if (mHeaderBackground != null) {
-                mHeaderBackground!!.setImageBitmap(backgroundBit)
-            }
+            mHeaderBackground?.setImageBitmap(bg)
         }
     }
 
@@ -329,14 +329,15 @@ class MainActivity : StageActivity(),
         }
         setContentView(R.layout.activity_main)
 
-        mDrawerLayout = ViewUtils.`$$`(this, R.id.draw_view) as EhDrawerLayout
-        mDrawerLayout!!.setDrawerListener(this)
+        val drawerLayout = ViewUtils.`$$`(this, R.id.draw_view) as EhDrawerLayout
+        mDrawerLayout = drawerLayout
+        drawerLayout.setDrawerListener(this)
 
         // Strip display cutout insets on left/right so fitsSystemWindows doesn't pad
         // for the notch/punch-hole area in landscape. Top/bottom are preserved for
         // status bar (portrait) and navigation bar.
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-            mDrawerLayout!!.setOnApplyWindowInsetsListener { v, insets ->
+            drawerLayout.setOnApplyWindowInsetsListener { v, insets ->
                 val cutout = insets.displayCutout
                 if (cutout != null) {
                     val left = Math.max(
@@ -357,25 +358,26 @@ class MainActivity : StageActivity(),
                 v.onApplyWindowInsets(insets)
             }
         }
-        mNavView = ViewUtils.`$$`(this, R.id.nav_view) as NavigationView
+        val navView = ViewUtils.`$$`(this, R.id.nav_view) as NavigationView
+        mNavView = navView
         mRightDrawer = ViewUtils.`$$`(this, R.id.right_drawer) as FrameLayout
-        val headerLayout = mNavView!!.getHeaderView(0)
-        mAvatar = ViewUtils.`$$`(headerLayout, R.id.avatar) as AvatarImageView
-        mAvatar!!.setOnClickListener { onAvatarChange() }
-        mHeaderBackground = ViewUtils.`$$`(headerLayout, R.id.header_background) as ImageView
-        mHeaderBackground!!.setOnClickListener { onBackgroundChange() }
+        val headerLayout = navView.getHeaderView(0)
+        val avatar = ViewUtils.`$$`(headerLayout, R.id.avatar) as AvatarImageView
+        mAvatar = avatar
+        avatar.setOnClickListener { onAvatarChange() }
+        val headerBackground = ViewUtils.`$$`(headerLayout, R.id.header_background) as ImageView
+        mHeaderBackground = headerBackground
+        headerBackground.setOnClickListener { onBackgroundChange() }
         initUserImage()
         updateProfile()
         mDisplayName = ViewUtils.`$$`(headerLayout, R.id.display_name) as TextView
         val mChangeTheme = ViewUtils.`$$`(this, R.id.change_theme) as TextView
 
-        mDrawerLayout!!.setStatusBarColor(
+        drawerLayout.setStatusBarColor(
             ResourcesUtils.getAttrColor(this, androidx.appcompat.R.attr.colorPrimaryDark)
         )
 
-        if (mNavView != null) {
-            mNavView!!.setNavigationItemSelectedListener(this)
-        }
+        navView.setNavigationItemSelectedListener(this)
         if (AppearanceSettings.getTheme() == 0) {
             mChangeTheme.setTextColor(getColor(R.color.theme_change_light))
             mChangeTheme.setBackgroundColor(getColor(R.color.white))
@@ -429,14 +431,14 @@ class MainActivity : StageActivity(),
 
     private fun cleanupBackgroundResources() {
         handlerB.removeCallbacksAndMessages(null)
-        if (gifHandler != null) {
-            gifHandler!!.close()
-            gifHandler = null
+        gifHandler?.close()
+        gifHandler = null
+        backgroundBit?.let { bmp ->
+            if (!bmp.isRecycled) {
+                bmp.recycle()
+            }
         }
-        if (backgroundBit != null && !backgroundBit!!.isRecycled) {
-            backgroundBit!!.recycle()
-            backgroundBit = null
-        }
+        backgroundBit = null
     }
 
     private fun initBackgroundImageData(file: File?) {
@@ -447,15 +449,16 @@ class MainActivity : StageActivity(),
             val name = file.name
             val ns = name.split("\\.".toRegex())
             if (ns[1] == "gif" || ns[1] == "GIF") {
-                gifHandler = GifHandler(file.absolutePath)
-                val width = gifHandler!!.width
-                val height = gifHandler!!.height
+                val gif = GifHandler(file.absolutePath)
+                gifHandler = gif
+                val width = gif.width
+                val height = gif.height
                 backgroundBit = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-                val nextFrame = gifHandler!!.updateFrame(backgroundBit)
+                val nextFrame = gif.updateFrame(backgroundBit)
                 handlerB.sendEmptyMessageDelayed(1, nextFrame.toLong())
             } else {
                 backgroundBit = decodeSampledBitmap(file.path)
-                mHeaderBackground!!.setImageBitmap(backgroundBit)
+                mHeaderBackground?.setImageBitmap(backgroundBit)
             }
         }
     }
@@ -463,9 +466,7 @@ class MainActivity : StageActivity(),
     override fun backgroundSourceChange(file: File?) {
         if (file == null) {
             cleanupBackgroundResources()
-            if (mHeaderBackground != null) {
-                mHeaderBackground!!.setImageResource(R.drawable.sadpanda_low_poly)
-            }
+            mHeaderBackground?.setImageResource(R.drawable.sadpanda_low_poly)
         } else {
             initBackgroundImageData(file)
         }
@@ -476,17 +477,17 @@ class MainActivity : StageActivity(),
      * Called by UserImageChange.resetToDefault().
      */
     fun loadAvatar() {
-        if (mAvatar == null) return
+        val avatar = mAvatar ?: return
         val userAvatarFile = AppearanceSettings.getUserImageFile(AppearanceSettings.USER_AVATAR_IMAGE)
         if (userAvatarFile != null) {
             val bitmap = decodeSampledBitmap(userAvatarFile.path)
             if (bitmap != null) {
-                mAvatar!!.load(BitmapDrawable(mAvatar!!.resources, bitmap))
+                avatar.load(BitmapDrawable(avatar.resources, bitmap))
             } else {
-                mAvatar!!.load(R.drawable.default_avatar)
+                avatar.load(R.drawable.default_avatar)
             }
         } else {
-            mAvatar!!.load(R.drawable.default_avatar)
+            avatar.load(R.drawable.default_avatar)
         }
     }
 
@@ -613,16 +614,18 @@ class MainActivity : StageActivity(),
     override fun onSceneViewCreated(scene: SceneFragment, savedInstanceState: Bundle?) {
         super.onSceneViewCreated(scene, savedInstanceState)
 
-        if (scene is BaseScene && mRightDrawer != null && mDrawerLayout != null) {
-            mRightDrawer!!.removeAllViews()
+        val rightDrawer = mRightDrawer ?: return
+        val drawerLayout = mDrawerLayout ?: return
+        if (scene is BaseScene) {
+            rightDrawer.removeAllViews()
             val drawerView = scene.createDrawerView(
-                scene.layoutInflater2, mRightDrawer, savedInstanceState
+                scene.layoutInflater2, rightDrawer, savedInstanceState
             )
             if (drawerView != null) {
-                mRightDrawer!!.addView(drawerView)
-                mDrawerLayout!!.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)
+                rightDrawer.addView(drawerView)
+                drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)
             } else {
-                mDrawerLayout!!.setDrawerLockMode(
+                drawerLayout.setDrawerLockMode(
                     DrawerLayout.LOCK_MODE_LOCKED_CLOSED,
                     Gravity.RIGHT
                 )
@@ -655,29 +658,29 @@ class MainActivity : StageActivity(),
     }
 
     fun updateProfile() {
-        if (mAvatar != null) {
+        mAvatar?.let { avatar ->
             val avatarUrl = AppearanceSettings.getAvatar()
             if (TextUtils.isEmpty(avatarUrl)) {
                 val userAvatarFile = AppearanceSettings.getUserImageFile(AppearanceSettings.USER_AVATAR_IMAGE)
                 if (userAvatarFile != null) {
                     val bitmap = decodeSampledBitmap(userAvatarFile.path)
-                    val drawable = BitmapDrawable(mAvatar!!.resources, bitmap)
-                    mAvatar!!.load(drawable)
+                    val drawable = BitmapDrawable(avatar.resources, bitmap)
+                    avatar.load(drawable)
                 } else {
-                    mAvatar!!.load(R.drawable.default_avatar)
+                    avatar.load(R.drawable.default_avatar)
                 }
             } else {
-                mAvatar!!.load(avatarUrl, avatarUrl)
+                avatar.load(avatarUrl, avatarUrl)
             }
         }
 
-        if (mDisplayName != null) {
+        mDisplayName?.let { displayNameView ->
             var displayName = AppearanceSettings.getDisplayName()
             if (TextUtils.isEmpty(displayName)) {
                 displayName = getString(R.string.default_display_name)
             }
             Toast.makeText(this, displayName, Toast.LENGTH_LONG).show()
-            mDisplayName!!.text = displayName
+            displayNameView.text = displayName
         }
     }
 
@@ -693,30 +696,30 @@ class MainActivity : StageActivity(),
      * 更换壁纸
      */
     fun onBackgroundChange() {
-        userImageChange = null
-        userImageChange = UserImageChange(
+        val change = UserImageChange(
             this@MainActivity,
             UserImageChange.CHANGE_BACKGROUND,
             layoutInflater,
             LayoutInflater.from(this@MainActivity),
             this
         )
-        userImageChange!!.showImageChangeDialog()
+        userImageChange = change
+        change.showImageChangeDialog()
     }
 
     /**
      * 更换头像
      */
     fun onAvatarChange() {
-        userImageChange = null
-        userImageChange = UserImageChange(
+        val change = UserImageChange(
             this@MainActivity,
             UserImageChange.CHANGE_AVATAR,
             layoutInflater,
             LayoutInflater.from(this@MainActivity),
             this
         )
-        userImageChange!!.showImageChangeDialog()
+        userImageChange = change
+        change.showImageChangeDialog()
     }
 
     fun setDrawerLockMode(lockMode: Int, edgeGravity: Int) {
@@ -732,12 +735,11 @@ class MainActivity : StageActivity(),
     }
 
     fun toggleDrawer(drawerGravity: Int) {
-        if (mDrawerLayout != null) {
-            if (mDrawerLayout!!.isDrawerOpen(drawerGravity)) {
-                mDrawerLayout!!.closeDrawer(drawerGravity)
-            } else {
-                mDrawerLayout!!.openDrawer(drawerGravity)
-            }
+        val drawer = mDrawerLayout ?: return
+        if (drawer.isDrawerOpen(drawerGravity)) {
+            drawer.closeDrawer(drawerGravity)
+        } else {
+            drawer.openDrawer(drawerGravity)
         }
     }
 
@@ -750,11 +752,11 @@ class MainActivity : StageActivity(),
 
     fun setNavCheckedItem(@IdRes resId: Int) {
         mNavCheckedItem = resId
-        if (mNavView != null) {
+        mNavView?.let { navView ->
             if (resId == 0) {
-                mNavView!!.setCheckedItem(R.id.nav_stub)
+                navView.setCheckedItem(R.id.nav_stub)
             } else {
-                mNavView!!.setCheckedItem(resId)
+                navView.setCheckedItem(resId)
             }
         }
     }
@@ -767,9 +769,10 @@ class MainActivity : StageActivity(),
      * If activity is running, show snack bar, otherwise show toast
      */
     fun showTip(message: CharSequence, length: Int) {
-        if (mDrawerLayout != null) {
+        val drawer = mDrawerLayout
+        if (drawer != null) {
             Snackbar.make(
-                mDrawerLayout!!, message,
+                drawer, message,
                 if (length == BaseScene.LENGTH_LONG) 5000 else 3000
             ).show()
         } else {
@@ -783,10 +786,11 @@ class MainActivity : StageActivity(),
     @SuppressLint("RtlHardcoded")
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        if (mDrawerLayout != null && (mDrawerLayout!!.isDrawerOpen(Gravity.LEFT) ||
-                mDrawerLayout!!.isDrawerOpen(Gravity.RIGHT))
+        val drawer = mDrawerLayout
+        if (drawer != null && (drawer.isDrawerOpen(Gravity.LEFT) ||
+                drawer.isDrawerOpen(Gravity.RIGHT))
         ) {
-            mDrawerLayout!!.closeDrawers()
+            drawer.closeDrawers()
         } else {
             super.onBackPressed()
         }
@@ -836,8 +840,8 @@ class MainActivity : StageActivity(),
             }
         }
 
-        if (id != R.id.nav_stub && mDrawerLayout != null) {
-            mDrawerLayout!!.closeDrawers()
+        if (id != R.id.nav_stub) {
+            mDrawerLayout?.closeDrawers()
         }
 
         return true
@@ -851,11 +855,12 @@ class MainActivity : StageActivity(),
             }
             return
         }
+        val imageChange = userImageChange
         if ((requestCode == UserImageChange.TAKE_CAMERA ||
                     requestCode == UserImageChange.PICK_PHOTO ||
-                    requestCode == UserImageChange.CROP_PHOTO) && userImageChange != null
+                    requestCode == UserImageChange.CROP_PHOTO) && imageChange != null
         ) {
-            userImageChange!!.saveImageForResult(requestCode, resultCode, data, mAvatar)
+            imageChange.saveImageForResult(requestCode, resultCode, data, mAvatar)
             return
         }
         super.onActivityResult(requestCode, resultCode, data)

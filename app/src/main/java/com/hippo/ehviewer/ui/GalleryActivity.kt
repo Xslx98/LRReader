@@ -265,33 +265,32 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
 
     @Suppress("WrongConstant")
     private fun onCreateView(savedInstanceState: Bundle?) {
-        if (mGalleryProvider == null) {
-            if (!canFinish) {
-                return
-            }
-            finish()
+        val galleryProvider = mGalleryProvider ?: run {
+            if (canFinish) finish()
             return
         }
-        mGalleryProvider!!.start()
+        galleryProvider.start()
 
         // Get start page
         val startPage: Int = if (savedInstanceState == null) {
-            if (mPage >= 0) mPage else mGalleryProvider!!.getStartPage()
+            if (mPage >= 0) mPage else galleryProvider.getStartPage()
         } else {
             mSliderController.currentIndex
         }
 
         if (!isEglAvailable()) {
-            mGalleryProvider!!.stop()
+            galleryProvider.stop()
             showGlFallbackView()
             return
         }
 
         setContentView(R.layout.activity_gallery)
-        mGLRootView = ViewUtils.`$$`(this, R.id.gl_root_view) as GLRootView
-        mGalleryAdapter = GalleryAdapter(mGLRootView!!, mGalleryProvider!!)
+        val glRootView = ViewUtils.`$$`(this, R.id.gl_root_view) as GLRootView
+        mGLRootView = glRootView
+        val galleryAdapter = GalleryAdapter(glRootView, galleryProvider)
+        mGalleryAdapter = galleryAdapter
         val resources = resources
-        mGalleryView = GalleryView.Builder(this, mGalleryAdapter!!)
+        val galleryView = GalleryView.Builder(this, galleryAdapter)
             .setListener(this)
             .setLayoutMode(ReadingSettings.getReadingDirection())
             .setScaleMode(ReadingSettings.getPageScaling())
@@ -325,15 +324,16 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
             .setDefaultErrorString(resources.getString(R.string.error_unknown))
             .setEmptyString(resources.getString(R.string.error_empty))
             .build()
-        mGLRootView!!.setContentPane(mGalleryView)
-        mGLRootView!!.setOnGenericMotionListener(mInputHandler::handleGenericMotion)
-        mGalleryProvider!!.galleryView = mGalleryView
-        mGalleryProvider!!.setListener(mGalleryAdapter)
-        mGalleryProvider!!.setGLRoot(mGLRootView)
+        mGalleryView = galleryView
+        glRootView.setContentPane(galleryView)
+        glRootView.setOnGenericMotionListener(mInputHandler::handleGenericMotion)
+        galleryProvider.galleryView = galleryView
+        galleryProvider.setListener(galleryAdapter)
+        galleryProvider.setGLRoot(glRootView)
 
         // Setup helpers
-        mInputHandler.galleryView = mGalleryView
-        mImageOps.galleryProvider = mGalleryProvider
+        mInputHandler.galleryView = galleryView
+        mImageOps.galleryProvider = galleryProvider
         mImageOps.galleryInfo = mGalleryInfo
 
         // System UI helper
@@ -347,21 +347,25 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                 WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
                 WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
             )
-            mSystemUiHelper = SystemUiHelper(
+            val systemUiHelper = SystemUiHelper(
                 this, SystemUiHelper.LEVEL_IMMERSIVE,
                 SystemUiHelper.FLAG_LAYOUT_IN_SCREEN_OLDER_DEVICES or SystemUiHelper.FLAG_IMMERSIVE_STICKY
             )
-            mSystemUiHelper!!.hide()
+            mSystemUiHelper = systemUiHelper
+            systemUiHelper.hide()
         }
 
         // Header views
         mMaskView = ViewUtils.`$$`(this, R.id.mask) as ColorView
-        mClock = ViewUtils.`$$`(this, R.id.clock)
-        mProgress = ViewUtils.`$$`(this, R.id.progress) as TextView
-        mBattery = ViewUtils.`$$`(this, R.id.battery)
-        mClock!!.visibility = if (ReadingSettings.getShowClock()) View.VISIBLE else View.GONE
-        mProgress!!.visibility = if (ReadingSettings.getShowProgress()) View.VISIBLE else View.GONE
-        mBattery!!.visibility = if (ReadingSettings.getShowBattery()) View.VISIBLE else View.GONE
+        val clock = ViewUtils.`$$`(this, R.id.clock)
+        mClock = clock
+        val progress = ViewUtils.`$$`(this, R.id.progress) as TextView
+        mProgress = progress
+        val battery = ViewUtils.`$$`(this, R.id.battery)
+        mBattery = battery
+        clock.visibility = if (ReadingSettings.getShowClock()) View.VISIBLE else View.GONE
+        progress.visibility = if (ReadingSettings.getShowProgress()) View.VISIBLE else View.GONE
+        battery.visibility = if (ReadingSettings.getShowBattery()) View.VISIBLE else View.GONE
 
         // Slider controller
         val seekBarPanel = ViewUtils.`$$`(this, R.id.seek_bar_panel)
@@ -371,23 +375,21 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         val seekBar = ViewUtils.`$$`(seekBarPanel, R.id.seek_bar) as ReversibleSeekBar
 
         mSliderController.setViews(
-            seekBarPanel, autoTransferPanel, leftText, rightText, seekBar, mProgress as TextView
+            seekBarPanel, autoTransferPanel, leftText, rightText, seekBar, progress
         )
         mSliderController.setSystemUiHelper(mSystemUiHelper)
-        mSliderController.setGalleryView(mGalleryView)
+        mSliderController.setGalleryView(galleryView)
 
         mInputHandler.autoTransferPanel = autoTransferPanel
         autoTransferPanel.setOnClickListener { v -> mInputHandler.toggleAutoRead(v) }
 
-        val size = mGalleryProvider!!.size()
+        val size = galleryProvider.size()
         mSliderController.size = size
         if (savedInstanceState == null) {
             mSliderController.currentIndex = startPage
         }
-        if (mGalleryView != null) {
-            mSliderController.layoutMode = mGalleryView!!.layoutMode
-            mInputHandler.layoutMode = mGalleryView!!.layoutMode
-        }
+        mSliderController.layoutMode = galleryView.layoutMode
+        mInputHandler.layoutMode = galleryView.layoutMode
 
         // Keep screen on
         if (ReadingSettings.getKeepScreenOn()) {
@@ -459,15 +461,13 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
 
         mGLRootView = null
         mGalleryView = null
-        if (mGalleryAdapter != null) {
-            mGalleryAdapter!!.clearUploader()
-            mGalleryAdapter = null
+        mGalleryAdapter?.clearUploader()
+        mGalleryAdapter = null
+        mGalleryProvider?.let { provider ->
+            provider.setListener(null)
+            provider.stop()
         }
-        if (mGalleryProvider != null) {
-            mGalleryProvider!!.setListener(null)
-            mGalleryProvider!!.stop()
-            mGalleryProvider = null
-        }
+        mGalleryProvider = null
 
         mMaskView = null
         mClock = null
@@ -499,11 +499,12 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         super.onWindowFocusChanged(hasFocus)
 
         mainHandler.postDelayed({
-            if (hasFocus && mSystemUiHelper != null) {
+            if (hasFocus) {
+                val uiHelper = mSystemUiHelper ?: return@postDelayed
                 if (mSliderController.isShowSystemUi) {
-                    mSystemUiHelper!!.show()
+                    uiHelper.show()
                 } else {
-                    mSystemUiHelper!!.hide()
+                    uiHelper.hide()
                 }
             }
         }, 300)
@@ -588,14 +589,14 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         customScreenLightness: Boolean, screenLightness: Int,
         transferTime: Int
     ) {
-        if (mGalleryView == null) return
+        val gv = mGalleryView ?: return
 
         val oldReadingFullscreen = ReadingSettings.getReadingFullscreen()
 
         requestedOrientation = resolveOrientation(screenRotation)
-        mGalleryView!!.layoutMode = layoutMode
-        mGalleryView!!.setScaleMode(scaleMode)
-        mGalleryView!!.setStartPosition(startPosition)
+        gv.layoutMode = layoutMode
+        gv.setScaleMode(scaleMode)
+        gv.setStartPosition(startPosition)
 
         if (keepScreenOn) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -606,10 +607,10 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         mProgress?.visibility = if (showProgress) View.VISIBLE else View.GONE
         mBattery?.visibility = if (showBattery) View.VISIBLE else View.GONE
 
-        mGalleryView!!.setPagerInterval(
+        gv.setPagerInterval(
             if (showPageInterval) resources.getDimensionPixelOffset(R.dimen.gallery_pager_interval) else 0
         )
-        mGalleryView!!.setScrollInterval(
+        gv.setScrollInterval(
             if (showPageInterval) resources.getDimensionPixelOffset(R.dimen.gallery_scroll_interval) else 0
         )
 
@@ -626,24 +627,22 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
     // ======== Screen lightness ========
 
     private fun setScreenLightness(enable: Boolean, lightness: Int) {
-        if (mMaskView == null) {
-            return
-        }
+        val maskView = mMaskView ?: return
         val w = window
         val lp = w.attributes
         if (enable) {
             val clampedLightness = MathUtils.clamp(lightness, 0, 200)
             if (clampedLightness > 100) {
-                mMaskView!!.setColor(0)
+                maskView.setColor(0)
                 lp.screenBrightness = Math.max((clampedLightness - 100) / 100.0f, 0.01f)
             } else {
-                mMaskView!!.setColor(
+                maskView.setColor(
                     MathUtils.lerp(0xde, 0x00, clampedLightness / 100.0f) shl 24
                 )
                 lp.screenBrightness = 0.01f
             }
         } else {
-            mMaskView!!.setColor(0)
+            maskView.setColor(0)
             lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
         }
         w.attributes = lp
@@ -709,15 +708,14 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         override fun onDataChanged() {
             super.onDataChanged()
 
-            if (mGalleryProvider != null) {
-                val size = mGalleryProvider!!.size()
-                var task = mNotifyTaskPool.pop()
-                if (task == null) {
-                    task = NotifyTask()
-                }
-                task.setData(NOTIFY_KEY_SIZE, size)
-                mainHandler.post(task)
+            val provider = mGalleryProvider ?: return
+            val size = provider.size()
+            var task = mNotifyTaskPool.pop()
+            if (task == null) {
+                task = NotifyTask()
             }
+            task.setData(NOTIFY_KEY_SIZE, size)
+            mainHandler.post(task)
         }
     }
 }
