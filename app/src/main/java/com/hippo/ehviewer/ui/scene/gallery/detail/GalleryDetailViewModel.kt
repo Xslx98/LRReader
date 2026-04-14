@@ -14,7 +14,10 @@ import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadInfoListener
 import com.hippo.ehviewer.download.DownloadManager
+import com.hippo.ehviewer.gallery.GalleryProvider2
+import com.hippo.ehviewer.gallery.ReaderPageCache
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -143,6 +146,8 @@ class GalleryDetailViewModel : ViewModel() {
      * new arguments to the flows.
      */
     fun resetForNewEntry() {
+        detailPreloadJob?.cancel()
+        detailPreloadJob = null
         _action.value = null
         _gid.value = 0L
         _token.value = null
@@ -216,6 +221,34 @@ class GalleryDetailViewModel : ViewModel() {
      */
     fun getEffectiveGalleryInfo(): GalleryInfo? {
         return _galleryDetail.value ?: _galleryInfo.value
+    }
+
+    // -------------------------------------------------------------------------
+    // Detail-page reading preload
+    // -------------------------------------------------------------------------
+
+    /** Background job that preloads reading pages from the detail page. */
+    private var detailPreloadJob: Job? = null
+
+    /**
+     * Preload 2 pages (at the reading progress position) into the reader's
+     * cache so that opening the reader produces an immediate cache hit.
+     */
+    private fun triggerReadingPreload(arcId: String, serverProgress: Int, gid: Long) {
+        detailPreloadJob?.cancel()
+        val serverUrl = LRRAuthManager.getServerUrl() ?: return
+        val context = ServiceRegistry.appModule.getContext()
+
+        val localProgress = GalleryProvider2.loadReadingProgress(context, gid)
+        val startPage = when {
+            serverProgress > 0 && localProgress > 0 ->
+                maxOf(serverProgress - 1, localProgress) // server is 1-indexed
+            serverProgress > 0 -> serverProgress - 1
+            localProgress > 0 -> localProgress
+            else -> 0
+        }
+
+        detailPreloadJob = ReaderPageCache.preloadForDetail(context, arcId, serverUrl, startPage)
     }
 
     // -------------------------------------------------------------------------
@@ -381,6 +414,9 @@ class GalleryDetailViewModel : ViewModel() {
                 ServiceRegistry.dataModule.galleryDetailCache.put(gd.gid, gd)
 
                 _galleryDetail.value = gd
+
+                // Preload reading pages in background
+                triggerReadingPreload(arcid, archive.progress, gd.gid)
             } catch (e: Exception) {
                 android.util.Log.e(TAG, "LRR metadata fetch failed", e)
                 _detailError.tryEmit(e)
