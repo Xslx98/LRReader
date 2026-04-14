@@ -18,7 +18,6 @@ package com.hippo.ehviewer.preference
 import android.content.Context
 import android.util.AttributeSet
 import androidx.appcompat.app.AlertDialog
-import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.preference.MessagePreference
@@ -43,7 +42,7 @@ class ClearDownloadPathCachePreference : MessagePreference {
         super.onDialogClosed(positiveResult)
         if (positiveResult) {
             ServiceRegistry.coroutineModule.ioScope.launch {
-                EhDB.clearDownloadDirnameAsync()
+                ServiceRegistry.dataModule.downloadDbRepository.clearDownloadDirname()
             }
         }
     }

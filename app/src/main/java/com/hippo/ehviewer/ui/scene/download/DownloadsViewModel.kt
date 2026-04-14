@@ -6,7 +6,6 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.callBack.DownloadSearchCallback
@@ -71,7 +70,8 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
      * delivered via the [DownloadInfoListener] callback mechanism, forwarded
      * to the Scene as SharedFlow events below.
      */
-    val downloadsFlow: Flow<List<DownloadInfo>> = EhDB.observeDownloads()
+    val downloadsFlow: Flow<List<DownloadInfo>> =
+        ServiceRegistry.dataModule.downloadDbRepository.observeDownloads()
 
     // -------------------------------------------------------------------------
     // DownloadInfoListener → sealed DownloadUiEvent forwarding
@@ -421,7 +421,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
         if (deleteFiles) {
             val gid = galleryInfo.gid
             ServiceRegistry.coroutineModule.ioScope.launch {
-                EhDB.removeDownloadDirnameAsync(gid)
+                ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(gid)
                 val file = SpiderDen.getGalleryDownloadDir(galleryInfo)
                 file?.delete()
             }
@@ -444,7 +444,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
             val infos = ArrayList(downloadInfoList)
             ServiceRegistry.coroutineModule.ioScope.launch {
                 for (info in infos) {
-                    EhDB.removeDownloadDirnameAsync(info.gid)
+                    ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(info.gid)
                     val file = SpiderDen.getGalleryDownloadDir(info)
                     file?.delete()
                 }

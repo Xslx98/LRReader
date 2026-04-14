@@ -20,7 +20,7 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import android.webkit.MimeTypeMap
 import com.hippo.beerbelly.SimpleDiskCache
-import com.hippo.ehviewer.EhDB
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
 import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.client.data.GalleryInfo
@@ -267,7 +267,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
         /**
          * Resolves the download directory for the given gallery.
          *
-         * This is a suspend function that calls [EhDB] methods directly.
+         * This is a suspend function that calls [DownloadDbRepository] methods.
          * All callers must be in a coroutine context.
          */
         @JvmStatic
@@ -275,11 +275,12 @@ class SpiderDen(galleryInfo: GalleryInfo) {
             val dir = DownloadSettings.getDownloadLocation() ?: return null
 
             // Read from DB
-            var dirname = EhDB.getDownloadDirnameAsync(galleryInfo.gid)
+            val downloadDbRepo = ServiceRegistry.dataModule.downloadDbRepository
+            var dirname = downloadDbRepo.getDownloadDirname(galleryInfo.gid)
             if (dirname != null) {
                 // Some dirname may be invalid in some version
                 dirname = FileUtils.sanitizeFilename(dirname)
-                EhDB.putDownloadDirnameAsync(galleryInfo.gid, dirname)
+                downloadDbRepo.putDownloadDirname(galleryInfo.gid, dirname)
             }
 
             // Find it
@@ -300,7 +301,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
                             }
                         }
                         if (dirname != null) {
-                            EhDB.putDownloadDirnameAsync(galleryInfo.gid, dirname)
+                            downloadDbRepo.putDownloadDirname(galleryInfo.gid, dirname)
                         }
                     }
                 } catch (e: Exception) {
@@ -313,7 +314,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
             // Create it
             if (dirname == null) {
                 dirname = FileUtils.sanitizeFilename("${galleryInfo.gid}-${LRRUtils.getSuitableTitle(galleryInfo)}")
-                EhDB.putDownloadDirnameAsync(galleryInfo.gid, dirname)
+                downloadDbRepo.putDownloadDirname(galleryInfo.gid, dirname)
             }
 
             return dir.subFile(dirname)

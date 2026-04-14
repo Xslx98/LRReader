@@ -29,7 +29,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import com.hippo.ehviewer.EhDB
+
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.DownloadInfo
@@ -430,7 +430,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
                             val gi = downloadManager.getDownloadInfo(gid)
                             if (gi != null) {
                                 gi.state = DownloadInfo.STATE_NONE
-                                EhDB.putDownloadInfoAsync(gi)
+                                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(gi)
                             }
                         }
                         continue
@@ -464,7 +464,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
                             val gi = downloadManager.getDownloadInfo(gid)
                             if (gi != null) {
                                 gi.state = DownloadInfo.STATE_NONE
-                                EhDB.putDownloadInfoAsync(gi)
+                                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(gi)
                             }
                         }
                     }
