@@ -79,11 +79,12 @@ class DownloadLabelsScene : ToolbarScene() {
     ): View {
         val view = inflater.inflate(R.layout.scene_label_list, container, false)
 
-        mRecyclerView = ViewUtils.`$$`(view, R.id.recycler_view) as EasyRecyclerView
+        val recyclerView = ViewUtils.`$$`(view, R.id.recycler_view) as EasyRecyclerView
+        mRecyclerView = recyclerView
         val tip = ViewUtils.`$$`(view, R.id.tip) as TextView
-        mViewTransition = ViewTransition(mRecyclerView, tip)
+        mViewTransition = ViewTransition(recyclerView, tip)
 
-        val context = ehContext!!
+        val context = ehContext ?: return view
         val drawable = DrawableManager.getVectorDrawable(context, R.drawable.big_label)
         drawable?.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
         tip.setCompoundDrawables(null, drawable, null, null)
@@ -103,11 +104,11 @@ class DownloadLabelsScene : ToolbarScene() {
         mAdapter = adapter
         val animator = SwipeDismissItemAnimator()
 
-        mRecyclerView!!.layoutManager = LinearLayoutManager(context)
-        mRecyclerView!!.adapter = adapter
-        mRecyclerView!!.itemAnimator = animator
+        recyclerView.layoutManager = LinearLayoutManager(context)
+        recyclerView.adapter = adapter
+        recyclerView.itemAnimator = animator
 
-        dragDropManager.attachRecyclerView(mRecyclerView!!)
+        dragDropManager.attachRecyclerView(recyclerView)
 
         updateView()
 
@@ -157,7 +158,7 @@ class DownloadLabelsScene : ToolbarScene() {
 
     private fun updateView() {
         mViewTransition?.let { vt ->
-            if (mList != null && mList!!.isNotEmpty()) {
+            if (mList?.isNotEmpty() == true) {
                 vt.showView(0)
             } else {
                 vt.showView(1)
@@ -188,11 +189,12 @@ class DownloadLabelsScene : ToolbarScene() {
                 mBuilder.setError(null)
                 mDialog.dismiss()
                 viewModel.addLabel(text)
-                if (mAdapter != null && mList != null) {
-                    mAdapter!!.notifyItemInserted(mList!!.size - 1)
+                val list = mList
+                if (mAdapter != null && list != null) {
+                    mAdapter?.notifyItemInserted(list.size - 1)
                 }
                 mViewTransition?.let { vt ->
-                    if (mList != null && mList!!.isNotEmpty()) {
+                    if (mList?.isNotEmpty() == true) {
                         vt.showView(0)
                     } else {
                         vt.showView(1)
@@ -247,12 +249,13 @@ class DownloadLabelsScene : ToolbarScene() {
         override fun onClick(v: View) {
             val position = adapterPosition
             val context = ehContext
-            if (context == null || mList == null || mRecyclerView == null) {
+            val list = mList
+            if (context == null || list == null || mRecyclerView == null) {
                 return
             }
 
             if (label === v) {
-                val raw = mList!![position]
+                val raw = list[position]
                 val builder = EditTextDialogBuilder(
                     context, raw.label, getString(R.string.download_labels)
                 )
@@ -261,7 +264,7 @@ class DownloadLabelsScene : ToolbarScene() {
                 val dialog = builder.show()
                 RenameLabelDialogHelper(builder, dialog, raw.label ?: "", position)
             } else if (delete === v) {
-                val downloadLabel = mList!![position]
+                val downloadLabel = list[position]
                 AlertDialog.Builder(context)
                     .setTitle(R.string.delete_label_title)
                     .setMessage(getString(R.string.delete_label_message, downloadLabel.label))
@@ -285,7 +288,7 @@ class DownloadLabelsScene : ToolbarScene() {
     private inner class LabelAdapter : RecyclerView.Adapter<LabelHolder>(),
         DraggableItemAdapter<LabelHolder> {
 
-        private val mInflater: LayoutInflater = layoutInflater2!!
+        private val mInflater: LayoutInflater = layoutInflater2 ?: LayoutInflater.from(requireContext())
 
         init {
             AssertUtils.assertNotNull(mInflater)
@@ -296,13 +299,13 @@ class DownloadLabelsScene : ToolbarScene() {
         }
 
         override fun onBindViewHolder(holder: LabelHolder, position: Int) {
-            if (mList != null) {
-                holder.label.text = mList!![position].label
+            mList?.let { list ->
+                holder.label.text = list[position].label
             }
         }
 
         override fun getItemId(position: Int): Long {
-            return if (mList != null) mList!![position].id ?: 0L else 0L
+            return mList?.get(position)?.id ?: 0L
         }
 
         override fun getItemCount(): Int {
