@@ -112,6 +112,8 @@ class ServerListViewModelTest {
         val testDataModule = object : IDataModule {
             override val profileRepository get() = ProfileRepository(db.miscDao())
             override val historyRepository get() = throw NotImplementedError("not needed")
+            override val quickSearchRepository get() = throw NotImplementedError("not needed")
+            override val favoritesRepository get() = throw NotImplementedError("not needed")
             override val downloadManager get() = throw NotImplementedError("not needed")
             override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
             override val galleryDetailCache get() = throw NotImplementedError("not needed")

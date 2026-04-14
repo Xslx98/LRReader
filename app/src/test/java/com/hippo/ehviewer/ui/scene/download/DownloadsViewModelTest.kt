@@ -103,6 +103,10 @@ class DownloadsViewModelTest {
                 override val historyRepository get() =
                     com.hippo.ehviewer.dao.HistoryRepository(db.browsingDao())
                 override val profileRepository get() = ProfileRepository(db.miscDao())
+                override val quickSearchRepository get() =
+                    com.hippo.ehviewer.dao.QuickSearchRepository(db.browsingDao())
+                override val favoritesRepository get() =
+                    com.hippo.ehviewer.dao.FavoritesRepository(db.browsingDao())
                 override val galleryDetailCache get() = LruCache<Long, GalleryDetail>(10)
                 override val spiderInfoCache: SimpleDiskCache get() =
                     SimpleDiskCache(
