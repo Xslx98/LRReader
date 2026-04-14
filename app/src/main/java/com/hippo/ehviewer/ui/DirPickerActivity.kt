@@ -53,15 +53,17 @@ class DirPickerActivity : ToolbarActivity(),
 
         val file = if (savedInstanceState == null) onInit() else onRestore(savedInstanceState)
 
-        mDirExplorer!!.setCurrentFile(file)
-        mDirExplorer!!.setOnChangeDirListener(this)
+        val dirExplorer = mDirExplorer ?: return
+        dirExplorer.setCurrentFile(file)
+        dirExplorer.setOnChangeDirListener(this)
 
-        Ripple.addRipple(mOk!!, !AttrResources.getAttrBoolean(this, androidx.appcompat.R.attr.isLightTheme))
+        val okButton = mOk ?: return
+        Ripple.addRipple(okButton, !AttrResources.getAttrBoolean(this, androidx.appcompat.R.attr.isLightTheme))
 
-        mDefault!!.setOnClickListener(this)
-        mOk!!.setOnClickListener(this)
+        mDefault?.setOnClickListener(this)
+        okButton.setOnClickListener(this)
 
-        mPath!!.text = mDirExplorer!!.currentFile.path
+        mPath?.text = dirExplorer.currentFile.path
     }
 
     private fun onInit(): File? {

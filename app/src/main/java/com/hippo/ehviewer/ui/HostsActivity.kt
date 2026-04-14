@@ -213,19 +213,19 @@ class HostsActivity : ToolbarActivity(),
         protected abstract fun onCreateDialog(dialog: AlertDialog)
 
         protected fun put(dialog: AlertDialog) {
-            val host = dialog.findViewById<TextView>(R.id.host)!!
-            val ip = dialog.findViewById<TextView>(R.id.ip)!!
+            val host = dialog.findViewById<TextView>(R.id.host) ?: return
+            val ip = dialog.findViewById<TextView>(R.id.ip) ?: return
             val hostString = host.text.toString().trim().lowercase(Locale.US)
             val ipString = ip.text.toString().trim()
 
             if (!Hosts.isValidHost(hostString)) {
-                val hostInputLayout = dialog.findViewById<TextInputLayout>(R.id.host_input_layout)!!
+                val hostInputLayout = dialog.findViewById<TextInputLayout>(R.id.host_input_layout) ?: return
                 hostInputLayout.error = requireContext().getString(R.string.invalid_host)
                 return
             }
 
             if (!Hosts.isValidIp(ipString)) {
-                val ipInputLayout = dialog.findViewById<TextInputLayout>(R.id.ip_input_layout)!!
+                val ipInputLayout = dialog.findViewById<TextInputLayout>(R.id.ip_input_layout) ?: return
                 ipInputLayout.error = requireContext().getString(R.string.invalid_ip)
                 return
             }
@@ -238,7 +238,7 @@ class HostsActivity : ToolbarActivity(),
         }
 
         protected fun delete(dialog: AlertDialog) {
-            val host = dialog.findViewById<TextView>(R.id.host)!!
+            val host = dialog.findViewById<TextView>(R.id.host) ?: return
             val hostString = host.text.toString().trim().lowercase(Locale.US)
 
             val activity = dialog.ownerActivity as HostsActivity
@@ -270,7 +270,7 @@ class HostsActivity : ToolbarActivity(),
         }
 
         override fun onCreateDialog(dialog: AlertDialog) {
-            dialog.findViewById<View>(R.id.host_input_layout)!!.isEnabled = false
+            dialog.findViewById<View>(R.id.host_input_layout)?.isEnabled = false
             dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener { put(dialog) }
             dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setOnClickListener { delete(dialog) }
         }

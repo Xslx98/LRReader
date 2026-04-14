@@ -69,14 +69,15 @@ class GalleryTagChipHelper(private val callback: Callback) {
             return
         }
 
-        if (popupWindow != null) {
+        val existingPopup = popupWindow
+        if (existingPopup != null) {
             if (popupWindowPosition == position) {
                 popupWindowPosition = -1
-                popupWindow!!.dismiss()
+                existingPopup.dismiss()
                 return
             }
             popupWindowPosition = -1
-            popupWindow!!.dismiss()
+            existingPopup.dismiss()
         }
 
         val tgList = gi?.tgList
@@ -91,19 +92,20 @@ class GalleryTagChipHelper(private val callback: Callback) {
                 .inflate(R.layout.list_thumb_popupwindow, null) as LinearLayout
             val tagFlowLayout = buildChipGroup(gi, popView.findViewById(R.id.tab_tag_flow))
 
-            popupWindow = PopupWindow(popView, view.width - thumb.width, thumb.height)
-            popupWindow!!.isOutsideTouchable = true
-            popupWindow!!.animationStyle = R.style.PopupWindow
+            val newPopup = PopupWindow(popView, view.width - thumb.width, thumb.height)
+            popupWindow = newPopup
+            newPopup.isOutsideTouchable = true
+            newPopup.animationStyle = R.style.PopupWindow
 
             tagFlowLayout.setOnClickListener {
                 popupWindowPosition = -1
-                popupWindow!!.dismiss()
+                newPopup.dismiss()
                 callback.onItemClick(view, gi)
             }
             tagFlowLayout.setOnLongClickListener { callback.onItemLongClick(gi, view) }
             val location = IntArray(2)
             thumb.getLocationOnScreen(location)
-            popupWindow!!.showAtLocation(thumb, Gravity.NO_GRAVITY, location[0] + thumb.width, location[1])
+            newPopup.showAtLocation(thumb, Gravity.NO_GRAVITY, location[0] + thumb.width, location[1])
             popupWindowPosition = position
         }
     }
@@ -179,12 +181,10 @@ class GalleryTagChipHelper(private val callback: Callback) {
     }
 
     fun onTagLongClick(tagName: String): Boolean {
-        if (tagDialog == null) {
-            tagDialog = GalleryListSceneDialog(callback.getBaseScene())
-        }
+        val dialog = tagDialog ?: GalleryListSceneDialog(callback.getBaseScene()).also { tagDialog = it }
         ensureEhTags()
-        tagDialog!!.setTagName(tagName)
-        tagDialog!!.showTagLongPressDialog(ehTags)
+        dialog.setTagName(tagName)
+        dialog.showTagLongPressDialog(ehTags)
         return true
     }
 

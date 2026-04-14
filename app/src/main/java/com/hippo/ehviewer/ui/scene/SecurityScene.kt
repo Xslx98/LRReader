@@ -41,7 +41,6 @@ import com.hippo.ehviewer.util.collectFlow
 import com.hippo.hardware.ShakeDetector
 import com.hippo.widget.lockpattern.LockPatternUtils
 import com.hippo.widget.lockpattern.LockPatternView
-import com.hippo.lib.yorozuya.AssertUtils
 import com.hippo.lib.yorozuya.ViewUtils
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 
@@ -86,14 +85,16 @@ class SecurityScene : SolidScene(),
 
         viewModel = ViewModelProvider(requireActivity())[SecurityViewModel::class.java]
 
-        val context = ehContext
-        AssertUtils.assertNotNull(context)
-        mSensorManager = context!!.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
-        if (mSensorManager != null) {
-            mAccelerometer = mSensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-            if (mAccelerometer != null) {
-                mShakeDetector = ShakeDetector()
-                mShakeDetector!!.setOnShakeListener(this)
+        val context = ehContext ?: return
+        val sensorMgr = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
+        mSensorManager = sensorMgr
+        if (sensorMgr != null) {
+            val accelerometer = sensorMgr.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+            mAccelerometer = accelerometer
+            if (accelerometer != null) {
+                val detector = ShakeDetector()
+                detector.setOnShakeListener(this)
+                mShakeDetector = detector
             }
         }
 
@@ -113,8 +114,9 @@ class SecurityScene : SolidScene(),
     override fun onResume() {
         super.onResume()
 
-        if (mShakeDetector != null) {
-            mSensorManager!!.registerListener(mShakeDetector, mAccelerometer, SensorManager.SENSOR_DELAY_UI)
+        val shakeDetector = mShakeDetector
+        if (shakeDetector != null) {
+            mSensorManager?.registerListener(shakeDetector, mAccelerometer, SensorManager.SENSOR_DELAY_UI)
         }
 
         if (isFingerprintAuthAvailable()) {
@@ -137,8 +139,9 @@ class SecurityScene : SolidScene(),
     override fun onPause() {
         super.onPause()
 
-        if (mShakeDetector != null) {
-            mSensorManager!!.unregisterListener(mShakeDetector)
+        val shakeDetector = mShakeDetector
+        if (shakeDetector != null) {
+            mSensorManager?.unregisterListener(shakeDetector)
         }
         mBiometricPrompt?.cancelAuthentication()
         mHandler.removeCallbacks(mLockoutUpdateRunnable)
@@ -156,8 +159,9 @@ class SecurityScene : SolidScene(),
     ): View {
         val view = inflater.inflate(R.layout.scene_security, container, false)
 
-        mPatternView = ViewUtils.`$$`(view, R.id.pattern_view) as LockPatternView
-        mPatternView!!.setOnPatternListener(this)
+        val patternView = ViewUtils.`$$`(view, R.id.pattern_view) as LockPatternView
+        mPatternView = patternView
+        patternView.setOnPatternListener(this)
 
         mFingerprintIcon = ViewUtils.`$$`(view, R.id.fingerprint_icon) as ImageView
         if (SecuritySettings.getEnableFingerprint() && isFingerprintAuthAvailable()) {
