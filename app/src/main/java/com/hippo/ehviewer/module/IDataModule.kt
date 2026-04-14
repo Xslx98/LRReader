@@ -4,6 +4,7 @@ import androidx.collection.LruCache
 import com.hippo.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.client.data.GalleryDetail
+import com.hippo.ehviewer.dao.DownloadDbRepository
 import com.hippo.ehviewer.dao.FavoritesRepository
 import com.hippo.ehviewer.dao.HistoryRepository
 import com.hippo.ehviewer.dao.ProfileRepository
@@ -34,6 +35,9 @@ interface IDataModule {
 
     /** Local favorites domain repository backed by BrowsingRoomDao. */
     val favoritesRepository: FavoritesRepository
+
+    /** Download domain repository backed by [com.hippo.ehviewer.dao.DownloadRoomDao]. */
+    val downloadDbRepository: DownloadDbRepository
 
     /** LRU cache for [GalleryDetail] objects keyed by gid. */
     val galleryDetailCache: LruCache<Long, GalleryDetail>

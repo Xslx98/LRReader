@@ -37,7 +37,6 @@ import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemView
 import com.hippo.android.resource.AttrResources
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.ehviewer.Analytics
-import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
@@ -336,7 +335,7 @@ class DownloadAdapter(
         if (fromPosInList in 0 until list.size && toPosInList in 0 until list.size) {
             // 先更新数据库中的顺序（通过 time 字段）
             ServiceRegistry.coroutineModule.ioScope.launch {
-                EhDB.moveDownloadInfoAsync(list, fromPosInList, toPosInList)
+                ServiceRegistry.dataModule.downloadDbRepository.moveDownloadInfo(list, fromPosInList, toPosInList)
             }
 
             // 再尝试更新当前列表的内存顺序

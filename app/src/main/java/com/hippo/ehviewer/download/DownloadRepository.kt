@@ -21,7 +21,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Looper
 import android.util.Log
-import com.hippo.ehviewer.EhDB
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.DownloadLabel
@@ -147,8 +147,9 @@ class DownloadRepository(
      */
     private suspend fun loadDataFromDb(onComplete: () -> Unit) {
         // ── IO phase ───────────────────────────────────────────────────
-        val loadedLabels = EhDB.getAllDownloadLabelListAsync()
-        val loadedInfos = EhDB.getAllDownloadInfoAsync()
+        val downloadDbRepo = ServiceRegistry.dataModule.downloadDbRepository
+        val loadedLabels = downloadDbRepo.getAllDownloadLabels()
+        val loadedInfos = downloadDbRepo.getAllDownloadInfo()
 
         val labelStrings: HashSet<String> = HashSet()
         for (label in loadedLabels) {
@@ -189,7 +190,7 @@ class DownloadRepository(
             list.add(info)
         }
 
-        val extraSavedLabels = EhDB.addDownloadLabelsAsync(orphanLabelStrings)
+        val extraSavedLabels = downloadDbRepo.addDownloadLabels(orphanLabelStrings)
 
         val loaded = LoadedDownloadData(
             labels = loadedLabels,
@@ -514,7 +515,7 @@ class DownloadRepository(
     fun persistInfo(info: DownloadInfo) {
         scope.launch {
             try {
-                EhDB.putDownloadInfoAsync(info)
+                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to persist download info gid=${info.gid}", e)
             }
@@ -525,7 +526,7 @@ class DownloadRepository(
     fun persistHistory(info: DownloadInfo) {
         scope.launch {
             try {
-                EhDB.putHistoryInfoAsync(info)
+                ServiceRegistry.dataModule.historyRepository.putHistoryInfo(info)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to persist history info gid=${info.gid}", e)
             }
@@ -536,7 +537,7 @@ class DownloadRepository(
     fun removeInfoFromDb(gid: Long) {
         scope.launch {
             try {
-                EhDB.removeDownloadInfoAsync(gid)
+                ServiceRegistry.dataModule.downloadDbRepository.removeDownloadInfo(gid)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to remove download info gid=$gid from DB", e)
             }
@@ -547,7 +548,7 @@ class DownloadRepository(
     fun removeInfoBatchFromDb(gids: List<Long>) {
         scope.launch {
             try {
-                EhDB.removeDownloadInfoBatchAsync(gids)
+                ServiceRegistry.dataModule.downloadDbRepository.removeDownloadInfoBatch(gids)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to batch-remove download infos from DB", e)
             }
@@ -558,7 +559,7 @@ class DownloadRepository(
     fun persistInfoBatch(list: List<DownloadInfo>) {
         scope.launch {
             try {
-                EhDB.putDownloadInfoBatchAsync(list)
+                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfoBatch(list)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to batch-persist download infos", e)
             }
@@ -585,7 +586,7 @@ class DownloadRepository(
 
         scope.launch {
             try {
-                val reloadedInfos = EhDB.getAllDownloadInfoAsync()
+                val reloadedInfos = ServiceRegistry.dataModule.downloadDbRepository.getAllDownloadInfo()
                 runOnMainThread {
                     allInfoList.addAll(reloadedInfos)
                     for (info in reloadedInfos) {
@@ -630,7 +631,7 @@ class DownloadRepository(
 
         scope.launch {
             try {
-                val saved = EhDB.addDownloadLabelAsync(label)
+                val saved = ServiceRegistry.dataModule.downloadDbRepository.addDownloadLabel(label)
                 runOnMainThread {
                     newLabel.id = saved.id
                     newLabel.time = saved.time
@@ -649,7 +650,7 @@ class DownloadRepository(
         labelList.add(toPosition, item)
         scope.launch {
             try {
-                EhDB.moveDownloadLabelAsync(fromPosition, toPosition)
+                ServiceRegistry.dataModule.downloadDbRepository.moveDownloadLabel(fromPosition, toPosition)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to persist label move from=$fromPosition to=$toPosition", e)
             }
@@ -686,8 +687,8 @@ class DownloadRepository(
         val infosToUpdate = ArrayList(list)
         scope.launch {
             try {
-                EhDB.updateDownloadLabelAsync(labelToUpdate)
-                EhDB.putDownloadInfoBatchAsync(infosToUpdate)
+                ServiceRegistry.dataModule.downloadDbRepository.updateDownloadLabel(labelToUpdate)
+                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfoBatch(infosToUpdate)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to persist label rename from=$from to=$to", e)
             }
@@ -728,8 +729,8 @@ class DownloadRepository(
         val infosToUpdate = ArrayList(list)
         scope.launch {
             try {
-                EhDB.removeDownloadLabelAsync(labelToRemove)
-                EhDB.putDownloadInfoBatchAsync(infosToUpdate)
+                ServiceRegistry.dataModule.downloadDbRepository.removeDownloadLabel(labelToRemove)
+                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfoBatch(infosToUpdate)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to persist label deletion: $label", e)
             }
@@ -771,7 +772,7 @@ class DownloadRepository(
 
             scope.launch {
                 try {
-                    EhDB.putDownloadInfoAsync(info)
+                    ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to persist label change for gid=${info.gid}", e)
                 }
