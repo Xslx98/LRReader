@@ -4,8 +4,10 @@ import androidx.collection.LruCache
 import com.hippo.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.client.data.GalleryDetail
+import com.hippo.ehviewer.dao.FavoritesRepository
 import com.hippo.ehviewer.dao.HistoryRepository
 import com.hippo.ehviewer.dao.ProfileRepository
+import com.hippo.ehviewer.dao.QuickSearchRepository
 import com.hippo.ehviewer.download.DownloadManager
 
 /**
@@ -26,6 +28,12 @@ interface IDataModule {
 
     /** Server profile domain repository backed by [com.hippo.ehviewer.dao.MiscRoomDao]. */
     val profileRepository: ProfileRepository
+
+    /** Quick search domain repository backed by BrowsingRoomDao. */
+    val quickSearchRepository: QuickSearchRepository
+
+    /** Local favorites domain repository backed by BrowsingRoomDao. */
+    val favoritesRepository: FavoritesRepository
 
     /** LRU cache for [GalleryDetail] objects keyed by gid. */
     val galleryDetailCache: LruCache<Long, GalleryDetail>

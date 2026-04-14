@@ -20,7 +20,6 @@ import android.app.Activity
 import android.content.Intent
 import android.util.Log
 import com.hippo.app.ListCheckBoxDialogBuilder
-import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryInfo
@@ -57,7 +56,7 @@ object CommonOperations {
     ) {
         ServiceRegistry.coroutineModule.ioScope.launch {
             try {
-                EhDB.putLocalFavoriteAsync(galleryInfo)
+                ServiceRegistry.dataModule.favoritesRepository.putLocalFavorite(galleryInfo)
                 withContext(Dispatchers.Main) { listener.onSuccess() }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) { listener.onFailure(e) }
@@ -73,7 +72,7 @@ object CommonOperations {
     ) {
         ServiceRegistry.coroutineModule.ioScope.launch {
             try {
-                EhDB.removeLocalFavoritesAsync(galleryInfo.gid)
+                ServiceRegistry.dataModule.favoritesRepository.removeLocalFavorite(galleryInfo.gid)
                 withContext(Dispatchers.Main) { listener.onSuccess() }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) { listener.onFailure(e) }

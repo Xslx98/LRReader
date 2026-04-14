@@ -7,8 +7,10 @@ import com.hippo.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.dao.AppDatabase
+import com.hippo.ehviewer.dao.FavoritesRepository
 import com.hippo.ehviewer.dao.HistoryRepository
 import com.hippo.ehviewer.dao.ProfileRepository
+import com.hippo.ehviewer.dao.QuickSearchRepository
 import com.hippo.ehviewer.download.DownloadManager
 import java.io.File
 
@@ -33,6 +35,14 @@ class DataModule(private val context: Context) : IDataModule, Cacheable {
 
     override val profileRepository: ProfileRepository by lazy {
         ProfileRepository(AppDatabase.getInstance(context).miscDao())
+    }
+
+    override val quickSearchRepository: QuickSearchRepository by lazy {
+        QuickSearchRepository(AppDatabase.getInstance(context).browsingDao())
+    }
+
+    override val favoritesRepository: FavoritesRepository by lazy {
+        FavoritesRepository(AppDatabase.getInstance(context).browsingDao())
     }
 
     override val galleryDetailCache: LruCache<Long, GalleryDetail> by lazy {
