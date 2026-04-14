@@ -15,7 +15,6 @@ import android.widget.TextView
 import androidx.viewpager.widget.ViewPager
 import com.hippo.app.CheckBoxDialogBuilder
 import com.hippo.app.EditTextDialogBuilder
-import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.data.ListUrlBuilder
@@ -181,7 +180,7 @@ class GalleryDrawerHelper(private val callback: Callback) {
             }
             val activity = callback.getHostActivity()
             ServiceRegistry.coroutineModule.ioScope.launch {
-                EhDB.insertQuickSearchAsync(quickSearch)
+                ServiceRegistry.dataModule.quickSearchRepository.insert(quickSearch)
                 activity?.runOnUiThread {
                     @Suppress("UNCHECKED_CAST")
                     (list as MutableList<QuickSearch>).add(quickSearch)

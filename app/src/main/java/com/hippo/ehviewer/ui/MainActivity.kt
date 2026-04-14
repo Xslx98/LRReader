@@ -48,8 +48,8 @@ import com.google.android.material.snackbar.Snackbar
 import com.hippo.drawerlayout.DrawerLayout
 import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.EhApplication
-import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.SecuritySettings
 import com.hippo.ehviewer.settings.NetworkSettings
 import com.hippo.ehviewer.settings.DownloadSettings
@@ -822,7 +822,7 @@ class MainActivity : StageActivity(),
                 lifecycleScope.launch {
                     try {
                         val profileCount = withContext(Dispatchers.IO) {
-                            EhDB.getAllServerProfilesAsync().size
+                            ServiceRegistry.dataModule.profileRepository.getAllProfiles().size
                         }
                         if (profileCount > 0) {
                             startScene(Announcer(ServerListScene::class.java))
