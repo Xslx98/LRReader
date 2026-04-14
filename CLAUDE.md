@@ -109,6 +109,9 @@ LRReader/
 | `client/api/LRRArchivePagingSource.kt` | Paging 3 source for gallery list |
 | `dao/AppDatabase.kt` | Room database schema (v19, schema exported) |
 | `dao/HistoryRepository.kt` | History domain Repository backed by BrowsingRoomDao (W17-3) |
+| `dao/ProfileRepository.kt` | Server profile domain Repository backed by MiscRoomDao (W19-2) |
+| `dao/QuickSearchRepository.kt` | Quick search domain Repository backed by BrowsingRoomDao (W21-1) |
+| `dao/FavoritesRepository.kt` | Local favorites domain Repository backed by BrowsingRoomDao (W21-1) |
 | `util/FlowBridge.kt` | Java→Kotlin Flow bridge for lifecycle-aware collection |
 | `ui/MainActivity.kt` | Main UI entry point + scene routing |
 | `ui/GalleryActivity.kt` | Reader/detail view |
@@ -384,4 +387,7 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 - Do not add fire-and-forget `scope.launch { EhDB.*() }` without try-catch — all DB persistence launches must handle exceptions (W7-4)
 - Do not use `EhUrl` / `EhUrlOpener` — renamed to `LRRUrl` / `LRRUrlOpener` (W14-1)
 - Do not call `EhDB` history methods directly from UI layer — use `HistoryRepository` via `ServiceRegistry.dataModule.historyRepository` (W17-3); EhDB history methods are `@Deprecated`
+- Do not call `EhDB` profile methods directly — use `ProfileRepository` via `ServiceRegistry.dataModule.profileRepository` (W19-2); EhDB profile methods are `@Deprecated`
+- Do not call `EhDB` quick search methods directly — use `QuickSearchRepository` via `ServiceRegistry.dataModule.quickSearchRepository` (W21-1); EhDB quick search methods are `@Deprecated`
+- Do not call `EhDB` local favorites methods directly — use `FavoritesRepository` via `ServiceRegistry.dataModule.favoritesRepository` (W21-1); EhDB local favorites methods are `@Deprecated`
 - Do not add new Scene classes without a corresponding ViewModel — all 8 functional Scenes now have ViewModels (W14-W15)
