@@ -14,9 +14,10 @@ import com.hippo.unifile.UniFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -113,35 +114,45 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
             }
         }
 
-        // Extract archive on background thread
+        // Load page list and metadata on background threads
         providerScope?.launch {
             try {
                 val client = ServiceRegistry.networkModule.longReadClient
-                val pages = runSuspend {
-                    LRRArchiveApi.getFileList(
-                        ServiceRegistry.networkModule.longReadClient,
-                        serverUrl, arcId
-                    )
+
+                // Fire-and-forget: clear "new" flag (independent, no need to wait)
+                launch {
+                    try {
+                        LRRArchiveApi.clearNewFlag(client, serverUrl, arcId)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Clear new flag for archive $arcId", e)
+                    }
                 }
+
+                // Parallel: fetch file list + server metadata
+                val pagesDeferred = async {
+                    LRRArchiveApi.getFileList(client, serverUrl, arcId)
+                }
+                val metadataDeferred = async {
+                    try {
+                        LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcId)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "[PROGRESS] Failed to load server progress: ${e.message}")
+                        null
+                    }
+                }
+
+                // As soon as file list is ready, notify UI — page requests can start immediately
+                val pages = pagesDeferred.await()
                 stateRef.set(ProviderState(paths = pages, count = pages.size))
                 Log.d(TAG, "Extracted ${pages.size} pages for $arcId")
+                notifyDataChanged()
 
-                // Clear "new" flag
-                try {
-                    runSuspend<Unit> {
-                        LRRArchiveApi.clearNewFlag(client, serverUrl, arcId)
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Clear new flag for archive $arcId", e)
-                }
-
-                // Load server-side reading progress
-                var serverPage = startPageValue // fallback to local SP value
+                // Resolve reading progress from server metadata (may already be available)
+                val metadata = metadataDeferred.await()
+                var serverPage = startPageValue
                 Log.i(TAG, "[PROGRESS] Local SP page=$startPageValue for gid=${galleryInfo.gid}")
-                try {
-                    val metadata = runSuspend {
-                        LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcId)
-                    }
+
+                if (metadata != null) {
                     Log.i(
                         TAG,
                         "[PROGRESS] Server metadata: progress=${metadata.progress}" +
@@ -155,7 +166,6 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
                             TAG,
                             "[PROGRESS] serverPage0=$serverPage0 serverTs=$serverTs localTs=$localTs"
                         )
-                        // Use whichever is more recent by timestamp
                         if (serverTs > localTs) {
                             serverPage = serverPage0
                             startPageValue = serverPage0
@@ -165,7 +175,6 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
                             serverPage = startPageValue
                             Log.i(TAG, "[PROGRESS] Using LOCAL progress: page $startPageValue")
                         } else {
-                            // Equal timestamps or both zero — use the larger page number
                             serverPage = maxOf(serverPage0, startPageValue)
                             startPageValue = serverPage
                             Log.i(TAG, "[PROGRESS] Timestamps equal, using max page: $serverPage")
@@ -174,26 +183,19 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
                         Log.i(TAG, "[PROGRESS] Server progress=0, using local page=$startPageValue")
                         serverPage = startPageValue
                     }
-                } catch (e: Exception) {
-                    Log.w(TAG, "[PROGRESS] Failed to load server progress: ${e.message}")
                 }
 
                 val finalPage = serverPage
                 Log.i(TAG, "[PROGRESS] Final resolved page=$finalPage")
 
-                // Notify UI that data is ready
-                notifyDataChanged()
-
-                // Jump GalleryView to the resolved page via coroutine + Dispatchers.Main
-                // (getStartPage() was read synchronously before this async callback)
+                // Jump GalleryView to the resolved page.
+                // setCurrentPage() posts to GL method queue, notifyDataChanged() posted
+                // to GL idle first — GL processes them in order, no delay needed.
                 if (finalPage > 0) {
                     val gv = galleryView
                     Log.i(TAG, "[PROGRESS] GalleryView ref=${if (gv != null) "OK" else "NULL"}")
                     if (gv != null) {
-                        // Delay to ensure GL layout is attached; launched on
-                        // providerScope so stop() cancellation prevents stale View access.
                         providerScope?.launch {
-                            delay(300)
                             if (stateRef.get().stopped) return@launch
                             val gvRef = galleryView ?: return@launch
                             withContext(Dispatchers.Main) {
@@ -208,7 +210,7 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
                     }
                 }
 
-                // Preload pages from start page position
+                // Start preloading from resolved page
                 preloadPages(finalPage)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to extract archive: ${e.message}", e)
@@ -615,27 +617,32 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
 
     /**
      * Preload adjacent pages (download only, no decode).
-     * Downloads sequentially on a single IO thread to avoid overloading the server.
+     * Uses a semaphore to allow [PRELOAD_PARALLELISM] concurrent downloads,
+     * utilizing more of the available bandwidth without overloading the server.
      */
     private fun preloadPages(currentIndex: Int) {
-        val state = stateRef.get()
-        if (state.paths == null) return
+        val paths = stateRef.get().paths ?: return
         providerScope?.launch {
+            val semaphore = Semaphore(PRELOAD_PARALLELISM)
             for (i in 1..PRELOAD_COUNT) {
-                val currentState = stateRef.get()
-                if (currentState.stopped) break
+                if (stateRef.get().stopped) break
                 val preloadIndex = currentIndex + i
-                val paths = currentState.paths ?: break
                 if (preloadIndex >= paths.size) break
-
                 val cached = getCacheFile(preloadIndex)
                 if (cached.exists() && cached.length() > MIN_IMAGE_SIZE) continue
 
-                try {
-                    downloadPageToCache(preloadIndex)
-                    Log.d(TAG, "Preloaded page $preloadIndex")
-                } catch (e: Exception) {
-                    Log.d(TAG, "Preload failed for page $preloadIndex: ${e.message}")
+                launch {
+                    semaphore.acquire()
+                    try {
+                        if (!stateRef.get().stopped) {
+                            downloadPageToCache(preloadIndex)
+                            Log.d(TAG, "Preloaded page $preloadIndex")
+                        }
+                    } catch (e: Exception) {
+                        Log.d(TAG, "Preload failed for page $preloadIndex: ${e.message}")
+                    } finally {
+                        semaphore.release()
+                    }
                 }
             }
         }
@@ -645,6 +652,7 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
         private const val TAG = "LRRGalleryProvider"
         private const val BUFFER_SIZE = 65536 // 64KB buffer for LAN transfers
         private const val PRELOAD_COUNT = 5 // Preload next 5 pages (LAN is fast)
+        private const val PRELOAD_PARALLELISM = 2 // Concurrent preload downloads
         private const val MAX_TOTAL_CACHE_BYTES = 500L * 1024L * 1024L // 500MB total cache limit
         private const val SP_CACHE_ACCESS = "lrr_cache_access" // SharedPreferences name for cache access timestamps
         private const val MIN_IMAGE_SIZE = 1024L // Minimum valid image file size (1KB)
