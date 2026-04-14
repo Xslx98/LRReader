@@ -293,11 +293,12 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         val nonNullContext = requireContext()
         val drawable = DrawableManager.getVectorDrawable(nonNullContext, R.drawable.big_sad_pandroid)
         drawable?.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
-        mTip!!.setCompoundDrawables(null, drawable, null, null)
-        mTip!!.setOnClickListener(this)
+        val tip = mTip ?: return null
+        tip.setCompoundDrawables(null, drawable, null, null)
+        tip.setOnClickListener(this)
 
-        mBelowHeader = mainView.findViewById(R.id.below_header)
-        val belowHeader = mBelowHeader!!
+        val belowHeader: View = mainView.findViewById(R.id.below_header)
+        mBelowHeader = belowHeader
         val isDarkTheme = !AttrResources.getAttrBoolean(nonNullContext, androidx.appcompat.R.attr.isLightTheme)
         mHeader = ViewUtils.`$$`(belowHeader, R.id.header)
         val colorBg = ViewUtils.`$$`(mHeader, R.id.color_bg)
@@ -308,15 +309,16 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mActionGroup = ViewUtils.`$$`(mHeader, R.id.action_card) as ViewGroup
         val download = ViewUtils.`$$`(mActionGroup, R.id.download) as TextView
         val archiverDownloadProgress = ViewUtils.`$$`(mHeader, R.id.archiver_download_progress) as ArchiverDownloadProgress
-        mRead = ViewUtils.`$$`(mActionGroup, R.id.read)
+        val read = ViewUtils.`$$`(mActionGroup, R.id.read)
+        mRead = read
         Ripple.addRipple(otherActions, isDarkTheme)
         Ripple.addRipple(download, isDarkTheme)
-        Ripple.addRipple(mRead!!, isDarkTheme)
+        Ripple.addRipple(read, isDarkTheme)
         uploader.setOnClickListener(this)
         otherActions.setOnClickListener(this)
         download.setOnClickListener(this)
         download.setOnLongClickListener(this)
-        mRead!!.setOnClickListener(this)
+        read.setOnClickListener(this)
         title.setOnClickListener(this)
 
         uploader.setOnLongClickListener(this)
@@ -328,29 +330,32 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mActions = ViewUtils.`$$`(belowHeader, R.id.actions)
         val ratingText = ViewUtils.`$$`(mActions, R.id.rating_text) as TextView
         val rating = ViewUtils.`$$`(mActions, R.id.rating) as RatingBar
-        mHeartGroup = ViewUtils.`$$`(mActions, R.id.heart_group)
-        val heart = ViewUtils.`$$`(mHeartGroup, R.id.heart) as TextView
-        val heartOutline = ViewUtils.`$$`(mHeartGroup, R.id.heart_outline) as TextView
-        Ripple.addRipple(mHeartGroup!!, isDarkTheme)
-        mHeartGroup!!.setOnClickListener(this)
-        mHeartGroup!!.setOnLongClickListener(this)
+        val heartGroup = ViewUtils.`$$`(mActions, R.id.heart_group)
+        mHeartGroup = heartGroup
+        val heart = ViewUtils.`$$`(heartGroup, R.id.heart) as TextView
+        val heartOutline = ViewUtils.`$$`(heartGroup, R.id.heart_outline) as TextView
+        Ripple.addRipple(heartGroup, isDarkTheme)
+        heartGroup.setOnClickListener(this)
+        heartGroup.setOnLongClickListener(this)
 
         val tags = ViewUtils.`$$`(belowHeader, R.id.tags) as LinearLayout
         val noTags = ViewUtils.`$$`(tags, R.id.no_tags) as TextView
 
         // Initialize helpers
-        mHeaderBinder = DetailHeaderBinder(
+        val headerBinder = DetailHeaderBinder(
             viewModel, viewLifecycleOwner,
             thumb, title, uploader, pages, size,
             ratingText, rating, heart, heartOutline,
             archiverDownloadProgress, colorBg, tags, noTags
         )
-        mHeaderBinder!!.ensureActionDrawable(nonNullContext)
+        mHeaderBinder = headerBinder
+        headerBinder.ensureActionDrawable(nonNullContext)
 
-        mActionHandler = DetailActionHandler(this, viewModel, viewLifecycleOwner)
-        mActionHandler!!.otherActions = otherActions
-        mActionHandler!!.download = download
-        mActionHandler!!.onFavoriteChanged = { gd ->
+        val actionHandler = DetailActionHandler(this, viewModel, viewLifecycleOwner)
+        mActionHandler = actionHandler
+        actionHandler.otherActions = otherActions
+        actionHandler.download = download
+        actionHandler.onFavoriteChanged = { gd ->
             mHeaderBinder?.updateFavoriteDrawable(gd)
         }
 
@@ -390,10 +395,11 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             val isLrr = LRRAuthManager.getServerUrl() != null
             btn.visibility = if (isLrr) View.VISIBLE else View.GONE
             btn.setOnClickListener {
-                if (mGalleryDetail != null) {
+                val gd = mGalleryDetail
+                if (gd != null) {
                     TagEditDialog.show(
-                        activity2, mGalleryDetail!!.token,
-                        mGalleryDetail!!.tags
+                        activity2, gd.token,
+                        gd.tags
                     ) {
                         if (mState != STATE_REFRESH && mState != STATE_REFRESH_HEADER) {
                             adjustViewVisibility(STATE_REFRESH, true)
@@ -421,7 +427,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 adjustViewVisibility(STATE_REFRESH, false)
             }
         } else {
-            mTip!!.setText(R.string.error_cannot_find_gallery)
+            tip.setText(R.string.error_cannot_find_gallery)
             adjustViewVisibility(STATE_FAILED, false)
         }
 
@@ -546,9 +552,8 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         if (state == mState) {
             return
         }
-        if (mViewTransition == null || mViewTransition2 == null) {
-            return
-        }
+        val viewTransition = mViewTransition ?: return
+        val viewTransition2 = mViewTransition2 ?: return
 
         val oldState = mState
         mState = state
@@ -559,24 +564,24 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         when (state) {
             STATE_NORMAL -> {
                 // Show mMainView
-                mViewTransition!!.showView(0, animation)
+                viewTransition.showView(0, animation)
                 // Show mBelowHeader
-                mViewTransition2!!.showView(0, animation)
+                viewTransition2.showView(0, animation)
             }
             STATE_REFRESH -> {
                 // Show mProgressView
-                mViewTransition!!.showView(1, animation)
+                viewTransition.showView(1, animation)
             }
             STATE_REFRESH_HEADER -> {
                 // Show mMainView
-                mViewTransition!!.showView(0, animation)
+                viewTransition.showView(0, animation)
                 // Show mProgress
-                mViewTransition2!!.showView(1, animation)
+                viewTransition2.showView(1, animation)
             }
             else -> {
                 // STATE_INIT, STATE_FAILED
                 // Show mFailedView
-                mViewTransition!!.showView(2, animation)
+                viewTransition.showView(2, animation)
             }
         }
         val context = getEHContext() ?: return
@@ -611,9 +616,10 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     }
 
     override fun onClick(v: View) {
-        mContext = getEHContext()
+        val ctx = getEHContext() ?: return
+        mContext = ctx
         activity = activity2
-        if (mContext == null || activity == null) {
+        if (activity == null) {
             return
         }
 
@@ -622,7 +628,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 adjustViewVisibility(STATE_REFRESH, true)
             }
         } else {
-            mActionHandler?.onClick(v, mContext!!, activity)
+            mActionHandler?.onClick(v, ctx, activity)
         }
     }
 
@@ -680,9 +686,10 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     internal fun onGetGalleryDetailFailure(e: Exception) {
         e.printStackTrace()
         val context = getEHContext()
-        if (context != null && mTip != null) {
+        val tip = mTip
+        if (context != null && tip != null) {
             val error = ExceptionUtils.getReadableString(e)
-            mTip!!.text = error
+            tip.text = error
             adjustViewVisibility(STATE_FAILED, true)
         }
     }

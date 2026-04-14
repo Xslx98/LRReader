@@ -66,10 +66,7 @@ internal class DownloadSearchHelper(private val callback: Callback) {
         set(value) { callback.viewModel.setSearching(value) }
 
     fun gotoSearch(context: Context) {
-        if (searchDialog != null) {
-            searchDialog!!.show()
-            return
-        }
+        searchDialog?.let { it.show(); return }
         val layoutInflater = LayoutInflater.from(context)
 
         val drawable = DrawableManager.getVectorDrawable(context, R.drawable.big_download)
@@ -114,13 +111,12 @@ internal class DownloadSearchHelper(private val callback: Callback) {
     }
 
     fun enterSearchMode(animation: Boolean) {
-        val bar = searchBar
-        if (searchMode || bar == null || searchBarMover == null) {
-            return
-        }
+        val bar = searchBar ?: return
+        val mover = searchBarMover ?: return
+        if (searchMode) return
         searchMode = true
         bar.setState(SearchBar.STATE_SEARCH_LIST, animation)
-        searchBarMover!!.returnSearchBarPosition(animation)
+        mover.returnSearchBarPosition(animation)
     }
 
     fun startSearching() {
@@ -130,7 +126,7 @@ internal class DownloadSearchHelper(private val callback: Callback) {
             searchBar?.setState(SearchBar.STATE_NORMAL)
         }
 
-        searchDialog!!.dismiss()
+        searchDialog?.dismiss()
 
         callback.updateForLabel()
 
@@ -154,16 +150,16 @@ internal class DownloadSearchHelper(private val callback: Callback) {
     fun initCategorySpinner(spinner: Spinner, context: Context) {
         val categoryList = ArrayList<String>()
         categoryList.add(callback.getString(R.string.category_all))
-        categoryList.add(LRRUtils.getCategory(EhConfig.DOUJINSHI)!!.uppercase(java.util.Locale.ROOT))
-        categoryList.add(LRRUtils.getCategory(EhConfig.MANGA)!!.uppercase(java.util.Locale.ROOT))
-        categoryList.add(LRRUtils.getCategory(EhConfig.ARTIST_CG)!!.uppercase(java.util.Locale.ROOT))
-        categoryList.add(LRRUtils.getCategory(EhConfig.GAME_CG)!!.uppercase(java.util.Locale.ROOT))
-        categoryList.add(LRRUtils.getCategory(EhConfig.WESTERN)!!.uppercase(java.util.Locale.ROOT))
-        categoryList.add(LRRUtils.getCategory(EhConfig.NON_H)!!.uppercase(java.util.Locale.ROOT))
-        categoryList.add(LRRUtils.getCategory(EhConfig.IMAGE_SET)!!.uppercase(java.util.Locale.ROOT))
-        categoryList.add(LRRUtils.getCategory(EhConfig.COSPLAY)!!.uppercase(java.util.Locale.ROOT))
-        categoryList.add(LRRUtils.getCategory(EhConfig.ASIAN_PORN)!!.uppercase(java.util.Locale.ROOT))
-        categoryList.add(LRRUtils.getCategory(EhConfig.MISC)!!.uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.DOUJINSHI).orEmpty().uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.MANGA).orEmpty().uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.ARTIST_CG).orEmpty().uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.GAME_CG).orEmpty().uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.WESTERN).orEmpty().uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.NON_H).orEmpty().uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.IMAGE_SET).orEmpty().uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.COSPLAY).orEmpty().uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.ASIAN_PORN).orEmpty().uppercase(java.util.Locale.ROOT))
+        categoryList.add(LRRUtils.getCategory(EhConfig.MISC).orEmpty().uppercase(java.util.Locale.ROOT))
 
         val categoryAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, categoryList)
         categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
