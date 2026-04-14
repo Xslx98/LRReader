@@ -81,6 +81,8 @@ class QuickSearchViewModelTest {
                     HistoryRepository(db.browsingDao())
                 override val profileRepository get() =
                     ProfileRepository(db.miscDao())
+                override val downloadDbRepository get() =
+                    throw NotImplementedError("Not needed for QuickSearchViewModel tests")
                 override val downloadManager: DownloadManager
                     get() = throw NotImplementedError("Not needed for QuickSearchViewModel tests")
                 override val favouriteStatusRouter get() = FavouriteStatusRouter()

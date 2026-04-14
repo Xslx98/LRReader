@@ -8,6 +8,7 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.Settings
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.dao.AppDatabase
+import com.hippo.ehviewer.dao.DownloadDbRepository
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.module.CoroutineModule
 import kotlinx.coroutines.CoroutineScope
@@ -76,6 +77,21 @@ class DownloadRepositoryTest {
         val dbField = EhDB::class.java.getDeclaredField("sDatabase")
         dbField.isAccessible = true
         dbField.set(EhDB, db)
+
+        ServiceRegistry.initializeForTest(
+            data = object : com.hippo.ehviewer.module.IDataModule {
+                override val downloadDbRepository get() = DownloadDbRepository(db.downloadDao(), db)
+                override val downloadManager get() = throw NotImplementedError("not needed")
+                override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
+                override val historyRepository get() = com.hippo.ehviewer.dao.HistoryRepository(db.browsingDao())
+                override val profileRepository get() = throw NotImplementedError("not needed")
+                override val quickSearchRepository get() = throw NotImplementedError("not needed")
+                override val favoritesRepository get() = throw NotImplementedError("not needed")
+                override val galleryDetailCache get() = throw NotImplementedError("not needed")
+                override val spiderInfoCache get() = throw NotImplementedError("not needed")
+                override fun clearGalleryDetailCache() {}
+            }
+        )
 
         LRRAuthManager.setServerUrl("http://localhost:3000")
 

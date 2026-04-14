@@ -13,6 +13,7 @@ import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.dao.AppDatabase
+import com.hippo.ehviewer.dao.DownloadDbRepository
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.dao.ProfileRepository
@@ -90,12 +91,12 @@ class DownloadsViewModelTest {
 
         ShadowLooper.idleMainLooper()
 
-        // Create a DownloadManager with testScope, then inject into ServiceRegistry
-        val manager = DownloadManager(context, testScope)
-        runBlocking { manager.awaitInitAsync() }
-        ShadowLooper.idleMainLooper()
-
-        // Inject a DataModule that uses our test DownloadManager
+        // Set up DataModule BEFORE constructing DownloadManager, because
+        // DownloadRepository (in-memory layer) now calls
+        // ServiceRegistry.dataModule.downloadDbRepository during init.
+        // Use lateinit to break the circular dependency: DataModule needs
+        // manager, but manager needs DataModule to exist during construction.
+        lateinit var manager: DownloadManager
         ServiceRegistry.initializeForTest(
             data = object : IDataModule {
                 override val downloadManager: DownloadManager get() = manager
@@ -107,6 +108,8 @@ class DownloadsViewModelTest {
                     com.hippo.ehviewer.dao.QuickSearchRepository(db.browsingDao())
                 override val favoritesRepository get() =
                     com.hippo.ehviewer.dao.FavoritesRepository(db.browsingDao())
+                override val downloadDbRepository get() =
+                    DownloadDbRepository(db.downloadDao(), db)
                 override val galleryDetailCache get() = LruCache<Long, GalleryDetail>(10)
                 override val spiderInfoCache: SimpleDiskCache get() =
                     SimpleDiskCache(
@@ -116,6 +119,12 @@ class DownloadsViewModelTest {
                 override fun clearGalleryDetailCache() {}
             }
         )
+
+        // Now create the manager — its internal DownloadRepository will
+        // find downloadDbRepository via ServiceRegistry.
+        manager = DownloadManager(context, testScope)
+        runBlocking { manager.awaitInitAsync() }
+        ShadowLooper.idleMainLooper()
 
         vm = DownloadsViewModel()
     }
