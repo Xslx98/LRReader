@@ -97,25 +97,25 @@ class GalleryGuideView @JvmOverloads constructor(
 
         when (mStep) {
             0 -> {
-                mLeftText!!.measure(
+                mLeftText?.measure(
                     MeasureSpec.makeMeasureSpec(widthSize / 3, MeasureSpec.EXACTLY),
                     MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.EXACTLY)
                 )
-                mRightText!!.measure(
+                mRightText?.measure(
                     MeasureSpec.makeMeasureSpec(widthSize / 3, MeasureSpec.EXACTLY),
                     MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.EXACTLY)
                 )
-                mMenuText!!.measure(
+                mMenuText?.measure(
                     MeasureSpec.makeMeasureSpec(widthSize / 3, MeasureSpec.EXACTLY),
                     MeasureSpec.makeMeasureSpec(heightSize / 2, MeasureSpec.EXACTLY)
                 )
-                mProgressText!!.measure(
+                mProgressText?.measure(
                     MeasureSpec.makeMeasureSpec(widthSize / 3, MeasureSpec.EXACTLY),
                     MeasureSpec.makeMeasureSpec(heightSize / 2, MeasureSpec.EXACTLY)
                 )
             }
             else -> {
-                mLongClickText!!.measure(
+                mLongClickText?.measure(
                     MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY),
                     MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.EXACTLY)
                 )
@@ -131,13 +131,13 @@ class GalleryGuideView @JvmOverloads constructor(
 
         when (mStep) {
             0 -> {
-                mLeftText!!.layout(0, 0, width / 3, height)
-                mRightText!!.layout(width * 2 / 3, 0, width, height)
-                mMenuText!!.layout(width / 3, 0, width * 2 / 3, height / 2)
-                mProgressText!!.layout(width / 3, height / 2, width * 2 / 3, height)
+                mLeftText?.layout(0, 0, width / 3, height)
+                mRightText?.layout(width * 2 / 3, 0, width, height)
+                mMenuText?.layout(width / 3, 0, width * 2 / 3, height / 2)
+                mProgressText?.layout(width / 3, height / 2, width * 2 / 3, height)
             }
             else -> {
-                mLongClickText!!.layout(0, 0, width, height)
+                mLongClickText?.layout(0, 0, width, height)
             }
         }
     }
