@@ -239,17 +239,20 @@ class HistoryViewModelTest {
     // ═══════════════════════════════════════════════════════════
 
     /**
-     * Inserts galleries into the history table via [EhDB.putHistoryInfoAsync].
+     * Inserts galleries into the history table via the DAO directly.
      */
     private fun insertGalleries(vararg galleries: Pair<Long, String>) {
         runBlocking {
+            val dao = db.browsingDao()
             for ((gid, title) in galleries) {
-                val info = GalleryInfo().apply {
+                val gi = GalleryInfo().apply {
                     this.gid = gid
                     this.token = "tok$gid"
                     this.title = title
                 }
-                EhDB.putHistoryInfoAsync(info)
+                val historyInfo = com.hippo.ehviewer.dao.HistoryInfo(gi)
+                historyInfo.time = System.currentTimeMillis()
+                dao.insertHistory(historyInfo)
             }
         }
     }

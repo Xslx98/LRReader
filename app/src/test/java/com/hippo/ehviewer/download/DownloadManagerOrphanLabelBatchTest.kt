@@ -117,12 +117,12 @@ class DownloadManagerOrphanLabelBatchTest {
                     state = DownloadInfo.STATE_NONE
                     time = System.currentTimeMillis() + index
                 }
-                EhDB.putDownloadInfoAsync(info)
+                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
             }
         }
 
         // Verify no labels exist in DB before loading
-        val labelsBeforeLoad = runBlocking { EhDB.getAllDownloadLabelListAsync() }
+        val labelsBeforeLoad = runBlocking { ServiceRegistry.dataModule.downloadDbRepository.getAllDownloadLabels() }
         assertTrue("Labels table should be empty before manager init", labelsBeforeLoad.isEmpty())
 
         // Create DownloadManager — loadDataFromDb will encounter orphan labels
@@ -143,7 +143,7 @@ class DownloadManagerOrphanLabelBatchTest {
         }
 
         // Verify all labels were persisted to DB
-        val dbLabels = runBlocking { EhDB.getAllDownloadLabelListAsync() }
+        val dbLabels = runBlocking { ServiceRegistry.dataModule.downloadDbRepository.getAllDownloadLabels() }
         assertEquals(orphanCount, dbLabels.size)
         val dbLabelNames = dbLabels.map { it.label }
         for (label in orphanLabels) {
@@ -171,7 +171,7 @@ class DownloadManagerOrphanLabelBatchTest {
                         state = DownloadInfo.STATE_NONE
                         time = System.currentTimeMillis() + index * 10 + j
                     }
-                    EhDB.putDownloadInfoAsync(info)
+                    ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
                 }
             }
         }
@@ -196,8 +196,8 @@ class DownloadManagerOrphanLabelBatchTest {
     fun noOrphanLabels_noExtraInserts() {
         // Pre-create labels
         runBlocking {
-            EhDB.addDownloadLabelAsync("existing-1")
-            EhDB.addDownloadLabelAsync("existing-2")
+            ServiceRegistry.dataModule.downloadDbRepository.addDownloadLabel("existing-1")
+            ServiceRegistry.dataModule.downloadDbRepository.addDownloadLabel("existing-2")
         }
 
         // Insert downloads referencing the existing labels
@@ -211,7 +211,7 @@ class DownloadManagerOrphanLabelBatchTest {
                     state = DownloadInfo.STATE_NONE
                     time = System.currentTimeMillis() + i
                 }
-                EhDB.putDownloadInfoAsync(info)
+                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
             }
         }
 
@@ -221,7 +221,7 @@ class DownloadManagerOrphanLabelBatchTest {
 
         // Should have exactly the 2 pre-created labels, nothing more
         assertEquals(2, manager.labelList.size)
-        val dbLabels = runBlocking { EhDB.getAllDownloadLabelListAsync() }
+        val dbLabels = runBlocking { ServiceRegistry.dataModule.downloadDbRepository.getAllDownloadLabels() }
         assertEquals(2, dbLabels.size)
     }
 
@@ -233,7 +233,7 @@ class DownloadManagerOrphanLabelBatchTest {
     fun mixedLabels_onlyOrphansInserted() {
         // Pre-create one label
         runBlocking {
-            EhDB.addDownloadLabelAsync("known")
+            ServiceRegistry.dataModule.downloadDbRepository.addDownloadLabel("known")
         }
 
         // Insert downloads: some with "known", some with orphan labels
@@ -244,7 +244,7 @@ class DownloadManagerOrphanLabelBatchTest {
                 label = "known"; state = DownloadInfo.STATE_NONE
                 time = System.currentTimeMillis()
             }
-            EhDB.putDownloadInfoAsync(info1)
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info1)
 
             for ((index, label) in orphanLabels.withIndex()) {
                 val info = DownloadInfo().apply {
@@ -252,7 +252,7 @@ class DownloadManagerOrphanLabelBatchTest {
                     this.label = label; state = DownloadInfo.STATE_NONE
                     time = System.currentTimeMillis() + index + 1
                 }
-                EhDB.putDownloadInfoAsync(info)
+                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
             }
         }
 
@@ -268,7 +268,7 @@ class DownloadManagerOrphanLabelBatchTest {
         }
 
         // DB should also have 4 labels
-        val dbLabels = runBlocking { EhDB.getAllDownloadLabelListAsync() }
+        val dbLabels = runBlocking { ServiceRegistry.dataModule.downloadDbRepository.getAllDownloadLabels() }
         assertEquals(4, dbLabels.size)
     }
 
@@ -286,7 +286,7 @@ class DownloadManagerOrphanLabelBatchTest {
                     label = "shared-orphan"; state = DownloadInfo.STATE_NONE
                     time = System.currentTimeMillis() + i
                 }
-                EhDB.putDownloadInfoAsync(info)
+                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
             }
         }
 

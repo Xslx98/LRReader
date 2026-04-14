@@ -163,8 +163,8 @@ class DownloadManagerTest {
             time = System.currentTimeMillis() + 1
         }
         runBlocking {
-            EhDB.putDownloadInfoAsync(info1)
-            EhDB.putDownloadInfoAsync(info2)
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info1)
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info2)
         }
 
         val freshManager = DownloadManager(context, testScope)
@@ -179,8 +179,8 @@ class DownloadManagerTest {
     fun constructor_loadsExistingLabels() {
         // Insert labels into DB before constructing a new manager
         runBlocking {
-            EhDB.addDownloadLabelAsync("Comics")
-            EhDB.addDownloadLabelAsync("Manga")
+            ServiceRegistry.dataModule.downloadDbRepository.addDownloadLabel("Comics")
+            ServiceRegistry.dataModule.downloadDbRepository.addDownloadLabel("Manga")
         }
 
         val freshManager = DownloadManager(context, testScope)
@@ -322,7 +322,7 @@ class DownloadManagerTest {
         Thread.sleep(100)
 
         // Verify in DB
-        val dbLabels = runBlocking { EhDB.getAllDownloadLabelListAsync() }
+        val dbLabels = runBlocking { ServiceRegistry.dataModule.downloadDbRepository.getAllDownloadLabels() }
         assertTrue(dbLabels.any { it.label == "NewLabel" })
     }
 
@@ -463,7 +463,7 @@ class DownloadManagerTest {
             state = DownloadInfo.STATE_NONE
             time = System.currentTimeMillis()
         }
-        runBlocking { EhDB.putDownloadInfoAsync(info) }
+        runBlocking { ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info) }
 
         val events = mutableListOf<String>()
         manager.addDownloadInfoListener(object : FakeDownloadInfoListener() {
@@ -638,7 +638,7 @@ class DownloadManagerTest {
         val labelStrings = (0 until labelCount).map { "race-label-$it" }
         runBlocking {
             for (s in labelStrings) {
-                EhDB.addDownloadLabelAsync(s)
+                ServiceRegistry.dataModule.downloadDbRepository.addDownloadLabel(s)
             }
             for (i in 0 until infoCount) {
                 val info = DownloadInfo().apply {
@@ -649,7 +649,7 @@ class DownloadManagerTest {
                     state = DownloadInfo.STATE_NONE
                     time = System.currentTimeMillis() + i
                 }
-                EhDB.putDownloadInfoAsync(info)
+                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
             }
         }
 
