@@ -102,30 +102,35 @@ internal class DownloadBatchOpsHelper(private val callback: Callback) {
         for (i in 0 until stateArray.size()) {
             if (stateArray.valueAt(i)) {
                 val info = list[callback.positionInList(stateArray.keyAt(i))]
-                if (collectDownloadInfo) downloadInfoList!!.add(info)
-                if (collectGid) gidList!!.add(info.gid)
+                downloadInfoList?.add(info)
+                gidList?.add(info.gid)
             }
         }
 
         when (position) {
             1 -> { // Start
-                startRange(gidList!!, act)
+                val gids = gidList ?: return
+                startRange(gids, act)
                 recyclerView.outOfCustomChoiceMode()
             }
             2 -> { // Stop
-                stopRange(gidList!!)
+                val gids = gidList ?: return
+                stopRange(gids)
                 recyclerView.outOfCustomChoiceMode()
             }
             3 -> { // Delete
-                deleteRange(context, downloadInfoList!!, gidList!!) { deleteFiles ->
+                val gids = gidList ?: return
+                val infos = downloadInfoList ?: return
+                deleteRange(context, infos, gids) { deleteFiles ->
                     recyclerView.outOfCustomChoiceMode()
-                    callback.viewModel.deleteRangeDownloads(downloadInfoList, gidList, deleteFiles)
+                    callback.viewModel.deleteRangeDownloads(infos, gids, deleteFiles)
                 }
             }
             4 -> { // Move
-                moveRange(context, downloadInfoList!!) { label ->
+                val infos = downloadInfoList ?: return
+                moveRange(context, infos) { label ->
                     recyclerView.outOfCustomChoiceMode()
-                    callback.viewModel.moveDownloads(downloadInfoList, label)
+                    callback.viewModel.moveDownloads(infos, label)
                 }
             }
             5 -> { // Random

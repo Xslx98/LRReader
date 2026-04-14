@@ -127,22 +127,23 @@ class UserImageChange(
     }
 
     private fun startCamera() {
-        checkNotNull(popupWindow)
-        popupWindow!!.dismiss()
+        val popup = popupWindow ?: return
+        popup.dismiss()
         val cameraDir = File(activity.externalCacheDir, "camera")
         cameraDir.mkdirs()
-        outputImage = if (dialogType == CHANGE_BACKGROUND) {
+        val output = if (dialogType == CHANGE_BACKGROUND) {
             File(cameraDir, "background_image.jpg")
         } else {
             File(cameraDir, "avatar_image.jpg")
         }
+        outputImage = output
         imageUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             // 大于等于版本24（7.0）的场合
             val authority = activity.application.packageName + ".fileprovider"
-            FileProvider.getUriForFile(activity, authority, outputImage!!)
+            FileProvider.getUriForFile(activity, authority, output)
         } else {
             // 小于android 版本7.0（24）的场合
-            Uri.fromFile(outputImage)
+            Uri.fromFile(output)
         }
 
         PermissionRequester.request(
@@ -153,8 +154,8 @@ class UserImageChange(
     }
 
     private fun startAlbum() {
-        checkNotNull(popupWindow)
-        popupWindow!!.dismiss()
+        val popup = popupWindow ?: return
+        popup.dismiss()
         PermissionRequester.request(
             activity, Manifest.permission.WRITE_EXTERNAL_STORAGE,
             activity.getString(R.string.request_storage_permission),
@@ -187,8 +188,9 @@ class UserImageChange(
             }
             saveImageFromAlbum(data, avatar)
         } else if (requestCode == TAKE_CAMERA) {
-            if (imageUri != null) {
-                startCrop(imageUri!!)
+            val uri = imageUri
+            if (uri != null) {
+                startCrop(uri)
                 return
             }
             saveImageFromCamera(avatar)
@@ -285,11 +287,12 @@ class UserImageChange(
     }
 
     private fun saveImageFromCamera(avatar: AvatarImageView?) {
-        AppearanceSettings.saveFilePath(key, outputImage!!.path)
+        val output = outputImage ?: return
+        AppearanceSettings.saveFilePath(key, output.path)
         if (dialogType == CHANGE_BACKGROUND) {
-            imageChangeCallBack.backgroundSourceChange(File(outputImage!!.path))
+            imageChangeCallBack.backgroundSourceChange(File(output.path))
         } else {
-            avatar?.setImageBitmap(BitmapFactory.decodeFile(outputImage!!.path))
+            avatar?.setImageBitmap(BitmapFactory.decodeFile(output.path))
         }
     }
 

@@ -36,7 +36,6 @@ import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemView
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ui.scene.ToolbarScene
-import com.hippo.lib.yorozuya.AssertUtils
 import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.util.DrawableManager
 import com.hippo.view.ViewTransition
@@ -69,8 +68,7 @@ class QuickSearchScene : ToolbarScene() {
         val tip = ViewUtils.`$$`(view, R.id.tip) as TextView
         mViewTransition = ViewTransition(mRecyclerView, tip)
 
-        val context = ehContext!!
-        AssertUtils.assertNotNull(context)
+        val context = ehContext ?: return view
 
         val drawable = DrawableManager.getVectorDrawable(context, R.drawable.big_search)
         drawable?.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
@@ -89,11 +87,12 @@ class QuickSearchScene : ToolbarScene() {
         mAdapter = adapter
 
         val animator = DraggableItemAnimator()
-        mRecyclerView!!.layoutManager = LinearLayoutManager(context)
-        mRecyclerView!!.adapter = adapter
-        mRecyclerView!!.itemAnimator = animator
+        val recyclerView = mRecyclerView ?: return view
+        recyclerView.layoutManager = LinearLayoutManager(context)
+        recyclerView.adapter = adapter
+        recyclerView.itemAnimator = animator
 
-        dragDropManager.attachRecyclerView(mRecyclerView!!)
+        dragDropManager.attachRecyclerView(recyclerView)
 
         // Observe ViewModel quick search list for initial load
         lifecycleScope.launch {
@@ -181,8 +180,8 @@ class QuickSearchScene : ToolbarScene() {
         RecyclerView.Adapter<QuickSearchHolder>(),
         DraggableItemAdapter<QuickSearchHolder> {
 
-        private val mInflater: LayoutInflater = layoutInflater2!!.also {
-            AssertUtils.assertNotNull(it)
+        private val mInflater: LayoutInflater = requireNotNull(layoutInflater2) {
+            "layoutInflater2 must not be null"
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): QuickSearchHolder {

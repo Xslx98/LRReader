@@ -65,13 +65,14 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
         // Pattern is stored as a hash and cannot be recovered for display.
         // The view starts empty regardless of whether a pattern was previously set.
 
-        if (canAuthenticateBiometric(this)) {
-            mFingerprint!!.visibility = View.VISIBLE
-            mFingerprint!!.isChecked = SecuritySettings.getEnableFingerprint()
+        val fingerprint = mFingerprint
+        if (fingerprint != null && canAuthenticateBiometric(this)) {
+            fingerprint.visibility = View.VISIBLE
+            fingerprint.isChecked = SecuritySettings.getEnableFingerprint()
         }
 
-        mCancel!!.setOnClickListener(this)
-        mSet!!.setOnClickListener(this)
+        mCancel?.setOnClickListener(this)
+        mSet?.setOnClickListener(this)
     }
 
     override fun onDestroy() {
@@ -93,11 +94,12 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
         if (v === mCancel) {
             finish()
         } else if (v === mSet) {
-            if (mPatternView != null && mFingerprint != null) {
-                val security = if (mPatternView!!.cellSize <= 1) {
+            val patternView = mPatternView ?: return
+            if (mFingerprint != null) {
+                val security = if (patternView.cellSize <= 1) {
                     ""
                 } else {
-                    mPatternView!!.patternString
+                    patternView.patternString
                 }
                 savePattern(security)
             }
@@ -134,11 +136,12 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
     }
 
     private fun setPatternPbkdf2Only(security: String) {
+        val fingerprint = mFingerprint
         try {
             SecuritySettings.setPattern(security)
             SecuritySettings.putEnableFingerprint(
-                mFingerprint!!.visibility == View.VISIBLE &&
-                    mFingerprint!!.isChecked && security.isNotEmpty()
+                fingerprint != null && fingerprint.visibility == View.VISIBLE &&
+                    fingerprint.isChecked && security.isNotEmpty()
             )
         } catch (e: LRRSecureStorageUnavailableException) {
             showStorageErrorDialog()
@@ -178,11 +181,12 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
                         setPatternPbkdf2Only(security)
                         return
                     }
+                    val fp = mFingerprint
                     try {
                         LRRAuthManager.setPatternWithCipher(security, authCipher)
                         SecuritySettings.putEnableFingerprint(
-                            mFingerprint!!.visibility == View.VISIBLE &&
-                                mFingerprint!!.isChecked && security.isNotEmpty()
+                            fp != null && fp.visibility == View.VISIBLE &&
+                                fp.isChecked && security.isNotEmpty()
                         )
                     } catch (e: LRRSecureStorageUnavailableException) {
                         showStorageErrorDialog()
