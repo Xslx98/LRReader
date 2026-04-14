@@ -11,7 +11,6 @@ import android.widget.ListView
 import android.widget.TextView
 import androidx.appcompat.widget.Toolbar
 import com.hippo.ehviewer.EhApplication
-import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.GuideSettings
@@ -53,7 +52,7 @@ class BookmarksDraw(
         toolbar.inflateMenu(R.menu.drawer_gallery_list)
 
         ServiceRegistry.coroutineModule.ioScope.launch {
-            val quickSearchList = EhDB.getAllQuickSearchAsync()
+            val quickSearchList = ServiceRegistry.dataModule.quickSearchRepository.getAll()
             // tag translation updates are persisted on IO thread
             val judge = AppearanceSettings.getShowTagTranslations()
             val toUpdate = mutableListOf<QuickSearch>()
@@ -75,7 +74,7 @@ class BookmarksDraw(
                 }
             }
             if (toUpdate.isNotEmpty()) {
-                for (qs in toUpdate) EhDB.updateQuickSearchAsync(qs)
+                for (qs in toUpdate) ServiceRegistry.dataModule.quickSearchRepository.update(qs)
             }
 
             val list = quickSearchList
