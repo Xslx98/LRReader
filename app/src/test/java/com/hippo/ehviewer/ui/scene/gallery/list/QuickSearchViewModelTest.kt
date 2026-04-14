@@ -1,11 +1,23 @@
 package com.hippo.ehviewer.ui.scene.gallery.list
 
 import android.content.Context
+import androidx.collection.LruCache
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.hippo.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.EhDB
+import com.hippo.ehviewer.FavouriteStatusRouter
+import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.dao.AppDatabase
+import com.hippo.ehviewer.dao.FavoritesRepository
+import com.hippo.ehviewer.dao.HistoryRepository
+import com.hippo.ehviewer.dao.ProfileRepository
 import com.hippo.ehviewer.dao.QuickSearch
+import com.hippo.ehviewer.dao.QuickSearchRepository
+import com.hippo.ehviewer.download.DownloadManager
+import com.hippo.ehviewer.module.CoroutineModule
+import com.hippo.ehviewer.module.IDataModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -29,9 +41,9 @@ import java.util.concurrent.CopyOnWriteArrayList
 /**
  * Unit tests for [QuickSearchViewModel].
  *
- * Uses Robolectric + in-memory Room database injected into [EhDB] via
- * reflection so the ViewModel's `EhDB.*Async()` calls resolve to the
- * test database.
+ * Uses Robolectric + in-memory Room database. ServiceRegistry is set up with
+ * a test IDataModule that provides a QuickSearchRepository backed by the
+ * in-memory database.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -48,11 +60,36 @@ class QuickSearchViewModelTest {
         val ctx: Context = ApplicationProvider.getApplicationContext()
         db = Room.inMemoryDatabaseBuilder(ctx, AppDatabase::class.java)
             .allowMainThreadQueries()
+            .setQueryExecutor { it.run() }
+            .setTransactionExecutor { it.run() }
             .build()
 
+        // Still needed for any EhDB calls that remain in the delegation chain
         val field = EhDB::class.java.getDeclaredField("sDatabase")
         field.isAccessible = true
         field.set(EhDB, db)
+
+        // Set up ServiceRegistry with a test DataModule providing the repository
+        ServiceRegistry.initializeForTest(
+            coroutine = CoroutineModule(),
+            data = object : IDataModule {
+                override val quickSearchRepository get() =
+                    QuickSearchRepository(db.browsingDao())
+                override val favoritesRepository get() =
+                    FavoritesRepository(db.browsingDao())
+                override val historyRepository get() =
+                    HistoryRepository(db.browsingDao())
+                override val profileRepository get() =
+                    ProfileRepository(db.miscDao())
+                override val downloadManager: DownloadManager
+                    get() = throw NotImplementedError("Not needed for QuickSearchViewModel tests")
+                override val favouriteStatusRouter get() = FavouriteStatusRouter()
+                override val galleryDetailCache get() = LruCache<Long, GalleryDetail>(10)
+                override val spiderInfoCache: SimpleDiskCache
+                    get() = throw NotImplementedError("Not needed for QuickSearchViewModel tests")
+                override fun clearGalleryDetailCache() {}
+            }
+        )
 
         eventScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     }
