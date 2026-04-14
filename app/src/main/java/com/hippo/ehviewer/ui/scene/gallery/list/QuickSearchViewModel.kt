@@ -3,7 +3,7 @@ package com.hippo.ehviewer.ui.scene.gallery.list
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.hippo.ehviewer.EhDB
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.QuickSearch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -59,7 +59,7 @@ class QuickSearchViewModel : ViewModel() {
     fun loadQuickSearches() {
         viewModelScope.launch {
             try {
-                val result = withContext(Dispatchers.IO) { EhDB.getAllQuickSearchAsync() }
+                val result = withContext(Dispatchers.IO) { ServiceRegistry.dataModule.quickSearchRepository.getAll() }
                 _quickSearches.value = result
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load quick searches", e)
@@ -81,7 +81,7 @@ class QuickSearchViewModel : ViewModel() {
     fun deleteQuickSearch(quickSearch: QuickSearch) {
         viewModelScope.launch {
             try {
-                withContext(Dispatchers.IO) { EhDB.deleteQuickSearchAsync(quickSearch) }
+                withContext(Dispatchers.IO) { ServiceRegistry.dataModule.quickSearchRepository.delete(quickSearch) }
                 _quickSearches.value = _quickSearches.value.filter { it.id != quickSearch.id }
                 _uiEvent.tryEmit(QuickSearchUiEvent.Deleted(quickSearch))
             } catch (e: Exception) {
@@ -119,7 +119,7 @@ class QuickSearchViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    EhDB.moveQuickSearchAsync(fromPosition, toPosition)
+                    ServiceRegistry.dataModule.quickSearchRepository.move(fromPosition, toPosition)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to move quick search", e)

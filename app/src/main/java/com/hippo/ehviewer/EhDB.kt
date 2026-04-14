@@ -445,75 +445,86 @@ object EhDB {
     // ═══════════════════════════════════════════════════════════
     // LOCAL FAVORITES
     // ═══════════════════════════════════════════════════════════
+    // Deprecated — use ServiceRegistry.dataModule.favoritesRepository instead.
+    // These methods delegate to FavoritesRepository and will be removed in a
+    // future release once all callers have migrated.
 
+    @Deprecated(
+        "Use FavoritesRepository via ServiceRegistry.dataModule.favoritesRepository",
+        ReplaceWith("ServiceRegistry.dataModule.favoritesRepository.removeLocalFavorite(gid)")
+    )
     suspend fun removeLocalFavoritesAsync(gid: Long) {
-        sDatabase.browsingDao().deleteLocalFavoriteByKey(gid)
+        ServiceRegistry.dataModule.favoritesRepository.removeLocalFavorite(gid)
     }
 
+    @Deprecated(
+        "Use FavoritesRepository via ServiceRegistry.dataModule.favoritesRepository",
+        ReplaceWith("ServiceRegistry.dataModule.favoritesRepository.removeLocalFavorites(gidArray)")
+    )
     suspend fun removeLocalFavoritesAsync(gidArray: LongArray) {
-        val dao = sDatabase.browsingDao()
-        for (gid in gidArray) {
-            dao.deleteLocalFavoriteByKey(gid)
-        }
+        ServiceRegistry.dataModule.favoritesRepository.removeLocalFavorites(gidArray)
     }
 
+    @Deprecated(
+        "Use FavoritesRepository via ServiceRegistry.dataModule.favoritesRepository",
+        ReplaceWith("ServiceRegistry.dataModule.favoritesRepository.containsLocalFavorite(gid)")
+    )
     suspend fun containLocalFavoritesAsync(gid: Long): Boolean {
-        return sDatabase.browsingDao().loadLocalFavorite(gid) != null
+        return ServiceRegistry.dataModule.favoritesRepository.containsLocalFavorite(gid)
     }
 
+    @Deprecated(
+        "Use FavoritesRepository via ServiceRegistry.dataModule.favoritesRepository",
+        ReplaceWith("ServiceRegistry.dataModule.favoritesRepository.putLocalFavorite(galleryInfo)")
+    )
     suspend fun putLocalFavoriteAsync(galleryInfo: GalleryInfo) {
-        val dao = sDatabase.browsingDao()
-        if (dao.loadLocalFavorite(galleryInfo.gid) == null) {
-            val info = if (galleryInfo is LocalFavoriteInfo) {
-                galleryInfo
-            } else {
-                LocalFavoriteInfo(galleryInfo).also { it.time = System.currentTimeMillis() }
-            }
-            dao.insertLocalFavorite(info)
-        }
+        ServiceRegistry.dataModule.favoritesRepository.putLocalFavorite(galleryInfo)
     }
 
     // ═══════════════════════════════════════════════════════════
     // QUICK SEARCH
     // ═══════════════════════════════════════════════════════════
+    // Deprecated — use ServiceRegistry.dataModule.quickSearchRepository instead.
+    // These methods delegate to QuickSearchRepository and will be removed in a
+    // future release once all callers have migrated.
 
+    @Deprecated(
+        "Use QuickSearchRepository via ServiceRegistry.dataModule.quickSearchRepository",
+        ReplaceWith("ServiceRegistry.dataModule.quickSearchRepository.getAll()")
+    )
     suspend fun getAllQuickSearchAsync(): List<QuickSearch> =
-        sDatabase.browsingDao().getAllQuickSearch()
+        ServiceRegistry.dataModule.quickSearchRepository.getAll()
 
+    @Deprecated(
+        "Use QuickSearchRepository via ServiceRegistry.dataModule.quickSearchRepository",
+        ReplaceWith("ServiceRegistry.dataModule.quickSearchRepository.insert(quickSearch)")
+    )
     suspend fun insertQuickSearchAsync(quickSearch: QuickSearch) {
-        quickSearch.id = null
-        if (quickSearch.time == 0L) {
-            quickSearch.time = System.currentTimeMillis()
-        }
-        quickSearch.id = sDatabase.browsingDao().insertQuickSearch(quickSearch)
+        ServiceRegistry.dataModule.quickSearchRepository.insert(quickSearch)
     }
 
+    @Deprecated(
+        "Use QuickSearchRepository via ServiceRegistry.dataModule.quickSearchRepository",
+        ReplaceWith("ServiceRegistry.dataModule.quickSearchRepository.update(quickSearch)")
+    )
     suspend fun updateQuickSearchAsync(quickSearch: QuickSearch) {
-        sDatabase.browsingDao().updateQuickSearch(quickSearch)
+        ServiceRegistry.dataModule.quickSearchRepository.update(quickSearch)
     }
 
+    @Deprecated(
+        "Use QuickSearchRepository via ServiceRegistry.dataModule.quickSearchRepository",
+        ReplaceWith("ServiceRegistry.dataModule.quickSearchRepository.delete(quickSearch)")
+    )
     suspend fun deleteQuickSearchAsync(quickSearch: QuickSearch) {
-        sDatabase.browsingDao().deleteQuickSearch(quickSearch)
+        ServiceRegistry.dataModule.quickSearchRepository.delete(quickSearch)
     }
 
+    @Deprecated(
+        "Use QuickSearchRepository via ServiceRegistry.dataModule.quickSearchRepository",
+        ReplaceWith("ServiceRegistry.dataModule.quickSearchRepository.move(fromPosition, toPosition)")
+    )
     suspend fun moveQuickSearchAsync(fromPosition: Int, toPosition: Int) {
-        if (fromPosition == toPosition) return
-        val reverse = fromPosition > toPosition
-        val offset = if (reverse) toPosition else fromPosition
-        val limit = if (reverse) fromPosition - toPosition + 1 else toPosition - fromPosition + 1
-        val dao = sDatabase.browsingDao()
-        val list = dao.getQuickSearchRange(offset, limit)
-        val step = if (reverse) 1 else -1
-        val start = if (reverse) limit - 1 else 0
-        val end = if (reverse) 0 else limit - 1
-        val toTime = list[end].time
-        var i = end
-        while (if (reverse) i < start else i > start) {
-            list[i].time = list[i + step].time
-            i += step
-        }
-        list[start].time = toTime
-        dao.updateQuickSearchList(list)
+        ServiceRegistry.dataModule.quickSearchRepository.move(fromPosition, toPosition)
     }
 
     // ═══════════════════════════════════════════════════════════
