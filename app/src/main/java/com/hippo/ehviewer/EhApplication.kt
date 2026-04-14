@@ -130,7 +130,8 @@ class EhApplication : RecordingApplication() {
         AppModule.bootScope.launch {
             var resolvedId: Long? = null
             try {
-                val allProfiles = EhDB.getAllServerProfilesAsync()
+                val allProfiles = com.hippo.ehviewer.dao.AppDatabase.getInstance(this@EhApplication)
+                    .miscDao().getAllServerProfiles()
                 LRRAuthManager.markReauthIfProfilesUnprotected(allProfiles.map { it.id })
                 val activeProfile = allProfiles.firstOrNull { it.isActive }
                 if (activeProfile != null) {
