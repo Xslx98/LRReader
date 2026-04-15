@@ -1,6 +1,7 @@
 package com.hippo.ehviewer.mapper
 
 import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.dao.DownloadInfo
 import com.lanraragi.reader.client.api.arcidToGid
 import com.lanraragi.reader.domain.Archive
 
@@ -28,4 +29,39 @@ fun Archive.toGalleryInfo(): GalleryInfo {
     gi.category = -1
     gi.serverProfileId = serverProfileId
     return gi
+}
+
+/**
+ * Convert a [GalleryInfo] (or [DownloadInfo]) to an [Archive] domain model.
+ * Used when the adapter/UI layer needs Archive for display.
+ */
+fun GalleryInfo.toArchive(): Archive {
+    return Archive(
+        arcid = token,
+        title = title ?: "",
+        tags = simpleTags?.let { tags ->
+            val map = LinkedHashMap<String, MutableList<String>>()
+            for (tag in tags) {
+                val colonIdx = tag.indexOf(':')
+                if (colonIdx > 0) {
+                    val ns = tag.substring(0, colonIdx).trim()
+                    val v = tag.substring(colonIdx + 1).trim()
+                    map.getOrPut(ns) { mutableListOf() }.add(v)
+                } else {
+                    map.getOrPut("misc") { mutableListOf() }.add(tag)
+                }
+            }
+            map
+        } ?: emptyMap(),
+        pagecount = pages,
+        progress = progress,
+        extension = "",
+        filename = "",
+        thumbnailUrl = thumb ?: "",
+        rating = rating,
+        isnew = false,
+        lastreadtime = 0L,
+        summary = null,
+        serverProfileId = serverProfileId,
+    )
 }
