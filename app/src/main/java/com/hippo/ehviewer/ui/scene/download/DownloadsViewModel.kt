@@ -22,6 +22,7 @@ import com.hippo.ehviewer.spider.SpiderInfo
 import com.hippo.ehviewer.sync.DownloadListInfosExecutor
 import com.hippo.lib.yorozuya.collect.LongList
 import com.hippo.unifile.UniFile
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 
 /**
  * Sealed interface representing all download-related UI events forwarded from
@@ -86,12 +88,38 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     // Lifecycle: register/unregister listener
     // -------------------------------------------------------------------------
 
+    private var roomFlowJob: Job? = null
+
     init {
         downloadManager.addDownloadInfoListener(this)
+        startObservingRoomFlow()
+    }
+
+    /**
+     * Observe the Room downloads table via Flow. Whenever persisted data changes
+     * (insert/delete/state update), re-emit the filtered list for the current label.
+     * Transient fields (speed, remaining, finished, total) are NOT persisted and
+     * continue to be delivered via [DownloadInfoListener] callbacks.
+     */
+    private fun startObservingRoomFlow() {
+        roomFlowJob?.cancel()
+        roomFlowJob = viewModelScope.launch {
+            downloadsFlow.collectLatest { allDownloads ->
+                val label = _currentLabel.value
+                val filtered = if (label == null) {
+                    allDownloads.filter { it.label == null }
+                } else {
+                    allDownloads.filter { it.label == label }
+                }
+                _downloadList.value = filtered
+                _backList.value = filtered
+            }
+        }
     }
 
     override fun onCleared() {
         super.onCleared()
+        roomFlowJob?.cancel()
         downloadManager.removeDownloadInfoListener(this)
     }
 
@@ -181,29 +209,17 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     }
 
     /**
-     * Refreshes the download list for the current label from [DownloadManager].
-     * Also resets the back-list (unfiltered source) and persists the label choice.
+     * Refreshes the download list for the current label.
+     *
+     * Restarts the Room Flow collection with the new label filter.
+     * The Flow will emit the filtered list asynchronously. Also persists
+     * the label choice.
      */
     fun updateForLabel() {
-        val label = _currentLabel.value
-
-        val list: List<DownloadInfo> = if (label == null) {
-            downloadManager.defaultDownloadInfoList
-        } else {
-            val labelList = downloadManager.getLabelDownloadInfoList(label)
-            if (labelList == null) {
-                // Label no longer exists, fall back to default
-                _currentLabel.value = null
-                downloadManager.defaultDownloadInfoList
-            } else {
-                labelList
-            }
-        }
-
-        _downloadList.value = list
-        _backList.value = list
-
         DownloadSettings.putRecentDownloadLabel(_currentLabel.value)
+        // Re-start Room Flow observation — collectLatest will use the
+        // updated _currentLabel.value to filter.
+        startObservingRoomFlow()
     }
 
     // -------------------------------------------------------------------------
