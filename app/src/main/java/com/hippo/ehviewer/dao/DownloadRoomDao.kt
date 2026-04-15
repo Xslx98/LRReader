@@ -14,19 +14,9 @@ interface DownloadRoomDao {
     @Query("SELECT * FROM DOWNLOADS ORDER BY TIME DESC")
     suspend fun getAllDownloadInfo(): List<DownloadInfo>
 
-    /**
-     * Observe all downloads reactively. Room invalidates the Flow whenever the
-     * DOWNLOADS table changes (insert/update/delete).
-     *
-     * Note: Flow-returning Room queries must NOT be `suspend` — Room handles
-     * the background threading internally.
-     */
     @Query("SELECT * FROM DOWNLOADS ORDER BY TIME DESC")
     fun observeAllDownloads(): Flow<List<DownloadInfo>>
 
-    /**
-     * Observe downloads filtered by server profile reactively.
-     */
     @Query("SELECT * FROM DOWNLOADS WHERE SERVER_PROFILE_ID = :profileId ORDER BY TIME DESC")
     fun observeDownloadsByServer(profileId: Long): Flow<List<DownloadInfo>>
 
@@ -42,11 +32,17 @@ interface DownloadRoomDao {
     @Update
     suspend fun updateAll(list: List<DownloadInfo>)
 
+    @Query("SELECT * FROM DOWNLOADS WHERE ARCID = :arcid")
+    suspend fun loadDownload(arcid: String): DownloadInfo?
+
     @Query("SELECT * FROM DOWNLOADS WHERE GID = :gid")
-    suspend fun loadDownload(gid: Long): DownloadInfo?
+    suspend fun loadDownloadByGid(gid: Long): DownloadInfo?
+
+    @Query("DELETE FROM DOWNLOADS WHERE ARCID = :arcid")
+    suspend fun deleteDownloadByKey(arcid: String)
 
     @Query("DELETE FROM DOWNLOADS WHERE GID = :gid")
-    suspend fun deleteDownloadByKey(gid: Long)
+    suspend fun deleteDownloadByGid(gid: Long)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(list: List<DownloadInfo>)
@@ -56,8 +52,8 @@ interface DownloadRoomDao {
 
     // --- DOWNLOAD_DIRNAME ---
 
-    @Query("SELECT * FROM DOWNLOAD_DIRNAME WHERE GID = :gid")
-    suspend fun loadDirname(gid: Long): DownloadDirname?
+    @Query("SELECT * FROM DOWNLOAD_DIRNAME WHERE ARCID = :arcid")
+    suspend fun loadDirname(arcid: String): DownloadDirname?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDirname(dirname: DownloadDirname)
@@ -65,8 +61,8 @@ interface DownloadRoomDao {
     @Update
     suspend fun updateDirname(dirname: DownloadDirname)
 
-    @Query("DELETE FROM DOWNLOAD_DIRNAME WHERE GID = :gid")
-    suspend fun deleteDirnameByKey(gid: Long)
+    @Query("DELETE FROM DOWNLOAD_DIRNAME WHERE ARCID = :arcid")
+    suspend fun deleteDirnameByKey(arcid: String)
 
     @Query("DELETE FROM DOWNLOAD_DIRNAME")
     suspend fun deleteAllDirnames()

@@ -22,6 +22,9 @@ interface BrowsingRoomDao {
     @Query("SELECT * FROM HISTORY ORDER BY TIME DESC LIMIT :limit")
     suspend fun getHistoryLimit(limit: Int): List<HistoryInfo>
 
+    @Query("DELETE FROM HISTORY WHERE ARCID = :arcid")
+    suspend fun deleteHistoryByArcid(arcid: String)
+
     @Query("DELETE FROM HISTORY WHERE GID = :gid")
     suspend fun deleteHistoryByKey(gid: Long)
 
@@ -31,7 +34,7 @@ interface BrowsingRoomDao {
     @Query("SELECT COUNT(*) FROM HISTORY")
     suspend fun countHistory(): Int
 
-    @Query("DELETE FROM HISTORY WHERE GID NOT IN (SELECT GID FROM HISTORY ORDER BY TIME DESC LIMIT :maxCount)")
+    @Query("DELETE FROM HISTORY WHERE ARCID NOT IN (SELECT ARCID FROM HISTORY ORDER BY TIME DESC LIMIT :maxCount)")
     suspend fun trimHistoryTo(maxCount: Int)
 
     @Query("SELECT * FROM HISTORY ORDER BY TIME ASC LIMIT 1")
@@ -53,6 +56,9 @@ interface BrowsingRoomDao {
 
     @Query("DELETE FROM LOCAL_FAVORITES WHERE GID = :gid")
     suspend fun deleteLocalFavoriteByKey(gid: Long)
+
+    @Query("DELETE FROM LOCAL_FAVORITES WHERE ARCID = :arcid")
+    suspend fun deleteLocalFavoriteByArcid(arcid: String)
 
     // --- QUICK_SEARCH ---
 

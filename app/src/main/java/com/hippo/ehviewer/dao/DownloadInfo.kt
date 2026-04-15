@@ -19,7 +19,7 @@ import org.json.JSONObject
  */
 @Entity(
     tableName = "DOWNLOADS",
-    primaryKeys = ["GID"],
+    primaryKeys = ["ARCID"],
     indices = [
         Index("SERVER_PROFILE_ID"),
         Index("TIME"),
@@ -87,7 +87,7 @@ class DownloadInfo : GalleryInfoEntity {
         label: String?, archiveUri: String?
     ) {
         this.gid = gid
-        this.token = token
+        this.token = token ?: ""
         this.title = title
         this.titleJpn = titleJpn
         this.thumb = thumb
