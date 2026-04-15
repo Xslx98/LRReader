@@ -11,6 +11,7 @@ import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.runSuspend
+import com.lanraragi.reader.domain.ArchiveDetail
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadInfoListener
 import com.hippo.ehviewer.download.DownloadManager
@@ -81,6 +82,11 @@ class GalleryDetailViewModel : ViewModel() {
 
     /** The full gallery detail, loaded from the LANraragi API. */
     val galleryDetail: StateFlow<GalleryDetail?> = _galleryDetail.asStateFlow()
+
+    private val _archiveDetail = MutableStateFlow<ArchiveDetail?>(null)
+
+    /** Domain model for display. Populated alongside [galleryDetail] from the same API response. */
+    val archiveDetail: StateFlow<ArchiveDetail?> = _archiveDetail.asStateFlow()
 
     private val _downloadInfo = MutableStateFlow<DownloadInfo?>(null)
 
@@ -153,6 +159,7 @@ class GalleryDetailViewModel : ViewModel() {
         _token.value = null
         _galleryInfo.value = null
         _galleryDetail.value = null
+        _archiveDetail.value = null
         _downloadInfo.value = null
         _downloadState.value = DownloadInfo.STATE_INVALID
         _state.value = STATE_INIT
@@ -378,6 +385,7 @@ class GalleryDetailViewModel : ViewModel() {
                     LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcid)
                 }
                 val gd = archive.toGalleryDetail()
+                val ad = archive.toArchiveDetail()
 
                 // Query LANraragi categories to determine favorite status
                 try {
@@ -414,6 +422,7 @@ class GalleryDetailViewModel : ViewModel() {
                 ServiceRegistry.dataModule.galleryDetailCache.put(gd.gid, gd)
 
                 _galleryDetail.value = gd
+                _archiveDetail.value = ad
 
                 // Preload reading pages in background
                 triggerReadingPreload(arcid, archive.progress, gd.gid)
@@ -443,8 +452,43 @@ class GalleryDetailViewModel : ViewModel() {
         val cached = ServiceRegistry.dataModule.galleryDetailCache.get(gid)
         if (cached != null) {
             _galleryDetail.value = cached
+            _archiveDetail.value = cached.toArchiveDetail()
             return true
         }
         return true
+    }
+
+    /**
+     * Derive an [ArchiveDetail] from a cached [GalleryDetail] (when the original
+     * LRRArchive is not available).
+     */
+    private fun GalleryDetail.toArchiveDetail(): ArchiveDetail {
+        val tagGroups = tags?.map { group ->
+            com.lanraragi.reader.domain.TagGroup(
+                namespace = group.groupName ?: "misc",
+                tags = (0 until group.size()).map { group.getTagAt(it) }
+            )
+        } ?: emptyList()
+
+        return ArchiveDetail(
+            archive = com.lanraragi.reader.domain.Archive(
+                arcid = token ?: "",
+                title = title ?: "",
+                tags = tagGroups.associate { it.namespace to it.tags },
+                pagecount = pages,
+                progress = progress,
+                extension = "",
+                filename = "",
+                thumbnailUrl = thumb ?: "",
+                rating = rating,
+                isnew = false,
+                lastreadtime = 0L,
+                summary = null,
+                serverProfileId = serverProfileId,
+            ),
+            tagGroups = tagGroups,
+            language = language,
+            size = size,
+        )
     }
 }
