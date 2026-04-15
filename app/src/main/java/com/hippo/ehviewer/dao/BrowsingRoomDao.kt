@@ -22,6 +22,9 @@ interface BrowsingRoomDao {
     @Query("SELECT * FROM HISTORY ORDER BY TIME DESC LIMIT :limit")
     suspend fun getHistoryLimit(limit: Int): List<HistoryInfo>
 
+    @Query("UPDATE HISTORY SET RATING = :rating WHERE ARCID = :arcid")
+    suspend fun updateHistoryRating(arcid: String, rating: Float)
+
     @Query("DELETE FROM HISTORY WHERE ARCID = :arcid")
     suspend fun deleteHistoryByArcid(arcid: String)
 
