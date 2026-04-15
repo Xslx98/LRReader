@@ -33,8 +33,9 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
 import com.hippo.ehviewer.client.LRRUtils
-import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.download.DownloadManager
+import com.lanraragi.reader.client.api.arcidToGid
+import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
 import com.hippo.ehviewer.widget.SimpleRatingView
@@ -173,55 +174,46 @@ abstract class GalleryAdapterNew(
 
     override fun getItemViewType(position: Int): Int = mType
 
-    open fun getDataAt(position: Int): GalleryInfoUi? = null
+    open fun getDataAt(position: Int): Archive? = null
 
     override fun onBindViewHolder(holder: GalleryHolder, position: Int) {
-        val gi = getDataAt(position) ?: return
+        val archive = getDataAt(position) ?: return
+        val gid = arcidToGid(archive.arcid)
 
         when (mType) {
             TYPE_GRID -> {
-                (holder.thumb as TileThumbNew).setThumbSize(gi.thumbWidth, gi.thumbHeight)
-                holder.thumb.load(LRRCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
-                // LANraragi doesn't use E-Hentai categories - hide triangle
+                (holder.thumb as TileThumbNew).setThumbSize(0, 0)
+                holder.thumb.load(LRRCacheKeyFactory.getThumbKey(gid), archive.thumbnailUrl)
                 holder.category?.visibility = View.GONE
-                holder.simpleLanguage?.text = gi.simpleLanguage
+                holder.simpleLanguage?.text = null
             }
             else -> {
-                // TYPE_LIST or default
-                holder.thumb.load(LRRCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
-                holder.title?.text = LRRUtils.getSuitableTitle(gi)
-                holder.uploader?.text = gi.uploader
+                holder.thumb.load(LRRCacheKeyFactory.getThumbKey(gid), archive.thumbnailUrl)
+                holder.title?.text = archive.title
+                holder.uploader?.text = null
                 if (!AppearanceSettings.getShowGalleryRating()) {
                     holder.rating?.visibility = View.INVISIBLE
                 } else {
-                    holder.rating?.setRating(gi.rating)
+                    holder.rating?.setRating(archive.rating)
                 }
-
-                // LANraragi doesn't use E-Hentai categories - hide badge
                 holder.category?.visibility = View.GONE
-                holder.posted?.text = gi.posted
-                if (gi.pages == 0 || !AppearanceSettings.getShowGalleryPages()) {
+                holder.posted?.text = null
+                if (archive.pagecount == 0 || !AppearanceSettings.getShowGalleryPages()) {
                     holder.pages?.text = null
                     holder.pages?.visibility = View.GONE
                 } else {
-                    val displayProgress = if (gi.progress > 0) gi.progress else 1
-                    holder.pages?.text = "${displayProgress}/${gi.pages}P"
+                    val displayProgress = if (archive.progress > 0) archive.progress else 1
+                    holder.pages?.text = "${displayProgress}/${archive.pagecount}P"
                     holder.pages?.visibility = View.VISIBLE
                 }
-                if (TextUtils.isEmpty(gi.simpleLanguage)) {
-                    holder.simpleLanguage?.text = null
-                    holder.simpleLanguage?.visibility = View.GONE
-                } else {
-                    holder.simpleLanguage?.text = gi.simpleLanguage
-                    holder.simpleLanguage?.visibility = View.VISIBLE
-                }
-                holder.favourite?.visibility =
-                    if (mShowFavourite && gi.favoriteSlot in -1..10) View.VISIBLE else View.GONE
+                holder.simpleLanguage?.text = null
+                holder.simpleLanguage?.visibility = View.GONE
+                holder.favourite?.visibility = View.GONE
                 holder.downloaded?.visibility =
-                    if (mDownloadManager.containDownloadInfo(gi.gid)) View.VISIBLE else View.GONE
+                    if (mDownloadManager.containDownloadInfo(gid)) View.VISIBLE else View.GONE
             }
         }
-        ViewCompat.setTransitionName(holder.thumb, TransitionNameFactory.getThumbTransitionName(gi.gid))
+        ViewCompat.setTransitionName(holder.thumb, TransitionNameFactory.getThumbTransitionName(gid))
     }
 
     fun setThumbItemClickListener(listener: OnThumbItemClickListener?) {
@@ -229,7 +221,7 @@ abstract class GalleryAdapterNew(
     }
 
     interface OnThumbItemClickListener {
-        fun onThumbItemClick(position: Int, view: View, gi: GalleryInfoUi?)
+        fun onThumbItemClick(position: Int, view: View, archive: Archive?)
     }
 
     inner class GalleryHolder(
