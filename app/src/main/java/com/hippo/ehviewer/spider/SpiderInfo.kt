@@ -19,11 +19,9 @@ package com.hippo.ehviewer.spider
 import android.text.TextUtils
 import android.util.Log
 import android.util.SparseArray
-import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
-import com.hippo.ehviewer.client.exception.ParseException
 import com.hippo.streampipe.OutputStreamPipe
 import com.hippo.unifile.UniFile
 import com.hippo.util.ExceptionUtils
@@ -99,9 +97,6 @@ class SpiderInfo {
         pages = newInfo.pages
         gid = newInfo.gid
         token = newInfo.token
-        pTokenMap = newInfo.pTokenMap
-        previewPerPage = newInfo.previewPerPage
-        previewPages = newInfo.previewPages
     }
 
     @Synchronized
@@ -266,35 +261,12 @@ class SpiderInfo {
 
         @JvmStatic
         fun getSpiderInfo(info: GalleryDetail): SpiderInfo? {
-            try {
-                val spiderInfo = SpiderInfo()
-                spiderInfo.gid = info.gid
-                spiderInfo.token = info.token
-                spiderInfo.pages = info.SpiderInfoPages
-                spiderInfo.pTokenMap = SparseArray(spiderInfo.pages)
-                readPreviews(info, 0, spiderInfo)
-                return spiderInfo
-            } catch (e: ParseException) {
-                Analytics.recordException(e)
-            }
-            return null
-        }
-
-        @Throws(ParseException::class)
-        private fun readPreviews(info: GalleryDetail, index: Int, spiderInfo: SpiderInfo) {
+            val spiderInfo = SpiderInfo()
+            spiderInfo.gid = info.gid
+            spiderInfo.token = info.token
             spiderInfo.pages = info.SpiderInfoPages
-            spiderInfo.previewPages = info.SpiderInfoPreviewPages
-            val previewSet = info.SpiderInfoPreviewSet
-
-            if (previewSet != null && previewSet.size() > 0) {
-                spiderInfo.previewPerPage = if (index == 0) {
-                    previewSet.size()
-                } else {
-                    previewSet.getPosition(0) / index
-                }
-            }
-
-            // LANraragi: E-Hentai page URL parsing removed (pTokenMap not populated)
+            spiderInfo.pTokenMap = SparseArray(0)
+            return if (spiderInfo.pages > 0) spiderInfo else null
         }
     }
 }
