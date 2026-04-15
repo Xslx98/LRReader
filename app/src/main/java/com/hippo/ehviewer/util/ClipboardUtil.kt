@@ -6,6 +6,7 @@ import android.content.Context
 import android.text.TextUtils
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.util.galleryInfoFromJson
 import com.hippo.scene.Announcer
 import com.hippo.util.ExceptionUtils
 import org.json.JSONObject
@@ -93,7 +94,7 @@ object ClipboardUtil {
                 }
             }
             obj.put("time", System.currentTimeMillis())
-            GalleryInfo.galleryInfoFromJson(obj)
+            galleryInfoFromJson(obj)
         } catch (e: Exception) {
             null
         }
