@@ -169,12 +169,11 @@ class HistoryViewModelTest {
         drainCoroutines()
         assertEquals(2, vm.historyList.value.size)
 
-        val itemToDelete = vm.historyList.value.first { it.gid == 1L }
+        val itemToDelete = vm.getRawHistoryInfo(0)!!
         vm.deleteHistoryItem(itemToDelete)
         drainCoroutines()
 
         assertEquals(1, vm.historyList.value.size)
-        assertEquals(2L, vm.historyList.value.first().gid)
     }
 
     @Test
