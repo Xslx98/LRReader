@@ -259,12 +259,34 @@ class HistoryScene : ToolbarScene(),
         args.putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_GALLERY_INFO)
         args.putParcelable(GalleryDetailScene.KEY_GALLERY_INFO, gi)
         val announcer = Announcer(GalleryDetailScene::class.java).setArgs(args)
+            .setRequestCode(this, REQUEST_CODE_GALLERY_DETAIL)
         val thumb = view.findViewById<View>(R.id.thumb)
         if (thumb != null) {
             announcer.setTranHelper(EnterGalleryDetailTransaction(thumb))
         }
         startScene(announcer)
         return true
+    }
+
+    override fun onSceneResult(requestCode: Int, resultCode: Int, data: Bundle?) {
+        if (requestCode == REQUEST_CODE_GALLERY_DETAIL
+            && resultCode == RESULT_OK && data != null
+        ) {
+            val gid = data.getLong(GalleryDetailScene.KEY_GID, -1)
+            val rating = data.getFloat(GalleryDetailScene.KEY_RATING_RESULT, -1f)
+            if (gid >= 0 && rating >= 0) {
+                // Update the Archive display list in-place
+                val list = viewModel.historyList.value
+                for (i in list.indices) {
+                    if (com.lanraragi.reader.client.api.arcidToGid(list[i].arcid) == gid) {
+                        viewModel.updateRatingAtPosition(i, rating)
+                        mAdapter?.notifyItemChanged(i)
+                        break
+                    }
+                }
+            }
+        }
+        super.onSceneResult(requestCode, resultCode, data)
     }
 
     override fun onItemLongClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean {
@@ -394,6 +416,10 @@ class HistoryScene : ToolbarScene(),
 
             viewModel.deleteHistoryItem(info)
         }
+    }
+
+    companion object {
+        private const val REQUEST_CODE_GALLERY_DETAIL = 200
     }
 
     private class AddToFavoriteListener(
