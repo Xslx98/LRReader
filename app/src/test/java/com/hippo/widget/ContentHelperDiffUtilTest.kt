@@ -1,7 +1,7 @@
 package com.hippo.widget
 
 import androidx.recyclerview.widget.DiffUtil
-import com.hippo.ehviewer.client.data.GalleryInfoUi
+import com.lanraragi.reader.domain.Archive
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -9,32 +9,28 @@ import org.junit.Test
  * Tests for the DiffUtil integration in [ContentLayout.ContentHelper].
  *
  * The ContentHelper.dispatchDiffUpdates() uses:
- * - areItemsTheSame: isDuplicate(d1, d2) → d1.gid == d2.gid
- * - areContentsTheSame: oldData.get(oldPos).equals(mData.get(newPos))
- *
- * These tests verify DiffUtil.calculateDiff produces correct update operations
- * for the data patterns ContentHelper encounters.
- *
- * Ref: https://developer.android.com/reference/androidx/recyclerview/widget/DiffUtil
+ * - areItemsTheSame: isDuplicate(d1, d2) → d1.arcid == d2.arcid
+ * - areContentsTheSame: compare title
  */
 class ContentHelperDiffUtilTest {
 
-    private fun makeInfo(gid: Long, title: String = "title$gid"): GalleryInfoUi {
-        return GalleryInfoUi().apply {
-            this.gid = gid
-            this.title = title
-            this.posted = "2025-01-01"
-        }
+    private fun makeInfo(id: Long, title: String = "title$id"): Archive {
+        return Archive(
+            arcid = "arcid$id", title = title, tags = emptyMap(),
+            pagecount = 0, progress = 0, extension = "", filename = "",
+            thumbnailUrl = "", rating = 0f, isnew = false, lastreadtime = 0,
+            summary = null, serverProfileId = 0
+        )
     }
 
-    private fun computeDiff(oldList: List<GalleryInfoUi>, newList: List<GalleryInfoUi>): DiffUtil.DiffResult {
+    private fun computeDiff(oldList: List<Archive>, newList: List<Archive>): DiffUtil.DiffResult {
         return DiffUtil.calculateDiff(object : DiffUtil.Callback() {
             override fun getOldListSize() = oldList.size
             override fun getNewListSize() = newList.size
             override fun areItemsTheSame(oldPos: Int, newPos: Int) =
-                oldList[oldPos].gid == newList[newPos].gid
+                oldList[oldPos].arcid == newList[newPos].arcid
             override fun areContentsTheSame(oldPos: Int, newPos: Int) =
-                oldList[oldPos].gid == newList[newPos].gid &&
+                oldList[oldPos].arcid == newList[newPos].arcid &&
                 oldList[oldPos].title == newList[newPos].title
         })
     }
@@ -86,7 +82,7 @@ class ContentHelperDiffUtilTest {
 
     @Test
     fun emptyToFilled_allInserts() {
-        val old = emptyList<GalleryInfoUi>()
+        val old = emptyList<Archive>()
         val new = listOf(makeInfo(1), makeInfo(2))
         val ops = mutableListOf<String>()
         computeDiff(old, new).dispatchUpdatesTo(object : androidx.recyclerview.widget.ListUpdateCallback {
@@ -102,7 +98,7 @@ class ContentHelperDiffUtilTest {
     @Test
     fun filledToEmpty_allRemoves() {
         val old = listOf(makeInfo(1), makeInfo(2))
-        val new = emptyList<GalleryInfoUi>()
+        val new = emptyList<Archive>()
         val ops = mutableListOf<String>()
         computeDiff(old, new).dispatchUpdatesTo(object : androidx.recyclerview.widget.ListUpdateCallback {
             override fun onInserted(position: Int, count: Int) { ops.add("insert") }
