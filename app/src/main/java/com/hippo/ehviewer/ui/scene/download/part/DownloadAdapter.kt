@@ -40,8 +40,8 @@ import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
-import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.dao.DownloadInfo
+import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.download.DownloadService
 import com.hippo.ehviewer.gallery.A7ZipArchive
@@ -154,40 +154,32 @@ class DownloadAdapter(
         try {
             val pos = mCallback.positionInList(position)
             val info = list[pos]
+            val archive = info.toArchive()
             val archiveUri = info.archiveUri
             val isImportedArchive = archiveUri != null && archiveUri.startsWith("content://")
 
-            var title = LRRUtils.getSuitableTitle(info)
-            // Add special prefix for imported archives
+            var title = archive.title
             if (isImportedArchive) {
                 title = "📦 $title"
             }
-            // Handle thumbnail loading for imported archives
             if (isImportedArchive) {
                 loadArchiveThumbnail(holder.thumb, Uri.parse(archiveUri))
             } else {
                 holder.thumb.load(
-                    LRRCacheKeyFactory.getThumbKey(info.gid), info.thumb,
+                    LRRCacheKeyFactory.getThumbKey(info.gid), archive.thumbnailUrl,
                     ThumbDataContainer(info), true, false
                 )
             }
 
             holder.title.text = title
-            // Hide uploader if empty (LANraragi items don't have uploaders)
-            if (info.uploader.isNullOrEmpty()) {
-                holder.uploader.visibility = View.GONE
-            } else {
-                holder.uploader.visibility = View.VISIBLE
-                holder.uploader.text = info.uploader
-            }
+            holder.uploader.visibility = View.GONE
 
-            // Handle rating display for imported archives
             if (isImportedArchive) {
                 holder.rating.setRating(5.0f)
-            } else if (info.rating <= 0) {
+            } else if (archive.rating <= 0) {
                 holder.rating.visibility = View.GONE
             } else {
-                holder.rating.setRating(info.rating)
+                holder.rating.setRating(archive.rating)
             }
 
             val spiderInfo = mCallback.spiderInfoMap[info.gid]
@@ -198,18 +190,13 @@ class DownloadAdapter(
             }
 
             val category = holder.category
-            var newCategoryText = LRRUtils.getCategory(info.category)
-            if ("unknown".equals(newCategoryText, ignoreCase = true)) {
-                category.visibility = View.GONE
-            } else if (isImportedArchive) {
-                newCategoryText = mScene.getString(R.string.imported_archive_category)
-                category.text = newCategoryText
+            if (isImportedArchive) {
+                val categoryText = mScene.getString(R.string.imported_archive_category)
+                category.text = categoryText
                 category.setBackgroundColor(0xFF4CAF50.toInt())
                 category.visibility = View.VISIBLE
             } else {
-                category.text = newCategoryText
-                category.setBackgroundColor(LRRUtils.getCategoryColor(info.category))
-                category.visibility = View.VISIBLE
+                category.visibility = View.GONE
             }
             bindForState(holder, info)
 
