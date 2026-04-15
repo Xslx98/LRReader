@@ -87,7 +87,7 @@ class GalleryInfoParcelTest {
     fun galleryInfo_parcelRoundTrip_withNullFields() {
         val original = GalleryInfo().apply {
             gid = 1L
-            token = null
+            token = ""
             title = null
             titleJpn = null
             thumb = null
@@ -106,7 +106,7 @@ class GalleryInfoParcelTest {
             val restored = GalleryInfo.CREATOR.createFromParcel(parcel)
 
             assertEquals(original.gid, restored.gid)
-            assertNull(restored.token)
+            assertEquals("", restored.token)
             assertNull(restored.title)
             assertNull(restored.titleJpn)
             assertNull(restored.thumb)
