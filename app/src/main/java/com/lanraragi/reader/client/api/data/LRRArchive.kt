@@ -8,6 +8,9 @@ import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.client.data.GalleryTagGroup
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.arcidToGid
+import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.domain.ArchiveDetail
+import com.lanraragi.reader.domain.TagGroup
 import com.hippo.ehviewer.mapper.toEntity
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -128,6 +131,47 @@ class LRRArchive() : Parcelable {
         gd.serverProfileId = LRRAuthManager.getActiveProfileId()
 
         return gd
+    }
+
+    // ----- Domain model conversion -----
+
+    /**
+     * Convert this LRRArchive into an [Archive] domain model.
+     * No hashing, no legacy field mapping — fields map 1:1.
+     */
+    fun toArchive(): Archive {
+        val serverUrl = LRRAuthManager.getServerUrl()
+        return Archive(
+            arcid = arcid,
+            title = title,
+            tags = getParsedTags(),
+            pagecount = pagecount,
+            progress = progress,
+            extension = extension,
+            filename = filename,
+            thumbnailUrl = if (serverUrl != null) getThumbnailUrl(serverUrl) else "",
+            rating = parseRatingFromTags(tags),
+            isnew = isNew(),
+            lastreadtime = lastreadtime,
+            summary = summary,
+            serverProfileId = LRRAuthManager.getActiveProfileId(),
+        )
+    }
+
+    /**
+     * Convert this LRRArchive into an [ArchiveDetail] for the detail view.
+     */
+    fun toArchiveDetail(): ArchiveDetail {
+        val parsedTags = getParsedTags()
+        val tagGroups = parsedTags.map { (namespace, values) ->
+            TagGroup(namespace, values)
+        }
+        return ArchiveDetail(
+            archive = toArchive(),
+            tagGroups = tagGroups,
+            language = "N/A",
+            size = extension.uppercase().ifEmpty { "N/A" },
+        )
     }
 
     // ----- Helper methods -----
