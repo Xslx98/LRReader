@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
 
     private val context: Context = context.applicationContext
-    private val arcId: String = checkNotNull(info.token) { "DownloadInfo.token (arcid) must not be null" }
+    private val arcId: String = checkNotNull(info.arcid) { "DownloadInfo.arcid must not be null" }
     private val serverUrl: String = checkNotNull(LRRAuthManager.getServerUrl()) { "Server URL must be configured" }
 
     var listener: SpiderQueen.OnSpiderListener? = null

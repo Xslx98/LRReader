@@ -111,7 +111,7 @@ object EhDB {
                     while (!it.isAfterLast) {
                         val gi = GalleryInfo()
                         gi.gid = it.getInt(0).toLong()
-                        gi.token = it.getString(1)
+                        gi.arcid = it.getString(1)
                         gi.title = it.getString(2)
                         gi.posted = it.getString(3)
                         gi.category = it.getInt(4)
