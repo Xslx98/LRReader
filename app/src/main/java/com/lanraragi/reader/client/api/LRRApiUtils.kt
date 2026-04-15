@@ -30,7 +30,7 @@ private const val TAG = "LRRApi"
  */
 private val arcidGidCache = LruCache<String, Long>(1024)
 
-internal fun arcidToGid(arcid: String): Long {
+fun arcidToGid(arcid: String): Long {
     if (arcid.isEmpty()) return 0L
     arcidGidCache.get(arcid)?.let { return it }
     val digest = MessageDigest.getInstance("SHA-256").digest(arcid.toByteArray(Charsets.UTF_8))

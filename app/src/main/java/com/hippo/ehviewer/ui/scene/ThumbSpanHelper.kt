@@ -17,11 +17,11 @@
 package com.hippo.ehviewer.ui.scene
 
 import android.util.Log
-import com.hippo.ehviewer.client.data.GalleryInfoUi
+import com.lanraragi.reader.domain.Archive
 import java.util.Arrays
 
 // KNOWN-ISSUE (P2): GridLayoutManager ignores SpaceGroupIndex; custom span calculation needed
-class ThumbSpanHelper(private val mData: List<GalleryInfoUi>) {
+class ThumbSpanHelper(private val mData: List<Archive>) {
 
     companion object {
         private const val MIN_ARRAY_LENGTH = 50
@@ -119,108 +119,9 @@ class ThumbSpanHelper(private val mData: List<GalleryInfoUi>) {
     }
 
     private fun append() {
-        if (1 == mSpanCount) {
-            for (i in mAttachedCount until mData.size) {
-                val gi = mData[i]
-                gi.spanSize = 1
-                gi.spanGroupIndex = i
-                gi.spanIndex = 0
-            }
-            mAttachedCount = mData.size
-        } else if (mSpanCount >= 2) {
-            for (i in mAttachedCount until mData.size) {
-                val gi = mData[i]
-                val spanSize = if (gi.thumbWidth <= gi.thumbHeight) 1 else 2
-                gi.spanSize = spanSize
-
-                if (1 == spanSize) {
-                    // Update near space
-                    updateNearSpace()
-
-                    Log.d("TAG", "Update mNearSpaceGroupIndex = $mNearSpaceGroupIndex, mNearSpaceIndex = $mNearSpaceIndex")
-
-                    if (mNextIndex == mNearSpaceIndex && mNextGroupIndex == mNearSpaceGroupIndex) {
-                        // No space, just append
-                        gi.spanIndex = mNextIndex
-                        gi.spanGroupIndex = mNextGroupIndex
-
-                        // Update cell
-                        val start = gi.spanGroupIndex * mSpanCount + gi.spanIndex
-                        fillCell(start, start + 1)
-
-                        // Update field
-                        mNextIndex++
-                        if (mSpanCount == mNextIndex) {
-                            mNextIndex = 0
-                            mNextGroupIndex++
-                        }
-                        mNearSpaceIndex = mNextIndex
-                        mNearSpaceGroupIndex = mNextGroupIndex
-
-                        Log.d("TAG", "type 0")
-                        Log.d("TAG", "i = $i, spanSize = $spanSize, spanGroupIndex = ${gi.spanGroupIndex}, spanIndex = ${gi.spanIndex}")
-                        Log.d("TAG", "mNextGroupIndex = $mNextGroupIndex, mNextIndex = $mNextIndex")
-                        Log.d("TAG", "mNearSpaceGroupIndex = $mNearSpaceGroupIndex, mNearSpaceIndex = $mNearSpaceIndex")
-                    } else {
-                        // Found space
-                        gi.spanIndex = mNearSpaceIndex
-                        gi.spanGroupIndex = mNearSpaceGroupIndex
-
-                        // Update cell
-                        val start = gi.spanGroupIndex * mSpanCount + gi.spanIndex
-                        fillCell(start, start + 1)
-
-                        // Find near space
-                        findNearSpace(start + 1)
-
-                        Log.d("TAG", "type 1")
-                        Log.d("TAG", "i = $i, spanSize = $spanSize, spanGroupIndex = ${gi.spanGroupIndex}, spanIndex = ${gi.spanIndex}")
-                        Log.d("TAG", "mNextGroupIndex = $mNextGroupIndex, mNextIndex = $mNextIndex")
-                        Log.d("TAG", "mNearSpaceGroupIndex = $mNearSpaceGroupIndex, mNearSpaceIndex = $mNearSpaceIndex")
-                    }
-                } else {
-                    val syncNear = mNextIndex == mNearSpaceIndex && mNextGroupIndex == mNearSpaceGroupIndex
-                    // false for old, true for new
-                    val oldOrNew: Boolean
-                    if (mSpanCount - mNextIndex >= 2) {
-                        gi.spanIndex = mNextIndex
-                        gi.spanGroupIndex = mNextGroupIndex
-                        oldOrNew = true
-                    } else {
-                        // Go to next row
-                        gi.spanIndex = 0
-                        gi.spanGroupIndex = mNextGroupIndex + 1
-                        oldOrNew = false
-                    }
-
-                    // Update cell
-                    val start = gi.spanGroupIndex * mSpanCount + gi.spanIndex
-                    fillCell(start, start + 2)
-
-                    // Update field
-                    if (syncNear && !oldOrNew) {
-                        mNearSpaceIndex = mNextIndex
-                        mNearSpaceGroupIndex = mNextGroupIndex
-                    }
-                    mNextIndex = gi.spanIndex + 2
-                    mNextGroupIndex = gi.spanGroupIndex
-                    if (mSpanCount == mNextIndex) {
-                        mNextIndex = 0
-                        mNextGroupIndex++
-                    }
-                    if (syncNear && oldOrNew) {
-                        mNearSpaceIndex = mNextIndex
-                        mNearSpaceGroupIndex = mNextGroupIndex
-                    }
-
-                    Log.d("TAG", "type 2")
-                    Log.d("TAG", "i = $i, spanSize = $spanSize, spanGroupIndex = ${gi.spanGroupIndex}, spanIndex = ${gi.spanIndex}")
-                    Log.d("TAG", "mNextGroupIndex = $mNextGroupIndex, mNextIndex = $mNextIndex")
-                    Log.d("TAG", "mNearSpaceGroupIndex = $mNearSpaceGroupIndex, mNearSpaceIndex = $mNearSpaceIndex")
-                }
-            }
-            mAttachedCount = mData.size
-        }
+        // Archive is an immutable data class — span fields cannot be mutated in-place.
+        // LANraragi thumbnails are uniform size, so staggered spanning is not needed.
+        mAttachedCount = mData.size
     }
 
     private fun updateNearSpace() {

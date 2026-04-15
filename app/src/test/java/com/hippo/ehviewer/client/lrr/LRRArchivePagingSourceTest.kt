@@ -5,7 +5,7 @@ import com.lanraragi.reader.client.api.data.*
 import androidx.paging.PagingConfig
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import com.hippo.ehviewer.client.data.GalleryInfoUi
+import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
@@ -234,7 +234,7 @@ class LRRArchivePagingSourceTest {
     @Test
     fun getRefreshKey_returnsNullWhenNoAnchor() {
         val source = createPagingSource()
-        val state = PagingState<Int, GalleryInfoUi>(
+        val state = PagingState<Int, Archive>(
             pages = emptyList(),
             anchorPosition = null,
             config = PagingConfig(pageSize = 50),
@@ -246,9 +246,14 @@ class LRRArchivePagingSourceTest {
     @Test
     fun getRefreshKey_returnsKeyFromClosestPage() {
         val source = createPagingSource()
-        val galleryInfo = GalleryInfoUi().apply { title = "Test" }
+        val archive = Archive(
+            arcid = "test", title = "Test", tags = emptyMap(),
+            pagecount = 0, progress = 0, extension = "", filename = "",
+            thumbnailUrl = "", rating = 0f, isnew = false, lastreadtime = 0,
+            summary = null, serverProfileId = 0
+        )
         val page = PagingSource.LoadResult.Page(
-            data = listOf(galleryInfo),
+            data = listOf(archive),
             prevKey = 1,
             nextKey = 3
         )
