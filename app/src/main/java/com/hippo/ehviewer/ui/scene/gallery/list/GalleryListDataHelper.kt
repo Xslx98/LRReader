@@ -7,8 +7,8 @@ import android.view.View
 import androidx.paging.PagingSource
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.client.data.ListUrlBuilder
+import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.api.LRRArchivePagingSource
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRClientProvider
@@ -138,8 +138,8 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
         callback.showActionFab()
     }
 
-    override fun isDuplicate(d1: GalleryInfoUi, d2: GalleryInfoUi): Boolean {
-        return d1.gid == d2.gid
+    override fun isDuplicate(d1: Archive, d2: Archive): Boolean {
+        return d1.arcid == d2.arcid
     }
 
     override fun onScrollToPosition(postion: Int) {
@@ -150,7 +150,7 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
     }
 
     private fun onGetPagingSourceSuccess(
-        data: List<GalleryInfoUi>, taskId: Int, page: Int, hasMore: Boolean
+        data: List<Archive>, taskId: Int, page: Int, hasMore: Boolean
     ) {
         if (isCurrentTask(taskId)) {
             setEmptyString(callback.getString(R.string.gallery_list_empty_hit))
