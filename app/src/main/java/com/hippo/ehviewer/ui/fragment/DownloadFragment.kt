@@ -36,6 +36,8 @@ import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.ui.CommonOperations
+import com.hippo.ehviewer.util.galleryInfoFromCSV
+import com.hippo.ehviewer.util.toCSV
 import com.hippo.unifile.UniFile
 import com.hippo.util.ExceptionUtils
 import com.hippo.yorozuya.IOUtils
@@ -306,7 +308,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
                         if (line.startsWith(DownloadManager.DOWNLOAD_INFO_HEADER)) {
                             null
                         } else {
-                            com.hippo.ehviewer.client.data.GalleryInfo.fromCSV(line)
+                            galleryInfoFromCSV(line)
                         }
                     }
 
