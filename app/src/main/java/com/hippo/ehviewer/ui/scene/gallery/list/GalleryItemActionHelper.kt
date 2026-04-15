@@ -15,8 +15,9 @@ import com.google.android.material.chip.ChipGroup
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
 import com.hippo.ehviewer.client.LRRUtils
-import com.hippo.ehviewer.client.data.GalleryInfoUi
-import com.hippo.ehviewer.mapper.toEntity
+import com.hippo.ehviewer.mapper.toGalleryInfo
+import com.lanraragi.reader.client.api.arcidToGid
+import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.ServiceRegistry
@@ -53,7 +54,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
         fun startScene(announcer: Announcer)
         fun getString(resId: Int): String
         fun getString(resId: Int, vararg formatArgs: Any): String
-        fun buildChipGroup(gi: GalleryInfoUi?, chipGroup: ChipGroup): ChipGroup
+        fun buildChipGroup(gi: Archive?, chipGroup: ChipGroup): ChipGroup
     }
 
     var alertDialog: AlertDialog? = null
@@ -62,7 +63,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
         alertDialog?.dismiss()
     }
 
-    fun onItemClick(view: View?, gi: GalleryInfoUi?): Boolean {
+    fun onItemClick(view: View?, gi: Archive?): Boolean {
         if (gi == null) {
             return true
         }
@@ -70,7 +71,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
 
         val args = android.os.Bundle()
         args.putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_GALLERY_INFO)
-        args.putParcelable(GalleryDetailScene.KEY_GALLERY_INFO, gi.toEntity())
+        args.putParcelable(GalleryDetailScene.KEY_GALLERY_INFO, gi.toGalleryInfo())
         val announcer = Announcer(GalleryDetailScene::class.java).setArgs(args)
             .setRequestCode(callback.getSceneFragment(), REQUEST_CODE_GALLERY_DETAIL)
         if (view != null) {
@@ -83,7 +84,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
         return true
     }
 
-    fun onItemLongClick(gi: GalleryInfoUi?, view: View): Boolean {
+    fun onItemLongClick(gi: Archive?, view: View): Boolean {
         val context = callback.getHostContext()
         val activity = callback.getHostActivity()
         if (context == null || activity == null) {
@@ -95,8 +96,9 @@ class GalleryItemActionHelper(private val callback: Callback) {
         }
 
         val downloadManager = callback.getDownloadManager()
-        val downloaded = downloadManager.getDownloadState(gi.gid) != DownloadInfo.STATE_INVALID
-        val favourited = gi.favoriteSlot != -2
+        val gid = arcidToGid(gi.arcid)
+        val downloaded = downloadManager.getDownloadState(gid) != DownloadInfo.STATE_INVALID
+        val favourited = false // LANraragi uses category-based favorites, not slots
 
         val items = arrayOf<CharSequence>(
             context.getString(R.string.read),
@@ -117,15 +119,15 @@ class GalleryItemActionHelper(private val callback: Callback) {
         linearLayout.setOnClickListener { onItemClick(view, gi) }
 
         val imageViewNew: LoadImageViewNew = linearLayout.findViewById(R.id.dialog_thumb)
-        imageViewNew.load(LRRCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
+        imageViewNew.load(LRRCacheKeyFactory.getThumbKey(arcidToGid(gi.arcid)), gi.thumbnailUrl)
         imageViewNew.setOnClickListener { onItemClick(view, gi) }
 
         callback.buildChipGroup(gi, linearLayout.findViewById(R.id.tab_tag_flow))
 
         val textView: TextView = linearLayout.findViewById(R.id.title_text)
-        textView.text = LRRUtils.getSuitableTitle(gi)
+        textView.text = gi.title
         textView.setOnClickListener {
-            AppHelper.copyPlainText(LRRUtils.getSuitableTitle(gi), context)
+            AppHelper.copyPlainText(gi.title, context)
             val toast = Toast.makeText(context, R.string.lrr_title_copied, Toast.LENGTH_SHORT)
             toast.setGravity(Gravity.CENTER, 0, 0)
             toast.show()
@@ -137,7 +139,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
                 when (which) {
                     0 -> { // Read
                         ServiceRegistry.coroutineModule.ioScope.launch {
-                            val intent = GalleryOpenHelper.buildReadIntent(activity, gi.toEntity())
+                            val intent = GalleryOpenHelper.buildReadIntent(activity, gi.toGalleryInfo())
                             withContext(Dispatchers.Main) {
                                 activity.startActivity(intent)
                             }
@@ -149,17 +151,17 @@ class GalleryItemActionHelper(private val callback: Callback) {
                                 .setTitle(R.string.download_remove_dialog_title)
                                 .setMessage(callback.getString(R.string.download_remove_dialog_message, gi.title ?: ""))
                                 .setPositiveButton(android.R.string.ok) { _, _ ->
-                                    downloadManager.deleteDownload(gi.gid)
+                                    downloadManager.deleteDownload(arcidToGid(gi.arcid))
                                 }
                                 .show()
                         } else {
                             (activity as? MainActivity)?.let {
-                                CommonOperations.startDownload(it, gi.toEntity(), false)
+                                CommonOperations.startDownload(it, gi.toGalleryInfo(), false)
                             }
                         }
                     }
                     2 -> { // Favorites
-                        val entity = gi.toEntity()
+                        val entity = gi.toGalleryInfo()
                         if (favourited) {
                             CommonOperations.removeFromFavorites(
                                 activity, entity,
