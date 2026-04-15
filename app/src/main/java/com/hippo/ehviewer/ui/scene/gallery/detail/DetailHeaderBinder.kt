@@ -17,7 +17,9 @@ import com.hippo.ehviewer.client.LRRCacheKeyFactory
 import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
+import com.lanraragi.reader.client.api.arcidToGid
 import com.lanraragi.reader.client.api.data.LRRArchive
+import com.lanraragi.reader.domain.ArchiveDetail
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
 import com.hippo.ehviewer.widget.ArchiverDownloadProgress
 import com.hippo.reveal.ViewAnimationUtils
@@ -155,6 +157,54 @@ internal class DetailHeaderBinder(
         bindArchiverProgress(gd)
         if (context != null && inflater != null) {
             GalleryTagHelper.bindTags(context, inflater, tags, noTags, gd.tags, clickListener, longClickListener)
+        }
+    }
+
+    /**
+     * Bind display fields from an [ArchiveDetail] domain model.
+     * Uses Archive's native fields (arcid, title, thumbnailUrl, rating, tags)
+     * without going through GalleryDetail's EhViewer legacy fields.
+     */
+    fun bindFromArchiveDetail(
+        ad: ArchiveDetail,
+        context: Context?,
+        inflater: android.view.LayoutInflater?,
+        clickListener: View.OnClickListener,
+        longClickListener: View.OnLongClickListener
+    ) {
+        val archive = ad.archive
+        val gid = arcidToGid(archive.arcid)
+
+        thumb.load(LRRCacheKeyFactory.getThumbKey(gid), archive.thumbnailUrl)
+        title.text = archive.title
+        uploader.text = null
+
+        // Progress
+        val displayProgress = if (archive.progress > 0) archive.progress else 1
+        pages.text = "${displayProgress}/${archive.pagecount}P"
+
+        size.text = ad.size ?: "N/A"
+
+        // Rating
+        if (archive.rating > 0) {
+            ratingText.text = String.format("%.0f\u2605", archive.rating)
+            rating.rating = archive.rating
+        } else {
+            ratingText.text = "Not rated"
+            rating.rating = 0f
+        }
+
+        // Tags — convert domain TagGroups to GalleryTagGroup for existing tag binder
+        if (context != null && inflater != null) {
+            val galleryTagGroups = ad.tagGroups.map { tg ->
+                val group = com.hippo.ehviewer.client.data.GalleryTagGroup()
+                group.groupName = tg.namespace
+                for (tag in tg.tags) {
+                    group.addTag(tag)
+                }
+                group
+            }.toTypedArray()
+            GalleryTagHelper.bindTags(context, inflater, tags, noTags, galleryTagGroups, clickListener, longClickListener)
         }
     }
 
