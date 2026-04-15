@@ -392,7 +392,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                         if (ns == "misc") tag else "$ns:$tag"
                     }
                 }?.joinToString(", ") ?: ""
-                RatingHelper.saveRatingToServer(arcid, finalRating, currentTags, null)
+                RatingHelper.saveRatingToServer(arcid, finalRating, currentTags)
             }
             false // Don't consume — let RatingBar handle the touch
         }
