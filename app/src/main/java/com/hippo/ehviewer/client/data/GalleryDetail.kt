@@ -70,12 +70,6 @@ class GalleryDetail : GalleryInfoEntity {
     @JvmField
     var SpiderInfoPreviewPages: Int = 0
 
-    @JvmField
-    var previewSet: PreviewSet? = null
-
-    @JvmField
-    var SpiderInfoPreviewSet: PreviewSet? = null
-
     constructor()
 
     protected constructor(`in`: Parcel) : super(`in`) {
@@ -99,8 +93,6 @@ class GalleryDetail : GalleryInfoEntity {
         }
         previewPages = `in`.readInt()
         SpiderInfoPreviewPages = `in`.readInt()
-        previewSet = `in`.readParcelable(PreviewSet::class.java.classLoader)
-        SpiderInfoPreviewSet = `in`.readParcelable(PreviewSet::class.java.classLoader)
     }
 
     override fun describeContents(): Int = 0
@@ -122,8 +114,6 @@ class GalleryDetail : GalleryInfoEntity {
         dest.writeParcelableArray(tags, flags)
         dest.writeInt(previewPages)
         dest.writeInt(SpiderInfoPreviewPages)
-        dest.writeParcelable(previewSet, flags)
-        dest.writeParcelable(SpiderInfoPreviewSet, flags)
     }
 
     companion object {
