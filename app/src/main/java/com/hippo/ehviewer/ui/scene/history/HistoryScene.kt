@@ -273,8 +273,8 @@ class HistoryScene : ToolbarScene(),
             && resultCode == RESULT_OK && data != null
         ) {
             val gid = data.getLong(GalleryDetailScene.KEY_GID, -1)
-            val rating = data.getFloat(GalleryDetailScene.KEY_RATING_RESULT, -1f)
-            if (gid >= 0 && rating >= 0) {
+            val rating = data.getFloat(GalleryDetailScene.KEY_RATING_RESULT, Float.NaN)
+            if (gid >= 0 && !rating.isNaN()) {
                 // Update the Archive display list in-place
                 val list = viewModel.historyList.value
                 for (i in list.indices) {
