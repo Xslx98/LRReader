@@ -17,7 +17,7 @@ import android.os.Parcelable
 class GalleryInfoUi : Parcelable {
 
     @JvmField var gid: Long = 0
-    @JvmField var token: String? = null
+    @JvmField var arcid: String? = null
     @JvmField var title: String? = null
     @JvmField var titleJpn: String? = null
     @JvmField var thumb: String? = null
@@ -44,7 +44,7 @@ class GalleryInfoUi : Parcelable {
 
     protected constructor(`in`: Parcel) {
         gid = `in`.readLong()
-        token = `in`.readString()
+        arcid = `in`.readString()
         title = `in`.readString()
         titleJpn = `in`.readString()
         thumb = `in`.readString()
@@ -70,7 +70,7 @@ class GalleryInfoUi : Parcelable {
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
         dest.writeLong(gid)
-        dest.writeString(token)
+        dest.writeString(arcid)
         dest.writeString(title)
         dest.writeString(titleJpn)
         dest.writeString(thumb)

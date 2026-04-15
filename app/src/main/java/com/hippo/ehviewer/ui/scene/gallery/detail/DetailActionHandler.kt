@@ -232,9 +232,9 @@ internal class DetailActionHandler(
 
     private fun getGalleryDetailUrl(): String? {
         val gid = viewModel.getEffectiveGid()
-        val token = viewModel.getEffectiveToken()
+        val arcid = viewModel.getEffectiveArcid()
         if (gid == -1L) return null
-        return LRRUrl.getGalleryDetailUrl(gid, token, 0, false)
+        return LRRUrl.getGalleryDetailUrl(gid, arcid, 0, false)
     }
 
     fun destroy() {

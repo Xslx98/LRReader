@@ -16,7 +16,7 @@ import com.hippo.ehviewer.dao.DownloadInfo
 fun GalleryInfo.toUi(): GalleryInfoUi {
     val ui = GalleryInfoUi()
     ui.gid = gid
-    ui.token = token
+    ui.arcid = arcid
     ui.title = title
     ui.titleJpn = titleJpn
     ui.thumb = thumb
@@ -45,7 +45,7 @@ fun GalleryInfo.toUi(): GalleryInfoUi {
 fun GalleryInfoUi.toEntity(): GalleryInfo {
     val entity = GalleryInfo()
     entity.gid = gid
-    entity.token = token
+    entity.arcid = arcid
     entity.title = title
     entity.titleJpn = titleJpn
     entity.thumb = thumb

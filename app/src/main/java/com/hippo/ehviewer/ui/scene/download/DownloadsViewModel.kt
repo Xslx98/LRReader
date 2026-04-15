@@ -545,7 +545,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
         return try {
             DownloadInfo().apply {
                 gid = System.currentTimeMillis()
-                token = ""
+                arcid = ""
                 title = fileName.replace("\\.[^.]*$".toRegex(), "")
                 titleJpn = null
                 thumb = null

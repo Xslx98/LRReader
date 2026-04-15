@@ -62,7 +62,7 @@ object RatingHelper {
     }
 
     /**
-     * Find the DownloadInfo whose token matches [arcid], update its
+     * Find the DownloadInfo whose arcid matches [arcid], update its
      * rating field in-memory, and persist to DB (rating is a Room
      * @ColumnInfo). Must read the list on the main thread because
      * DownloadManager collections are main-thread-only.
@@ -71,7 +71,7 @@ object RatingHelper {
         dm: DownloadManager, arcid: String, rating: Float
     ) {
         val info = withContext(Dispatchers.Main) {
-            dm.allDownloadInfoList.firstOrNull { it.token == arcid }
+            dm.allDownloadInfoList.firstOrNull { it.arcid == arcid }
         } ?: return
         info.rating = rating
         try {
