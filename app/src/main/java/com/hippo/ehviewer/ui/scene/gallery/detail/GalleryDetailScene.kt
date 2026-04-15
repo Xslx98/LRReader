@@ -364,26 +364,29 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         // The value is ceiled to an integer on touch release.
         rating.setIsIndicator(false)
         rating.stepSize = 1.0f
-        // Debounce: delay save until user finishes dragging. The handler
-        // is cleared on each change and only fires after 500ms of no change.
         val ratingHandler = android.os.Handler(android.os.Looper.getMainLooper())
         var pendingRatingSave: Runnable? = null
         rating.onRatingBarChangeListener =
             RatingBar.OnRatingBarChangeListener { _, ratingValue, fromUser ->
                 if (!fromUser) return@OnRatingBarChangeListener
                 val gd = mGalleryDetail ?: return@OnRatingBarChangeListener
-                val intRating = ratingValue.toInt().coerceIn(1, 5)
-                // Live preview
-                ratingText.text = LRRArchive.buildRatingEmoji(intRating)
+                // 0 = unrated (-1.0f internally), 1-5 = star rating
+                val intRating = ratingValue.toInt().coerceIn(0, 5)
+                val finalRating = if (intRating == 0) -1f else intRating.toFloat()
 
-                // Cancel any pending save and schedule a new one
+                // Update gd.rating IMMEDIATELY so onBackPressed sees the
+                // latest value (do NOT defer to the debounced Runnable)
+                gd.rating = finalRating
+                gd.rated = intRating > 0
+                rating.rating = ratingValue.toInt().toFloat() // snap to integer
+
+                // Live preview
+                ratingText.text = if (intRating > 0)
+                    LRRArchive.buildRatingEmoji(intRating) else "Not rated"
+
+                // Debounce only the server save (500ms)
                 pendingRatingSave?.let { ratingHandler.removeCallbacks(it) }
                 pendingRatingSave = Runnable {
-                    val finalRating = intRating.toFloat()
-                    rating.rating = finalRating
-                    gd.rating = finalRating
-                    gd.rated = true
-                    // Build fully-qualified tags (namespace:value)
                     val currentTags = gd.tags?.flatMap { group ->
                         val ns = group.groupName ?: "misc"
                         (0 until group.size()).map { i ->
