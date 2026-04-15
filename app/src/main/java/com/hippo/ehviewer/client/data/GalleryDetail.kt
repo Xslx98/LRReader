@@ -23,25 +23,7 @@ import java.util.Arrays
 class GalleryDetail : GalleryInfoEntity {
 
     @JvmField
-    var apiUid: Long = -1L
-
-    @JvmField
-    var apiKey: String? = null
-
-    @JvmField
     var torrentCount: Int = 0
-
-    @JvmField
-    var torrentUrl: String? = null
-
-    @JvmField
-    var archiveUrl: String? = null
-
-    @JvmField
-    var parent: String? = null
-
-    @JvmField
-    var visible: String? = null
 
     @JvmField
     var language: String? = null
@@ -80,10 +62,6 @@ class GalleryDetail : GalleryInfoEntity {
 
     protected constructor(`in`: Parcel) : super(`in`) {
         torrentCount = `in`.readInt()
-        torrentUrl = `in`.readString()
-        archiveUrl = `in`.readString()
-        parent = `in`.readString()
-        visible = `in`.readString()
         language = `in`.readString()
         size = `in`.readString()
         pages = `in`.readInt()
@@ -108,10 +86,6 @@ class GalleryDetail : GalleryInfoEntity {
     override fun writeToParcel(dest: Parcel, flags: Int) {
         super.writeToParcel(dest, flags)
         dest.writeInt(torrentCount)
-        dest.writeString(torrentUrl)
-        dest.writeString(archiveUrl)
-        dest.writeString(parent)
-        dest.writeString(visible)
         dest.writeString(language)
         dest.writeString(size)
         dest.writeInt(pages)
