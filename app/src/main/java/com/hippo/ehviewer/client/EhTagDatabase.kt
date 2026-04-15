@@ -22,7 +22,6 @@ import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.data.Tag
 import com.hippo.lib.yorozuya.FileUtils
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.util.ExceptionUtils
@@ -43,8 +42,18 @@ import java.util.concurrent.locks.ReentrantLock
 
 class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
 
+    /**
+     * Lightweight internal tag entry replacing the deleted legacy [com.hippo.ehviewer.client.data.Tag] class.
+     */
+    private data class TagEntry(val english: String?, val chinese: String?) {
+        fun involve(chars: String): Boolean {
+            if (english != null && english.contains(chars)) return true
+            return chinese != null && chinese.contains(chars)
+        }
+    }
+
     private val tags: ByteArray
-    private val tagList: List<Tag>
+    private val tagList: List<TagEntry>
 
     init {
         val totalBytes = source.readInt()
@@ -58,11 +67,11 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
         return search(tags, tag.toByteArray(TextUrl.UTF_8!!))
     }
 
-    private fun initTagList(sourceString: String): List<Tag> {
+    private fun initTagList(sourceString: String): List<TagEntry> {
         return sourceString.split("\n").map { parseTag(it) }
     }
 
-    private fun parseTag(source: String): Tag {
+    private fun parseTag(source: String): TagEntry {
         val cArray = source.split("\r")
         if (cArray.size == 2) {
             val chinese = String(Base64.decode(cArray[1], Base64.DEFAULT), StandardCharsets.UTF_8)
@@ -74,9 +83,9 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
             } else {
                 cArray[0]
             }
-            return Tag(english, chinese)
+            return TagEntry(english, chinese)
         }
-        return Tag(source, "null")
+        return TagEntry(source, "null")
     }
 
     private fun search(tags: ByteArray, tag: ByteArray): String? {
@@ -142,7 +151,7 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
         return searchTag(tagList, keyword, limit)
     }
 
-    private fun searchTag(tags: List<Tag>, keyword: String, limit: Int): List<Pair<String, String>> {
+    private fun searchTag(tags: List<TagEntry>, keyword: String, limit: Int): List<Pair<String, String>> {
         val searchList = mutableListOf<Pair<String, String>>()
         for (tag in tags) {
             if (searchList.size >= limit) break
