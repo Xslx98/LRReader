@@ -94,20 +94,20 @@ class RoomMigrationTest {
     fun `SERVER_PROFILE_ID default value is 0 across tables`() {
         // Verify DOWNLOADS
         sqliteDb.execSQL(
-            "INSERT INTO DOWNLOADS (GID, STATE, LEGACY, TIME, CATEGORY, RATING) " +
-                "VALUES (101, 0, 0, ${System.currentTimeMillis()}, 0, 0.0)"
+            "INSERT INTO DOWNLOADS (ARCID, GID, STATE, LEGACY, TIME, CATEGORY, RATING) " +
+                "VALUES ('arcid_101', 101, 0, 0, ${System.currentTimeMillis()}, 0, 0.0)"
         )
-        val cur1 = sqliteDb.query("SELECT SERVER_PROFILE_ID FROM DOWNLOADS WHERE GID = 101")
+        val cur1 = sqliteDb.query("SELECT SERVER_PROFILE_ID FROM DOWNLOADS WHERE ARCID = 'arcid_101'")
         assertTrue(cur1.moveToFirst())
         assertEquals(0, cur1.getInt(0))
         cur1.close()
 
         // Verify HISTORY
         sqliteDb.execSQL(
-            "INSERT INTO HISTORY (GID, MODE, TIME, CATEGORY, RATING) " +
-                "VALUES (102, 0, ${System.currentTimeMillis()}, 0, 0.0)"
+            "INSERT INTO HISTORY (ARCID, GID, MODE, TIME, CATEGORY, RATING) " +
+                "VALUES ('arcid_102', 102, 0, ${System.currentTimeMillis()}, 0, 0.0)"
         )
-        val cur2 = sqliteDb.query("SELECT SERVER_PROFILE_ID FROM HISTORY WHERE GID = 102")
+        val cur2 = sqliteDb.query("SELECT SERVER_PROFILE_ID FROM HISTORY WHERE ARCID = 'arcid_102'")
         assertTrue(cur2.moveToFirst())
         assertEquals(0, cur2.getInt(0))
         cur2.close()
@@ -146,7 +146,7 @@ class RoomMigrationTest {
         }
         dao.insert(info)
 
-        val result = dao.loadDownload(1001L)
+        val result = dao.loadDownload("test_token")
         assertNotNull(result)
         assertEquals("test_token", result!!.token)
         assertEquals("Test Gallery", result.title)
@@ -157,6 +157,7 @@ class RoomMigrationTest {
         val dao = db.downloadDao()
         val info = DownloadInfo().apply {
             gid = 2001L
+            token = "arcid_2001"
             state = DownloadInfo.STATE_NONE
             time = System.currentTimeMillis()
         }
@@ -164,7 +165,7 @@ class RoomMigrationTest {
 
         info.state = DownloadInfo.STATE_DOWNLOAD
         dao.update(info)
-        val result = dao.loadDownload(2001L)
+        val result = dao.loadDownload("arcid_2001")
         assertEquals(DownloadInfo.STATE_DOWNLOAD, result!!.state)
     }
 
@@ -173,13 +174,14 @@ class RoomMigrationTest {
         val dao = db.downloadDao()
         val info = DownloadInfo().apply {
             gid = 3001L
+            token = "arcid_3001"
             state = DownloadInfo.STATE_NONE
             time = System.currentTimeMillis()
         }
         dao.insert(info)
-        dao.deleteDownloadByKey(3001L)
+        dao.deleteDownloadByKey("arcid_3001")
 
-        assertNull(dao.loadDownload(3001L))
+        assertNull(dao.loadDownload("arcid_3001"))
     }
 
     @Test
@@ -199,13 +201,10 @@ class RoomMigrationTest {
     @Test
     fun `DownloadDao dirname CRUD`() = runBlocking {
         val dao = db.downloadDao()
-        val dirname = DownloadDirname().apply {
-            gid = 8001L
-            dirname = "/storage/gallery_8001"
-        }
+        val dirname = DownloadDirname(arcid = "arcid_8001", dirname = "/storage/gallery_8001")
         dao.insertDirname(dirname)
 
-        val result = dao.loadDirname(8001L)
+        val result = dao.loadDirname("arcid_8001")
         assertNotNull(result)
         assertEquals("/storage/gallery_8001", result!!.dirname)
     }
@@ -235,6 +234,7 @@ class RoomMigrationTest {
         for (i in 1..5) {
             dao.insertHistory(HistoryInfo().apply {
                 gid = (9000 + i).toLong()
+                token = "arcid_${9000 + i}"
                 time = now + i
                 mode = 0
             })

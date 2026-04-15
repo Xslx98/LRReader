@@ -43,8 +43,8 @@ open class GalleryInfoEntity : Parcelable {
     var gid: Long = 0
 
     @JvmField
-    @ColumnInfo(name = "TOKEN")
-    var token: String? = null
+    @ColumnInfo(name = "ARCID")
+    var token: String = ""
 
     @JvmField
     @ColumnInfo(name = "TITLE")
@@ -142,7 +142,7 @@ open class GalleryInfoEntity : Parcelable {
 
     protected constructor(`in`: Parcel) {
         gid = `in`.readLong()
-        token = `in`.readString()
+        token = `in`.readString() ?: ""
         title = `in`.readString()
         titleJpn = `in`.readString()
         thumb = `in`.readString()
