@@ -363,39 +363,38 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         // ratings (1-5), but we keep stepSize=0.5 for smooth drag feedback.
         // The value is ceiled to an integer on touch release.
         rating.setIsIndicator(false)
-        rating.stepSize = 0.5f
+        rating.stepSize = 1.0f
+        // Debounce: delay save until user finishes dragging. The handler
+        // is cleared on each change and only fires after 500ms of no change.
+        val ratingHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        var pendingRatingSave: Runnable? = null
         rating.onRatingBarChangeListener =
             RatingBar.OnRatingBarChangeListener { _, ratingValue, fromUser ->
-                if (!fromUser || mGalleryDetail == null) return@OnRatingBarChangeListener
-                // Live preview: show the emoji for the rounded value while dragging
-                ratingText.text = LRRArchive.buildRatingEmoji(
-                    kotlin.math.ceil(ratingValue).toInt()
-                )
+                if (!fromUser) return@OnRatingBarChangeListener
+                val gd = mGalleryDetail ?: return@OnRatingBarChangeListener
+                val intRating = ratingValue.toInt().coerceIn(1, 5)
+                // Live preview
+                ratingText.text = LRRArchive.buildRatingEmoji(intRating)
+
+                // Cancel any pending save and schedule a new one
+                pendingRatingSave?.let { ratingHandler.removeCallbacks(it) }
+                pendingRatingSave = Runnable {
+                    val finalRating = intRating.toFloat()
+                    rating.rating = finalRating
+                    gd.rating = finalRating
+                    gd.rated = true
+                    // Build fully-qualified tags (namespace:value)
+                    val currentTags = gd.tags?.flatMap { group ->
+                        val ns = group.groupName ?: "misc"
+                        (0 until group.size()).map { i ->
+                            val tag = group.getTagAt(i)
+                            if (ns == "misc") tag else "$ns:$tag"
+                        }
+                    }?.joinToString(", ") ?: ""
+                    RatingHelper.saveRatingToServer(gd.token, finalRating, currentTags)
+                }
+                ratingHandler.postDelayed(pendingRatingSave!!, 500)
             }
-        @android.annotation.SuppressLint("ClickableViewAccessibility")
-        rating.setOnTouchListener { _, event ->
-            if (event.action == android.view.MotionEvent.ACTION_UP) {
-                val gd = mGalleryDetail ?: return@setOnTouchListener false
-                val arcid = gd.token
-                // Ceil to integer: 0.5→1, 1.5→2, 4.5→5, etc.
-                val finalRating = kotlin.math.ceil(rating.rating).coerceIn(0f, 5f)
-                rating.rating = finalRating
-                gd.rating = finalRating
-                gd.rated = true
-                ratingText.text = LRRArchive.buildRatingEmoji(finalRating.toInt())
-                // Build fully-qualified tags (namespace:value) from the
-                // GalleryDetail.tags array to avoid a network GET
-                val currentTags = gd.tags?.flatMap { group ->
-                    val ns = group.groupName ?: "misc"
-                    (0 until group.size()).map { i ->
-                        val tag = group.getTagAt(i)
-                        if (ns == "misc") tag else "$ns:$tag"
-                    }
-                }?.joinToString(", ") ?: ""
-                RatingHelper.saveRatingToServer(arcid, finalRating, currentTags)
-            }
-            false // Don't consume — let RatingBar handle the touch
-        }
 
         mEditTagsBtn = ViewUtils.`$$`(tags, R.id.edit_tags_btn) as? android.widget.ImageButton
         mEditTagsBtn?.let { btn ->
