@@ -276,11 +276,12 @@ class SpiderDen(galleryInfo: GalleryInfo) {
 
             // Read from DB
             val downloadDbRepo = ServiceRegistry.dataModule.downloadDbRepository
-            var dirname = downloadDbRepo.getDownloadDirname(galleryInfo.gid)
+            val arcid = galleryInfo.token
+            var dirname = downloadDbRepo.getDownloadDirname(arcid)
             if (dirname != null) {
                 // Some dirname may be invalid in some version
                 dirname = FileUtils.sanitizeFilename(dirname)
-                downloadDbRepo.putDownloadDirname(galleryInfo.gid, dirname)
+                downloadDbRepo.putDownloadDirname(arcid, dirname)
             }
 
             // Find it
@@ -301,7 +302,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
                             }
                         }
                         if (dirname != null) {
-                            downloadDbRepo.putDownloadDirname(galleryInfo.gid, dirname)
+                            downloadDbRepo.putDownloadDirname(arcid, dirname)
                         }
                     }
                 } catch (e: Exception) {
@@ -314,7 +315,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
             // Create it
             if (dirname == null) {
                 dirname = FileUtils.sanitizeFilename("${galleryInfo.gid}-${LRRUtils.getSuitableTitle(galleryInfo)}")
-                downloadDbRepo.putDownloadDirname(galleryInfo.gid, dirname)
+                downloadDbRepo.putDownloadDirname(arcid, dirname)
             }
 
             return dir.subFile(dirname)

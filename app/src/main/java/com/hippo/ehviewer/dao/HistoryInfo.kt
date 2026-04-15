@@ -15,7 +15,7 @@ import com.hippo.ehviewer.client.data.GalleryInfoEntity
  */
 @Entity(
     tableName = "HISTORY",
-    primaryKeys = ["GID"],
+    primaryKeys = ["ARCID"],
     indices = [Index("SERVER_PROFILE_ID"), Index("TIME")]
 )
 class HistoryInfo : GalleryInfoEntity {
@@ -42,7 +42,7 @@ class HistoryInfo : GalleryInfoEntity {
         rating: Float, simpleLanguage: String?, mode: Int, time: Long
     ) {
         this.gid = gid
-        this.token = token
+        this.token = token ?: ""
         this.title = title
         this.titleJpn = titleJpn
         this.thumb = thumb
