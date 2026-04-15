@@ -63,10 +63,10 @@ class GalleryDetailViewModel : ViewModel() {
     /** Gallery ID, used when action is ACTION_GID_TOKEN. */
     val gid: StateFlow<Long> = _gid.asStateFlow()
 
-    private val _token = MutableStateFlow<String?>(null)
+    private val _arcid = MutableStateFlow<String?>(null)
 
-    /** Gallery token, used when action is ACTION_GID_TOKEN. */
-    val token: StateFlow<String?> = _token.asStateFlow()
+    /** Gallery arcid, used when action is ACTION_GID_TOKEN. */
+    val arcid: StateFlow<String?> = _arcid.asStateFlow()
 
     // -------------------------------------------------------------------------
     // Gallery data
@@ -108,8 +108,8 @@ class GalleryDetailViewModel : ViewModel() {
         _gid.value = gid
     }
 
-    fun setToken(token: String?) {
-        _token.value = token
+    fun setArcid(arcid: String?) {
+        _arcid.value = arcid
     }
 
     fun setGalleryInfo(info: GalleryInfo?) {
@@ -137,7 +137,7 @@ class GalleryDetailViewModel : ViewModel() {
      * across `GalleryDetailScene` navigations. The `getEffective*()` accessors
      * fall back as `detail > info > args`. Without an explicit reset, the
      * previously loaded `_galleryDetail` shadows the newly written
-     * `_galleryInfo` and every effective gid / token / category returns the
+     * `_galleryInfo` and every effective gid / arcid / category returns the
      * stale gallery — the new detail page renders the old gallery, downloads
      * its file, etc. The reader path is unaffected because it goes through an
      * Intent with the GalleryInfo embedded directly, bypassing the ViewModel.
@@ -150,7 +150,7 @@ class GalleryDetailViewModel : ViewModel() {
         detailPreloadJob = null
         _action.value = null
         _gid.value = 0L
-        _token.value = null
+        _arcid.value = null
         _galleryInfo.value = null
         _galleryDetail.value = null
         _downloadInfo.value = null
@@ -180,17 +180,17 @@ class GalleryDetailViewModel : ViewModel() {
     }
 
     /**
-     * Returns the effective token, preferring galleryDetail > galleryInfo > token argument.
+     * Returns the effective arcid, preferring galleryDetail > galleryInfo > arcid argument.
      */
-    fun getEffectiveToken(): String? {
+    fun getEffectiveArcid(): String? {
         val detail = _galleryDetail.value
-        if (detail != null) return detail.token
+        if (detail != null) return detail.arcid
 
         val info = _galleryInfo.value
-        if (info != null) return info.token
+        if (info != null) return info.arcid
 
         if (GalleryDetailScene.ACTION_GID_TOKEN == _action.value) {
-            return _token.value
+            return _arcid.value
         }
         return null
     }
@@ -364,7 +364,7 @@ class GalleryDetailViewModel : ViewModel() {
         categoryInfoSuffix: String,
         categoryCountSuffix: String
     ): Boolean {
-        val arcid = getEffectiveToken()
+        val arcid = getEffectiveArcid()
         val serverUrl = LRRAuthManager.getServerUrl()
         if (arcid.isNullOrEmpty() || serverUrl.isNullOrEmpty()) {
             return false

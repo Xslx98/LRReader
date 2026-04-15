@@ -113,10 +113,10 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         get() = viewModel.gid.value
         set(value) { viewModel.setGid(value) }
 
-    /** Shortcut delegating to [GalleryDetailViewModel.token]. */
-    private var mToken: String?
-        get() = viewModel.token.value
-        set(value) { viewModel.setToken(value) }
+    /** Shortcut delegating to [GalleryDetailViewModel.arcid]. */
+    private var mArcid: String?
+        get() = viewModel.arcid.value
+        set(value) { viewModel.setArcid(value) }
 
     /** Shortcut delegating to [GalleryDetailViewModel.galleryDetail]. */
     private var mGalleryDetail: GalleryDetail?
@@ -161,7 +161,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             }
         } else if (ACTION_GID_TOKEN == action) {
             mGid = args.getLong(KEY_GID)
-            mToken = args.getString(KEY_TOKEN)
+            mArcid = args.getString(KEY_ARCID)
         } else if (ACTION_DOWNLOAD_GALLERY_INFO == action) {
             try {
                 val di: DownloadInfo? = args.getParcelable(KEY_GALLERY_INFO)
@@ -216,7 +216,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mAction = savedInstanceState.getString(KEY_ACTION)
         mGalleryInfo = savedInstanceState.getParcelable(KEY_GALLERY_INFO)
         mGid = savedInstanceState.getLong(KEY_GID)
-        mToken = savedInstanceState.getString(KEY_TOKEN)
+        mArcid = savedInstanceState.getString(KEY_ARCID)
         mGalleryDetail = savedInstanceState.getParcelable(KEY_GALLERY_DETAIL)
         mRequestId = savedInstanceState.getInt(KEY_REQUEST_ID)
     }
@@ -231,8 +231,8 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             outState.putParcelable(KEY_GALLERY_INFO, mGalleryInfo)
         }
         outState.putLong(KEY_GID, mGid)
-        if (mToken != null) {
-            outState.putString(KEY_TOKEN, mToken)
+        if (mArcid != null) {
+            outState.putString(KEY_ARCID, mArcid)
         }
         if (mGalleryDetail != null) {
             outState.putParcelable(KEY_GALLERY_DETAIL, mGalleryDetail)
@@ -378,7 +378,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 || event.action == android.view.MotionEvent.ACTION_CANCEL
             ) {
                 val gd = mGalleryDetail ?: return@setOnTouchListener false
-                val arcid = gd.token ?: return@setOnTouchListener false
+                val arcid = gd.arcid ?: return@setOnTouchListener false
                 // Ceil to integer: 0.5→1, 1.5→2, 4.5→5, etc.
                 val finalRating = kotlin.math.ceil(rating.rating).coerceIn(0f, 5f)
                 rating.rating = finalRating
@@ -398,7 +398,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 val gd = mGalleryDetail
                 if (gd != null) {
                     TagEditDialog.show(
-                        activity2, gd.token,
+                        activity2, gd.arcid,
                         gd.tags
                     ) {
                         if (mState != STATE_REFRESH && mState != STATE_REFRESH_HEADER) {
@@ -715,7 +715,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         const val KEY_GALLERY_INFO = "gallery_info"
         const val KEY_GID = "gid"
-        const val KEY_TOKEN = "token"
+        const val KEY_ARCID = "token"
         const val KEY_PAGE = "page"
         const val KEY_RATING_RESULT = "rating_result"
 

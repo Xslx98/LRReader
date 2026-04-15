@@ -337,10 +337,10 @@ class DownloadRepositoryTest {
     // Helpers
     // ═══════════════════════════════════════════════════════════
 
-    private fun makeInfo(gid: Long, token: String, title: String): DownloadInfo {
+    private fun makeInfo(gid: Long, arcid: String, title: String): DownloadInfo {
         return DownloadInfo().apply {
             this.gid = gid
-            this.token = token
+            this.arcid = arcid
             this.title = title
             this.state = DownloadInfo.STATE_NONE
             this.time = System.currentTimeMillis()

@@ -37,12 +37,12 @@ class HistoryInfo : GalleryInfoEntity {
 
     @Ignore
     constructor(
-        gid: Long, token: String?, title: String?, titleJpn: String?,
+        gid: Long, arcid: String?, title: String?, titleJpn: String?,
         thumb: String?, category: Int, posted: String?, uploader: String?,
         rating: Float, simpleLanguage: String?, mode: Int, time: Long
     ) {
         this.gid = gid
-        this.token = token
+        this.arcid = arcid
         this.title = title
         this.titleJpn = titleJpn
         this.thumb = thumb
@@ -58,7 +58,7 @@ class HistoryInfo : GalleryInfoEntity {
     @Ignore
     constructor(galleryInfo: GalleryInfo) {
         gid = galleryInfo.gid
-        token = galleryInfo.token
+        arcid = galleryInfo.arcid
         title = galleryInfo.title
         titleJpn = galleryInfo.titleJpn
         thumb = galleryInfo.thumb

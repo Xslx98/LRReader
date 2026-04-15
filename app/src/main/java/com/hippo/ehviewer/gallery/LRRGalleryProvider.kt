@@ -50,7 +50,7 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
     )
 
     private val context: Context = context.applicationContext
-    private val arcId: String = galleryInfo.token ?: "" // arcid stored in token by toGalleryInfo()
+    private val arcId: String = galleryInfo.arcid ?: "" // arcid from LRRArchive
     private val serverUrl: String = LRRAuthManager.getServerUrl() ?: ""
 
     // Atomic provider state -- replaces individual @Volatile fields for pagePaths/pageCount/stopped
