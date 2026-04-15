@@ -374,9 +374,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             }
         @android.annotation.SuppressLint("ClickableViewAccessibility")
         rating.setOnTouchListener { _, event ->
-            if (event.action == android.view.MotionEvent.ACTION_UP
-                || event.action == android.view.MotionEvent.ACTION_CANCEL
-            ) {
+            if (event.action == android.view.MotionEvent.ACTION_UP) {
                 val gd = mGalleryDetail ?: return@setOnTouchListener false
                 val arcid = gd.token
                 // Ceil to integer: 0.5→1, 1.5→2, 4.5→5, etc.
@@ -385,8 +383,15 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 gd.rating = finalRating
                 gd.rated = true
                 ratingText.text = LRRArchive.buildRatingEmoji(finalRating.toInt())
-                // Build tags from the already-loaded detail to avoid a network GET
-                val currentTags = gd.simpleTags?.joinToString(", ") ?: ""
+                // Build fully-qualified tags (namespace:value) from the
+                // GalleryDetail.tags array to avoid a network GET
+                val currentTags = gd.tags?.flatMap { group ->
+                    val ns = group.groupName ?: "misc"
+                    (0 until group.size()).map { i ->
+                        val tag = group.getTagAt(i)
+                        if (ns == "misc") tag else "$ns:$tag"
+                    }
+                }?.joinToString(", ") ?: ""
                 RatingHelper.saveRatingToServer(arcid, finalRating, currentTags, null)
             }
             false // Don't consume — let RatingBar handle the touch
