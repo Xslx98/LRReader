@@ -80,6 +80,14 @@ class DownloadDbRepository(
         dao.insert(downloadInfo)
     }
 
+    /**
+     * Update the rating for a download identified by [arcid].
+     * Triggers Room Flow invalidation so observers see the change.
+     */
+    suspend fun updateRating(arcid: String, rating: Float) {
+        dao.updateRating(arcid, rating)
+    }
+
     suspend fun removeDownloadInfo(gid: Long) {
         dao.deleteDownloadByGid(gid)
     }
