@@ -378,14 +378,16 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 || event.action == android.view.MotionEvent.ACTION_CANCEL
             ) {
                 val gd = mGalleryDetail ?: return@setOnTouchListener false
-                val arcid = gd.token ?: return@setOnTouchListener false
+                val arcid = gd.token
                 // Ceil to integer: 0.5→1, 1.5→2, 4.5→5, etc.
                 val finalRating = kotlin.math.ceil(rating.rating).coerceIn(0f, 5f)
                 rating.rating = finalRating
                 gd.rating = finalRating
                 gd.rated = true
                 ratingText.text = LRRArchive.buildRatingEmoji(finalRating.toInt())
-                RatingHelper.saveRatingToServer(arcid, finalRating, null)
+                // Build tags from the already-loaded detail to avoid a network GET
+                val currentTags = gd.simpleTags?.joinToString(", ") ?: ""
+                RatingHelper.saveRatingToServer(arcid, finalRating, currentTags, null)
             }
             false // Don't consume — let RatingBar handle the touch
         }
