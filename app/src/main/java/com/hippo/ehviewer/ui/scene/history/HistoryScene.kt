@@ -251,12 +251,11 @@ class HistoryScene : ToolbarScene(),
     }
 
     override fun onItemClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean {
-        val list = viewModel.historyList.value
-        if (list.isEmpty() || position >= list.size) return false
+        val gi = viewModel.getRawHistoryInfo(position) ?: return false
 
         val args = Bundle()
         args.putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_GALLERY_INFO)
-        args.putParcelable(GalleryDetailScene.KEY_GALLERY_INFO, list[position])
+        args.putParcelable(GalleryDetailScene.KEY_GALLERY_INFO, gi)
         val announcer = Announcer(GalleryDetailScene::class.java).setArgs(args)
         val thumb = view.findViewById<View>(R.id.thumb)
         if (thumb != null) {
@@ -269,10 +268,8 @@ class HistoryScene : ToolbarScene(),
     override fun onItemLongClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean {
         val context = ehContext ?: return false
         val activity = activity2 ?: return false
-        val list = viewModel.historyList.value
-        if (list.isEmpty() || position >= list.size) return false
+        val gi = viewModel.getRawHistoryInfo(position) ?: return false
 
-        val gi = list[position]
         AlertDialog.Builder(context)
             .setTitle(LRRUtils.getSuitableTitle(gi))
             .setItems(R.array.gallery_list_menu_entries) { _, which ->
@@ -322,7 +319,7 @@ class HistoryScene : ToolbarScene(),
 
         override fun getItemId(position: Int): Long {
             val list = viewModel.historyList.value
-            return if (position < list.size) list[position].gid else super.getItemId(position)
+            return if (position < list.size) list[position].arcid.hashCode().toLong() else super.getItemId(position)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HistoryHolder {
@@ -340,23 +337,23 @@ class HistoryScene : ToolbarScene(),
             val list = viewModel.historyList.value
             if (position >= list.size) return
 
-            val gi = list[position]
-            holder.thumb.load(LRRCacheKeyFactory.getThumbKey(gi.gid), gi.thumb)
-            holder.title.text = LRRUtils.getSuitableTitle(gi)
-            holder.uploader.text = gi.uploader
-            holder.rating.setRating(gi.rating)
+            val archive = list[position]
+            val gid = com.lanraragi.reader.client.api.arcidToGid(archive.arcid)
+            holder.thumb.load(LRRCacheKeyFactory.getThumbKey(gid), archive.thumbnailUrl)
+            holder.title.text = archive.title
+            holder.uploader.text = null
+            holder.rating.setRating(archive.rating)
             val category = holder.category
-            val newCategoryText = LRRUtils.getCategory(gi.category)
+            val newCategoryText = LRRUtils.getCategory(-1)
             if (newCategoryText != category.text.toString()) {
                 category.text = newCategoryText
-                category.setBackgroundColor(LRRUtils.getCategoryColor(gi.category))
+                category.setBackgroundColor(LRRUtils.getCategoryColor(-1))
             }
-            holder.posted.text = gi.posted
-            holder.simpleLanguage.text = gi.simpleLanguage
+            holder.posted.text = null
+            holder.simpleLanguage.text = null
 
             // Update transition name
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                val gid = gi.gid
                 ViewCompat.setTransitionName(
                     holder.thumb,
                     TransitionNameFactory.getThumbTransitionName(gid)
@@ -390,10 +387,10 @@ class HistoryScene : ToolbarScene(),
 
         override fun onPerformAction() {
             super.onPerformAction()
-            val list = viewModel.historyList.value
-            if (mAdapter == null || mPosition >= list.size) return
+            if (mAdapter == null) return
+            val info = viewModel.getRawHistoryInfo(mPosition) ?: return
 
-            viewModel.deleteHistoryItem(list[mPosition])
+            viewModel.deleteHistoryItem(info)
         }
     }
 
