@@ -8,6 +8,7 @@ import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.ui.CommonOperations
+import com.hippo.ehviewer.util.galleryInfoFromJson
 import com.hippo.unifile.UniFile
 import com.hippo.util.ExceptionUtils
 
@@ -191,7 +192,7 @@ object DownloadSettings {
             return null
         }
         return try {
-            GalleryInfo.galleryInfoFromJson(org.json.JSONObject(s))
+            galleryInfoFromJson(org.json.JSONObject(s))
         } catch (e: org.json.JSONException) {
             null
         }
