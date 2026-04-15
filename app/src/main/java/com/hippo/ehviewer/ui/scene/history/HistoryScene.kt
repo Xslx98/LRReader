@@ -184,6 +184,8 @@ class HistoryScene : ToolbarScene(),
             mLayoutManager.setColumnSize(columnWidth)
             mRecyclerView.requestLayout()
         }
+        // Reload history to pick up rating changes made in detail page
+        viewModel.loadHistory()
     }
 
     override fun onDestroyView() {

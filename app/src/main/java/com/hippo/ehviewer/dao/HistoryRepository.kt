@@ -50,4 +50,11 @@ class HistoryRepository(private val dao: BrowsingRoomDao) {
     suspend fun clearHistory() {
         dao.deleteAllHistory()
     }
+
+    /**
+     * Update the rating for a history entry identified by [arcid].
+     */
+    suspend fun updateRating(arcid: String, rating: Float) {
+        dao.updateHistoryRating(arcid, rating)
+    }
 }
