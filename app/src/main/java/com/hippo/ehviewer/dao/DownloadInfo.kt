@@ -8,6 +8,7 @@ import androidx.room.Ignore
 import androidx.room.Index
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.GalleryInfoEntity
+import com.hippo.ehviewer.util.galleryInfoFromJson
 import android.util.Log
 import org.json.JSONException
 import org.json.JSONObject
