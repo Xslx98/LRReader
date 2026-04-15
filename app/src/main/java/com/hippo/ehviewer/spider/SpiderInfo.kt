@@ -284,17 +284,8 @@ class SpiderInfo {
         private fun readPreviews(info: GalleryDetail, index: Int, spiderInfo: SpiderInfo) {
             spiderInfo.pages = info.SpiderInfoPages
             spiderInfo.previewPages = info.SpiderInfoPreviewPages
-            val previewSet = info.SpiderInfoPreviewSet
 
-            if (previewSet != null && previewSet.size() > 0) {
-                spiderInfo.previewPerPage = if (index == 0) {
-                    previewSet.size()
-                } else {
-                    previewSet.getPosition(0) / index
-                }
-            }
-
-            // LANraragi: E-Hentai page URL parsing removed (pTokenMap not populated)
+            // LANraragi: E-Hentai preview set + page URL parsing removed (not used)
         }
     }
 }

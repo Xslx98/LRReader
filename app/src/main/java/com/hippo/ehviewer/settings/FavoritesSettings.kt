@@ -1,7 +1,6 @@
 package com.hippo.ehviewer.settings
 
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.client.data.FavListUrlBuilder
 import com.hippo.lib.yorozuya.AssertUtils
 
 /**
@@ -79,8 +78,10 @@ object FavoritesSettings {
     // --- Recent Fav Cat ---
     private const val KEY_RECENT_FAV_CAT = "recent_fav_cat"
 
+    private const val FAV_CAT_ALL = -1
+
     @JvmStatic
-    fun getRecentFavCat(): Int = Settings.getInt(KEY_RECENT_FAV_CAT, FavListUrlBuilder.FAV_CAT_ALL)
+    fun getRecentFavCat(): Int = Settings.getInt(KEY_RECENT_FAV_CAT, FAV_CAT_ALL)
 
     @JvmStatic
     fun putRecentFavCat(value: Int) = Settings.putInt(KEY_RECENT_FAV_CAT, value)
