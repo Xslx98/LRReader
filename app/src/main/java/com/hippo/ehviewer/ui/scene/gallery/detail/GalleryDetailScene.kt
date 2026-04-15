@@ -604,7 +604,16 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         try {
             val gd = mGalleryDetail ?: return
             val binder = mHeaderBinder ?: return
-            binder.bindViewSecond(gd, mGalleryInfo, getEHContext(), layoutInflater2, this, this)
+            // Prefer ArchiveDetail for display fields when available
+            val ad = viewModel.archiveDetail.value
+            if (ad != null) {
+                binder.bindFromArchiveDetail(ad, getEHContext(), layoutInflater2, this, this)
+            } else {
+                binder.bindViewSecond(gd, mGalleryInfo, getEHContext(), layoutInflater2, this, this)
+            }
+            // Favorites + archiver progress still use GalleryDetail (legacy operations)
+            binder.updateFavoriteDrawable(gd)
+            binder.bindArchiverProgress(gd)
             mActionHandler?.updateDownloadText()
         } catch (e: Exception) {
             android.util.Log.e("GalleryDetailScene", "bindViewSecond crashed", e)
