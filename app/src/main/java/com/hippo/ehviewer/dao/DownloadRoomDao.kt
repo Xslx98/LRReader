@@ -38,6 +38,9 @@ interface DownloadRoomDao {
     @Query("SELECT * FROM DOWNLOADS WHERE GID = :gid")
     suspend fun loadDownloadByGid(gid: Long): DownloadInfo?
 
+    @Query("UPDATE DOWNLOADS SET RATING = :rating WHERE ARCID = :arcid")
+    suspend fun updateRating(arcid: String, rating: Float)
+
     @Query("DELETE FROM DOWNLOADS WHERE ARCID = :arcid")
     suspend fun deleteDownloadByKey(arcid: String)
 
