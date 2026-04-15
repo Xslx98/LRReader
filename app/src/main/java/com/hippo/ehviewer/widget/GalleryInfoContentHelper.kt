@@ -16,86 +16,37 @@
 
 package com.hippo.ehviewer.widget
 
-import android.annotation.SuppressLint
-import android.os.Bundle
 import android.os.Parcelable
-import com.hippo.ehviewer.FavouriteStatusRouter
-import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.data.GalleryInfoUi
-import com.hippo.lib.yorozuya.IntIdGenerator
 import com.hippo.widget.ContentLayout
+import com.lanraragi.reader.domain.Archive
 
-@SuppressLint("UseSparseArrays")
-abstract class GalleryInfoContentHelper : ContentLayout.ContentHelper<GalleryInfoUi>() {
+abstract class GalleryInfoContentHelper : ContentLayout.ContentHelper<Archive>() {
 
-    private var map: MutableMap<Long, GalleryInfoUi> = HashMap()
-    private val listener: FavouriteStatusRouter.Listener
-
-    init {
-        listener = FavouriteStatusRouter.Listener { gid, slot ->
-            val info = map[gid]
-            if (info != null) {
-                info.favoriteSlot = slot
-            }
-        }
-        ServiceRegistry.dataModule.favouriteStatusRouter.addListener(listener)
+    override fun onAddData(data: Archive) {
+        // No-op: Archive is a value type, no map tracking needed
     }
 
-    fun destroy() {
-        ServiceRegistry.dataModule.favouriteStatusRouter.removeListener(listener)
+    override fun onAddData(data: List<Archive>) {
+        // No-op
     }
 
-    override fun onAddData(data: GalleryInfoUi) {
-        map[data.gid] = data
+    override fun onRemoveData(data: Archive) {
+        // No-op
     }
 
-    override fun onAddData(data: List<GalleryInfoUi>) {
-        for (info in data) {
-            map[info.gid] = info
-        }
-    }
-
-    override fun onRemoveData(data: GalleryInfoUi) {
-        map.remove(data.gid)
-    }
-
-    override fun onRemoveData(data: List<GalleryInfoUi>) {
-        for (info in data) {
-            map.remove(info.gid)
-        }
+    override fun onRemoveData(data: List<Archive>) {
+        // No-op
     }
 
     override fun onClearData() {
-        map.clear()
+        // No-op
     }
 
     override fun saveInstanceState(superState: Parcelable): Parcelable {
-        val bundle = super.saveInstanceState(superState) as Bundle
-
-        // KNOWN-ISSUE (P2): inherits ContentHelper's global-state design for data persistence
-        val router = ServiceRegistry.dataModule.favouriteStatusRouter
-        val id = router.saveDataMap(map)
-        bundle.putInt(KEY_DATA_MAP, id)
-
-        return bundle
+        return super.saveInstanceState(superState)
     }
 
     override fun restoreInstanceState(state: Parcelable): Parcelable {
-        val bundle = state as Bundle
-
-        val id = bundle.getInt(KEY_DATA_MAP, IntIdGenerator.INVALID_ID)
-        if (id != IntIdGenerator.INVALID_ID) {
-            val router = ServiceRegistry.dataModule.favouriteStatusRouter
-            val restoredMap = router.restoreDataMap(id)
-            if (restoredMap != null) {
-                this.map = restoredMap
-            }
-        }
-
         return super.restoreInstanceState(state)
-    }
-
-    companion object {
-        private const val KEY_DATA_MAP = "data_map"
     }
 }
