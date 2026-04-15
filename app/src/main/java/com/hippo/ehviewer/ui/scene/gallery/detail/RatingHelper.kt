@@ -41,16 +41,22 @@ object RatingHelper {
                 val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
                 val client = ServiceRegistry.networkModule.okHttpClient
 
-                val newRatingTag = "rating:" + LRRArchive.buildRatingEmoji(rating.roundToInt())
+                // Strip existing rating tag
                 var cleaned = currentTags.replace(Regex(",\\s*rating:[^,]*"), "")
                     .replace(Regex("rating:[^,]*\\s*,?\\s*"), "")
                     .trim()
                 cleaned = cleaned.replace(Regex("^,\\s*|,\\s*$"), "").trim()
-                val updatedTags = if (cleaned.isEmpty()) newRatingTag else "$cleaned, $newRatingTag"
 
-                // Direct suspend call — no runSuspend/runBlocking wrapper
+                // rating <= 0 means "unrated" — just remove the tag
+                val updatedTags = if (rating > 0) {
+                    val newRatingTag = "rating:" + LRRArchive.buildRatingEmoji(rating.roundToInt())
+                    if (cleaned.isEmpty()) newRatingTag else "$cleaned, $newRatingTag"
+                } else {
+                    cleaned
+                }
+
                 LRRArchiveApi.updateArchiveMetadata(client, serverUrl, arcid, updatedTags)
-                Log.d(TAG, "Rating saved to server: $newRatingTag for $arcid")
+                Log.d(TAG, "Rating saved to server: ${if (rating > 0) "rating:${LRRArchive.buildRatingEmoji(rating.roundToInt())}" else "(removed)"} for $arcid")
             } catch (e: Exception) {
                 Log.e(TAG, "Server rating update failed for $arcid", e)
             }
@@ -58,14 +64,16 @@ object RatingHelper {
     }
 
     private suspend fun syncRatingToLocalCaches(arcid: String, rating: Float) {
+        // Room stores 0 for "unrated", API uses -1. Normalize.
+        val dbRating = if (rating < 0) 0f else rating
         val dataModule = ServiceRegistry.dataModule
         try {
-            dataModule.downloadDbRepository.updateRating(arcid, rating)
+            dataModule.downloadDbRepository.updateRating(arcid, dbRating)
         } catch (e: Exception) {
             Log.w(TAG, "Failed to sync rating to DOWNLOADS for $arcid", e)
         }
         try {
-            dataModule.historyRepository.updateRating(arcid, rating)
+            dataModule.historyRepository.updateRating(arcid, dbRating)
         } catch (e: Exception) {
             Log.w(TAG, "Failed to sync rating to HISTORY for $arcid", e)
         }
