@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.DiffUtil
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.HistoryInfo
 import com.hippo.ehviewer.dao.HistoryRepository
+import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,10 +34,17 @@ class HistoryViewModel : ViewModel() {
     // History list state
     // -------------------------------------------------------------------------
 
-    private val _historyList = MutableStateFlow<List<HistoryInfo>>(emptyList())
+    private val _historyList = MutableStateFlow<List<Archive>>(emptyList())
 
-    /** The current history list. The Scene's adapter reads from this. */
-    val historyList: StateFlow<List<HistoryInfo>> = _historyList.asStateFlow()
+    /** The current history list as [Archive] domain models for display. */
+    val historyList: StateFlow<List<Archive>> = _historyList.asStateFlow()
+
+    /**
+     * Raw [HistoryInfo] entities from the last DB load, kept in parallel with
+     * [_historyList] for operations that need the Room entity (delete, navigate).
+     * Same ordering and indices as [_historyList].
+     */
+    private var rawHistoryList: List<HistoryInfo> = emptyList()
 
     /**
      * Snapshot of the list last dispatched to the adapter. Used to compute
@@ -44,7 +52,7 @@ class HistoryViewModel : ViewModel() {
      * docs/diffutil-root-cause-analysis.md for why we are careful about
      * snapshot ownership.
      */
-    private var lastSnapshot: List<HistoryInfo> = emptyList()
+    private var lastSnapshot: List<Archive> = emptyList()
 
     // -------------------------------------------------------------------------
     // One-shot events
@@ -55,7 +63,7 @@ class HistoryViewModel : ViewModel() {
      * its adapter. Using a data class so the Scene can apply both atomically.
      */
     data class ListUpdate(
-        val newList: List<HistoryInfo>,
+        val newList: List<Archive>,
         val diffResult: DiffUtil.DiffResult
     )
 
@@ -81,9 +89,10 @@ class HistoryViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val lazyList = withContext(Dispatchers.IO) { historyRepository.getHistoryLazyList() }
-                val newList = ArrayList(lazyList)
+                rawHistoryList = ArrayList(lazyList)
+                val newList = ArrayList(lazyList.map { it.toArchive() })
                 val diff = DiffUtil.calculateDiff(
-                    HistoryInfoDiffCallback(lastSnapshot, newList)
+                    ArchiveDiffCallback(lastSnapshot, newList)
                 )
                 _historyList.value = newList
                 lastSnapshot = newList
@@ -102,6 +111,7 @@ class HistoryViewModel : ViewModel() {
     fun resetSnapshot() {
         lastSnapshot = emptyList()
         _historyList.value = emptyList()
+        rawHistoryList = emptyList()
     }
 
     // -------------------------------------------------------------------------
@@ -123,6 +133,14 @@ class HistoryViewModel : ViewModel() {
     }
 
     /**
+     * Returns the raw [HistoryInfo] at the given position (same index as [historyList]).
+     * Used by the Scene for operations that require the Room entity (IPC, delete, download).
+     */
+    fun getRawHistoryInfo(position: Int): HistoryInfo? {
+        return rawHistoryList.getOrNull(position)
+    }
+
+    /**
      * Clears all history entries, then reloads the list.
      */
     fun clearAllHistory() {
@@ -141,36 +159,53 @@ class HistoryViewModel : ViewModel() {
     }
 
     // -------------------------------------------------------------------------
+    // Conversion
+    // -------------------------------------------------------------------------
+
+    private fun HistoryInfo.toArchive(): Archive {
+        return Archive(
+            arcid = token ?: "",
+            title = title ?: "",
+            tags = emptyMap(),
+            pagecount = pages,
+            progress = progress,
+            extension = "",
+            filename = "",
+            thumbnailUrl = thumb ?: "",
+            rating = rating,
+            isnew = false,
+            lastreadtime = time,
+            summary = null,
+            serverProfileId = serverProfileId,
+        )
+    }
+
+    // -------------------------------------------------------------------------
     // DiffUtil callback
     // -------------------------------------------------------------------------
 
     /**
-     * DiffUtil callback for HistoryInfo lists. Identity is `gid` (Room PK).
-     * Content compares all fields rendered in onBindViewHolder so a metadata
-     * refresh repaints the affected rows.
+     * DiffUtil callback for [Archive] lists. Identity is [Archive.arcid].
+     * Content compares fields rendered in onBindViewHolder.
      */
-    private class HistoryInfoDiffCallback(
-        private val oldList: List<HistoryInfo>,
-        private val newList: List<HistoryInfo>
+    private class ArchiveDiffCallback(
+        private val oldList: List<Archive>,
+        private val newList: List<Archive>
     ) : DiffUtil.Callback() {
 
         override fun getOldListSize(): Int = oldList.size
         override fun getNewListSize(): Int = newList.size
 
         override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-            return oldList[oldItemPosition].gid == newList[newItemPosition].gid
+            return oldList[oldItemPosition].arcid == newList[newItemPosition].arcid
         }
 
         override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
             val o = oldList[oldItemPosition]
             val n = newList[newItemPosition]
             return o.title == n.title &&
-                o.uploader == n.uploader &&
                 o.rating == n.rating &&
-                o.category == n.category &&
-                o.posted == n.posted &&
-                o.simpleLanguage == n.simpleLanguage &&
-                o.thumb == n.thumb
+                o.thumbnailUrl == n.thumbnailUrl
         }
     }
 }
