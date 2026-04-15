@@ -139,7 +139,7 @@ class RoomMigrationTest {
         val dao = db.downloadDao()
         val info = DownloadInfo().apply {
             gid = 1001L
-            token = "test_token"
+            arcid = "test_token"
             title = "Test Gallery"
             state = DownloadInfo.STATE_NONE
             time = System.currentTimeMillis()
@@ -148,7 +148,7 @@ class RoomMigrationTest {
 
         val result = dao.loadDownload(1001L)
         assertNotNull(result)
-        assertEquals("test_token", result!!.token)
+        assertEquals("test_token", result!!.arcid)
         assertEquals("Test Gallery", result.title)
     }
 
@@ -217,7 +217,7 @@ class RoomMigrationTest {
         val dao = db.browsingDao()
         val history = HistoryInfo().apply {
             gid = 4001L
-            token = "hist_token"
+            arcid = "hist_token"
             title = "History Gallery"
             time = System.currentTimeMillis()
             mode = 0
@@ -251,7 +251,7 @@ class RoomMigrationTest {
         val dao = db.browsingDao()
         val fav = LocalFavoriteInfo().apply {
             gid = 5001L
-            token = "fav_token"
+            arcid = "fav_token"
             title = "Favorite Gallery"
             time = System.currentTimeMillis()
         }

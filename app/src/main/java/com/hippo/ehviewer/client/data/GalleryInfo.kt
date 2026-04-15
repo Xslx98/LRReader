@@ -46,7 +46,7 @@ open class GalleryInfoEntity : Parcelable {
 
     @JvmField
     @ColumnInfo(name = "TOKEN")
-    var token: String? = null
+    var arcid: String? = null
 
     @JvmField
     @ColumnInfo(name = "TITLE")
@@ -144,7 +144,7 @@ open class GalleryInfoEntity : Parcelable {
 
     protected constructor(`in`: Parcel) {
         gid = `in`.readLong()
-        token = `in`.readString()
+        arcid = `in`.readString()
         title = `in`.readString()
         titleJpn = `in`.readString()
         thumb = `in`.readString()
@@ -170,7 +170,7 @@ open class GalleryInfoEntity : Parcelable {
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
         dest.writeLong(gid)
-        dest.writeString(token)
+        dest.writeString(arcid)
         dest.writeString(title)
         dest.writeString(titleJpn)
         dest.writeString(thumb)
@@ -229,7 +229,7 @@ open class GalleryInfoEntity : Parcelable {
 
     fun toCSV(): String {
         return gid.toString() + "," +
-            token + "," +
+            arcid + "," +
             title + "," +
             titleJpn + "," +
             thumb + "," +
@@ -254,7 +254,7 @@ open class GalleryInfoEntity : Parcelable {
         try {
             val jsonObject = JSONObject()
             jsonObject.put("gid", gid)
-            jsonObject.put("token", token)
+            jsonObject.put("token", arcid)
             jsonObject.put("title", title)
             jsonObject.put("titleJpn", titleJpn)
             jsonObject.put("thumb", thumb)
@@ -296,7 +296,7 @@ open class GalleryInfoEntity : Parcelable {
     fun getDownloadInfo(info: DownloadInfo?): DownloadInfo {
         val i = DownloadInfo()
         i.gid = gid
-        i.token = token
+        i.arcid = arcid
         i.title = title
         i.titleJpn = titleJpn
         i.thumb = thumb
@@ -415,7 +415,7 @@ open class GalleryInfoEntity : Parcelable {
             val gi = GalleryInfoEntity()
             try {
                 gi.gid = values[0].toLong()
-                gi.token = values[1]
+                gi.arcid = values[1]
                 gi.title = values[2]
                 gi.titleJpn = values[3]
                 gi.thumb = values[4]
@@ -484,7 +484,7 @@ open class GalleryInfoEntity : Parcelable {
             galleryInfo.thumbWidth = obj.optInt("thumbWidth", 0)
             galleryInfo.title = obj.optString("title", null)
             galleryInfo.titleJpn = obj.optString("titleJpn", null)
-            galleryInfo.token = obj.optString("token", null)
+            galleryInfo.arcid = obj.optString("token", null)
             galleryInfo.uploader = obj.optString("uploader", null)
             galleryInfo.serverProfileId = obj.optLong("serverProfileId", 0)
             return galleryInfo

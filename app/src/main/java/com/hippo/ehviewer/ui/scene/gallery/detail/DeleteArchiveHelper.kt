@@ -32,7 +32,7 @@ object DeleteArchiveHelper {
         if (activity == null || galleryInfo == null) return
 
         val title = galleryInfo.title ?: "Unknown"
-        val arcid = galleryInfo.token
+        val arcid = galleryInfo.arcid
 
         val dialog = AlertDialog.Builder(activity)
             .setTitle(R.string.lrr_delete_confirm_title)
