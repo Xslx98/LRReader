@@ -4,14 +4,12 @@ import android.os.Parcel
 import android.os.Parcelable
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
-import com.hippo.ehviewer.client.data.GalleryInfoUi
 import com.hippo.ehviewer.client.data.GalleryTagGroup
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.arcidToGid
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.domain.TagGroup
-import com.hippo.ehviewer.mapper.toEntity
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -37,14 +35,14 @@ class LRRArchive() : Parcelable {
     // ----- Bridge to GalleryInfo -----
 
     /**
-     * Convert this LRRArchive into a [GalleryInfoUi] for the UI/adapter layer.
+     * Convert to a persistence-layer [GalleryInfo] (aka [GalleryInfoEntity]).
+     * Used when the caller needs a Room entity (e.g. DB writes, Parcelable IPC).
      */
-    fun toGalleryInfoUi(): GalleryInfoUi {
-        val gi = GalleryInfoUi()
+    fun toGalleryInfo(): GalleryInfo {
+        val gi = GalleryInfo()
         gi.gid = arcidToGid(arcid)
         gi.token = arcid
         gi.title = title
-        gi.titleJpn = null
         gi.pages = pagecount
         gi.progress = progress
 
@@ -59,23 +57,13 @@ class LRRArchive() : Parcelable {
         }
 
         gi.category = -1
-
         val parsedRating = parseRatingFromTags(tags)
         gi.rating = parsedRating
         gi.rated = parsedRating > 0
-
-        gi.uploader = null
-        gi.posted = null
         gi.serverProfileId = LRRAuthManager.getActiveProfileId()
 
         return gi
     }
-
-    /**
-     * Backward-compat bridge: converts to [GalleryInfoEntity] via [toGalleryInfoUi].
-     * Use this when the caller needs a persistence-layer entity (e.g. DB writes).
-     */
-    fun toGalleryInfo(): GalleryInfo = toGalleryInfoUi().toEntity()
 
     /**
      * Convert this LRRArchive into a GalleryDetail for the detail scene.
