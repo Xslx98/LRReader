@@ -27,14 +27,14 @@ import java.util.regex.Pattern
 
 /**
  * Backward-compatibility alias. New code should use [GalleryInfoEntity] (for Room /
- * persistence) or [GalleryInfoUi] (for UI display).
+ * persistence) or [Archive] (for UI display).
  */
 typealias GalleryInfo = GalleryInfoEntity
 
 /**
  * Room entity base class. Holds the columns persisted to the DOWNLOADS / HISTORY /
  * LOCAL_FAVORITES tables via inheritance, plus transient (`@Ignore`) fields used
- * during API ↔ DB bridging. For pure UI display, prefer [GalleryInfoUi].
+ * during API ↔ DB bridging. For pure UI display, prefer [Archive].
  */
 open class GalleryInfoEntity : Parcelable {
 
