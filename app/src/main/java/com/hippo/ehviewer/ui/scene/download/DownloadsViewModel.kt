@@ -419,9 +419,9 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
         downloadManager.deleteDownload(galleryInfo.gid)
         DownloadSettings.putRemoveImageFiles(deleteFiles)
         if (deleteFiles) {
-            val gid = galleryInfo.gid
+            val arcid = galleryInfo.token
             ServiceRegistry.coroutineModule.ioScope.launch {
-                ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(gid)
+                ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(arcid)
                 val file = SpiderDen.getGalleryDownloadDir(galleryInfo)
                 file?.delete()
             }
@@ -444,7 +444,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
             val infos = ArrayList(downloadInfoList)
             ServiceRegistry.coroutineModule.ioScope.launch {
                 for (info in infos) {
-                    ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(info.gid)
+                    ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(info.token)
                     val file = SpiderDen.getGalleryDownloadDir(info)
                     file?.delete()
                 }
