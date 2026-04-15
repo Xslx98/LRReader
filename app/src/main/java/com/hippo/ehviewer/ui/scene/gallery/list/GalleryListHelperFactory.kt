@@ -12,7 +12,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.hippo.drawable.AddDeleteDrawable
 import com.hippo.drawable.DrawerArrowDrawable
 import com.hippo.ehviewer.client.EhTagDatabase
-import com.hippo.ehviewer.client.data.GalleryInfoUi
+import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.ui.scene.BaseScene
@@ -82,7 +82,7 @@ internal object GalleryListHelperFactory {
             override fun getString(resId: Int): String = scene.getString(resId)
             override fun getString(resId: Int, vararg formatArgs: Any): String =
                 scene.getString(resId, *formatArgs)
-            override fun buildChipGroup(gi: GalleryInfoUi?, chipGroup: ChipGroup): ChipGroup =
+            override fun buildChipGroup(gi: Archive?, chipGroup: ChipGroup): ChipGroup =
                 scene.tagChipHelper?.buildChipGroup(gi, chipGroup) ?: chipGroup
         })
 
@@ -102,9 +102,9 @@ internal object GalleryListHelperFactory {
             }
             override fun onUpdateUrlBuilder() = scene.onUpdateUrlBuilder()
             override fun setState(state: Int) { scene.stateHelper?.setState(state) }
-            override fun onItemClick(view: View?, gi: GalleryInfoUi?): Boolean =
+            override fun onItemClick(view: View?, gi: Archive?): Boolean =
                 scene.itemActionHelper?.onItemClick(view, gi) ?: false
-            override fun onItemLongClick(gi: GalleryInfoUi?, view: View): Boolean =
+            override fun onItemLongClick(gi: Archive?, view: View): Boolean =
                 scene.itemActionHelper?.onItemLongClick(gi, view) ?: false
             override fun dismissItemDialog() { scene.itemActionHelper?.dismissDialog() }
             override fun getBaseScene(): BaseScene = scene

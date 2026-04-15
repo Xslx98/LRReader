@@ -46,7 +46,8 @@ import com.hippo.drawable.DrawerArrowDrawable
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.LRRUtils
-import com.hippo.ehviewer.client.data.GalleryInfoUi
+import com.lanraragi.reader.client.api.arcidToGid
+import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.dao.QuickSearch
 import com.hippo.ehviewer.download.DownloadManager
@@ -203,8 +204,8 @@ class GalleryListScene : BaseScene(),
                     val adapter = adapter ?: return@collectFlow
                     val count = adapter.itemCount
                     for (i in 0 until count) {
-                        val gi = adapter.getDataAt(i)
-                        if (gi != null && gi.gid == event.gid) {
+                        val archive = adapter.getDataAt(i)
+                        if (archive != null && arcidToGid(archive.arcid) == event.gid) {
                             adapter.notifyItemChanged(i)
                             break
                         }
@@ -269,9 +270,8 @@ class GalleryListScene : BaseScene(),
             if (gid >= 0 && rating >= 0) {
                 val list = mHelper?.getData() ?: return
                 for (i in list.indices) {
-                    if (list[i].gid == gid) {
-                        list[i].rating = rating
-                        list[i].rated = true
+                    if (arcidToGid(list[i].arcid) == gid) {
+                        list[i] = list[i].copy(rating = rating)
                         adapter?.notifyItemChanged(i)
                         break
                     }
@@ -359,8 +359,8 @@ class GalleryListScene : BaseScene(),
             recyclerView, AppearanceSettings.getListMode()
         )
         mAdapterImpl?.setThumbItemClickListener(object : GalleryAdapterNew.OnThumbItemClickListener {
-            override fun onThumbItemClick(position: Int, view: View, gi: GalleryInfoUi?) {
-                tagChipHelper?.onThumbItemClick(position, view, gi)
+            override fun onThumbItemClick(position: Int, view: View, archive: Archive?) {
+                tagChipHelper?.onThumbItemClick(position, view, archive)
             }
         })
         recyclerView.selector = Ripple.generateRippleDrawable(
@@ -488,7 +488,6 @@ class GalleryListScene : BaseScene(),
         searchBarMover = null
         val helper = mHelper
         if (helper != null) {
-            helper.destroy()
             if (1 == helper.shownViewIndex) {
                 mHasFirstRefresh = false
             }
@@ -645,7 +644,7 @@ class GalleryListScene : BaseScene(),
             return mHelper?.size() ?: 0
         }
 
-        override fun getDataAt(position: Int): GalleryInfoUi? {
+        override fun getDataAt(position: Int): Archive? {
             return mHelper?.getDataAtEx(position)
         }
     }

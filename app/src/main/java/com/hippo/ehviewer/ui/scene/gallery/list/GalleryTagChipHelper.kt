@@ -14,7 +14,7 @@ import com.google.android.material.chip.ChipGroup
 import com.hippo.android.resource.AttrResources
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhTagDatabase
-import com.hippo.ehviewer.client.data.GalleryInfoUi
+import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.ui.scene.BaseScene
@@ -40,8 +40,8 @@ class GalleryTagChipHelper(private val callback: Callback) {
         fun updateFilterDisplay()
         fun onUpdateUrlBuilder()
         fun setState(state: Int)
-        fun onItemClick(view: View?, gi: GalleryInfoUi?): Boolean
-        fun onItemLongClick(gi: GalleryInfoUi?, view: View): Boolean
+        fun onItemClick(view: View?, gi: Archive?): Boolean
+        fun onItemLongClick(gi: Archive?, view: View): Boolean
         fun dismissItemDialog()
         fun getBaseScene(): BaseScene
     }
@@ -62,7 +62,7 @@ class GalleryTagChipHelper(private val callback: Callback) {
         popupWindowPosition = -1
     }
 
-    fun onThumbItemClick(position: Int, view: View, gi: GalleryInfoUi?) {
+    fun onThumbItemClick(position: Int, view: View, gi: Archive?) {
         val thumb: LoadImageViewNew = view.findViewById(R.id.thumb_new)
         if (thumb.mFailed) {
             thumb.load()
@@ -80,7 +80,7 @@ class GalleryTagChipHelper(private val callback: Callback) {
             existingPopup.dismiss()
         }
 
-        val tgList = gi?.tgList
+        val tgList = gi?.flatTags
         if (gi != null && (tgList == null || tgList.isEmpty())) {
             callback.onItemClick(view, gi)
             return
@@ -110,9 +110,9 @@ class GalleryTagChipHelper(private val callback: Callback) {
         }
     }
 
-    fun buildChipGroup(gi: GalleryInfoUi?, tagFlowLayout: ChipGroup): ChipGroup {
+    fun buildChipGroup(gi: Archive?, tagFlowLayout: ChipGroup): ChipGroup {
         val colorTag = AttrResources.getAttrColor(callback.requireContext(), R.attr.tagBackgroundColor)
-        val tgList = gi?.tgList
+        val tgList = gi?.flatTags
         if (tgList == null) {
             val tagName = callback.requireContext().getString(R.string.lrr_no_preview_tags)
             @SuppressLint("InflateParams")
