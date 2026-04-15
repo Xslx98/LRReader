@@ -115,6 +115,23 @@ class HistoryViewModel : ViewModel() {
     }
 
     // -------------------------------------------------------------------------
+    // In-place update (for onSceneResult rating propagation)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Update the rating of the Archive at [position] in the display list.
+     * Used by HistoryScene.onSceneResult for immediate UI feedback.
+     */
+    fun updateRatingAtPosition(position: Int, newRating: Float) {
+        val current = _historyList.value.toMutableList()
+        if (position in current.indices) {
+            current[position] = current[position].copy(rating = newRating)
+            _historyList.value = current
+            lastSnapshot = current
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Delete operations
     // -------------------------------------------------------------------------
 
