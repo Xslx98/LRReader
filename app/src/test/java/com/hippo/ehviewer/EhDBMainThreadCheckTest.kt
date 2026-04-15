@@ -97,29 +97,27 @@ class EhDBMainThreadCheckTest {
         val dao = db.downloadDao()
 
         // Initially null
-        val initial = dao.loadDirname(42L)
-        assertNull("Fresh DB should have no dirname for gid 42", initial)
+        val initial = dao.loadDirname("arcid42")
+        assertNull("Fresh DB should have no dirname for arcid42", initial)
 
         // Insert
-        val entry = com.hippo.ehviewer.dao.DownloadDirname()
-        entry.gid = 42L
-        entry.dirname = "42-test-gallery"
+        val entry = com.hippo.ehviewer.dao.DownloadDirname(arcid = "arcid42", dirname = "42-test-gallery")
         dao.insertDirname(entry)
 
         // Read back
-        val loaded = dao.loadDirname(42L)
+        val loaded = dao.loadDirname("arcid42")
         assertNotNull("Should find dirname after insert", loaded)
         assertEquals("42-test-gallery", loaded!!.dirname)
 
         // Update
         loaded.dirname = "42-test-gallery-sanitized"
         dao.updateDirname(loaded)
-        val updated = dao.loadDirname(42L)
+        val updated = dao.loadDirname("arcid42")
         assertEquals("42-test-gallery-sanitized", updated!!.dirname)
 
         // Delete
-        dao.deleteDirnameByKey(42L)
-        val deleted = dao.loadDirname(42L)
+        dao.deleteDirnameByKey("arcid42")
+        val deleted = dao.loadDirname("arcid42")
         assertNull("Should be null after delete", deleted)
     }
 }

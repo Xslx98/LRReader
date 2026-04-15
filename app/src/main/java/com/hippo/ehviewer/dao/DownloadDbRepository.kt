@@ -81,7 +81,7 @@ class DownloadDbRepository(
     }
 
     suspend fun removeDownloadInfo(gid: Long) {
-        dao.deleteDownloadByKey(gid)
+        dao.deleteDownloadByGid(gid)
     }
 
     suspend fun putDownloadInfoBatch(list: List<DownloadInfo>) {
@@ -100,27 +100,25 @@ class DownloadDbRepository(
     // DOWNLOAD DIRNAME
     // ═══════════════════════════════════════════════════════════
 
-    suspend fun getDownloadDirname(gid: Long): String? {
-        return dao.loadDirname(gid)?.dirname
+    suspend fun getDownloadDirname(arcid: String): String? {
+        return dao.loadDirname(arcid)?.dirname
     }
 
-    suspend fun putDownloadDirname(gid: Long, dirname: String) {
+    suspend fun putDownloadDirname(arcid: String, dirname: String) {
         database.withTransaction {
-            val raw = dao.loadDirname(gid)
+            val raw = dao.loadDirname(arcid)
             if (raw != null) {
                 raw.dirname = dirname
                 dao.updateDirname(raw)
             } else {
-                val newRaw = DownloadDirname()
-                newRaw.gid = gid
-                newRaw.dirname = dirname
+                val newRaw = DownloadDirname(arcid = arcid, dirname = dirname)
                 dao.insertDirname(newRaw)
             }
         }
     }
 
-    suspend fun removeDownloadDirname(gid: Long) {
-        dao.deleteDirnameByKey(gid)
+    suspend fun removeDownloadDirname(arcid: String) {
+        dao.deleteDirnameByKey(arcid)
     }
 
     suspend fun clearDownloadDirname() {

@@ -43,7 +43,7 @@ import java.security.MessageDigest
         QuickSearch::class,
         ServerProfile::class
     ],
-    version = 19,
+    version = 20,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class)
@@ -65,7 +65,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "eh.db"
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20)
                     .build()
                     .also { INSTANCE = it }
             }
@@ -109,6 +109,132 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_LOCAL_FAVORITES_TIME` ON `LOCAL_FAVORITES` (`TIME`)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_QUICK_SEARCH_TIME` ON `QUICK_SEARCH` (`TIME`)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_DOWNLOAD_LABELS_TIME` ON `DOWNLOAD_LABELS` (`TIME`)")
+            }
+        }
+
+        /**
+         * v19 → v20: Migrate primary key from GID (Long) to ARCID (String).
+         *
+         * LANraragi's natural identifier is `arcid` (40-char hex SHA-1 string).
+         * The old GID was a SHA-256 hash of arcid, stored as Long. The TOKEN
+         * column already contains the arcid verbatim, so no data is lost.
+         *
+         * For each of the 4 affected tables:
+         * 1. Create new table with ARCID TEXT as PK
+         * 2. Copy data from old table (TOKEN → ARCID)
+         * 3. Drop old table
+         * 4. Rename new table
+         * 5. Recreate indexes
+         */
+        @VisibleForTesting
+        internal val MIGRATION_19_20 = object : Migration(19, 20) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // ── DOWNLOADS ──
+                db.execSQL("""
+                    CREATE TABLE DOWNLOADS_NEW (
+                        ARCID TEXT NOT NULL,
+                        GID INTEGER NOT NULL,
+                        TITLE TEXT,
+                        TITLE_JPN TEXT,
+                        THUMB TEXT,
+                        CATEGORY INTEGER NOT NULL DEFAULT 0,
+                        POSTED TEXT,
+                        UPLOADER TEXT,
+                        RATING REAL NOT NULL DEFAULT 0,
+                        SIMPLE_LANGUAGE TEXT,
+                        SERVER_PROFILE_ID INTEGER NOT NULL DEFAULT 0,
+                        STATE INTEGER NOT NULL DEFAULT 0,
+                        LEGACY INTEGER NOT NULL DEFAULT 0,
+                        TIME INTEGER NOT NULL DEFAULT 0,
+                        LABEL TEXT,
+                        ARCHIVE_URI TEXT,
+                        PRIMARY KEY (ARCID)
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT INTO DOWNLOADS_NEW (ARCID, GID, TITLE, TITLE_JPN, THUMB, CATEGORY, POSTED, UPLOADER, RATING, SIMPLE_LANGUAGE, SERVER_PROFILE_ID, STATE, LEGACY, TIME, LABEL, ARCHIVE_URI)
+                    SELECT TOKEN, GID, TITLE, TITLE_JPN, THUMB, CATEGORY, POSTED, UPLOADER, RATING, SIMPLE_LANGUAGE, SERVER_PROFILE_ID, STATE, LEGACY, TIME, LABEL, ARCHIVE_URI
+                    FROM DOWNLOADS WHERE TOKEN IS NOT NULL AND TOKEN != ''
+                """.trimIndent())
+                db.execSQL("DROP TABLE DOWNLOADS")
+                db.execSQL("ALTER TABLE DOWNLOADS_NEW RENAME TO DOWNLOADS")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_DOWNLOADS_SERVER_PROFILE_ID` ON `DOWNLOADS` (`SERVER_PROFILE_ID`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_DOWNLOADS_TIME` ON `DOWNLOADS` (`TIME`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_DOWNLOADS_LABEL` ON `DOWNLOADS` (`LABEL`)")
+
+                // ── HISTORY ──
+                db.execSQL("""
+                    CREATE TABLE HISTORY_NEW (
+                        ARCID TEXT NOT NULL,
+                        GID INTEGER NOT NULL,
+                        TITLE TEXT,
+                        TITLE_JPN TEXT,
+                        THUMB TEXT,
+                        CATEGORY INTEGER NOT NULL DEFAULT 0,
+                        POSTED TEXT,
+                        UPLOADER TEXT,
+                        RATING REAL NOT NULL DEFAULT 0,
+                        SIMPLE_LANGUAGE TEXT,
+                        SERVER_PROFILE_ID INTEGER NOT NULL DEFAULT 0,
+                        MODE INTEGER NOT NULL DEFAULT 0,
+                        TIME INTEGER NOT NULL DEFAULT 0,
+                        PRIMARY KEY (ARCID)
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT INTO HISTORY_NEW (ARCID, GID, TITLE, TITLE_JPN, THUMB, CATEGORY, POSTED, UPLOADER, RATING, SIMPLE_LANGUAGE, SERVER_PROFILE_ID, MODE, TIME)
+                    SELECT TOKEN, GID, TITLE, TITLE_JPN, THUMB, CATEGORY, POSTED, UPLOADER, RATING, SIMPLE_LANGUAGE, SERVER_PROFILE_ID, MODE, TIME
+                    FROM HISTORY WHERE TOKEN IS NOT NULL AND TOKEN != ''
+                """.trimIndent())
+                db.execSQL("DROP TABLE HISTORY")
+                db.execSQL("ALTER TABLE HISTORY_NEW RENAME TO HISTORY")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_HISTORY_SERVER_PROFILE_ID` ON `HISTORY` (`SERVER_PROFILE_ID`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_HISTORY_TIME` ON `HISTORY` (`TIME`)")
+
+                // ── LOCAL_FAVORITES ──
+                db.execSQL("""
+                    CREATE TABLE LOCAL_FAVORITES_NEW (
+                        ARCID TEXT NOT NULL,
+                        GID INTEGER NOT NULL,
+                        TITLE TEXT,
+                        TITLE_JPN TEXT,
+                        THUMB TEXT,
+                        CATEGORY INTEGER NOT NULL DEFAULT 0,
+                        POSTED TEXT,
+                        UPLOADER TEXT,
+                        RATING REAL NOT NULL DEFAULT 0,
+                        SIMPLE_LANGUAGE TEXT,
+                        SERVER_PROFILE_ID INTEGER NOT NULL DEFAULT 0,
+                        TIME INTEGER NOT NULL DEFAULT 0,
+                        PRIMARY KEY (ARCID)
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT INTO LOCAL_FAVORITES_NEW (ARCID, GID, TITLE, TITLE_JPN, THUMB, CATEGORY, POSTED, UPLOADER, RATING, SIMPLE_LANGUAGE, SERVER_PROFILE_ID, TIME)
+                    SELECT TOKEN, GID, TITLE, TITLE_JPN, THUMB, CATEGORY, POSTED, UPLOADER, RATING, SIMPLE_LANGUAGE, SERVER_PROFILE_ID, TIME
+                    FROM LOCAL_FAVORITES WHERE TOKEN IS NOT NULL AND TOKEN != ''
+                """.trimIndent())
+                db.execSQL("DROP TABLE LOCAL_FAVORITES")
+                db.execSQL("ALTER TABLE LOCAL_FAVORITES_NEW RENAME TO LOCAL_FAVORITES")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_LOCAL_FAVORITES_TIME` ON `LOCAL_FAVORITES` (`TIME`)")
+
+                // ── DOWNLOAD_DIRNAME ──
+                db.execSQL("""
+                    CREATE TABLE DOWNLOAD_DIRNAME_NEW (
+                        ARCID TEXT NOT NULL,
+                        DIRNAME TEXT,
+                        PRIMARY KEY (ARCID)
+                    )
+                """.trimIndent())
+                // Join with DOWNLOADS to get ARCID from the GID foreign key
+                db.execSQL("""
+                    INSERT INTO DOWNLOAD_DIRNAME_NEW (ARCID, DIRNAME)
+                    SELECT d.ARCID, dd.DIRNAME
+                    FROM DOWNLOAD_DIRNAME dd
+                    INNER JOIN DOWNLOADS d ON dd.GID = d.GID
+                """.trimIndent())
+                db.execSQL("DROP TABLE DOWNLOAD_DIRNAME")
+                db.execSQL("ALTER TABLE DOWNLOAD_DIRNAME_NEW RENAME TO DOWNLOAD_DIRNAME")
             }
         }
 
