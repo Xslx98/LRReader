@@ -46,6 +46,15 @@ class DownloadManager(
 ) {
 
     internal val repo = DownloadRepository(mContext, scope)
+
+    /**
+     * In-memory per-archive progress snapshot (W35-3a, ADR-001 Option D).
+     * New code should read progress via [progressFor] or subscribe to
+     * `progressTracker.progressFlow` instead of reading transient fields
+     * from [DownloadInfo] directly.
+     */
+    val progressTracker = DownloadProgressTracker()
+
     private val mSpeedReminder: DownloadSpeedTracker
     internal lateinit var scheduler: DownloadScheduler
 
@@ -56,13 +65,16 @@ class DownloadManager(
             override fun getDownloadListener(): DownloadListener? = eventBus.getDownloadListener()
             override fun getDownloadInfoListeners(): List<WeakReference<DownloadInfoListener>> = eventBus.getInfoListenerRefs()
             override fun getWaitList(): List<DownloadInfo> = scheduler.waitList
-        })
-        scheduler = DownloadScheduler(mContext, scope, repo, eventBus, mSpeedReminder)
+        }, progressTracker)
+        scheduler = DownloadScheduler(mContext, scope, repo, eventBus, mSpeedReminder, progressTracker)
         repo.startLoading {
             eventBus.forEachListener { it.onReload() }
             syncRatingsFromServer()
         }
     }
+
+    /** @return the current progress snapshot for [arcid], or null if not tracked. */
+    fun progressFor(arcid: String): ProgressSnapshot? = progressTracker.snapshot(arcid)
 
     /**
      * After initial load from DB, fetch current ratings from the server
