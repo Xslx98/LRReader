@@ -417,11 +417,11 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         if (prepareData()) {
             if (mGalleryDetail != null) {
                 bindViewSecond()
-                mHeaderBinder?.setTransitionName(getGid())
+                mHeaderBinder?.setTransitionName(viewModel.getEffectiveArcid())
                 adjustViewVisibility(STATE_NORMAL, false)
             } else if (mGalleryInfo != null) {
                 bindViewFirst()
-                mHeaderBinder?.setTransitionName(getGid())
+                mHeaderBinder?.setTransitionName(viewModel.getEffectiveArcid())
                 adjustViewVisibility(STATE_REFRESH_HEADER, false)
             } else {
                 adjustViewVisibility(STATE_REFRESH, false)
