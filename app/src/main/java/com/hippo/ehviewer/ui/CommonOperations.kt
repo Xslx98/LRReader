@@ -90,20 +90,20 @@ object CommonOperations {
     fun startDownload(activity: MainActivity, galleryInfos: List<GalleryInfo>, forceDefault: Boolean) {
         val dm = ServiceRegistry.dataModule.downloadManager
 
-        val toStart = com.hippo.lib.yorozuya.collect.LongList()
+        val toStart = ArrayList<String>()
         val toAdd = mutableListOf<GalleryInfo>()
         for (gi in galleryInfos) {
-            if (dm.containDownloadInfo(gi.gid)) {
-                toStart.add(gi.gid)
+            if (dm.containDownloadInfo(gi.arcid)) {
+                toStart.add(gi.arcid)
             } else {
                 toAdd.add(gi)
             }
         }
 
-        if (!toStart.isEmpty()) {
+        if (toStart.isNotEmpty()) {
             val intent = Intent(activity, DownloadService::class.java)
             intent.action = DownloadService.ACTION_START_RANGE
-            intent.putExtra(DownloadService.KEY_GID_LIST, toStart)
+            intent.putStringArrayListExtra(DownloadService.KEY_ARCID_LIST, toStart)
             activity.startService(intent)
         }
 
