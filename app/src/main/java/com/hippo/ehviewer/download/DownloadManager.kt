@@ -27,7 +27,7 @@ import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.ehviewer.spider.SpiderInfo
 import com.hippo.lib.yorozuya.ObjectUtils
-import com.hippo.lib.yorozuya.collect.LongList
+
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -128,14 +128,11 @@ class DownloadManager(
     }
 
     fun containLabel(label: String?): Boolean = repo.containLabel(label)
-    fun containDownloadInfo(gid: Long): Boolean = repo.containDownloadInfo(gid)
-    fun getDownloadInfo(gid: Long): DownloadInfo? = repo.getDownloadInfo(gid)
-    fun getDownloadState(gid: Long): Int = repo.getDownloadState(gid)
-    fun containDownloadInfo(arcid: String): Boolean = repo.containDownloadInfoByArcid(arcid)
-    fun getDownloadInfo(arcid: String): DownloadInfo? = repo.getDownloadInfoByArcid(arcid)
-    fun getDownloadState(arcid: String): Int = repo.getDownloadStateByArcid(arcid)
+    fun containDownloadInfo(arcid: String): Boolean = repo.containDownloadInfo(arcid)
+    fun getDownloadInfo(arcid: String): DownloadInfo? = repo.getDownloadInfo(arcid)
+    fun getDownloadState(arcid: String): Int = repo.getDownloadState(arcid)
     fun getLabelCount(label: String?): Long = repo.getLabelCount(label)
-    fun getNoneDownloadInfo(gid: Long): DownloadInfo? = scheduler.getNoneDownloadInfo(gid)
+    fun getNoneDownloadInfo(arcid: String): DownloadInfo? = scheduler.getNoneDownloadInfo(arcid)
     val isIdle: Boolean get() = scheduler.isIdle
 
     val labelList: List<DownloadLabel> get() { repo.assertMainThread(); return repo.labelList }
@@ -167,12 +164,12 @@ class DownloadManager(
 
     fun startDownload(galleryInfo: GalleryInfo, label: String?) {
         repo.assertMainThread()
-        for (active in scheduler.activeTasks) { if (active.gid == galleryInfo.gid) return }
+        for (active in scheduler.activeTasks) { if (active.arcid == galleryInfo.arcid) return }
         if (galleryInfo is DownloadInfo) {
             val uri = galleryInfo.archiveUri
             if (uri != null && uri.startsWith("content://")) return
         }
-        val existing = repo.getDownloadInfo(galleryInfo.gid)
+        val existing = repo.getDownloadInfo(galleryInfo.arcid)
         if (existing != null) {
             if (existing.state != DownloadInfo.STATE_WAIT) {
                 existing.state = DownloadInfo.STATE_WAIT
@@ -187,7 +184,7 @@ class DownloadManager(
             val list = repo.getInfoListForLabel(info.label) ?: run { Log.e(TAG, "Can't find download info list with label: $label"); return }
             list.add(0, info)
             repo.allInfoList.add(0, info)
-            repo.allInfoMap[galleryInfo.gid] = info
+            repo.allInfoMap[galleryInfo.arcid] = info
             scheduler.waitList.add(info)
             repo.persistInfo(info)
             eventBus.forEachListener { it.onAdd(info, list, list.size - 1) }
@@ -196,22 +193,20 @@ class DownloadManager(
         }
     }
 
-    fun startRangeDownload(gidList: LongList) {
+    fun startRangeDownload(arcidList: List<String>) {
         repo.assertMainThread()
         var update = false
         val downloadOrder = DownloadSettings.getDownloadOrder()
         if (downloadOrder) {
-            for (i in 0 until gidList.size()) {
-                val info = repo.allInfoMap[gidList.get(i)] ?: continue
+            for (arcid in arcidList) {
+                val info = repo.allInfoMap[arcid] ?: continue
                 if (info.state == DownloadInfo.STATE_NONE || info.state == DownloadInfo.STATE_FAILED || info.state == DownloadInfo.STATE_FINISH) {
                     update = true; info.state = DownloadInfo.STATE_WAIT; scheduler.waitList.add(info); repo.persistInfo(info)
                 }
             }
         } else {
-            var i = gidList.size()
-            while (i > 0) {
-                i--
-                val info = repo.allInfoMap[gidList.get(i)] ?: continue
+            for (arcid in arcidList.reversed()) {
+                val info = repo.allInfoMap[arcid] ?: continue
                 if (info.state == DownloadInfo.STATE_NONE || info.state == DownloadInfo.STATE_FAILED || info.state == DownloadInfo.STATE_FINISH) {
                     update = true; info.state = DownloadInfo.STATE_WAIT; scheduler.waitList.add(info); repo.persistInfo(info)
                 }
@@ -285,9 +280,9 @@ class DownloadManager(
 
     // ── Stop / Delete ─────────────────────────────────────────
 
-    fun stopDownload(gid: Long) {
+    fun stopDownload(arcid: String) {
         repo.assertMainThread()
-        val info = scheduler.stopDownload(gid) ?: return
+        val info = scheduler.stopDownload(arcid) ?: return
         val list = repo.getInfoListForLabel(info.label)
         if (list != null) eventBus.forEachListener { it.onUpdate(info, list, scheduler.waitList) }
         scheduler.ensureDownload()
@@ -301,9 +296,9 @@ class DownloadManager(
         scheduler.ensureDownload()
     }
 
-    fun stopRangeDownload(gidList: LongList) {
+    fun stopRangeDownload(arcidList: List<String>) {
         repo.assertMainThread()
-        scheduler.stopRangeDownload(gidList)
+        scheduler.stopRangeDownload(arcidList)
         eventBus.forEachListener { it.onUpdateAll() }
         scheduler.ensureDownload()
     }
@@ -314,31 +309,19 @@ class DownloadManager(
         eventBus.forEachListener { it.onUpdateAll() }
     }
 
-    fun deleteDownload(gid: Long) {
+    fun deleteDownload(arcid: String) {
         repo.assertMainThread()
-        scheduler.stopDownload(gid)
-        val result = repo.deleteInfo(gid) ?: return
+        scheduler.stopDownload(arcid)
+        val result = repo.deleteInfo(arcid) ?: return
         val (info, list, index) = result
         if (index >= 0) eventBus.forEachListener { it.onRemove(info, list, index) }
         scheduler.ensureDownload()
     }
 
-    fun stopDownload(arcid: String) {
-        val info = repo.getDownloadInfoByArcid(arcid) ?: return
-        stopDownload(info.gid)
-    }
-
-    fun deleteDownload(arcid: String) {
-        val info = repo.getDownloadInfoByArcid(arcid) ?: return
-        deleteDownload(info.gid)
-    }
-
-    fun deleteRangeDownload(gidList: LongList) {
+    fun deleteRangeDownload(arcidList: List<String>) {
         repo.assertMainThread()
-        scheduler.stopRangeDownload(gidList)
-        val gidSet = HashSet<Long>(gidList.size())
-        for (i in 0 until gidList.size()) gidSet.add(gidList.get(i))
-        repo.deleteInfoRange(gidSet)
+        scheduler.stopRangeDownload(arcidList)
+        repo.deleteInfoRange(arcidList.toHashSet())
         eventBus.forEachListener { it.onReload() }
         scheduler.ensureDownload()
     }
@@ -360,7 +343,7 @@ class DownloadManager(
             try {
                 val gi = GalleryInfo()
                 for (di in list) {
-                    gi.gid = di.gid; gi.arcid = di.arcid; gi.title = di.title; gi.thumb = di.thumb
+                    gi.arcid = di.arcid; gi.title = di.title; gi.thumb = di.thumb
                     gi.category = di.category; gi.posted = di.posted; gi.uploader = di.uploader; gi.rating = di.rating
                     val dir = SpiderDen.getGalleryDownloadDir(gi) ?: continue
                     val file = dir.findFile(".ehviewer") ?: continue
