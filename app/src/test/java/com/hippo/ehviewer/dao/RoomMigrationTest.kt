@@ -139,7 +139,7 @@ class RoomMigrationTest {
         val dao = db.downloadDao()
         val info = DownloadInfo().apply {
             gid = 1001L
-            token = "test_token"
+            arcid = "test_token"
             title = "Test Gallery"
             state = DownloadInfo.STATE_NONE
             time = System.currentTimeMillis()
@@ -148,7 +148,7 @@ class RoomMigrationTest {
 
         val result = dao.loadDownload("test_token")
         assertNotNull(result)
-        assertEquals("test_token", result!!.token)
+        assertEquals("test_token", result!!.arcid)
         assertEquals("Test Gallery", result.title)
     }
 
@@ -157,7 +157,7 @@ class RoomMigrationTest {
         val dao = db.downloadDao()
         val info = DownloadInfo().apply {
             gid = 2001L
-            token = "arcid_2001"
+            arcid ="arcid_2001"
             state = DownloadInfo.STATE_NONE
             time = System.currentTimeMillis()
         }
@@ -174,7 +174,7 @@ class RoomMigrationTest {
         val dao = db.downloadDao()
         val info = DownloadInfo().apply {
             gid = 3001L
-            token = "arcid_3001"
+            arcid ="arcid_3001"
             state = DownloadInfo.STATE_NONE
             time = System.currentTimeMillis()
         }
@@ -216,7 +216,7 @@ class RoomMigrationTest {
         val dao = db.browsingDao()
         val history = HistoryInfo().apply {
             gid = 4001L
-            token = "hist_token"
+            arcid = "hist_token"
             title = "History Gallery"
             time = System.currentTimeMillis()
             mode = 0
@@ -234,7 +234,7 @@ class RoomMigrationTest {
         for (i in 1..5) {
             dao.insertHistory(HistoryInfo().apply {
                 gid = (9000 + i).toLong()
-                token = "arcid_${9000 + i}"
+                arcid ="arcid_${9000 + i}"
                 time = now + i
                 mode = 0
             })
@@ -251,7 +251,7 @@ class RoomMigrationTest {
         val dao = db.browsingDao()
         val fav = LocalFavoriteInfo().apply {
             gid = 5001L
-            token = "fav_token"
+            arcid = "fav_token"
             title = "Favorite Gallery"
             time = System.currentTimeMillis()
         }

@@ -150,14 +150,14 @@ class DownloadManagerTest {
         // Insert downloads into DB before constructing a new manager
         val info1 = DownloadInfo().apply {
             gid = 1001L
-            token = "token1"
+            arcid = "token1"
             title = "Gallery One"
             state = DownloadInfo.STATE_NONE
             time = System.currentTimeMillis()
         }
         val info2 = DownloadInfo().apply {
             gid = 1002L
-            token = "token2"
+            arcid = "token2"
             title = "Gallery Two"
             state = DownloadInfo.STATE_FINISH
             time = System.currentTimeMillis() + 1
@@ -206,7 +206,7 @@ class DownloadManagerTest {
 
         val gallery = GalleryInfo().apply {
             gid = 2001L
-            token = "tok_2001"
+            arcid = "tok_2001"
             title = "Test Download"
         }
         // Start download with null (default) label
@@ -227,7 +227,7 @@ class DownloadManagerTest {
         // Add a download first with STATE_NONE via addDownload
         val gallery = GalleryInfo().apply {
             gid = 2002L
-            token = "tok_2002"
+            arcid = "tok_2002"
             title = "Existing"
         }
         manager.addDownload(gallery, null, DownloadInfo.STATE_NONE)
@@ -246,7 +246,7 @@ class DownloadManagerTest {
     fun deleteDownload_removesFromAllLists() {
         val gallery = GalleryInfo().apply {
             gid = 2003L
-            token = "tok_2003"
+            arcid = "tok_2003"
             title = "To Delete"
         }
         manager.addDownload(gallery, null, DownloadInfo.STATE_NONE)
@@ -264,7 +264,7 @@ class DownloadManagerTest {
         for (i in 1..3) {
             val gallery = GalleryInfo().apply {
                 gid = (3000 + i).toLong()
-                token = "tok_$i"
+                arcid = "tok_$i"
                 title = "Gallery $i"
             }
             manager.addDownload(gallery, null, DownloadInfo.STATE_NONE)
@@ -274,7 +274,7 @@ class DownloadManagerTest {
         for (i in 1..3) {
             val gallery = GalleryInfo().apply {
                 gid = (3000 + i).toLong()
-                token = "tok_$i"
+                arcid = "tok_$i"
                 title = "Gallery $i"
             }
             manager.startDownload(gallery, null)
@@ -299,7 +299,7 @@ class DownloadManagerTest {
         // Added returns the correct state
         val gallery = GalleryInfo().apply {
             gid = 2005L
-            token = "tok_2005"
+            arcid = "tok_2005"
             title = "State Test"
         }
         manager.addDownload(gallery, null, DownloadInfo.STATE_FINISH)
@@ -333,7 +333,7 @@ class DownloadManagerTest {
         // Add a download with that label
         val gallery = GalleryInfo().apply {
             gid = 4001L
-            token = "tok_4001"
+            arcid = "tok_4001"
             title = "Labeled"
         }
         manager.addDownload(gallery, "OldName", DownloadInfo.STATE_NONE)
@@ -358,7 +358,7 @@ class DownloadManagerTest {
         // Add a download with that label
         val gallery = GalleryInfo().apply {
             gid = 4002L
-            token = "tok_4002"
+            arcid = "tok_4002"
             title = "Will Move"
         }
         manager.addDownload(gallery, "ToRemove", DownloadInfo.STATE_NONE)
@@ -410,7 +410,7 @@ class DownloadManagerTest {
 
         val gallery = GalleryInfo().apply {
             gid = 5001L
-            token = "tok_5001"
+            arcid = "tok_5001"
             title = "Listener Test"
         }
         manager.addDownload(gallery, null, DownloadInfo.STATE_NONE)
@@ -433,7 +433,7 @@ class DownloadManagerTest {
         // First add — should be received
         val gallery1 = GalleryInfo().apply {
             gid = 5002L
-            token = "tok_5002"
+            arcid = "tok_5002"
             title = "First"
         }
         manager.addDownload(gallery1, null, DownloadInfo.STATE_NONE)
@@ -445,7 +445,7 @@ class DownloadManagerTest {
         // Second add — should NOT be received
         val gallery2 = GalleryInfo().apply {
             gid = 5003L
-            token = "tok_5003"
+            arcid = "tok_5003"
             title = "Second"
         }
         manager.addDownload(gallery2, null, DownloadInfo.STATE_NONE)
@@ -458,7 +458,7 @@ class DownloadManagerTest {
         // guaranteed data to reload from.
         val info = DownloadInfo().apply {
             gid = 5004L
-            token = "tok_5004"
+            arcid = "tok_5004"
             title = "Reload Test"
             state = DownloadInfo.STATE_NONE
             time = System.currentTimeMillis()
@@ -502,7 +502,7 @@ class DownloadManagerTest {
 
         val gallery = GalleryInfo().apply {
             gid = 6001L
-            token = "tok_6001"
+            arcid = "tok_6001"
             title = "Contain Test"
         }
         manager.addDownload(gallery, null, DownloadInfo.STATE_NONE)
@@ -516,7 +516,7 @@ class DownloadManagerTest {
 
         val gallery = GalleryInfo().apply {
             gid = 6002L
-            token = "tok_6002"
+            arcid = "tok_6002"
             title = "Info Test"
         }
         manager.addDownload(gallery, null, DownloadInfo.STATE_NONE)
@@ -534,7 +534,7 @@ class DownloadManagerTest {
         for (i in 1..5) {
             val gallery = GalleryInfo().apply {
                 gid = (6100 + i).toLong()
-                token = "tok_$i"
+                arcid = "tok_$i"
                 title = "Count $i"
             }
             manager.addDownload(gallery, null, DownloadInfo.STATE_NONE)
@@ -643,7 +643,7 @@ class DownloadManagerTest {
             for (i in 0 until infoCount) {
                 val info = DownloadInfo().apply {
                     gid = 90000L + i
-                    token = "race-token-$i"
+                    arcid = "race-token-$i"
                     title = "race title $i"
                     label = labelStrings[i % labelCount]
                     state = DownloadInfo.STATE_NONE
@@ -744,7 +744,7 @@ class DownloadManagerTest {
         val infos = timestamps.mapIndexed { i, ts ->
             DownloadInfo().apply {
                 gid = (7000 + i).toLong()
-                token = "tok_sort_$i"
+                arcid = "tok_sort_$i"
                 title = "Sort Test $i"
                 state = DownloadInfo.STATE_NONE
                 time = ts
@@ -776,7 +776,7 @@ class DownloadManagerTest {
         val infos = timestamps.mapIndexed { i, ts ->
             DownloadInfo().apply {
                 gid = (7100 + i).toLong()
-                token = "tok_lsort_$i"
+                arcid = "tok_lsort_$i"
                 title = "Label Sort $i"
                 label = "SortLabel"
                 state = DownloadInfo.STATE_NONE
@@ -805,7 +805,7 @@ class DownloadManagerTest {
         val destInfos = listOf(900L, 300L).mapIndexed { i, ts ->
             DownloadInfo().apply {
                 gid = (7200 + i).toLong()
-                token = "tok_dest_$i"
+                arcid = "tok_dest_$i"
                 title = "Dest $i"
                 label = "DestLabel"
                 state = DownloadInfo.STATE_NONE
@@ -818,7 +818,7 @@ class DownloadManagerTest {
         // Add an item to SourceLabel that should land between the two dest items
         val sourceInfo = DownloadInfo().apply {
             gid = 7210L
-            token = "tok_src"
+            arcid = "tok_src"
             title = "Source Item"
             label = "SourceLabel"
             state = DownloadInfo.STATE_NONE
@@ -850,7 +850,7 @@ class DownloadManagerTest {
         // Add items to default list with known timestamps
         val defaultGallery = GalleryInfo().apply {
             gid = 7300L
-            token = "tok_def"
+            arcid = "tok_def"
             title = "Default Item"
         }
         manager.addDownload(defaultGallery, null, DownloadInfo.STATE_NONE)
@@ -861,7 +861,7 @@ class DownloadManagerTest {
         val labelInfos = listOf(800L, 200L).mapIndexed { i, ts ->
             DownloadInfo().apply {
                 gid = (7310 + i).toLong()
-                token = "tok_del_$i"
+                arcid = "tok_del_$i"
                 title = "Delete Label Item $i"
                 label = "ToDelete"
                 state = DownloadInfo.STATE_NONE
@@ -891,7 +891,7 @@ class DownloadManagerTest {
         val infos = (0..4).map { i ->
             DownloadInfo().apply {
                 gid = (7400 + i).toLong()
-                token = "tok_eq_$i"
+                arcid = "tok_eq_$i"
                 title = "Equal Time $i"
                 state = DownloadInfo.STATE_NONE
                 time = 1000L // all same timestamp
@@ -917,7 +917,7 @@ class DownloadManagerTest {
         for ((i, ts) in timestamps.withIndex()) {
             val info = DownloadInfo().apply {
                 gid = (7500 + i).toLong()
-                token = "tok_helper_$i"
+                arcid = "tok_helper_$i"
                 title = "Helper $i"
                 time = ts
             }

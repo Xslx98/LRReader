@@ -8,7 +8,6 @@ import androidx.room.Ignore
 import androidx.room.Index
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.GalleryInfoEntity
-import com.hippo.ehviewer.util.galleryInfoFromJson
 import android.util.Log
 import org.json.JSONException
 import org.json.JSONObject
@@ -19,7 +18,7 @@ import org.json.JSONObject
  */
 @Entity(
     tableName = "DOWNLOADS",
-    primaryKeys = ["ARCID"],
+    primaryKeys = ["GID"],
     indices = [
         Index("SERVER_PROFILE_ID"),
         Index("TIME"),
@@ -81,13 +80,13 @@ class DownloadInfo : GalleryInfoEntity {
 
     @Ignore
     constructor(
-        gid: Long, token: String?, title: String?, titleJpn: String?, thumb: String?,
+        gid: Long, arcid: String?, title: String?, titleJpn: String?, thumb: String?,
         category: Int, posted: String?, uploader: String?, rating: Float,
         simpleLanguage: String?, state: Int, legacy: Int, time: Long,
         label: String?, archiveUri: String?
     ) {
         this.gid = gid
-        this.token = token ?: ""
+        this.arcid = arcid ?: ""
         this.title = title
         this.titleJpn = titleJpn
         this.thumb = thumb
@@ -106,7 +105,7 @@ class DownloadInfo : GalleryInfoEntity {
     @Ignore
     constructor(galleryInfo: GalleryInfo) {
         gid = galleryInfo.gid
-        token = galleryInfo.token
+        arcid = galleryInfo.arcid
         title = galleryInfo.title
         titleJpn = galleryInfo.titleJpn
         thumb = galleryInfo.thumb
@@ -140,7 +139,7 @@ class DownloadInfo : GalleryInfoEntity {
     }
 
     fun updateInfo(galleryInfo: GalleryInfo) {
-        token = galleryInfo.token
+        arcid = galleryInfo.arcid
         title = galleryInfo.title
         titleJpn = galleryInfo.titleJpn
         thumb = galleryInfo.thumb
