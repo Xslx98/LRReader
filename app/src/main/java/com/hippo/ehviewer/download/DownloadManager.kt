@@ -131,6 +131,9 @@ class DownloadManager(
     fun containDownloadInfo(gid: Long): Boolean = repo.containDownloadInfo(gid)
     fun getDownloadInfo(gid: Long): DownloadInfo? = repo.getDownloadInfo(gid)
     fun getDownloadState(gid: Long): Int = repo.getDownloadState(gid)
+    fun containDownloadInfo(arcid: String): Boolean = repo.containDownloadInfoByArcid(arcid)
+    fun getDownloadInfo(arcid: String): DownloadInfo? = repo.getDownloadInfoByArcid(arcid)
+    fun getDownloadState(arcid: String): Int = repo.getDownloadStateByArcid(arcid)
     fun getLabelCount(label: String?): Long = repo.getLabelCount(label)
     fun getNoneDownloadInfo(gid: Long): DownloadInfo? = scheduler.getNoneDownloadInfo(gid)
     val isIdle: Boolean get() = scheduler.isIdle
@@ -318,6 +321,16 @@ class DownloadManager(
         val (info, list, index) = result
         if (index >= 0) eventBus.forEachListener { it.onRemove(info, list, index) }
         scheduler.ensureDownload()
+    }
+
+    fun stopDownload(arcid: String) {
+        val info = repo.getDownloadInfoByArcid(arcid) ?: return
+        stopDownload(info.gid)
+    }
+
+    fun deleteDownload(arcid: String) {
+        val info = repo.getDownloadInfoByArcid(arcid) ?: return
+        deleteDownload(info.gid)
     }
 
     fun deleteRangeDownload(gidList: LongList) {

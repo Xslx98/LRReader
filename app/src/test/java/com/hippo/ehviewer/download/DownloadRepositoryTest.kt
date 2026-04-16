@@ -334,6 +334,54 @@ class DownloadRepositoryTest {
     }
 
     // ═══════════════════════════════════════════════════════════
+    // arcid-based queries (W32-2)
+    // ═══════════════════════════════════════════════════════════
+
+    @Test
+    fun containDownloadInfoByArcid_returnsTrueWhenPresent() {
+        val info = makeInfo(1001L, "abc123", "Gallery One")
+        repo.addInfo(info)
+        assertTrue(repo.containDownloadInfoByArcid("abc123"))
+    }
+
+    @Test
+    fun containDownloadInfoByArcid_returnsFalseWhenAbsent() {
+        assertFalse(repo.containDownloadInfoByArcid("nonexistent"))
+    }
+
+    @Test
+    fun getDownloadInfoByArcid_returnsCorrectInfo() {
+        val info = makeInfo(1001L, "abc123", "Gallery One")
+        repo.addInfo(info)
+        val result = repo.getDownloadInfoByArcid("abc123")
+        assertNotNull(result)
+        assertEquals(1001L, result!!.gid)
+        assertEquals("abc123", result.arcid)
+    }
+
+    @Test
+    fun getDownloadStateByArcid_returnsState() {
+        val info = makeInfo(1001L, "abc123", "Gallery One")
+        info.state = DownloadInfo.STATE_DOWNLOAD
+        repo.addInfo(info)
+        assertEquals(DownloadInfo.STATE_DOWNLOAD, repo.getDownloadStateByArcid("abc123"))
+    }
+
+    @Test
+    fun getDownloadStateByArcid_returnsInvalidWhenAbsent() {
+        assertEquals(DownloadInfo.STATE_INVALID, repo.getDownloadStateByArcid("nonexistent"))
+    }
+
+    @Test
+    fun arcidInfoMap_syncedOnRemove() {
+        val info = makeInfo(1001L, "abc123", "Gallery One")
+        repo.addInfo(info)
+        assertTrue(repo.containDownloadInfoByArcid("abc123"))
+        repo.removeInfo(info)
+        assertFalse(repo.containDownloadInfoByArcid("abc123"))
+    }
+
+    // ═══════════════════════════════════════════════════════════
     // Helpers
     // ═══════════════════════════════════════════════════════════
 
