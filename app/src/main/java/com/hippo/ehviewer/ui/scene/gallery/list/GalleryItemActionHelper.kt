@@ -70,8 +70,8 @@ class GalleryItemActionHelper(private val callback: Callback) {
         alertDialog?.dismiss()
 
         val args = android.os.Bundle()
-        args.putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_GALLERY_INFO)
-        args.putParcelable(GalleryDetailScene.KEY_GALLERY_INFO, gi.toGalleryInfo())
+        args.putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_ARCHIVE)
+        args.putParcelable(GalleryDetailScene.KEY_ARCHIVE, gi)
         val announcer = Announcer(GalleryDetailScene::class.java).setArgs(args)
             .setRequestCode(callback.getSceneFragment(), REQUEST_CODE_GALLERY_DETAIL)
         if (view != null) {
