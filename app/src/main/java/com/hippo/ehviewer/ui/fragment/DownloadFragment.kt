@@ -318,7 +318,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
 
                     for (i in galleryInfos.indices) {
                         val gi = galleryInfos[i]
-                        if (downloadManager.getDownloadInfo(gi.gid) == null) {
+                        if (downloadManager.getDownloadInfo(gi.arcid) == null) {
                             downloadManager.addDownload(gi, null)
                             importCount++
                         }
@@ -423,13 +423,10 @@ class DownloadFragment : PreferenceFragmentCompat(),
                     if (contentLines.size < 8) {
                         logs.add("Invalid .ehviewer file: ${dir.name}")
                         invalidCount++
-                        val gid = try {
-                            contentLines[0].toLong()
-                        } catch (e: NumberFormatException) {
-                            -1L
-                        }
-                        if (gid != -1L) {
-                            val gi = downloadManager.getDownloadInfo(gid)
+                        // SpiderInfo v2: line[3] = arcid
+                        val arcid = if (contentLines.size > 3) contentLines[3].trim() else null
+                        if (!arcid.isNullOrEmpty()) {
+                            val gi = downloadManager.getDownloadInfo(arcid)
                             if (gi != null) {
                                 gi.state = DownloadInfo.STATE_NONE
                                 ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(gi)
@@ -457,13 +454,10 @@ class DownloadFragment : PreferenceFragmentCompat(),
                                 subFile.delete()
                             }
                         }
-                        val gid = try {
-                            contentLines[0].toLong()
-                        } catch (e: NumberFormatException) {
-                            -1L
-                        }
-                        if (gid != -1L) {
-                            val gi = downloadManager.getDownloadInfo(gid)
+                        // SpiderInfo v2: line[3] = arcid
+                        val arcid = if (contentLines.size > 3) contentLines[3].trim() else null
+                        if (!arcid.isNullOrEmpty()) {
+                            val gi = downloadManager.getDownloadInfo(arcid)
                             if (gi != null) {
                                 gi.state = DownloadInfo.STATE_NONE
                                 ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(gi)
