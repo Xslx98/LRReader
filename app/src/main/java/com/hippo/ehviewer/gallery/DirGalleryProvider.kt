@@ -80,15 +80,20 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
         this.arcId = galleryInfo.arcid // LANraragi arcid
         this.serverUrl = LRRAuthManager.getServerUrl()
         val ctx = this.context ?: return
-        this.startPageValue = loadReadingProgress(ctx, gid)
+        this.startPageValue = if (arcId != null) {
+            loadReadingProgress(ctx, arcId!!)
+        } else {
+            @Suppress("DEPRECATION")
+            loadReadingProgress(ctx, gid)
+        }
     }
 
     override fun getStartPage(): Int = startPageValue
 
     override fun putStartPage(page: Int) {
         startPageValue = page
-        if (context != null && gid != 0L) {
-            saveReadingProgress(context, gid, page)
+        if (context != null && arcId != null) {
+            saveReadingProgress(context, arcId!!, page)
         }
         // Sync progress to LANraragi server (1-indexed)
         if (arcId != null && serverUrl != null) {
@@ -121,7 +126,7 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
                     if (metadata.progress > 0) {
                         val serverPage0 = metadata.progress - 1
                         val serverTs = metadata.lastreadtime
-                        val localTs = loadReadingTimestamp(context, gid)
+                        val localTs = if (arcId != null) loadReadingTimestamp(context, arcId!!) else 0L
                         Log.i(TAG, "[PROGRESS] serverPage0=$serverPage0" +
                                 " serverTs=$serverTs localTs=$localTs" +
                                 " localPage=$startPageValue")
@@ -129,7 +134,7 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
                         if (serverTs > localTs) {
                             resolvedPage = serverPage0
                             startPageValue = serverPage0
-                            saveReadingProgress(context, gid, serverPage0)
+                            if (arcId != null) saveReadingProgress(context, arcId!!, serverPage0)
                             Log.i(TAG, "[PROGRESS] Using SERVER progress: page $serverPage0")
                         } else if (localTs > serverTs && startPageValue > 0) {
                             resolvedPage = startPageValue

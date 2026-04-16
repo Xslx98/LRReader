@@ -14,7 +14,13 @@ import com.hippo.ehviewer.client.data.GalleryInfo
 class FavoritesRepository(private val dao: BrowsingRoomDao) {
 
     suspend fun putLocalFavorite(galleryInfo: GalleryInfo) {
-        if (dao.loadLocalFavorite(galleryInfo.gid) == null) {
+        val arcid = galleryInfo.arcid
+        val exists = if (arcid != null) {
+            dao.loadLocalFavoriteByArcid(arcid) != null
+        } else {
+            dao.loadLocalFavorite(galleryInfo.gid) != null
+        }
+        if (!exists) {
             val info = if (galleryInfo is LocalFavoriteInfo) {
                 galleryInfo
             } else {
@@ -24,8 +30,13 @@ class FavoritesRepository(private val dao: BrowsingRoomDao) {
         }
     }
 
+    @Deprecated("Use arcid-based overload", ReplaceWith("removeLocalFavorite(arcid)"))
     suspend fun removeLocalFavorite(gid: Long) {
         dao.deleteLocalFavoriteByKey(gid)
+    }
+
+    suspend fun removeLocalFavorite(arcid: String) {
+        dao.deleteLocalFavoriteByArcid(arcid)
     }
 
     suspend fun removeLocalFavorites(gidArray: LongArray) {
@@ -34,7 +45,12 @@ class FavoritesRepository(private val dao: BrowsingRoomDao) {
         }
     }
 
+    @Deprecated("Use arcid-based overload", ReplaceWith("containsLocalFavorite(arcid)"))
     suspend fun containsLocalFavorite(gid: Long): Boolean {
         return dao.loadLocalFavorite(gid) != null
+    }
+
+    suspend fun containsLocalFavorite(arcid: String): Boolean {
+        return dao.loadLocalFavoriteByArcid(arcid) != null
     }
 }
