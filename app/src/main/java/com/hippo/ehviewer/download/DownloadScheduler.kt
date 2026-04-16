@@ -40,7 +40,8 @@ internal class DownloadScheduler(
     private val scope: CoroutineScope,
     private val repo: DownloadRepository,
     private val eventBus: DownloadEventBus,
-    private val speedTracker: DownloadSpeedTracker
+    private val speedTracker: DownloadSpeedTracker,
+    private val progressTracker: DownloadProgressTracker = DownloadProgressTracker()
 ) {
 
     /** Downloads queued to start. */
@@ -98,6 +99,7 @@ internal class DownloadScheduler(
             info.finished = 0
             info.downloaded = 0
             info.legacy = -1
+            progressTracker.resetForStart(info.arcid)
             // Persist to DB
             repo.persistInfo(info)
             // Start speed tracking
@@ -137,6 +139,7 @@ internal class DownloadScheduler(
                 activeIt.remove()
                 if (activeTasks.isEmpty()) speedTracker.stop()
                 info.state = DownloadInfo.STATE_NONE
+                progressTracker.clear(info.arcid)
                 repo.persistInfo(info)
                 eventBus.getDownloadListener()?.onCancel(info)
                 return info
@@ -150,6 +153,7 @@ internal class DownloadScheduler(
             if (info.arcid == arcid) {
                 waitIt.remove()
                 info.state = DownloadInfo.STATE_NONE
+                progressTracker.clear(info.arcid)
                 repo.persistInfo(info)
                 return info
             }
@@ -176,6 +180,7 @@ internal class DownloadScheduler(
         if (stopped.isEmpty()) return null
         for (info in stopped) {
             info.state = DownloadInfo.STATE_NONE
+            progressTracker.clear(info.arcid)
             repo.persistInfo(info)
             eventBus.getDownloadListener()?.onCancel(info)
         }
@@ -207,6 +212,7 @@ internal class DownloadScheduler(
                 if (info.arcid in arcidSet) {
                     iterator.remove()
                     info.state = DownloadInfo.STATE_NONE
+                    progressTracker.clear(info.arcid)
                     repo.persistInfo(info)
                 }
             }
@@ -221,6 +227,7 @@ internal class DownloadScheduler(
         // Stop all in wait list
         for (info in waitList) {
             info.state = DownloadInfo.STATE_NONE
+            progressTracker.clear(info.arcid)
             repo.persistInfo(info)
         }
         waitList.clear()
@@ -254,6 +261,7 @@ internal class DownloadScheduler(
                 val info = iterator.next()
                 if (info.arcid == arcid) {
                     info.state = DownloadInfo.STATE_NONE
+                    progressTracker.clear(arcid)
                     iterator.remove()
                     break
                 }
@@ -312,6 +320,7 @@ internal class DownloadScheduler(
             is DownloadEvent.OnGetPages -> {
                 val info = event.taskInfo
                 info.total = event.pages
+                progressTracker.update(info.arcid, total = event.pages)
                 val list = repo.getInfoListForLabel(info.label)
                 if (list != null) {
                     eventBus.forEachListener {
@@ -331,6 +340,12 @@ internal class DownloadScheduler(
                 info.finished = event.finished
                 info.downloaded = event.downloaded
                 info.total = event.total
+                progressTracker.update(
+                    info.arcid,
+                    finished = event.finished,
+                    downloaded = event.downloaded,
+                    total = event.total
+                )
                 eventBus.getDownloadListener()?.onGetPage(info)
                 val list = repo.getInfoListForLabel(info.label)
                 if (list != null) {
@@ -345,6 +360,12 @@ internal class DownloadScheduler(
                 info.finished = event.finished
                 info.downloaded = event.downloaded
                 info.total = event.total
+                progressTracker.update(
+                    info.arcid,
+                    finished = event.finished,
+                    downloaded = event.downloaded,
+                    total = event.total
+                )
                 val list = repo.getInfoListForLabel(info.label)
                 if (list != null) {
                     eventBus.forEachListener {
@@ -368,6 +389,15 @@ internal class DownloadScheduler(
                 } else {
                     info.state = DownloadInfo.STATE_FAILED
                 }
+                // Mirror final values into tracker, then drop the live entry
+                // (download is no longer active → progress not live).
+                progressTracker.update(
+                    info.arcid,
+                    finished = event.finished,
+                    downloaded = event.downloaded,
+                    total = event.total
+                )
+                progressTracker.clear(info.arcid)
                 // Persist to DB
                 repo.persistInfo(info)
                 // Notify
