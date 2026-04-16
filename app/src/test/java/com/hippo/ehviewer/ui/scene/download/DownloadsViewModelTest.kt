@@ -480,4 +480,101 @@ class DownloadsViewModelTest {
         vm.setDownloadList(list)
         assertEquals(2, vm.downloadList.value.size)
     }
+
+    // -------------------------------------------------------------------------
+    // W35-3b: Flow-driven enrichment tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `downloadList reflects tracker progress for matching arcid`() = runBlocking {
+        // Arrange: one download in DB with default label, progress tracker has a live snapshot
+        val dm = vm.downloadManager
+        val info = DownloadInfo().apply {
+            arcid = "arc-prog-1"
+            title = "prog test"
+            label = null
+            state = DownloadInfo.STATE_DOWNLOAD
+            time = 1_000L
+        }
+        dm.addDownloadInfo(info, null)
+        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+
+        // Act: write a ProgressSnapshot through the tracker
+        dm.progressTracker.update(
+            "arc-prog-1",
+            speed = 12345L,
+            finished = 3,
+            downloaded = 3,
+            total = 10,
+            remaining = 7777L
+        )
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+
+        // Assert: the ViewModel's downloadList carries the enriched values
+        val list = vm.downloadList.value
+        val found = list.firstOrNull { it.arcid == "arc-prog-1" }
+        assertTrue("expected arc-prog-1 in downloadList", found != null)
+        assertEquals(12345L, found!!.speed)
+        assertEquals(3, found.finished)
+        assertEquals(3, found.downloaded)
+        assertEquals(10, found.total)
+        assertEquals(7777L, found.remaining)
+    }
+
+    @Test
+    fun `downloadList filters by currentLabel`() = runBlocking {
+        val dm = vm.downloadManager
+        // Add one default-label and one "L1"-label info
+        val infoA = DownloadInfo().apply {
+            arcid = "a"; title = "A"; label = null; state = DownloadInfo.STATE_NONE; time = 1L
+        }
+        val infoB = DownloadInfo().apply {
+            arcid = "b"; title = "B"; label = "L1"; state = DownloadInfo.STATE_NONE; time = 2L
+        }
+        dm.addLabel("L1")
+        dm.addDownloadInfo(infoA, null)
+        dm.addDownloadInfo(infoB, "L1")
+        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(infoA)
+        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(infoB)
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+
+        // Default label → sees only A
+        vm.selectLabel(null)
+        vm.updateForLabel()
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+        val defaultList = vm.downloadList.value
+        assertTrue(defaultList.any { it.arcid == "a" })
+        assertFalse(defaultList.any { it.arcid == "b" })
+
+        // Switch to L1 → sees only B
+        vm.selectLabel("L1")
+        vm.updateForLabel()
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+        val l1List = vm.downloadList.value
+        assertTrue(l1List.any { it.arcid == "b" })
+        assertFalse(l1List.any { it.arcid == "a" })
+    }
+
+    @Test
+    fun `downloadList re-emits when tracker updates without Room change`() = runBlocking {
+        val dm = vm.downloadManager
+        val info = DownloadInfo().apply {
+            arcid = "arc-ticks"; title = "ticks"; label = null
+            state = DownloadInfo.STATE_DOWNLOAD; time = 9_000L
+        }
+        dm.addDownloadInfo(info, null)
+        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+
+        dm.progressTracker.update("arc-ticks", speed = 100L)
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+        val first = vm.downloadList.value.first { it.arcid == "arc-ticks" }.speed
+        assertEquals(100L, first)
+
+        dm.progressTracker.update("arc-ticks", speed = 200L)
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+        val second = vm.downloadList.value.first { it.arcid == "arc-ticks" }.speed
+        assertEquals(200L, second)
+    }
 }
