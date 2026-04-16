@@ -41,7 +41,7 @@ class LRRArchive() : Parcelable {
     fun toGalleryInfo(): GalleryInfo {
         val gi = GalleryInfo()
         gi.gid = arcidToGid(arcid)
-        gi.token = arcid
+        gi.arcid = arcid
         gi.title = title
         gi.pages = pagecount
         gi.progress = progress
@@ -72,7 +72,7 @@ class LRRArchive() : Parcelable {
         val gd = GalleryDetail()
 
         gd.gid = arcidToGid(arcid)
-        gd.token = arcid
+        gd.arcid = arcid
         gd.title = title
         gd.titleJpn = null
         gd.pages = pagecount

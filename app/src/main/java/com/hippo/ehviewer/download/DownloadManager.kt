@@ -84,7 +84,7 @@ class DownloadManager(
 
                 // Fetch metadata for each archive and compare ratings
                 for (info in infos) {
-                    val arcid = info.token ?: continue
+                    val arcid = info.arcid ?: continue
                     try {
                         val archive = com.lanraragi.reader.client.api.LRRArchiveApi
                             .getArchiveMetadata(client, serverUrl, arcid)
@@ -347,7 +347,7 @@ class DownloadManager(
             try {
                 val gi = GalleryInfo()
                 for (di in list) {
-                    gi.gid = di.gid; gi.token = di.token; gi.title = di.title; gi.thumb = di.thumb
+                    gi.gid = di.gid; gi.arcid = di.arcid; gi.title = di.title; gi.thumb = di.thumb
                     gi.category = di.category; gi.posted = di.posted; gi.uploader = di.uploader; gi.rating = di.rating
                     val dir = SpiderDen.getGalleryDownloadDir(gi) ?: continue
                     val file = dir.findFile(".ehviewer") ?: continue

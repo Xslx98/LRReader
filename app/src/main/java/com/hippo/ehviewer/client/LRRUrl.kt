@@ -81,8 +81,8 @@ object LRRUrl {
     private const val URL_PREFIX_THUMB_EX = "https://exhentai.org/t/"
 
     @JvmStatic
-    fun getGalleryDetailUrl(gid: Long, token: String?): String {
-        return getGalleryDetailUrl(gid, token, 0, false)
+    fun getGalleryDetailUrl(gid: Long, arcid: String?): String {
+        return getGalleryDetailUrl(gid, arcid, 0, false)
     }
 
     @JvmStatic
@@ -156,8 +156,8 @@ object LRRUrl {
      * 获取画廊详情地址
      */
     @JvmStatic
-    fun getGalleryDetailUrl(gid: Long, token: String?, index: Int, allComment: Boolean): String {
-        val builder = UrlBuilder(getHost() + "g/" + gid + '/' + (token ?: "") + '/')
+    fun getGalleryDetailUrl(gid: Long, arcid: String?, index: Int, allComment: Boolean): String {
+        val builder = UrlBuilder(getHost() + "g/" + gid + '/' + (arcid ?: "") + '/')
         if (index != 0) {
             builder.addQuery("p", index)
         }
@@ -173,16 +173,16 @@ object LRRUrl {
     }
 
     @JvmStatic
-    fun getAddFavorites(gid: Long, token: String?): String {
-        return getHost() + "gallerypopups.php?gid=" + gid + "&t=" + token + "&act=addfav"
+    fun getAddFavorites(gid: Long, arcid: String?): String {
+        return getHost() + "gallerypopups.php?gid=" + gid + "&t=" + arcid + "&act=addfav"
     }
 
     @JvmStatic
-    fun getDownloadArchive(gid: Long, token: String?, or: String): String {
+    fun getDownloadArchive(gid: Long, arcid: String?, or: String): String {
         return if (or.isEmpty()) {
-            getHost() + "archiver.php?gid=" + gid + "&token=" + token
+            getHost() + "archiver.php?gid=" + gid + "&token=" + arcid
         } else {
-            getHost() + "archiver.php?gid=" + gid + "&token=" + token + "&or=" + or
+            getHost() + "archiver.php?gid=" + gid + "&token=" + arcid + "&or=" + or
         }
     }
 

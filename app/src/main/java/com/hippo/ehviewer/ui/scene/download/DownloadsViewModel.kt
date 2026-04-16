@@ -435,7 +435,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
         downloadManager.deleteDownload(galleryInfo.gid)
         DownloadSettings.putRemoveImageFiles(deleteFiles)
         if (deleteFiles) {
-            val arcid = galleryInfo.token
+            val arcid = galleryInfo.arcid
             ServiceRegistry.coroutineModule.ioScope.launch {
                 ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(arcid)
                 val file = SpiderDen.getGalleryDownloadDir(galleryInfo)
@@ -460,7 +460,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
             val infos = ArrayList(downloadInfoList)
             ServiceRegistry.coroutineModule.ioScope.launch {
                 for (info in infos) {
-                    ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(info.token)
+                    ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(info.arcid)
                     val file = SpiderDen.getGalleryDownloadDir(info)
                     file?.delete()
                 }
@@ -561,7 +561,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
         return try {
             DownloadInfo().apply {
                 gid = System.currentTimeMillis()
-                token = ""
+                arcid = ""
                 title = fileName.replace("\\.[^.]*$".toRegex(), "")
                 titleJpn = null
                 thumb = null

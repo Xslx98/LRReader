@@ -113,10 +113,10 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         get() = viewModel.gid.value
         set(value) { viewModel.setGid(value) }
 
-    /** Shortcut delegating to [GalleryDetailViewModel.token]. */
-    private var mToken: String?
-        get() = viewModel.token.value
-        set(value) { viewModel.setToken(value) }
+    /** Shortcut delegating to [GalleryDetailViewModel.arcid]. */
+    private var mArcid: String?
+        get() = viewModel.arcid.value
+        set(value) { viewModel.setArcid(value) }
 
     /** Shortcut delegating to [GalleryDetailViewModel.galleryDetail]. */
     private var mGalleryDetail: GalleryDetail?
@@ -161,7 +161,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             }
         } else if (ACTION_GID_TOKEN == action) {
             mGid = args.getLong(KEY_GID)
-            mToken = args.getString(KEY_TOKEN)
+            mArcid = args.getString(KEY_ARCID)
         } else if (ACTION_DOWNLOAD_GALLERY_INFO == action) {
             try {
                 val di: DownloadInfo? = args.getParcelable(KEY_GALLERY_INFO)
@@ -216,7 +216,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mAction = savedInstanceState.getString(KEY_ACTION)
         mGalleryInfo = savedInstanceState.getParcelable(KEY_GALLERY_INFO)
         mGid = savedInstanceState.getLong(KEY_GID)
-        mToken = savedInstanceState.getString(KEY_TOKEN)
+        mArcid = savedInstanceState.getString(KEY_ARCID)
         mGalleryDetail = savedInstanceState.getParcelable(KEY_GALLERY_DETAIL)
         mRequestId = savedInstanceState.getInt(KEY_REQUEST_ID)
     }
@@ -231,8 +231,8 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             outState.putParcelable(KEY_GALLERY_INFO, mGalleryInfo)
         }
         outState.putLong(KEY_GID, mGid)
-        if (mToken != null) {
-            outState.putString(KEY_TOKEN, mToken)
+        if (mArcid != null) {
+            outState.putString(KEY_ARCID, mArcid)
         }
         if (mGalleryDetail != null) {
             outState.putParcelable(KEY_GALLERY_DETAIL, mGalleryDetail)
@@ -363,41 +363,32 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         // ratings (1-5), but we keep stepSize=0.5 for smooth drag feedback.
         // The value is ceiled to an integer on touch release.
         rating.setIsIndicator(false)
-        rating.stepSize = 1.0f
-        val ratingHandler = android.os.Handler(android.os.Looper.getMainLooper())
-        var pendingRatingSave: Runnable? = null
+        rating.stepSize = 0.5f
         rating.onRatingBarChangeListener =
             RatingBar.OnRatingBarChangeListener { _, ratingValue, fromUser ->
-                if (!fromUser) return@OnRatingBarChangeListener
-                val gd = mGalleryDetail ?: return@OnRatingBarChangeListener
-                // 0 = unrated (-1.0f internally), 1-5 = star rating
-                val intRating = ratingValue.toInt().coerceIn(0, 5)
-                val finalRating = if (intRating == 0) -1f else intRating.toFloat()
-
-                // Update gd.rating IMMEDIATELY so onBackPressed sees the
-                // latest value (do NOT defer to the debounced Runnable)
-                gd.rating = finalRating
-                gd.rated = intRating > 0
-                rating.rating = ratingValue.toInt().toFloat() // snap to integer
-
-                // Live preview
-                ratingText.text = if (intRating > 0)
-                    LRRArchive.buildRatingEmoji(intRating) else "Not rated"
-
-                // Debounce only the server save (500ms)
-                pendingRatingSave?.let { ratingHandler.removeCallbacks(it) }
-                pendingRatingSave = Runnable {
-                    val currentTags = gd.tags?.flatMap { group ->
-                        val ns = group.groupName ?: "misc"
-                        (0 until group.size()).map { i ->
-                            val tag = group.getTagAt(i)
-                            if (ns == "misc") tag else "$ns:$tag"
-                        }
-                    }?.joinToString(", ") ?: ""
-                    RatingHelper.saveRatingToServer(gd.token, finalRating, currentTags)
-                }
-                ratingHandler.postDelayed(pendingRatingSave!!, 500)
+                if (!fromUser || mGalleryDetail == null) return@OnRatingBarChangeListener
+                // Live preview: show the emoji for the rounded value while dragging
+                ratingText.text = LRRArchive.buildRatingEmoji(
+                    kotlin.math.ceil(ratingValue).toInt()
+                )
             }
+        @android.annotation.SuppressLint("ClickableViewAccessibility")
+        rating.setOnTouchListener { _, event ->
+            if (event.action == android.view.MotionEvent.ACTION_UP
+                || event.action == android.view.MotionEvent.ACTION_CANCEL
+            ) {
+                val gd = mGalleryDetail ?: return@setOnTouchListener false
+                val arcid = gd.arcid ?: return@setOnTouchListener false
+                // Ceil to integer: 0.5→1, 1.5→2, 4.5→5, etc.
+                val finalRating = kotlin.math.ceil(rating.rating).coerceIn(0f, 5f)
+                rating.rating = finalRating
+                gd.rating = finalRating
+                gd.rated = true
+                ratingText.text = LRRArchive.buildRatingEmoji(finalRating.toInt())
+                RatingHelper.saveRatingToServer(arcid, finalRating, null)
+            }
+            false // Don't consume — let RatingBar handle the touch
+        }
 
         mEditTagsBtn = ViewUtils.`$$`(tags, R.id.edit_tags_btn) as? android.widget.ImageButton
         mEditTagsBtn?.let { btn ->
@@ -407,7 +398,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 val gd = mGalleryDetail
                 if (gd != null) {
                     TagEditDialog.show(
-                        activity2, gd.token,
+                        activity2, gd.arcid,
                         gd.tags
                     ) {
                         if (mState != STATE_REFRESH && mState != STATE_REFRESH_HEADER) {
@@ -613,16 +604,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         try {
             val gd = mGalleryDetail ?: return
             val binder = mHeaderBinder ?: return
-            // Prefer ArchiveDetail for display fields when available
-            val ad = viewModel.archiveDetail.value
-            if (ad != null) {
-                binder.bindFromArchiveDetail(ad, getEHContext(), layoutInflater2, this, this)
-            } else {
-                binder.bindViewSecond(gd, mGalleryInfo, getEHContext(), layoutInflater2, this, this)
-            }
-            // Favorites + archiver progress still use GalleryDetail (legacy operations)
-            binder.updateFavoriteDrawable(gd)
-            binder.bindArchiverProgress(gd)
+            binder.bindViewSecond(gd, mGalleryInfo, getEHContext(), layoutInflater2, this, this)
             mActionHandler?.updateDownloadText()
         } catch (e: Exception) {
             android.util.Log.e("GalleryDetailScene", "bindViewSecond crashed", e)
@@ -733,7 +715,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         const val KEY_GALLERY_INFO = "gallery_info"
         const val KEY_GID = "gid"
-        const val KEY_TOKEN = "token"
+        const val KEY_ARCID = "token"
         const val KEY_PAGE = "page"
         const val KEY_RATING_RESULT = "rating_result"
 
