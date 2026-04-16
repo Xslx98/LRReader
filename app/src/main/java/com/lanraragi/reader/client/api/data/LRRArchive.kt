@@ -6,7 +6,7 @@ import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.GalleryTagGroup
 import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.arcidToGid
+
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.domain.TagGroup
@@ -40,7 +40,7 @@ class LRRArchive() : Parcelable {
      */
     fun toGalleryInfo(): GalleryInfo {
         val gi = GalleryInfo()
-        gi.gid = arcidToGid(arcid)
+        gi.gid = 0L
         gi.arcid = arcid
         gi.title = title
         gi.pages = pagecount
@@ -71,7 +71,7 @@ class LRRArchive() : Parcelable {
     fun toGalleryDetail(): GalleryDetail {
         val gd = GalleryDetail()
 
-        gd.gid = arcidToGid(arcid)
+        gd.gid = 0L
         gd.arcid = arcid
         gd.title = title
         gd.titleJpn = null

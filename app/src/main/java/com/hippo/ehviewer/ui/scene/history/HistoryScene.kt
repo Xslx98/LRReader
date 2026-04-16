@@ -274,13 +274,13 @@ class HistoryScene : ToolbarScene(),
         if (requestCode == REQUEST_CODE_GALLERY_DETAIL
             && resultCode == RESULT_OK && data != null
         ) {
-            val gid = data.getLong(GalleryDetailScene.KEY_GID, -1)
+            val arcid = data.getString(GalleryDetailScene.KEY_ARCID)
             val rating = data.getFloat(GalleryDetailScene.KEY_RATING_RESULT, Float.NaN)
-            if (gid >= 0 && !rating.isNaN()) {
+            if (arcid != null && !rating.isNaN()) {
                 // Update the Archive display list in-place
                 val list = viewModel.historyList.value
                 for (i in list.indices) {
-                    if (com.lanraragi.reader.client.api.arcidToGid(list[i].arcid) == gid) {
+                    if (list[i].arcid == arcid) {
                         viewModel.updateRatingAtPosition(i, rating)
                         mAdapter?.notifyItemChanged(i)
                         break

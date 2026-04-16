@@ -46,7 +46,7 @@ import com.hippo.drawable.DrawerArrowDrawable
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.LRRUtils
-import com.lanraragi.reader.client.api.arcidToGid
+
 import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.dao.QuickSearch
@@ -205,7 +205,7 @@ class GalleryListScene : BaseScene(),
                     val count = adapter.itemCount
                     for (i in 0 until count) {
                         val archive = adapter.getDataAt(i)
-                        if (archive != null && arcidToGid(archive.arcid) == event.gid) {
+                        if (archive != null && archive.arcid == event.arcid) {
                             adapter.notifyItemChanged(i)
                             break
                         }
@@ -265,12 +265,12 @@ class GalleryListScene : BaseScene(),
         if (requestCode == GalleryItemActionHelper.REQUEST_CODE_GALLERY_DETAIL
             && resultCode == RESULT_OK && data != null
         ) {
-            val gid = data.getLong(GalleryDetailScene.KEY_GID, -1)
+            val arcid = data.getString(GalleryDetailScene.KEY_ARCID)
             val rating = data.getFloat(GalleryDetailScene.KEY_RATING_RESULT, Float.NaN)
-            if (gid >= 0 && !rating.isNaN()) {
+            if (arcid != null && !rating.isNaN()) {
                 val list = mHelper?.getData() ?: return
                 for (i in list.indices) {
-                    if (arcidToGid(list[i].arcid) == gid) {
+                    if (list[i].arcid == arcid) {
                         list[i] = list[i].copy(rating = rating)
                         adapter?.notifyItemChanged(i)
                         break
