@@ -77,7 +77,7 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
         this.dir = dir
         this.context = context.applicationContext
         this.gid = galleryInfo.gid
-        this.arcId = galleryInfo.token // LANraragi arcid
+        this.arcId = galleryInfo.arcid // LANraragi arcid
         this.serverUrl = LRRAuthManager.getServerUrl()
         val ctx = this.context ?: return
         this.startPageValue = loadReadingProgress(ctx, gid)

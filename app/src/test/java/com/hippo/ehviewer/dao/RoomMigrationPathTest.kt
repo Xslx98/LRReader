@@ -404,13 +404,13 @@ class RoomMigrationPathTest {
     fun `migrate 9 to 10 - row where old GID already matches SHA-256 is not changed`() {
         db = createDatabase(9) { createV9Schema(it) }
 
-        val token = "already_correct"
-        val correctGid = sha256Gid(token)
+        val arcid = "already_correct"
+        val correctGid = sha256Gid(arcid)
         val now = System.currentTimeMillis()
 
         db.execSQL(
             "INSERT INTO DOWNLOADS (GID, TOKEN, STATE, LEGACY, TIME, CATEGORY, RATING) VALUES (?, ?, 0, 0, ?, 0, 0.0)",
-            arrayOf<Any>(correctGid, token, now)
+            arrayOf<Any>(correctGid, arcid, now)
         )
 
         AppDatabase.MIGRATION_9_10.migrate(db)
@@ -1055,16 +1055,16 @@ class RoomMigrationPathTest {
     fun `migrate all v9 to v19 - full chain preserves data`() {
         db = createDatabase(9) { createV9Schema(it) }
 
-        val token = "full_chain_test_arcid"
-        val oldGid = token.hashCode().toLong() and 0x7FFFFFFF
-        val expectedGid = sha256Gid(token)
+        val arcid = "full_chain_test_arcid"
+        val oldGid = arcid.hashCode().toLong() and 0x7FFFFFFF
+        val expectedGid = sha256Gid(arcid)
         val now = System.currentTimeMillis()
 
         // Seed v9 data across multiple tables
         db.execSQL(
             "INSERT INTO DOWNLOADS (GID, TOKEN, STATE, LEGACY, TIME, CATEGORY, RATING, TITLE) " +
                 "VALUES (?, ?, 0, 0, ?, 0, 5.0, 'Test Manga')",
-            arrayOf<Any>(oldGid, token, now)
+            arrayOf<Any>(oldGid, arcid, now)
         )
         db.execSQL(
             "INSERT INTO DOWNLOAD_DIRNAME (GID, DIRNAME) VALUES (?, '/test/dir')",
@@ -1072,7 +1072,7 @@ class RoomMigrationPathTest {
         )
         db.execSQL(
             "INSERT INTO HISTORY (GID, TOKEN, MODE, TIME, CATEGORY, RATING) VALUES (?, ?, 0, ?, 0, 3.5)",
-            arrayOf<Any>(oldGid, token, now)
+            arrayOf<Any>(oldGid, arcid, now)
         )
         db.execSQL(
             "INSERT INTO SERVER_PROFILES (NAME, URL, API_KEY, IS_ACTIVE) VALUES ('TestSrv', 'http://test.local', 'secret', 1)"
@@ -1098,7 +1098,7 @@ class RoomMigrationPathTest {
         db.query("SELECT GID, TOKEN, TITLE, RATING FROM DOWNLOADS").use { c ->
             assertTrue(c.moveToFirst())
             assertEquals(expectedGid, c.getLong(0))
-            assertEquals(token, c.getString(1))
+            assertEquals(arcid, c.getString(1))
             assertEquals("Test Manga", c.getString(2))
             assertEquals(5.0, c.getDouble(3), 0.001)
         }
@@ -1112,7 +1112,7 @@ class RoomMigrationPathTest {
         db.query("SELECT GID, TOKEN, RATING FROM HISTORY").use { c ->
             assertTrue(c.moveToFirst())
             assertEquals(expectedGid, c.getLong(0))
-            assertEquals(token, c.getString(1))
+            assertEquals(arcid, c.getString(1))
             assertEquals(3.5, c.getDouble(2), 0.001)
         }
 

@@ -276,7 +276,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
 
             // Read from DB
             val downloadDbRepo = ServiceRegistry.dataModule.downloadDbRepository
-            val arcid = galleryInfo.token
+            val arcid = galleryInfo.arcid
             var dirname = downloadDbRepo.getDownloadDirname(arcid)
             if (dirname != null) {
                 // Some dirname may be invalid in some version

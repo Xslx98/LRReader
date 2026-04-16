@@ -15,7 +15,7 @@ private const val TAG = "GalleryInfoSerializer"
  */
 fun GalleryInfoEntity.toCSV(): String {
     return gid.toString() + "," +
-        token + "," +
+        arcid + "," +
         title + "," +
         titleJpn + "," +
         thumb + "," +
@@ -50,7 +50,7 @@ fun GalleryInfoEntity.toCSV(): String {
 fun GalleryInfoEntity.getDownloadInfo(info: DownloadInfo?): DownloadInfo {
     val i = DownloadInfo()
     i.gid = gid
-    i.token = token
+    i.arcid = arcid
     i.title = title
     i.titleJpn = titleJpn
     i.thumb = thumb
@@ -92,7 +92,7 @@ fun galleryInfoFromCSV(csv: String): GalleryInfoEntity? {
     val gi = GalleryInfoEntity()
     try {
         gi.gid = values[0].toLong()
-        gi.token = values[1]
+        gi.arcid = values[1]
         gi.title = values[2]
         gi.titleJpn = values[3]
         gi.thumb = values[4]
@@ -164,7 +164,7 @@ fun galleryInfoFromJson(obj: JSONObject): GalleryInfoEntity {
     galleryInfo.thumbWidth = obj.optInt("thumbWidth", 0)
     galleryInfo.title = obj.optString("title", null)
     galleryInfo.titleJpn = obj.optString("titleJpn", null)
-    galleryInfo.token = obj.optString("token", null)
+    galleryInfo.arcid = obj.optString("token", null)
     galleryInfo.uploader = obj.optString("uploader", null)
     galleryInfo.serverProfileId = obj.optLong("serverProfileId", 0)
     return galleryInfo

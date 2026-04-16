@@ -26,7 +26,7 @@ class GalleryInfoParcelTest {
     fun galleryInfo_parcelRoundTrip_preservesAllFields() {
         val original = GalleryInfo().apply {
             gid = 12345L
-            token = "abc123"
+            arcid = "abc123"
             title = "Test Title"
             titleJpn = "\u30c6\u30b9\u30c8"
             thumb = "https://example.com/thumb.jpg"
@@ -56,7 +56,7 @@ class GalleryInfoParcelTest {
             val restored = GalleryInfo.CREATOR.createFromParcel(parcel)
 
             assertEquals(original.gid, restored.gid)
-            assertEquals(original.token, restored.token)
+            assertEquals(original.arcid, restored.arcid)
             assertEquals(original.title, restored.title)
             assertEquals(original.titleJpn, restored.titleJpn)
             assertEquals(original.thumb, restored.thumb)
@@ -87,7 +87,7 @@ class GalleryInfoParcelTest {
     fun galleryInfo_parcelRoundTrip_withNullFields() {
         val original = GalleryInfo().apply {
             gid = 1L
-            token = ""
+            arcid = ""
             title = null
             titleJpn = null
             thumb = null
@@ -106,7 +106,7 @@ class GalleryInfoParcelTest {
             val restored = GalleryInfo.CREATOR.createFromParcel(parcel)
 
             assertEquals(original.gid, restored.gid)
-            assertEquals("", restored.token)
+            assertEquals("", restored.arcid)
             assertNull(restored.title)
             assertNull(restored.titleJpn)
             assertNull(restored.thumb)
@@ -205,7 +205,7 @@ class GalleryInfoParcelTest {
         val original = DownloadInfo().apply {
             // GalleryInfo parent fields
             gid = 67890L
-            token = "xyz789"
+            arcid = "xyz789"
             title = "Download Test"
             titleJpn = "\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9"
             thumb = "https://example.com/dl_thumb.jpg"
@@ -235,7 +235,7 @@ class GalleryInfoParcelTest {
 
             // Parent fields
             assertEquals(original.gid, restored.gid)
-            assertEquals(original.token, restored.token)
+            assertEquals(original.arcid, restored.arcid)
             assertEquals(original.title, restored.title)
             assertEquals(original.titleJpn, restored.titleJpn)
             assertEquals(original.thumb, restored.thumb)

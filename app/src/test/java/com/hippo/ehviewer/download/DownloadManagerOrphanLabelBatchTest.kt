@@ -111,7 +111,7 @@ class DownloadManagerOrphanLabelBatchTest {
             for ((index, label) in orphanLabels.withIndex()) {
                 val info = DownloadInfo().apply {
                     gid = (10000L + index)
-                    token = "tok-$index"
+                    arcid = "tok-$index"
                     title = "Orphan Gallery $index"
                     this.label = label
                     state = DownloadInfo.STATE_NONE
@@ -165,7 +165,7 @@ class DownloadManagerOrphanLabelBatchTest {
                 for (j in 0..1) {
                     val info = DownloadInfo().apply {
                         gid = (20000L + index * 10 + j)
-                        token = "tok-$index-$j"
+                        arcid = "tok-$index-$j"
                         title = "Gallery $label $j"
                         this.label = label
                         state = DownloadInfo.STATE_NONE
@@ -205,7 +205,7 @@ class DownloadManagerOrphanLabelBatchTest {
             for (i in 0..3) {
                 val info = DownloadInfo().apply {
                     gid = (30000L + i)
-                    token = "tok-$i"
+                    arcid = "tok-$i"
                     title = "Gallery $i"
                     label = if (i % 2 == 0) "existing-1" else "existing-2"
                     state = DownloadInfo.STATE_NONE
@@ -240,7 +240,7 @@ class DownloadManagerOrphanLabelBatchTest {
         val orphanLabels = listOf("orphan-a", "orphan-b", "orphan-c")
         runBlocking {
             val info1 = DownloadInfo().apply {
-                gid = 40001L; token = "t1"; title = "G1"
+                gid = 40001L; arcid = "t1"; title = "G1"
                 label = "known"; state = DownloadInfo.STATE_NONE
                 time = System.currentTimeMillis()
             }
@@ -248,7 +248,7 @@ class DownloadManagerOrphanLabelBatchTest {
 
             for ((index, label) in orphanLabels.withIndex()) {
                 val info = DownloadInfo().apply {
-                    gid = (40010L + index); token = "t-$index"; title = "G-$label"
+                    gid = (40010L + index); arcid = "t-$index"; title = "G-$label"
                     this.label = label; state = DownloadInfo.STATE_NONE
                     time = System.currentTimeMillis() + index + 1
                 }
@@ -282,7 +282,7 @@ class DownloadManagerOrphanLabelBatchTest {
         runBlocking {
             for (i in 0..4) {
                 val info = DownloadInfo().apply {
-                    gid = (50000L + i); token = "t-$i"; title = "G-$i"
+                    gid = (50000L + i); arcid = "t-$i"; title = "G-$i"
                     label = "shared-orphan"; state = DownloadInfo.STATE_NONE
                     time = System.currentTimeMillis() + i
                 }

@@ -21,7 +21,7 @@ import com.lanraragi.reader.domain.TagGroup
 fun Archive.toGalleryInfo(): GalleryInfo {
     val gi = GalleryInfo()
     gi.gid = arcidToGid(arcid)
-    gi.token = arcid
+    gi.arcid = arcid
     gi.title = title
     gi.thumb = thumbnailUrl
     gi.rating = rating
@@ -40,7 +40,7 @@ fun Archive.toGalleryInfo(): GalleryInfo {
  */
 fun GalleryInfo.toArchive(lastreadtime: Long = 0L): Archive {
     return Archive(
-        arcid = token,
+        arcid = this.arcid,
         title = title ?: "",
         tags = simpleTags?.let { tags ->
             val map = LinkedHashMap<String, MutableList<String>>()
@@ -84,7 +84,7 @@ fun GalleryDetail.toArchiveDetail(): ArchiveDetail {
 
     return ArchiveDetail(
         archive = Archive(
-            arcid = token ?: "",
+            arcid = this.arcid,
             title = title ?: "",
             tags = tagGroups.associate { it.namespace to it.tags },
             pagecount = pages,

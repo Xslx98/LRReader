@@ -13,7 +13,7 @@ import com.hippo.ehviewer.client.data.GalleryInfoEntity
  * Entity mapped to table "LOCAL_FAVORITES".
  * Primary key is GID (inherited from GalleryInfo).
  */
-@Entity(tableName = "LOCAL_FAVORITES", primaryKeys = ["ARCID"], indices = [Index("TIME")])
+@Entity(tableName = "LOCAL_FAVORITES", primaryKeys = ["GID"], indices = [Index("TIME")])
 class LocalFavoriteInfo : GalleryInfoEntity {
 
     @ColumnInfo(name = "TIME")
@@ -29,12 +29,12 @@ class LocalFavoriteInfo : GalleryInfoEntity {
 
     @Ignore
     constructor(
-        gid: Long, token: String?, title: String?, titleJpn: String?,
+        gid: Long, arcid: String?, title: String?, titleJpn: String?,
         thumb: String?, category: Int, posted: String?, uploader: String?,
         rating: Float, simpleLanguage: String?, time: Long
     ) {
         this.gid = gid
-        this.token = token ?: ""
+        this.arcid = arcid ?: ""
         this.title = title
         this.titleJpn = titleJpn
         this.thumb = thumb
@@ -49,7 +49,7 @@ class LocalFavoriteInfo : GalleryInfoEntity {
     @Ignore
     constructor(galleryInfo: GalleryInfo) {
         gid = galleryInfo.gid
-        token = galleryInfo.token
+        arcid = galleryInfo.arcid
         title = galleryInfo.title
         titleJpn = galleryInfo.titleJpn
         thumb = galleryInfo.thumb
