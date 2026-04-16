@@ -632,7 +632,7 @@ class DownloadAdapter(
                 }
                 stop -> {
                     val downloadManager = mCallback.downloadManager
-                    downloadManager?.stopDownload(list[mCallback.positionInList(index)].gid)
+                    downloadManager?.stopDownload(list[mCallback.positionInList(index)].arcid)
                 }
             }
         }
