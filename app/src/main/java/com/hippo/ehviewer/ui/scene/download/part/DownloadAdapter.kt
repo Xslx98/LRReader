@@ -136,7 +136,7 @@ class DownloadAdapter(
         if (posInList < 0 || posInList >= list.size) {
             return 0
         }
-        return list[posInList].gid
+        return list[posInList].arcid.hashCode().toLong()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DownloadHolder {
