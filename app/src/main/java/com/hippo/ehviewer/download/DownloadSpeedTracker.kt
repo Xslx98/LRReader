@@ -30,7 +30,10 @@ import java.lang.ref.WeakReference
  * Callbacks are supplied via [Callback] so this class does not need a
  * direct reference to DownloadManager.
  */
-internal class DownloadSpeedTracker(private val callback: Callback) : Runnable {
+internal class DownloadSpeedTracker(
+    private val callback: Callback,
+    private val progressTracker: DownloadProgressTracker = DownloadProgressTracker()
+) : Runnable {
 
     private val handler = Handler(Looper.getMainLooper())
 
@@ -102,12 +105,17 @@ internal class DownloadSpeedTracker(private val callback: Callback) : Runnable {
             }
             oldSpeed = newSpeed
             info.speed = newSpeed
+            progressTracker.update(info.arcid, speed = newSpeed)
 
-            // Calculate remaining time
+            // Calculate remaining time. If total<=0, newSpeed==0, or the pair
+            // of maps yields downloadingCount==0, we keep the prior
+            // info.remaining value (legacy behavior).
             if (info.total <= 0) {
                 info.remaining = -1
+                progressTracker.update(info.arcid, remaining = -1L)
             } else if (newSpeed == 0L) {
                 info.remaining = 300L * 24L * 60L * 60L * 1000L // 300 days
+                progressTracker.update(info.arcid, remaining = info.remaining)
             } else {
                 var downloadingCount = 0
                 var downloadingContentLengthSum = 0L
@@ -124,6 +132,7 @@ internal class DownloadSpeedTracker(private val callback: Callback) : Runnable {
                     totalSize += downloadingContentLengthSum *
                         (info.total - info.downloaded - downloadingCount) / downloadingCount
                     info.remaining = totalSize / newSpeed * 1000
+                    progressTracker.update(info.arcid, remaining = info.remaining)
                 }
             }
 
