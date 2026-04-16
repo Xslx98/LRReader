@@ -17,7 +17,7 @@ import com.hippo.ehviewer.client.LRRCacheKeyFactory
 import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
-import com.lanraragi.reader.client.api.arcidToGid
+
 import com.lanraragi.reader.client.api.data.LRRArchive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
@@ -111,7 +111,7 @@ internal class DetailHeaderBinder(
         if (action == GalleryDetailScene.ACTION_GALLERY_INFO ||
             action == GalleryDetailScene.ACTION_DOWNLOAD_GALLERY_INFO
         ) {
-            thumb.load(LRRCacheKeyFactory.getThumbKey(galleryInfo.gid), galleryInfo.thumb)
+            thumb.load(LRRCacheKeyFactory.getThumbKey(galleryInfo.arcid), galleryInfo.thumb)
             title.text = LRRUtils.getSuitableTitle(galleryInfo)
             uploader.text = galleryInfo.uploader
         }
@@ -126,13 +126,13 @@ internal class DetailHeaderBinder(
         longClickListener: View.OnLongClickListener
     ) {
         if (galleryInfo == null) {
-            thumb.load(LRRCacheKeyFactory.getThumbKey(gd.gid), gd.thumb)
+            thumb.load(LRRCacheKeyFactory.getThumbKey(gd.arcid), gd.thumb)
         } else {
             if (useNetWorkLoadThumb) {
-                thumb.load(LRRCacheKeyFactory.getThumbKey(gd.gid), gd.thumb)
+                thumb.load(LRRCacheKeyFactory.getThumbKey(gd.arcid), gd.thumb)
                 useNetWorkLoadThumb = false
             } else {
-                thumb.load(LRRCacheKeyFactory.getThumbKey(gd.gid), gd.thumb, false)
+                thumb.load(LRRCacheKeyFactory.getThumbKey(gd.arcid), gd.thumb, false)
             }
         }
 
@@ -173,9 +173,8 @@ internal class DetailHeaderBinder(
         longClickListener: View.OnLongClickListener
     ) {
         val archive = ad.archive
-        val gid = arcidToGid(archive.arcid)
 
-        thumb.load(LRRCacheKeyFactory.getThumbKey(gid), archive.thumbnailUrl)
+        thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), archive.thumbnailUrl)
         title.text = archive.title
         uploader.text = null
 
@@ -243,11 +242,11 @@ internal class DetailHeaderBinder(
         pages.text = "${displayProgress}/${info.pages}P"
     }
 
-    fun setTransitionName(gid: Long) {
-        if (gid != -1L) {
-            ViewCompat.setTransitionName(thumb, TransitionNameFactory.getThumbTransitionName(gid))
-            ViewCompat.setTransitionName(title, TransitionNameFactory.getTitleTransitionName(gid))
-            ViewCompat.setTransitionName(uploader, TransitionNameFactory.getUploaderTransitionName(gid))
+    fun setTransitionName(arcid: String?) {
+        if (arcid != null) {
+            ViewCompat.setTransitionName(thumb, TransitionNameFactory.getThumbTransitionName(arcid))
+            ViewCompat.setTransitionName(title, TransitionNameFactory.getTitleTransitionName(arcid))
+            ViewCompat.setTransitionName(uploader, TransitionNameFactory.getUploaderTransitionName(arcid))
         }
     }
 
