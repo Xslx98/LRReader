@@ -95,7 +95,7 @@ class DownloadAdapter(
         fun positionInList(position: Int): Int
         fun listIndexInPage(position: Int): Int
         val list: List<DownloadInfo>?
-        val spiderInfoMap: Map<Long, SpiderInfo>
+        val spiderInfoMap: Map<String, SpiderInfo>
         val downloadManager: DownloadManager?
         val recyclerView: EasyRecyclerView?
     }
@@ -182,7 +182,7 @@ class DownloadAdapter(
                 holder.rating.setRating(archive.rating)
             }
 
-            val spiderInfo = mCallback.spiderInfoMap[info.gid]
+            val spiderInfo = info.arcid?.let { mCallback.spiderInfoMap[it] }
             if (spiderInfo != null) {
                 val startPage = spiderInfo.startPage + 1
                 val readText = "$startPage/${spiderInfo.pages}"

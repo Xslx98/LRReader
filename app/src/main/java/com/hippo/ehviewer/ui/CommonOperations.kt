@@ -72,7 +72,13 @@ object CommonOperations {
     ) {
         ServiceRegistry.coroutineModule.ioScope.launch {
             try {
-                ServiceRegistry.dataModule.favoritesRepository.removeLocalFavorite(galleryInfo.gid)
+                val arcid = galleryInfo.arcid
+                if (arcid != null) {
+                    ServiceRegistry.dataModule.favoritesRepository.removeLocalFavorite(arcid)
+                } else {
+                    @Suppress("DEPRECATION")
+                    ServiceRegistry.dataModule.favoritesRepository.removeLocalFavorite(galleryInfo.gid)
+                }
                 withContext(Dispatchers.Main) { listener.onSuccess() }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) { listener.onFailure(e) }

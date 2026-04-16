@@ -471,7 +471,13 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         super.onResume()
         // Sync local reading progress back to the in-memory model
         val info = getGalleryInfo() ?: return
-        val localPage = GalleryProvider2.loadReadingProgress(requireContext(), info.gid) + 1
+        val arcid = info.arcid
+        val localPage = if (arcid != null) {
+            GalleryProvider2.loadReadingProgress(requireContext(), arcid) + 1
+        } else {
+            @Suppress("DEPRECATION")
+            GalleryProvider2.loadReadingProgress(requireContext(), info.gid) + 1
+        }
         if (localPage > info.progress) {
             info.progress = localPage
         }
@@ -680,7 +686,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         if (dlState != DownloadInfo.STATE_INVALID) {
             val di = mDownloadInfo
             if (di != null && di.thumb != null &&
-                di.thumb != result.thumb && di.gid == result.gid
+                di.thumb != result.thumb && di.arcid == result.arcid
             ) {
                 mHeaderBinder?.useNetWorkLoadThumb = true
                 di.updateInfo(result)
