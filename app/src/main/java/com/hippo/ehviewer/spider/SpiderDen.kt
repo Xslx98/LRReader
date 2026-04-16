@@ -49,7 +49,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
     @Volatile
     private var mMode: Int = SpiderQueen.MODE_READ
 
-    private var mGid: Long = galleryInfo.gid
+    private var mArcid: String = galleryInfo.arcid
 
     /**
      * Initializes the download directory by resolving it from DB/filesystem.
@@ -59,8 +59,8 @@ class SpiderDen(galleryInfo: GalleryInfo) {
         mDownloadDir = getGalleryDownloadDir(galleryInfo)
     }
 
-    fun setMGid(mGid: Long) {
-        this.mGid = mGid
+    fun setMArcid(arcid: String) {
+        this.mArcid = arcid
     }
 
     fun setMode(@SpiderQueen.Mode mode: Int) {
@@ -94,7 +94,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
 
     private fun containInCache(index: Int): Boolean {
         val cache = sCache ?: return false
-        val key = LRRCacheKeyFactory.getImageKey(mGid, index)
+        val key = LRRCacheKeyFactory.getImageKey(mArcid, index)
         return cache.contain(key)
     }
 
@@ -114,7 +114,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
     private fun copyFromCacheToDownloadDir(index: Int): Boolean {
         val cache = sCache ?: return false
         val dir = getDownloadDir() ?: return false
-        val key = LRRCacheKeyFactory.getImageKey(mGid, index)
+        val key = LRRCacheKeyFactory.getImageKey(mArcid, index)
         val pipe = cache.getInputStreamPipe(key) ?: return false
 
         var os: java.io.OutputStream? = null
@@ -160,7 +160,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
 
     private fun removeFromCache(index: Int): Boolean {
         val cache = sCache ?: return false
-        val key = LRRCacheKeyFactory.getImageKey(mGid, index)
+        val key = LRRCacheKeyFactory.getImageKey(mArcid, index)
         return cache.remove(key)
     }
 
@@ -185,7 +185,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
 
     private fun openCacheOutputStreamPipe(index: Int): OutputStreamPipe? {
         val cache = sCache ?: return null
-        val key = LRRCacheKeyFactory.getImageKey(mGid, index)
+        val key = LRRCacheKeyFactory.getImageKey(mArcid, index)
         return cache.getOutputStreamPipe(key)
     }
 
@@ -217,7 +217,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
 
     private fun openCacheInputStreamPipe(index: Int): InputStreamPipe? {
         val cache = sCache ?: return null
-        val key = LRRCacheKeyFactory.getImageKey(mGid, index)
+        val key = LRRCacheKeyFactory.getImageKey(mArcid, index)
         return cache.getInputStreamPipe(key)
     }
 
