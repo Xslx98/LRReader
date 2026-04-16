@@ -90,10 +90,21 @@ class DownloadsScene : ToolbarScene(),
         get() = viewModel.currentLabel.value
         set(value) { viewModel.selectLabel(value) }
 
-    /** Shortcut delegating to [DownloadsViewModel.downloadList]. */
-    private var mList: List<DownloadInfo>?
-        get() = viewModel.downloadList.value
-        set(value) { if (value != null) viewModel.setDownloadList(value) }
+    /**
+     * The in-memory download list for the current label.
+     * Reads from DownloadManager's memory collections which retain
+     * transient fields (speed, remaining, downloaded, total).
+     */
+    private val mList: List<DownloadInfo>?
+        get() {
+            val dm = downloadManager ?: return null
+            val label = viewModel.currentLabel.value
+            return if (label == null) {
+                dm.defaultDownloadInfoList
+            } else {
+                dm.getLabelDownloadInfoList(label)
+            }
+        }
 
     private var mLastSnapshot: MutableList<DownloadInfo> = ArrayList()
 
@@ -404,16 +415,22 @@ class DownloadsScene : ToolbarScene(),
         updateTitle()
         setNavigationIcon(R.drawable.v_arrow_left_dark_x24)
 
-        // Subscribe to Room Flow for reactive download list structure changes.
-        // This handles add/remove/state changes persisted to the database.
-        // Progress updates (speed, downloaded, total) are @Ignore fields and
-        // continue to use the existing DownloadInfoListener callback mechanism.
-        collectFlow(viewLifecycleOwner, viewModel.downloadsFlow) { downloads ->
+        // Subscribe to Room Flow to detect structural changes (add/remove/state).
+        // When the Flow emits, re-read the in-memory list from DownloadManager
+        // (which retains @Ignore transient fields like speed/remaining/downloaded).
+        collectFlow(viewLifecycleOwner, viewModel.downloadsFlow) { _ ->
             if (mAdapter == null || searching) {
                 return@collectFlow
             }
-            // Apply DiffUtil against the last known snapshot
-            dispatchDiffUpdate(ArrayList(downloads))
+            // Re-read the in-memory list (has speed/progress) for the current label
+            val dm = downloadManager ?: return@collectFlow
+            val label = viewModel.currentLabel.value
+            val memoryList = if (label == null) {
+                dm.defaultDownloadInfoList
+            } else {
+                dm.getLabelDownloadInfoList(label) ?: emptyList()
+            }
+            dispatchDiffUpdate(ArrayList(memoryList))
         }
 
         // Observe filter loading state
@@ -430,13 +447,11 @@ class DownloadsScene : ToolbarScene(),
         // Observe filter/sort/search completion
         collectFlow(viewLifecycleOwner, viewModel.filterSearchDone) {
             if (!isAdded) return@collectFlow
-            mList = viewModel.downloadList.value
             updateAdapter()
         }
 
         // Observe category filter list changes
         collectFlow(viewLifecycleOwner, viewModel.listChanged) {
-            mList = viewModel.downloadList.value
             dispatchDiffUpdate(mList?.let { ArrayList(it) } ?: ArrayList())
             updateTitle()
             updatePaginationIndicator()

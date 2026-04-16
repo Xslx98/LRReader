@@ -18,7 +18,7 @@ import org.json.JSONObject
  */
 @Entity(
     tableName = "DOWNLOADS",
-    primaryKeys = ["GID"],
+    primaryKeys = ["ARCID"],
     indices = [
         Index("SERVER_PROFILE_ID"),
         Index("TIME"),
