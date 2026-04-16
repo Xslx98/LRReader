@@ -21,7 +21,7 @@
 | Build | Gradle + AGP 8.13.2 | `./gradlew` + Version Catalog (`libs.versions.toml`) |
 | Network | OkHttp | 4.12.0 |
 | API Serialization | kotlinx-serialization | 1.8.1 (all JSON, Gson removed) |
-| Database | Room + KSP | 2.6.1, schema v18 (exported to `app/schemas/`) |
+| Database | Room + KSP | 2.6.1, schema v21 (exported to `app/schemas/`) |
 | Coroutines | kotlinx-coroutines | 1.10.2 |
 | Lifecycle | AndroidX lifecycle-runtime-ktx | 2.8.7 |
 | Image Decoding | Custom C/JNI (libjpeg-turbo, libpng, libwebp) | CMake |
@@ -67,7 +67,7 @@ LRReader/
 │   │   │   │   └── CMakeLists.txt
 │   │   │   ├── res/                   # Resources (11 locale configs)
 │   │   │   └── AndroidManifest.xml
-│   │   └── test/                      # Unit tests (42 files, LRR API + DAO + DiffUtil + Paging + Filter + Download)
+│   │   └── test/                      # Unit tests (Robolectric + MockWebServer)
 │   ├── build.gradle                   # App-level Gradle config
 │   └── proguard-rules.pro
 ├── config/detekt/detekt.yml           # Detekt static analysis config
@@ -84,68 +84,33 @@ LRReader/
 
 ### Key Source Files
 
+All paths below are relative to `app/src/main/java/com/hippo/ehviewer/` unless noted.
+
 | File | Purpose |
 |---|---|
-| `EhApplication.kt` | App entry point; calls `ServiceRegistry.initialize()`, defers JNI init to background |
-| `ServiceRegistry.kt` | Central singleton registry replacing old EhApplication service locator |
-| `module/AppModule.kt` | App-level services (crash reporting, analytics) |
-| `module/ClientModule.kt` | LRR API clients + auth |
-| `module/CoroutineModule.kt` | SupervisorJob + CoroutineExceptionHandler scoped coroutines |
-| `module/DataModule.kt` | Room database access |
-| `module/NetworkModule.kt` | OkHttp client configuration + DNS |
-| `util/CoroutineBridge.kt` | Java→coroutine bridge (launchIO/launchIOGlobal) |
-| `EhDB.kt` | Room database access layer (all suspend, no `blockingDb` bridges) |
-| `settings/AppearanceSettings.kt` | UI/theme preferences |
-| `settings/DownloadSettings.kt` | Download preferences |
-| `settings/NetworkSettings.kt` | Network/proxy preferences |
-| `settings/ReadingSettings.kt` | Reader preferences |
-| `settings/SecuritySettings.kt` | Auth/security preferences |
-| `client/api/LRRApiUtils.kt` | Shared utilities: `parseBaseUrl()`, `retryOnFailure()`, `friendlyError()`, JSON/exception defs |
-| `client/api/LRRArchiveApi.kt` | Archive search/list/detail/upload/delete/metadata API |
-| `client/api/LRRSearchApi.kt` | Search + random endpoint |
-| `client/api/LRRCategoryApi.kt` | Category CRUD + archive association |
-| `client/api/LRRDatabaseApi.kt` | Tag statistics + database operations |
-| `client/api/LRRTagCache.kt` | In-memory tag autocomplete cache (10-min TTL) |
-| `client/api/LRRArchivePagingSource.kt` | Paging 3 source for gallery list |
-| `dao/AppDatabase.kt` | Room database schema (v19, schema exported) |
-| `dao/HistoryRepository.kt` | History domain Repository backed by BrowsingRoomDao (W17-3) |
-| `dao/ProfileRepository.kt` | Server profile domain Repository backed by MiscRoomDao (W19-2) |
-| `dao/QuickSearchRepository.kt` | Quick search domain Repository backed by BrowsingRoomDao (W21-1) |
-| `dao/FavoritesRepository.kt` | Local favorites domain Repository backed by BrowsingRoomDao (W21-1) |
-| `util/FlowBridge.kt` | Java→Kotlin Flow bridge for lifecycle-aware collection |
+| `EhApplication.kt` | App entry point; calls `ServiceRegistry.initialize()` |
+| `ServiceRegistry.kt` | Central singleton registry (modules: App, Client, Coroutine, Data, Network) |
+| `EhDB.kt` | Room database access layer (all suspend); domain methods are `@Deprecated` in favour of Repositories |
+| `dao/AppDatabase.kt` | Room database schema (v21, exported to `app/schemas/`) |
+| `dao/*Repository.kt` | Domain Repositories: History, Profile, QuickSearch, Favorites, DownloadDb |
+| `settings/*.kt` | Modular settings objects (Appearance, Download, Network, Reading, Security, etc.) |
+| `client/api/LRR*.kt` | LANraragi REST API: Archive, Search, Category, Database, TagCache, PagingSource |
+| `client/api/LRRApiUtils.kt` | Shared utilities: `parseBaseUrl()`, `retryOnFailure()`, `friendlyError()` |
+| `download/DownloadManager.kt` | Download facade — delegates to Repository/Scheduler/EventBus; owns `progressTracker` |
+| `download/DownloadRepository.kt` | Download in-memory collections + DB persistence |
+| `download/DownloadScheduler.kt` | Download worker scheduling + state machine |
+| `download/DownloadProgressTracker.kt` | In-memory `StateFlow<Map<arcid, ProgressSnapshot>>` — live progress (ADR-001) |
+| `download/ProgressSnapshot.kt` | Immutable per-archive progress: speed/finished/downloaded/total/remaining |
 | `ui/MainActivity.kt` | Main UI entry point + scene routing |
 | `ui/GalleryActivity.kt` | Reader/detail view |
-| `ui/scene/GalleryListScene.kt` | Gallery browse scene (uses PagingSource for LRR search) |
-| `ui/scene/download/DownloadsScene.kt` | Download management (~830 lines, renders from viewModel.downloadList enriched Flow, W35-3b; no DownloadManager memory reads for list) |
-| `ui/scene/download/DownloadGuideHelper.kt` | Showcase/tutorial overlay logic extracted from DownloadsScene (W9-2) |
-| `ui/scene/download/DownloadPaginationHelper.kt` | Page indicator and navigation extracted from DownloadsScene (W9-2) |
-| `ui/scene/download/DownloadDragDropHelper.kt` | Item reordering via RecyclerViewDragDropManager extracted from DownloadsScene (W9-2) |
-| `ui/scene/gallery/detail/GalleryDetailScene.kt` | Gallery detail view (~694 lines, observes GalleryDetailViewModel, W9-3 decomposed) |
-| `ui/scene/gallery/detail/DetailHeaderBinder.kt` | Header view binding + thumbnail + circular reveal extracted from GalleryDetailScene (W9-3) |
-| `ui/scene/gallery/detail/DetailActionHandler.kt` | Action button click handling extracted from GalleryDetailScene (W9-3) |
-| `ui/scene/gallery/detail/GalleryDetailViewModel.kt` | Gallery detail state + metadata fetch + download state + DownloadInfoListener (W3-2) |
-| `ui/scene/gallery/detail/GalleryTagHelper.kt` | Stateless tag display utility object (W3-2: Callback eliminated) |
-| `ui/scene/gallery/list/GalleryListViewModel.kt` | Paging 3 ViewModel for gallery list + download state observation (W15-2) |
-| `ui/scene/gallery/list/QuickSearchViewModel.kt` | Quick search CRUD ViewModel (W14-3) |
-| `ui/scene/gallery/list/GalleryFabHelper.kt` | FabLayout callback logic extracted from GalleryListScene (W15-2) |
-| `ui/scene/gallery/list/GallerySearchBarHelper.kt` | SearchBar/FastScroller/SearchLayout callbacks (W15-2) |
-| `ui/scene/gallery/list/GalleryListHelperFactory.kt` | Factory wiring all 12 helpers for GalleryListScene (W15-2) |
-| `ui/scene/gallery/list/GalleryListSearchHelper.kt` | SearchBar interaction + query construction extracted from GalleryListScene (W9-3) |
-| `ui/scene/download/DownloadsViewModel.kt` | Download list state (Flow-driven, enriched by DownloadProgressTracker, W35-3b), labels, filter/sort, search, import, bulk ops, sealed DownloadUiEvent |
-| `ui/scene/download/DownloadGalleryOpenHelper.kt` | Gallery item click + read-process update extracted from DownloadsScene (W16-1) |
-| `ui/scene/download/DownloadSelectionHelper.kt` | Selection mode + FAB handling extracted from DownloadsScene (W16-1) |
-| `ui/scene/LRRCategoriesViewModel.kt` | Category CRUD ViewModel (W14-2) |
-| `ui/scene/ServerListViewModel.kt` | Server profile CRUD + connection verification ViewModel (W15-1) |
-| `ui/scene/ServerListDialogHelper.kt` | Profile add/edit/delete dialog builders (W15-1) |
-| `download/DownloadManager.kt` | Download facade — thin delegation to Repository/Scheduler/EventBus (W6-2); owns `progressTracker` (W35-3a) |
-| `download/DownloadRepository.kt` | Download collection management + DB persistence, injected CoroutineDispatcher (W6-2, W8-3) |
-| `download/DownloadScheduler.kt` | Download worker scheduling + state machine (W6-2); mirrors transient fields into `progressTracker` (W35-3a) |
-| `download/DownloadEventBus.kt` | Download listener registration + event dispatch (W6-2) |
-| `download/ProgressSnapshot.kt` | Immutable per-archive progress snapshot: speed/finished/downloaded/total/remaining (W35-3a) |
-| `download/DownloadProgressTracker.kt` | In-memory `StateFlow<Map<arcid, ProgressSnapshot>>` tracker — mixed SSOT per ADR-001 (W35-3a) |
-| `mapper/GalleryInfoMapper.kt` | GalleryInfo↔GalleryInfoUi conversion (W3-3) |
-| `ui/scene/gallery/detail/TagEditDialog.kt` | Grouped tag editor (chip-style, per-namespace) |
-| `ui/gallery/GalleryMenuHelper.kt` | Reader settings dialog (immediate-apply, no confirm button) |
+| `ui/scene/GalleryListScene.kt` | Gallery browse scene (Paging 3) |
+| `ui/scene/gallery/detail/GalleryDetailScene.kt` | Gallery detail view (decomposed: DetailHeaderBinder, DetailActionHandler) |
+| `ui/scene/gallery/detail/GalleryDetailViewModel.kt` | Gallery detail state + metadata fetch + download state |
+| `ui/scene/download/DownloadsScene.kt` | Download list UI; renders from `viewModel.downloadList` (Room × ProgressTracker Flow) |
+| `ui/scene/download/DownloadsViewModel.kt` | Download list state (Flow-driven), labels, filter/sort, search, import, sealed DownloadUiEvent |
+| `mapper/GalleryInfoMapper.kt` | GalleryInfo↔GalleryInfoUi conversion |
+| `util/CoroutineBridge.kt` | Java→coroutine bridge (launchIO) |
+| `util/FlowBridge.kt` | Java→Kotlin Flow bridge for lifecycle-aware collection |
 
 ---
 
@@ -200,9 +165,8 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 ### Language
 
 - **All new code must be Kotlin.** Java is legacy from EhViewer; do not write new Java.
-- **All `ehviewer` business code is Kotlin** — data, API, download, settings, modules, gallery providers, all Scenes, all Activities, all Adapters, all widgets.
-- Remaining 16 Java files in `ehviewer` are small callback interfaces, exception classes, legacy parsers, and annotations (`GalleryActivityEvent` converted to Kotlin in W3-3).
-- `com.hippo.*` framework (230 files: GLView, Conaco, ContentLayout, widgets) stays Java — stable legacy, rarely touched.
+- **All `ehviewer` business code is 100% Kotlin** — zero Java files remain in `com.hippo.ehviewer`.
+- `com.hippo.*` framework (~228 files: GLView, Conaco, ContentLayout, widgets) stays Java — stable legacy, rarely touched.
 
 ### Style
 
@@ -216,12 +180,12 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 - All network and database calls use **Kotlin Coroutines**: `suspend fun` + `withContext(Dispatchers.IO)`
 - Use `viewLifecycleOwner.lifecycleScope` for Fragment coroutines
 - **From Java code**, use `CoroutineBridge.launchIO(lifecycleOwner, task)` or `IoThreadPoolExecutor` to move DB/network work off the main thread
-- `EhDB` provides only `suspend fun xxxAsync()` methods — the legacy `blockingDb` bridge and all `@JvmStatic` wrappers have been removed (W3-5)
+- `EhDB` provides only `suspend fun xxxAsync()` methods — the legacy `blockingDb` bridge and all `@JvmStatic` wrappers have been removed
 - `CoroutineModule` provides `applicationScope` and `ioScope` with `SupervisorJob` + `CoroutineExceptionHandler`
 - `LRRCoroutineHelper.runSuspend()` has a **runtime main-thread guard** that throws if called on the UI thread
 - **No `AsyncTask` anywhere** — all replaced with `IoThreadPoolExecutor` + `Handler`
 - **No main-thread DB calls** — all `EhDB.*()` calls from UI code are wrapped in `IoThreadPoolExecutor` or coroutine scopes
-- **No `runBlocking` in new code** — use `scope.launch {}` or `suspend fun` instead. The only surviving `runBlocking` is in `LRRCoroutineHelper.runSuspend()` (Java→Kotlin bridge with `@WorkerThread` + main-thread guard). SpiderDen was migrated to `suspend fun` in W5-3.
+- **No `runBlocking` in new code** — use `scope.launch {}` or `suspend fun` instead. The only surviving `runBlocking` is in `LRRCoroutineHelper.runSuspend()` (Java→Kotlin bridge with `@WorkerThread` + main-thread guard).
 - Thread pool: `IoThreadPoolExecutor` for parallel image/network work
 
 ### Networking (OkHttp)
@@ -236,7 +200,7 @@ Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.
 
 - All entities and DAOs in `dao/` package
 - Use KSP (not KAPT) for annotation processing
-- Schema version is v19; exported to `app/schemas/` — always provide a `Migration` when bumping
+- Schema version is v21; exported to `app/schemas/` — always provide a `Migration` when bumping
 - **Never** use `fallbackToDestructiveMigration()` in production code
 - `AppDatabase.kt` is the single Room database instance
 
@@ -267,7 +231,7 @@ Access via `ServiceRegistry.<module>.<service>`. Do not add new statics to `EhAp
 
 Settings are now Kotlin objects in `settings/`:
 
-- `Settings.kt` (utility: `getContext()`, `getPreferences()`, generic accessors only — field-specific accessors removed in W3-4), `AppearanceSettings`, `DownloadSettings`, `FavoritesSettings`, `NetworkSettings`, `ReadingSettings`, `SecuritySettings`, `UpdateSettings`, `GuideSettings`, `PrivacySettings`
+- `Settings.kt` (utility only: `getContext()`, `getPreferences()`, generic accessors), `AppearanceSettings`, `DownloadSettings`, `FavoritesSettings`, `NetworkSettings`, `ReadingSettings`, `SecuritySettings`, `UpdateSettings`, `GuideSettings`, `PrivacySettings`
 - New settings go into the appropriate typed object; do not add field-specific accessors to `Settings.kt`
 - API keys use `EncryptedSharedPreferences` via `LRRAuthManager` — never plaintext
 
@@ -282,39 +246,14 @@ Settings are now Kotlin objects in `settings/`:
 
 ## Testing
 
-Unit tests live in `app/src/test/java/` (52 files, 573 test methods), covering:
+Unit tests live in `app/src/test/java/` covering:
 
-- All LRR API classes (`LRRArchiveApiTest`, `LRRSearchApiTest`, `LRRCategoryApiTest`, etc.) using `MockWebServer`
-- All LRR data classes (`LRRArchiveTest`, `LRRCategoryTest`, etc.)
-- `LRRTagStatTest` + `LRRTagCacheTest` — tag autocomplete data + cache (18 tests)
-- `LRRArchivePagingSourceTest` — Paging 3 source (16 tests)
-- `DownloadManagerTest` — download facade state machine, labels, queue, notifications, sort order invariants (29 tests, uses injected `CoroutineScope`)
-- `DownloadManagerOrphanLabelBatchTest` — orphan label batch insert verification (5 tests)
-- `DownloadEventBusTest` — listener registration/dispatch, WeakReference cleanup (8 tests, W6-2)
-- `DownloadRepositoryTest` — collection management, label CRUD, info mutations, sorted insertion (12 tests, W6-2)
-- `DownloadSchedulerTest` — worker scheduling, stop operations, concurrency limit, event dispatch (10 tests, W6-2)
-- `DownloadSpeedTrackerTest` — speed calculation + remaining time
-- `GalleryInfoParcelTest` — Parcelable round-trip for GalleryInfo + DownloadInfo (11 tests)
-- `TagEditDialogTest` — tag parsing + formatting round-trip (18 tests)
-- `RoomMigrationTest` — schema integrity verification (validates current v19 schema)
-- `RoomMigrationPathTest` — migration path tests v9→v10→v11→v12→v13→v14→v15→v16→v17→v18→v19
-- `ServerProfileDaoTest` — DAO CRUD verification
-- `GalleryInfoDiffTest` — DiffUtil identity/content equality contracts
-- `ContentHelperDiffUtilTest` — DiffUtil dispatch operations
-- `CoroutineBridgeTest` — Java→coroutine bridge function contracts
-- `EhDBMainThreadCheckTest` — blockingDb bridge removal verification + async dirname DAO round-trip
-- `ClientModuleTest` — memory cache tier boundary verification (8 tests)
-- `CacheableTest` — Cacheable self-registration pattern in ServiceRegistry (6 tests, W3-1)
-- `DownloadsViewModelTest` — label switching, search, pagination, sealed event forwarding (31 tests, W17-1)
-- `HistoryViewModelTest` — history load/delete/clear, DiffUtil integration (8 tests, W17-1)
-- `ServerConfigViewModelTest` — WAN detection, connection verify, profile persistence (12 tests, W17-1)
-- `LRRCategoriesViewModelTest` — category CRUD via MockWebServer, pinned sort, loading state (11 tests, W17-2)
-- `QuickSearchViewModelTest` — quick search load/delete/reorder via in-memory Room (6 tests, W17-2)
-- `ServerListViewModelTest` — profile CRUD, activation, connection verify (10 tests, W17-2)
-- `PatternLockoutTest` — pattern lock failure lockout logic with controllable clock + PBKDF2 migration (29 tests, W3-6 + W8-2)
-- `TestServiceRegistryHelper` — test infrastructure for ServiceRegistry mocking
+- **LRR API** — all API classes + data classes + PagingSource (MockWebServer)
+- **Download module** — DownloadManager, Repository, Scheduler, EventBus, SpeedTracker, ProgressTracker
+- **ViewModels** — all 8 Scene ViewModels (Downloads, GalleryDetail, GalleryList, History, ServerConfig, ServerList, Categories, QuickSearch)
+- **Room** — schema integrity, migration paths, DAO CRUD
+- **Utilities** — Parcelable round-trip, DiffUtil contracts, CoroutineBridge, tag parsing, pattern lockout
 
-Run tests with:
 ```bash
 ./gradlew app:testAppReleaseDebugUnitTest
 ```
@@ -362,38 +301,54 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 
 ## What NOT to Do
 
-- Do not write new Java; use Kotlin for all new code
-- Do not use `AsyncTask` or raw `Thread` for network/DB work
-- Do not store API keys or secrets in source code or non-encrypted preferences
-- Do not use `fallbackToDestructiveMigration()` for Room schema changes
-- Do not add `google-services.json` to the repository
-- Do not commit `local.properties` or keystore credentials
+### Language & Build
+
+- Do not write new Java — all new code must be Kotlin
 - Do not use Gson — use `kotlinx-serialization` for all JSON
 - Do not hardcode dependency versions in `build.gradle` — use `libs.versions.toml`
-- Do not add new singletons to `EhApplication` — use `ServiceRegistry` modules
-- Do not add `blockingDb()` bridges or `@JvmStatic` wrappers to `EhDB` — they have been removed (W3-5); use `suspend fun *Async()` variants from a coroutine scope
+- Do not add `x86_64` ABI filter to release builds — release is arm64-v8a only (debug includes x86_64 for emulator)
+- Do not commit `local.properties`, keystore credentials, or `google-services.json`
+
+### Threading & Coroutines
+
+- Do not use `AsyncTask` or raw `Thread` for network/DB work — use coroutines or `IoThreadPoolExecutor`
 - Do not use `runBlocking` in new code — use `scope.launch {}` or `suspend fun` instead
+- Do not add `blockingDb()` bridges or `@JvmStatic` wrappers to `EhDB` — use `suspend fun` variants from a coroutine scope
+- Do not add fire-and-forget `scope.launch { EhDB.*() }` without try-catch — all DB persistence launches must handle exceptions
+
+### Database & Persistence
+
+- Do not use `fallbackToDestructiveMigration()` for Room schema changes
+- Do not store API keys or secrets in source code or non-encrypted preferences
+- Do not call `EhDB` domain methods directly from UI layer — use the corresponding Repository via `ServiceRegistry.dataModule` (History, Profile, QuickSearch, Favorites, DownloadDb); the `EhDB` methods are `@Deprecated`
+
+### Architecture & Patterns
+
+- Do not add new singletons to `EhApplication` — use `ServiceRegistry` modules
+- Do not add field-specific accessors to `Settings.kt` — new settings go into the appropriate modular settings object
+- Do not hardcode cache-clear calls in `ServiceRegistry.clearAllCaches()` — implement `Cacheable` and register via `ServiceRegistry.registerCacheable()`
+- Do not use `GalleryInfo` / `GalleryInfoEntity` in UI-layer code that only displays gallery data — use `GalleryInfoUi`; use `GalleryInfoEntity` (via `GalleryInfo` typealias) only at persistence boundaries
+- Do not add new Scene classes without a corresponding ViewModel — all functional Scenes have ViewModels
+- Do not reintroduce Helper Callback interfaces — business logic goes in ViewModels, Scenes observe StateFlow/SharedFlow
+- Do not move extracted helper logic back into Scene classes — keep Scenes as coordinators, helpers own the logic
+
+### API & Naming
+
 - Do not use `toHttpUrlOrNull()!!` to build LRR API URLs — use `parseBaseUrl()` from `LRRApiUtils.kt`
+- Do not import from `com.hippo.ehviewer.client.lrr` — use `com.lanraragi.reader.client.api`
+- Do not use `EhUrl` / `EhUrlOpener` — renamed to `LRRUrl` / `LRRUrlOpener`
+
+### UI
+
 - Do not use `notifyDataSetChanged()` on RecyclerView — use DiffUtil or specific `notifyItem*()` calls
 - Do not introduce new visual themes or Material3 components — match existing `RoundSideRectDrawable` + theme attr style
-- Do not add `x86_64` ABI filter to release builds — release is arm64-v8a only (debug includes x86_64 for emulator)
-- Do not add field-specific accessors to `Settings.kt` — it now contains only utility methods (`getContext`, `getPreferences`, generic typed accessors); new settings go into the appropriate modular settings object (`AppearanceSettings`, `DownloadSettings`, `UpdateSettings`, `GuideSettings`, `PrivacySettings`, etc.) (W3-4)
-- Do not hardcode cache-clear calls in `ServiceRegistry.clearAllCaches()` — implement `Cacheable` and register via `ServiceRegistry.registerCacheable()` (W3-1)
-- Do not use `GalleryInfo` / `GalleryInfoEntity` in UI-layer code that only displays gallery data — use `GalleryInfoUi` (W3-3); use `GalleryInfoEntity` (via `GalleryInfo` typealias) only at persistence boundaries
-- Do not reintroduce Helper Callback interfaces — business logic goes in ViewModels, Scenes observe StateFlow/SharedFlow (W3-2)
-- Do not import from `com.hippo.ehviewer.client.lrr` — use `com.lanraragi.reader.client.api` (W3-7)
-- Do not import `DownloadRepository`, `DownloadScheduler`, or `DownloadEventBus` from outside the `download/` package — use `DownloadManager` facade only (W6-2)
-- Do not add `DownloadInfoListener` implementation to Scene classes — listener logic belongs in ViewModels, Scenes observe sealed `DownloadUiEvent` SharedFlow (W9-1)
-- Do not split `DownloadUiEvent` sealed interface back into individual SharedFlows — the single-flow dispatch pattern is intentional (W9-1)
-- Do not move extracted helper logic back into Scene classes — keep Scenes as coordinators, helpers own the logic (W9-2, W9-3)
-- Do not add fire-and-forget `scope.launch { EhDB.*() }` without try-catch — all DB persistence launches must handle exceptions (W7-4)
-- Do not use `EhUrl` / `EhUrlOpener` — renamed to `LRRUrl` / `LRRUrlOpener` (W14-1)
-- Do not call `EhDB` history methods directly from UI layer — use `HistoryRepository` via `ServiceRegistry.dataModule.historyRepository` (W17-3); EhDB history methods are `@Deprecated`
-- Do not call `EhDB` profile methods directly — use `ProfileRepository` via `ServiceRegistry.dataModule.profileRepository` (W19-2); EhDB profile methods are `@Deprecated`
-- Do not call `EhDB` quick search methods directly — use `QuickSearchRepository` via `ServiceRegistry.dataModule.quickSearchRepository` (W21-1); EhDB quick search methods are `@Deprecated`
-- Do not call `EhDB` local favorites methods directly — use `FavoritesRepository` via `ServiceRegistry.dataModule.favoritesRepository` (W21-1); EhDB local favorites methods are `@Deprecated`
-- Do not add new Scene classes without a corresponding ViewModel — all 8 functional Scenes now have ViewModels (W14-W15)
-- Do not read transient progress fields (`speed` / `finished` / `downloaded` / `total` / `remaining`) from `DownloadInfo` in new code — use `DownloadManager.progressFor(arcid)` or subscribe to `DownloadManager.progressTracker.progressFlow` (W35-3a, ADR-001 Option D). The `@Ignore` fields on `DownloadInfo` are retained only for backward compatibility during the W35-3 migration and will be removed in W35-3c.
-- Do not read `DownloadManager.getLabelDownloadInfoList(label)` or `DownloadManager.defaultDownloadInfoList` from download-list UI code — use `viewModel.downloadList` (progress-enriched Flow) instead (W35-3b). These accessors remain available only for non-UI callers (rating lookup, label-count display, clean-redundancy preference, etc.).
-- Do not add a Scene-level `collectFlow(viewModel.downloadsFlow)` subscription for the download list — the Scene subscribes to `viewModel.downloadList` which already combines Room Flow with `DownloadProgressTracker.progressFlow` (W35-3b).
-- Do not re-add per-tick `DownloadInfoListener.onUpdate`-driven `notifyItemChanged` calls for progress display — progress updates arrive via the combined Flow. The `ItemUpdated` event handler is retained only for immediate state flips (e.g., WAIT→DOWNLOAD) that precede the next Room Flow emission (W35-3b).
+
+### Download Module
+
+- Do not import `DownloadRepository`, `DownloadScheduler`, or `DownloadEventBus` from outside the `download/` package — use `DownloadManager` facade only
+- Do not add `DownloadInfoListener` implementation to Scene classes — listener logic belongs in ViewModels, Scenes observe sealed `DownloadUiEvent` SharedFlow
+- Do not split `DownloadUiEvent` sealed interface back into individual SharedFlows — the single-flow dispatch pattern is intentional
+- Do not read transient progress fields (`speed` / `finished` / `downloaded` / `total` / `remaining`) from `DownloadInfo` in new code — use `DownloadManager.progressFor(arcid)` or subscribe to `progressTracker.progressFlow` (ADR-001). The `@Ignore` fields on `DownloadInfo` are retained only for backward compatibility and will be removed in a future step.
+- Do not read `DownloadManager.getLabelDownloadInfoList` / `defaultDownloadInfoList` from download-list UI code — use `viewModel.downloadList` (progress-enriched Flow). These accessors remain for non-UI callers only.
+- Do not add a Scene-level `collectFlow(viewModel.downloadsFlow)` subscription for the download list — the Scene subscribes to `viewModel.downloadList` which already combines Room Flow with `DownloadProgressTracker.progressFlow`.
+- Do not re-add per-tick `DownloadInfoListener.onUpdate`-driven `notifyItemChanged` calls for progress display — progress updates arrive via the combined Flow. The `ItemUpdated` event handler is retained only for immediate state flips (e.g., WAIT→DOWNLOAD) that precede the next Room Flow emission.
