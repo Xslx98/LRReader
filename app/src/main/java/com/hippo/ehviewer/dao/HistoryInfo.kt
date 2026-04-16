@@ -15,7 +15,7 @@ import com.hippo.ehviewer.client.data.GalleryInfoEntity
  */
 @Entity(
     tableName = "HISTORY",
-    primaryKeys = ["GID"],
+    primaryKeys = ["ARCID"],
     indices = [Index("SERVER_PROFILE_ID"), Index("TIME")]
 )
 class HistoryInfo : GalleryInfoEntity {
