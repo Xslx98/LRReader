@@ -309,22 +309,22 @@ class DownloadsViewModelTest {
     @Test
     fun putSpiderInfo_addsToMap() {
         val spiderInfo = com.hippo.ehviewer.spider.SpiderInfo().apply {
-            gid = 100L
+            arcid = "abc123"
             pages = 10
         }
-        vm.putSpiderInfo(100L, spiderInfo)
-        assertEquals(spiderInfo, vm.spiderInfoMap.value[100L])
+        vm.putSpiderInfo("abc123", spiderInfo)
+        assertEquals(spiderInfo, vm.spiderInfoMap.value["abc123"])
     }
 
     @Test
     fun removeSpiderInfo_removesFromMap() {
         val spiderInfo = com.hippo.ehviewer.spider.SpiderInfo().apply {
-            gid = 100L
+            arcid = "abc123"
             pages = 10
         }
-        vm.putSpiderInfo(100L, spiderInfo)
-        vm.removeSpiderInfo(100L)
-        assertNull(vm.spiderInfoMap.value[100L])
+        vm.putSpiderInfo("abc123", spiderInfo)
+        vm.removeSpiderInfo("abc123")
+        assertNull(vm.spiderInfoMap.value["abc123"])
     }
 
     // ═══════════════════════════════════════════════════════════

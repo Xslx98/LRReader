@@ -74,7 +74,7 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
     private var providerScope: CoroutineScope? = null
 
     // Track start page for reading progress
-    private var startPageValue: Int = loadReadingProgress(this.context, galleryInfo.gid)
+    private var startPageValue: Int = loadReadingProgress(this.context, arcId)
 
 
     override fun start() {
@@ -129,7 +129,7 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
                 // Resolve reading progress from server metadata (may already be available)
                 val metadata = metadataDeferred.await()
                 var serverPage = startPageValue
-                Log.i(TAG, "[PROGRESS] Local SP page=$startPageValue for gid=${galleryInfo.gid}")
+                Log.i(TAG, "[PROGRESS] Local SP page=$startPageValue for arcid=${galleryInfo.arcid}")
 
                 if (metadata != null) {
                     Log.i(
@@ -140,7 +140,7 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
                     if (metadata.progress > 0) {
                         val serverPage0 = metadata.progress - 1 // convert 1-indexed to 0-indexed
                         val serverTs = metadata.lastreadtime
-                        val localTs = loadReadingTimestamp(context, galleryInfo.gid)
+                        val localTs = loadReadingTimestamp(context, arcId)
                         Log.i(
                             TAG,
                             "[PROGRESS] serverPage0=$serverPage0 serverTs=$serverTs localTs=$localTs"
@@ -148,7 +148,7 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
                         if (serverTs > localTs) {
                             serverPage = serverPage0
                             startPageValue = serverPage0
-                            saveReadingProgress(context, galleryInfo.gid, serverPage0)
+                            saveReadingProgress(context, arcId, serverPage0)
                             Log.i(TAG, "[PROGRESS] Using SERVER progress: page $serverPage0")
                         } else if (localTs > serverTs && startPageValue > 0) {
                             serverPage = startPageValue
@@ -225,7 +225,7 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
         startPageValue = page
 
         // Persist locally for instant restore on next open
-        saveReadingProgress(context, galleryInfo.gid, page)
+        saveReadingProgress(context, arcId, page)
 
         // Sync progress to LANraragi server (1-indexed). Use the app-wide IO
         // scope: putStartPage may be called during stop()/teardown when the
