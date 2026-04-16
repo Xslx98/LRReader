@@ -362,8 +362,7 @@ class HistoryScene : ToolbarScene(),
             if (position >= list.size) return
 
             val archive = list[position]
-            val gid = com.lanraragi.reader.client.api.arcidToGid(archive.arcid)
-            holder.thumb.load(LRRCacheKeyFactory.getThumbKey(gid), archive.thumbnailUrl)
+            holder.thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), archive.thumbnailUrl)
             holder.title.text = archive.title
             holder.uploader.text = null
             holder.rating.setRating(archive.rating)
@@ -380,7 +379,7 @@ class HistoryScene : ToolbarScene(),
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 ViewCompat.setTransitionName(
                     holder.thumb,
-                    TransitionNameFactory.getThumbTransitionName(gid)
+                    TransitionNameFactory.getThumbTransitionName(archive.arcid)
                 )
             }
         }
