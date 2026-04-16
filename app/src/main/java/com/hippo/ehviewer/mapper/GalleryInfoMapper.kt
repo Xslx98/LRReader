@@ -1,9 +1,12 @@
 package com.hippo.ehviewer.mapper
 
+import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.lanraragi.reader.client.api.arcidToGid
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.domain.ArchiveDetail
+import com.lanraragi.reader.domain.TagGroup
 
 /**
  * Bridge functions between the [Archive] domain model and the legacy
@@ -35,7 +38,7 @@ fun Archive.toGalleryInfo(): GalleryInfo {
  * Convert a [GalleryInfo] (or [DownloadInfo]) to an [Archive] domain model.
  * Used when the adapter/UI layer needs Archive for display.
  */
-fun GalleryInfo.toArchive(): Archive {
+fun GalleryInfo.toArchive(lastreadtime: Long = 0L): Archive {
     return Archive(
         arcid = token,
         title = title ?: "",
@@ -60,8 +63,43 @@ fun GalleryInfo.toArchive(): Archive {
         thumbnailUrl = thumb ?: "",
         rating = rating,
         isnew = false,
-        lastreadtime = 0L,
+        lastreadtime = lastreadtime,
         summary = null,
         serverProfileId = serverProfileId,
+    )
+}
+
+/**
+ * Derive an [ArchiveDetail] from a cached [GalleryDetail] (when the original
+ * LRRArchive is not available). Converts [GalleryDetail.tags] (GalleryTagGroup[])
+ * into domain [TagGroup] list.
+ */
+fun GalleryDetail.toArchiveDetail(): ArchiveDetail {
+    val tagGroups = tags?.map { group ->
+        TagGroup(
+            namespace = group.groupName ?: "misc",
+            tags = (0 until group.size()).map { group.getTagAt(it) }
+        )
+    } ?: emptyList()
+
+    return ArchiveDetail(
+        archive = Archive(
+            arcid = token ?: "",
+            title = title ?: "",
+            tags = tagGroups.associate { it.namespace to it.tags },
+            pagecount = pages,
+            progress = progress,
+            extension = "",
+            filename = "",
+            thumbnailUrl = thumb ?: "",
+            rating = rating,
+            isnew = false,
+            lastreadtime = 0L,
+            summary = null,
+            serverProfileId = serverProfileId,
+        ),
+        tagGroups = tagGroups,
+        language = language,
+        size = size,
     )
 }
