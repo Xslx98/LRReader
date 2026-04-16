@@ -130,12 +130,12 @@ class DownloadRepositoryTest {
 
     @Test
     fun containDownloadInfo_returnsTrueForExisting() {
-        assertFalse(repo.containDownloadInfo(1001L))
+        assertFalse(repo.containDownloadInfo("tok1"))
 
         val info = makeInfo(1001L, "tok1", "Gallery One")
         repo.addInfo(info)
 
-        assertTrue(repo.containDownloadInfo(1001L))
+        assertTrue(repo.containDownloadInfo("tok1"))
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -147,15 +147,15 @@ class DownloadRepositoryTest {
         val info = makeInfo(2001L, "tok2001", "Add Remove Test")
         repo.addInfo(info)
 
-        assertTrue(repo.containDownloadInfo(2001L))
+        assertTrue(repo.containDownloadInfo("tok2001"))
         assertEquals(1, repo.allInfoList.size)
-        assertNotNull(repo.allInfoMap[2001L])
+        assertNotNull(repo.allInfoMap["tok2001"])
 
         val removedIndex = repo.removeInfo(info)
         assertTrue(removedIndex >= 0)
-        assertFalse(repo.containDownloadInfo(2001L))
+        assertFalse(repo.containDownloadInfo("tok2001"))
         assertTrue(repo.allInfoList.isEmpty())
-        assertNull(repo.allInfoMap[2001L])
+        assertNull(repo.allInfoMap["tok2001"])
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -221,7 +221,7 @@ class DownloadRepositoryTest {
         // Add an info with that label
         val info = makeInfo(3001L, "tok3001", "Labeled").apply { label = "OldName" }
         repo.allInfoList.add(info)
-        repo.allInfoMap[info.gid] = info
+        repo.allInfoMap[info.arcid] = info
         repo.labelInfoMap["OldName"]!!.add(info)
 
         val affected = repo.renameLabel("OldName", "NewName")
@@ -254,7 +254,7 @@ class DownloadRepositoryTest {
             time = 500L
         }
         repo.allInfoList.add(info)
-        repo.allInfoMap[info.gid] = info
+        repo.allInfoMap[info.arcid] = info
         repo.labelInfoMap["ToDelete"]!!.add(info)
 
         val affected = repo.deleteLabel("ToDelete")
@@ -282,9 +282,9 @@ class DownloadRepositoryTest {
         val newInfo = makeInfo(5002L, "tok5002", "New")
         repo.replaceInfo(newInfo, oldInfo)
 
-        assertFalse(repo.containDownloadInfo(5001L))
-        assertTrue(repo.containDownloadInfo(5002L))
-        assertEquals("New", repo.getDownloadInfo(5002L)?.title)
+        assertFalse(repo.containDownloadInfo("tok5001"))
+        assertTrue(repo.containDownloadInfo("tok5002"))
+        assertEquals("New", repo.getDownloadInfo("tok5002")?.title)
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -294,14 +294,14 @@ class DownloadRepositoryTest {
     @Test
     fun getDownloadState_returnsCorrectState() {
         // Non-existent returns INVALID
-        assertEquals(DownloadInfo.STATE_INVALID, repo.getDownloadState(9999L))
+        assertEquals(DownloadInfo.STATE_INVALID, repo.getDownloadState("nonexistent"))
 
         val info = makeInfo(6001L, "tok6001", "State Test").apply {
             state = DownloadInfo.STATE_FINISH
         }
         repo.addInfo(info)
 
-        assertEquals(DownloadInfo.STATE_FINISH, repo.getDownloadState(6001L))
+        assertEquals(DownloadInfo.STATE_FINISH, repo.getDownloadState("tok6001"))
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -338,47 +338,47 @@ class DownloadRepositoryTest {
     // ═══════════════════════════════════════════════════════════
 
     @Test
-    fun containDownloadInfoByArcid_returnsTrueWhenPresent() {
+    fun containDownloadInfo_byArcid_returnsTrueWhenPresent() {
         val info = makeInfo(1001L, "abc123", "Gallery One")
         repo.addInfo(info)
-        assertTrue(repo.containDownloadInfoByArcid("abc123"))
+        assertTrue(repo.containDownloadInfo("abc123"))
     }
 
     @Test
-    fun containDownloadInfoByArcid_returnsFalseWhenAbsent() {
-        assertFalse(repo.containDownloadInfoByArcid("nonexistent"))
+    fun containDownloadInfo_byArcid_returnsFalseWhenAbsent() {
+        assertFalse(repo.containDownloadInfo("nonexistent"))
     }
 
     @Test
-    fun getDownloadInfoByArcid_returnsCorrectInfo() {
+    fun getDownloadInfo_byArcid_returnsCorrectInfo() {
         val info = makeInfo(1001L, "abc123", "Gallery One")
         repo.addInfo(info)
-        val result = repo.getDownloadInfoByArcid("abc123")
+        val result = repo.getDownloadInfo("abc123")
         assertNotNull(result)
         assertEquals(1001L, result!!.gid)
         assertEquals("abc123", result.arcid)
     }
 
     @Test
-    fun getDownloadStateByArcid_returnsState() {
+    fun getDownloadState_byArcid_returnsState() {
         val info = makeInfo(1001L, "abc123", "Gallery One")
         info.state = DownloadInfo.STATE_DOWNLOAD
         repo.addInfo(info)
-        assertEquals(DownloadInfo.STATE_DOWNLOAD, repo.getDownloadStateByArcid("abc123"))
+        assertEquals(DownloadInfo.STATE_DOWNLOAD, repo.getDownloadState("abc123"))
     }
 
     @Test
-    fun getDownloadStateByArcid_returnsInvalidWhenAbsent() {
-        assertEquals(DownloadInfo.STATE_INVALID, repo.getDownloadStateByArcid("nonexistent"))
+    fun getDownloadState_byArcid_returnsInvalidWhenAbsent() {
+        assertEquals(DownloadInfo.STATE_INVALID, repo.getDownloadState("nonexistent"))
     }
 
     @Test
     fun arcidInfoMap_syncedOnRemove() {
         val info = makeInfo(1001L, "abc123", "Gallery One")
         repo.addInfo(info)
-        assertTrue(repo.containDownloadInfoByArcid("abc123"))
+        assertTrue(repo.containDownloadInfo("abc123"))
         repo.removeInfo(info)
-        assertFalse(repo.containDownloadInfoByArcid("abc123"))
+        assertFalse(repo.containDownloadInfo("abc123"))
     }
 
     // ═══════════════════════════════════════════════════════════

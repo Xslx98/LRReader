@@ -39,6 +39,9 @@ class CleanRedundancyPreference : TaskPreference {
         private val mApplication: EhApplication = context.applicationContext as EhApplication
         private val mManager = ServiceRegistry.dataModule.downloadManager
 
+        // Snapshot of gids for all known downloads, built on main thread at construction time.
+        private val knownGids: Set<Long> = mManager.allDownloadInfoList.mapTo(HashSet()) { it.gid }
+
         // True for cleared
         private fun clearFile(file: UniFile): Boolean {
             var name = file.name ?: return false
@@ -50,7 +53,7 @@ class CleanRedundancyPreference : TaskPreference {
             if (gid == -1L) {
                 return false
             }
-            if (mManager.containDownloadInfo(gid)) {
+            if (gid in knownGids) {
                 return false
             }
             file.delete()

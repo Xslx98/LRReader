@@ -53,6 +53,9 @@ interface DownloadRoomDao {
     @Query("DELETE FROM DOWNLOADS WHERE GID IN (:gids)")
     suspend fun deleteByGids(gids: List<Long>)
 
+    @Query("DELETE FROM DOWNLOADS WHERE ARCID IN (:arcids)")
+    suspend fun deleteByArcids(arcids: List<String>)
+
     // --- DOWNLOAD_DIRNAME ---
 
     @Query("SELECT * FROM DOWNLOAD_DIRNAME WHERE ARCID = :arcid")

@@ -256,8 +256,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     ): View? {
         val context = getEHContext()
         // Get download state
-        val gid = getGid()
-        viewModel.initDownloadState(gid)
+        viewModel.initDownloadState(viewModel.getEffectiveArcid())
 
         val view = inflater.inflate(R.layout.scene_gallery_detail, container, false)
 
