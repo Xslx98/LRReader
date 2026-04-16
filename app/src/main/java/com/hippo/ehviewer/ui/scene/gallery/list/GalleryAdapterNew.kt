@@ -178,17 +178,18 @@ abstract class GalleryAdapterNew(
 
     override fun onBindViewHolder(holder: GalleryHolder, position: Int) {
         val archive = getDataAt(position) ?: return
-        val gid = arcidToGid(archive.arcid)
+        val arcid = archive.arcid
+        val gid = arcidToGid(arcid)
 
         when (mType) {
             TYPE_GRID -> {
                 (holder.thumb as TileThumbNew).setThumbSize(0, 0)
-                holder.thumb.load(LRRCacheKeyFactory.getThumbKey(gid), archive.thumbnailUrl)
+                holder.thumb.load(LRRCacheKeyFactory.getThumbKey(arcid), archive.thumbnailUrl)
                 holder.category?.visibility = View.GONE
                 holder.simpleLanguage?.text = null
             }
             else -> {
-                holder.thumb.load(LRRCacheKeyFactory.getThumbKey(gid), archive.thumbnailUrl)
+                holder.thumb.load(LRRCacheKeyFactory.getThumbKey(arcid), archive.thumbnailUrl)
                 holder.title?.text = archive.title
                 holder.uploader?.text = null
                 if (!AppearanceSettings.getShowGalleryRating()) {
@@ -213,7 +214,7 @@ abstract class GalleryAdapterNew(
                     if (mDownloadManager.containDownloadInfo(gid)) View.VISIBLE else View.GONE
             }
         }
-        ViewCompat.setTransitionName(holder.thumb, TransitionNameFactory.getThumbTransitionName(gid))
+        ViewCompat.setTransitionName(holder.thumb, TransitionNameFactory.getThumbTransitionName(arcid))
     }
 
     fun setThumbItemClickListener(listener: OnThumbItemClickListener?) {
