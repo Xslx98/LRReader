@@ -92,6 +92,10 @@ class DownloadDbRepository(
         dao.deleteDownloadByGid(gid)
     }
 
+    suspend fun removeDownloadInfoByArcid(arcid: String) {
+        dao.deleteDownloadByKey(arcid)
+    }
+
     suspend fun putDownloadInfoBatch(list: List<DownloadInfo>) {
         database.withTransaction {
             dao.insertAll(list)
@@ -101,6 +105,12 @@ class DownloadDbRepository(
     suspend fun removeDownloadInfoBatch(gids: List<Long>) {
         database.withTransaction {
             dao.deleteByGids(gids)
+        }
+    }
+
+    suspend fun removeDownloadInfoBatchByArcids(arcids: List<String>) {
+        database.withTransaction {
+            dao.deleteByArcids(arcids)
         }
     }
 

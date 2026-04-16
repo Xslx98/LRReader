@@ -157,9 +157,9 @@ class DownloadsScene : ToolbarScene(),
         }
 
         val dm = viewModel.downloadManager
-        val gid = args.getLong(KEY_GID, -1L)
-        if (gid != -1L) {
-            val info = dm.getDownloadInfo(gid)
+        val arcid = args.getString(KEY_ARCID)
+        if (arcid != null) {
+            val info = dm.getDownloadInfo(arcid)
             if (info != null) {
                 viewModel.selectLabel(info.label)
                 updateForLabel()
@@ -806,7 +806,7 @@ class DownloadsScene : ToolbarScene(),
     companion object {
         private val TAG = DownloadsScene::class.java.simpleName
 
-        const val KEY_GID = "gid"
+        const val KEY_ARCID = "arcid"
         const val KEY_ACTION = "action"
         private const val KEY_LABEL = "label"
 

@@ -20,7 +20,6 @@ import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.ehviewer.spider.SpiderInfo
 import com.hippo.ehviewer.sync.DownloadListInfosExecutor
-import com.hippo.lib.yorozuya.collect.LongList
 import com.hippo.unifile.UniFile
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -432,7 +431,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
      * download directory and dirname DB record.
      */
     fun deleteSingleDownload(galleryInfo: GalleryInfo, deleteFiles: Boolean) {
-        downloadManager.deleteDownload(galleryInfo.gid)
+        downloadManager.deleteDownload(galleryInfo.arcid)
         DownloadSettings.putRemoveImageFiles(deleteFiles)
         if (deleteFiles) {
             val arcid = galleryInfo.arcid
@@ -450,10 +449,10 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
      */
     fun deleteRangeDownloads(
         downloadInfoList: List<DownloadInfo>,
-        gidList: LongList,
+        arcidList: List<String>,
         deleteFiles: Boolean
     ) {
-        downloadManager.deleteRangeDownload(gidList)
+        downloadManager.deleteRangeDownload(arcidList)
         DownloadSettings.putRemoveImageFiles(deleteFiles)
         if (deleteFiles) {
             // Snapshot the list to avoid concurrent modification
@@ -476,10 +475,10 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     }
 
     /**
-     * Stops a range of downloads by gid list.
+     * Stops a range of downloads by arcid list.
      */
-    fun stopRangeDownloads(gidList: LongList) {
-        downloadManager.stopRangeDownload(gidList)
+    fun stopRangeDownloads(arcidList: List<String>) {
+        downloadManager.stopRangeDownload(arcidList)
     }
 
     // -------------------------------------------------------------------------
@@ -532,7 +531,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
                 }
 
                 // Check if already imported
-                if (downloadManager.containDownloadInfo(downloadInfo.gid)) {
+                if (downloadManager.containDownloadInfo(downloadInfo.arcid)) {
                     _importToast.tryEmit(com.hippo.ehviewer.R.string.import_archive_already_imported)
                     return@launch
                 }

@@ -125,13 +125,13 @@ internal class DownloadScheduler(
      *
      * @return the stopped [DownloadInfo], or null if not found.
      */
-    fun stopDownload(gid: Long): DownloadInfo? {
+    fun stopDownload(arcid: String): DownloadInfo? {
         assertMainThread()
         // Check active tasks
         val activeIt = activeTasks.iterator()
         while (activeIt.hasNext()) {
             val info = activeIt.next()
-            if (info.gid == gid) {
+            if (info.arcid == arcid) {
                 val w = activeWorkers.remove(info)
                 w?.cancel()
                 activeIt.remove()
@@ -147,7 +147,7 @@ internal class DownloadScheduler(
         val waitIt = waitList.iterator()
         while (waitIt.hasNext()) {
             val info = waitIt.next()
-            if (info.gid == gid) {
+            if (info.arcid == arcid) {
                 waitIt.remove()
                 info.state = DownloadInfo.STATE_NONE
                 repo.persistInfo(info)
@@ -186,24 +186,25 @@ internal class DownloadScheduler(
      * Stop a range of downloads by gid list. Stops both active and waiting
      * downloads.
      */
-    fun stopRangeDownload(gidList: LongList) {
+    fun stopRangeDownload(arcidList: List<String>) {
         assertMainThread()
-        if (gidList.size() < waitList.size) {
-            for (i in 0 until gidList.size()) {
-                stopDownload(gidList.get(i))
+        val arcidSet = arcidList.toHashSet()
+        if (arcidSet.size < waitList.size) {
+            for (arcid in arcidSet) {
+                stopDownload(arcid)
             }
         } else {
             // Check active tasks
             for (active in ArrayList(activeTasks)) {
-                if (gidList.contains(active.gid)) {
-                    stopDownload(active.gid)
+                if (active.arcid in arcidSet) {
+                    stopDownload(active.arcid)
                 }
             }
             // Check all in wait list
             val iterator = waitList.iterator()
             while (iterator.hasNext()) {
                 val info = iterator.next()
-                if (gidList.contains(info.gid)) {
+                if (info.arcid in arcidSet) {
                     iterator.remove()
                     info.state = DownloadInfo.STATE_NONE
                     repo.persistInfo(info)
@@ -236,29 +237,29 @@ internal class DownloadScheduler(
      * and set its state to [DownloadInfo.STATE_NONE]. Returns the
      * [DownloadInfo] from the repository (may be null if not tracked).
      */
-    fun getNoneDownloadInfo(gid: Long): DownloadInfo? {
+    fun getNoneDownloadInfo(arcid: String): DownloadInfo? {
         assertMainThread()
         var wasActive = false
         for (info in activeTasks) {
-            if (info.gid == gid) {
+            if (info.arcid == arcid) {
                 wasActive = true
                 break
             }
         }
         if (wasActive) {
-            stopDownload(gid)
+            stopDownload(arcid)
         } else {
             val iterator = waitList.iterator()
             while (iterator.hasNext()) {
                 val info = iterator.next()
-                if (info.gid == gid) {
+                if (info.arcid == arcid) {
                     info.state = DownloadInfo.STATE_NONE
                     iterator.remove()
                     break
                 }
             }
         }
-        return repo.getDownloadInfo(gid)
+        return repo.getDownloadInfo(arcid)
     }
 
     // ═══════════════════════════════════════════════════════════
