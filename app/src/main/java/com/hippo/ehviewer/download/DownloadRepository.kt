@@ -55,6 +55,9 @@ class DownloadRepository(
     /** O(1) lookup by gid. */
     internal val allInfoMap: HashMap<Long, DownloadInfo> = HashMap()
 
+    /** O(1) lookup by arcid. */
+    internal val arcidInfoMap: HashMap<String, DownloadInfo> = HashMap()
+
     /** Label string → per-label info list. Does NOT contain default (null-label) entries. */
     internal val labelInfoMap: MutableMap<String?, MutableList<DownloadInfo>> = HashMap()
 
@@ -219,6 +222,7 @@ class DownloadRepository(
         allInfoList.addAll(loaded.allInfoList)
         for (info in loaded.allInfoList) {
             allInfoMap[info.gid] = info
+            arcidInfoMap[info.arcid] = info
         }
 
         for ((label, list) in loaded.labelToInfoList) {
@@ -278,6 +282,22 @@ class DownloadRepository(
         return info?.state ?: DownloadInfo.STATE_INVALID
     }
 
+    fun containDownloadInfoByArcid(arcid: String): Boolean {
+        assertMainThread()
+        return arcidInfoMap.containsKey(arcid)
+    }
+
+    fun getDownloadInfoByArcid(arcid: String): DownloadInfo? {
+        assertMainThread()
+        return arcidInfoMap[arcid]
+    }
+
+    fun getDownloadStateByArcid(arcid: String): Int {
+        assertMainThread()
+        val info = arcidInfoMap[arcid]
+        return info?.state ?: DownloadInfo.STATE_INVALID
+    }
+
     fun getLabelCount(label: String?): Long {
         assertMainThread()
         return labelCountMap[label] ?: 0L
@@ -295,6 +315,7 @@ class DownloadRepository(
         assertMainThread()
         allInfoList.add(0, info)
         allInfoMap[info.gid] = info
+        arcidInfoMap[info.arcid] = info
         val list = getInfoListForLabel(info.label)
         list?.add(0, info)
     }
@@ -307,6 +328,7 @@ class DownloadRepository(
         assertMainThread()
         insertSorted(allInfoList, info)
         allInfoMap[info.gid] = info
+        arcidInfoMap[info.arcid] = info
         val list = getInfoListForLabel(info.label)
         if (list != null) {
             insertSorted(list, info)
@@ -321,6 +343,7 @@ class DownloadRepository(
         assertMainThread()
         allInfoList.remove(info)
         allInfoMap.remove(info.gid)
+        arcidInfoMap.remove(info.arcid)
         val list = getInfoListForLabel(info.label)
         if (list != null) {
             val index = list.indexOf(info)
@@ -340,6 +363,7 @@ class DownloadRepository(
         for (gid in gidSet) {
             val info = allInfoMap.remove(gid)
             if (info != null) {
+                arcidInfoMap.remove(info.arcid)
                 val list = getInfoListForLabel(info.label)
                 list?.remove(info)
             }
@@ -368,7 +392,9 @@ class DownloadRepository(
             }
         }
         allInfoMap.remove(oldInfo.gid)
+        arcidInfoMap.remove(oldInfo.arcid)
         allInfoMap[newInfo.gid] = newInfo
+        arcidInfoMap[newInfo.arcid] = newInfo
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -400,6 +426,7 @@ class DownloadRepository(
             insertSorted(list, info)
             insertSorted(allInfoList, info)
             allInfoMap[info.gid] = info
+            arcidInfoMap[info.arcid] = info
         }
         return newLabels
     }
@@ -447,6 +474,7 @@ class DownloadRepository(
         list.add(0, info)
         allInfoList.add(0, info)
         allInfoMap[galleryInfo.gid] = info
+        arcidInfoMap[galleryInfo.arcid] = info
         persistInfo(info)
         return Pair(info, list)
     }
@@ -468,6 +496,7 @@ class DownloadRepository(
         list.add(0, info)
         persistInfo(info)
         allInfoMap[galleryInfo.gid] = info
+        arcidInfoMap[galleryInfo.arcid] = info
         return true
     }
 
@@ -480,6 +509,7 @@ class DownloadRepository(
         val info = allInfoMap[gid] ?: return null
         allInfoList.remove(info)
         allInfoMap.remove(info.gid)
+        arcidInfoMap.remove(info.arcid)
         val list = getInfoListForLabel(info.label)
         val index = if (list != null) {
             val idx = list.indexOf(info)
@@ -499,6 +529,7 @@ class DownloadRepository(
         for (gid in gidSet) {
             val info = allInfoMap.remove(gid)
             if (info != null) {
+                arcidInfoMap.remove(info.arcid)
                 gidsToRemove.add(info.gid)
                 getInfoListForLabel(info.label)?.remove(info)
             }
@@ -579,6 +610,7 @@ class DownloadRepository(
 
         allInfoList.clear()
         allInfoMap.clear()
+        arcidInfoMap.clear()
         defaultInfoList.clear()
         for ((_, value) in labelInfoMap) {
             value.clear()
@@ -591,6 +623,7 @@ class DownloadRepository(
                     allInfoList.addAll(reloadedInfos)
                     for (info in reloadedInfos) {
                         allInfoMap[info.gid] = info
+                        arcidInfoMap[info.arcid] = info
                         var list = getInfoListForLabel(info.label)
                         if (list == null) {
                             list = ArrayList()
