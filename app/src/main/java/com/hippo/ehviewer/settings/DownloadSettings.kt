@@ -209,17 +209,35 @@ object DownloadSettings {
     }
 
     @JvmStatic
+    @Deprecated("Use arcid-based overload", ReplaceWith("getArchiverDownloadId(arcid)"))
     fun getArchiverDownloadId(gid: Long): Long {
         return sArchiverPre.getLong("${gid}DId", -1L)
     }
 
     @JvmStatic
+    fun getArchiverDownloadId(arcid: String): Long {
+        return sArchiverPre.getLong("${arcid}DId", -1L)
+    }
+
+    @JvmStatic
+    @Deprecated("Use arcid-based overload", ReplaceWith("putArchiverDownloadId(arcid, downloadId)"))
     fun putArchiverDownloadId(gid: Long, downloadId: Long) {
         sArchiverPre.edit().putLong("${gid}DId", downloadId).apply()
     }
 
     @JvmStatic
+    fun putArchiverDownloadId(arcid: String, downloadId: Long) {
+        sArchiverPre.edit().putLong("${arcid}DId", downloadId).apply()
+    }
+
+    @JvmStatic
+    @Deprecated("Use arcid-based overload", ReplaceWith("deleteArchiverDownloadId(arcid)"))
     fun deleteArchiverDownloadId(gid: Long) {
         sArchiverPre.edit().remove("${gid}DId").apply()
+    }
+
+    @JvmStatic
+    fun deleteArchiverDownloadId(arcid: String) {
+        sArchiverPre.edit().remove("${arcid}DId").apply()
     }
 }

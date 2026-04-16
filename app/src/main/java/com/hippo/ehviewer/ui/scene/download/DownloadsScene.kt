@@ -672,7 +672,7 @@ class DownloadsScene : ToolbarScene(),
     override val list: List<DownloadInfo>?
         get() = mList
 
-    override val spiderInfoMap: Map<Long, SpiderInfo>
+    override val spiderInfoMap: Map<String, SpiderInfo>
         get() = viewModel.spiderInfoMap.value
 
     override val downloadManager: DownloadManager?
@@ -830,7 +830,7 @@ internal class DownloadInfoDiffCallback(
     override fun getNewListSize(): Int = newList.size
 
     override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-        return oldList[oldItemPosition].gid == newList[newItemPosition].gid
+        return oldList[oldItemPosition].arcid == newList[newItemPosition].arcid
     }
 
     override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {

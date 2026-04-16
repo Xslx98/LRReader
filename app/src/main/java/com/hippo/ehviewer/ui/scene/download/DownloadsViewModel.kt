@@ -190,10 +190,10 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     // Spider info cache
     // -------------------------------------------------------------------------
 
-    private val _spiderInfoMap = MutableStateFlow<MutableMap<Long, SpiderInfo>>(HashMap())
+    private val _spiderInfoMap = MutableStateFlow<MutableMap<String, SpiderInfo>>(HashMap())
 
-    /** Cached spider info for reading progress display. */
-    val spiderInfoMap: StateFlow<Map<Long, SpiderInfo>> = _spiderInfoMap.asStateFlow()
+    /** Cached spider info for reading progress display, keyed by arcid. */
+    val spiderInfoMap: StateFlow<Map<String, SpiderInfo>> = _spiderInfoMap.asStateFlow()
 
     // -------------------------------------------------------------------------
     // Label switching
@@ -389,15 +389,15 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     // Spider info
     // -------------------------------------------------------------------------
 
-    fun removeSpiderInfo(gid: Long) {
-        _spiderInfoMap.value.remove(gid)
+    fun removeSpiderInfo(arcid: String) {
+        _spiderInfoMap.value.remove(arcid)
     }
 
-    fun putSpiderInfo(gid: Long, info: SpiderInfo) {
-        _spiderInfoMap.value[gid] = info
+    fun putSpiderInfo(arcid: String, info: SpiderInfo) {
+        _spiderInfoMap.value[arcid] = info
     }
 
-    fun putAllSpiderInfo(map: Map<Long, SpiderInfo>) {
+    fun putAllSpiderInfo(map: Map<String, SpiderInfo>) {
         _spiderInfoMap.value.putAll(map)
     }
 

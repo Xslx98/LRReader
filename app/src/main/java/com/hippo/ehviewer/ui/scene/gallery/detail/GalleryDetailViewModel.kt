@@ -242,12 +242,12 @@ class GalleryDetailViewModel : ViewModel() {
      * Preload 2 pages (at the reading progress position) into the reader's
      * cache so that opening the reader produces an immediate cache hit.
      */
-    private fun triggerReadingPreload(arcId: String, serverProgress: Int, gid: Long) {
+    private fun triggerReadingPreload(arcId: String, serverProgress: Int) {
         detailPreloadJob?.cancel()
         val serverUrl = LRRAuthManager.getServerUrl() ?: return
         val context = ServiceRegistry.appModule.getContext()
 
-        val localProgress = GalleryProvider2.loadReadingProgress(context, gid)
+        val localProgress = GalleryProvider2.loadReadingProgress(context, arcId)
         val startPage = when {
             serverProgress > 0 && localProgress > 0 ->
                 maxOf(serverProgress - 1, localProgress) // server is 1-indexed
@@ -348,11 +348,15 @@ class GalleryDetailViewModel : ViewModel() {
     }
 
     /**
-     * Suspends to check whether [gid] is in the local favorites table.
+     * Suspends to check whether [arcid] is in the local favorites table.
      * Runs on [Dispatchers.IO].
      */
-    suspend fun isLocalFavorite(gid: Long): Boolean = withContext(Dispatchers.IO) {
-        ServiceRegistry.dataModule.favoritesRepository.containsLocalFavorite(gid)
+    suspend fun isLocalFavorite(arcid: String?): Boolean = withContext(Dispatchers.IO) {
+        if (arcid != null) {
+            ServiceRegistry.dataModule.favoritesRepository.containsLocalFavorite(arcid)
+        } else {
+            false
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -426,7 +430,7 @@ class GalleryDetailViewModel : ViewModel() {
                 _archiveDetail.value = ad
 
                 // Preload reading pages in background
-                triggerReadingPreload(arcid, archive.progress, gd.gid)
+                triggerReadingPreload(arcid, archive.progress)
             } catch (e: Exception) {
                 android.util.Log.e(TAG, "LRR metadata fetch failed", e)
                 _detailError.tryEmit(e)

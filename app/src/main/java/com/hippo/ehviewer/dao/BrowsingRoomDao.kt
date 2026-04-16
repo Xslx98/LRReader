@@ -54,6 +54,9 @@ interface BrowsingRoomDao {
     @Query("SELECT * FROM LOCAL_FAVORITES WHERE GID = :gid")
     suspend fun loadLocalFavorite(gid: Long): LocalFavoriteInfo?
 
+    @Query("SELECT * FROM LOCAL_FAVORITES WHERE ARCID = :arcid")
+    suspend fun loadLocalFavoriteByArcid(arcid: String): LocalFavoriteInfo?
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertLocalFavorite(info: LocalFavoriteInfo)
 

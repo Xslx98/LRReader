@@ -232,8 +232,7 @@ internal class DetailActionHandler(
 
     private fun getGalleryDetailUrl(): String? {
         val gid = viewModel.getEffectiveGid()
-        val arcid = viewModel.getEffectiveArcid()
-        if (gid == -1L) return null
+        val arcid = viewModel.getEffectiveArcid() ?: return null
         return LRRUrl.getGalleryDetailUrl(gid, arcid, 0, false)
     }
 

@@ -152,15 +152,15 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
 
         if (!isImportedArchive) {
             // Only process SpiderInfo for regular downloads, not imported archives
-            callback.viewModel.removeSpiderInfo(info.gid)
-            val gid = info.gid
+            val arcid = info.arcid ?: return
+            callback.viewModel.removeSpiderInfo(arcid)
             callback.viewLifecycleOwner.lifecycleScope.launch {
                 try {
                     val spiderInfo = withContext(Dispatchers.IO) {
                         SpiderInfo.getSpiderInfo(info)
                     }
                     if (spiderInfo != null) {
-                        callback.viewModel.putSpiderInfo(gid, spiderInfo)
+                        callback.viewModel.putSpiderInfo(arcid, spiderInfo)
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to load spider info", e)
@@ -171,7 +171,7 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
         val list = callback.mList ?: return
         val adapter = callback.mAdapter ?: return
         for (i in list.indices) {
-            if (list[i].gid == info.gid) {
+            if (list[i].arcid == info.arcid) {
                 val position = callback.listIndexInPage(i)
                 adapter.notifyItemChanged(position)
                 return
