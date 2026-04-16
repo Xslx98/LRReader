@@ -41,7 +41,6 @@ import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.util.ReadableTime
 import com.hippo.lib.yorozuya.FileUtils
-import com.hippo.lib.yorozuya.collect.LongList
 import com.hippo.lib.yorozuya.collect.SparseJBArray
 import com.hippo.lib.yorozuya.collect.SparseJLArray
 import kotlinx.coroutines.CoroutineScope
@@ -201,43 +200,43 @@ class DownloadService : Service(), DownloadListener {
         when (action) {
             ACTION_CLEAR -> clear()
             ACTION_DELETE_RANGE -> {
-                val gidList = intent.getParcelableExtra<LongList>(KEY_GID_LIST)
-                if (gidList != null && dm != null) {
-                    dm.deleteRangeDownload(gidList)
+                val arcidList = intent.getStringArrayListExtra(KEY_ARCID_LIST)
+                if (arcidList != null && dm != null) {
+                    dm.deleteRangeDownload(arcidList)
                 }
             }
 
             ACTION_DELETE -> {
-                val gid = intent.getLongExtra(KEY_GID, -1)
-                if (gid != -1L && dm != null) {
-                    dm.deleteDownload(gid)
+                val arcid = intent.getStringExtra(KEY_ARCID)
+                if (arcid != null && dm != null) {
+                    dm.deleteDownload(arcid)
                 }
             }
 
             ACTION_STOP_ALL -> dm?.stopAllDownload()
 
             ACTION_STOP_RANGE -> {
-                val gidListS = intent.getParcelableExtra<LongList>(KEY_GID_LIST)
-                if (gidListS != null && dm != null) {
-                    dm.stopRangeDownload(gidListS)
+                val arcidListS = intent.getStringArrayListExtra(KEY_ARCID_LIST)
+                if (arcidListS != null && dm != null) {
+                    dm.stopRangeDownload(arcidListS)
                 }
             }
 
             ACTION_STOP_CURRENT -> dm?.stopCurrentDownload()
 
             ACTION_STOP -> {
-                val gidS = intent.getLongExtra(KEY_GID, -1)
-                if (gidS != -1L && dm != null) {
-                    dm.stopDownload(gidS)
+                val arcidS = intent.getStringExtra(KEY_ARCID)
+                if (arcidS != null && dm != null) {
+                    dm.stopDownload(arcidS)
                 }
             }
 
             ACTION_START_ALL -> dm?.startAllDownload()
 
             ACTION_START_RANGE -> {
-                val gidListSR = intent.getParcelableExtra<LongList>(KEY_GID_LIST)
-                if (gidListSR != null && dm != null) {
-                    dm.startRangeDownload(gidListSR)
+                val arcidListSR = intent.getStringArrayListExtra(KEY_ARCID_LIST)
+                if (arcidListSR != null && dm != null) {
+                    dm.startRangeDownload(arcidListSR)
                 }
             }
 
@@ -361,7 +360,7 @@ class DownloadService : Service(), DownloadListener {
         ensureDownloadingBuilder()
 
         val bundle = Bundle()
-        bundle.putLong(SCENE_KEY_GID, info.gid)
+        bundle.putString(SCENE_KEY_ARCID, info.arcid)
         val activityIntent = Intent().setClassName(packageName, TARGET_ACTIVITY)
         activityIntent.setAction(ACTION_START_SCENE)
         activityIntent.putExtra(KEY_SCENE_NAME, TARGET_SCENE)
@@ -678,8 +677,8 @@ class DownloadService : Service(), DownloadListener {
 
         const val KEY_GALLERY_INFO: String = "gallery_info"
         const val KEY_LABEL: String = "label"
-        const val KEY_GID: String = "gid"
-        const val KEY_GID_LIST: String = "gid_list"
+        const val KEY_ARCID: String = "arcid"
+        const val KEY_ARCID_LIST: String = "arcid_list"
 
         private const val ID_DOWNLOADING = 1
         private const val ID_DOWNLOADED = 2
@@ -694,7 +693,7 @@ class DownloadService : Service(), DownloadListener {
         private const val TARGET_SCENE = "com.hippo.ehviewer.ui.scene.download.DownloadsScene"
         private const val SCENE_KEY_ACTION = "action"
         private const val SCENE_ACTION_CLEAR = "clear_download_service"
-        private const val SCENE_KEY_GID = "gid"
+        private const val SCENE_KEY_ARCID = "arcid"
 
         private val sItemStateArray =
             SparseJBArray()

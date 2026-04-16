@@ -171,8 +171,8 @@ class DownloadManagerTest {
         kotlinx.coroutines.runBlocking { freshManager.awaitInitAsync() }
 
         assertEquals(2, freshManager.allDownloadInfoList.size)
-        assertTrue(freshManager.containDownloadInfo(1001L))
-        assertTrue(freshManager.containDownloadInfo(1002L))
+        assertTrue(freshManager.containDownloadInfo("token1"))
+        assertTrue(freshManager.containDownloadInfo("token2"))
     }
 
     @Test
@@ -212,9 +212,9 @@ class DownloadManagerTest {
         // Start download with null (default) label
         manager.startDownload(gallery, null)
 
-        assertTrue(manager.containDownloadInfo(2001L))
+        assertTrue(manager.containDownloadInfo("tok_2001"))
         // ensureDownload() may immediately promote WAIT -> DOWNLOAD
-        val state = manager.getDownloadState(2001L)
+        val state = manager.getDownloadState("tok_2001")
         assertTrue(
             "Expected WAIT or DOWNLOAD, got $state",
             state == DownloadInfo.STATE_WAIT || state == DownloadInfo.STATE_DOWNLOAD
@@ -231,11 +231,11 @@ class DownloadManagerTest {
             title = "Existing"
         }
         manager.addDownload(gallery, null, DownloadInfo.STATE_NONE)
-        assertEquals(DownloadInfo.STATE_NONE, manager.getDownloadState(2002L))
+        assertEquals(DownloadInfo.STATE_NONE, manager.getDownloadState("tok_2002"))
 
         // Now start it — should set to WAIT (ensureDownload may promote to DOWNLOAD)
         manager.startDownload(gallery, null)
-        val state = manager.getDownloadState(2002L)
+        val state = manager.getDownloadState("tok_2002")
         assertTrue(
             "Expected WAIT or DOWNLOAD after restart, got $state",
             state == DownloadInfo.STATE_WAIT || state == DownloadInfo.STATE_DOWNLOAD
@@ -250,12 +250,12 @@ class DownloadManagerTest {
             title = "To Delete"
         }
         manager.addDownload(gallery, null, DownloadInfo.STATE_NONE)
-        assertTrue(manager.containDownloadInfo(2003L))
+        assertTrue(manager.containDownloadInfo("tok_2003"))
 
-        manager.deleteDownload(2003L)
+        manager.deleteDownload("tok_2003")
 
-        assertFalse(manager.containDownloadInfo(2003L))
-        assertNull(manager.getDownloadInfo(2003L))
+        assertFalse(manager.containDownloadInfo("tok_2003"))
+        assertNull(manager.getDownloadInfo("tok_2003"))
     }
 
     @Test
@@ -283,7 +283,7 @@ class DownloadManagerTest {
         manager.stopAllDownload()
 
         for (i in 1..3) {
-            val state = manager.getDownloadState((3000 + i).toLong())
+            val state = manager.getDownloadState("tok_$i")
             assertTrue(
                 "Expected STATE_NONE or STATE_DOWNLOAD after stop, got $state",
                 state == DownloadInfo.STATE_NONE || state == DownloadInfo.STATE_DOWNLOAD
@@ -294,7 +294,7 @@ class DownloadManagerTest {
     @Test
     fun getDownloadState_returnsCorrectState() {
         // Non-existent returns INVALID
-        assertEquals(DownloadInfo.STATE_INVALID, manager.getDownloadState(9999L))
+        assertEquals(DownloadInfo.STATE_INVALID, manager.getDownloadState("nonexistent"))
 
         // Added returns the correct state
         val gallery = GalleryInfo().apply {
@@ -303,7 +303,7 @@ class DownloadManagerTest {
             title = "State Test"
         }
         manager.addDownload(gallery, null, DownloadInfo.STATE_FINISH)
-        assertEquals(DownloadInfo.STATE_FINISH, manager.getDownloadState(2005L))
+        assertEquals(DownloadInfo.STATE_FINISH, manager.getDownloadState("tok_2005"))
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -347,7 +347,7 @@ class DownloadManagerTest {
         assertTrue("NewName" in labels)
 
         // Verify the download's label was updated
-        val info = manager.getDownloadInfo(4001L)
+        val info = manager.getDownloadInfo("tok_4001")
         assertEquals("NewName", info?.label)
     }
 
@@ -371,7 +371,7 @@ class DownloadManagerTest {
         assertFalse("ToRemove" in labels)
 
         // Verify the download moved to default (null label)
-        val info = manager.getDownloadInfo(4002L)
+        val info = manager.getDownloadInfo("tok_4002")
         assertNull("Download should have null label (default)", info?.label)
 
         // Verify it's in the default list
@@ -488,7 +488,7 @@ class DownloadManagerTest {
             "allDownloadInfoList should not be empty after reload",
             manager.allDownloadInfoList.isNotEmpty()
         )
-        assertTrue(manager.containDownloadInfo(5004L))
+        assertTrue(manager.containDownloadInfo("tok_5004"))
         assertTrue("reload" in events)
     }
 
@@ -498,7 +498,7 @@ class DownloadManagerTest {
 
     @Test
     fun containDownloadInfo_returnsTrueForExisting() {
-        assertFalse(manager.containDownloadInfo(6001L))
+        assertFalse(manager.containDownloadInfo("tok_6001"))
 
         val gallery = GalleryInfo().apply {
             gid = 6001L
@@ -507,12 +507,12 @@ class DownloadManagerTest {
         }
         manager.addDownload(gallery, null, DownloadInfo.STATE_NONE)
 
-        assertTrue(manager.containDownloadInfo(6001L))
+        assertTrue(manager.containDownloadInfo("tok_6001"))
     }
 
     @Test
     fun getDownloadInfo_returnsCorrectInfo() {
-        assertNull(manager.getDownloadInfo(6002L))
+        assertNull(manager.getDownloadInfo("tok_6002"))
 
         val gallery = GalleryInfo().apply {
             gid = 6002L
@@ -521,7 +521,7 @@ class DownloadManagerTest {
         }
         manager.addDownload(gallery, null, DownloadInfo.STATE_NONE)
 
-        val info = manager.getDownloadInfo(6002L)
+        val info = manager.getDownloadInfo("tok_6002")
         assertNotNull(info)
         assertEquals(6002L, info!!.gid)
         assertEquals("Info Test", info.title)
@@ -556,15 +556,15 @@ class DownloadManagerTest {
     fun publicMethods_throwOnBackgroundThread() {
         val methodsToCheck: List<Pair<String, () -> Unit>> = listOf(
             "containLabel" to { manager.containLabel("x") },
-            "containDownloadInfo" to { manager.containDownloadInfo(0L) },
+            "containDownloadInfo" to { manager.containDownloadInfo("") },
             "labelList" to { manager.labelList },
             "getLabelCount" to { manager.getLabelCount(null) },
             "allDownloadInfoList" to { manager.allDownloadInfoList },
             "defaultDownloadInfoList" to { manager.defaultDownloadInfoList },
             "getLabelDownloadInfoList" to { manager.getLabelDownloadInfoList(null) },
             "downloadInfoList" to { manager.downloadInfoList },
-            "getDownloadInfo" to { manager.getDownloadInfo(0L) },
-            "getDownloadState" to { manager.getDownloadState(0L) },
+            "getDownloadInfo" to { manager.getDownloadInfo("") },
+            "getDownloadState" to { manager.getDownloadState("") },
             "addDownloadInfoListener" to { manager.addDownloadInfoListener(FakeDownloadInfoListener()) },
             "removeDownloadInfoListener" to { manager.removeDownloadInfoListener(FakeDownloadInfoListener()) },
             "setDownloadListener" to { manager.setDownloadListener(null) },
@@ -668,7 +668,7 @@ class DownloadManagerTest {
                         // Existence checks — exercises HashSet read concurrent
                         // with what used to be a HashSet write.
                         freshManager.containLabel(labelStrings[spin % labelCount])
-                        freshManager.containDownloadInfo(90000L + spin)
+                        freshManager.containDownloadInfo("race-token-$spin")
                         // Sanity assertion: snapshot must never be partially
                         // populated. It is either empty (publish hasn't run) or
                         // exactly the full label set.
@@ -828,7 +828,7 @@ class DownloadManagerTest {
         org.robolectric.shadows.ShadowLooper.idleMainLooper()
 
         // Move the source item to DestLabel
-        manager.changeLabel(listOf(manager.getDownloadInfo(7210L)!!), "DestLabel")
+        manager.changeLabel(listOf(manager.getDownloadInfo("tok_src")!!), "DestLabel")
 
         val destList = manager.getLabelDownloadInfoList("DestLabel")!!
         assertEquals(3, destList.size)
@@ -855,7 +855,7 @@ class DownloadManagerTest {
         }
         manager.addDownload(defaultGallery, null, DownloadInfo.STATE_NONE)
         // Manually set time for deterministic ordering
-        manager.getDownloadInfo(7300L)!!.time = 500L
+        manager.getDownloadInfo("tok_def")!!.time = 500L
 
         // Add items to the label that will be deleted
         val labelInfos = listOf(800L, 200L).mapIndexed { i, ts ->

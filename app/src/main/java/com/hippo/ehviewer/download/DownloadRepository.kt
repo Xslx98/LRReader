@@ -52,11 +52,8 @@ class DownloadRepository(
     /** All download info, sorted by [DATE_DESC_COMPARATOR]. */
     internal val allInfoList: MutableList<DownloadInfo> = ArrayList()
 
-    /** O(1) lookup by gid. */
-    internal val allInfoMap: HashMap<Long, DownloadInfo> = HashMap()
-
-    /** O(1) lookup by arcid. */
-    internal val arcidInfoMap: HashMap<String, DownloadInfo> = HashMap()
+    /** O(1) lookup by arcid. Primary map for download info. */
+    internal val allInfoMap: HashMap<String, DownloadInfo> = HashMap()
 
     /** Label string → per-label info list. Does NOT contain default (null-label) entries. */
     internal val labelInfoMap: MutableMap<String?, MutableList<DownloadInfo>> = HashMap()
@@ -221,8 +218,7 @@ class DownloadRepository(
 
         allInfoList.addAll(loaded.allInfoList)
         for (info in loaded.allInfoList) {
-            allInfoMap[info.gid] = info
-            arcidInfoMap[info.arcid] = info
+            allInfoMap[info.arcid] = info
         }
 
         for ((label, list) in loaded.labelToInfoList) {
@@ -266,35 +262,19 @@ class DownloadRepository(
         return labelSet.contains(label)
     }
 
-    fun containDownloadInfo(gid: Long): Boolean {
+    fun containDownloadInfo(arcid: String): Boolean {
         assertMainThread()
-        return allInfoMap.containsKey(gid)
+        return allInfoMap.containsKey(arcid)
     }
 
-    fun getDownloadInfo(gid: Long): DownloadInfo? {
+    fun getDownloadInfo(arcid: String): DownloadInfo? {
         assertMainThread()
-        return allInfoMap[gid]
+        return allInfoMap[arcid]
     }
 
-    fun getDownloadState(gid: Long): Int {
+    fun getDownloadState(arcid: String): Int {
         assertMainThread()
-        val info = allInfoMap[gid]
-        return info?.state ?: DownloadInfo.STATE_INVALID
-    }
-
-    fun containDownloadInfoByArcid(arcid: String): Boolean {
-        assertMainThread()
-        return arcidInfoMap.containsKey(arcid)
-    }
-
-    fun getDownloadInfoByArcid(arcid: String): DownloadInfo? {
-        assertMainThread()
-        return arcidInfoMap[arcid]
-    }
-
-    fun getDownloadStateByArcid(arcid: String): Int {
-        assertMainThread()
-        val info = arcidInfoMap[arcid]
+        val info = allInfoMap[arcid]
         return info?.state ?: DownloadInfo.STATE_INVALID
     }
 
@@ -314,8 +294,7 @@ class DownloadRepository(
     fun addInfo(info: DownloadInfo) {
         assertMainThread()
         allInfoList.add(0, info)
-        allInfoMap[info.gid] = info
-        arcidInfoMap[info.arcid] = info
+        allInfoMap[info.arcid] = info
         val list = getInfoListForLabel(info.label)
         list?.add(0, info)
     }
@@ -327,8 +306,7 @@ class DownloadRepository(
     fun addInfoSorted(info: DownloadInfo) {
         assertMainThread()
         insertSorted(allInfoList, info)
-        allInfoMap[info.gid] = info
-        arcidInfoMap[info.arcid] = info
+        allInfoMap[info.arcid] = info
         val list = getInfoListForLabel(info.label)
         if (list != null) {
             insertSorted(list, info)
@@ -342,8 +320,7 @@ class DownloadRepository(
     fun removeInfo(info: DownloadInfo): Int {
         assertMainThread()
         allInfoList.remove(info)
-        allInfoMap.remove(info.gid)
-        arcidInfoMap.remove(info.arcid)
+        allInfoMap.remove(info.arcid)
         val list = getInfoListForLabel(info.label)
         if (list != null) {
             val index = list.indexOf(info)
@@ -356,19 +333,18 @@ class DownloadRepository(
     }
 
     /**
-     * Batch-remove infos by gid set. More efficient than N individual [removeInfo] calls.
+     * Batch-remove infos by arcid set. More efficient than N individual [removeInfo] calls.
      */
-    fun removeInfoBatch(gidSet: Set<Long>) {
+    fun removeInfoBatch(arcidSet: Set<String>) {
         assertMainThread()
-        for (gid in gidSet) {
-            val info = allInfoMap.remove(gid)
+        for (arcid in arcidSet) {
+            val info = allInfoMap.remove(arcid)
             if (info != null) {
-                arcidInfoMap.remove(info.arcid)
                 val list = getInfoListForLabel(info.label)
                 list?.remove(info)
             }
         }
-        allInfoList.removeAll { it.gid in gidSet }
+        allInfoList.removeAll { it.arcid in arcidSet }
     }
 
     /**
@@ -377,7 +353,7 @@ class DownloadRepository(
     fun replaceInfo(newInfo: DownloadInfo, oldInfo: DownloadInfo) {
         assertMainThread()
         for (i in allInfoList.indices) {
-            if (oldInfo.gid == allInfoList[i].gid) {
+            if (oldInfo.arcid == allInfoList[i].arcid) {
                 allInfoList[i] = newInfo
                 break
             }
@@ -385,16 +361,14 @@ class DownloadRepository(
         val infoList = getInfoListForLabel(oldInfo.label)
         if (infoList != null) {
             for (i in infoList.indices) {
-                if (oldInfo.gid == infoList[i].gid) {
+                if (oldInfo.arcid == infoList[i].arcid) {
                     infoList[i] = newInfo
                     break
                 }
             }
         }
-        allInfoMap.remove(oldInfo.gid)
-        arcidInfoMap.remove(oldInfo.arcid)
-        allInfoMap[newInfo.gid] = newInfo
-        arcidInfoMap[newInfo.arcid] = newInfo
+        allInfoMap.remove(oldInfo.arcid)
+        allInfoMap[newInfo.arcid] = newInfo
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -411,7 +385,7 @@ class DownloadRepository(
         assertMainThread()
         val newLabels = mutableListOf<String>()
         for (info in infos) {
-            if (containDownloadInfo(info.gid)) continue
+            if (containDownloadInfo(info.arcid)) continue
             if (DownloadInfo.STATE_WAIT == info.state || DownloadInfo.STATE_DOWNLOAD == info.state) {
                 info.state = DownloadInfo.STATE_NONE
             }
@@ -425,8 +399,7 @@ class DownloadRepository(
             }
             insertSorted(list, info)
             insertSorted(allInfoList, info)
-            allInfoMap[info.gid] = info
-            arcidInfoMap[info.arcid] = info
+            allInfoMap[info.arcid] = info
         }
         return newLabels
     }
@@ -454,7 +427,7 @@ class DownloadRepository(
      */
     fun addSingleDownload(galleryInfo: GalleryInfo, label: String?, state: Int): Pair<DownloadInfo, MutableList<DownloadInfo>>? {
         assertMainThread()
-        if (containDownloadInfo(galleryInfo.gid)) return null
+        if (containDownloadInfo(galleryInfo.arcid)) return null
 
         val info = DownloadInfo(galleryInfo)
         info.label = label
@@ -473,8 +446,7 @@ class DownloadRepository(
         }
         list.add(0, info)
         allInfoList.add(0, info)
-        allInfoMap[galleryInfo.gid] = info
-        arcidInfoMap[galleryInfo.arcid] = info
+        allInfoMap[galleryInfo.arcid] = info
         persistInfo(info)
         return Pair(info, list)
     }
@@ -484,7 +456,7 @@ class DownloadRepository(
      */
     fun addInfoOnly(galleryInfo: GalleryInfo, label: String?): Boolean {
         assertMainThread()
-        if (containDownloadInfo(galleryInfo.gid)) return false
+        if (containDownloadInfo(galleryInfo.arcid)) return false
         val info = DownloadInfo(galleryInfo)
         info.label = label
         info.state = DownloadInfo.STATE_NONE
@@ -495,8 +467,7 @@ class DownloadRepository(
         }
         list.add(0, info)
         persistInfo(info)
-        allInfoMap[galleryInfo.gid] = info
-        arcidInfoMap[galleryInfo.arcid] = info
+        allInfoMap[galleryInfo.arcid] = info
         return true
     }
 
@@ -504,38 +475,36 @@ class DownloadRepository(
      * Remove download info from collections and DB by gid.
      * Returns (info, label-list, index-in-label-list) or null.
      */
-    fun deleteInfo(gid: Long): Triple<DownloadInfo, MutableList<DownloadInfo>, Int>? {
+    fun deleteInfo(arcid: String): Triple<DownloadInfo, MutableList<DownloadInfo>, Int>? {
         assertMainThread()
-        val info = allInfoMap[gid] ?: return null
+        val info = allInfoMap[arcid] ?: return null
         allInfoList.remove(info)
-        allInfoMap.remove(info.gid)
-        arcidInfoMap.remove(info.arcid)
+        allInfoMap.remove(arcid)
         val list = getInfoListForLabel(info.label)
         val index = if (list != null) {
             val idx = list.indexOf(info)
             if (idx >= 0) list.removeAt(idx)
             idx
         } else -1
-        removeInfoFromDb(info.gid)
+        removeInfoFromDbByArcid(arcid)
         return Triple(info, list ?: ArrayList(), index)
     }
 
     /**
      * Remove a range of download infos from collections and DB.
      */
-    fun deleteInfoRange(gidSet: Set<Long>) {
+    fun deleteInfoRange(arcidSet: Set<String>) {
         assertMainThread()
-        val gidsToRemove = mutableListOf<Long>()
-        for (gid in gidSet) {
-            val info = allInfoMap.remove(gid)
+        val arcidsToRemove = mutableListOf<String>()
+        for (arcid in arcidSet) {
+            val info = allInfoMap.remove(arcid)
             if (info != null) {
-                arcidInfoMap.remove(info.arcid)
-                gidsToRemove.add(info.gid)
+                arcidsToRemove.add(arcid)
                 getInfoListForLabel(info.label)?.remove(info)
             }
         }
-        allInfoList.removeAll { it.gid in gidSet }
-        if (gidsToRemove.isNotEmpty()) removeInfoBatchFromDb(gidsToRemove)
+        allInfoList.removeAll { it.arcid in arcidSet }
+        if (arcidsToRemove.isNotEmpty()) removeInfoBatchFromDbByArcids(arcidsToRemove)
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -548,7 +517,7 @@ class DownloadRepository(
             try {
                 ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to persist download info gid=${info.gid}", e)
+                Log.e(TAG, "Failed to persist download info arcid=${info.arcid}", e)
             }
         }
     }
@@ -559,7 +528,7 @@ class DownloadRepository(
             try {
                 ServiceRegistry.dataModule.historyRepository.putHistoryInfo(info)
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to persist history info gid=${info.gid}", e)
+                Log.e(TAG, "Failed to persist history info arcid=${info.arcid}", e)
             }
         }
     }
@@ -575,11 +544,33 @@ class DownloadRepository(
         }
     }
 
+    /** Remove download info from the DB by arcid on a background thread. */
+    fun removeInfoFromDbByArcid(arcid: String) {
+        scope.launch {
+            try {
+                ServiceRegistry.dataModule.downloadDbRepository.removeDownloadInfoByArcid(arcid)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to remove download info arcid=$arcid from DB", e)
+            }
+        }
+    }
+
     /** Batch-remove download infos from the DB on a background thread. */
     fun removeInfoBatchFromDb(gids: List<Long>) {
         scope.launch {
             try {
                 ServiceRegistry.dataModule.downloadDbRepository.removeDownloadInfoBatch(gids)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to batch-remove download infos from DB", e)
+            }
+        }
+    }
+
+    /** Batch-remove download infos from the DB by arcids on a background thread. */
+    fun removeInfoBatchFromDbByArcids(arcids: List<String>) {
+        scope.launch {
+            try {
+                ServiceRegistry.dataModule.downloadDbRepository.removeDownloadInfoBatchByArcids(arcids)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to batch-remove download infos from DB", e)
             }
@@ -610,7 +601,7 @@ class DownloadRepository(
 
         allInfoList.clear()
         allInfoMap.clear()
-        arcidInfoMap.clear()
+        allInfoMap.clear()
         defaultInfoList.clear()
         for ((_, value) in labelInfoMap) {
             value.clear()
@@ -622,8 +613,8 @@ class DownloadRepository(
                 runOnMainThread {
                     allInfoList.addAll(reloadedInfos)
                     for (info in reloadedInfos) {
-                        allInfoMap[info.gid] = info
-                        arcidInfoMap[info.arcid] = info
+                        allInfoMap[info.arcid] = info
+                        allInfoMap[info.arcid] = info
                         var list = getInfoListForLabel(info.label)
                         if (list == null) {
                             list = ArrayList()
@@ -807,7 +798,7 @@ class DownloadRepository(
                 try {
                     ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to persist label change for gid=${info.gid}", e)
+                    Log.e(TAG, "Failed to persist label change for arcid=${info.arcid}", e)
                 }
             }
         }

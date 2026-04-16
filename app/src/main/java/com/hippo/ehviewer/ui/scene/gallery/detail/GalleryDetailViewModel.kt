@@ -278,11 +278,11 @@ class GalleryDetailViewModel : ViewModel() {
     val downloadState: StateFlow<Int> = _downloadState.asStateFlow()
 
     /**
-     * Initialize download state for the given gid.
+     * Initialize download state for the given arcid.
      */
-    fun initDownloadState(gid: Long) {
-        _downloadState.value = if (gid != -1L) {
-            downloadManager.getDownloadState(gid)
+    fun initDownloadState(arcid: String?) {
+        _downloadState.value = if (!arcid.isNullOrEmpty()) {
+            downloadManager.getDownloadState(arcid)
         } else {
             DownloadInfo.STATE_INVALID
         }
@@ -292,9 +292,9 @@ class GalleryDetailViewModel : ViewModel() {
      * Re-query the current download state from [DownloadManager].
      */
     fun refreshDownloadState() {
-        val gid = getEffectiveGid()
-        if (gid == -1L) return
-        _downloadState.value = downloadManager.getDownloadState(gid)
+        val arcid = getEffectiveArcid()
+        if (arcid.isNullOrEmpty()) return
+        _downloadState.value = downloadManager.getDownloadState(arcid)
     }
 
     /** [DownloadInfoListener] that updates [_downloadState] on any change. */

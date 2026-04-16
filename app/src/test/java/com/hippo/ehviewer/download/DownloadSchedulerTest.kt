@@ -11,7 +11,6 @@ import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.module.CoroutineModule
-import com.hippo.lib.yorozuya.collect.LongList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -161,7 +160,7 @@ class DownloadSchedulerTest {
 
         assertFalse("Scheduler should not be idle with wait list entry", scheduler.isIdle)
 
-        val stopped = scheduler.stopDownload(1L)
+        val stopped = scheduler.stopDownload("token_1")
         assertNotNull("stopDownload should return the stopped info", stopped)
         assertEquals(DownloadInfo.STATE_NONE, stopped!!.state)
         assertTrue("Wait list should be empty after stop", scheduler.waitList.isEmpty())
@@ -187,7 +186,7 @@ class DownloadSchedulerTest {
         val info = makeInfo(1L)
         scheduler.waitList.add(info)
 
-        val result = scheduler.getNoneDownloadInfo(1L)
+        val result = scheduler.getNoneDownloadInfo("token_1")
         assertNotNull("getNoneDownloadInfo should return the info", result)
         assertEquals(DownloadInfo.STATE_NONE, result!!.state)
         assertTrue("Wait list should be empty", scheduler.waitList.isEmpty())
@@ -195,8 +194,8 @@ class DownloadSchedulerTest {
 
     @Test
     fun stopDownload_nonExistentReturnsNull() {
-        val result = scheduler.stopDownload(999L)
-        assertNull("Stopping a non-existent gid should return null", result)
+        val result = scheduler.stopDownload("nonexistent")
+        assertNull("Stopping a non-existent arcid should return null", result)
     }
 
     @Test
@@ -206,10 +205,8 @@ class DownloadSchedulerTest {
         }
         assertEquals(5, scheduler.waitList.size)
 
-        val gidList = LongList()
-        gidList.add(2L)
-        gidList.add(4L)
-        scheduler.stopRangeDownload(gidList)
+        val arcidList = listOf("token_2", "token_4")
+        scheduler.stopRangeDownload(arcidList)
 
         assertEquals(3, scheduler.waitList.size)
         val remainingGids = scheduler.waitList.map { it.gid }.toSet()
