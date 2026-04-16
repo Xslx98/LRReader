@@ -166,7 +166,7 @@ class DownloadAdapter(
                 loadArchiveThumbnail(holder.thumb, Uri.parse(archiveUri))
             } else {
                 holder.thumb.load(
-                    LRRCacheKeyFactory.getThumbKey(info.gid), archive.thumbnailUrl,
+                    LRRCacheKeyFactory.getThumbKey(info.arcid), archive.thumbnailUrl,
                     ThumbDataContainer(info), true, false
                 )
             }
@@ -200,7 +200,7 @@ class DownloadAdapter(
             }
             bindForState(holder, info)
 
-            ViewCompat.setTransitionName(holder.thumb, TransitionNameFactory.getThumbTransitionName(info.gid))
+            ViewCompat.setTransitionName(holder.thumb, TransitionNameFactory.getThumbTransitionName(info.arcid))
         } catch (e: Exception) {
             Analytics.recordException(e)
         }
