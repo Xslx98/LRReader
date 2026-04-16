@@ -420,7 +420,7 @@ class GalleryDetailViewModel : ViewModel() {
                 }
 
                 // Cache the detail
-                ServiceRegistry.dataModule.galleryDetailCache.put(gd.gid, gd)
+                ServiceRegistry.dataModule.archiveDetailCache.put(arcid, ad)
 
                 _galleryDetail.value = gd
                 _archiveDetail.value = ad
@@ -445,15 +445,13 @@ class GalleryDetailViewModel : ViewModel() {
      * false if the gid is invalid.
      */
     fun tryLoadFromCache(): Boolean {
-        if (_galleryDetail.value != null) return true
+        if (_archiveDetail.value != null) return true
 
-        val gid = getEffectiveGid()
-        if (gid == -1L) return false
+        val arcid = getEffectiveArcid() ?: return false
 
-        val cached = ServiceRegistry.dataModule.galleryDetailCache.get(gid)
+        val cached = ServiceRegistry.dataModule.archiveDetailCache.get(arcid)
         if (cached != null) {
-            _galleryDetail.value = cached
-            _archiveDetail.value = cached.toArchiveDetail()
+            _archiveDetail.value = cached
             return true
         }
         return true

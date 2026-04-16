@@ -288,7 +288,7 @@ class EhApplication : RecordingApplication() {
         super.onTrimMemory(level)
         if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
             ServiceRegistry.clientModule.clearMemoryCache()
-            ServiceRegistry.dataModule.clearGalleryDetailCache()
+            ServiceRegistry.dataModule.clearArchiveDetailCache()
         }
     }
 
@@ -352,7 +352,7 @@ class EhApplication : RecordingApplication() {
 
     fun clearMemoryCache() {
         ServiceRegistry.clientModule.clearMemoryCache()
-        ServiceRegistry.dataModule.clearGalleryDetailCache()
+        ServiceRegistry.dataModule.clearArchiveDetailCache()
     }
 
     // --- GlobalStuff delegation ---

@@ -5,7 +5,7 @@ import android.util.Log
 import androidx.collection.LruCache
 import com.hippo.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.FavouriteStatusRouter
-import com.hippo.ehviewer.client.data.GalleryDetail
+import com.lanraragi.reader.domain.ArchiveDetail
 import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.dao.DownloadDbRepository
 import com.hippo.ehviewer.dao.FavoritesRepository
@@ -53,24 +53,20 @@ class DataModule(private val context: Context) : IDataModule, Cacheable {
         )
     }
 
-    override val galleryDetailCache: LruCache<Long, GalleryDetail> by lazy {
-        LruCache<Long, GalleryDetail>(150).also { cache ->
-            favouriteStatusRouter.addListener { gid, slot ->
-                cache[gid]?.let { it.favoriteSlot = slot }
-            }
-        }
+    override val archiveDetailCache: LruCache<String, ArchiveDetail> by lazy {
+        LruCache<String, ArchiveDetail>(150)
     }
 
     override val spiderInfoCache: SimpleDiskCache by lazy {
         SimpleDiskCache(File(context.cacheDir, "spider_info"), 5 * 1024 * 1024) // 5MB
     }
 
-    override fun clearGalleryDetailCache() {
-        galleryDetailCache.evictAll()
+    override fun clearArchiveDetailCache() {
+        archiveDetailCache.evictAll()
     }
 
     override fun clearCache() {
-        galleryDetailCache.evictAll()
+        archiveDetailCache.evictAll()
         try { spiderInfoCache.clear() } catch (e: Exception) { Log.w(TAG, "Failed to clear spider info cache", e) }
     }
 }

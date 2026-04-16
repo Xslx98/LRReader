@@ -3,7 +3,7 @@ package com.hippo.ehviewer.module
 import androidx.collection.LruCache
 import com.hippo.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.FavouriteStatusRouter
-import com.hippo.ehviewer.client.data.GalleryDetail
+import com.lanraragi.reader.domain.ArchiveDetail
 import com.hippo.ehviewer.dao.DownloadDbRepository
 import com.hippo.ehviewer.dao.FavoritesRepository
 import com.hippo.ehviewer.dao.HistoryRepository
@@ -39,12 +39,12 @@ interface IDataModule {
     /** Download domain repository backed by [com.hippo.ehviewer.dao.DownloadRoomDao]. */
     val downloadDbRepository: DownloadDbRepository
 
-    /** LRU cache for [GalleryDetail] objects keyed by gid. */
-    val galleryDetailCache: LruCache<Long, GalleryDetail>
+    /** LRU cache for [ArchiveDetail] objects keyed by arcid. */
+    val archiveDetailCache: LruCache<String, ArchiveDetail>
 
     /** Small disk cache holding per-gallery spider state for preloading. */
     val spiderInfoCache: SimpleDiskCache
 
-    /** Evicts every entry from [galleryDetailCache]. */
-    fun clearGalleryDetailCache()
+    /** Evicts every entry from [archiveDetailCache]. */
+    fun clearArchiveDetailCache()
 }
