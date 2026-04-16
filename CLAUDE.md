@@ -137,10 +137,12 @@ LRReader/
 | `ui/scene/LRRCategoriesViewModel.kt` | Category CRUD ViewModel (W14-2) |
 | `ui/scene/ServerListViewModel.kt` | Server profile CRUD + connection verification ViewModel (W15-1) |
 | `ui/scene/ServerListDialogHelper.kt` | Profile add/edit/delete dialog builders (W15-1) |
-| `download/DownloadManager.kt` | Download facade — thin delegation to Repository/Scheduler/EventBus (W6-2) |
+| `download/DownloadManager.kt` | Download facade — thin delegation to Repository/Scheduler/EventBus (W6-2); owns `progressTracker` (W35-3a) |
 | `download/DownloadRepository.kt` | Download collection management + DB persistence, injected CoroutineDispatcher (W6-2, W8-3) |
-| `download/DownloadScheduler.kt` | Download worker scheduling + state machine (W6-2) |
+| `download/DownloadScheduler.kt` | Download worker scheduling + state machine (W6-2); mirrors transient fields into `progressTracker` (W35-3a) |
 | `download/DownloadEventBus.kt` | Download listener registration + event dispatch (W6-2) |
+| `download/ProgressSnapshot.kt` | Immutable per-archive progress snapshot: speed/finished/downloaded/total/remaining (W35-3a) |
+| `download/DownloadProgressTracker.kt` | In-memory `StateFlow<Map<arcid, ProgressSnapshot>>` tracker — mixed SSOT per ADR-001 (W35-3a) |
 | `mapper/GalleryInfoMapper.kt` | GalleryInfo↔GalleryInfoUi conversion (W3-3) |
 | `ui/scene/gallery/detail/TagEditDialog.kt` | Grouped tag editor (chip-style, per-namespace) |
 | `ui/gallery/GalleryMenuHelper.kt` | Reader settings dialog (immediate-apply, no confirm button) |
@@ -391,3 +393,4 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 - Do not call `EhDB` quick search methods directly — use `QuickSearchRepository` via `ServiceRegistry.dataModule.quickSearchRepository` (W21-1); EhDB quick search methods are `@Deprecated`
 - Do not call `EhDB` local favorites methods directly — use `FavoritesRepository` via `ServiceRegistry.dataModule.favoritesRepository` (W21-1); EhDB local favorites methods are `@Deprecated`
 - Do not add new Scene classes without a corresponding ViewModel — all 8 functional Scenes now have ViewModels (W14-W15)
+- Do not read transient progress fields (`speed` / `finished` / `downloaded` / `total` / `remaining`) from `DownloadInfo` in new code — use `DownloadManager.progressFor(arcid)` or subscribe to `DownloadManager.progressTracker.progressFlow` (W35-3a, ADR-001 Option D). The `@Ignore` fields on `DownloadInfo` are retained only for backward compatibility during the W35-3 migration and will be removed in W35-3c.
