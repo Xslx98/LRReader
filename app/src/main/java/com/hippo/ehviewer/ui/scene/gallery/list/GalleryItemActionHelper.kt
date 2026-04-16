@@ -119,7 +119,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
         linearLayout.setOnClickListener { onItemClick(view, gi) }
 
         val imageViewNew: LoadImageViewNew = linearLayout.findViewById(R.id.dialog_thumb)
-        imageViewNew.load(LRRCacheKeyFactory.getThumbKey(arcidToGid(gi.arcid)), gi.thumbnailUrl)
+        imageViewNew.load(LRRCacheKeyFactory.getThumbKey(gi.arcid), gi.thumbnailUrl)
         imageViewNew.setOnClickListener { onItemClick(view, gi) }
 
         callback.buildChipGroup(gi, linearLayout.findViewById(R.id.tab_tag_flow))
