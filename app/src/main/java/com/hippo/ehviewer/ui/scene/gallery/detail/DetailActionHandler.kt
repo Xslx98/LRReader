@@ -196,7 +196,7 @@ internal class DetailActionHandler(
     private fun onDownloadClick(context: Context, activity: MainActivity) {
         val galleryInfo = viewModel.getEffectiveGalleryInfo() ?: return
 
-        if (viewModel.downloadManager.getDownloadState(galleryInfo.gid) == DownloadInfo.STATE_INVALID) {
+        if (viewModel.downloadManager.getDownloadState(galleryInfo.arcid) == DownloadInfo.STATE_INVALID) {
             CommonOperations.startDownload(activity, galleryInfo, false)
         } else {
             androidx.appcompat.app.AlertDialog.Builder(context)
@@ -208,7 +208,7 @@ internal class DetailActionHandler(
                     )
                 )
                 .setPositiveButton(android.R.string.ok) { _, _ ->
-                    viewModel.downloadManager.deleteDownload(galleryInfo.gid)
+                    viewModel.downloadManager.deleteDownload(galleryInfo.arcid)
                 }
                 .show()
         }

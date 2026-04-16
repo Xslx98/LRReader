@@ -30,7 +30,6 @@ import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.ui.GalleryActivity
 import com.hippo.ehviewer.ui.scene.download.part.DownloadAdapter.Companion.DRAG_ENABLE
 import com.hippo.easyrecyclerview.EasyRecyclerView
-import com.hippo.lib.yorozuya.collect.LongList
 import com.hippo.widget.FabLayout
 
 /**
@@ -91,11 +90,11 @@ internal class DownloadBatchOpsHelper(private val callback: Callback) {
             return
         }
 
-        var gidList: LongList? = null
+        var arcidList: ArrayList<String>? = null
         var downloadInfoList: MutableList<DownloadInfo>? = null
-        val collectGid = position == 1 || position == 2 || position == 3
+        val collectArcid = position == 1 || position == 2 || position == 3
         val collectDownloadInfo = position == 3 || position == 4
-        if (collectGid) gidList = LongList()
+        if (collectArcid) arcidList = ArrayList()
         if (collectDownloadInfo) downloadInfoList = java.util.LinkedList()
 
         val stateArray = recyclerView.checkedItemPositions ?: return
@@ -103,27 +102,27 @@ internal class DownloadBatchOpsHelper(private val callback: Callback) {
             if (stateArray.valueAt(i)) {
                 val info = list[callback.positionInList(stateArray.keyAt(i))]
                 downloadInfoList?.add(info)
-                gidList?.add(info.gid)
+                arcidList?.add(info.arcid)
             }
         }
 
         when (position) {
             1 -> { // Start
-                val gids = gidList ?: return
-                startRange(gids, act)
+                val arcids = arcidList ?: return
+                startRange(arcids, act)
                 recyclerView.outOfCustomChoiceMode()
             }
             2 -> { // Stop
-                val gids = gidList ?: return
-                stopRange(gids)
+                val arcids = arcidList ?: return
+                stopRange(arcids)
                 recyclerView.outOfCustomChoiceMode()
             }
             3 -> { // Delete
-                val gids = gidList ?: return
+                val arcids = arcidList ?: return
                 val infos = downloadInfoList ?: return
-                deleteRange(context, infos, gids) { deleteFiles ->
+                deleteRange(context, infos, arcids) { deleteFiles ->
                     recyclerView.outOfCustomChoiceMode()
-                    callback.viewModel.deleteRangeDownloads(infos, gids, deleteFiles)
+                    callback.viewModel.deleteRangeDownloads(infos, arcids, deleteFiles)
                 }
             }
             4 -> { // Move
@@ -144,27 +143,27 @@ internal class DownloadBatchOpsHelper(private val callback: Callback) {
         }
     }
 
-    private fun startRange(gidList: LongList, activity: Activity) {
-        if (gidList.isEmpty()) return
+    private fun startRange(arcidList: List<String>, activity: Activity) {
+        if (arcidList.isEmpty()) return
         val intent = Intent(activity, DownloadService::class.java)
         intent.action = DownloadService.ACTION_START_RANGE
-        intent.putExtra(DownloadService.KEY_GID_LIST, gidList)
+        intent.putStringArrayListExtra(DownloadService.KEY_ARCID_LIST, ArrayList(arcidList))
         activity.startService(intent)
     }
 
-    private fun stopRange(gidList: LongList) {
-        if (gidList.isEmpty()) return
-        callback.viewModel.stopRangeDownloads(gidList)
+    private fun stopRange(arcidList: List<String>) {
+        if (arcidList.isEmpty()) return
+        callback.viewModel.stopRangeDownloads(arcidList)
     }
 
     private fun deleteRange(
         context: Context,
         downloadInfoList: List<DownloadInfo>,
-        gidList: LongList,
+        arcidList: List<String>,
         onConfirmed: (Boolean) -> Unit
     ) {
         if (downloadInfoList.isEmpty()) return
-        DownloadLabelHelper.showDeleteRangeDialog(context, gidList.size()) { deleteFiles ->
+        DownloadLabelHelper.showDeleteRangeDialog(context, arcidList.size) { deleteFiles ->
             onConfirmed(deleteFiles)
         }
     }
