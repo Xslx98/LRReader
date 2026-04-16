@@ -8,7 +8,7 @@ import com.hippo.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.data.GalleryDetail
+import com.lanraragi.reader.domain.ArchiveDetail
 import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.dao.FavoritesRepository
 import com.hippo.ehviewer.dao.HistoryRepository
@@ -86,10 +86,10 @@ class QuickSearchViewModelTest {
                 override val downloadManager: DownloadManager
                     get() = throw NotImplementedError("Not needed for QuickSearchViewModel tests")
                 override val favouriteStatusRouter get() = FavouriteStatusRouter()
-                override val galleryDetailCache get() = LruCache<Long, GalleryDetail>(10)
+                override val archiveDetailCache get() = LruCache<String, ArchiveDetail>(10)
                 override val spiderInfoCache: SimpleDiskCache
                     get() = throw NotImplementedError("Not needed for QuickSearchViewModel tests")
-                override fun clearGalleryDetailCache() {}
+                override fun clearArchiveDetailCache() {}
             }
         )
 
