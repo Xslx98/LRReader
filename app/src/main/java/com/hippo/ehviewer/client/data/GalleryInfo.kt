@@ -28,15 +28,16 @@ import android.util.Log
 import java.util.regex.Pattern
 
 /**
- * Backward-compatibility alias. New code should use [GalleryInfoEntity] (for Room /
- * persistence) or [GalleryInfoUi] (for UI display).
+ * Backward-compatibility alias. New code should use [GalleryInfoEntity] directly (for
+ * Room / persistence) or the domain model [com.lanraragi.reader.domain.Archive] (for UI
+ * display).
  */
 typealias GalleryInfo = GalleryInfoEntity
 
 /**
  * Room entity base class. Holds the columns persisted to the DOWNLOADS / HISTORY /
  * LOCAL_FAVORITES tables via inheritance, plus transient (`@Ignore`) fields used
- * during API ↔ DB bridging. For pure UI display, prefer [GalleryInfoUi].
+ * during API ↔ DB bridging. For pure UI display, prefer [com.lanraragi.reader.domain.Archive].
  */
 open class GalleryInfoEntity : Parcelable {
 
