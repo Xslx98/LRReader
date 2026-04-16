@@ -110,10 +110,11 @@ class SpiderInfo {
                 ExceptionUtils.throwIfFatal(e)
                 Log.w(TAG, "Failed to write spider info to download dir", e)
             }
-            // Read from cache
+            // Write to cache (keyed by arcid for lookup consistency)
+            val cacheKey = arcid ?: gid.toString()
             val pipe: OutputStreamPipe = ServiceRegistry.dataModule
                 .spiderInfoCache
-                .getOutputStreamPipe(gid.toString())
+                .getOutputStreamPipe(cacheKey)
             try {
                 pipe.obtain()
                 write(pipe.open())
@@ -250,9 +251,7 @@ class SpiderInfo {
             if (mDownloadDir != null && mDownloadDir.isDirectory) {
                 val file = mDownloadDir.findFile(SpiderQueen.SPIDER_INFO_FILENAME)
                 val spiderInfo = read(file)
-                if (spiderInfo != null && spiderInfo.gid == info.gid &&
-                    spiderInfo.arcid == info.arcid
-                ) {
+                if (spiderInfo != null && spiderInfo.arcid == info.arcid) {
                     return spiderInfo
                 }
             }
