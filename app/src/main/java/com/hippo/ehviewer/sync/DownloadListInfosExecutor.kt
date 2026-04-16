@@ -224,10 +224,12 @@ class DownloadListInfosExecutor {
             while (i <= mid && j <= right) {
                 when (sortType) {
                     R.id.sort_by_gallery_id_asc -> {
-                        if (arr[i].gid < arr[j].gid) a[k++] = arr[i++] else a[k++] = arr[j++]
+                        val cmp = (arr[i].arcid ?: "").compareTo(arr[j].arcid ?: "")
+                        if (cmp <= 0) a[k++] = arr[i++] else a[k++] = arr[j++]
                     }
                     R.id.sort_by_gallery_id_desc -> {
-                        if (arr[i].gid > arr[j].gid) a[k++] = arr[i++] else a[k++] = arr[j++]
+                        val cmp = (arr[i].arcid ?: "").compareTo(arr[j].arcid ?: "")
+                        if (cmp >= 0) a[k++] = arr[i++] else a[k++] = arr[j++]
                     }
                     R.id.sort_by_create_time_asc -> {
                         if (arr[i].time < arr[j].time) a[k++] = arr[i++] else a[k++] = arr[j++]

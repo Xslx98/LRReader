@@ -44,7 +44,12 @@ class HistoryRepository(private val dao: BrowsingRoomDao) {
     }
 
     suspend fun deleteHistoryInfo(info: HistoryInfo) {
-        dao.deleteHistoryByKey(info.gid)
+        val arcid = info.arcid
+        if (arcid != null) {
+            dao.deleteHistoryByArcid(arcid)
+        } else {
+            dao.deleteHistoryByKey(info.gid)
+        }
     }
 
     suspend fun clearHistory() {
