@@ -657,6 +657,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         if (gd != null && !mInitialRating.isNaN() && gd.rating != mInitialRating) {
             val data = android.os.Bundle()
             data.putLong(KEY_GID, gd.gid)
+            data.putString(KEY_ARCID, gd.arcid)
             data.putFloat(KEY_RATING_RESULT, gd.rating)
             setResult(RESULT_OK, data)
         }

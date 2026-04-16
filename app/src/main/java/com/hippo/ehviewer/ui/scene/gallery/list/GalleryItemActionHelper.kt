@@ -16,7 +16,7 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
 import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.mapper.toGalleryInfo
-import com.lanraragi.reader.client.api.arcidToGid
+
 import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadManager
@@ -96,8 +96,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
         }
 
         val downloadManager = callback.getDownloadManager()
-        val gid = arcidToGid(gi.arcid)
-        val downloaded = downloadManager.getDownloadState(gid) != DownloadInfo.STATE_INVALID
+        val downloaded = downloadManager.getDownloadState(gi.arcid) != DownloadInfo.STATE_INVALID
         val favourited = false // LANraragi uses category-based favorites, not slots
 
         val items = arrayOf<CharSequence>(
@@ -151,7 +150,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
                                 .setTitle(R.string.download_remove_dialog_title)
                                 .setMessage(callback.getString(R.string.download_remove_dialog_message, gi.title ?: ""))
                                 .setPositiveButton(android.R.string.ok) { _, _ ->
-                                    downloadManager.deleteDownload(arcidToGid(gi.arcid))
+                                    downloadManager.deleteDownload(gi.arcid)
                                 }
                                 .show()
                         } else {

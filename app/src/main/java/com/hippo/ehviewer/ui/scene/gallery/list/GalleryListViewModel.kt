@@ -99,8 +99,8 @@ class GalleryListViewModel : ViewModel() {
      * The Scene observes these to refresh specific adapter items.
      */
     sealed interface DownloadEvent {
-        /** A single download was updated; refresh the item with this [gid]. */
-        data class ItemUpdated(val gid: Long) : DownloadEvent
+        /** A single download was updated; refresh the item with this [arcid]. */
+        data class ItemUpdated(val arcid: String) : DownloadEvent
 
         /** Broad change (add/remove/reload/change); refresh all visible items. */
         data object BulkChanged : DownloadEvent
@@ -137,7 +137,7 @@ class GalleryListViewModel : ViewModel() {
                 list: List<DownloadInfo>,
                 mWaitList: List<DownloadInfo>
             ) {
-                _downloadEvent.tryEmit(DownloadEvent.ItemUpdated(info.gid))
+                _downloadEvent.tryEmit(DownloadEvent.ItemUpdated(info.arcid))
             }
 
             override fun onUpdateAll() {

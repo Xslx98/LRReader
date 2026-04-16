@@ -2,7 +2,6 @@ package com.lanraragi.reader.client.api
 
 import android.content.Context
 import android.util.Log
-import androidx.collection.LruCache
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import kotlinx.coroutines.delay
@@ -13,8 +12,6 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Response
 import java.io.IOException
-import java.nio.ByteBuffer
-import java.security.MessageDigest
 
 /**
  * Shared utilities for all LRR API classes.
@@ -22,22 +19,6 @@ import java.security.MessageDigest
  */
 
 private const val TAG = "LRRApi"
-
-/**
- * Derive a stable 63-bit GID from an arcid using SHA-256.
- * Replaces the 32-bit hashCode() approach which has 50% collision probability at ~77K archives.
- * SHA-256 collision space is ~2^63, making real-world collisions astronomically unlikely.
- */
-private val arcidGidCache = LruCache<String, Long>(1024)
-
-fun arcidToGid(arcid: String): Long {
-    if (arcid.isEmpty()) return 0L
-    arcidGidCache.get(arcid)?.let { return it }
-    val digest = MessageDigest.getInstance("SHA-256").digest(arcid.toByteArray(Charsets.UTF_8))
-    val gid = ByteBuffer.wrap(digest, 0, 8).getLong() and Long.MAX_VALUE
-    arcidGidCache.put(arcid, gid)
-    return gid
-}
 
 /**
  * Parse [baseUrl] into an [okhttp3.HttpUrl], throwing a clear [IOException]
