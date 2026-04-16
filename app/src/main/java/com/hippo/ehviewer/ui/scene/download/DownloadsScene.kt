@@ -91,19 +91,17 @@ class DownloadsScene : ToolbarScene(),
         set(value) { viewModel.selectLabel(value) }
 
     /**
-     * The in-memory download list for the current label.
-     * Reads from DownloadManager's memory collections which retain
-     * transient fields (speed, remaining, downloaded, total).
+     * The progress-enriched, label-filtered download list for rendering.
+     * Reads from [DownloadsViewModel.downloadList], which combines the Room
+     * Flow with [com.hippo.ehviewer.download.DownloadProgressTracker] (W35-3b).
+     *
+     * Returns null only if the ViewModel has not yet been initialised; an
+     * empty list means the active label currently has no downloads.
      */
     private val mList: List<DownloadInfo>?
         get() {
-            val dm = downloadManager ?: return null
-            val label = viewModel.currentLabel.value
-            return if (label == null) {
-                dm.defaultDownloadInfoList
-            } else {
-                dm.getLabelDownloadInfoList(label)
-            }
+            if (!::viewModel.isInitialized) return null
+            return viewModel.downloadList.value
         }
 
     private var mLastSnapshot: MutableList<DownloadInfo> = ArrayList()
@@ -415,22 +413,15 @@ class DownloadsScene : ToolbarScene(),
         updateTitle()
         setNavigationIcon(R.drawable.v_arrow_left_dark_x24)
 
-        // Subscribe to Room Flow to detect structural changes (add/remove/state).
-        // When the Flow emits, re-read the in-memory list from DownloadManager
-        // (which retains @Ignore transient fields like speed/remaining/downloaded).
-        collectFlow(viewLifecycleOwner, viewModel.downloadsFlow) { _ ->
-            if (mAdapter == null || searching) {
-                return@collectFlow
-            }
-            // Re-read the in-memory list (has speed/progress) for the current label
-            val dm = downloadManager ?: return@collectFlow
-            val label = viewModel.currentLabel.value
-            val memoryList = if (label == null) {
-                dm.defaultDownloadInfoList
-            } else {
-                dm.getLabelDownloadInfoList(label) ?: emptyList()
-            }
-            dispatchDiffUpdate(ArrayList(memoryList))
+        // Subscribe to the enriched, label-filtered list StateFlow (Room Flow
+        // × progress tracker, W35-3b). Every structural change AND every
+        // progress tick produces a DiffUtil dispatch.
+        collectFlow(viewLifecycleOwner, viewModel.downloadList) { list ->
+            if (mAdapter == null || searching) return@collectFlow
+            dispatchDiffUpdate(ArrayList(list))
+            updateTitle()
+            updatePaginationIndicator()
+            updateView()
         }
 
         // Observe filter loading state
@@ -473,39 +464,28 @@ class DownloadsScene : ToolbarScene(),
 
         collectFlow(viewLifecycleOwner, viewModel.downloadEvent) { event ->
             when (event) {
-                is DownloadUiEvent.ItemAdded -> {
-                    if (viewModel.currentLabel.value != event.info.label) return@collectFlow
-                    mAdapter?.notifyItemInserted(event.position)
-                    downloadLabelDraw?.updateDownloadLabels()
-                    updateView()
-                }
-                is DownloadUiEvent.ItemRemoved -> {
-                    if (viewModel.currentLabel.value != event.info.label) return@collectFlow
-                    mAdapter?.notifyItemRemoved(listIndexInPage(event.position))
+                // Structural events (ItemAdded / ItemRemoved / DiffUpdate / Reloaded)
+                // are covered by the enriched downloadList Flow above — no-op.
+                is DownloadUiEvent.ItemAdded,
+                is DownloadUiEvent.ItemRemoved,
+                is DownloadUiEvent.DiffUpdate,
+                is DownloadUiEvent.Reloaded -> {
                     updateView()
                 }
                 is DownloadUiEvent.ItemUpdated -> {
-                    if (viewModel.currentLabel.value != event.info.label && mList?.contains(event.info) != true) return@collectFlow
+                    // Fast path: scheduler flipped a state (e.g., WAIT→DOWNLOAD)
+                    // before Room emission caught up. Refresh the row immediately.
+                    if (viewModel.currentLabel.value != event.info.label &&
+                        mList?.contains(event.info) != true
+                    ) return@collectFlow
                     val index = mList?.indexOf(event.info) ?: return@collectFlow
                     if (index >= 0) {
                         mAdapter?.notifyItemChanged(listIndexInPage(index))
                     }
                 }
-                is DownloadUiEvent.DiffUpdate -> {
-                    val list = mList
-                    if (mAdapter != null && list != null) {
-                        dispatchDiffUpdate(ArrayList(list))
-                    }
-                    updateView()
-                }
                 is DownloadUiEvent.Replaced -> {
-                    val list = mList ?: return@collectFlow
                     updateForLabel()
                     updateView()
-                    val index = list.indexOf(event.newInfo)
-                    if (index >= 0) {
-                        mAdapter?.notifyItemChanged(listIndexInPage(index))
-                    }
                 }
                 is DownloadUiEvent.LabelRenamed -> {
                     viewModel.handleLabelRenamed(event.from, event.to)
@@ -515,13 +495,6 @@ class DownloadsScene : ToolbarScene(),
                 is DownloadUiEvent.LabelDeleted -> {
                     viewModel.resetToDefaultLabel()
                     updateForLabel()
-                    updateView()
-                }
-                is DownloadUiEvent.Reloaded -> {
-                    val list = mList
-                    if (mAdapter != null && list != null) {
-                        dispatchDiffUpdate(ArrayList(list))
-                    }
                     updateView()
                 }
                 is DownloadUiEvent.LabelsChanged -> {
