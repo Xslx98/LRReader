@@ -45,7 +45,7 @@ object CategoryDialogHelper {
     fun showCategoryDialog(activity: Activity?, gd: GalleryDetail?, callback: Callback?) {
         if (activity == null || gd == null) return
 
-        val arcid = gd.token
+        val arcid = gd.arcid
         val serverUrl = LRRAuthManager.getServerUrl()
         if (arcid == null || serverUrl == null) return
 

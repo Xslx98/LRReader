@@ -134,7 +134,7 @@ class DownloadSchedulerTest {
     private fun makeInfo(gid: Long, label: String? = null): DownloadInfo {
         val gi = GalleryInfo()
         gi.gid = gid
-        gi.token = "token_$gid"
+        gi.arcid = "token_$gid"
         gi.title = "Test Gallery $gid"
         val info = DownloadInfo(gi)
         info.label = label

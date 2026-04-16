@@ -413,8 +413,8 @@ abstract class AppDatabase : RoomDatabase() {
                 db.query("SELECT GID, TOKEN FROM $table WHERE TOKEN IS NOT NULL AND TOKEN != ''").use { c ->
                     while (c.moveToNext()) {
                         val oldGid = c.getLong(0)
-                        val token  = c.getString(1)
-                        val newGid = sha256Gid(token)
+                        val arcid  = c.getString(1)
+                        val newGid = sha256Gid(arcid)
                         if (oldGid != newGid) map[oldGid] = newGid
                     }
                 }

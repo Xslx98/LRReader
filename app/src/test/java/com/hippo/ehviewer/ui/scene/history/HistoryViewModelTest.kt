@@ -246,7 +246,7 @@ class HistoryViewModelTest {
             for ((gid, title) in galleries) {
                 val gi = GalleryInfo().apply {
                     this.gid = gid
-                    this.token = "tok$gid"
+                    this.arcid = "tok$gid"
                     this.title = title
                 }
                 val historyInfo = com.hippo.ehviewer.dao.HistoryInfo(gi)

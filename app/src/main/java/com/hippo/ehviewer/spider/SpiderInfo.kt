@@ -39,7 +39,7 @@ class SpiderInfo {
     @JvmField
     var gid: Long = -1
     @JvmField
-    var token: String? = null
+    var arcid: String? = null
     @JvmField
     var pages: Int = -1
     @JvmField
@@ -60,7 +60,7 @@ class SpiderInfo {
             writer.write("\n")
             writer.write(gid.toString())
             writer.write("\n")
-            writer.write(token)
+            writer.write(arcid)
             writer.write("\n")
             writer.write("1")
             writer.write("\n")
@@ -96,7 +96,7 @@ class SpiderInfo {
     fun updateSpiderInfo(newInfo: SpiderInfo) {
         pages = newInfo.pages
         gid = newInfo.gid
-        token = newInfo.token
+        arcid = newInfo.arcid
     }
 
     @Synchronized
@@ -196,7 +196,7 @@ class SpiderInfo {
                 // Gid
                 spiderInfo.gid = IOUtils.readAsciiLine(inputStream).toLong()
                 // Token
-                spiderInfo.token = IOUtils.readAsciiLine(inputStream)
+                spiderInfo.arcid = IOUtils.readAsciiLine(inputStream)
                 // Deprecated, mode, skip it
                 IOUtils.readAsciiLine(inputStream)
                 // Preview pages
@@ -235,7 +235,7 @@ class SpiderInfo {
                 Log.w(TAG, "Invalid number format in spider info", e)
             }
 
-            return if (spiderInfo == null || spiderInfo.gid == -1L || spiderInfo.token == null ||
+            return if (spiderInfo == null || spiderInfo.gid == -1L || spiderInfo.arcid == null ||
                 spiderInfo.pages == -1 || spiderInfo.pTokenMap == null
             ) {
                 null
@@ -251,7 +251,7 @@ class SpiderInfo {
                 val file = mDownloadDir.findFile(SpiderQueen.SPIDER_INFO_FILENAME)
                 val spiderInfo = read(file)
                 if (spiderInfo != null && spiderInfo.gid == info.gid &&
-                    spiderInfo.token == info.token
+                    spiderInfo.arcid == info.arcid
                 ) {
                     return spiderInfo
                 }
@@ -263,7 +263,7 @@ class SpiderInfo {
         fun getSpiderInfo(info: GalleryDetail): SpiderInfo? {
             val spiderInfo = SpiderInfo()
             spiderInfo.gid = info.gid
-            spiderInfo.token = info.token
+            spiderInfo.arcid = info.arcid
             spiderInfo.pages = info.SpiderInfoPages
             spiderInfo.pTokenMap = SparseArray(0)
             return if (spiderInfo.pages > 0) spiderInfo else null

@@ -25,7 +25,7 @@ class GalleryInfoMapperTest {
     @Test
     fun `toArchive defaults lastreadtime to 0`() {
         val gi = GalleryInfo()
-        gi.token = "abc123"
+        gi.arcid = "abc123"
         gi.title = "Test"
         val archive = gi.toArchive()
         assertEquals(0L, archive.lastreadtime)
@@ -34,7 +34,7 @@ class GalleryInfoMapperTest {
     @Test
     fun `toArchive preserves explicit lastreadtime`() {
         val gi = GalleryInfo()
-        gi.token = "abc123"
+        gi.arcid = "abc123"
         gi.title = "Test"
         val archive = gi.toArchive(lastreadtime = 1700000000L)
         assertEquals(1700000000L, archive.lastreadtime)
@@ -43,7 +43,7 @@ class GalleryInfoMapperTest {
     @Test
     fun `toArchive maps basic fields`() {
         val gi = GalleryInfo()
-        gi.token = "id42"
+        gi.arcid = "id42"
         gi.title = "My Archive"
         gi.thumb = "https://example.com/thumb.jpg"
         gi.rating = 3.5f
@@ -64,7 +64,7 @@ class GalleryInfoMapperTest {
     @Test
     fun `toArchive parses simpleTags into namespace map`() {
         val gi = GalleryInfo()
-        gi.token = "x"
+        gi.arcid = "x"
         gi.simpleTags = arrayOf("artist:someone", "parody:series", "misc_tag")
 
         val archive = gi.toArchive()
@@ -76,7 +76,7 @@ class GalleryInfoMapperTest {
     @Test
     fun `toArchive handles null simpleTags`() {
         val gi = GalleryInfo()
-        gi.token = "x"
+        gi.arcid = "x"
         gi.simpleTags = null
 
         val archive = gi.toArchive()
@@ -90,7 +90,7 @@ class GalleryInfoMapperTest {
     @Test
     fun `toArchiveDetail converts tag groups`() {
         val gd = GalleryDetail()
-        gd.token = "detail1"
+        gd.arcid = "detail1"
         gd.title = "Detail Test"
         gd.language = "Japanese"
         gd.size = "150 MB"
@@ -122,7 +122,7 @@ class GalleryInfoMapperTest {
     @Test
     fun `toArchiveDetail handles null tags`() {
         val gd = GalleryDetail()
-        gd.token = "detail2"
+        gd.arcid = "detail2"
         gd.tags = null
         gd.serverProfileId = 1L
 
@@ -134,7 +134,7 @@ class GalleryInfoMapperTest {
     @Test
     fun `toArchiveDetail maps basic archive fields`() {
         val gd = GalleryDetail()
-        gd.token = "arcid99"
+        gd.arcid = "arcid99"
         gd.title = "Title"
         gd.thumb = "https://example.com/t.jpg"
         gd.pages = 20
@@ -156,7 +156,7 @@ class GalleryInfoMapperTest {
     @Test
     fun `toArchiveDetail uses misc for null groupName`() {
         val gd = GalleryDetail()
-        gd.token = "x"
+        gd.arcid = "x"
         gd.serverProfileId = 1L
 
         val group = GalleryTagGroup()

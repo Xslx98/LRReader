@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 20,
-    "identityHash": "6dfd64f593c171758540b339785290fb",
+    "identityHash": "612f095fff764fdd1a0230d176280419",
     "entities": [
       {
         "tableName": "DOWNLOADS",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`STATE` INTEGER NOT NULL, `LEGACY` INTEGER NOT NULL, `TIME` INTEGER NOT NULL, `LABEL` TEXT, `ARCHIVE_URI` TEXT, `GID` INTEGER NOT NULL, `ARCID` TEXT NOT NULL, `TITLE` TEXT, `TITLE_JPN` TEXT, `THUMB` TEXT, `CATEGORY` INTEGER NOT NULL, `POSTED` TEXT, `UPLOADER` TEXT, `RATING` REAL NOT NULL, `SIMPLE_LANGUAGE` TEXT, `SERVER_PROFILE_ID` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`ARCID`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`STATE` INTEGER NOT NULL, `LEGACY` INTEGER NOT NULL, `TIME` INTEGER NOT NULL, `LABEL` TEXT, `ARCHIVE_URI` TEXT, `GID` INTEGER NOT NULL, `ARCID` TEXT NOT NULL, `TITLE` TEXT, `TITLE_JPN` TEXT, `THUMB` TEXT, `CATEGORY` INTEGER NOT NULL, `POSTED` TEXT, `UPLOADER` TEXT, `RATING` REAL NOT NULL, `SIMPLE_LANGUAGE` TEXT, `SERVER_PROFILE_ID` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`GID`))",
         "fields": [
           {
             "fieldPath": "state",
@@ -45,7 +45,7 @@
             "notNull": true
           },
           {
-            "fieldPath": "token",
+            "fieldPath": "arcid",
             "columnName": "ARCID",
             "affinity": "TEXT",
             "notNull": true
@@ -109,7 +109,7 @@
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "ARCID"
+            "GID"
           ]
         },
         "indices": [
@@ -213,7 +213,7 @@
       },
       {
         "tableName": "HISTORY",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`MODE` INTEGER NOT NULL, `TIME` INTEGER NOT NULL, `GID` INTEGER NOT NULL, `ARCID` TEXT NOT NULL, `TITLE` TEXT, `TITLE_JPN` TEXT, `THUMB` TEXT, `CATEGORY` INTEGER NOT NULL, `POSTED` TEXT, `UPLOADER` TEXT, `RATING` REAL NOT NULL, `SIMPLE_LANGUAGE` TEXT, `SERVER_PROFILE_ID` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`ARCID`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`MODE` INTEGER NOT NULL, `TIME` INTEGER NOT NULL, `GID` INTEGER NOT NULL, `ARCID` TEXT NOT NULL, `TITLE` TEXT, `TITLE_JPN` TEXT, `THUMB` TEXT, `CATEGORY` INTEGER NOT NULL, `POSTED` TEXT, `UPLOADER` TEXT, `RATING` REAL NOT NULL, `SIMPLE_LANGUAGE` TEXT, `SERVER_PROFILE_ID` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`GID`))",
         "fields": [
           {
             "fieldPath": "mode",
@@ -234,7 +234,7 @@
             "notNull": true
           },
           {
-            "fieldPath": "token",
+            "fieldPath": "arcid",
             "columnName": "ARCID",
             "affinity": "TEXT",
             "notNull": true
@@ -298,7 +298,7 @@
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "ARCID"
+            "GID"
           ]
         },
         "indices": [
@@ -325,7 +325,7 @@
       },
       {
         "tableName": "LOCAL_FAVORITES",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`TIME` INTEGER NOT NULL, `GID` INTEGER NOT NULL, `ARCID` TEXT NOT NULL, `TITLE` TEXT, `TITLE_JPN` TEXT, `THUMB` TEXT, `CATEGORY` INTEGER NOT NULL, `POSTED` TEXT, `UPLOADER` TEXT, `RATING` REAL NOT NULL, `SIMPLE_LANGUAGE` TEXT, `SERVER_PROFILE_ID` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`ARCID`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`TIME` INTEGER NOT NULL, `GID` INTEGER NOT NULL, `ARCID` TEXT NOT NULL, `TITLE` TEXT, `TITLE_JPN` TEXT, `THUMB` TEXT, `CATEGORY` INTEGER NOT NULL, `POSTED` TEXT, `UPLOADER` TEXT, `RATING` REAL NOT NULL, `SIMPLE_LANGUAGE` TEXT, `SERVER_PROFILE_ID` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`GID`))",
         "fields": [
           {
             "fieldPath": "time",
@@ -340,7 +340,7 @@
             "notNull": true
           },
           {
-            "fieldPath": "token",
+            "fieldPath": "arcid",
             "columnName": "ARCID",
             "affinity": "TEXT",
             "notNull": true
@@ -404,7 +404,7 @@
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "ARCID"
+            "GID"
           ]
         },
         "indices": [
@@ -553,7 +553,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6dfd64f593c171758540b339785290fb')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '612f095fff764fdd1a0230d176280419')"
     ]
   }
 }

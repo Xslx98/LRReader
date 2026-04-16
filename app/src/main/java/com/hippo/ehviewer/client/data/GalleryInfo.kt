@@ -20,21 +20,23 @@ import android.os.Parcel
 import android.os.Parcelable
 import androidx.room.ColumnInfo
 import androidx.room.Ignore
+import com.hippo.ehviewer.dao.DownloadInfo
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
+import android.util.Log
 import java.util.regex.Pattern
 
 /**
  * Backward-compatibility alias. New code should use [GalleryInfoEntity] (for Room /
- * persistence) or [Archive] (for UI display).
+ * persistence) or [GalleryInfoUi] (for UI display).
  */
 typealias GalleryInfo = GalleryInfoEntity
 
 /**
  * Room entity base class. Holds the columns persisted to the DOWNLOADS / HISTORY /
  * LOCAL_FAVORITES tables via inheritance, plus transient (`@Ignore`) fields used
- * during API ↔ DB bridging. For pure UI display, prefer [Archive].
+ * during API ↔ DB bridging. For pure UI display, prefer [GalleryInfoUi].
  */
 open class GalleryInfoEntity : Parcelable {
 
@@ -44,7 +46,7 @@ open class GalleryInfoEntity : Parcelable {
 
     @JvmField
     @ColumnInfo(name = "ARCID")
-    var token: String = ""
+    var arcid: String = ""
 
     @JvmField
     @ColumnInfo(name = "TITLE")
@@ -142,7 +144,7 @@ open class GalleryInfoEntity : Parcelable {
 
     protected constructor(`in`: Parcel) {
         gid = `in`.readLong()
-        token = `in`.readString() ?: ""
+        arcid = `in`.readString() ?: ""
         title = `in`.readString()
         titleJpn = `in`.readString()
         thumb = `in`.readString()
@@ -168,7 +170,7 @@ open class GalleryInfoEntity : Parcelable {
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
         dest.writeLong(gid)
-        dest.writeString(token)
+        dest.writeString(arcid)
         dest.writeString(title)
         dest.writeString(titleJpn)
         dest.writeString(thumb)
@@ -225,11 +227,34 @@ open class GalleryInfoEntity : Parcelable {
         simpleLanguage = null
     }
 
+    fun toCSV(): String {
+        return gid.toString() + "," +
+            arcid + "," +
+            title + "," +
+            titleJpn + "," +
+            thumb + "," +
+            category + "," +
+            posted + "," +
+            uploader + "," +
+            rating + "," +
+            rated + "," +
+            simpleLanguage + "," +
+            simpleTags.contentToString() + "," +
+            thumbWidth + "," +
+            thumbHeight + "," +
+            spanSize + "," +
+            spanIndex + "," +
+            spanGroupIndex + "," +
+            favoriteSlot + "," +
+            favoriteName + "," +
+            pages + "\n"
+    }
+
     open fun toJson(): JSONObject {
         try {
             val jsonObject = JSONObject()
             jsonObject.put("gid", gid)
-            jsonObject.put("token", token)
+            jsonObject.put("token", arcid)
             jsonObject.put("title", title)
             jsonObject.put("titleJpn", titleJpn)
             jsonObject.put("thumb", thumb)
@@ -268,7 +293,41 @@ open class GalleryInfoEntity : Parcelable {
         }
     }
 
+    fun getDownloadInfo(info: DownloadInfo?): DownloadInfo {
+        val i = DownloadInfo()
+        i.gid = gid
+        i.arcid = arcid
+        i.title = title
+        i.titleJpn = titleJpn
+        i.thumb = thumb
+        i.category = category
+        i.posted = posted
+        i.uploader = uploader
+        i.rating = rating
+        i.rated = rated
+        i.simpleLanguage = simpleLanguage
+        i.simpleTags = simpleTags
+        i.thumbWidth = thumbWidth
+        i.thumbHeight = thumbHeight
+        i.spanSize = spanSize
+        i.spanIndex = spanIndex
+        i.spanGroupIndex = spanGroupIndex
+        i.favoriteSlot = favoriteSlot
+        i.favoriteName = favoriteName
+        i.tgList = tgList
+        i.progress = progress
+        if (info != null) {
+            i.state = info.state
+            i.legacy = info.legacy
+            i.time = info.time
+            i.label = info.label
+        }
+        return i
+    }
+
     companion object {
+        private val TAG = GalleryInfoEntity::class.java.simpleName
+
         /** ISO 639-1 */
         const val S_LANG_JA: String = "JA"
         const val S_LANG_EN: String = "EN"
@@ -347,5 +406,88 @@ open class GalleryInfoEntity : Parcelable {
             override fun newArray(size: Int): Array<GalleryInfoEntity?> = arrayOfNulls(size)
         }
 
+        @JvmStatic
+        fun fromCSV(csv: String): GalleryInfoEntity? {
+            val values = csv.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+            if (values.size < 20) {
+                return null
+            }
+            val gi = GalleryInfoEntity()
+            try {
+                gi.gid = values[0].toLong()
+                gi.arcid = values[1]
+                gi.title = values[2]
+                gi.titleJpn = values[3]
+                gi.thumb = values[4]
+                gi.category = values[5].toInt()
+                gi.posted = values[6]
+                gi.uploader = values[7]
+                gi.rating = values[8].toFloat()
+                gi.rated = values[9].toBoolean()
+                gi.simpleLanguage = values[10]
+                gi.simpleTags = values[11].substring(1, values[11].length - 1).split(", ".toRegex())
+                    .dropLastWhile { it.isEmpty() }.toTypedArray()
+                gi.thumbWidth = values[12].toInt()
+                gi.thumbHeight = values[13].toInt()
+                gi.spanSize = values[14].toInt()
+                gi.spanIndex = values[15].toInt()
+                gi.spanGroupIndex = values[16].toInt()
+                gi.favoriteSlot = values[17].toInt()
+                gi.favoriteName = values[18]
+                gi.pages = values[19].trim().toInt()
+            } catch (e: NumberFormatException) {
+                return null
+            }
+            return gi
+        }
+
+        @JvmStatic
+        fun galleryInfoFromJson(obj: JSONObject): GalleryInfoEntity {
+            val galleryInfo = GalleryInfoEntity()
+            galleryInfo.posted = obj.optString("posted", null)
+            galleryInfo.category = obj.optInt("category", 0)
+            galleryInfo.favoriteName = obj.optString("favoriteName", null)
+            galleryInfo.favoriteSlot = obj.optInt("favoriteSlot", 0)
+            galleryInfo.gid = obj.optLong("gid", 0)
+            galleryInfo.pages = obj.optInt("pages", 0)
+            galleryInfo.rated = obj.optBoolean("rated", false)
+            galleryInfo.rating = obj.optDouble("rating", 0.0).toFloat()
+            galleryInfo.simpleLanguage = obj.optString("simpleLanguage", null)
+            val simpleTagsArr = obj.optJSONArray("simpleTags")
+            if (simpleTagsArr != null) {
+                try {
+                    val tags = Array(simpleTagsArr.length()) { i ->
+                        simpleTagsArr.getString(i)
+                    }
+                    galleryInfo.simpleTags = tags
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to deserialize simpleTags from JSON", e)
+                }
+            }
+            galleryInfo.spanGroupIndex = obj.optInt("spanGroupIndex", 0)
+            galleryInfo.spanIndex = obj.optInt("spanIndex", 0)
+            galleryInfo.spanSize = obj.optInt("spanSize", 0)
+            val tgArray = obj.optJSONArray("tgList")
+            if (tgArray != null) {
+                try {
+                    val list = ArrayList<String>()
+                    for (i in 0 until tgArray.length()) {
+                        list.add(tgArray.getString(i))
+                    }
+                    galleryInfo.tgList = list
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to deserialize tgList from JSON", e)
+                }
+            }
+            galleryInfo.thumb = obj.optString("thumb", null)
+            galleryInfo.thumbHeight = obj.optInt("thumbHeight", 0)
+            galleryInfo.thumbWidth = obj.optInt("thumbWidth", 0)
+            galleryInfo.title = obj.optString("title", null)
+            galleryInfo.titleJpn = obj.optString("titleJpn", null)
+            galleryInfo.arcid = obj.optString("token", null)
+            galleryInfo.uploader = obj.optString("uploader", null)
+            galleryInfo.serverProfileId = obj.optLong("serverProfileId", 0)
+            return galleryInfo
+        }
     }
 }
