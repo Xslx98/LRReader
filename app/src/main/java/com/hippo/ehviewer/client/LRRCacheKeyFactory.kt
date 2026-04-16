@@ -23,18 +23,6 @@ object LRRCacheKeyFactory {
         "preview:large:$gid:0"
 
     @JvmStatic
-    fun getNormalPreviewKey(gid: Long, index: Int): String =
-        "preview:normal:$gid:$index"
-
-    @JvmStatic
-    fun getLargePreviewKey(gid: Long, index: Int): String =
-        "preview:large:$gid:$index"
-
-    @JvmStatic
-    fun getLargePreviewSetKey(gid: Long, index: Int): String =
-        "large_preview_set:$gid:$index"
-
-    @JvmStatic
     fun getImageKey(gid: Long, index: Int): String =
         "image:$gid:$index"
 }

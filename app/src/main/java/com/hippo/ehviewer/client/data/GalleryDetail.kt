@@ -50,7 +50,7 @@ class GalleryDetail : GalleryInfoEntity {
     var previewPages: Int = 0
 
     @JvmField
-    var previewSet: PreviewSet? = null
+    var SpiderInfoPreviewPages: Int = 0
 
     constructor()
 
@@ -70,7 +70,7 @@ class GalleryDetail : GalleryInfoEntity {
             null
         }
         previewPages = `in`.readInt()
-        previewSet = `in`.readParcelable(PreviewSet::class.java.classLoader)
+        SpiderInfoPreviewPages = `in`.readInt()
     }
 
     override fun describeContents(): Int = 0
@@ -87,7 +87,7 @@ class GalleryDetail : GalleryInfoEntity {
         dest.writeInt(ratingCount)
         dest.writeParcelableArray(tags, flags)
         dest.writeInt(previewPages)
-        dest.writeParcelable(previewSet, flags)
+        dest.writeInt(SpiderInfoPreviewPages)
     }
 
     companion object {
