@@ -42,6 +42,7 @@ class DownloadSchedulerTest {
     private lateinit var repo: DownloadRepository
     private lateinit var eventBus: DownloadEventBus
     private lateinit var speedTracker: DownloadSpeedTracker
+    private lateinit var progressTracker: DownloadProgressTracker
     private lateinit var scheduler: DownloadScheduler
 
     @Before
@@ -82,6 +83,7 @@ class DownloadSchedulerTest {
         repo = DownloadRepository(context, testScope, Dispatchers.Unconfined)
         eventBus = DownloadEventBus()
 
+        progressTracker = DownloadProgressTracker()
         speedTracker = DownloadSpeedTracker(object : DownloadSpeedTracker.Callback {
             override fun getFirstActiveTask(): DownloadInfo? {
                 return if (scheduler.activeTasks.isEmpty()) null else scheduler.activeTasks[0]
@@ -102,9 +104,9 @@ class DownloadSchedulerTest {
             override fun getWaitList(): List<DownloadInfo> {
                 return scheduler.waitList
             }
-        })
+        }, progressTracker)
 
-        scheduler = DownloadScheduler(context, testScope, repo, eventBus, speedTracker)
+        scheduler = DownloadScheduler(context, testScope, repo, eventBus, speedTracker, progressTracker)
 
         // Initialize repo collections so getInfoListForLabel works
         repo.publishLoadedData(
@@ -299,5 +301,58 @@ class DownloadSchedulerTest {
         assertEquals(10, info.downloaded)
         assertEquals(10, info.total)
         assertEquals(0, info.legacy)
+        // W35-3a: tracker entry is cleared after finish (progress no longer live).
+        assertNull(
+            "Progress tracker should not retain finished arcid",
+            progressTracker.snapshot(info.arcid)
+        )
+    }
+
+    @Test
+    fun dispatchEvent_onGetPages_updatesProgressTracker() {
+        val info = makeInfo(2L)
+        scheduler.activeTasks.add(info)
+        info.state = DownloadInfo.STATE_DOWNLOAD
+
+        scheduler.dispatchEvent(
+            DownloadScheduler.DownloadEvent.OnGetPages(taskInfo = info, pages = 42)
+        )
+        ShadowLooper.idleMainLooper()
+
+        assertEquals(42, info.total)
+        assertEquals(42, progressTracker.snapshot(info.arcid)?.total)
+    }
+
+    @Test
+    fun dispatchEvent_onPageSuccess_mirrorsProgressIntoTracker() {
+        val info = makeInfo(3L)
+        scheduler.activeTasks.add(info)
+        info.state = DownloadInfo.STATE_DOWNLOAD
+
+        scheduler.dispatchEvent(
+            DownloadScheduler.DownloadEvent.OnPageSuccess(
+                taskInfo = info, index = 0, finished = 5, downloaded = 5, total = 10
+            )
+        )
+        ShadowLooper.idleMainLooper()
+
+        val snap = progressTracker.snapshot(info.arcid)!!
+        assertEquals(5, snap.finished)
+        assertEquals(5, snap.downloaded)
+        assertEquals(10, snap.total)
+    }
+
+    @Test
+    fun stopDownload_clearsProgressTrackerEntry() {
+        val info = makeInfo(4L)
+        scheduler.waitList.add(info)
+        progressTracker.update(info.arcid, speed = 123L)
+
+        scheduler.stopDownload(info.arcid)
+
+        assertNull(
+            "Progress tracker entry should be cleared on stop",
+            progressTracker.snapshot(info.arcid)
+        )
     }
 }
