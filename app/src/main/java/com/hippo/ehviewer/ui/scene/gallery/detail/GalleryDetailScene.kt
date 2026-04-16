@@ -515,7 +515,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         val context = getEHContext()
         AssertUtils.assertNotNull(context)
 
-        // Try ViewModel cache (checks in-memory detail, then galleryDetailCache)
+        // Try ViewModel cache (checks in-memory detail, then archiveDetailCache)
         if (!viewModel.tryLoadFromCache()) {
             return false
         }
