@@ -53,7 +53,8 @@ class ArchiverDownloadProgress @JvmOverloads constructor(
     fun initThread(galleryInfo: GalleryInfo?) {
         if (galleryInfo == null) return
         if (showing) return
-        val dId = DownloadSettings.getArchiverDownloadId(galleryInfo.gid)
+        val arcid = galleryInfo.arcid ?: return
+        val dId = DownloadSettings.getArchiverDownloadId(arcid)
         if (dId == -1L) return
 
         showing = true
