@@ -11,7 +11,7 @@ import java.io.File
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.LRRUtils
-import com.hippo.ehviewer.client.data.GalleryDetail
+import com.lanraragi.reader.domain.ArchiveDetail
 import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.dao.DownloadDbRepository
 import com.hippo.ehviewer.dao.DownloadInfo
@@ -110,13 +110,13 @@ class DownloadsViewModelTest {
                     com.hippo.ehviewer.dao.FavoritesRepository(db.browsingDao())
                 override val downloadDbRepository get() =
                     DownloadDbRepository(db.downloadDao(), db)
-                override val galleryDetailCache get() = LruCache<Long, GalleryDetail>(10)
+                override val archiveDetailCache get() = LruCache<String, ArchiveDetail>(10)
                 override val spiderInfoCache: SimpleDiskCache get() =
                     SimpleDiskCache(
                         java.io.File(context.cacheDir, "test_spider_info"),
                         1024 * 1024
                     )
-                override fun clearGalleryDetailCache() {}
+                override fun clearArchiveDetailCache() {}
             }
         )
 
