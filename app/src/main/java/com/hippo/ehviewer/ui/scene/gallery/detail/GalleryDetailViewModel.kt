@@ -11,6 +11,7 @@ import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.runSuspend
+import com.hippo.ehviewer.mapper.toArchiveDetail
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadInfoListener
@@ -458,37 +459,4 @@ class GalleryDetailViewModel : ViewModel() {
         return true
     }
 
-    /**
-     * Derive an [ArchiveDetail] from a cached [GalleryDetail] (when the original
-     * LRRArchive is not available).
-     */
-    private fun GalleryDetail.toArchiveDetail(): ArchiveDetail {
-        val tagGroups = tags?.map { group ->
-            com.lanraragi.reader.domain.TagGroup(
-                namespace = group.groupName ?: "misc",
-                tags = (0 until group.size()).map { group.getTagAt(it) }
-            )
-        } ?: emptyList()
-
-        return ArchiveDetail(
-            archive = com.lanraragi.reader.domain.Archive(
-                arcid = token ?: "",
-                title = title ?: "",
-                tags = tagGroups.associate { it.namespace to it.tags },
-                pagecount = pages,
-                progress = progress,
-                extension = "",
-                filename = "",
-                thumbnailUrl = thumb ?: "",
-                rating = rating,
-                isnew = false,
-                lastreadtime = 0L,
-                summary = null,
-                serverProfileId = serverProfileId,
-            ),
-            tagGroups = tagGroups,
-            language = language,
-            size = size,
-        )
-    }
 }
