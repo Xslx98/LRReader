@@ -284,10 +284,15 @@ class SpiderDen(galleryInfo: GalleryInfo) {
                 downloadDbRepo.putDownloadDirname(arcid, dirname)
             }
 
-            // Find it
+            // Find it by arcid prefix (new format), then fall back to gid prefix (legacy)
             if (dirname == null) {
                 try {
-                    val files = dir.listFiles(StartWithFilenameFilter("${galleryInfo.gid}-"))
+                    // Try arcid-prefixed directory first (new format)
+                    var files = dir.listFiles(StartWithFilenameFilter("$arcid-"))
+                    // Fall back to gid-prefixed directory (legacy installs)
+                    if ((files == null || files.isEmpty()) && galleryInfo.gid != 0L) {
+                        files = dir.listFiles(StartWithFilenameFilter("${galleryInfo.gid}-"))
+                    }
                     if (files != null) {
                         // Get max-length-name dir
                         var maxLength = -1
@@ -312,9 +317,9 @@ class SpiderDen(galleryInfo: GalleryInfo) {
                 }
             }
 
-            // Create it
+            // Create it — use arcid as prefix for unique directory names
             if (dirname == null) {
-                dirname = FileUtils.sanitizeFilename("${galleryInfo.gid}-${LRRUtils.getSuitableTitle(galleryInfo)}")
+                dirname = FileUtils.sanitizeFilename("$arcid-${LRRUtils.getSuitableTitle(galleryInfo)}")
                 downloadDbRepo.putDownloadDirname(arcid, dirname)
             }
 
