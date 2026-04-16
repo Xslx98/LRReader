@@ -13,7 +13,7 @@ import com.hippo.ehviewer.client.data.GalleryInfoEntity
  * Entity mapped to table "LOCAL_FAVORITES".
  * Primary key is GID (inherited from GalleryInfo).
  */
-@Entity(tableName = "LOCAL_FAVORITES", primaryKeys = ["GID"], indices = [Index("TIME")])
+@Entity(tableName = "LOCAL_FAVORITES", primaryKeys = ["ARCID"], indices = [Index("TIME")])
 class LocalFavoriteInfo : GalleryInfoEntity {
 
     @ColumnInfo(name = "TIME")
