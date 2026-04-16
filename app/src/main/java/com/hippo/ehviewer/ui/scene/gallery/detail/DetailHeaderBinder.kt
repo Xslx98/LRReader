@@ -211,7 +211,7 @@ internal class DetailHeaderBinder(
         if (gd == null) return
         lifecycleOwner.lifecycleScope.launch {
             try {
-                val isFav = gd.isFavorited || viewModel.isLocalFavorite(gd.gid)
+                val isFav = gd.isFavorited || viewModel.isLocalFavorite(gd.arcid)
                 heart.post {
                     if (isFav) {
                         heart.visibility = View.VISIBLE
