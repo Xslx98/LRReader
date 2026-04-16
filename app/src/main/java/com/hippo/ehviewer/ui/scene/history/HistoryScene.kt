@@ -253,11 +253,13 @@ class HistoryScene : ToolbarScene(),
     }
 
     override fun onItemClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean {
-        val gi = viewModel.getRawHistoryInfo(position) ?: return false
+        val list = viewModel.historyList.value
+        if (position >= list.size) return false
+        val archive = list[position]
 
         val args = Bundle()
-        args.putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_GALLERY_INFO)
-        args.putParcelable(GalleryDetailScene.KEY_GALLERY_INFO, gi)
+        args.putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_ARCHIVE)
+        args.putParcelable(GalleryDetailScene.KEY_ARCHIVE, archive)
         val announcer = Announcer(GalleryDetailScene::class.java).setArgs(args)
             .setRequestCode(this, REQUEST_CODE_GALLERY_DETAIL)
         val thumb = view.findViewById<View>(R.id.thumb)

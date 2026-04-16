@@ -39,6 +39,7 @@ import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
+import com.hippo.ehviewer.mapper.toGalleryInfo
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.data.LRRArchive
 import com.hippo.ehviewer.gallery.GalleryProvider2
@@ -162,6 +163,14 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         } else if (ACTION_GID_TOKEN == action) {
             mGid = args.getLong(KEY_GID)
             mArcid = args.getString(KEY_ARCID)
+        } else if (ACTION_ARCHIVE == action) {
+            val archive: com.lanraragi.reader.domain.Archive? = args.getParcelable(KEY_ARCHIVE)
+            if (archive != null) {
+                val gi = archive.toGalleryInfo()
+                mGalleryInfo = gi
+                mArcid = archive.arcid
+                viewModel.recordHistory(gi)
+            }
         } else if (ACTION_DOWNLOAD_GALLERY_INFO == action) {
             try {
                 val di: DownloadInfo? = args.getParcelable(KEY_GALLERY_INFO)
@@ -712,8 +721,10 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         const val ACTION_GALLERY_INFO = "action_gallery_info"
         const val ACTION_DOWNLOAD_GALLERY_INFO = "action_download_gallery_info"
         const val ACTION_GID_TOKEN = "action_gid_token"
+        const val ACTION_ARCHIVE = "action_archive"
 
         const val KEY_GALLERY_INFO = "gallery_info"
+        const val KEY_ARCHIVE = "archive"
         const val KEY_GID = "gid"
         const val KEY_ARCID = "token"
         const val KEY_PAGE = "page"
