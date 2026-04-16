@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.DiffUtil
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.HistoryInfo
 import com.hippo.ehviewer.dao.HistoryRepository
+import com.hippo.ehviewer.mapper.toArchive
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -90,7 +91,7 @@ class HistoryViewModel : ViewModel() {
             try {
                 val lazyList = withContext(Dispatchers.IO) { historyRepository.getHistoryLazyList() }
                 rawHistoryList = ArrayList(lazyList)
-                val newList = ArrayList(lazyList.map { it.toArchive() })
+                val newList = ArrayList(lazyList.map { it.toArchive(lastreadtime = it.time) })
                 val diff = DiffUtil.calculateDiff(
                     ArchiveDiffCallback(lastSnapshot, newList)
                 )
@@ -173,28 +174,6 @@ class HistoryViewModel : ViewModel() {
 
     companion object {
         private const val TAG = "HistoryViewModel"
-    }
-
-    // -------------------------------------------------------------------------
-    // Conversion
-    // -------------------------------------------------------------------------
-
-    private fun HistoryInfo.toArchive(): Archive {
-        return Archive(
-            arcid = token ?: "",
-            title = title ?: "",
-            tags = emptyMap(),
-            pagecount = pages,
-            progress = progress,
-            extension = "",
-            filename = "",
-            thumbnailUrl = thumb ?: "",
-            rating = rating,
-            isnew = false,
-            lastreadtime = time,
-            summary = null,
-            serverProfileId = serverProfileId,
-        )
     }
 
     // -------------------------------------------------------------------------
