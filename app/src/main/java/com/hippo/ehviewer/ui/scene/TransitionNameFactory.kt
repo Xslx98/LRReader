@@ -19,14 +19,14 @@ package com.hippo.ehviewer.ui.scene
 object TransitionNameFactory {
 
     @JvmStatic
-    fun getThumbTransitionName(gid: Long): String = "thumb:$gid"
+    fun getThumbTransitionName(arcid: String): String = "thumb:$arcid"
 
     @JvmStatic
-    fun getTitleTransitionName(gid: Long): String = "title:$gid"
+    fun getTitleTransitionName(arcid: String): String = "title:$arcid"
 
     @JvmStatic
-    fun getUploaderTransitionName(gid: Long): String = "uploader:$gid"
+    fun getUploaderTransitionName(arcid: String): String = "uploader:$arcid"
 
     @JvmStatic
-    fun getCategoryTransitionName(gid: Long): String = "category:$gid"
+    fun getCategoryTransitionName(arcid: String): String = "category:$arcid"
 }

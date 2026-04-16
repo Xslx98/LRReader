@@ -19,10 +19,10 @@ package com.hippo.ehviewer.client
 object LRRCacheKeyFactory {
 
     @JvmStatic
-    fun getThumbKey(gid: Long): String =
-        "preview:large:$gid:0"
+    fun getThumbKey(arcid: String): String =
+        "preview:large:$arcid:0"
 
     @JvmStatic
-    fun getImageKey(gid: Long, index: Int): String =
-        "image:$gid:$index"
+    fun getImageKey(arcid: String, index: Int): String =
+        "image:$arcid:$index"
 }
