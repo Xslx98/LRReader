@@ -27,10 +27,12 @@ class DownloadSpeedTrackerTest {
     }
 
     private lateinit var tracker: DownloadSpeedTracker
+    private lateinit var progressTracker: DownloadProgressTracker
 
     @Before
     fun setUp() {
         activeTask = DownloadInfo()
+        activeTask.arcid = "test-arcid"
         activeTask.total = 100
         activeTask.downloaded = 0
         activeTask.finished = 0
@@ -44,7 +46,8 @@ class DownloadSpeedTrackerTest {
             override fun getWaitList(): List<DownloadInfo> = waitList
         }
 
-        tracker = DownloadSpeedTracker(callback)
+        progressTracker = DownloadProgressTracker()
+        tracker = DownloadSpeedTracker(callback, progressTracker)
     }
 
     @Test
@@ -54,6 +57,19 @@ class DownloadSpeedTrackerTest {
         // run() divides mBytesRead by 2 for smoothing: (200+300)/2 = 250
         tracker.run()
         assertEquals(250L, activeTask.speed)
+        // Tracker mirrors the speed value via progressTracker (W35-3a).
+        assertEquals(250L, progressTracker.snapshot("test-arcid")?.speed)
+    }
+
+    @Test
+    fun run_mirrorsRemainingIntoProgressTracker() {
+        activeTask.total = 100
+        activeTask.downloaded = 0
+        tracker.onDownload(0, 1000L, 0L, 2000)
+        tracker.run()
+        val snap = progressTracker.snapshot("test-arcid")!!
+        assertEquals(activeTask.speed, snap.speed)
+        assertEquals(activeTask.remaining, snap.remaining)
     }
 
     @Test
