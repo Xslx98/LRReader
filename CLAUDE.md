@@ -116,7 +116,7 @@ LRReader/
 | `ui/MainActivity.kt` | Main UI entry point + scene routing |
 | `ui/GalleryActivity.kt` | Reader/detail view |
 | `ui/scene/GalleryListScene.kt` | Gallery browse scene (uses PagingSource for LRR search) |
-| `ui/scene/download/DownloadsScene.kt` | Download management (~1259 lines, observes ViewModel sealed events, no direct DownloadManager access) |
+| `ui/scene/download/DownloadsScene.kt` | Download management (~830 lines, renders from viewModel.downloadList enriched Flow, W35-3b; no DownloadManager memory reads for list) |
 | `ui/scene/download/DownloadGuideHelper.kt` | Showcase/tutorial overlay logic extracted from DownloadsScene (W9-2) |
 | `ui/scene/download/DownloadPaginationHelper.kt` | Page indicator and navigation extracted from DownloadsScene (W9-2) |
 | `ui/scene/download/DownloadDragDropHelper.kt` | Item reordering via RecyclerViewDragDropManager extracted from DownloadsScene (W9-2) |
@@ -131,7 +131,7 @@ LRReader/
 | `ui/scene/gallery/list/GallerySearchBarHelper.kt` | SearchBar/FastScroller/SearchLayout callbacks (W15-2) |
 | `ui/scene/gallery/list/GalleryListHelperFactory.kt` | Factory wiring all 12 helpers for GalleryListScene (W15-2) |
 | `ui/scene/gallery/list/GalleryListSearchHelper.kt` | SearchBar interaction + query construction extracted from GalleryListScene (W9-3) |
-| `ui/scene/download/DownloadsViewModel.kt` | Download list state, labels, filter/sort, search, import, bulk ops, sealed DownloadUiEvent (W9-1) |
+| `ui/scene/download/DownloadsViewModel.kt` | Download list state (Flow-driven, enriched by DownloadProgressTracker, W35-3b), labels, filter/sort, search, import, bulk ops, sealed DownloadUiEvent |
 | `ui/scene/download/DownloadGalleryOpenHelper.kt` | Gallery item click + read-process update extracted from DownloadsScene (W16-1) |
 | `ui/scene/download/DownloadSelectionHelper.kt` | Selection mode + FAB handling extracted from DownloadsScene (W16-1) |
 | `ui/scene/LRRCategoriesViewModel.kt` | Category CRUD ViewModel (W14-2) |
@@ -394,3 +394,6 @@ Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial trans
 - Do not call `EhDB` local favorites methods directly — use `FavoritesRepository` via `ServiceRegistry.dataModule.favoritesRepository` (W21-1); EhDB local favorites methods are `@Deprecated`
 - Do not add new Scene classes without a corresponding ViewModel — all 8 functional Scenes now have ViewModels (W14-W15)
 - Do not read transient progress fields (`speed` / `finished` / `downloaded` / `total` / `remaining`) from `DownloadInfo` in new code — use `DownloadManager.progressFor(arcid)` or subscribe to `DownloadManager.progressTracker.progressFlow` (W35-3a, ADR-001 Option D). The `@Ignore` fields on `DownloadInfo` are retained only for backward compatibility during the W35-3 migration and will be removed in W35-3c.
+- Do not read `DownloadManager.getLabelDownloadInfoList(label)` or `DownloadManager.defaultDownloadInfoList` from download-list UI code — use `viewModel.downloadList` (progress-enriched Flow) instead (W35-3b). These accessors remain available only for non-UI callers (rating lookup, label-count display, clean-redundancy preference, etc.).
+- Do not add a Scene-level `collectFlow(viewModel.downloadsFlow)` subscription for the download list — the Scene subscribes to `viewModel.downloadList` which already combines Room Flow with `DownloadProgressTracker.progressFlow` (W35-3b).
+- Do not re-add per-tick `DownloadInfoListener.onUpdate`-driven `notifyItemChanged` calls for progress display — progress updates arrive via the combined Flow. The `ItemUpdated` event handler is retained only for immediate state flips (e.g., WAIT→DOWNLOAD) that precede the next Room Flow emission (W35-3b).
