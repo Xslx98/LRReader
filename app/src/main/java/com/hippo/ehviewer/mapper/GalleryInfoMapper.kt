@@ -3,7 +3,7 @@ package com.hippo.ehviewer.mapper
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
-import com.lanraragi.reader.client.api.arcidToGid
+
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.domain.TagGroup
@@ -20,7 +20,7 @@ import com.lanraragi.reader.domain.TagGroup
  */
 fun Archive.toGalleryInfo(): GalleryInfo {
     val gi = GalleryInfo()
-    gi.gid = arcidToGid(arcid)
+    gi.gid = 0L
     gi.arcid = arcid
     gi.title = title
     gi.thumb = thumbnailUrl

@@ -34,7 +34,7 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
 import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.download.DownloadManager
-import com.lanraragi.reader.client.api.arcidToGid
+
 import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
@@ -179,7 +179,6 @@ abstract class GalleryAdapterNew(
     override fun onBindViewHolder(holder: GalleryHolder, position: Int) {
         val archive = getDataAt(position) ?: return
         val arcid = archive.arcid
-        val gid = arcidToGid(arcid)
 
         when (mType) {
             TYPE_GRID -> {
@@ -211,7 +210,7 @@ abstract class GalleryAdapterNew(
                 holder.simpleLanguage?.visibility = View.GONE
                 holder.favourite?.visibility = View.GONE
                 holder.downloaded?.visibility =
-                    if (mDownloadManager.containDownloadInfo(gid)) View.VISIBLE else View.GONE
+                    if (mDownloadManager.containDownloadInfo(arcid)) View.VISIBLE else View.GONE
             }
         }
         ViewCompat.setTransitionName(holder.thumb, TransitionNameFactory.getThumbTransitionName(arcid))
