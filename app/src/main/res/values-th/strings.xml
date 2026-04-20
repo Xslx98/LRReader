@@ -553,8 +553,6 @@
     <string name="settings_download_media_scan_summary_off">แอปแกลเลอรี่ส่วนใหญ่จะข้ามการสแกนรูปภาพในแหล่งดาวน์โหลด</string>
     <string name="settings_download_multi_thread_download">ดาวน์โหลดแบบหลายเธด</string>
     <string name="settings_download_multi_thread_download_summary">โหลดถึง %s ภาพ</string>
-    <string name="settings_download_preload_image">โหลดภาพล่วงหน้า</string>
-    <string name="settings_download_preload_image_summary">โหลดภาพล่วงหน้าไป %s ภาพ</string>
     <string name="settings_download_image_resolution">ความละเอียดของภาพ</string>
     <string name="settings_download_image_resolution_summary">ค่าตอนนี้เป็น %s. ความละเอียดตั้งแต่ 1280x ขึ้นไปอาจจะไม่ทำงาน</string>
     <string name="settings_download_image_resolution_auto">อัตโนมัติ</string>
@@ -785,9 +783,6 @@
     <string name="decompression_failed">การขยายไฟล์ล้มเหลว!</string>
     <string name="download_label_archiver">Archiver</string>
     <string name="cookie_in_clipboard_incorrect">รูปแบบ Cookie ไม่ถูกต้อง</string>
-    <string name="settings_download_timeout">หมดเวลาการดาวน์โหลด</string>
-    <string name="download_timeout_unlimited">ไม่จำกัด</string>
-    <string name="settings_download_timeout_summary">%s(วินาที), เวลาสูงสุดที่อนุญาตให้ดาวน์โหลดรูปภาพหนึ่งรูป</string>
     <string name="have_new_version">คลิกเพื่อดูเวอร์ชั่นแกลเลอรี่ใหม่</string>
     <string name="appwidget_text">ข้อความวิดเจ็ต</string>
     <string name="add_widget">เพิ่มวิดเจ็ต</string>
