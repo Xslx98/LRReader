@@ -483,8 +483,6 @@
     <string name="settings_download_clean_redundancy_no_redundancy">Keine zu löschenden Dateien gefunden</string>
     <string name="settings_download_clean_redundancy_done">Reinigung abgeschlossen. %d Datei(en) wurde(n) gelöscht.</string>
     <string name="settings_advanced">Erweiterte Optionen</string>
-    <string name="settings_advanced_save_parse_error_body">HTML-Datei beim Parsing-Fehler speichern</string>
-    <string name="settings_advanced_save_parse_error_body_summary">Die Datei könnte etwas Privates enthalten</string>
     <string name="settings_advanced_save_crash_log">Crash-Bericht speichern</string>
     <string name="settings_advanced_save_crash_log_summary">Der Bericht hilft dem Entwickler dabei, Fehler schnell zu beheben.</string>
     <string name="settings_advanced_dump_logcat">Logcat-Protokoll speichern</string>
@@ -633,7 +631,6 @@
     <string name="settings_eh_theme_light">Weiß</string>
     <string name="settings_eh_theme_dark">Dunkel</string>
     <string name="settings_eh_theme_black">Schwarz</string>
-    <string name="settings_eh_apply_nav_bar_theme_color">Theme-Farbe in Navigation-Bar anwenden</string>
     <string name="settings_about_donate_message">Du bekommest kein Privileg davon. Deine Spende hilft mir dabei, diese App instand zu halten.</string>
     <string name="settings_about_donate_alipay">Alipay</string>
     <string name="settings_about_donate_paypal">PayPal</string>

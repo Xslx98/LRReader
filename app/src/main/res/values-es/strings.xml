@@ -539,8 +539,6 @@
     <string name="settings_download_clean_redundancy_done">Limpieza de redundancia completada, se limpiaron %d elementos en total</string>
 
     <string name="settings_advanced">Avanzado</string>
-    <string name="settings_advanced_save_parse_error_body">Guardar contenido HTML al analizar el error</string>
-    <string name="settings_advanced_save_parse_error_body_summary">El contenido HTML puede ser sensible a la privacidad</string>
     <string name="settings_advanced_save_crash_log">Guardar registro de fallos cuando la aplicación falla</string>
     <string name="settings_advanced_save_crash_log_summary">Los registros de fallos ayudan a los desarrolladores a corregir errores</string>
     <string name="settings_advanced_dump_logcat">Guardado de logcat</string>
@@ -750,7 +748,6 @@
     <string name="settings_eh_theme_light">Claro</string>
     <string name="settings_eh_theme_dark">Oscuro</string>
     <string name="settings_eh_theme_black">Negro</string>
-    <string name="settings_eh_apply_nav_bar_theme_color">Aplicar color del tema a la barra de navegación</string>
     <string name="settings_about_donate_guide">Guía de apoyo</string>
 
     <!--  排行榜  -->
