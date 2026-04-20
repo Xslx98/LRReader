@@ -59,33 +59,14 @@ class DownloadFragment : PreferenceFragmentCompat(),
         addPreferencesFromResource(R.xml.download_settings)
 
         val mediaScan = findPreference<Preference>(DownloadSettings.KEY_MEDIA_SCAN)
-        val downloadTimeout = findPreference<Preference>(DownloadSettings.KEY_DOWNLOAD_TIMEOUT)
         mDownloadLocation = findPreference(KEY_DOWNLOAD_LOCATION)
         val exportDownloadItems = findPreference<Preference>(KEY_EXPORT_DOWNLOAD_ITEMS)
         val importDownloadItems = findPreference<Preference>(KEY_IMPORT_DOWNLOAD_ITEMS)
         val cleanInvalidDownload = findPreference<Preference>(KEY_CLEAN_INVALID_DOWNLOAD)
-        val preloadImage = findPreference<Preference>("preload_image")
 
         onUpdateDownloadLocation()
 
-        // Initialize summaries with current settings
-        if (downloadTimeout != null) {
-            val timeoutStr = if (DownloadSettings.getDownloadTimeout() == 0) {
-                getString(R.string.download_timeout_unlimited)
-            } else {
-                DownloadSettings.getDownloadTimeout().toString()
-            }
-            downloadTimeout.summary = getString(R.string.settings_download_timeout_summary, timeoutStr)
-        }
-        if (preloadImage != null) {
-            preloadImage.summary = getString(
-                R.string.settings_download_preload_image_summary,
-                DownloadSettings.getPreloadImage().toString()
-            )
-        }
-
         mediaScan?.onPreferenceChangeListener = this
-        downloadTimeout?.onPreferenceChangeListener = this
 
         mDownloadLocation?.onPreferenceClickListener = this
         exportDownloadItems?.onPreferenceClickListener = this
@@ -254,35 +235,19 @@ class DownloadFragment : PreferenceFragmentCompat(),
 
     override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
         val key = preference.key
-        when (key) {
-            DownloadSettings.KEY_MEDIA_SCAN -> {
-                if (newValue is Boolean) {
-                    val downloadLocation = DownloadSettings.getDownloadLocation()
-                    if (newValue) {
-                        CommonOperations.removeNoMediaFile(downloadLocation)
-                        triggerMediaScan(downloadLocation)
-                    } else {
-                        CommonOperations.ensureNoMediaFile(downloadLocation)
-                    }
+        if (key == DownloadSettings.KEY_MEDIA_SCAN) {
+            if (newValue is Boolean) {
+                val downloadLocation = DownloadSettings.getDownloadLocation()
+                if (newValue) {
+                    CommonOperations.removeNoMediaFile(downloadLocation)
+                    triggerMediaScan(downloadLocation)
+                } else {
+                    CommonOperations.ensureNoMediaFile(downloadLocation)
                 }
-                return true
             }
-            DownloadSettings.KEY_DOWNLOAD_TIMEOUT -> {
-                if (newValue is String) {
-                    DownloadSettings.setDownloadTimeout(toTimeoutTime(newValue))
-                }
-                return true
-            }
+            return true
         }
         return false
-    }
-
-    private fun toTimeoutTime(newValue: Any): Int {
-        return try {
-            newValue.toString().toInt()
-        } catch (e: NumberFormatException) {
-            0
-        }
     }
 
     // --- Import download task ---
