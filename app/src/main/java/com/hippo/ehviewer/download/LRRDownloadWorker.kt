@@ -238,6 +238,17 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                     FileOutputStream(tmpFile).use { fos ->
                         val buffer = ByteArray(BUFFER_SIZE)
                         var read: Int
+                        // Coalesce progress notifications: each post hops to
+                        // the main thread via DownloadEventBus, so emitting one
+                        // per 256 KB chunk (~160/s on LAN gigabit with 8
+                        // parallel pages) was starving the UI. Accumulate
+                        // bytes locally and flush at most every
+                        // PROGRESS_NOTIFY_INTERVAL_MS, plus a final flush when
+                        // the stream ends.
+                        var pendingDelta = 0
+                        var lastNotifyNanos = System.nanoTime()
+                        val intervalNanos =
+                            PROGRESS_NOTIFY_INTERVAL_MS * 1_000_000L
                         while (inputStream.read(buffer).also { read = it } != -1) {
                             if (cancelled) {
                                 tmpFile.delete()
@@ -245,6 +256,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                             }
                             fos.write(buffer, 0, read)
                             totalRead += read
+                            pendingDelta += read
                             if (totalRead > MAX_PAGE_SIZE) {
                                 tmpFile.delete()
                                 throw IOException(
@@ -252,8 +264,22 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                                 )
                             }
                             if (contentLength > 0) {
-                                listener?.onPageDownload(index, contentLength, totalRead, read)
+                                val now = System.nanoTime()
+                                if (now - lastNotifyNanos >= intervalNanos) {
+                                    listener?.onPageDownload(
+                                        index, contentLength, totalRead, pendingDelta
+                                    )
+                                    pendingDelta = 0
+                                    lastNotifyNanos = now
+                                }
                             }
+                        }
+                        // Final flush so the last partial interval isn't lost
+                        // (e.g. small pages that finish before the first tick).
+                        if (contentLength > 0 && pendingDelta > 0) {
+                            listener?.onPageDownload(
+                                index, contentLength, totalRead, pendingDelta
+                            )
                         }
                         // fos.close() (via use{}) flushes to OS buffer cache.
                         // Explicit fsync removed: rename-after-close is sufficient
@@ -312,6 +338,14 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         private const val MIN_IMAGE_SIZE = 1024L       // 1KB minimum valid image
         private const val MAX_RETRY = 2                // Try up to 2 times per page
         private const val MAX_PAGE_SIZE = 200L * 1024 * 1024 // 200MB per page
+        /**
+         * Minimum wall time between progress notifications per page. Each
+         * notification posts to the main thread via
+         * [com.hippo.ehviewer.download.DownloadEventBus], so posting once per
+         * 256 KB chunk churned the main looper during fast downloads. 250 ms
+         * still gives SpeedTracker (2-second tick) plenty of resolution.
+         */
+        private const val PROGRESS_NOTIFY_INTERVAL_MS = 250L
         // Concurrent page downloads per archive. 8 is a sweet spot for LAN +
         // pre-extracted archives (Hypnotoad's 4 workers can saturate 8 open
         // page requests without queueing, and NetworkModule now allows 16
