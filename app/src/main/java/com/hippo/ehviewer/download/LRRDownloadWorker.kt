@@ -312,7 +312,12 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         private const val MIN_IMAGE_SIZE = 1024L       // 1KB minimum valid image
         private const val MAX_RETRY = 2                // Try up to 2 times per page
         private const val MAX_PAGE_SIZE = 200L * 1024 * 1024 // 200MB per page
-        private const val PARALLEL_PAGES = 4           // Concurrent page downloads per archive
+        // Concurrent page downloads per archive. 8 is a sweet spot for LAN +
+        // pre-extracted archives (Hypnotoad's 4 workers can saturate 8 open
+        // page requests without queueing, and NetworkModule now allows 16
+        // per-host). Going higher starts to stress server CPU / disk on
+        // first-time extractions with diminishing throughput gain.
+        private const val PARALLEL_PAGES = 8
 
         /**
          * Validate that a file starts with a known image format magic bytes.
