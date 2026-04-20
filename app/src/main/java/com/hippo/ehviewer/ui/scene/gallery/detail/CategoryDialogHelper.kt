@@ -37,17 +37,28 @@ object CategoryDialogHelper {
     }
 
     /**
-     * Show the category selection dialog for a given archive.
-     * Loads categories from the server, presents a checkbox list,
-     * and applies changes on confirmation.
+     * Show the category selection dialog for a given [GalleryDetail].
+     * Thin wrapper that pulls out the arcid and delegates to the
+     * [showCategoryDialog] overload below — list-based callers that only
+     * have an arcid can call that overload directly.
      */
     @JvmStatic
     fun showCategoryDialog(activity: Activity?, gd: GalleryDetail?, callback: Callback?) {
         if (activity == null || gd == null) return
+        val arcid = gd.arcid ?: return
+        showCategoryDialog(activity, arcid, callback)
+    }
 
-        val arcid = gd.arcid
-        val serverUrl = LRRAuthManager.getServerUrl()
-        if (arcid == null || serverUrl == null) return
+    /**
+     * Show the category selection dialog for an [arcid]. Loads categories
+     * from the server, presents a checkbox list, and applies changes on
+     * confirmation. Useful from contexts (gallery list long-press,
+     * shortcuts, etc.) where no [GalleryDetail] has been loaded.
+     */
+    @JvmStatic
+    fun showCategoryDialog(activity: Activity?, arcid: String?, callback: Callback?) {
+        if (activity == null || arcid.isNullOrEmpty()) return
+        val serverUrl = LRRAuthManager.getServerUrl() ?: return
 
         Toast.makeText(activity, R.string.lrr_loading_categories, Toast.LENGTH_SHORT).show()
 

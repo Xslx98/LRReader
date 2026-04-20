@@ -171,8 +171,6 @@
     <string name="search_osc">Nur nach Umschläge suchen</string>
     <string name="search_se">Die gelöschten Galerien anzeigen</string>
     <string name="select_image_first">Wähle ein Bild</string>
-    <string name="add_to_favourites">Zur Kategorie hinzufügen</string>
-    <string name="remove_from_favourites">Aus der Kategorie entfernen</string>
     <string name="stop_downloading">Download stoppen</string>
     <string name="delete_downloads">Downloads löschen</string>
     <string name="quick_search">Schnellsuche</string>
@@ -222,10 +220,6 @@
     <string name="favorited">Zur Kategorie hinzugefügt</string>
     <string name="not_favorited">Nicht Zur Kategorie hinzugefügt</string>
     <string name="remember_favorite_collection">Kategorie merken</string>
-    <string name="add_to_favorite_success">Zu Favoriten hinzugefügt</string>
-    <string name="remove_from_favorite_success">Aus Kategorie entfernt</string>
-    <string name="add_to_favorite_failure">Fehler beim Hinzufügen zur Kategorie</string>
-    <string name="remove_from_favorite_failure">Fehler beim Entfernen aus Kategorie</string>
     <string name="copy_tag">Tag kopieren</string>
     <string name="rating10">EIN MEISTERSTÜCK</string>
     <string name="rating_none" translatable="false">(´_ゝ`)</string>
@@ -1009,6 +1003,7 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_loading_categories">Kategorien werden geladen…</string>
     <string name="lrr_no_static_categories">Keine statischen Kategorien verfügbar</string>
     <string name="lrr_add_to_category">Zur Kategorie hinzufügen</string>
+    <string name="lrr_menu_categories">Kategorien</string>
     <string name="lrr_category_info_suffix"> usw.</string>
     <string name="lrr_category_count_suffix"> Kategorien</string>
     <string name="lrr_category_updated_toast">Kategorie aktualisiert</string>
