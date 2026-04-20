@@ -478,7 +478,6 @@
     <string name="settings_eh_theme_dark">มืด</string>
     <string name="settings_eh_theme_black">ดำ</string>
     <string name="settings_eh_theme_auto_switch">ติดตามโหมดมืดของระบบ</string>
-    <string name="settings_eh_apply_nav_bar_theme_color">ใช้สีของธีมบนแถบนำทางด้วย</string>
     <string name="settings_eh_gallery_site">เว็บไซต์หลักของแกลเลอรี่</string>
     <string name="settings_eh_launch_page">หน้าเริ่มต้น</string>
     <string name="settings_eh_list_mode">มุมองแบบรายการ</string>
@@ -574,8 +573,6 @@
     <string name="settings_download_clean_redundancy_done">การลบสิ่งที่ไม่จำเป็นเสร็จสิ้น ลบไปแล้วทั้งหมด %d ชิ้น</string>
 
     <string name="settings_advanced">ขั้นสูง</string>
-    <string name="settings_advanced_save_parse_error_body">บันทึกเนื้อหาลง HTML เมื่อการวิเคราะห์ผิดพลาด</string>
-    <string name="settings_advanced_save_parse_error_body_summary">เนื้อหาแบบ HTML อาจจะเป็นข้อมูลความเป็นส่วนตัวที่มีความอ่อนไหวได้</string>
     <string name="settings_advanced_save_crash_log">บันทึกข้อผิดพลาดเมื่อเกิด crash</string>
     <string name="settings_advanced_save_crash_log_summary">การบันทึกข้อผิดพลาดจาก crash จะช่วยให้ผู้พัฒนาหาและแก้ไขบัคต่างๆได้ง่าย</string>
     <string name="settings_advanced_dump_logcat">สร้าง Logcat</string>

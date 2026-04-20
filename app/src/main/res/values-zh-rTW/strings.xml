@@ -480,7 +480,6 @@
     <string name="settings_eh_theme_dark">暗色</string>
     <string name="settings_eh_theme_black">黑色</string>
     <string name="settings_eh_theme_auto_switch">跟隨系統暗色模式</string>
-    <string name="settings_eh_apply_nav_bar_theme_color">導航欄應用主題配色</string>
     <string name="settings_eh_gallery_site">圖庫站台</string>
     <string name="settings_eh_launch_page">啟動頁</string>
     <string name="settings_eh_list_mode">列表模式</string>
@@ -580,8 +579,6 @@
     <string name="settings_download_clean_redundancy_done">完成冗餘檔案清理，共清理了 %d 個檔案</string>
 
     <string name="settings_advanced">進階</string>
-    <string name="settings_advanced_save_parse_error_body">解析失敗時儲存網頁的內容</string>
-    <string name="settings_advanced_save_parse_error_body_summary">網頁內容可能含有敏感的隱私資料</string>
     <string name="settings_advanced_save_crash_log">應用崩潰時儲存錯誤日誌</string>
     <string name="settings_advanced_save_crash_log_summary">錯誤日誌可以幫助開發者修正問題</string>
     <string name="settings_advanced_dump_logcat">傾印log</string>

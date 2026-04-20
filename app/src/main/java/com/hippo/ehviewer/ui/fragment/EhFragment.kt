@@ -31,21 +31,16 @@ class EhFragment : BasePreferenceFragmentCompat(),
 
         val theme = findPreference<Preference>(AppearanceSettings.KEY_THEME)
         val themeAutoSwitch = findPreference<Preference>(AppearanceSettings.KEY_THEME_AUTO_SWITCH)
-        val applyNavBarThemeColor = findPreference<Preference>(AppearanceSettings.KEY_APPLY_NAV_BAR_THEME_COLOR)
         val listMode = findPreference<Preference>(AppearanceSettings.KEY_LIST_MODE)
 
         theme?.onPreferenceChangeListener = this
         themeAutoSwitch?.onPreferenceChangeListener = this
-        applyNavBarThemeColor?.onPreferenceChangeListener = this
         listMode?.onPreferenceChangeListener = this
     }
 
     override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
         val key = preference.key
         if (AppearanceSettings.KEY_THEME == key) {
-            (requireActivity().application as EhApplication).recreate()
-            return true
-        } else if (AppearanceSettings.KEY_APPLY_NAV_BAR_THEME_COLOR == key) {
             (requireActivity().application as EhApplication).recreate()
             return true
         } else if (AppearanceSettings.KEY_LIST_MODE == key) {

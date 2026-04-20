@@ -18,12 +18,6 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <com.hippo.preference.SwitchPreference
-        android:defaultValue="@bool/beta"
-        android:key="save_parse_error_body"
-        android:summary="@string/settings_advanced_save_parse_error_body_summary"
-        android:title="@string/settings_advanced_save_parse_error_body" />
-
-    <com.hippo.preference.SwitchPreference
         android:defaultValue="false"
         android:key="save_crash_log"
         android:summary="@string/settings_advanced_save_crash_log_summary"

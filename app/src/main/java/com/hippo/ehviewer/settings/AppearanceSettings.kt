@@ -41,12 +41,6 @@ object AppearanceSettings {
     @JvmStatic
     fun isThemeAutoSwitchAvailable(): Boolean = Settings.getBoolean(KEY_THEME_AUTO_SWITCH, false)
 
-    // --- Nav Bar Theme ---
-    const val KEY_APPLY_NAV_BAR_THEME_COLOR = "apply_nav_bar_theme_color"
-
-    @JvmStatic
-    fun getApplyNavBarThemeColor(): Boolean = Settings.getBoolean(KEY_APPLY_NAV_BAR_THEME_COLOR, false)
-
     // --- Gallery Site ---
     const val KEY_GALLERY_SITE = "gallery_site"
     private const val DEFAULT_GALLERY_SITE = 0
