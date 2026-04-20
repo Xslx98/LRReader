@@ -48,6 +48,7 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.download.DownloadService
+import com.hippo.ehviewer.download.ProgressSnapshot
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.spider.SpiderInfo
 import com.hippo.ehviewer.ui.scene.ToolbarScene
@@ -91,9 +92,11 @@ class DownloadsScene : ToolbarScene(),
         set(value) { viewModel.selectLabel(value) }
 
     /**
-     * The progress-enriched, label-filtered download list for rendering.
-     * Reads from [DownloadsViewModel.downloadList], which combines the Room
-     * Flow with [com.hippo.ehviewer.download.DownloadProgressTracker] (W35-3b).
+     * The label-filtered download list for rendering, sourced purely from the
+     * Room Flow via [DownloadsViewModel.downloadList]. Transient progress
+     * (speed / finished / total / remaining) is NOT carried on these items —
+     * read it from [DownloadsViewModel.progressMap] or via
+     * [DownloadManager.progressFor]. See ADR-001 Option D.
      *
      * Returns null only if the ViewModel has not yet been initialised; an
      * empty list means the active label currently has no downloads.
@@ -105,6 +108,13 @@ class DownloadsScene : ToolbarScene(),
         }
 
     private var mLastSnapshot: MutableList<DownloadInfo> = ArrayList()
+
+    /**
+     * Most recent progress map observed from [DownloadsViewModel.progressMap].
+     * Used to compute a per-arcid delta and dispatch only the changed rows
+     * via `notifyItemChanged(pos, PAYLOAD_PROGRESS)`.
+     */
+    private var mLastProgressMap: Map<String, ProgressSnapshot> = emptyMap()
 
     /*---------------
      List pagination
@@ -413,15 +423,25 @@ class DownloadsScene : ToolbarScene(),
         updateTitle()
         setNavigationIcon(R.drawable.v_arrow_left_dark_x24)
 
-        // Subscribe to the enriched, label-filtered list StateFlow (Room Flow
-        // × progress tracker, W35-3b). Every structural change AND every
-        // progress tick produces a DiffUtil dispatch.
+        // Subscribe to the structural list StateFlow (Room Flow, label-
+        // filtered). Transient progress flows separately via progressMap
+        // below. DiffUtil compares structural fields only.
         collectFlow(viewLifecycleOwner, viewModel.downloadList) { list ->
             if (mAdapter == null || searching) return@collectFlow
             dispatchDiffUpdate(ArrayList(list))
             updateTitle()
             updatePaginationIndicator()
             updateView()
+        }
+
+        // Subscribe to the live progress map. For each arcid whose snapshot
+        // changed since the last emission, fire a targeted
+        // notifyItemChanged(pos, PAYLOAD_PROGRESS) so only the progress views
+        // repaint — no DiffUtil, no full rebind. Fixes the progress-freeze
+        // bug introduced by the earlier mutating-combine approach.
+        collectFlow(viewLifecycleOwner, viewModel.progressMap) { progressMap ->
+            if (mAdapter == null || searching) return@collectFlow
+            dispatchProgressChanges(progressMap)
         }
 
         // Observe filter loading state
@@ -464,24 +484,17 @@ class DownloadsScene : ToolbarScene(),
 
         collectFlow(viewLifecycleOwner, viewModel.downloadEvent) { event ->
             when (event) {
-                // Structural events (ItemAdded / ItemRemoved / DiffUpdate / Reloaded)
-                // are covered by the enriched downloadList Flow above — no-op.
+                // Structural events are covered by the downloadList Flow
+                // above; transient progress by the progressMap Flow. These
+                // listener callbacks exist only so downstream consumers (e.g.
+                // RatingHelper) can react — the Scene itself just refreshes
+                // its empty-view.
                 is DownloadUiEvent.ItemAdded,
                 is DownloadUiEvent.ItemRemoved,
                 is DownloadUiEvent.DiffUpdate,
-                is DownloadUiEvent.Reloaded -> {
-                    updateView()
-                }
+                is DownloadUiEvent.Reloaded,
                 is DownloadUiEvent.ItemUpdated -> {
-                    // Fast path: scheduler flipped a state (e.g., WAIT→DOWNLOAD)
-                    // before Room emission caught up. Refresh the row immediately.
-                    if (viewModel.currentLabel.value != event.info.label &&
-                        mList?.contains(event.info) != true
-                    ) return@collectFlow
-                    val index = mList?.indexOf(event.info) ?: return@collectFlow
-                    if (index >= 0) {
-                        mAdapter?.notifyItemChanged(listIndexInPage(index))
-                    }
+                    updateView()
                 }
                 is DownloadUiEvent.Replaced -> {
                     updateForLabel()
@@ -584,6 +597,35 @@ class DownloadsScene : ToolbarScene(),
         val result = DiffUtil.calculateDiff(DownloadInfoDiffCallback(mLastSnapshot, newList))
         mLastSnapshot = newList
         mAdapter?.let { result.dispatchUpdatesTo(it) }
+    }
+
+    /**
+     * Dispatch targeted progress updates for any arcid whose [ProgressSnapshot]
+     * changed since the last emission. Uses a payload so [DownloadAdapter]
+     * can rebind only the progress / speed / percent views — no full item
+     * rebind, no image re-fetch.
+     */
+    private fun dispatchProgressChanges(newMap: Map<String, ProgressSnapshot>) {
+        val oldMap = mLastProgressMap
+        mLastProgressMap = newMap
+        val list = mList ?: return
+        val adapter = mAdapter ?: return
+        // Collect arcids whose snapshot meaningfully differs (or was
+        // added/removed). ProgressSnapshot is a data class so `!=` compares
+        // by value — same arcid, same fields → skip.
+        val affected = HashSet<String>()
+        for ((arcid, snap) in newMap) {
+            if (oldMap[arcid] != snap) affected.add(arcid)
+        }
+        for (arcid in oldMap.keys) {
+            if (arcid !in newMap) affected.add(arcid)
+        }
+        if (affected.isEmpty()) return
+        for ((indexInList, info) in list.withIndex()) {
+            val id = info.arcid ?: continue
+            if (id !in affected) continue
+            adapter.notifyItemChanged(listIndexInPage(indexInList), PAYLOAD_PROGRESS)
+        }
     }
 
     override fun onCreateDrawerView(
@@ -801,12 +843,27 @@ class DownloadsScene : ToolbarScene(),
         const val ACTION_CLEAR_DOWNLOAD_SERVICE = "clear_download_service"
 
         const val LOCAL_GALLERY_INFO_CHANGE = 909
+
+        /**
+         * Payload token for [RecyclerView.Adapter.notifyItemChanged] that
+         * signals "only the transient progress views changed — keep the rest
+         * of the row intact." [DownloadAdapter.onBindViewHolder] checks for
+         * this and skips the full rebind (image load, tag render, etc.).
+         */
+        const val PAYLOAD_PROGRESS = "progress"
     }
 }
 
 /**
  * DiffUtil callback for DownloadInfo lists.
- * Uses gid for identity; compares state, legacy, downloaded, total, speed, thumb for content.
+ *
+ * Identity: [DownloadInfo.arcid]. Content comparison covers only persistent
+ * / structural fields — transient progress (speed / downloaded / total /
+ * finished / remaining) is intentionally excluded because it flows through
+ * [DownloadsScene.dispatchProgressChanges] with the `PAYLOAD_PROGRESS`
+ * payload, not through DiffUtil. Including those fields here would defeat
+ * that split and (prior to the W35-3b post-mortem fix) led to frozen
+ * progress due to shared-reference mutation. See ADR-001 Option D.
  */
 internal class DownloadInfoDiffCallback(
     private val oldList: List<DownloadInfo>,
@@ -826,9 +883,8 @@ internal class DownloadInfoDiffCallback(
         val newItem = newList[newItemPosition]
         return oldItem.state == newItem.state &&
             oldItem.legacy == newItem.legacy &&
-            oldItem.downloaded == newItem.downloaded &&
-            oldItem.total == newItem.total &&
-            oldItem.speed == newItem.speed &&
+            ObjectUtils.equal(oldItem.label, newItem.label) &&
+            ObjectUtils.equal(oldItem.title, newItem.title) &&
             ObjectUtils.equal(oldItem.thumb, newItem.thumb)
     }
 }

@@ -148,6 +148,35 @@ class DownloadAdapter(
         return holder
     }
 
+    /**
+     * Payload-aware bind. When the payload list contains
+     * [DownloadsScene.PAYLOAD_PROGRESS], only the progress / speed / percent
+     * views are refreshed — no image reload, no tag rebuild. This path is
+     * exercised on every progress-tracker tick via
+     * `DownloadsScene.dispatchProgressChanges`.
+     */
+    override fun onBindViewHolder(
+        holder: DownloadHolder,
+        position: Int,
+        payloads: MutableList<Any>
+    ) {
+        if (payloads.isNotEmpty() &&
+            payloads.any { it == DownloadsScene.PAYLOAD_PROGRESS }
+        ) {
+            val list = mCallback.list ?: return
+            val pos = mCallback.positionInList(position)
+            if (pos !in list.indices) return
+            val info = list[pos]
+            if (info.state == DownloadInfo.STATE_DOWNLOAD ||
+                info.state == DownloadInfo.STATE_WAIT
+            ) {
+                bindProgress(holder, info)
+            }
+            return
+        }
+        super.onBindViewHolder(holder, position, payloads)
+    }
+
     override fun onBindViewHolder(holder: DownloadHolder, position: Int) {
         val list = mCallback.list ?: return
 
@@ -282,18 +311,23 @@ class DownloadAdapter(
             setVisibility(holder.stop, View.GONE)
         }
 
-        if (info.total <= 0 || info.finished < 0) {
+        // Authoritative transient-progress source is the in-memory tracker,
+        // not the Room-backed DownloadInfo (whose @Ignore fields are stale
+        // copies from the scheduler's own instance and never reach this
+        // Room-emitted instance). See ADR-001 Option D.
+        val snap = mCallback.downloadManager?.progressFor(info.arcid)
+        val total = snap?.total ?: -1
+        val finished = snap?.finished ?: 0
+        val speed = (snap?.speed ?: -1L).coerceAtLeast(0L)
+
+        if (total <= 0 || finished < 0) {
             holder.percent.text = null
             holder.progressBar.isIndeterminate = true
         } else {
-            holder.percent.text = "${info.finished}/${info.total}"
+            holder.percent.text = "$finished/$total"
             holder.progressBar.isIndeterminate = false
-            holder.progressBar.max = info.total
-            holder.progressBar.progress = info.finished
-        }
-        var speed = info.speed
-        if (speed < 0) {
-            speed = 0
+            holder.progressBar.max = total
+            holder.progressBar.progress = finished
         }
         holder.speed.text = com.hippo.lib.yorozuya.FileUtils.humanReadableByteCount(speed, false) + "/S"
     }
