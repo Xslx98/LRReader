@@ -18,8 +18,10 @@ import com.lanraragi.reader.client.api.LRRAuthManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -148,6 +150,35 @@ class ServerListViewModelTest {
         assertTrue("Condition not met within ${timeoutMs}ms", condition())
     }
 
+    /**
+     * Start collecting [ServerListViewModel.uiEvent] and synchronously wait
+     * until the collector has actually subscribed before returning.
+     *
+     * `_uiEvent` is a MutableSharedFlow with replay = 0 and
+     * extraBufferCapacity = 4: a `tryEmit` issued while no subscribers are
+     * active is silently dropped, not buffered. The previous
+     * `eventScope.launch { collect { ... } }` pattern raced with the test
+     * body — on CI's slower scheduler the `collect` coroutine had not yet
+     * registered when `vm.deleteProfile(...)` fired, so the event was lost
+     * and [awaitCondition] timed out.
+     *
+     * [onSubscription] runs its callback after the flow registers the
+     * collector but before the first value is delivered, so completing the
+     * deferred there guarantees the subscription is live by the time this
+     * helper returns.
+     */
+    private fun collectEvents(vm: ServerListViewModel): CopyOnWriteArrayList<ServerListViewModel.ServerListUiEvent> {
+        val events = CopyOnWriteArrayList<ServerListViewModel.ServerListUiEvent>()
+        val subscribed = CompletableDeferred<Unit>()
+        eventScope.launch {
+            vm.uiEvent
+                .onSubscription { subscribed.complete(Unit) }
+                .collect { events.add(it) }
+        }
+        runBlocking { subscribed.await() }
+        return events
+    }
+
     private fun insertProfile(name: String, url: String, isActive: Boolean = false): Long {
         return runBlocking { db.miscDao().insertServerProfile(ServerProfile(name = name, url = url, isActive = isActive)) }
     }
@@ -198,8 +229,7 @@ class ServerListViewModelTest {
         val profileB = ServerProfile(id = id2, name = "B", url = "https://b.com", isActive = false)
 
         val vm = ServerListViewModel()
-        val events = CopyOnWriteArrayList<ServerListViewModel.ServerListUiEvent>()
-        eventScope.launch { vm.uiEvent.collect { events.add(it) } }
+        val events = collectEvents(vm)
 
         vm.activateProfile(profileB)
 
@@ -259,8 +289,7 @@ class ServerListViewModelTest {
         LRRAuthManager.simulateStorageUnavailableForTesting()
 
         val vm = ServerListViewModel()
-        val events = CopyOnWriteArrayList<ServerListViewModel.ServerListUiEvent>()
-        eventScope.launch { vm.uiEvent.collect { events.add(it) } }
+        val events = collectEvents(vm)
 
         vm.deleteProfile(profile)
 
@@ -296,8 +325,7 @@ class ServerListViewModelTest {
         }"""))
 
         val vm = ServerListViewModel()
-        val events = CopyOnWriteArrayList<ServerListViewModel.ServerListUiEvent>()
-        eventScope.launch { vm.uiEvent.collect { events.add(it) } }
+        val events = collectEvents(vm)
 
         vm.verifyActiveProfile(server.url("").toString().removeSuffix("/"))
 
@@ -314,8 +342,7 @@ class ServerListViewModelTest {
         server.enqueue(MockResponse().setResponseCode(401).setBody("Unauthorized"))
 
         val vm = ServerListViewModel()
-        val events = CopyOnWriteArrayList<ServerListViewModel.ServerListUiEvent>()
-        eventScope.launch { vm.uiEvent.collect { events.add(it) } }
+        val events = collectEvents(vm)
 
         vm.verifyActiveProfile(server.url("").toString().removeSuffix("/"))
 
