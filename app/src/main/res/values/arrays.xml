@@ -293,11 +293,6 @@
         <item>640</item>
     </string-array>
 
-    <string-array name="gallery_list_menu_entries">
-        <item>@string/download</item>
-        <item>@string/add_to_favourites</item>
-    </string-array>
-
     <string-array name="tag_menu_entries">
         <item>@string/show_definition</item>
     </string-array>

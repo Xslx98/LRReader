@@ -203,8 +203,6 @@
     <string name="search_se">Montrer les galeries supprimées</string>
     <string name="select_image_first">Sélectionnez une image</string>
 
-    <string name="add_to_favourites">Ajouter à favori</string>
-    <string name="remove_from_favourites">Retirer de favori</string>
 
     <string name="stop_downloading">Arrêter le téléchargement</string>
     <string name="delete_downloads">Supprimer les téléchargements</string>
@@ -266,10 +264,6 @@
     <string name="favorited">Ajoutée à catégories</string>
     <string name="not_favorited">Non ajoutée à catégories</string>
     <string name="remember_favorite_collection">Enrégistrer la collection catégories</string>
-    <string name="add_to_favorite_success">Ajouté aux favoris</string>
-    <string name="remove_from_favorite_success">Retirer de catégories</string>
-    <string name="add_to_favorite_failure">Impossible de l\'ajouter à catégories</string>
-    <string name="remove_from_favorite_failure">Impossible de la retirer de la catégorie</string>
 
     <!-- Rating -->
     <string name="rating10">CHEF-D\'ŒUVRE</string>
@@ -1075,6 +1069,7 @@ Cette action est irréversible.</string>
     <string name="lrr_loading_categories">Chargement des catégories…</string>
     <string name="lrr_no_static_categories">Aucune catégorie statique disponible</string>
     <string name="lrr_add_to_category">Ajouter à une catégorie</string>
+    <string name="lrr_menu_categories">Catégories</string>
     <string name="lrr_category_info_suffix"> etc.</string>
     <string name="lrr_category_count_suffix"> catégories</string>
     <string name="lrr_category_updated_toast">Catégorie mise à jour</string>

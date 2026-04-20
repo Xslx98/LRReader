@@ -217,8 +217,6 @@
     <string name="search_se">แสดงเรื่องที่โดนลบ</string>
     <string name="select_image_first">โปรดเลือกรูปภาพก่อน</string>
 
-    <string name="add_to_favourites">เพิ่มเข้าในหมวดหมู่</string>
-    <string name="remove_from_favourites">ลบออกจากหมวดหมู่</string>
 
     <string name="stop_downloading">หยุดการดาวน์โหลด</string>
     <string name="delete_downloads">ลบการดาวน์โหลด</string>
@@ -281,10 +279,6 @@
     <string name="favorited">เพิ่มในหมวดหมู่แล้ว</string>
     <string name="not_favorited">ยังไม่เพิ่มหมวดหมู่</string>
     <string name="remember_favorite_collection">จดจำหมวดหมู่ที่เลือก</string>
-    <string name="add_to_favorite_success">เพิ่มในรายการโปรดแล้ว</string>
-    <string name="remove_from_favorite_success">ลบออกจากหมวดหมู่แล้ว</string>
-    <string name="add_to_favorite_failure">เกิดความล้มเหลวในการเพิ่มเข้าในหมวดหมู่</string>
-    <string name="remove_from_favorite_failure">เกิดข้อล้มเหลวในการลบออกจากหมวดหมู่</string>
 
     <!-- Rating -->
     <string name="rating10">นี้มันผลงานมาสเตอร์พีคชัดๆ!</string>
@@ -1076,6 +1070,7 @@
     <string name="lrr_loading_categories">กำลังโหลดหมวดหมู่…</string>
     <string name="lrr_no_static_categories">ไม่มีหมวดหมู่แบบคงที่</string>
     <string name="lrr_add_to_category">เพิ่มในหมวดหมู่</string>
+    <string name="lrr_menu_categories">หมวดหมู่</string>
     <string name="lrr_category_info_suffix"> ฯลฯ</string>
     <string name="lrr_category_count_suffix"> หมวดหมู่</string>
     <string name="lrr_category_updated_toast">อัปเดตหมวดหมู่แล้ว</string>

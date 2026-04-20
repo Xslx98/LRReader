@@ -197,8 +197,6 @@
     <string name="search_osc">Buscar solo portadas</string>
     <string name="search_se">Mostrar borrados</string>
     <string name="select_image_first">Seleccione la imagen primero</string>
-    <string name="add_to_favourites">Añadir a categorías</string>
-    <string name="remove_from_favourites">Eliminar de categorías</string>
     <string name="stop_downloading">Detener descarga</string>
     <string name="delete_downloads">Eliminar descargas</string>
     <string name="search_sp">Páginas:</string>
@@ -265,9 +263,6 @@
     <string name="favorited">Categoría</string>
     <string name="not_favorited">No En categorías</string>
     <string name="remember_favorite_collection">Recordar categoría</string>
-    <string name="remove_from_favorite_success">Eliminado de categorías</string>
-    <string name="add_to_favorite_failure">No se ha podido Agregar a categoría</string>
-    <string name="remove_from_favorite_failure">Error al borrar de categorías</string>
     <string name="copy_tag">Copiar etiqueta</string>
 
     <!-- Rating -->
@@ -920,7 +915,6 @@
 
     <!-- Auto-generated missing translations -->
     <string name="add_favorites_dialog_title">Añadir a favoritos</string>
-    <string name="add_to_favorite_success">Añadido a favoritos</string>
     <string name="app_language_de" translatable="false">Deutsch</string>
     <string name="app_language_en" translatable="false">English</string>
     <string name="app_language_es" translatable="false">Español</string>
@@ -1069,6 +1063,7 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_loading_categories">Cargando categorías…</string>
     <string name="lrr_no_static_categories">No hay categorías estáticas disponibles</string>
     <string name="lrr_add_to_category">Añadir a categoría</string>
+    <string name="lrr_menu_categories">Categorías</string>
     <string name="lrr_category_info_suffix"> etc.</string>
     <string name="lrr_category_count_suffix"> categorías</string>
     <string name="lrr_category_updated_toast">Categoría actualizada</string>
