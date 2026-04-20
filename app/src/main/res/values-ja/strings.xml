@@ -440,7 +440,6 @@
     <string name="settings_eh_theme_light">ライト</string>
     <string name="settings_eh_theme_dark">ダーク</string>
     <string name="settings_eh_theme_black">ブラック</string>
-    <string name="settings_eh_apply_nav_bar_theme_color">テーマカラーをナビゲーションバーに適用する</string>
     <string name="settings_eh_gallery_site">ギャラリーサイト</string>
     <string name="settings_eh_launch_page">アプリのデフォルト画面</string>
     <string name="settings_eh_list_mode">リスト表示モード</string>
@@ -536,8 +535,6 @@
     <string name="settings_download_clean_redundancy_no_redundancy">不要なファイルが見つかりませんでした</string>
     <string name="settings_download_clean_redundancy_done">%d 件のファイルを削除しました</string>
     <string name="settings_advanced">その他の設定</string>
-    <string name="settings_advanced_save_parse_error_body">解析に失敗時に HTML ファイルを保存する</string>
-    <string name="settings_advanced_save_parse_error_body_summary">HTML ファイルに個人情報がある可能性があります</string>
     <string name="settings_advanced_save_crash_log">クラッシュレポートを保存する</string>
     <string name="settings_advanced_save_crash_log_summary">クラッシュレポートはバグの修正に役立ちます</string>
     <string name="settings_advanced_dump_logcat">ログをエクスポート</string>

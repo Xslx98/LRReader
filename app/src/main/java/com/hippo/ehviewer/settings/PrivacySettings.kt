@@ -1,10 +1,9 @@
 package com.hippo.ehviewer.settings
 
-import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.Settings
 
 /**
- * Privacy and diagnostics settings: analytics consent, crash logging, parse error saving.
+ * Privacy and diagnostics settings: analytics consent, crash logging.
  */
 object PrivacySettings {
 
@@ -28,17 +27,6 @@ object PrivacySettings {
 
     @JvmStatic
     fun putEnableAnalytics(value: Boolean) = Settings.putBoolean(KEY_ENABLE_ANALYTICS, value)
-
-    // --- Save Parse Error Body ---
-    @JvmField
-    val KEY_SAVE_PARSE_ERROR_BODY = "save_parse_error_body"
-    private val DEFAULT_SAVE_PARSE_ERROR_BODY = EhApplication.BETA
-
-    @JvmStatic
-    fun getSaveParseErrorBody(): Boolean = Settings.getBoolean(KEY_SAVE_PARSE_ERROR_BODY, DEFAULT_SAVE_PARSE_ERROR_BODY)
-
-    @JvmStatic
-    fun putSaveParseErrorBody(value: Boolean) = Settings.putBoolean(KEY_SAVE_PARSE_ERROR_BODY, value)
 
     // --- Save Crash Log ---
     private const val KEY_SAVE_CRASH_LOG = "save_crash_log"

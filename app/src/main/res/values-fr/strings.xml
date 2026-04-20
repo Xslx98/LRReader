@@ -533,8 +533,6 @@
     <string name="settings_download_clean_redundancy_done">Nettoyage complété avec succès, %d objets effacés</string>
 
     <string name="settings_advanced">Avancé</string>
-    <string name="settings_advanced_save_parse_error_body">Enrég. les HTMLs avec erreurs</string>
-    <string name="settings_advanced_save_parse_error_body_summary">Le fichier HTML pourrait contenir des informations personnelles</string>
     <string name="settings_advanced_save_crash_log">Enrégistrer le rapport crash</string>
     <string name="settings_advanced_save_crash_log_summary">Les rapports crash aident le développeur à correcter les bugs</string>
     <string name="settings_advanced_dump_logcat">Sauvegarder le journal logcat</string>
@@ -733,7 +731,6 @@
     <string name="settings_eh_theme_light">Blanc</string>
     <string name="settings_eh_theme_dark">Gris</string>
     <string name="settings_eh_theme_black">Noir</string>
-    <string name="settings_eh_apply_nav_bar_theme_color">Appli. la couleur du théme à la barre de navi.</string>
     <string name="settings_eh_theme_auto_switch">Suivre le mode sombre du système</string>
     <string name="settings_about_donate_message">Faire un don ne verrouille aucune fonction cachée, mais vous m\'aiderez à maintenir cette application.</string>
     <string name="settings_about_donate_alipay">Alipay</string>
