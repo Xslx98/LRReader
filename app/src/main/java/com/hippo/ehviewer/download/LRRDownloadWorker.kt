@@ -79,9 +79,14 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
 
     private suspend fun doDownload() {
         val client = ServiceRegistry.networkModule.okHttpClient
-        // Use longer timeout for page downloads (large archives may need extraction time)
+        // Dedicated client for page body GETs:
+        //  - 30 s read timeout (large archives may need on-the-fly extraction)
+        //  - .cache(null): page responses are not HTTP-cacheable and we are
+        //    writing to disk ourselves; skipping the shared 200 MB http_cache
+        //    avoids pointless cache-layer bookkeeping per request
         val pageClient = client.newBuilder()
             .readTimeout(30, TimeUnit.SECONDS)
+            .cache(null)
             .build()
 
         // Step 1: Extract archive to get page list
@@ -221,6 +226,11 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         val request = Request.Builder()
             .url(pageUrl)
             .get()
+            // Image bodies (JPEG/PNG/WebP/…) are already compressed; OkHttp's
+            // default `Accept-Encoding: gzip` wastes server CPU if the server
+            // honours it, and — worse — transparent gzip decoding loses the
+            // response's Content-Length, breaking our progress math.
+            .header("Accept-Encoding", "identity")
             .build()
 
         val tmpFile = File(outFile.parent, "${outFile.name}.${UUID.randomUUID()}.tmp")
