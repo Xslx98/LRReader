@@ -7,6 +7,7 @@ import com.hippo.ehviewer.Hosts
 import okhttp3.Cache
 import okhttp3.ConnectionPool
 import okhttp3.CookieJar
+import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -39,8 +40,24 @@ class NetworkModule(private val context: Context) : INetworkModule, Cacheable {
 
     override val proxySelector: EhProxySelector by lazy { EhProxySelector() }
 
+    /**
+     * Shared dispatcher. The OkHttp default caps concurrent requests to the
+     * same host at 5, which throttled parallel page downloads once multiple
+     * archives ran at once (or when a single archive exceeded
+     * `PARALLEL_PAGES=4`). LANraragi's Hypnotoad (4 workers × 1000
+     * connections) tolerates far more; raise the per-host cap so our own
+     * parallelism settings actually take effect.
+     */
+    private val dispatcher: Dispatcher by lazy {
+        Dispatcher().apply {
+            maxRequests = 128
+            maxRequestsPerHost = 16
+        }
+    }
+
     override val okHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .dispatcher(dispatcher)
             .connectionPool(ConnectionPool(10, 5, TimeUnit.MINUTES))
             .followRedirects(true)
             .followSslRedirects(true)
