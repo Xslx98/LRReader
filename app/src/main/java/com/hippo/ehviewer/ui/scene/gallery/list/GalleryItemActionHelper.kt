@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.hippo.ehviewer.ui.dialog.SelectItemWithIconAdapter
 import com.hippo.ehviewer.ui.scene.BaseScene
+import com.hippo.ehviewer.ui.scene.download.DownloadLabelHelper
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.scene.Announcer
 import com.hippo.scene.SceneFragment
@@ -146,13 +147,10 @@ class GalleryItemActionHelper(private val callback: Callback) {
                     }
                     1 -> { // Download
                         if (downloaded) {
-                            AlertDialog.Builder(context)
-                                .setTitle(R.string.download_remove_dialog_title)
-                                .setMessage(callback.getString(R.string.download_remove_dialog_message, gi.title ?: ""))
-                                .setPositiveButton(android.R.string.ok) { _, _ ->
-                                    downloadManager.deleteDownload(gi.arcid)
-                                }
-                                .show()
+                            val galleryInfo = gi.toGalleryInfo()
+                            DownloadLabelHelper.showDeleteDialog(context, galleryInfo) { deleteFiles ->
+                                DownloadLabelHelper.performDelete(galleryInfo, deleteFiles)
+                            }
                         } else {
                             (activity as? MainActivity)?.let {
                                 CommonOperations.startDownload(it, gi.toGalleryInfo(), false)
