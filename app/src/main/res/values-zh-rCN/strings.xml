@@ -550,8 +550,6 @@
     <string name="settings_download_continue">继续</string>
     <string name="settings_download_multi_thread_download">下载线程数</string>
     <string name="settings_download_multi_thread_download_summary">最多同时下载 %s 张图片</string>
-    <string name="settings_download_preload_image">预载图片</string>
-    <string name="settings_download_preload_image_summary">向后预载 %s 张图片</string>
     <string name="settings_download_image_resolution">图片分辨率</string>
     <string name="settings_download_image_resolution_summary">当前: %s，大于 1280x 的分辨率可能不好使</string>
     <string name="settings_download_image_resolution_auto">自动</string>
@@ -895,9 +893,6 @@
     <string name="decompression_failed">解压失败！</string>
     <string name="download_label_archiver">档案</string>
     <string name="cookie_in_clipboard_incorrect">Cookie格式不正确</string>
-    <string name="settings_download_timeout">下载超时时间</string>
-    <string name="download_timeout_unlimited">无上限</string>
-    <string name="settings_download_timeout_summary">%s 秒，下载一张图片的最大可用时长。</string>
     <string name="have_new_version">点击查看新的画廊版本</string>
     <string name="archiver_downloading">档案下载中 %s</string>
     <string name="order">排序</string>

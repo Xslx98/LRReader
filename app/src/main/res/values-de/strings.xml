@@ -463,8 +463,6 @@
     <string name="settings_download_media_scan_summary_off">Meisten Galerie-Apps ignorieren die Bilder im Downloadpfad</string>
     <string name="settings_download_multi_thread_download">Multi-Thread-Download</string>
     <string name="settings_download_multi_thread_download_summary">Bis zu %s Bild(er)</string>
-    <string name="settings_download_preload_image">Bilder vorabladen</string>
-    <string name="settings_download_preload_image_summary">Die nächste %s Bilder vorabladen</string>
     <string name="settings_download_image_resolution">Auflösung der Bilder</string>
     <string name="settings_download_image_resolution_summary">%s. Auflösung über 1280x funktioniert möglicherweise nicht</string>
     <string name="settings_download_image_resolution_auto">Automatisch</string>
@@ -798,9 +796,6 @@
     <string name="decompression_failed">Dekomprimierung fehlgeschlagen!</string>
     <string name="download_label_archiver">Archiver</string>
     <string name="cookie_in_clipboard_incorrect">Cookie-Format ist falsch</string>
-    <string name="settings_download_timeout">Download-Timeout</string>
-    <string name="download_timeout_unlimited">Unbegrenzt</string>
-    <string name="settings_download_timeout_summary">%s(S), Maximale Zeit zum Herunterladen eines Bildes.</string>
     <string name="have_new_version">Klicken, um neue Galerieversion zu sehen</string>
     <string name="archiver_downloading">Archiv wird heruntergeladen %s</string>
     <string name="order">Sortierung</string>

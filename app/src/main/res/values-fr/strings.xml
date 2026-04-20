@@ -512,8 +512,6 @@
     <string name="settings_download_media_scan_summary_off">La plupart d\'applications galerie ignorent les images dans le chemin de téléchargement</string>
     <string name="settings_download_multi_thread_download">Téléchargement multi-thread</string>
     <string name="settings_download_multi_thread_download_summary">Jusqu\'à %s image(s)</string>
-    <string name="settings_download_preload_image">Charger les images d\'avance</string>
-    <string name="settings_download_preload_image_summary">Charger les prochaine %s images</string>
     <string name="settings_download_image_resolution">Resolution d\'image</string>
     <string name="settings_download_image_resolution_summary">%s, résolutions supérieures à 1280x risquent de ne pas fonctionner</string>
     <string name="settings_download_image_resolution_auto">Auto</string>
@@ -781,9 +779,6 @@
     <string name="decompression_failed">Échec de la décompression !</string>
     <string name="download_label_archiver">Archiver</string>
     <string name="cookie_in_clipboard_incorrect">Le format du cookie est incorrect</string>
-    <string name="settings_download_timeout">Délai d\'expiration du téléchargement</string>
-    <string name="download_timeout_unlimited">Illimité</string>
-    <string name="settings_download_timeout_summary">%s (S), Temps maximum autorisé pour télécharger une image.</string>
     <string name="have_new_version">Cliquez pour voir la nouvelle version de la galerie</string>
     <string name="archiver_downloading">Téléchargement d\'archive %s</string>
     <string name="order">Ordre</string>

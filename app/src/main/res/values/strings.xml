@@ -665,8 +665,6 @@
     <string name="settings_download_media_scan_summary_off">Most gallery apps will ignore pictures in the download path</string>
     <string name="settings_download_multi_thread_download">Multi-threaded download</string>
     <string name="settings_download_multi_thread_download_summary">Up to %s images</string>
-    <string name="settings_download_preload_image">Preload images</string>
-    <string name="settings_download_preload_image_summary">Preload %s images ahead</string>
     <string name="settings_download_image_resolution">Image resolution</string>
     <string name="settings_download_image_resolution_summary">Currently %s. Resolutions above 1280x may not work</string>
     <string name="settings_download_image_resolution_auto">Auto</string>
@@ -1014,9 +1012,6 @@
     <string name="decompression_failed">Decompression failed!</string>
     <string name="download_label_archiver">Archiver</string>
     <string name="cookie_in_clipboard_incorrect">Cookie format is incorrect</string>
-    <string name="settings_download_timeout">Download Timeout</string>
-    <string name="download_timeout_unlimited">Unlimited</string>
-    <string name="settings_download_timeout_summary">%s seconds, the maximum time allowed to download a single image.</string>
     <string name="have_new_version">Click to see new gallery version</string>
     <string name="appwidget_text">EXAMPLE</string>
     <string name="add_widget">Add widget</string>
