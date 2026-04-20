@@ -481,7 +481,6 @@
     <string name="settings_eh_theme_light">Light</string>
     <string name="settings_eh_theme_dark">Dark</string>
     <string name="settings_eh_theme_black">Black</string>
-    <string name="settings_eh_apply_nav_bar_theme_color">Apply theme color to navigation bar</string>
     <string name="settings_eh_gallery_site">Gallery site</string>
     <string name="settings_eh_launch_page">Launch page</string>
     <string name="settings_eh_list_mode">List mode</string>
@@ -574,8 +573,6 @@
     <string name="settings_download_clean_redundancy_done">Redundancy cleaning completed, clean-up %d items totally</string>
 
     <string name="settings_advanced">Advanced</string>
-    <string name="settings_advanced_save_parse_error_body">Save html content when parsing error</string>
-    <string name="settings_advanced_save_parse_error_body_summary">Html content may be privacy-sensitive</string>
     <string name="settings_advanced_save_crash_log">Save crash log when app crashes</string>
     <string name="settings_advanced_save_crash_log_summary">Crash logs help developers fix bugs</string>
     <string name="settings_advanced_dump_logcat">Dump logcat</string>
