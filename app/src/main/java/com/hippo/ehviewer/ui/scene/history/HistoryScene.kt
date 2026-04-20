@@ -54,6 +54,7 @@ import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.ehviewer.ui.scene.ToolbarScene
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
+import com.hippo.ehviewer.ui.scene.gallery.detail.CategoryDialogHelper
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.ehviewer.ui.scene.gallery.list.EnterGalleryDetailTransaction
 import com.hippo.ehviewer.widget.SimpleRatingView
@@ -296,17 +297,16 @@ class HistoryScene : ToolbarScene(),
         val activity = activity2 ?: return false
         val gi = viewModel.getRawHistoryInfo(position) ?: return false
 
+        val items = arrayOf<CharSequence>(
+            context.getString(R.string.download),
+            context.getString(R.string.lrr_menu_categories),
+        )
         AlertDialog.Builder(context)
             .setTitle(LRRUtils.getSuitableTitle(gi))
-            .setItems(R.array.gallery_list_menu_entries) { _, which ->
+            .setItems(items) { _, which ->
                 when (which) {
-                    0 -> // Download
-                        CommonOperations.startDownload(activity, gi, false)
-                    1 -> // Favorites
-                        CommonOperations.addToFavorites(
-                            activity, gi,
-                            AddToFavoriteListener(this@HistoryScene)
-                        )
+                    0 -> CommonOperations.startDownload(activity, gi, false)
+                    1 -> CategoryDialogHelper.showCategoryDialog(activity, gi.arcid, null)
                 }
             }.show()
         return true
@@ -421,18 +421,5 @@ class HistoryScene : ToolbarScene(),
 
     companion object {
         private const val REQUEST_CODE_GALLERY_DETAIL = 200
-    }
-
-    private class AddToFavoriteListener(
-        private val scene: HistoryScene
-    ) : CommonOperations.FavoriteListener {
-
-        override fun onSuccess() {
-            scene.showTip(R.string.add_to_favorite_success, LENGTH_SHORT)
-        }
-
-        override fun onFailure(e: Exception) {
-            scene.showTip(R.string.add_to_favorite_failure, LENGTH_LONG)
-        }
     }
 }

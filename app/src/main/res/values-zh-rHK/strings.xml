@@ -253,8 +253,6 @@
     <string name="search_se">顯示被刪除的畫廊</string>
     <string name="select_image_first">請先選擇圖片</string>
 
-    <string name="add_to_favourites">分類</string>
-    <string name="remove_from_favourites">移除分類</string>
 
     <string name="stop_downloading">停止下載</string>
     <string name="delete_downloads">刪除下載</string>
@@ -318,10 +316,6 @@
     <string name="not_favorited">未分類</string>
     <string name="add_favorites_dialog_title">新增分類</string>
     <string name="remember_favorite_collection">記住分類</string>
-    <string name="add_to_favorite_success">已新增至分類</string>
-    <string name="remove_from_favorite_success">移除分類</string>
-    <string name="add_to_favorite_failure">新增分類失敗</string>
-    <string name="remove_from_favorite_failure">移除分類失敗</string>
     <string name="copy_tag">複製</string>
 
     <!-- Rating -->
@@ -1101,6 +1095,7 @@
     <string name="lrr_loading_categories">載入分類中…</string>
     <string name="lrr_no_static_categories">沒有可用的靜態分類</string>
     <string name="lrr_add_to_category">加入分類</string>
+    <string name="lrr_menu_categories">分類</string>
     <string name="lrr_category_info_suffix"> 等</string>
     <string name="lrr_category_count_suffix"> 個分類</string>
     <string name="lrr_category_updated_toast">分類已更新</string>
