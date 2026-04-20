@@ -33,9 +33,6 @@
 
     <!-- LANraragi: removed download_thread, preload_image, list_pagination, image_size, download_origin_image, download_timeout, download_order_asc -->
 
-
-
-
     <com.hippo.ehviewer.preference.CleanRedundancyPreference
         android:key="clean_redundancy"
         android:summary="@string/settings_download_clean_redundancy_summary"
@@ -48,26 +45,6 @@
         android:summary="@string/settings_download_clean_invalid_download_summary"
         android:title="@string/settings_download_clean_invalid_download"
         app:allowDividerAbove="true"
-        app:iconSpaceReserved="false" />
-
-    <com.hippo.preference.ListPreference
-        android:defaultValue="5"
-        android:key="preload_image"
-        android:summary="@string/settings_download_preload_image_summary"
-        android:title="@string/settings_download_preload_image"
-        app:allowDividerAbove="true"
-        app:entries="@array/preload_image_entries"
-        app:entryValues="@array/preload_image_entry_values"
-        app:iconSpaceReserved="false" />
-
-    <com.hippo.preference.ListPreference
-        android:defaultValue="0"
-        android:key="download_timeout"
-        android:summary="@string/settings_download_timeout_summary"
-        android:title="@string/settings_download_timeout"
-        app:allowDividerAbove="true"
-        app:entries="@array/download_timeout_entries"
-        app:entryValues="@array/download_timeout_entries_values"
         app:iconSpaceReserved="false" />
 
     <Preference

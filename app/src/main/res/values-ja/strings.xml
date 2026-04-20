@@ -516,8 +516,6 @@
     <string name="settings_download_media_scan_summary_off">ほとんどのギャラリーアプリはダウンロードパスの内容を表示しません</string>
     <string name="settings_download_multi_thread_download">ダウンロードスレッド数</string>
     <string name="settings_download_multi_thread_download_summary">同時に最大 %s 枚の画像をダウンロードします</string>
-    <string name="settings_download_preload_image">画像をプリロード</string>
-    <string name="settings_download_preload_image_summary">%s 枚の画像をプリロードします</string>
     <string name="settings_download_image_resolution">画像の解像度</string>
     <string name="settings_download_image_resolution_summary">現在は「%s」です。1280x を超える解像度は不安定になります</string>
     <string name="settings_download_image_resolution_auto">自動</string>
@@ -810,9 +808,6 @@
     <string name="decompression_failed">展開に失敗しました！</string>
     <string name="download_label_archiver">アーカイブ</string>
     <string name="cookie_in_clipboard_incorrect">Cookie の形式が正しくありません</string>
-    <string name="settings_download_timeout">ダウンロードのタイムアウト</string>
-    <string name="download_timeout_unlimited">無制限</string>
-    <string name="settings_download_timeout_summary">画像のダウンロードを許可する最大時間 (%s 秒単位)</string>
     <string name="have_new_version">タップで新しいギャラリーのバージョンを表示</string>
     <string name="appwidget_text">ウィジェットテキスト</string>
     <string name="add_widget">ウィジェットを追加</string>

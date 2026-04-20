@@ -102,16 +102,6 @@ object DownloadSettings {
     @JvmStatic
     fun putDefaultDownloadLabel(value: String?) = Settings.putString(KEY_DEFAULT_DOWNLOAD_LABEL, value)
 
-    // --- Preload Image ---
-    private const val KEY_PRELOAD_IMAGE = "preload_image"
-    private const val DEFAULT_PRELOAD_IMAGE = 5
-
-    @JvmStatic
-    fun getPreloadImage(): Int = Settings.getIntFromStr(KEY_PRELOAD_IMAGE, DEFAULT_PRELOAD_IMAGE)
-
-    @JvmStatic
-    fun putPreloadImage(value: Int) = Settings.putIntToStr(KEY_PRELOAD_IMAGE, value)
-
     // --- Download Delay ---
     private const val KEY_DOWNLOAD_DELAY = "download_delay"
     private const val DEFAULT_DOWNLOAD_DELAY = 0
@@ -161,16 +151,6 @@ object DownloadSettings {
     @JvmStatic
     fun setConcurrentDownloads(value: Int) =
         Settings.putIntToStr(KEY_CONCURRENT_DOWNLOADS, value.coerceIn(1, 3))
-
-    // --- Download Timeout ---
-    const val KEY_DOWNLOAD_TIMEOUT = "download_timeout"
-    const val DEFAULT_DOWNLOAD_TIMEOUT = 0
-
-    @JvmStatic
-    fun getDownloadTimeout(): Int = Math.max(Settings.getIntFromStr(KEY_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_TIMEOUT), DEFAULT_DOWNLOAD_TIMEOUT)
-
-    @JvmStatic
-    fun setDownloadTimeout(value: Int) = Settings.putIntToStr(KEY_DOWNLOAD_TIMEOUT, value)
 
     // --- Remove Image Files (delete-with-files checkbox default) ---
     private const val KEY_REMOVE_IMAGE_FILES = "include_pic"

@@ -563,8 +563,6 @@
     <string name="settings_download_continue">계속</string>
     <string name="settings_download_multi_thread_download">다중 스레드 다운로드</string>
     <string name="settings_download_multi_thread_download_summary">%s개 이미지까지</string>
-    <string name="settings_download_preload_image">이미지 미리 불러오기</string>
-    <string name="settings_download_preload_image_summary">다음 %s개 이미지를 미리 불러옴</string>
     <string name="settings_download_image_resolution">이미지 해상도</string>
     <string name="settings_download_image_resolution_summary">1280x 이상으로 설정하면 작동하지 않을 수 있습니다. 현재 설정\u003a \u005b%s\u005d</string>
     <string name="settings_download_image_resolution_auto">자동</string>
@@ -850,9 +848,6 @@
     <string name="decompression_failed">압축 해제 실패!</string>
     <string name="download_label_archiver">아카이버</string>
     <string name="cookie_in_clipboard_incorrect">쿠키 형식이 올바르지 않습니다</string>
-    <string name="settings_download_timeout">다운로드 타임아웃</string>
-    <string name="download_timeout_unlimited">무제한</string>
-    <string name="settings_download_timeout_summary">%s(초), 이미지 다운로드에 허용되는 최대 시간.</string>
     <string name="have_new_version">새 갤러리 버전 보기</string>
     <string name="appwidget_text">위젯 텍스트</string>
     <string name="add_widget">위젯 추가</string>

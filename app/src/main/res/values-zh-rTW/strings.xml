@@ -556,8 +556,6 @@
     <string name="settings_download_continue">繼續</string>
     <string name="settings_download_multi_thread_download">同時多重下載</string>
     <string name="settings_download_multi_thread_download_summary">最多同時下載 %s 張圖片</string>
-    <string name="settings_download_preload_image">預載圖片</string>
-    <string name="settings_download_preload_image_summary">向後預載 %s 張圖片</string>
     <string name="settings_download_image_resolution">圖片解析度</string>
     <string name="settings_download_image_resolution_summary">%s，大於 1280x 的解析度可能不會生效</string>
     <string name="settings_download_image_resolution_auto">自動</string>
@@ -900,9 +898,6 @@
     <string name="decompression_failed">解壓縮失敗！</string>
     <string name="download_label_archiver">歸檔器</string>
     <string name="cookie_in_clipboard_incorrect">Cookie 格式不正確</string>
-    <string name="settings_download_timeout">下載逾時</string>
-    <string name="download_timeout_unlimited">無限制</string>
-    <string name="settings_download_timeout_summary">%s（秒），允許下載一張圖片的最大時間。</string>
     <string name="have_new_version">點擊查看新圖庫版本</string>
     <string name="appwidget_text">範例</string>
     <string name="add_widget">新增小工具</string>
