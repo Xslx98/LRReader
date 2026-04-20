@@ -17,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import com.hippo.ehviewer.dao.DownloadLabel
 import com.hippo.ehviewer.download.DownloadInfoListener
 import com.hippo.ehviewer.download.DownloadManager
+import com.hippo.ehviewer.download.ProgressSnapshot
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.ehviewer.spider.SpiderInfo
 import com.hippo.ehviewer.sync.DownloadListInfosExecutor
@@ -31,7 +32,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 
 /**
  * Sealed interface representing all download-related UI events forwarded from
@@ -66,42 +66,28 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     val downloadManager: DownloadManager = ServiceRegistry.dataModule.downloadManager
 
     /**
-     * Room flow of the persisted download list. Emits whenever the underlying
-     * table structure changes (add / remove / state column). Progress updates
-     * are supplied via [DownloadManager.progressTracker] and merged into
-     * [downloadListFlow] below.
-     *
-     * Exposed for tests and legacy call sites; new code should subscribe to
-     * [downloadList] (already enriched + label-filtered).
+     * Room flow of the persisted download list. Emits on every structural
+     * change (add / remove / label / state / title / time). Transient progress
+     * (speed / downloaded / total / remaining) is not carried here — it lives
+     * on [progressMap] below. Split architecture per ADR-001 Option D.
      */
     val downloadsFlow: Flow<List<DownloadInfo>> =
         ServiceRegistry.dataModule.downloadDbRepository.observeDownloads()
 
     /**
-     * Room-structure + live-progress combined flow. Emits on every Room
-     * change AND on every [DownloadProgressTracker] update. The emitted list
-     * uses the same [DownloadInfo] instances Room gave us, mutated in place
-     * with the latest tracker values (speed / finished / downloaded / total /
-     * remaining). This is safe because Room gives us a fresh object per
-     * emission (see `GalleryInfoDao.observeDownloadsByServer`).
+     * Live per-archive progress map, pass-through from
+     * [DownloadManager.progressTracker]. The [DownloadsScene] subscribes to
+     * this separately and dispatches `notifyItemChanged(pos, PAYLOAD_PROGRESS)`
+     * so only the progress views repaint on a tick — the list itself does
+     * not need to re-emit for a progress update.
      *
-     * Part of ADR-001 Option D (W35-3b).
+     * This split is the root cause fix for the progress-freeze bug introduced
+     * by the earlier mutating-combine design (W35-3b post-mortem): sharing
+     * mutable [DownloadInfo] instances across Flow emissions defeats
+     * [MutableStateFlow] equality-based conflation and DiffUtil alike.
      */
-    private val downloadListFlow: Flow<List<DownloadInfo>> =
-        combine(downloadsFlow, downloadManager.progressTracker.progressFlow) { list, progressMap ->
-            if (progressMap.isEmpty()) {
-                list
-            } else {
-                list.onEach { info ->
-                    val snap = progressMap[info.arcid] ?: return@onEach
-                    info.speed = snap.speed
-                    info.finished = snap.finished
-                    info.downloaded = snap.downloaded
-                    info.total = snap.total
-                    info.remaining = snap.remaining
-                }
-            }
-        }
+    val progressMap: StateFlow<Map<String, ProgressSnapshot>> =
+        downloadManager.progressTracker.progressFlow
 
     // -------------------------------------------------------------------------
     // DownloadInfoListener → sealed DownloadUiEvent forwarding
@@ -115,27 +101,24 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     // -------------------------------------------------------------------------
     // Lifecycle: register/unregister listener
     //
-    // NOTE: [roomFlowJob] must be declared here (a property with default null)
-    // but the [init] block that starts collection is placed AFTER all other
-    // state fields (labels, lists, search, etc.) because
-    // [startObservingDownloadListFlow] reads [_currentLabel] inside its
-    // collectLatest lambda. Although the lambda runs asynchronously, the
-    // `combine` source is a StateFlow (progressTracker) that emits an initial
-    // value synchronously on subscribe — keep field-initialization order in
-    // mind if reshuffling this file.
+    // [roomFlowJob] is started from [init] after all state fields are set up
+    // because [startObservingRoomFlow] reads [_currentLabel] inside its
+    // collectLatest lambda. Kept as a property so [updateForLabel] can
+    // restart collection when the label changes.
     // -------------------------------------------------------------------------
 
     private var roomFlowJob: Job? = null
 
     /**
-     * Subscribe to the enriched [downloadListFlow], filter by the active
-     * label, and publish to [_downloadList] + [_backList]. Restarted when
-     * the label changes via [updateForLabel].
+     * Subscribe to [downloadsFlow], filter by the active label, and publish to
+     * [_downloadList] + [_backList]. Emissions are structural only — progress
+     * ticks flow via [progressMap]. Restarted when the label changes via
+     * [updateForLabel].
      */
-    private fun startObservingDownloadListFlow() {
+    private fun startObservingRoomFlow() {
         roomFlowJob?.cancel()
         roomFlowJob = viewModelScope.launch {
-            downloadListFlow.collectLatest { allDownloads ->
+            downloadsFlow.collectLatest { allDownloads ->
                 val label = _currentLabel.value
                 val filtered = if (label == null) {
                     allDownloads.filter { it.label == null }
@@ -183,7 +166,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
 
     init {
         downloadManager.addDownloadInfoListener(this)
-        startObservingDownloadListFlow()
+        startObservingRoomFlow()
     }
 
     // -------------------------------------------------------------------------
@@ -253,9 +236,9 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
      */
     fun updateForLabel() {
         DownloadSettings.putRecentDownloadLabel(_currentLabel.value)
-        // Re-start collection — collectLatest in startObservingDownloadListFlow()
+        // Re-start collection — collectLatest in startObservingRoomFlow()
         // will pick up the new _currentLabel.value on the next emission.
-        startObservingDownloadListFlow()
+        startObservingRoomFlow()
     }
 
     // -------------------------------------------------------------------------

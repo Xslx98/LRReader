@@ -482,25 +482,13 @@ class DownloadsViewModelTest {
     }
 
     // -------------------------------------------------------------------------
-    // W35-3b: Flow-driven enrichment tests
+    // W35-3b post-mortem: split Room (structural) from progressMap (transient)
     // -------------------------------------------------------------------------
 
     @Test
-    fun `downloadList reflects tracker progress for matching arcid`() = runBlocking {
-        // Arrange: one download in DB with default label, progress tracker has a live snapshot
+    fun `progressMap exposes tracker snapshots by arcid`() = runBlocking {
         val dm = vm.downloadManager
-        val info = DownloadInfo().apply {
-            arcid = "arc-prog-1"
-            title = "prog test"
-            label = null
-            state = DownloadInfo.STATE_DOWNLOAD
-            time = 1_000L
-        }
-        dm.addDownloadInfo(info, null)
-        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
-        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
 
-        // Act: write a ProgressSnapshot through the tracker
         dm.progressTracker.update(
             "arc-prog-1",
             speed = 12345L,
@@ -511,15 +499,54 @@ class DownloadsViewModelTest {
         )
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
 
-        // Assert: the ViewModel's downloadList carries the enriched values
-        val list = vm.downloadList.value
-        val found = list.firstOrNull { it.arcid == "arc-prog-1" }
-        assertTrue("expected arc-prog-1 in downloadList", found != null)
-        assertEquals(12345L, found!!.speed)
-        assertEquals(3, found.finished)
-        assertEquals(3, found.downloaded)
-        assertEquals(10, found.total)
-        assertEquals(7777L, found.remaining)
+        val snap = vm.progressMap.value["arc-prog-1"]
+        assertTrue("expected arc-prog-1 in progressMap", snap != null)
+        assertEquals(12345L, snap!!.speed)
+        assertEquals(3, snap.finished)
+        assertEquals(3, snap.downloaded)
+        assertEquals(10, snap.total)
+        assertEquals(7777L, snap.remaining)
+    }
+
+    @Test
+    fun `downloadList does not carry tracker progress fields`() = runBlocking {
+        // Structural split: the Room-emitted DownloadInfo in downloadList
+        // must not receive mutations from the progress tracker. UI reads
+        // progress via progressMap / DownloadManager.progressFor instead.
+        val dm = vm.downloadManager
+        val info = DownloadInfo().apply {
+            arcid = "arc-struct"
+            title = "structural only"
+            label = null
+            state = DownloadInfo.STATE_DOWNLOAD
+            time = 1_000L
+        }
+        dm.addDownloadInfo(info, null)
+        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+
+        dm.progressTracker.update(
+            "arc-struct",
+            speed = 99999L,
+            finished = 7,
+            downloaded = 7,
+            total = 20,
+            remaining = 1234L
+        )
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+
+        val emitted = vm.downloadList.value.firstOrNull { it.arcid == "arc-struct" }
+        assertTrue("expected arc-struct in downloadList", emitted != null)
+        // The Room-emitted instance must not be mutated by the tracker. Its
+        // @Ignore fields should remain at their DB-default values (speed
+        // defaults to 0 via primitive-long init; the authoritative 99999L
+        // lives on progressMap only).
+        assertEquals(0L, emitted!!.speed)
+        assertEquals(0, emitted.finished)
+        assertEquals(0, emitted.downloaded)
+        // progressMap has the live values.
+        assertEquals(99999L, vm.progressMap.value["arc-struct"]?.speed)
+        assertEquals(7, vm.progressMap.value["arc-struct"]?.finished)
     }
 
     @Test
@@ -557,24 +584,22 @@ class DownloadsViewModelTest {
     }
 
     @Test
-    fun `downloadList re-emits when tracker updates without Room change`() = runBlocking {
+    fun `progressMap re-emits every tracker update`() = runBlocking {
         val dm = vm.downloadManager
-        val info = DownloadInfo().apply {
-            arcid = "arc-ticks"; title = "ticks"; label = null
-            state = DownloadInfo.STATE_DOWNLOAD; time = 9_000L
+        val seen = mutableListOf<Long>()
+        val job = CoroutineScope(Dispatchers.Unconfined).launch {
+            vm.progressMap.collect { map -> map["arc-ticks"]?.speed?.let { seen.add(it) } }
         }
-        dm.addDownloadInfo(info, null)
-        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
-        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
 
         dm.progressTracker.update("arc-ticks", speed = 100L)
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
-        val first = vm.downloadList.value.first { it.arcid == "arc-ticks" }.speed
-        assertEquals(100L, first)
-
         dm.progressTracker.update("arc-ticks", speed = 200L)
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
-        val second = vm.downloadList.value.first { it.arcid == "arc-ticks" }.speed
-        assertEquals(200L, second)
+        dm.progressTracker.update("arc-ticks", speed = 300L)
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+
+        job.cancel()
+        // Initial emission (empty map) adds no entry; three updates add three speeds.
+        assertEquals(listOf(100L, 200L, 300L), seen)
     }
 }
