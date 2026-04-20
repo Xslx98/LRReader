@@ -21,9 +21,11 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okio.EOFException
+import okio.buffer
+import okio.sink
 import java.io.File
 import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.io.IOException
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -164,14 +166,15 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                         }
 
                         try {
+                            // downloadPage validates image magic in-stream (first
+                            // 16 bytes peeked from the HTTP response before the
+                            // body is written). If that check fails it throws
+                            // before the tmp file is renamed, so here we only
+                            // verify the final file exists and meets MIN_IMAGE_SIZE.
                             downloadPage(pageClient, pagePath, pageFile, i, total)
                             if (!pageFile.exists() || pageFile.length() < MIN_IMAGE_SIZE) {
                                 if (pageFile.exists()) pageFile.delete()
                                 throw IOException("Downloaded file too small or missing")
-                            }
-                            if (!validateImageFile(pageFile)) {
-                                pageFile.delete()
-                                throw IOException("Downloaded file is not a valid image")
                             }
                             success = true
                             break
@@ -234,58 +237,78 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                 val body = response.body ?: throw IOException("Empty response body")
                 contentLength = body.contentLength()
 
-                body.byteStream().use { inputStream ->
-                    FileOutputStream(tmpFile).use { fos ->
-                        val buffer = ByteArray(BUFFER_SIZE)
-                        var read: Int
-                        // Coalesce progress notifications: each post hops to
-                        // the main thread via DownloadEventBus, so emitting one
-                        // per 256 KB chunk (~160/s on LAN gigabit with 8
-                        // parallel pages) was starving the UI. Accumulate
-                        // bytes locally and flush at most every
-                        // PROGRESS_NOTIFY_INTERVAL_MS, plus a final flush when
-                        // the stream ends.
-                        var pendingDelta = 0
-                        var lastNotifyNanos = System.nanoTime()
-                        val intervalNanos =
-                            PROGRESS_NOTIFY_INTERVAL_MS * 1_000_000L
-                        while (inputStream.read(buffer).also { read = it } != -1) {
-                            if (cancelled) {
-                                tmpFile.delete()
-                                throw IOException("Cancelled")
-                            }
-                            fos.write(buffer, 0, read)
-                            totalRead += read
-                            pendingDelta += read
-                            if (totalRead > MAX_PAGE_SIZE) {
-                                tmpFile.delete()
-                                throw IOException(
-                                    "Page exceeds maximum size limit (${MAX_PAGE_SIZE / 1024 / 1024} MB)"
-                                )
-                            }
-                            if (contentLength > 0) {
-                                val now = System.nanoTime()
-                                if (now - lastNotifyNanos >= intervalNanos) {
-                                    listener?.onPageDownload(
-                                        index, contentLength, totalRead, pendingDelta
-                                    )
-                                    pendingDelta = 0
-                                    lastNotifyNanos = now
-                                }
-                            }
+                // Validate image magic bytes in-stream: peek the first 16
+                // bytes from the HTTP response without consuming them, run
+                // the format check, and only then start writing to disk.
+                // Saves a post-write disk re-read and aborts corrupt
+                // responses before a tmp file is even flushed.
+                val source = body.source()
+                val header = try {
+                    source.peek().readByteArray(HEADER_PEEK_BYTES.toLong())
+                } catch (e: EOFException) {
+                    throw IOException(
+                        "Response too small to validate as image", e
+                    )
+                }
+                if (!validateImageHeader(header, header.size)) {
+                    throw IOException("Downloaded data is not a valid image")
+                }
+
+                // Stream body → disk via Okio (OkHttp already exposes its
+                // body as a BufferedSource; going through `byteStream()` +
+                // `FileOutputStream` incurred an extra adapter + byte[]
+                // copy for every chunk).
+                tmpFile.sink().buffer().use { sink ->
+                    // Coalesce progress notifications: each post hops to
+                    // the main thread via DownloadEventBus, so emitting one
+                    // per 256 KB chunk (~160/s on LAN gigabit with 8
+                    // parallel pages) was starving the UI. Accumulate
+                    // bytes locally and flush at most every
+                    // PROGRESS_NOTIFY_INTERVAL_MS, plus a final flush when
+                    // the stream ends.
+                    var pendingDelta = 0
+                    var lastNotifyNanos = System.nanoTime()
+                    val intervalNanos =
+                        PROGRESS_NOTIFY_INTERVAL_MS * 1_000_000L
+                    while (true) {
+                        if (cancelled) {
+                            tmpFile.delete()
+                            throw IOException("Cancelled")
                         }
-                        // Final flush so the last partial interval isn't lost
-                        // (e.g. small pages that finish before the first tick).
-                        if (contentLength > 0 && pendingDelta > 0) {
-                            listener?.onPageDownload(
-                                index, contentLength, totalRead, pendingDelta
+                        val read = source.read(sink.buffer, BUFFER_SIZE.toLong())
+                        if (read == -1L) break
+                        sink.emitCompleteSegments()
+                        totalRead += read
+                        pendingDelta += read.toInt()
+                        if (totalRead > MAX_PAGE_SIZE) {
+                            tmpFile.delete()
+                            throw IOException(
+                                "Page exceeds maximum size limit (${MAX_PAGE_SIZE / 1024 / 1024} MB)"
                             )
                         }
-                        // fos.close() (via use{}) flushes to OS buffer cache.
-                        // Explicit fsync removed: rename-after-close is sufficient
-                        // for download integrity; the OS flushes to disk on its
-                        // own schedule. This avoids 2-50ms latency per page.
+                        if (contentLength > 0) {
+                            val now = System.nanoTime()
+                            if (now - lastNotifyNanos >= intervalNanos) {
+                                listener?.onPageDownload(
+                                    index, contentLength, totalRead, pendingDelta
+                                )
+                                pendingDelta = 0
+                                lastNotifyNanos = now
+                            }
+                        }
                     }
+                    // Final flush so the last partial interval isn't lost
+                    // (e.g. small pages that finish before the first tick).
+                    if (contentLength > 0 && pendingDelta > 0) {
+                        listener?.onPageDownload(
+                            index, contentLength, totalRead, pendingDelta
+                        )
+                    }
+                    // sink.close() (via use{}) flushes buffered segments to
+                    // the underlying FileOutputStream, which in turn flushes
+                    // to the OS buffer cache. Explicit fsync remains
+                    // omitted: rename-after-close is sufficient for download
+                    // integrity; the OS flushes to disk on its own schedule.
                 }
             }
 
@@ -352,61 +375,79 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         // per-host). Going higher starts to stress server CPU / disk on
         // first-time extractions with diminishing throughput gain.
         private const val PARALLEL_PAGES = 8
+        /** Bytes peeked from an image response / file to verify magic. */
+        private const val HEADER_PEEK_BYTES = 16
 
         /**
-         * Validate that a file starts with a known image format magic bytes.
+         * Pure header-byte image format check. Used both by
+         * [validateImageFile] (on-disk, for resume) and by [downloadPage]
+         * (in-stream, after peeking the HTTP response).
+         *
          * Supports JPEG, PNG, GIF, WebP, BMP, AVIF, JPEG XL.
+         *
+         * @param header bytes read from the start of the image
+         * @param read number of valid bytes in [header] (may be < header.size)
+         */
+        @JvmStatic
+        fun validateImageHeader(header: ByteArray, read: Int): Boolean {
+            if (read < 4) return false
+            return when {
+                // JPEG: FF D8 FF
+                header[0] == 0xFF.toByte() && header[1] == 0xD8.toByte()
+                    && header[2] == 0xFF.toByte() -> true
+                // PNG: 89 50 4E 47
+                header[0] == 0x89.toByte() && header[1] == 0x50.toByte()
+                    && header[2] == 0x4E.toByte() && header[3] == 0x47.toByte() -> true
+                // GIF: 47 49 46 38
+                header[0] == 0x47.toByte() && header[1] == 0x49.toByte()
+                    && header[2] == 0x46.toByte() && header[3] == 0x38.toByte() -> true
+                // WebP: RIFF....WEBP
+                read >= 12 && header[0] == 'R'.code.toByte() && header[1] == 'I'.code.toByte()
+                    && header[2] == 'F'.code.toByte() && header[3] == 'F'.code.toByte()
+                    && header[8] == 'W'.code.toByte() && header[9] == 'E'.code.toByte()
+                    && header[10] == 'B'.code.toByte() && header[11] == 'P'.code.toByte() -> true
+                // BMP: 42 4D
+                header[0] == 0x42.toByte() && header[1] == 0x4D.toByte() -> true
+                // AVIF: ....ftypavif
+                read >= 12 && header[4] == 'f'.code.toByte() && header[5] == 't'.code.toByte()
+                    && header[6] == 'y'.code.toByte() && header[7] == 'p'.code.toByte()
+                    && header[8] == 'a'.code.toByte() && header[9] == 'v'.code.toByte()
+                    && header[10] == 'i'.code.toByte() && header[11] == 'f'.code.toByte() -> true
+                // JXL naked codestream: FF 0A
+                header[0] == 0xFF.toByte() && header[1] == 0x0A.toByte() -> true
+                // JXL ISOBMFF container: 00 00 00 0C 4A 58 4C 20 0D 0A 87 0A
+                read >= 12 && header[0] == 0x00.toByte() && header[1] == 0x00.toByte()
+                    && header[2] == 0x00.toByte() && header[3] == 0x0C.toByte()
+                    && header[4] == 0x4A.toByte() && header[5] == 0x58.toByte()
+                    && header[6] == 0x4C.toByte() && header[7] == 0x20.toByte()
+                    && header[8] == 0x0D.toByte() && header[9] == 0x0A.toByte()
+                    && header[10] == 0x87.toByte() && header[11] == 0x0A.toByte() -> true
+                else -> {
+                    Log.w(
+                        TAG,
+                        "Unknown image format: %02X %02X %02X %02X".format(
+                            header[0], header[1], header[2], header[3]
+                        )
+                    )
+                    false
+                }
+            }
+        }
+
+        /**
+         * Validate that an on-disk file starts with a known image format
+         * magic. Used by the resume path (skip already-downloaded pages).
+         * Live downloads validate in-stream via [validateImageHeader] so
+         * this path is exercised only for pre-existing files.
          */
         @JvmStatic
         fun validateImageFile(file: File): Boolean {
             if (!file.exists() || file.length() < 4) return false
             return try {
                 FileInputStream(file).use { fis ->
-                    val header = ByteArray(16)
+                    val header = ByteArray(HEADER_PEEK_BYTES)
                     val read = fis.read(header)
-                    if (read < 4) return false
-
-                    when {
-                        // JPEG: FF D8 FF
-                        header[0] == 0xFF.toByte() && header[1] == 0xD8.toByte()
-                            && header[2] == 0xFF.toByte() -> true
-                        // PNG: 89 50 4E 47
-                        header[0] == 0x89.toByte() && header[1] == 0x50.toByte()
-                            && header[2] == 0x4E.toByte() && header[3] == 0x47.toByte() -> true
-                        // GIF: 47 49 46 38
-                        header[0] == 0x47.toByte() && header[1] == 0x49.toByte()
-                            && header[2] == 0x46.toByte() && header[3] == 0x38.toByte() -> true
-                        // WebP: RIFF....WEBP
-                        read >= 12 && header[0] == 'R'.code.toByte() && header[1] == 'I'.code.toByte()
-                            && header[2] == 'F'.code.toByte() && header[3] == 'F'.code.toByte()
-                            && header[8] == 'W'.code.toByte() && header[9] == 'E'.code.toByte()
-                            && header[10] == 'B'.code.toByte() && header[11] == 'P'.code.toByte() -> true
-                        // BMP: 42 4D
-                        header[0] == 0x42.toByte() && header[1] == 0x4D.toByte() -> true
-                        // AVIF: ....ftypavif
-                        read >= 12 && header[4] == 'f'.code.toByte() && header[5] == 't'.code.toByte()
-                            && header[6] == 'y'.code.toByte() && header[7] == 'p'.code.toByte()
-                            && header[8] == 'a'.code.toByte() && header[9] == 'v'.code.toByte()
-                            && header[10] == 'i'.code.toByte() && header[11] == 'f'.code.toByte() -> true
-                        // JXL naked codestream: FF 0A
-                        header[0] == 0xFF.toByte() && header[1] == 0x0A.toByte() -> true
-                        // JXL ISOBMFF container: 00 00 00 0C 4A 58 4C 20 0D 0A 87 0A
-                        read >= 12 && header[0] == 0x00.toByte() && header[1] == 0x00.toByte()
-                            && header[2] == 0x00.toByte() && header[3] == 0x0C.toByte()
-                            && header[4] == 0x4A.toByte() && header[5] == 0x58.toByte()
-                            && header[6] == 0x4C.toByte() && header[7] == 0x20.toByte()
-                            && header[8] == 0x0D.toByte() && header[9] == 0x0A.toByte()
-                            && header[10] == 0x87.toByte() && header[11] == 0x0A.toByte() -> true
-                        else -> {
-                            Log.w(
-                                TAG,
-                                "Unknown image format: %02X %02X %02X %02X".format(
-                                    header[0], header[1], header[2], header[3]
-                                )
-                            )
-                            false
-                        }
-                    }
+                    validateImageHeader(header, read)
                 }
             } catch (e: IOException) {
                 Log.w(TAG, "Failed to validate image file", e)
