@@ -447,23 +447,6 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     // -------------------------------------------------------------------------
 
     /**
-     * Deletes a single download. If [deleteFiles] is true, also removes the
-     * download directory and dirname DB record.
-     */
-    fun deleteSingleDownload(galleryInfo: GalleryInfo, deleteFiles: Boolean) {
-        downloadManager.deleteDownload(galleryInfo.arcid)
-        DownloadSettings.putRemoveImageFiles(deleteFiles)
-        if (deleteFiles) {
-            val arcid = galleryInfo.arcid
-            ServiceRegistry.coroutineModule.ioScope.launch {
-                ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(arcid)
-                val file = SpiderDen.getGalleryDownloadDir(galleryInfo)
-                file?.delete()
-            }
-        }
-    }
-
-    /**
      * Deletes a range of downloads. If [deleteFiles] is true, also removes
      * the download directories and dirname DB records.
      */

@@ -23,6 +23,7 @@ import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.ehviewer.ui.GalleryOpenHelper
 import com.hippo.ehviewer.ui.MainActivity
 import com.hippo.ehviewer.ui.scene.BaseScene
+import com.hippo.ehviewer.ui.scene.download.DownloadLabelHelper
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
 import com.hippo.ehviewer.util.ClipboardUtil
 import com.hippo.lib.yorozuya.AssertUtils
@@ -199,18 +200,9 @@ internal class DetailActionHandler(
         if (viewModel.downloadManager.getDownloadState(galleryInfo.arcid) == DownloadInfo.STATE_INVALID) {
             CommonOperations.startDownload(activity, galleryInfo, false)
         } else {
-            androidx.appcompat.app.AlertDialog.Builder(context)
-                .setTitle(R.string.download_remove_dialog_title)
-                .setMessage(
-                    scene.getString(
-                        R.string.download_remove_dialog_message,
-                        galleryInfo.title ?: ""
-                    )
-                )
-                .setPositiveButton(android.R.string.ok) { _, _ ->
-                    viewModel.downloadManager.deleteDownload(galleryInfo.arcid)
-                }
-                .show()
+            DownloadLabelHelper.showDeleteDialog(context, galleryInfo) { deleteFiles ->
+                DownloadLabelHelper.performDelete(galleryInfo, deleteFiles)
+            }
         }
     }
 
