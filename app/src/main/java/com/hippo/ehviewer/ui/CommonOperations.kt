@@ -16,7 +16,6 @@
 
 package com.hippo.ehviewer.ui
 
-import android.app.Activity
 import android.content.Intent
 import android.util.Log
 import com.hippo.app.ListCheckBoxDialogBuilder
@@ -28,63 +27,11 @@ import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.unifile.UniFile
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.IOException
 
 object CommonOperations {
 
     private const val TAG = "CommonOperations"
-
-    /**
-     * Result callback for [addToFavorites] / [removeFromFavorites].
-     *
-     * The cloud-favourites slots (1-10) are gone with E-Hentai support, so the
-     * callback only carries success / failure for the local-favourites table.
-     */
-    interface FavoriteListener {
-        fun onSuccess()
-        fun onFailure(e: Exception)
-    }
-
-    @JvmStatic
-    fun addToFavorites(
-        activity: Activity,
-        galleryInfo: GalleryInfo,
-        listener: FavoriteListener
-    ) {
-        ServiceRegistry.coroutineModule.ioScope.launch {
-            try {
-                ServiceRegistry.dataModule.favoritesRepository.putLocalFavorite(galleryInfo)
-                withContext(Dispatchers.Main) { listener.onSuccess() }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) { listener.onFailure(e) }
-            }
-        }
-    }
-
-    @JvmStatic
-    fun removeFromFavorites(
-        activity: Activity,
-        galleryInfo: GalleryInfo,
-        listener: FavoriteListener
-    ) {
-        ServiceRegistry.coroutineModule.ioScope.launch {
-            try {
-                val arcid = galleryInfo.arcid
-                if (arcid != null) {
-                    ServiceRegistry.dataModule.favoritesRepository.removeLocalFavorite(arcid)
-                } else {
-                    @Suppress("DEPRECATION")
-                    ServiceRegistry.dataModule.favoritesRepository.removeLocalFavorite(galleryInfo.gid)
-                }
-                withContext(Dispatchers.Main) { listener.onSuccess() }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) { listener.onFailure(e) }
-            }
-        }
-    }
 
     @JvmStatic
     fun startDownload(activity: MainActivity, galleryInfo: GalleryInfo, forceDefault: Boolean) {

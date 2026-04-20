@@ -28,8 +28,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.hippo.ehviewer.ui.dialog.SelectItemWithIconAdapter
-import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.ui.scene.download.DownloadLabelHelper
+import com.hippo.ehviewer.ui.scene.gallery.detail.CategoryDialogHelper
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.scene.Announcer
 import com.hippo.scene.SceneFragment
@@ -98,18 +98,17 @@ class GalleryItemActionHelper(private val callback: Callback) {
 
         val downloadManager = callback.getDownloadManager()
         val downloaded = downloadManager.getDownloadState(gi.arcid) != DownloadInfo.STATE_INVALID
-        val favourited = false // LANraragi uses category-based favorites, not slots
 
         val items = arrayOf<CharSequence>(
             context.getString(R.string.read),
             context.getString(if (downloaded) R.string.delete_downloads else R.string.download),
-            context.getString(if (favourited) R.string.remove_from_favourites else R.string.add_to_favourites),
+            context.getString(R.string.lrr_menu_categories),
         )
 
         val icons = intArrayOf(
             R.drawable.v_book_open_x24,
             if (downloaded) R.drawable.v_delete_x24 else R.drawable.v_download_x24,
-            if (favourited) R.drawable.v_heart_broken_x24 else R.drawable.v_heart_x24,
+            R.drawable.v_heart_x24,
         )
 
         @SuppressLint("InflateParams")
@@ -157,48 +156,11 @@ class GalleryItemActionHelper(private val callback: Callback) {
                             }
                         }
                     }
-                    2 -> { // Favorites
-                        val entity = gi.toGalleryInfo()
-                        if (favourited) {
-                            CommonOperations.removeFromFavorites(
-                                activity, entity,
-                                RemoveFromFavoriteListener(activity)
-                            )
-                        } else {
-                            CommonOperations.addToFavorites(
-                                activity, entity,
-                                AddToFavoriteListener(activity)
-                            )
-                        }
+                    2 -> { // Categories — open LANraragi category picker
+                        CategoryDialogHelper.showCategoryDialog(activity, gi.arcid, null)
                     }
                 }
             }.show()
         return true
-    }
-
-    private class AddToFavoriteListener(
-        private val activity: Activity
-    ) : CommonOperations.FavoriteListener {
-
-        override fun onSuccess() {
-            (activity as? MainActivity)?.showTip(R.string.add_to_favorite_success, BaseScene.LENGTH_SHORT)
-        }
-
-        override fun onFailure(e: Exception) {
-            (activity as? MainActivity)?.showTip(R.string.add_to_favorite_failure, BaseScene.LENGTH_LONG)
-        }
-    }
-
-    private class RemoveFromFavoriteListener(
-        private val activity: Activity
-    ) : CommonOperations.FavoriteListener {
-
-        override fun onSuccess() {
-            (activity as? MainActivity)?.showTip(R.string.remove_from_favorite_success, BaseScene.LENGTH_SHORT)
-        }
-
-        override fun onFailure(e: Exception) {
-            (activity as? MainActivity)?.showTip(R.string.remove_from_favorite_failure, BaseScene.LENGTH_LONG)
-        }
     }
 }

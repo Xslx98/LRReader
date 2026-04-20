@@ -234,8 +234,6 @@
     <string name="search_se">Show expunged</string>
     <string name="select_image_first">Please select image first</string>
 
-    <string name="add_to_favourites">Add to favourites</string>
-    <string name="remove_from_favourites">Remove from favourites</string>
 
     <string name="stop_downloading">Stop downloading</string>
     <string name="delete_downloads">Delete downloads</string>
@@ -297,10 +295,6 @@
     <string name="not_favorited">Not favorited</string>
     <string name="add_favorites_dialog_title">Add to favorites</string>
     <string name="remember_favorite_collection">Remember favorite collection</string>
-    <string name="add_to_favorite_success">Added to favorites</string>
-    <string name="remove_from_favorite_success">Removed from favorites</string>
-    <string name="add_to_favorite_failure">Failed to add to favorites</string>
-    <string name="remove_from_favorite_failure">Failed to remove from favorites</string>
 
     <!-- Rating -->
     <string name="rating10">MASTERPIECE</string>
@@ -1074,6 +1068,7 @@
     <string name="lrr_loading_categories">Loading categories…</string>
     <string name="lrr_no_static_categories">No static categories available</string>
     <string name="lrr_add_to_category">Add to category</string>
+    <string name="lrr_menu_categories">Categories</string>
     <string name="lrr_category_info_suffix"> etc.</string>
     <string name="lrr_category_count_suffix"> categories</string>
     <string name="lrr_category_updated_toast">Category updated</string>
