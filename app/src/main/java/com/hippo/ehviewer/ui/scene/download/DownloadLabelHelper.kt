@@ -24,6 +24,8 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.dao.DownloadInfo
+import com.hippo.ehviewer.spider.SpiderDen
+import kotlinx.coroutines.launch
 
 /**
  * Stateless utility for download label/bulk action dialogs.
@@ -76,6 +78,32 @@ object DownloadLabelHelper {
                 onConfirm(builder.isChecked)
             }
             .show()
+    }
+
+    /**
+     * Perform the actual delete for a single archive: remove the DB row +
+     * in-memory entry (always), and if [deleteFiles] is true also drop the
+     * `DOWNLOAD_DIRNAME` record and recursively delete the on-disk gallery
+     * directory.
+     *
+     * The in-memory / DB removal runs synchronously on the caller's thread
+     * (main-thread for [com.hippo.ehviewer.download.DownloadManager.deleteDownload]).
+     * File removal is dispatched to [ServiceRegistry.coroutineModule.ioScope]
+     * — don't block the caller waiting for it.
+     *
+     * Also persists [deleteFiles] as the remembered default for the next
+     * dialog invocation.
+     */
+    fun performDelete(galleryInfo: GalleryInfo, deleteFiles: Boolean) {
+        ServiceRegistry.dataModule.downloadManager.deleteDownload(galleryInfo.arcid)
+        DownloadSettings.putRemoveImageFiles(deleteFiles)
+        if (deleteFiles) {
+            val arcid = galleryInfo.arcid
+            ServiceRegistry.coroutineModule.ioScope.launch {
+                ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(arcid)
+                SpiderDen.getGalleryDownloadDir(galleryInfo)?.delete()
+            }
+        }
     }
 
     /**
