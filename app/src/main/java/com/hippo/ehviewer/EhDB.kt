@@ -147,13 +147,8 @@ object EhDB {
                         }
                         val info = LocalFavoriteInfo().apply {
                             arcid = gi.arcid
-                            this.gid = gi.gid
                             title = gi.title
-                            titleJpn = gi.titleJpn
                             thumb = gi.thumb
-                            category = gi.category
-                            posted = gi.posted
-                            uploader = gi.uploader
                             rating = gi.rating
                             simpleLanguage = gi.simpleLanguage
                             serverProfileId = gi.serverProfileId
@@ -214,13 +209,8 @@ object EhDB {
                         }
                         val info = DownloadInfo().apply {
                             arcid = gi.arcid
-                            this.gid = gi.gid
                             title = gi.title
-                            titleJpn = gi.titleJpn
                             thumb = gi.thumb
-                            category = gi.category
-                            posted = gi.posted
-                            uploader = gi.uploader
                             rating = gi.rating
                             simpleLanguage = gi.simpleLanguage
                             serverProfileId = gi.serverProfileId
@@ -258,13 +248,8 @@ object EhDB {
                         }
                         val info = HistoryInfo().apply {
                             arcid = gi.arcid
-                            this.gid = gi.gid
                             title = gi.title
-                            titleJpn = gi.titleJpn
                             thumb = gi.thumb
-                            category = gi.category
-                            posted = gi.posted
-                            uploader = gi.uploader
                             rating = gi.rating
                             simpleLanguage = gi.simpleLanguage
                             serverProfileId = gi.serverProfileId

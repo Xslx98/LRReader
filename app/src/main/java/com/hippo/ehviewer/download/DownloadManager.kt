@@ -357,7 +357,7 @@ class DownloadManager(
         scope.launch {
             try {
                 for (di in list) {
-                    val dir = SpiderDen.getGalleryDownloadDir(di.arcid, di.title, di.gid) ?: continue
+                    val dir = SpiderDen.getGalleryDownloadDir(di.arcid, di.title) ?: continue
                     val file = dir.findFile(".ehviewer") ?: continue
                     val si = SpiderInfo.read(file) ?: continue
                     si.startPage = 0
