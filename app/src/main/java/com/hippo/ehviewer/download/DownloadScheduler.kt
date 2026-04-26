@@ -93,11 +93,6 @@ internal class DownloadScheduler(
             activeWorkers[info] = worker
             worker.listener = PerTaskListener(info)
             info.state = DownloadInfo.STATE_DOWNLOAD
-            info.speed = -1
-            info.remaining = -1
-            info.total = -1
-            info.finished = 0
-            info.downloaded = 0
             info.legacy = -1
             progressTracker.resetForStart(info.arcid)
             // Persist to DB
@@ -319,7 +314,6 @@ internal class DownloadScheduler(
         when (event) {
             is DownloadEvent.OnGetPages -> {
                 val info = event.taskInfo
-                info.total = event.pages
                 progressTracker.update(info.arcid, total = event.pages)
                 val list = repo.getInfoListForLabel(info.label)
                 if (list != null) {
@@ -337,9 +331,6 @@ internal class DownloadScheduler(
             is DownloadEvent.OnPageSuccess -> {
                 speedTracker.onDone(event.index)
                 val info = event.taskInfo
-                info.finished = event.finished
-                info.downloaded = event.downloaded
-                info.total = event.total
                 progressTracker.update(
                     info.arcid,
                     finished = event.finished,
@@ -357,9 +348,6 @@ internal class DownloadScheduler(
             is DownloadEvent.OnPageFailure -> {
                 speedTracker.onDone(event.index)
                 val info = event.taskInfo
-                info.finished = event.finished
-                info.downloaded = event.downloaded
-                info.total = event.total
                 progressTracker.update(
                     info.arcid,
                     finished = event.finished,
@@ -380,9 +368,6 @@ internal class DownloadScheduler(
                 activeWorkers.remove(info)
                 if (activeTasks.isEmpty()) speedTracker.stop()
                 // Update state
-                info.finished = event.finished
-                info.downloaded = event.downloaded
-                info.total = event.total
                 info.legacy = event.total - event.finished
                 if (info.legacy == 0) {
                     info.state = DownloadInfo.STATE_FINISH
