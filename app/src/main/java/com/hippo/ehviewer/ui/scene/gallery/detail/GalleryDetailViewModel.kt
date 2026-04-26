@@ -11,7 +11,9 @@ import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.runSuspend
+import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.mapper.toArchiveDetail
+import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadInfoListener
@@ -87,6 +89,16 @@ class GalleryDetailViewModel : ViewModel() {
     /** The initial gallery info passed via arguments (before detail is loaded). */
     val galleryInfo: StateFlow<GalleryInfo?> = _galleryInfo.asStateFlow()
 
+    private val _archive = MutableStateFlow<Archive?>(null)
+
+    /**
+     * Archive (domain model) form of the navigation argument. Populated
+     * automatically by [setGalleryInfo] (via `info.toArchive()`) and by
+     * [setArchive]. The eventual goal of W36-3 is to drop [_galleryInfo]
+     * entirely and have all consumers read this flow directly.
+     */
+    val archive: StateFlow<Archive?> = _archive.asStateFlow()
+
     private val _galleryDetail = MutableStateFlow<GalleryDetail?>(null)
 
     /** The full gallery detail, loaded from the LANraragi API. */
@@ -129,6 +141,13 @@ class GalleryDetailViewModel : ViewModel() {
 
     fun setGalleryInfo(info: GalleryInfo?) {
         _galleryInfo.value = info
+        // Mirror to the Archive flow so consumers migrating to the
+        // domain model can read the same navigation argument.
+        _archive.value = info?.toArchive()
+    }
+
+    fun setArchive(archive: Archive?) {
+        _archive.value = archive
     }
 
     fun setGalleryDetail(detail: GalleryDetail?) {
@@ -167,6 +186,7 @@ class GalleryDetailViewModel : ViewModel() {
         _gid.value = 0L
         _arcid.value = null
         _galleryInfo.value = null
+        _archive.value = null
         _galleryDetail.value = null
         _archiveDetail.value = null
         _downloadInfo.value = null
@@ -237,6 +257,15 @@ class GalleryDetailViewModel : ViewModel() {
      */
     fun getEffectiveGalleryInfo(): GalleryInfo? {
         return _galleryDetail.value ?: _galleryInfo.value
+    }
+
+    /**
+     * Returns the best available [Archive] for display. Prefers the rich
+     * detail (mapped via [toArchive]) when loaded, otherwise the navigation
+     * argument [_archive].
+     */
+    fun getEffectiveArchive(): Archive? {
+        return _galleryDetail.value?.toArchive() ?: _archive.value
     }
 
     // -------------------------------------------------------------------------
