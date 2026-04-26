@@ -40,10 +40,10 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.settings.GuideSettings
 import com.hippo.ehviewer.settings.ReadingSettings
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.event.AppEventBus
 import com.hippo.ehviewer.event.GalleryActivityEvent
 import com.hippo.ehviewer.gallery.ArchiveGalleryProvider
+import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.gallery.DirGalleryProvider
 import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.gallery.LRRGalleryProvider
@@ -81,7 +81,10 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         const val KEY_ACTION = "action"
         const val KEY_FILENAME = "filename"
         const val KEY_URI = "uri"
-        const val KEY_GALLERY_INFO = "gallery_info"
+        const val KEY_ARCHIVE = "archive"
+
+        /** onBackPressed result-extra carrying the (possibly mutated) archive back to the launching scene. */
+        const val EXTRA_RESULT_ARCHIVE = "result_archive"
         const val DATA_IN_EVENT = "data_in_event"
         const val KEY_PAGE = "page"
         const val KEY_CURRENT_INDEX = "current_index"
@@ -109,7 +112,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
     private var mAction: String? = null
     private var mFilename: String? = null
     private var mUri: android.net.Uri? = null
-    private var mGalleryInfo: GalleryInfo? = null
+    private var mArchive: Archive? = null
     private var mPage = 0
 
     private var mGLRootView: GLRootView? = null
@@ -151,18 +154,18 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                 val filename = mFilename
                 if (filename != null) {
                     val uniFile = UniFile.fromFile(File(filename)) ?: return
-                    val galleryInfo = mGalleryInfo
-                    mGalleryProvider = if (galleryInfo != null) {
-                        DirGalleryProvider(uniFile, this, galleryInfo.arcid)
+                    val archive = mArchive
+                    mGalleryProvider = if (archive != null) {
+                        DirGalleryProvider(uniFile, this, archive.arcid)
                     } else {
                         DirGalleryProvider(uniFile)
                     }
                 }
             }
             ACTION_LRR -> {
-                val galleryInfo = mGalleryInfo
-                if (galleryInfo != null) {
-                    mGalleryProvider = LRRGalleryProvider(this, galleryInfo.arcid)
+                val archive = mArchive
+                if (archive != null) {
+                    mGalleryProvider = LRRGalleryProvider(this, archive.arcid)
                 }
             }
             Intent.ACTION_VIEW -> {
@@ -183,7 +186,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         val cache = AppEventBus.galleryActivityEvent.replayCache
         if (cache.isNotEmpty()) {
             val event = cache[cache.size - 1]
-            mGalleryInfo = event.galleryInfo
+            mArchive = event.archive
             mPage = event.pagePosition
             buildProvider()
             onCreateView(null)
@@ -201,7 +204,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         mAction = intent.action
         mFilename = intent.getStringExtra(KEY_FILENAME)
         mUri = intent.data
-        mGalleryInfo = intent.getParcelableExtra(KEY_GALLERY_INFO)
+        mArchive = intent.getParcelableExtra(KEY_ARCHIVE)
         val onEvent = intent.getBooleanExtra(DATA_IN_EVENT, false)
         if (!onEvent) {
             canFinish = true
@@ -214,7 +217,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         mAction = savedInstanceState.getString(KEY_ACTION)
         mFilename = savedInstanceState.getString(KEY_FILENAME)
         mUri = savedInstanceState.getParcelable(KEY_URI)
-        mGalleryInfo = savedInstanceState.getParcelable(KEY_GALLERY_INFO)
+        mArchive = savedInstanceState.getParcelable(KEY_ARCHIVE)
         mPage = savedInstanceState.getInt(KEY_PAGE, -1)
         mSliderController.currentIndex = savedInstanceState.getInt(KEY_CURRENT_INDEX)
         buildProvider()
@@ -225,7 +228,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         outState.putString(KEY_ACTION, mAction)
         outState.putString(KEY_FILENAME, mFilename)
         outState.putParcelable(KEY_URI, mUri)
-        mGalleryInfo?.let { outState.putParcelable(KEY_GALLERY_INFO, it) }
+        mArchive?.let { outState.putParcelable(KEY_ARCHIVE, it) }
         outState.putInt(KEY_PAGE, mPage)
         outState.putInt(KEY_CURRENT_INDEX, mSliderController.currentIndex)
     }
@@ -334,7 +337,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         // Setup helpers
         mInputHandler.galleryView = galleryView
         mImageOps.galleryProvider = galleryProvider
-        mImageOps.galleryInfo = mGalleryInfo
+        mImageOps.archive = mArchive
 
         // System UI helper
         if (ReadingSettings.getReadingFullscreen()) {
@@ -480,7 +483,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         val intent = Intent()
-        intent.putExtra("info", mGalleryInfo)
+        intent.putExtra(EXTRA_RESULT_ARCHIVE, mArchive)
         setResult(DownloadsScene.LOCAL_GALLERY_INFO_CHANGE, intent)
         super.onBackPressed()
     }
