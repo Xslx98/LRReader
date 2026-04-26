@@ -146,9 +146,8 @@ class GalleryItemActionHelper(private val callback: Callback) {
                     }
                     1 -> { // Download
                         if (downloaded) {
-                            val galleryInfo = gi.toGalleryInfo()
-                            DownloadLabelHelper.showDeleteDialog(context, galleryInfo) { deleteFiles ->
-                                DownloadLabelHelper.performDelete(galleryInfo, deleteFiles)
+                            DownloadLabelHelper.showDeleteDialog(context, gi) { deleteFiles ->
+                                DownloadLabelHelper.performDelete(gi, deleteFiles)
                             }
                         } else {
                             (activity as? MainActivity)?.let {
