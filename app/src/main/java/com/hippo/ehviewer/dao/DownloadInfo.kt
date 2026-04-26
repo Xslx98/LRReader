@@ -8,9 +8,6 @@ import androidx.room.Ignore
 import androidx.room.Index
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.GalleryInfoEntity
-import android.util.Log
-import org.json.JSONException
-import org.json.JSONObject
 
 /**
  * Entity mapped to table "DOWNLOADS".
@@ -136,51 +133,18 @@ class DownloadInfo : GalleryInfoEntity {
         simpleLanguage = galleryInfo.simpleLanguage
     }
 
-    override fun toJson(): JSONObject {
-        val jsonObject = super.toJson()
-        try {
-            jsonObject.put("legacy", legacy)
-            jsonObject.put("label", label)
-            jsonObject.put("state", state)
-            jsonObject.put("time", time)
-            jsonObject.put("archiveUri", archiveUri)
-        } catch (e: JSONException) {
-            Log.w(TAG, "Failed to serialize DownloadInfo to JSON", e)
-        }
-        return jsonObject
-    }
-
     companion object {
-        private val TAG = DownloadInfo::class.java.simpleName
-
         const val STATE_INVALID: Int = -1
         const val STATE_NONE: Int = 0
         const val STATE_WAIT: Int = 1
         const val STATE_DOWNLOAD: Int = 2
         const val STATE_FINISH: Int = 3
         const val STATE_FAILED: Int = 4
-        const val STATE_UPDATE: Int = 5
-        const val GOTO_NEW: Int = 6
 
         @JvmField
         val CREATOR: Parcelable.Creator<DownloadInfo> = object : Parcelable.Creator<DownloadInfo> {
             override fun createFromParcel(source: Parcel): DownloadInfo = DownloadInfo(source)
             override fun newArray(size: Int): Array<DownloadInfo?> = arrayOfNulls(size)
-        }
-
-        @JvmStatic
-        @Throws(ClassCastException::class)
-        fun downloadInfoFromJson(`object`: JSONObject): DownloadInfo {
-            val downloadInfo = galleryInfoFromJson(`object`) as DownloadInfo
-            // Old exports may carry transient progress keys
-            // (finished/downloaded/remaining/speed/total). They are silently
-            // ignored — progress is in-memory only post-W35-3c.
-            downloadInfo.legacy = `object`.optInt("legacy", 0)
-            downloadInfo.label = `object`.optString("label", null)
-            downloadInfo.state = `object`.optInt("state", 0)
-            downloadInfo.time = `object`.optLong("time", 0)
-            downloadInfo.archiveUri = `object`.optString("archiveUri", null)
-            return downloadInfo
         }
     }
 }
