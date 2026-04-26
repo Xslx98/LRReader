@@ -133,14 +133,14 @@ class DownloadSchedulerTest {
     // ═══════════════════════════════════════════════════════════
 
     private fun makeInfo(gid: Long, label: String? = null): DownloadInfo {
-        val gi = GalleryInfo()
-        gi.gid = gid
-        gi.arcid = "token_$gid"
-        gi.title = "Test Gallery $gid"
-        val info = DownloadInfo(gi)
-        info.label = label
-        info.state = DownloadInfo.STATE_WAIT
-        info.time = System.currentTimeMillis() - gid // ensure distinct times
+        val info = DownloadInfo().apply {
+            this.gid = gid
+            arcid = "token_$gid"
+            title = "Test Gallery $gid"
+            this.label = label
+            state = DownloadInfo.STATE_WAIT
+            time = System.currentTimeMillis() - gid // ensure distinct times
+        }
         // Add to repo so getDownloadInfo works
         repo.addInfo(info)
         return info
