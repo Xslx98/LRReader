@@ -71,11 +71,7 @@ class DownloadInfoParcelTest {
             assertArrayEquals(original.simpleTags, restored.simpleTags)
             assertNotNull(restored.tgList)
             assertEquals(original.tgList, restored.tgList)
-            // fileSize Parcel round-trip is enabled by W36-7 flatten (Task 5
-            // adds it to DownloadInfo.writeToParcel). Pre-flatten the inherited
-            // GalleryInfoEntity.writeToParcel does NOT include @Ignore fileSize,
-            // so this assertion is added in the flatten commit.
-            // assertEquals(original.fileSize, restored.fileSize)
+            assertEquals(original.fileSize, restored.fileSize)
         } finally {
             parcel.recycle()
         }
