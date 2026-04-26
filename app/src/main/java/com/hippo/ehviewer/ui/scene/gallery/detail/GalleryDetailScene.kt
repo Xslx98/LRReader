@@ -39,6 +39,7 @@ import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
+import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.mapper.toGalleryInfo
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.data.LRRArchive
@@ -158,7 +159,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             mGalleryInfo = gi
             // Add history
             if (gi != null) {
-                viewModel.recordHistory(gi)
+                viewModel.recordHistory(gi.toArchive())
             }
         } else if (ACTION_GID_TOKEN == action) {
             mGid = args.getLong(KEY_GID)
@@ -166,10 +167,9 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         } else if (ACTION_ARCHIVE == action) {
             val archive: com.lanraragi.reader.domain.Archive? = args.getParcelable(KEY_ARCHIVE)
             if (archive != null) {
-                val gi = archive.toGalleryInfo()
-                mGalleryInfo = gi
+                mGalleryInfo = archive.toGalleryInfo()
                 mArcid = archive.arcid
-                viewModel.recordHistory(gi)
+                viewModel.recordHistory(archive)
             }
         } else if (ACTION_DOWNLOAD_GALLERY_INFO == action) {
             try {
@@ -177,13 +177,13 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 mDownloadInfo = di
                 mGalleryInfo = di
                 if (di != null) {
-                    viewModel.recordHistory(di)
+                    viewModel.recordHistory(di.toArchive())
                 }
             } catch (e: ClassCastException) {
                 val gi: GalleryInfo? = args.getParcelable(KEY_GALLERY_INFO)
                 mGalleryInfo = gi
                 if (gi != null) {
-                    viewModel.recordHistory(gi)
+                    viewModel.recordHistory(gi.toArchive())
                 }
             }
         }
