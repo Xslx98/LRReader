@@ -25,6 +25,8 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.DownloadLabel
+import com.hippo.ehviewer.mapper.toDownloadInfo
+import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -425,11 +427,11 @@ class DownloadRepository(
      * Add a single download (from UI). Returns the per-label list the info
      * was added to, or null if the label list was not found.
      */
-    fun addSingleDownload(galleryInfo: GalleryInfo, label: String?, state: Int): Pair<DownloadInfo, MutableList<DownloadInfo>>? {
+    fun addSingleDownload(archive: Archive, label: String?, state: Int): Pair<DownloadInfo, MutableList<DownloadInfo>>? {
         assertMainThread()
-        if (containDownloadInfo(galleryInfo.arcid)) return null
+        if (containDownloadInfo(archive.arcid)) return null
 
-        val info = DownloadInfo(galleryInfo)
+        val info = archive.toDownloadInfo()
         info.label = label
         info.state = state
         info.time = System.currentTimeMillis()
@@ -446,7 +448,7 @@ class DownloadRepository(
         }
         list.add(0, info)
         allInfoList.add(0, info)
-        allInfoMap[galleryInfo.arcid] = info
+        allInfoMap[archive.arcid] = info
         persistInfo(info)
         return Pair(info, list)
     }
@@ -454,10 +456,10 @@ class DownloadRepository(
     /**
      * Add download info without notifying (for sync/import). Returns true if added.
      */
-    fun addInfoOnly(galleryInfo: GalleryInfo, label: String?): Boolean {
+    fun addInfoOnly(archive: Archive, label: String?): Boolean {
         assertMainThread()
-        if (containDownloadInfo(galleryInfo.arcid)) return false
-        val info = DownloadInfo(galleryInfo)
+        if (containDownloadInfo(archive.arcid)) return false
+        val info = archive.toDownloadInfo()
         info.label = label
         info.state = DownloadInfo.STATE_NONE
         if (info.time == 0L) info.time = System.currentTimeMillis()
@@ -467,7 +469,7 @@ class DownloadRepository(
         }
         list.add(0, info)
         persistInfo(info)
-        allInfoMap[galleryInfo.arcid] = info
+        allInfoMap[archive.arcid] = info
         return true
     }
 
