@@ -244,13 +244,12 @@ class HistoryViewModelTest {
         runBlocking {
             val dao = db.browsingDao()
             for ((gid, title) in galleries) {
-                val gi = GalleryInfo().apply {
+                val historyInfo = com.hippo.ehviewer.dao.HistoryInfo().apply {
                     this.gid = gid
                     this.arcid = "tok$gid"
                     this.title = title
+                    this.time = System.currentTimeMillis()
                 }
-                val historyInfo = com.hippo.ehviewer.dao.HistoryInfo(gi)
-                historyInfo.time = System.currentTimeMillis()
                 dao.insertHistory(historyInfo)
             }
         }
