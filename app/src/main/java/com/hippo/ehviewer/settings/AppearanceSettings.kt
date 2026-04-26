@@ -100,12 +100,6 @@ object AppearanceSettings {
         else -> R.dimen.gallery_grid_column_width_middle
     }
 
-    // --- Show JPN Title ---
-    private const val KEY_SHOW_JPN_TITLE = "show_jpn_title"
-
-    @JvmStatic
-    fun getShowJpnTitle(): Boolean = Settings.getBoolean(KEY_SHOW_JPN_TITLE, false)
-
     // --- Show Gallery Pages ---
     private const val KEY_SHOW_GALLERY_PAGES = "show_gallery_pages"
 
