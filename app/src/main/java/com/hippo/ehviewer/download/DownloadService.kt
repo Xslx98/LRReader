@@ -386,12 +386,13 @@ class DownloadService : Service(), DownloadListener {
         }
         ensureDownloadingBuilder()
 
-        var speed = info.speed
+        val snap = mDownloadManager?.progressFor(info.arcid)
+        var speed = snap?.speed ?: -1L
         if (speed < 0) {
             speed = 0
         }
         var text = FileUtils.humanReadableByteCount(speed, false) + "/S"
-        val remaining = info.remaining
+        val remaining = snap?.remaining ?: -1L
         text = if (remaining >= 0) {
             getString(
                 R.string.download_speed_text_2,
@@ -401,11 +402,13 @@ class DownloadService : Service(), DownloadListener {
         } else {
             getString(R.string.download_speed_text, text)
         }
+        val total = snap?.total ?: -1
+        val finished = snap?.finished ?: -1
         val dlBuilder = mDownloadingBuilder ?: return
         dlBuilder.setContentTitle(LRRUtils.getSuitableTitle(info))
             .setContentText(text)
-            .setContentInfo(if (info.total == -1 || info.finished == -1) null else info.finished.toString() + "/" + info.total)
-            .setProgress(info.total, info.finished, false)
+            .setContentInfo(if (total == -1 || finished == -1) null else "$finished/$total")
+            .setProgress(total, finished, false)
 
         mDownloadingDelay?.startForeground()
     }
