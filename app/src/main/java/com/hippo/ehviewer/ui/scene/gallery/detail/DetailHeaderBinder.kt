@@ -108,10 +108,7 @@ internal class DetailHeaderBinder(
 
     fun bindViewFirst(action: String?, archive: Archive?) {
         if (archive == null) return
-        if (action == GalleryDetailScene.ACTION_GALLERY_INFO ||
-            action == GalleryDetailScene.ACTION_DOWNLOAD_GALLERY_INFO ||
-            action == GalleryDetailScene.ACTION_ARCHIVE
-        ) {
+        if (action == GalleryDetailScene.ACTION_ARCHIVE) {
             thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), archive.thumbnailUrl)
             title.text = archive.title
             // Archive has no uploader (LRR never populates it); clear the
