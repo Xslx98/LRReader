@@ -18,6 +18,7 @@ import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
 
 import com.lanraragi.reader.client.api.data.LRRArchive
+import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
 import com.hippo.ehviewer.widget.ArchiverDownloadProgress
@@ -105,14 +106,17 @@ internal class DetailHeaderBinder(
         }
     }
 
-    fun bindViewFirst(action: String?, galleryInfo: GalleryInfo?) {
-        if (galleryInfo == null) return
+    fun bindViewFirst(action: String?, archive: Archive?) {
+        if (archive == null) return
         if (action == GalleryDetailScene.ACTION_GALLERY_INFO ||
-            action == GalleryDetailScene.ACTION_DOWNLOAD_GALLERY_INFO
+            action == GalleryDetailScene.ACTION_DOWNLOAD_GALLERY_INFO ||
+            action == GalleryDetailScene.ACTION_ARCHIVE
         ) {
-            thumb.load(LRRCacheKeyFactory.getThumbKey(galleryInfo.arcid), galleryInfo.thumb)
-            title.text = galleryInfo.title
-            uploader.text = galleryInfo.uploader
+            thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), archive.thumbnailUrl)
+            title.text = archive.title
+            // Archive has no uploader (LRR never populates it); clear the
+            // field so a previous binding does not leak through.
+            uploader.text = null
         }
     }
 
