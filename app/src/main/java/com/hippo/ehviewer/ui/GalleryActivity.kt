@@ -162,7 +162,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
             ACTION_LRR -> {
                 val galleryInfo = mGalleryInfo
                 if (galleryInfo != null) {
-                    mGalleryProvider = LRRGalleryProvider(this, galleryInfo)
+                    mGalleryProvider = LRRGalleryProvider(this, galleryInfo.arcid)
                 }
             }
             Intent.ACTION_VIEW -> {
