@@ -154,14 +154,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         val action = args.getString(KEY_ACTION)
         mAction = action
-        if (ACTION_GALLERY_INFO == action) {
-            val gi: GalleryInfo? = args.getParcelable(KEY_GALLERY_INFO)
-            mGalleryInfo = gi
-            // Add history
-            if (gi != null) {
-                viewModel.recordHistory(gi.toArchive())
-            }
-        } else if (ACTION_GID_TOKEN == action) {
+        if (ACTION_GID_TOKEN == action) {
             mGid = args.getLong(KEY_GID)
             mArcid = args.getString(KEY_ARCID)
         } else if (ACTION_ARCHIVE == action) {
@@ -169,22 +162,13 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             if (archive != null) {
                 mGalleryInfo = archive.toGalleryInfo()
                 mArcid = archive.arcid
+                // If we already have a download record for this arcid, surface it
+                // so onGetGalleryDetailSuccessInternal's thumb-refresh path picks
+                // it up — equivalent to the old ACTION_DOWNLOAD_GALLERY_INFO
+                // branch which received the DownloadInfo directly.
+                mDownloadInfo = ServiceRegistry.dataModule
+                    .downloadManager.getDownloadInfo(archive.arcid)
                 viewModel.recordHistory(archive)
-            }
-        } else if (ACTION_DOWNLOAD_GALLERY_INFO == action) {
-            try {
-                val di: DownloadInfo? = args.getParcelable(KEY_GALLERY_INFO)
-                mDownloadInfo = di
-                mGalleryInfo = di
-                if (di != null) {
-                    viewModel.recordHistory(di.toArchive())
-                }
-            } catch (e: ClassCastException) {
-                val gi: GalleryInfo? = args.getParcelable(KEY_GALLERY_INFO)
-                mGalleryInfo = gi
-                if (gi != null) {
-                    viewModel.recordHistory(gi.toArchive())
-                }
             }
         }
     }
@@ -220,7 +204,11 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
     private fun onRestore(savedInstanceState: Bundle) {
         mAction = savedInstanceState.getString(KEY_ACTION)
-        mGalleryInfo = savedInstanceState.getParcelable(KEY_GALLERY_INFO)
+        val archive: com.lanraragi.reader.domain.Archive? =
+            savedInstanceState.getParcelable(KEY_ARCHIVE)
+        if (archive != null) {
+            mGalleryInfo = archive.toGalleryInfo()
+        }
         mGid = savedInstanceState.getLong(KEY_GID)
         mArcid = savedInstanceState.getString(KEY_ARCID)
         mGalleryDetail = savedInstanceState.getParcelable(KEY_GALLERY_DETAIL)
@@ -233,9 +221,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         if (mAction != null) {
             outState.putString(KEY_ACTION, mAction)
         }
-        if (mGalleryInfo != null) {
-            outState.putParcelable(KEY_GALLERY_INFO, mGalleryInfo)
-        }
+        viewModel.archive.value?.let { outState.putParcelable(KEY_ARCHIVE, it) }
         outState.putLong(KEY_GID, mGid)
         if (mArcid != null) {
             outState.putString(KEY_ARCID, mArcid)
@@ -726,12 +712,9 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         private const val STATE_FAILED = GalleryDetailViewModel.STATE_FAILED
 
         const val KEY_ACTION = "action"
-        const val ACTION_GALLERY_INFO = "action_gallery_info"
-        const val ACTION_DOWNLOAD_GALLERY_INFO = "action_download_gallery_info"
         const val ACTION_GID_TOKEN = "action_gid_token"
         const val ACTION_ARCHIVE = "action_archive"
 
-        const val KEY_GALLERY_INFO = "gallery_info"
         const val KEY_ARCHIVE = "archive"
         const val KEY_GID = "gid"
         const val KEY_ARCID = "token"

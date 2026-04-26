@@ -57,7 +57,7 @@ class GalleryDetailViewModelTest {
     fun resetForNewEntry_clearsAllPerEntryState() {
         val vm = GalleryDetailViewModel()
 
-        vm.setAction(GalleryDetailScene.ACTION_GALLERY_INFO)
+        vm.setAction(GalleryDetailScene.ACTION_ARCHIVE)
         vm.setGid(42L)
         vm.setArcid("tok")
         vm.setGalleryInfo(GalleryInfo().apply { arcid = "tok" })

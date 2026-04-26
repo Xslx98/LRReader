@@ -650,8 +650,11 @@ class DownloadAdapter(
                             .show()
                     } else {
                         val args = Bundle()
-                        args.putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_DOWNLOAD_GALLERY_INFO)
-                        args.putParcelable(GalleryDetailScene.KEY_GALLERY_INFO, list[mCallback.positionInList(index)])
+                        args.putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_ARCHIVE)
+                        args.putParcelable(
+                            GalleryDetailScene.KEY_ARCHIVE,
+                            list[mCallback.positionInList(index)].toArchive(),
+                        )
                         val announcer = Announcer(GalleryDetailScene::class.java).setArgs(args)
                         announcer.setTranHelper(EnterGalleryDetailTransaction(thumb))
                         mScene.startScene(announcer)
