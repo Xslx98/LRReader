@@ -258,9 +258,14 @@ class GalleryDetailViewModel : ViewModel() {
     }
         .distinctUntilChanged()
         .flatMapLatest { arcid ->
-            if (arcid.isNullOrEmpty()) flowOf(0) else ReadingProgressTracker.progressFlow(arcid)
+            if (arcid.isNullOrEmpty()) flowOf(ReadingProgressTracker.NO_LOCAL_PROGRESS)
+            else ReadingProgressTracker.progressFlow(arcid)
         }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+        // Lazily started so the flow does not run (and does not touch
+        // ServiceRegistry / SharedPreferences) until the Scene subscribes.
+        // Avoids needless work on Activity-scoped VM construction and keeps
+        // unit tests (which never collect) free of Android dependencies.
+        .stateIn(viewModelScope, SharingStarted.Lazily, ReadingProgressTracker.NO_LOCAL_PROGRESS)
 
     // -------------------------------------------------------------------------
     // Detail-page reading preload

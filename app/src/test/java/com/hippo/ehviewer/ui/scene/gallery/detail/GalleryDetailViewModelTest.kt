@@ -2,7 +2,9 @@ package com.hippo.ehviewer.ui.scene.gallery.detail
 
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.gallery.ReadingProgressTracker
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Test
@@ -94,5 +96,21 @@ class GalleryDetailViewModelTest {
 
         assertEquals(777L, vm.getEffectiveGid())
         assertNull(vm.downloadInfo.value)
+    }
+
+    /**
+     * Regression: constructing the VM must not eagerly start [GalleryDetailViewModel.localReadingPage]
+     * — that flow lazily reads SharedPreferences via ServiceRegistry, which is uninitialized
+     * in unit tests and would surface as kotlinx.coroutines.test's
+     * `UncaughtExceptionsBeforeTest` against an unrelated test class.
+     *
+     * See commit history for the original eager `SharingStarted.Eagerly` flake.
+     */
+    @Test
+    fun construction_doesNotTriggerServiceRegistry() {
+        val vm = GalleryDetailViewModel()
+        // StateFlow exists, holds the sentinel, and was created without throwing.
+        assertNotNull(vm.localReadingPage)
+        assertEquals(ReadingProgressTracker.NO_LOCAL_PROGRESS, vm.localReadingPage.value)
     }
 }
