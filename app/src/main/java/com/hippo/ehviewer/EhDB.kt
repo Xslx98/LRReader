@@ -145,7 +145,20 @@ object EhDB {
                             it.moveToNext()
                             return@use
                         }
-                        val info = LocalFavoriteInfo(gi)
+                        val info = LocalFavoriteInfo().apply {
+                            arcid = gi.arcid
+                            this.gid = gi.gid
+                            title = gi.title
+                            titleJpn = gi.titleJpn
+                            thumb = gi.thumb
+                            category = gi.category
+                            posted = gi.posted
+                            uploader = gi.uploader
+                            rating = gi.rating
+                            simpleLanguage = gi.simpleLanguage
+                            serverProfileId = gi.serverProfileId
+                            simpleTags = gi.simpleTags
+                        }
                         info.time = i
                         browsingDao.insertLocalFavorite(info)
                         it.moveToNext()
