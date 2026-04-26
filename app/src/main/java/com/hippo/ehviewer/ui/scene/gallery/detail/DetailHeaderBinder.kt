@@ -236,7 +236,7 @@ internal class DetailHeaderBinder(
     }
 
     fun bindArchiverProgress(gd: GalleryDetail) {
-        archiverDownloadProgress.initThread(gd)
+        archiverDownloadProgress.initThread(gd.arcid)
     }
 
     /**
