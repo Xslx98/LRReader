@@ -15,7 +15,6 @@ import com.hippo.android.resource.AttrResources
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
 import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.client.data.GalleryInfo
 
 import com.lanraragi.reader.client.api.data.LRRArchive
 import com.lanraragi.reader.domain.Archive
@@ -119,28 +118,27 @@ internal class DetailHeaderBinder(
 
     fun bindViewSecond(
         gd: GalleryDetail,
-        galleryInfo: GalleryInfo?,
+        hadEagerBind: Boolean,
         context: Context?,
         inflater: android.view.LayoutInflater?,
         clickListener: View.OnClickListener,
         longClickListener: View.OnLongClickListener
     ) {
-        if (galleryInfo == null) {
+        if (!hadEagerBind) {
             thumb.load(LRRCacheKeyFactory.getThumbKey(gd.arcid), gd.thumb)
+        } else if (useNetWorkLoadThumb) {
+            // bindViewFirst loaded a stale thumb URL; force a network refresh.
+            thumb.load(LRRCacheKeyFactory.getThumbKey(gd.arcid), gd.thumb)
+            useNetWorkLoadThumb = false
         } else {
-            if (useNetWorkLoadThumb) {
-                thumb.load(LRRCacheKeyFactory.getThumbKey(gd.arcid), gd.thumb)
-                useNetWorkLoadThumb = false
-            } else {
-                thumb.load(LRRCacheKeyFactory.getThumbKey(gd.arcid), gd.thumb, false)
-            }
+            // Eager bind already cached the same URL — read from disk.
+            thumb.load(LRRCacheKeyFactory.getThumbKey(gd.arcid), gd.thumb, false)
         }
 
         title.text = gd.title
         uploader.text = gd.uploader
 
-        val info = galleryInfo ?: gd
-        bindReadProgress(info.progress, info.pages)
+        bindReadProgress(gd.progress, gd.pages)
 
         size.text = gd.size
 

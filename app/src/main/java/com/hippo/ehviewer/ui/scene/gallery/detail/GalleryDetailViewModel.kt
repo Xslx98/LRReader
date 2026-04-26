@@ -85,18 +85,14 @@ class GalleryDetailViewModel : ViewModel() {
     // Gallery data
     // -------------------------------------------------------------------------
 
-    private val _galleryInfo = MutableStateFlow<GalleryInfo?>(null)
-
-    /** The initial gallery info passed via arguments (before detail is loaded). */
-    val galleryInfo: StateFlow<GalleryInfo?> = _galleryInfo.asStateFlow()
-
     private val _archive = MutableStateFlow<Archive?>(null)
 
     /**
-     * Archive (domain model) form of the navigation argument. Populated
-     * automatically by [setGalleryInfo] (via `info.toArchive()`) and by
-     * [setArchive]. The eventual goal of W36-3 is to drop [_galleryInfo]
-     * entirely and have all consumers read this flow directly.
+     * Archive (domain model) of the navigation argument. Populated by
+     * [setArchive] from `GalleryDetailScene.handleArgs`. Until the
+     * detail-API response lands this is the only source for the eager
+     * header bind (thumb / title); after that, [galleryDetail] is
+     * preferred via [getEffectiveArchive].
      */
     val archive: StateFlow<Archive?> = _archive.asStateFlow()
 
@@ -140,13 +136,6 @@ class GalleryDetailViewModel : ViewModel() {
         _arcid.value = arcid
     }
 
-    fun setGalleryInfo(info: GalleryInfo?) {
-        _galleryInfo.value = info
-        // Mirror to the Archive flow so consumers migrating to the
-        // domain model can read the same navigation argument.
-        _archive.value = info?.toArchive()
-    }
-
     fun setArchive(archive: Archive?) {
         _archive.value = archive
     }
@@ -170,12 +159,12 @@ class GalleryDetailViewModel : ViewModel() {
      * Why this exists: this ViewModel is scoped via
      * `ViewModelProvider(requireActivity())`, so the same instance is reused
      * across `GalleryDetailScene` navigations. The `getEffective*()` accessors
-     * fall back as `detail > info > args`. Without an explicit reset, the
+     * fall back as `detail > archive > args`. Without an explicit reset, the
      * previously loaded `_galleryDetail` shadows the newly written
-     * `_galleryInfo` and every effective gid / arcid / category returns the
-     * stale gallery — the new detail page renders the old gallery, downloads
-     * its file, etc. The reader path is unaffected because it goes through an
-     * Intent with the GalleryInfo embedded directly, bypassing the ViewModel.
+     * `_archive` and every effective arcid returns the stale gallery — the
+     * new detail page renders the old gallery, downloads its file, etc.
+     * The reader path is unaffected because it goes through an Intent with
+     * the Archive embedded directly, bypassing the ViewModel.
      *
      * Must be called by `GalleryDetailScene.handleArgs()` before writing the
      * new arguments to the flows.
@@ -186,7 +175,6 @@ class GalleryDetailViewModel : ViewModel() {
         _action.value = null
         _gid.value = 0L
         _arcid.value = null
-        _galleryInfo.value = null
         _archive.value = null
         _galleryDetail.value = null
         _archiveDetail.value = null
@@ -200,26 +188,19 @@ class GalleryDetailViewModel : ViewModel() {
     // -------------------------------------------------------------------------
 
     /**
-     * Returns the effective arcid, preferring galleryDetail > galleryInfo > arcid argument.
+     * Returns the effective arcid, preferring galleryDetail > archive > arcid argument.
      */
     fun getEffectiveArcid(): String? {
         val detail = _galleryDetail.value
         if (detail != null) return detail.arcid
 
-        val info = _galleryInfo.value
-        if (info != null) return info.arcid
+        val archive = _archive.value
+        if (archive != null) return archive.arcid
 
         if (GalleryDetailScene.ACTION_GID_TOKEN == _action.value) {
             return _arcid.value
         }
         return null
-    }
-
-    /**
-     * Returns the best available gallery info object (detail preferred over info).
-     */
-    fun getEffectiveGalleryInfo(): GalleryInfo? {
-        return _galleryDetail.value ?: _galleryInfo.value
     }
 
     /**
@@ -242,10 +223,10 @@ class GalleryDetailViewModel : ViewModel() {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val localReadingPage: StateFlow<Int> = combine(
-        _galleryDetail, _galleryInfo, _arcid, _action
-    ) { gd, gi, argArcid, action ->
+        _galleryDetail, _archive, _arcid, _action
+    ) { gd, archive, argArcid, action ->
         gd?.arcid
-            ?: gi?.arcid
+            ?: archive?.arcid
             ?: if (action == GalleryDetailScene.ACTION_GID_TOKEN) argArcid else null
     }
         .distinctUntilChanged()
