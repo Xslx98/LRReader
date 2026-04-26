@@ -189,9 +189,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         }
     }
 
-    // -1 for error
-    private fun getGid(): Long = viewModel.getEffectiveGid()
-
     private fun getGalleryInfo(): GalleryInfo? = viewModel.getEffectiveGalleryInfo()
 
     override fun onCreate(savedInstanceState: Bundle?) {
