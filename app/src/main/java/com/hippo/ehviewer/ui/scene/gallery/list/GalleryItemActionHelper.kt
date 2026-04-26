@@ -152,7 +152,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
                             }
                         } else {
                             (activity as? MainActivity)?.let {
-                                CommonOperations.startDownload(it, gi.toGalleryInfo(), false)
+                                CommonOperations.startDownload(it, gi, false)
                             }
                         }
                     }
