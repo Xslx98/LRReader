@@ -42,9 +42,9 @@ import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.mapper.toGalleryInfo
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.data.LRRArchive
-import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.ui.MainActivity
 import com.hippo.ehviewer.ui.scene.BaseScene
+import com.hippo.ehviewer.util.collectFlow
 import com.hippo.ehviewer.widget.ArchiverDownloadProgress
 import com.hippo.lib.yorozuya.AssertUtils
 import com.hippo.lib.yorozuya.IntIdGenerator
@@ -465,22 +465,27 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 mActionHandler?.updateDownloadText()
             }
         }
+        // Observe local reading progress so the header refreshes whenever the
+        // reader writes a new page (StateFlow replays its current value to new
+        // collectors, so this also covers returning from the reader to a paused
+        // detail Scene). Replaces the previous one-shot onResume re-read.
+        collectFlow(viewLifecycleOwner, viewModel.localReadingPage) { localPage0 ->
+            applyLocalReadingProgress(localPage0)
+        }
     }
 
-    override fun onResume() {
-        super.onResume()
-        // Sync local reading progress back to the in-memory model
+    private fun applyLocalReadingProgress(localPage0: Int) {
+        // Sentinel: SP has never been written, defer to server-reported progress.
+        if (localPage0 == com.hippo.ehviewer.gallery.ReadingProgressTracker.NO_LOCAL_PROGRESS) return
         val info = getGalleryInfo() ?: return
-        val arcid = info.arcid
-        val localPage = if (arcid != null) {
-            GalleryProvider2.loadReadingProgress(requireContext(), arcid) + 1
-        } else {
-            @Suppress("DEPRECATION")
-            GalleryProvider2.loadReadingProgress(requireContext(), info.gid) + 1
-        }
-        if (localPage > info.progress) {
-            info.progress = localPage
-        }
+        val localPage1 = localPage0 + 1
+        // Local progress is the latest authoritative position once the reader
+        // has written it, so sync unconditionally — going backward must update
+        // the display too. Mutate both the detail and the original list info
+        // so any later re-bind path (which may pick either object) is consistent.
+        viewModel.galleryDetail.value?.progress = localPage1
+        viewModel.galleryInfo.value?.progress = localPage1
+        info.progress = localPage1
         mHeaderBinder?.bindReadProgress(info)
     }
 

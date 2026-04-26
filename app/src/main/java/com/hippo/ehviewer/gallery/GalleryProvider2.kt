@@ -86,6 +86,7 @@ abstract class GalleryProvider2 : GalleryProvider() {
                 .putInt(arcid, page)
                 .putLong("${arcid}_ts", System.currentTimeMillis() / 1000L)
                 .apply()
+            ReadingProgressTracker.setProgress(arcid, page)
         }
 
         /**
