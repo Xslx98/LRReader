@@ -42,9 +42,14 @@ object ReadingProgressTracker {
     const val NO_LOCAL_PROGRESS: Int = -1
 
     private fun flowFor(arcid: String): MutableStateFlow<Int> = flows.getOrPut(arcid) {
-        val ctx = ServiceRegistry.appModule.getContext()
-        val ts = GalleryProvider2.loadReadingTimestamp(ctx, arcid)
-        val initial = if (ts > 0) GalleryProvider2.loadReadingProgress(ctx, arcid) else NO_LOCAL_PROGRESS
+        // Defensive: ServiceRegistry may not be initialized in unit tests or
+        // very early app startup. Fall back to NO_LOCAL_PROGRESS so observers
+        // simply defer to whatever progress is already in memory.
+        val initial = runCatching {
+            val ctx = ServiceRegistry.appModule.getContext()
+            val ts = GalleryProvider2.loadReadingTimestamp(ctx, arcid)
+            if (ts > 0) GalleryProvider2.loadReadingProgress(ctx, arcid) else NO_LOCAL_PROGRESS
+        }.getOrDefault(NO_LOCAL_PROGRESS)
         MutableStateFlow(initial)
     }
 }
