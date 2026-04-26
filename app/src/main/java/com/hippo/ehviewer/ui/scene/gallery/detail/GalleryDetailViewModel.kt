@@ -233,27 +233,6 @@ class GalleryDetailViewModel : ViewModel() {
     }
 
     /**
-     * Returns the effective uploader string, preferring galleryDetail > galleryInfo.
-     */
-    fun getEffectiveUploader(): String? {
-        return _galleryDetail.value?.uploader ?: _galleryInfo.value?.uploader
-    }
-
-    /**
-     * Returns the effective category, preferring galleryDetail > galleryInfo.
-     * Returns -1 if none is available.
-     */
-    fun getEffectiveCategory(): Int {
-        val detail = _galleryDetail.value
-        if (detail != null) return detail.category
-
-        val info = _galleryInfo.value
-        if (info != null) return info.category
-
-        return -1
-    }
-
-    /**
      * Returns the best available gallery info object (detail preferred over info).
      */
     fun getEffectiveGalleryInfo(): GalleryInfo? {
