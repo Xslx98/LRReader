@@ -200,7 +200,7 @@ internal class DetailActionHandler(
         val galleryInfo = viewModel.getEffectiveGalleryInfo() ?: return
 
         if (viewModel.downloadManager.getDownloadState(galleryInfo.arcid) == DownloadInfo.STATE_INVALID) {
-            CommonOperations.startDownload(activity, galleryInfo, false)
+            CommonOperations.startDownload(activity, galleryInfo.toArchive(), false)
         } else {
             DownloadLabelHelper.showDeleteDialog(context, galleryInfo) { deleteFiles ->
                 DownloadLabelHelper.performDelete(galleryInfo, deleteFiles)
