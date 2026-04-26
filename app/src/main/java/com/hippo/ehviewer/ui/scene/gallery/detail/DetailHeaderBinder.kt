@@ -139,7 +139,7 @@ internal class DetailHeaderBinder(
         uploader.text = gd.uploader
 
         val info = galleryInfo ?: gd
-        bindReadProgress(info)
+        bindReadProgress(info.progress, info.pages)
 
         size.text = gd.size
 
@@ -235,10 +235,16 @@ internal class DetailHeaderBinder(
         archiverDownloadProgress.initThread(gd)
     }
 
-    fun bindReadProgress(info: GalleryInfo?) {
-        if (info == null) return
-        val displayProgress = if (info.progress > 0) info.progress else 1
-        pages.text = "${displayProgress}/${info.pages}P"
+    /**
+     * Bind the "page X / total Y" display.
+     *
+     * @param progress 1-indexed reading progress; 0 means "unread" and is
+     *   displayed as page 1
+     * @param totalPages total page count for the gallery
+     */
+    fun bindReadProgress(progress: Int, totalPages: Int) {
+        val displayProgress = if (progress > 0) progress else 1
+        pages.text = "${displayProgress}/${totalPages}P"
     }
 
     fun setTransitionName(arcid: String?) {
