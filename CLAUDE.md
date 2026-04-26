@@ -1,354 +1,155 @@
-# CLAUDE.md — LR Reader Codebase Guide
+# CLAUDE.md — LR Reader 协作守则
 
-## Project Overview
-
-**LR Reader** is an Android client for [LANraragi](https://github.com/Difegue/LANraragi), a self-hosted manga/archive management server. It is forked from [EhViewer_CN_SXJ](https://github.com/xiaojieonly/Ehviewer_CN_SXJ) and retains the EhViewer framework as its UI/reading foundation while replacing all E-Hentai API calls with LANraragi (LRR) REST API calls.
-
-- **Application ID:** `com.lanraragi.reader`
-- **Namespace:** `com.hippo.ehviewer` (legacy, retained from EhViewer)
-- **Current Version:** 1.11.6 (versionCode 11106 — formula: `MAJOR*10000 + MINOR*100 + PATCH`)
-- **License:** GPLv3
-
----
-
-## Technology Stack
-
-| Layer | Technology | Version |
-|---|---|---|
-| Languages | Java / Kotlin hybrid (52% Kotlin by file count) | Kotlin 2.1.0 |
-| Android SDK | compileSdk 35, minSdk 28 | Android 9+ |
-| JDK | Java 21 | sourceCompatibility VERSION_21 |
-| Build | Gradle + AGP 8.13.2 | `./gradlew` + Version Catalog (`libs.versions.toml`) |
-| Network | OkHttp | 4.12.0 |
-| API Serialization | kotlinx-serialization | 1.8.1 (all JSON, Gson removed) |
-| Database | Room + KSP | 2.6.1, schema v21 (exported to `app/schemas/`) |
-| Coroutines | kotlinx-coroutines | 1.10.2 |
-| Lifecycle | AndroidX lifecycle-runtime-ktx | 2.8.7 |
-| Image Decoding | Custom C/JNI (libjpeg-turbo, libpng, libwebp) | CMake |
-| Security | EncryptedSharedPreferences | 1.1.0 |
-| UI | Material Design + AndroidX | Material 1.13.0 |
-| Static Analysis | Detekt | 1.23.7 (config: `config/detekt/detekt.yml`) |
-| Paging | Jetpack Paging 3 | 3.3.6 |
-| ViewModel | AndroidX lifecycle-viewmodel-ktx | 2.8.7 |
-| ABI | arm64-v8a (release), arm64-v8a + x86_64 (debug) | 64-bit only |
+> **LR Reader** 是 [LANraragi](https://github.com/Difegue/LANraragi) 的 Android 客户端。Fork 自 EhViewer_CN_SXJ，保留 EhViewer 的 UI/阅读框架，业务后端全部替换为 LANraragi REST API。
+>
+> - **Application ID**：`com.lanraragi.reader`
+> - **Namespace**：`com.hippo.ehviewer`（保留）
+> - **当前版本**：v1.12.0 (versionCode 11200)
+> - **License**：GPLv3
+> - **versionCode 公式**：`MAJOR*10000 + MINOR*100 + PATCH`
 
 ---
 
-## Repository Structure
+## 文档索引
 
-```
-LRReader/
-├── app/
-│   ├── schemas/                   # Room schema exports (per version)
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/com/lanraragi/reader/
-│   │   │   │   └── client/api/        # LANraragi REST API client (PRIMARY)
-│   │   │   │       └── data/          # LRR @Serializable data classes
-│   │   │   ├── java/com/hippo/ehviewer/
-│   │   │   │   ├── client/parser/     # HTML/JSON parsers (legacy EH)
-│   │   │   │   ├── client/exception/  # Custom API exceptions
-│   │   │   │   ├── dao/               # Room DB entities + DAOs
-│   │   │   │   ├── module/            # DI-style service modules (ServiceRegistry)
-│   │   │   │   ├── settings/          # Modular settings objects (replaces Settings.java)
-│   │   │   │   ├── ui/                # Activities + Scenes + Fragments + Dialogs
-│   │   │   │   ├── download/          # Download management
-│   │   │   │   ├── gallery/           # Gallery + image provider
-│   │   │   │   ├── spider/            # Spider/preload subsystem
-│   │   │   │   ├── sync/              # Reading progress sync
-│   │   │   │   ├── util/              # General utilities
-│   │   │   │   ├── widget/            # Custom Android widgets
-│   │   │   │   ├── preference/        # Preference screen helpers
-│   │   │   │   ├── updater/           # Version update checking
-│   │   │   │   ├── shortcuts/         # App shortcuts
-│   │   │   │   ├── event/             # Event bus messages
-│   │   │   │   └── callBack/          # Callback interfaces
-│   │   │   ├── cpp/                   # C/JNI native image decoder
-│   │   │   │   └── CMakeLists.txt
-│   │   │   ├── res/                   # Resources (11 locale configs)
-│   │   │   └── AndroidManifest.xml
-│   │   └── test/                      # Unit tests (Robolectric + MockWebServer)
-│   ├── build.gradle                   # App-level Gradle config
-│   └── proguard-rules.pro
-├── config/detekt/detekt.yml           # Detekt static analysis config
-├── gradle/
-│   └── libs.versions.toml             # Gradle Version Catalog (all deps here)
-├── fastlane/                          # Fastlane metadata + screenshots
-├── .github/workflows/
-│   └── build.yml                      # CI: build + test + lint + detekt
-├── build.gradle                       # Root Gradle config
-├── settings.gradle                    # Project structure + repositories
-├── gradle.properties                  # JVM args, AndroidX settings
-└── local.properties                   # Local SDK path + signing (gitignored)
-```
+CLAUDE.md 只承载高频日常约定。详细信息分散在 `docs/`：
 
-### Key Source Files
-
-All paths below are relative to `app/src/main/java/com/hippo/ehviewer/` unless noted.
-
-| File | Purpose |
+| 文档 | 何时阅读 |
 |---|---|
-| `EhApplication.kt` | App entry point; calls `ServiceRegistry.initialize()` |
-| `ServiceRegistry.kt` | Central singleton registry (modules: App, Client, Coroutine, Data, Network) |
-| `EhDB.kt` | Room database access layer (all suspend); domain methods are `@Deprecated` in favour of Repositories |
-| `dao/AppDatabase.kt` | Room database schema (v21, exported to `app/schemas/`) |
-| `dao/*Repository.kt` | Domain Repositories: History, Profile, QuickSearch, Favorites, DownloadDb |
-| `settings/*.kt` | Modular settings objects (Appearance, Download, Network, Reading, Security, etc.) |
-| `client/api/LRR*.kt` | LANraragi REST API: Archive, Search, Category, Database, TagCache, PagingSource |
-| `client/api/LRRApiUtils.kt` | Shared utilities: `parseBaseUrl()`, `retryOnFailure()`, `friendlyError()` |
-| `download/DownloadManager.kt` | Download facade — delegates to Repository/Scheduler/EventBus; owns `progressTracker` |
-| `download/DownloadRepository.kt` | Download in-memory collections + DB persistence |
-| `download/DownloadScheduler.kt` | Download worker scheduling + state machine |
-| `download/DownloadProgressTracker.kt` | In-memory `StateFlow<Map<arcid, ProgressSnapshot>>` — live progress (ADR-001) |
-| `download/ProgressSnapshot.kt` | Immutable per-archive progress: speed/finished/downloaded/total/remaining |
-| `ui/MainActivity.kt` | Main UI entry point + scene routing |
-| `ui/GalleryActivity.kt` | Reader/detail view |
-| `ui/scene/GalleryListScene.kt` | Gallery browse scene (Paging 3) |
-| `ui/scene/gallery/detail/GalleryDetailScene.kt` | Gallery detail view (decomposed: DetailHeaderBinder, DetailActionHandler) |
-| `ui/scene/gallery/detail/GalleryDetailViewModel.kt` | Gallery detail state + metadata fetch + download state |
-| `ui/scene/download/DownloadsScene.kt` | Download list UI; renders from `viewModel.downloadList` (Room × ProgressTracker Flow) |
-| `ui/scene/download/DownloadsViewModel.kt` | Download list state (Flow-driven), labels, filter/sort, search, import, sealed DownloadUiEvent |
-| `mapper/GalleryInfoMapper.kt` | GalleryInfo↔GalleryInfoUi conversion |
-| `util/CoroutineBridge.kt` | Java→coroutine bridge (launchIO) |
-| `util/FlowBridge.kt` | Java→Kotlin Flow bridge for lifecycle-aware collection |
+| [docs/architecture.md](docs/architecture.md) | 需要技术栈版本表、目录结构、关键文件列表、ServiceRegistry / Settings 模块拆分 |
+| [docs/testing-and-ci.md](docs/testing-and-ci.md) | 跑测试、看 CI 流程、改签名配置、Native CMake、本地化、Room schema 演进 |
+| [docs/adr-001-download-ssot.md](docs/adr-001-download-ssot.md) | 改 Download 模块（W35-3a/3b 已完成，W35-1a/3c 仍在路上） |
+| [docs/audit-2026-04-15-v2.md](docs/audit-2026-04-15-v2.md) | 数据架构反模式（D1/D4/D5/D7 仍部分修复，是当前活跃整改对象） |
+| [docs/EDGE_TO_EDGE.md](docs/EDGE_TO_EDGE.md) | 改 Activity 布局或状态栏 —— API 35+ 状态栏着色坑很深，必读 |
+| `docs/archive/` | 归档目录：已完成的 plan / 旧 audit 快照 / 过时 onboard / 历史 ROADMAP。**不必要不查看**，主要为审计/历史回溯保留 |
+
+> ⚠️ **`docs/` 永不入 git**。整个目录及所有子目录在 `.gitignore` 中（`/docs/`），仅作本地协作笔记，不提交、不推送、不发布到 GitHub。新增/修改 docs 文件不要 `git add docs/...`，也不要 `git add -f` 强制追加。
 
 ---
 
-## Build Commands
+## 常用命令
 
 ```bash
-# Debug APK
-./gradlew :app:assembleAppReleaseDebug
-# Output: app/build/outputs/apk/appRelease/debug/
-
-# Signed Release APK
-./gradlew :app:assembleAppReleaseRelease
-# Output: app/build/outputs/apk/appRelease/release/
-
-# Unit tests
-./gradlew app:testAppReleaseDebugUnitTest
-
-# Lint
-./gradlew app:lintAppReleaseDebug
-
-# Detekt (static analysis — continue-on-error in CI)
-./gradlew detekt
-
-# Clean
+./gradlew :app:assembleAppReleaseDebug      # Debug APK
+./gradlew :app:assembleAppReleaseRelease    # 签名 Release APK
+./gradlew app:testAppReleaseDebugUnitTest   # 单测
+./gradlew app:lintAppReleaseDebug           # Lint
+./gradlew detekt                            # 静态分析（CI 阻塞）
 ./gradlew clean
 ```
 
-### Signing Setup (required for release builds)
-
-Create `local.properties` in the project root (gitignored):
-
-```properties
-sdk.dir=/path/to/Android/Sdk
-RELEASE_STORE_FILE=keystore/release.jks
-RELEASE_STORE_PASSWORD=<password>
-RELEASE_KEY_ALIAS=lrreader
-RELEASE_KEY_PASSWORD=<password>
-```
-
-Signing config also reads from environment variables (`RELEASE_STORE_FILE`, etc.) for CI use.
-
-### Build Variants
-
-- Single flavor: `appRelease`
-- Two build types: `debug` (applicationIdSuffix `.debug`) and `release` (minified, signed)
-- R8/ProGuard enabled for release; `shrinkResources true`
-
 ---
 
-## Code Conventions
+## 代码约定
 
-### Language
+### 语言
 
-- **All new code must be Kotlin.** Java is legacy from EhViewer; do not write new Java.
-- **All `ehviewer` business code is 100% Kotlin** — zero Java files remain in `com.hippo.ehviewer`.
-- `com.hippo.*` framework (~228 files: GLView, Conaco, ContentLayout, widgets) stays Java — stable legacy, rarely touched.
+- **新代码必须 Kotlin**。`com.hippo.ehviewer` 业务代码已 100% Kotlin（零 Java 文件）；`com.hippo.*` 框架（GLView / Conaco / ContentLayout / 控件，~228 文件）保持 Java，稳定遗留，不动。
+- 4 空格缩进，同行开括号；CamelCase 类名 / camelCase 变量与方法。
+- 注释中文/英文皆可；Detekt 强制风格规则，提交前 `./gradlew detekt`。
 
-### Style
+### 异步与线程
 
-- 4-space indentation, same-line opening braces
-- CamelCase for classes, camelCase for variables/methods
-- Comments may be in Chinese or English (both acceptable)
-- Detekt enforces style rules; run `./gradlew detekt` before pushing
+- 网络与 DB 调用一律 **Kotlin 协程**：`suspend fun` + `withContext(Dispatchers.IO)`。
+- Fragment 协程用 `viewLifecycleOwner.lifecycleScope`。
+- Java 调 IO 工作：`CoroutineBridge.launchIO(lifecycleOwner, task)` 或 `IoThreadPoolExecutor`。
+- `EhDB` 只暴露 `suspend fun xxxAsync()`；旧 `blockingDb` 桥与 `@JvmStatic` 包装已删除。
+- `CoroutineModule` 提供 `applicationScope` / `ioScope`，含 `SupervisorJob` + `CoroutineExceptionHandler`。
+- `LRRCoroutineHelper.runSuspend()` 带运行时主线程守卫（在 UI 线程调用会抛异常）。
+- **新代码禁用 `runBlocking`**（唯一存活点：`LRRCoroutineHelper.runSuspend()`，`@WorkerThread` + 主线程守卫）。
+- **禁止主线程 DB 调用** —— UI 层调 `EhDB.*()` 必须包在 `IoThreadPoolExecutor` 或协程作用域里。
+- 无 `AsyncTask`；并行 IO 用 `IoThreadPoolExecutor`。
 
-### Async / Threading
+### 网络（OkHttp）
 
-- All network and database calls use **Kotlin Coroutines**: `suspend fun` + `withContext(Dispatchers.IO)`
-- Use `viewLifecycleOwner.lifecycleScope` for Fragment coroutines
-- **From Java code**, use `CoroutineBridge.launchIO(lifecycleOwner, task)` or `IoThreadPoolExecutor` to move DB/network work off the main thread
-- `EhDB` provides only `suspend fun xxxAsync()` methods — the legacy `blockingDb` bridge and all `@JvmStatic` wrappers have been removed
-- `CoroutineModule` provides `applicationScope` and `ioScope` with `SupervisorJob` + `CoroutineExceptionHandler`
-- `LRRCoroutineHelper.runSuspend()` has a **runtime main-thread guard** that throws if called on the UI thread
-- **No `AsyncTask` anywhere** — all replaced with `IoThreadPoolExecutor` + `Handler`
-- **No main-thread DB calls** — all `EhDB.*()` calls from UI code are wrapped in `IoThreadPoolExecutor` or coroutine scopes
-- **No `runBlocking` in new code** — use `scope.launch {}` or `suspend fun` instead. The only surviving `runBlocking` is in `LRRCoroutineHelper.runSuspend()` (Java→Kotlin bridge with `@WorkerThread` + main-thread guard).
-- Thread pool: `IoThreadPoolExecutor` for parallel image/network work
+- 所有 LANraragi API 调用走 `client/api/` 包。
+- `LRRAuthInterceptor` 注入 API key（按目标 host 校验，防 token 泄漏）。
+- DNS-over-HTTPS 来自 `okhttp-dnsoverhttps`。
+- 全局允许明文 HTTP（LAN IP 访问）。
 
-### Networking (OkHttp)
+### 数据库（Room）
 
-- All LANraragi API calls go through `client/api/` package
-- `LRRAuthInterceptor` injects API key per request
-- `LRRClientProvider` supplies the configured `OkHttpClient`
-- DNS-over-HTTPS via `okhttp-dnsoverhttps`
-- Cleartext HTTP allowed globally for LAN IP access; API key scoped to configured server via `LRRAuthInterceptor`
+- Entity / DAO 都在 `dao/` 包；用 KSP（**不**用 KAPT）。
+- 当前 schema v21；升级流程见 [docs/testing-and-ci.md §6](docs/testing-and-ci.md#6-schema-演进)。
+- **永不**使用 `fallbackToDestructiveMigration()`（生产代码）。
+- `AppDatabase.kt` 是唯一 Room 数据库实例。
+- UI 不直接调 `EhDB` domain 方法 —— 走对应 Repository（`ServiceRegistry.dataModule.{history|profile|quickSearch|favorites|downloadDb}Repository`），`EhDB` 上的 domain 方法已 `@Deprecated`。
 
-### Database (Room)
+### 序列化
 
-- All entities and DAOs in `dao/` package
-- Use KSP (not KAPT) for annotation processing
-- Schema version is v21; exported to `app/schemas/` — always provide a `Migration` when bumping
-- **Never** use `fallbackToDestructiveMigration()` in production code
-- `AppDatabase.kt` is the single Room database instance
+- 所有 JSON（包括 LRR API 响应和新代码）用 `kotlinx-serialization` 的 `@Serializable` 数据类（在 `client/api/data/`）。
+- **Gson 已从项目中移除，禁止重新引入。**
 
-### Serialization
+### 依赖管理
 
-- **All JSON (LRR API responses and new code):** `kotlinx-serialization` with `@Serializable` data classes in `client/api/data/`
-- Gson has been removed from the project — do not re-add it
+- 库版本统一在 `gradle/libs.versions.toml`；`build.gradle` 用 `libs.<alias>` 引用，**禁止硬编码版本号**。
+- JitPack 依赖钉到 commit hash，更新需手动同步并在 catalog 注释中说明。
 
-### Dependency Management
+### 命名
 
-- All library versions declared in `gradle/libs.versions.toml` (Version Catalog)
-- Reference libraries in `build.gradle` as `libs.<alias>`, never hardcode versions
-- JitPack dependencies are pinned to commit hashes — update manually, document in catalog comments
-
-### Service / Module Pattern
-
-New singletons belong in the appropriate module under `module/`:
-
-- `AppModule` — app-wide services (crash, analytics)
-- `ClientModule` — API client instances
-- `CoroutineModule` — scoped coroutines with exception handling
-- `DataModule` — database access objects
-- `NetworkModule` — OkHttp, DNS, proxy
-
-Access via `ServiceRegistry.<module>.<service>`. Do not add new statics to `EhApplication`.
-
-### Settings
-
-Settings are now Kotlin objects in `settings/`:
-
-- `Settings.kt` (utility only: `getContext()`, `getPreferences()`, generic accessors), `AppearanceSettings`, `DownloadSettings`, `FavoritesSettings`, `NetworkSettings`, `ReadingSettings`, `SecuritySettings`, `UpdateSettings`, `GuideSettings`, `PrivacySettings`
-- New settings go into the appropriate typed object; do not add field-specific accessors to `Settings.kt`
-- API keys use `EncryptedSharedPreferences` via `LRRAuthManager` — never plaintext
-
-### Package Organization
-
-- LRR API code → `client/api/`
-- LRR data classes → `client/api/data/`
-- UI scenes → `ui/scene/`; fragments → `ui/fragment/`
-- Business logic stays out of Activities/Fragments
+- 用 `parseBaseUrl()`（来自 `LRRApiUtils.kt`）构建 LRR API URL，**不要** `toHttpUrlOrNull()!!`。
+- 旧路径 `com.hippo.ehviewer.client.lrr` 已废弃 —— 用 `com.lanraragi.reader.client.api`。
+- 旧名 `EhUrl` / `EhUrlOpener` 已重命名为 `LRRUrl` / `LRRUrlOpener`。
 
 ---
-
-## Testing
-
-Unit tests live in `app/src/test/java/` covering:
-
-- **LRR API** — all API classes + data classes + PagingSource (MockWebServer)
-- **Download module** — DownloadManager, Repository, Scheduler, EventBus, SpeedTracker, ProgressTracker
-- **ViewModels** — all 8 Scene ViewModels (Downloads, GalleryDetail, GalleryList, History, ServerConfig, ServerList, Categories, QuickSearch)
-- **Room** — schema integrity, migration paths, DAO CRUD
-- **Utilities** — Parcelable round-trip, DiffUtil contracts, CoroutineBridge, tag parsing, pattern lockout
-
-```bash
-./gradlew app:testAppReleaseDebugUnitTest
-```
-
-Test reports: `app/build/reports/tests/`
-
----
-
-## CI/CD
-
-### GitHub Actions
-
-**`build.yml`** — triggers on push/PR to `main`:
-1. Validate Fastlane metadata
-2. Build (`assembleAppReleaseDebug`)
-3. Unit tests (`testAppReleaseDebugUnitTest`)
-4. Lint (`lintAppReleaseDebug`)
-5. Detekt (blocking — build fails on violations)
-6. JaCoCo test coverage report (continue-on-error)
-7. Upload artifacts: test reports, coverage reports, lint reports, detekt reports, APK
-8. Dependency submission (push to `main` only — GitHub dependency graph)
-
-Releases are managed locally via `gh release create` with pre-signed APKs. No CI-based release workflow.
-
-Firebase Crashlytics is optional: applied only if `app/google-services.json` exists (gitignored).
-
----
-
-## Localization
-
-Resources compiled for 11 locale configurations:
-`en`, `zh`, `zh-rCN`, `zh-rHK`, `zh-rTW`, `es`, `ja`, `ko`, `fr`, `de`, `th`
-
-Lint rules disable `MissingTranslation` and `ExtraTranslation` — partial translations are acceptable.
-
----
-
-## Native Code (C/JNI)
-
-- Located in `app/src/main/cpp/`
-- Built via CMake (`CMakeLists.txt`)
-- Custom high-performance image decoder wrapping libjpeg-turbo, libpng, libwebp
-- JNI module name: `native-lib`
-- Only touch for image decoding bugs or new format support
 
 ## What NOT to Do
 
-### Language & Build
+### 语言 / 构建
 
-- Do not write new Java — all new code must be Kotlin
-- Do not use Gson — use `kotlinx-serialization` for all JSON
-- Do not hardcode dependency versions in `build.gradle` — use `libs.versions.toml`
-- Do not add `x86_64` ABI filter to release builds — release is arm64-v8a only (debug includes x86_64 for emulator)
-- Do not commit `local.properties`, keystore credentials, or `google-services.json`
+- 不写新 Java —— 新代码一律 Kotlin。
+- 不用 Gson —— 全部用 `kotlinx-serialization`。
+- 不在 `build.gradle` 硬编码版本 —— 用 `libs.versions.toml`。
+- Release 不加 `x86_64` ABI —— release 仅 arm64-v8a，debug 才包含 x86_64。
+- 不提交 `local.properties` / 签名文件 / `google-services.json`。
+- 不跟踪 `docs/` 目录 —— 整个目录 gitignored，仅本地协作笔记，禁止 `git add docs/...` 或 `-f` 强制追加。
 
-### Threading & Coroutines
+### 协程 / 线程
 
-- Do not use `AsyncTask` or raw `Thread` for network/DB work — use coroutines or `IoThreadPoolExecutor`
-- Do not use `runBlocking` in new code — use `scope.launch {}` or `suspend fun` instead
-- Do not add `blockingDb()` bridges or `@JvmStatic` wrappers to `EhDB` — use `suspend fun` variants from a coroutine scope
-- Do not add fire-and-forget `scope.launch { EhDB.*() }` without try-catch — all DB persistence launches must handle exceptions
+- 不用 `AsyncTask` 或裸 `Thread` 做网络/DB 工作 —— 用协程或 `IoThreadPoolExecutor`。
+- 新代码不用 `runBlocking` —— 用 `scope.launch {}` 或 `suspend fun`。
+- 不在 `EhDB` 添加 `blockingDb()` 桥或 `@JvmStatic` 包装 —— 协程作用域中调 `suspend` 变体。
+- DB 持久化的 `scope.launch { EhDB.*() }` 必须带 try-catch，禁止"fire-and-forget 不处理异常"。
 
-### Database & Persistence
+### 数据库 / 持久化
 
-- Do not use `fallbackToDestructiveMigration()` for Room schema changes
-- Do not store API keys or secrets in source code or non-encrypted preferences
-- Do not call `EhDB` domain methods directly from UI layer — use the corresponding Repository via `ServiceRegistry.dataModule` (History, Profile, QuickSearch, Favorites, DownloadDb); the `EhDB` methods are `@Deprecated`
+- Room schema 升级不用 `fallbackToDestructiveMigration()`。
+- API key / 任何 secret 不入源码、不入未加密 SharedPreferences。
+- UI 层不直接调 `EhDB` domain 方法 —— 走对应 Repository（同上节）。
 
-### Architecture & Patterns
+### 架构
 
-- Do not add new singletons to `EhApplication` — use `ServiceRegistry` modules
-- Do not add field-specific accessors to `Settings.kt` — new settings go into the appropriate modular settings object
-- Do not hardcode cache-clear calls in `ServiceRegistry.clearAllCaches()` — implement `Cacheable` and register via `ServiceRegistry.registerCacheable()`
-- Do not use `GalleryInfo` / `GalleryInfoEntity` in UI-layer code that only displays gallery data — use `GalleryInfoUi`; use `GalleryInfoEntity` (via `GalleryInfo` typealias) only at persistence boundaries
-- Do not add new Scene classes without a corresponding ViewModel — all functional Scenes have ViewModels
-- Do not reintroduce Helper Callback interfaces — business logic goes in ViewModels, Scenes observe StateFlow/SharedFlow
-- Do not move extracted helper logic back into Scene classes — keep Scenes as coordinators, helpers own the logic
+- 不在 `EhApplication` 加单例 —— 用 `ServiceRegistry` 各 Module。
+- 不在 `Settings.kt` 加字段访问器 —— 新设置进对应模块化 settings 对象。
+- 不在 `ServiceRegistry.clearAllCaches()` 硬编码清缓存调用 —— 实现 `Cacheable` 并 `registerCacheable()`。
+- UI 层只显示画廊数据时用 `GalleryInfoUi`，不要传 `GalleryInfo` / `GalleryInfoEntity`；只在持久化边界用 `GalleryInfoEntity`（其 typealias 为 `GalleryInfo`）。
+- 不新建无 ViewModel 的 Scene —— 所有功能性 Scene 都有 ViewModel。
+- 不重新引入 Helper Callback 接口 —— 业务逻辑放 ViewModel，Scene 观察 StateFlow / SharedFlow。
+- 抽离的 helper 不要塞回 Scene 类 —— Scene 当 coordinator，helper 持有逻辑。
 
-### API & Naming
+### API / 命名
 
-- Do not use `toHttpUrlOrNull()!!` to build LRR API URLs — use `parseBaseUrl()` from `LRRApiUtils.kt`
-- Do not import from `com.hippo.ehviewer.client.lrr` — use `com.lanraragi.reader.client.api`
-- Do not use `EhUrl` / `EhUrlOpener` — renamed to `LRRUrl` / `LRRUrlOpener`
+- 构建 LRR API URL 不用 `toHttpUrlOrNull()!!` —— 用 `parseBaseUrl()`。
+- 不从 `com.hippo.ehviewer.client.lrr` 导入 —— 用 `com.lanraragi.reader.client.api`。
+- 不用 `EhUrl` / `EhUrlOpener` —— 已重命名为 `LRRUrl` / `LRRUrlOpener`。
 
 ### UI
 
-- Do not use `notifyDataSetChanged()` on RecyclerView — use DiffUtil or specific `notifyItem*()` calls
-- Do not introduce new visual themes or Material3 components — match existing `RoundSideRectDrawable` + theme attr style
+- 不在 RecyclerView 用 `notifyDataSetChanged()` —— 用 DiffUtil 或具体的 `notifyItem*()`。
+- 不引入新视觉主题或 Material3 控件 —— 沿用现有 `RoundSideRectDrawable` + theme attr 风格。
 
-### Download Module
+### Download 模块
 
-- Do not import `DownloadRepository`, `DownloadScheduler`, or `DownloadEventBus` from outside the `download/` package — use `DownloadManager` facade only
-- Do not add `DownloadInfoListener` implementation to Scene classes — listener logic belongs in ViewModels, Scenes observe sealed `DownloadUiEvent` SharedFlow
-- Do not split `DownloadUiEvent` sealed interface back into individual SharedFlows — the single-flow dispatch pattern is intentional
-- Do not read transient progress fields (`speed` / `finished` / `downloaded` / `total` / `remaining`) from `DownloadInfo` in new code — use `DownloadManager.progressFor(arcid)` or subscribe to `progressTracker.progressFlow` (ADR-001). The `@Ignore` fields on `DownloadInfo` are retained only for backward compatibility and will be removed in a future step.
-- Do not read `DownloadManager.getLabelDownloadInfoList` / `defaultDownloadInfoList` from download-list UI code — use `viewModel.downloadList` (progress-enriched Flow). These accessors remain for non-UI callers only.
-- Do not add a Scene-level `collectFlow(viewModel.downloadsFlow)` subscription for the download list — the Scene subscribes to `viewModel.downloadList` which already combines Room Flow with `DownloadProgressTracker.progressFlow`.
-- Do not re-add per-tick `DownloadInfoListener.onUpdate`-driven `notifyItemChanged` calls for progress display — progress updates arrive via the combined Flow. The `ItemUpdated` event handler is retained only for immediate state flips (e.g., WAIT→DOWNLOAD) that precede the next Room Flow emission.
+- 不从 `download/` 包外导入 `DownloadRepository` / `DownloadScheduler` / `DownloadEventBus` —— 只用 `DownloadManager` Facade。
+- Scene 不实现 `DownloadInfoListener` —— 监听器逻辑进 ViewModel，Scene 订阅 sealed `DownloadUiEvent` SharedFlow。
+- 不把 `DownloadUiEvent` 拆回多个独立 SharedFlow —— 单 Flow 分派模式有意为之。
+- 新代码不读 `DownloadInfo` 上的瞬态字段（`speed` / `finished` / `downloaded` / `total` / `remaining`） —— 用 `DownloadManager.progressFor(arcid)` 或订阅 `progressTracker.progressFlow`（详见 [docs/adr-001-download-ssot.md](docs/adr-001-download-ssot.md)）。`DownloadInfo` 上的 `@Ignore` 字段仅为后向兼容保留，将在后续步骤删除。
+- 下载列表 UI 代码不读 `DownloadManager.getLabelDownloadInfoList` / `defaultDownloadInfoList` —— 用 `viewModel.downloadList`（带进度信息的 Flow）。这两个 accessor 仅留给非 UI 调用方。
+- 不在 Scene 层加 `collectFlow(viewModel.downloadsFlow)` —— Scene 已订阅 `viewModel.downloadList`，它已经把 Room Flow 与 `DownloadProgressTracker.progressFlow` combine 过。
+- 不重新加每 tick 由 `DownloadInfoListener.onUpdate` 驱动的 `notifyItemChanged` —— 进度更新走 combined Flow。`ItemUpdated` 事件处理器仅保留给"先于下次 Room Flow emission 的即时状态翻转"（如 WAIT→DOWNLOAD）。
+
+---
+
+## 反馈渠道
+
+`/help` 查看 Claude Code 帮助；反馈 issue 提交到 https://github.com/anthropics/claude-code/issues。
