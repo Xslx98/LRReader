@@ -661,7 +661,7 @@ class DownloadAdapter(
                     val info = list[mCallback.positionInList(index)]
                     val intent = Intent(context, DownloadService::class.java)
                     intent.action = DownloadService.ACTION_START
-                    intent.putExtra(DownloadService.KEY_GALLERY_INFO, info)
+                    intent.putExtra(DownloadService.KEY_ARCHIVE, info.toArchive())
                     context.startService(intent)
                 }
                 stop -> {
