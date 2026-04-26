@@ -19,7 +19,7 @@ CLAUDE.md 只承载高频日常约定。详细信息分散在 `docs/`：
 | [docs/architecture.md](docs/architecture.md) | 需要技术栈版本表、目录结构、关键文件列表、ServiceRegistry / Settings 模块拆分 |
 | [docs/testing-and-ci.md](docs/testing-and-ci.md) | 跑测试、看 CI 流程、改签名配置、Native CMake、本地化、Room schema 演进 |
 | [docs/adr-001-download-ssot.md](docs/adr-001-download-ssot.md) | 改 Download 模块（W35-3a/3b 已完成，W35-1a/3c 仍在路上） |
-| [docs/audit-2026-04-15-v2.md](docs/audit-2026-04-15-v2.md) | 数据架构反模式 —— 顶部含 2026-04-26 状态更新。**W36 Phase 1 + Phase 2 完成**：业务/UI 零 GalleryInfo；DownloadInfo / HistoryInfo / LocalFavoriteInfo 三 Entity 全部解耦自 GalleryInfoEntity（schema 仍 v21）；W36-10 才 bump (v21→v22) 做 DROP COLUMN，W36-11 退 GalleryDetail / GalleryInfoEntity |
+| [docs/audit-2026-04-15-v2.md](docs/audit-2026-04-15-v2.md) | 数据架构反模式 —— 顶部含 2026-04-26 状态更新。**W36 Phase 1 + 2 + 3 完成**：业务/UI 零 GalleryInfo；三 Entity 全部解耦自 GalleryInfoEntity；schema **v22** 落地（GID/TITLE_JPN/CATEGORY/POSTED/UPLOADER 已物理 DROP，**已发布即不可逆**）；剩 W36-11/12 退 GalleryDetail / GalleryInfoEntity / mapper 遗物 |
 | [docs/EDGE_TO_EDGE.md](docs/EDGE_TO_EDGE.md) | 改 Activity 布局或状态栏 —— API 35+ 状态栏着色坑很深，必读 |
 | `docs/archive/` | 归档目录：已完成的 plan / 旧 audit 快照 / 过时 onboard / 历史 ROADMAP。**不必要不查看**，主要为审计/历史回溯保留 |
 
