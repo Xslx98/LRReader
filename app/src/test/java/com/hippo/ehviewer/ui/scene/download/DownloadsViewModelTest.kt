@@ -10,6 +10,7 @@ import com.hippo.ehviewer.FavouriteStatusRouter
 import java.io.File
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.client.LRRUtils
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.hippo.ehviewer.dao.AppDatabase
@@ -521,7 +522,7 @@ class DownloadsViewModelTest {
             state = DownloadInfo.STATE_DOWNLOAD
             time = 1_000L
         }
-        dm.addDownloadInfo(info, null)
+        dm.addDownloadInfo(info.toArchive(), null)
         ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
 
@@ -555,8 +556,8 @@ class DownloadsViewModelTest {
             arcid = "b"; title = "B"; label = "L1"; state = DownloadInfo.STATE_NONE; time = 2L
         }
         dm.addLabel("L1")
-        dm.addDownloadInfo(infoA, null)
-        dm.addDownloadInfo(infoB, "L1")
+        dm.addDownloadInfo(infoA.toArchive(), null)
+        dm.addDownloadInfo(infoB.toArchive(), "L1")
         ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(infoA)
         ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(infoB)
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks()

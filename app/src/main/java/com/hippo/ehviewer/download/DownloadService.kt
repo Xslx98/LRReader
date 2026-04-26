@@ -35,6 +35,7 @@ import androidx.annotation.IntDef
 import androidx.core.app.NotificationCompat
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
@@ -243,7 +244,7 @@ class DownloadService : Service(), DownloadListener {
                 val gi = intent.getParcelableExtra<GalleryInfo>(KEY_GALLERY_INFO)
                 val label = intent.getStringExtra(KEY_LABEL)
                 if (gi != null && dm != null) {
-                    dm.startDownload(gi, label)
+                    dm.startDownload(gi.toArchive(), label)
                 }
             }
         }
