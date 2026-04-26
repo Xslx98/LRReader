@@ -199,7 +199,20 @@ object EhDB {
                             it.moveToNext()
                             return@use
                         }
-                        val info = DownloadInfo(gi)
+                        val info = DownloadInfo().apply {
+                            arcid = gi.arcid
+                            this.gid = gi.gid
+                            title = gi.title
+                            titleJpn = gi.titleJpn
+                            thumb = gi.thumb
+                            category = gi.category
+                            posted = gi.posted
+                            uploader = gi.uploader
+                            rating = gi.rating
+                            simpleLanguage = gi.simpleLanguage
+                            serverProfileId = gi.serverProfileId
+                            simpleTags = gi.simpleTags
+                        }
                         var state = it.getInt(2)
                         val legacy = it.getInt(3)
                         if (state == DownloadInfo.STATE_FINISH && legacy > 0) {

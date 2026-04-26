@@ -20,7 +20,6 @@ import android.os.Parcel
 import android.os.Parcelable
 import androidx.room.ColumnInfo
 import androidx.room.Ignore
-import com.hippo.ehviewer.dao.DownloadInfo
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -292,38 +291,6 @@ open class GalleryInfoEntity : Parcelable {
         } catch (e: JSONException) {
             return JSONObject()
         }
-    }
-
-    fun getDownloadInfo(info: DownloadInfo?): DownloadInfo {
-        val i = DownloadInfo()
-        i.gid = gid
-        i.arcid = arcid
-        i.title = title
-        i.titleJpn = titleJpn
-        i.thumb = thumb
-        i.category = category
-        i.posted = posted
-        i.uploader = uploader
-        i.rating = rating
-        i.rated = rated
-        i.simpleLanguage = simpleLanguage
-        i.simpleTags = simpleTags
-        i.thumbWidth = thumbWidth
-        i.thumbHeight = thumbHeight
-        i.spanSize = spanSize
-        i.spanIndex = spanIndex
-        i.spanGroupIndex = spanGroupIndex
-        i.favoriteSlot = favoriteSlot
-        i.favoriteName = favoriteName
-        i.tgList = tgList
-        i.progress = progress
-        if (info != null) {
-            i.state = info.state
-            i.legacy = info.legacy
-            i.time = info.time
-            i.label = info.label
-        }
-        return i
     }
 
     companion object {
