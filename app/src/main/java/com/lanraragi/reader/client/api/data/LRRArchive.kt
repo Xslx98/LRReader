@@ -67,28 +67,27 @@ class LRRArchive() : Parcelable {
 
     /**
      * Convert this LRRArchive into a GalleryDetail for the detail scene.
+     *
+     * Post-W36-11 the GalleryDetail field set is intentionally narrower
+     * than the historical GalleryInfoEntity it used to inherit; fields
+     * with no UI reader (titleJpn / category / posted / simpleTags /
+     * tgList) are no longer populated here.
      */
     fun toGalleryDetail(): GalleryDetail {
         val gd = GalleryDetail()
 
-        gd.gid = 0L
         gd.arcid = arcid
         gd.title = title
-        gd.titleJpn = null
         gd.pages = pagecount
         gd.progress = progress
 
         val serverUrl = LRRAuthManager.getServerUrl()
         gd.thumb = if (serverUrl != null) getThumbnailUrl(serverUrl) else ""
 
-        gd.category = 0
-        gd.rated = false
-
         val parsedRatingDetail = parseRatingFromTags(tags)
         gd.rating = parsedRatingDetail
         gd.rated = parsedRatingDetail > 0
         gd.uploader = null
-        gd.posted = null
 
         gd.language = "N/A"
         gd.size = extension.uppercase().ifEmpty { "N/A" }
@@ -105,17 +104,8 @@ class LRRArchive() : Parcelable {
                 tagGroups.add(group)
             }
             gd.tags = tagGroups.toTypedArray()
-
-            val allTags = parsedTags.values.flatten()
-            gd.simpleTags = allTags.toTypedArray()
-            gd.tgList = ArrayList(allTags)
         }
 
-        gd.torrentCount = 0
-        gd.favoriteCount = 0
-        gd.isFavorited = false
-        gd.ratingCount = 0
-        gd.previewPages = 0
         gd.serverProfileId = LRRAuthManager.getActiveProfileId()
 
         return gd

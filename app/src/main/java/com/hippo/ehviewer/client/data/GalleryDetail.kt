@@ -20,48 +20,99 @@ import android.os.Parcel
 import android.os.Parcelable
 import java.util.Arrays
 
-class GalleryDetail : GalleryInfoEntity {
+/**
+ * In-memory model for the gallery detail view, built from an
+ * [com.lanraragi.reader.client.api.LRRArchive] response.
+ *
+ * W36-11: standalone Parcelable. Used to inherit GalleryInfoEntity for
+ * the shared display columns (arcid/title/thumb/rating/etc.); the
+ * remaining handful of fields are now declared locally so this class
+ * carries only what its UI consumers actually read.
+ */
+class GalleryDetail() : Parcelable {
 
-    @JvmField
-    var torrentCount: Int = 0
+    // ── Display fields shared with the gallery list view ──
 
-    @JvmField
-    var language: String? = null
+    @JvmField var arcid: String = ""
 
-    @JvmField
-    var size: String? = null
+    @JvmField var title: String? = null
 
-    @JvmField
-    var SpiderInfoPages: Int = 0
+    @JvmField var thumb: String? = null
 
-    @JvmField
-    var favoriteCount: Int = 0
+    @JvmField var rating: Float = 0f
 
-    @JvmField
-    var isFavorited: Boolean = false
+    @JvmField var simpleLanguage: String? = null
 
-    @JvmField
-    var ratingCount: Int = 0
+    @JvmField var serverProfileId: Long = 0
 
-    @JvmField
-    var tags: Array<GalleryTagGroup>? = null
+    // ── Cross-screen state used by the detail UI ──
 
-    @JvmField
-    var previewPages: Int = 0
+    /** Total page count (LRR pagecount). Read by header binder + reader. */
+    @JvmField var pages: Int = 0
 
-    @JvmField
-    var SpiderInfoPreviewPages: Int = 0
+    /** Last reader page (1-indexed; 0 = unread). Mutable on read-progress events. */
+    @JvmField var progress: Int = 0
 
-    constructor()
+    /** True after a successful rating submission this session. */
+    @JvmField var rated: Boolean = false
 
-    protected constructor(`in`: Parcel) : super(`in`) {
+    /** Display string for the uploader chip — null on LRR (no uploader concept). */
+    @JvmField var uploader: String? = null
+
+    /** Local favorite slot label, set by viewmodel after lookup. */
+    @JvmField var favoriteName: String? = null
+
+    /** True iff the archive is in any local favorite. Used by header heart icon. */
+    @JvmField var isFavorited: Boolean = false
+
+    /**
+     * Legacy EH gid; LRR builds always set 0. Retained because the rating-
+     * result Bundle still carries a KEY_GID extra and removing it requires
+     * a wider sweep of the Scene result-handling path.
+     */
+    @JvmField var gid: Long = 0
+
+    // ── Detail-only fields (no list-view counterpart) ──
+
+    @JvmField var torrentCount: Int = 0
+
+    @JvmField var language: String? = null
+
+    @JvmField var size: String? = null
+
+    @JvmField var SpiderInfoPages: Int = 0
+
+    @JvmField var favoriteCount: Int = 0
+
+    @JvmField var ratingCount: Int = 0
+
+    @JvmField var tags: Array<GalleryTagGroup>? = null
+
+    @JvmField var previewPages: Int = 0
+
+    @JvmField var SpiderInfoPreviewPages: Int = 0
+
+    // ── Parcelable ──
+
+    private constructor(`in`: Parcel) : this() {
+        arcid = `in`.readString() ?: ""
+        title = `in`.readString()
+        thumb = `in`.readString()
+        rating = `in`.readFloat()
+        simpleLanguage = `in`.readString()
+        serverProfileId = `in`.readLong()
+        pages = `in`.readInt()
+        progress = `in`.readInt()
+        rated = `in`.readByte().toInt() != 0
+        uploader = `in`.readString()
+        favoriteName = `in`.readString()
+        isFavorited = `in`.readByte().toInt() != 0
+        gid = `in`.readLong()
         torrentCount = `in`.readInt()
         language = `in`.readString()
         size = `in`.readString()
-        pages = `in`.readInt()
         SpiderInfoPages = `in`.readInt()
         favoriteCount = `in`.readInt()
-        isFavorited = `in`.readByte().toInt() != 0
         ratingCount = `in`.readInt()
         val array = `in`.readParcelableArray(GalleryTagGroup::class.java.classLoader)
         tags = if (array != null) {
@@ -76,14 +127,24 @@ class GalleryDetail : GalleryInfoEntity {
     override fun describeContents(): Int = 0
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
-        super.writeToParcel(dest, flags)
+        dest.writeString(arcid)
+        dest.writeString(title)
+        dest.writeString(thumb)
+        dest.writeFloat(rating)
+        dest.writeString(simpleLanguage)
+        dest.writeLong(serverProfileId)
+        dest.writeInt(pages)
+        dest.writeInt(progress)
+        dest.writeByte(if (rated) 1.toByte() else 0.toByte())
+        dest.writeString(uploader)
+        dest.writeString(favoriteName)
+        dest.writeByte(if (isFavorited) 1.toByte() else 0.toByte())
+        dest.writeLong(gid)
         dest.writeInt(torrentCount)
         dest.writeString(language)
         dest.writeString(size)
-        dest.writeInt(pages)
         dest.writeInt(SpiderInfoPages)
         dest.writeInt(favoriteCount)
-        dest.writeByte(if (isFavorited) 1.toByte() else 0.toByte())
         dest.writeInt(ratingCount)
         dest.writeParcelableArray(tags, flags)
         dest.writeInt(previewPages)
