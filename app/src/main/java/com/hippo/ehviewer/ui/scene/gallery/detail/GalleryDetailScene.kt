@@ -39,7 +39,6 @@ import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.mapper.toArchive
-import com.hippo.ehviewer.mapper.toGalleryInfo
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.data.LRRArchive
 import com.hippo.ehviewer.ui.MainActivity
