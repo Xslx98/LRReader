@@ -15,7 +15,6 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.UrlOpener
 import com.hippo.ehviewer.client.LRRUrl
 import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.dao.DownloadInfo
@@ -91,7 +90,7 @@ internal class DetailActionHandler(
                     scene.requestRefresh()
                 }
                 R.id.action_lrr_delete -> {
-                    DeleteArchiveHelper.show(scene.activity2, viewModel.getEffectiveGalleryInfo()?.toArchive()) { title ->
+                    DeleteArchiveHelper.show(scene.activity2, viewModel.getEffectiveArchive()) { title ->
                         scene.showTip(
                             scene.getString(R.string.lrr_delete_success, title),
                             BaseScene.LENGTH_LONG
@@ -117,8 +116,10 @@ internal class DetailActionHandler(
                 showPopMenu()
             }
             v.id == R.id.uploader -> {
+                // Uploader is only carried by GalleryDetail (the rich API
+                // response). Archive does not expose it (LRR never populates
+                // it), so the fallback chain stops at galleryDetail.
                 val uploader = viewModel.galleryDetail.value?.uploader
-                    ?: viewModel.galleryInfo.value?.uploader
                 if (TextUtils.isEmpty(uploader)) return
                 val lub = ListUrlBuilder()
                 lub.mode = ListUrlBuilder.MODE_UPLOADER
@@ -197,12 +198,11 @@ internal class DetailActionHandler(
      * Handles download button click: start a new download or show delete dialog.
      */
     private fun onDownloadClick(context: Context, activity: MainActivity) {
-        val galleryInfo = viewModel.getEffectiveGalleryInfo() ?: return
+        val archive = viewModel.getEffectiveArchive() ?: return
 
-        if (viewModel.downloadManager.getDownloadState(galleryInfo.arcid) == DownloadInfo.STATE_INVALID) {
-            CommonOperations.startDownload(activity, galleryInfo.toArchive(), false)
+        if (viewModel.downloadManager.getDownloadState(archive.arcid) == DownloadInfo.STATE_INVALID) {
+            CommonOperations.startDownload(activity, archive, false)
         } else {
-            val archive = galleryInfo.toArchive()
             DownloadLabelHelper.showDeleteDialog(context, archive) { deleteFiles ->
                 DownloadLabelHelper.performDelete(archive, deleteFiles)
             }

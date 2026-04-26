@@ -37,7 +37,6 @@ import com.hippo.ehviewer.ServiceRegistry
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.mapper.toGalleryInfo
@@ -100,10 +99,10 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         get() = viewModel.action.value
         set(value) { viewModel.setAction(value) }
 
-    /** Shortcut delegating to [GalleryDetailViewModel.galleryInfo]. */
-    private var mGalleryInfo: GalleryInfo?
-        get() = viewModel.galleryInfo.value
-        set(value) { viewModel.setGalleryInfo(value) }
+    /** Shortcut delegating to [GalleryDetailViewModel.archive]. */
+    private var mArchive: com.lanraragi.reader.domain.Archive?
+        get() = viewModel.archive.value
+        set(value) { viewModel.setArchive(value) }
 
     /** Shortcut delegating to [GalleryDetailViewModel.downloadInfo]. */
     private var mDownloadInfo: DownloadInfo?
@@ -160,7 +159,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         } else if (ACTION_ARCHIVE == action) {
             val archive: com.lanraragi.reader.domain.Archive? = args.getParcelable(KEY_ARCHIVE)
             if (archive != null) {
-                mGalleryInfo = archive.toGalleryInfo()
+                mArchive = archive
                 mArcid = archive.arcid
                 // If we already have a download record for this arcid, surface it
                 // so onGetGalleryDetailSuccessInternal's thumb-refresh path picks
@@ -173,8 +172,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         }
     }
 
-    private fun getGalleryInfo(): GalleryInfo? = viewModel.getEffectiveGalleryInfo()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -186,13 +183,13 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             onRestore(savedInstanceState)
         }
 
-        val gi = mGalleryInfo
-        if (properties == null && gi != null) {
+        val a = mArchive
+        if (properties == null && a != null) {
             val date = Date()
             @SuppressLint("SimpleDateFormat")
             val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
             properties = HashMap<String, String>().apply {
-                put("Title", gi.title.orEmpty())
+                put("Title", a.title)
                 put("Time", dateFormat.format(date))
             }
         }
@@ -204,11 +201,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
     private fun onRestore(savedInstanceState: Bundle) {
         mAction = savedInstanceState.getString(KEY_ACTION)
-        val archive: com.lanraragi.reader.domain.Archive? =
-            savedInstanceState.getParcelable(KEY_ARCHIVE)
-        if (archive != null) {
-            mGalleryInfo = archive.toGalleryInfo()
-        }
+        mArchive = savedInstanceState.getParcelable(KEY_ARCHIVE)
         mGid = savedInstanceState.getLong(KEY_GID)
         mArcid = savedInstanceState.getString(KEY_ARCID)
         mGalleryDetail = savedInstanceState.getParcelable(KEY_GALLERY_DETAIL)
@@ -410,7 +403,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 bindViewSecond()
                 mHeaderBinder?.setTransitionName(viewModel.getEffectiveArcid())
                 adjustViewVisibility(STATE_NORMAL, false)
-            } else if (mGalleryInfo != null) {
+            } else if (mArchive != null) {
                 bindViewFirst()
                 mHeaderBinder?.setTransitionName(viewModel.getEffectiveArcid())
                 adjustViewVisibility(STATE_REFRESH_HEADER, false)
@@ -460,16 +453,16 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     private fun applyLocalReadingProgress(localPage0: Int) {
         // Sentinel: SP has never been written, defer to server-reported progress.
         if (localPage0 == com.hippo.ehviewer.gallery.ReadingProgressTracker.NO_LOCAL_PROGRESS) return
-        val info = getGalleryInfo() ?: return
+        val gd = viewModel.galleryDetail.value
+        val archive = viewModel.archive.value
+        val totalPages = gd?.pages ?: archive?.pagecount ?: return
         val localPage1 = localPage0 + 1
         // Local progress is the latest authoritative position once the reader
         // has written it, so sync unconditionally — going backward must update
-        // the display too. Mutate both the detail and the original list info
-        // so any later re-bind path (which may pick either object) is consistent.
-        viewModel.galleryDetail.value?.progress = localPage1
-        viewModel.galleryInfo.value?.progress = localPage1
-        info.progress = localPage1
-        mHeaderBinder?.bindReadProgress(localPage1, info.pages)
+        // the display too. Mutate galleryDetail.progress so any later re-bind
+        // path (bindViewSecond) picks up the new value.
+        gd?.progress = localPage1
+        mHeaderBinder?.bindReadProgress(localPage1, totalPages)
     }
 
     override fun onDestroyView() {
@@ -606,7 +599,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         try {
             val gd = mGalleryDetail ?: return
             val binder = mHeaderBinder ?: return
-            binder.bindViewSecond(gd, mGalleryInfo, getEHContext(), layoutInflater2, this, this)
+            binder.bindViewSecond(gd, mArchive != null, getEHContext(), layoutInflater2, this, this)
             mActionHandler?.updateDownloadText()
         } catch (e: Exception) {
             android.util.Log.e("GalleryDetailScene", "bindViewSecond crashed", e)
