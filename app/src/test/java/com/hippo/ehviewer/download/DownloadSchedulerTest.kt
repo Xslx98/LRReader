@@ -134,7 +134,6 @@ class DownloadSchedulerTest {
 
     private fun makeInfo(gid: Long, label: String? = null): DownloadInfo {
         val info = DownloadInfo().apply {
-            this.gid = gid
             arcid = "token_$gid"
             title = "Test Gallery $gid"
             this.label = label
@@ -211,10 +210,10 @@ class DownloadSchedulerTest {
         scheduler.stopRangeDownload(arcidList)
 
         assertEquals(3, scheduler.waitList.size)
-        val remainingGids = scheduler.waitList.map { it.gid }.toSet()
-        assertTrue("Should still have gid 1", 1L in remainingGids)
-        assertTrue("Should still have gid 3", 3L in remainingGids)
-        assertTrue("Should still have gid 5", 5L in remainingGids)
+        val remainingArcids = scheduler.waitList.map { it.arcid }.toSet()
+        assertTrue("Should still have token_1", "token_1" in remainingArcids)
+        assertTrue("Should still have token_3", "token_3" in remainingArcids)
+        assertTrue("Should still have token_5", "token_5" in remainingArcids)
     }
 
     @Test

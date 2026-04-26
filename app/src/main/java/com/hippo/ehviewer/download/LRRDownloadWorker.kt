@@ -347,7 +347,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         // Use the same download location as SpiderDen (DownloadSettings.getDownloadLocation())
         // so downloaded files are visible in the user-configured directory
         try {
-            val uniDir = SpiderDen.getGalleryDownloadDir(info.arcid, info.title, info.gid)
+            val uniDir = SpiderDen.getGalleryDownloadDir(info.arcid, info.title)
             if (uniDir != null && uniDir.ensureDir()) {
                 val uri = uniDir.uri
                 if ("file" == uri.scheme) {

@@ -351,22 +351,15 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
 
     /**
      * Apply category filter to the back-list and update the download list.
+     *
+     * Post-W36-10 the CATEGORY column was dropped (LRR archives have no
+     * EH-style category), so this is a no-op pass-through that preserves
+     * the API for the existing UI category picker. Picker removal is a
+     * Phase 4 cleanup (see W36-11/12).
      */
     @SuppressLint("NotifyDataSetChanged")
     fun filterByCategory() {
-        val backList = _backList.value
-        val category = _selectedCategory.value
-        if (category == LRRUtils.ALL_CATEGORY) {
-            _downloadList.value = ArrayList(backList)
-        } else {
-            val filtered = ArrayList<DownloadInfo>()
-            for (info in backList) {
-                if (info.category == category) {
-                    filtered.add(info)
-                }
-            }
-            _downloadList.value = filtered
-        }
+        _downloadList.value = ArrayList(_backList.value)
         _listChanged.tryEmit(Unit)
     }
 
@@ -462,7 +455,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
             ServiceRegistry.coroutineModule.ioScope.launch {
                 for (info in infos) {
                     ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(info.arcid)
-                    val file = SpiderDen.getGalleryDownloadDir(info.arcid, info.title, info.gid)
+                    val file = SpiderDen.getGalleryDownloadDir(info.arcid, info.title)
                     file?.delete()
                 }
             }
@@ -561,14 +554,9 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     private fun createArchiveDownloadInfo(uri: Uri, fileName: String): DownloadInfo? {
         return try {
             DownloadInfo().apply {
-                gid = System.currentTimeMillis()
                 arcid = ""
                 title = fileName.replace("\\.[^.]*$".toRegex(), "")
-                titleJpn = null
                 thumb = null
-                category = LRRUtils.UNKNOWN
-                posted = null
-                uploader = "Local Archive"
                 rating = -1.0f
                 state = DownloadInfo.STATE_FINISH
                 legacy = 0

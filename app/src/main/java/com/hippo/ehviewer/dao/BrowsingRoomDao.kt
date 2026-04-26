@@ -28,9 +28,6 @@ interface BrowsingRoomDao {
     @Query("DELETE FROM HISTORY WHERE ARCID = :arcid")
     suspend fun deleteHistoryByArcid(arcid: String)
 
-    @Query("DELETE FROM HISTORY WHERE GID = :gid")
-    suspend fun deleteHistoryByKey(gid: Long)
-
     @Query("DELETE FROM HISTORY")
     suspend fun deleteAllHistory()
 
@@ -51,17 +48,11 @@ interface BrowsingRoomDao {
     @Query("SELECT * FROM LOCAL_FAVORITES WHERE TITLE LIKE :query ORDER BY TIME DESC")
     suspend fun searchLocalFavorites(query: String): List<LocalFavoriteInfo>
 
-    @Query("SELECT * FROM LOCAL_FAVORITES WHERE GID = :gid")
-    suspend fun loadLocalFavorite(gid: Long): LocalFavoriteInfo?
-
     @Query("SELECT * FROM LOCAL_FAVORITES WHERE ARCID = :arcid")
     suspend fun loadLocalFavoriteByArcid(arcid: String): LocalFavoriteInfo?
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertLocalFavorite(info: LocalFavoriteInfo)
-
-    @Query("DELETE FROM LOCAL_FAVORITES WHERE GID = :gid")
-    suspend fun deleteLocalFavoriteByKey(gid: Long)
 
     @Query("DELETE FROM LOCAL_FAVORITES WHERE ARCID = :arcid")
     suspend fun deleteLocalFavoriteByArcid(arcid: String)

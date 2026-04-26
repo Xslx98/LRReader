@@ -23,7 +23,6 @@ import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.DownloadSettings
-import com.hippo.lib.yorozuya.NumberUtils
 import com.hippo.unifile.UniFile
 
 class CleanRedundancyPreference : TaskPreference {
@@ -39,21 +38,27 @@ class CleanRedundancyPreference : TaskPreference {
         private val mApplication: EhApplication = context.applicationContext as EhApplication
         private val mManager = ServiceRegistry.dataModule.downloadManager
 
-        // Snapshot of gids for all known downloads, built on main thread at construction time.
-        private val knownGids: Set<Long> = mManager.allDownloadInfoList.mapTo(HashSet()) { it.gid }
+        // Snapshot of arcid prefixes for all known downloads. Files in the
+        // download dir are named "<arcid>-<title>" (post-v20 format) or with
+        // a custom dirname stored in DOWNLOAD_DIRNAME (resolved by SpiderDen).
+        // Match by arcid prefix here — covers the common case; legacy
+        // gid-prefixed dirs from pre-v20 installs that have not been opened
+        // since upgrade may be wrongly flagged as orphan, but those dirs
+        // are repaired the next time the user opens the corresponding
+        // download (SpiderDen.getGalleryDownloadDir falls back to gid prefix
+        // and writes the canonical dirname into DOWNLOAD_DIRNAME).
+        private val knownArcids: Set<String> =
+            mManager.allDownloadInfoList.mapTo(HashSet()) { it.arcid }
 
         // True for cleared
         private fun clearFile(file: UniFile): Boolean {
-            var name = file.name ?: return false
-            val index = name.indexOf('-')
-            if (index >= 0) {
-                name = name.substring(0, index)
-            }
-            val gid = NumberUtils.parseLongSafely(name, -1L)
-            if (gid == -1L) {
+            val name = file.name ?: return false
+            val dashIdx = name.indexOf('-')
+            val prefix = if (dashIdx >= 0) name.substring(0, dashIdx) else name
+            if (prefix.isEmpty()) {
                 return false
             }
-            if (gid in knownGids) {
+            if (prefix in knownArcids) {
                 return false
             }
             file.delete()
