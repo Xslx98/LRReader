@@ -355,8 +355,7 @@ class DownloadRepositoryTest {
         repo.addInfo(info)
         val result = repo.getDownloadInfo("abc123")
         assertNotNull(result)
-        assertEquals(1001L, result!!.gid)
-        assertEquals("abc123", result.arcid)
+        assertEquals("abc123", result!!.arcid)
     }
 
     @Test
@@ -385,9 +384,8 @@ class DownloadRepositoryTest {
     // Helpers
     // ═══════════════════════════════════════════════════════════
 
-    private fun makeInfo(gid: Long, arcid: String, title: String): DownloadInfo {
+    private fun makeInfo(@Suppress("UNUSED_PARAMETER") gid: Long, arcid: String, title: String): DownloadInfo {
         return DownloadInfo().apply {
-            this.gid = gid
             this.arcid = arcid
             this.title = title
             this.state = DownloadInfo.STATE_NONE

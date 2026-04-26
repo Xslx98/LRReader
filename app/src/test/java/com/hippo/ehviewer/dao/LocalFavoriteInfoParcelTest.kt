@@ -12,10 +12,10 @@ import org.robolectric.annotation.Config
 /**
  * Parcelable round-trip tests for [LocalFavoriteInfo].
  *
- * Pre-W36-9 (extends GalleryInfoEntity): inherited fields go through
- * super.writeToParcel(); this test asserts only the field set
- * LocalFavoriteInfo keeps post-flatten so it stays green across the
- * refactor and locks the new wire format.
+ * Locks the post-W36-10 wire format. Field set:
+ *   persistent: arcid, title, thumb, rating, simpleLanguage,
+ *               serverProfileId, time
+ *   @Ignore:    simpleTags
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], application = android.app.Application::class)
@@ -25,13 +25,8 @@ class LocalFavoriteInfoParcelTest {
     fun parcelRoundTrip_preservesAllFields() {
         val original = LocalFavoriteInfo().apply {
             arcid = "fav-1"
-            gid = 200L
             title = "Favorite Test"
-            titleJpn = "お気に入り"
             thumb = "https://example.com/f.jpg"
-            category = 3
-            posted = "2026-04-10"
-            uploader = "u2"
             rating = 5.0f
             simpleLanguage = "JA"
             serverProfileId = 11L
@@ -46,13 +41,8 @@ class LocalFavoriteInfoParcelTest {
             val restored = LocalFavoriteInfo.CREATOR.createFromParcel(parcel)
 
             assertEquals(original.arcid, restored.arcid)
-            assertEquals(original.gid, restored.gid)
             assertEquals(original.title, restored.title)
-            assertEquals(original.titleJpn, restored.titleJpn)
             assertEquals(original.thumb, restored.thumb)
-            assertEquals(original.category, restored.category)
-            assertEquals(original.posted, restored.posted)
-            assertEquals(original.uploader, restored.uploader)
             assertEquals(original.rating, restored.rating, 0.001f)
             assertEquals(original.simpleLanguage, restored.simpleLanguage)
             assertEquals(original.serverProfileId, restored.serverProfileId)
@@ -68,10 +58,7 @@ class LocalFavoriteInfoParcelTest {
         val original = LocalFavoriteInfo().apply {
             arcid = "f-null"
             title = null
-            titleJpn = null
             thumb = null
-            posted = null
-            uploader = null
             simpleLanguage = null
             simpleTags = null
         }
@@ -84,10 +71,7 @@ class LocalFavoriteInfoParcelTest {
 
             assertEquals("f-null", restored.arcid)
             assertNull(restored.title)
-            assertNull(restored.titleJpn)
             assertNull(restored.thumb)
-            assertNull(restored.posted)
-            assertNull(restored.uploader)
             assertNull(restored.simpleLanguage)
             assertNull(restored.simpleTags)
         } finally {

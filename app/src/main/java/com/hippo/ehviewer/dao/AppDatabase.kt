@@ -43,7 +43,7 @@ import java.security.MessageDigest
         QuickSearch::class,
         ServerProfile::class
     ],
-    version = 21,
+    version = 22,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class)
@@ -65,7 +65,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "eh.db"
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22)
                     .build()
                     .also { INSTANCE = it }
             }
@@ -126,7 +126,6 @@ abstract class AppDatabase : RoomDatabase() {
          * 4. Rename new table
          * 5. Recreate indexes
          */
-        @VisibleForTesting
         /**
          * v20 → v21: Fix Entity PK annotations (GID → ARCID).
          *
@@ -138,6 +137,111 @@ abstract class AppDatabase : RoomDatabase() {
          * have ARCID PK), this is a safe no-op — the recreated tables are
          * structurally identical.
          */
+        /**
+         * v21 → v22: Drop dead EH-era columns from DOWNLOADS / HISTORY /
+         * LOCAL_FAVORITES.
+         *
+         * After W36 Phase 2 the three Entities are standalone Parcelables
+         * and no longer inherit GalleryInfoEntity, but the Room schema
+         * still carried five columns from the EhViewer ancestry that LRR
+         * never populates: GID (Long, replaced by ARCID PK in v20),
+         * TITLE_JPN, CATEGORY (always 0/-1), POSTED, UPLOADER (always
+         * null). Drop them physically here.
+         *
+         * minSdk = 28 → no native ALTER TABLE DROP COLUMN (added in
+         * SQLite 3.35 / Android 14). Use the recreate-table dance
+         * established in MIGRATION_20_21:
+         *   1. CREATE TABLE *_NEW with the slimmed column set
+         *   2. INSERT SELECT the kept columns
+         *   3. DROP the original table
+         *   4. RENAME *_NEW → original
+         *   5. CREATE INDEX entries
+         *
+         * **Irreversible**: once a user runs the new APK their database
+         * file no longer carries those columns. A `git revert` of this
+         * commit will work for the source tree but cannot recover the
+         * dropped data on a user's device.
+         */
+        @VisibleForTesting
+        internal val MIGRATION_21_22 = object : Migration(21, 22) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // ── DOWNLOADS ──
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS DOWNLOADS_NEW (
+                        ARCID TEXT NOT NULL,
+                        TITLE TEXT,
+                        THUMB TEXT,
+                        RATING REAL NOT NULL DEFAULT 0,
+                        SIMPLE_LANGUAGE TEXT,
+                        SERVER_PROFILE_ID INTEGER NOT NULL DEFAULT 0,
+                        STATE INTEGER NOT NULL DEFAULT 0,
+                        LEGACY INTEGER NOT NULL DEFAULT 0,
+                        TIME INTEGER NOT NULL DEFAULT 0,
+                        LABEL TEXT,
+                        ARCHIVE_URI TEXT,
+                        PRIMARY KEY (ARCID)
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT OR IGNORE INTO DOWNLOADS_NEW
+                    SELECT ARCID, TITLE, THUMB, RATING, SIMPLE_LANGUAGE, SERVER_PROFILE_ID, STATE, LEGACY, TIME, LABEL, ARCHIVE_URI
+                    FROM DOWNLOADS
+                """.trimIndent())
+                db.execSQL("DROP TABLE DOWNLOADS")
+                db.execSQL("ALTER TABLE DOWNLOADS_NEW RENAME TO DOWNLOADS")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_DOWNLOADS_SERVER_PROFILE_ID` ON `DOWNLOADS` (`SERVER_PROFILE_ID`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_DOWNLOADS_TIME` ON `DOWNLOADS` (`TIME`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_DOWNLOADS_LABEL` ON `DOWNLOADS` (`LABEL`)")
+
+                // ── HISTORY ──
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS HISTORY_NEW (
+                        ARCID TEXT NOT NULL,
+                        TITLE TEXT,
+                        THUMB TEXT,
+                        RATING REAL NOT NULL DEFAULT 0,
+                        SIMPLE_LANGUAGE TEXT,
+                        SERVER_PROFILE_ID INTEGER NOT NULL DEFAULT 0,
+                        MODE INTEGER NOT NULL DEFAULT 0,
+                        TIME INTEGER NOT NULL DEFAULT 0,
+                        PRIMARY KEY (ARCID)
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT OR IGNORE INTO HISTORY_NEW
+                    SELECT ARCID, TITLE, THUMB, RATING, SIMPLE_LANGUAGE, SERVER_PROFILE_ID, MODE, TIME
+                    FROM HISTORY
+                """.trimIndent())
+                db.execSQL("DROP TABLE HISTORY")
+                db.execSQL("ALTER TABLE HISTORY_NEW RENAME TO HISTORY")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_HISTORY_SERVER_PROFILE_ID` ON `HISTORY` (`SERVER_PROFILE_ID`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_HISTORY_TIME` ON `HISTORY` (`TIME`)")
+
+                // ── LOCAL_FAVORITES ──
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS LOCAL_FAVORITES_NEW (
+                        ARCID TEXT NOT NULL,
+                        TITLE TEXT,
+                        THUMB TEXT,
+                        RATING REAL NOT NULL DEFAULT 0,
+                        SIMPLE_LANGUAGE TEXT,
+                        SERVER_PROFILE_ID INTEGER NOT NULL DEFAULT 0,
+                        TIME INTEGER NOT NULL DEFAULT 0,
+                        PRIMARY KEY (ARCID)
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT OR IGNORE INTO LOCAL_FAVORITES_NEW
+                    SELECT ARCID, TITLE, THUMB, RATING, SIMPLE_LANGUAGE, SERVER_PROFILE_ID, TIME
+                    FROM LOCAL_FAVORITES
+                """.trimIndent())
+                db.execSQL("DROP TABLE LOCAL_FAVORITES")
+                db.execSQL("ALTER TABLE LOCAL_FAVORITES_NEW RENAME TO LOCAL_FAVORITES")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_LOCAL_FAVORITES_TIME` ON `LOCAL_FAVORITES` (`TIME`)")
+            }
+        }
+
+        @VisibleForTesting
         internal val MIGRATION_20_21 = object : Migration(20, 21) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // ── DOWNLOADS ──

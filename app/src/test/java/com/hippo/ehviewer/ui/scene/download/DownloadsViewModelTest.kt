@@ -1,4 +1,4 @@
-package com.hippo.ehviewer.ui.scene.download
+﻿package com.hippo.ehviewer.ui.scene.download
 
 import android.content.Context
 import androidx.collection.LruCache
@@ -244,32 +244,15 @@ class DownloadsViewModelTest {
     }
 
     @Test
-    fun filterByCategory_allCategory_returnsFullBackList() {
-        val info1 = DownloadInfo().apply { gid = 1L; category = 1 }
-        val info2 = DownloadInfo().apply { gid = 2L; category = 2 }
-        vm.setDownloadList(listOf(info1, info2))
-
-        // Set backList via updateForLabel (which uses downloadManager default list)
-        // Instead, directly test the filter logic by setting backList indirectly:
-        // We must set up the download list first, then filter.
-        // Use reflection to set _backList since it's private
-        val backListField = DownloadsViewModel::class.java.getDeclaredField("_backList")
-        backListField.isAccessible = true
-        @Suppress("UNCHECKED_CAST")
-        (backListField.get(vm) as kotlinx.coroutines.flow.MutableStateFlow<List<DownloadInfo>>)
-            .value = listOf(info1, info2)
-
-        vm.setSelectedCategory(LRRUtils.ALL_CATEGORY)
-        vm.filterByCategory()
-
-        assertEquals(2, vm.downloadList.value.size)
-    }
-
-    @Test
-    fun filterByCategory_specificCategory_filtersCorrectly() {
-        val info1 = DownloadInfo().apply { gid = 1L; category = 1 }
-        val info2 = DownloadInfo().apply { gid = 2L; category = 2 }
-        val info3 = DownloadInfo().apply { gid = 3L; category = 1 }
+    fun filterByCategory_postW36_10_isPassThrough() {
+        // After W36-10 the CATEGORY column was dropped (LRR archives have
+        // no EH-style category) and filterByCategory became a no-op
+        // pass-through. Verify it copies the full backList regardless of
+        // selectedCategory state. UI category picker removal is a Phase 4
+        // cleanup (W36-11/12).
+        val info1 = DownloadInfo().apply { arcid = "fc1" }
+        val info2 = DownloadInfo().apply { arcid = "fc2" }
+        val info3 = DownloadInfo().apply { arcid = "fc3" }
 
         val backListField = DownloadsViewModel::class.java.getDeclaredField("_backList")
         backListField.isAccessible = true
@@ -277,11 +260,14 @@ class DownloadsViewModelTest {
         (backListField.get(vm) as kotlinx.coroutines.flow.MutableStateFlow<List<DownloadInfo>>)
             .value = listOf(info1, info2, info3)
 
+        // Both ALL_CATEGORY and a "specific" value yield the full list.
+        vm.setSelectedCategory(LRRUtils.ALL_CATEGORY)
+        vm.filterByCategory()
+        assertEquals(3, vm.downloadList.value.size)
+
         vm.setSelectedCategory(1)
         vm.filterByCategory()
-
-        assertEquals(2, vm.downloadList.value.size)
-        assertTrue(vm.downloadList.value.all { it.category == 1 })
+        assertEquals(3, vm.downloadList.value.size)
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -291,14 +277,14 @@ class DownloadsViewModelTest {
     @Test
     fun positionInList_smallList_returnsPositionAsIs() {
         // List with fewer items than PAGINATION_SIZE (500)
-        val smallList = (1..10).map { DownloadInfo().apply { gid = it.toLong() } }
+        val smallList = (1..10).map { DownloadInfo().apply { arcid = "vm_$it" } }
         vm.setDownloadList(smallList)
         assertEquals(3, vm.positionInList(3))
     }
 
     @Test
     fun listIndexInPage_smallList_returnsPositionAsIs() {
-        val smallList = (1..10).map { DownloadInfo().apply { gid = it.toLong() } }
+        val smallList = (1..10).map { DownloadInfo().apply { arcid = "vm_$it" } }
         vm.setDownloadList(smallList)
         assertEquals(5, vm.listIndexInPage(5))
     }
@@ -340,13 +326,13 @@ class DownloadsViewModelTest {
             vm.downloadEvent.collect { events.add(it) }
         }
 
-        val info = DownloadInfo().apply { gid = 1L }
+        val info = DownloadInfo().apply { arcid = "vm_1" }
         vm.onAdd(info, listOf(info), 0)
 
         assertTrue(events.size >= 1)
         val event = events.first()
         assertTrue(event is DownloadUiEvent.ItemAdded)
-        assertEquals(1L, (event as DownloadUiEvent.ItemAdded).info.gid)
+        assertEquals("vm_1", (event as DownloadUiEvent.ItemAdded).info.arcid)
 
         job.cancel()
     }
@@ -359,7 +345,7 @@ class DownloadsViewModelTest {
             vm.downloadEvent.collect { events.add(it) }
         }
 
-        val info = DownloadInfo().apply { gid = 2L }
+        val info = DownloadInfo().apply { arcid = "vm_2" }
         vm.onRemove(info, emptyList(), 0)
 
         assertTrue(events.size >= 1)
@@ -475,8 +461,8 @@ class DownloadsViewModelTest {
     @Test
     fun setDownloadList_updatesState() {
         val list = listOf(
-            DownloadInfo().apply { gid = 1L },
-            DownloadInfo().apply { gid = 2L }
+            DownloadInfo().apply { arcid = "vm_1" },
+            DownloadInfo().apply { arcid = "vm_2" }
         )
         vm.setDownloadList(list)
         assertEquals(2, vm.downloadList.value.size)
