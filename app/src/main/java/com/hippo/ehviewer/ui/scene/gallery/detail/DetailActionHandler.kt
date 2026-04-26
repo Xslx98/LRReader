@@ -117,7 +117,8 @@ internal class DetailActionHandler(
                 showPopMenu()
             }
             v.id == R.id.uploader -> {
-                val uploader = viewModel.getEffectiveUploader()
+                val uploader = viewModel.galleryDetail.value?.uploader
+                    ?: viewModel.galleryInfo.value?.uploader
                 if (TextUtils.isEmpty(uploader)) return
                 val lub = ListUrlBuilder()
                 lub.mode = ListUrlBuilder.MODE_UPLOADER
