@@ -37,49 +37,6 @@ fun GalleryInfoEntity.toCSV(): String {
 }
 
 /**
- * Converts a [GalleryInfoEntity] to a [DownloadInfo], optionally copying
- * download-specific state from an existing [DownloadInfo].
- *
- * @param info optional existing download info whose state/legacy/time/label
- *             fields are carried over.
- */
-@Deprecated(
-    message = "No external callers — retained for binary compatibility only.",
-    level = DeprecationLevel.WARNING
-)
-fun GalleryInfoEntity.getDownloadInfo(info: DownloadInfo?): DownloadInfo {
-    val i = DownloadInfo()
-    i.gid = gid
-    i.arcid = arcid
-    i.title = title
-    i.titleJpn = titleJpn
-    i.thumb = thumb
-    i.category = category
-    i.posted = posted
-    i.uploader = uploader
-    i.rating = rating
-    i.rated = rated
-    i.simpleLanguage = simpleLanguage
-    i.simpleTags = simpleTags
-    i.thumbWidth = thumbWidth
-    i.thumbHeight = thumbHeight
-    i.spanSize = spanSize
-    i.spanIndex = spanIndex
-    i.spanGroupIndex = spanGroupIndex
-    i.favoriteSlot = favoriteSlot
-    i.favoriteName = favoriteName
-    i.tgList = tgList
-    i.progress = progress
-    if (info != null) {
-        i.state = info.state
-        i.legacy = info.legacy
-        i.time = info.time
-        i.label = info.label
-    }
-    return i
-}
-
-/**
  * Parses a single CSV line (produced by [toCSV]) back into a
  * [GalleryInfoEntity]. Returns `null` when the line has fewer than 20
  * columns or contains unparseable numbers.
@@ -116,6 +73,45 @@ fun galleryInfoFromCSV(csv: String): GalleryInfoEntity? {
         return null
     }
     return gi
+}
+
+/**
+ * CSV serialization for [DownloadInfo].
+ *
+ * Emits the same 20-column wire format as [GalleryInfoEntity.toCSV] for
+ * backward compatibility with users' existing CSV exports (read by
+ * [galleryInfoFromCSV]). After W36-7 flatten DownloadInfo no longer
+ * inherits the GalleryInfoEntity extension; this standalone keeps the
+ * DownloadFragment export feature working without changing the on-disk
+ * format.
+ *
+ * Fields not carried by the flattened DownloadInfo are filled with
+ * defaults so the column count stays stable:
+ *   - titleJpn / posted / uploader / favoriteName → null
+ *   - category / thumbWidth / thumbHeight / spanSize / spanIndex /
+ *     spanGroupIndex / pages → 0
+ *   - rated → false
+ *   - favoriteSlot → -2
+ *
+ * Format slimming will happen when GalleryInfoEntity retires (W36-11+).
+ */
+fun DownloadInfo.toCSV(): String {
+    return gid.toString() + "," +
+        arcid + "," +
+        title + "," +
+        "null" + "," +                   // titleJpn
+        thumb + "," +
+        "0" + "," +                      // category
+        "null" + "," +                   // posted
+        "null" + "," +                   // uploader
+        rating + "," +
+        "false" + "," +                  // rated
+        simpleLanguage + "," +
+        simpleTags.contentToString() + "," +
+        "0,0,0,0,0," +                   // thumbWidth, thumbHeight, spanSize, spanIndex, spanGroupIndex
+        "-2," +                          // favoriteSlot
+        "null" + "," +                   // favoriteName
+        "0\n"                            // pages
 }
 
 /**
