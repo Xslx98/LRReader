@@ -48,7 +48,7 @@ class ThumbDataContainer(private val mInfo: DownloadInfo) : DataContainer {
     private val downloadDirFuture: CompletableFuture<UniFile?> = CompletableFuture<UniFile?>().also { future ->
         ServiceRegistry.coroutineModule.ioScope.launch {
             try {
-                future.complete(SpiderDen.getGalleryDownloadDir(mInfo.arcid, mInfo.title, mInfo.gid))
+                future.complete(SpiderDen.getGalleryDownloadDir(mInfo.arcid, mInfo.title))
             } catch (e: Exception) {
                 future.complete(null)
             }

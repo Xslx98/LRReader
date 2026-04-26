@@ -535,17 +535,6 @@ class DownloadRepository(
         }
     }
 
-    /** Remove download info from the DB by gid on a background thread. */
-    fun removeInfoFromDb(gid: Long) {
-        scope.launch {
-            try {
-                ServiceRegistry.dataModule.downloadDbRepository.removeDownloadInfo(gid)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to remove download info gid=$gid from DB", e)
-            }
-        }
-    }
-
     /** Remove download info from the DB by arcid on a background thread. */
     fun removeInfoFromDbByArcid(arcid: String) {
         scope.launch {
@@ -553,17 +542,6 @@ class DownloadRepository(
                 ServiceRegistry.dataModule.downloadDbRepository.removeDownloadInfoByArcid(arcid)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to remove download info arcid=$arcid from DB", e)
-            }
-        }
-    }
-
-    /** Batch-remove download infos from the DB on a background thread. */
-    fun removeInfoBatchFromDb(gids: List<Long>) {
-        scope.launch {
-            try {
-                ServiceRegistry.dataModule.downloadDbRepository.removeDownloadInfoBatch(gids)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to batch-remove download infos from DB", e)
             }
         }
     }

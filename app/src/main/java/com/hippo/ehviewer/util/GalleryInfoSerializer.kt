@@ -80,13 +80,14 @@ fun galleryInfoFromCSV(csv: String): GalleryInfoEntity? {
  *
  * Emits the same 20-column wire format as [GalleryInfoEntity.toCSV] for
  * backward compatibility with users' existing CSV exports (read by
- * [galleryInfoFromCSV]). After W36-7 flatten DownloadInfo no longer
- * inherits the GalleryInfoEntity extension; this standalone keeps the
- * DownloadFragment export feature working without changing the on-disk
- * format.
+ * [galleryInfoFromCSV]). The flattened DownloadInfo no longer carries
+ * the EH-era columns (gid / titleJpn / category / posted / uploader)
+ * since W36-10 dropped them from the schema; this serializer fills them
+ * with stable defaults so the column count stays at 20 and old CSVs
+ * import unchanged via the existing parser.
  *
- * Fields not carried by the flattened DownloadInfo are filled with
- * defaults so the column count stays stable:
+ * Default fillers:
+ *   - gid → 0
  *   - titleJpn / posted / uploader / favoriteName → null
  *   - category / thumbWidth / thumbHeight / spanSize / spanIndex /
  *     spanGroupIndex / pages → 0
@@ -96,7 +97,7 @@ fun galleryInfoFromCSV(csv: String): GalleryInfoEntity? {
  * Format slimming will happen when GalleryInfoEntity retires (W36-11+).
  */
 fun DownloadInfo.toCSV(): String {
-    return gid.toString() + "," +
+    return "0" + "," +                   // gid (dropped W36-10)
         arcid + "," +
         title + "," +
         "null" + "," +                   // titleJpn
