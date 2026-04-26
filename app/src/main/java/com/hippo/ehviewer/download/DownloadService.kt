@@ -432,11 +432,11 @@ class DownloadService : Service(), DownloadListener {
         ensureDownloadedBuilder()
 
         val finish = info.state == DownloadInfo.STATE_FINISH
-        val gid = info.gid
-        val index = sItemStateArray.indexOfKey(gid)
-        if (index < 0) { // Not contain
-            sItemStateArray.put(gid, finish)
-            sItemTitleArray.put(gid, info.title)
+        val arcid = info.arcid
+        val previous = sItemStateArray[arcid]
+        if (previous == null) { // Not contain
+            sItemStateArray[arcid] = finish
+            sItemTitleArray[arcid] = info.title
             sDownloadedCount++
             if (finish) {
                 sFinishedCount++
@@ -444,13 +444,12 @@ class DownloadService : Service(), DownloadListener {
                 sFailedCount++
             }
         } else { // Contain
-            val oldFinish = sItemStateArray.valueAt(index)
-            sItemStateArray.put(gid, finish)
-            sItemTitleArray.put(gid, info.title)
-            if (oldFinish && !finish) {
+            sItemStateArray[arcid] = finish
+            sItemTitleArray[arcid] = info.title
+            if (previous && !finish) {
                 sFinishedCount--
                 sFailedCount++
-            } else if (!oldFinish && finish) {
+            } else if (!previous && finish) {
                 sFinishedCount++
                 sFailedCount--
             }
@@ -460,10 +459,11 @@ class DownloadService : Service(), DownloadListener {
         val needStyle: Boolean
         if (sFinishedCount != 0 && sFailedCount == 0) {
             if (sFinishedCount == 1) {
-                if (sItemTitleArray.size() >= 1) {
+                val firstTitle = sItemTitleArray.values.firstOrNull()
+                if (firstTitle != null) {
                     text = getString(
                         R.string.stat_download_done_line_succeeded,
-                        sItemTitleArray.valueAt(0)
+                        firstTitle
                     )
                 } else {
                     Log.d("TAG", "WTF, sItemTitleArray is null")
@@ -476,10 +476,11 @@ class DownloadService : Service(), DownloadListener {
             }
         } else if (sFinishedCount == 0 && sFailedCount != 0) {
             if (sFailedCount == 1) {
-                if (sItemTitleArray.size() >= 1) {
+                val firstTitle = sItemTitleArray.values.firstOrNull()
+                if (firstTitle != null) {
                     text = getString(
                         R.string.stat_download_done_line_failed,
-                        sItemTitleArray.valueAt(0)
+                        firstTitle
                     )
                 } else {
                     Log.d("TAG", "WTF, sItemTitleArray is null")
@@ -499,25 +500,14 @@ class DownloadService : Service(), DownloadListener {
         if (needStyle) {
             style = NotificationCompat.InboxStyle()
             style.setBigContentTitle(getString(R.string.stat_download_done_title))
-            val stateArray = sItemStateArray
-            val titleArray = sItemTitleArray
-            var i = 0
-            val n = stateArray.size()
-            while (i < n) {
-                val id = stateArray.keyAt(i)
-                val fin = stateArray.valueAt(i)
-                val title = titleArray[id]
-                if (title == null) {
-                    i++
-                    continue
-                }
+            for ((arcid, fin) in sItemStateArray) {
+                val title = sItemTitleArray[arcid] ?: continue
                 style.addLine(
                     getString(
                         if (fin) R.string.stat_download_done_line_succeeded else R.string.stat_download_done_line_failed,
                         title
                     )
                 )
-                i++
             }
         } else {
             style = null
@@ -697,10 +687,9 @@ class DownloadService : Service(), DownloadListener {
         private const val SCENE_ACTION_CLEAR = "clear_download_service"
         private const val SCENE_KEY_ARCID = "arcid"
 
-        private val sItemStateArray =
-            SparseJBArray()
-        private val sItemTitleArray =
-            SparseJLArray<String>()
+        // Keyed by arcid post-W36-10 (gid column dropped from DOWNLOADS).
+        private val sItemStateArray = LinkedHashMap<String, Boolean>()
+        private val sItemTitleArray = LinkedHashMap<String, String?>()
 
         private var sFailedCount = 0
         private var sFinishedCount = 0

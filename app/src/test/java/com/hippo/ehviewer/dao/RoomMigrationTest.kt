@@ -83,19 +83,25 @@ class RoomMigrationTest {
         }
         cursor.close()
 
-        assertTrue("GID column missing", "GID" in columns)
         assertTrue("STATE column missing", "STATE" in columns)
         assertTrue("SERVER_PROFILE_ID column missing", "SERVER_PROFILE_ID" in columns)
         assertTrue("TITLE column missing", "TITLE" in columns)
         assertTrue("ARCHIVE_URI column missing", "ARCHIVE_URI" in columns)
+        // Post-W36-10: GID / TITLE_JPN / CATEGORY / POSTED / UPLOADER were
+        // dropped from DOWNLOADS in MIGRATION_21_22.
+        assertTrue("GID column should be dropped post-W36-10", "GID" !in columns)
+        assertTrue("CATEGORY column should be dropped post-W36-10", "CATEGORY" !in columns)
+        assertTrue("TITLE_JPN column should be dropped post-W36-10", "TITLE_JPN" !in columns)
+        assertTrue("POSTED column should be dropped post-W36-10", "POSTED" !in columns)
+        assertTrue("UPLOADER column should be dropped post-W36-10", "UPLOADER" !in columns)
     }
 
     @Test
     fun `SERVER_PROFILE_ID default value is 0 across tables`() {
         // Verify DOWNLOADS
         sqliteDb.execSQL(
-            "INSERT INTO DOWNLOADS (ARCID, GID, STATE, LEGACY, TIME, CATEGORY, RATING) " +
-                "VALUES ('arcid_101', 101, 0, 0, ${System.currentTimeMillis()}, 0, 0.0)"
+            "INSERT INTO DOWNLOADS (ARCID, STATE, LEGACY, TIME, RATING) " +
+                "VALUES ('arcid_101', 0, 0, ${System.currentTimeMillis()}, 0.0)"
         )
         val cur1 = sqliteDb.query("SELECT SERVER_PROFILE_ID FROM DOWNLOADS WHERE ARCID = 'arcid_101'")
         assertTrue(cur1.moveToFirst())
@@ -104,8 +110,8 @@ class RoomMigrationTest {
 
         // Verify HISTORY
         sqliteDb.execSQL(
-            "INSERT INTO HISTORY (ARCID, GID, MODE, TIME, CATEGORY, RATING) " +
-                "VALUES ('arcid_102', 102, 0, ${System.currentTimeMillis()}, 0, 0.0)"
+            "INSERT INTO HISTORY (ARCID, MODE, TIME, RATING) " +
+                "VALUES ('arcid_102', 0, ${System.currentTimeMillis()}, 0.0)"
         )
         val cur2 = sqliteDb.query("SELECT SERVER_PROFILE_ID FROM HISTORY WHERE ARCID = 'arcid_102'")
         assertTrue(cur2.moveToFirst())
@@ -138,7 +144,6 @@ class RoomMigrationTest {
     fun `DownloadDao insert and query`() = runBlocking {
         val dao = db.downloadDao()
         val info = DownloadInfo().apply {
-            gid = 1001L
             arcid = "test_token"
             title = "Test Gallery"
             state = DownloadInfo.STATE_NONE
@@ -156,7 +161,6 @@ class RoomMigrationTest {
     fun `DownloadDao update`() = runBlocking {
         val dao = db.downloadDao()
         val info = DownloadInfo().apply {
-            gid = 2001L
             arcid ="arcid_2001"
             state = DownloadInfo.STATE_NONE
             time = System.currentTimeMillis()
@@ -173,7 +177,6 @@ class RoomMigrationTest {
     fun `DownloadDao delete`() = runBlocking {
         val dao = db.downloadDao()
         val info = DownloadInfo().apply {
-            gid = 3001L
             arcid ="arcid_3001"
             state = DownloadInfo.STATE_NONE
             time = System.currentTimeMillis()
@@ -215,7 +218,6 @@ class RoomMigrationTest {
     fun `BrowsingDao history insert and query`() = runBlocking {
         val dao = db.browsingDao()
         val history = HistoryInfo().apply {
-            gid = 4001L
             arcid = "hist_token"
             title = "History Gallery"
             time = System.currentTimeMillis()
@@ -224,7 +226,7 @@ class RoomMigrationTest {
         dao.insertHistory(history)
 
         val all = dao.getAllHistory()
-        assertTrue(all.any { it.gid == 4001L })
+        assertTrue(all.any { it.arcid == "hist_token" })
     }
 
     @Test
@@ -233,7 +235,6 @@ class RoomMigrationTest {
         val now = System.currentTimeMillis()
         for (i in 1..5) {
             dao.insertHistory(HistoryInfo().apply {
-                gid = (9000 + i).toLong()
                 arcid ="arcid_${9000 + i}"
                 time = now + i
                 mode = 0
@@ -250,7 +251,6 @@ class RoomMigrationTest {
     fun `BrowsingDao local favorite insert and query`() = runBlocking {
         val dao = db.browsingDao()
         val fav = LocalFavoriteInfo().apply {
-            gid = 5001L
             arcid = "fav_token"
             title = "Favorite Gallery"
             time = System.currentTimeMillis()
@@ -258,7 +258,7 @@ class RoomMigrationTest {
         dao.insertLocalFavorite(fav)
 
         val all = dao.getAllLocalFavorites()
-        assertTrue(all.any { it.gid == 5001L })
+        assertTrue(all.any { it.arcid == "fav_token" })
     }
 
     @Test

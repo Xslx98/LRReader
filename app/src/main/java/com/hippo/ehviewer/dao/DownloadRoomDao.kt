@@ -35,23 +35,14 @@ interface DownloadRoomDao {
     @Query("SELECT * FROM DOWNLOADS WHERE ARCID = :arcid")
     suspend fun loadDownload(arcid: String): DownloadInfo?
 
-    @Query("SELECT * FROM DOWNLOADS WHERE GID = :gid")
-    suspend fun loadDownloadByGid(gid: Long): DownloadInfo?
-
     @Query("UPDATE DOWNLOADS SET RATING = :rating WHERE ARCID = :arcid")
     suspend fun updateRating(arcid: String, rating: Float)
 
     @Query("DELETE FROM DOWNLOADS WHERE ARCID = :arcid")
     suspend fun deleteDownloadByKey(arcid: String)
 
-    @Query("DELETE FROM DOWNLOADS WHERE GID = :gid")
-    suspend fun deleteDownloadByGid(gid: Long)
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(list: List<DownloadInfo>)
-
-    @Query("DELETE FROM DOWNLOADS WHERE GID IN (:gids)")
-    suspend fun deleteByGids(gids: List<Long>)
 
     @Query("DELETE FROM DOWNLOADS WHERE ARCID IN (:arcids)")
     suspend fun deleteByArcids(arcids: List<String>)

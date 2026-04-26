@@ -245,7 +245,6 @@ class HistoryViewModelTest {
             val dao = db.browsingDao()
             for ((gid, title) in galleries) {
                 val historyInfo = com.hippo.ehviewer.dao.HistoryInfo().apply {
-                    this.gid = gid
                     this.arcid = "tok$gid"
                     this.title = title
                     this.time = System.currentTimeMillis()
