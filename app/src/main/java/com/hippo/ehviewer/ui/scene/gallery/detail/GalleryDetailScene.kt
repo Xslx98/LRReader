@@ -615,7 +615,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     private fun bindViewFirst() {
         if (mGalleryDetail != null) return
         val binder = mHeaderBinder ?: return
-        binder.bindViewFirst(mAction, mGalleryInfo)
+        binder.bindViewFirst(mAction, viewModel.archive.value)
         mActionHandler?.updateDownloadText()
     }
 
