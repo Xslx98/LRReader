@@ -34,6 +34,7 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadManager
+import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.ehviewer.util.galleryInfoFromCSV
@@ -284,7 +285,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
                     for (i in galleryInfos.indices) {
                         val gi = galleryInfos[i]
                         if (downloadManager.getDownloadInfo(gi.arcid) == null) {
-                            downloadManager.addDownload(gi, null)
+                            downloadManager.addDownload(gi.toArchive(), null)
                             importCount++
                         }
                         val progress = i + 1
