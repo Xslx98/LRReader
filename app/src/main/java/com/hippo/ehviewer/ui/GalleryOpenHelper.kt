@@ -47,7 +47,7 @@ object GalleryOpenHelper {
      */
     @JvmStatic
     suspend fun getLocalDownloadDir(context: Context, info: GalleryInfo): File? {
-        val uniDir = SpiderDen.getGalleryDownloadDir(info)
+        val uniDir = SpiderDen.getGalleryDownloadDir(info.arcid, info.title, info.gid)
         if (uniDir != null) {
             val uri = uniDir.uri
             if ("file" == uri.scheme) {

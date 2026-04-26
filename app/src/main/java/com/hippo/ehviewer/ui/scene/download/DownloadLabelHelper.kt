@@ -101,7 +101,7 @@ object DownloadLabelHelper {
             val arcid = galleryInfo.arcid
             ServiceRegistry.coroutineModule.ioScope.launch {
                 ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(arcid)
-                SpiderDen.getGalleryDownloadDir(galleryInfo)?.delete()
+                SpiderDen.getGalleryDownloadDir(galleryInfo.arcid, galleryInfo.title, galleryInfo.gid)?.delete()
             }
         }
     }
