@@ -5,18 +5,23 @@
 
 package com.hippo.ehviewer.spider
 
-import android.content.Context
 import androidx.annotation.IntDef
-import androidx.annotation.UiThread
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.lib.glgallery.GalleryProvider
 import com.hippo.lib.image.Image
 import com.hippo.unifile.UniFile
 
 /**
  * SpiderQueen -- STUB.
- * E-Hentai image downloading spider has been removed.
- * Only preserved: constants, OnSpiderListener interface, findStartPage().
+ * E-Hentai image downloading spider has been removed. Only retained:
+ *  - [Mode] / [State] annotations and constants
+ *  - [OnSpiderListener] callback interface (used by LRRDownloadWorker /
+ *    DownloadScheduler)
+ *  - [SPIDER_INFO_FILENAME] / [SPIDER_INFO_BACKUP_DIR] constants
+ *
+ * The instance class is itself dead — no caller creates a SpiderQueen.
+ * The class shell is preserved only because Kotlin nests its constants
+ * and the listener interface inside it; removing the class would mean
+ * relocating those declarations to a new top-level container.
  */
 class SpiderQueen private constructor() : Runnable {
 
@@ -65,23 +70,5 @@ class SpiderQueen private constructor() : Runnable {
         const val DECODE_THREAD_NUM = 2
         const val SPIDER_INFO_FILENAME = ".ehviewer"
         const val SPIDER_INFO_BACKUP_DIR = "backupDir"
-
-        @JvmStatic
-        @UiThread
-        fun obtainSpiderQueen(
-            context: Context,
-            galleryInfo: GalleryInfo,
-            @Mode mode: Int
-        ): SpiderQueen = SpiderQueen()
-
-        @JvmStatic
-        @UiThread
-        fun releaseSpiderQueen(queen: SpiderQueen, @Mode mode: Int) {
-            // No-op
-        }
-
-        @JvmStatic
-        @UiThread
-        fun findStartPage(context: Context, galleryInfo: GalleryInfo): Int = 0
     }
 }
