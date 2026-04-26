@@ -21,12 +21,12 @@ import android.util.Log
 import com.hippo.app.ListCheckBoxDialogBuilder
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.download.DownloadService
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.unifile.UniFile
+import com.lanraragi.reader.domain.Archive
 import java.io.IOException
 
 object CommonOperations {
@@ -34,22 +34,22 @@ object CommonOperations {
     private const val TAG = "CommonOperations"
 
     @JvmStatic
-    fun startDownload(activity: MainActivity, galleryInfo: GalleryInfo, forceDefault: Boolean) {
-        startDownload(activity, listOf(galleryInfo), forceDefault)
+    fun startDownload(activity: MainActivity, archive: Archive, forceDefault: Boolean) {
+        startDownload(activity, listOf(archive), forceDefault)
     }
 
     // KNOWN-ISSUE (P2): assumes Activity context matches theme; may mismatch in multi-window
     @JvmStatic
-    fun startDownload(activity: MainActivity, galleryInfos: List<GalleryInfo>, forceDefault: Boolean) {
+    fun startDownload(activity: MainActivity, archives: List<Archive>, forceDefault: Boolean) {
         val dm = ServiceRegistry.dataModule.downloadManager
 
         val toStart = ArrayList<String>()
-        val toAdd = mutableListOf<GalleryInfo>()
-        for (gi in galleryInfos) {
-            if (dm.containDownloadInfo(gi.arcid)) {
-                toStart.add(gi.arcid)
+        val toAdd = mutableListOf<Archive>()
+        for (a in archives) {
+            if (dm.containDownloadInfo(a.arcid)) {
+                toStart.add(a.arcid)
             } else {
-                toAdd.add(gi)
+                toAdd.add(a)
             }
         }
 
@@ -80,11 +80,11 @@ object CommonOperations {
 
         if (justStart) {
             // Got default label
-            for (gi in toAdd) {
+            for (a in toAdd) {
                 val intent = Intent(activity, DownloadService::class.java)
                 intent.action = DownloadService.ACTION_START
                 intent.putExtra(DownloadService.KEY_LABEL, label)
-                intent.putExtra(DownloadService.KEY_GALLERY_INFO, gi)
+                intent.putExtra(DownloadService.KEY_ARCHIVE, a)
                 activity.startService(intent)
             }
             // Notify
@@ -107,11 +107,11 @@ object CommonOperations {
                         if (candidate != null && dm.containLabel(candidate)) candidate else null
                     }
                     // Start download
-                    for (gi in toAdd) {
+                    for (a in toAdd) {
                         val intent = Intent(activity, DownloadService::class.java)
                         intent.action = DownloadService.ACTION_START
                         intent.putExtra(DownloadService.KEY_LABEL, selectedLabel)
-                        intent.putExtra(DownloadService.KEY_GALLERY_INFO, gi)
+                        intent.putExtra(DownloadService.KEY_ARCHIVE, a)
                         activity.startService(intent)
                     }
                     // Save settings

@@ -35,7 +35,7 @@ import androidx.annotation.IntDef
 import androidx.core.app.NotificationCompat
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.mapper.toArchive
+import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
@@ -241,10 +241,10 @@ class DownloadService : Service(), DownloadListener {
             }
 
             ACTION_START -> {
-                val gi = intent.getParcelableExtra<GalleryInfo>(KEY_GALLERY_INFO)
+                val archive = intent.getParcelableExtra<Archive>(KEY_ARCHIVE)
                 val label = intent.getStringExtra(KEY_LABEL)
-                if (gi != null && dm != null) {
-                    dm.startDownload(gi.toArchive(), label)
+                if (archive != null && dm != null) {
+                    dm.startDownload(archive, label)
                 }
             }
         }
@@ -678,7 +678,7 @@ class DownloadService : Service(), DownloadListener {
         const val ACTION_DELETE_RANGE: String = "delete_range"
         const val ACTION_CLEAR: String = "clear"
 
-        const val KEY_GALLERY_INFO: String = "gallery_info"
+        const val KEY_ARCHIVE: String = "archive"
         const val KEY_LABEL: String = "label"
         const val KEY_ARCID: String = "arcid"
         const val KEY_ARCID_LIST: String = "arcid_list"
