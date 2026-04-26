@@ -2,8 +2,8 @@ package com.hippo.ehviewer.ui
 
 import android.content.Context
 import android.content.Intent
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.spider.SpiderDen
+import com.lanraragi.reader.domain.Archive
 import java.io.File
 
 /**
@@ -15,27 +15,27 @@ import java.io.File
 object GalleryOpenHelper {
 
     /**
-     * Build an Intent for reading the given gallery, preferring local files if available.
+     * Build an Intent for reading the given archive, preferring local files if available.
      *
-     * @param context    Context
-     * @param galleryInfo Gallery to open
+     * @param context Context
+     * @param archive Archive to open
      * @return Intent ready for startActivity()
      */
     @JvmStatic
-    suspend fun buildReadIntent(context: Context, galleryInfo: GalleryInfo): Intent {
+    suspend fun buildReadIntent(context: Context, archive: Archive): Intent {
         val intent = Intent(context, GalleryActivity::class.java)
 
         // Check if local downloaded files exist
-        val downloadDir = getLocalDownloadDir(context, galleryInfo)
+        val downloadDir = getLocalDownloadDir(context, archive)
         if (downloadDir != null && hasImageFiles(downloadDir)) {
             // Local files available — read offline (instant)
             intent.action = GalleryActivity.ACTION_DIR
             intent.putExtra(GalleryActivity.KEY_FILENAME, downloadDir.absolutePath)
-            intent.putExtra(GalleryActivity.KEY_GALLERY_INFO, galleryInfo)
+            intent.putExtra(GalleryActivity.KEY_ARCHIVE, archive)
         } else {
             // No local files — stream from LANraragi server
             intent.action = GalleryActivity.ACTION_LRR
-            intent.putExtra(GalleryActivity.KEY_GALLERY_INFO, galleryInfo)
+            intent.putExtra(GalleryActivity.KEY_ARCHIVE, archive)
         }
 
         return intent
@@ -46,8 +46,8 @@ object GalleryOpenHelper {
      * Uses SpiderDen.getGalleryDownloadDir() for consistency with LRRDownloadWorker.
      */
     @JvmStatic
-    suspend fun getLocalDownloadDir(context: Context, info: GalleryInfo): File? {
-        val uniDir = SpiderDen.getGalleryDownloadDir(info)
+    suspend fun getLocalDownloadDir(context: Context, archive: Archive): File? {
+        val uniDir = SpiderDen.getGalleryDownloadDir(archive.arcid, archive.title)
         if (uniDir != null) {
             val uri = uniDir.uri
             if ("file" == uri.scheme) {
@@ -58,7 +58,7 @@ object GalleryOpenHelper {
             }
         }
         // Fallback: check old app-private path for backwards compatibility
-        val title = info.title ?: return null
+        val title = archive.title.takeIf { it.isNotEmpty() } ?: return null
         val baseDir = File(context.getExternalFilesDir(null), "download")
         val dirName = title.replace("[\\\\/:*?\"<>|]".toRegex(), "_").trim()
         val oldDir = File(baseDir, dirName)

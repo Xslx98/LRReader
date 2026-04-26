@@ -10,7 +10,6 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.callBack.DownloadSearchCallback
 import com.hippo.ehviewer.client.LRRUtils
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.util.FileUtils
 import kotlinx.coroutines.Dispatchers
@@ -463,7 +462,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
             ServiceRegistry.coroutineModule.ioScope.launch {
                 for (info in infos) {
                     ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(info.arcid)
-                    val file = SpiderDen.getGalleryDownloadDir(info)
+                    val file = SpiderDen.getGalleryDownloadDir(info.arcid, info.title, info.gid)
                     file?.delete()
                 }
             }
@@ -575,8 +574,6 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
                 legacy = 0
                 time = System.currentTimeMillis()
                 label = null
-                total = 0
-                finished = 0
                 archiveUri = uri.toString()
             }
         } catch (e: Exception) {

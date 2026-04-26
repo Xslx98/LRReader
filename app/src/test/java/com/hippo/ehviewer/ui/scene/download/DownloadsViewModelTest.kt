@@ -10,6 +10,7 @@ import com.hippo.ehviewer.FavouriteStatusRouter
 import java.io.File
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.client.LRRUtils
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.hippo.ehviewer.dao.AppDatabase
@@ -521,7 +522,7 @@ class DownloadsViewModelTest {
             state = DownloadInfo.STATE_DOWNLOAD
             time = 1_000L
         }
-        dm.addDownloadInfo(info, null)
+        dm.addDownloadInfo(info.toArchive(), null)
         ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
 
@@ -537,16 +538,11 @@ class DownloadsViewModelTest {
 
         val emitted = vm.downloadList.value.firstOrNull { it.arcid == "arc-struct" }
         assertTrue("expected arc-struct in downloadList", emitted != null)
-        // The Room-emitted instance must not be mutated by the tracker. Its
-        // @Ignore fields should remain at their DB-default values (speed
-        // defaults to 0 via primitive-long init; the authoritative 99999L
-        // lives on progressMap only).
-        assertEquals(0L, emitted!!.speed)
-        assertEquals(0, emitted.finished)
-        assertEquals(0, emitted.downloaded)
-        // progressMap has the live values.
+        // Post-W35-3c: progress lives only in progressMap. The Room-emitted
+        // DownloadInfo no longer carries @Ignore progress fields at all.
         assertEquals(99999L, vm.progressMap.value["arc-struct"]?.speed)
         assertEquals(7, vm.progressMap.value["arc-struct"]?.finished)
+        assertEquals(7, vm.progressMap.value["arc-struct"]?.downloaded)
     }
 
     @Test
@@ -560,8 +556,8 @@ class DownloadsViewModelTest {
             arcid = "b"; title = "B"; label = "L1"; state = DownloadInfo.STATE_NONE; time = 2L
         }
         dm.addLabel("L1")
-        dm.addDownloadInfo(infoA, null)
-        dm.addDownloadInfo(infoB, "L1")
+        dm.addDownloadInfo(infoA.toArchive(), null)
+        dm.addDownloadInfo(infoB.toArchive(), "L1")
         ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(infoA)
         ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(infoB)
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks()

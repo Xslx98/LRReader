@@ -50,6 +50,7 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
 import com.hippo.ehviewer.client.LRRUtils
+import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.ehviewer.ui.scene.ToolbarScene
@@ -302,10 +303,10 @@ class HistoryScene : ToolbarScene(),
             context.getString(R.string.lrr_menu_categories),
         )
         AlertDialog.Builder(context)
-            .setTitle(LRRUtils.getSuitableTitle(gi))
+            .setTitle(gi.title)
             .setItems(items) { _, which ->
                 when (which) {
-                    0 -> CommonOperations.startDownload(activity, gi, false)
+                    0 -> CommonOperations.startDownload(activity, gi.toArchive(), false)
                     1 -> CategoryDialogHelper.showCategoryDialog(activity, gi.arcid, null)
                 }
             }.show()

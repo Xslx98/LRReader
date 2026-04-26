@@ -458,10 +458,8 @@
     <string name="settings_eh_excluded_languages_summary">指定した言語のギャラリーをホームページと検索から隠します</string>
     <string name="settings_eh_excluded_tag_namespaces">タグセットを除外</string>
     <string name="settings_eh_excluded_tag_namespaces_summary">指定したタグセットをデフォルト検索から除外します</string>
-    <string name="settings_eh_show_jpn_title">日本語タイトルを表示する</string>
     <string name="settings_eh_show_gallery_comment">ギャラリーコメントを表示する</string>
     <string name="settings_eh_show_eh_event">EH のイベントを表示する</string>
-    <string name="settings_eh_show_jpn_title_summary">LANraragi ウェブサイトの設定で日本語タイトルを有効化する必要があります</string>
     <string name="settings_eh_show_gallery_pages">ギャラリーページ数を表示する</string>
     <string name="settings_eh_show_gallery_pages_summary">リストにギャラリーのページの数量を表示します</string>
     <string name="settings_eh_show_tag_translations">中国語のタグ翻訳を表示する</string>

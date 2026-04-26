@@ -543,11 +543,9 @@
     <string name="settings_eh_excluded_tag_namespaces_summary">在預設搜尋中排除指定標籤組</string>
     <string name="settings_eh_excluded_languages">排除語言</string>
     <string name="settings_eh_excluded_languages_summary">在主頁與搜尋中隱藏指定語言的畫廊</string>
-    <string name="settings_eh_show_jpn_title">顯示日文標題</string>
     <string name="settings_eh_show_gallery_comment">顯示畫廊留言</string>
     <string name="settings_eh_show_gallery_rating">顯示畫廊評分</string>
     <string name="settings_eh_show_eh_event">顯示 EH 活動</string>
-    <string name="settings_eh_show_jpn_title_summary">需同時在 LANraragi 網站設定中啟用 Japanese Title</string>
     <string name="settings_eh_show_gallery_pages">顯示畫廊頁數</string>
     <string name="settings_eh_show_gallery_pages_summary">在畫廊列表中顯示頁數</string>
     <string name="settings_eh_show_tag_translations">顯示標籤翻譯</string>

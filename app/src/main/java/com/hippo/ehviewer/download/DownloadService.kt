@@ -35,9 +35,8 @@ import androidx.annotation.IntDef
 import androidx.core.app.NotificationCompat
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.ServiceRegistry
+import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.LRRUtils
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.util.ReadableTime
 import com.hippo.lib.yorozuya.FileUtils
@@ -241,10 +240,10 @@ class DownloadService : Service(), DownloadListener {
             }
 
             ACTION_START -> {
-                val gi = intent.getParcelableExtra<GalleryInfo>(KEY_GALLERY_INFO)
+                val archive = intent.getParcelableExtra<Archive>(KEY_ARCHIVE)
                 val label = intent.getStringExtra(KEY_LABEL)
-                if (gi != null && dm != null) {
-                    dm.startDownload(gi, label)
+                if (archive != null && dm != null) {
+                    dm.startDownload(archive, label)
                 }
             }
         }
@@ -371,7 +370,7 @@ class DownloadService : Service(), DownloadListener {
         )
 
         val dlBuilder = mDownloadingBuilder ?: return
-        dlBuilder.setContentTitle(LRRUtils.getSuitableTitle(info))
+        dlBuilder.setContentTitle(info.title)
             .setContentText(null)
             .setContentInfo(null)
             .setProgress(0, 0, true)
@@ -386,12 +385,13 @@ class DownloadService : Service(), DownloadListener {
         }
         ensureDownloadingBuilder()
 
-        var speed = info.speed
+        val snap = mDownloadManager?.progressFor(info.arcid)
+        var speed = snap?.speed ?: -1L
         if (speed < 0) {
             speed = 0
         }
         var text = FileUtils.humanReadableByteCount(speed, false) + "/S"
-        val remaining = info.remaining
+        val remaining = snap?.remaining ?: -1L
         text = if (remaining >= 0) {
             getString(
                 R.string.download_speed_text_2,
@@ -401,11 +401,13 @@ class DownloadService : Service(), DownloadListener {
         } else {
             getString(R.string.download_speed_text, text)
         }
+        val total = snap?.total ?: -1
+        val finished = snap?.finished ?: -1
         val dlBuilder = mDownloadingBuilder ?: return
-        dlBuilder.setContentTitle(LRRUtils.getSuitableTitle(info))
+        dlBuilder.setContentTitle(info.title)
             .setContentText(text)
-            .setContentInfo(if (info.total == -1 || info.finished == -1) null else info.finished.toString() + "/" + info.total)
-            .setProgress(info.total, info.finished, false)
+            .setContentInfo(if (total == -1 || finished == -1) null else "$finished/$total")
+            .setProgress(total, finished, false)
 
         mDownloadingDelay?.startForeground()
     }
@@ -434,7 +436,7 @@ class DownloadService : Service(), DownloadListener {
         val index = sItemStateArray.indexOfKey(gid)
         if (index < 0) { // Not contain
             sItemStateArray.put(gid, finish)
-            sItemTitleArray.put(gid, LRRUtils.getSuitableTitle(info))
+            sItemTitleArray.put(gid, info.title)
             sDownloadedCount++
             if (finish) {
                 sFinishedCount++
@@ -444,7 +446,7 @@ class DownloadService : Service(), DownloadListener {
         } else { // Contain
             val oldFinish = sItemStateArray.valueAt(index)
             sItemStateArray.put(gid, finish)
-            sItemTitleArray.put(gid, LRRUtils.getSuitableTitle(info))
+            sItemTitleArray.put(gid, info.title)
             if (oldFinish && !finish) {
                 sFinishedCount--
                 sFailedCount++
@@ -675,7 +677,7 @@ class DownloadService : Service(), DownloadListener {
         const val ACTION_DELETE_RANGE: String = "delete_range"
         const val ACTION_CLEAR: String = "clear"
 
-        const val KEY_GALLERY_INFO: String = "gallery_info"
+        const val KEY_ARCHIVE: String = "archive"
         const val KEY_LABEL: String = "label"
         const val KEY_ARCID: String = "arcid"
         const val KEY_ARCID_LIST: String = "arcid_list"
