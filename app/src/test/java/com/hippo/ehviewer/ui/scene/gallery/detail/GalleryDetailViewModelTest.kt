@@ -30,17 +30,16 @@ import org.junit.Test
 class GalleryDetailViewModelTest {
 
     @Test
-    fun secondNavigation_afterReset_returnsNewGalleryGid_notStaleDetail() {
+    fun secondNavigation_afterReset_returnsNewGalleryArcid_notStaleDetail() {
         val vm = GalleryDetailViewModel()
 
-        val galleryA = GalleryInfo().apply { gid = 100L; arcid = "tokA" }
-        val detailA = GalleryDetail().apply { gid = 100L; arcid = "tokA" }
-        val galleryB = GalleryInfo().apply { gid = 200L; arcid = "tokB" }
+        val galleryA = GalleryInfo().apply { arcid = "tokA" }
+        val detailA = GalleryDetail().apply { arcid = "tokA" }
+        val galleryB = GalleryInfo().apply { arcid = "tokB" }
 
         // First navigation: A loaded with both info and detail.
         vm.setGalleryInfo(galleryA)
         vm.setGalleryDetail(detailA)
-        assertEquals(100L, vm.getEffectiveGid())
         assertEquals("tokA", vm.getEffectiveArcid())
         assertSame(detailA, vm.getEffectiveGalleryInfo())
 
@@ -50,7 +49,6 @@ class GalleryDetailViewModelTest {
         vm.resetForNewEntry()
         vm.setGalleryInfo(galleryB)
 
-        assertEquals(200L, vm.getEffectiveGid())
         assertEquals("tokB", vm.getEffectiveArcid())
         assertSame(galleryB, vm.getEffectiveGalleryInfo())
     }
@@ -62,8 +60,8 @@ class GalleryDetailViewModelTest {
         vm.setAction(GalleryDetailScene.ACTION_GALLERY_INFO)
         vm.setGid(42L)
         vm.setArcid("tok")
-        vm.setGalleryInfo(GalleryInfo().apply { gid = 42L })
-        vm.setGalleryDetail(GalleryDetail().apply { gid = 42L })
+        vm.setGalleryInfo(GalleryInfo().apply { arcid = "tok" })
+        vm.setGalleryDetail(GalleryDetail().apply { arcid = "tok" })
         vm.setState(GalleryDetailViewModel.STATE_NORMAL)
 
         vm.resetForNewEntry()
@@ -75,7 +73,7 @@ class GalleryDetailViewModelTest {
         assertNull(vm.galleryDetail.value)
         assertNull(vm.downloadInfo.value)
         assertEquals(GalleryDetailViewModel.STATE_INIT, vm.state.value)
-        assertEquals(-1L, vm.getEffectiveGid())
+        assertNull(vm.getEffectiveArcid())
         assertNull(vm.getEffectiveGalleryInfo())
     }
 
@@ -84,17 +82,17 @@ class GalleryDetailViewModelTest {
         val vm = GalleryDetailViewModel()
 
         // First entry: opened from downloads scene with a DownloadInfo.
-        val downloadDetail = GalleryDetail().apply { gid = 555L; arcid = "downTok" }
+        val downloadDetail = GalleryDetail().apply { arcid = "downTok" }
         vm.setGalleryInfo(downloadDetail)
         vm.setGalleryDetail(downloadDetail)
-        assertEquals(555L, vm.getEffectiveGid())
+        assertEquals("downTok", vm.getEffectiveArcid())
 
         // Second entry: search-result click on a different gallery.
         vm.resetForNewEntry()
-        val freshInfo = GalleryInfo().apply { gid = 777L; arcid = "freshTok" }
+        val freshInfo = GalleryInfo().apply { arcid = "freshTok" }
         vm.setGalleryInfo(freshInfo)
 
-        assertEquals(777L, vm.getEffectiveGid())
+        assertEquals("freshTok", vm.getEffectiveArcid())
         assertNull(vm.downloadInfo.value)
     }
 
