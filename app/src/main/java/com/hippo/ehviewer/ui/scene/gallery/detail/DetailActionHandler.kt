@@ -202,8 +202,9 @@ internal class DetailActionHandler(
         if (viewModel.downloadManager.getDownloadState(galleryInfo.arcid) == DownloadInfo.STATE_INVALID) {
             CommonOperations.startDownload(activity, galleryInfo.toArchive(), false)
         } else {
-            DownloadLabelHelper.showDeleteDialog(context, galleryInfo) { deleteFiles ->
-                DownloadLabelHelper.performDelete(galleryInfo, deleteFiles)
+            val archive = galleryInfo.toArchive()
+            DownloadLabelHelper.showDeleteDialog(context, archive) { deleteFiles ->
+                DownloadLabelHelper.performDelete(archive, deleteFiles)
             }
         }
     }

@@ -21,10 +21,9 @@ import androidx.appcompat.app.AlertDialog
 import com.hippo.app.CheckBoxDialogBuilder
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.settings.DownloadSettings
-import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.spider.SpiderDen
+import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.launch
 
 /**
@@ -40,12 +39,12 @@ object DownloadLabelHelper {
      */
     fun showDeleteDialog(
         context: Context,
-        galleryInfo: GalleryInfo,
+        archive: Archive,
         onConfirm: (deleteFiles: Boolean) -> Unit
     ) {
         val builder = CheckBoxDialogBuilder(
             context,
-            context.getString(R.string.download_remove_dialog_message, galleryInfo.title ?: ""),
+            context.getString(R.string.download_remove_dialog_message, archive.title),
             context.getString(R.string.download_remove_dialog_check_text),
             DownloadSettings.getRemoveImageFiles()
         )
@@ -94,14 +93,15 @@ object DownloadLabelHelper {
      * Also persists [deleteFiles] as the remembered default for the next
      * dialog invocation.
      */
-    fun performDelete(galleryInfo: GalleryInfo, deleteFiles: Boolean) {
-        ServiceRegistry.dataModule.downloadManager.deleteDownload(galleryInfo.arcid)
+    fun performDelete(archive: Archive, deleteFiles: Boolean) {
+        ServiceRegistry.dataModule.downloadManager.deleteDownload(archive.arcid)
         DownloadSettings.putRemoveImageFiles(deleteFiles)
         if (deleteFiles) {
-            val arcid = galleryInfo.arcid
+            val arcid = archive.arcid
+            val title = archive.title
             ServiceRegistry.coroutineModule.ioScope.launch {
                 ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(arcid)
-                SpiderDen.getGalleryDownloadDir(galleryInfo.arcid, galleryInfo.title, galleryInfo.gid)?.delete()
+                SpiderDen.getGalleryDownloadDir(arcid, title)?.delete()
             }
         }
     }
