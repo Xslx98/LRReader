@@ -16,334 +16,117 @@
 
 package com.hippo.ehviewer.spider
 
-import android.content.Context
-import android.graphics.BitmapFactory
-import android.webkit.MimeTypeMap
-import com.hippo.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.LRRCacheKeyFactory
-import com.hippo.ehviewer.client.LRRUtils
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.settings.DownloadSettings
-import com.hippo.ehviewer.settings.ReadingSettings
-import com.hippo.io.UniFileInputStreamPipe
-import com.hippo.io.UniFileOutputStreamPipe
-import com.hippo.streampipe.InputStreamPipe
-import com.hippo.streampipe.OutputStreamPipe
 import com.hippo.unifile.FilenameFilter
 import com.hippo.unifile.UniFile
 import com.hippo.lib.yorozuya.FileUtils
-import com.hippo.lib.yorozuya.IOUtils
-import com.hippo.lib.yorozuya.MathUtils
-import com.hippo.lib.yorozuya.Utilities
-import java.io.File
-import java.io.IOException
 import java.util.Locale
 
-class SpiderDen(galleryInfo: GalleryInfo) {
-
-    var mDownloadDir: UniFile? = null
-        private set
-
-    @Volatile
-    private var mMode: Int = SpiderQueen.MODE_READ
-
-    private var mArcid: String = galleryInfo.arcid
+/**
+ * Helpers for resolving an archive's on-disk download directory and the
+ * filename layout LRReader uses for downloaded pages.
+ *
+ * The original EhViewer SpiderDen instance class (image cache + per-archive
+ * state) has been removed: LANraragi's image flow goes through
+ * [com.hippo.ehviewer.gallery.LRRGalleryProvider] /
+ * [com.hippo.ehviewer.download.LRRDownloadWorker] and never created a
+ * SpiderDen instance. Only the directory + filename helpers survive.
+ */
+object SpiderDen {
 
     /**
-     * Initializes the download directory by resolving it from DB/filesystem.
-     * Must be called after construction from a coroutine context.
+     * Resolves the download directory for the given archive.
+     *
+     * Suspend because it calls [com.hippo.ehviewer.dao.DownloadDbRepository].
+     * Callers must be in a coroutine context.
+     *
+     * @param arcid LANraragi archive id (the directory's primary key)
+     * @param title display title — used only when the directory has to be
+     *   created (it becomes part of the directory name)
+     * @param legacyGid optional EH-era gid; used as a fallback prefix when
+     *   listing directories so that very old installs (pre-W34-1) whose
+     *   on-disk dirs are gid-prefixed can still be matched. Pass `null` if
+     *   the caller has no gid value (e.g. arcid-only contexts).
      */
-    suspend fun initDownloadDir(galleryInfo: GalleryInfo) {
-        mDownloadDir = getGalleryDownloadDir(galleryInfo)
-    }
+    @JvmStatic
+    suspend fun getGalleryDownloadDir(
+        arcid: String,
+        title: String?,
+        legacyGid: Long? = null,
+    ): UniFile? {
+        val dir = DownloadSettings.getDownloadLocation() ?: return null
 
-    fun setMArcid(arcid: String) {
-        this.mArcid = arcid
-    }
-
-    fun setMode(@SpiderQueen.Mode mode: Int) {
-        mMode = mode
-        if (mode == SpiderQueen.MODE_DOWNLOAD) {
-            ensureDownloadDir()
+        // Read from DB
+        val downloadDbRepo = ServiceRegistry.dataModule.downloadDbRepository
+        var dirname = downloadDbRepo.getDownloadDirname(arcid)
+        if (dirname != null) {
+            // Some dirname may be invalid in some version
+            dirname = FileUtils.sanitizeFilename(dirname)
+            downloadDbRepo.putDownloadDirname(arcid, dirname)
         }
-    }
 
-    private fun ensureDownloadDir(): Boolean {
-        val dir = mDownloadDir
-        return dir != null && dir.ensureDir()
-    }
-
-    fun isReady(): Boolean {
-        return when (mMode) {
-            SpiderQueen.MODE_READ -> sCache != null
-            SpiderQueen.MODE_DOWNLOAD -> { val dir = mDownloadDir; dir != null && dir.isDirectory }
-            else -> false
-        }
-    }
-
-    fun getDownloadDir(): UniFile? {
-        val dir = mDownloadDir
-        return if (dir != null && dir.isDirectory) dir else null
-    }
-
-    fun getDownloadDirName(): UniFile? {
-        return mDownloadDir
-    }
-
-    private fun containInCache(index: Int): Boolean {
-        val cache = sCache ?: return false
-        val key = LRRCacheKeyFactory.getImageKey(mArcid, index)
-        return cache.contain(key)
-    }
-
-    private fun containInDownloadDir(index: Int): Boolean {
-        val dir = getDownloadDir() ?: return false
-        return findImageFile(dir, index) != null
-    }
-
-    private fun fixExtension(extension: String): String {
-        return if (Utilities.contain(GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS, extension)) {
-            extension
-        } else {
-            GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS[0]
-        }
-    }
-
-    private fun copyFromCacheToDownloadDir(index: Int): Boolean {
-        val cache = sCache ?: return false
-        val dir = getDownloadDir() ?: return false
-        val key = LRRCacheKeyFactory.getImageKey(mArcid, index)
-        val pipe = cache.getInputStreamPipe(key) ?: return false
-
-        var os: java.io.OutputStream? = null
-        try {
-            // Get extension
-            val options = BitmapFactory.Options()
-            options.inJustDecodeBounds = true
-            pipe.obtain()
+        // Find it by arcid prefix (new format), then fall back to gid prefix (legacy)
+        if (dirname == null) {
             try {
-                BitmapFactory.decodeStream(pipe.open(), null, options)
-            } finally {
-                pipe.close()
-            }
-            var extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(options.outMimeType)
-                ?: return false
-            extension = ".$extension"
-            // Fix extension
-            extension = fixExtension(extension)
-            // Copy from cache to download dir
-            val file = dir.createFile(generateImageFilename(index, extension)) ?: return false
-            os = file.openOutputStream()
-            try {
-                IOUtils.copy(pipe.open(), os)
-            } finally {
-                pipe.close()
-            }
-            return true
-        } catch (e: IOException) {
-            return false
-        } finally {
-            IOUtils.closeQuietly(os)
-            pipe.release()
-        }
-    }
-
-    fun contain(index: Int): Boolean {
-        return when (mMode) {
-            SpiderQueen.MODE_READ -> containInCache(index) || containInDownloadDir(index)
-            SpiderQueen.MODE_DOWNLOAD -> containInDownloadDir(index) || copyFromCacheToDownloadDir(index)
-            else -> false
-        }
-    }
-
-    private fun removeFromCache(index: Int): Boolean {
-        val cache = sCache ?: return false
-        val key = LRRCacheKeyFactory.getImageKey(mArcid, index)
-        return cache.remove(key)
-    }
-
-    private fun removeFromDownloadDir(index: Int): Boolean {
-        val dir = getDownloadDir() ?: return false
-        var result = false
-        for (ext in GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS) {
-            val filename = generateImageFilename(index, ext)
-            val file = dir.subFile(filename)
-            if (file != null) {
-                result = result or file.delete()
+                // Try arcid-prefixed directory first (new format)
+                var files = dir.listFiles(StartWithFilenameFilter("$arcid-"))
+                // Fall back to gid-prefixed directory (legacy installs)
+                if ((files == null || files.isEmpty()) && legacyGid != null && legacyGid != 0L) {
+                    files = dir.listFiles(StartWithFilenameFilter("$legacyGid-"))
+                }
+                if (files != null) {
+                    // Get max-length-name dir
+                    var maxLength = -1
+                    for (file in files) {
+                        if (file.isDirectory) {
+                            val name = file.name ?: continue
+                            val length = name.length
+                            if (length > maxLength) {
+                                maxLength = length
+                                dirname = name
+                            }
+                        }
+                    }
+                    if (dirname != null) {
+                        downloadDbRepo.putDownloadDirname(arcid, dirname)
+                    }
+                }
+            } catch (e: Exception) {
+                // Failed to list files, maybe storage is unavailable or permission lost
+                // Continue to create new directory
+                android.util.Log.w("SpiderDen", "Failed to list files in download directory", e)
             }
         }
-        return result
-    }
 
-    fun remove(index: Int): Boolean {
-        var result = removeFromCache(index)
-        result = result or removeFromDownloadDir(index)
-        return result
-    }
+        // Create it — use arcid as prefix for unique directory names
+        if (dirname == null) {
+            dirname = FileUtils.sanitizeFilename("$arcid-$title")
+            downloadDbRepo.putDownloadDirname(arcid, dirname)
+        }
 
-    private fun openCacheOutputStreamPipe(index: Int): OutputStreamPipe? {
-        val cache = sCache ?: return null
-        val key = LRRCacheKeyFactory.getImageKey(mArcid, index)
-        return cache.getOutputStreamPipe(key)
+        return dir.subFile(dirname)
     }
 
     /**
-     * @param extension without dot
+     * @param extension with dot (e.g. ".jpg")
      */
-    private fun openDownloadOutputStreamPipe(index: Int, extension: String?): OutputStreamPipe? {
-        val dir = getDownloadDir() ?: return null
-        val fixedExtension = if (extension == null || !extension.contains(".")) {
-            fixExtension(".$extension")
-        } else {
-            fixExtension(extension)
-        }
-        val file = dir.createFile(generateImageFilename(index, fixedExtension)) ?: return null
-        return UniFileOutputStreamPipe(file)
-    }
+    @JvmStatic
+    fun generateImageFilename(index: Int, extension: String): String =
+        String.format(Locale.US, "%08d%s", index + 1, extension)
 
-    fun openOutputStreamPipe(index: Int, extension: String?): OutputStreamPipe? {
-        return when (mMode) {
-            SpiderQueen.MODE_READ -> {
-                // Return the download pipe if the gallery has been downloaded
-                openDownloadOutputStreamPipe(index, extension)
-                    ?: openCacheOutputStreamPipe(index)
-            }
-            SpiderQueen.MODE_DOWNLOAD -> openDownloadOutputStreamPipe(index, extension)
-            else -> null
-        }
-    }
-
-    private fun openCacheInputStreamPipe(index: Int): InputStreamPipe? {
-        val cache = sCache ?: return null
-        val key = LRRCacheKeyFactory.getImageKey(mArcid, index)
-        return cache.getInputStreamPipe(key)
-    }
-
-    fun openDownloadInputStreamPipe(index: Int): InputStreamPipe? {
-        val dir = getDownloadDir() ?: return null
-        for (i in 0 until 2) {
-            val file = findImageFile(dir, index)
-            if (file != null) {
-                return UniFileInputStreamPipe(file)
-            } else if (!copyFromCacheToDownloadDir(index)) {
-                return null
-            }
+    @JvmStatic
+    fun findImageFile(dir: UniFile, index: Int): UniFile? {
+        for (extension in GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS) {
+            val filename = generateImageFilename(index, extension)
+            val file = dir.findFile(filename)
+            if (file != null) return file
         }
         return null
     }
 
-    fun openInputStreamPipe(index: Int): InputStreamPipe? {
-        return when (mMode) {
-            SpiderQueen.MODE_READ -> {
-                openDownloadInputStreamPipe(index) ?: openCacheInputStreamPipe(index)
-            }
-            SpiderQueen.MODE_DOWNLOAD -> openDownloadInputStreamPipe(index)
-            else -> null
-        }
-    }
-
-    class StartWithFilenameFilter(private val mPrefix: String) : FilenameFilter {
-        override fun accept(dir: UniFile, filename: String): Boolean {
-            return filename.startsWith(mPrefix)
-        }
-    }
-
-    companion object {
-        @Volatile
-        private var sCache: SimpleDiskCache? = null
-
-        @JvmStatic
-        @Synchronized
-        fun initialize(context: Context) {
-            if (sCache != null) return
-            sCache = SimpleDiskCache(
-                File(context.cacheDir, "image"),
-                MathUtils.clamp(ReadingSettings.getReadCacheSize(), 40, 640) * 1024 * 1024
-            )
-        }
-
-        /**
-         * Resolves the download directory for the given gallery.
-         *
-         * This is a suspend function that calls [DownloadDbRepository] methods.
-         * All callers must be in a coroutine context.
-         */
-        @JvmStatic
-        suspend fun getGalleryDownloadDir(galleryInfo: GalleryInfo): UniFile? {
-            val dir = DownloadSettings.getDownloadLocation() ?: return null
-
-            // Read from DB
-            val downloadDbRepo = ServiceRegistry.dataModule.downloadDbRepository
-            val arcid = galleryInfo.arcid
-            var dirname = downloadDbRepo.getDownloadDirname(arcid)
-            if (dirname != null) {
-                // Some dirname may be invalid in some version
-                dirname = FileUtils.sanitizeFilename(dirname)
-                downloadDbRepo.putDownloadDirname(arcid, dirname)
-            }
-
-            // Find it by arcid prefix (new format), then fall back to gid prefix (legacy)
-            if (dirname == null) {
-                try {
-                    // Try arcid-prefixed directory first (new format)
-                    var files = dir.listFiles(StartWithFilenameFilter("$arcid-"))
-                    // Fall back to gid-prefixed directory (legacy installs)
-                    if ((files == null || files.isEmpty()) && galleryInfo.gid != 0L) {
-                        files = dir.listFiles(StartWithFilenameFilter("${galleryInfo.gid}-"))
-                    }
-                    if (files != null) {
-                        // Get max-length-name dir
-                        var maxLength = -1
-                        for (file in files) {
-                            if (file.isDirectory) {
-                                val name = file.name ?: continue
-                                val length = name.length
-                                if (length > maxLength) {
-                                    maxLength = length
-                                    dirname = name
-                                }
-                            }
-                        }
-                        if (dirname != null) {
-                            downloadDbRepo.putDownloadDirname(arcid, dirname)
-                        }
-                    }
-                } catch (e: Exception) {
-                    // Failed to list files, maybe storage is unavailable or permission lost
-                    // Continue to create new directory
-                    android.util.Log.w("SpiderDen", "Failed to list files in download directory", e)
-                }
-            }
-
-            // Create it — use arcid as prefix for unique directory names
-            if (dirname == null) {
-                dirname = FileUtils.sanitizeFilename("$arcid-${LRRUtils.getSuitableTitle(galleryInfo)}")
-                downloadDbRepo.putDownloadDirname(arcid, dirname)
-            }
-
-            return dir.subFile(dirname)
-        }
-
-        /**
-         * @param extension with dot
-         */
-        @JvmStatic
-        fun generateImageFilename(index: Int, extension: String): String {
-            return String.format(Locale.US, "%08d%s", index + 1, extension)
-        }
-
-        @JvmStatic
-        fun findImageFile(dir: UniFile, index: Int): UniFile? {
-            for (extension in GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS) {
-                val filename = generateImageFilename(index, extension)
-                val file = dir.findFile(filename)
-                if (file != null) {
-                    return file
-                }
-            }
-            return null
-        }
+    private class StartWithFilenameFilter(private val prefix: String) : FilenameFilter {
+        override fun accept(dir: UniFile, filename: String): Boolean = filename.startsWith(prefix)
     }
 }

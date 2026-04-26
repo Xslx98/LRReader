@@ -14,11 +14,10 @@ import androidx.lifecycle.lifecycleScope
 import com.hippo.android.resource.AttrResources
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
-import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.client.data.GalleryInfo
 
 import com.lanraragi.reader.client.api.data.LRRArchive
+import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
 import com.hippo.ehviewer.widget.ArchiverDownloadProgress
@@ -106,41 +105,40 @@ internal class DetailHeaderBinder(
         }
     }
 
-    fun bindViewFirst(action: String?, galleryInfo: GalleryInfo?) {
-        if (galleryInfo == null) return
-        if (action == GalleryDetailScene.ACTION_GALLERY_INFO ||
-            action == GalleryDetailScene.ACTION_DOWNLOAD_GALLERY_INFO
-        ) {
-            thumb.load(LRRCacheKeyFactory.getThumbKey(galleryInfo.arcid), galleryInfo.thumb)
-            title.text = LRRUtils.getSuitableTitle(galleryInfo)
-            uploader.text = galleryInfo.uploader
+    fun bindViewFirst(action: String?, archive: Archive?) {
+        if (archive == null) return
+        if (action == GalleryDetailScene.ACTION_ARCHIVE) {
+            thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), archive.thumbnailUrl)
+            title.text = archive.title
+            // Archive has no uploader (LRR never populates it); clear the
+            // field so a previous binding does not leak through.
+            uploader.text = null
         }
     }
 
     fun bindViewSecond(
         gd: GalleryDetail,
-        galleryInfo: GalleryInfo?,
+        hadEagerBind: Boolean,
         context: Context?,
         inflater: android.view.LayoutInflater?,
         clickListener: View.OnClickListener,
         longClickListener: View.OnLongClickListener
     ) {
-        if (galleryInfo == null) {
+        if (!hadEagerBind) {
             thumb.load(LRRCacheKeyFactory.getThumbKey(gd.arcid), gd.thumb)
+        } else if (useNetWorkLoadThumb) {
+            // bindViewFirst loaded a stale thumb URL; force a network refresh.
+            thumb.load(LRRCacheKeyFactory.getThumbKey(gd.arcid), gd.thumb)
+            useNetWorkLoadThumb = false
         } else {
-            if (useNetWorkLoadThumb) {
-                thumb.load(LRRCacheKeyFactory.getThumbKey(gd.arcid), gd.thumb)
-                useNetWorkLoadThumb = false
-            } else {
-                thumb.load(LRRCacheKeyFactory.getThumbKey(gd.arcid), gd.thumb, false)
-            }
+            // Eager bind already cached the same URL — read from disk.
+            thumb.load(LRRCacheKeyFactory.getThumbKey(gd.arcid), gd.thumb, false)
         }
 
-        title.text = LRRUtils.getSuitableTitle(gd)
+        title.text = gd.title
         uploader.text = gd.uploader
 
-        val info = galleryInfo ?: gd
-        bindReadProgress(info)
+        bindReadProgress(gd.progress, gd.pages)
 
         size.text = gd.size
 
@@ -233,13 +231,19 @@ internal class DetailHeaderBinder(
     }
 
     fun bindArchiverProgress(gd: GalleryDetail) {
-        archiverDownloadProgress.initThread(gd)
+        archiverDownloadProgress.initThread(gd.arcid)
     }
 
-    fun bindReadProgress(info: GalleryInfo?) {
-        if (info == null) return
-        val displayProgress = if (info.progress > 0) info.progress else 1
-        pages.text = "${displayProgress}/${info.pages}P"
+    /**
+     * Bind the "page X / total Y" display.
+     *
+     * @param progress 1-indexed reading progress; 0 means "unread" and is
+     *   displayed as page 1
+     * @param totalPages total page count for the gallery
+     */
+    fun bindReadProgress(progress: Int, totalPages: Int) {
+        val displayProgress = if (progress > 0) progress else 1
+        pages.text = "${displayProgress}/${totalPages}P"
     }
 
     fun setTransitionName(arcid: String?) {

@@ -7,6 +7,7 @@ import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.mapper.toArchive
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.dao.DownloadInfo
@@ -200,17 +201,16 @@ class DownloadManagerTest {
         val notifications = mutableListOf<String>()
         manager.addDownloadInfoListener(object : FakeDownloadInfoListener() {
             override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-                notifications.add("add:${info.gid}")
+                notifications.add("add:${info.arcid}")
             }
         })
 
         val gallery = GalleryInfo().apply {
-            gid = 2001L
             arcid = "tok_2001"
             title = "Test Download"
         }
         // Start download with null (default) label
-        manager.startDownload(gallery, null)
+        manager.startDownload(gallery.toArchive(), null)
 
         assertTrue(manager.containDownloadInfo("tok_2001"))
         // ensureDownload() may immediately promote WAIT -> DOWNLOAD
@@ -219,7 +219,7 @@ class DownloadManagerTest {
             "Expected WAIT or DOWNLOAD, got $state",
             state == DownloadInfo.STATE_WAIT || state == DownloadInfo.STATE_DOWNLOAD
         )
-        assertTrue(notifications.contains("add:2001"))
+        assertTrue(notifications.contains("add:tok_2001"))
     }
 
     @Test
@@ -230,11 +230,11 @@ class DownloadManagerTest {
             arcid = "tok_2002"
             title = "Existing"
         }
-        manager.addDownload(gallery, null, DownloadInfo.STATE_NONE)
+        manager.addDownload(gallery.toArchive(), null, DownloadInfo.STATE_NONE)
         assertEquals(DownloadInfo.STATE_NONE, manager.getDownloadState("tok_2002"))
 
         // Now start it — should set to WAIT (ensureDownload may promote to DOWNLOAD)
-        manager.startDownload(gallery, null)
+        manager.startDownload(gallery.toArchive(), null)
         val state = manager.getDownloadState("tok_2002")
         assertTrue(
             "Expected WAIT or DOWNLOAD after restart, got $state",
@@ -249,7 +249,7 @@ class DownloadManagerTest {
             arcid = "tok_2003"
             title = "To Delete"
         }
-        manager.addDownload(gallery, null, DownloadInfo.STATE_NONE)
+        manager.addDownload(gallery.toArchive(), null, DownloadInfo.STATE_NONE)
         assertTrue(manager.containDownloadInfo("tok_2003"))
 
         manager.deleteDownload("tok_2003")
@@ -267,7 +267,7 @@ class DownloadManagerTest {
                 arcid = "tok_$i"
                 title = "Gallery $i"
             }
-            manager.addDownload(gallery, null, DownloadInfo.STATE_NONE)
+            manager.addDownload(gallery.toArchive(), null, DownloadInfo.STATE_NONE)
         }
 
         // Put them into wait state via startDownload
@@ -277,7 +277,7 @@ class DownloadManagerTest {
                 arcid = "tok_$i"
                 title = "Gallery $i"
             }
-            manager.startDownload(gallery, null)
+            manager.startDownload(gallery.toArchive(), null)
         }
 
         manager.stopAllDownload()
@@ -302,7 +302,7 @@ class DownloadManagerTest {
             arcid = "tok_2005"
             title = "State Test"
         }
-        manager.addDownload(gallery, null, DownloadInfo.STATE_FINISH)
+        manager.addDownload(gallery.toArchive(), null, DownloadInfo.STATE_FINISH)
         assertEquals(DownloadInfo.STATE_FINISH, manager.getDownloadState("tok_2005"))
     }
 
@@ -336,7 +336,7 @@ class DownloadManagerTest {
             arcid = "tok_4001"
             title = "Labeled"
         }
-        manager.addDownload(gallery, "OldName", DownloadInfo.STATE_NONE)
+        manager.addDownload(gallery.toArchive(), "OldName", DownloadInfo.STATE_NONE)
 
         // Rename the label
         manager.renameLabel("OldName", "NewName")
@@ -361,7 +361,7 @@ class DownloadManagerTest {
             arcid = "tok_4002"
             title = "Will Move"
         }
-        manager.addDownload(gallery, "ToRemove", DownloadInfo.STATE_NONE)
+        manager.addDownload(gallery.toArchive(), "ToRemove", DownloadInfo.STATE_NONE)
 
         // Delete the label
         manager.deleteLabel("ToRemove")
@@ -375,7 +375,7 @@ class DownloadManagerTest {
         assertNull("Download should have null label (default)", info?.label)
 
         // Verify it's in the default list
-        assertTrue(manager.defaultDownloadInfoList.any { it.gid == 4002L })
+        assertTrue(manager.defaultDownloadInfoList.any { it.arcid == "tok_4002" })
     }
 
     @Test
@@ -400,7 +400,7 @@ class DownloadManagerTest {
         val events = mutableListOf<String>()
         val listener = object : FakeDownloadInfoListener() {
             override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-                events.add("add:${info.gid}")
+                events.add("add:${info.arcid}")
             }
             override fun onUpdateLabels() {
                 events.add("updateLabels")
@@ -409,14 +409,13 @@ class DownloadManagerTest {
         manager.addDownloadInfoListener(listener)
 
         val gallery = GalleryInfo().apply {
-            gid = 5001L
             arcid = "tok_5001"
             title = "Listener Test"
         }
-        manager.addDownload(gallery, null, DownloadInfo.STATE_NONE)
+        manager.addDownload(gallery.toArchive(), null, DownloadInfo.STATE_NONE)
         manager.addLabel("ListenerLabel")
 
-        assertTrue("add:5001" in events)
+        assertTrue("add:tok_5001" in events)
         assertTrue("updateLabels" in events)
     }
 
@@ -425,7 +424,7 @@ class DownloadManagerTest {
         val events = mutableListOf<String>()
         val listener = object : FakeDownloadInfoListener() {
             override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-                events.add("add:${info.gid}")
+                events.add("add:${info.arcid}")
             }
         }
         manager.addDownloadInfoListener(listener)
@@ -436,7 +435,7 @@ class DownloadManagerTest {
             arcid = "tok_5002"
             title = "First"
         }
-        manager.addDownload(gallery1, null, DownloadInfo.STATE_NONE)
+        manager.addDownload(gallery1.toArchive(), null, DownloadInfo.STATE_NONE)
         assertEquals(1, events.size)
 
         // Remove listener
@@ -448,7 +447,7 @@ class DownloadManagerTest {
             arcid = "tok_5003"
             title = "Second"
         }
-        manager.addDownload(gallery2, null, DownloadInfo.STATE_NONE)
+        manager.addDownload(gallery2.toArchive(), null, DownloadInfo.STATE_NONE)
         assertEquals(1, events.size) // Still 1 — listener was removed
     }
 
@@ -505,7 +504,7 @@ class DownloadManagerTest {
             arcid = "tok_6001"
             title = "Contain Test"
         }
-        manager.addDownload(gallery, null, DownloadInfo.STATE_NONE)
+        manager.addDownload(gallery.toArchive(), null, DownloadInfo.STATE_NONE)
 
         assertTrue(manager.containDownloadInfo("tok_6001"))
     }
@@ -519,11 +518,11 @@ class DownloadManagerTest {
             arcid = "tok_6002"
             title = "Info Test"
         }
-        manager.addDownload(gallery, null, DownloadInfo.STATE_NONE)
+        manager.addDownload(gallery.toArchive(), null, DownloadInfo.STATE_NONE)
 
         val info = manager.getDownloadInfo("tok_6002")
         assertNotNull(info)
-        assertEquals(6002L, info!!.gid)
+        assertEquals("tok_6002", info!!.arcid)
         assertEquals("Info Test", info.title)
     }
 
@@ -537,7 +536,7 @@ class DownloadManagerTest {
                 arcid = "tok_$i"
                 title = "Count $i"
             }
-            manager.addDownload(gallery, null, DownloadInfo.STATE_NONE)
+            manager.addDownload(gallery.toArchive(), null, DownloadInfo.STATE_NONE)
         }
 
         assertEquals(5, manager.allDownloadInfoList.size)
@@ -853,7 +852,7 @@ class DownloadManagerTest {
             arcid = "tok_def"
             title = "Default Item"
         }
-        manager.addDownload(defaultGallery, null, DownloadInfo.STATE_NONE)
+        manager.addDownload(defaultGallery.toArchive(), null, DownloadInfo.STATE_NONE)
         // Manually set time for deterministic ordering
         manager.getDownloadInfo("tok_def")!!.time = 500L
 

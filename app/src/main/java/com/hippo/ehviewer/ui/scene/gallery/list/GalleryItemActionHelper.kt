@@ -138,7 +138,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
                 when (which) {
                     0 -> { // Read
                         ServiceRegistry.coroutineModule.ioScope.launch {
-                            val intent = GalleryOpenHelper.buildReadIntent(activity, gi.toGalleryInfo())
+                            val intent = GalleryOpenHelper.buildReadIntent(activity, gi)
                             withContext(Dispatchers.Main) {
                                 activity.startActivity(intent)
                             }
@@ -146,13 +146,12 @@ class GalleryItemActionHelper(private val callback: Callback) {
                     }
                     1 -> { // Download
                         if (downloaded) {
-                            val galleryInfo = gi.toGalleryInfo()
-                            DownloadLabelHelper.showDeleteDialog(context, galleryInfo) { deleteFiles ->
-                                DownloadLabelHelper.performDelete(galleryInfo, deleteFiles)
+                            DownloadLabelHelper.showDeleteDialog(context, gi) { deleteFiles ->
+                                DownloadLabelHelper.performDelete(gi, deleteFiles)
                             }
                         } else {
                             (activity as? MainActivity)?.let {
-                                CommonOperations.startDownload(it, gi.toGalleryInfo(), false)
+                                CommonOperations.startDownload(it, gi, false)
                             }
                         }
                     }

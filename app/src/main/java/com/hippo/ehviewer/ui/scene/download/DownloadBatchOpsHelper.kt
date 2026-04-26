@@ -23,9 +23,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.res.ResourcesCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadService
+import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.ui.GalleryActivity
 import com.hippo.ehviewer.ui.scene.download.part.DownloadAdapter.Companion.DRAG_ENABLE
@@ -184,7 +184,7 @@ internal class DownloadBatchOpsHelper(private val callback: Callback) {
 
         val intent = Intent(activity, GalleryActivity::class.java)
         intent.action = GalleryActivity.ACTION_LRR
-        intent.putExtra(GalleryActivity.KEY_GALLERY_INFO, list[position] as GalleryInfo)
+        intent.putExtra(GalleryActivity.KEY_ARCHIVE, list[position].toArchive())
         callback.launchGallery(intent)
     }
 
