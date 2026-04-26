@@ -505,11 +505,9 @@
     <string name="settings_eh_excluded_tag_namespaces_summary">기본 태그 검색에서 특정 네임스페이스 제외</string>
     <string name="settings_eh_excluded_languages">제외할 언어</string>
     <string name="settings_eh_excluded_languages_summary">갤러리 목록과 검색에서 특정 언어 숨기기</string>
-    <string name="settings_eh_show_jpn_title">일본어 제목 표시</string>
     <string name="settings_eh_show_gallery_comment">갤러리 코멘트 보이기</string>
     <string name="settings_eh_show_gallery_rating">갤러리 평점 표시</string>
     <string name="settings_eh_show_eh_event">EH 이벤트 표시</string>
-    <string name="settings_eh_show_jpn_title_summary">LANraragi 웹 사이트 설정에서 Japanese Title을 사용하도록 설정해야 함</string>
     <string name="settings_eh_show_gallery_pages">갤러리 페이지 수 표시</string>
     <string name="settings_eh_show_gallery_pages_summary">갤러리 목록에 해당 갤러리의 페이지 수를 표시합니다</string>
     <string name="settings_eh_show_tag_translations">번역된 태그 표시</string>

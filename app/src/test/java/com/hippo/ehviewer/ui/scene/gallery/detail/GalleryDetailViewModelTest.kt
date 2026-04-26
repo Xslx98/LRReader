@@ -1,12 +1,11 @@
 package com.hippo.ehviewer.ui.scene.gallery.detail
 
 import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.gallery.ReadingProgressTracker
+import com.lanraragi.reader.domain.Archive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertSame
 import org.junit.Test
 
 /**
@@ -15,13 +14,12 @@ import org.junit.Test
  * Background: GalleryDetailViewModel is scoped via
  * `ViewModelProvider(requireActivity())`, so the same instance is reused
  * across navigations. The `getEffective*()` accessors prefer galleryDetail
- * over galleryInfo (the "detail > info > args" fallback). When the user
- * pops back to the list and clicks a different gallery, [setGalleryInfo]
- * writes the new info but the previous gallery's `_galleryDetail` is still
- * cached. Without an explicit reset every getEffective*() call returns the
- * stale gid → the new detail screen renders the old gallery, downloads it,
- * etc. The reader path is unaffected because it goes through an Intent
- * with the GalleryInfo embedded directly, bypassing the ViewModel.
+ * over the navigation Archive (the "detail > archive > args" fallback).
+ * When the user pops back to the list and clicks a different gallery,
+ * [setArchive] writes the new arg but the previous gallery's
+ * `_galleryDetail` is still cached. Without an explicit reset every
+ * getEffective*() call returns the stale arcid → the new detail screen
+ * renders the old gallery, downloads it, etc.
  *
  * Fix: [GalleryDetailViewModel.resetForNewEntry] clears all per-entry state
  * and must be called by the Scene's `handleArgs()` before writing the new
@@ -29,41 +27,54 @@ import org.junit.Test
  */
 class GalleryDetailViewModelTest {
 
+    private fun archive(arcid: String) = Archive(
+        arcid = arcid,
+        title = "title-$arcid",
+        tags = emptyMap(),
+        pagecount = 0,
+        progress = 0,
+        extension = "",
+        filename = "",
+        thumbnailUrl = "",
+        rating = 0f,
+        isnew = false,
+        lastreadtime = 0L,
+        summary = null,
+        serverProfileId = 0L,
+    )
+
     @Test
-    fun secondNavigation_afterReset_returnsNewGalleryGid_notStaleDetail() {
+    fun secondNavigation_afterReset_returnsNewGalleryArcid_notStaleDetail() {
         val vm = GalleryDetailViewModel()
 
-        val galleryA = GalleryInfo().apply { gid = 100L; arcid = "tokA" }
-        val detailA = GalleryDetail().apply { gid = 100L; arcid = "tokA" }
-        val galleryB = GalleryInfo().apply { gid = 200L; arcid = "tokB" }
+        val archiveA = archive("tokA")
+        val detailA = GalleryDetail().apply { arcid = "tokA" }
+        val archiveB = archive("tokB")
 
-        // First navigation: A loaded with both info and detail.
-        vm.setGalleryInfo(galleryA)
+        // First navigation: A loaded with both archive and detail.
+        vm.setArchive(archiveA)
         vm.setGalleryDetail(detailA)
-        assertEquals(100L, vm.getEffectiveGid())
         assertEquals("tokA", vm.getEffectiveArcid())
-        assertSame(detailA, vm.getEffectiveGalleryInfo())
 
         // User pops back and clicks gallery B. The Scene must reset the
         // ViewModel before writing the new arguments, otherwise the stale
-        // detail from gallery A wins via the detail > info fallback.
+        // detail from gallery A wins via the detail > archive fallback.
         vm.resetForNewEntry()
-        vm.setGalleryInfo(galleryB)
+        vm.setArchive(archiveB)
 
-        assertEquals(200L, vm.getEffectiveGid())
         assertEquals("tokB", vm.getEffectiveArcid())
-        assertSame(galleryB, vm.getEffectiveGalleryInfo())
+        assertEquals(archiveB, vm.getEffectiveArchive())
     }
 
     @Test
     fun resetForNewEntry_clearsAllPerEntryState() {
         val vm = GalleryDetailViewModel()
 
-        vm.setAction(GalleryDetailScene.ACTION_GALLERY_INFO)
+        vm.setAction(GalleryDetailScene.ACTION_ARCHIVE)
         vm.setGid(42L)
         vm.setArcid("tok")
-        vm.setGalleryInfo(GalleryInfo().apply { gid = 42L })
-        vm.setGalleryDetail(GalleryDetail().apply { gid = 42L })
+        vm.setArchive(archive("tok"))
+        vm.setGalleryDetail(GalleryDetail().apply { arcid = "tok" })
         vm.setState(GalleryDetailViewModel.STATE_NORMAL)
 
         vm.resetForNewEntry()
@@ -71,30 +82,29 @@ class GalleryDetailViewModelTest {
         assertNull(vm.action.value)
         assertEquals(0L, vm.gid.value)
         assertNull(vm.arcid.value)
-        assertNull(vm.galleryInfo.value)
+        assertNull(vm.archive.value)
         assertNull(vm.galleryDetail.value)
         assertNull(vm.downloadInfo.value)
         assertEquals(GalleryDetailViewModel.STATE_INIT, vm.state.value)
-        assertEquals(-1L, vm.getEffectiveGid())
-        assertNull(vm.getEffectiveGalleryInfo())
+        assertNull(vm.getEffectiveArcid())
+        assertNull(vm.getEffectiveArchive())
     }
 
     @Test
-    fun secondNavigation_withDownloadInfo_doesNotLeakIntoFreshGalleryInfo() {
+    fun secondNavigation_doesNotLeakDownloadInfoIntoFreshArchive() {
         val vm = GalleryDetailViewModel()
 
-        // First entry: opened from downloads scene with a DownloadInfo.
-        val downloadDetail = GalleryDetail().apply { gid = 555L; arcid = "downTok" }
-        vm.setGalleryInfo(downloadDetail)
+        // First entry: opened from downloads scene — downloadInfo set.
+        val downloadDetail = GalleryDetail().apply { arcid = "downTok" }
+        vm.setArchive(archive("downTok"))
         vm.setGalleryDetail(downloadDetail)
-        assertEquals(555L, vm.getEffectiveGid())
+        assertEquals("downTok", vm.getEffectiveArcid())
 
         // Second entry: search-result click on a different gallery.
         vm.resetForNewEntry()
-        val freshInfo = GalleryInfo().apply { gid = 777L; arcid = "freshTok" }
-        vm.setGalleryInfo(freshInfo)
+        vm.setArchive(archive("freshTok"))
 
-        assertEquals(777L, vm.getEffectiveGid())
+        assertEquals("freshTok", vm.getEffectiveArcid())
         assertNull(vm.downloadInfo.value)
     }
 

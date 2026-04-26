@@ -23,7 +23,6 @@ import android.util.Log
 import com.hippo.ehviewer.GetText
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.runSuspend
@@ -49,7 +48,6 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
 
     private val dir: UniFile
     private val context: Context?
-    private val gid: Long
     private val arcId: String?
     private val serverUrl: String?
     private var startPageValue: Int = 0
@@ -67,25 +65,18 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
     constructor(dir: UniFile) {
         this.dir = dir
         this.context = null
-        this.gid = 0
         this.arcId = null
         this.serverUrl = null
     }
 
-    /** Constructor with Context and GalleryInfo for reading progress persistence. */
-    constructor(dir: UniFile, context: Context, galleryInfo: GalleryInfo) {
+    /** Constructor with Context and arcid for reading progress persistence. */
+    constructor(dir: UniFile, context: Context, arcid: String) {
         this.dir = dir
         this.context = context.applicationContext
-        this.gid = galleryInfo.gid
-        this.arcId = galleryInfo.arcid // LANraragi arcid
+        this.arcId = arcid
         this.serverUrl = LRRAuthManager.getServerUrl()
         val ctx = this.context ?: return
-        this.startPageValue = if (arcId != null) {
-            loadReadingProgress(ctx, arcId!!)
-        } else {
-            @Suppress("DEPRECATION")
-            loadReadingProgress(ctx, gid)
-        }
+        this.startPageValue = loadReadingProgress(ctx, arcid)
     }
 
     override fun getStartPage(): Int = startPageValue

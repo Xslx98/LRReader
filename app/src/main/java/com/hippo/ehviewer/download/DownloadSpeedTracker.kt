@@ -99,23 +99,24 @@ internal class DownloadSpeedTracker(
     override fun run() {
         val info = callback.getFirstActiveTask()
         if (info != null) {
+            val snap = progressTracker.snapshot(info.arcid)
+            val total = snap?.total ?: -1
+            val downloaded = snap?.downloaded ?: 0
+
             var newSpeed = bytesRead / 2
             if (oldSpeed != -1L) {
                 newSpeed = MathUtils.lerp(oldSpeed.toFloat(), newSpeed.toFloat(), 0.75f).toLong()
             }
             oldSpeed = newSpeed
-            info.speed = newSpeed
             progressTracker.update(info.arcid, speed = newSpeed)
 
             // Calculate remaining time. If total<=0, newSpeed==0, or the pair
-            // of maps yields downloadingCount==0, we keep the prior
-            // info.remaining value (legacy behavior).
-            if (info.total <= 0) {
-                info.remaining = -1
+            // of maps yields downloadingCount==0, the prior remaining value
+            // is kept (legacy behaviour preserved post-W35-3c).
+            if (total <= 0) {
                 progressTracker.update(info.arcid, remaining = -1L)
             } else if (newSpeed == 0L) {
-                info.remaining = 300L * 24L * 60L * 60L * 1000L // 300 days
-                progressTracker.update(info.arcid, remaining = info.remaining)
+                progressTracker.update(info.arcid, remaining = 300L * 24L * 60L * 60L * 1000L)
             } else {
                 var downloadingCount = 0
                 var downloadingContentLengthSum = 0L
@@ -130,9 +131,9 @@ internal class DownloadSpeedTracker(
                 }
                 if (downloadingCount != 0) {
                     totalSize += downloadingContentLengthSum *
-                        (info.total - info.downloaded - downloadingCount) / downloadingCount
-                    info.remaining = totalSize / newSpeed * 1000
-                    progressTracker.update(info.arcid, remaining = info.remaining)
+                        (total - downloaded - downloadingCount) / downloadingCount
+                    val remaining = totalSize / newSpeed * 1000
+                    progressTracker.update(info.arcid, remaining = remaining)
                 }
             }
 

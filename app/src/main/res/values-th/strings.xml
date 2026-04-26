@@ -496,10 +496,8 @@
     <string name="settings_eh_excluded_languages_summary">ซ่อนแกลเลอรี่ที่มีภาษาต่างๆจากรายการแกลเลอรี่และการค้นหา</string>
     <string name="settings_eh_excluded_tag_namespaces">แท็กเนมสเปซที่ยกเว้น</string>
     <string name="settings_eh_excluded_tag_namespaces_summary">แยกเนมสเปซที่ตั้งไว้ออกจากที่ค้นหาแท็กที่เป็นค่าเริ่มต้น</string>
-    <string name="settings_eh_show_jpn_title">แสดงชื่อเรื่องญี่ปุ่น</string>
     <string name="settings_eh_show_gallery_comment">แสดงความคิดเห็นแกลเลอรี่</string>
     <string name="settings_eh_show_eh_event">แสดงกิจกรรม EH</string>
-    <string name="settings_eh_show_jpn_title_summary">ต้องเปิดใช้งานชื่อเรื่องญี่ปุ่นในการตั้งค่าบนเว็บไซต์ LANraragi</string>
     <string name="settings_eh_show_gallery_pages">แสดงจำนวนหน้าของแกลเลอรี่</string>
     <string name="settings_eh_show_gallery_pages_summary">แสดงจำนวนหน้าที่มีอยู่ในแต่ละแกลเลอรี่</string>
     <string name="settings_eh_show_tag_translations">แสดงแท็กการแปลภาษา</string>

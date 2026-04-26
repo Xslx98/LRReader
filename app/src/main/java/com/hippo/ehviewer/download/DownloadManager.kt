@@ -20,13 +20,14 @@ import android.content.Context
 import android.os.Looper
 import android.util.Log
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.DownloadLabel
+import com.hippo.ehviewer.mapper.toDownloadInfo
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.ehviewer.spider.SpiderInfo
 import com.hippo.lib.yorozuya.ObjectUtils
+import com.lanraragi.reader.domain.Archive
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -158,7 +159,7 @@ class DownloadManager(
         return Collections.unmodifiableList(repo.defaultInfoList)
     }
 
-    val downloadInfoList: List<GalleryInfo> get() { repo.assertMainThread(); return ArrayList(repo.allInfoList) }
+    val downloadInfoList: List<DownloadInfo> get() { repo.assertMainThread(); return ArrayList(repo.allInfoList) }
 
     fun getLabelDownloadInfoList(label: String?): List<DownloadInfo>? {
         repo.assertMainThread()
@@ -174,15 +175,17 @@ class DownloadManager(
 
     // ── Download lifecycle ────────────────────────────────────
 
-    fun startDownload(galleryInfo: GalleryInfo, label: String?) {
+    fun startDownload(archive: Archive, label: String?) {
         repo.assertMainThread()
-        for (active in scheduler.activeTasks) { if (active.arcid == galleryInfo.arcid) return }
-        if (galleryInfo is DownloadInfo) {
-            val uri = galleryInfo.archiveUri
-            if (uri != null && uri.startsWith("content://")) return
-        }
-        val existing = repo.getDownloadInfo(galleryInfo.arcid)
+        for (active in scheduler.activeTasks) { if (active.arcid == archive.arcid) return }
+        val existing = repo.getDownloadInfo(archive.arcid)
         if (existing != null) {
+            // Imported archives (content:// URIs) cannot be re-downloaded; the
+            // pre-W36-4 short-circuit on `galleryInfo is DownloadInfo` is now
+            // anchored on the persisted state, which is the only place
+            // archiveUri actually lives.
+            val uri = existing.archiveUri
+            if (uri != null && uri.startsWith("content://")) return
             if (existing.state != DownloadInfo.STATE_WAIT) {
                 existing.state = DownloadInfo.STATE_WAIT
                 scheduler.waitList.add(existing)
@@ -192,11 +195,11 @@ class DownloadManager(
                 scheduler.ensureDownload()
             }
         } else {
-            val info = DownloadInfo(galleryInfo).apply { this.label = label; state = DownloadInfo.STATE_WAIT; time = System.currentTimeMillis() }
+            val info = archive.toDownloadInfo().apply { this.label = label; state = DownloadInfo.STATE_WAIT; time = System.currentTimeMillis() }
             val list = repo.getInfoListForLabel(info.label) ?: run { Log.e(TAG, "Can't find download info list with label: $label"); return }
             list.add(0, info)
             repo.allInfoList.add(0, info)
-            repo.allInfoMap[galleryInfo.arcid] = info
+            repo.allInfoMap[archive.arcid] = info
             scheduler.waitList.add(info)
             repo.persistInfo(info)
             eventBus.forEachListener { it.onAdd(info, list, list.size - 1) }
@@ -277,17 +280,17 @@ class DownloadManager(
         }
     }
 
-    fun addDownload(galleryInfo: GalleryInfo, label: String?, state: Int) {
+    fun addDownload(archive: Archive, label: String?, state: Int) {
         repo.assertMainThread()
-        val result = repo.addSingleDownload(galleryInfo, label, state) ?: return
+        val result = repo.addSingleDownload(archive, label, state) ?: return
         eventBus.forEachListener { it.onAdd(result.first, result.second, result.second.size - 1) }
     }
 
-    fun addDownload(galleryInfo: GalleryInfo, label: String?) { addDownload(galleryInfo, label, DownloadInfo.STATE_NONE) }
+    fun addDownload(archive: Archive, label: String?) { addDownload(archive, label, DownloadInfo.STATE_NONE) }
 
-    fun addDownloadInfo(galleryInfo: GalleryInfo, label: String?) {
+    fun addDownloadInfo(archive: Archive, label: String?) {
         repo.assertMainThread()
-        repo.addInfoOnly(galleryInfo, label)
+        repo.addInfoOnly(archive, label)
     }
 
     // ── Stop / Delete ─────────────────────────────────────────
@@ -353,11 +356,8 @@ class DownloadManager(
         val list = ArrayList(repo.allInfoList)
         scope.launch {
             try {
-                val gi = GalleryInfo()
                 for (di in list) {
-                    gi.arcid = di.arcid; gi.title = di.title; gi.thumb = di.thumb
-                    gi.category = di.category; gi.posted = di.posted; gi.uploader = di.uploader; gi.rating = di.rating
-                    val dir = SpiderDen.getGalleryDownloadDir(gi) ?: continue
+                    val dir = SpiderDen.getGalleryDownloadDir(di.arcid, di.title, di.gid) ?: continue
                     val file = dir.findFile(".ehviewer") ?: continue
                     val si = SpiderInfo.read(file) ?: continue
                     si.startPage = 0
