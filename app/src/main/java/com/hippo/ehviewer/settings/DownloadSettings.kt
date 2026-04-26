@@ -6,9 +6,7 @@ import android.net.Uri
 import androidx.annotation.Nullable
 import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.ui.CommonOperations
-import com.hippo.ehviewer.util.galleryInfoFromJson
 import com.hippo.unifile.UniFile
 import com.hippo.util.ExceptionUtils
 
@@ -166,54 +164,13 @@ object DownloadSettings {
     // Uses a separate SharedPreferences ("archiver_cache") for system DownloadManager mappings.
 
     @JvmStatic
-    fun getArchiverDownload(downloadId: Long): GalleryInfo? {
-        val s = sArchiverPre.getString(downloadId.toString(), "") ?: ""
-        if (s.isEmpty()) {
-            return null
-        }
-        return try {
-            galleryInfoFromJson(org.json.JSONObject(s))
-        } catch (e: org.json.JSONException) {
-            null
-        }
-    }
-
-    @JvmStatic
-    fun putArchiverDownload(downloadId: Long, info: GalleryInfo) {
-        sArchiverPre.edit().putString(downloadId.toString(), info.toJson().toString()).apply()
-    }
-
-    @JvmStatic
-    fun deleteArchiverDownload(downloadId: Long) {
-        sArchiverPre.edit().remove(downloadId.toString()).apply()
-    }
-
-    @JvmStatic
-    @Deprecated("Use arcid-based overload", ReplaceWith("getArchiverDownloadId(arcid)"))
-    fun getArchiverDownloadId(gid: Long): Long {
-        return sArchiverPre.getLong("${gid}DId", -1L)
-    }
-
-    @JvmStatic
     fun getArchiverDownloadId(arcid: String): Long {
         return sArchiverPre.getLong("${arcid}DId", -1L)
     }
 
     @JvmStatic
-    @Deprecated("Use arcid-based overload", ReplaceWith("putArchiverDownloadId(arcid, downloadId)"))
-    fun putArchiverDownloadId(gid: Long, downloadId: Long) {
-        sArchiverPre.edit().putLong("${gid}DId", downloadId).apply()
-    }
-
-    @JvmStatic
     fun putArchiverDownloadId(arcid: String, downloadId: Long) {
         sArchiverPre.edit().putLong("${arcid}DId", downloadId).apply()
-    }
-
-    @JvmStatic
-    @Deprecated("Use arcid-based overload", ReplaceWith("deleteArchiverDownloadId(arcid)"))
-    fun deleteArchiverDownloadId(gid: Long) {
-        sArchiverPre.edit().remove("${gid}DId").apply()
     }
 
     @JvmStatic

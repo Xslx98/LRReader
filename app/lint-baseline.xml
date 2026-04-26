@@ -13291,17 +13291,6 @@
 
     <issue
         id="UnusedResources"
-        message="The resource `R.string.settings_eh_show_jpn_title` appears to be unused"
-        errorLine1="    &lt;string name=&quot;settings_eh_show_jpn_title&quot;>Show Japanese title&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="611"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
         message="The resource `R.string.settings_eh_show_gallery_comment` appears to be unused"
         errorLine1="    &lt;string name=&quot;settings_eh_show_gallery_comment&quot;>Show Gallery Comment&lt;/string>"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
@@ -13330,17 +13319,6 @@
         <location
             file="src/main/res/values/strings.xml"
             line="614"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.settings_eh_show_jpn_title_summary` appears to be unused"
-        errorLine1="    &lt;string name=&quot;settings_eh_show_jpn_title_summary&quot;>Require enabling Japanese Title in Settings on LANraragi website&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="615"
             column="13"/>
     </issue>
 

@@ -19,7 +19,7 @@ CLAUDE.md 只承载高频日常约定。详细信息分散在 `docs/`：
 | [docs/architecture.md](docs/architecture.md) | 需要技术栈版本表、目录结构、关键文件列表、ServiceRegistry / Settings 模块拆分 |
 | [docs/testing-and-ci.md](docs/testing-and-ci.md) | 跑测试、看 CI 流程、改签名配置、Native CMake、本地化、Room schema 演进 |
 | [docs/adr-001-download-ssot.md](docs/adr-001-download-ssot.md) | 改 Download 模块（W35-3a/3b 已完成，W35-1a/3c 仍在路上） |
-| [docs/audit-2026-04-15-v2.md](docs/audit-2026-04-15-v2.md) | 数据架构反模式 —— 顶部含 2026-04-26 状态更新；当前唯一活跃整改是 D1（`GalleryInfoEntity` 扁平化），合入 W35-1a/3c 执行 |
+| [docs/audit-2026-04-15-v2.md](docs/audit-2026-04-15-v2.md) | 数据架构反模式 —— 顶部含 2026-04-26 状态更新。**W36 Phase 1 完成**：业务/UI 层零 GalleryInfo（30 commit / -556 LOC）；Phase 2（Entity 扁平化 + schema 迁移）待启动 |
 | [docs/EDGE_TO_EDGE.md](docs/EDGE_TO_EDGE.md) | 改 Activity 布局或状态栏 —— API 35+ 状态栏着色坑很深，必读 |
 | `docs/archive/` | 归档目录：已完成的 plan / 旧 audit 快照 / 过时 onboard / 历史 ROADMAP。**不必要不查看**，主要为审计/历史回溯保留 |
 
@@ -143,7 +143,7 @@ CLAUDE.md 只承载高频日常约定。详细信息分散在 `docs/`：
 - 不从 `download/` 包外导入 `DownloadRepository` / `DownloadScheduler` / `DownloadEventBus` —— 只用 `DownloadManager` Facade。
 - Scene 不实现 `DownloadInfoListener` —— 监听器逻辑进 ViewModel，Scene 订阅 sealed `DownloadUiEvent` SharedFlow。
 - 不把 `DownloadUiEvent` 拆回多个独立 SharedFlow —— 单 Flow 分派模式有意为之。
-- 新代码不读 `DownloadInfo` 上的瞬态字段（`speed` / `finished` / `downloaded` / `total` / `remaining`） —— 用 `DownloadManager.progressFor(arcid)` 或订阅 `progressTracker.progressFlow`（详见 [docs/adr-001-download-ssot.md](docs/adr-001-download-ssot.md)）。`DownloadInfo` 上的 `@Ignore` 字段仅为后向兼容保留，将在后续步骤删除。
+- 下载进度（`speed` / `finished` / `downloaded` / `total` / `remaining`）只在 `DownloadProgressTracker` 上 —— 用 `DownloadManager.progressFor(arcid)` 或订阅 `progressTracker.progressFlow`（详见 [docs/adr-001-download-ssot.md](docs/adr-001-download-ssot.md)）。`DownloadInfo` 已不再持有这些 @Ignore 字段（W35-3c 已移除）。
 - 下载列表 UI 代码不读 `DownloadManager.getLabelDownloadInfoList` / `defaultDownloadInfoList` —— 用 `viewModel.downloadList`（带进度信息的 Flow）。这两个 accessor 仅留给非 UI 调用方。
 - 不在 Scene 层加 `collectFlow(viewModel.downloadsFlow)` —— Scene 已订阅 `viewModel.downloadList`，它已经把 Room Flow 与 `DownloadProgressTracker.progressFlow` combine 过。
 - 不重新加每 tick 由 `DownloadInfoListener.onUpdate` 驱动的 `notifyItemChanged` —— 进度更新走 combined Flow。`ItemUpdated` 事件处理器仅保留给"先于下次 Room Flow emission 的即时状态翻转"（如 WAIT→DOWNLOAD）。

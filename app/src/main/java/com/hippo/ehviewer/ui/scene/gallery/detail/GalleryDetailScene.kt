@@ -37,9 +37,8 @@ import com.hippo.ehviewer.ServiceRegistry
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
-import com.hippo.ehviewer.mapper.toGalleryInfo
+import com.hippo.ehviewer.mapper.toArchive
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.data.LRRArchive
 import com.hippo.ehviewer.ui.MainActivity
@@ -99,10 +98,10 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         get() = viewModel.action.value
         set(value) { viewModel.setAction(value) }
 
-    /** Shortcut delegating to [GalleryDetailViewModel.galleryInfo]. */
-    private var mGalleryInfo: GalleryInfo?
-        get() = viewModel.galleryInfo.value
-        set(value) { viewModel.setGalleryInfo(value) }
+    /** Shortcut delegating to [GalleryDetailViewModel.archive]. */
+    private var mArchive: com.lanraragi.reader.domain.Archive?
+        get() = viewModel.archive.value
+        set(value) { viewModel.setArchive(value) }
 
     /** Shortcut delegating to [GalleryDetailViewModel.downloadInfo]. */
     private var mDownloadInfo: DownloadInfo?
@@ -153,46 +152,24 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         val action = args.getString(KEY_ACTION)
         mAction = action
-        if (ACTION_GALLERY_INFO == action) {
-            val gi: GalleryInfo? = args.getParcelable(KEY_GALLERY_INFO)
-            mGalleryInfo = gi
-            // Add history
-            if (gi != null) {
-                viewModel.recordHistory(gi)
-            }
-        } else if (ACTION_GID_TOKEN == action) {
+        if (ACTION_GID_TOKEN == action) {
             mGid = args.getLong(KEY_GID)
             mArcid = args.getString(KEY_ARCID)
         } else if (ACTION_ARCHIVE == action) {
             val archive: com.lanraragi.reader.domain.Archive? = args.getParcelable(KEY_ARCHIVE)
             if (archive != null) {
-                val gi = archive.toGalleryInfo()
-                mGalleryInfo = gi
+                mArchive = archive
                 mArcid = archive.arcid
-                viewModel.recordHistory(gi)
-            }
-        } else if (ACTION_DOWNLOAD_GALLERY_INFO == action) {
-            try {
-                val di: DownloadInfo? = args.getParcelable(KEY_GALLERY_INFO)
-                mDownloadInfo = di
-                mGalleryInfo = di
-                if (di != null) {
-                    viewModel.recordHistory(di)
-                }
-            } catch (e: ClassCastException) {
-                val gi: GalleryInfo? = args.getParcelable(KEY_GALLERY_INFO)
-                mGalleryInfo = gi
-                if (gi != null) {
-                    viewModel.recordHistory(gi)
-                }
+                // If we already have a download record for this arcid, surface it
+                // so onGetGalleryDetailSuccessInternal's thumb-refresh path picks
+                // it up — equivalent to the old ACTION_DOWNLOAD_GALLERY_INFO
+                // branch which received the DownloadInfo directly.
+                mDownloadInfo = ServiceRegistry.dataModule
+                    .downloadManager.getDownloadInfo(archive.arcid)
+                viewModel.recordHistory(archive)
             }
         }
     }
-
-    // -1 for error
-    private fun getGid(): Long = viewModel.getEffectiveGid()
-
-    private fun getGalleryInfo(): GalleryInfo? = viewModel.getEffectiveGalleryInfo()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -205,13 +182,13 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             onRestore(savedInstanceState)
         }
 
-        val gi = mGalleryInfo
-        if (properties == null && gi != null) {
+        val a = mArchive
+        if (properties == null && a != null) {
             val date = Date()
             @SuppressLint("SimpleDateFormat")
             val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
             properties = HashMap<String, String>().apply {
-                put("Title", gi.title.orEmpty())
+                put("Title", a.title)
                 put("Time", dateFormat.format(date))
             }
         }
@@ -223,7 +200,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
     private fun onRestore(savedInstanceState: Bundle) {
         mAction = savedInstanceState.getString(KEY_ACTION)
-        mGalleryInfo = savedInstanceState.getParcelable(KEY_GALLERY_INFO)
+        mArchive = savedInstanceState.getParcelable(KEY_ARCHIVE)
         mGid = savedInstanceState.getLong(KEY_GID)
         mArcid = savedInstanceState.getString(KEY_ARCID)
         mGalleryDetail = savedInstanceState.getParcelable(KEY_GALLERY_DETAIL)
@@ -236,9 +213,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         if (mAction != null) {
             outState.putString(KEY_ACTION, mAction)
         }
-        if (mGalleryInfo != null) {
-            outState.putParcelable(KEY_GALLERY_INFO, mGalleryInfo)
-        }
+        viewModel.archive.value?.let { outState.putParcelable(KEY_ARCHIVE, it) }
         outState.putLong(KEY_GID, mGid)
         if (mArcid != null) {
             outState.putString(KEY_ARCID, mArcid)
@@ -427,7 +402,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 bindViewSecond()
                 mHeaderBinder?.setTransitionName(viewModel.getEffectiveArcid())
                 adjustViewVisibility(STATE_NORMAL, false)
-            } else if (mGalleryInfo != null) {
+            } else if (mArchive != null) {
                 bindViewFirst()
                 mHeaderBinder?.setTransitionName(viewModel.getEffectiveArcid())
                 adjustViewVisibility(STATE_REFRESH_HEADER, false)
@@ -477,16 +452,16 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     private fun applyLocalReadingProgress(localPage0: Int) {
         // Sentinel: SP has never been written, defer to server-reported progress.
         if (localPage0 == com.hippo.ehviewer.gallery.ReadingProgressTracker.NO_LOCAL_PROGRESS) return
-        val info = getGalleryInfo() ?: return
+        val gd = viewModel.galleryDetail.value
+        val archive = viewModel.archive.value
+        val totalPages = gd?.pages ?: archive?.pagecount ?: return
         val localPage1 = localPage0 + 1
         // Local progress is the latest authoritative position once the reader
         // has written it, so sync unconditionally — going backward must update
-        // the display too. Mutate both the detail and the original list info
-        // so any later re-bind path (which may pick either object) is consistent.
-        viewModel.galleryDetail.value?.progress = localPage1
-        viewModel.galleryInfo.value?.progress = localPage1
-        info.progress = localPage1
-        mHeaderBinder?.bindReadProgress(info)
+        // the display too. Mutate galleryDetail.progress so any later re-bind
+        // path (bindViewSecond) picks up the new value.
+        gd?.progress = localPage1
+        mHeaderBinder?.bindReadProgress(localPage1, totalPages)
     }
 
     override fun onDestroyView() {
@@ -615,7 +590,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     private fun bindViewFirst() {
         if (mGalleryDetail != null) return
         val binder = mHeaderBinder ?: return
-        binder.bindViewFirst(mAction, mGalleryInfo)
+        binder.bindViewFirst(mAction, viewModel.archive.value)
         mActionHandler?.updateDownloadText()
     }
 
@@ -623,7 +598,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         try {
             val gd = mGalleryDetail ?: return
             val binder = mHeaderBinder ?: return
-            binder.bindViewSecond(gd, mGalleryInfo, getEHContext(), layoutInflater2, this, this)
+            binder.bindViewSecond(gd, mArchive != null, getEHContext(), layoutInflater2, this, this)
             mActionHandler?.updateDownloadText()
         } catch (e: Exception) {
             android.util.Log.e("GalleryDetailScene", "bindViewSecond crashed", e)
@@ -729,12 +704,9 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         private const val STATE_FAILED = GalleryDetailViewModel.STATE_FAILED
 
         const val KEY_ACTION = "action"
-        const val ACTION_GALLERY_INFO = "action_gallery_info"
-        const val ACTION_DOWNLOAD_GALLERY_INFO = "action_download_gallery_info"
         const val ACTION_GID_TOKEN = "action_gid_token"
         const val ACTION_ARCHIVE = "action_archive"
 
-        const val KEY_GALLERY_INFO = "gallery_info"
         const val KEY_ARCHIVE = "archive"
         const val KEY_GID = "gid"
         const val KEY_ARCID = "token"

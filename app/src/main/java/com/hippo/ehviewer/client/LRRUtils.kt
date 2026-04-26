@@ -16,10 +16,7 @@
 package com.hippo.ehviewer.client
 
 import android.graphics.Color
-import android.text.TextUtils
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.settings.AppearanceSettings
-import com.hippo.ehviewer.client.data.GalleryInfo
 import java.util.regex.Pattern
 
 object LRRUtils {
@@ -124,21 +121,6 @@ object LRRUtils {
             EhConfig.MISC -> return BG_COLOR_MISC
             else -> return BG_COLOR_UNKNOWN
         }
-    }
-
-    @JvmStatic
-    fun getSuitableTitle(gi: GalleryInfo): String? {
-        if (AppearanceSettings.getShowJpnTitle()) {
-            return if (TextUtils.isEmpty(gi.titleJpn)) gi.title else gi.titleJpn
-        } else {
-            return if (TextUtils.isEmpty(gi.title)) gi.titleJpn else gi.title
-        }
-    }
-
-    @JvmStatic
-    fun judgeSuitableTitle(gi: GalleryInfo, key: String): Boolean {
-        val titleB = gi.titleJpn + "" + gi.title
-        return titleB.contains(key)
     }
 
     @JvmStatic

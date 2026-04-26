@@ -15,10 +15,10 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.UrlOpener
 import com.hippo.ehviewer.client.LRRUrl
 import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.dao.DownloadInfo
+import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.ehviewer.ui.GalleryOpenHelper
 import com.hippo.ehviewer.ui.MainActivity
@@ -90,7 +90,7 @@ internal class DetailActionHandler(
                     scene.requestRefresh()
                 }
                 R.id.action_lrr_delete -> {
-                    DeleteArchiveHelper.show(scene.activity2, viewModel.getEffectiveGalleryInfo()) { title ->
+                    DeleteArchiveHelper.show(scene.activity2, viewModel.getEffectiveArchive()) { title ->
                         scene.showTip(
                             scene.getString(R.string.lrr_delete_success, title),
                             BaseScene.LENGTH_LONG
@@ -116,7 +116,10 @@ internal class DetailActionHandler(
                 showPopMenu()
             }
             v.id == R.id.uploader -> {
-                val uploader = viewModel.getEffectiveUploader()
+                // Uploader is only carried by GalleryDetail (the rich API
+                // response). Archive does not expose it (LRR never populates
+                // it), so the fallback chain stops at galleryDetail.
+                val uploader = viewModel.galleryDetail.value?.uploader
                 if (TextUtils.isEmpty(uploader)) return
                 val lub = ListUrlBuilder()
                 lub.mode = ListUrlBuilder.MODE_UPLOADER
@@ -127,12 +130,12 @@ internal class DetailActionHandler(
                 onDownloadClick(context, activity)
             }
             v.id == R.id.read -> {
-                val galleryInfo: GalleryInfo? = viewModel.galleryInfo.value ?: viewModel.galleryDetail.value
-                if (galleryInfo != null) {
+                val archive = viewModel.getEffectiveArchive()
+                if (archive != null) {
                     lifecycleOwner.lifecycleScope.launch {
                         try {
                             val intent = withContext(Dispatchers.IO) {
-                                GalleryOpenHelper.buildReadIntent(activity, galleryInfo)
+                                GalleryOpenHelper.buildReadIntent(activity, archive)
                             }
                             scene.startActivity(intent)
                         } catch (e: Exception) {
@@ -195,13 +198,13 @@ internal class DetailActionHandler(
      * Handles download button click: start a new download or show delete dialog.
      */
     private fun onDownloadClick(context: Context, activity: MainActivity) {
-        val galleryInfo = viewModel.getEffectiveGalleryInfo() ?: return
+        val archive = viewModel.getEffectiveArchive() ?: return
 
-        if (viewModel.downloadManager.getDownloadState(galleryInfo.arcid) == DownloadInfo.STATE_INVALID) {
-            CommonOperations.startDownload(activity, galleryInfo, false)
+        if (viewModel.downloadManager.getDownloadState(archive.arcid) == DownloadInfo.STATE_INVALID) {
+            CommonOperations.startDownload(activity, archive, false)
         } else {
-            DownloadLabelHelper.showDeleteDialog(context, galleryInfo) { deleteFiles ->
-                DownloadLabelHelper.performDelete(galleryInfo, deleteFiles)
+            DownloadLabelHelper.showDeleteDialog(context, archive) { deleteFiles ->
+                DownloadLabelHelper.performDelete(archive, deleteFiles)
             }
         }
     }
@@ -223,7 +226,11 @@ internal class DetailActionHandler(
     var onFavoriteChanged: ((GalleryDetail) -> Unit)? = null
 
     private fun getGalleryDetailUrl(): String? {
-        val gid = viewModel.getEffectiveGid()
+        // EH-style URL is used only by the "open in other app" share menu;
+        // the gid component is meaningless for LRR archives, so fall back
+        // to 0 when galleryDetail (the only gid carrier on this path) is
+        // not loaded yet. Archive does not expose gid by design.
+        val gid = viewModel.galleryDetail.value?.gid ?: 0L
         val arcid = viewModel.getEffectiveArcid() ?: return null
         return LRRUrl.getGalleryDetailUrl(gid, arcid, 0, false)
     }

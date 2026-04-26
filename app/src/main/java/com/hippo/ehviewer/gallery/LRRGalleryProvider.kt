@@ -4,7 +4,6 @@ import android.content.Context
 import android.util.Log
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.runSuspend
@@ -37,7 +36,7 @@ import java.util.concurrent.locks.LockSupport
  * 2. onRequest(index) -> downloads the specific page image, decodes it, notifies UI
  * 3. Adjacent pages are preloaded (download only) for faster navigation
  */
-class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo) : GalleryProvider2() {
+class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryProvider2() {
 
     /**
      * Immutable snapshot of provider state. All three fields are read/written atomically
@@ -50,7 +49,6 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
     )
 
     private val context: Context = context.applicationContext
-    private val arcId: String = galleryInfo.arcid ?: "" // arcid from LRRArchive
     private val serverUrl: String = LRRAuthManager.getServerUrl() ?: ""
 
     // Atomic provider state -- replaces individual @Volatile fields for pagePaths/pageCount/stopped
@@ -129,7 +127,7 @@ class LRRGalleryProvider(context: Context, private val galleryInfo: GalleryInfo)
                 // Resolve reading progress from server metadata (may already be available)
                 val metadata = metadataDeferred.await()
                 var serverPage = startPageValue
-                Log.i(TAG, "[PROGRESS] Local SP page=$startPageValue for arcid=${galleryInfo.arcid}")
+                Log.i(TAG, "[PROGRESS] Local SP page=$startPageValue for arcid=$arcId")
 
                 if (metadata != null) {
                     Log.i(

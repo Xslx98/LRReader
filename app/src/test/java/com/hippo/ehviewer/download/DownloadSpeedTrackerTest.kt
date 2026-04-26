@@ -9,8 +9,13 @@ import java.lang.ref.WeakReference
 /**
  * Unit tests for [DownloadSpeedTracker].
  * Uses a fake [DownloadSpeedTracker.Callback] so no Android framework is required.
+ *
+ * Post-W35-3c: progress fields (speed/remaining/total/downloaded/finished) live
+ * exclusively on [DownloadProgressTracker]; tests read/write through it.
  */
 class DownloadSpeedTrackerTest {
+
+    private val arcid = "test-arcid"
 
     private lateinit var activeTask: DownloadInfo
     private val infoListeners = mutableListOf<DownloadInfoListener>()
@@ -32,10 +37,10 @@ class DownloadSpeedTrackerTest {
     @Before
     fun setUp() {
         activeTask = DownloadInfo()
-        activeTask.arcid = "test-arcid"
-        activeTask.total = 100
-        activeTask.downloaded = 0
-        activeTask.finished = 0
+        activeTask.arcid = arcid
+
+        progressTracker = DownloadProgressTracker()
+        progressTracker.update(arcid, total = 100, downloaded = 0, finished = 0)
 
         val callback = object : DownloadSpeedTracker.Callback {
             override fun getFirstActiveTask(): DownloadInfo = activeTask
@@ -46,9 +51,10 @@ class DownloadSpeedTrackerTest {
             override fun getWaitList(): List<DownloadInfo> = waitList
         }
 
-        progressTracker = DownloadProgressTracker()
         tracker = DownloadSpeedTracker(callback, progressTracker)
     }
+
+    private fun snap() = progressTracker.snapshot(arcid)!!
 
     @Test
     fun onDownload_accumulatesBytesRead() {
@@ -56,20 +62,17 @@ class DownloadSpeedTrackerTest {
         tracker.onDownload(1, 2000L, 1000L, 300)
         // run() divides mBytesRead by 2 for smoothing: (200+300)/2 = 250
         tracker.run()
-        assertEquals(250L, activeTask.speed)
-        // Tracker mirrors the speed value via progressTracker (W35-3a).
-        assertEquals(250L, progressTracker.snapshot("test-arcid")?.speed)
+        assertEquals(250L, snap().speed)
     }
 
     @Test
-    fun run_mirrorsRemainingIntoProgressTracker() {
-        activeTask.total = 100
-        activeTask.downloaded = 0
+    fun run_writesRemainingIntoProgressTracker() {
+        progressTracker.update(arcid, total = 100, downloaded = 0)
         tracker.onDownload(0, 1000L, 0L, 2000)
         tracker.run()
-        val snap = progressTracker.snapshot("test-arcid")!!
-        assertEquals(activeTask.speed, snap.speed)
-        assertEquals(activeTask.remaining, snap.remaining)
+        val s = snap()
+        assertTrue("Speed should be positive", s.speed > 0)
+        assertTrue("Remaining should be positive", s.remaining > 0)
     }
 
     @Test
@@ -85,7 +88,7 @@ class DownloadSpeedTrackerTest {
         tracker.run() // speed = 400/2 = 200
         // Second tick with no new bytes: speed approaches 0 via lerp
         tracker.run()
-        assertTrue("Speed should decrease toward zero", activeTask.speed < 200L)
+        assertTrue("Speed should decrease toward zero", snap().speed < 200L)
     }
 
     @Test
@@ -94,10 +97,10 @@ class DownloadSpeedTrackerTest {
         tracker.onDone(0)
         tracker.run()
         // No downloading pages → remaining calculation skipped, speed is 500/2=250 from bytes
-        assertEquals(250L, activeTask.speed)
+        assertEquals(250L, snap().speed)
         // Maps are empty after onDone: downloadingCount=0 → remaining calculation skipped,
-        // stays at its initial value (0L — not set to -1 by tracker in this path)
-        assertEquals(0L, activeTask.remaining)
+        // tracker keeps initial -1L (initial sentinel for remaining).
+        assertEquals(-1L, snap().remaining)
     }
 
     @Test
@@ -108,31 +111,29 @@ class DownloadSpeedTrackerTest {
         // After onFinish, content length maps are cleared; run() should still work
         tracker.run()
         // Maps empty after onFinish: downloadingCount=0 → remaining calculation skipped,
-        // stays at initial 0L (not set to -1 by tracker when speed is nonzero)
-        assertEquals(0L, activeTask.remaining)
+        // tracker keeps initial -1L sentinel.
+        assertEquals(-1L, snap().remaining)
     }
 
     @Test
     fun remainingTime_calculatedWhenSpeedNonZero() {
         // 100 total pages, 0 downloaded, 1 page downloading with 1000 bytes at 0 received
-        activeTask.total = 100
-        activeTask.downloaded = 0
+        progressTracker.update(arcid, total = 100, downloaded = 0)
         tracker.onDownload(0, 1000L, 0L, 2000)
         tracker.run()
         // speed = 2000/2 = 1000 B/s
-        assertEquals(1000L, activeTask.speed)
+        assertEquals(1000L, snap().speed)
         // remaining should be calculated (not -1 or max-days)
-        assertTrue("Remaining should be positive", activeTask.remaining > 0)
-        assertNotEquals(300L * 24 * 60 * 60 * 1000L, activeTask.remaining)
+        assertTrue("Remaining should be positive", snap().remaining > 0)
+        assertNotEquals(300L * 24 * 60 * 60 * 1000L, snap().remaining)
     }
 
     @Test
     fun remainingTime_isMaxWhenSpeedIsZero() {
-        activeTask.total = 100
-        activeTask.downloaded = 0
+        progressTracker.update(arcid, total = 100, downloaded = 0)
         // No bytes downloaded → speed stays 0 after lerp
         tracker.run()
         tracker.run() // second run, oldSpeed=0, newSpeed=0
-        assertEquals(300L * 24 * 60 * 60 * 1000L, activeTask.remaining)
+        assertEquals(300L * 24 * 60 * 60 * 1000L, snap().remaining)
     }
 }

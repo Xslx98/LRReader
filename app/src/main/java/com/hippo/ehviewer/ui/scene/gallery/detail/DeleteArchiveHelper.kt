@@ -9,8 +9,8 @@ import androidx.activity.ComponentActivity
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.lanraragi.reader.client.api.LRRArchiveApi
+import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.lanraragi.reader.client.api.runSuspend
 import kotlinx.coroutines.Dispatchers
@@ -28,11 +28,11 @@ object DeleteArchiveHelper {
     }
 
     @JvmStatic
-    fun show(activity: Activity?, galleryInfo: GalleryInfo?, callback: Callback?) {
-        if (activity == null || galleryInfo == null) return
+    fun show(activity: Activity?, archive: Archive?, callback: Callback?) {
+        if (activity == null || archive == null) return
 
-        val title = galleryInfo.title ?: "Unknown"
-        val arcid = galleryInfo.arcid
+        val title = archive.title.ifEmpty { "Unknown" }
+        val arcid = archive.arcid
 
         val dialog = AlertDialog.Builder(activity)
             .setTitle(R.string.lrr_delete_confirm_title)
@@ -69,8 +69,8 @@ object DeleteArchiveHelper {
         dialog.show()
     }
 
-    private fun performDelete(activity: Activity, arcid: String?, title: String, callback: Callback?) {
-        if (arcid.isNullOrEmpty()) return
+    private fun performDelete(activity: Activity, arcid: String, title: String, callback: Callback?) {
+        if (arcid.isEmpty()) return
 
         (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
             try {

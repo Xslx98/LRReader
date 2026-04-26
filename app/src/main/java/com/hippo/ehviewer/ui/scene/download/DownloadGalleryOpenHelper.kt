@@ -25,11 +25,13 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.DownloadInfo
+import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.spider.SpiderInfo
 import com.hippo.ehviewer.ui.GalleryActivity
 import com.hippo.ehviewer.ui.GalleryOpenHelper
+import com.lanraragi.reader.domain.Archive
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -80,10 +82,11 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
 
         // Use GalleryOpenHelper to prefer local files over server
         // buildReadIntent is suspend (resolves download dir from DB)
+        val archive = downloadInfo.toArchive()
         callback.viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val readIntent = withContext(Dispatchers.IO) {
-                    GalleryOpenHelper.buildReadIntent(activity, downloadInfo)
+                    GalleryOpenHelper.buildReadIntent(activity, archive)
                 }
                 callback.launchGallery(readIntent)
             } catch (e: Exception) {
@@ -141,23 +144,21 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
 
         val data = result.data ?: return
         @Suppress("DEPRECATION")
-        val info = data.getParcelableExtra<GalleryInfo>("info") ?: return
+        val archive = data.getParcelableExtra<Archive>(GalleryActivity.EXTRA_RESULT_ARCHIVE) ?: return
+        val arcid = archive.arcid
 
-        // Check if this is an imported archive - skip SpiderInfo processing
-        var isImportedArchive = false
-        if (info is DownloadInfo) {
-            isImportedArchive = info.archiveUri != null &&
-                info.archiveUri!!.startsWith("content://")
-        }
+        // Imported archives (content:// URIs) live in the DB as DownloadInfo
+        // with a non-null archiveUri; skip SpiderInfo refresh for those.
+        val downloadInfo = ServiceRegistry.dataModule.downloadManager.getDownloadInfo(arcid)
+        val isImportedArchive = downloadInfo?.archiveUri?.startsWith("content://") == true
 
         if (!isImportedArchive) {
             // Only process SpiderInfo for regular downloads, not imported archives
-            val arcid = info.arcid ?: return
             callback.viewModel.removeSpiderInfo(arcid)
             callback.viewLifecycleOwner.lifecycleScope.launch {
                 try {
                     val spiderInfo = withContext(Dispatchers.IO) {
-                        SpiderInfo.getSpiderInfo(info)
+                        SpiderInfo.getSpiderInfo(arcid)
                     }
                     if (spiderInfo != null) {
                         callback.viewModel.putSpiderInfo(arcid, spiderInfo)
@@ -171,7 +172,7 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
         val list = callback.mList ?: return
         val adapter = callback.mAdapter ?: return
         for (i in list.indices) {
-            if (list[i].arcid == info.arcid) {
+            if (list[i].arcid == arcid) {
                 val position = callback.listIndexInPage(i)
                 adapter.notifyItemChanged(position)
                 return
