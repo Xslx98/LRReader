@@ -162,6 +162,27 @@ private fun simpleTagsToTagsMap(simpleTags: Array<String>?): Map<String, List<St
 }
 
 /**
+ * Convert a [GalleryDetail] (post-W36-11 standalone) into an [Archive]
+ * domain model. Used by GalleryDetailViewModel.getEffectiveArchive when
+ * the live Archive isn't available but a cached GalleryDetail is.
+ */
+fun GalleryDetail.toArchive(): Archive = Archive(
+    arcid = arcid,
+    title = title ?: "",
+    tags = galleryDetailTagsMap(tags),
+    pagecount = pages,
+    progress = progress,
+    extension = "",
+    filename = "",
+    thumbnailUrl = thumb ?: "",
+    rating = rating,
+    isnew = false,
+    lastreadtime = 0L,
+    summary = null,
+    serverProfileId = serverProfileId,
+)
+
+/**
  * Derive an [ArchiveDetail] from a cached [GalleryDetail] (when the original
  * LRRArchive is not available). Converts [GalleryDetail.tags] (GalleryTagGroup[])
  * into domain [TagGroup] list.
@@ -175,23 +196,24 @@ fun GalleryDetail.toArchiveDetail(): ArchiveDetail {
     } ?: emptyList()
 
     return ArchiveDetail(
-        archive = Archive(
-            arcid = this.arcid,
-            title = title ?: "",
-            tags = tagGroups.associate { it.namespace to it.tags },
-            pagecount = pages,
-            progress = progress,
-            extension = "",
-            filename = "",
-            thumbnailUrl = thumb ?: "",
-            rating = rating,
-            isnew = false,
-            lastreadtime = 0L,
-            summary = null,
-            serverProfileId = serverProfileId,
-        ),
+        archive = toArchive(),
         tagGroups = tagGroups,
         language = language,
         size = size,
     )
+}
+
+private fun galleryDetailTagsMap(
+    groups: Array<com.hippo.ehviewer.client.data.GalleryTagGroup>?
+): Map<String, List<String>> {
+    if (groups == null) return emptyMap()
+    val map = LinkedHashMap<String, MutableList<String>>()
+    for (g in groups) {
+        val ns = g.groupName ?: "misc"
+        val list = map.getOrPut(ns) { mutableListOf() }
+        for (i in 0 until g.size()) {
+            list.add(g.getTagAt(i))
+        }
+    }
+    return map
 }
