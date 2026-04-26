@@ -19,7 +19,7 @@ CLAUDE.md 只承载高频日常约定。详细信息分散在 `docs/`：
 | [docs/architecture.md](docs/architecture.md) | 需要技术栈版本表、目录结构、关键文件列表、ServiceRegistry / Settings 模块拆分 |
 | [docs/testing-and-ci.md](docs/testing-and-ci.md) | 跑测试、看 CI 流程、改签名配置、Native CMake、本地化、Room schema 演进 |
 | [docs/adr-001-download-ssot.md](docs/adr-001-download-ssot.md) | 改 Download 模块（W35-3a/3b 已完成，W35-1a/3c 仍在路上） |
-| [docs/audit-2026-04-15-v2.md](docs/audit-2026-04-15-v2.md) | 数据架构反模式（D1/D4/D5/D7 仍部分修复，是当前活跃整改对象） |
+| [docs/audit-2026-04-15-v2.md](docs/audit-2026-04-15-v2.md) | 数据架构反模式 —— 顶部含 2026-04-26 状态更新；当前唯一活跃整改是 D1（`GalleryInfoEntity` 扁平化），合入 W35-1a/3c 执行 |
 | [docs/EDGE_TO_EDGE.md](docs/EDGE_TO_EDGE.md) | 改 Activity 布局或状态栏 —— API 35+ 状态栏着色坑很深，必读 |
 | `docs/archive/` | 归档目录：已完成的 plan / 旧 audit 快照 / 过时 onboard / 历史 ROADMAP。**不必要不查看**，主要为审计/历史回溯保留 |
 
