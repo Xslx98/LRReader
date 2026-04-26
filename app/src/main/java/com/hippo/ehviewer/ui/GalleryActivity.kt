@@ -153,7 +153,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                     val uniFile = UniFile.fromFile(File(filename)) ?: return
                     val galleryInfo = mGalleryInfo
                     mGalleryProvider = if (galleryInfo != null) {
-                        DirGalleryProvider(uniFile, this, galleryInfo)
+                        DirGalleryProvider(uniFile, this, galleryInfo.arcid)
                     } else {
                         DirGalleryProvider(uniFile)
                     }
