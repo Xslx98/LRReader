@@ -119,6 +119,45 @@ fun galleryInfoFromCSV(csv: String): GalleryInfoEntity? {
 }
 
 /**
+ * CSV serialization for [DownloadInfo].
+ *
+ * Emits the same 20-column wire format as [GalleryInfoEntity.toCSV] for
+ * backward compatibility with users' existing CSV exports (read by
+ * [galleryInfoFromCSV]). After W36-7 flatten DownloadInfo no longer
+ * inherits the GalleryInfoEntity extension; this standalone keeps the
+ * DownloadFragment export feature working without changing the on-disk
+ * format.
+ *
+ * Fields not carried by the flattened DownloadInfo are filled with
+ * defaults so the column count stays stable:
+ *   - titleJpn / posted / uploader / favoriteName → null
+ *   - category / thumbWidth / thumbHeight / spanSize / spanIndex /
+ *     spanGroupIndex / pages → 0
+ *   - rated → false
+ *   - favoriteSlot → -2
+ *
+ * Format slimming will happen when GalleryInfoEntity retires (W36-11+).
+ */
+fun DownloadInfo.toCSV(): String {
+    return gid.toString() + "," +
+        arcid + "," +
+        title + "," +
+        "null" + "," +                   // titleJpn
+        thumb + "," +
+        "0" + "," +                      // category
+        "null" + "," +                   // posted
+        "null" + "," +                   // uploader
+        rating + "," +
+        "false" + "," +                  // rated
+        simpleLanguage + "," +
+        simpleTags.contentToString() + "," +
+        "0,0,0,0,0," +                   // thumbWidth, thumbHeight, spanSize, spanIndex, spanGroupIndex
+        "-2," +                          // favoriteSlot
+        "null" + "," +                   // favoriteName
+        "0\n"                            // pages
+}
+
+/**
  * Deserializes a [GalleryInfoEntity] from a [JSONObject] previously
  * produced by [GalleryInfoEntity.toJson].
  */
