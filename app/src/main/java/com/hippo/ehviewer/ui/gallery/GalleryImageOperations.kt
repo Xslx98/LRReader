@@ -31,8 +31,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.gallery.GalleryProvider2
+import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.settings.ReadingSettings
 import com.hippo.unifile.UniFile
 import com.hippo.util.ExceptionUtils
@@ -48,7 +48,7 @@ import java.io.IOException
 class GalleryImageOperations(private val mActivity: Activity) {
 
     var galleryProvider: GalleryProvider2? = null
-    var galleryInfo: GalleryInfo? = null
+    var archive: Archive? = null
     var saveToLauncher: ActivityResultLauncher<Intent>? = null
 
     private var mCacheFileName: String? = null
@@ -112,11 +112,9 @@ class GalleryImageOperations(private val mActivity: Activity) {
         }
 
         // Build display name with archive title prefix
-        val archiveTitle = if (galleryInfo?.title != null) {
-            sanitizeFilename(galleryInfo!!.title, 80)
-        } else {
-            "archive"
-        }
+        val archiveTitle = archive?.title?.takeIf { it.isNotEmpty() }
+            ?.let { sanitizeFilename(it, 80) }
+            ?: "archive"
         val displayName = archiveTitle + "_" + (filename ?: "page_$page")
 
         // Determine MIME type
