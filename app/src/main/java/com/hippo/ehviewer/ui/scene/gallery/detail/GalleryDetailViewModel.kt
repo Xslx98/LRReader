@@ -200,23 +200,6 @@ class GalleryDetailViewModel : ViewModel() {
     // -------------------------------------------------------------------------
 
     /**
-     * Returns the effective gallery ID, preferring galleryDetail > galleryInfo > gid argument.
-     * Returns -1 if none is available.
-     */
-    fun getEffectiveGid(): Long {
-        val detail = _galleryDetail.value
-        if (detail != null) return detail.gid
-
-        val info = _galleryInfo.value
-        if (info != null) return info.gid
-
-        if (GalleryDetailScene.ACTION_GID_TOKEN == _action.value) {
-            return _gid.value
-        }
-        return -1
-    }
-
-    /**
      * Returns the effective arcid, preferring galleryDetail > galleryInfo > arcid argument.
      */
     fun getEffectiveArcid(): String? {
