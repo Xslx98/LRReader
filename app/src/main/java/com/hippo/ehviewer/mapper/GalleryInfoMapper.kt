@@ -76,27 +76,14 @@ fun Archive.toGalleryInfo(): GalleryInfo {
 }
 
 /**
- * Convert a [GalleryInfo] (or [DownloadInfo]) to an [Archive] domain model.
+ * Convert a [GalleryInfo] to an [Archive] domain model.
  * Used when the adapter/UI layer needs Archive for display.
  */
 fun GalleryInfo.toArchive(lastreadtime: Long = 0L): Archive {
     return Archive(
         arcid = this.arcid,
         title = title ?: "",
-        tags = simpleTags?.let { tags ->
-            val map = LinkedHashMap<String, MutableList<String>>()
-            for (tag in tags) {
-                val colonIdx = tag.indexOf(':')
-                if (colonIdx > 0) {
-                    val ns = tag.substring(0, colonIdx).trim()
-                    val v = tag.substring(colonIdx + 1).trim()
-                    map.getOrPut(ns) { mutableListOf() }.add(v)
-                } else {
-                    map.getOrPut("misc") { mutableListOf() }.add(tag)
-                }
-            }
-            map
-        } ?: emptyMap(),
+        tags = simpleTagsToTagsMap(simpleTags),
         pagecount = pages,
         progress = progress,
         extension = "",
@@ -108,6 +95,47 @@ fun GalleryInfo.toArchive(lastreadtime: Long = 0L): Archive {
         summary = null,
         serverProfileId = serverProfileId,
     )
+}
+
+/**
+ * Convert a flattened [DownloadInfo] (no longer extends GalleryInfoEntity
+ * post-W36-7) to an [Archive] domain model. Mirrors the GalleryInfo
+ * conversion above for fields the flattened entity still carries; fields
+ * dropped from DownloadInfo (pages, progress) get sane defaults — Archive
+ * pagecount/progress are server-driven anyway.
+ */
+fun DownloadInfo.toArchive(): Archive {
+    return Archive(
+        arcid = this.arcid,
+        title = title ?: "",
+        tags = simpleTagsToTagsMap(simpleTags),
+        pagecount = 0,
+        progress = 0,
+        extension = "",
+        filename = "",
+        thumbnailUrl = thumb ?: "",
+        rating = rating,
+        isnew = false,
+        lastreadtime = 0L,
+        summary = null,
+        serverProfileId = serverProfileId,
+    )
+}
+
+private fun simpleTagsToTagsMap(simpleTags: Array<String>?): Map<String, List<String>> {
+    if (simpleTags == null) return emptyMap()
+    val map = LinkedHashMap<String, MutableList<String>>()
+    for (tag in simpleTags) {
+        val colonIdx = tag.indexOf(':')
+        if (colonIdx > 0) {
+            val ns = tag.substring(0, colonIdx).trim()
+            val v = tag.substring(colonIdx + 1).trim()
+            map.getOrPut(ns) { mutableListOf() }.add(v)
+        } else {
+            map.getOrPut("misc") { mutableListOf() }.add(tag)
+        }
+    }
+    return map
 }
 
 /**
