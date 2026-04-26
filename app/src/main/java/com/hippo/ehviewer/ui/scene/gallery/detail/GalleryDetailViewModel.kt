@@ -6,8 +6,6 @@ import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.client.data.GalleryInfo
-import com.hippo.ehviewer.mapper.toGalleryInfo
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRCategoryApi
@@ -341,14 +339,10 @@ class GalleryDetailViewModel : ViewModel() {
     /**
      * Records [archive] in the history table. Fire-and-forget; runs on
      * [Dispatchers.IO].
-     *
-     * The repository still consumes [GalleryInfo]; conversion happens at
-     * this boundary until W36-5 migrates HistoryRepository to take Archive
-     * directly.
      */
     fun recordHistory(archive: Archive) {
         viewModelScope.launch(Dispatchers.IO) {
-            ServiceRegistry.dataModule.historyRepository.putHistoryInfo(archive.toGalleryInfo())
+            ServiceRegistry.dataModule.historyRepository.putHistoryInfo(archive)
         }
     }
 
