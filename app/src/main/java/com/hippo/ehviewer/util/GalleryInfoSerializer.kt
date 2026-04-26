@@ -37,49 +37,6 @@ fun GalleryInfoEntity.toCSV(): String {
 }
 
 /**
- * Converts a [GalleryInfoEntity] to a [DownloadInfo], optionally copying
- * download-specific state from an existing [DownloadInfo].
- *
- * @param info optional existing download info whose state/legacy/time/label
- *             fields are carried over.
- */
-@Deprecated(
-    message = "No external callers — retained for binary compatibility only.",
-    level = DeprecationLevel.WARNING
-)
-fun GalleryInfoEntity.getDownloadInfo(info: DownloadInfo?): DownloadInfo {
-    val i = DownloadInfo()
-    i.gid = gid
-    i.arcid = arcid
-    i.title = title
-    i.titleJpn = titleJpn
-    i.thumb = thumb
-    i.category = category
-    i.posted = posted
-    i.uploader = uploader
-    i.rating = rating
-    i.rated = rated
-    i.simpleLanguage = simpleLanguage
-    i.simpleTags = simpleTags
-    i.thumbWidth = thumbWidth
-    i.thumbHeight = thumbHeight
-    i.spanSize = spanSize
-    i.spanIndex = spanIndex
-    i.spanGroupIndex = spanGroupIndex
-    i.favoriteSlot = favoriteSlot
-    i.favoriteName = favoriteName
-    i.tgList = tgList
-    i.progress = progress
-    if (info != null) {
-        i.state = info.state
-        i.legacy = info.legacy
-        i.time = info.time
-        i.label = info.label
-    }
-    return i
-}
-
-/**
  * Parses a single CSV line (produced by [toCSV]) back into a
  * [GalleryInfoEntity]. Returns `null` when the line has fewer than 20
  * columns or contains unparseable numbers.
