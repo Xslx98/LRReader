@@ -181,7 +181,7 @@ class DownloadListInfosExecutor {
      */
     private suspend fun calculateDownloadDirSize(info: DownloadInfo): Long {
         return try {
-            val downloadDir = SpiderDen.getGalleryDownloadDir(info)
+            val downloadDir = SpiderDen.getGalleryDownloadDir(info.arcid, info.title, info.gid)
             if (downloadDir == null || !downloadDir.isDirectory) {
                 return -1
             }

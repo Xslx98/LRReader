@@ -353,11 +353,8 @@ class DownloadManager(
         val list = ArrayList(repo.allInfoList)
         scope.launch {
             try {
-                val gi = GalleryInfo()
                 for (di in list) {
-                    gi.arcid = di.arcid; gi.title = di.title; gi.thumb = di.thumb
-                    gi.category = di.category; gi.posted = di.posted; gi.uploader = di.uploader; gi.rating = di.rating
-                    val dir = SpiderDen.getGalleryDownloadDir(gi) ?: continue
+                    val dir = SpiderDen.getGalleryDownloadDir(di.arcid, di.title, di.gid) ?: continue
                     val file = dir.findFile(".ehviewer") ?: continue
                     val si = SpiderInfo.read(file) ?: continue
                     si.startPage = 0

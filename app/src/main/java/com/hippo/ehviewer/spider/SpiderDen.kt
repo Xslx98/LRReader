@@ -17,7 +17,6 @@
 package com.hippo.ehviewer.spider
 
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.unifile.FilenameFilter
@@ -38,18 +37,29 @@ import java.util.Locale
 object SpiderDen {
 
     /**
-     * Resolves the download directory for the given gallery.
+     * Resolves the download directory for the given archive.
      *
      * Suspend because it calls [com.hippo.ehviewer.dao.DownloadDbRepository].
      * Callers must be in a coroutine context.
+     *
+     * @param arcid LANraragi archive id (the directory's primary key)
+     * @param title display title — used only when the directory has to be
+     *   created (it becomes part of the directory name)
+     * @param legacyGid optional EH-era gid; used as a fallback prefix when
+     *   listing directories so that very old installs (pre-W34-1) whose
+     *   on-disk dirs are gid-prefixed can still be matched. Pass `null` if
+     *   the caller has no gid value (e.g. arcid-only contexts).
      */
     @JvmStatic
-    suspend fun getGalleryDownloadDir(galleryInfo: GalleryInfo): UniFile? {
+    suspend fun getGalleryDownloadDir(
+        arcid: String,
+        title: String?,
+        legacyGid: Long? = null,
+    ): UniFile? {
         val dir = DownloadSettings.getDownloadLocation() ?: return null
 
         // Read from DB
         val downloadDbRepo = ServiceRegistry.dataModule.downloadDbRepository
-        val arcid = galleryInfo.arcid
         var dirname = downloadDbRepo.getDownloadDirname(arcid)
         if (dirname != null) {
             // Some dirname may be invalid in some version
@@ -63,8 +73,8 @@ object SpiderDen {
                 // Try arcid-prefixed directory first (new format)
                 var files = dir.listFiles(StartWithFilenameFilter("$arcid-"))
                 // Fall back to gid-prefixed directory (legacy installs)
-                if ((files == null || files.isEmpty()) && galleryInfo.gid != 0L) {
-                    files = dir.listFiles(StartWithFilenameFilter("${galleryInfo.gid}-"))
+                if ((files == null || files.isEmpty()) && legacyGid != null && legacyGid != 0L) {
+                    files = dir.listFiles(StartWithFilenameFilter("$legacyGid-"))
                 }
                 if (files != null) {
                     // Get max-length-name dir
@@ -92,7 +102,7 @@ object SpiderDen {
 
         // Create it — use arcid as prefix for unique directory names
         if (dirname == null) {
-            dirname = FileUtils.sanitizeFilename("$arcid-${galleryInfo.title}")
+            dirname = FileUtils.sanitizeFilename("$arcid-$title")
             downloadDbRepo.putDownloadDirname(arcid, dirname)
         }
 
