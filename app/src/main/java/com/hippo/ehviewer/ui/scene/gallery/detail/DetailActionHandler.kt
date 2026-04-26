@@ -19,6 +19,7 @@ import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.dao.DownloadInfo
+import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.ehviewer.ui.GalleryOpenHelper
 import com.hippo.ehviewer.ui.MainActivity
@@ -90,7 +91,7 @@ internal class DetailActionHandler(
                     scene.requestRefresh()
                 }
                 R.id.action_lrr_delete -> {
-                    DeleteArchiveHelper.show(scene.activity2, viewModel.getEffectiveGalleryInfo()) { title ->
+                    DeleteArchiveHelper.show(scene.activity2, viewModel.getEffectiveGalleryInfo()?.toArchive()) { title ->
                         scene.showTip(
                             scene.getString(R.string.lrr_delete_success, title),
                             BaseScene.LENGTH_LONG
