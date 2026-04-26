@@ -37,7 +37,6 @@ import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.util.ReadableTime
 import com.hippo.lib.yorozuya.FileUtils
