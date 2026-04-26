@@ -3,6 +3,7 @@ package com.hippo.ehviewer.mapper
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
+import com.hippo.ehviewer.dao.HistoryInfo
 
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
@@ -33,6 +34,24 @@ fun Archive.toDownloadInfo(): DownloadInfo {
     di.simpleTags = flatTags.toTypedArray()
     di.serverProfileId = serverProfileId
     return di
+}
+
+/**
+ * Bridge: convert an [Archive] domain model to a fresh [HistoryInfo]
+ * Entity (HISTORY table). Sets the persistent + display fields from
+ * Archive; history-specific fields (time, mode) keep their defaults
+ * and the caller is expected to stamp `time = System.currentTimeMillis()`
+ * before insert (HistoryRepository does so).
+ */
+fun Archive.toHistoryInfo(): HistoryInfo {
+    val hi = HistoryInfo()
+    hi.arcid = arcid
+    hi.title = title
+    hi.thumb = thumbnailUrl
+    hi.rating = rating
+    hi.simpleTags = flatTags.toTypedArray()
+    hi.serverProfileId = serverProfileId
+    return hi
 }
 
 /**
