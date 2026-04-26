@@ -458,11 +458,9 @@
     <string name="settings_eh_excluded_languages_summary">Ocultar galerías en ciertos idiomas de la lista de galerías y búsquedas</string>
     <string name="settings_eh_excluded_tag_namespaces">Excluir etiquetas espacios de nombres</string>
     <string name="settings_eh_excluded_tag_namespaces_summary">Excluir ciertos espacios de nombres de una búsqueda de etiquetas por defecto</string>
-    <string name="settings_eh_show_jpn_title">Mostrar títulos en japonés</string>
     <string name="settings_eh_show_gallery_comment">Mostrar comentarios de galería</string>
     <string name="settings_eh_show_gallery_rating">Mostrar valoración de galería</string>
     <string name="settings_eh_show_eh_event">Mostrar eventos EH</string>
-    <string name="settings_eh_show_jpn_title_summary">Requiere habilitar Título en japonés en Configuración en el sitio web LANraragi</string>
     <string name="settings_eh_show_gallery_pages">Mostrar número de páginas de la galería</string>
     <string name="settings_eh_show_gallery_pages_summary">Mostrar el número de páginas en la lista de galerías</string>
     <string name="settings_eh_show_tag_translations">Mostrar traducciones de etiquetas</string>
