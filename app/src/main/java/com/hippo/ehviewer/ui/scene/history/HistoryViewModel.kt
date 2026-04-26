@@ -91,7 +91,7 @@ class HistoryViewModel : ViewModel() {
             try {
                 val lazyList = withContext(Dispatchers.IO) { historyRepository.getHistoryLazyList() }
                 rawHistoryList = ArrayList(lazyList)
-                val newList = ArrayList(lazyList.map { it.toArchive(lastreadtime = it.time) })
+                val newList = ArrayList(lazyList.map { it.toArchive() })
                 val diff = DiffUtil.calculateDiff(
                     ArchiveDiffCallback(lastSnapshot, newList)
                 )
