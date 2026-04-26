@@ -18,14 +18,22 @@ import com.hippo.ehviewer.download.DownloadInfoListener
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.gallery.ReaderPageCache
+import com.hippo.ehviewer.gallery.ReadingProgressTracker
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -230,6 +238,29 @@ class GalleryDetailViewModel : ViewModel() {
     fun getEffectiveGalleryInfo(): GalleryInfo? {
         return _galleryDetail.value ?: _galleryInfo.value
     }
+
+    // -------------------------------------------------------------------------
+    // Local reading progress (reactive)
+    //
+    // Tracks the latest 0-indexed page persisted by the reader for the current
+    // gallery's arcid. Re-emits whenever the reader writes to local storage,
+    // so the detail UI sees fresh progress as soon as the user returns from
+    // the reader instead of relying on a one-shot onResume re-read.
+    // -------------------------------------------------------------------------
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val localReadingPage: StateFlow<Int> = combine(
+        _galleryDetail, _galleryInfo, _arcid, _action
+    ) { gd, gi, argArcid, action ->
+        gd?.arcid
+            ?: gi?.arcid
+            ?: if (action == GalleryDetailScene.ACTION_GID_TOKEN) argArcid else null
+    }
+        .distinctUntilChanged()
+        .flatMapLatest { arcid ->
+            if (arcid.isNullOrEmpty()) flowOf(0) else ReadingProgressTracker.progressFlow(arcid)
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
     // -------------------------------------------------------------------------
     // Detail-page reading preload
