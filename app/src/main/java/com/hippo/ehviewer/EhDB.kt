@@ -243,7 +243,20 @@ object EhDB {
                             it.moveToNext()
                             return@use
                         }
-                        val info = HistoryInfo(gi)
+                        val info = HistoryInfo().apply {
+                            arcid = gi.arcid
+                            this.gid = gi.gid
+                            title = gi.title
+                            titleJpn = gi.titleJpn
+                            thumb = gi.thumb
+                            category = gi.category
+                            posted = gi.posted
+                            uploader = gi.uploader
+                            rating = gi.rating
+                            simpleLanguage = gi.simpleLanguage
+                            serverProfileId = gi.serverProfileId
+                            simpleTags = gi.simpleTags
+                        }
                         info.mode = it.getInt(1)
                         info.time = it.getLong(2)
                         browsingDao.insertHistory(info)

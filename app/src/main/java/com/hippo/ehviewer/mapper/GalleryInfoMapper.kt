@@ -122,6 +122,29 @@ fun DownloadInfo.toArchive(): Archive {
     )
 }
 
+/**
+ * Convert a flattened [HistoryInfo] (no longer extends GalleryInfoEntity
+ * post-W36-8) to an [Archive] domain model. Same shape as the DownloadInfo
+ * variant — pages/progress are server-driven and not stored on the entity.
+ */
+fun HistoryInfo.toArchive(): Archive {
+    return Archive(
+        arcid = this.arcid,
+        title = title ?: "",
+        tags = simpleTagsToTagsMap(simpleTags),
+        pagecount = 0,
+        progress = 0,
+        extension = "",
+        filename = "",
+        thumbnailUrl = thumb ?: "",
+        rating = rating,
+        isnew = false,
+        lastreadtime = time,
+        summary = null,
+        serverProfileId = serverProfileId,
+    )
+}
+
 private fun simpleTagsToTagsMap(simpleTags: Array<String>?): Map<String, List<String>> {
     if (simpleTags == null) return emptyMap()
     val map = LinkedHashMap<String, MutableList<String>>()
