@@ -61,6 +61,16 @@ class DownloadService : Service(), DownloadListener {
     private var mDownloadedDelay: NotificationDelay? = null
     private var m509Delay: NotificationDelay? = null
 
+    // Last-emitted (arcid, finished) for the in-progress notification. The
+    // AOSP DownloadProvider gates progress notifications on BOTH a 2 s
+    // time-delta and a 64 KB byte-delta; we already have the time gate
+    // inside NotificationDelay, and this is the progress-delta equivalent
+    // (skip the rebuild when no page has finished since the last emit).
+    // SpeedTracker drives a periodic onDownload tick — that path will
+    // refresh the speed text on the next page completion.
+    private var mLastNotifiedArcid: String? = null
+    private var mLastNotifiedFinished: Int = -1
+
     /**
      * Service-scoped CoroutineScope for background awaits (notably
      * [DownloadManager.awaitInitAsync]). Cancelled in [onDestroy] to clean
@@ -356,6 +366,12 @@ class DownloadService : Service(), DownloadListener {
             return
         }
 
+        // Reset the progress-delta gate so the first onUpdate for this task
+        // always fires (even if a prior task happened to leave finished at
+        // the same numeric value).
+        mLastNotifiedArcid = null
+        mLastNotifiedFinished = -1
+
         ensureDownloadingBuilder()
 
         val bundle = Bundle()
@@ -386,6 +402,19 @@ class DownloadService : Service(), DownloadListener {
         ensureDownloadingBuilder()
 
         val snap = mDownloadManager?.progressFor(info.arcid)
+        val finished = snap?.finished ?: -1
+
+        // Progress-delta gate (paired with NotificationDelay's 2 s time gate
+        // for the AOSP "both must pass" behaviour). When the same archive is
+        // ticking but no page has completed, skip the rebuild + IPC entirely
+        // — there is nothing user-visible to redraw, and a flood of these
+        // calls is what drove NotificationManagerService into Shedding mode.
+        if (info.arcid == mLastNotifiedArcid && finished == mLastNotifiedFinished) {
+            return
+        }
+        mLastNotifiedArcid = info.arcid
+        mLastNotifiedFinished = finished
+
         var speed = snap?.speed ?: -1L
         if (speed < 0) {
             speed = 0
@@ -402,7 +431,6 @@ class DownloadService : Service(), DownloadListener {
             getString(R.string.download_speed_text, text)
         }
         val total = snap?.total ?: -1
-        val finished = snap?.finished ?: -1
         val dlBuilder = mDownloadingBuilder ?: return
         dlBuilder.setContentTitle(info.title)
             .setContentText(text)
@@ -423,6 +451,13 @@ class DownloadService : Service(), DownloadListener {
     override fun onFinish(info: DownloadInfo) {
         if (mNotifyManager == null) {
             return
+        }
+
+        // The active task is gone; clear the progress-delta gate so the next
+        // task's first onUpdate fires unconditionally (see onStart).
+        if (info.arcid == mLastNotifiedArcid) {
+            mLastNotifiedArcid = null
+            mLastNotifiedFinished = -1
         }
 
         if (null != mDownloadingDelay) {
@@ -653,7 +688,13 @@ class DownloadService : Service(), DownloadListener {
             private const val OPS_CANCEL = 1
             private const val OPS_START_FOREGROUND = 2
 
-            private const val DELAY: Long = 1000 // 1s
+            // 2 s matches AOSP DownloadProvider's MIN_PROGRESS_TIME and stays
+            // safely under NotificationManagerService's 10 enqueues/s/package
+            // ceiling (and the ≤5/s soft target Google notifications engineers
+            // recommend). Combined with the per-finished gate in onUpdate,
+            // this implements the AOSP "both time AND progress delta must
+            // pass" pattern.
+            private const val DELAY: Long = 2000
         }
     }
 
