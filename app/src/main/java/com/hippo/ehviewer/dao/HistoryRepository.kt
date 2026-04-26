@@ -1,8 +1,9 @@
 package com.hippo.ehviewer.dao
 
-import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.mapper.toHistoryInfo
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.domain.Archive
 
 /**
  * Repository for history-related database operations, backed by [BrowsingRoomDao].
@@ -23,8 +24,8 @@ class HistoryRepository(private val dao: BrowsingRoomDao) {
             dao.getAllHistory()
     }
 
-    suspend fun putHistoryInfo(galleryInfo: GalleryInfo) {
-        val info = HistoryInfo(galleryInfo)
+    suspend fun putHistoryInfo(archive: Archive) {
+        val info = archive.toHistoryInfo()
         info.time = System.currentTimeMillis()
         dao.insertHistory(info)
         val maxCount = AppearanceSettings.getHistoryInfoSize().let {

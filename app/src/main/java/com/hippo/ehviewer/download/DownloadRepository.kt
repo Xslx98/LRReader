@@ -24,6 +24,7 @@ import android.util.Log
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.DownloadLabel
+import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.mapper.toDownloadInfo
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.CompletableDeferred
@@ -527,7 +528,7 @@ class DownloadRepository(
     fun persistHistory(info: DownloadInfo) {
         scope.launch {
             try {
-                ServiceRegistry.dataModule.historyRepository.putHistoryInfo(info)
+                ServiceRegistry.dataModule.historyRepository.putHistoryInfo(info.toArchive())
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to persist history info arcid=${info.arcid}", e)
             }
