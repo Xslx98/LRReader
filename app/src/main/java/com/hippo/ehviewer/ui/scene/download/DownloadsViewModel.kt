@@ -463,7 +463,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
             ServiceRegistry.coroutineModule.ioScope.launch {
                 for (info in infos) {
                     ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(info.arcid)
-                    val file = SpiderDen.getGalleryDownloadDir(info)
+                    val file = SpiderDen.getGalleryDownloadDir(info.arcid, info.title, info.gid)
                     file?.delete()
                 }
             }
