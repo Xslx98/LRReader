@@ -12,10 +12,10 @@ import org.robolectric.annotation.Config
 /**
  * Parcelable round-trip tests for [HistoryInfo].
  *
- * Pre-W36-8 (extends GalleryInfoEntity): inherited fields go through
- * super.writeToParcel(); this test asserts only the field set HistoryInfo
- * keeps post-flatten so it stays green across the refactor and locks
- * the new wire format.
+ * Locks the post-W36-10 wire format. Field set:
+ *   persistent: arcid, title, thumb, rating, simpleLanguage,
+ *               serverProfileId, mode, time
+ *   @Ignore:    simpleTags
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], application = android.app.Application::class)
@@ -25,13 +25,8 @@ class HistoryInfoParcelTest {
     fun parcelRoundTrip_preservesAllFields() {
         val original = HistoryInfo().apply {
             arcid = "hist-1"
-            gid = 100L
             title = "History Test"
-            titleJpn = "履歴"
             thumb = "https://example.com/h.jpg"
-            category = 2
-            posted = "2026-04-01"
-            uploader = "u1"
             rating = 4.0f
             simpleLanguage = "EN"
             serverProfileId = 7L
@@ -47,13 +42,8 @@ class HistoryInfoParcelTest {
             val restored = HistoryInfo.CREATOR.createFromParcel(parcel)
 
             assertEquals(original.arcid, restored.arcid)
-            assertEquals(original.gid, restored.gid)
             assertEquals(original.title, restored.title)
-            assertEquals(original.titleJpn, restored.titleJpn)
             assertEquals(original.thumb, restored.thumb)
-            assertEquals(original.category, restored.category)
-            assertEquals(original.posted, restored.posted)
-            assertEquals(original.uploader, restored.uploader)
             assertEquals(original.rating, restored.rating, 0.001f)
             assertEquals(original.simpleLanguage, restored.simpleLanguage)
             assertEquals(original.serverProfileId, restored.serverProfileId)
@@ -70,10 +60,7 @@ class HistoryInfoParcelTest {
         val original = HistoryInfo().apply {
             arcid = "h-null"
             title = null
-            titleJpn = null
             thumb = null
-            posted = null
-            uploader = null
             simpleLanguage = null
             simpleTags = null
         }
@@ -86,10 +73,7 @@ class HistoryInfoParcelTest {
 
             assertEquals("h-null", restored.arcid)
             assertNull(restored.title)
-            assertNull(restored.titleJpn)
             assertNull(restored.thumb)
-            assertNull(restored.posted)
-            assertNull(restored.uploader)
             assertNull(restored.simpleLanguage)
             assertNull(restored.simpleTags)
         } finally {

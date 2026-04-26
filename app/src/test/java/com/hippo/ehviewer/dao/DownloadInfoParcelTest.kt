@@ -13,10 +13,10 @@ import org.robolectric.annotation.Config
 /**
  * Parcelable round-trip tests for [DownloadInfo].
  *
- * Pre-W36-7 (extends GalleryInfoEntity): the inherited fields go through
- * super.writeToParcel(); this test asserts only the field set DownloadInfo
- * keeps post-flatten, so it stays green across the refactor and locks the
- * new wire format.
+ * Locks the post-W36-10 wire format. Field set:
+ *   persistent: arcid, title, thumb, rating, simpleLanguage,
+ *               serverProfileId, state, legacy, time, label, archiveUri
+ *   @Ignore:    simpleTags, tgList, fileSize
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], application = android.app.Application::class)
@@ -26,13 +26,8 @@ class DownloadInfoParcelTest {
     fun parcelRoundTrip_preservesAllFields() {
         val original = DownloadInfo().apply {
             arcid = "xyz789"
-            gid = 67890L
             title = "Download Test"
-            titleJpn = "ダウンロード"
             thumb = "https://example.com/dl_thumb.jpg"
-            category = 5
-            posted = "2026-03-15"
-            uploader = "uploader2"
             rating = 3.5f
             simpleLanguage = "ZH"
             serverProfileId = 42L
@@ -53,13 +48,8 @@ class DownloadInfoParcelTest {
             val restored = DownloadInfo.CREATOR.createFromParcel(parcel)
 
             assertEquals(original.arcid, restored.arcid)
-            assertEquals(original.gid, restored.gid)
             assertEquals(original.title, restored.title)
-            assertEquals(original.titleJpn, restored.titleJpn)
             assertEquals(original.thumb, restored.thumb)
-            assertEquals(original.category, restored.category)
-            assertEquals(original.posted, restored.posted)
-            assertEquals(original.uploader, restored.uploader)
             assertEquals(original.rating, restored.rating, 0.001f)
             assertEquals(original.simpleLanguage, restored.simpleLanguage)
             assertEquals(original.serverProfileId, restored.serverProfileId)
@@ -82,10 +72,7 @@ class DownloadInfoParcelTest {
         val original = DownloadInfo().apply {
             arcid = "n1"
             title = null
-            titleJpn = null
             thumb = null
-            posted = null
-            uploader = null
             simpleLanguage = null
             label = null
             archiveUri = null
@@ -101,10 +88,7 @@ class DownloadInfoParcelTest {
 
             assertEquals("n1", restored.arcid)
             assertNull(restored.title)
-            assertNull(restored.titleJpn)
             assertNull(restored.thumb)
-            assertNull(restored.posted)
-            assertNull(restored.uploader)
             assertNull(restored.simpleLanguage)
             assertNull(restored.label)
             assertNull(restored.archiveUri)
@@ -126,8 +110,6 @@ class DownloadInfoParcelTest {
             val restored = DownloadInfo.CREATOR.createFromParcel(parcel)
 
             assertEquals("", restored.arcid)
-            assertEquals(0L, restored.gid)
-            assertEquals(0, restored.category)
             assertEquals(0f, restored.rating, 0.001f)
             assertEquals(0, restored.state)
             assertEquals(0, restored.legacy)

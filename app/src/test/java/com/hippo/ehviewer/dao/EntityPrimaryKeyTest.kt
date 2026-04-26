@@ -92,7 +92,6 @@ class EntityPrimaryKeyTest {
         val rows = dao.getAllDownloadInfo()
         assertEquals(3, rows.size)
         assertEquals(setOf("arcid_0", "arcid_1", "arcid_2"), rows.map { it.arcid }.toSet())
-        assertTrue("All rows should share the default gid=0", rows.all { it.gid == 0L })
     }
 
     @Test
