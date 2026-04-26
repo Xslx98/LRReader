@@ -537,16 +537,11 @@ class DownloadsViewModelTest {
 
         val emitted = vm.downloadList.value.firstOrNull { it.arcid == "arc-struct" }
         assertTrue("expected arc-struct in downloadList", emitted != null)
-        // The Room-emitted instance must not be mutated by the tracker. Its
-        // @Ignore fields should remain at their DB-default values (speed
-        // defaults to 0 via primitive-long init; the authoritative 99999L
-        // lives on progressMap only).
-        assertEquals(0L, emitted!!.speed)
-        assertEquals(0, emitted.finished)
-        assertEquals(0, emitted.downloaded)
-        // progressMap has the live values.
+        // Post-W35-3c: progress lives only in progressMap. The Room-emitted
+        // DownloadInfo no longer carries @Ignore progress fields at all.
         assertEquals(99999L, vm.progressMap.value["arc-struct"]?.speed)
         assertEquals(7, vm.progressMap.value["arc-struct"]?.finished)
+        assertEquals(7, vm.progressMap.value["arc-struct"]?.downloaded)
     }
 
     @Test
