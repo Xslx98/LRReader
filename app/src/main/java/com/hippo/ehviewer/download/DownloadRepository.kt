@@ -22,7 +22,6 @@ import android.net.Uri
 import android.os.Looper
 import android.util.Log
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.DownloadLabel
 import com.hippo.ehviewer.mapper.toDownloadInfo
