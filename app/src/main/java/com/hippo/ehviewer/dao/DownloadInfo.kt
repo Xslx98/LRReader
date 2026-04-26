@@ -47,26 +47,11 @@ class DownloadInfo : GalleryInfoEntity {
     @ColumnInfo(name = "ARCHIVE_URI")
     var archiveUri: String? = null
 
-    @JvmField
-    @Ignore
-    var speed: Long = 0
-
-    @JvmField
-    @Ignore
-    var remaining: Long = 0
-
-    @JvmField
-    @Ignore
-    var finished: Int = 0
-
-    @JvmField
-    @Ignore
-    var downloaded: Int = 0
-
-    @JvmField
-    @Ignore
-    var total: Int = 0
-
+    /**
+     * Cached size of the on-disk download directory; filled lazily by
+     * [com.hippo.ehviewer.sync.DownloadListInfosExecutor] when sorting by
+     * size. Not progress data — separate from `DownloadProgressTracker`.
+     */
     @JvmField
     @Ignore
     var fileSize: Long = -1
@@ -154,15 +139,10 @@ class DownloadInfo : GalleryInfoEntity {
     override fun toJson(): JSONObject {
         val jsonObject = super.toJson()
         try {
-            jsonObject.put("finished", finished)
             jsonObject.put("legacy", legacy)
             jsonObject.put("label", label)
-            jsonObject.put("downloaded", downloaded)
-            jsonObject.put("remaining", remaining)
-            jsonObject.put("speed", speed)
             jsonObject.put("state", state)
             jsonObject.put("time", time)
-            jsonObject.put("total", total)
             jsonObject.put("archiveUri", archiveUri)
         } catch (e: JSONException) {
             Log.w(TAG, "Failed to serialize DownloadInfo to JSON", e)
@@ -192,15 +172,13 @@ class DownloadInfo : GalleryInfoEntity {
         @Throws(ClassCastException::class)
         fun downloadInfoFromJson(`object`: JSONObject): DownloadInfo {
             val downloadInfo = galleryInfoFromJson(`object`) as DownloadInfo
-            downloadInfo.finished = `object`.optInt("finished", 0)
+            // Old exports may carry transient progress keys
+            // (finished/downloaded/remaining/speed/total). They are silently
+            // ignored — progress is in-memory only post-W35-3c.
             downloadInfo.legacy = `object`.optInt("legacy", 0)
             downloadInfo.label = `object`.optString("label", null)
-            downloadInfo.downloaded = `object`.optInt("downloaded", 0)
-            downloadInfo.remaining = `object`.optLong("remaining", 0)
-            downloadInfo.speed = `object`.optLong("speed", 0)
             downloadInfo.state = `object`.optInt("state", 0)
             downloadInfo.time = `object`.optLong("time", 0)
-            downloadInfo.total = `object`.optInt("total", 0)
             downloadInfo.archiveUri = `object`.optString("archiveUri", null)
             return downloadInfo
         }

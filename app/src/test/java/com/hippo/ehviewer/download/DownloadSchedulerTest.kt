@@ -297,9 +297,6 @@ class DownloadSchedulerTest {
         assertTrue("Active tasks should be empty after OnFinish", scheduler.activeTasks.isEmpty())
         assertFalse("Active workers should not contain the info", scheduler.activeWorkers.containsKey(info))
         assertEquals("State should be FINISH when legacy == 0", DownloadInfo.STATE_FINISH, info.state)
-        assertEquals(10, info.finished)
-        assertEquals(10, info.downloaded)
-        assertEquals(10, info.total)
         assertEquals(0, info.legacy)
         // W35-3a: tracker entry is cleared after finish (progress no longer live).
         assertNull(
@@ -319,7 +316,6 @@ class DownloadSchedulerTest {
         )
         ShadowLooper.idleMainLooper()
 
-        assertEquals(42, info.total)
         assertEquals(42, progressTracker.snapshot(info.arcid)?.total)
     }
 

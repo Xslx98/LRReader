@@ -575,8 +575,6 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
                 legacy = 0
                 time = System.currentTimeMillis()
                 label = null
-                total = 0
-                finished = 0
                 archiveUri = uri.toString()
             }
         } catch (e: Exception) {
