@@ -53,32 +53,12 @@ class DownloadInfo() : Parcelable {
     var arcid: String = ""
 
     @JvmField
-    @ColumnInfo(name = "GID")
-    var gid: Long = 0
-
-    @JvmField
     @ColumnInfo(name = "TITLE")
     var title: String? = null
 
     @JvmField
-    @ColumnInfo(name = "TITLE_JPN")
-    var titleJpn: String? = null
-
-    @JvmField
     @ColumnInfo(name = "THUMB")
     var thumb: String? = null
-
-    @JvmField
-    @ColumnInfo(name = "CATEGORY")
-    var category: Int = 0
-
-    @JvmField
-    @ColumnInfo(name = "POSTED")
-    var posted: String? = null
-
-    @JvmField
-    @ColumnInfo(name = "UPLOADER")
-    var uploader: String? = null
 
     @JvmField
     @ColumnInfo(name = "RATING")
@@ -145,13 +125,8 @@ class DownloadInfo() : Parcelable {
     @Ignore
     private constructor(`in`: Parcel) : this() {
         arcid = `in`.readString() ?: ""
-        gid = `in`.readLong()
         title = `in`.readString()
-        titleJpn = `in`.readString()
         thumb = `in`.readString()
-        category = `in`.readInt()
-        posted = `in`.readString()
-        uploader = `in`.readString()
         rating = `in`.readFloat()
         simpleLanguage = `in`.readString()
         serverProfileId = `in`.readLong()
@@ -170,13 +145,8 @@ class DownloadInfo() : Parcelable {
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
         dest.writeString(arcid)
-        dest.writeLong(gid)
         dest.writeString(title)
-        dest.writeString(titleJpn)
         dest.writeString(thumb)
-        dest.writeInt(category)
-        dest.writeString(posted)
-        dest.writeString(uploader)
         dest.writeFloat(rating)
         dest.writeString(simpleLanguage)
         dest.writeLong(serverProfileId)
@@ -199,11 +169,7 @@ class DownloadInfo() : Parcelable {
     fun updateInfo(galleryInfo: GalleryInfo) {
         arcid = galleryInfo.arcid
         title = galleryInfo.title
-        titleJpn = galleryInfo.titleJpn
         thumb = galleryInfo.thumb
-        category = galleryInfo.category
-        posted = galleryInfo.posted
-        uploader = galleryInfo.uploader
         rating = galleryInfo.rating
         simpleTags = galleryInfo.simpleTags
         simpleLanguage = galleryInfo.simpleLanguage

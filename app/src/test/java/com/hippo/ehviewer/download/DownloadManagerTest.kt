@@ -1,4 +1,4 @@
-package com.hippo.ehviewer.download
+﻿package com.hippo.ehviewer.download
 
 import android.content.Context
 import androidx.room.Room
@@ -150,14 +150,12 @@ class DownloadManagerTest {
     fun constructor_loadsExistingDownloads() {
         // Insert downloads into DB before constructing a new manager
         val info1 = DownloadInfo().apply {
-            gid = 1001L
             arcid = "token1"
             title = "Gallery One"
             state = DownloadInfo.STATE_NONE
             time = System.currentTimeMillis()
         }
         val info2 = DownloadInfo().apply {
-            gid = 1002L
             arcid = "token2"
             title = "Gallery Two"
             state = DownloadInfo.STATE_FINISH
@@ -226,7 +224,6 @@ class DownloadManagerTest {
     fun startDownload_existingDownload_restartsIt() {
         // Add a download first with STATE_NONE via addDownload
         val gallery = GalleryInfo().apply {
-            gid = 2002L
             arcid = "tok_2002"
             title = "Existing"
         }
@@ -245,7 +242,6 @@ class DownloadManagerTest {
     @Test
     fun deleteDownload_removesFromAllLists() {
         val gallery = GalleryInfo().apply {
-            gid = 2003L
             arcid = "tok_2003"
             title = "To Delete"
         }
@@ -263,7 +259,6 @@ class DownloadManagerTest {
         // Add some downloads in WAIT state
         for (i in 1..3) {
             val gallery = GalleryInfo().apply {
-                gid = (3000 + i).toLong()
                 arcid = "tok_$i"
                 title = "Gallery $i"
             }
@@ -273,7 +268,6 @@ class DownloadManagerTest {
         // Put them into wait state via startDownload
         for (i in 1..3) {
             val gallery = GalleryInfo().apply {
-                gid = (3000 + i).toLong()
                 arcid = "tok_$i"
                 title = "Gallery $i"
             }
@@ -298,7 +292,6 @@ class DownloadManagerTest {
 
         // Added returns the correct state
         val gallery = GalleryInfo().apply {
-            gid = 2005L
             arcid = "tok_2005"
             title = "State Test"
         }
@@ -332,7 +325,6 @@ class DownloadManagerTest {
 
         // Add a download with that label
         val gallery = GalleryInfo().apply {
-            gid = 4001L
             arcid = "tok_4001"
             title = "Labeled"
         }
@@ -357,7 +349,6 @@ class DownloadManagerTest {
 
         // Add a download with that label
         val gallery = GalleryInfo().apply {
-            gid = 4002L
             arcid = "tok_4002"
             title = "Will Move"
         }
@@ -431,7 +422,6 @@ class DownloadManagerTest {
 
         // First add — should be received
         val gallery1 = GalleryInfo().apply {
-            gid = 5002L
             arcid = "tok_5002"
             title = "First"
         }
@@ -443,7 +433,6 @@ class DownloadManagerTest {
 
         // Second add — should NOT be received
         val gallery2 = GalleryInfo().apply {
-            gid = 5003L
             arcid = "tok_5003"
             title = "Second"
         }
@@ -456,7 +445,6 @@ class DownloadManagerTest {
         // Insert a download directly to DB (bypassing manager) so we have
         // guaranteed data to reload from.
         val info = DownloadInfo().apply {
-            gid = 5004L
             arcid = "tok_5004"
             title = "Reload Test"
             state = DownloadInfo.STATE_NONE
@@ -500,7 +488,6 @@ class DownloadManagerTest {
         assertFalse(manager.containDownloadInfo("tok_6001"))
 
         val gallery = GalleryInfo().apply {
-            gid = 6001L
             arcid = "tok_6001"
             title = "Contain Test"
         }
@@ -514,7 +501,6 @@ class DownloadManagerTest {
         assertNull(manager.getDownloadInfo("tok_6002"))
 
         val gallery = GalleryInfo().apply {
-            gid = 6002L
             arcid = "tok_6002"
             title = "Info Test"
         }
@@ -532,7 +518,6 @@ class DownloadManagerTest {
 
         for (i in 1..5) {
             val gallery = GalleryInfo().apply {
-                gid = (6100 + i).toLong()
                 arcid = "tok_$i"
                 title = "Count $i"
             }
@@ -641,7 +626,6 @@ class DownloadManagerTest {
             }
             for (i in 0 until infoCount) {
                 val info = DownloadInfo().apply {
-                    gid = 90000L + i
                     arcid = "race-token-$i"
                     title = "race title $i"
                     label = labelStrings[i % labelCount]
@@ -742,7 +726,6 @@ class DownloadManagerTest {
         val timestamps = listOf(500L, 100L, 900L, 300L, 700L)
         val infos = timestamps.mapIndexed { i, ts ->
             DownloadInfo().apply {
-                gid = (7000 + i).toLong()
                 arcid = "tok_sort_$i"
                 title = "Sort Test $i"
                 state = DownloadInfo.STATE_NONE
@@ -763,8 +746,12 @@ class DownloadManagerTest {
                 allList[i].time >= allList[i + 1].time
             )
         }
-        // Verify exact expected order by gid
-        assertEquals(listOf(7002L, 7004L, 7000L, 7003L, 7001L), allList.map { it.gid })
+        // Verify exact expected order (timestamps 500, 100, 900, 300, 700
+        // → DESC: 900(i=2), 700(i=4), 500(i=0), 300(i=3), 100(i=1))
+        assertEquals(
+            listOf("tok_sort_2", "tok_sort_4", "tok_sort_0", "tok_sort_3", "tok_sort_1"),
+            allList.map { it.arcid }
+        )
     }
 
     @Test
@@ -774,7 +761,6 @@ class DownloadManagerTest {
         val timestamps = listOf(200L, 800L, 400L, 600L)
         val infos = timestamps.mapIndexed { i, ts ->
             DownloadInfo().apply {
-                gid = (7100 + i).toLong()
                 arcid = "tok_lsort_$i"
                 title = "Label Sort $i"
                 label = "SortLabel"
@@ -803,7 +789,6 @@ class DownloadManagerTest {
         // Add items to DestLabel with known timestamps
         val destInfos = listOf(900L, 300L).mapIndexed { i, ts ->
             DownloadInfo().apply {
-                gid = (7200 + i).toLong()
                 arcid = "tok_dest_$i"
                 title = "Dest $i"
                 label = "DestLabel"
@@ -816,7 +801,6 @@ class DownloadManagerTest {
 
         // Add an item to SourceLabel that should land between the two dest items
         val sourceInfo = DownloadInfo().apply {
-            gid = 7210L
             arcid = "tok_src"
             title = "Source Item"
             label = "SourceLabel"
@@ -839,7 +823,7 @@ class DownloadManagerTest {
             )
         }
         // Verify the moved item landed in the middle (time=600 between 900 and 300)
-        assertEquals(7210L, destList[1].gid)
+        assertEquals("tok_src", destList[1].arcid)
     }
 
     @Test
@@ -848,7 +832,6 @@ class DownloadManagerTest {
 
         // Add items to default list with known timestamps
         val defaultGallery = GalleryInfo().apply {
-            gid = 7300L
             arcid = "tok_def"
             title = "Default Item"
         }
@@ -859,7 +842,6 @@ class DownloadManagerTest {
         // Add items to the label that will be deleted
         val labelInfos = listOf(800L, 200L).mapIndexed { i, ts ->
             DownloadInfo().apply {
-                gid = (7310 + i).toLong()
                 arcid = "tok_del_$i"
                 title = "Delete Label Item $i"
                 label = "ToDelete"
@@ -889,7 +871,6 @@ class DownloadManagerTest {
         // Add items with the same timestamp — should not crash or corrupt order
         val infos = (0..4).map { i ->
             DownloadInfo().apply {
-                gid = (7400 + i).toLong()
                 arcid = "tok_eq_$i"
                 title = "Equal Time $i"
                 state = DownloadInfo.STATE_NONE
@@ -902,8 +883,11 @@ class DownloadManagerTest {
         val allList = manager.allDownloadInfoList
         assertEquals(5, allList.size)
         // All timestamps equal — just verify no crash and all items present
-        val gids = allList.map { it.gid }.toSet()
-        assertEquals(setOf(7400L, 7401L, 7402L, 7403L, 7404L), gids)
+        val arcids = allList.map { it.arcid }.toSet()
+        assertEquals(
+            setOf("tok_eq_0", "tok_eq_1", "tok_eq_2", "tok_eq_3", "tok_eq_4"),
+            arcids
+        )
     }
 
     @Test
@@ -915,7 +899,6 @@ class DownloadManagerTest {
         val timestamps = listOf(500L, 900L, 100L, 700L, 300L)
         for ((i, ts) in timestamps.withIndex()) {
             val info = DownloadInfo().apply {
-                gid = (7500 + i).toLong()
                 arcid = "tok_helper_$i"
                 title = "Helper $i"
                 time = ts
