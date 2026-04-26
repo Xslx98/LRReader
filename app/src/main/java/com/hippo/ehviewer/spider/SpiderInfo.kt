@@ -216,7 +216,7 @@ class SpiderInfo {
 
         @JvmStatic
         suspend fun getSpiderInfo(info: GalleryInfo): SpiderInfo? {
-            val mDownloadDir = SpiderDen.getGalleryDownloadDir(info)
+            val mDownloadDir = SpiderDen.getGalleryDownloadDir(info.arcid, info.title, info.gid)
             if (mDownloadDir != null && mDownloadDir.isDirectory) {
                 val file = mDownloadDir.findFile(SpiderQueen.SPIDER_INFO_FILENAME)
                 val spiderInfo = read(file)
