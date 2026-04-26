@@ -597,6 +597,7 @@ class DownloadService : Service(), DownloadListener {
                     mPosted = true
                     handler.postDelayed(this, DELAY)
                 }
+                mLastTime = now
             }
         }
 
@@ -624,6 +625,7 @@ class DownloadService : Service(), DownloadListener {
                     mPosted = true
                     handler.postDelayed(this, DELAY)
                 }
+                mLastTime = now
             }
         }
 
