@@ -486,7 +486,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         viewModel.galleryDetail.value?.progress = localPage1
         viewModel.galleryInfo.value?.progress = localPage1
         info.progress = localPage1
-        mHeaderBinder?.bindReadProgress(info)
+        mHeaderBinder?.bindReadProgress(localPage1, info.pages)
     }
 
     override fun onDestroyView() {
