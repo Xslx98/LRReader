@@ -3,7 +3,6 @@ package com.lanraragi.reader.client.api.data
 import android.os.Parcel
 import android.os.Parcelable
 import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.GalleryTagGroup
 import com.lanraragi.reader.client.api.LRRAuthManager
 
@@ -31,39 +30,6 @@ class LRRArchive() : Parcelable {
     @JvmField @SerialName("progress") var progress: Int = 0
     @JvmField @SerialName("lastreadtime") var lastreadtime: Long = 0
     @JvmField @SerialName("summary") var summary: String? = null
-
-    // ----- Bridge to GalleryInfo -----
-
-    /**
-     * Convert to a persistence-layer [GalleryInfo] (aka [GalleryInfoEntity]).
-     * Used when the caller needs a Room entity (e.g. DB writes, Parcelable IPC).
-     */
-    fun toGalleryInfo(): GalleryInfo {
-        val gi = GalleryInfo()
-        gi.gid = 0L
-        gi.arcid = arcid
-        gi.title = title
-        gi.pages = pagecount
-        gi.progress = progress
-
-        val serverUrl = LRRAuthManager.getServerUrl()
-        gi.thumb = if (serverUrl != null) getThumbnailUrl(serverUrl) else ""
-
-        if (tags.isNotEmpty()) {
-            val parts = tags.split(",")
-            val tagList = parts.map { it.trim() }.filter { it.isNotEmpty() }
-            gi.simpleTags = tagList.toTypedArray()
-            gi.tgList = ArrayList(tagList)
-        }
-
-        gi.category = -1
-        val parsedRating = parseRatingFromTags(tags)
-        gi.rating = parsedRating
-        gi.rated = parsedRating > 0
-        gi.serverProfileId = LRRAuthManager.getActiveProfileId()
-
-        return gi
-    }
 
     /**
      * Convert this LRRArchive into a GalleryDetail for the detail scene.

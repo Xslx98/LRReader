@@ -1,7 +1,6 @@
 package com.hippo.ehviewer.mapper
 
 import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.GalleryTagGroup
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -11,81 +10,17 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Tests for GalleryInfo → Archive and GalleryDetail → ArchiveDetail mapper
- * extension functions in [GalleryInfoMapper].
+ * Tests for [GalleryInfoMapper] — the mapper extensions that bridge
+ * Room Entities to the [Archive] / [ArchiveDetail] domain models.
+ *
+ * Pre-W36-11 this file also covered `GalleryInfo.toArchive()`. That
+ * mapper was removed when GalleryDetail stopped extending
+ * GalleryInfoEntity (no remaining caller); only the
+ * GalleryDetail.toArchiveDetail path stayed live.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class GalleryInfoMapperTest {
-
-    // -------------------------------------------------------------------------
-    // GalleryInfo.toArchive()
-    // -------------------------------------------------------------------------
-
-    @Test
-    fun `toArchive defaults lastreadtime to 0`() {
-        val gi = GalleryInfo()
-        gi.arcid = "abc123"
-        gi.title = "Test"
-        val archive = gi.toArchive()
-        assertEquals(0L, archive.lastreadtime)
-    }
-
-    @Test
-    fun `toArchive preserves explicit lastreadtime`() {
-        val gi = GalleryInfo()
-        gi.arcid = "abc123"
-        gi.title = "Test"
-        val archive = gi.toArchive(lastreadtime = 1700000000L)
-        assertEquals(1700000000L, archive.lastreadtime)
-    }
-
-    @Test
-    fun `toArchive maps basic fields`() {
-        val gi = GalleryInfo()
-        gi.arcid = "id42"
-        gi.title = "My Archive"
-        gi.thumb = "https://example.com/thumb.jpg"
-        gi.rating = 3.5f
-        gi.pages = 100
-        gi.progress = 42
-        gi.serverProfileId = 7L
-
-        val archive = gi.toArchive()
-        assertEquals("id42", archive.arcid)
-        assertEquals("My Archive", archive.title)
-        assertEquals("https://example.com/thumb.jpg", archive.thumbnailUrl)
-        assertEquals(3.5f, archive.rating)
-        assertEquals(100, archive.pagecount)
-        assertEquals(42, archive.progress)
-        assertEquals(7L, archive.serverProfileId)
-    }
-
-    @Test
-    fun `toArchive parses simpleTags into namespace map`() {
-        val gi = GalleryInfo()
-        gi.arcid = "x"
-        gi.simpleTags = arrayOf("artist:someone", "parody:series", "misc_tag")
-
-        val archive = gi.toArchive()
-        assertEquals(listOf("someone"), archive.tags["artist"])
-        assertEquals(listOf("series"), archive.tags["parody"])
-        assertEquals(listOf("misc_tag"), archive.tags["misc"])
-    }
-
-    @Test
-    fun `toArchive handles null simpleTags`() {
-        val gi = GalleryInfo()
-        gi.arcid = "x"
-        gi.simpleTags = null
-
-        val archive = gi.toArchive()
-        assertTrue(archive.tags.isEmpty())
-    }
-
-    // -------------------------------------------------------------------------
-    // GalleryDetail.toArchiveDetail()
-    // -------------------------------------------------------------------------
 
     @Test
     fun `toArchiveDetail converts tag groups`() {
@@ -166,5 +101,32 @@ class GalleryInfoMapperTest {
 
         val detail = gd.toArchiveDetail()
         assertEquals("misc", detail.tagGroups[0].namespace)
+    }
+
+    @Test
+    fun `toArchive on GalleryDetail maps fields and tags`() {
+        val gd = GalleryDetail()
+        gd.arcid = "ga1"
+        gd.title = "Direct Archive"
+        gd.thumb = "https://example.com/g.jpg"
+        gd.pages = 33
+        gd.progress = 7
+        gd.rating = 3.0f
+        gd.serverProfileId = 9L
+
+        val group = GalleryTagGroup()
+        group.groupName = "artist"
+        group.addTag("alice")
+        gd.tags = arrayOf(group)
+
+        val archive = gd.toArchive()
+        assertEquals("ga1", archive.arcid)
+        assertEquals("Direct Archive", archive.title)
+        assertEquals("https://example.com/g.jpg", archive.thumbnailUrl)
+        assertEquals(33, archive.pagecount)
+        assertEquals(7, archive.progress)
+        assertEquals(3.0f, archive.rating)
+        assertEquals(9L, archive.serverProfileId)
+        assertEquals(listOf("alice"), archive.tags["artist"])
     }
 }
