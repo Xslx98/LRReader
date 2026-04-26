@@ -19,12 +19,9 @@ package com.hippo.ehviewer.spider
 import android.text.TextUtils
 import android.util.Log
 import android.util.SparseArray
-import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
-import com.hippo.streampipe.OutputStreamPipe
 import com.hippo.unifile.UniFile
-import com.hippo.util.ExceptionUtils
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.lib.yorozuya.NumberUtils
 import java.io.IOException
@@ -97,34 +94,6 @@ class SpiderInfo {
         pages = newInfo.pages
         gid = newInfo.gid
         arcid = newInfo.arcid
-    }
-
-    @Synchronized
-    fun writeNewSpiderInfoToLocal(spiderDen: SpiderDen, context: android.content.Context?) {
-        val downloadDir = spiderDen.getDownloadDir()
-        if (downloadDir != null) {
-            val file = downloadDir.createFile(SpiderQueen.SPIDER_INFO_FILENAME)
-            try {
-                write(file.openOutputStream())
-            } catch (e: Throwable) {
-                ExceptionUtils.throwIfFatal(e)
-                Log.w(TAG, "Failed to write spider info to download dir", e)
-            }
-            // Write to cache (keyed by arcid for lookup consistency)
-            val cacheKey = arcid ?: gid.toString()
-            val pipe: OutputStreamPipe = ServiceRegistry.dataModule
-                .spiderInfoCache
-                .getOutputStreamPipe(cacheKey)
-            try {
-                pipe.obtain()
-                write(pipe.open())
-            } catch (e: IOException) {
-                Log.w(TAG, "Failed to write spider info to cache", e)
-            } finally {
-                pipe.close()
-                pipe.release()
-            }
-        }
     }
 
     companion object {
