@@ -1,7 +1,6 @@
 package com.hippo.ehviewer.client.data
 
 import android.os.Parcel
-import com.hippo.ehviewer.dao.DownloadInfo
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -13,10 +12,13 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Parcelable round-trip tests for [GalleryInfo] and [DownloadInfo].
+ * Parcelable round-trip tests for [GalleryInfo].
  *
  * Uses Robolectric to provide the Android Parcel implementation.
  * Verifies that all fields survive a write-then-read cycle.
+ *
+ * DownloadInfo round-trip lives in `dao/DownloadInfoParcelTest.kt` since
+ * W36-7 (Entity flatten — no longer extends GalleryInfoEntity).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], application = android.app.Application::class)
@@ -198,103 +200,4 @@ class GalleryInfoParcelTest {
         assertEquals(5, array.size)
     }
 
-    // ---- DownloadInfo Parcel round-trip ----
-
-    @Test
-    fun downloadInfo_parcelRoundTrip_preservesParentAndChildFields() {
-        val original = DownloadInfo().apply {
-            // GalleryInfo parent fields
-            gid = 67890L
-            arcid = "xyz789"
-            title = "Download Test"
-            titleJpn = "\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9"
-            thumb = "https://example.com/dl_thumb.jpg"
-            category = 5
-            posted = "2026-03-15"
-            uploader = "uploader2"
-            rating = 3.5f
-            rated = false
-            simpleLanguage = "ZH"
-            simpleTags = arrayOf("lang:chinese", "artist:someone")
-            favoriteSlot = 1
-            favoriteName = "My Favs"
-            serverProfileId = 42L
-            // DownloadInfo child fields
-            state = DownloadInfo.STATE_DOWNLOAD
-            legacy = 1
-            time = 1672531200000L
-            label = "my-label"
-            archiveUri = "content://downloads/123"
-        }
-
-        val parcel = Parcel.obtain()
-        try {
-            original.writeToParcel(parcel, 0)
-            parcel.setDataPosition(0)
-            val restored = DownloadInfo.CREATOR.createFromParcel(parcel)
-
-            // Parent fields
-            assertEquals(original.gid, restored.gid)
-            assertEquals(original.arcid, restored.arcid)
-            assertEquals(original.title, restored.title)
-            assertEquals(original.titleJpn, restored.titleJpn)
-            assertEquals(original.thumb, restored.thumb)
-            assertEquals(original.category, restored.category)
-            assertEquals(original.posted, restored.posted)
-            assertEquals(original.uploader, restored.uploader)
-            assertEquals(original.rating, restored.rating, 0.001f)
-            assertEquals(original.rated, restored.rated)
-            assertEquals(original.simpleLanguage, restored.simpleLanguage)
-            assertArrayEquals(original.simpleTags, restored.simpleTags)
-            assertEquals(original.favoriteSlot, restored.favoriteSlot)
-            assertEquals(original.favoriteName, restored.favoriteName)
-            assertEquals(original.serverProfileId, restored.serverProfileId)
-            // Child fields
-            assertEquals(original.state, restored.state)
-            assertEquals(original.legacy, restored.legacy)
-            assertEquals(original.time, restored.time)
-            assertEquals(original.label, restored.label)
-            assertEquals(original.archiveUri, restored.archiveUri)
-        } finally {
-            parcel.recycle()
-        }
-    }
-
-    @Test
-    fun downloadInfo_parcelRoundTrip_withNullChildFields() {
-        val original = DownloadInfo().apply {
-            gid = 1L
-            state = DownloadInfo.STATE_NONE
-            legacy = 0
-            time = 0L
-            label = null
-            archiveUri = null
-        }
-
-        val parcel = Parcel.obtain()
-        try {
-            original.writeToParcel(parcel, 0)
-            parcel.setDataPosition(0)
-            val restored = DownloadInfo.CREATOR.createFromParcel(parcel)
-
-            assertEquals(DownloadInfo.STATE_NONE, restored.state)
-            assertEquals(0, restored.legacy)
-            assertEquals(0L, restored.time)
-            assertNull(restored.label)
-            assertNull(restored.archiveUri)
-        } finally {
-            parcel.recycle()
-        }
-    }
-
-    @Test
-    fun downloadInfo_describeContents_returnsZero() {
-        assertEquals(0, DownloadInfo().describeContents())
-    }
-
-    @Test
-    fun downloadInfo_creatorNewArray_returnsCorrectSize() {
-        val array = DownloadInfo.CREATOR.newArray(3)
-        assertEquals(3, array.size)
-    }
 }
