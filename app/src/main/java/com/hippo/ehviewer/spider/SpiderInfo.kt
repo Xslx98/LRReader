@@ -19,8 +19,9 @@ package com.hippo.ehviewer.spider
 import android.text.TextUtils
 import android.util.Log
 import android.util.SparseArray
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.unifile.UniFile
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.lib.yorozuya.NumberUtils
@@ -214,17 +215,27 @@ class SpiderInfo {
             }
         }
 
+        /**
+         * Read the persisted SpiderInfo for [arcid] from its download
+         * directory. Returns null if the directory has no DB-tracked
+         * dirname mapping, the dir doesn't exist on disk, the .ehviewer
+         * file is missing/unreadable, or the parsed arcid doesn't match.
+         *
+         * Unlike the previous implementation, this does NOT call into
+         * [SpiderDen.getGalleryDownloadDir] — that has a side effect of
+         * creating a new dirname mapping when none exists, which is
+         * inappropriate for a read-only lookup.
+         */
         @JvmStatic
-        suspend fun getSpiderInfo(info: GalleryInfo): SpiderInfo? {
-            val mDownloadDir = SpiderDen.getGalleryDownloadDir(info.arcid, info.title, info.gid)
-            if (mDownloadDir != null && mDownloadDir.isDirectory) {
-                val file = mDownloadDir.findFile(SpiderQueen.SPIDER_INFO_FILENAME)
-                val spiderInfo = read(file)
-                if (spiderInfo != null && spiderInfo.arcid == info.arcid) {
-                    return spiderInfo
-                }
-            }
-            return null
+        suspend fun getSpiderInfo(arcid: String): SpiderInfo? {
+            val baseDir = DownloadSettings.getDownloadLocation() ?: return null
+            val dirname = ServiceRegistry.dataModule.downloadDbRepository
+                .getDownloadDirname(arcid) ?: return null
+            val dir = baseDir.subFile(dirname) ?: return null
+            if (!dir.isDirectory) return null
+            val file = dir.findFile(SpiderQueen.SPIDER_INFO_FILENAME) ?: return null
+            val spiderInfo = read(file) ?: return null
+            return if (spiderInfo.arcid == arcid) spiderInfo else null
         }
 
         @JvmStatic

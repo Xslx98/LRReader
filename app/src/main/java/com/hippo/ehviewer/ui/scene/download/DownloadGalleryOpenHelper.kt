@@ -157,7 +157,7 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
             callback.viewLifecycleOwner.lifecycleScope.launch {
                 try {
                     val spiderInfo = withContext(Dispatchers.IO) {
-                        SpiderInfo.getSpiderInfo(info)
+                        SpiderInfo.getSpiderInfo(arcid)
                     }
                     if (spiderInfo != null) {
                         callback.viewModel.putSpiderInfo(arcid, spiderInfo)
