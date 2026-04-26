@@ -15,8 +15,6 @@ import com.google.android.material.chip.ChipGroup
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
 import com.hippo.ehviewer.client.LRRUtils
-import com.hippo.ehviewer.mapper.toGalleryInfo
-
 import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadManager

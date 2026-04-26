@@ -1,7 +1,6 @@
 package com.hippo.ehviewer.mapper
 
 import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.HistoryInfo
 
@@ -10,8 +9,8 @@ import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.domain.TagGroup
 
 /**
- * Bridge functions between the [Archive] domain model and the legacy
- * [GalleryInfo] persistence layer.
+ * Bridge functions between the [Archive] domain model and the Room
+ * Entities (DownloadInfo / HistoryInfo / GalleryDetail).
  */
 
 /**
@@ -52,49 +51,6 @@ fun Archive.toHistoryInfo(): HistoryInfo {
     hi.simpleTags = flatTags.toTypedArray()
     hi.serverProfileId = serverProfileId
     return hi
-}
-
-/**
- * Bridge: convert an [Archive] domain model to a persistence-layer [GalleryInfo].
- * Used for navigation (Parcelable IPC to detail/reader scenes) and download operations
- * that still consume GalleryInfo/GalleryInfoEntity.
- */
-fun Archive.toGalleryInfo(): GalleryInfo {
-    val gi = GalleryInfo()
-    gi.gid = 0L
-    gi.arcid = arcid
-    gi.title = title
-    gi.thumb = thumbnailUrl
-    gi.rating = rating
-    gi.pages = pagecount
-    gi.progress = progress
-    gi.simpleTags = flatTags.toTypedArray()
-    gi.tgList = ArrayList(flatTags)
-    gi.category = -1
-    gi.serverProfileId = serverProfileId
-    return gi
-}
-
-/**
- * Convert a [GalleryInfo] to an [Archive] domain model.
- * Used when the adapter/UI layer needs Archive for display.
- */
-fun GalleryInfo.toArchive(lastreadtime: Long = 0L): Archive {
-    return Archive(
-        arcid = this.arcid,
-        title = title ?: "",
-        tags = simpleTagsToTagsMap(simpleTags),
-        pagecount = pages,
-        progress = progress,
-        extension = "",
-        filename = "",
-        thumbnailUrl = thumb ?: "",
-        rating = rating,
-        isnew = false,
-        lastreadtime = lastreadtime,
-        summary = null,
-        serverProfileId = serverProfileId,
-    )
 }
 
 /**

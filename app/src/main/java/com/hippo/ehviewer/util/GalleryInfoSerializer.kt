@@ -1,100 +1,36 @@
 package com.hippo.ehviewer.util
 
-import android.util.Log
-import com.hippo.ehviewer.client.data.GalleryInfoEntity
 import com.hippo.ehviewer.dao.DownloadInfo
-import org.json.JSONObject
-
-private const val TAG = "GalleryInfoSerializer"
+import com.lanraragi.reader.domain.Archive
 
 /**
- * CSV serialization for [GalleryInfoEntity].
+ * CSV serialization for the download list import/export feature.
  *
- * Produces one CSV line (terminated with `\n`) whose columns match the
- * [galleryInfoFromCSV] parser.
+ * The on-disk format is a 20-column line per archive, frozen for
+ * backward compatibility with users' existing CSV exports. Most
+ * columns are EH-era ceremony that LRR never populates; only the
+ * columns the importer actually consumes carry real data:
+ *
+ *   index  column           role
+ *   ─────  ───────────────  ─────────────────────────────────────
+ *      1  arcid             primary key (LRR SHA-1)
+ *      2  title             display title
+ *      4  thumb             thumbnail URL
+ *      8  rating            float, 0..5
+ *     10  simpleLanguage    EN / JA / ZH / …
+ *     11  simpleTags        bracketed Array.contentToString() form
+ *
+ * Other columns are written as fixed defaults on export and read
+ * but discarded on import (legacy gid, titleJpn, category, posted,
+ * uploader, rated, thumbWidth/Height, span*, favoriteSlot/Name,
+ * pages). Slimming the format is a future task once no v1.x APK
+ * remains in the wild.
  */
-fun GalleryInfoEntity.toCSV(): String {
-    return gid.toString() + "," +
-        arcid + "," +
-        title + "," +
-        titleJpn + "," +
-        thumb + "," +
-        category + "," +
-        posted + "," +
-        uploader + "," +
-        rating + "," +
-        rated + "," +
-        simpleLanguage + "," +
-        simpleTags.contentToString() + "," +
-        thumbWidth + "," +
-        thumbHeight + "," +
-        spanSize + "," +
-        spanIndex + "," +
-        spanGroupIndex + "," +
-        favoriteSlot + "," +
-        favoriteName + "," +
-        pages + "\n"
-}
 
 /**
- * Parses a single CSV line (produced by [toCSV]) back into a
- * [GalleryInfoEntity]. Returns `null` when the line has fewer than 20
- * columns or contains unparseable numbers.
- */
-fun galleryInfoFromCSV(csv: String): GalleryInfoEntity? {
-    val values = csv.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-    if (values.size < 20) {
-        return null
-    }
-    val gi = GalleryInfoEntity()
-    try {
-        gi.gid = values[0].toLong()
-        gi.arcid = values[1]
-        gi.title = values[2]
-        gi.titleJpn = values[3]
-        gi.thumb = values[4]
-        gi.category = values[5].toInt()
-        gi.posted = values[6]
-        gi.uploader = values[7]
-        gi.rating = values[8].toFloat()
-        gi.rated = values[9].toBoolean()
-        gi.simpleLanguage = values[10]
-        gi.simpleTags = values[11].substring(1, values[11].length - 1).split(", ".toRegex())
-            .dropLastWhile { it.isEmpty() }.toTypedArray()
-        gi.thumbWidth = values[12].toInt()
-        gi.thumbHeight = values[13].toInt()
-        gi.spanSize = values[14].toInt()
-        gi.spanIndex = values[15].toInt()
-        gi.spanGroupIndex = values[16].toInt()
-        gi.favoriteSlot = values[17].toInt()
-        gi.favoriteName = values[18]
-        gi.pages = values[19].trim().toInt()
-    } catch (e: NumberFormatException) {
-        return null
-    }
-    return gi
-}
-
-/**
- * CSV serialization for [DownloadInfo].
- *
- * Emits the same 20-column wire format as [GalleryInfoEntity.toCSV] for
- * backward compatibility with users' existing CSV exports (read by
- * [galleryInfoFromCSV]). The flattened DownloadInfo no longer carries
- * the EH-era columns (gid / titleJpn / category / posted / uploader)
- * since W36-10 dropped them from the schema; this serializer fills them
- * with stable defaults so the column count stays at 20 and old CSVs
- * import unchanged via the existing parser.
- *
- * Default fillers:
- *   - gid → 0
- *   - titleJpn / posted / uploader / favoriteName → null
- *   - category / thumbWidth / thumbHeight / spanSize / spanIndex /
- *     spanGroupIndex / pages → 0
- *   - rated → false
- *   - favoriteSlot → -2
- *
- * Format slimming will happen when GalleryInfoEntity retires (W36-11+).
+ * Emit a single archive row as a 20-column CSV line. Wire format
+ * matches the parser in [archiveFromCsvLine] and the historical
+ * GalleryInfoEntity.toCSV that this replaces.
  */
 fun DownloadInfo.toCSV(): String {
     return "0" + "," +                   // gid (dropped W36-10)
@@ -116,53 +52,64 @@ fun DownloadInfo.toCSV(): String {
 }
 
 /**
- * Deserializes a [GalleryInfoEntity] from a [JSONObject] previously
- * produced by [GalleryInfoEntity.toJson].
+ * Parse a single CSV line (produced by [DownloadInfo.toCSV] now or
+ * by the historical GalleryInfoEntity.toCSV) into an [Archive]
+ * domain object. Returns `null` when the line has fewer than 20
+ * columns or contains unparseable numbers.
+ *
+ * Only fields the importer actually consumes (arcid / title / thumb /
+ * rating / simpleLanguage / simpleTags) are extracted; the dead
+ * legacy columns are read past but discarded.
  */
-fun galleryInfoFromJson(obj: JSONObject): GalleryInfoEntity {
-    val galleryInfo = GalleryInfoEntity()
-    galleryInfo.posted = obj.optString("posted", null)
-    galleryInfo.category = obj.optInt("category", 0)
-    galleryInfo.favoriteName = obj.optString("favoriteName", null)
-    galleryInfo.favoriteSlot = obj.optInt("favoriteSlot", 0)
-    galleryInfo.gid = obj.optLong("gid", 0)
-    galleryInfo.pages = obj.optInt("pages", 0)
-    galleryInfo.rated = obj.optBoolean("rated", false)
-    galleryInfo.rating = obj.optDouble("rating", 0.0).toFloat()
-    galleryInfo.simpleLanguage = obj.optString("simpleLanguage", null)
-    val simpleTagsArr = obj.optJSONArray("simpleTags")
-    if (simpleTagsArr != null) {
-        try {
-            val tags = Array(simpleTagsArr.length()) { i ->
-                simpleTagsArr.getString(i)
-            }
-            galleryInfo.simpleTags = tags
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to deserialize simpleTags from JSON", e)
-        }
+fun archiveFromCsvLine(csv: String): Archive? {
+    val values = csv.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+    if (values.size < 20) {
+        return null
     }
-    galleryInfo.spanGroupIndex = obj.optInt("spanGroupIndex", 0)
-    galleryInfo.spanIndex = obj.optInt("spanIndex", 0)
-    galleryInfo.spanSize = obj.optInt("spanSize", 0)
-    val tgArray = obj.optJSONArray("tgList")
-    if (tgArray != null) {
-        try {
-            val list = ArrayList<String>()
-            for (i in 0 until tgArray.length()) {
-                list.add(tgArray.getString(i))
-            }
-            galleryInfo.tgList = list
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to deserialize tgList from JSON", e)
+    return try {
+        val arcid = values[1]
+        val title = values[2]
+        val thumb = values[4]
+        val rating = values[8].toFloat()
+        // values[10] is simpleLanguage — not exposed on Archive (language is
+        // derived from tags at display time), so just read past it.
+        val tagsCell = values[11]
+        // simpleTags came from Array.contentToString(): "[a, b, c]". Strip
+        // the surrounding brackets and split on ", " so each element ends
+        // up as a `namespace:value` (or bare) token.
+        val flatTags = if (tagsCell.length >= 2 && tagsCell.startsWith("[") && tagsCell.endsWith("]")) {
+            tagsCell.substring(1, tagsCell.length - 1)
+                .split(", ".toRegex())
+                .filter { it.isNotEmpty() }
+        } else {
+            emptyList()
         }
+        val tagsMap = LinkedHashMap<String, MutableList<String>>()
+        for (tag in flatTags) {
+            val colon = tag.indexOf(':')
+            if (colon > 0) {
+                tagsMap.getOrPut(tag.substring(0, colon).trim()) { mutableListOf() }
+                    .add(tag.substring(colon + 1).trim())
+            } else {
+                tagsMap.getOrPut("misc") { mutableListOf() }.add(tag)
+            }
+        }
+        Archive(
+            arcid = arcid,
+            title = title,
+            tags = tagsMap,
+            pagecount = 0,
+            progress = 0,
+            extension = "",
+            filename = "",
+            thumbnailUrl = thumb,
+            rating = rating,
+            isnew = false,
+            lastreadtime = 0L,
+            summary = null,
+            serverProfileId = 0L,
+        )
+    } catch (e: NumberFormatException) {
+        null
     }
-    galleryInfo.thumb = obj.optString("thumb", null)
-    galleryInfo.thumbHeight = obj.optInt("thumbHeight", 0)
-    galleryInfo.thumbWidth = obj.optInt("thumbWidth", 0)
-    galleryInfo.title = obj.optString("title", null)
-    galleryInfo.titleJpn = obj.optString("titleJpn", null)
-    galleryInfo.arcid = obj.optString("token", null)
-    galleryInfo.uploader = obj.optString("uploader", null)
-    galleryInfo.serverProfileId = obj.optLong("serverProfileId", 0)
-    return galleryInfo
 }
