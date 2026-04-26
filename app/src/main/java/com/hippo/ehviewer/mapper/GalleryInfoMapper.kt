@@ -14,6 +14,28 @@ import com.lanraragi.reader.domain.TagGroup
  */
 
 /**
+ * Bridge: convert an [Archive] domain model to a fresh [DownloadInfo]
+ * Entity (DOWNLOADS table). Sets the persistent + display fields from
+ * Archive; download-specific fields (state, label, time, archiveUri,
+ * legacy) keep their default values and must be set by the caller as
+ * needed (e.g., DownloadManager.startDownload sets state=WAIT, time=now).
+ *
+ * EH-era fields (titleJpn / category / posted / uploader / gid) are
+ * left at their defaults — LRR never populates them and W36-7 will
+ * drop them from the schema entirely.
+ */
+fun Archive.toDownloadInfo(): DownloadInfo {
+    val di = DownloadInfo()
+    di.arcid = arcid
+    di.title = title
+    di.thumb = thumbnailUrl
+    di.rating = rating
+    di.simpleTags = flatTags.toTypedArray()
+    di.serverProfileId = serverProfileId
+    return di
+}
+
+/**
  * Bridge: convert an [Archive] domain model to a persistence-layer [GalleryInfo].
  * Used for navigation (Parcelable IPC to detail/reader scenes) and download operations
  * that still consume GalleryInfo/GalleryInfoEntity.
