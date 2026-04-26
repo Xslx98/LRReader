@@ -36,7 +36,6 @@ import androidx.core.app.NotificationCompat
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.util.ReadableTime
@@ -371,7 +370,7 @@ class DownloadService : Service(), DownloadListener {
         )
 
         val dlBuilder = mDownloadingBuilder ?: return
-        dlBuilder.setContentTitle(LRRUtils.getSuitableTitle(info))
+        dlBuilder.setContentTitle(info.title)
             .setContentText(null)
             .setContentInfo(null)
             .setProgress(0, 0, true)
@@ -405,7 +404,7 @@ class DownloadService : Service(), DownloadListener {
         val total = snap?.total ?: -1
         val finished = snap?.finished ?: -1
         val dlBuilder = mDownloadingBuilder ?: return
-        dlBuilder.setContentTitle(LRRUtils.getSuitableTitle(info))
+        dlBuilder.setContentTitle(info.title)
             .setContentText(text)
             .setContentInfo(if (total == -1 || finished == -1) null else "$finished/$total")
             .setProgress(total, finished, false)
@@ -437,7 +436,7 @@ class DownloadService : Service(), DownloadListener {
         val index = sItemStateArray.indexOfKey(gid)
         if (index < 0) { // Not contain
             sItemStateArray.put(gid, finish)
-            sItemTitleArray.put(gid, LRRUtils.getSuitableTitle(info))
+            sItemTitleArray.put(gid, info.title)
             sDownloadedCount++
             if (finish) {
                 sFinishedCount++
@@ -447,7 +446,7 @@ class DownloadService : Service(), DownloadListener {
         } else { // Contain
             val oldFinish = sItemStateArray.valueAt(index)
             sItemStateArray.put(gid, finish)
-            sItemTitleArray.put(gid, LRRUtils.getSuitableTitle(info))
+            sItemTitleArray.put(gid, info.title)
             if (oldFinish && !finish) {
                 sFinishedCount--
                 sFailedCount++

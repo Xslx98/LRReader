@@ -302,7 +302,7 @@ class HistoryScene : ToolbarScene(),
             context.getString(R.string.lrr_menu_categories),
         )
         AlertDialog.Builder(context)
-            .setTitle(LRRUtils.getSuitableTitle(gi))
+            .setTitle(gi.title)
             .setItems(items) { _, which ->
                 when (which) {
                     0 -> CommonOperations.startDownload(activity, gi, false)

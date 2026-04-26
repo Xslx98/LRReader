@@ -22,7 +22,6 @@ import android.webkit.MimeTypeMap
 import com.hippo.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
-import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.settings.DownloadSettings
@@ -319,7 +318,7 @@ class SpiderDen(galleryInfo: GalleryInfo) {
 
             // Create it — use arcid as prefix for unique directory names
             if (dirname == null) {
-                dirname = FileUtils.sanitizeFilename("$arcid-${LRRUtils.getSuitableTitle(galleryInfo)}")
+                dirname = FileUtils.sanitizeFilename("$arcid-${galleryInfo.title}")
                 downloadDbRepo.putDownloadDirname(arcid, dirname)
             }
 
