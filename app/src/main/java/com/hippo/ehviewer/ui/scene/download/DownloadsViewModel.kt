@@ -10,7 +10,6 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.callBack.DownloadSearchCallback
 import com.hippo.ehviewer.client.LRRUtils
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.util.FileUtils
 import kotlinx.coroutines.Dispatchers
