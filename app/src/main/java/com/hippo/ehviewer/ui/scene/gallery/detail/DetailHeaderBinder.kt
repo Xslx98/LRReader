@@ -14,7 +14,6 @@ import androidx.lifecycle.lifecycleScope
 import com.hippo.android.resource.AttrResources
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
-import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.GalleryInfo
 
@@ -112,7 +111,7 @@ internal class DetailHeaderBinder(
             action == GalleryDetailScene.ACTION_DOWNLOAD_GALLERY_INFO
         ) {
             thumb.load(LRRCacheKeyFactory.getThumbKey(galleryInfo.arcid), galleryInfo.thumb)
-            title.text = LRRUtils.getSuitableTitle(galleryInfo)
+            title.text = galleryInfo.title
             uploader.text = galleryInfo.uploader
         }
     }
@@ -136,7 +135,7 @@ internal class DetailHeaderBinder(
             }
         }
 
-        title.text = LRRUtils.getSuitableTitle(gd)
+        title.text = gd.title
         uploader.text = gd.uploader
 
         val info = galleryInfo ?: gd
