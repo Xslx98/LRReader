@@ -138,7 +138,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
                 when (which) {
                     0 -> { // Read
                         ServiceRegistry.coroutineModule.ioScope.launch {
-                            val intent = GalleryOpenHelper.buildReadIntent(activity, gi.toGalleryInfo())
+                            val intent = GalleryOpenHelper.buildReadIntent(activity, gi)
                             withContext(Dispatchers.Main) {
                                 activity.startActivity(intent)
                             }

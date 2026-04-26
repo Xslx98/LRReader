@@ -129,12 +129,12 @@ internal class DetailActionHandler(
                 onDownloadClick(context, activity)
             }
             v.id == R.id.read -> {
-                val galleryInfo: GalleryInfo? = viewModel.galleryInfo.value ?: viewModel.galleryDetail.value
-                if (galleryInfo != null) {
+                val archive = viewModel.getEffectiveArchive()
+                if (archive != null) {
                     lifecycleOwner.lifecycleScope.launch {
                         try {
                             val intent = withContext(Dispatchers.IO) {
-                                GalleryOpenHelper.buildReadIntent(activity, galleryInfo)
+                                GalleryOpenHelper.buildReadIntent(activity, archive)
                             }
                             scene.startActivity(intent)
                         } catch (e: Exception) {
