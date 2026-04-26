@@ -6,7 +6,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.mapper.toArchive
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.dao.AppDatabase
@@ -34,6 +33,7 @@ import org.robolectric.annotation.Config
  * into [EhDB] via reflection to avoid the AppDatabase singleton cache and
  * the Settings dependency in [EhDB.initialize].
  */
+
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], application = android.app.Application::class)
 class DownloadManagerTest {
@@ -203,7 +203,7 @@ class DownloadManagerTest {
             }
         })
 
-        val gallery = GalleryInfo().apply {
+        val gallery = DownloadInfo().apply {
             arcid = "tok_2001"
             title = "Test Download"
         }
@@ -223,7 +223,7 @@ class DownloadManagerTest {
     @Test
     fun startDownload_existingDownload_restartsIt() {
         // Add a download first with STATE_NONE via addDownload
-        val gallery = GalleryInfo().apply {
+        val gallery = DownloadInfo().apply {
             arcid = "tok_2002"
             title = "Existing"
         }
@@ -241,7 +241,7 @@ class DownloadManagerTest {
 
     @Test
     fun deleteDownload_removesFromAllLists() {
-        val gallery = GalleryInfo().apply {
+        val gallery = DownloadInfo().apply {
             arcid = "tok_2003"
             title = "To Delete"
         }
@@ -258,7 +258,7 @@ class DownloadManagerTest {
     fun stopAllDownload_stopsAllActive() {
         // Add some downloads in WAIT state
         for (i in 1..3) {
-            val gallery = GalleryInfo().apply {
+            val gallery = DownloadInfo().apply {
                 arcid = "tok_$i"
                 title = "Gallery $i"
             }
@@ -267,7 +267,7 @@ class DownloadManagerTest {
 
         // Put them into wait state via startDownload
         for (i in 1..3) {
-            val gallery = GalleryInfo().apply {
+            val gallery = DownloadInfo().apply {
                 arcid = "tok_$i"
                 title = "Gallery $i"
             }
@@ -291,7 +291,7 @@ class DownloadManagerTest {
         assertEquals(DownloadInfo.STATE_INVALID, manager.getDownloadState("nonexistent"))
 
         // Added returns the correct state
-        val gallery = GalleryInfo().apply {
+        val gallery = DownloadInfo().apply {
             arcid = "tok_2005"
             title = "State Test"
         }
@@ -324,7 +324,7 @@ class DownloadManagerTest {
         manager.addLabel("OldName")
 
         // Add a download with that label
-        val gallery = GalleryInfo().apply {
+        val gallery = DownloadInfo().apply {
             arcid = "tok_4001"
             title = "Labeled"
         }
@@ -348,7 +348,7 @@ class DownloadManagerTest {
         manager.addLabel("ToRemove")
 
         // Add a download with that label
-        val gallery = GalleryInfo().apply {
+        val gallery = DownloadInfo().apply {
             arcid = "tok_4002"
             title = "Will Move"
         }
@@ -399,7 +399,7 @@ class DownloadManagerTest {
         }
         manager.addDownloadInfoListener(listener)
 
-        val gallery = GalleryInfo().apply {
+        val gallery = DownloadInfo().apply {
             arcid = "tok_5001"
             title = "Listener Test"
         }
@@ -421,7 +421,7 @@ class DownloadManagerTest {
         manager.addDownloadInfoListener(listener)
 
         // First add — should be received
-        val gallery1 = GalleryInfo().apply {
+        val gallery1 = DownloadInfo().apply {
             arcid = "tok_5002"
             title = "First"
         }
@@ -432,7 +432,7 @@ class DownloadManagerTest {
         manager.removeDownloadInfoListener(listener)
 
         // Second add — should NOT be received
-        val gallery2 = GalleryInfo().apply {
+        val gallery2 = DownloadInfo().apply {
             arcid = "tok_5003"
             title = "Second"
         }
@@ -487,7 +487,7 @@ class DownloadManagerTest {
     fun containDownloadInfo_returnsTrueForExisting() {
         assertFalse(manager.containDownloadInfo("tok_6001"))
 
-        val gallery = GalleryInfo().apply {
+        val gallery = DownloadInfo().apply {
             arcid = "tok_6001"
             title = "Contain Test"
         }
@@ -500,7 +500,7 @@ class DownloadManagerTest {
     fun getDownloadInfo_returnsCorrectInfo() {
         assertNull(manager.getDownloadInfo("tok_6002"))
 
-        val gallery = GalleryInfo().apply {
+        val gallery = DownloadInfo().apply {
             arcid = "tok_6002"
             title = "Info Test"
         }
@@ -517,7 +517,7 @@ class DownloadManagerTest {
         assertEquals(0, manager.allDownloadInfoList.size)
 
         for (i in 1..5) {
-            val gallery = GalleryInfo().apply {
+            val gallery = DownloadInfo().apply {
                 arcid = "tok_$i"
                 title = "Count $i"
             }
@@ -831,7 +831,7 @@ class DownloadManagerTest {
         manager.addLabel("ToDelete")
 
         // Add items to default list with known timestamps
-        val defaultGallery = GalleryInfo().apply {
+        val defaultGallery = DownloadInfo().apply {
             arcid = "tok_def"
             title = "Default Item"
         }
