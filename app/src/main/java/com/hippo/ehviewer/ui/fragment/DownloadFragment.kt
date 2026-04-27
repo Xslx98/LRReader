@@ -156,10 +156,8 @@ class DownloadFragment : PreferenceFragmentCompat(),
             file.openOutputStream().use { os ->
                 os.write(DownloadManager.DOWNLOAD_INFO_HEADER.toByteArray(StandardCharsets.UTF_8))
                 for (gi in list) {
-                    // gi: DownloadInfo → resolves to DownloadInfo.toCSV() in
-                    // GalleryInfoSerializer. Stable 20-column wire format
-                    // shared with the parent GalleryInfoEntity.toCSV() so old
-                    // CSV files import via galleryInfoFromCSV() unchanged.
+                    // 20-column wire format defined in EntitySerializer; kept stable so
+                    // CSV files exported by older versions still import via archiveFromCsvLine().
                     os.write(gi.toCSV().toByteArray(StandardCharsets.UTF_8))
                 }
             }
