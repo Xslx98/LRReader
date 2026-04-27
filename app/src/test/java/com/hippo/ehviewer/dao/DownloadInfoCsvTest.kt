@@ -1,21 +1,17 @@
 package com.hippo.ehviewer.dao
 
-import com.hippo.ehviewer.client.data.GalleryInfoEntity
-import com.hippo.ehviewer.util.galleryInfoFromCSV
+import com.hippo.ehviewer.util.archiveFromCsvLine
 import com.hippo.ehviewer.util.toCSV
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 /**
- * Validates that DownloadInfo.toCSV() produces the same 20-column wire
- * format that galleryInfoFromCSV() can parse back into a GalleryInfoEntity.
+ * Validates that [DownloadInfo.toCSV] produces a 20-column line that
+ * [archiveFromCsvLine] parses back into the right Archive shape.
  *
  * Guards the user-facing download list import/export feature in
  * DownloadFragment.exportDownloadItems / executeImportDownload.
- *
- * The wire format must remain stable across W36-7 — old CSV files
- * exported by v1.12.0 (pre-flatten) MUST import on post-flatten APK.
  *
  * Note: legacy format does NOT escape commas inside `simpleTags`
  * (`Array.contentToString()` emits `[a, b]` with `, ` separator), so
@@ -42,32 +38,30 @@ class DownloadInfoCsvTest {
         val csv = di.toCSV()
         assertEquals(20, csv.trimEnd('\n').split(",").size)
 
-        val parsed: GalleryInfoEntity? = galleryInfoFromCSV(csv.trimEnd('\n'))
+        val parsed = archiveFromCsvLine(csv.trimEnd('\n'))
         assertNotNull(parsed)
         assertEquals("csv-arc-1", parsed!!.arcid)
         assertEquals("CSV Test", parsed.title)
-        assertEquals("https://example.com/t.jpg", parsed.thumb)
+        assertEquals("https://example.com/t.jpg", parsed.thumbnailUrl)
         assertEquals(4.5f, parsed.rating, 0.001f)
-        assertEquals("EN", parsed.simpleLanguage)
+        // simpleLanguage is read past but not exposed on Archive — verify
+        // tag parsing instead, since simpleTags survives.
+        assertEquals(listOf("foo"), parsed.tags["artist"])
     }
 
     @Test
-    fun oldGalleryInfoEntityCsv_roundTripsThroughGalleryInfoEntity() {
-        // Simulates a CSV line produced by an older app version
-        // (pre-flatten DownloadInfo went through GalleryInfoEntity.toCSV()).
-        val gi = GalleryInfoEntity().apply {
-            arcid = "old-csv-1"
-            title = "Old CSV"
-            thumb = "https://old/t.jpg"
-            rating = 3.0f
-            simpleLanguage = "JA"
-            serverProfileId = 0L
-        }
-        val oldCsv = gi.toCSV()
+    fun pre_flatten_csv_format_roundTripsToArchive() {
+        // Simulate a CSV line shaped like the historical
+        // GalleryInfoEntity.toCSV output that older app versions wrote.
+        // Wire format is frozen and must keep parsing into a valid Archive.
+        val oldCsv = "0,old-csv-1,Old CSV,null,https://old/t.jpg,0,null,null,3.0,false,JA,[lang:japanese],0,0,0,0,0,-2,null,0"
 
-        val parsed = galleryInfoFromCSV(oldCsv.trimEnd('\n'))
+        val parsed = archiveFromCsvLine(oldCsv)
         assertNotNull(parsed)
         assertEquals("old-csv-1", parsed!!.arcid)
         assertEquals("Old CSV", parsed.title)
+        assertEquals("https://old/t.jpg", parsed.thumbnailUrl)
+        assertEquals(3.0f, parsed.rating, 0.001f)
+        assertEquals(listOf("japanese"), parsed.tags["lang"])
     }
 }
