@@ -37,7 +37,7 @@ import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.ui.CommonOperations
-import com.hippo.ehviewer.util.galleryInfoFromCSV
+import com.hippo.ehviewer.util.archiveFromCsvLine
 import com.hippo.ehviewer.util.toCSV
 import com.hippo.unifile.UniFile
 import com.hippo.util.ExceptionUtils
@@ -274,22 +274,22 @@ class DownloadFragment : PreferenceFragmentCompat(),
                 requireActivity().contentResolver.openInputStream(uri)?.use { inputStream ->
                     val content = IOUtils.readString(inputStream, StandardCharsets.UTF_8.name())
                     val lines = content.split("\n")
-                    val galleryInfos = lines.mapNotNull { line ->
+                    val archives = lines.mapNotNull { line ->
                         if (line.startsWith(DownloadManager.DOWNLOAD_INFO_HEADER)) {
                             null
                         } else {
-                            galleryInfoFromCSV(line)
+                            archiveFromCsvLine(line)
                         }
                     }
 
                     val downloadManager = ServiceRegistry.dataModule.downloadManager
-                    val total = galleryInfos.size
+                    val total = archives.size
                     mainHandler.post { dialog.max = total; dialog.progress = 0 }
 
-                    for (i in galleryInfos.indices) {
-                        val gi = galleryInfos[i]
-                        if (downloadManager.getDownloadInfo(gi.arcid) == null) {
-                            downloadManager.addDownload(gi.toArchive(), null)
+                    for (i in archives.indices) {
+                        val archive = archives[i]
+                        if (downloadManager.getDownloadInfo(archive.arcid) == null) {
+                            downloadManager.addDownload(archive, null)
                             importCount++
                         }
                         val progress = i + 1

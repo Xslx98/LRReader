@@ -21,7 +21,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Ignore
 import androidx.room.Index
-import com.hippo.ehviewer.client.data.GalleryInfo
+import com.hippo.ehviewer.client.data.GalleryDetail
 
 /**
  * Entity mapped to table "DOWNLOADS".
@@ -161,18 +161,22 @@ class DownloadInfo() : Parcelable {
     }
 
     /**
-     * Refresh display fields from a re-fetched [GalleryInfo] (typically
-     * a [com.hippo.ehviewer.client.data.GalleryDetail] returned by the
-     * server). Called from GalleryDetailScene after detail load to keep
-     * the cached download row in sync with the latest server state.
+     * Refresh display fields from a re-fetched [GalleryDetail]. Called
+     * from GalleryDetailScene after detail load to keep the cached
+     * download row in sync with the latest server state.
+     *
+     * Pre-W36-11 this took the broader GalleryInfo type because
+     * GalleryDetail used to inherit from GalleryInfoEntity; the actual
+     * call site has always passed a GalleryDetail.
      */
-    fun updateInfo(galleryInfo: GalleryInfo) {
-        arcid = galleryInfo.arcid
-        title = galleryInfo.title
-        thumb = galleryInfo.thumb
-        rating = galleryInfo.rating
-        simpleTags = galleryInfo.simpleTags
-        simpleLanguage = galleryInfo.simpleLanguage
+    fun updateInfo(detail: GalleryDetail) {
+        arcid = detail.arcid
+        title = detail.title
+        thumb = detail.thumb
+        rating = detail.rating
+        simpleLanguage = detail.simpleLanguage
+        // simpleTags is no longer carried on GalleryDetail (zero readers).
+        // Adapter recomputes from the live Archive on the next bind.
     }
 
     companion object {
