@@ -1,0 +1,2 @@
+- Fixed a download speed regression. On networks where pages complete quickly, system notification throttling could silently throttle downloads to roughly half speed. Notification updates are now properly rate-limited and downloads run at full speed again.
+- Internal cleanup and stability improvements.
