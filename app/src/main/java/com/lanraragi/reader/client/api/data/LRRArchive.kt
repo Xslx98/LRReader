@@ -3,7 +3,6 @@ package com.lanraragi.reader.client.api.data
 import android.os.Parcel
 import android.os.Parcelable
 import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.GalleryTagGroup
 import com.lanraragi.reader.client.api.LRRAuthManager
 
@@ -32,63 +31,29 @@ class LRRArchive() : Parcelable {
     @JvmField @SerialName("lastreadtime") var lastreadtime: Long = 0
     @JvmField @SerialName("summary") var summary: String? = null
 
-    // ----- Bridge to GalleryInfo -----
-
-    /**
-     * Convert to a persistence-layer [GalleryInfo] (aka [GalleryInfoEntity]).
-     * Used when the caller needs a Room entity (e.g. DB writes, Parcelable IPC).
-     */
-    fun toGalleryInfo(): GalleryInfo {
-        val gi = GalleryInfo()
-        gi.gid = 0L
-        gi.arcid = arcid
-        gi.title = title
-        gi.pages = pagecount
-        gi.progress = progress
-
-        val serverUrl = LRRAuthManager.getServerUrl()
-        gi.thumb = if (serverUrl != null) getThumbnailUrl(serverUrl) else ""
-
-        if (tags.isNotEmpty()) {
-            val parts = tags.split(",")
-            val tagList = parts.map { it.trim() }.filter { it.isNotEmpty() }
-            gi.simpleTags = tagList.toTypedArray()
-            gi.tgList = ArrayList(tagList)
-        }
-
-        gi.category = -1
-        val parsedRating = parseRatingFromTags(tags)
-        gi.rating = parsedRating
-        gi.rated = parsedRating > 0
-        gi.serverProfileId = LRRAuthManager.getActiveProfileId()
-
-        return gi
-    }
-
     /**
      * Convert this LRRArchive into a GalleryDetail for the detail scene.
+     *
+     * Post-W36-11 the GalleryDetail field set is intentionally narrower
+     * than the historical GalleryInfoEntity it used to inherit; fields
+     * with no UI reader (titleJpn / category / posted / simpleTags /
+     * tgList) are no longer populated here.
      */
     fun toGalleryDetail(): GalleryDetail {
         val gd = GalleryDetail()
 
-        gd.gid = 0L
         gd.arcid = arcid
         gd.title = title
-        gd.titleJpn = null
         gd.pages = pagecount
         gd.progress = progress
 
         val serverUrl = LRRAuthManager.getServerUrl()
         gd.thumb = if (serverUrl != null) getThumbnailUrl(serverUrl) else ""
 
-        gd.category = 0
-        gd.rated = false
-
         val parsedRatingDetail = parseRatingFromTags(tags)
         gd.rating = parsedRatingDetail
         gd.rated = parsedRatingDetail > 0
         gd.uploader = null
-        gd.posted = null
 
         gd.language = "N/A"
         gd.size = extension.uppercase().ifEmpty { "N/A" }
@@ -105,17 +70,8 @@ class LRRArchive() : Parcelable {
                 tagGroups.add(group)
             }
             gd.tags = tagGroups.toTypedArray()
-
-            val allTags = parsedTags.values.flatten()
-            gd.simpleTags = allTags.toTypedArray()
-            gd.tgList = ArrayList(allTags)
         }
 
-        gd.torrentCount = 0
-        gd.favoriteCount = 0
-        gd.isFavorited = false
-        gd.ratingCount = 0
-        gd.previewPages = 0
         gd.serverProfileId = LRRAuthManager.getActiveProfileId()
 
         return gd
