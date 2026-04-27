@@ -18,30 +18,22 @@ package com.hippo.ehviewer.ui.scene.download
 import android.content.Context
 import android.content.DialogInterface
 import android.view.LayoutInflater
-import android.view.View
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
 import android.widget.LinearLayout
-import android.widget.Spinner
 import androidx.appcompat.app.AlertDialog
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.EhConfig
-import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.widget.SearchBar
 import com.hippo.util.DrawableManager
 import com.hippo.widget.SearchBarMover
 
 /**
- * Manages the search dialog, search mode state, and category filter spinner
- * for DownloadsScene. Extracted from DownloadsScene (W11-3).
+ * Manages the search dialog and search mode state for DownloadsScene.
+ * Extracted from DownloadsScene (W11-3).
  */
 internal class DownloadSearchHelper(private val callback: Callback) {
 
     interface Callback {
         val ehContext: Context?
         val viewModel: DownloadsViewModel
-        fun getResources(): android.content.res.Resources
-        fun getString(resId: Int): String
         fun updateForLabel()
         fun updateView()
         /** The SearchBar.Helper + SearchBarMover.Helper delegate (the Scene itself). */
@@ -145,50 +137,5 @@ internal class DownloadSearchHelper(private val callback: Callback) {
             searchMode = false
         }
         searchBar?.setState(SearchBar.STATE_NORMAL, true)
-    }
-
-    fun initCategorySpinner(spinner: Spinner, context: Context) {
-        val categoryList = ArrayList<String>()
-        categoryList.add(callback.getString(R.string.category_all))
-        categoryList.add(LRRUtils.getCategory(EhConfig.DOUJINSHI).orEmpty().uppercase(java.util.Locale.ROOT))
-        categoryList.add(LRRUtils.getCategory(EhConfig.MANGA).orEmpty().uppercase(java.util.Locale.ROOT))
-        categoryList.add(LRRUtils.getCategory(EhConfig.ARTIST_CG).orEmpty().uppercase(java.util.Locale.ROOT))
-        categoryList.add(LRRUtils.getCategory(EhConfig.GAME_CG).orEmpty().uppercase(java.util.Locale.ROOT))
-        categoryList.add(LRRUtils.getCategory(EhConfig.WESTERN).orEmpty().uppercase(java.util.Locale.ROOT))
-        categoryList.add(LRRUtils.getCategory(EhConfig.NON_H).orEmpty().uppercase(java.util.Locale.ROOT))
-        categoryList.add(LRRUtils.getCategory(EhConfig.IMAGE_SET).orEmpty().uppercase(java.util.Locale.ROOT))
-        categoryList.add(LRRUtils.getCategory(EhConfig.COSPLAY).orEmpty().uppercase(java.util.Locale.ROOT))
-        categoryList.add(LRRUtils.getCategory(EhConfig.ASIAN_PORN).orEmpty().uppercase(java.util.Locale.ROOT))
-        categoryList.add(LRRUtils.getCategory(EhConfig.MISC).orEmpty().uppercase(java.util.Locale.ROOT))
-
-        val categoryAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, categoryList)
-        categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinner.adapter = categoryAdapter
-        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val selectedCategory = when (position) {
-                    1 -> EhConfig.DOUJINSHI
-                    2 -> EhConfig.MANGA
-                    3 -> EhConfig.ARTIST_CG
-                    4 -> EhConfig.GAME_CG
-                    5 -> EhConfig.WESTERN
-                    6 -> EhConfig.NON_H
-                    7 -> EhConfig.IMAGE_SET
-                    8 -> EhConfig.COSPLAY
-                    9 -> EhConfig.ASIAN_PORN
-                    10 -> EhConfig.MISC
-                    else -> LRRUtils.ALL_CATEGORY
-                }
-                if (selectedCategory != callback.viewModel.selectedCategory.value) {
-                    callback.viewModel.setSelectedCategory(selectedCategory)
-                    callback.viewModel.filterByCategory()
-                }
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-                // Do nothing
-            }
-        }
-        spinner.setSelection(0)
     }
 }
