@@ -10,17 +10,12 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Tests for [GalleryInfoMapper] — the mapper extensions that bridge
+ * Tests for [EntityMapper] — the mapper extensions that bridge
  * Room Entities to the [Archive] / [ArchiveDetail] domain models.
- *
- * Pre-W36-11 this file also covered `GalleryInfo.toArchive()`. That
- * mapper was removed when GalleryDetail stopped extending
- * GalleryInfoEntity (no remaining caller); only the
- * GalleryDetail.toArchiveDetail path stayed live.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
-class GalleryInfoMapperTest {
+class EntityMapperTest {
 
     @Test
     fun `toArchiveDetail converts tag groups`() {
