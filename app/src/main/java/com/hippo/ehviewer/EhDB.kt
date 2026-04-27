@@ -23,12 +23,10 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.util.Log
 
-import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.dao.*
 import com.hippo.util.ExceptionUtils
 import com.hippo.lib.yorozuya.IOUtils
-import com.hippo.lib.yorozuya.collect.SparseJLArray
 
 import java.io.File
 import java.io.FileInputStream
@@ -46,6 +44,20 @@ import java.io.IOException
  * [com.hippo.ehviewer.spider.SpiderDen.getGalleryDownloadDir] was converted
  * to a `suspend fun` in W5-3 (2026-04-11).
  */
+/**
+ * Minimal projection of the legacy `gallery` table used only by
+ * [EhDB.mergeOldDB]. Replaces the `GalleryInfo` intermediate that
+ * was retired in W36-11. Holds only the columns the downstream
+ * Entity inserters actually copy.
+ */
+private data class LegacyGallery(
+    val gid: Long,
+    val arcid: String,
+    val title: String?,
+    val thumb: String?,
+    val rating: Float,
+)
+
 object EhDB {
 
     private const val TAG = "EhDB"
@@ -102,28 +114,31 @@ object EhDB {
         val downloadDao = sDatabase.downloadDao()
         val browsingDao = sDatabase.browsingDao()
 
-        // Get GalleryInfo list
-        val map = SparseJLArray<GalleryInfo>()
+        // Build a transient gid -> minimal-DTO map from the legacy gallery
+        // table. The DTO holds only the columns the downstream merge blocks
+        // actually copy into Room Entities (arcid / title / thumb / rating);
+        // posted / category / uploader / etc. are EH-era fields the LRR
+        // entities no longer carry, so we don't bother projecting them.
+        val map = HashMap<Long, LegacyGallery>()
         try {
             val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_GALLERY}", null)
             cursor?.use {
                 if (it.moveToFirst()) {
                     while (!it.isAfterLast) {
-                        val gi = GalleryInfo()
-                        gi.gid = it.getInt(0).toLong()
-                        gi.arcid = it.getString(1)
-                        gi.title = it.getString(2)
-                        gi.posted = it.getString(3)
-                        gi.category = it.getInt(4)
-                        gi.thumb = it.getString(5)
-                        gi.uploader = it.getString(6)
-                        try {
-                            gi.rating = it.getFloat(7)
+                        val gid = it.getInt(0).toLong()
+                        val rating = try {
+                            it.getFloat(7)
                         } catch (e: Throwable) {
                             ExceptionUtils.throwIfFatal(e)
-                            gi.rating = -1.0f
+                            -1.0f
                         }
-                        map.put(gi.gid, gi)
+                        map[gid] = LegacyGallery(
+                            gid = gid,
+                            arcid = it.getString(1),
+                            title = it.getString(2),
+                            thumb = it.getString(5),
+                            rating = rating,
+                        )
                         it.moveToNext()
                     }
                 }
@@ -140,8 +155,8 @@ object EhDB {
                     var i = 0L
                     while (!it.isAfterLast) {
                         val gid = it.getInt(0).toLong()
-                        val gi = map.get(gid) ?: run {
-                            Log.e(TAG, "Can't get GalleryInfo with gid: $gid")
+                        val gi = map[gid] ?: run {
+                            Log.e(TAG, "Can't get legacy gallery row with gid: $gid")
                             it.moveToNext()
                             return@use
                         }
@@ -150,9 +165,6 @@ object EhDB {
                             title = gi.title
                             thumb = gi.thumb
                             rating = gi.rating
-                            simpleLanguage = gi.simpleLanguage
-                            serverProfileId = gi.serverProfileId
-                            simpleTags = gi.simpleTags
                         }
                         info.time = i
                         browsingDao.insertLocalFavorite(info)
@@ -202,8 +214,8 @@ object EhDB {
                     var i = 0L
                     while (!it.isAfterLast) {
                         val gid = it.getInt(0).toLong()
-                        val gi = map.get(gid) ?: run {
-                            Log.e(TAG, "Can't get GalleryInfo with gid: $gid")
+                        val gi = map[gid] ?: run {
+                            Log.e(TAG, "Can't get legacy gallery row with gid: $gid")
                             it.moveToNext()
                             return@use
                         }
@@ -212,9 +224,6 @@ object EhDB {
                             title = gi.title
                             thumb = gi.thumb
                             rating = gi.rating
-                            simpleLanguage = gi.simpleLanguage
-                            serverProfileId = gi.serverProfileId
-                            simpleTags = gi.simpleTags
                         }
                         var state = it.getInt(2)
                         val legacy = it.getInt(3)
@@ -241,8 +250,8 @@ object EhDB {
                 if (it.moveToFirst()) {
                     while (!it.isAfterLast) {
                         val gid = it.getInt(0).toLong()
-                        val gi = map.get(gid) ?: run {
-                            Log.e(TAG, "Can't get GalleryInfo with gid: $gid")
+                        val gi = map[gid] ?: run {
+                            Log.e(TAG, "Can't get legacy gallery row with gid: $gid")
                             it.moveToNext()
                             return@use
                         }
@@ -251,9 +260,6 @@ object EhDB {
                             title = gi.title
                             thumb = gi.thumb
                             rating = gi.rating
-                            simpleLanguage = gi.simpleLanguage
-                            serverProfileId = gi.serverProfileId
-                            simpleTags = gi.simpleTags
                         }
                         info.mode = it.getInt(1)
                         info.time = it.getLong(2)
