@@ -26,7 +26,6 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -155,8 +154,6 @@ class DownloadsScene : ToolbarScene(),
     var searching: Boolean
         get() = viewModel.searching.value
         set(value) { viewModel.setSearching(value) }
-
-    private var mCategorySpinner: Spinner? = null
 
     private val galleryActivityLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -300,9 +297,6 @@ class DownloadsScene : ToolbarScene(),
         mBatchOpsHelper = DownloadBatchOpsHelper(BatchOpsHelperCallback())
         mGalleryOpenHelper = DownloadGalleryOpenHelper(GalleryOpenHelperCallback())
         mSelectionHelper = DownloadSelectionHelper(SelectionHelperCallback())
-
-        mCategorySpinner = ViewUtils.`$$`(view, R.id.category_spinner) as Spinner
-        mSearchHelper?.initCategorySpinner(mCategorySpinner!!, context)
 
         mProgressView = ViewUtils.`$$`(view, R.id.download_progress_view) as ProgressView
         val content = ViewUtils.`$$`(view, R.id.content)
@@ -459,14 +453,6 @@ class DownloadsScene : ToolbarScene(),
         collectFlow(viewLifecycleOwner, viewModel.filterSearchDone) {
             if (!isAdded) return@collectFlow
             updateAdapter()
-        }
-
-        // Observe category filter list changes
-        collectFlow(viewLifecycleOwner, viewModel.listChanged) {
-            dispatchDiffUpdate(mList?.let { ArrayList(it) } ?: ArrayList())
-            updateTitle()
-            updatePaginationIndicator()
-            updateView()
         }
 
         // Observe import toast events
@@ -811,8 +797,6 @@ class DownloadsScene : ToolbarScene(),
     private inner class SearchHelperCallback : DownloadSearchHelper.Callback {
         override val ehContext: Context? get() = this@DownloadsScene.ehContext
         override val viewModel: DownloadsViewModel get() = this@DownloadsScene.viewModel
-        override fun getResources(): android.content.res.Resources = this@DownloadsScene.getResources()
-        override fun getString(resId: Int): String = this@DownloadsScene.getString(resId)
         override fun updateForLabel() = this@DownloadsScene.updateForLabel()
         override fun updateView() = this@DownloadsScene.updateView()
         override val searchBarHelper: SearchBar.Helper get() = this@DownloadsScene

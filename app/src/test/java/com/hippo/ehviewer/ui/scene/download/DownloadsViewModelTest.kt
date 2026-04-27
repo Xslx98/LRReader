@@ -11,7 +11,6 @@ import java.io.File
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.mapper.toArchive
-import com.hippo.ehviewer.client.LRRUtils
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.dao.DownloadDbRepository
@@ -41,7 +40,7 @@ import org.robolectric.shadows.ShadowLooper
 
 /**
  * Unit tests for [DownloadsViewModel] — download list state, label switching,
- * search, category filter, pagination math, spider info cache, and
+ * search, pagination math, spider info cache, and
  * DownloadInfoListener -> sealed DownloadUiEvent forwarding.
  *
  * Uses Robolectric for Android Context + in-memory Room database. The
@@ -168,11 +167,6 @@ class DownloadsViewModelTest {
     }
 
     @Test
-    fun initialState_selectedCategoryIsAll() {
-        assertEquals(LRRUtils.ALL_CATEGORY, vm.selectedCategory.value)
-    }
-
-    @Test
     fun initialState_filterLoadingIsFalse() {
         assertFalse(vm.filterLoading.value)
     }
@@ -234,44 +228,7 @@ class DownloadsViewModelTest {
     }
 
     // ═══════════════════════════════════════════════════════════
-    // D. Category filter
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
-    fun setSelectedCategory_updatesState() {
-        vm.setSelectedCategory(42)
-        assertEquals(42, vm.selectedCategory.value)
-    }
-
-    @Test
-    fun filterByCategory_postW36_10_isPassThrough() {
-        // After W36-10 the CATEGORY column was dropped (LRR archives have
-        // no EH-style category) and filterByCategory became a no-op
-        // pass-through. Verify it copies the full backList regardless of
-        // selectedCategory state. UI category picker removal is a Phase 4
-        // cleanup (W36-11/12).
-        val info1 = DownloadInfo().apply { arcid = "fc1" }
-        val info2 = DownloadInfo().apply { arcid = "fc2" }
-        val info3 = DownloadInfo().apply { arcid = "fc3" }
-
-        val backListField = DownloadsViewModel::class.java.getDeclaredField("_backList")
-        backListField.isAccessible = true
-        @Suppress("UNCHECKED_CAST")
-        (backListField.get(vm) as kotlinx.coroutines.flow.MutableStateFlow<List<DownloadInfo>>)
-            .value = listOf(info1, info2, info3)
-
-        // Both ALL_CATEGORY and a "specific" value yield the full list.
-        vm.setSelectedCategory(LRRUtils.ALL_CATEGORY)
-        vm.filterByCategory()
-        assertEquals(3, vm.downloadList.value.size)
-
-        vm.setSelectedCategory(1)
-        vm.filterByCategory()
-        assertEquals(3, vm.downloadList.value.size)
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // E. Pagination math
+    // D. Pagination math
     // ═══════════════════════════════════════════════════════════
 
     @Test
@@ -290,7 +247,7 @@ class DownloadsViewModelTest {
     }
 
     // ═══════════════════════════════════════════════════════════
-    // F. Spider info cache
+    // E. Spider info cache
     // ═══════════════════════════════════════════════════════════
 
     @Test
@@ -315,7 +272,7 @@ class DownloadsViewModelTest {
     }
 
     // ═══════════════════════════════════════════════════════════
-    // G. DownloadInfoListener -> sealed event forwarding
+    // F. DownloadInfoListener -> sealed event forwarding
     // ═══════════════════════════════════════════════════════════
 
     @Test
@@ -422,7 +379,7 @@ class DownloadsViewModelTest {
     }
 
     // ═══════════════════════════════════════════════════════════
-    // H. Archive format validation (via reflection)
+    // G. Archive format validation (via reflection)
     // ═══════════════════════════════════════════════════════════
 
     @Test
@@ -443,7 +400,7 @@ class DownloadsViewModelTest {
     }
 
     // ═══════════════════════════════════════════════════════════
-    // I. Pagination / page size state
+    // H. Pagination / page size state
     // ═══════════════════════════════════════════════════════════
 
     @Test

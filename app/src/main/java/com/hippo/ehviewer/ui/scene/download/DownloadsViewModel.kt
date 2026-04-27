@@ -1,6 +1,5 @@
 package com.hippo.ehviewer.ui.scene.download
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import android.util.Log
@@ -9,7 +8,6 @@ import androidx.lifecycle.viewModelScope
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.callBack.DownloadSearchCallback
-import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.util.FileUtils
 import kotlinx.coroutines.Dispatchers
@@ -267,19 +265,6 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     }
 
     // -------------------------------------------------------------------------
-    // Category filter state
-    // -------------------------------------------------------------------------
-
-    private val _selectedCategory = MutableStateFlow(LRRUtils.ALL_CATEGORY)
-
-    /** The currently selected category filter. */
-    val selectedCategory: StateFlow<Int> = _selectedCategory.asStateFlow()
-
-    fun setSelectedCategory(category: Int) {
-        _selectedCategory.value = category
-    }
-
-    // -------------------------------------------------------------------------
     // Filter loading state
     // -------------------------------------------------------------------------
 
@@ -289,13 +274,8 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     val filterLoading: StateFlow<Boolean> = _filterLoading.asStateFlow()
 
     // -------------------------------------------------------------------------
-    // One-shot events for list changed
+    // One-shot events for filter/search completion
     // -------------------------------------------------------------------------
-
-    private val _listChanged = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-
-    /** Emitted after a category filter produces new results; Scene should refresh UI. */
-    val listChanged: SharedFlow<Unit> = _listChanged.asSharedFlow()
 
     private val _filterSearchDone = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
@@ -347,20 +327,6 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
         val executor = DownloadListInfosExecutor(_downloadList.value, searchKey)
         executor.setDownloadSearchingListener(filterCallback)
         executor.executeSearching()
-    }
-
-    /**
-     * Apply category filter to the back-list and update the download list.
-     *
-     * Post-W36-10 the CATEGORY column was dropped (LRR archives have no
-     * EH-style category), so this is a no-op pass-through that preserves
-     * the API for the existing UI category picker. Picker removal is a
-     * Phase 4 cleanup (see W36-11/12).
-     */
-    @SuppressLint("NotifyDataSetChanged")
-    fun filterByCategory() {
-        _downloadList.value = ArrayList(_backList.value)
-        _listChanged.tryEmit(Unit)
     }
 
     // -------------------------------------------------------------------------
