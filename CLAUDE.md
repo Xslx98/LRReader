@@ -4,7 +4,7 @@
 >
 > - **Application ID**：`com.lanraragi.reader`
 > - **Namespace**：`com.hippo.ehviewer`（保留）
-> - **当前版本**：v1.12.0 (versionCode 11200)
+> - **当前版本**：v1.12.1 (versionCode 11201)
 > - **License**：GPLv3
 > - **versionCode 公式**：`MAJOR*10000 + MINOR*100 + PATCH`
 
@@ -19,10 +19,9 @@ CLAUDE.md 只承载高频日常约定。详细信息分散在 `docs/`：
 | [docs/architecture.md](docs/architecture.md) | 需要技术栈版本表、目录结构、关键文件列表、ServiceRegistry / Settings 模块拆分 |
 | [docs/testing-and-ci.md](docs/testing-and-ci.md) | 跑测试、看 CI 流程、改签名配置、Native CMake、本地化、Room schema 演进 |
 | [docs/adr-001-download-ssot.md](docs/adr-001-download-ssot.md) | 改 Download 模块（混合 SSOT 已落地：Room Flow 驱动列表 + DownloadProgressTracker 驱动进度）|
-| [docs/audit-2026-04-15-v2.md](docs/audit-2026-04-15-v2.md) | 数据架构反模式 —— 顶部含 2026-04-26 状态更新。**W36 全 12 wave + 通知节流 hotfix 完成（D1 ✅）**：业务/UI 零 GalleryInfo；4 个 Entity 全 standalone；schema **v22** 落地（**已发布即不可逆**，本地 main 比 origin 领先 25 commits 待 Beta 灰度后推）；`GalleryInfoEntity` 类 + typealias 已删除 |
-| [docs/superpowers/plans/2026-04-26-w36-completion-report.md](docs/superpowers/plans/2026-04-26-w36-completion-report.md) | **W36 全程完成报告**（next-session 入口）—— wave 列表 / commit hash / 关键决策 / 测试覆盖 / 推 origin 前置清单 |
+| [docs/audit-2026-04-15-v2.md](docs/audit-2026-04-15-v2.md) | 数据架构反模式闭环记录 —— **12/13 已修复**（D1 ✅ / D7 ✅，schema **v22** 已发布到 origin）；剩 D12（GalleryTagGroup 残余）等 detail-UI 重构时自然消亡。顶部 2026-04-26 状态更新是当前真相源，§1+ 是 4/15 时点的冻结快照 |
 | [docs/EDGE_TO_EDGE.md](docs/EDGE_TO_EDGE.md) | 改 Activity 布局或状态栏 —— API 35+ 状态栏着色坑很深，必读 |
-| `docs/archive/` | 归档目录：已完成的 plan / 旧 audit 快照 / 过时 onboard / 历史 ROADMAP。**不必要不查看**，主要为审计/历史回溯保留 |
+| `docs/archive/` | 归档目录：已完成的 plan（含 W36 全 12 wave + 通知节流 hotfix 完成报告）/ 旧 audit 快照 / 过时 onboard / 历史 ROADMAP。**不必要不查看**，主要为审计/历史回溯保留 |
 
 > ⚠️ **`docs/` 永不入 git**。整个目录及所有子目录在 `.gitignore` 中（`/docs/`），仅作本地协作笔记，不提交、不推送、不发布到 GitHub。新增/修改 docs 文件不要 `git add docs/...`，也不要 `git add -f` 强制追加。
 
