@@ -52,10 +52,7 @@ class LRRArchive() : Parcelable {
         val serverUrl = LRRAuthManager.getServerUrl()
         gd.thumb = if (serverUrl != null) getThumbnailUrl(serverUrl) else ""
 
-        val parsedRatingDetail = parseRatingFromTags(tags)
-        gd.rating = parsedRatingDetail
-        gd.rated = parsedRatingDetail > 0
-        gd.uploader = null
+        gd.rating = parseRatingFromTags(tags)
 
         gd.language = "N/A"
         gd.size = extension.uppercase().ifEmpty { "N/A" }

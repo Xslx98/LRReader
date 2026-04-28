@@ -32,6 +32,8 @@ import com.lanraragi.reader.domain.TagGroup
  * - 2026-04-28 M2 audit: removed seven dead EH-era fields whose readers
  *   were all dead code (gid, torrentCount, favoriteCount, ratingCount,
  *   SpiderInfoPages, SpiderInfoPreviewPages, previewPages).
+ * - 2026-04-28 M1b-2: removed `rated` (zero readers, pure dead write)
+ *   and `uploader` (LRR never populates it; only writer set null).
  */
 class GalleryDetail() : Parcelable {
 
@@ -56,12 +58,6 @@ class GalleryDetail() : Parcelable {
 
     /** Last reader page (1-indexed; 0 = unread). Mutable on read-progress events. */
     @JvmField var progress: Int = 0
-
-    /** True after a successful rating submission this session. */
-    @JvmField var rated: Boolean = false
-
-    /** Display string for the uploader chip — null on LRR (no uploader concept). */
-    @JvmField var uploader: String? = null
 
     /** Local favorite slot label, set by viewmodel after lookup. */
     @JvmField var favoriteName: String? = null
@@ -88,8 +84,6 @@ class GalleryDetail() : Parcelable {
         serverProfileId = `in`.readLong()
         pages = `in`.readInt()
         progress = `in`.readInt()
-        rated = `in`.readByte().toInt() != 0
-        uploader = `in`.readString()
         favoriteName = `in`.readString()
         isFavorited = `in`.readByte().toInt() != 0
         language = `in`.readString()
@@ -110,8 +104,6 @@ class GalleryDetail() : Parcelable {
         dest.writeLong(serverProfileId)
         dest.writeInt(pages)
         dest.writeInt(progress)
-        dest.writeByte(if (rated) 1.toByte() else 0.toByte())
-        dest.writeString(uploader)
         dest.writeString(favoriteName)
         dest.writeByte(if (isFavorited) 1.toByte() else 0.toByte())
         dest.writeString(language)

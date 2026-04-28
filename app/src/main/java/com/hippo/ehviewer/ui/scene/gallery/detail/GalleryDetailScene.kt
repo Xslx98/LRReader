@@ -345,7 +345,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 val finalRating = kotlin.math.ceil(rating.rating).coerceIn(0f, 5f)
                 rating.rating = finalRating
                 gd.rating = finalRating
-                gd.rated = true
                 ratingText.text = buildRatingEmoji(finalRating.toInt())
                 RatingHelper.saveRatingToServer(arcid, finalRating, null)
             }
