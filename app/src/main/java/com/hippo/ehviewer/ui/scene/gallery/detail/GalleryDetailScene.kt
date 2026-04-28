@@ -37,7 +37,6 @@ import com.hippo.ehviewer.ServiceRegistry
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.mapper.toArchive
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.domain.buildRatingEmoji
@@ -104,11 +103,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         get() = viewModel.archive.value
         set(value) { viewModel.setArchive(value) }
 
-    /** Shortcut delegating to [GalleryDetailViewModel.downloadInfo]. */
-    private var mDownloadInfo: DownloadInfo?
-        get() = viewModel.downloadInfo.value
-        set(value) { viewModel.setDownloadInfo(value) }
-
     /** Shortcut delegating to [GalleryDetailViewModel.arcid]. */
     private var mArcid: String?
         get() = viewModel.arcid.value
@@ -153,12 +147,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             if (archive != null) {
                 mArchive = archive
                 mArcid = archive.arcid
-                // If we already have a download record for this arcid, surface it
-                // so onGetGalleryDetailSuccessInternal's thumb-refresh path picks
-                // it up — equivalent to the old ACTION_DOWNLOAD_GALLERY_INFO
-                // branch which received the DownloadInfo directly.
-                mDownloadInfo = ServiceRegistry.dataModule
-                    .downloadManager.getDownloadInfo(archive.arcid)
                 viewModel.recordHistory(archive)
             }
         }
@@ -654,7 +642,10 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         viewModel.refreshDownloadState()
         val dlState = viewModel.downloadState.value
         if (dlState != DownloadState.INVALID) {
-            val di = mDownloadInfo
+            // Refresh the cached download row's thumb if the freshly fetched
+            // detail carries a different one. Snapshot lookup — the row is
+            // only read here, so we do not need a long-lived StateFlow.
+            val di = ServiceRegistry.dataModule.downloadManager.getDownloadInfo(result.arcid)
             if (di != null && di.thumb != null &&
                 di.thumb != result.thumb && di.arcid == result.arcid
             ) {
