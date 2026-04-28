@@ -472,9 +472,9 @@ class DownloadsScene : ToolbarScene(),
             when (event) {
                 // Structural events are covered by the downloadList Flow
                 // above; transient progress by the progressMap Flow. These
-                // listener callbacks exist only so downstream consumers (e.g.
-                // RatingHelper) can react — the Scene itself just refreshes
-                // its empty-view.
+                // listener callbacks exist only so downstream consumers
+                // (e.g. the rating sync path inside GalleryDetailViewModel)
+                // can react — the Scene itself just refreshes its empty-view.
                 is DownloadUiEvent.ItemAdded,
                 is DownloadUiEvent.ItemRemoved,
                 is DownloadUiEvent.DiffUpdate,
