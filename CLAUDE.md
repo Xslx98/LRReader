@@ -70,7 +70,7 @@ CLAUDE.md 只承载高频日常约定。详细信息分散在 `docs/`：
 ### 数据库（Room）
 
 - Entity / DAO 都在 `dao/` 包；用 KSP（**不**用 KAPT）。
-- 当前 schema v21；升级流程见 [docs/testing-and-ci.md §6](docs/testing-and-ci.md#6-schema-演进)。
+- 当前 schema v22；升级流程见 [docs/testing-and-ci.md §6](docs/testing-and-ci.md#6-schema-演进)。
 - **永不**使用 `fallbackToDestructiveMigration()`（生产代码）。
 - `AppDatabase.kt` 是唯一 Room 数据库实例。
 - UI 不直接调 `EhDB` domain 方法 —— 走对应 Repository（`ServiceRegistry.dataModule.{history|profile|quickSearch|favorites|downloadDb}Repository`），`EhDB` 上的 domain 方法已 `@Deprecated`。
