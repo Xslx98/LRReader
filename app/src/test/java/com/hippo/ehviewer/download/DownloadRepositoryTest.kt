@@ -23,6 +23,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.hippo.ehviewer.download.DownloadState
 
 /**
  * Unit tests for [DownloadRepository] — collection management and DB persistence.
@@ -294,14 +295,14 @@ class DownloadRepositoryTest {
     @Test
     fun getDownloadState_returnsCorrectState() {
         // Non-existent returns INVALID
-        assertEquals(DownloadInfo.STATE_INVALID, repo.getDownloadState("nonexistent"))
+        assertEquals(DownloadState.INVALID, repo.getDownloadState("nonexistent"))
 
         val info = makeInfo(6001L, "tok6001", "State Test").apply {
-            state = DownloadInfo.STATE_FINISH
+            state = DownloadState.FINISH
         }
         repo.addInfo(info)
 
-        assertEquals(DownloadInfo.STATE_FINISH, repo.getDownloadState("tok6001"))
+        assertEquals(DownloadState.FINISH, repo.getDownloadState("tok6001"))
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -361,14 +362,14 @@ class DownloadRepositoryTest {
     @Test
     fun getDownloadState_byArcid_returnsState() {
         val info = makeInfo(1001L, "abc123", "Gallery One")
-        info.state = DownloadInfo.STATE_DOWNLOAD
+        info.state = DownloadState.DOWNLOAD
         repo.addInfo(info)
-        assertEquals(DownloadInfo.STATE_DOWNLOAD, repo.getDownloadState("abc123"))
+        assertEquals(DownloadState.DOWNLOAD, repo.getDownloadState("abc123"))
     }
 
     @Test
     fun getDownloadState_byArcid_returnsInvalidWhenAbsent() {
-        assertEquals(DownloadInfo.STATE_INVALID, repo.getDownloadState("nonexistent"))
+        assertEquals(DownloadState.INVALID, repo.getDownloadState("nonexistent"))
     }
 
     @Test
@@ -388,7 +389,7 @@ class DownloadRepositoryTest {
         return DownloadInfo().apply {
             this.arcid = arcid
             this.title = title
-            this.state = DownloadInfo.STATE_NONE
+            this.state = DownloadState.NONE
             this.time = System.currentTimeMillis()
         }
     }

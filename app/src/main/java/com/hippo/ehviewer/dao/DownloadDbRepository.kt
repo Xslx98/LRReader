@@ -3,6 +3,7 @@ package com.hippo.ehviewer.dao
 import androidx.room.withTransaction
 import com.lanraragi.reader.client.api.LRRAuthManager
 import kotlinx.coroutines.flow.Flow
+import com.hippo.ehviewer.download.DownloadState
 
 /**
  * Repository for download-related database operations, backed by [DownloadRoomDao].
@@ -31,8 +32,8 @@ class DownloadDbRepository(
         val profileId = LRRAuthManager.getActiveProfileId()
         val list = if (profileId > 0) dao.getDownloadInfoByServer(profileId) else dao.getAllDownloadInfo()
         for (info in list) {
-            if (info.state == DownloadInfo.STATE_WAIT || info.state == DownloadInfo.STATE_DOWNLOAD) {
-                info.state = DownloadInfo.STATE_NONE
+            if (info.state == DownloadState.WAIT || info.state == DownloadState.DOWNLOAD) {
+                info.state = DownloadState.NONE
             }
         }
         return list

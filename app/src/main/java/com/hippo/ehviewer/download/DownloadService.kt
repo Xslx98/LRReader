@@ -466,7 +466,7 @@ class DownloadService : Service(), DownloadListener {
 
         ensureDownloadedBuilder()
 
-        val finish = info.state == DownloadInfo.STATE_FINISH
+        val finish = info.state == DownloadState.FINISH
         val arcid = info.arcid
         val previous = sItemStateArray[arcid]
         if (previous == null) { // Not contain

@@ -13,6 +13,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.hippo.ehviewer.download.DownloadState
 
 /**
  * Room database schema integrity and DAO CRUD tests.
@@ -146,7 +147,7 @@ class RoomMigrationTest {
         val info = DownloadInfo().apply {
             arcid = "test_token"
             title = "Test Gallery"
-            state = DownloadInfo.STATE_NONE
+            state = DownloadState.NONE
             time = System.currentTimeMillis()
         }
         dao.insert(info)
@@ -162,15 +163,15 @@ class RoomMigrationTest {
         val dao = db.downloadDao()
         val info = DownloadInfo().apply {
             arcid ="arcid_2001"
-            state = DownloadInfo.STATE_NONE
+            state = DownloadState.NONE
             time = System.currentTimeMillis()
         }
         dao.insert(info)
 
-        info.state = DownloadInfo.STATE_DOWNLOAD
+        info.state = DownloadState.DOWNLOAD
         dao.update(info)
         val result = dao.loadDownload("arcid_2001")
-        assertEquals(DownloadInfo.STATE_DOWNLOAD, result!!.state)
+        assertEquals(DownloadState.DOWNLOAD, result!!.state)
     }
 
     @Test
@@ -178,7 +179,7 @@ class RoomMigrationTest {
         val dao = db.downloadDao()
         val info = DownloadInfo().apply {
             arcid ="arcid_3001"
-            state = DownloadInfo.STATE_NONE
+            state = DownloadState.NONE
             time = System.currentTimeMillis()
         }
         dao.insert(info)

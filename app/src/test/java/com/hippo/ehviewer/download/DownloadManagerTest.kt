@@ -1,4 +1,4 @@
-﻿package com.hippo.ehviewer.download
+package com.hippo.ehviewer.download
 
 import android.content.Context
 import androidx.room.Room
@@ -25,6 +25,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.hippo.ehviewer.download.DownloadState
 
 /**
  * Unit tests for [DownloadManager] — the core download state management class.
@@ -152,13 +153,13 @@ class DownloadManagerTest {
         val info1 = DownloadInfo().apply {
             arcid = "token1"
             title = "Gallery One"
-            state = DownloadInfo.STATE_NONE
+            state = DownloadState.NONE
             time = System.currentTimeMillis()
         }
         val info2 = DownloadInfo().apply {
             arcid = "token2"
             title = "Gallery Two"
-            state = DownloadInfo.STATE_FINISH
+            state = DownloadState.FINISH
             time = System.currentTimeMillis() + 1
         }
         runBlocking {
@@ -215,7 +216,7 @@ class DownloadManagerTest {
         val state = manager.getDownloadState("tok_2001")
         assertTrue(
             "Expected WAIT or DOWNLOAD, got $state",
-            state == DownloadInfo.STATE_WAIT || state == DownloadInfo.STATE_DOWNLOAD
+            state == DownloadState.WAIT || state == DownloadState.DOWNLOAD
         )
         assertTrue(notifications.contains("add:tok_2001"))
     }
@@ -227,15 +228,15 @@ class DownloadManagerTest {
             arcid = "tok_2002"
             title = "Existing"
         }
-        manager.addDownload(gallery.toArchive(), null, DownloadInfo.STATE_NONE)
-        assertEquals(DownloadInfo.STATE_NONE, manager.getDownloadState("tok_2002"))
+        manager.addDownload(gallery.toArchive(), null, DownloadState.NONE)
+        assertEquals(DownloadState.NONE, manager.getDownloadState("tok_2002"))
 
         // Now start it — should set to WAIT (ensureDownload may promote to DOWNLOAD)
         manager.startDownload(gallery.toArchive(), null)
         val state = manager.getDownloadState("tok_2002")
         assertTrue(
             "Expected WAIT or DOWNLOAD after restart, got $state",
-            state == DownloadInfo.STATE_WAIT || state == DownloadInfo.STATE_DOWNLOAD
+            state == DownloadState.WAIT || state == DownloadState.DOWNLOAD
         )
     }
 
@@ -245,7 +246,7 @@ class DownloadManagerTest {
             arcid = "tok_2003"
             title = "To Delete"
         }
-        manager.addDownload(gallery.toArchive(), null, DownloadInfo.STATE_NONE)
+        manager.addDownload(gallery.toArchive(), null, DownloadState.NONE)
         assertTrue(manager.containDownloadInfo("tok_2003"))
 
         manager.deleteDownload("tok_2003")
@@ -262,7 +263,7 @@ class DownloadManagerTest {
                 arcid = "tok_$i"
                 title = "Gallery $i"
             }
-            manager.addDownload(gallery.toArchive(), null, DownloadInfo.STATE_NONE)
+            manager.addDownload(gallery.toArchive(), null, DownloadState.NONE)
         }
 
         // Put them into wait state via startDownload
@@ -280,7 +281,7 @@ class DownloadManagerTest {
             val state = manager.getDownloadState("tok_$i")
             assertTrue(
                 "Expected STATE_NONE or STATE_DOWNLOAD after stop, got $state",
-                state == DownloadInfo.STATE_NONE || state == DownloadInfo.STATE_DOWNLOAD
+                state == DownloadState.NONE || state == DownloadState.DOWNLOAD
             )
         }
     }
@@ -288,15 +289,15 @@ class DownloadManagerTest {
     @Test
     fun getDownloadState_returnsCorrectState() {
         // Non-existent returns INVALID
-        assertEquals(DownloadInfo.STATE_INVALID, manager.getDownloadState("nonexistent"))
+        assertEquals(DownloadState.INVALID, manager.getDownloadState("nonexistent"))
 
         // Added returns the correct state
         val gallery = DownloadInfo().apply {
             arcid = "tok_2005"
             title = "State Test"
         }
-        manager.addDownload(gallery.toArchive(), null, DownloadInfo.STATE_FINISH)
-        assertEquals(DownloadInfo.STATE_FINISH, manager.getDownloadState("tok_2005"))
+        manager.addDownload(gallery.toArchive(), null, DownloadState.FINISH)
+        assertEquals(DownloadState.FINISH, manager.getDownloadState("tok_2005"))
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -328,7 +329,7 @@ class DownloadManagerTest {
             arcid = "tok_4001"
             title = "Labeled"
         }
-        manager.addDownload(gallery.toArchive(), "OldName", DownloadInfo.STATE_NONE)
+        manager.addDownload(gallery.toArchive(), "OldName", DownloadState.NONE)
 
         // Rename the label
         manager.renameLabel("OldName", "NewName")
@@ -352,7 +353,7 @@ class DownloadManagerTest {
             arcid = "tok_4002"
             title = "Will Move"
         }
-        manager.addDownload(gallery.toArchive(), "ToRemove", DownloadInfo.STATE_NONE)
+        manager.addDownload(gallery.toArchive(), "ToRemove", DownloadState.NONE)
 
         // Delete the label
         manager.deleteLabel("ToRemove")
@@ -403,7 +404,7 @@ class DownloadManagerTest {
             arcid = "tok_5001"
             title = "Listener Test"
         }
-        manager.addDownload(gallery.toArchive(), null, DownloadInfo.STATE_NONE)
+        manager.addDownload(gallery.toArchive(), null, DownloadState.NONE)
         manager.addLabel("ListenerLabel")
 
         assertTrue("add:tok_5001" in events)
@@ -425,7 +426,7 @@ class DownloadManagerTest {
             arcid = "tok_5002"
             title = "First"
         }
-        manager.addDownload(gallery1.toArchive(), null, DownloadInfo.STATE_NONE)
+        manager.addDownload(gallery1.toArchive(), null, DownloadState.NONE)
         assertEquals(1, events.size)
 
         // Remove listener
@@ -436,7 +437,7 @@ class DownloadManagerTest {
             arcid = "tok_5003"
             title = "Second"
         }
-        manager.addDownload(gallery2.toArchive(), null, DownloadInfo.STATE_NONE)
+        manager.addDownload(gallery2.toArchive(), null, DownloadState.NONE)
         assertEquals(1, events.size) // Still 1 — listener was removed
     }
 
@@ -447,7 +448,7 @@ class DownloadManagerTest {
         val info = DownloadInfo().apply {
             arcid = "tok_5004"
             title = "Reload Test"
-            state = DownloadInfo.STATE_NONE
+            state = DownloadState.NONE
             time = System.currentTimeMillis()
         }
         runBlocking { ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info) }
@@ -491,7 +492,7 @@ class DownloadManagerTest {
             arcid = "tok_6001"
             title = "Contain Test"
         }
-        manager.addDownload(gallery.toArchive(), null, DownloadInfo.STATE_NONE)
+        manager.addDownload(gallery.toArchive(), null, DownloadState.NONE)
 
         assertTrue(manager.containDownloadInfo("tok_6001"))
     }
@@ -504,7 +505,7 @@ class DownloadManagerTest {
             arcid = "tok_6002"
             title = "Info Test"
         }
-        manager.addDownload(gallery.toArchive(), null, DownloadInfo.STATE_NONE)
+        manager.addDownload(gallery.toArchive(), null, DownloadState.NONE)
 
         val info = manager.getDownloadInfo("tok_6002")
         assertNotNull(info)
@@ -521,7 +522,7 @@ class DownloadManagerTest {
                 arcid = "tok_$i"
                 title = "Count $i"
             }
-            manager.addDownload(gallery.toArchive(), null, DownloadInfo.STATE_NONE)
+            manager.addDownload(gallery.toArchive(), null, DownloadState.NONE)
         }
 
         assertEquals(5, manager.allDownloadInfoList.size)
@@ -629,7 +630,7 @@ class DownloadManagerTest {
                     arcid = "race-token-$i"
                     title = "race title $i"
                     label = labelStrings[i % labelCount]
-                    state = DownloadInfo.STATE_NONE
+                    state = DownloadState.NONE
                     time = System.currentTimeMillis() + i
                 }
                 ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
@@ -728,7 +729,7 @@ class DownloadManagerTest {
             DownloadInfo().apply {
                 arcid = "tok_sort_$i"
                 title = "Sort Test $i"
-                state = DownloadInfo.STATE_NONE
+                state = DownloadState.NONE
                 time = ts
             }
         }
@@ -764,7 +765,7 @@ class DownloadManagerTest {
                 arcid = "tok_lsort_$i"
                 title = "Label Sort $i"
                 label = "SortLabel"
-                state = DownloadInfo.STATE_NONE
+                state = DownloadState.NONE
                 time = ts
             }
         }
@@ -792,7 +793,7 @@ class DownloadManagerTest {
                 arcid = "tok_dest_$i"
                 title = "Dest $i"
                 label = "DestLabel"
-                state = DownloadInfo.STATE_NONE
+                state = DownloadState.NONE
                 time = ts
             }
         }
@@ -804,7 +805,7 @@ class DownloadManagerTest {
             arcid = "tok_src"
             title = "Source Item"
             label = "SourceLabel"
-            state = DownloadInfo.STATE_NONE
+            state = DownloadState.NONE
             time = 600L
         }
         manager.addDownload(listOf(sourceInfo))
@@ -835,7 +836,7 @@ class DownloadManagerTest {
             arcid = "tok_def"
             title = "Default Item"
         }
-        manager.addDownload(defaultGallery.toArchive(), null, DownloadInfo.STATE_NONE)
+        manager.addDownload(defaultGallery.toArchive(), null, DownloadState.NONE)
         // Manually set time for deterministic ordering
         manager.getDownloadInfo("tok_def")!!.time = 500L
 
@@ -845,7 +846,7 @@ class DownloadManagerTest {
                 arcid = "tok_del_$i"
                 title = "Delete Label Item $i"
                 label = "ToDelete"
-                state = DownloadInfo.STATE_NONE
+                state = DownloadState.NONE
                 time = ts
             }
         }
@@ -873,7 +874,7 @@ class DownloadManagerTest {
             DownloadInfo().apply {
                 arcid = "tok_eq_$i"
                 title = "Equal Time $i"
-                state = DownloadInfo.STATE_NONE
+                state = DownloadState.NONE
                 time = 1000L // all same timestamp
             }
         }

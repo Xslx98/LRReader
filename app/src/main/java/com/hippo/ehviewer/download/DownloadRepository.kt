@@ -274,10 +274,10 @@ class DownloadRepository(
         return allInfoMap[arcid]
     }
 
-    fun getDownloadState(arcid: String): Int {
+    fun getDownloadState(arcid: String): DownloadState {
         assertMainThread()
         val info = allInfoMap[arcid]
-        return info?.state ?: DownloadInfo.STATE_INVALID
+        return info?.state ?: DownloadState.INVALID
     }
 
     fun getLabelCount(label: String?): Long {
@@ -388,8 +388,8 @@ class DownloadRepository(
         val newLabels = mutableListOf<String>()
         for (info in infos) {
             if (containDownloadInfo(info.arcid)) continue
-            if (DownloadInfo.STATE_WAIT == info.state || DownloadInfo.STATE_DOWNLOAD == info.state) {
-                info.state = DownloadInfo.STATE_NONE
+            if (DownloadState.WAIT == info.state || DownloadState.DOWNLOAD == info.state) {
+                info.state = DownloadState.NONE
             }
             var list = getInfoListForLabel(info.label)
             if (list == null) {
@@ -427,7 +427,7 @@ class DownloadRepository(
      * Add a single download (from UI). Returns the per-label list the info
      * was added to, or null if the label list was not found.
      */
-    fun addSingleDownload(archive: Archive, label: String?, state: Int): Pair<DownloadInfo, MutableList<DownloadInfo>>? {
+    fun addSingleDownload(archive: Archive, label: String?, state: DownloadState): Pair<DownloadInfo, MutableList<DownloadInfo>>? {
         assertMainThread()
         if (containDownloadInfo(archive.arcid)) return null
 
@@ -461,7 +461,7 @@ class DownloadRepository(
         if (containDownloadInfo(archive.arcid)) return false
         val info = archive.toDownloadInfo()
         info.label = label
-        info.state = DownloadInfo.STATE_NONE
+        info.state = DownloadState.NONE
         if (info.time == 0L) info.time = System.currentTimeMillis()
         val list = getInfoListForLabel(info.label) ?: run {
             Log.e(TAG, "Can't find download info list with label: $label")

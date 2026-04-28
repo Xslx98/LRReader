@@ -143,7 +143,7 @@ class DownloadManager(
     fun containLabel(label: String?): Boolean = repo.containLabel(label)
     fun containDownloadInfo(arcid: String): Boolean = repo.containDownloadInfo(arcid)
     fun getDownloadInfo(arcid: String): DownloadInfo? = repo.getDownloadInfo(arcid)
-    fun getDownloadState(arcid: String): Int = repo.getDownloadState(arcid)
+    fun getDownloadState(arcid: String): DownloadState = repo.getDownloadState(arcid)
     fun getLabelCount(label: String?): Long = repo.getLabelCount(label)
     fun getNoneDownloadInfo(arcid: String): DownloadInfo? = scheduler.getNoneDownloadInfo(arcid)
     val isIdle: Boolean get() = scheduler.isIdle
@@ -186,8 +186,8 @@ class DownloadManager(
             // archiveUri actually lives.
             val uri = existing.archiveUri
             if (uri != null && uri.startsWith("content://")) return
-            if (existing.state != DownloadInfo.STATE_WAIT) {
-                existing.state = DownloadInfo.STATE_WAIT
+            if (existing.state != DownloadState.WAIT) {
+                existing.state = DownloadState.WAIT
                 scheduler.waitList.add(existing)
                 repo.persistInfo(existing)
                 val list = repo.getInfoListForLabel(existing.label)
@@ -195,7 +195,7 @@ class DownloadManager(
                 scheduler.ensureDownload()
             }
         } else {
-            val info = archive.toDownloadInfo().apply { this.label = label; state = DownloadInfo.STATE_WAIT; time = System.currentTimeMillis() }
+            val info = archive.toDownloadInfo().apply { this.label = label; state = DownloadState.WAIT; time = System.currentTimeMillis() }
             val list = repo.getInfoListForLabel(info.label) ?: run { Log.e(TAG, "Can't find download info list with label: $label"); return }
             list.add(0, info)
             repo.allInfoList.add(0, info)
@@ -215,15 +215,15 @@ class DownloadManager(
         if (downloadOrder) {
             for (arcid in arcidList) {
                 val info = repo.allInfoMap[arcid] ?: continue
-                if (info.state == DownloadInfo.STATE_NONE || info.state == DownloadInfo.STATE_FAILED || info.state == DownloadInfo.STATE_FINISH) {
-                    update = true; info.state = DownloadInfo.STATE_WAIT; scheduler.waitList.add(info); repo.persistInfo(info)
+                if (info.state == DownloadState.NONE || info.state == DownloadState.FAILED || info.state == DownloadState.FINISH) {
+                    update = true; info.state = DownloadState.WAIT; scheduler.waitList.add(info); repo.persistInfo(info)
                 }
             }
         } else {
             for (arcid in arcidList.reversed()) {
                 val info = repo.allInfoMap[arcid] ?: continue
-                if (info.state == DownloadInfo.STATE_NONE || info.state == DownloadInfo.STATE_FAILED || info.state == DownloadInfo.STATE_FINISH) {
-                    update = true; info.state = DownloadInfo.STATE_WAIT; scheduler.waitList.add(info); repo.persistInfo(info)
+                if (info.state == DownloadState.NONE || info.state == DownloadState.FAILED || info.state == DownloadState.FINISH) {
+                    update = true; info.state = DownloadState.WAIT; scheduler.waitList.add(info); repo.persistInfo(info)
                 }
             }
         }
@@ -235,8 +235,8 @@ class DownloadManager(
         var update = false
         val downloadOrder = DownloadSettings.getDownloadOrder()
         for (info in repo.allInfoList) {
-            if (info.state == DownloadInfo.STATE_NONE || info.state == DownloadInfo.STATE_FAILED) {
-                update = true; info.state = DownloadInfo.STATE_WAIT
+            if (info.state == DownloadState.NONE || info.state == DownloadState.FAILED) {
+                update = true; info.state = DownloadState.WAIT
                 if (downloadOrder) scheduler.waitList.add(info) else scheduler.waitList.add(0, info)
                 repo.persistInfo(info)
             }
@@ -280,13 +280,13 @@ class DownloadManager(
         }
     }
 
-    fun addDownload(archive: Archive, label: String?, state: Int) {
+    fun addDownload(archive: Archive, label: String?, state: DownloadState) {
         repo.assertMainThread()
         val result = repo.addSingleDownload(archive, label, state) ?: return
         eventBus.forEachListener { it.onAdd(result.first, result.second, result.second.size - 1) }
     }
 
-    fun addDownload(archive: Archive, label: String?) { addDownload(archive, label, DownloadInfo.STATE_NONE) }
+    fun addDownload(archive: Archive, label: String?) { addDownload(archive, label, DownloadState.NONE) }
 
     fun addDownloadInfo(archive: Archive, label: String?) {
         repo.assertMainThread()

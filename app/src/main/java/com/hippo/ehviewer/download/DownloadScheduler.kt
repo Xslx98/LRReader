@@ -92,7 +92,7 @@ internal class DownloadScheduler(
             activeTasks.add(info)
             activeWorkers[info] = worker
             worker.listener = PerTaskListener(info)
-            info.state = DownloadInfo.STATE_DOWNLOAD
+            info.state = DownloadState.DOWNLOAD
             info.legacy = -1
             progressTracker.resetForStart(info.arcid)
             // Persist to DB
@@ -117,7 +117,7 @@ internal class DownloadScheduler(
 
     /**
      * Stop a single download by gid. Checks active tasks first, then wait
-     * list. Updates state to [DownloadInfo.STATE_NONE], persists, and
+     * list. Updates state to [DownloadState.NONE], persists, and
      * notifies the download listener on cancel (for active tasks).
      *
      * @return the stopped [DownloadInfo], or null if not found.
@@ -133,7 +133,7 @@ internal class DownloadScheduler(
                 w?.cancel()
                 activeIt.remove()
                 if (activeTasks.isEmpty()) speedTracker.stop()
-                info.state = DownloadInfo.STATE_NONE
+                info.state = DownloadState.NONE
                 progressTracker.clear(info.arcid)
                 repo.persistInfo(info)
                 eventBus.getDownloadListener()?.onCancel(info)
@@ -147,7 +147,7 @@ internal class DownloadScheduler(
             val info = waitIt.next()
             if (info.arcid == arcid) {
                 waitIt.remove()
-                info.state = DownloadInfo.STATE_NONE
+                info.state = DownloadState.NONE
                 progressTracker.clear(info.arcid)
                 repo.persistInfo(info)
                 return info
@@ -174,7 +174,7 @@ internal class DownloadScheduler(
         speedTracker.stop()
         if (stopped.isEmpty()) return null
         for (info in stopped) {
-            info.state = DownloadInfo.STATE_NONE
+            info.state = DownloadState.NONE
             progressTracker.clear(info.arcid)
             repo.persistInfo(info)
             eventBus.getDownloadListener()?.onCancel(info)
@@ -206,7 +206,7 @@ internal class DownloadScheduler(
                 val info = iterator.next()
                 if (info.arcid in arcidSet) {
                     iterator.remove()
-                    info.state = DownloadInfo.STATE_NONE
+                    info.state = DownloadState.NONE
                     progressTracker.clear(info.arcid)
                     repo.persistInfo(info)
                 }
@@ -221,7 +221,7 @@ internal class DownloadScheduler(
         assertMainThread()
         // Stop all in wait list
         for (info in waitList) {
-            info.state = DownloadInfo.STATE_NONE
+            info.state = DownloadState.NONE
             progressTracker.clear(info.arcid)
             repo.persistInfo(info)
         }
@@ -236,7 +236,7 @@ internal class DownloadScheduler(
 
     /**
      * If the given gid is currently downloading (active or waiting), stop it
-     * and set its state to [DownloadInfo.STATE_NONE]. Returns the
+     * and set its state to [DownloadState.NONE]. Returns the
      * [DownloadInfo] from the repository (may be null if not tracked).
      */
     fun getNoneDownloadInfo(arcid: String): DownloadInfo? {
@@ -255,7 +255,7 @@ internal class DownloadScheduler(
             while (iterator.hasNext()) {
                 val info = iterator.next()
                 if (info.arcid == arcid) {
-                    info.state = DownloadInfo.STATE_NONE
+                    info.state = DownloadState.NONE
                     progressTracker.clear(arcid)
                     iterator.remove()
                     break
@@ -370,9 +370,9 @@ internal class DownloadScheduler(
                 // Update state
                 info.legacy = event.total - event.finished
                 if (info.legacy == 0) {
-                    info.state = DownloadInfo.STATE_FINISH
+                    info.state = DownloadState.FINISH
                 } else {
-                    info.state = DownloadInfo.STATE_FAILED
+                    info.state = DownloadState.FAILED
                 }
                 // Mirror final values into tracker, then drop the live entry
                 // (download is no longer active → progress not live).

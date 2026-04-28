@@ -225,10 +225,10 @@ object EhDB {
                             thumb = gi.thumb
                             rating = gi.rating
                         }
-                        var state = it.getInt(2)
+                        var state = com.hippo.ehviewer.download.DownloadState.fromCode(it.getInt(2))
                         val legacy = it.getInt(3)
-                        if (state == DownloadInfo.STATE_FINISH && legacy > 0) {
-                            state = DownloadInfo.STATE_FAILED
+                        if (state == com.hippo.ehviewer.download.DownloadState.FINISH && legacy > 0) {
+                            state = com.hippo.ehviewer.download.DownloadState.FAILED
                         }
                         info.state = state
                         info.legacy = legacy
