@@ -109,11 +109,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         get() = viewModel.downloadInfo.value
         set(value) { viewModel.setDownloadInfo(value) }
 
-    /** Shortcut delegating to [GalleryDetailViewModel.gid]. */
-    private var mGid: Long
-        get() = viewModel.gid.value
-        set(value) { viewModel.setGid(value) }
-
     /** Shortcut delegating to [GalleryDetailViewModel.arcid]. */
     private var mArcid: String?
         get() = viewModel.arcid.value
@@ -153,10 +148,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         val action = args.getString(KEY_ACTION)
         mAction = action
-        if (ACTION_GID_TOKEN == action) {
-            mGid = args.getLong(KEY_GID)
-            mArcid = args.getString(KEY_ARCID)
-        } else if (ACTION_ARCHIVE == action) {
+        if (ACTION_ARCHIVE == action) {
             val archive: com.lanraragi.reader.domain.Archive? = args.getParcelable(KEY_ARCHIVE)
             if (archive != null) {
                 mArchive = archive
@@ -202,7 +194,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     private fun onRestore(savedInstanceState: Bundle) {
         mAction = savedInstanceState.getString(KEY_ACTION)
         mArchive = savedInstanceState.getParcelable(KEY_ARCHIVE)
-        mGid = savedInstanceState.getLong(KEY_GID)
         mArcid = savedInstanceState.getString(KEY_ARCID)
         mGalleryDetail = savedInstanceState.getParcelable(KEY_GALLERY_DETAIL)
         mRequestId = savedInstanceState.getInt(KEY_REQUEST_ID)
@@ -215,7 +206,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             outState.putString(KEY_ACTION, mAction)
         }
         viewModel.archive.value?.let { outState.putParcelable(KEY_ARCHIVE, it) }
-        outState.putLong(KEY_GID, mGid)
         if (mArcid != null) {
             outState.putString(KEY_ARCID, mArcid)
         }
@@ -642,7 +632,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         val gd = mGalleryDetail
         if (gd != null && !mInitialRating.isNaN() && gd.rating != mInitialRating) {
             val data = android.os.Bundle()
-            data.putLong(KEY_GID, gd.gid)
             data.putString(KEY_ARCID, gd.arcid)
             data.putFloat(KEY_RATING_RESULT, gd.rating)
             setResult(RESULT_OK, data)
@@ -705,11 +694,9 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         private const val STATE_FAILED = GalleryDetailViewModel.STATE_FAILED
 
         const val KEY_ACTION = "action"
-        const val ACTION_GID_TOKEN = "action_gid_token"
         const val ACTION_ARCHIVE = "action_archive"
 
         const val KEY_ARCHIVE = "archive"
-        const val KEY_GID = "gid"
         const val KEY_ARCID = "token"
         const val KEY_PAGE = "page"
         const val KEY_RATING_RESULT = "rating_result"
