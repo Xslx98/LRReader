@@ -25,7 +25,7 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.DownloadLabel
 import com.hippo.ehviewer.mapper.toArchive
-import com.hippo.ehviewer.mapper.toDownloadInfo
+import com.hippo.ehviewer.mapper.toDownloadInfoView
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -431,7 +431,7 @@ class DownloadRepository(
         assertMainThread()
         if (containDownloadInfo(archive.arcid)) return null
 
-        val info = archive.toDownloadInfo()
+        val info = archive.toDownloadInfoView()
         info.label = label
         info.state = state
         info.time = System.currentTimeMillis()
@@ -459,7 +459,7 @@ class DownloadRepository(
     fun addInfoOnly(archive: Archive, label: String?): Boolean {
         assertMainThread()
         if (containDownloadInfo(archive.arcid)) return false
-        val info = archive.toDownloadInfo()
+        val info = archive.toDownloadInfoView()
         info.label = label
         info.state = DownloadState.NONE
         if (info.time == 0L) info.time = System.currentTimeMillis()

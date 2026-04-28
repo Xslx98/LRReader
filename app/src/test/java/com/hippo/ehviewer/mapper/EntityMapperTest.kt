@@ -37,8 +37,8 @@ class EntityMapperTest {
     )
 
     @Test
-    fun `Archive toDownloadInfo populates display fields`() {
-        val di = archive().toDownloadInfo()
+    fun `Archive toDownloadInfoView populates display fields`() {
+        val di = archive().toDownloadInfoView()
 
         assertEquals("ga1", di.arcid)
         assertEquals("Direct Archive", di.title)
@@ -53,8 +53,8 @@ class EntityMapperTest {
     }
 
     @Test
-    fun `Archive toHistoryInfo populates display fields`() {
-        val hi = archive().toHistoryInfo()
+    fun `Archive toHistoryInfoView populates display fields`() {
+        val hi = archive().toHistoryInfoView()
 
         assertEquals("ga1", hi.arcid)
         assertEquals("Direct Archive", hi.title)
@@ -65,10 +65,10 @@ class EntityMapperTest {
 
     @Test
     fun `DownloadInfo toArchive groups simple tags by namespace`() {
-        val di = archive().toDownloadInfo()
+        val di = archive().toDownloadInfoView()
         // Mimic a tag-namespaced flat array as written by the legacy
-        // import path; current toDownloadInfo writes namespace-less
-        // values, but the inverse parser must still cope.
+        // import path; the forward mapper writes namespace-less values,
+        // but the inverse parser must still cope.
         di.simpleTags = arrayOf("artist:alice", "language:english", "raw")
         val back = di.toArchive()
 
