@@ -1,27 +1,48 @@
 package com.hippo.ehviewer.dao
 
 import androidx.room.withTransaction
-import com.lanraragi.reader.client.api.LRRAuthManager
-import kotlinx.coroutines.flow.Flow
 import com.hippo.ehviewer.download.DownloadState
+import com.hippo.ehviewer.mapper.toArchive
+import com.hippo.ehviewer.mapper.toArchiveJson
+import com.hippo.ehviewer.mapper.toDownloadInfoView
+import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.domain.Archive
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /**
- * Repository for download-related database operations, backed by [DownloadRoomDao].
+ * Repository for download-related database operations.
  *
- * This is the final domain repository extracted from [com.hippo.ehviewer.EhDB] as part
- * of the incremental God Object decomposition. It is a thin delegation layer — no
- * business logic beyond what EhDB already had (profile filtering, state reset, label
- * deduplication, reorder logic).
+ * Post-L1 the `DOWNLOADS` table is gone — download rows live on
+ * `ARCHIVE_LOCAL_STATE` keyed off `DOWNLOAD_STATE IS NOT NULL`. The
+ * label and dirname tables are unchanged and continue to flow through
+ * [DownloadRoomDao].
  *
- * **Important distinction**: There is already a [com.hippo.ehviewer.download.DownloadRepository]
- * that manages IN-MEMORY download collections (lists, labels, infos). This class handles
- * the DATABASE persistence layer. These are separate concerns.
+ * **Atomicity strategy**: the per-archive download mutations
+ * (`putDownloadInfo`, `removeDownloadInfoByArcid`, `updateRating`) use
+ * the INSERT-OR-IGNORE-then-UPDATE pattern. Each statement is its own
+ * atomic SQL op; the pair preserves cross-subsystem columns
+ * (history / favorite) without putting the calling coroutine into
+ * Room's transaction dispatcher — that would otherwise deadlock the
+ * invalidation observer that drives [observeDownloads] in unit tests
+ * with inline executors.
+ *
+ * The only operation that *does* take a `withTransaction` lock is
+ * [moveDownloadInfo], because per-row UPDATEs there are not safe to
+ * interleave with concurrent writes on the same arcids. The other
+ * batch operations are sequenced loops over the atomic mutations.
+ *
+ * **Important distinction**: there is also a
+ * [com.hippo.ehviewer.download.DownloadRepository] that manages
+ * IN-MEMORY download collections (lists, labels, infos). This class
+ * handles the DATABASE persistence layer. Two separate concerns.
  *
  * Registered as a lazy val in [com.hippo.ehviewer.module.DataModule].
  */
 class DownloadDbRepository(
-    private val dao: DownloadRoomDao,
-    private val database: AppDatabase
+    private val archiveLocalStateDao: ArchiveLocalStateDao,
+    private val downloadDao: DownloadRoomDao,
+    private val database: AppDatabase,
 ) {
 
     // ═══════════════════════════════════════════════════════════
@@ -30,8 +51,14 @@ class DownloadDbRepository(
 
     suspend fun getAllDownloadInfo(): List<DownloadInfo> {
         val profileId = LRRAuthManager.getActiveProfileId()
-        val list = if (profileId > 0) dao.getDownloadInfoByServer(profileId) else dao.getAllDownloadInfo()
+        val rows = if (profileId > 0)
+            archiveLocalStateDao.getDownloadsByServer(profileId)
+        else
+            archiveLocalStateDao.getAllDownloads()
+        val list = rows.map { it.toDownloadInfoView() }
         for (info in list) {
+            // Reset transient WAIT/DOWNLOAD states (process restart →
+            // these aren't real anymore). Mirrors v22 behavior.
             if (info.state == DownloadState.WAIT || info.state == DownloadState.DOWNLOAD) {
                 info.state = DownloadState.NONE
             }
@@ -40,23 +67,37 @@ class DownloadDbRepository(
     }
 
     /**
-     * Returns a [Flow] that emits the current download list whenever the
-     * DOWNLOADS table changes (insert/update/delete of persisted columns).
+     * Returns a [Flow] that emits the current download list whenever
+     * the persisted download fields change. The adapter to memory
+     * views is applied on each emission.
      *
-     * Profile-aware: filters by the active server profile when one is set.
-     *
-     * **Important:** `@Ignore` fields (speed, downloaded, total, etc.) are NOT
-     * persisted, so this Flow will NOT fire for progress-only changes.
+     * Profile-aware: filters by the active server profile when one is
+     * set.
      */
     fun observeDownloads(): Flow<List<DownloadInfo>> {
         val profileId = LRRAuthManager.getActiveProfileId()
-        return if (profileId > 0)
-            dao.observeDownloadsByServer(profileId)
+        val flow = if (profileId > 0)
+            archiveLocalStateDao.observeDownloadsByServer(profileId)
         else
-            dao.observeAllDownloads()
+            archiveLocalStateDao.observeAllDownloads()
+        return flow.map { rows -> rows.map { it.toDownloadInfoView() } }
     }
 
-    suspend fun moveDownloadInfo(infos: List<DownloadInfo>, fromPosition: Int, toPosition: Int) {
+    /**
+     * Reorder a contiguous slice of the download list by rotating
+     * DOWNLOAD_TIME values. Mirrors the v22 swap algorithm; only the
+     * persistence step is different (per-row UPDATE on the unified
+     * table instead of `dao.updateAll`).
+     *
+     * This is the one place that benefits from a transaction — the
+     * per-row UPDATEs must succeed or fail as a unit so that the
+     * resulting ordering is consistent.
+     */
+    suspend fun moveDownloadInfo(
+        infos: List<DownloadInfo>,
+        fromPosition: Int,
+        toPosition: Int,
+    ) {
         if (fromPosition == toPosition) return
         database.withTransaction {
             val reverse = fromPosition > toPosition
@@ -73,89 +114,125 @@ class DownloadDbRepository(
                 i += step
             }
             list[start].time = toTime
-            dao.updateAll(list)
-        }
-    }
-
-    suspend fun putDownloadInfo(downloadInfo: DownloadInfo) {
-        dao.insert(downloadInfo)
-    }
-
-    /**
-     * Update the rating for a download identified by [arcid].
-     * Triggers Room Flow invalidation so observers see the change.
-     */
-    suspend fun updateRating(arcid: String, rating: Float) {
-        dao.updateRating(arcid, rating)
-    }
-
-    suspend fun removeDownloadInfoByArcid(arcid: String) {
-        dao.deleteDownloadByKey(arcid)
-    }
-
-    suspend fun putDownloadInfoBatch(list: List<DownloadInfo>) {
-        database.withTransaction {
-            dao.insertAll(list)
-        }
-    }
-
-    suspend fun removeDownloadInfoBatchByArcids(arcids: List<String>) {
-        database.withTransaction {
-            dao.deleteByArcids(arcids)
-        }
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // DOWNLOAD DIRNAME
-    // ═══════════════════════════════════════════════════════════
-
-    suspend fun getDownloadDirname(arcid: String): String? {
-        return dao.loadDirname(arcid)?.dirname
-    }
-
-    suspend fun putDownloadDirname(arcid: String, dirname: String) {
-        database.withTransaction {
-            val raw = dao.loadDirname(arcid)
-            if (raw != null) {
-                raw.dirname = dirname
-                dao.updateDirname(raw)
-            } else {
-                val newRaw = DownloadDirname(arcid = arcid, dirname = dirname)
-                dao.insertDirname(newRaw)
+            for (info in list) {
+                archiveLocalStateDao.updateDownloadTime(info.arcid, info.time)
             }
         }
     }
 
+    suspend fun putDownloadInfo(downloadInfo: DownloadInfo) {
+        upsertDownloadSubsystem(downloadInfo)
+    }
+
+    /**
+     * Update the rating for a download identified by [arcid]. The
+     * rating lives in `archive_json`, so the in-row update has to
+     * load, patch, and rewrite the JSON column.
+     */
+    suspend fun updateRating(arcid: String, rating: Float) {
+        val row = archiveLocalStateDao.loadByArcid(arcid) ?: return
+        val archive = ArchiveLocalStateJson.decodeFromString(Archive.serializer(), row.archiveJson)
+        archiveLocalStateDao.updateArchiveJson(arcid, archive.copy(rating = rating).toArchiveJson())
+    }
+
+    suspend fun removeDownloadInfoByArcid(arcid: String) {
+        archiveLocalStateDao.clearDownloadSubsystem(arcid)
+        archiveLocalStateDao.deleteIfNoSubsystem(arcid)
+    }
+
+    suspend fun putDownloadInfoBatch(list: List<DownloadInfo>) {
+        if (list.isEmpty()) return
+        for (info in list) {
+            upsertDownloadSubsystem(info)
+        }
+    }
+
+    suspend fun removeDownloadInfoBatchByArcids(arcids: List<String>) {
+        if (arcids.isEmpty()) return
+        for (arcid in arcids) {
+            archiveLocalStateDao.clearDownloadSubsystem(arcid)
+            archiveLocalStateDao.deleteIfNoSubsystem(arcid)
+        }
+    }
+
+    /**
+     * Idempotent INSERT-OR-IGNORE-then-UPDATE for the download
+     * subsystem. INSERT seeds a new row only if absent; UPDATE writes
+     * the download columns regardless. Cross-subsystem columns
+     * (history / favorite) on a pre-existing row stay untouched.
+     */
+    private suspend fun upsertDownloadSubsystem(downloadInfo: DownloadInfo) {
+        val archiveJson = downloadInfo.toArchive().toArchiveJson()
+        archiveLocalStateDao.insertOrIgnoreDownload(
+            arcid = downloadInfo.arcid,
+            serverProfileId = downloadInfo.serverProfileId,
+            archiveJson = archiveJson,
+            downloadState = downloadInfo.state,
+            downloadLegacy = downloadInfo.legacy,
+            downloadTime = downloadInfo.time,
+            downloadLabel = downloadInfo.label,
+            downloadArchiveUri = downloadInfo.archiveUri,
+        )
+        archiveLocalStateDao.updateDownloadFields(
+            arcid = downloadInfo.arcid,
+            serverProfileId = downloadInfo.serverProfileId,
+            archiveJson = archiveJson,
+            downloadState = downloadInfo.state,
+            downloadLegacy = downloadInfo.legacy,
+            downloadTime = downloadInfo.time,
+            downloadLabel = downloadInfo.label,
+            downloadArchiveUri = downloadInfo.archiveUri,
+        )
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // DOWNLOAD DIRNAME (separate table, not touched by L1)
+    // ═══════════════════════════════════════════════════════════
+
+    suspend fun getDownloadDirname(arcid: String): String? {
+        return downloadDao.loadDirname(arcid)?.dirname
+    }
+
+    suspend fun putDownloadDirname(arcid: String, dirname: String) {
+        val raw = downloadDao.loadDirname(arcid)
+        if (raw != null) {
+            raw.dirname = dirname
+            downloadDao.updateDirname(raw)
+        } else {
+            val newRaw = DownloadDirname(arcid = arcid, dirname = dirname)
+            downloadDao.insertDirname(newRaw)
+        }
+    }
+
     suspend fun removeDownloadDirname(arcid: String) {
-        dao.deleteDirnameByKey(arcid)
+        downloadDao.deleteDirnameByKey(arcid)
     }
 
     suspend fun clearDownloadDirname() {
-        dao.deleteAllDirnames()
+        downloadDao.deleteAllDirnames()
     }
 
     // ═══════════════════════════════════════════════════════════
-    // DOWNLOAD LABELS
+    // DOWNLOAD LABELS (separate table, not touched by L1)
     // ═══════════════════════════════════════════════════════════
 
     suspend fun getAllDownloadLabels(): List<DownloadLabel> {
-        return dao.getAllDownloadLabels()
+        return downloadDao.getAllDownloadLabels()
     }
 
     suspend fun addDownloadLabel(label: String): DownloadLabel {
-        val existing = dao.findLabelByName(label)
+        val existing = downloadDao.findLabelByName(label)
         if (existing != null) return existing
         val raw = DownloadLabel()
         raw.label = label
         raw.time = System.currentTimeMillis()
-        raw.id = dao.insertLabel(raw)
+        raw.id = downloadDao.insertLabel(raw)
         return raw
     }
 
     /**
-     * Batch-insert multiple orphan label strings in a single transaction.
-     *
-     * Returns the list of [DownloadLabel] entities with their assigned IDs.
+     * Batch-insert multiple orphan label strings. Returns the list of
+     * [DownloadLabel] entities with their assigned IDs.
      */
     suspend fun addDownloadLabels(labels: List<String>): List<DownloadLabel> {
         if (labels.isEmpty()) return emptyList()
@@ -166,9 +243,7 @@ class DownloadDbRepository(
                 this.time = now + index
             }
         }
-        val ids = database.withTransaction {
-            dao.insertLabels(entities)
-        }
+        val ids = downloadDao.insertLabels(entities)
         for (i in entities.indices) {
             entities[i].id = ids[i]
         }
@@ -177,12 +252,12 @@ class DownloadDbRepository(
 
     suspend fun addDownloadLabel(raw: DownloadLabel): DownloadLabel {
         raw.id = null
-        raw.id = dao.insertLabel(raw)
+        raw.id = downloadDao.insertLabel(raw)
         return raw
     }
 
     suspend fun updateDownloadLabel(raw: DownloadLabel) {
-        dao.updateLabel(raw)
+        downloadDao.updateLabel(raw)
     }
 
     suspend fun moveDownloadLabel(fromPosition: Int, toPosition: Int) {
@@ -190,7 +265,7 @@ class DownloadDbRepository(
         val reverse = fromPosition > toPosition
         val offset = if (reverse) toPosition else fromPosition
         val limit = if (reverse) fromPosition - toPosition + 1 else toPosition - fromPosition + 1
-        val list = dao.getLabelsRange(offset, limit)
+        val list = downloadDao.getLabelsRange(offset, limit)
         val step = if (reverse) 1 else -1
         val start = if (reverse) limit - 1 else 0
         val end = if (reverse) 0 else limit - 1
@@ -201,10 +276,10 @@ class DownloadDbRepository(
             i += step
         }
         list[start].time = toTime
-        dao.updateLabels(list)
+        downloadDao.updateLabels(list)
     }
 
     suspend fun removeDownloadLabel(raw: DownloadLabel) {
-        dao.deleteLabel(raw)
+        downloadDao.deleteLabel(raw)
     }
 }

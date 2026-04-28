@@ -76,9 +76,9 @@ class QuickSearchViewModelTest {
                 override val quickSearchRepository get() =
                     QuickSearchRepository(db.browsingDao())
                 override val favoritesRepository get() =
-                    FavoritesRepository(db.browsingDao())
+                    FavoritesRepository(db.archiveLocalStateDao(), db)
                 override val historyRepository get() =
-                    HistoryRepository(db.browsingDao())
+                    HistoryRepository(db.archiveLocalStateDao(), db)
                 override val profileRepository get() =
                     ProfileRepository(db.miscDao())
                 override val downloadDbRepository get() =
