@@ -40,7 +40,7 @@ import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.mapper.toArchive
 import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.data.LRRArchive
+import com.lanraragi.reader.domain.buildRatingEmoji
 import com.hippo.ehviewer.ui.MainActivity
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.util.collectFlow
@@ -351,7 +351,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             RatingBar.OnRatingBarChangeListener { _, ratingValue, fromUser ->
                 if (!fromUser || mGalleryDetail == null) return@OnRatingBarChangeListener
                 // Live preview: show the emoji for the rounded value while dragging
-                ratingText.text = LRRArchive.buildRatingEmoji(
+                ratingText.text = buildRatingEmoji(
                     kotlin.math.ceil(ratingValue).toInt()
                 )
             }
@@ -367,7 +367,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 rating.rating = finalRating
                 gd.rating = finalRating
                 gd.rated = true
-                ratingText.text = LRRArchive.buildRatingEmoji(finalRating.toInt())
+                ratingText.text = buildRatingEmoji(finalRating.toInt())
                 RatingHelper.saveRatingToServer(arcid, finalRating, null)
             }
             false // Don't consume — let RatingBar handle the touch

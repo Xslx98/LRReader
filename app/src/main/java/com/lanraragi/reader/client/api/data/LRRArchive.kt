@@ -10,6 +10,7 @@ import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.domain.parseLrrTagString
+import com.lanraragi.reader.domain.parseRatingFromTags
 import com.lanraragi.reader.domain.stripNamespace
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -182,44 +183,5 @@ class LRRArchive() : Parcelable {
             override fun createFromParcel(parcel: Parcel): LRRArchive = LRRArchive(parcel)
             override fun newArray(size: Int): Array<LRRArchive?> = arrayOfNulls(size)
         }
-
-        /**
-         * Parse rating from the tags string. LANraragi uses emoji format: "rating:⭐⭐⭐⭐"
-         * @return rating as float (1-5), or -1 if no rating tag found
-         */
-        @JvmStatic
-        fun parseRatingFromTags(tags: String?): Float {
-            if (tags.isNullOrEmpty()) return -1.0f
-            for (part in tags.split(",")) {
-                val trimmed = part.trim()
-                if (trimmed.startsWith("rating:")) {
-                    val ratingValue = trimmed.substring(7).trim()
-                    var starCount = 0
-                    var i = 0
-                    while (i < ratingValue.length) {
-                        val cp = ratingValue.codePointAt(i)
-                        if (cp == 0x2B50) starCount++ // ⭐
-                        i += Character.charCount(cp)
-                    }
-                    if (starCount > 0) {
-                        return starCount.coerceAtMost(5).toFloat()
-                    }
-                    return try {
-                        ratingValue.toFloat()
-                    } catch (_: NumberFormatException) {
-                        -1.0f
-                    }
-                }
-            }
-            return -1.0f
-        }
-
-        /**
-         * Build a rating tag value using ⭐ emojis.
-         * e.g. starCount=4 -> "⭐⭐⭐⭐"
-         */
-        @JvmStatic
-        fun buildRatingEmoji(starCount: Int): String =
-            "⭐".repeat(starCount.coerceAtMost(5))
     }
 }

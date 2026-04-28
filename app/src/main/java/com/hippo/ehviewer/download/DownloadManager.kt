@@ -23,6 +23,7 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.DownloadLabel
 import com.hippo.ehviewer.mapper.toDownloadInfo
+import com.lanraragi.reader.domain.parseRatingFromTags
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.ehviewer.spider.SpiderInfo
@@ -101,8 +102,7 @@ class DownloadManager(
                     try {
                         val archive = com.lanraragi.reader.client.api.LRRArchiveApi
                             .getArchiveMetadata(client, serverUrl, arcid)
-                        val serverRating = com.lanraragi.reader.client.api.data.LRRArchive
-                            .parseRatingFromTags(archive.tags)
+                        val serverRating = parseRatingFromTags(archive.tags)
                         // Only update if server has a meaningful rating that
                         // differs from the local value. -1 = no rating tag on
                         // server, 0 = unrated locally; treat both as "unrated".
