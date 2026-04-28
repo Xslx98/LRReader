@@ -118,54 +118,8 @@ class LRRArchiveTest {
         assertNull(archive.getSimpleTags())
     }
 
-    // ── Rating ─────────────────────────────────────────────────────
-
-    @Test
-    fun parseRatingFromTags_emoji() {
-        assertEquals(3.0f, LRRArchive.parseRatingFromTags("artist:foo, rating:⭐⭐⭐"), 0.01f)
-    }
-
-    @Test
-    fun parseRatingFromTags_numeric() {
-        assertEquals(4.5f, LRRArchive.parseRatingFromTags("rating:4.5"), 0.01f)
-    }
-
-    @Test
-    fun parseRatingFromTags_none() {
-        assertEquals(-1.0f, LRRArchive.parseRatingFromTags("artist:foo, genre:bar"), 0.01f)
-    }
-
-    @Test
-    fun parseRatingFromTags_null() {
-        assertEquals(-1.0f, LRRArchive.parseRatingFromTags(null), 0.01f)
-    }
-
-    @Test
-    fun parseRatingFromTags_empty() {
-        assertEquals(-1.0f, LRRArchive.parseRatingFromTags(""), 0.01f)
-    }
-
-    @Test
-    fun parseRatingFromTags_fiveStarsMax() {
-        assertEquals(5.0f, LRRArchive.parseRatingFromTags("rating:⭐⭐⭐⭐⭐⭐⭐"), 0.01f)
-    }
-
-    @Test
-    fun parseRatingFromTags_oneStar() {
-        assertEquals(1.0f, LRRArchive.parseRatingFromTags("rating:⭐"), 0.01f)
-    }
-
-    @Test
-    fun parseRatingFromTags_invalidText() {
-        assertEquals(-1.0f, LRRArchive.parseRatingFromTags("rating:good"), 0.01f)
-    }
-
-    @Test
-    fun buildRatingEmoji() {
-        assertEquals("⭐⭐⭐", LRRArchive.buildRatingEmoji(3))
-        assertEquals("⭐⭐⭐⭐⭐", LRRArchive.buildRatingEmoji(7)) // capped at 5
-        assertEquals("", LRRArchive.buildRatingEmoji(0))
-    }
+    // Rating tag parsing/building moved to RatingServiceTest in
+    // com.lanraragi.reader.domain after F3.
 
     // ── Thumbnail URL ──────────────────────────────────────────────
 
