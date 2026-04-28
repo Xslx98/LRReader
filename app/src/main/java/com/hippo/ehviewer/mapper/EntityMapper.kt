@@ -7,6 +7,7 @@ import com.hippo.ehviewer.dao.HistoryInfo
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.domain.TagGroup
+import com.lanraragi.reader.domain.groupFlatTags
 
 /**
  * Bridge functions between the [Archive] domain model and the Room
@@ -64,7 +65,7 @@ fun DownloadInfo.toArchive(): Archive {
     return Archive(
         arcid = this.arcid,
         title = title ?: "",
-        tags = simpleTagsToTagsMap(simpleTags),
+        tags = groupFlatTags(simpleTags),
         pagecount = 0,
         progress = 0,
         extension = "",
@@ -87,7 +88,7 @@ fun HistoryInfo.toArchive(): Archive {
     return Archive(
         arcid = this.arcid,
         title = title ?: "",
-        tags = simpleTagsToTagsMap(simpleTags),
+        tags = groupFlatTags(simpleTags),
         pagecount = 0,
         progress = 0,
         extension = "",
@@ -99,22 +100,6 @@ fun HistoryInfo.toArchive(): Archive {
         summary = null,
         serverProfileId = serverProfileId,
     )
-}
-
-private fun simpleTagsToTagsMap(simpleTags: Array<String>?): Map<String, List<String>> {
-    if (simpleTags == null) return emptyMap()
-    val map = LinkedHashMap<String, MutableList<String>>()
-    for (tag in simpleTags) {
-        val colonIdx = tag.indexOf(':')
-        if (colonIdx > 0) {
-            val ns = tag.substring(0, colonIdx).trim()
-            val v = tag.substring(colonIdx + 1).trim()
-            map.getOrPut(ns) { mutableListOf() }.add(v)
-        } else {
-            map.getOrPut("misc") { mutableListOf() }.add(tag)
-        }
-    }
-    return map
 }
 
 /**
