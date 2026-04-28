@@ -1,7 +1,6 @@
 package com.hippo.ehviewer.ui.scene.gallery.detail
 
 import android.content.Context
-import android.text.TextUtils
 import android.util.Log
 import android.view.Gravity
 import android.view.View
@@ -116,17 +115,6 @@ internal class DetailActionHandler(
                 ensurePopMenu(context)
                 showPopMenu()
             }
-            v.id == R.id.uploader -> {
-                // Uploader is only carried by GalleryDetail (the rich API
-                // response). Archive does not expose it (LRR never populates
-                // it), so the fallback chain stops at galleryDetail.
-                val uploader = viewModel.galleryDetail.value?.uploader
-                if (TextUtils.isEmpty(uploader)) return
-                val lub = ListUrlBuilder()
-                lub.mode = ListUrlBuilder.MODE_UPLOADER
-                lub.keyword = uploader
-                GalleryListScene.startScene(scene, lub)
-            }
             v.id == R.id.download -> {
                 onDownloadClick(context, activity)
             }
@@ -178,10 +166,6 @@ internal class DetailActionHandler(
             v.id == R.id.heart_group -> {
                 showCategoryDialog(activity)
                 true
-            }
-            v.id == R.id.uploader -> {
-                // long-press uploader does nothing extra currently
-                false
             }
             else -> {
                 val tag = v.getTag(R.id.tag) as? String

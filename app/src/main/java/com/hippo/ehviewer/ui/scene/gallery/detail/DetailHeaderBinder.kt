@@ -136,7 +136,9 @@ internal class DetailHeaderBinder(
         }
 
         title.text = gd.title
-        uploader.text = gd.uploader
+        // LRR has no uploader concept — clear the slot; this matches the
+        // bindFromArchiveDetail path which writes null too.
+        uploader.text = null
 
         bindReadProgress(gd.progress, gd.pages)
 
