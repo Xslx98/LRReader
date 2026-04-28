@@ -19,7 +19,7 @@ CLAUDE.md 只承载高频日常约定。详细信息分散在 `docs/`：
 | [docs/architecture.md](docs/architecture.md) | 需要技术栈版本表、目录结构、关键文件列表、ServiceRegistry / Settings 模块拆分 |
 | [docs/testing-and-ci.md](docs/testing-and-ci.md) | 跑测试、看 CI 流程、改签名配置、Native CMake、本地化、Room schema 演进 |
 | [docs/adr-001-download-ssot.md](docs/adr-001-download-ssot.md) | 改 Download 模块（混合 SSOT 已落地：Room Flow 驱动列表 + DownloadProgressTracker 驱动进度）|
-| [docs/audit-2026-04-15-v2.md](docs/audit-2026-04-15-v2.md) | 数据架构反模式闭环记录 —— **12/13 已修复**（D1 ✅ / D7 ✅，schema **v22** 已发布到 origin）；剩 D12（GalleryTagGroup 残余）等 detail-UI 重构时自然消亡。顶部 2026-04-26 状态更新是当前真相源，§1+ 是 4/15 时点的冻结快照 |
+| [docs/audit-2026-04-15-v2.md](docs/audit-2026-04-15-v2.md) | 数据架构反模式闭环记录 —— **13/13 + N1 已闭环**（D1 ✅ / D7 ✅ / N1 ✅ L1 三表合一，schema **v24**）；剩 D12（GalleryTagGroup 残余）等 detail-UI 重构时自然消亡。顶部 2026-04-28 状态更新是当前真相源，§1+ 是 4/15 时点的冻结快照 |
 | [docs/EDGE_TO_EDGE.md](docs/EDGE_TO_EDGE.md) | 改 Activity 布局或状态栏 —— API 35+ 状态栏着色坑很深，必读 |
 | `docs/archive/` | 归档目录：已完成的 plan（含 W36 全 12 wave + 通知节流 hotfix 完成报告）/ 旧 audit 快照 / 过时 onboard / 历史 ROADMAP。**不必要不查看**，主要为审计/历史回溯保留 |
 
@@ -70,7 +70,7 @@ CLAUDE.md 只承载高频日常约定。详细信息分散在 `docs/`：
 ### 数据库（Room）
 
 - Entity / DAO 都在 `dao/` 包；用 KSP（**不**用 KAPT）。
-- 当前 schema v22；升级流程见 [docs/testing-and-ci.md §6](docs/testing-and-ci.md#6-schema-演进)。
+- 当前 schema **v24**（L1 三表合一已落地 2026-04-28）；升级流程见 [docs/testing-and-ci.md §6](docs/testing-and-ci.md#6-schema-演进)。下载 / 历史 / 本地收藏统一在 `ARCHIVE_LOCAL_STATE` 表，`DOWNLOAD_STATE` / `HISTORY_TIME` / `FAVORITE_TIME` 任一非 NULL 即代表该 archive 属于对应子系统；展示字段（title / thumb / rating / tags...）落 `archive_json` 列，新增字段不再 schema bump。
 - **永不**使用 `fallbackToDestructiveMigration()`（生产代码）。
 - `AppDatabase.kt` 是唯一 Room 数据库实例。
 - UI 不直接调 `EhDB` domain 方法 —— 走对应 Repository（`ServiceRegistry.dataModule.{history|profile|quickSearch|favorites|downloadDb}Repository`），`EhDB` 上的 domain 方法已 `@Deprecated`。
