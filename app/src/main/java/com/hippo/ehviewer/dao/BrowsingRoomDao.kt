@@ -3,61 +3,15 @@ package com.hippo.ehviewer.dao
 import androidx.room.*
 
 /**
- * Room DAO for browsing-related tables: HISTORY, LOCAL_FAVORITES, QUICK_SEARCH.
+ * Room DAO for the residual browsing-related table: QUICK_SEARCH.
+ *
+ * The HISTORY and LOCAL_FAVORITES tables are gone post-L1; their
+ * subsystems live on `ARCHIVE_LOCAL_STATE` and are accessed via
+ * [ArchiveLocalStateDao]. QUICK_SEARCH is unrelated to per-archive
+ * state and stays on its own table.
  */
 @Dao
 interface BrowsingRoomDao {
-
-    // --- HISTORY ---
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertHistory(info: HistoryInfo)
-
-    @Query("SELECT * FROM HISTORY ORDER BY TIME DESC")
-    suspend fun getAllHistory(): List<HistoryInfo>
-
-    @Query("SELECT * FROM HISTORY WHERE SERVER_PROFILE_ID = :profileId ORDER BY TIME DESC")
-    suspend fun getHistoryByServer(profileId: Long): List<HistoryInfo>
-
-    @Query("SELECT * FROM HISTORY ORDER BY TIME DESC LIMIT :limit")
-    suspend fun getHistoryLimit(limit: Int): List<HistoryInfo>
-
-    @Query("UPDATE HISTORY SET RATING = :rating WHERE ARCID = :arcid")
-    suspend fun updateHistoryRating(arcid: String, rating: Float)
-
-    @Query("DELETE FROM HISTORY WHERE ARCID = :arcid")
-    suspend fun deleteHistoryByArcid(arcid: String)
-
-    @Query("DELETE FROM HISTORY")
-    suspend fun deleteAllHistory()
-
-    @Query("SELECT COUNT(*) FROM HISTORY")
-    suspend fun countHistory(): Int
-
-    @Query("DELETE FROM HISTORY WHERE ARCID NOT IN (SELECT ARCID FROM HISTORY ORDER BY TIME DESC LIMIT :maxCount)")
-    suspend fun trimHistoryTo(maxCount: Int)
-
-    @Query("SELECT * FROM HISTORY ORDER BY TIME ASC LIMIT 1")
-    suspend fun getOldestHistory(): HistoryInfo?
-
-    // --- LOCAL_FAVORITES ---
-
-    @Query("SELECT * FROM LOCAL_FAVORITES ORDER BY TIME DESC")
-    suspend fun getAllLocalFavorites(): List<LocalFavoriteInfo>
-
-    @Query("SELECT * FROM LOCAL_FAVORITES WHERE TITLE LIKE :query ORDER BY TIME DESC")
-    suspend fun searchLocalFavorites(query: String): List<LocalFavoriteInfo>
-
-    @Query("SELECT * FROM LOCAL_FAVORITES WHERE ARCID = :arcid")
-    suspend fun loadLocalFavoriteByArcid(arcid: String): LocalFavoriteInfo?
-
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertLocalFavorite(info: LocalFavoriteInfo)
-
-    @Query("DELETE FROM LOCAL_FAVORITES WHERE ARCID = :arcid")
-    suspend fun deleteLocalFavoriteByArcid(arcid: String)
-
-    // --- QUICK_SEARCH ---
 
     @Query("SELECT * FROM QUICK_SEARCH ORDER BY TIME ASC")
     suspend fun getAllQuickSearch(): List<QuickSearch>

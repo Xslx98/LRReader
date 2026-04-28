@@ -17,71 +17,43 @@ package com.hippo.ehviewer.dao
 
 import android.os.Parcel
 import android.os.Parcelable
-import androidx.room.ColumnInfo
-import androidx.room.Entity
-import androidx.room.Ignore
-import androidx.room.Index
 
 /**
- * Entity mapped to table "LOCAL_FAVORITES".
+ * In-memory view over the favorite subsystem of an
+ * `ARCHIVE_LOCAL_STATE` row.
  *
- * W36-9: standalone class. Used to inherit GalleryInfoEntity to share
- * the GalleryInfo column set; every non-DAO consumer was migrated to
- * the Archive domain model in Phase 1 and the inheritance only kept
- * dead fields alive.
- *
- * Persistent column set unchanged from Room schema v21 — physical
- * column drops happen in W36-10.
+ * Post-L1-4 this class is no longer a Room `@Entity` — the persisted
+ * state lives on [ArchiveLocalState] (FAVORITE_TIME column is non-null
+ * when the archive is in local favorites). The repository layer
+ * translates between this view and the unified row.
  */
-@Entity(tableName = "LOCAL_FAVORITES", primaryKeys = ["ARCID"], indices = [Index("TIME")])
 class LocalFavoriteInfo() : Parcelable {
 
-    // ── Persistent columns (mirror Room v21 schema 1:1) ──
-
     @JvmField
-    @ColumnInfo(name = "ARCID")
     var arcid: String = ""
 
     @JvmField
-    @ColumnInfo(name = "TITLE")
     var title: String? = null
 
     @JvmField
-    @ColumnInfo(name = "THUMB")
     var thumb: String? = null
 
     @JvmField
-    @ColumnInfo(name = "RATING")
     var rating: Float = 0f
 
     @JvmField
-    @ColumnInfo(name = "SIMPLE_LANGUAGE")
     var simpleLanguage: String? = null
 
     @JvmField
-    @ColumnInfo(name = "SERVER_PROFILE_ID", defaultValue = "0")
     var serverProfileId: Long = 0
 
     @JvmField
-    @ColumnInfo(name = "TIME")
     var time: Long = 0
 
-    // ── @Ignore transient fields (kept per W36-7 audit) ──
-
-    /**
-     * Display tags; populated by mergeOldDB legacy path. No production
-     * reader at present, but kept conservatively to mirror pre-flatten
-     * behavior (any future Archive→LocalFavoriteInfo mapper would set
-     * it). Drop together with all dead @Ignore fields when the Phase 4
-     * format overhaul lands.
-     */
+    /** Display tags; populated by the mapper from Archive.flatTags. */
     @JvmField
-    @Ignore
     var simpleTags: Array<String>? = null
 
-    // ── Parcelable ──
-
-    @Ignore
     private constructor(`in`: Parcel) : this() {
         arcid = `in`.readString() ?: ""
         title = `in`.readString()
