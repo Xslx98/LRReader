@@ -31,7 +31,8 @@ class DataModule(private val context: Context) : IDataModule, Cacheable {
     override val downloadManager: DownloadManager by lazy { DownloadManager(context) }
 
     override val historyRepository: HistoryRepository by lazy {
-        HistoryRepository(AppDatabase.getInstance(context).browsingDao())
+        val db = AppDatabase.getInstance(context)
+        HistoryRepository(db.archiveLocalStateDao(), db)
     }
 
     override val profileRepository: ProfileRepository by lazy {
@@ -43,13 +44,16 @@ class DataModule(private val context: Context) : IDataModule, Cacheable {
     }
 
     override val favoritesRepository: FavoritesRepository by lazy {
-        FavoritesRepository(AppDatabase.getInstance(context).browsingDao())
+        val db = AppDatabase.getInstance(context)
+        FavoritesRepository(db.archiveLocalStateDao(), db)
     }
 
     override val downloadDbRepository: DownloadDbRepository by lazy {
+        val db = AppDatabase.getInstance(context)
         DownloadDbRepository(
-            AppDatabase.getInstance(context).downloadDao(),
-            AppDatabase.getInstance(context)
+            db.archiveLocalStateDao(),
+            db.downloadDao(),
+            db,
         )
     }
 

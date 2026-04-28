@@ -1,8 +1,11 @@
 package com.hippo.ehviewer.mapper
 
+import com.hippo.ehviewer.dao.ArchiveLocalState
+import com.hippo.ehviewer.dao.ArchiveLocalStateJson
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.HistoryInfo
-
+import com.hippo.ehviewer.dao.LocalFavoriteInfo
+import com.hippo.ehviewer.download.DownloadState
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.groupFlatTags
 
@@ -98,3 +101,81 @@ fun HistoryInfo.toArchive(): Archive {
         serverProfileId = serverProfileId,
     )
 }
+
+// ═══════════════════════════════════════════════════════════════════
+//  ArchiveLocalState ↔ memory views (DownloadInfo / HistoryInfo /
+//  LocalFavoriteInfo).  L1-3 onwards the three "Info" types are pure
+//  in-memory views over an ArchiveLocalState row; the Archive payload
+//  is decoded from `archiveJson` and merged with the row's subsystem
+//  columns.
+// ═══════════════════════════════════════════════════════════════════
+
+private fun decodeArchive(archiveJson: String): Archive {
+    return ArchiveLocalStateJson.decodeFromString(Archive.serializer(), archiveJson)
+}
+
+/**
+ * Build an in-memory [DownloadInfo] view from an [ArchiveLocalState]
+ * row. Subsystem columns set the download fields; the display payload
+ * comes from `archiveJson`.
+ */
+fun ArchiveLocalState.toDownloadInfoView(): DownloadInfo {
+    val archive = decodeArchive(archiveJson)
+    val info = DownloadInfo()
+    info.arcid = arcid
+    info.title = archive.title
+    info.thumb = archive.thumbnailUrl
+    info.rating = archive.rating
+    info.simpleLanguage = null
+    info.simpleTags = archive.flatTags.toTypedArray()
+    info.serverProfileId = serverProfileId
+    info.state = downloadState ?: DownloadState.NONE
+    info.legacy = downloadLegacy
+    info.time = downloadTime ?: 0L
+    info.label = downloadLabel
+    info.archiveUri = downloadArchiveUri
+    return info
+}
+
+/**
+ * Build an in-memory [HistoryInfo] view from an [ArchiveLocalState]
+ * row.
+ */
+fun ArchiveLocalState.toHistoryInfoView(): HistoryInfo {
+    val archive = decodeArchive(archiveJson)
+    val info = HistoryInfo()
+    info.arcid = arcid
+    info.title = archive.title
+    info.thumb = archive.thumbnailUrl
+    info.rating = archive.rating
+    info.simpleLanguage = null
+    info.simpleTags = archive.flatTags.toTypedArray()
+    info.serverProfileId = serverProfileId
+    info.mode = historyMode
+    info.time = historyTime ?: 0L
+    return info
+}
+
+/**
+ * Build an in-memory [LocalFavoriteInfo] view from an
+ * [ArchiveLocalState] row.
+ */
+fun ArchiveLocalState.toLocalFavoriteInfoView(): LocalFavoriteInfo {
+    val archive = decodeArchive(archiveJson)
+    val info = LocalFavoriteInfo()
+    info.arcid = arcid
+    info.title = archive.title
+    info.thumb = archive.thumbnailUrl
+    info.rating = archive.rating
+    info.simpleLanguage = null
+    info.simpleTags = archive.flatTags.toTypedArray()
+    info.serverProfileId = serverProfileId
+    info.time = favoriteTime ?: 0L
+    return info
+}
+
+/**
+ * Encode an [Archive] for storage in the `ARCHIVE_JSON` column.
+ */
+fun Archive.toArchiveJson(): String =
+    ArchiveLocalStateJson.encodeToString(Archive.serializer(), this)
