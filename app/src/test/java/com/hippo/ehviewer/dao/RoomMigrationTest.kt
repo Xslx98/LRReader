@@ -19,7 +19,7 @@ import com.hippo.ehviewer.download.DownloadState
  * Room database schema integrity and DAO CRUD tests.
  *
  * These tests ensure:
- * 1. The Room-managed schema creates all 7 tables correctly
+ * 1. The Room-managed schema creates the expected table set correctly
  * 2. Column defaults (e.g., SERVER_PROFILE_ID) work as expected
  * 3. Basic CRUD operations work for all 3 DAOs
  * 4. Data roundtrip through Room Entity ↔ SQLite is correct
@@ -53,7 +53,7 @@ class RoomMigrationTest {
     // ========== Schema Integrity Tests ==========
 
     @Test
-    fun `schema has all 7 expected tables`() {
+    fun `schema has all expected tables`() {
         val cursor = sqliteDb.query(
             "SELECT name FROM sqlite_master WHERE type='table' " +
                 "AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'room_%' " +
@@ -65,10 +65,14 @@ class RoomMigrationTest {
         }
         cursor.close()
 
+        // L1-1 dual-entity stage: ARCHIVE_LOCAL_STATE coexists alongside
+        // the three legacy tables (DOWNLOADS/HISTORY/LOCAL_FAVORITES).
+        // L1-4 will drop the legacy three from the entity list — update
+        // this set then.
         val expectedTables = setOf(
             "DOWNLOADS", "DOWNLOAD_LABELS", "DOWNLOAD_DIRNAME",
             "HISTORY", "LOCAL_FAVORITES", "QUICK_SEARCH",
-            "SERVER_PROFILES"
+            "SERVER_PROFILES", "ARCHIVE_LOCAL_STATE"
         )
         assertEquals(expectedTables, tables)
     }
