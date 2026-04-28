@@ -9,23 +9,26 @@ import com.hippo.ehviewer.download.DownloadState
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.groupFlatTags
 
-/**
- * Bridge functions between the [Archive] domain model and the Room
- * Entities (DownloadInfo / HistoryInfo).
- */
+// ═══════════════════════════════════════════════════════════════════
+//  Archive ↔ in-memory subsystem views (DownloadInfo / HistoryInfo /
+//  LocalFavoriteInfo).
+//
+//  Post-L1 the three "Info" types are no longer Room entities — they
+//  are mutable in-memory views the UI/Adapter/sync code reads and
+//  writes. Persistence lives on `ArchiveLocalState`. These bridge
+//  functions intentionally do NOT touch the database; their job is to
+//  shape an Archive (or an ArchiveLocalState row) into the view
+//  callers expect, and back again when the caller writes.
+// ═══════════════════════════════════════════════════════════════════
 
 /**
- * Bridge: convert an [Archive] domain model to a fresh [DownloadInfo]
- * Entity (DOWNLOADS table). Sets the persistent + display fields from
- * Archive; download-specific fields (state, label, time, archiveUri,
- * legacy) keep their default values and must be set by the caller as
- * needed (e.g., DownloadManager.startDownload sets state=WAIT, time=now).
- *
- * EH-era fields (titleJpn / category / posted / uploader / gid) are
- * left at their defaults — LRR never populates them and W36-7 will
- * drop them from the schema entirely.
+ * Build a fresh [DownloadInfo] view from an [Archive] domain model.
+ * Sets the display fields; download-specific fields (state, label,
+ * time, archiveUri, legacy) keep their default values and must be set
+ * by the caller (e.g., `DownloadManager.startDownload` sets
+ * `state = WAIT, time = now`).
  */
-fun Archive.toDownloadInfo(): DownloadInfo {
+fun Archive.toDownloadInfoView(): DownloadInfo {
     val di = DownloadInfo()
     di.arcid = arcid
     di.title = title
@@ -37,13 +40,12 @@ fun Archive.toDownloadInfo(): DownloadInfo {
 }
 
 /**
- * Bridge: convert an [Archive] domain model to a fresh [HistoryInfo]
- * Entity (HISTORY table). Sets the persistent + display fields from
- * Archive; history-specific fields (time, mode) keep their defaults
- * and the caller is expected to stamp `time = System.currentTimeMillis()`
- * before insert (HistoryRepository does so).
+ * Build a fresh [HistoryInfo] view from an [Archive] domain model.
+ * History-specific fields (`time`, `mode`) keep their defaults; the
+ * caller is expected to stamp `time = System.currentTimeMillis()`
+ * before insert (`HistoryRepository` does so).
  */
-fun Archive.toHistoryInfo(): HistoryInfo {
+fun Archive.toHistoryInfoView(): HistoryInfo {
     val hi = HistoryInfo()
     hi.arcid = arcid
     hi.title = title
@@ -55,11 +57,10 @@ fun Archive.toHistoryInfo(): HistoryInfo {
 }
 
 /**
- * Convert a flattened [DownloadInfo] (no longer extends GalleryInfoEntity
- * post-W36-7) to an [Archive] domain model. Mirrors the GalleryInfo
- * conversion above for fields the flattened entity still carries; fields
- * dropped from DownloadInfo (pages, progress) get sane defaults — Archive
- * pagecount/progress are server-driven anyway.
+ * Recover an [Archive] from a [DownloadInfo] view. Lossy: tags
+ * collapse to a flat list (the `simpleTags` field), `pagecount` /
+ * `progress` / `extension` / `filename` reset to defaults — these are
+ * server-driven and round-trip via the next LRR detail fetch.
  */
 fun DownloadInfo.toArchive(): Archive {
     return Archive(
@@ -80,9 +81,9 @@ fun DownloadInfo.toArchive(): Archive {
 }
 
 /**
- * Convert a flattened [HistoryInfo] (no longer extends GalleryInfoEntity
- * post-W36-8) to an [Archive] domain model. Same shape as the DownloadInfo
- * variant — pages/progress are server-driven and not stored on the entity.
+ * Recover an [Archive] from a [HistoryInfo] view. Same lossy shape as
+ * the DownloadInfo variant — pages / progress are server-driven and
+ * not carried by the view.
  */
 fun HistoryInfo.toArchive(): Archive {
     return Archive(
@@ -103,11 +104,13 @@ fun HistoryInfo.toArchive(): Archive {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-//  ArchiveLocalState ↔ memory views (DownloadInfo / HistoryInfo /
-//  LocalFavoriteInfo).  L1-3 onwards the three "Info" types are pure
-//  in-memory views over an ArchiveLocalState row; the Archive payload
-//  is decoded from `archiveJson` and merged with the row's subsystem
-//  columns.
+//  ArchiveLocalState row → in-memory views.
+//
+//  The repository layer reads ARCHIVE_LOCAL_STATE rows and hands
+//  callers DownloadInfo / HistoryInfo / LocalFavoriteInfo via the
+//  toXxxView() functions below. Each constructs an [Archive] from
+//  the row's `archive_json` payload and overlays the subsystem
+//  columns onto the view.
 // ═══════════════════════════════════════════════════════════════════
 
 private fun decodeArchive(archiveJson: String): Archive {
@@ -115,9 +118,9 @@ private fun decodeArchive(archiveJson: String): Archive {
 }
 
 /**
- * Build an in-memory [DownloadInfo] view from an [ArchiveLocalState]
- * row. Subsystem columns set the download fields; the display payload
- * comes from `archiveJson`.
+ * Build a [DownloadInfo] view from an [ArchiveLocalState] row.
+ * Subsystem columns set the download fields; the display payload
+ * comes from `archive_json`.
  */
 fun ArchiveLocalState.toDownloadInfoView(): DownloadInfo {
     val archive = decodeArchive(archiveJson)
@@ -138,8 +141,7 @@ fun ArchiveLocalState.toDownloadInfoView(): DownloadInfo {
 }
 
 /**
- * Build an in-memory [HistoryInfo] view from an [ArchiveLocalState]
- * row.
+ * Build a [HistoryInfo] view from an [ArchiveLocalState] row.
  */
 fun ArchiveLocalState.toHistoryInfoView(): HistoryInfo {
     val archive = decodeArchive(archiveJson)
@@ -157,8 +159,7 @@ fun ArchiveLocalState.toHistoryInfoView(): HistoryInfo {
 }
 
 /**
- * Build an in-memory [LocalFavoriteInfo] view from an
- * [ArchiveLocalState] row.
+ * Build a [LocalFavoriteInfo] view from an [ArchiveLocalState] row.
  */
 fun ArchiveLocalState.toLocalFavoriteInfoView(): LocalFavoriteInfo {
     val archive = decodeArchive(archiveJson)
@@ -173,6 +174,12 @@ fun ArchiveLocalState.toLocalFavoriteInfoView(): LocalFavoriteInfo {
     info.time = favoriteTime ?: 0L
     return info
 }
+
+/**
+ * Decode the `archive_json` column of an [ArchiveLocalState] row into
+ * the [Archive] payload it contains.
+ */
+fun ArchiveLocalState.toArchive(): Archive = decodeArchive(archiveJson)
 
 /**
  * Encode an [Archive] for storage in the `ARCHIVE_JSON` column.

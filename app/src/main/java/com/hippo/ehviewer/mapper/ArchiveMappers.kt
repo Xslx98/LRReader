@@ -1,47 +1,38 @@
 package com.hippo.ehviewer.mapper
 
-import com.hippo.ehviewer.dao.DownloadInfo
-import com.hippo.ehviewer.dao.HistoryInfo
+import com.hippo.ehviewer.dao.ArchiveLocalState
 import com.lanraragi.reader.client.api.data.LRRArchive
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
-import com.lanraragi.reader.domain.Bimapper
 import com.lanraragi.reader.domain.Mapper
 
 /**
- * Injectable face of the archive ↔ entity ↔ DTO conversions defined as
+ * Injectable face of the archive ↔ DTO ↔ row conversions defined as
  * extension functions in [EntityMapper] and the LRR API DTO. Each
- * adapter delegates to its extension counterpart so call-site ergonomics
- * stay (kotlin extensions read better than `mapper.map(x)`); the
- * [Mapper] wrappers exist so tests and DI can substitute behavior
+ * adapter delegates to its extension counterpart so call-site
+ * ergonomics stay (kotlin extensions read better than `mapper.map(x)`);
+ * the [Mapper] wrappers exist so tests and DI can substitute behavior
  * without resurrecting full models.
  *
- * Wire L1 (three-table unification) plans to introduce a single
- * `ArchiveLocalState` entity. When that lands the existing
- * [downloadInfoToArchive] / [historyInfoToArchive] members will be
- * replaced by an `archiveLocalStateToArchive` Bimapper without
- * touching call sites.
+ * Post-L1 the DownloadInfo / HistoryInfo / LocalFavoriteInfo bimappers
+ * that used to live here are gone — those types are pure in-memory
+ * views, not Room entities, and the persistence path now goes through
+ * `ArchiveLocalState`. The single forward [archiveLocalStateToArchive]
+ * mapper is the wire equivalent: decode the `archive_json` payload
+ * and surface the [Archive] inside.
  */
 object ArchiveMappers {
-
-    val archiveToDownloadInfo: Mapper<Archive, DownloadInfo> = Mapper { it.toDownloadInfo() }
-    val downloadInfoToArchive: Mapper<DownloadInfo, Archive> = Mapper { it.toArchive() }
-
-    val archiveToHistoryInfo: Mapper<Archive, HistoryInfo> = Mapper { it.toHistoryInfo() }
-    val historyInfoToArchive: Mapper<HistoryInfo, Archive> = Mapper { it.toArchive() }
 
     val lrrArchiveToArchive: Mapper<LRRArchive, Archive> = Mapper { it.toArchive() }
     val lrrArchiveToArchiveDetail: Mapper<LRRArchive, ArchiveDetail> = Mapper { it.toArchiveDetail() }
 
-    /** Round-trip wrapper for the DOWNLOADS-row ↔ Archive conversion pair. */
-    val downloadInfoBimapper: Bimapper<Archive, DownloadInfo> = Bimapper(
-        forward = archiveToDownloadInfo,
-        backward = downloadInfoToArchive,
-    )
-
-    /** Round-trip wrapper for the HISTORY-row ↔ Archive conversion pair. */
-    val historyInfoBimapper: Bimapper<Archive, HistoryInfo> = Bimapper(
-        forward = archiveToHistoryInfo,
-        backward = historyInfoToArchive,
-    )
+    /**
+     * Decode an [ArchiveLocalState] row into the [Archive] payload it
+     * carries. The reverse direction (Archive → ArchiveLocalState) is
+     * intentionally not exposed as a Mapper because it cannot be done
+     * losslessly without choosing a subsystem
+     * (download / history / favorite); callers that need to write
+     * should go through the per-subsystem repository methods.
+     */
+    val archiveLocalStateToArchive: Mapper<ArchiveLocalState, Archive> = Mapper { it.toArchive() }
 }
