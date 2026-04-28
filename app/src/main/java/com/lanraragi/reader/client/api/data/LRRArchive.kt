@@ -3,7 +3,6 @@ package com.lanraragi.reader.client.api.data
 import android.os.Parcel
 import android.os.Parcelable
 import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.client.data.GalleryTagGroup
 import com.lanraragi.reader.client.api.LRRAuthManager
 
 import com.lanraragi.reader.domain.Archive
@@ -63,16 +62,7 @@ class LRRArchive() : Parcelable {
 
         val parsedTags = getParsedTags()
         if (parsedTags.isNotEmpty()) {
-            val tagGroups = mutableListOf<GalleryTagGroup>()
-            for ((namespace, values) in parsedTags) {
-                val group = GalleryTagGroup()
-                group.groupName = namespace
-                for (tag in values) {
-                    group.addTag(tag)
-                }
-                tagGroups.add(group)
-            }
-            gd.tags = tagGroups.toTypedArray()
+            gd.tags = parsedTags.map { (namespace, values) -> TagGroup(namespace, values) }
         }
 
         gd.serverProfileId = LRRAuthManager.getActiveProfileId()

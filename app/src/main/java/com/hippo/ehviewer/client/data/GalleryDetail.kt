@@ -18,7 +18,7 @@ package com.hippo.ehviewer.client.data
 
 import android.os.Parcel
 import android.os.Parcelable
-import java.util.Arrays
+import com.lanraragi.reader.domain.TagGroup
 
 /**
  * In-memory model for the gallery detail view, built from an
@@ -86,7 +86,7 @@ class GalleryDetail() : Parcelable {
 
     @JvmField var ratingCount: Int = 0
 
-    @JvmField var tags: Array<GalleryTagGroup>? = null
+    @JvmField var tags: List<TagGroup>? = null
 
     @JvmField var previewPages: Int = 0
 
@@ -114,12 +114,9 @@ class GalleryDetail() : Parcelable {
         SpiderInfoPages = `in`.readInt()
         favoriteCount = `in`.readInt()
         ratingCount = `in`.readInt()
-        val array = `in`.readParcelableArray(GalleryTagGroup::class.java.classLoader)
-        tags = if (array != null) {
-            Arrays.copyOf(array, array.size, Array<GalleryTagGroup>::class.java)
-        } else {
-            null
-        }
+        val tagList = ArrayList<TagGroup>()
+        `in`.readTypedList(tagList, TagGroup.CREATOR)
+        tags = if (tagList.isEmpty()) null else tagList
         previewPages = `in`.readInt()
         SpiderInfoPreviewPages = `in`.readInt()
     }
@@ -146,7 +143,7 @@ class GalleryDetail() : Parcelable {
         dest.writeInt(SpiderInfoPages)
         dest.writeInt(favoriteCount)
         dest.writeInt(ratingCount)
-        dest.writeParcelableArray(tags, flags)
+        dest.writeTypedList(tags ?: emptyList())
         dest.writeInt(previewPages)
         dest.writeInt(SpiderInfoPreviewPages)
     }

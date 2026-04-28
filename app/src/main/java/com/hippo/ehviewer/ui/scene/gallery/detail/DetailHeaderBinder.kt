@@ -191,17 +191,9 @@ internal class DetailHeaderBinder(
             rating.rating = 0f
         }
 
-        // Tags — convert domain TagGroups to GalleryTagGroup for existing tag binder
+        // Tags — pass domain TagGroups directly to the tag binder
         if (context != null && inflater != null) {
-            val galleryTagGroups = ad.tagGroups.map { tg ->
-                val group = com.hippo.ehviewer.client.data.GalleryTagGroup()
-                group.groupName = tg.namespace
-                for (tag in tg.tags) {
-                    group.addTag(tag)
-                }
-                group
-            }.toTypedArray()
-            GalleryTagHelper.bindTags(context, inflater, tags, noTags, galleryTagGroups, clickListener, longClickListener)
+            GalleryTagHelper.bindTags(context, inflater, tags, noTags, ad.tagGroups, clickListener, longClickListener)
         }
     }
 
