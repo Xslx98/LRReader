@@ -82,17 +82,16 @@ class GalleryDetailViewModelTest {
         assertNull(vm.arcid.value)
         assertNull(vm.archive.value)
         assertNull(vm.galleryDetail.value)
-        assertNull(vm.downloadInfo.value)
         assertEquals(GalleryDetailViewModel.STATE_INIT, vm.state.value)
         assertNull(vm.getEffectiveArcid())
         assertNull(vm.getEffectiveArchive())
     }
 
     @Test
-    fun secondNavigation_doesNotLeakDownloadInfoIntoFreshArchive() {
+    fun secondNavigation_doesNotLeakDetailIntoFreshArchive() {
         val vm = GalleryDetailViewModel()
 
-        // First entry: opened from downloads scene — downloadInfo set.
+        // First entry: opened from downloads scene — detail loaded.
         val downloadDetail = GalleryDetail().apply { arcid = "downTok" }
         vm.setArchive(archive("downTok"))
         vm.setGalleryDetail(downloadDetail)
@@ -103,7 +102,7 @@ class GalleryDetailViewModelTest {
         vm.setArchive(archive("freshTok"))
 
         assertEquals("freshTok", vm.getEffectiveArcid())
-        assertNull(vm.downloadInfo.value)
+        assertNull(vm.galleryDetail.value)
     }
 
     /**
