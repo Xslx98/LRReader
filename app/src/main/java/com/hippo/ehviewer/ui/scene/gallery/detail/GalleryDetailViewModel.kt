@@ -67,17 +67,12 @@ class GalleryDetailViewModel : ViewModel() {
 
     private val _action = MutableStateFlow<String?>(null)
 
-    /** The action that opened this scene (ACTION_GALLERY_INFO, ACTION_GID_TOKEN, etc.). */
+    /** The action that opened this scene (currently only ACTION_ARCHIVE). */
     val action: StateFlow<String?> = _action.asStateFlow()
-
-    private val _gid = MutableStateFlow(0L)
-
-    /** Gallery ID, used when action is ACTION_GID_TOKEN. */
-    val gid: StateFlow<Long> = _gid.asStateFlow()
 
     private val _arcid = MutableStateFlow<String?>(null)
 
-    /** Gallery arcid, used when action is ACTION_GID_TOKEN. */
+    /** Gallery arcid populated by the action handler. */
     val arcid: StateFlow<String?> = _arcid.asStateFlow()
 
     // -------------------------------------------------------------------------
@@ -127,10 +122,6 @@ class GalleryDetailViewModel : ViewModel() {
         _action.value = action
     }
 
-    fun setGid(gid: Long) {
-        _gid.value = gid
-    }
-
     fun setArcid(arcid: String?) {
         _arcid.value = arcid
     }
@@ -172,7 +163,6 @@ class GalleryDetailViewModel : ViewModel() {
         detailPreloadJob?.cancel()
         detailPreloadJob = null
         _action.value = null
-        _gid.value = 0L
         _arcid.value = null
         _archive.value = null
         _galleryDetail.value = null
@@ -187,19 +177,13 @@ class GalleryDetailViewModel : ViewModel() {
     // -------------------------------------------------------------------------
 
     /**
-     * Returns the effective arcid, preferring galleryDetail > archive > arcid argument.
+     * Returns the effective arcid, preferring galleryDetail > archive >
+     * arcid argument.
      */
     fun getEffectiveArcid(): String? {
-        val detail = _galleryDetail.value
-        if (detail != null) return detail.arcid
-
-        val archive = _archive.value
-        if (archive != null) return archive.arcid
-
-        if (GalleryDetailScene.ACTION_GID_TOKEN == _action.value) {
-            return _arcid.value
-        }
-        return null
+        return _galleryDetail.value?.arcid
+            ?: _archive.value?.arcid
+            ?: _arcid.value
     }
 
     /**
@@ -222,11 +206,9 @@ class GalleryDetailViewModel : ViewModel() {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val localReadingPage: StateFlow<Int> = combine(
-        _galleryDetail, _archive, _arcid, _action
-    ) { gd, archive, argArcid, action ->
-        gd?.arcid
-            ?: archive?.arcid
-            ?: if (action == GalleryDetailScene.ACTION_GID_TOKEN) argArcid else null
+        _galleryDetail, _archive, _arcid
+    ) { gd, archive, argArcid ->
+        gd?.arcid ?: archive?.arcid ?: argArcid
     }
         .distinctUntilChanged()
         .flatMapLatest { arcid ->
