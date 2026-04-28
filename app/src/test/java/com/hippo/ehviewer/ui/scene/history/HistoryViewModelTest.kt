@@ -70,7 +70,7 @@ class HistoryViewModelTest {
         // Provide a DataModule with HistoryRepository so the ViewModel can resolve it
         ServiceRegistry.initializeForTest(
             data = object : IDataModule {
-                override val historyRepository get() = HistoryRepository(db.browsingDao())
+                override val historyRepository get() = HistoryRepository(db.archiveLocalStateDao(), db)
                 override val profileRepository get() = ProfileRepository(db.miscDao())
                 override val quickSearchRepository get() = throw NotImplementedError("not needed")
                 override val favoritesRepository get() = throw NotImplementedError("not needed")
@@ -241,14 +241,24 @@ class HistoryViewModelTest {
      */
     private fun insertGalleries(vararg galleries: Pair<Long, String>) {
         runBlocking {
-            val dao = db.browsingDao()
+            val repo = ServiceRegistry.dataModule.historyRepository
             for ((gid, title) in galleries) {
-                val historyInfo = com.hippo.ehviewer.dao.HistoryInfo().apply {
-                    this.arcid = "tok$gid"
-                    this.title = title
-                    this.time = System.currentTimeMillis()
-                }
-                dao.insertHistory(historyInfo)
+                val archive = com.lanraragi.reader.domain.Archive(
+                    arcid = "tok$gid",
+                    title = title,
+                    tags = emptyMap(),
+                    pagecount = 0,
+                    progress = 0,
+                    extension = "",
+                    filename = "",
+                    thumbnailUrl = "",
+                    rating = 0f,
+                    isnew = false,
+                    lastreadtime = 0L,
+                    summary = null,
+                    serverProfileId = 0L,
+                )
+                repo.putHistoryInfo(archive)
             }
         }
     }
