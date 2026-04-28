@@ -669,7 +669,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 di.thumb != result.thumb && di.arcid == result.arcid
             ) {
                 mHeaderBinder?.useNetWorkLoadThumb = true
-                di.updateInfo(result)
+                di.updateInfo(result.toArchive())
                 di.state = dlState
                 viewModel.persistDownloadInfo(di)
             }
