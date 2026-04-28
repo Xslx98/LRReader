@@ -1,4 +1,4 @@
-﻿package com.hippo.ehviewer.ui.scene.download
+package com.hippo.ehviewer.ui.scene.download
 
 import android.content.Context
 import androidx.collection.LruCache
@@ -37,6 +37,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
+import com.hippo.ehviewer.download.DownloadState
 
 /**
  * Unit tests for [DownloadsViewModel] — download list state, label switching,
@@ -462,7 +463,7 @@ class DownloadsViewModelTest {
             arcid = "arc-struct"
             title = "structural only"
             label = null
-            state = DownloadInfo.STATE_DOWNLOAD
+            state = DownloadState.DOWNLOAD
             time = 1_000L
         }
         dm.addDownloadInfo(info.toArchive(), null)
@@ -493,10 +494,10 @@ class DownloadsViewModelTest {
         val dm = vm.downloadManager
         // Add one default-label and one "L1"-label info
         val infoA = DownloadInfo().apply {
-            arcid = "a"; title = "A"; label = null; state = DownloadInfo.STATE_NONE; time = 1L
+            arcid = "a"; title = "A"; label = null; state = DownloadState.NONE; time = 1L
         }
         val infoB = DownloadInfo().apply {
-            arcid = "b"; title = "B"; label = "L1"; state = DownloadInfo.STATE_NONE; time = 2L
+            arcid = "b"; title = "B"; label = "L1"; state = DownloadState.NONE; time = 2L
         }
         dm.addLabel("L1")
         dm.addDownloadInfo(infoA.toArchive(), null)

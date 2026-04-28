@@ -21,6 +21,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Ignore
 import androidx.room.Index
+import com.hippo.ehviewer.download.DownloadState
 import com.lanraragi.reader.domain.Archive
 
 /**
@@ -74,7 +75,7 @@ class DownloadInfo() : Parcelable {
 
     @JvmField
     @ColumnInfo(name = "STATE")
-    var state: Int = 0
+    var state: DownloadState = DownloadState.NONE
 
     @JvmField
     @ColumnInfo(name = "LEGACY")
@@ -130,7 +131,7 @@ class DownloadInfo() : Parcelable {
         rating = `in`.readFloat()
         simpleLanguage = `in`.readString()
         serverProfileId = `in`.readLong()
-        state = `in`.readInt()
+        state = DownloadState.fromCode(`in`.readInt())
         legacy = `in`.readInt()
         time = `in`.readLong()
         label = `in`.readString()
@@ -150,7 +151,7 @@ class DownloadInfo() : Parcelable {
         dest.writeFloat(rating)
         dest.writeString(simpleLanguage)
         dest.writeLong(serverProfileId)
-        dest.writeInt(state)
+        dest.writeInt(state.code)
         dest.writeInt(legacy)
         dest.writeLong(time)
         dest.writeString(label)
@@ -182,13 +183,6 @@ class DownloadInfo() : Parcelable {
     }
 
     companion object {
-        const val STATE_INVALID: Int = -1
-        const val STATE_NONE: Int = 0
-        const val STATE_WAIT: Int = 1
-        const val STATE_DOWNLOAD: Int = 2
-        const val STATE_FINISH: Int = 3
-        const val STATE_FAILED: Int = 4
-
         @JvmField
         val CREATOR: Parcelable.Creator<DownloadInfo> = object : Parcelable.Creator<DownloadInfo> {
             override fun createFromParcel(source: Parcel): DownloadInfo = DownloadInfo(source)

@@ -9,6 +9,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.hippo.ehviewer.download.DownloadState
 
 /**
  * Parcelable round-trip tests for [DownloadInfo].
@@ -31,7 +32,7 @@ class DownloadInfoParcelTest {
             rating = 3.5f
             simpleLanguage = "ZH"
             serverProfileId = 42L
-            state = DownloadInfo.STATE_DOWNLOAD
+            state = DownloadState.DOWNLOAD
             legacy = 1
             time = 1672531200000L
             label = "my-label"
@@ -111,7 +112,7 @@ class DownloadInfoParcelTest {
 
             assertEquals("", restored.arcid)
             assertEquals(0f, restored.rating, 0.001f)
-            assertEquals(0, restored.state)
+            assertEquals(DownloadState.NONE, restored.state)
             assertEquals(0, restored.legacy)
             assertEquals(0L, restored.time)
             assertEquals(0L, restored.serverProfileId)

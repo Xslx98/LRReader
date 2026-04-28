@@ -56,6 +56,7 @@ import com.hippo.view.ViewTransition
 import com.hippo.widget.LoadImageView
 import java.text.SimpleDateFormat
 import java.util.Date
+import com.hippo.ehviewer.download.DownloadState
 
 class GalleryDetailScene : BaseScene(), View.OnClickListener,
     View.OnLongClickListener {
@@ -663,7 +664,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         if (mInitialRating.isNaN()) mInitialRating = result.rating
         viewModel.refreshDownloadState()
         val dlState = viewModel.downloadState.value
-        if (dlState != DownloadInfo.STATE_INVALID) {
+        if (dlState != DownloadState.INVALID) {
             val di = mDownloadInfo
             if (di != null && di.thumb != null &&
                 di.thumb != result.thumb && di.arcid == result.arcid

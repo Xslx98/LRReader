@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Arrays
+import com.hippo.ehviewer.download.DownloadState
 
 class DownloadListInfosExecutor {
 
@@ -53,11 +54,11 @@ class DownloadListInfosExecutor {
     fun executeFilterAndSort(id: Int) {
         ServiceRegistry.coroutineModule.ioScope.launch {
             resultList = when (id) {
-                R.id.download_done -> filterDownloadState(DownloadInfo.STATE_FINISH)
-                R.id.not_started -> filterDownloadState(DownloadInfo.STATE_NONE)
-                R.id.waiting -> filterDownloadState(DownloadInfo.STATE_WAIT)
-                R.id.downloading -> filterDownloadState(DownloadInfo.STATE_DOWNLOAD)
-                R.id.failed -> filterDownloadState(DownloadInfo.STATE_FAILED)
+                R.id.download_done -> filterDownloadState(DownloadState.FINISH)
+                R.id.not_started -> filterDownloadState(DownloadState.NONE)
+                R.id.waiting -> filterDownloadState(DownloadState.WAIT)
+                R.id.downloading -> filterDownloadState(DownloadState.DOWNLOAD)
+                R.id.failed -> filterDownloadState(DownloadState.FAILED)
                 R.id.sort_by_gallery_id_asc,
                 R.id.sort_by_gallery_id_desc,
                 R.id.sort_by_create_time_asc,
@@ -117,7 +118,7 @@ class DownloadListInfosExecutor {
         return Arrays.asList(*arr)
     }
 
-    private fun filterDownloadState(state: Int): List<DownloadInfo> {
+    private fun filterDownloadState(state: DownloadState): List<DownloadInfo> {
         val list = ArrayList<DownloadInfo>()
         if (mList == null) {
             return list
