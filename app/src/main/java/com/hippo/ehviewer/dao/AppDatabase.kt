@@ -356,6 +356,7 @@ abstract class AppDatabase : RoomDatabase() {
             return MIGRATION_JSON.encodeToString(Archive.serializer(), archive)
         }
 
+        @Suppress("NestedBlockDepth")
         private fun liftDownloadsToArchiveLocalState(db: SupportSQLiteDatabase) {
             // First lift: no rows in ARCHIVE_LOCAL_STATE yet → plain INSERT.
             val insertStmt = db.compileStatement(
@@ -405,6 +406,7 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        @Suppress("NestedBlockDepth")
         private fun liftHistoryToArchiveLocalState(db: SupportSQLiteDatabase) {
             // Idempotent INSERT-then-UPDATE pattern (see migration KDoc).
             val insertIgnoreStmt = db.compileStatement(
@@ -458,6 +460,7 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        @Suppress("NestedBlockDepth")
         private fun liftLocalFavoritesToArchiveLocalState(db: SupportSQLiteDatabase) {
             val insertIgnoreStmt = db.compileStatement(
                 "INSERT OR IGNORE INTO ARCHIVE_LOCAL_STATE " +

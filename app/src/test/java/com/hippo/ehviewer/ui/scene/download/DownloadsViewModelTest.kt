@@ -103,14 +103,14 @@ class DownloadsViewModelTest {
                 override val downloadManager: DownloadManager get() = manager
                 override val favouriteStatusRouter get() = FavouriteStatusRouter()
                 override val historyRepository get() =
-                    com.hippo.ehviewer.dao.HistoryRepository(db.browsingDao())
+                    com.hippo.ehviewer.dao.HistoryRepository(db.archiveLocalStateDao(), db)
                 override val profileRepository get() = ProfileRepository(db.miscDao())
                 override val quickSearchRepository get() =
                     com.hippo.ehviewer.dao.QuickSearchRepository(db.browsingDao())
                 override val favoritesRepository get() =
-                    com.hippo.ehviewer.dao.FavoritesRepository(db.browsingDao())
+                    com.hippo.ehviewer.dao.FavoritesRepository(db.archiveLocalStateDao(), db)
                 override val downloadDbRepository get() =
-                    DownloadDbRepository(db.downloadDao(), db)
+                    DownloadDbRepository(db.archiveLocalStateDao(), db.downloadDao(), db)
                 override val archiveDetailCache get() = LruCache<String, ArchiveDetail>(10)
                 override val spiderInfoCache: SimpleDiskCache get() =
                     SimpleDiskCache(

@@ -97,10 +97,10 @@ class DownloadManagerTest {
         // through ServiceRegistry instead of the deprecated EhDB methods.
         ServiceRegistry.initializeForTest(
             data = object : com.hippo.ehviewer.module.IDataModule {
-                override val downloadDbRepository get() = DownloadDbRepository(db.downloadDao(), db)
+                override val downloadDbRepository get() = DownloadDbRepository(db.archiveLocalStateDao(), db.downloadDao(), db)
                 override val downloadManager get() = throw NotImplementedError("set after init")
                 override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
-                override val historyRepository get() = com.hippo.ehviewer.dao.HistoryRepository(db.browsingDao())
+                override val historyRepository get() = com.hippo.ehviewer.dao.HistoryRepository(db.archiveLocalStateDao(), db)
                 override val profileRepository get() = throw NotImplementedError("not needed")
                 override val quickSearchRepository get() = throw NotImplementedError("not needed")
                 override val favoritesRepository get() = throw NotImplementedError("not needed")
