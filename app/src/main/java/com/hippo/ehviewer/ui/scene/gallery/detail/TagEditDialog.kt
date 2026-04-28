@@ -20,8 +20,8 @@ import androidx.lifecycle.lifecycleScope
 import com.hippo.android.resource.AttrResources
 import com.hippo.drawable.RoundSideRectDrawable
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.data.GalleryTagGroup
 import com.lanraragi.reader.client.api.LRRArchiveApi
+import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.lanraragi.reader.client.api.LRRTagCache
 import com.lanraragi.reader.client.api.friendlyError
@@ -53,17 +53,16 @@ object TagEditDialog {
     )
 
     /**
-     * Reconstruct the raw LANraragi-format tag string from [GalleryTagGroup] array.
+     * Reconstruct the raw LANraragi-format tag string from a [TagGroup] list.
      * Format: "namespace:tag1, namespace:tag2, ..."
      */
     @JvmStatic
-    fun tagsToString(tagGroups: Array<GalleryTagGroup>?): String {
+    fun tagsToString(tagGroups: List<TagGroup>?): String {
         if (tagGroups.isNullOrEmpty()) return ""
         return buildList {
             for (group in tagGroups) {
-                val namespace = group.groupName ?: "misc"
-                for (i in 0 until group.size()) {
-                    add("$namespace:${group.getTagAt(i)}")
+                for (tag in group.tags) {
+                    add("${group.namespace}:$tag")
                 }
             }
         }.joinToString(", ")
@@ -85,14 +84,14 @@ object TagEditDialog {
     }
 
     /**
-     * Parse [GalleryTagGroup] array into mutable editing model.
+     * Parse a domain [TagGroup] list into the mutable editing model.
      */
-    private fun parseTagGroups(tagGroups: Array<GalleryTagGroup>?): MutableList<EditableTagGroup> {
+    private fun parseTagGroups(tagGroups: List<TagGroup>?): MutableList<EditableTagGroup> {
         if (tagGroups.isNullOrEmpty()) return mutableListOf()
         return tagGroups.map { group ->
             EditableTagGroup(
-                namespace = group.groupName ?: "misc",
-                tags = (0 until group.size()).map { group.getTagAt(it) }.toMutableList()
+                namespace = group.namespace,
+                tags = group.tags.toMutableList()
             )
         }.toMutableList()
     }
@@ -109,7 +108,7 @@ object TagEditDialog {
     fun show(
         activity: Activity?,
         arcid: String?,
-        tagGroups: Array<GalleryTagGroup>?,
+        tagGroups: List<TagGroup>?,
         callback: Callback?
     ) {
         if (activity == null || arcid.isNullOrEmpty()) return
