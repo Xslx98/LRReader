@@ -74,6 +74,7 @@ class GalleryDetailViewModelTest {
         vm.setArcid("tok")
         vm.setArchive(archive("tok"))
         vm.setGalleryDetail(GalleryDetail().apply { arcid = "tok" })
+        vm.updateFavoriteState(FavoriteState(isFavorited = true, name = "slot"))
         vm.setState(GalleryDetailViewModel.STATE_NORMAL)
 
         vm.resetForNewEntry()
@@ -82,9 +83,27 @@ class GalleryDetailViewModelTest {
         assertNull(vm.arcid.value)
         assertNull(vm.archive.value)
         assertNull(vm.galleryDetail.value)
+        assertNull(vm.favoriteState.value)
         assertEquals(GalleryDetailViewModel.STATE_INIT, vm.state.value)
         assertNull(vm.getEffectiveArcid())
         assertNull(vm.getEffectiveArchive())
+    }
+
+    @Test
+    fun updateFavoriteState_storesAndExposesViaFlow() {
+        val vm = GalleryDetailViewModel()
+        assertNull(vm.favoriteState.value)
+
+        vm.updateFavoriteState(FavoriteState(isFavorited = true, name = "manga"))
+        assertEquals(true, vm.favoriteState.value?.isFavorited)
+        assertEquals("manga", vm.favoriteState.value?.name)
+
+        vm.updateFavoriteState(FavoriteState(isFavorited = false, name = null))
+        assertEquals(false, vm.favoriteState.value?.isFavorited)
+        assertNull(vm.favoriteState.value?.name)
+
+        vm.updateFavoriteState(null)
+        assertNull(vm.favoriteState.value)
     }
 
     @Test

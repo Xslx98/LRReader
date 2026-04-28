@@ -198,8 +198,10 @@ internal class DetailActionHandler(
         val gd = viewModel.galleryDetail.value ?: return
         CategoryDialogHelper.showCategoryDialog(activity, gd) { isFavorited, favoriteName ->
             val current = viewModel.galleryDetail.value ?: return@showCategoryDialog
+            // Mirror onto both sources during the M1b transition.
             current.isFavorited = isFavorited
             current.favoriteName = favoriteName
+            viewModel.updateFavoriteState(FavoriteState(isFavorited, favoriteName))
             onFavoriteChanged?.invoke(current)
         }
     }
