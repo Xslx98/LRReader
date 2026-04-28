@@ -14,7 +14,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.data.GalleryDetail
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.data.LRRCategory
@@ -37,23 +36,10 @@ object CategoryDialogHelper {
     }
 
     /**
-     * Show the category selection dialog for a given [GalleryDetail].
-     * Thin wrapper that pulls out the arcid and delegates to the
-     * [showCategoryDialog] overload below — list-based callers that only
-     * have an arcid can call that overload directly.
-     */
-    @JvmStatic
-    fun showCategoryDialog(activity: Activity?, gd: GalleryDetail?, callback: Callback?) {
-        if (activity == null || gd == null) return
-        val arcid = gd.arcid ?: return
-        showCategoryDialog(activity, arcid, callback)
-    }
-
-    /**
      * Show the category selection dialog for an [arcid]. Loads categories
      * from the server, presents a checkbox list, and applies changes on
-     * confirmation. Useful from contexts (gallery list long-press,
-     * shortcuts, etc.) where no [GalleryDetail] has been loaded.
+     * confirmation. Useful from any context (detail page, gallery list
+     * long-press, shortcuts) — only the arcid is required.
      */
     @JvmStatic
     fun showCategoryDialog(activity: Activity?, arcid: String?, callback: Callback?) {

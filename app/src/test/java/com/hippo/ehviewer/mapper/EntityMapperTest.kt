@@ -1,103 +1,79 @@
 package com.hippo.ehviewer.mapper
 
-import com.hippo.ehviewer.client.data.GalleryDetail
-import com.lanraragi.reader.domain.TagGroup
+import com.lanraragi.reader.domain.Archive
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Tests for [EntityMapper] — the mapper extensions that bridge
- * Room Entities to the [Archive] / [ArchiveDetail] domain models.
+ * Tests for the entity ↔ Archive bridge extensions in [EntityMapper].
+ *
+ * The GalleryDetail extensions were removed in M1b-5 along with the
+ * GalleryDetail class itself — those scenarios are now covered by
+ * [com.lanraragi.reader.client.api.data.LRRArchiveTest] (LRRArchive →
+ * Archive / ArchiveDetail) and the round-trip suite in
+ * [ArchiveMappersTest].
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class EntityMapperTest {
 
+    private fun archive(): Archive = Archive(
+        arcid = "ga1",
+        title = "Direct Archive",
+        tags = mapOf("artist" to listOf("alice", "bob"), "language" to listOf("english")),
+        pagecount = 33,
+        progress = 7,
+        extension = "zip",
+        filename = "ga1.zip",
+        thumbnailUrl = "https://example.com/g.jpg",
+        rating = 3.0f,
+        isnew = false,
+        lastreadtime = 1700_000L,
+        summary = null,
+        serverProfileId = 9L,
+    )
+
     @Test
-    fun `toArchiveDetail converts tag groups`() {
-        val gd = GalleryDetail()
-        gd.arcid = "detail1"
-        gd.title = "Detail Test"
-        gd.language = "Japanese"
-        gd.size = "150 MB"
-        gd.pages = 50
-        gd.rating = 4.0f
-        gd.serverProfileId = 1L
+    fun `Archive toDownloadInfo populates display fields`() {
+        val di = archive().toDownloadInfo()
 
-        gd.tags = listOf(
-            TagGroup("artist", listOf("author_a", "author_b")),
-            TagGroup("parody", listOf("series_x")),
-        )
-
-        val detail = gd.toArchiveDetail()
-        assertEquals(2, detail.tagGroups.size)
-        assertEquals("artist", detail.tagGroups[0].namespace)
-        assertEquals(listOf("author_a", "author_b"), detail.tagGroups[0].tags)
-        assertEquals("parody", detail.tagGroups[1].namespace)
-        assertEquals(listOf("series_x"), detail.tagGroups[1].tags)
-        assertEquals("Japanese", detail.language)
-        assertEquals("150 MB", detail.size)
+        assertEquals("ga1", di.arcid)
+        assertEquals("Direct Archive", di.title)
+        assertEquals("https://example.com/g.jpg", di.thumb)
+        assertEquals(3.0f, di.rating)
+        assertEquals(9L, di.serverProfileId)
+        // simpleTags is the flattened "namespace:value" array consumed by
+        // the search index; verify it round-trips through the Archive
+        // tag map.
+        val flat = di.simpleTags?.toList()
+        assertEquals(listOf("alice", "bob", "english"), flat)
     }
 
     @Test
-    fun `toArchiveDetail handles null tags`() {
-        val gd = GalleryDetail()
-        gd.arcid = "detail2"
-        gd.tags = null
-        gd.serverProfileId = 1L
+    fun `Archive toHistoryInfo populates display fields`() {
+        val hi = archive().toHistoryInfo()
 
-        val detail = gd.toArchiveDetail()
-        assertTrue(detail.tagGroups.isEmpty())
-        assertTrue(detail.archive.tags.isEmpty())
+        assertEquals("ga1", hi.arcid)
+        assertEquals("Direct Archive", hi.title)
+        assertEquals("https://example.com/g.jpg", hi.thumb)
+        assertEquals(3.0f, hi.rating)
+        assertEquals(9L, hi.serverProfileId)
     }
 
     @Test
-    fun `toArchiveDetail maps basic archive fields`() {
-        val gd = GalleryDetail()
-        gd.arcid = "arcid99"
-        gd.title = "Title"
-        gd.thumb = "https://example.com/t.jpg"
-        gd.pages = 20
-        gd.progress = 5
-        gd.rating = 2.5f
-        gd.serverProfileId = 3L
-        gd.tags = emptyList()
+    fun `DownloadInfo toArchive groups simple tags by namespace`() {
+        val di = archive().toDownloadInfo()
+        // Mimic a tag-namespaced flat array as written by the legacy
+        // import path; current toDownloadInfo writes namespace-less
+        // values, but the inverse parser must still cope.
+        di.simpleTags = arrayOf("artist:alice", "language:english", "raw")
+        val back = di.toArchive()
 
-        val detail = gd.toArchiveDetail()
-        assertEquals("arcid99", detail.archive.arcid)
-        assertEquals("Title", detail.archive.title)
-        assertEquals("https://example.com/t.jpg", detail.archive.thumbnailUrl)
-        assertEquals(20, detail.archive.pagecount)
-        assertEquals(5, detail.archive.progress)
-        assertEquals(2.5f, detail.archive.rating)
-        assertEquals(3L, detail.archive.serverProfileId)
-    }
-
-    @Test
-    fun `toArchive on GalleryDetail maps fields and tags`() {
-        val gd = GalleryDetail()
-        gd.arcid = "ga1"
-        gd.title = "Direct Archive"
-        gd.thumb = "https://example.com/g.jpg"
-        gd.pages = 33
-        gd.progress = 7
-        gd.rating = 3.0f
-        gd.serverProfileId = 9L
-
-        gd.tags = listOf(TagGroup("artist", listOf("alice")))
-
-        val archive = gd.toArchive()
-        assertEquals("ga1", archive.arcid)
-        assertEquals("Direct Archive", archive.title)
-        assertEquals("https://example.com/g.jpg", archive.thumbnailUrl)
-        assertEquals(33, archive.pagecount)
-        assertEquals(7, archive.progress)
-        assertEquals(3.0f, archive.rating)
-        assertEquals(9L, archive.serverProfileId)
-        assertEquals(listOf("alice"), archive.tags["artist"])
+        assertEquals(listOf("alice"), back.tags["artist"])
+        assertEquals(listOf("english"), back.tags["language"])
+        assertEquals(listOf("raw"), back.tags["misc"])
     }
 }

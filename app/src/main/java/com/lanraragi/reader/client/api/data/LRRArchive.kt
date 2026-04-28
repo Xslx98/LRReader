@@ -2,7 +2,6 @@ package com.lanraragi.reader.client.api.data
 
 import android.os.Parcel
 import android.os.Parcelable
-import com.hippo.ehviewer.client.data.GalleryDetail
 import com.lanraragi.reader.client.api.LRRAuthManager
 
 import com.lanraragi.reader.domain.Archive
@@ -32,40 +31,6 @@ class LRRArchive() : Parcelable {
     @JvmField @SerialName("progress") var progress: Int = 0
     @JvmField @SerialName("lastreadtime") var lastreadtime: Long = 0
     @JvmField @SerialName("summary") var summary: String? = null
-
-    /**
-     * Convert this LRRArchive into a GalleryDetail for the detail scene.
-     *
-     * Post-W36-11 the GalleryDetail field set is intentionally narrower
-     * than the historical GalleryInfoEntity it used to inherit; fields
-     * with no UI reader (titleJpn / category / posted / simpleTags /
-     * tgList) are no longer populated here.
-     */
-    fun toGalleryDetail(): GalleryDetail {
-        val gd = GalleryDetail()
-
-        gd.arcid = arcid
-        gd.title = title
-        gd.pages = pagecount
-        gd.progress = progress
-
-        val serverUrl = LRRAuthManager.getServerUrl()
-        gd.thumb = if (serverUrl != null) getThumbnailUrl(serverUrl) else ""
-
-        gd.rating = parseRatingFromTags(tags)
-
-        gd.language = "N/A"
-        gd.size = extension.uppercase().ifEmpty { "N/A" }
-
-        val parsedTags = getParsedTags()
-        if (parsedTags.isNotEmpty()) {
-            gd.tags = parsedTags.map { (namespace, values) -> TagGroup(namespace, values) }
-        }
-
-        gd.serverProfileId = LRRAuthManager.getActiveProfileId()
-
-        return gd
-    }
 
     // ----- Domain model conversion -----
 

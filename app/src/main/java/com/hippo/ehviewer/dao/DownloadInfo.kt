@@ -166,12 +166,8 @@ class DownloadInfo() : Parcelable {
      * GalleryDetailScene after detail load to keep the cached download
      * row in sync with the latest server state.
      *
-     * Took a [com.hippo.ehviewer.client.data.GalleryDetail] until F4 of
-     * the 2026-04-28 audit — Room entities should not depend on UI
-     * cache models, and Archive carries every field this method
-     * actually writes. simpleLanguage is dropped because LRR never
-     * populates it; the DB column still exists but is no longer
-     * refreshed here.
+     * simpleLanguage is intentionally not refreshed because LRR never
+     * populates it; the DB column still exists but is read-only here.
      */
     fun updateInfo(archive: Archive) {
         arcid = archive.arcid
