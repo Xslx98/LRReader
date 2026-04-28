@@ -9,8 +9,10 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.annotation.VisibleForTesting
 import com.hippo.ehviewer.download.DownloadStateConverter
+import com.lanraragi.reader.domain.Archive
 import java.nio.ByteBuffer
 import java.security.MessageDigest
+import kotlinx.serialization.json.Json
 
 /**
  * Room database replacing GreenDAO's DaoMaster/DaoSession.
@@ -245,49 +247,263 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         /**
-         * v22 → v23: Introduce the `ARCHIVE_LOCAL_STATE` table (L1).
+         * v22 → v23: Introduce the `ARCHIVE_LOCAL_STATE` table and lift
+         * existing rows from the three legacy tables (`DOWNLOADS`,
+         * `HISTORY`, `LOCAL_FAVORITES`) into it. (L1)
          *
-         * **L1-1 stage (this commit)**: create the new table + indexes only.
-         * The legacy `DOWNLOADS` / `HISTORY` / `LOCAL_FAVORITES` tables are
-         * preserved verbatim — the dual-entity stage lets KSP generate the
-         * new DAO without disturbing existing readers.
+         * Pipeline:
+         *   1. CREATE TABLE ARCHIVE_LOCAL_STATE + indexes
+         *   2. Lift each `DOWNLOADS` row → INSERT (download fields set,
+         *      history/favorite fields NULL). `archive_json` is built
+         *      from the row's title/thumb/rating/server_profile_id; tags
+         *      = empty (recovered on next detail load — see plan §5).
+         *   3. Lift each `HISTORY` row → INSERT OR IGNORE then UPDATE
+         *      history columns. The IGNORE step prevents clobbering an
+         *      existing row already lifted from DOWNLOADS; the UPDATE
+         *      then writes history columns whether the row was new or
+         *      pre-existing. Same idempotent pattern is used for
+         *      LOCAL_FAVORITES. Necessary because minSdk = 28 → SQLite
+         *      3.22 → no `ON CONFLICT DO UPDATE` (which arrived in
+         *      SQLite 3.24).
+         *   4. (DROP of the three legacy tables is deferred to L1-4
+         *      with a v23→v24 bump. Removing entities from
+         *      `AppDatabase.entities` shifts Room's compiled identity
+         *      hash; that change must coincide with a version bump so
+         *      the per-DB stored identity hash is updated cleanly. The
+         *      legacy tables therefore stay around — unused — between
+         *      L1-2 and L1-4. Acceptable footprint: a few KB per device.)
          *
-         * **L1-2 stage (follow-up commit)**: this same migration body will be
-         * extended to lift rows from the three legacy tables into
-         * `ARCHIVE_LOCAL_STATE` and DROP them. The 6-scenario
-         * `MIGRATION_22_23_Test` lands together with that data-copy step.
-         *
-         * **Irreversible**: once L1-2 ships and a user runs the new APK their
-         * three legacy tables are gone. A `git revert` works for the source
-         * tree but cannot resurrect the dropped data on the device — recovery
-         * is forward-fix only.
+         * **Irreversible at the row level**: lifted rows live in
+         * ARCHIVE_LOCAL_STATE going forward. The legacy tables remain as
+         * read-only fallback through L1-3 and are dropped in L1-4.
          */
         @VisibleForTesting
         internal val MIGRATION_22_23 = object : Migration(22, 23) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
-                    """
-                    CREATE TABLE IF NOT EXISTS ARCHIVE_LOCAL_STATE (
-                        ARCID TEXT NOT NULL,
-                        SERVER_PROFILE_ID INTEGER NOT NULL DEFAULT 0,
-                        ARCHIVE_JSON TEXT NOT NULL,
-                        DOWNLOAD_STATE INTEGER,
-                        DOWNLOAD_LEGACY INTEGER NOT NULL DEFAULT 0,
-                        DOWNLOAD_TIME INTEGER,
-                        DOWNLOAD_LABEL TEXT,
-                        DOWNLOAD_ARCHIVE_URI TEXT,
-                        HISTORY_TIME INTEGER,
-                        HISTORY_MODE INTEGER NOT NULL DEFAULT 0,
-                        FAVORITE_TIME INTEGER,
-                        PRIMARY KEY (ARCID)
-                    )
-                    """.trimIndent()
+                createArchiveLocalStateTable(db)
+                liftDownloadsToArchiveLocalState(db)
+                liftHistoryToArchiveLocalState(db)
+                liftLocalFavoritesToArchiveLocalState(db)
+            }
+        }
+
+        private fun createArchiveLocalStateTable(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS ARCHIVE_LOCAL_STATE (
+                    ARCID TEXT NOT NULL,
+                    SERVER_PROFILE_ID INTEGER NOT NULL DEFAULT 0,
+                    ARCHIVE_JSON TEXT NOT NULL,
+                    DOWNLOAD_STATE INTEGER,
+                    DOWNLOAD_LEGACY INTEGER NOT NULL DEFAULT 0,
+                    DOWNLOAD_TIME INTEGER,
+                    DOWNLOAD_LABEL TEXT,
+                    DOWNLOAD_ARCHIVE_URI TEXT,
+                    HISTORY_TIME INTEGER,
+                    HISTORY_MODE INTEGER NOT NULL DEFAULT 0,
+                    FAVORITE_TIME INTEGER,
+                    PRIMARY KEY (ARCID)
                 )
-                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_SERVER_PROFILE_ID` ON `ARCHIVE_LOCAL_STATE` (`SERVER_PROFILE_ID`)")
-                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_DOWNLOAD_TIME` ON `ARCHIVE_LOCAL_STATE` (`DOWNLOAD_TIME`)")
-                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_HISTORY_TIME` ON `ARCHIVE_LOCAL_STATE` (`HISTORY_TIME`)")
-                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_FAVORITE_TIME` ON `ARCHIVE_LOCAL_STATE` (`FAVORITE_TIME`)")
-                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_DOWNLOAD_LABEL` ON `ARCHIVE_LOCAL_STATE` (`DOWNLOAD_LABEL`)")
+                """.trimIndent()
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_SERVER_PROFILE_ID` ON `ARCHIVE_LOCAL_STATE` (`SERVER_PROFILE_ID`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_DOWNLOAD_TIME` ON `ARCHIVE_LOCAL_STATE` (`DOWNLOAD_TIME`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_HISTORY_TIME` ON `ARCHIVE_LOCAL_STATE` (`HISTORY_TIME`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_FAVORITE_TIME` ON `ARCHIVE_LOCAL_STATE` (`FAVORITE_TIME`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_DOWNLOAD_LABEL` ON `ARCHIVE_LOCAL_STATE` (`DOWNLOAD_LABEL`)")
+        }
+
+        /**
+         * Migration-time JSON encoder. `ignoreUnknownKeys` keeps lifted
+         * rows readable if [Archive] grows new optional fields later;
+         * `encodeDefaults = false` keeps stored JSON tight.
+         */
+        private val MIGRATION_JSON: Json = Json {
+            encodeDefaults = false
+            ignoreUnknownKeys = true
+        }
+
+        /**
+         * Build the `ARCHIVE_JSON` payload for a row lifted out of one
+         * of the legacy tables. Only fields present in the v22 schema
+         * survive — tags is empty (the @Ignore field never made it to
+         * disk), and pagecount/progress/extension/filename get sane
+         * defaults that the next LRR detail fetch will overwrite.
+         */
+        private fun encodeArchiveForLift(
+            arcid: String,
+            title: String,
+            thumbnailUrl: String,
+            rating: Float,
+            serverProfileId: Long,
+            lastreadtime: Long,
+        ): String {
+            val archive = Archive(
+                arcid = arcid,
+                title = title,
+                tags = emptyMap(),
+                pagecount = 0,
+                progress = 0,
+                extension = "",
+                filename = "",
+                thumbnailUrl = thumbnailUrl,
+                rating = rating,
+                isnew = false,
+                lastreadtime = lastreadtime,
+                summary = null,
+                serverProfileId = serverProfileId,
+            )
+            return MIGRATION_JSON.encodeToString(Archive.serializer(), archive)
+        }
+
+        private fun liftDownloadsToArchiveLocalState(db: SupportSQLiteDatabase) {
+            // First lift: no rows in ARCHIVE_LOCAL_STATE yet → plain INSERT.
+            val insertStmt = db.compileStatement(
+                "INSERT OR IGNORE INTO ARCHIVE_LOCAL_STATE " +
+                    "(ARCID, SERVER_PROFILE_ID, ARCHIVE_JSON, DOWNLOAD_STATE, DOWNLOAD_LEGACY, DOWNLOAD_TIME, DOWNLOAD_LABEL, DOWNLOAD_ARCHIVE_URI) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+            )
+            try {
+                db.query(
+                    "SELECT ARCID, TITLE, THUMB, RATING, SERVER_PROFILE_ID, STATE, LEGACY, TIME, LABEL, ARCHIVE_URI FROM DOWNLOADS"
+                ).use { c ->
+                    while (c.moveToNext()) {
+                        val arcid = c.getString(0) ?: continue
+                        val title = if (c.isNull(1)) "" else c.getString(1)
+                        val thumb = if (c.isNull(2)) "" else c.getString(2)
+                        val rating = c.getFloat(3)
+                        val serverProfileId = c.getLong(4)
+                        val state = c.getInt(5)
+                        val legacy = c.getInt(6)
+                        val time = c.getLong(7)
+                        val label = if (c.isNull(8)) null else c.getString(8)
+                        val archiveUri = if (c.isNull(9)) null else c.getString(9)
+
+                        val archiveJson = encodeArchiveForLift(
+                            arcid = arcid,
+                            title = title,
+                            thumbnailUrl = thumb,
+                            rating = rating,
+                            serverProfileId = serverProfileId,
+                            lastreadtime = 0L,
+                        )
+
+                        insertStmt.clearBindings()
+                        insertStmt.bindString(1, arcid)
+                        insertStmt.bindLong(2, serverProfileId)
+                        insertStmt.bindString(3, archiveJson)
+                        insertStmt.bindLong(4, state.toLong())
+                        insertStmt.bindLong(5, legacy.toLong())
+                        insertStmt.bindLong(6, time)
+                        if (label != null) insertStmt.bindString(7, label) else insertStmt.bindNull(7)
+                        if (archiveUri != null) insertStmt.bindString(8, archiveUri) else insertStmt.bindNull(8)
+                        insertStmt.executeInsert()
+                    }
+                }
+            } finally {
+                insertStmt.close()
+            }
+        }
+
+        private fun liftHistoryToArchiveLocalState(db: SupportSQLiteDatabase) {
+            // Idempotent INSERT-then-UPDATE pattern (see migration KDoc).
+            val insertIgnoreStmt = db.compileStatement(
+                "INSERT OR IGNORE INTO ARCHIVE_LOCAL_STATE " +
+                    "(ARCID, SERVER_PROFILE_ID, ARCHIVE_JSON, HISTORY_TIME, HISTORY_MODE) " +
+                    "VALUES (?, ?, ?, ?, ?)"
+            )
+            val updateStmt = db.compileStatement(
+                "UPDATE ARCHIVE_LOCAL_STATE SET HISTORY_TIME = ?, HISTORY_MODE = ? WHERE ARCID = ?"
+            )
+            try {
+                db.query(
+                    "SELECT ARCID, TITLE, THUMB, RATING, SERVER_PROFILE_ID, MODE, TIME FROM HISTORY"
+                ).use { c ->
+                    while (c.moveToNext()) {
+                        val arcid = c.getString(0) ?: continue
+                        val title = if (c.isNull(1)) "" else c.getString(1)
+                        val thumb = if (c.isNull(2)) "" else c.getString(2)
+                        val rating = c.getFloat(3)
+                        val serverProfileId = c.getLong(4)
+                        val mode = c.getInt(5)
+                        val time = c.getLong(6)
+
+                        val archiveJson = encodeArchiveForLift(
+                            arcid = arcid,
+                            title = title,
+                            thumbnailUrl = thumb,
+                            rating = rating,
+                            serverProfileId = serverProfileId,
+                            lastreadtime = time,
+                        )
+
+                        insertIgnoreStmt.clearBindings()
+                        insertIgnoreStmt.bindString(1, arcid)
+                        insertIgnoreStmt.bindLong(2, serverProfileId)
+                        insertIgnoreStmt.bindString(3, archiveJson)
+                        insertIgnoreStmt.bindLong(4, time)
+                        insertIgnoreStmt.bindLong(5, mode.toLong())
+                        insertIgnoreStmt.executeInsert()
+
+                        updateStmt.clearBindings()
+                        updateStmt.bindLong(1, time)
+                        updateStmt.bindLong(2, mode.toLong())
+                        updateStmt.bindString(3, arcid)
+                        updateStmt.executeUpdateDelete()
+                    }
+                }
+            } finally {
+                insertIgnoreStmt.close()
+                updateStmt.close()
+            }
+        }
+
+        private fun liftLocalFavoritesToArchiveLocalState(db: SupportSQLiteDatabase) {
+            val insertIgnoreStmt = db.compileStatement(
+                "INSERT OR IGNORE INTO ARCHIVE_LOCAL_STATE " +
+                    "(ARCID, SERVER_PROFILE_ID, ARCHIVE_JSON, FAVORITE_TIME) " +
+                    "VALUES (?, ?, ?, ?)"
+            )
+            val updateStmt = db.compileStatement(
+                "UPDATE ARCHIVE_LOCAL_STATE SET FAVORITE_TIME = ? WHERE ARCID = ?"
+            )
+            try {
+                db.query(
+                    "SELECT ARCID, TITLE, THUMB, RATING, SERVER_PROFILE_ID, TIME FROM LOCAL_FAVORITES"
+                ).use { c ->
+                    while (c.moveToNext()) {
+                        val arcid = c.getString(0) ?: continue
+                        val title = if (c.isNull(1)) "" else c.getString(1)
+                        val thumb = if (c.isNull(2)) "" else c.getString(2)
+                        val rating = c.getFloat(3)
+                        val serverProfileId = c.getLong(4)
+                        val time = c.getLong(5)
+
+                        val archiveJson = encodeArchiveForLift(
+                            arcid = arcid,
+                            title = title,
+                            thumbnailUrl = thumb,
+                            rating = rating,
+                            serverProfileId = serverProfileId,
+                            lastreadtime = 0L,
+                        )
+
+                        insertIgnoreStmt.clearBindings()
+                        insertIgnoreStmt.bindString(1, arcid)
+                        insertIgnoreStmt.bindLong(2, serverProfileId)
+                        insertIgnoreStmt.bindString(3, archiveJson)
+                        insertIgnoreStmt.bindLong(4, time)
+                        insertIgnoreStmt.executeInsert()
+
+                        updateStmt.clearBindings()
+                        updateStmt.bindLong(1, time)
+                        updateStmt.bindString(2, arcid)
+                        updateStmt.executeUpdateDelete()
+                    }
+                }
+            } finally {
+                insertIgnoreStmt.close()
+                updateStmt.close()
             }
         }
 
