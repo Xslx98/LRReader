@@ -100,11 +100,6 @@ class GalleryDetailViewModel : ViewModel() {
     /** Domain model for display. Populated alongside [galleryDetail] from the same API response. */
     val archiveDetail: StateFlow<ArchiveDetail?> = _archiveDetail.asStateFlow()
 
-    private val _downloadInfo = MutableStateFlow<DownloadInfo?>(null)
-
-    /** Download info when opened from downloads scene. */
-    val downloadInfo: StateFlow<DownloadInfo?> = _downloadInfo.asStateFlow()
-
     // -------------------------------------------------------------------------
     // Loading state
     // -------------------------------------------------------------------------
@@ -132,10 +127,6 @@ class GalleryDetailViewModel : ViewModel() {
 
     fun setGalleryDetail(detail: GalleryDetail?) {
         _galleryDetail.value = detail
-    }
-
-    fun setDownloadInfo(info: DownloadInfo?) {
-        _downloadInfo.value = info
     }
 
     fun setState(state: Int) {
@@ -167,7 +158,6 @@ class GalleryDetailViewModel : ViewModel() {
         _archive.value = null
         _galleryDetail.value = null
         _archiveDetail.value = null
-        _downloadInfo.value = null
         _downloadState.value = DownloadState.INVALID
         _state.value = STATE_INIT
     }
