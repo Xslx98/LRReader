@@ -22,12 +22,16 @@ import com.lanraragi.reader.domain.TagGroup
 
 /**
  * In-memory model for the gallery detail view, built from an
- * [com.lanraragi.reader.client.api.LRRArchive] response.
+ * [com.lanraragi.reader.client.api.LRRArchive] response and held by
+ * [com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailViewModel].
  *
- * W36-11: standalone Parcelable. Used to inherit GalleryInfoEntity for
- * the shared display columns (arcid/title/thumb/rating/etc.); the
- * remaining handful of fields are now declared locally so this class
- * carries only what its UI consumers actually read.
+ * Parcelable so it survives process death via Scene `savedInstanceState`.
+ *
+ * History:
+ * - W36-11: extracted from the GalleryInfoEntity inheritance chain.
+ * - 2026-04-28 M2 audit: removed seven dead EH-era fields whose readers
+ *   were all dead code (gid, torrentCount, favoriteCount, ratingCount,
+ *   SpiderInfoPages, SpiderInfoPreviewPages, previewPages).
  */
 class GalleryDetail() : Parcelable {
 
@@ -65,32 +69,13 @@ class GalleryDetail() : Parcelable {
     /** True iff the archive is in any local favorite. Used by header heart icon. */
     @JvmField var isFavorited: Boolean = false
 
-    /**
-     * Legacy EH gid; LRR builds always set 0. Retained because the rating-
-     * result Bundle still carries a KEY_GID extra and removing it requires
-     * a wider sweep of the Scene result-handling path.
-     */
-    @JvmField var gid: Long = 0
-
     // ── Detail-only fields (no list-view counterpart) ──
-
-    @JvmField var torrentCount: Int = 0
 
     @JvmField var language: String? = null
 
     @JvmField var size: String? = null
 
-    @JvmField var SpiderInfoPages: Int = 0
-
-    @JvmField var favoriteCount: Int = 0
-
-    @JvmField var ratingCount: Int = 0
-
     @JvmField var tags: List<TagGroup>? = null
-
-    @JvmField var previewPages: Int = 0
-
-    @JvmField var SpiderInfoPreviewPages: Int = 0
 
     // ── Parcelable ──
 
@@ -107,18 +92,11 @@ class GalleryDetail() : Parcelable {
         uploader = `in`.readString()
         favoriteName = `in`.readString()
         isFavorited = `in`.readByte().toInt() != 0
-        gid = `in`.readLong()
-        torrentCount = `in`.readInt()
         language = `in`.readString()
         size = `in`.readString()
-        SpiderInfoPages = `in`.readInt()
-        favoriteCount = `in`.readInt()
-        ratingCount = `in`.readInt()
         val tagList = ArrayList<TagGroup>()
         `in`.readTypedList(tagList, TagGroup.CREATOR)
         tags = if (tagList.isEmpty()) null else tagList
-        previewPages = `in`.readInt()
-        SpiderInfoPreviewPages = `in`.readInt()
     }
 
     override fun describeContents(): Int = 0
@@ -136,16 +114,9 @@ class GalleryDetail() : Parcelable {
         dest.writeString(uploader)
         dest.writeString(favoriteName)
         dest.writeByte(if (isFavorited) 1.toByte() else 0.toByte())
-        dest.writeLong(gid)
-        dest.writeInt(torrentCount)
         dest.writeString(language)
         dest.writeString(size)
-        dest.writeInt(SpiderInfoPages)
-        dest.writeInt(favoriteCount)
-        dest.writeInt(ratingCount)
         dest.writeTypedList(tags ?: emptyList())
-        dest.writeInt(previewPages)
-        dest.writeInt(SpiderInfoPreviewPages)
     }
 
     companion object {
