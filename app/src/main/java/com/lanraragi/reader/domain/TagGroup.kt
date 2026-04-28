@@ -7,8 +7,7 @@ import android.os.Parcelable
  * A group of tags under a single namespace (e.g., "artist", "parody", "misc").
  *
  * Implements [Parcelable] so it can ride inside other Parcelable models
- * (notably the in-memory [com.hippo.ehviewer.client.data.GalleryDetail])
- * without requiring a separate adapter type.
+ * (notably [ArchiveDetail]) without requiring a separate adapter type.
  */
 data class TagGroup(
     val namespace: String,

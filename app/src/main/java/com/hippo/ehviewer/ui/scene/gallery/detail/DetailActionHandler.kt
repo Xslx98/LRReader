@@ -13,7 +13,6 @@ import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.UrlOpener
 import com.hippo.ehviewer.client.LRRUrl
-import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.dao.DownloadInfo
@@ -197,15 +196,6 @@ internal class DetailActionHandler(
     private fun showCategoryDialog(activity: android.app.Activity) {
         val arcid = viewModel.getEffectiveArcid() ?: return
         CategoryDialogHelper.showCategoryDialog(activity, arcid) { isFavorited, favoriteName ->
-            // Mirror onto both sources during the M1b transition: the
-            // legacy GalleryDetail flags keep working for any caller still
-            // reading them; the FavoriteState flow is now the canonical
-            // source for DetailHeaderBinder.
-            val gd = viewModel.galleryDetail.value
-            if (gd != null) {
-                gd.isFavorited = isFavorited
-                gd.favoriteName = favoriteName
-            }
             viewModel.updateFavoriteState(FavoriteState(isFavorited, favoriteName))
             onFavoriteChanged?.invoke(arcid)
         }

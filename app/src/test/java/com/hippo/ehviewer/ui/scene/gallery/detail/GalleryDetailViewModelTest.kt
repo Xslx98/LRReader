@@ -1,8 +1,8 @@
 package com.hippo.ehviewer.ui.scene.gallery.detail
 
-import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.gallery.ReadingProgressTracker
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.domain.ArchiveDetail
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -13,11 +13,11 @@ import org.junit.Test
  *
  * Background: GalleryDetailViewModel is scoped via
  * `ViewModelProvider(requireActivity())`, so the same instance is reused
- * across navigations. The `getEffective*()` accessors prefer galleryDetail
- * over the navigation Archive (the "detail > archive > args" fallback).
+ * across navigations. The `getEffective*()` accessors prefer archiveDetail
+ * over the navigation Archive (the "archiveDetail > archive > args" fallback).
  * When the user pops back to the list and clicks a different gallery,
  * [setArchive] writes the new arg but the previous gallery's
- * `_galleryDetail` is still cached. Without an explicit reset every
+ * `_archiveDetail` is still cached. Without an explicit reset every
  * getEffective*() call returns the stale arcid → the new detail screen
  * renders the old gallery, downloads it, etc.
  *
@@ -43,22 +43,27 @@ class GalleryDetailViewModelTest {
         serverProfileId = 0L,
     )
 
+    private fun archiveDetail(arcid: String) = ArchiveDetail(
+        archive = archive(arcid),
+        tagGroups = emptyList(),
+        language = null,
+        size = null,
+    )
+
     @Test
     fun secondNavigation_afterReset_returnsNewGalleryArcid_notStaleDetail() {
         val vm = GalleryDetailViewModel()
 
-        val archiveA = archive("tokA")
-        val detailA = GalleryDetail().apply { arcid = "tokA" }
         val archiveB = archive("tokB")
 
         // First navigation: A loaded with both archive and detail.
-        vm.setArchive(archiveA)
-        vm.setGalleryDetail(detailA)
+        vm.setArchive(archive("tokA"))
+        vm.setArchiveDetail(archiveDetail("tokA"))
         assertEquals("tokA", vm.getEffectiveArcid())
 
         // User pops back and clicks gallery B. The Scene must reset the
         // ViewModel before writing the new arguments, otherwise the stale
-        // detail from gallery A wins via the detail > archive fallback.
+        // detail from gallery A wins via the archiveDetail > archive fallback.
         vm.resetForNewEntry()
         vm.setArchive(archiveB)
 
@@ -73,8 +78,9 @@ class GalleryDetailViewModelTest {
         vm.setAction(GalleryDetailScene.ACTION_ARCHIVE)
         vm.setArcid("tok")
         vm.setArchive(archive("tok"))
-        vm.setGalleryDetail(GalleryDetail().apply { arcid = "tok" })
+        vm.setArchiveDetail(archiveDetail("tok"))
         vm.updateFavoriteState(FavoriteState(isFavorited = true, name = "slot"))
+        vm.updateCurrentRating(4f)
         vm.setState(GalleryDetailViewModel.STATE_NORMAL)
 
         vm.resetForNewEntry()
@@ -82,8 +88,9 @@ class GalleryDetailViewModelTest {
         assertNull(vm.action.value)
         assertNull(vm.arcid.value)
         assertNull(vm.archive.value)
-        assertNull(vm.galleryDetail.value)
+        assertNull(vm.archiveDetail.value)
         assertNull(vm.favoriteState.value)
+        assertNull(vm.currentRating.value)
         assertEquals(GalleryDetailViewModel.STATE_INIT, vm.state.value)
         assertNull(vm.getEffectiveArcid())
         assertNull(vm.getEffectiveArchive())
@@ -107,13 +114,42 @@ class GalleryDetailViewModelTest {
     }
 
     @Test
+    fun updateCurrentRating_storesAndExposesViaFlow() {
+        val vm = GalleryDetailViewModel()
+        assertNull(vm.currentRating.value)
+
+        vm.updateCurrentRating(3f)
+        assertEquals(3f, vm.currentRating.value)
+
+        vm.updateCurrentRating(5f)
+        assertEquals(5f, vm.currentRating.value)
+    }
+
+    @Test
+    fun setArchiveDetail_initializesCurrentRatingFromArchive() {
+        val vm = GalleryDetailViewModel()
+
+        // setArchiveDetail seeds _currentRating from archive.rating so the
+        // detail page never displays a missing rating between load and the
+        // first user touch.
+        val ad = archiveDetail("tok").copy(
+            archive = archive("tok").copy(rating = 4.5f)
+        )
+        vm.setArchiveDetail(ad)
+        assertEquals(4.5f, vm.currentRating.value)
+
+        // Clearing falls back to null.
+        vm.setArchiveDetail(null)
+        assertNull(vm.currentRating.value)
+    }
+
+    @Test
     fun secondNavigation_doesNotLeakDetailIntoFreshArchive() {
         val vm = GalleryDetailViewModel()
 
         // First entry: opened from downloads scene — detail loaded.
-        val downloadDetail = GalleryDetail().apply { arcid = "downTok" }
         vm.setArchive(archive("downTok"))
-        vm.setGalleryDetail(downloadDetail)
+        vm.setArchiveDetail(archiveDetail("downTok"))
         assertEquals("downTok", vm.getEffectiveArcid())
 
         // Second entry: search-result click on a different gallery.
@@ -121,7 +157,7 @@ class GalleryDetailViewModelTest {
         vm.setArchive(archive("freshTok"))
 
         assertEquals("freshTok", vm.getEffectiveArcid())
-        assertNull(vm.galleryDetail.value)
+        assertNull(vm.archiveDetail.value)
     }
 
     /**
