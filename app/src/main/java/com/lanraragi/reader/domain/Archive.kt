@@ -2,6 +2,7 @@ package com.lanraragi.reader.domain
 
 import android.os.Parcel
 import android.os.Parcelable
+import kotlinx.serialization.Serializable
 
 /**
  * Shared domain model representing a LANraragi archive.
@@ -11,8 +12,13 @@ import android.os.Parcelable
  * Uses the natural LANraragi identifier [arcid] (String) rather than
  * the legacy hashed gid (Long).
  *
- * Implements [Parcelable] for Android IPC (ContentHelper, Intent extras).
+ * Implements [Parcelable] for Android IPC (ContentHelper, Intent extras)
+ * and `@Serializable` so the entire archive can be JSON-encoded into a
+ * single column when the W2026-04 audit's L1 (three-table unification)
+ * lands. The JSON form is forward-compatible: adding new fields here
+ * does not require a Room schema bump.
  */
+@Serializable
 data class Archive(
     val arcid: String,
     val title: String,
@@ -25,7 +31,7 @@ data class Archive(
     val rating: Float,
     val isnew: Boolean,
     val lastreadtime: Long,
-    val summary: String?,
+    val summary: String? = null,
     val serverProfileId: Long,
 ) : Parcelable {
 
