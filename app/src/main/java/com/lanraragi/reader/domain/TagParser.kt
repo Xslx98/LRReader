@@ -3,15 +3,17 @@ package com.lanraragi.reader.domain
 /**
  * Tag parsing utilities for LANraragi tag formats.
  *
- * LRR tags are conceptually `namespace:value`. They appear in three
+ * LRR tags are conceptually `namespace:value`. They appear in two
  * physical shapes across the wire/persistence boundary:
  *
  * - Comma-separated string from the API:  `"artist:foo, parody:bar, baz"`
  * - Flat array from Room `@Ignore` caches: `["artist:foo", "parody:bar", "baz"]`
- * - Already-grouped via [com.hippo.ehviewer.client.data.GalleryTagGroup]
  *
- * This file owns the namespace-split logic so the three shapes share one
+ * This file owns the namespace-split logic so both shapes share one
  * implementation; tags lacking a namespace fall under [DEFAULT_NAMESPACE].
+ *
+ * The grouped form ([com.lanraragi.reader.domain.TagGroup]) is built
+ * directly from the parser's output and never re-parsed.
  */
 
 private const val DEFAULT_NAMESPACE = "misc"

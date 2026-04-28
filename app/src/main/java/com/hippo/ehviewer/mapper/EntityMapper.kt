@@ -10,8 +10,9 @@ import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.domain.groupFlatTags
 
 /**
- * Bridge functions between the [Archive] domain model and the Room
- * Entities (DownloadInfo / HistoryInfo / GalleryDetail).
+ * Bridge functions between the [Archive] domain model, the Room
+ * Entities (DownloadInfo / HistoryInfo) and the in-memory detail view
+ * model [GalleryDetail].
  */
 
 /**
@@ -110,7 +111,7 @@ fun HistoryInfo.toArchive(): Archive {
 fun GalleryDetail.toArchive(): Archive = Archive(
     arcid = arcid,
     title = title ?: "",
-    tags = galleryDetailTagsMap(tags),
+    tags = tagGroupsToMap(tags),
     pagecount = pages,
     progress = progress,
     extension = "",
@@ -125,36 +126,21 @@ fun GalleryDetail.toArchive(): Archive = Archive(
 
 /**
  * Derive an [ArchiveDetail] from a cached [GalleryDetail] (when the original
- * LRRArchive is not available). Converts [GalleryDetail.tags] (GalleryTagGroup[])
- * into domain [TagGroup] list.
+ * LRRArchive is not available). Both sides now share the domain [TagGroup]
+ * type post-M3, so tag groups pass through unchanged.
  */
-fun GalleryDetail.toArchiveDetail(): ArchiveDetail {
-    val tagGroups = tags?.map { group ->
-        TagGroup(
-            namespace = group.groupName ?: "misc",
-            tags = (0 until group.size()).map { group.getTagAt(it) }
-        )
-    } ?: emptyList()
+fun GalleryDetail.toArchiveDetail(): ArchiveDetail = ArchiveDetail(
+    archive = toArchive(),
+    tagGroups = tags ?: emptyList(),
+    language = language,
+    size = size,
+)
 
-    return ArchiveDetail(
-        archive = toArchive(),
-        tagGroups = tagGroups,
-        language = language,
-        size = size,
-    )
-}
-
-private fun galleryDetailTagsMap(
-    groups: Array<com.hippo.ehviewer.client.data.GalleryTagGroup>?
-): Map<String, List<String>> {
-    if (groups == null) return emptyMap()
+private fun tagGroupsToMap(groups: List<TagGroup>?): Map<String, List<String>> {
+    if (groups.isNullOrEmpty()) return emptyMap()
     val map = LinkedHashMap<String, MutableList<String>>()
     for (g in groups) {
-        val ns = g.groupName ?: "misc"
-        val list = map.getOrPut(ns) { mutableListOf() }
-        for (i in 0 until g.size()) {
-            list.add(g.getTagAt(i))
-        }
+        map.getOrPut(g.namespace) { mutableListOf() }.addAll(g.tags)
     }
     return map
 }

@@ -1,7 +1,7 @@
 package com.hippo.ehviewer.mapper
 
 import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.client.data.GalleryTagGroup
+import com.lanraragi.reader.domain.TagGroup
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -28,16 +28,10 @@ class EntityMapperTest {
         gd.rating = 4.0f
         gd.serverProfileId = 1L
 
-        val group1 = GalleryTagGroup()
-        group1.groupName = "artist"
-        group1.addTag("author_a")
-        group1.addTag("author_b")
-
-        val group2 = GalleryTagGroup()
-        group2.groupName = "parody"
-        group2.addTag("series_x")
-
-        gd.tags = arrayOf(group1, group2)
+        gd.tags = listOf(
+            TagGroup("artist", listOf("author_a", "author_b")),
+            TagGroup("parody", listOf("series_x")),
+        )
 
         val detail = gd.toArchiveDetail()
         assertEquals(2, detail.tagGroups.size)
@@ -71,7 +65,7 @@ class EntityMapperTest {
         gd.progress = 5
         gd.rating = 2.5f
         gd.serverProfileId = 3L
-        gd.tags = emptyArray()
+        gd.tags = emptyList()
 
         val detail = gd.toArchiveDetail()
         assertEquals("arcid99", detail.archive.arcid)
@@ -81,21 +75,6 @@ class EntityMapperTest {
         assertEquals(5, detail.archive.progress)
         assertEquals(2.5f, detail.archive.rating)
         assertEquals(3L, detail.archive.serverProfileId)
-    }
-
-    @Test
-    fun `toArchiveDetail uses misc for null groupName`() {
-        val gd = GalleryDetail()
-        gd.arcid = "x"
-        gd.serverProfileId = 1L
-
-        val group = GalleryTagGroup()
-        group.groupName = null
-        group.addTag("some_tag")
-        gd.tags = arrayOf(group)
-
-        val detail = gd.toArchiveDetail()
-        assertEquals("misc", detail.tagGroups[0].namespace)
     }
 
     @Test
@@ -109,10 +88,7 @@ class EntityMapperTest {
         gd.rating = 3.0f
         gd.serverProfileId = 9L
 
-        val group = GalleryTagGroup()
-        group.groupName = "artist"
-        group.addTag("alice")
-        gd.tags = arrayOf(group)
+        gd.tags = listOf(TagGroup("artist", listOf("alice")))
 
         val archive = gd.toArchive()
         assertEquals("ga1", archive.arcid)
