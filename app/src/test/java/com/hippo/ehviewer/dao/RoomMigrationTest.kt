@@ -1,7 +1,5 @@
 package com.hippo.ehviewer.dao
 
-import android.content.ContentValues
-import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.test.core.app.ApplicationProvider
@@ -13,19 +11,14 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import com.hippo.ehviewer.download.DownloadState
 
 /**
  * Room database schema integrity and DAO CRUD tests.
  *
- * These tests ensure:
- * 1. The Room-managed schema creates the expected table set correctly
- * 2. Column defaults (e.g., SERVER_PROFILE_ID) work as expected
- * 3. Basic CRUD operations work for all 3 DAOs
- * 4. Data roundtrip through Room Entity ↔ SQLite is correct
- *
- * When future migrations are added, add migration-specific
- * tests using MigrationTestHelper with androidTest instrumentation.
+ * Tests the residual entity/DAO surface that survives L1: the
+ * unified `ARCHIVE_LOCAL_STATE` table is covered by
+ * [ArchiveLocalStateDaoTest] separately, and migrations are covered
+ * by per-version tests under `RoomMigrationVxxVxxTest`.
  *
  * Run with: ./gradlew testAppReleaseDebugUnitTest --tests "*.RoomMigrationTest"
  */
@@ -65,67 +58,21 @@ class RoomMigrationTest {
         }
         cursor.close()
 
-        // L1-1 dual-entity stage: ARCHIVE_LOCAL_STATE coexists alongside
-        // the three legacy tables (DOWNLOADS/HISTORY/LOCAL_FAVORITES).
-        // L1-4 will drop the legacy three from the entity list — update
-        // this set then.
+        // Post-L1-4: the legacy three tables (DOWNLOADS, HISTORY,
+        // LOCAL_FAVORITES) are gone — their subsystems live on
+        // ARCHIVE_LOCAL_STATE. DOWNLOAD_LABELS / DOWNLOAD_DIRNAME /
+        // QUICK_SEARCH / SERVER_PROFILES carry distinct concerns and
+        // remain on their own tables.
         val expectedTables = setOf(
-            "DOWNLOADS", "DOWNLOAD_LABELS", "DOWNLOAD_DIRNAME",
-            "HISTORY", "LOCAL_FAVORITES", "QUICK_SEARCH",
-            "SERVER_PROFILES", "ARCHIVE_LOCAL_STATE"
+            "DOWNLOAD_LABELS", "DOWNLOAD_DIRNAME",
+            "QUICK_SEARCH", "SERVER_PROFILES",
+            "ARCHIVE_LOCAL_STATE"
         )
         assertEquals(expectedTables, tables)
     }
 
     @Test
-    fun `DOWNLOADS table has expected columns`() {
-        val cursor = sqliteDb.query("PRAGMA table_info(DOWNLOADS)")
-        val columns = mutableMapOf<String, String>() // name -> type
-        while (cursor.moveToNext()) {
-            val name = cursor.getString(cursor.getColumnIndexOrThrow("name"))
-            val type = cursor.getString(cursor.getColumnIndexOrThrow("type"))
-            columns[name] = type
-        }
-        cursor.close()
-
-        assertTrue("STATE column missing", "STATE" in columns)
-        assertTrue("SERVER_PROFILE_ID column missing", "SERVER_PROFILE_ID" in columns)
-        assertTrue("TITLE column missing", "TITLE" in columns)
-        assertTrue("ARCHIVE_URI column missing", "ARCHIVE_URI" in columns)
-        // Post-W36-10: GID / TITLE_JPN / CATEGORY / POSTED / UPLOADER were
-        // dropped from DOWNLOADS in MIGRATION_21_22.
-        assertTrue("GID column should be dropped post-W36-10", "GID" !in columns)
-        assertTrue("CATEGORY column should be dropped post-W36-10", "CATEGORY" !in columns)
-        assertTrue("TITLE_JPN column should be dropped post-W36-10", "TITLE_JPN" !in columns)
-        assertTrue("POSTED column should be dropped post-W36-10", "POSTED" !in columns)
-        assertTrue("UPLOADER column should be dropped post-W36-10", "UPLOADER" !in columns)
-    }
-
-    @Test
-    fun `SERVER_PROFILE_ID default value is 0 across tables`() {
-        // Verify DOWNLOADS
-        sqliteDb.execSQL(
-            "INSERT INTO DOWNLOADS (ARCID, STATE, LEGACY, TIME, RATING) " +
-                "VALUES ('arcid_101', 0, 0, ${System.currentTimeMillis()}, 0.0)"
-        )
-        val cur1 = sqliteDb.query("SELECT SERVER_PROFILE_ID FROM DOWNLOADS WHERE ARCID = 'arcid_101'")
-        assertTrue(cur1.moveToFirst())
-        assertEquals(0, cur1.getInt(0))
-        cur1.close()
-
-        // Verify HISTORY
-        sqliteDb.execSQL(
-            "INSERT INTO HISTORY (ARCID, MODE, TIME, RATING) " +
-                "VALUES ('arcid_102', 0, ${System.currentTimeMillis()}, 0.0)"
-        )
-        val cur2 = sqliteDb.query("SELECT SERVER_PROFILE_ID FROM HISTORY WHERE ARCID = 'arcid_102'")
-        assertTrue(cur2.moveToFirst())
-        assertEquals(0, cur2.getInt(0))
-        cur2.close()
-    }
-
-    @Test
-    fun `schema has v19 indexes on LOCAL_FAVORITES, QUICK_SEARCH, DOWNLOAD_LABELS`() {
+    fun `schema has v19 indexes on QUICK_SEARCH and DOWNLOAD_LABELS`() {
         val cursor = sqliteDb.query(
             "SELECT name FROM sqlite_master WHERE type='index' AND name NOT LIKE 'sqlite_%'"
         )
@@ -135,62 +82,17 @@ class RoomMigrationTest {
         }
         cursor.close()
 
-        assertTrue("index_LOCAL_FAVORITES_TIME should exist",
-            indexes.contains("index_LOCAL_FAVORITES_TIME"))
-        assertTrue("index_QUICK_SEARCH_TIME should exist",
-            indexes.contains("index_QUICK_SEARCH_TIME"))
-        assertTrue("index_DOWNLOAD_LABELS_TIME should exist",
-            indexes.contains("index_DOWNLOAD_LABELS_TIME"))
+        assertTrue(
+            "index_QUICK_SEARCH_TIME should exist",
+            indexes.contains("index_QUICK_SEARCH_TIME")
+        )
+        assertTrue(
+            "index_DOWNLOAD_LABELS_TIME should exist",
+            indexes.contains("index_DOWNLOAD_LABELS_TIME")
+        )
     }
 
-    // ========== DownloadRoomDao CRUD Tests ==========
-
-    @Test
-    fun `DownloadDao insert and query`() = runBlocking {
-        val dao = db.downloadDao()
-        val info = DownloadInfo().apply {
-            arcid = "test_token"
-            title = "Test Gallery"
-            state = DownloadState.NONE
-            time = System.currentTimeMillis()
-        }
-        dao.insert(info)
-
-        val result = dao.loadDownload("test_token")
-        assertNotNull(result)
-        assertEquals("test_token", result!!.arcid)
-        assertEquals("Test Gallery", result.title)
-    }
-
-    @Test
-    fun `DownloadDao update`() = runBlocking {
-        val dao = db.downloadDao()
-        val info = DownloadInfo().apply {
-            arcid ="arcid_2001"
-            state = DownloadState.NONE
-            time = System.currentTimeMillis()
-        }
-        dao.insert(info)
-
-        info.state = DownloadState.DOWNLOAD
-        dao.update(info)
-        val result = dao.loadDownload("arcid_2001")
-        assertEquals(DownloadState.DOWNLOAD, result!!.state)
-    }
-
-    @Test
-    fun `DownloadDao delete`() = runBlocking {
-        val dao = db.downloadDao()
-        val info = DownloadInfo().apply {
-            arcid ="arcid_3001"
-            state = DownloadState.NONE
-            time = System.currentTimeMillis()
-        }
-        dao.insert(info)
-        dao.deleteDownloadByKey("arcid_3001")
-
-        assertNull(dao.loadDownload("arcid_3001"))
-    }
+    // ========== DownloadRoomDao CRUD Tests (residual tables) ==========
 
     @Test
     fun `DownloadDao label CRUD`() = runBlocking {
@@ -217,54 +119,7 @@ class RoomMigrationTest {
         assertEquals("/storage/gallery_8001", result!!.dirname)
     }
 
-    // ========== BrowsingRoomDao CRUD Tests ==========
-
-    @Test
-    fun `BrowsingDao history insert and query`() = runBlocking {
-        val dao = db.browsingDao()
-        val history = HistoryInfo().apply {
-            arcid = "hist_token"
-            title = "History Gallery"
-            time = System.currentTimeMillis()
-            mode = 0
-        }
-        dao.insertHistory(history)
-
-        val all = dao.getAllHistory()
-        assertTrue(all.any { it.arcid == "hist_token" })
-    }
-
-    @Test
-    fun `BrowsingDao history count and trim`() = runBlocking {
-        val dao = db.browsingDao()
-        val now = System.currentTimeMillis()
-        for (i in 1..5) {
-            dao.insertHistory(HistoryInfo().apply {
-                arcid ="arcid_${9000 + i}"
-                time = now + i
-                mode = 0
-            })
-        }
-
-        assertEquals(5, dao.countHistory())
-
-        dao.trimHistoryTo(3)
-        assertEquals(3, dao.countHistory())
-    }
-
-    @Test
-    fun `BrowsingDao local favorite insert and query`() = runBlocking {
-        val dao = db.browsingDao()
-        val fav = LocalFavoriteInfo().apply {
-            arcid = "fav_token"
-            title = "Favorite Gallery"
-            time = System.currentTimeMillis()
-        }
-        dao.insertLocalFavorite(fav)
-
-        val all = dao.getAllLocalFavorites()
-        assertTrue(all.any { it.arcid == "fav_token" })
-    }
+    // ========== BrowsingRoomDao CRUD Tests (residual table) ==========
 
     @Test
     fun `BrowsingDao quickSearch insert and query`() = runBlocking {
@@ -310,30 +165,4 @@ class RoomMigrationTest {
         val all = dao.getAllServerProfiles()
         assertTrue(all.none { it.isActive })
     }
-
-    // ========== Migration Testing Guide ==========
-
-    // Currently at schema v9 (baseline). When a migration is needed:
-    //
-    // 1. Add the migration to AppDatabase (e.g., MIGRATION_9_10)
-    // 2. Create an androidTest with MigrationTestHelper:
-    //
-    //    @get:Rule
-    //    val helper = MigrationTestHelper(
-    //        InstrumentationRegistry.getInstrumentation(),
-    //        AppDatabase::class.java.canonicalName
-    //    )
-    //
-    //    @Test
-    //    fun migrate9To10() {
-    //        val db = helper.createDatabase("test", 9).apply {
-    //            execSQL("INSERT INTO DOWNLOADS ...")
-    //            close()
-    //        }
-    //        val migrated = helper.runMigrationsAndValidate("test", 10, true, MIGRATION_9_10)
-    //        // verify data with cursor queries
-    //    }
-    //
-    // MigrationTestHelper requires InstrumentationRegistry and schema JSON files
-    // in androidTest assets (not unit test). Use androidTest for migration-path testing.
 }

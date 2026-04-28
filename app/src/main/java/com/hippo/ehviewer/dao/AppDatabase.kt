@@ -38,16 +38,13 @@ import kotlinx.serialization.json.Json
  */
 @Database(
     entities = [
-        DownloadInfo::class,
         DownloadLabel::class,
         DownloadDirname::class,
-        HistoryInfo::class,
-        LocalFavoriteInfo::class,
         QuickSearch::class,
         ServerProfile::class,
         ArchiveLocalState::class
     ],
-    version = 23,
+    version = 24,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class, DownloadStateConverter::class)
@@ -70,7 +67,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "eh.db"
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24)
                     .build()
                     .also { INSTANCE = it }
             }
@@ -243,6 +240,33 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("DROP TABLE LOCAL_FAVORITES")
                 db.execSQL("ALTER TABLE LOCAL_FAVORITES_NEW RENAME TO LOCAL_FAVORITES")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_LOCAL_FAVORITES_TIME` ON `LOCAL_FAVORITES` (`TIME`)")
+            }
+        }
+
+        /**
+         * v23 → v24: Drop the three legacy tables that the L1-2
+         * migration kept around for the dual-entity stage. By the time
+         * this migration runs, `MIGRATION_22_23` has already lifted
+         * every row into `ARCHIVE_LOCAL_STATE` and the legacy DAO
+         * methods are gone. The tables are deadweight at this point —
+         * a few KB of unreferenced rows on the device.
+         *
+         * Bumping the schema version is what makes this commit safe to
+         * ship: removing entities from `@Database.entities` changes
+         * Room's compiled identity hash, which Room verifies against
+         * the per-database stored hash on every open. Without a
+         * version bump, an existing v23 install would fail the hash
+         * check on first start with the new APK; with the bump,
+         * `MIGRATION_23_24` (this body) becomes the legitimate
+         * upgrade path that brings the schema in line with the new
+         * entity set.
+         */
+        @VisibleForTesting
+        internal val MIGRATION_23_24 = object : Migration(23, 24) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DROP TABLE IF EXISTS DOWNLOADS")
+                db.execSQL("DROP TABLE IF EXISTS HISTORY")
+                db.execSQL("DROP TABLE IF EXISTS LOCAL_FAVORITES")
             }
         }
 

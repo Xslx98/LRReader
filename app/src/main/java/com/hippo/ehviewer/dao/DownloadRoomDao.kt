@@ -1,51 +1,18 @@
 package com.hippo.ehviewer.dao
 
 import androidx.room.*
-import kotlinx.coroutines.flow.Flow
 
 /**
- * Room DAO for download-related tables: DOWNLOADS, DOWNLOAD_DIRNAME, DOWNLOAD_LABELS.
+ * Room DAO for the residual download-related tables: DOWNLOAD_DIRNAME
+ * and DOWNLOAD_LABELS.
+ *
+ * The DOWNLOADS table itself is gone post-L1; download rows live on
+ * `ARCHIVE_LOCAL_STATE` and are accessed via [ArchiveLocalStateDao].
+ * The two tables that survive carry distinct concerns —
+ * `arcid → on-disk dirname` mapping and label metadata respectively.
  */
 @Dao
 interface DownloadRoomDao {
-
-    // --- DOWNLOADS ---
-
-    @Query("SELECT * FROM DOWNLOADS ORDER BY TIME DESC")
-    suspend fun getAllDownloadInfo(): List<DownloadInfo>
-
-    @Query("SELECT * FROM DOWNLOADS ORDER BY TIME DESC")
-    fun observeAllDownloads(): Flow<List<DownloadInfo>>
-
-    @Query("SELECT * FROM DOWNLOADS WHERE SERVER_PROFILE_ID = :profileId ORDER BY TIME DESC")
-    fun observeDownloadsByServer(profileId: Long): Flow<List<DownloadInfo>>
-
-    @Query("SELECT * FROM DOWNLOADS WHERE SERVER_PROFILE_ID = :profileId ORDER BY TIME DESC")
-    suspend fun getDownloadInfoByServer(profileId: Long): List<DownloadInfo>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(info: DownloadInfo)
-
-    @Update
-    suspend fun update(info: DownloadInfo)
-
-    @Update
-    suspend fun updateAll(list: List<DownloadInfo>)
-
-    @Query("SELECT * FROM DOWNLOADS WHERE ARCID = :arcid")
-    suspend fun loadDownload(arcid: String): DownloadInfo?
-
-    @Query("UPDATE DOWNLOADS SET RATING = :rating WHERE ARCID = :arcid")
-    suspend fun updateRating(arcid: String, rating: Float)
-
-    @Query("DELETE FROM DOWNLOADS WHERE ARCID = :arcid")
-    suspend fun deleteDownloadByKey(arcid: String)
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(list: List<DownloadInfo>)
-
-    @Query("DELETE FROM DOWNLOADS WHERE ARCID IN (:arcids)")
-    suspend fun deleteByArcids(arcids: List<String>)
 
     // --- DOWNLOAD_DIRNAME ---
 

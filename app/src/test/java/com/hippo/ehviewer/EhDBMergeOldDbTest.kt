@@ -101,9 +101,13 @@ class EhDBMergeOldDbTest {
         EhDB.mergeOldDB(context)
 
         // Verify the Room DB was not mutated as a side effect.
-        assertEquals(0, db.downloadDao().getAllDownloadInfo().size)
+        // Post-L1-4: legacy tables gone — check the unified
+        // ARCHIVE_LOCAL_STATE table for downloads / history /
+        // favorites, plus the still-distinct quick-search table.
+        assertTrue(db.archiveLocalStateDao().getAllDownloads().isEmpty())
+        assertTrue(db.archiveLocalStateDao().getAllHistory().isEmpty())
+        assertTrue(db.archiveLocalStateDao().getAllFavorites().isEmpty())
         assertTrue(db.browsingDao().getAllQuickSearch().isEmpty())
-        assertTrue(db.browsingDao().getAllHistory().isEmpty())
     }
 
     @Test
