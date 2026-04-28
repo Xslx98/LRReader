@@ -5,13 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.data.GalleryDetail
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.runSuspend
-import com.hippo.ehviewer.mapper.toArchive
-import com.hippo.ehviewer.mapper.toArchiveDetail
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.hippo.ehviewer.dao.DownloadInfo
@@ -85,19 +82,14 @@ class GalleryDetailViewModel : ViewModel() {
      * Archive (domain model) of the navigation argument. Populated by
      * [setArchive] from `GalleryDetailScene.handleArgs`. Until the
      * detail-API response lands this is the only source for the eager
-     * header bind (thumb / title); after that, [galleryDetail] is
-     * preferred via [getEffectiveArchive].
+     * header bind (thumb / title); after that, [archiveDetail] is the
+     * canonical truth source via [getEffectiveArchive].
      */
     val archive: StateFlow<Archive?> = _archive.asStateFlow()
 
-    private val _galleryDetail = MutableStateFlow<GalleryDetail?>(null)
-
-    /** The full gallery detail, loaded from the LANraragi API. */
-    val galleryDetail: StateFlow<GalleryDetail?> = _galleryDetail.asStateFlow()
-
     private val _archiveDetail = MutableStateFlow<ArchiveDetail?>(null)
 
-    /** Domain model for display. Populated alongside [galleryDetail] from the same API response. */
+    /** Canonical detail-page domain model. Populated by [requestGalleryDetail] or [tryLoadFromCache]. */
     val archiveDetail: StateFlow<ArchiveDetail?> = _archiveDetail.asStateFlow()
 
     private val _favoriteState = MutableStateFlow<FavoriteState?>(null)
@@ -106,11 +98,6 @@ class GalleryDetailViewModel : ViewModel() {
      * Whether the current archive is favorited and, if so, under which slot
      * label. `null` means "favorite status not yet resolved" (e.g. detail
      * still loading or cache hit before the categories API call returns).
-     *
-     * During the M1b transition `loadGalleryDetail` mirrors the same data
-     * onto the legacy `_galleryDetail.isFavorited` / `_galleryDetail.favoriteName`
-     * flags so existing readers (DetailHeaderBinder) keep working until M1b-4
-     * migrates them to this flow.
      */
     val favoriteState: StateFlow<FavoriteState?> = _favoriteState.asStateFlow()
 
@@ -118,9 +105,8 @@ class GalleryDetailViewModel : ViewModel() {
 
     /**
      * The rating currently shown / submitted by the user this session. `null`
-     * means "not yet known" (detail still loading). Replaces the in-place
-     * mutation of `_galleryDetail.rating` from before M1b-4: Archive is an
-     * immutable `data class val`, so the user's edits live here instead.
+     * means "not yet known" (detail still loading). Archive is an immutable
+     * `val` so the user's edits live here rather than via in-place mutation.
      *
      * onBackPressed compares this against the initial rating to decide
      * whether to fire a result Bundle.
@@ -150,10 +136,6 @@ class GalleryDetailViewModel : ViewModel() {
 
     fun setArchive(archive: Archive?) {
         _archive.value = archive
-    }
-
-    fun setGalleryDetail(detail: GalleryDetail?) {
-        _galleryDetail.value = detail
     }
 
     /**
@@ -196,12 +178,12 @@ class GalleryDetailViewModel : ViewModel() {
      * Why this exists: this ViewModel is scoped via
      * `ViewModelProvider(requireActivity())`, so the same instance is reused
      * across `GalleryDetailScene` navigations. The `getEffective*()` accessors
-     * fall back as `detail > archive > args`. Without an explicit reset, the
-     * previously loaded `_galleryDetail` shadows the newly written
-     * `_archive` and every effective arcid returns the stale gallery — the
-     * new detail page renders the old gallery, downloads its file, etc.
-     * The reader path is unaffected because it goes through an Intent with
-     * the Archive embedded directly, bypassing the ViewModel.
+     * fall back as `archiveDetail > archive > args`. Without an explicit
+     * reset, the previously loaded `_archiveDetail` shadows the newly
+     * written `_archive` and every effective arcid returns the stale
+     * gallery — the new detail page renders the old gallery, downloads its
+     * file, etc. The reader path is unaffected because it goes through an
+     * Intent with the Archive embedded directly, bypassing the ViewModel.
      *
      * Must be called by `GalleryDetailScene.handleArgs()` before writing the
      * new arguments to the flows.
@@ -212,7 +194,6 @@ class GalleryDetailViewModel : ViewModel() {
         _action.value = null
         _arcid.value = null
         _archive.value = null
-        _galleryDetail.value = null
         _archiveDetail.value = null
         _favoriteState.value = null
         _currentRating.value = null
@@ -226,13 +207,11 @@ class GalleryDetailViewModel : ViewModel() {
 
     /**
      * Returns the effective arcid, preferring archiveDetail > archive >
-     * arcid argument. The legacy `_galleryDetail` path is still consulted
-     * as a final fallback during the M1b-4 transition window.
+     * arcid argument.
      */
     fun getEffectiveArcid(): String? {
         return _archiveDetail.value?.archive?.arcid
             ?: _archive.value?.arcid
-            ?: _galleryDetail.value?.arcid
             ?: _arcid.value
     }
 
@@ -430,7 +409,6 @@ class GalleryDetailViewModel : ViewModel() {
                 val archive = runSuspend {
                     LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcid)
                 }
-                val gd = archive.toGalleryDetail()
                 val ad = archive.toArchiveDetail()
 
                 // Query LANraragi categories to determine favorite status
@@ -444,7 +422,7 @@ class GalleryDetailViewModel : ViewModel() {
                             cat.name?.let { matchedNames.add(it) }
                         }
                     }
-                    if (matchedNames.isNotEmpty()) {
+                    _favoriteState.value = if (matchedNames.isNotEmpty()) {
                         val displayName = if (matchedNames.size == 1) {
                             matchedNames[0]
                         } else {
@@ -453,22 +431,9 @@ class GalleryDetailViewModel : ViewModel() {
                                 matchedNames.size +
                                 categoryCountSuffix
                         }
-                        // Mirror onto _favoriteState for new readers and
-                        // onto the legacy GalleryDetail flags for the
-                        // not-yet-migrated DetailHeaderBinder path. Both
-                        // sources stay in sync until M1b-4 retires the
-                        // GalleryDetail mirror.
-                        gd.isFavorited = true
-                        gd.favoriteName = displayName
-                        _favoriteState.value = FavoriteState(
-                            isFavorited = true,
-                            name = displayName,
-                        )
+                        FavoriteState(isFavorited = true, name = displayName)
                     } else {
-                        _favoriteState.value = FavoriteState(
-                            isFavorited = false,
-                            name = null,
-                        )
+                        FavoriteState(isFavorited = false, name = null)
                     }
                 } catch (catEx: Exception) {
                     android.util.Log.w(
@@ -482,7 +447,6 @@ class GalleryDetailViewModel : ViewModel() {
                 // Cache the detail
                 ServiceRegistry.dataModule.archiveDetailCache.put(arcid, ad)
 
-                _galleryDetail.value = gd
                 _archiveDetail.value = ad
                 _currentRating.value = ad.archive.rating
 

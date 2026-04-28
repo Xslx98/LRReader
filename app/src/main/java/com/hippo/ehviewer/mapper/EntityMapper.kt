@@ -1,18 +1,14 @@
 package com.hippo.ehviewer.mapper
 
-import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.HistoryInfo
 
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.domain.ArchiveDetail
-import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.domain.groupFlatTags
 
 /**
- * Bridge functions between the [Archive] domain model, the Room
- * Entities (DownloadInfo / HistoryInfo) and the in-memory detail view
- * model [GalleryDetail].
+ * Bridge functions between the [Archive] domain model and the Room
+ * Entities (DownloadInfo / HistoryInfo).
  */
 
 /**
@@ -101,46 +97,4 @@ fun HistoryInfo.toArchive(): Archive {
         summary = null,
         serverProfileId = serverProfileId,
     )
-}
-
-/**
- * Convert a [GalleryDetail] (post-W36-11 standalone) into an [Archive]
- * domain model. Used by GalleryDetailViewModel.getEffectiveArchive when
- * the live Archive isn't available but a cached GalleryDetail is.
- */
-fun GalleryDetail.toArchive(): Archive = Archive(
-    arcid = arcid,
-    title = title ?: "",
-    tags = tagGroupsToMap(tags),
-    pagecount = pages,
-    progress = progress,
-    extension = "",
-    filename = "",
-    thumbnailUrl = thumb ?: "",
-    rating = rating,
-    isnew = false,
-    lastreadtime = 0L,
-    summary = null,
-    serverProfileId = serverProfileId,
-)
-
-/**
- * Derive an [ArchiveDetail] from a cached [GalleryDetail] (when the original
- * LRRArchive is not available). Both sides now share the domain [TagGroup]
- * type post-M3, so tag groups pass through unchanged.
- */
-fun GalleryDetail.toArchiveDetail(): ArchiveDetail = ArchiveDetail(
-    archive = toArchive(),
-    tagGroups = tags ?: emptyList(),
-    language = language,
-    size = size,
-)
-
-private fun tagGroupsToMap(groups: List<TagGroup>?): Map<String, List<String>> {
-    if (groups.isNullOrEmpty()) return emptyMap()
-    val map = LinkedHashMap<String, MutableList<String>>()
-    for (g in groups) {
-        map.getOrPut(g.namespace) { mutableListOf() }.addAll(g.tags)
-    }
-    return map
 }

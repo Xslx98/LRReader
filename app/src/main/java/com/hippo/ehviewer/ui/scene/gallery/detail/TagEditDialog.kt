@@ -100,8 +100,8 @@ object TagEditDialog {
      * Show the tag edit dialog.
      *
      * @param activity  current activity
-     * @param arcid     LANraragi archive ID (GalleryInfo.arcid)
-     * @param tagGroups current tag groups from GalleryDetail
+     * @param arcid     LANraragi archive ID
+     * @param tagGroups current tag groups (from ArchiveDetail.tagGroups)
      * @param callback  called on the UI thread after a successful update
      */
     @JvmStatic

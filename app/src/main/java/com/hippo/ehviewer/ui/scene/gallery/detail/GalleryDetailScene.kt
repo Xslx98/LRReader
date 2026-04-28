@@ -36,9 +36,6 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import com.hippo.ehviewer.client.data.GalleryDetail
-import com.hippo.ehviewer.mapper.toArchive
-import com.hippo.ehviewer.mapper.toArchiveDetail
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.domain.buildRatingEmoji
@@ -110,11 +107,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         get() = viewModel.arcid.value
         set(value) { viewModel.setArcid(value) }
 
-    /** Shortcut delegating to [GalleryDetailViewModel.galleryDetail]. */
-    private var mGalleryDetail: GalleryDetail?
-        get() = viewModel.galleryDetail.value
-        set(value) { viewModel.setGalleryDetail(value) }
-
     private var mRequestId: Int = IntIdGenerator.INVALID_ID
     /** Rating when the scene was opened, used to detect changes on exit. */
     private var mInitialRating: Float = Float.NaN
@@ -185,19 +177,8 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mAction = savedInstanceState.getString(KEY_ACTION)
         mArchive = savedInstanceState.getParcelable(KEY_ARCHIVE)
         mArcid = savedInstanceState.getString(KEY_ARCID)
-        // Prefer the new ArchiveDetail key (M1b-4); fall back to the
-        // legacy GalleryDetail key for same-process restores written by
-        // an earlier build during the transition window.
-        val savedAd: com.lanraragi.reader.domain.ArchiveDetail? =
-            savedInstanceState.getParcelable(KEY_ARCHIVE_DETAIL)
-        if (savedAd != null) {
-            viewModel.setArchiveDetail(savedAd)
-        } else {
-            val legacyGd: GalleryDetail? = savedInstanceState.getParcelable(KEY_GALLERY_DETAIL)
-            if (legacyGd != null) {
-                mGalleryDetail = legacyGd
-                viewModel.setArchiveDetail(legacyGd.toArchiveDetail())
-            }
+        savedInstanceState.getParcelable<ArchiveDetail>(KEY_ARCHIVE_DETAIL)?.let {
+            viewModel.setArchiveDetail(it)
         }
         mRequestId = savedInstanceState.getInt(KEY_REQUEST_ID)
     }
@@ -212,15 +193,8 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         if (mArcid != null) {
             outState.putString(KEY_ARCID, mArcid)
         }
-        // Dual-write: KEY_ARCHIVE_DETAIL is the canonical key going
-        // forward; KEY_GALLERY_DETAIL stays for one transition cycle so
-        // a process restore from a Bundle written by this build still
-        // works after M1b-5 rolls in.
         viewModel.archiveDetail.value?.let {
             outState.putParcelable(KEY_ARCHIVE_DETAIL, it)
-        }
-        if (mGalleryDetail != null) {
-            outState.putParcelable(KEY_GALLERY_DETAIL, mGalleryDetail)
         }
         outState.putInt(KEY_REQUEST_ID, mRequestId)
     }
@@ -711,7 +685,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         const val KEY_PAGE = "page"
         const val KEY_RATING_RESULT = "rating_result"
 
-        private const val KEY_GALLERY_DETAIL = "gallery_detail"
         private const val KEY_ARCHIVE_DETAIL = "archive_detail"
         private const val KEY_REQUEST_ID = "request_id"
 
