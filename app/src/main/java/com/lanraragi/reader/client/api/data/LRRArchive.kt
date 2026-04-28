@@ -9,6 +9,8 @@ import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.domain.TagGroup
+import com.lanraragi.reader.domain.parseLrrTagString
+import com.lanraragi.reader.domain.stripNamespace
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -136,37 +138,12 @@ class LRRArchive() : Parcelable {
      * Parses the comma-separated tag string into a map of namespace → tag list.
      * Tags without a namespace are placed under "misc".
      */
-    fun getParsedTags(): Map<String, List<String>> {
-        if (tags.isEmpty()) return emptyMap()
-
-        val result = LinkedHashMap<String, MutableList<String>>()
-        for (raw in tags.split(",")) {
-            val tag = raw.trim()
-            if (tag.isEmpty()) continue
-
-            val colonIdx = tag.indexOf(':')
-            val namespace: String
-            val value: String
-            if (colonIdx > 0) {
-                namespace = tag.substring(0, colonIdx).trim()
-                value = tag.substring(colonIdx + 1).trim()
-            } else {
-                namespace = "misc"
-                value = tag
-            }
-            result.getOrPut(namespace) { mutableListOf() }.add(value)
-        }
-        return result
-    }
+    fun getParsedTags(): Map<String, List<String>> = parseLrrTagString(tags)
 
     /** @return Simple flat list of tag strings (without namespaces) for display. */
     fun getSimpleTags(): Array<String>? {
         if (tags.isEmpty()) return null
-        return tags.split(",").map { t ->
-            val trimmed = t.trim()
-            val colonIdx = trimmed.indexOf(':')
-            if (colonIdx > 0) trimmed.substring(colonIdx + 1).trim() else trimmed
-        }.toTypedArray()
+        return tags.split(",").map { stripNamespace(it) }.toTypedArray()
     }
 
     // ----- Parcelable -----
