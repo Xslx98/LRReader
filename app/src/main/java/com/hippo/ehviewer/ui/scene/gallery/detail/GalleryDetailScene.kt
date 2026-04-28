@@ -335,13 +335,29 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             if (event.action == android.view.MotionEvent.ACTION_UP
                 || event.action == android.view.MotionEvent.ACTION_CANCEL
             ) {
-                val arcid = viewModel.getEffectiveArcid() ?: return@setOnTouchListener false
-                // Ceil to integer: 0.5→1, 1.5→2, 4.5→5, etc.
-                val finalRating = kotlin.math.ceil(rating.rating).coerceIn(0f, 5f)
-                rating.rating = finalRating
-                viewModel.updateCurrentRating(finalRating)
-                ratingText.text = buildRatingEmoji(finalRating.toInt())
-                RatingHelper.saveRatingToServer(arcid, finalRating, null)
+                // Defer the read to the next frame. dispatchTouchEvent
+                // calls OnTouchListener BEFORE View.onTouchEvent, so
+                // reading rating.rating synchronously here snapshots the
+                // pre-touch value on a *tap* gesture (DOWN→UP with no
+                // MOVE in between). Drag still appears to work because
+                // MOVE events let RatingBar.onTouchEvent update the
+                // progress en route. post() runs after RatingBar's own
+                // onTouchEvent has applied the UP coordinates.
+                rating.post {
+                    if (viewModel.archiveDetail.value == null) return@post
+                    // Ceil to integer: 0.5→1, 1.5→2, 4.5→5, etc.
+                    val finalRating = kotlin.math.ceil(rating.rating).coerceIn(0f, 5f)
+                    rating.rating = finalRating
+                    ratingText.text = if (finalRating > 0f) {
+                        buildRatingEmoji(finalRating.toInt())
+                    } else {
+                        "Not rated"
+                    }
+                    // Single business entry point: the ViewModel does the
+                    // optimistic write across every SSOT and runs the PUT.
+                    // The Scene only renders.
+                    viewModel.submitRating(finalRating)
+                }
             }
             false // Don't consume — let RatingBar handle the touch
         }
@@ -394,10 +410,26 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Observe archive-detail updates from ViewModel (replaces RequestHelper callback)
+        // Capture the server-side rating exactly once per detail-page
+        // entry. The cache-hit / process-death-restore paths take
+        // STATE_NORMAL straight from `prepareData` and never reach
+        // `onGetArchiveDetailSuccessInternal`, so the capture lives here.
         lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
             viewModel.archiveDetail.collect { ad ->
-                if (ad != null && mState != STATE_NORMAL) {
+                if (ad != null && mInitialRating.isNaN()) {
+                    mInitialRating = ad.archive.rating
+                }
+            }
+        }
+        // Drive REFRESH→NORMAL transitions off the dedicated load-event
+        // SharedFlow rather than the deduped archiveDetail StateFlow.
+        // A refresh that returns identical content would otherwise leave
+        // the spinner up forever (StateFlow distinct-emit eats the value
+        // and `collect` never fires). detailLoaded fires unconditionally
+        // on every successful API response.
+        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
+            viewModel.detailLoaded.collect { ad ->
+                if (mState != STATE_NORMAL) {
                     onGetArchiveDetailSuccess(ad)
                 }
             }
@@ -405,6 +437,23 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
             viewModel.detailError.collect { e ->
                 onGetGalleryDetailFailure(e)
+            }
+        }
+        // After a rollback the optimistic write to currentRating /
+        // archiveDetail has been reverted on the IO thread; reflect the
+        // restored value on the rating bar and toast the error so the
+        // user knows their change did not stick.
+        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
+            viewModel.ratingError.collect { e ->
+                rebindRatingFromViewModel()
+                val ctx = getEHContext()
+                if (ctx != null) {
+                    android.widget.Toast.makeText(
+                        ctx,
+                        com.lanraragi.reader.client.api.friendlyError(ctx, e),
+                        android.widget.Toast.LENGTH_LONG,
+                    ).show()
+                }
             }
         }
         // Observe download state changes from ViewModel (replaces DownloadHelper listener)
@@ -419,6 +468,30 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         // detail Scene). Replaces the previous one-shot onResume re-read.
         collectFlow(viewLifecycleOwner, viewModel.localReadingPage) { localPage0 ->
             applyLocalReadingProgress(localPage0)
+        }
+    }
+
+    /**
+     * Snap the rating bar + emoji label back to the ViewModel's current
+     * rating. Used after an in-flight PUT was rolled back (the
+     * optimistic write reverted on a background thread, the UI element
+     * needs to follow).
+     */
+    private fun rebindRatingFromViewModel() {
+        val mainView = view ?: return
+        val ratingBar = ViewUtils.`$$`(mainView, R.id.rating) as? RatingBar
+        val ratingTextView = ViewUtils.`$$`(mainView, R.id.rating_text) as? TextView
+        val current = viewModel.currentRating.value ?: 0f
+        if (ratingBar != null) ratingBar.rating = current
+        if (ratingTextView != null) {
+            // Match DetailHeaderBinder.bindViewSecond's "Not rated"
+            // fallback verbatim so a rollback does not cause the label to
+            // flip styles versus the load path.
+            ratingTextView.text = if (current > 0f) {
+                buildRatingEmoji(current.toInt())
+            } else {
+                "Not rated"
+            }
         }
     }
 
