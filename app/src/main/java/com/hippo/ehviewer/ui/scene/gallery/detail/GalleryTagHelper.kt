@@ -25,8 +25,8 @@ import com.hippo.android.resource.AttrResources
 import com.hippo.drawable.RoundSideRectDrawable
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhTagDatabase
-import com.hippo.ehviewer.client.data.GalleryTagGroup
 import com.hippo.ehviewer.settings.AppearanceSettings
+import com.lanraragi.reader.domain.TagGroup
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListSceneDialog
 import com.hippo.widget.AutoWrapLayout
@@ -54,12 +54,12 @@ object GalleryTagHelper {
         inflater: LayoutInflater,
         tagsLayout: LinearLayout,
         noTagsView: TextView,
-        tagGroups: Array<GalleryTagGroup>?,
+        tagGroups: List<TagGroup>?,
         clickListener: View.OnClickListener,
         longClickListener: View.OnLongClickListener
     ) {
         tagsLayout.removeViews(1, tagsLayout.childCount - 1)
-        if (tagGroups == null || tagGroups.isEmpty()) {
+        if (tagGroups.isNullOrEmpty()) {
             noTagsView.visibility = View.VISIBLE
             return
         } else {
@@ -80,33 +80,26 @@ object GalleryTagHelper {
             ll.orientation = LinearLayout.HORIZONTAL
             tagsLayout.addView(ll)
 
-            var readableTagName: String? = null
-            if (ehTags != null) {
-                readableTagName = ehTags!!.getTranslation("n:" + tg.groupName)
-            }
+            val readableTagName = ehTags?.getTranslation("n:" + tg.namespace)
 
             val tgName = inflater.inflate(R.layout.item_gallery_tag, ll, false) as TextView
             ll.addView(tgName)
-            tgName.text = readableTagName ?: tg.groupName
+            tgName.text = readableTagName ?: tg.namespace
             tgName.background = RoundSideRectDrawable(colorName)
 
-            val prefix = tg.groupName?.let { EhTagDatabase.namespaceToPrefix(it) } ?: ""
+            val prefix = EhTagDatabase.namespaceToPrefix(tg.namespace) ?: ""
 
             val awl = AutoWrapLayout(context)
             ll.addView(awl, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-            for (j in 0 until tg.size()) {
+            for (tagStr in tg.tags) {
                 val tag = inflater.inflate(R.layout.item_gallery_tag, awl, false) as TextView
                 awl.addView(tag)
-                val tagStr = tg.getTagAt(j)
 
-                var readableTag: String? = null
-                if (ehTags != null) {
-                    readableTag = ehTags!!.getTranslation(prefix + tagStr)
-                }
+                val readableTag = ehTags?.getTranslation(prefix + tagStr)
 
                 tag.text = readableTag ?: tagStr
                 tag.background = RoundSideRectDrawable(colorTag)
-                tag.setTag(R.id.tag, tg.groupName + ":" + tagStr)
+                tag.setTag(R.id.tag, tg.namespace + ":" + tagStr)
                 tag.setOnClickListener(clickListener)
                 tag.setOnLongClickListener(longClickListener)
             }
