@@ -8,10 +8,9 @@ import android.os.Parcelable
  * Composes [Archive] with structured tag groups and file metadata.
  *
  * Implements [Parcelable] so the detail page can save/restore it via
- * `Scene.onSaveInstanceState`. M1b-4 will switch the savedInstanceState
- * key from the legacy `KEY_GALLERY_DETAIL` to a Parcelable
- * `KEY_ARCHIVE_DETAIL`, eliminating the need for the standalone
- * `GalleryDetail` UI cache class.
+ * `Scene.onSaveInstanceState`. After the M1b state-collapse this is
+ * the canonical detail-page truth source — the standalone GalleryDetail
+ * UI cache class was retired.
  */
 data class ArchiveDetail(
     val archive: Archive,

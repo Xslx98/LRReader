@@ -1,6 +1,5 @@
 package com.hippo.ehviewer.mapper
 
-import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.HistoryInfo
 import com.lanraragi.reader.client.api.data.LRRArchive
@@ -31,12 +30,8 @@ object ArchiveMappers {
     val archiveToHistoryInfo: Mapper<Archive, HistoryInfo> = Mapper { it.toHistoryInfo() }
     val historyInfoToArchive: Mapper<HistoryInfo, Archive> = Mapper { it.toArchive() }
 
-    val galleryDetailToArchive: Mapper<GalleryDetail, Archive> = Mapper { it.toArchive() }
-    val galleryDetailToArchiveDetail: Mapper<GalleryDetail, ArchiveDetail> = Mapper { it.toArchiveDetail() }
-
     val lrrArchiveToArchive: Mapper<LRRArchive, Archive> = Mapper { it.toArchive() }
     val lrrArchiveToArchiveDetail: Mapper<LRRArchive, ArchiveDetail> = Mapper { it.toArchiveDetail() }
-    val lrrArchiveToGalleryDetail: Mapper<LRRArchive, GalleryDetail> = Mapper { it.toGalleryDetail() }
 
     /** Round-trip wrapper for the DOWNLOADS-row ↔ Archive conversion pair. */
     val downloadInfoBimapper: Bimapper<Archive, DownloadInfo> = Bimapper(
