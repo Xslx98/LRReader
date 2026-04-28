@@ -8,6 +8,7 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.annotation.VisibleForTesting
+import com.hippo.ehviewer.download.DownloadStateConverter
 import java.nio.ByteBuffer
 import java.security.MessageDigest
 
@@ -46,7 +47,7 @@ import java.security.MessageDigest
     version = 22,
     exportSchema = true
 )
-@TypeConverters(DateConverter::class)
+@TypeConverters(DateConverter::class, DownloadStateConverter::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun downloadDao(): DownloadRoomDao

@@ -1,4 +1,4 @@
-﻿package com.hippo.ehviewer.download
+package com.hippo.ehviewer.download
 
 import android.content.Context
 import androidx.room.Room
@@ -23,6 +23,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.hippo.ehviewer.download.DownloadState
 
 /**
  * Tests for the batch orphan label insert optimization in
@@ -113,7 +114,7 @@ class DownloadManagerOrphanLabelBatchTest {
                     arcid = "tok-$index"
                     title = "Orphan Gallery $index"
                     this.label = label
-                    state = DownloadInfo.STATE_NONE
+                    state = DownloadState.NONE
                     time = System.currentTimeMillis() + index
                 }
                 ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
@@ -166,7 +167,7 @@ class DownloadManagerOrphanLabelBatchTest {
                         arcid = "tok-$index-$j"
                         title = "Gallery $label $j"
                         this.label = label
-                        state = DownloadInfo.STATE_NONE
+                        state = DownloadState.NONE
                         time = System.currentTimeMillis() + index * 10 + j
                     }
                     ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
@@ -205,7 +206,7 @@ class DownloadManagerOrphanLabelBatchTest {
                     arcid = "tok-$i"
                     title = "Gallery $i"
                     label = if (i % 2 == 0) "existing-1" else "existing-2"
-                    state = DownloadInfo.STATE_NONE
+                    state = DownloadState.NONE
                     time = System.currentTimeMillis() + i
                 }
                 ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
@@ -238,7 +239,7 @@ class DownloadManagerOrphanLabelBatchTest {
         runBlocking {
             val info1 = DownloadInfo().apply {
                 arcid = "t1"; title = "G1"
-                label = "known"; state = DownloadInfo.STATE_NONE
+                label = "known"; state = DownloadState.NONE
                 time = System.currentTimeMillis()
             }
             ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info1)
@@ -246,7 +247,7 @@ class DownloadManagerOrphanLabelBatchTest {
             for ((index, label) in orphanLabels.withIndex()) {
                 val info = DownloadInfo().apply {
                     arcid = "t-$index"; title = "G-$label"
-                    this.label = label; state = DownloadInfo.STATE_NONE
+                    this.label = label; state = DownloadState.NONE
                     time = System.currentTimeMillis() + index + 1
                 }
                 ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
@@ -280,7 +281,7 @@ class DownloadManagerOrphanLabelBatchTest {
             for (i in 0..4) {
                 val info = DownloadInfo().apply {
                     arcid = "t-$i"; title = "G-$i"
-                    label = "shared-orphan"; state = DownloadInfo.STATE_NONE
+                    label = "shared-orphan"; state = DownloadState.NONE
                     time = System.currentTimeMillis() + i
                 }
                 ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)

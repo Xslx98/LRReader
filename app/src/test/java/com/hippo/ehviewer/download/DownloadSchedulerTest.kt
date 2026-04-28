@@ -23,6 +23,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
 import java.lang.ref.WeakReference
+import com.hippo.ehviewer.download.DownloadState
 
 /**
  * Unit tests for [DownloadScheduler] -- worker scheduling, state machine,
@@ -136,7 +137,7 @@ class DownloadSchedulerTest {
             arcid = "token_$gid"
             title = "Test Gallery $gid"
             this.label = label
-            state = DownloadInfo.STATE_WAIT
+            state = DownloadState.WAIT
             time = System.currentTimeMillis() - gid // ensure distinct times
         }
         // Add to repo so getDownloadInfo works
@@ -162,7 +163,7 @@ class DownloadSchedulerTest {
 
         val stopped = scheduler.stopDownload("token_1")
         assertNotNull("stopDownload should return the stopped info", stopped)
-        assertEquals(DownloadInfo.STATE_NONE, stopped!!.state)
+        assertEquals(DownloadState.NONE, stopped!!.state)
         assertTrue("Wait list should be empty after stop", scheduler.waitList.isEmpty())
         assertTrue("Scheduler should be idle after stop", scheduler.isIdle)
     }
@@ -188,7 +189,7 @@ class DownloadSchedulerTest {
 
         val result = scheduler.getNoneDownloadInfo("token_1")
         assertNotNull("getNoneDownloadInfo should return the info", result)
-        assertEquals(DownloadInfo.STATE_NONE, result!!.state)
+        assertEquals(DownloadState.NONE, result!!.state)
         assertTrue("Wait list should be empty", scheduler.waitList.isEmpty())
     }
 
@@ -230,7 +231,7 @@ class DownloadSchedulerTest {
         assertTrue("Wait list should be empty after ensure", scheduler.waitList.isEmpty())
         assertEquals("Active tasks should have 1 entry", 1, scheduler.activeTasks.size)
         assertEquals(info, scheduler.activeTasks[0])
-        assertEquals(DownloadInfo.STATE_DOWNLOAD, info.state)
+        assertEquals(DownloadState.DOWNLOAD, info.state)
         assertTrue("Active workers should contain the info", scheduler.activeWorkers.containsKey(info))
     }
 
@@ -279,7 +280,7 @@ class DownloadSchedulerTest {
         val info = makeInfo(1L)
         // Manually add to activeTasks to simulate an in-progress download
         scheduler.activeTasks.add(info)
-        info.state = DownloadInfo.STATE_DOWNLOAD
+        info.state = DownloadState.DOWNLOAD
 
         // Dispatch an OnFinish event where all pages succeeded
         scheduler.dispatchEvent(
@@ -294,7 +295,7 @@ class DownloadSchedulerTest {
 
         assertTrue("Active tasks should be empty after OnFinish", scheduler.activeTasks.isEmpty())
         assertFalse("Active workers should not contain the info", scheduler.activeWorkers.containsKey(info))
-        assertEquals("State should be FINISH when legacy == 0", DownloadInfo.STATE_FINISH, info.state)
+        assertEquals("State should be FINISH when legacy == 0", DownloadState.FINISH, info.state)
         assertEquals(0, info.legacy)
         // W35-3a: tracker entry is cleared after finish (progress no longer live).
         assertNull(
@@ -307,7 +308,7 @@ class DownloadSchedulerTest {
     fun dispatchEvent_onGetPages_updatesProgressTracker() {
         val info = makeInfo(2L)
         scheduler.activeTasks.add(info)
-        info.state = DownloadInfo.STATE_DOWNLOAD
+        info.state = DownloadState.DOWNLOAD
 
         scheduler.dispatchEvent(
             DownloadScheduler.DownloadEvent.OnGetPages(taskInfo = info, pages = 42)
@@ -321,7 +322,7 @@ class DownloadSchedulerTest {
     fun dispatchEvent_onPageSuccess_mirrorsProgressIntoTracker() {
         val info = makeInfo(3L)
         scheduler.activeTasks.add(info)
-        info.state = DownloadInfo.STATE_DOWNLOAD
+        info.state = DownloadState.DOWNLOAD
 
         scheduler.dispatchEvent(
             DownloadScheduler.DownloadEvent.OnPageSuccess(

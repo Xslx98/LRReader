@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.hippo.ehviewer.download.DownloadState
 
 /**
  * ViewModel for [GalleryDetailScene]. Manages gallery detail state, gallery info,
@@ -177,7 +178,7 @@ class GalleryDetailViewModel : ViewModel() {
         _galleryDetail.value = null
         _archiveDetail.value = null
         _downloadInfo.value = null
-        _downloadState.value = DownloadInfo.STATE_INVALID
+        _downloadState.value = DownloadState.INVALID
         _state.value = STATE_INIT
     }
 
@@ -279,10 +280,10 @@ class GalleryDetailViewModel : ViewModel() {
     // Download state tracking
     // -------------------------------------------------------------------------
 
-    private val _downloadState = MutableStateFlow(DownloadInfo.STATE_INVALID)
+    private val _downloadState = MutableStateFlow(DownloadState.INVALID)
 
     /** Current download state for the displayed gallery. */
-    val downloadState: StateFlow<Int> = _downloadState.asStateFlow()
+    val downloadState: StateFlow<DownloadState> = _downloadState.asStateFlow()
 
     /**
      * Initialize download state for the given arcid.
@@ -291,7 +292,7 @@ class GalleryDetailViewModel : ViewModel() {
         _downloadState.value = if (!arcid.isNullOrEmpty()) {
             downloadManager.getDownloadState(arcid)
         } else {
-            DownloadInfo.STATE_INVALID
+            DownloadState.INVALID
         }
     }
 
