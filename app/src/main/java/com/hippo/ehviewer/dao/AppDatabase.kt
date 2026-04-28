@@ -42,9 +42,10 @@ import java.security.MessageDigest
         HistoryInfo::class,
         LocalFavoriteInfo::class,
         QuickSearch::class,
-        ServerProfile::class
+        ServerProfile::class,
+        ArchiveLocalState::class
     ],
-    version = 22,
+    version = 23,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class, DownloadStateConverter::class)
@@ -53,6 +54,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun downloadDao(): DownloadRoomDao
     abstract fun browsingDao(): BrowsingRoomDao
     abstract fun miscDao(): MiscRoomDao
+    abstract fun archiveLocalStateDao(): ArchiveLocalStateDao
 
     companion object {
         @Volatile
@@ -66,7 +68,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "eh.db"
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23)
                     .build()
                     .also { INSTANCE = it }
             }
@@ -239,6 +241,53 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("DROP TABLE LOCAL_FAVORITES")
                 db.execSQL("ALTER TABLE LOCAL_FAVORITES_NEW RENAME TO LOCAL_FAVORITES")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_LOCAL_FAVORITES_TIME` ON `LOCAL_FAVORITES` (`TIME`)")
+            }
+        }
+
+        /**
+         * v22 → v23: Introduce the `ARCHIVE_LOCAL_STATE` table (L1).
+         *
+         * **L1-1 stage (this commit)**: create the new table + indexes only.
+         * The legacy `DOWNLOADS` / `HISTORY` / `LOCAL_FAVORITES` tables are
+         * preserved verbatim — the dual-entity stage lets KSP generate the
+         * new DAO without disturbing existing readers.
+         *
+         * **L1-2 stage (follow-up commit)**: this same migration body will be
+         * extended to lift rows from the three legacy tables into
+         * `ARCHIVE_LOCAL_STATE` and DROP them. The 6-scenario
+         * `MIGRATION_22_23_Test` lands together with that data-copy step.
+         *
+         * **Irreversible**: once L1-2 ships and a user runs the new APK their
+         * three legacy tables are gone. A `git revert` works for the source
+         * tree but cannot resurrect the dropped data on the device — recovery
+         * is forward-fix only.
+         */
+        @VisibleForTesting
+        internal val MIGRATION_22_23 = object : Migration(22, 23) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS ARCHIVE_LOCAL_STATE (
+                        ARCID TEXT NOT NULL,
+                        SERVER_PROFILE_ID INTEGER NOT NULL DEFAULT 0,
+                        ARCHIVE_JSON TEXT NOT NULL,
+                        DOWNLOAD_STATE INTEGER,
+                        DOWNLOAD_LEGACY INTEGER NOT NULL DEFAULT 0,
+                        DOWNLOAD_TIME INTEGER,
+                        DOWNLOAD_LABEL TEXT,
+                        DOWNLOAD_ARCHIVE_URI TEXT,
+                        HISTORY_TIME INTEGER,
+                        HISTORY_MODE INTEGER NOT NULL DEFAULT 0,
+                        FAVORITE_TIME INTEGER,
+                        PRIMARY KEY (ARCID)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_SERVER_PROFILE_ID` ON `ARCHIVE_LOCAL_STATE` (`SERVER_PROFILE_ID`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_DOWNLOAD_TIME` ON `ARCHIVE_LOCAL_STATE` (`DOWNLOAD_TIME`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_HISTORY_TIME` ON `ARCHIVE_LOCAL_STATE` (`HISTORY_TIME`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_FAVORITE_TIME` ON `ARCHIVE_LOCAL_STATE` (`FAVORITE_TIME`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_DOWNLOAD_LABEL` ON `ARCHIVE_LOCAL_STATE` (`DOWNLOAD_LABEL`)")
             }
         }
 
