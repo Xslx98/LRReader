@@ -17,90 +17,72 @@ package com.hippo.ehviewer.dao
 
 import android.os.Parcel
 import android.os.Parcelable
-import androidx.room.ColumnInfo
-import androidx.room.Entity
-import androidx.room.Ignore
-import androidx.room.Index
 import com.hippo.ehviewer.download.DownloadState
 import com.lanraragi.reader.domain.Archive
 
 /**
- * Entity mapped to table "DOWNLOADS".
+ * In-memory view over a `download` row from `ARCHIVE_LOCAL_STATE`.
  *
- * W36-7: this is now a standalone class. It used to inherit from
- * GalleryInfoEntity to share the GalleryInfo column set, but every
- * non-DAO consumer was migrated to the Archive domain model in Phase 1
- * (commits W36-1..6) and the inheritance only kept dead fields alive.
+ * Post-L1-4 this class is no longer a Room `@Entity` — the persisted
+ * state lives on [ArchiveLocalState] (one row per arcid, with a
+ * download subsystem when DOWNLOAD_STATE is non-null). UI / Adapter /
+ * sync code keeps reading and writing `DownloadInfo` instances; the
+ * repository layer translates between this view and the unified row.
  *
- * Persistent column set is unchanged from Room schema v21 — physical
- * column drops (GID / TITLE_JPN / CATEGORY / POSTED / UPLOADER) happen
- * in a single bump in W36-10.
+ * Mutable fields (state, legacy, label, archiveUri, time, etc.) are
+ * preserved because the W36-era listeners and adapters mutate this
+ * object in place. Demoting to an immutable data class would force a
+ * larger UI refactor; that work belongs to a follow-up.
+ *
+ * Parcelable is kept because [DownloadInfo] still flows through Intent
+ * extras in a few places (DownloadService, GalleryActivity).
  */
-@Entity(
-    tableName = "DOWNLOADS",
-    primaryKeys = ["ARCID"],
-    indices = [
-        Index("SERVER_PROFILE_ID"),
-        Index("TIME"),
-        Index("LABEL")
-    ]
-)
 class DownloadInfo() : Parcelable {
 
-    // ── Persistent columns (mirror Room v21 schema 1:1) ──
+    // ── Display fields (from Archive payload) ──
 
     @JvmField
-    @ColumnInfo(name = "ARCID")
     var arcid: String = ""
 
     @JvmField
-    @ColumnInfo(name = "TITLE")
     var title: String? = null
 
     @JvmField
-    @ColumnInfo(name = "THUMB")
     var thumb: String? = null
 
     @JvmField
-    @ColumnInfo(name = "RATING")
     var rating: Float = 0f
 
     @JvmField
-    @ColumnInfo(name = "SIMPLE_LANGUAGE")
     var simpleLanguage: String? = null
 
     @JvmField
-    @ColumnInfo(name = "SERVER_PROFILE_ID", defaultValue = "0")
     var serverProfileId: Long = 0
 
+    // ── Download subsystem fields ──
+
     @JvmField
-    @ColumnInfo(name = "STATE")
     var state: DownloadState = DownloadState.NONE
 
     @JvmField
-    @ColumnInfo(name = "LEGACY")
     var legacy: Int = 0
 
     @JvmField
-    @ColumnInfo(name = "TIME")
     var time: Long = 0
 
     @JvmField
-    @ColumnInfo(name = "LABEL")
     var label: String? = null
 
     @JvmField
-    @ColumnInfo(name = "ARCHIVE_URI")
     var archiveUri: String? = null
 
-    // ── @Ignore transient fields (kept per Step 1 audit) ──
+    // ── Transient, non-persisted helpers ──
 
     /**
-     * Display tags; populated by [com.hippo.ehviewer.mapper.toDownloadInfo]
-     * from Archive.flatTags.
+     * Display tags; populated by the repository layer from the
+     * decoded Archive's flat tag list.
      */
     @JvmField
-    @Ignore
     var simpleTags: Array<String>? = null
 
     /**
@@ -108,22 +90,19 @@ class DownloadInfo() : Parcelable {
      * [com.hippo.ehviewer.sync.DownloadListInfosExecutor.matchTag].
      */
     @JvmField
-    @Ignore
     var tgList: ArrayList<String>? = null
 
     /**
      * Cached size of the on-disk download directory; filled lazily by
-     * [com.hippo.ehviewer.sync.DownloadListInfosExecutor] when sorting by
-     * size. Not progress data — separate from `DownloadProgressTracker`
-     * (see ADR-001).
+     * [com.hippo.ehviewer.sync.DownloadListInfosExecutor] when sorting
+     * by size. Not progress data — separate from
+     * `DownloadProgressTracker` (see ADR-001).
      */
     @JvmField
-    @Ignore
     var fileSize: Long = -1
 
     // ── Parcelable ──
 
-    @Ignore
     private constructor(`in`: Parcel) : this() {
         arcid = `in`.readString() ?: ""
         title = `in`.readString()
@@ -164,10 +143,12 @@ class DownloadInfo() : Parcelable {
     /**
      * Refresh display fields from a re-fetched [Archive]. Called from
      * GalleryDetailScene after detail load to keep the cached download
-     * row in sync with the latest server state.
+     * row in sync with the latest server state. Note that this only
+     * mutates the in-memory view; persistence happens via
+     * [com.hippo.ehviewer.dao.DownloadDbRepository.putDownloadInfo].
      *
      * simpleLanguage is intentionally not refreshed because LRR never
-     * populates it; the DB column still exists but is read-only here.
+     * populates it; the column has no producer in the post-L1 schema.
      */
     fun updateInfo(archive: Archive) {
         arcid = archive.arcid

@@ -25,8 +25,10 @@ import android.util.Log
 
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.dao.*
+import com.hippo.ehviewer.mapper.toArchiveJson
 import com.hippo.util.ExceptionUtils
 import com.hippo.lib.yorozuya.IOUtils
+import com.lanraragi.reader.domain.Archive
 
 import java.io.File
 import java.io.FileInputStream
@@ -111,8 +113,28 @@ object EhDB {
             return
         }
 
-        val downloadDao = sDatabase.downloadDao()
         val browsingDao = sDatabase.browsingDao()
+        val archiveLocalStateDao = sDatabase.archiveLocalStateDao()
+
+        // Build a fresh Archive shell for an arcid using only the columns
+        // the legacy gallery row carried (title / thumb / rating / arcid).
+        // tags is empty — it will be filled on the next LRR detail load.
+        fun shellArchive(arcid: String, title: String?, thumb: String?, rating: Float): Archive =
+            Archive(
+                arcid = arcid,
+                title = title ?: "",
+                tags = emptyMap(),
+                pagecount = 0,
+                progress = 0,
+                extension = "",
+                filename = "",
+                thumbnailUrl = thumb ?: "",
+                rating = rating,
+                isnew = false,
+                lastreadtime = 0L,
+                summary = null,
+                serverProfileId = 0L,
+            )
 
         // Build a transient gid -> minimal-DTO map from the legacy gallery
         // table. The DTO holds only the columns the downstream merge blocks
@@ -160,14 +182,10 @@ object EhDB {
                             it.moveToNext()
                             return@use
                         }
-                        val info = LocalFavoriteInfo().apply {
-                            arcid = gi.arcid
-                            title = gi.title
-                            thumb = gi.thumb
-                            rating = gi.rating
-                        }
-                        info.time = i
-                        browsingDao.insertLocalFavorite(info)
+                        val archive = shellArchive(gi.arcid, gi.title, gi.thumb, gi.rating)
+                        val archiveJson = archive.toArchiveJson()
+                        archiveLocalStateDao.insertOrIgnoreFavorite(gi.arcid, 0L, archiveJson, i)
+                        archiveLocalStateDao.updateFavoriteFields(gi.arcid, 0L, archiveJson, i)
                         it.moveToNext()
                         i++
                     }
@@ -219,21 +237,34 @@ object EhDB {
                             it.moveToNext()
                             return@use
                         }
-                        val info = DownloadInfo().apply {
-                            arcid = gi.arcid
-                            title = gi.title
-                            thumb = gi.thumb
-                            rating = gi.rating
-                        }
                         var state = com.hippo.ehviewer.download.DownloadState.fromCode(it.getInt(2))
                         val legacy = it.getInt(3)
                         if (state == com.hippo.ehviewer.download.DownloadState.FINISH && legacy > 0) {
                             state = com.hippo.ehviewer.download.DownloadState.FAILED
                         }
-                        info.state = state
-                        info.legacy = legacy
-                        info.time = if (it.columnCount == 5) it.getLong(4) else i
-                        downloadDao.insert(info)
+                        val time = if (it.columnCount == 5) it.getLong(4) else i
+                        val archive = shellArchive(gi.arcid, gi.title, gi.thumb, gi.rating)
+                        val archiveJson = archive.toArchiveJson()
+                        archiveLocalStateDao.insertOrIgnoreDownload(
+                            arcid = gi.arcid,
+                            serverProfileId = 0L,
+                            archiveJson = archiveJson,
+                            downloadState = state,
+                            downloadLegacy = legacy,
+                            downloadTime = time,
+                            downloadLabel = null,
+                            downloadArchiveUri = null,
+                        )
+                        archiveLocalStateDao.updateDownloadFields(
+                            arcid = gi.arcid,
+                            serverProfileId = 0L,
+                            archiveJson = archiveJson,
+                            downloadState = state,
+                            downloadLegacy = legacy,
+                            downloadTime = time,
+                            downloadLabel = null,
+                            downloadArchiveUri = null,
+                        )
                         it.moveToNext()
                         i++
                     }
@@ -255,15 +286,13 @@ object EhDB {
                             it.moveToNext()
                             return@use
                         }
-                        val info = HistoryInfo().apply {
-                            arcid = gi.arcid
-                            title = gi.title
-                            thumb = gi.thumb
-                            rating = gi.rating
-                        }
-                        info.mode = it.getInt(1)
-                        info.time = it.getLong(2)
-                        browsingDao.insertHistory(info)
+                        val mode = it.getInt(1)
+                        val time = it.getLong(2)
+                        val archive = shellArchive(gi.arcid, gi.title, gi.thumb, gi.rating)
+                            .copy(lastreadtime = time)
+                        val archiveJson = archive.toArchiveJson()
+                        archiveLocalStateDao.insertOrIgnoreHistory(gi.arcid, 0L, archiveJson, time, mode)
+                        archiveLocalStateDao.updateHistoryFields(gi.arcid, 0L, archiveJson, time, mode)
                         it.moveToNext()
                     }
                 }
