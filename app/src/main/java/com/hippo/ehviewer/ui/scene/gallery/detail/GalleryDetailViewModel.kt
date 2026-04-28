@@ -100,6 +100,20 @@ class GalleryDetailViewModel : ViewModel() {
     /** Domain model for display. Populated alongside [galleryDetail] from the same API response. */
     val archiveDetail: StateFlow<ArchiveDetail?> = _archiveDetail.asStateFlow()
 
+    private val _favoriteState = MutableStateFlow<FavoriteState?>(null)
+
+    /**
+     * Whether the current archive is favorited and, if so, under which slot
+     * label. `null` means "favorite status not yet resolved" (e.g. detail
+     * still loading or cache hit before the categories API call returns).
+     *
+     * During the M1b transition `loadGalleryDetail` mirrors the same data
+     * onto the legacy `_galleryDetail.isFavorited` / `_galleryDetail.favoriteName`
+     * flags so existing readers (DetailHeaderBinder) keep working until M1b-4
+     * migrates them to this flow.
+     */
+    val favoriteState: StateFlow<FavoriteState?> = _favoriteState.asStateFlow()
+
     // -------------------------------------------------------------------------
     // Loading state
     // -------------------------------------------------------------------------
@@ -127,6 +141,15 @@ class GalleryDetailViewModel : ViewModel() {
 
     fun setGalleryDetail(detail: GalleryDetail?) {
         _galleryDetail.value = detail
+    }
+
+    /**
+     * Update the in-memory favorite indicator. Called from the LRR
+     * categories lookup (in [requestGalleryDetail]) and from the heart-icon
+     * dialog after a successful add/remove operation.
+     */
+    fun updateFavoriteState(state: FavoriteState?) {
+        _favoriteState.value = state
     }
 
     fun setState(state: Int) {
@@ -158,6 +181,7 @@ class GalleryDetailViewModel : ViewModel() {
         _archive.value = null
         _galleryDetail.value = null
         _archiveDetail.value = null
+        _favoriteState.value = null
         _downloadState.value = DownloadState.INVALID
         _state.value = STATE_INIT
     }
@@ -385,15 +409,30 @@ class GalleryDetailViewModel : ViewModel() {
                         }
                     }
                     if (matchedNames.isNotEmpty()) {
-                        gd.isFavorited = true
-                        if (matchedNames.size == 1) {
-                            gd.favoriteName = matchedNames[0]
+                        val displayName = if (matchedNames.size == 1) {
+                            matchedNames[0]
                         } else {
-                            gd.favoriteName = matchedNames[0] +
+                            matchedNames[0] +
                                 categoryInfoSuffix +
                                 matchedNames.size +
                                 categoryCountSuffix
                         }
+                        // Mirror onto _favoriteState for new readers and
+                        // onto the legacy GalleryDetail flags for the
+                        // not-yet-migrated DetailHeaderBinder path. Both
+                        // sources stay in sync until M1b-4 retires the
+                        // GalleryDetail mirror.
+                        gd.isFavorited = true
+                        gd.favoriteName = displayName
+                        _favoriteState.value = FavoriteState(
+                            isFavorited = true,
+                            name = displayName,
+                        )
+                    } else {
+                        _favoriteState.value = FavoriteState(
+                            isFavorited = false,
+                            name = null,
+                        )
                     }
                 } catch (catEx: Exception) {
                     android.util.Log.w(
@@ -443,3 +482,18 @@ class GalleryDetailViewModel : ViewModel() {
     }
 
 }
+
+/**
+ * Detail-page favorite indicator. Lives on
+ * [GalleryDetailViewModel.favoriteState] as `null` (unresolved /
+ * unknown), `FavoriteState(false, null)` (resolved → not favorited),
+ * or `FavoriteState(true, displayName)` (resolved → favorited under
+ * `displayName`).
+ *
+ * The display name composes the matched LRR category(ies) — see
+ * `requestGalleryDetail` for the formatting.
+ */
+data class FavoriteState(
+    val isFavorited: Boolean,
+    val name: String?,
+)
