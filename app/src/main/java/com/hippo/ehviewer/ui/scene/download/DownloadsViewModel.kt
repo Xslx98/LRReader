@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import com.hippo.ehviewer.download.DownloadState
 
 /**
  * Sealed interface representing all download-related UI events forwarded from
@@ -524,7 +525,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
                 title = fileName.replace("\\.[^.]*$".toRegex(), "")
                 thumb = null
                 rating = -1.0f
-                state = DownloadInfo.STATE_FINISH
+                state = DownloadState.FINISH
                 legacy = 0
                 time = System.currentTimeMillis()
                 label = null

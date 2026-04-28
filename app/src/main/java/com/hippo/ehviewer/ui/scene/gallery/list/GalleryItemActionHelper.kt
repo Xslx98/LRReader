@@ -33,6 +33,7 @@ import com.hippo.scene.Announcer
 import com.hippo.scene.SceneFragment
 import com.hippo.util.AppHelper
 import com.hippo.widget.LoadImageViewNew
+import com.hippo.ehviewer.download.DownloadState
 
 /**
  * Handles item click and long-click context menu for GalleryListScene.
@@ -95,7 +96,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
         }
 
         val downloadManager = callback.getDownloadManager()
-        val downloaded = downloadManager.getDownloadState(gi.arcid) != DownloadInfo.STATE_INVALID
+        val downloaded = downloadManager.getDownloadState(gi.arcid) != DownloadState.INVALID
 
         val items = arrayOf<CharSequence>(
             context.getString(R.string.read),

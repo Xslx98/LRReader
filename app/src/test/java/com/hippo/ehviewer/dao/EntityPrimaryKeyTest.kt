@@ -12,6 +12,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.hippo.ehviewer.download.DownloadState
 
 /**
  * Regression guard for D14 — Entity @Entity(primaryKeys=...) must match the actual
@@ -83,7 +84,7 @@ class EntityPrimaryKeyTest {
                 // deliberately leave gid at default (0L) to mimic W33+ state
                 arcid = "arcid_$i"
                 title = "Title $i"
-                state = DownloadInfo.STATE_NONE
+                state = DownloadState.NONE
                 time = now + i
             }
             dao.insert(info)

@@ -62,6 +62,7 @@ import com.hippo.widget.LoadImageView
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import com.hippo.ehviewer.download.DownloadState
 
 /**
  * 下载列表适配器
@@ -167,8 +168,8 @@ class DownloadAdapter(
             val pos = mCallback.positionInList(position)
             if (pos !in list.indices) return
             val info = list[pos]
-            if (info.state == DownloadInfo.STATE_DOWNLOAD ||
-                info.state == DownloadInfo.STATE_WAIT
+            if (info.state == DownloadState.DOWNLOAD ||
+                info.state == DownloadState.WAIT
             ) {
                 bindProgress(holder, info)
             }
@@ -257,10 +258,11 @@ class DownloadAdapter(
         }
 
         when (info.state) {
-            DownloadInfo.STATE_NONE -> bindState(holder, info, resources.getString(R.string.download_state_none))
-            DownloadInfo.STATE_WAIT -> bindState(holder, info, resources.getString(R.string.download_state_wait))
-            DownloadInfo.STATE_DOWNLOAD -> bindProgress(holder, info)
-            DownloadInfo.STATE_FAILED -> {
+            DownloadState.INVALID,
+            DownloadState.NONE -> bindState(holder, info, resources.getString(R.string.download_state_none))
+            DownloadState.WAIT -> bindState(holder, info, resources.getString(R.string.download_state_wait))
+            DownloadState.DOWNLOAD -> bindProgress(holder, info)
+            DownloadState.FAILED -> {
                 val text = if (info.legacy <= 0) {
                     resources.getString(R.string.download_state_failed)
                 } else {
@@ -268,7 +270,7 @@ class DownloadAdapter(
                 }
                 bindState(holder, info, text)
             }
-            DownloadInfo.STATE_FINISH -> bindState(holder, info, resources.getString(R.string.download_state_finish))
+            DownloadState.FINISH -> bindState(holder, info, resources.getString(R.string.download_state_finish))
         }
     }
 
@@ -284,7 +286,7 @@ class DownloadAdapter(
         setVisibility(holder.progressBar, View.GONE)
         setVisibility(holder.percent, View.GONE)
         setVisibility(holder.speed, View.GONE)
-        if (info.state == DownloadInfo.STATE_WAIT || info.state == DownloadInfo.STATE_DOWNLOAD) {
+        if (info.state == DownloadState.WAIT || info.state == DownloadState.DOWNLOAD) {
             setVisibility(holder.start, View.GONE)
             setVisibility(holder.stop, View.VISIBLE)
         } else {
@@ -303,7 +305,7 @@ class DownloadAdapter(
         setVisibility(holder.progressBar, View.VISIBLE)
         setVisibility(holder.percent, View.VISIBLE)
         setVisibility(holder.speed, View.VISIBLE)
-        if (info.state == DownloadInfo.STATE_WAIT || info.state == DownloadInfo.STATE_DOWNLOAD) {
+        if (info.state == DownloadState.WAIT || info.state == DownloadState.DOWNLOAD) {
             setVisibility(holder.start, View.GONE)
             setVisibility(holder.stop, View.VISIBLE)
         } else {

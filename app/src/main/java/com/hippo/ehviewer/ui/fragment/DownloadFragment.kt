@@ -49,6 +49,7 @@ import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.hippo.ehviewer.download.DownloadState
 
 class DownloadFragment : PreferenceFragmentCompat(),
     Preference.OnPreferenceChangeListener,
@@ -396,7 +397,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
                         if (!arcid.isNullOrEmpty()) {
                             val gi = downloadManager.getDownloadInfo(arcid)
                             if (gi != null) {
-                                gi.state = DownloadInfo.STATE_NONE
+                                gi.state = DownloadState.NONE
                                 ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(gi)
                             }
                         }
@@ -427,7 +428,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
                         if (!arcid.isNullOrEmpty()) {
                             val gi = downloadManager.getDownloadInfo(arcid)
                             if (gi != null) {
-                                gi.state = DownloadInfo.STATE_NONE
+                                gi.state = DownloadState.NONE
                                 ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(gi)
                             }
                         }

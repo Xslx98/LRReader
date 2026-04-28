@@ -5,6 +5,7 @@ import com.hippo.ehviewer.util.toCSV
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Test
+import com.hippo.ehviewer.download.DownloadState
 
 /**
  * Validates that [DownloadInfo.toCSV] produces a 20-column line that
@@ -29,7 +30,7 @@ class DownloadInfoCsvTest {
             rating = 4.5f
             simpleLanguage = "EN"
             serverProfileId = 1L
-            state = DownloadInfo.STATE_FINISH
+            state = DownloadState.FINISH
             time = 1700000000000L
             label = "sample"
             simpleTags = arrayOf("artist:foo")

@@ -30,6 +30,7 @@ import com.hippo.lib.yorozuya.AssertUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.hippo.ehviewer.download.DownloadState
 
 /**
  * Handles action button clicks and popup menu for [GalleryDetailScene].
@@ -56,11 +57,11 @@ internal class DetailActionHandler(
     fun updateDownloadText() {
         val dl = download ?: return
         when (viewModel.downloadState.value) {
-            DownloadInfo.STATE_NONE -> dl.setText(R.string.download_state_none)
-            DownloadInfo.STATE_WAIT -> dl.setText(R.string.download_state_wait)
-            DownloadInfo.STATE_DOWNLOAD -> dl.setText(R.string.download_state_downloading)
-            DownloadInfo.STATE_FINISH -> dl.setText(R.string.download_state_downloaded)
-            DownloadInfo.STATE_FAILED -> dl.setText(R.string.download_state_failed)
+            DownloadState.NONE -> dl.setText(R.string.download_state_none)
+            DownloadState.WAIT -> dl.setText(R.string.download_state_wait)
+            DownloadState.DOWNLOAD -> dl.setText(R.string.download_state_downloading)
+            DownloadState.FINISH -> dl.setText(R.string.download_state_downloaded)
+            DownloadState.FAILED -> dl.setText(R.string.download_state_failed)
             else -> dl.setText(R.string.download)
         }
     }
@@ -200,7 +201,7 @@ internal class DetailActionHandler(
     private fun onDownloadClick(context: Context, activity: MainActivity) {
         val archive = viewModel.getEffectiveArchive() ?: return
 
-        if (viewModel.downloadManager.getDownloadState(archive.arcid) == DownloadInfo.STATE_INVALID) {
+        if (viewModel.downloadManager.getDownloadState(archive.arcid) == DownloadState.INVALID) {
             CommonOperations.startDownload(activity, archive, false)
         } else {
             DownloadLabelHelper.showDeleteDialog(context, archive) { deleteFiles ->
