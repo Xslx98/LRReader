@@ -114,6 +114,19 @@ class GalleryDetailViewModel : ViewModel() {
      */
     val favoriteState: StateFlow<FavoriteState?> = _favoriteState.asStateFlow()
 
+    private val _currentRating = MutableStateFlow<Float?>(null)
+
+    /**
+     * The rating currently shown / submitted by the user this session. `null`
+     * means "not yet known" (detail still loading). Replaces the in-place
+     * mutation of `_galleryDetail.rating` from before M1b-4: Archive is an
+     * immutable `data class val`, so the user's edits live here instead.
+     *
+     * onBackPressed compares this against the initial rating to decide
+     * whether to fire a result Bundle.
+     */
+    val currentRating: StateFlow<Float?> = _currentRating.asStateFlow()
+
     // -------------------------------------------------------------------------
     // Loading state
     // -------------------------------------------------------------------------
@@ -144,12 +157,32 @@ class GalleryDetailViewModel : ViewModel() {
     }
 
     /**
+     * Set the canonical [ArchiveDetail] truth source. Called from the
+     * Scene's `onRestore` when reviving a saved-state Bundle (process
+     * death recovery).
+     */
+    fun setArchiveDetail(detail: ArchiveDetail?) {
+        _archiveDetail.value = detail
+        _currentRating.value = detail?.archive?.rating
+    }
+
+    /**
      * Update the in-memory favorite indicator. Called from the LRR
      * categories lookup (in [requestGalleryDetail]) and from the heart-icon
      * dialog after a successful add/remove operation.
      */
     fun updateFavoriteState(state: FavoriteState?) {
         _favoriteState.value = state
+    }
+
+    /**
+     * Record the rating the user is currently looking at. Called by the
+     * rating-bar touch-release handler with the integer-rounded value, and
+     * by detail load with the server-side value. onBackPressed reads this
+     * to detect a session-local change.
+     */
+    fun updateCurrentRating(rating: Float) {
+        _currentRating.value = rating
     }
 
     fun setState(state: Int) {
@@ -182,6 +215,7 @@ class GalleryDetailViewModel : ViewModel() {
         _galleryDetail.value = null
         _archiveDetail.value = null
         _favoriteState.value = null
+        _currentRating.value = null
         _downloadState.value = DownloadState.INVALID
         _state.value = STATE_INIT
     }
@@ -191,22 +225,24 @@ class GalleryDetailViewModel : ViewModel() {
     // -------------------------------------------------------------------------
 
     /**
-     * Returns the effective arcid, preferring galleryDetail > archive >
-     * arcid argument.
+     * Returns the effective arcid, preferring archiveDetail > archive >
+     * arcid argument. The legacy `_galleryDetail` path is still consulted
+     * as a final fallback during the M1b-4 transition window.
      */
     fun getEffectiveArcid(): String? {
-        return _galleryDetail.value?.arcid
+        return _archiveDetail.value?.archive?.arcid
             ?: _archive.value?.arcid
+            ?: _galleryDetail.value?.arcid
             ?: _arcid.value
     }
 
     /**
      * Returns the best available [Archive] for display. Prefers the rich
-     * detail (mapped via [toArchive]) when loaded, otherwise the navigation
-     * argument [_archive].
+     * detail when loaded (now sourced directly from `_archiveDetail`),
+     * otherwise the navigation argument [_archive].
      */
     fun getEffectiveArchive(): Archive? {
-        return _galleryDetail.value?.toArchive() ?: _archive.value
+        return _archiveDetail.value?.archive ?: _archive.value
     }
 
     // -------------------------------------------------------------------------
@@ -220,9 +256,9 @@ class GalleryDetailViewModel : ViewModel() {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val localReadingPage: StateFlow<Int> = combine(
-        _galleryDetail, _archive, _arcid
-    ) { gd, archive, argArcid ->
-        gd?.arcid ?: archive?.arcid ?: argArcid
+        _archiveDetail, _archive, _arcid
+    ) { ad, archive, argArcid ->
+        ad?.archive?.arcid ?: archive?.arcid ?: argArcid
     }
         .distinctUntilChanged()
         .flatMapLatest { arcid ->
@@ -448,6 +484,7 @@ class GalleryDetailViewModel : ViewModel() {
 
                 _galleryDetail.value = gd
                 _archiveDetail.value = ad
+                _currentRating.value = ad.archive.rating
 
                 // Preload reading pages in background
                 triggerReadingPreload(arcid, archive.progress)
@@ -476,6 +513,7 @@ class GalleryDetailViewModel : ViewModel() {
         val cached = ServiceRegistry.dataModule.archiveDetailCache.get(arcid)
         if (cached != null) {
             _archiveDetail.value = cached
+            _currentRating.value = cached.archive.rating
             return true
         }
         return true

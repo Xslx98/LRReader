@@ -4,19 +4,15 @@ import android.content.Context
 import android.graphics.drawable.Drawable
 import android.util.Log
 import android.view.View
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RatingBar
 import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
-import com.hippo.android.resource.AttrResources
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
-import com.hippo.ehviewer.client.data.GalleryDetail
 
-import com.lanraragi.reader.client.api.data.LRRArchive
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
@@ -29,7 +25,7 @@ import kotlinx.coroutines.launch
 /**
  * Handles header view binding and update logic for [GalleryDetailScene].
  *
- * Owns: thumbnail loading, title/uploader display, rating, favourite state,
+ * Owns: thumbnail loading, title display, rating, favourite state,
  * archiver progress, read progress, transition names, circular reveal.
  */
 internal class DetailHeaderBinder(
@@ -117,56 +113,8 @@ internal class DetailHeaderBinder(
     }
 
     fun bindViewSecond(
-        gd: GalleryDetail,
-        hadEagerBind: Boolean,
-        context: Context?,
-        inflater: android.view.LayoutInflater?,
-        clickListener: View.OnClickListener,
-        longClickListener: View.OnLongClickListener
-    ) {
-        if (!hadEagerBind) {
-            thumb.load(LRRCacheKeyFactory.getThumbKey(gd.arcid), gd.thumb)
-        } else if (useNetWorkLoadThumb) {
-            // bindViewFirst loaded a stale thumb URL; force a network refresh.
-            thumb.load(LRRCacheKeyFactory.getThumbKey(gd.arcid), gd.thumb)
-            useNetWorkLoadThumb = false
-        } else {
-            // Eager bind already cached the same URL — read from disk.
-            thumb.load(LRRCacheKeyFactory.getThumbKey(gd.arcid), gd.thumb, false)
-        }
-
-        title.text = gd.title
-        // LRR has no uploader concept — clear the slot; this matches the
-        // bindFromArchiveDetail path which writes null too.
-        uploader.text = null
-
-        bindReadProgress(gd.progress, gd.pages)
-
-        size.text = gd.size
-
-        // LANraragi rating display
-        if (gd.rating > 0) {
-            ratingText.text = String.format("%.0f\u2605", gd.rating)
-            rating.rating = gd.rating
-        } else {
-            ratingText.text = "Not rated"
-            rating.rating = 0f
-        }
-
-        updateFavoriteDrawable(gd)
-        bindArchiverProgress(gd)
-        if (context != null && inflater != null) {
-            GalleryTagHelper.bindTags(context, inflater, tags, noTags, gd.tags, clickListener, longClickListener)
-        }
-    }
-
-    /**
-     * Bind display fields from an [ArchiveDetail] domain model.
-     * Uses Archive's native fields (arcid, title, thumbnailUrl, rating, tags)
-     * without going through GalleryDetail's EhViewer legacy fields.
-     */
-    fun bindFromArchiveDetail(
         ad: ArchiveDetail,
+        hadEagerBind: Boolean,
         context: Context?,
         inflater: android.view.LayoutInflater?,
         clickListener: View.OnClickListener,
@@ -174,42 +122,50 @@ internal class DetailHeaderBinder(
     ) {
         val archive = ad.archive
 
-        thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), archive.thumbnailUrl)
+        if (!hadEagerBind) {
+            thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), archive.thumbnailUrl)
+        } else if (useNetWorkLoadThumb) {
+            // bindViewFirst loaded a stale thumb URL; force a network refresh.
+            thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), archive.thumbnailUrl)
+            useNetWorkLoadThumb = false
+        } else {
+            // Eager bind already cached the same URL — read from disk.
+            thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), archive.thumbnailUrl, false)
+        }
+
         title.text = archive.title
+        // LRR has no uploader concept — clear the slot.
         uploader.text = null
 
-        // Progress
-        val displayProgress = if (archive.progress > 0) archive.progress else 1
-        pages.text = "${displayProgress}/${archive.pagecount}P"
+        bindReadProgress(archive.progress, archive.pagecount)
 
-        size.text = ad.size ?: "N/A"
+        size.text = ad.size
 
-        // Rating
+        // LANraragi rating display
         if (archive.rating > 0) {
-            ratingText.text = String.format("%.0f\u2605", archive.rating)
+            ratingText.text = String.format("%.0f★", archive.rating)
             rating.rating = archive.rating
         } else {
             ratingText.text = "Not rated"
             rating.rating = 0f
         }
 
-        // Tags — pass domain TagGroups directly to the tag binder
+        updateFavoriteDrawable(archive.arcid)
+        bindArchiverProgress(archive.arcid)
         if (context != null && inflater != null) {
             GalleryTagHelper.bindTags(context, inflater, tags, noTags, ad.tagGroups, clickListener, longClickListener)
         }
     }
 
-    fun updateFavoriteDrawable(gd: GalleryDetail?) {
-        if (gd == null) return
+    fun updateFavoriteDrawable(arcid: String?) {
+        if (arcid.isNullOrEmpty()) return
         lifecycleOwner.lifecycleScope.launch {
             try {
-                // Read favorite indicator from the dedicated StateFlow (M1b-3)
-                // and OR with the local-DB lookup. The legacy `gd.isFavorited /
-                // favoriteName` mirror still gets written, but is no longer
-                // consulted here so removing it in M1b-4 is a no-op for this
-                // path.
+                // Categories source comes from the dedicated favoriteState
+                // StateFlow; the local-DB lookup ORs in for galleries that
+                // are bookmarked locally but not server-side.
                 val favState = viewModel.favoriteState.value
-                val isFav = favState?.isFavorited == true || viewModel.isLocalFavorite(gd.arcid)
+                val isFav = favState?.isFavorited == true || viewModel.isLocalFavorite(arcid)
                 val name = favState?.name
                 heart.post {
                     if (isFav) {
@@ -231,8 +187,8 @@ internal class DetailHeaderBinder(
         }
     }
 
-    fun bindArchiverProgress(gd: GalleryDetail) {
-        archiverDownloadProgress.initThread(gd.arcid)
+    fun bindArchiverProgress(arcid: String) {
+        archiverDownloadProgress.initThread(arcid)
     }
 
     /**
