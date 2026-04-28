@@ -71,7 +71,6 @@ class GalleryDetailViewModelTest {
         val vm = GalleryDetailViewModel()
 
         vm.setAction(GalleryDetailScene.ACTION_ARCHIVE)
-        vm.setGid(42L)
         vm.setArcid("tok")
         vm.setArchive(archive("tok"))
         vm.setGalleryDetail(GalleryDetail().apply { arcid = "tok" })
@@ -80,7 +79,6 @@ class GalleryDetailViewModelTest {
         vm.resetForNewEntry()
 
         assertNull(vm.action.value)
-        assertEquals(0L, vm.gid.value)
         assertNull(vm.arcid.value)
         assertNull(vm.archive.value)
         assertNull(vm.galleryDetail.value)

@@ -20,7 +20,6 @@ import android.text.TextUtils
 import android.util.Log
 import android.util.SparseArray
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.unifile.UniFile
 import com.hippo.lib.yorozuya.IOUtils
@@ -238,14 +237,5 @@ class SpiderInfo {
             return if (spiderInfo.arcid == arcid) spiderInfo else null
         }
 
-        @JvmStatic
-        fun getSpiderInfo(info: GalleryDetail): SpiderInfo? {
-            val spiderInfo = SpiderInfo()
-            spiderInfo.gid = info.gid
-            spiderInfo.arcid = info.arcid
-            spiderInfo.pages = info.SpiderInfoPages
-            spiderInfo.pTokenMap = SparseArray(0)
-            return if (spiderInfo.pages > 0) spiderInfo else null
-        }
     }
 }

@@ -227,13 +227,12 @@ internal class DetailActionHandler(
     var onFavoriteChanged: ((GalleryDetail) -> Unit)? = null
 
     private fun getGalleryDetailUrl(): String? {
-        // EH-style URL is used only by the "open in other app" share menu;
-        // the gid component is meaningless for LRR archives, so fall back
-        // to 0 when galleryDetail (the only gid carrier on this path) is
-        // not loaded yet. Archive does not expose gid by design.
-        val gid = viewModel.galleryDetail.value?.gid ?: 0L
+        // EH-style URL is used only by the "open in other app" share menu.
+        // The leading numeric segment is meaningless for LRR archives so we
+        // hard-code 0; the arcid is the part the receiving app actually
+        // cares about.
         val arcid = viewModel.getEffectiveArcid() ?: return null
-        return LRRUrl.getGalleryDetailUrl(gid, arcid, 0, false)
+        return LRRUrl.getGalleryDetailUrl(0L, arcid, 0, false)
     }
 
     fun destroy() {
