@@ -5,8 +5,8 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.download.DownloadManager
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.data.LRRArchive
 import com.lanraragi.reader.client.api.runSuspend
+import com.lanraragi.reader.domain.buildRatingEmoji
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -36,7 +36,7 @@ object RatingHelper {
                 val originalTags = archive.tags ?: ""
 
                 // Remove old rating tag, add new with emoji
-                val newRatingTag = "rating:" + LRRArchive.buildRatingEmoji(rating.roundToInt())
+                val newRatingTag = "rating:" + buildRatingEmoji(rating.roundToInt())
                 var cleaned = originalTags.replace(Regex(",\\s*rating:[^,]*"), "")
                     .replace(Regex("rating:[^,]*\\s*,?\\s*"), "")
                     .trim()
