@@ -1,5 +1,6 @@
 package com.hippo.ehviewer.mapper
 
+import com.hippo.ehviewer.dao.ArchiveLocalState
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.Mapper
 import org.junit.Assert.assertEquals
@@ -30,47 +31,21 @@ class ArchiveMappersTest {
     )
 
     @Test
-    fun `archive to download info preserves display fields`() {
-        val a = archive()
-        val di = ArchiveMappers.archiveToDownloadInfo.map(a)
-        assertEquals("abc", di.arcid)
-        assertEquals("T", di.title)
-        assertEquals(3.5f, di.rating)
-    }
-
-    @Test
-    fun `download info to archive preserves arcid title rating profile`() {
-        // The DownloadInfo.@Ignore simpleTags is a flat array, so round-
-        // tripping through DownloadInfo loses tag namespaces (everything
-        // collapses into "misc"). This is a known legacy-entity loss the
-        // L1 audit item is set up to remove; lock the current behavior so
-        // the lossless replacement gets caught when it lands.
-        val a = archive()
-        val di = ArchiveMappers.archiveToDownloadInfo.map(a)
-        val back = ArchiveMappers.downloadInfoToArchive.map(di)
-        assertEquals("abc", back.arcid)
-        assertEquals("T", back.title)
-        assertEquals(3.5f, back.rating)
-        assertEquals(9L, back.serverProfileId)
-        assertEquals(listOf("alice"), back.tags["misc"])
-    }
-
-    @Test
-    fun `bimapper exposes both directions`() {
-        val a = archive()
-        val di = ArchiveMappers.downloadInfoBimapper.map(a)
-        val back = ArchiveMappers.downloadInfoBimapper.reverse(di)
-        assertEquals("abc", back.arcid)
-    }
-
-    @Test
-    fun `history bimapper preserves rating`() {
-        // Same legacy tag-namespace loss as the download bimapper above.
-        val a = archive()
-        val hi = ArchiveMappers.historyInfoBimapper.map(a)
-        val back = ArchiveMappers.historyInfoBimapper.reverse(hi)
-        assertEquals(3.5f, back.rating)
-        assertEquals(listOf("alice"), back.tags["misc"])
+    fun `archiveLocalStateToArchive decodes the archive_json payload`() {
+        val source = archive("rt-1")
+        val row = ArchiveLocalState(
+            arcid = "rt-1",
+            serverProfileId = 9L,
+            archiveJson = source.toArchiveJson(),
+            historyTime = 1700_000L,
+            historyMode = 0,
+        )
+        val decoded = ArchiveMappers.archiveLocalStateToArchive.map(row)
+        assertEquals("rt-1", decoded.arcid)
+        assertEquals("T", decoded.title)
+        assertEquals(3.5f, decoded.rating)
+        assertEquals(9L, decoded.serverProfileId)
+        assertEquals(listOf("alice"), decoded.tags["artist"])
     }
 
     @Test
@@ -85,5 +60,10 @@ class ArchiveMappersTest {
         // The actual conversion is exercised by LRRArchiveTest; here we
         // just want to be sure the registry constant is non-null.
         assertNotNull(ArchiveMappers.lrrArchiveToArchive)
+    }
+
+    @Test
+    fun `lrrArchiveToArchiveDetail registry entry is wired`() {
+        assertNotNull(ArchiveMappers.lrrArchiveToArchiveDetail)
     }
 }

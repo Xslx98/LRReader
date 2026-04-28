@@ -22,7 +22,7 @@ import android.util.Log
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.DownloadLabel
-import com.hippo.ehviewer.mapper.toDownloadInfo
+import com.hippo.ehviewer.mapper.toDownloadInfoView
 import com.lanraragi.reader.domain.parseRatingFromTags
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.spider.SpiderDen
@@ -195,7 +195,7 @@ class DownloadManager(
                 scheduler.ensureDownload()
             }
         } else {
-            val info = archive.toDownloadInfo().apply { this.label = label; state = DownloadState.WAIT; time = System.currentTimeMillis() }
+            val info = archive.toDownloadInfoView().apply { this.label = label; state = DownloadState.WAIT; time = System.currentTimeMillis() }
             val list = repo.getInfoListForLabel(info.label) ?: run { Log.e(TAG, "Can't find download info list with label: $label"); return }
             list.add(0, info)
             repo.allInfoList.add(0, info)
