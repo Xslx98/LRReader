@@ -137,9 +137,9 @@ internal class DetailActionHandler(
                 showCategoryDialog(activity)
             }
             v.id == R.id.title -> {
-                val detail = viewModel.galleryDetail.value
-                if (detail?.title != null) {
-                    ClipboardUtil.copyText(detail.title)
+                val title = viewModel.archiveDetail.value?.archive?.title
+                if (!title.isNullOrEmpty()) {
+                    ClipboardUtil.copyText(title)
                     Toast.makeText(context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
                 }
             }
@@ -195,14 +195,19 @@ internal class DetailActionHandler(
     }
 
     private fun showCategoryDialog(activity: android.app.Activity) {
-        val gd = viewModel.galleryDetail.value ?: return
-        CategoryDialogHelper.showCategoryDialog(activity, gd) { isFavorited, favoriteName ->
-            val current = viewModel.galleryDetail.value ?: return@showCategoryDialog
-            // Mirror onto both sources during the M1b transition.
-            current.isFavorited = isFavorited
-            current.favoriteName = favoriteName
+        val arcid = viewModel.getEffectiveArcid() ?: return
+        CategoryDialogHelper.showCategoryDialog(activity, arcid) { isFavorited, favoriteName ->
+            // Mirror onto both sources during the M1b transition: the
+            // legacy GalleryDetail flags keep working for any caller still
+            // reading them; the FavoriteState flow is now the canonical
+            // source for DetailHeaderBinder.
+            val gd = viewModel.galleryDetail.value
+            if (gd != null) {
+                gd.isFavorited = isFavorited
+                gd.favoriteName = favoriteName
+            }
             viewModel.updateFavoriteState(FavoriteState(isFavorited, favoriteName))
-            onFavoriteChanged?.invoke(current)
+            onFavoriteChanged?.invoke(arcid)
         }
     }
 
@@ -210,7 +215,7 @@ internal class DetailActionHandler(
      * Callback invoked when favorite state changes after a category dialog.
      * The scene uses this to update the favorite heart drawable.
      */
-    var onFavoriteChanged: ((GalleryDetail) -> Unit)? = null
+    var onFavoriteChanged: ((arcid: String) -> Unit)? = null
 
     private fun getGalleryDetailUrl(): String? {
         // EH-style URL is used only by the "open in other app" share menu.

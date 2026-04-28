@@ -38,7 +38,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.mapper.toArchive
+import com.hippo.ehviewer.mapper.toArchiveDetail
 import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.domain.buildRatingEmoji
 import com.hippo.ehviewer.ui.MainActivity
 import com.hippo.ehviewer.ui.scene.BaseScene
@@ -183,7 +185,20 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mAction = savedInstanceState.getString(KEY_ACTION)
         mArchive = savedInstanceState.getParcelable(KEY_ARCHIVE)
         mArcid = savedInstanceState.getString(KEY_ARCID)
-        mGalleryDetail = savedInstanceState.getParcelable(KEY_GALLERY_DETAIL)
+        // Prefer the new ArchiveDetail key (M1b-4); fall back to the
+        // legacy GalleryDetail key for same-process restores written by
+        // an earlier build during the transition window.
+        val savedAd: com.lanraragi.reader.domain.ArchiveDetail? =
+            savedInstanceState.getParcelable(KEY_ARCHIVE_DETAIL)
+        if (savedAd != null) {
+            viewModel.setArchiveDetail(savedAd)
+        } else {
+            val legacyGd: GalleryDetail? = savedInstanceState.getParcelable(KEY_GALLERY_DETAIL)
+            if (legacyGd != null) {
+                mGalleryDetail = legacyGd
+                viewModel.setArchiveDetail(legacyGd.toArchiveDetail())
+            }
+        }
         mRequestId = savedInstanceState.getInt(KEY_REQUEST_ID)
     }
 
@@ -196,6 +211,13 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         viewModel.archive.value?.let { outState.putParcelable(KEY_ARCHIVE, it) }
         if (mArcid != null) {
             outState.putString(KEY_ARCID, mArcid)
+        }
+        // Dual-write: KEY_ARCHIVE_DETAIL is the canonical key going
+        // forward; KEY_GALLERY_DETAIL stays for one transition cycle so
+        // a process restore from a Bundle written by this build still
+        // works after M1b-5 rolls in.
+        viewModel.archiveDetail.value?.let {
+            outState.putParcelable(KEY_ARCHIVE_DETAIL, it)
         }
         if (mGalleryDetail != null) {
             outState.putParcelable(KEY_GALLERY_DETAIL, mGalleryDetail)
@@ -317,8 +339,8 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mActionHandler = actionHandler
         actionHandler.otherActions = otherActions
         actionHandler.download = download
-        actionHandler.onFavoriteChanged = { gd ->
-            mHeaderBinder?.updateFavoriteDrawable(gd)
+        actionHandler.onFavoriteChanged = { arcid ->
+            mHeaderBinder?.updateFavoriteDrawable(arcid)
         }
 
         // Make rating bar interactive. LANraragi only supports integer
@@ -328,7 +350,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         rating.stepSize = 0.5f
         rating.onRatingBarChangeListener =
             RatingBar.OnRatingBarChangeListener { _, ratingValue, fromUser ->
-                if (!fromUser || mGalleryDetail == null) return@OnRatingBarChangeListener
+                if (!fromUser || viewModel.archiveDetail.value == null) return@OnRatingBarChangeListener
                 // Live preview: show the emoji for the rounded value while dragging
                 ratingText.text = buildRatingEmoji(
                     kotlin.math.ceil(ratingValue).toInt()
@@ -339,12 +361,11 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             if (event.action == android.view.MotionEvent.ACTION_UP
                 || event.action == android.view.MotionEvent.ACTION_CANCEL
             ) {
-                val gd = mGalleryDetail ?: return@setOnTouchListener false
-                val arcid = gd.arcid ?: return@setOnTouchListener false
+                val arcid = viewModel.getEffectiveArcid() ?: return@setOnTouchListener false
                 // Ceil to integer: 0.5→1, 1.5→2, 4.5→5, etc.
                 val finalRating = kotlin.math.ceil(rating.rating).coerceIn(0f, 5f)
                 rating.rating = finalRating
-                gd.rating = finalRating
+                viewModel.updateCurrentRating(finalRating)
                 ratingText.text = buildRatingEmoji(finalRating.toInt())
                 RatingHelper.saveRatingToServer(arcid, finalRating, null)
             }
@@ -356,11 +377,11 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             val isLrr = LRRAuthManager.getServerUrl() != null
             btn.visibility = if (isLrr) View.VISIBLE else View.GONE
             btn.setOnClickListener {
-                val gd = mGalleryDetail
-                if (gd != null) {
+                val ad = viewModel.archiveDetail.value
+                if (ad != null) {
                     TagEditDialog.show(
-                        activity2, gd.arcid,
-                        gd.tags
+                        activity2, ad.archive.arcid,
+                        ad.tagGroups
                     ) {
                         if (mState != STATE_REFRESH && mState != STATE_REFRESH_HEADER) {
                             adjustViewVisibility(STATE_REFRESH, true)
@@ -376,7 +397,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mViewTransition2 = ViewTransition(mBelowHeader, mProgress)
 
         if (prepareData()) {
-            if (mGalleryDetail != null) {
+            if (viewModel.archiveDetail.value != null) {
                 bindViewSecond()
                 mHeaderBinder?.setTransitionName(viewModel.getEffectiveArcid())
                 adjustViewVisibility(STATE_NORMAL, false)
@@ -399,11 +420,11 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Observe gallery detail updates from ViewModel (replaces RequestHelper callback)
+        // Observe archive-detail updates from ViewModel (replaces RequestHelper callback)
         lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
-            viewModel.galleryDetail.collect { detail ->
-                if (detail != null && mState != STATE_NORMAL) {
-                    onGetGalleryDetailSuccess(detail)
+            viewModel.archiveDetail.collect { ad ->
+                if (ad != null && mState != STATE_NORMAL) {
+                    onGetArchiveDetailSuccess(ad)
                 }
             }
         }
@@ -430,15 +451,14 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     private fun applyLocalReadingProgress(localPage0: Int) {
         // Sentinel: SP has never been written, defer to server-reported progress.
         if (localPage0 == com.hippo.ehviewer.gallery.ReadingProgressTracker.NO_LOCAL_PROGRESS) return
-        val gd = viewModel.galleryDetail.value
+        val ad = viewModel.archiveDetail.value
         val archive = viewModel.archive.value
-        val totalPages = gd?.pages ?: archive?.pagecount ?: return
+        val totalPages = ad?.archive?.pagecount ?: archive?.pagecount ?: return
         val localPage1 = localPage0 + 1
-        // Local progress is the latest authoritative position once the reader
-        // has written it, so sync unconditionally — going backward must update
-        // the display too. Mutate galleryDetail.progress so any later re-bind
-        // path (bindViewSecond) picks up the new value.
-        gd?.progress = localPage1
+        // Local progress is authoritative once the reader has written it, so
+        // sync the binder unconditionally — including going backwards. The
+        // ArchiveDetail itself stays immutable; bindReadProgress is the
+        // single point that owns the displayed value.
         mHeaderBinder?.bindReadProgress(localPage1, totalPages)
     }
 
@@ -482,7 +502,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         if (!viewModel.tryLoadFromCache()) {
             return false
         }
-        if (mGalleryDetail != null) {
+        if (viewModel.archiveDetail.value != null) {
             return true
         }
 
@@ -566,7 +586,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     }
 
     private fun bindViewFirst() {
-        if (mGalleryDetail != null) return
+        if (viewModel.archiveDetail.value != null) return
         val binder = mHeaderBinder ?: return
         binder.bindViewFirst(mAction, viewModel.archive.value)
         mActionHandler?.updateDownloadText()
@@ -574,17 +594,17 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
     private fun bindViewSecond() {
         try {
-            val gd = mGalleryDetail ?: return
+            val ad = viewModel.archiveDetail.value ?: return
             val binder = mHeaderBinder ?: return
-            binder.bindViewSecond(gd, mArchive != null, getEHContext(), layoutInflater2, this, this)
+            binder.bindViewSecond(ad, mArchive != null, getEHContext(), layoutInflater2, this, this)
             mActionHandler?.updateDownloadText()
         } catch (e: Exception) {
             android.util.Log.e("GalleryDetailScene", "bindViewSecond crashed", e)
         }
     }
 
-    fun bindArchiverProgress(gd: GalleryDetail) {
-        mHeaderBinder?.bindArchiverProgress(gd)
+    fun bindArchiverProgress(arcid: String) {
+        mHeaderBinder?.bindArchiverProgress(arcid)
     }
 
     override fun onClick(v: View) {
@@ -616,40 +636,40 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
 
     override fun onBackPressed() {
-        val gd = mGalleryDetail
-        if (gd != null && !mInitialRating.isNaN() && gd.rating != mInitialRating) {
+        val current = viewModel.currentRating.value
+        val arcid = viewModel.getEffectiveArcid()
+        if (current != null && arcid != null && !mInitialRating.isNaN() && current != mInitialRating) {
             val data = android.os.Bundle()
-            data.putString(KEY_ARCID, gd.arcid)
-            data.putFloat(KEY_RATING_RESULT, gd.rating)
+            data.putString(KEY_ARCID, arcid)
+            data.putFloat(KEY_RATING_RESULT, current)
             setResult(RESULT_OK, data)
         }
         finish()
     }
 
 
-    internal fun onGetGalleryDetailSuccess(result: GalleryDetail) {
+    internal fun onGetArchiveDetailSuccess(result: ArchiveDetail) {
         try {
-            onGetGalleryDetailSuccessInternal(result)
+            onGetArchiveDetailSuccessInternal(result)
         } catch (e: Exception) {
-            android.util.Log.e("GalleryDetailScene", "onGetGalleryDetailSuccess crashed", e)
+            android.util.Log.e("GalleryDetailScene", "onGetArchiveDetailSuccess crashed", e)
         }
     }
 
-    private fun onGetGalleryDetailSuccessInternal(result: GalleryDetail) {
-        mGalleryDetail = result
-        if (mInitialRating.isNaN()) mInitialRating = result.rating
+    private fun onGetArchiveDetailSuccessInternal(result: ArchiveDetail) {
+        if (mInitialRating.isNaN()) mInitialRating = result.archive.rating
         viewModel.refreshDownloadState()
         val dlState = viewModel.downloadState.value
         if (dlState != DownloadState.INVALID) {
             // Refresh the cached download row's thumb if the freshly fetched
             // detail carries a different one. Snapshot lookup — the row is
             // only read here, so we do not need a long-lived StateFlow.
-            val di = ServiceRegistry.dataModule.downloadManager.getDownloadInfo(result.arcid)
+            val di = ServiceRegistry.dataModule.downloadManager.getDownloadInfo(result.archive.arcid)
             if (di != null && di.thumb != null &&
-                di.thumb != result.thumb && di.arcid == result.arcid
+                di.thumb != result.archive.thumbnailUrl && di.arcid == result.archive.arcid
             ) {
                 mHeaderBinder?.useNetWorkLoadThumb = true
-                di.updateInfo(result.toArchive())
+                di.updateInfo(result.archive)
                 di.state = dlState
                 viewModel.persistDownloadInfo(di)
             }
@@ -692,6 +712,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         const val KEY_RATING_RESULT = "rating_result"
 
         private const val KEY_GALLERY_DETAIL = "gallery_detail"
+        private const val KEY_ARCHIVE_DETAIL = "archive_detail"
         private const val KEY_REQUEST_ID = "request_id"
 
         private const val TRANSITION_ANIMATION_DISABLED = true
