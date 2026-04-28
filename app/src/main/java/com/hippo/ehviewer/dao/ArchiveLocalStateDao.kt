@@ -259,4 +259,30 @@ interface ArchiveLocalStateDao {
         historyTime: Long,
         historyMode: Int,
     )
+
+    @Query(
+        "INSERT OR IGNORE INTO ARCHIVE_LOCAL_STATE " +
+            "(ARCID, SERVER_PROFILE_ID, ARCHIVE_JSON, FAVORITE_TIME) " +
+            "VALUES (:arcid, :serverProfileId, :archiveJson, :favoriteTime)"
+    )
+    suspend fun insertOrIgnoreFavorite(
+        arcid: String,
+        serverProfileId: Long,
+        archiveJson: String,
+        favoriteTime: Long,
+    )
+
+    @Query(
+        "UPDATE ARCHIVE_LOCAL_STATE SET " +
+            "SERVER_PROFILE_ID = :serverProfileId, " +
+            "ARCHIVE_JSON = :archiveJson, " +
+            "FAVORITE_TIME = :favoriteTime " +
+            "WHERE ARCID = :arcid"
+    )
+    suspend fun updateFavoriteFields(
+        arcid: String,
+        serverProfileId: Long,
+        archiveJson: String,
+        favoriteTime: Long,
+    )
 }

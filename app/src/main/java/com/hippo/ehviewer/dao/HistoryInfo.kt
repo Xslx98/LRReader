@@ -17,73 +17,46 @@ package com.hippo.ehviewer.dao
 
 import android.os.Parcel
 import android.os.Parcelable
-import androidx.room.ColumnInfo
-import androidx.room.Entity
-import androidx.room.Ignore
-import androidx.room.Index
 
 /**
- * Entity mapped to table "HISTORY".
+ * In-memory view over the history subsystem of an `ARCHIVE_LOCAL_STATE`
+ * row.
  *
- * W36-8: standalone class. Used to inherit GalleryInfoEntity to share
- * the GalleryInfo column set; every non-DAO consumer was migrated to
- * the Archive domain model in Phase 1 and the inheritance only kept
- * dead fields alive.
- *
- * Persistent column set unchanged from Room schema v21 — physical
- * column drops happen in W36-10.
+ * Post-L1-4 this class is no longer a Room `@Entity` — the persisted
+ * state lives on [ArchiveLocalState] (HISTORY_TIME / HISTORY_MODE
+ * columns are non-null when the archive is in reading history). The
+ * repository layer translates between this view and the unified row.
  */
-@Entity(
-    tableName = "HISTORY",
-    primaryKeys = ["ARCID"],
-    indices = [Index("SERVER_PROFILE_ID"), Index("TIME")]
-)
 class HistoryInfo() : Parcelable {
 
-    // ── Persistent columns (mirror Room v21 schema 1:1) ──
-
     @JvmField
-    @ColumnInfo(name = "ARCID")
     var arcid: String = ""
 
     @JvmField
-    @ColumnInfo(name = "TITLE")
     var title: String? = null
 
     @JvmField
-    @ColumnInfo(name = "THUMB")
     var thumb: String? = null
 
     @JvmField
-    @ColumnInfo(name = "RATING")
     var rating: Float = 0f
 
     @JvmField
-    @ColumnInfo(name = "SIMPLE_LANGUAGE")
     var simpleLanguage: String? = null
 
     @JvmField
-    @ColumnInfo(name = "SERVER_PROFILE_ID", defaultValue = "0")
     var serverProfileId: Long = 0
 
     @JvmField
-    @ColumnInfo(name = "MODE")
     var mode: Int = 0
 
     @JvmField
-    @ColumnInfo(name = "TIME")
     var time: Long = 0
 
-    // ── @Ignore transient fields (kept per W36-7 audit) ──
-
-    /** Display tags; populated by Archive.toHistoryInfo from flatTags. */
+    /** Display tags; populated by the mapper from Archive.flatTags. */
     @JvmField
-    @Ignore
     var simpleTags: Array<String>? = null
 
-    // ── Parcelable ──
-
-    @Ignore
     private constructor(`in`: Parcel) : this() {
         arcid = `in`.readString() ?: ""
         title = `in`.readString()
