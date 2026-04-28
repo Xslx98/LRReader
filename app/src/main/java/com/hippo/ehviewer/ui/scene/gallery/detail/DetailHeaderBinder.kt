@@ -203,14 +203,21 @@ internal class DetailHeaderBinder(
         if (gd == null) return
         lifecycleOwner.lifecycleScope.launch {
             try {
-                val isFav = gd.isFavorited || viewModel.isLocalFavorite(gd.arcid)
+                // Read favorite indicator from the dedicated StateFlow (M1b-3)
+                // and OR with the local-DB lookup. The legacy `gd.isFavorited /
+                // favoriteName` mirror still gets written, but is no longer
+                // consulted here so removing it in M1b-4 is a no-op for this
+                // path.
+                val favState = viewModel.favoriteState.value
+                val isFav = favState?.isFavorited == true || viewModel.isLocalFavorite(gd.arcid)
+                val name = favState?.name
                 heart.post {
                     if (isFav) {
                         heart.visibility = View.VISIBLE
-                        if (gd.favoriteName == null) {
+                        if (name == null) {
                             heart.setText(R.string.local_favorites)
                         } else {
-                            heart.text = gd.favoriteName
+                            heart.text = name
                         }
                         heartOutline.visibility = View.GONE
                     } else {
