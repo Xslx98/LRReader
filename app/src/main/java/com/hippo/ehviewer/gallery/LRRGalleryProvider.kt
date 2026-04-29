@@ -194,6 +194,18 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
                     "[PROGRESS] Final resolved page=$finalPage fraction=$finalFraction"
                 )
 
+                // Try the cross-session decoded slot (filled by the
+                // detail-page warmup). On a hit we hand the Image
+                // straight to the GL pipeline; the image cache picks
+                // it up so request(finalPage) from GalleryView is a
+                // synchronous notifyPageSucceed and the user sees the
+                // page on the very next frame.
+                val warmed = ReaderPageCache.consumeDecodedPage(arcId, finalPage)
+                if (warmed != null) {
+                    Log.i(TAG, "[PROGRESS] decoded slot HIT for page=$finalPage")
+                    notifyPageSucceed(finalPage, warmed)
+                }
+
                 // Jump GalleryView to the resolved page (and apply the
                 // intra-page fraction if any). setCurrentPage() and
                 // setCurrentPageScrollFraction() both post to the GL
