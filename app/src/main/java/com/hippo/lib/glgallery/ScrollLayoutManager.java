@@ -538,13 +538,23 @@ class ScrollLayoutManager extends GalleryView.LayoutManager {
                 }
             }
 
-            // Apply pending start-fraction once the target page has been
-            // measured and loaded. We need the *image-loaded* height,
-            // not the placeholder min-height, otherwise fraction × tiny
-            // placeholder ≪ fraction × actual long image. Until the
-            // target page reports `isLoaded()` we leave the pending
-            // value alone and re-check on the next fill — onScroll /
-            // onDown will clear it the moment the user interacts.
+            // Apply pending intra-page restore via the keep-top
+            // anchors (mKeepTopPageIndex / mKeepTop) — the same
+            // mechanism setCurrentIndex / onScale already use to pin a
+            // page at a specific viewport Y across fills. This is the
+            // GL-side analogue of
+            // LinearLayoutManager.scrollToPositionWithOffset(position,
+            // offset): "place the top of [position] at [offset] from
+            // the viewport top".
+            //
+            // We can only finalize once the target page reports a
+            // real loaded height — fraction × placeholder-min-height
+            // would yield a tiny offset. Until then we leave the
+            // pending value alone and re-check on the next fill — the
+            // GalleryAdapter pipes a requestFill() through after every
+            // onPageSucceed so this branch gets a second chance when
+            // the target's image arrives. onScroll / onDown clear
+            // pending the moment the user interacts.
             if (!Float.isNaN(mPendingStartFraction)
                     && mPendingStartFractionPageIndex != GalleryPageView.INVALID_INDEX) {
                 GalleryPageView target = null;
@@ -555,12 +565,28 @@ class ScrollLayoutManager extends GalleryView.LayoutManager {
                     }
                 }
                 if (target != null && target.isLoaded() && target.getHeight() > 0) {
-                    int dy = Math.round(mPendingStartFraction * target.getHeight());
-                    if (dy != 0) {
-                        scrollInternal(0, dy, false, 0f, 0f);
-                    }
+                    int desiredTop = -Math.round(mPendingStartFraction * target.getHeight());
+                    Log.d(TAG, "[FRACTION] applying: page=" + mPendingStartFractionPageIndex
+                        + " fraction=" + mPendingStartFraction
+                        + " pageHeight=" + target.getHeight()
+                        + " desiredTop=" + desiredTop);
+                    // Pin the target page at desiredTop via keep-top
+                    // anchors. fillPages reads (mKeepTopPageIndex,
+                    // mKeepTop) at the start of each fill (line 484)
+                    // and uses them as (startIndex, startOffset),
+                    // exactly what we want. The pin survives until
+                    // onScroll/onFling clear it on user input
+                    // (lines ~744, ~756).
+                    mKeepTopPageIndex = mPendingStartFractionPageIndex;
+                    mKeepTop = desiredTop;
                     mPendingStartFraction = Float.NaN;
                     mPendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX;
+                    // Force an immediate re-fill within this render
+                    // cycle so the new anchor lands on screen now;
+                    // mGalleryView.requestFill() would be a no-op
+                    // here since we're inside onFill
+                    // (mEnableRequestFill == false).
+                    mGalleryView.forceFill();
                 }
             }
         }
@@ -1051,20 +1077,25 @@ class ScrollLayoutManager extends GalleryView.LayoutManager {
      * Out-of-range fractions are clamped; NaN clears the pending value.
      */
     @Override
-    public void setStartScrollFraction(float fraction) {
-        if (Float.isNaN(fraction)) {
+    public void setStartScrollFraction(int pageIndex, float fraction) {
+        if (Float.isNaN(fraction) || pageIndex < 0) {
             mPendingStartFraction = Float.NaN;
             mPendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX;
+            Log.d(TAG, "[FRACTION] setStartScrollFraction cleared pending (pageIndex="
+                + pageIndex + ", fraction=" + fraction + ")");
             return;
         }
         float clamped = MathUtils.clamp(fraction, 0f, 1f);
         if (clamped <= 0f) {
             mPendingStartFraction = Float.NaN;
             mPendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX;
+            Log.d(TAG, "[FRACTION] setStartScrollFraction <= 0 -> cleared pending");
             return;
         }
         mPendingStartFraction = clamped;
-        mPendingStartFractionPageIndex = mIndex;
+        mPendingStartFractionPageIndex = pageIndex;
+        Log.d(TAG, "[FRACTION] setStartScrollFraction page=" + pageIndex
+            + " fraction=" + clamped);
         mGalleryView.requestFill();
     }
 

@@ -902,7 +902,7 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
     private void setCurrentPageWithFractionInternal(int page, float fraction) {
         if (mLayoutManager != null) {
             mLayoutManager.setCurrentIndex(page);
-            mLayoutManager.setStartScrollFraction(fraction);
+            mLayoutManager.setStartScrollFraction(page, fraction);
         } else {
             mIndex = page;
             // No layout manager yet — fraction can't be applied. The
@@ -1267,12 +1267,19 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
         abstract int getInternalCurrentIndex();
 
         /**
-         * Set a pending intra-page scroll fraction (0.0 ~ 1.0) to
-         * apply on the next successful fill. Default no-op for
-         * layout managers that don't support intra-page scrolling
-         * (e.g. pager mode).
+         * Set a pending intra-page scroll fraction (0.0 ~ 1.0) on
+         * the given target page, to apply on the next successful
+         * fill where that page is laid out and loaded. The page
+         * index is passed explicitly because the layout manager's
+         * internal mIndex can drift away from the caller's intent
+         * (fillPages sets mIndex to the first page in mPages, which
+         * for backward-extended layouts is not the requested page).
+         * Default no-op for layout managers that don't support
+         * intra-page scrolling (e.g. pager mode).
          */
-        public void setStartScrollFraction(@SuppressWarnings("unused") float fraction) {
+        public void setStartScrollFraction(
+                @SuppressWarnings("unused") int pageIndex,
+                @SuppressWarnings("unused") float fraction) {
             // No-op by default
         }
 
