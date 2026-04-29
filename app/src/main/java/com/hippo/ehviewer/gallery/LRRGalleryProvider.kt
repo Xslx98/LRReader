@@ -436,7 +436,7 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
     }
 
     @Throws(IOException::class)
-    private fun downloadAndDecodePage(index: Int) {
+    private suspend fun downloadAndDecodePage(index: Int) {
         // Try up to 2 times: once normally, once with cache invalidation
         for (attempt in 0 until 2) {
             var cacheFile = getCacheFile(index)
@@ -469,23 +469,21 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
                 return
             }
 
-            // Decode image
-            var fis: FileInputStream? = null
-            try {
-                fis = FileInputStream(cacheFile)
-                val image = Image.decode(fis, false)
-                if (image != null) {
-                    notifyPageSucceed(index, image)
-                    return // Success!
-                } else {
-                    // Decode returned null — file is corrupt
-                    cacheFile.delete()
-                    if (attempt == 0) continue // Retry
-                    notifyPageFailed(index, context.getString(R.string.lrr_decode_failed))
-                    return
-                }
-            } finally {
-                fis?.close()
+            // Decode image. Routed through the bounded decoderDispatcher so
+            // a burst of concurrent page requests doesn't blow past the
+            // global cap on simultaneous BitmapFactory work.
+            val image = withContext(ServiceRegistry.coroutineModule.decoderDispatcher) {
+                FileInputStream(cacheFile).use { fis -> Image.decode(fis, false) }
+            }
+            if (image != null) {
+                notifyPageSucceed(index, image)
+                return // Success!
+            } else {
+                // Decode returned null — file is corrupt
+                cacheFile.delete()
+                if (attempt == 0) continue // Retry
+                notifyPageFailed(index, context.getString(R.string.lrr_decode_failed))
+                return
             }
         }
     }
