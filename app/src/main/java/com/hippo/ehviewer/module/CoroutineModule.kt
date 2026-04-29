@@ -78,8 +78,36 @@ class CoroutineModule : ICoroutineModule {
         SupervisorJob() + Dispatchers.IO + exceptionHandler
     )
 
+    /**
+     * Decoder dispatcher: a view of [Dispatchers.IO] capped at
+     * [DECODER_PARALLELISM] concurrent tasks via
+     * [kotlinx.coroutines.CoroutineDispatcher.limitedParallelism].
+     *
+     * Why a separate dispatcher rather than just `Dispatchers.IO`:
+     * `Dispatchers.IO` defaults to a 64-thread pool, which lets
+     * unrelated I/O proceed while a few decodes are in flight. A
+     * `limitedParallelism` view shares the same backing pool but
+     * caps the *decode* tasks specifically, so a burst of pages
+     * doesn't drown out other I/O (network, DB) or push memory
+     * into trim. Empirically the value mirrors Coil's
+     * `bitmapFactoryMaxParallelism = 4`.
+     */
+    @kotlin.OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    override val decoderDispatcher = Dispatchers.IO.limitedParallelism(DECODER_PARALLELISM)
+
     override fun destroy() {
         applicationScope.cancel()
         ioScope.cancel()
+    }
+
+    private companion object {
+        /**
+         * Max concurrent decode tasks running through
+         * [decoderDispatcher]. Aligns with Coil's
+         * `bitmapFactoryMaxParallelism` default of 4 — high enough
+         * to overlap "current page + a couple of preloads" but low
+         * enough that large-bitmap allocations don't pile up.
+         */
+        const val DECODER_PARALLELISM = 4
     }
 }
