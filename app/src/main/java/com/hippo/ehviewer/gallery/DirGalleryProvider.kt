@@ -18,7 +18,6 @@ package com.hippo.ehviewer.gallery
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import android.os.Process
 import android.util.Log
 import com.hippo.ehviewer.GetText
 import com.hippo.ehviewer.R
@@ -33,18 +32,26 @@ import com.hippo.util.NaturalComparator
 import com.hippo.lib.yorozuya.FileUtils
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.lib.yorozuya.StringUtils
-import com.hippo.lib.yorozuya.thread.PriorityThread
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
-import java.util.Stack
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.PriorityBlockingQueue
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.max
 
-class DirGalleryProvider : GalleryProvider2, Runnable {
+class DirGalleryProvider : GalleryProvider2 {
 
     private val dir: UniFile
     private val context: Context?
@@ -52,10 +59,31 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
     private val serverUrl: String?
     private var startPageValue: Int = 0
 
-    private val requests = Stack<Int>()
-    private val decodingIndex = AtomicInteger(GalleryPageView.INVALID_INDEX)
     private val fileList = AtomicReference<Array<UniFile>?>()
-    private var bgThread: Thread? = null
+
+    /**
+     * Decode request queue with priority semantics:
+     * - [PRIO_CURRENT] = 0  (page actively requested by the GalleryView)
+     * - [PRIO_PRELOAD] = 1  (neighbour pages queued by the worker after a
+     *   successful decode, to amortize the next scroll)
+     *
+     * Lower numeric priority dequeues first; ties broken by FIFO via
+     * [seqCounter] so requests within the same tier come out in arrival
+     * order.
+     */
+    private val requestQueue = PriorityBlockingQueue<PageRequest>()
+    private val seqCounter = AtomicLong(0L)
+
+    /**
+     * Tracks which indices are currently in [requestQueue] *or* being
+     * decoded by a worker, to skip duplicate enqueues while still
+     * letting completed requests be re-issued (e.g. after cancel +
+     * re-request from the GalleryView).
+     */
+    private val pendingIndices: MutableSet<Int> = ConcurrentHashMap.newKeySet()
+
+    @Volatile
+    private var providerScope: CoroutineScope? = null
 
     @Volatile
     private var sizeValue: Int = STATE_WAIT
@@ -117,10 +145,19 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
     override fun start() {
         super.start()
 
+        // SupervisorJob so a single failed worker doesn't tear down the
+        // sibling worker(s). Anchored on Dispatchers.IO; the actual decode
+        // work hops onto decoderDispatcher inside processRequest below.
+        val scope = CoroutineScope(
+            SupervisorJob() + Dispatchers.IO +
+                ServiceRegistry.coroutineModule.exceptionHandler
+        )
+        providerScope = scope
+
         // Async: load server progress + local intra-page scroll fraction
         // and jump if newer / non-zero.
         if (arcId != null && serverUrl != null && context != null) {
-            ServiceRegistry.coroutineModule.ioScope.launch {
+            scope.launch {
                 try {
                     val client = ServiceRegistry.networkModule.okHttpClient
                     val metadata = runSuspend {
@@ -186,37 +223,65 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
             }
         }
 
-        val thread = PriorityThread(this, "$TAG-${sIdGenerator.incrementAndGet()}",
-                Process.THREAD_PRIORITY_BACKGROUND)
-        bgThread = thread
-        thread.start()
+        // Build the file list, then spin up the decode workers. We do
+        // both in a single launched coroutine so workers don't start
+        // looking at fileList before it's published.
+        scope.launch {
+            val files = try {
+                runInterruptible(Dispatchers.IO) { dir.listFiles(imageFilter) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "listFiles failed: ${e.message}")
+                null
+            }
+
+            if (files == null) {
+                sizeValue = STATE_ERROR
+                errorMessage = GetText.getString(R.string.error_not_folder_path)
+                notifyDataChanged()
+                Log.i(TAG, "ImageDecoder end with error")
+                return@launch
+            }
+
+            files.sortWith(naturalComparator)
+            fileList.lazySet(files)
+            sizeValue = files.size
+            notifyDataChanged()
+
+            startDecodeWorkers(scope, files.size)
+        }
     }
 
     override fun stop() {
         super.stop()
-        bgThread?.interrupt()
-        bgThread = null
+        providerScope?.cancel()
+        providerScope = null
+        requestQueue.clear()
+        pendingIndices.clear()
+        fileList.lazySet(null)
+        Log.i(TAG, "ImageDecoder end")
     }
 
     override fun size(): Int = sizeValue
 
     override fun onRequest(index: Int) {
-        synchronized(requests) {
-            if (!requests.contains(index) && index != decodingIndex.get()) {
-                requests.add(index)
-                (requests as Object).notify()
-            }
-        }
+        enqueueRequest(index, PRIO_CURRENT)
         notifyPageWait(index)
     }
 
     override fun onForceRequest(index: Int) {
-        onRequest(index)
+        // No on-disk cache to invalidate for a directory — re-enqueue at
+        // current priority and the worker will redecode.
+        enqueueRequest(index, PRIO_CURRENT)
     }
 
     override fun onCancelRequest(index: Int) {
-        synchronized(requests) {
-            requests.remove(Integer.valueOf(index))
+        // Drop a queued (not-yet-decoding) request. A worker that has
+        // already started decoding [index] will finish and report; the
+        // GalleryView discards results for unbound pages.
+        if (requestQueue.removeIf { it.index == index }) {
+            pendingIndices.remove(index)
         }
     }
 
@@ -271,110 +336,135 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
         }
     }
 
-    override fun run() {
-        // It may take a long time, so run it in new thread
-        val files = dir.listFiles(imageFilter)
+    // ── Decode pipeline ──────────────────────────────────────────────
 
-        if (files == null) {
-            sizeValue = STATE_ERROR
-            errorMessage = GetText.getString(R.string.error_not_folder_path)
+    private fun enqueueRequest(index: Int, priority: Int) {
+        if (index < 0) return
+        val files = fileList.get()
+        if (files != null && index >= files.size) return
+        if (!pendingIndices.add(index)) return
+        requestQueue.offer(PageRequest(index, priority, seqCounter.incrementAndGet()))
+    }
 
-            // Notify to show error
-            notifyDataChanged()
+    private fun startDecodeWorkers(scope: CoroutineScope, totalPages: Int) {
+        repeat(DECODE_WORKERS) {
+            scope.launch {
+                while (isActive) {
+                    val request = try {
+                        // Block this IO thread on queue.take() — cheap
+                        // (Dispatchers.IO has up to 64 threads), and
+                        // runInterruptible lets coroutine cancellation
+                        // unblock the take.
+                        runInterruptible { requestQueue.take() }
+                    } catch (e: CancellationException) {
+                        break
+                    } catch (e: InterruptedException) {
+                        break
+                    }
+                    pendingIndices.remove(request.index)
+                    processRequest(request.index, totalPages)
+                }
+            }
+        }
+    }
 
-            Log.i(TAG, "ImageDecoder end with error")
+    private suspend fun processRequest(index: Int, totalPages: Int) {
+        val files = fileList.get() ?: return
+        if (index < 0 || index >= files.size) {
+            notifyPageFailed(index, GetText.getString(R.string.error_out_of_range))
             return
         }
-
-        // Sort it
-        files.sortWith(naturalComparator)
-
-        // Put file list
-        fileList.lazySet(files)
-
-        // Set state normal and notify
-        sizeValue = files.size
-        notifyDataChanged()
-
-        var interrupted = false
-        while (!interrupted && !Thread.currentThread().isInterrupted) {
-            val index: Int = synchronized(requests) {
-                if (requests.isEmpty()) {
-                    try {
-                        (requests as Object).wait()
-                    } catch (e: InterruptedException) {
-                        interrupted = true
-                    }
-                    return@synchronized -1
+        try {
+            val image = decodePage(files[index])
+            if (image != null) {
+                notifyPageSucceed(index, image)
+                // Successful decode — queue the next few neighbours at
+                // PRELOAD priority so the upcoming scroll has decoded
+                // pages waiting. Bounded by [PRELOAD_RADIUS].
+                for (i in 1..PRELOAD_RADIUS) {
+                    val next = index + i
+                    if (next >= totalPages) break
+                    enqueueRequest(next, PRIO_PRELOAD)
                 }
-                val i = requests.pop()
-                decodingIndex.lazySet(i)
-                i
+            } else {
+                notifyPageFailed(index, GetText.getString(R.string.error_decoding_failed))
             }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: IOException) {
+            notifyPageFailed(index, GetText.getString(R.string.error_reading_failed))
+        } catch (e: Exception) {
+            Log.w(TAG, "decode failed for index=$index: ${e.message}")
+            notifyPageFailed(index, GetText.getString(R.string.error_decoding_failed))
+        }
+    }
 
-            if (interrupted) break
-            if (index == -1) continue
-
-            // Check index valid
-            if (index < 0 || index >= files.size) {
-                decodingIndex.lazySet(GalleryPageView.INVALID_INDEX)
-                notifyPageFailed(index, GetText.getString(R.string.error_out_of_range))
-                continue
-            }
-
-            try {
-                val inputStream = files[index].openInputStream()
-                val image = if (inputStream is FileInputStream) {
-                    try {
-                        Image.decode(inputStream, false)
-                    } finally {
-                        IOUtils.closeQuietly(inputStream)
-                    }
-                } else {
-                    // Non-FileInputStream (e.g., SAF content:// URI) — copy to temp file
-                    val ctx = context
-                    if (ctx == null) {
-                        IOUtils.closeQuietly(inputStream)
-                        decodingIndex.lazySet(GalleryPageView.INVALID_INDEX)
-                        notifyPageFailed(index, GetText.getString(R.string.error_reading_failed))
-                        continue
-                    }
-                    val tmpFile = File.createTempFile("dir_page_", ".tmp", ctx.cacheDir)
-                    try {
-                        inputStream.use { inp ->
-                            FileOutputStream(tmpFile).use { fos ->
-                                inp.copyTo(fos)
-                            }
-                        }
-                        FileInputStream(tmpFile).use { fis ->
-                            Image.decode(fis, false)
-                        }
-                    } finally {
-                        tmpFile.delete()
-                    }
+    /**
+     * Decode a single file on [ServiceRegistry.coroutineModule.decoderDispatcher].
+     * The dispatcher caps concurrent BitmapFactory work across all
+     * providers, so two Dir workers + an LRR session cannot together
+     * blow past the global decode-parallelism budget.
+     */
+    private suspend fun decodePage(file: UniFile): Image? =
+        withContext(ServiceRegistry.coroutineModule.decoderDispatcher) {
+            val inputStream = file.openInputStream()
+            if (inputStream is FileInputStream) {
+                inputStream.use { Image.decode(it, false) }
+            } else {
+                // Non-FileInputStream (e.g., SAF content:// URI) — copy to
+                // temp file so the native decoder can mmap it.
+                val ctx = context ?: run {
+                    IOUtils.closeQuietly(inputStream)
+                    return@withContext null
                 }
-                decodingIndex.lazySet(GalleryPageView.INVALID_INDEX)
-                if (image != null) {
-                    notifyPageSucceed(index, image)
-                } else {
-                    notifyPageFailed(index, GetText.getString(R.string.error_decoding_failed))
+                val tmpFile = File.createTempFile("dir_page_", ".tmp", ctx.cacheDir)
+                try {
+                    inputStream.use { inp ->
+                        FileOutputStream(tmpFile).use { fos -> inp.copyTo(fos) }
+                    }
+                    FileInputStream(tmpFile).use { fis -> Image.decode(fis, false) }
+                } finally {
+                    tmpFile.delete()
                 }
-            } catch (e: IOException) {
-                decodingIndex.lazySet(GalleryPageView.INVALID_INDEX)
-                notifyPageFailed(index, GetText.getString(R.string.error_reading_failed))
             }
-            decodingIndex.lazySet(GalleryPageView.INVALID_INDEX)
         }
 
-        // Clear file list
-        fileList.lazySet(null)
-
-        Log.i(TAG, "ImageDecoder end")
+    private data class PageRequest(
+        val index: Int,
+        val priority: Int,
+        val seq: Long,
+    ) : Comparable<PageRequest> {
+        override fun compareTo(other: PageRequest): Int {
+            val byPrio = priority - other.priority
+            if (byPrio != 0) return byPrio
+            return seq.compareTo(other.seq)
+        }
     }
 
     companion object {
         private val TAG = DirGalleryProvider::class.java.simpleName
-        private val sIdGenerator = AtomicInteger()
+
+        // Priority constants for the request queue. Lower number = served first.
+        private const val PRIO_CURRENT = 0
+        private const val PRIO_PRELOAD = 1
+
+        /**
+         * Concurrent decode worker count. Two is a deliberate
+         * conservative pick — it covers "currently visible page +
+         * one preload" overlap on mid-tier devices without piling up
+         * BitmapFactory allocations. The global cap on simultaneous
+         * decodes lives on `decoderDispatcher` (4); this is the
+         * per-provider dispatch parallelism.
+         */
+        private const val DECODE_WORKERS = 2
+
+        /**
+         * Pages to enqueue at PRELOAD priority after each successful
+         * decode. Aligned with Mihon's `preloadSize = 4` choice but
+         * smaller because we run two parallel workers and don't want
+         * the queue to outrun the visible window on a fast scroll.
+         */
+        private const val PRELOAD_RADIUS = 2
 
         private val imageFilter = com.hippo.unifile.FilenameFilter { _, name ->
             StringUtils.endsWith(name.lowercase(), GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS)
