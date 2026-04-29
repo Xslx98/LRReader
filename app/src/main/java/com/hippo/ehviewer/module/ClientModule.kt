@@ -5,6 +5,7 @@ import com.hippo.conaco.Conaco
 import com.hippo.ehviewer.ImageBitmapHelper
 import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRTagCache
+import com.lanraragi.reader.client.api.LrrFileListCache
 import com.hippo.lib.image.Image
 import java.io.File
 
@@ -20,6 +21,7 @@ class ClientModule(
 
     init {
         ServiceRegistry.registerCacheable(LRRTagCache)
+        ServiceRegistry.registerCacheable(LrrFileListCache)
     }
 
     override val imageBitmapHelper: ImageBitmapHelper by lazy { ImageBitmapHelper() }

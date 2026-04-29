@@ -6,6 +6,7 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.LrrFileListCache
 import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.lib.glgallery.GalleryProvider
 import com.hippo.lib.image.Image
@@ -113,8 +114,15 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
                 }
 
                 // Parallel: fetch file list + server metadata + local fraction
+                // The file list is the typical cold-open bottleneck on a
+                // server with many files per archive. Try the in-memory
+                // cross-session cache first; on miss fetch and store.
                 val pagesDeferred = async {
-                    LRRArchiveApi.getFileList(client, serverUrl, arcId)
+                    LrrFileListCache.get(arcId) ?: run {
+                        val fetched = LRRArchiveApi.getFileList(client, serverUrl, arcId)
+                        LrrFileListCache.put(arcId, fetched)
+                        fetched
+                    }
                 }
                 val metadataDeferred = async {
                     try {
