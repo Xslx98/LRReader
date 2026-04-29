@@ -5,10 +5,13 @@ import android.util.Log
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.module.Cacheable
 import com.hippo.lib.image.Image
+import com.hippo.unifile.UniFile
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LrrFileListCache
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -364,6 +367,47 @@ object ReaderPageCache : Cacheable {
             decodedSlot = null
         }
     }
+
+    // ---- Directory-source warmup ----
+
+    /**
+     * Decode-warm the start page of a downloaded archive into the
+     * [decodedSlot] slot, in parallel with the user tapping "open
+     * reader". By the time `DirGalleryProvider.start()` finishes
+     * enumerating files and reaches its consume call, the start page
+     * is already a decoded `Image` waiting to be handed to the
+     * pipeline.
+     *
+     * The "start page" here is the locally-stored 0-indexed reading
+     * progress for [arcId] — the same value `DirGalleryProvider`
+     * eventually settles on after the metadata fetch, modulo a
+     * server-progress override that may bump it. If the override
+     * picks a different page the slot simply won't match on consume
+     * and the regular decode path runs.
+     */
+    fun warmDir(context: Context, arcId: String, dir: UniFile): Job =
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            try {
+                val files = runInterruptible(Dispatchers.IO) {
+                    DirImageFiles.listSorted(dir)
+                } ?: return@launch
+                if (files.isEmpty()) return@launch
+                val pageIndex = GalleryProvider2
+                    .loadReadingProgress(context.applicationContext, arcId)
+                    .coerceIn(0, files.size - 1)
+                val image = withContext(
+                    ServiceRegistry.coroutineModule.decoderDispatcher
+                ) {
+                    DirImageFiles.decode(context.applicationContext, files[pageIndex])
+                }
+                if (image != null) {
+                    storeDecodedSlot(arcId, pageIndex, image)
+                    Log.d(TAG, "warmDir decoded page $pageIndex for $arcId")
+                }
+            } catch (e: Exception) {
+                Log.d(TAG, "warmDir failed for $arcId: ${e.message}")
+            }
+        }
 
     // ---- Detail-page preload ----
 
