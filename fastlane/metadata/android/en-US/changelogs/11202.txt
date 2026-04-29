@@ -1,0 +1,3 @@
+- Rating and favorite buttons on the gallery detail page now respond instantly, with automatic rollback if the server rejects the change.
+- Database upgraded to schema v24 (downloads / history / favorites unified into one table). Migration runs automatically on first launch and preserves all data.
+- Internal cleanup and stability improvements.
