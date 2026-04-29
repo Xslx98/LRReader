@@ -182,13 +182,21 @@ interface ArchiveLocalStateDao {
 
     /**
      * Update the per-archive intra-page scroll fraction. The UPDATE
-     * is a no-op if no row exists for [arcid] (e.g. when called
-     * before the first history upsert) — the next call after the
-     * row is created will land normally.
+     * is a no-op if no row exists for [arcid] at all. We deliberately
+     * do *not* gate on `HISTORY_TIME IS NOT NULL`: the reader can be
+     * launched directly from the downloads list (via
+     * [com.hippo.ehviewer.ui.scene.download.DownloadGalleryOpenHelper])
+     * which bypasses the detail page and therefore never calls
+     * [HistoryRepository.putHistoryInfo] — in that case the row
+     * exists with `DOWNLOAD_STATE` set but `HISTORY_TIME = NULL`.
+     * The fraction is just a column; persisting it on whichever row
+     * already exists is the right behavior. The accompanying
+     * recordHistory call from GalleryActivity then upgrades the row
+     * to history-subsystem membership in parallel.
      */
     @Query(
         "UPDATE ARCHIVE_LOCAL_STATE SET HISTORY_SCROLL_FRACTION = :fraction " +
-            "WHERE ARCID = :arcid AND HISTORY_TIME IS NOT NULL"
+            "WHERE ARCID = :arcid"
     )
     suspend fun updateHistoryScrollFraction(arcid: String, fraction: Float?)
 
