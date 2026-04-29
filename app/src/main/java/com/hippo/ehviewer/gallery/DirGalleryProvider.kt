@@ -101,10 +101,24 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
         }
     }
 
+    override fun putScrollFraction(fraction: Float) {
+        val targetArcid = arcId ?: return
+        val clamped = fraction.coerceIn(0f, 1f)
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            try {
+                ServiceRegistry.dataModule.historyRepository
+                    .setHistoryScrollFraction(targetArcid, clamped)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to save scroll fraction: ${e.message}")
+            }
+        }
+    }
+
     override fun start() {
         super.start()
 
-        // Async: load server progress and jump if newer
+        // Async: load server progress + local intra-page scroll fraction
+        // and jump if newer / non-zero.
         if (arcId != null && serverUrl != null && context != null) {
             ServiceRegistry.coroutineModule.ioScope.launch {
                 try {
@@ -112,17 +126,29 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
                     val metadata = runSuspend {
                         LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcId)
                     }
+                    val savedFraction = try {
+                        ServiceRegistry.dataModule.historyRepository
+                            .getHistoryScrollFraction(arcId!!) ?: 0f
+                    } catch (e: Exception) {
+                        Log.w(TAG, "[PROGRESS] Failed to load scroll fraction: ${e.message}")
+                        0f
+                    }.coerceIn(0f, 1f)
                     Log.i(TAG, "[PROGRESS] Server metadata: progress=${metadata.progress}" +
-                            " lastreadtime=${metadata.lastreadtime}")
-                    if (metadata.progress > 0) {
-                        val serverPage0 = metadata.progress - 1
+                            " lastreadtime=${metadata.lastreadtime}" +
+                            " savedFraction=$savedFraction")
+                    if (metadata.progress > 0 || savedFraction > 0f) {
+                        val serverPage0 = (metadata.progress - 1).coerceAtLeast(0)
                         val serverTs = metadata.lastreadtime
                         val localTs = if (arcId != null) loadReadingTimestamp(context, arcId!!) else 0L
                         Log.i(TAG, "[PROGRESS] serverPage0=$serverPage0" +
                                 " serverTs=$serverTs localTs=$localTs" +
                                 " localPage=$startPageValue")
                         val resolvedPage: Int
-                        if (serverTs > localTs) {
+                        if (metadata.progress <= 0) {
+                            // Server has no progress, but we still might have a
+                            // local intra-page fraction to restore on page 0.
+                            resolvedPage = startPageValue
+                        } else if (serverTs > localTs) {
                             resolvedPage = serverPage0
                             startPageValue = serverPage0
                             if (arcId != null) saveReadingProgress(context, arcId!!, serverPage0)
@@ -135,13 +161,19 @@ class DirGalleryProvider : GalleryProvider2, Runnable {
                             startPageValue = resolvedPage
                             Log.i(TAG, "[PROGRESS] Timestamps equal, using max: page $resolvedPage")
                         }
-                        // Jump GalleryView if needed
-                        if (resolvedPage > 0) {
+                        // Jump GalleryView if needed (page jump and/or
+                        // intra-page fraction restore).
+                        if (resolvedPage > 0 || savedFraction > 0f) {
                             val gv = galleryView
                             if (gv != null) {
                                 Handler(Looper.getMainLooper()).postDelayed({
-                                    if (galleryView != null) {
-                                        gv.setCurrentPage(resolvedPage)
+                                    val gvNow = galleryView ?: return@postDelayed
+                                    if (savedFraction > 0f) {
+                                        gvNow.setCurrentPageScrollFraction(resolvedPage, savedFraction)
+                                        Log.i(TAG, "[PROGRESS] setCurrentPageScrollFraction(" +
+                                                "$resolvedPage, $savedFraction) called")
+                                    } else {
+                                        gvNow.setCurrentPage(resolvedPage)
                                         Log.i(TAG, "[PROGRESS] setCurrentPage($resolvedPage) called")
                                     }
                                 }, 300)
