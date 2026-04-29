@@ -3,9 +3,13 @@ package com.hippo.ehviewer.gallery
 import android.content.Context
 import android.util.Log
 import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.module.Cacheable
+import com.hippo.lib.image.Image
 import com.lanraragi.reader.client.api.LRRArchiveApi
+import com.lanraragi.reader.client.api.LrrFileListCache
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -20,8 +24,14 @@ import java.util.concurrent.TimeUnit
  * Both [LRRGalleryProvider] (reading session) and detail-page preloading
  * use this object for cache paths, downloads, validation, and eviction,
  * ensuring a single source of truth for the on-disk layout.
+ *
+ * Also owns a single-entry **decoded-page slot** ([consumeDecodedPage] /
+ * private `storeDecodedSlot`): a cross-session in-memory hand-off for a
+ * freshly decoded page from the detail-screen warmup to the reader that
+ * will open next. Bounded to one entry with a 10-second TTL — the slot
+ * is the bridge across an Activity launch, not a general image cache.
  */
-object ReaderPageCache {
+object ReaderPageCache : Cacheable {
 
     private const val TAG = "ReaderPageCache"
     private const val CACHE_PARENT = "lrr_pages"
@@ -30,6 +40,14 @@ object ReaderPageCache {
     const val MIN_IMAGE_SIZE = 1024L // 1KB — below this a file is likely corrupt
     const val MAX_TOTAL_CACHE_BYTES = 500L * 1024L * 1024L // 500MB total limit
     private const val DETAIL_PRELOAD_RADIUS = 1 // Pages before and after the progress page
+
+    /**
+     * TTL for the decoded-page slot. Long enough to bridge a typical
+     * "tap read → reader Activity visible" transition; short enough
+     * that a user who backs out of the detail page doesn't leave a
+     * decoded image (10–30 MB) sitting in memory indefinitely.
+     */
+    private const val DECODED_SLOT_TTL_MS = 10_000L
 
     // ---- Path management ----
 
@@ -276,6 +294,77 @@ object ReaderPageCache {
         dir.delete()
     }
 
+    // ---- Decoded-page slot ----
+
+    private data class DecodedSlot(
+        val arcid: String,
+        val pageIndex: Int,
+        val image: Image,
+        val expiresAt: Long,
+    )
+
+    private val slotLock = Any()
+
+    /**
+     * Single-entry cross-session decoded-page slot. Producer side is
+     * the detail-page warmup ([preloadForDetail], and Dir-equivalent
+     * paths added later). Consumer is the gallery provider's start()
+     * — see [consumeDecodedPage]. Guarded by [slotLock].
+     */
+    private var decodedSlot: DecodedSlot? = null
+
+    /**
+     * Atomically take ownership of a previously-warmed decoded
+     * Image. Returns null if there is no slot, the (arcid,
+     * pageIndex) doesn't match, or the slot has aged past
+     * [DECODED_SLOT_TTL_MS]. On a hit, the caller is responsible
+     * for the eventual `image.recycle()` (typically by handing the
+     * Image to `GalleryProvider.notifyPageSucceed(index, image)`,
+     * which wraps it in an ImageWrapper that the existing pipeline
+     * recycles when refcount drops to zero).
+     */
+    fun consumeDecodedPage(arcid: String, pageIndex: Int): Image? {
+        synchronized(slotLock) {
+            val slot = decodedSlot ?: return null
+            if (slot.arcid != arcid || slot.pageIndex != pageIndex) return null
+            if (System.currentTimeMillis() > slot.expiresAt) {
+                slot.image.recycle()
+                decodedSlot = null
+                return null
+            }
+            decodedSlot = null
+            return slot.image
+        }
+    }
+
+    /**
+     * Park [image] for [arcid]:[pageIndex]. Replaces (and recycles)
+     * any previously-stored slot — there is intentionally only one
+     * slot to bound memory.
+     */
+    private fun storeDecodedSlot(arcid: String, pageIndex: Int, image: Image) {
+        synchronized(slotLock) {
+            decodedSlot?.image?.recycle()
+            decodedSlot = DecodedSlot(
+                arcid, pageIndex, image,
+                System.currentTimeMillis() + DECODED_SLOT_TTL_MS,
+            )
+        }
+    }
+
+    /**
+     * [Cacheable] hook — called on profile switch and on global
+     * cache-clear. Drops the in-memory slot so a stale decoded page
+     * from the previous server profile cannot leak into a reader
+     * opened against a different host.
+     */
+    override fun clearCache() {
+        synchronized(slotLock) {
+            decodedSlot?.image?.recycle()
+            decodedSlot = null
+        }
+    }
+
     // ---- Detail-page preload ----
 
     /**
@@ -298,7 +387,13 @@ object ReaderPageCache {
             ensureCacheDir(appContext, arcId)
 
             val client = ServiceRegistry.networkModule.longReadClient
-            val pages = LRRArchiveApi.getFileList(client, serverUrl, arcId)
+            // Reuse the file list cache so a re-entry to the same detail
+            // page within the cache TTL avoids the /files round-trip.
+            val pages = LrrFileListCache.get(arcId) ?: run {
+                val fetched = LRRArchiveApi.getFileList(client, serverUrl, arcId)
+                LrrFileListCache.put(arcId, fetched)
+                fetched
+            }
             if (pages.isEmpty()) return@launch
 
             val pageClient = ServiceRegistry.networkModule.okHttpClient.newBuilder()
@@ -310,14 +405,36 @@ object ReaderPageCache {
 
             for (pageIndex in start..end) {
                 val cacheFile = getCacheFile(appContext, arcId, pageIndex)
-                if (cacheFile.exists() && cacheFile.length() > MIN_IMAGE_SIZE) continue
+                if (!(cacheFile.exists() && cacheFile.length() > MIN_IMAGE_SIZE)) {
+                    try {
+                        val pageUrl = serverUrl + pages[pageIndex]
+                        downloadToFile(pageClient, pageUrl, cacheFile, pageIndex)
+                        Log.d(TAG, "Detail preloaded page $pageIndex for $arcId")
+                    } catch (e: Exception) {
+                        Log.d(TAG, "Detail preload page $pageIndex failed: ${e.message}")
+                        continue
+                    }
+                }
 
-                try {
-                    val pageUrl = serverUrl + pages[pageIndex]
-                    downloadToFile(pageClient, pageUrl, cacheFile, pageIndex)
-                    Log.d(TAG, "Detail preloaded page $pageIndex for $arcId")
-                } catch (e: Exception) {
-                    Log.d(TAG, "Detail preload page $pageIndex failed: ${e.message}")
+                // Decode-warm the *center* page only: it's the one the
+                // reader will display first, and decoding its neighbours
+                // would bloat memory before they're actually visible.
+                if (pageIndex == centerPage) {
+                    try {
+                        val decoded = withContext(
+                            ServiceRegistry.coroutineModule.decoderDispatcher
+                        ) {
+                            FileInputStream(cacheFile).use { fis ->
+                                Image.decode(fis, false)
+                            }
+                        }
+                        if (decoded != null) {
+                            storeDecodedSlot(arcId, centerPage, decoded)
+                            Log.d(TAG, "Detail decode-warmed page $centerPage for $arcId")
+                        }
+                    } catch (e: Exception) {
+                        Log.d(TAG, "Detail decode-warm $centerPage failed: ${e.message}")
+                    }
                 }
             }
 
