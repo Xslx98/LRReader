@@ -28,10 +28,8 @@ import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.lib.glgallery.GalleryPageView
 import com.hippo.lib.image.Image
 import com.hippo.unifile.UniFile
-import com.hippo.util.NaturalComparator
 import com.hippo.lib.yorozuya.FileUtils
 import com.hippo.lib.yorozuya.IOUtils
-import com.hippo.lib.yorozuya.StringUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,9 +39,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.PriorityBlockingQueue
@@ -228,7 +223,7 @@ class DirGalleryProvider : GalleryProvider2 {
         // looking at fileList before it's published.
         scope.launch {
             val files = try {
-                runInterruptible(Dispatchers.IO) { dir.listFiles(imageFilter) }
+                runInterruptible(Dispatchers.IO) { DirImageFiles.listSorted(dir) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -244,7 +239,6 @@ class DirGalleryProvider : GalleryProvider2 {
                 return@launch
             }
 
-            files.sortWith(naturalComparator)
             fileList.lazySet(files)
             sizeValue = files.size
             notifyDataChanged()
@@ -403,31 +397,16 @@ class DirGalleryProvider : GalleryProvider2 {
      * Decode a single file on [ServiceRegistry.coroutineModule.decoderDispatcher].
      * The dispatcher caps concurrent BitmapFactory work across all
      * providers, so two Dir workers + an LRR session cannot together
-     * blow past the global decode-parallelism budget.
+     * blow past the global decode-parallelism budget. Decode logic
+     * itself lives in [DirImageFiles.decode] and is shared with the
+     * detail-page warmup path in [ReaderPageCache].
      */
-    private suspend fun decodePage(file: UniFile): Image? =
-        withContext(ServiceRegistry.coroutineModule.decoderDispatcher) {
-            val inputStream = file.openInputStream()
-            if (inputStream is FileInputStream) {
-                inputStream.use { Image.decode(it, false) }
-            } else {
-                // Non-FileInputStream (e.g., SAF content:// URI) — copy to
-                // temp file so the native decoder can mmap it.
-                val ctx = context ?: run {
-                    IOUtils.closeQuietly(inputStream)
-                    return@withContext null
-                }
-                val tmpFile = File.createTempFile("dir_page_", ".tmp", ctx.cacheDir)
-                try {
-                    inputStream.use { inp ->
-                        FileOutputStream(tmpFile).use { fos -> inp.copyTo(fos) }
-                    }
-                    FileInputStream(tmpFile).use { fis -> Image.decode(fis, false) }
-                } finally {
-                    tmpFile.delete()
-                }
-            }
+    private suspend fun decodePage(file: UniFile): Image? {
+        val ctx = context ?: return null
+        return withContext(ServiceRegistry.coroutineModule.decoderDispatcher) {
+            DirImageFiles.decode(ctx, file)
         }
+    }
 
     private data class PageRequest(
         val index: Int,
@@ -465,13 +444,5 @@ class DirGalleryProvider : GalleryProvider2 {
          * the queue to outrun the visible window on a fast scroll.
          */
         private const val PRELOAD_RADIUS = 2
-
-        private val imageFilter = com.hippo.unifile.FilenameFilter { _, name ->
-            StringUtils.endsWith(name.lowercase(), GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS)
-        }
-
-        private val naturalComparator = Comparator<UniFile> { o1, o2 ->
-            NaturalComparator().compare(o1.name, o2.name)
-        }
     }
 }
