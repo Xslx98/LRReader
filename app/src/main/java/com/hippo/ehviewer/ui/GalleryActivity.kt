@@ -490,6 +490,17 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
 
     override fun onPause() {
         super.onPause()
+        // Save the current intra-page scroll fraction before the GL
+        // pipeline is paused. Vertical mode only — pager modes
+        // always report 0 and persisting it is a wasted DB round
+        // trip. Provider's putScrollFraction is itself fire-and-
+        // forget (app-wide ioScope), so this is safe to call from
+        // the UI thread without blocking onPause.
+        val gv = mGalleryView
+        val provider = mGalleryProvider
+        if (gv != null && provider != null && gv.layoutMode == GalleryView.LAYOUT_TOP_TO_BOTTOM) {
+            provider.putScrollFraction(gv.currentScrollFraction)
+        }
         mGLRootView?.onPause()
     }
 
@@ -532,7 +543,19 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
     // ======== GalleryView.Listener (delegated to helpers) ========
 
     override fun onUpdateCurrentIndex(index: Int) {
-        mGalleryProvider?.putStartPage(index)
+        val provider = mGalleryProvider
+        provider?.putStartPage(index)
+        // Persist intra-page fraction in lockstep with page-index
+        // changes — this is the same cadence the existing local SP
+        // page progress uses, plus an onPause() backstop. Vertical
+        // mode only: pager modes always report 0 and would just
+        // overwrite a saved fraction with 0 every time the user
+        // crossed a page boundary.
+        val gv = mGalleryView
+        if (provider != null && gv != null
+            && gv.layoutMode == GalleryView.LAYOUT_TOP_TO_BOTTOM) {
+            provider.putScrollFraction(gv.currentScrollFraction)
+        }
         var task = mNotifyTaskPool.pop()
         if (task == null) {
             task = NotifyTask()

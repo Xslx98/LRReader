@@ -32,6 +32,13 @@ abstract class GalleryProvider2 : GalleryProvider() {
     open fun putStartPage(page: Int) {}
 
     /**
+     * Persist the intra-page scroll fraction (0.0 ~ 1.0) for this
+     * archive. Local-only: no server sync. Default no-op for
+     * providers that don't track per-archive history.
+     */
+    open fun putScrollFraction(fraction: Float) {}
+
+    /**
      * @return without extension
      */
     abstract fun getImageFilename(index: Int): String

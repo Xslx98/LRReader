@@ -85,6 +85,18 @@ data class ArchiveLocalState(
     @ColumnInfo(name = "HISTORY_MODE", defaultValue = "0")
     val historyMode: Int = 0,
 
+    /**
+     * Per-archive intra-page scroll position (0.0 ~ 1.0) for vertical
+     * long-strip reading. NULL means "no precise resume point — fall
+     * back to the page top". Updated when the reader exits a page in
+     * `LAYOUT_TOP_TO_BOTTOM` mode; ignored in pager modes. Local-only
+     * (LANraragi has no equivalent server field), so it stays a
+     * dedicated column rather than living in [archiveJson] which gets
+     * overwritten by every server resync.
+     */
+    @ColumnInfo(name = "HISTORY_SCROLL_FRACTION")
+    val historyScrollFraction: Float? = null,
+
     // ── Favorite subsystem ─────────────────────────────────────
     /** Non-null iff the archive is in local favorites. */
     @ColumnInfo(name = "FAVORITE_TIME")
