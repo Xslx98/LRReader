@@ -74,6 +74,13 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
     // Track start page for reading progress
     private var startPageValue: Int = loadReadingProgress(this.context, arcId)
 
+    // Local-only intra-page scroll fraction (0.0 ~ 1.0) restored on
+    // start from ARCHIVE_LOCAL_STATE.HISTORY_SCROLL_FRACTION; written
+    // back via putScrollFraction. Only meaningful when reading in
+    // LAYOUT_TOP_TO_BOTTOM (vertical long-strip) mode.
+    @Volatile
+    private var pendingStartScrollFraction: Float = 0f
+
 
     override fun start() {
         super.start()
@@ -105,7 +112,7 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
                     }
                 }
 
-                // Parallel: fetch file list + server metadata
+                // Parallel: fetch file list + server metadata + local fraction
                 val pagesDeferred = async {
                     LRRArchiveApi.getFileList(client, serverUrl, arcId)
                 }
@@ -115,6 +122,15 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
                     } catch (e: Exception) {
                         Log.w(TAG, "[PROGRESS] Failed to load server progress: ${e.message}")
                         null
+                    }
+                }
+                val fractionDeferred = async {
+                    try {
+                        ServiceRegistry.dataModule.historyRepository
+                            .getHistoryScrollFraction(arcId) ?: 0f
+                    } catch (e: Exception) {
+                        Log.w(TAG, "[PROGRESS] Failed to load scroll fraction: ${e.message}")
+                        0f
                     }
                 }
 
@@ -163,12 +179,19 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
                 }
 
                 val finalPage = serverPage
-                Log.i(TAG, "[PROGRESS] Final resolved page=$finalPage")
+                val finalFraction = fractionDeferred.await().coerceIn(0f, 1f)
+                pendingStartScrollFraction = finalFraction
+                Log.i(
+                    TAG,
+                    "[PROGRESS] Final resolved page=$finalPage fraction=$finalFraction"
+                )
 
-                // Jump GalleryView to the resolved page.
-                // setCurrentPage() posts to GL method queue, notifyDataChanged() posted
-                // to GL idle first — GL processes them in order, no delay needed.
-                if (finalPage > 0) {
+                // Jump GalleryView to the resolved page (and apply the
+                // intra-page fraction if any). setCurrentPage() and
+                // setCurrentPageScrollFraction() both post to the GL
+                // method queue, which is drained in order — no delay
+                // needed.
+                if (finalPage > 0 || finalFraction > 0f) {
                     val gv = galleryView
                     Log.i(TAG, "[PROGRESS] GalleryView ref=${if (gv != null) "OK" else "NULL"}")
                     if (gv != null) {
@@ -177,8 +200,17 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
                             val gvRef = galleryView ?: return@launch
                             withContext(Dispatchers.Main) {
                                 if (!stateRef.get().stopped) {
-                                    gvRef.setCurrentPage(finalPage)
-                                    Log.i(TAG, "[PROGRESS] setCurrentPage($finalPage) called")
+                                    if (finalFraction > 0f) {
+                                        gvRef.setCurrentPageScrollFraction(finalPage, finalFraction)
+                                        Log.i(
+                                            TAG,
+                                            "[PROGRESS] setCurrentPageScrollFraction(" +
+                                                "$finalPage, $finalFraction) called"
+                                        )
+                                    } else {
+                                        gvRef.setCurrentPage(finalPage)
+                                        Log.i(TAG, "[PROGRESS] setCurrentPage($finalPage) called")
+                                    }
                                 } else {
                                     Log.w(TAG, "[PROGRESS] GalleryView gone before setCurrentPage")
                                 }
@@ -236,6 +268,27 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to sync progress: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Persist the local-only intra-page scroll fraction. Use the
+     * app-wide IO scope: putScrollFraction may fire during
+     * stop()/teardown when the provider scope is already cancelled,
+     * and we still want the value on disk.
+     */
+    override fun putScrollFraction(fraction: Float) {
+        val clamped = fraction.coerceIn(0f, 1f)
+        // Pass NULL for "absent" instead of 0f so the column stays
+        // distinguishable from "user explicitly scrolled to 0".
+        // Storing 0 wastes a row but is harmless either way.
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            try {
+                ServiceRegistry.dataModule.historyRepository
+                    .setHistoryScrollFraction(arcId, clamped)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to save scroll fraction: ${e.message}")
             }
         }
     }

@@ -86,6 +86,19 @@ class HistoryRepository(
     }
 
     /**
+     * Persist the intra-page scroll fraction (0.0 ~ 1.0) for [arcid].
+     * Local-only — never goes to the LANraragi server. The DAO update
+     * is a no-op if the archive doesn't yet have a history row, which
+     * is fine: the next call after the row is created will land.
+     */
+    suspend fun setHistoryScrollFraction(arcid: String, fraction: Float?) {
+        dao.updateHistoryScrollFraction(arcid, fraction)
+    }
+
+    suspend fun getHistoryScrollFraction(arcid: String): Float? =
+        dao.getHistoryScrollFraction(arcid)
+
+    /**
      * Idempotent INSERT-OR-IGNORE-then-UPDATE. The IGNORE step
      * preserves any pre-existing download / favorite columns by
      * leaving an existing row alone; the UPDATE then writes the
