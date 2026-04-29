@@ -8,11 +8,15 @@ import com.hippo.lib.image.Image
 import com.hippo.unifile.UniFile
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LrrFileListCache
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+import java.util.concurrent.ConcurrentHashMap
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -317,6 +321,16 @@ object ReaderPageCache : Cacheable {
     private var decodedSlot: DecodedSlot? = null
 
     /**
+     * In-flight warm jobs keyed by arcid. Lets consumers briefly
+     * await a same-arcid warm that started just before they did
+     * (the openHelper trigger fires ~70-150ms before the provider's
+     * own consumeDecodedPage call, racing the warm's store). One
+     * entry per arcid; entries auto-remove themselves on completion
+     * via [Job.invokeOnCompletion].
+     */
+    private val activeWarmups: ConcurrentHashMap<String, Job> = ConcurrentHashMap()
+
+    /**
      * Atomically take ownership of a previously-warmed decoded
      * Image. Returns null if there is no slot, the (arcid,
      * pageIndex) doesn't match, or the slot has aged past
@@ -326,11 +340,56 @@ object ReaderPageCache : Cacheable {
      * which wraps it in an ImageWrapper that the existing pipeline
      * recycles when refcount drops to zero).
      */
-    fun consumeDecodedPage(arcid: String, pageIndex: Int): Image? {
+    /**
+     * Consume the decoded slot for [arcid]:[pageIndex]. Returns null
+     * if the slot is empty, expired, or holds a different
+     * (arcid, pageIndex).
+     *
+     * If [awaitInflightWarmMs] > 0 and a warm targeting [arcid] is
+     * still running, this awaits its completion (bounded) before
+     * checking the slot. This bridges the openHelper-trigger race
+     * where warm and provider start fire concurrently and the
+     * provider would otherwise consume before warm has stored.
+     * 300ms is the recommended default for Dir/LRR providers — long
+     * enough to cover a typical decode (~130-280ms) without making
+     * a slow warm worse than skipping it.
+     *
+     * Order of slot-state checks (intentional): empty → expired →
+     * mismatch. Expired is checked before mismatch so a stale slot
+     * for a different arcid still gets recycled.
+     */
+    suspend fun consumeDecodedPage(
+        arcid: String,
+        pageIndex: Int,
+        awaitInflightWarmMs: Long = 0L,
+    ): Image? {
+        if (awaitInflightWarmMs > 0L) {
+            val warmJob = activeWarmups[arcid]
+            if (warmJob != null && warmJob.isActive) {
+                Log.i(TAG, "[WARM] consume awaiting in-flight warm arcid=$arcid timeoutMs=$awaitInflightWarmMs")
+                val waitStart = System.currentTimeMillis()
+                try {
+                    withTimeout(awaitInflightWarmMs) { warmJob.join() }
+                    Log.i(TAG, "[WARM] consume await completed arcid=$arcid waitedMs=${System.currentTimeMillis() - waitStart}")
+                } catch (e: TimeoutCancellationException) {
+                    Log.i(TAG, "[WARM] consume await timed out arcid=$arcid waitedMs=${System.currentTimeMillis() - waitStart}")
+                }
+            }
+        }
         synchronized(slotLock) {
             val slot = decodedSlot
             if (slot == null) {
                 Log.i(TAG, "[WARM] consume MISS empty arcid=$arcid page=$pageIndex")
+                return null
+            }
+            if (System.currentTimeMillis() > slot.expiresAt) {
+                Log.i(
+                    TAG,
+                    "[WARM] consume MISS expired arcid=$arcid page=$pageIndex " +
+                        "have=(${slot.arcid},${slot.pageIndex})"
+                )
+                slot.image.recycle()
+                decodedSlot = null
                 return null
             }
             if (slot.arcid != arcid || slot.pageIndex != pageIndex) {
@@ -339,12 +398,6 @@ object ReaderPageCache : Cacheable {
                     "[WARM] consume MISS mismatch want=($arcid,$pageIndex) " +
                         "have=(${slot.arcid},${slot.pageIndex})"
                 )
-                return null
-            }
-            if (System.currentTimeMillis() > slot.expiresAt) {
-                Log.i(TAG, "[WARM] consume MISS expired arcid=$arcid page=$pageIndex")
-                slot.image.recycle()
-                decodedSlot = null
                 return null
             }
             val ageMs = System.currentTimeMillis() - (slot.expiresAt - DECODED_SLOT_TTL_MS)
@@ -401,8 +454,12 @@ object ReaderPageCache : Cacheable {
      * picks a different page the slot simply won't match on consume
      * and the regular decode path runs.
      */
-    fun warmDir(context: Context, arcId: String, dir: UniFile): Job =
-        ServiceRegistry.coroutineModule.ioScope.launch {
+    fun warmDir(context: Context, arcId: String, dir: UniFile): Job {
+        // CoroutineStart.LAZY so we can publish the Job into
+        // activeWarmups *before* it begins running — otherwise a
+        // provider racing the launch could observe activeWarmups[arcId]
+        // == null and miss the await window.
+        val job = ServiceRegistry.coroutineModule.ioScope.launch(start = CoroutineStart.LAZY) {
             val startMs = System.currentTimeMillis()
             Log.i(TAG, "[WARM] warmDir begin arcid=$arcId")
             try {
@@ -439,6 +496,10 @@ object ReaderPageCache : Cacheable {
                 Log.w(TAG, "[WARM] warmDir failed for $arcId: ${e.message}")
             }
         }
+        registerActiveWarmup(arcId, job)
+        job.start()
+        return job
+    }
 
     // ---- Detail-page preload ----
 
@@ -456,8 +517,12 @@ object ReaderPageCache : Cacheable {
         arcId: String,
         serverUrl: String,
         centerPage: Int
-    ): Job = ServiceRegistry.coroutineModule.ioScope.launch {
-        try {
+    ): Job {
+        // CoroutineStart.LAZY so the Job is registered in
+        // activeWarmups before it begins running. See [warmDir] for
+        // the same pattern.
+        val job = ServiceRegistry.coroutineModule.ioScope.launch(start = CoroutineStart.LAZY) {
+            try {
             val appContext = context.applicationContext
             ensureCacheDir(appContext, arcId)
 
@@ -521,8 +586,24 @@ object ReaderPageCache : Cacheable {
             }
 
             cleanupOldCaches(appContext)
-        } catch (e: Exception) {
-            Log.d(TAG, "Detail preload failed for $arcId: ${e.message}")
+            } catch (e: Exception) {
+                Log.d(TAG, "Detail preload failed for $arcId: ${e.message}")
+            }
         }
+        registerActiveWarmup(arcId, job)
+        job.start()
+        return job
+    }
+
+    /**
+     * Publish a warm-up [Job] under [arcid] in [activeWarmups] so
+     * concurrent consumers can briefly await its completion. The job
+     * removes itself on finish (or cancel) — using `remove(key,
+     * value)` so a later same-arcid warm that replaced this entry
+     * isn't blown away.
+     */
+    private fun registerActiveWarmup(arcid: String, job: Job) {
+        activeWarmups[arcid] = job
+        job.invokeOnCompletion { activeWarmups.remove(arcid, job) }
     }
 }

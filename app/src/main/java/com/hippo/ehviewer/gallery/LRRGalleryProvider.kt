@@ -195,12 +195,15 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
                 )
 
                 // Try the cross-session decoded slot (filled by the
-                // detail-page warmup). On a hit we hand the Image
-                // straight to the GL pipeline; the image cache picks
-                // it up so request(finalPage) from GalleryView is a
-                // synchronous notifyPageSucceed and the user sees the
-                // page on the very next frame.
-                val warmed = ReaderPageCache.consumeDecodedPage(arcId, finalPage)
+                // detail-page warmup or the openHelper trigger). On a
+                // hit we hand the Image straight to the GL pipeline.
+                // awaitInflightWarmMs bridges the openHelper-trigger
+                // race: when warm and provider start race in parallel,
+                // a brief wait (here 300ms, ample for ~280ms LRR
+                // decode) turns the otherwise-MISS into a HIT.
+                val warmed = ReaderPageCache.consumeDecodedPage(
+                    arcId, finalPage, awaitInflightWarmMs = WARM_AWAIT_MS
+                )
                 if (warmed != null) {
                     Log.i(TAG, "[PROGRESS] decoded slot HIT for page=$finalPage")
                     notifyPageSucceed(finalPage, warmed)
@@ -548,5 +551,14 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
         private const val PRELOAD_PARALLELISM = 2 // Concurrent preload downloads
         private const val STRIPE_COUNT = 32 // Number of striped locks for page downloads (PERF-6)
         private const val RETRY_DELAY_NANOS = 1_000_000_000L // 1 second in nanos for retry delay
+
+        /**
+         * Bound on how long the consumer waits for an in-flight warm
+         * to land in the slot before falling through to the cold
+         * decode path. 300ms covers a typical LRR decode (~280ms
+         * including local-network bytes); a slow warm beyond that
+         * is better skipped than waited on.
+         */
+        private const val WARM_AWAIT_MS: Long = 300L
     }
 }
