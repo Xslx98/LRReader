@@ -37,6 +37,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import com.hippo.android.resource.AttrResources
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.settings.GuideSettings
 import com.hippo.ehviewer.settings.ReadingSettings
@@ -67,6 +68,7 @@ import com.hippo.lib.yorozuya.MathUtils
 import com.hippo.lib.yorozuya.ResourcesUtils
 import com.hippo.lib.yorozuya.ViewUtils
 import java.io.File
+import kotlinx.coroutines.launch
 import javax.microedition.khronos.egl.EGL10
 import javax.microedition.khronos.egl.EGLContext
 import javax.microedition.khronos.egl.EGLDisplay
@@ -211,6 +213,23 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         }
         mPage = intent.getIntExtra(KEY_PAGE, -1)
         buildProvider()
+        // Reader entry counts as reading: ensure history-subsystem
+        // membership for the archive so per-archive state (intra-page
+        // scroll fraction, etc.) lands on a row that the history
+        // queries can see. The reader can be launched directly from
+        // the downloads list (DownloadGalleryOpenHelper) which
+        // bypasses the detail page and therefore never calls
+        // HistoryRepository.putHistoryInfo. Fire-and-forget on the
+        // app-wide IO scope.
+        mArchive?.let { archive ->
+            ServiceRegistry.coroutineModule.ioScope.launch {
+                try {
+                    ServiceRegistry.dataModule.historyRepository.putHistoryInfo(archive)
+                } catch (e: Exception) {
+                    Log.w("GalleryActivity", "Failed to record history: ${e.message}")
+                }
+            }
+        }
     }
 
     private fun onRestore(savedInstanceState: Bundle) {
@@ -490,12 +509,6 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
 
     override fun onPause() {
         super.onPause()
-        // Save the current intra-page scroll fraction before the GL
-        // pipeline is paused. Vertical mode only — pager modes
-        // always report 0 and persisting it is a wasted DB round
-        // trip. Provider's putScrollFraction is itself fire-and-
-        // forget (app-wide ioScope), so this is safe to call from
-        // the UI thread without blocking onPause.
         val gv = mGalleryView
         val provider = mGalleryProvider
         if (gv != null && provider != null && gv.layoutMode == GalleryView.LAYOUT_TOP_TO_BOTTOM) {
@@ -742,6 +755,18 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
             }
             task.setData(NOTIFY_KEY_SIZE, size)
             mainHandler.post(task)
+        }
+
+        override fun onPageSucceed(index: Int, image: com.hippo.lib.glview.image.ImageWrapper) {
+            super.onPageSucceed(index, image)
+            // Setting the page image doesn't by itself flip GalleryView
+            // back into a fill cycle — it just paints the new texture
+            // on the next render. Pending intra-page restores in
+            // ScrollLayoutManager are gated on `target.isLoaded()`,
+            // so without an explicit requestFill here they'd never
+            // get a second chance after the target page's image
+            // arrives async.
+            mGalleryView?.requestFill()
         }
     }
 }
