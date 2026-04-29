@@ -9,6 +9,7 @@
  */
 package com.lanraragi.reader.client.api
 
+import android.util.Log
 import android.util.LruCache
 import com.hippo.ehviewer.module.Cacheable
 
@@ -37,6 +38,8 @@ import com.hippo.ehviewer.module.Cacheable
  */
 object LrrFileListCache : Cacheable {
 
+    private const val TAG = "LrrFileListCache"
+
     /** TTL for cached entries. */
     private const val TTL_MS: Long = 30 * 60 * 1000L // 30 minutes
 
@@ -61,11 +64,17 @@ object LrrFileListCache : Cacheable {
     fun get(arcid: String): Array<String>? {
         val profileId = LRRAuthManager.getActiveProfileId()
         val key = keyFor(profileId, arcid)
-        val entry = synchronized(lru) { lru.get(key) } ?: return null
-        if (System.currentTimeMillis() - entry.storedAt > TTL_MS) {
-            synchronized(lru) { lru.remove(key) }
+        val entry = synchronized(lru) { lru.get(key) }
+        if (entry == null) {
+            Log.i(TAG, "[WARM] fileList MISS empty arcid=$arcid profile=$profileId")
             return null
         }
+        if (System.currentTimeMillis() - entry.storedAt > TTL_MS) {
+            synchronized(lru) { lru.remove(key) }
+            Log.i(TAG, "[WARM] fileList MISS expired arcid=$arcid profile=$profileId")
+            return null
+        }
+        Log.i(TAG, "[WARM] fileList HIT arcid=$arcid profile=$profileId pages=${entry.pages.size}")
         return entry.pages
     }
 
@@ -74,6 +83,7 @@ object LrrFileListCache : Cacheable {
         val profileId = LRRAuthManager.getActiveProfileId()
         val key = keyFor(profileId, arcid)
         synchronized(lru) { lru.put(key, Entry(pages, System.currentTimeMillis())) }
+        Log.i(TAG, "[WARM] fileList store arcid=$arcid profile=$profileId pages=${pages.size}")
     }
 
     /**
