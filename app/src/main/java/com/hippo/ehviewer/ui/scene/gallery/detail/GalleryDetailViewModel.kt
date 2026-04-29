@@ -415,11 +415,19 @@ class GalleryDetailViewModel : ViewModel() {
             if (dir != null) {
                 val uniFile = com.hippo.unifile.UniFile.fromFile(dir)
                 if (uniFile != null) {
+                    android.util.Log.i(
+                        TAG,
+                        "[WARM] detailVM DIR trigger arcid=$arcId page=$startPage"
+                    )
                     ReaderPageCache.warmDir(context, arcId, uniFile).join()
                     return@launch
                 }
             }
             val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
+            android.util.Log.i(
+                TAG,
+                "[WARM] detailVM LRR trigger arcid=$arcId page=$startPage"
+            )
             ReaderPageCache.preloadForDetail(context, arcId, serverUrl, startPage).join()
         }
     }
