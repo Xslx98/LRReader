@@ -143,7 +143,6 @@
 
     <!-- Gallery -->
     <dimen name="gallery_pager_interval">48dp</dimen>
-    <dimen name="gallery_scroll_interval">28dp</dimen>
     <dimen name="gallery_page_min_height">256dp</dimen>
     <dimen name="gallery_page_info_interval">24dp</dimen>
     <dimen name="gallery_progress_size">56dp</dimen>

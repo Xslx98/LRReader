@@ -326,10 +326,14 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                 if (ReadingSettings.getShowPageInterval())
                     resources.getDimensionPixelOffset(R.dimen.gallery_pager_interval) else 0
             )
-            .setScrollInterval(
-                if (ReadingSettings.getShowPageInterval())
-                    resources.getDimensionPixelOffset(R.dimen.gallery_scroll_interval) else 0
-            )
+            // Vertical (LAYOUT_TOP_TO_BOTTOM) mode is the project's
+            // long-strip / webtoon view: the standard convention
+            // across Mihon / Tachiyomi / Yokai is *no* gap between
+            // pages so the strip reads continuously. The user-visible
+            // "show page interval" toggle still governs pager-mode
+            // spacing (where the gap is a useful visual separator
+            // between discrete pages).
+            .setScrollInterval(0)
             .setPageMinHeight(resources.getDimensionPixelOffset(R.dimen.gallery_page_min_height))
             .setPageInfoInterval(resources.getDimensionPixelOffset(R.dimen.gallery_page_info_interval))
             .setProgressColor(
@@ -649,9 +653,11 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         gv.setPagerInterval(
             if (showPageInterval) resources.getDimensionPixelOffset(R.dimen.gallery_pager_interval) else 0
         )
-        gv.setScrollInterval(
-            if (showPageInterval) resources.getDimensionPixelOffset(R.dimen.gallery_scroll_interval) else 0
-        )
+        // See onCreateView for the rationale: long-strip mode runs
+        // with no inter-page gap regardless of the user's
+        // showPageInterval choice (which governs only the pager
+        // mode's discrete-page separator).
+        gv.setScrollInterval(0)
 
         setScreenLightness(customScreenLightness, screenLightness)
 
