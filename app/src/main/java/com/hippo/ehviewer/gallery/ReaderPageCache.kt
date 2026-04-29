@@ -328,13 +328,27 @@ object ReaderPageCache : Cacheable {
      */
     fun consumeDecodedPage(arcid: String, pageIndex: Int): Image? {
         synchronized(slotLock) {
-            val slot = decodedSlot ?: return null
-            if (slot.arcid != arcid || slot.pageIndex != pageIndex) return null
+            val slot = decodedSlot
+            if (slot == null) {
+                Log.i(TAG, "[WARM] consume MISS empty arcid=$arcid page=$pageIndex")
+                return null
+            }
+            if (slot.arcid != arcid || slot.pageIndex != pageIndex) {
+                Log.i(
+                    TAG,
+                    "[WARM] consume MISS mismatch want=($arcid,$pageIndex) " +
+                        "have=(${slot.arcid},${slot.pageIndex})"
+                )
+                return null
+            }
             if (System.currentTimeMillis() > slot.expiresAt) {
+                Log.i(TAG, "[WARM] consume MISS expired arcid=$arcid page=$pageIndex")
                 slot.image.recycle()
                 decodedSlot = null
                 return null
             }
+            val ageMs = System.currentTimeMillis() - (slot.expiresAt - DECODED_SLOT_TTL_MS)
+            Log.i(TAG, "[WARM] consume HIT arcid=$arcid page=$pageIndex ageMs=$ageMs")
             decodedSlot = null
             return slot.image
         }
@@ -347,11 +361,13 @@ object ReaderPageCache : Cacheable {
      */
     private fun storeDecodedSlot(arcid: String, pageIndex: Int, image: Image) {
         synchronized(slotLock) {
+            val replaced = decodedSlot != null
             decodedSlot?.image?.recycle()
             decodedSlot = DecodedSlot(
                 arcid, pageIndex, image,
                 System.currentTimeMillis() + DECODED_SLOT_TTL_MS,
             )
+            Log.i(TAG, "[WARM] store arcid=$arcid page=$pageIndex replaced=$replaced ttlMs=$DECODED_SLOT_TTL_MS")
         }
     }
 
@@ -387,11 +403,20 @@ object ReaderPageCache : Cacheable {
      */
     fun warmDir(context: Context, arcId: String, dir: UniFile): Job =
         ServiceRegistry.coroutineModule.ioScope.launch {
+            val startMs = System.currentTimeMillis()
+            Log.i(TAG, "[WARM] warmDir begin arcid=$arcId")
             try {
                 val files = runInterruptible(Dispatchers.IO) {
                     DirImageFiles.listSorted(dir)
-                } ?: return@launch
-                if (files.isEmpty()) return@launch
+                }
+                if (files == null) {
+                    Log.i(TAG, "[WARM] warmDir abort listFiles=null arcid=$arcId")
+                    return@launch
+                }
+                if (files.isEmpty()) {
+                    Log.i(TAG, "[WARM] warmDir abort empty-dir arcid=$arcId")
+                    return@launch
+                }
                 val pageIndex = GalleryProvider2
                     .loadReadingProgress(context.applicationContext, arcId)
                     .coerceIn(0, files.size - 1)
@@ -402,10 +427,16 @@ object ReaderPageCache : Cacheable {
                 }
                 if (image != null) {
                     storeDecodedSlot(arcId, pageIndex, image)
-                    Log.d(TAG, "warmDir decoded page $pageIndex for $arcId")
+                    Log.i(
+                        TAG,
+                        "[WARM] warmDir done arcid=$arcId page=$pageIndex " +
+                            "elapsedMs=${System.currentTimeMillis() - startMs}"
+                    )
+                } else {
+                    Log.i(TAG, "[WARM] warmDir decode null arcid=$arcId page=$pageIndex")
                 }
             } catch (e: Exception) {
-                Log.d(TAG, "warmDir failed for $arcId: ${e.message}")
+                Log.w(TAG, "[WARM] warmDir failed for $arcId: ${e.message}")
             }
         }
 
@@ -464,6 +495,7 @@ object ReaderPageCache : Cacheable {
                 // reader will display first, and decoding its neighbours
                 // would bloat memory before they're actually visible.
                 if (pageIndex == centerPage) {
+                    val decodeStart = System.currentTimeMillis()
                     try {
                         val decoded = withContext(
                             ServiceRegistry.coroutineModule.decoderDispatcher
@@ -474,10 +506,16 @@ object ReaderPageCache : Cacheable {
                         }
                         if (decoded != null) {
                             storeDecodedSlot(arcId, centerPage, decoded)
-                            Log.d(TAG, "Detail decode-warmed page $centerPage for $arcId")
+                            Log.i(
+                                TAG,
+                                "[WARM] preloadForDetail done arcid=$arcId page=$centerPage " +
+                                    "decodeMs=${System.currentTimeMillis() - decodeStart}"
+                            )
+                        } else {
+                            Log.i(TAG, "[WARM] preloadForDetail decode null arcid=$arcId page=$centerPage")
                         }
                     } catch (e: Exception) {
-                        Log.d(TAG, "Detail decode-warm $centerPage failed: ${e.message}")
+                        Log.w(TAG, "[WARM] preloadForDetail decode-warm $centerPage failed: ${e.message}")
                     }
                 }
             }
