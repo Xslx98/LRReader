@@ -121,13 +121,13 @@ interface ArchiveLocalStateDao {
     suspend fun clearDownloadSubsystem(arcid: String)
 
     @Query(
-        "UPDATE ARCHIVE_LOCAL_STATE SET HISTORY_TIME = NULL, HISTORY_MODE = 0 " +
+        "UPDATE ARCHIVE_LOCAL_STATE SET HISTORY_TIME = NULL, HISTORY_MODE = 0, HISTORY_SCROLL_FRACTION = NULL " +
             "WHERE ARCID = :arcid"
     )
     suspend fun clearHistorySubsystem(arcid: String)
 
     @Query(
-        "UPDATE ARCHIVE_LOCAL_STATE SET HISTORY_TIME = NULL, HISTORY_MODE = 0 " +
+        "UPDATE ARCHIVE_LOCAL_STATE SET HISTORY_TIME = NULL, HISTORY_MODE = 0, HISTORY_SCROLL_FRACTION = NULL " +
             "WHERE HISTORY_TIME IS NOT NULL"
     )
     suspend fun clearAllHistorySubsystems()
@@ -143,7 +143,7 @@ interface ArchiveLocalStateDao {
      */
     @Query(
         "UPDATE ARCHIVE_LOCAL_STATE " +
-            "SET HISTORY_TIME = NULL, HISTORY_MODE = 0 " +
+            "SET HISTORY_TIME = NULL, HISTORY_MODE = 0, HISTORY_SCROLL_FRACTION = NULL " +
             "WHERE HISTORY_TIME IS NOT NULL " +
             "AND ARCID NOT IN (" +
             "  SELECT ARCID FROM ARCHIVE_LOCAL_STATE " +
@@ -179,6 +179,21 @@ interface ArchiveLocalStateDao {
 
     @Query("UPDATE ARCHIVE_LOCAL_STATE SET ARCHIVE_JSON = :archiveJson WHERE ARCID = :arcid")
     suspend fun updateArchiveJson(arcid: String, archiveJson: String)
+
+    /**
+     * Update the per-archive intra-page scroll fraction. The UPDATE
+     * is a no-op if no row exists for [arcid] (e.g. when called
+     * before the first history upsert) — the next call after the
+     * row is created will land normally.
+     */
+    @Query(
+        "UPDATE ARCHIVE_LOCAL_STATE SET HISTORY_SCROLL_FRACTION = :fraction " +
+            "WHERE ARCID = :arcid AND HISTORY_TIME IS NOT NULL"
+    )
+    suspend fun updateHistoryScrollFraction(arcid: String, fraction: Float?)
+
+    @Query("SELECT HISTORY_SCROLL_FRACTION FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid")
+    suspend fun getHistoryScrollFraction(arcid: String): Float?
 
     // ── Cross-subsystem-safe upsert pairs ──────────────────────
     //

@@ -108,6 +108,7 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
     private static final int METHOD_ON_ATTACH_TO_ROOT = 20;
     private static final int METHOD_SET_PAGER_INTERVAL = 21;
     private static final int METHOD_SET_SCROLL_INTERVAL = 22;
+    private static final int METHOD_SET_CURRENT_PAGE_WITH_FRACTION = 23;
 
     private final Context mContext;
     private Adapter mAdapter;
@@ -167,6 +168,12 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
     private final List<Object[]> mArgsListTemp = new ArrayList<>(5);
 
     private final AtomicInteger mCurrentIndex = new AtomicInteger(GalleryPageView.INVALID_INDEX);
+
+    // Latest intra-page scroll fraction published from the render
+    // thread (after each fill). Read by UI-thread callers via
+    // getCurrentScrollFraction() to persist a precise resume point
+    // on exit. Always 0 for pager modes.
+    private volatile float mCurrentScrollFraction = 0f;
 
     public static class Builder {
 
@@ -541,6 +548,26 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
         postMethod(METHOD_SET_CURRENT_PAGE, page);
     }
 
+    /**
+     * Jump to [page] and queue an intra-page scroll restore at
+     * [fraction] (0.0 ~ 1.0 of the target page's height) once that
+     * page is laid out and loaded. Only meaningful in
+     * `LAYOUT_TOP_TO_BOTTOM` — pager modes silently ignore the
+     * fraction. Posts to the render thread.
+     */
+    public void setCurrentPageScrollFraction(int page, float fraction) {
+        postMethod(METHOD_SET_CURRENT_PAGE_WITH_FRACTION, page, fraction);
+    }
+
+    /**
+     * Latest intra-page scroll fraction, published from the render
+     * thread after each fill. Safe to call from any thread; the
+     * read is single-volatile-load.
+     */
+    public float getCurrentScrollFraction() {
+        return mCurrentScrollFraction;
+    }
+
     public void pageLeft() {
         postMethod(METHOD_PAGE_LEFT);
     }
@@ -872,6 +899,18 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
         }
     }
 
+    private void setCurrentPageWithFractionInternal(int page, float fraction) {
+        if (mLayoutManager != null) {
+            mLayoutManager.setCurrentIndex(page);
+            mLayoutManager.setStartScrollFraction(fraction);
+        } else {
+            mIndex = page;
+            // No layout manager yet — fraction can't be applied. The
+            // caller is responsible for invoking us again once a
+            // layout manager exists (typically after onAttachToRoot).
+        }
+    }
+
     private void pageLeftInternal() {
         if (mLayoutManager != null) {
             mLayoutManager.onPageLeft();
@@ -990,6 +1029,9 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
                 case METHOD_SET_CURRENT_PAGE:
                     setCurrentPageInternal((Integer) args[0]);
                     break;
+                case METHOD_SET_CURRENT_PAGE_WITH_FRACTION:
+                    setCurrentPageWithFractionInternal((Integer) args[0], (Float) args[1]);
+                    break;
                 case METHOD_PAGE_LEFT:
                     pageLeftInternal();
                     break;
@@ -1040,8 +1082,10 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
         int newCurrentIndex;
         if (mLayoutManager != null) {
             newCurrentIndex = mLayoutManager.getCurrentIndex();
+            mCurrentScrollFraction = mLayoutManager.getCurrentScrollFraction();
         } else {
             newCurrentIndex = GalleryPageView.INVALID_INDEX;
+            mCurrentScrollFraction = 0f;
         }
         mCurrentIndex.lazySet(newCurrentIndex);
 
@@ -1221,6 +1265,25 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
         public abstract int getIndexUnder(float x, float y);
 
         abstract int getInternalCurrentIndex();
+
+        /**
+         * Set a pending intra-page scroll fraction (0.0 ~ 1.0) to
+         * apply on the next successful fill. Default no-op for
+         * layout managers that don't support intra-page scrolling
+         * (e.g. pager mode).
+         */
+        public void setStartScrollFraction(@SuppressWarnings("unused") float fraction) {
+            // No-op by default
+        }
+
+        /**
+         * Current intra-page scroll position as a fraction (0.0 ~
+         * 1.0) of the visible page's height. Default 0 for layout
+         * managers without continuous scroll.
+         */
+        public float getCurrentScrollFraction() {
+            return 0f;
+        }
 
         protected void placeCenter(GLView view) {
             int spec = GLView.MeasureSpec.makeMeasureSpec(GLView.LayoutParams.WRAP_CONTENT,
