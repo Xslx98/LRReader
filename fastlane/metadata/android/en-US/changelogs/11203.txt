@@ -1,0 +1,4 @@
+- Long-strip / webtoon (top-to-bottom) mode now remembers the exact scroll position within a page. Reopening a half-read long image lands you back where you left off, not at the page top. Database upgrades to schema v25 automatically on first launch.
+- Faster reader open. The first page is decoded in the background as soon as you tap to read, so the loading placeholder is much shorter — often invisible. Pages decode in parallel for smoother scrolling.
+- Removed the black band between pages in long-strip mode for a continuous, seamless read. The "show page interval" setting now governs only the page-flip mode where the gap is a useful separator.
+- Internal cleanup and stability improvements.
