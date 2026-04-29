@@ -2,6 +2,7 @@ package com.hippo.ehviewer.ui
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import com.hippo.ehviewer.gallery.ReaderPageCache
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.unifile.UniFile
@@ -16,6 +17,8 @@ import java.io.File
  * (instant, offline). Otherwise falls back to [GalleryActivity.ACTION_LRR] (server streaming).
  */
 object GalleryOpenHelper {
+
+    private const val TAG = "GalleryOpenHelper"
 
     /**
      * Build an Intent for reading the given archive, preferring local files if available.
@@ -39,6 +42,7 @@ object GalleryOpenHelper {
             // consumeDecodedPage call has a chance of hitting before the
             // user sees the loading placeholder.
             UniFile.fromFile(downloadDir)?.let { uniFile ->
+                Log.i(TAG, "[WARM] openHelper DIR trigger arcid=${archive.arcid}")
                 ReaderPageCache.warmDir(context, archive.arcid, uniFile)
             }
         } else {
@@ -52,6 +56,7 @@ object GalleryOpenHelper {
             val serverUrl = LRRAuthManager.getServerUrl()
             if (serverUrl != null) {
                 val centerPage = (archive.progress - 1).coerceAtLeast(0)
+                Log.i(TAG, "[WARM] openHelper LRR trigger arcid=${archive.arcid} page=$centerPage")
                 ReaderPageCache.preloadForDetail(context, archive.arcid, serverUrl, centerPage)
             }
         }
