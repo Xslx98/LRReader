@@ -79,6 +79,13 @@ class ScrollLayoutManager extends GalleryView.LayoutManager {
     private int mBottomStateBottom;
     private boolean mBottomStateHasNext;
 
+    // Pending intra-page scroll fraction to apply on the first fill
+    // where the target page is laid out and loaded. NaN = nothing
+    // pending. Cleared on user scroll/fling/touch so we don't fight
+    // the user. See setStartScrollFraction / onFill / onDown.
+    private float mPendingStartFraction = Float.NaN;
+    private int mPendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX;
+
     public ScrollLayoutManager(Context context, @NonNull GalleryView galleryView, int interval) {
         super(galleryView);
 
@@ -117,6 +124,8 @@ class ScrollLayoutManager extends GalleryView.LayoutManager {
         mScrollUp = false;
         mFlingUp = false;
         mStopAnimationFinger = false;
+        mPendingStartFraction = Float.NaN;
+        mPendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX;
     }
 
     // Return true for animations are running
@@ -528,6 +537,32 @@ class ScrollLayoutManager extends GalleryView.LayoutManager {
                     break;
                 }
             }
+
+            // Apply pending start-fraction once the target page has been
+            // measured and loaded. We need the *image-loaded* height,
+            // not the placeholder min-height, otherwise fraction × tiny
+            // placeholder ≪ fraction × actual long image. Until the
+            // target page reports `isLoaded()` we leave the pending
+            // value alone and re-check on the next fill — onScroll /
+            // onDown will clear it the moment the user interacts.
+            if (!Float.isNaN(mPendingStartFraction)
+                    && mPendingStartFractionPageIndex != GalleryPageView.INVALID_INDEX) {
+                GalleryPageView target = null;
+                for (GalleryPageView p : mPages) {
+                    if (p.getIndex() == mPendingStartFractionPageIndex) {
+                        target = p;
+                        break;
+                    }
+                }
+                if (target != null && target.isLoaded() && target.getHeight() > 0) {
+                    int dy = Math.round(mPendingStartFraction * target.getHeight());
+                    if (dy != 0) {
+                        scrollInternal(0, dy, false, 0f, 0f);
+                    }
+                    mPendingStartFraction = Float.NaN;
+                    mPendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX;
+                }
+            }
         }
     }
 
@@ -537,6 +572,11 @@ class ScrollLayoutManager extends GalleryView.LayoutManager {
         mDeltaY = 0;
         mScrollUp = false;
         mStopAnimationFinger = cancelAllAnimations();
+        // User touch wins: drop any pending start-fraction restore so we
+        // don't snap the page out from under the finger if the target
+        // page's image happens to load mid-gesture.
+        mPendingStartFraction = Float.NaN;
+        mPendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX;
     }
 
     @Override
@@ -999,6 +1039,59 @@ class ScrollLayoutManager extends GalleryView.LayoutManager {
             }
         }
         return GalleryPageView.INVALID_INDEX;
+    }
+
+    /**
+     * Schedule an intra-page scroll restore at the next successful
+     * fill. The restore is anchored to the page index that's currently
+     * active (the caller is expected to invoke
+     * {@link #setCurrentIndex(int)} immediately before this), so the
+     * pair forms a "jump to page N at fraction F" operation.
+     *
+     * Out-of-range fractions are clamped; NaN clears the pending value.
+     */
+    @Override
+    public void setStartScrollFraction(float fraction) {
+        if (Float.isNaN(fraction)) {
+            mPendingStartFraction = Float.NaN;
+            mPendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX;
+            return;
+        }
+        float clamped = MathUtils.clamp(fraction, 0f, 1f);
+        if (clamped <= 0f) {
+            mPendingStartFraction = Float.NaN;
+            mPendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX;
+            return;
+        }
+        mPendingStartFraction = clamped;
+        mPendingStartFractionPageIndex = mIndex;
+        mGalleryView.requestFill();
+    }
+
+    /**
+     * Compute the intra-page scroll fraction for the page that is
+     * currently the "first visible" one. Pages that haven't been
+     * measured yet, or empty layouts, return 0.
+     */
+    @Override
+    public float getCurrentScrollFraction() {
+        if (mPages.isEmpty()) {
+            return 0f;
+        }
+        int currentIdx = getCurrentIndex();
+        if (currentIdx == GalleryPageView.INVALID_INDEX) {
+            return 0f;
+        }
+        GalleryPageView page = findPageByIndex(currentIdx);
+        if (page == null) {
+            return 0f;
+        }
+        int height = page.getHeight();
+        if (height <= 0) {
+            return 0f;
+        }
+        float fraction = (float) (-page.bounds().top) / (float) height;
+        return MathUtils.clamp(fraction, 0f, 1f);
     }
 
     @Override

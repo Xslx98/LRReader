@@ -44,7 +44,7 @@ import kotlinx.serialization.json.Json
         ServerProfile::class,
         ArchiveLocalState::class
     ],
-    version = 24,
+    version = 25,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class, DownloadStateConverter::class)
@@ -67,7 +67,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "eh.db"
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25)
                     .build()
                     .also { INSTANCE = it }
             }
@@ -267,6 +267,24 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("DROP TABLE IF EXISTS DOWNLOADS")
                 db.execSQL("DROP TABLE IF EXISTS HISTORY")
                 db.execSQL("DROP TABLE IF EXISTS LOCAL_FAVORITES")
+            }
+        }
+
+        /**
+         * v24 → v25: Add `HISTORY_SCROLL_FRACTION` column to
+         * `ARCHIVE_LOCAL_STATE`. Stores the per-archive intra-page
+         * scroll position (0.0 ~ 1.0) for vertical long-strip
+         * (条漫) reading, so that returning to a half-read long
+         * page resumes at the same vertical offset instead of
+         * snapping to the page top. NULL is the absent sentinel
+         * — existing rows simply behave as before until the user
+         * scrolls in `LAYOUT_TOP_TO_BOTTOM` mode and the value is
+         * populated.
+         */
+        @VisibleForTesting
+        internal val MIGRATION_24_25 = object : Migration(24, 25) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE ARCHIVE_LOCAL_STATE ADD COLUMN HISTORY_SCROLL_FRACTION REAL")
             }
         }
 

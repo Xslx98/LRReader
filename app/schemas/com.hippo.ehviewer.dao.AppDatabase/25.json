@@ -1,0 +1,346 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 25,
+    "identityHash": "9bcb7de046bc1732a929749a3a67c678",
+    "entities": [
+      {
+        "tableName": "DOWNLOAD_LABELS",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT, `LABEL` TEXT, `TIME` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "_id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "label",
+            "columnName": "LABEL",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "time",
+            "columnName": "TIME",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_DOWNLOAD_LABELS_TIME",
+            "unique": false,
+            "columnNames": [
+              "TIME"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_DOWNLOAD_LABELS_TIME` ON `${TABLE_NAME}` (`TIME`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "DOWNLOAD_DIRNAME",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ARCID` TEXT NOT NULL, `DIRNAME` TEXT, PRIMARY KEY(`ARCID`))",
+        "fields": [
+          {
+            "fieldPath": "arcid",
+            "columnName": "ARCID",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dirname",
+            "columnName": "DIRNAME",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ARCID"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "QUICK_SEARCH",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT, `NAME` TEXT, `MODE` INTEGER NOT NULL, `CATEGORY` INTEGER NOT NULL, `KEYWORD` TEXT, `ADVANCE_SEARCH` INTEGER NOT NULL, `MIN_RATING` INTEGER NOT NULL, `PAGE_FROM` INTEGER NOT NULL, `PAGE_TO` INTEGER NOT NULL, `TIME` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "_id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "NAME",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "mode",
+            "columnName": "MODE",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "CATEGORY",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "keyword",
+            "columnName": "KEYWORD",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "advanceSearch",
+            "columnName": "ADVANCE_SEARCH",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "minRating",
+            "columnName": "MIN_RATING",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pageFrom",
+            "columnName": "PAGE_FROM",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pageTo",
+            "columnName": "PAGE_TO",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "time",
+            "columnName": "TIME",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_QUICK_SEARCH_TIME",
+            "unique": false,
+            "columnNames": [
+              "TIME"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_QUICK_SEARCH_TIME` ON `${TABLE_NAME}` (`TIME`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "SERVER_PROFILES",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ID` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `NAME` TEXT NOT NULL, `URL` TEXT NOT NULL, `IS_ACTIVE` INTEGER NOT NULL, `ALLOW_CLEARTEXT` INTEGER NOT NULL DEFAULT 1)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "ID",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "NAME",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "url",
+            "columnName": "URL",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "IS_ACTIVE",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "allowCleartext",
+            "columnName": "ALLOW_CLEARTEXT",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "1"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "ID"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "ARCHIVE_LOCAL_STATE",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ARCID` TEXT NOT NULL, `SERVER_PROFILE_ID` INTEGER NOT NULL DEFAULT 0, `ARCHIVE_JSON` TEXT NOT NULL, `DOWNLOAD_STATE` INTEGER, `DOWNLOAD_LEGACY` INTEGER NOT NULL DEFAULT 0, `DOWNLOAD_TIME` INTEGER, `DOWNLOAD_LABEL` TEXT, `DOWNLOAD_ARCHIVE_URI` TEXT, `HISTORY_TIME` INTEGER, `HISTORY_MODE` INTEGER NOT NULL DEFAULT 0, `HISTORY_SCROLL_FRACTION` REAL, `FAVORITE_TIME` INTEGER, PRIMARY KEY(`ARCID`))",
+        "fields": [
+          {
+            "fieldPath": "arcid",
+            "columnName": "ARCID",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serverProfileId",
+            "columnName": "SERVER_PROFILE_ID",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "archiveJson",
+            "columnName": "ARCHIVE_JSON",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "downloadState",
+            "columnName": "DOWNLOAD_STATE",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "downloadLegacy",
+            "columnName": "DOWNLOAD_LEGACY",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "downloadTime",
+            "columnName": "DOWNLOAD_TIME",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "downloadLabel",
+            "columnName": "DOWNLOAD_LABEL",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "downloadArchiveUri",
+            "columnName": "DOWNLOAD_ARCHIVE_URI",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "historyTime",
+            "columnName": "HISTORY_TIME",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "historyMode",
+            "columnName": "HISTORY_MODE",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "historyScrollFraction",
+            "columnName": "HISTORY_SCROLL_FRACTION",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "favoriteTime",
+            "columnName": "FAVORITE_TIME",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ARCID"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_ARCHIVE_LOCAL_STATE_SERVER_PROFILE_ID",
+            "unique": false,
+            "columnNames": [
+              "SERVER_PROFILE_ID"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_SERVER_PROFILE_ID` ON `${TABLE_NAME}` (`SERVER_PROFILE_ID`)"
+          },
+          {
+            "name": "index_ARCHIVE_LOCAL_STATE_DOWNLOAD_TIME",
+            "unique": false,
+            "columnNames": [
+              "DOWNLOAD_TIME"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_DOWNLOAD_TIME` ON `${TABLE_NAME}` (`DOWNLOAD_TIME`)"
+          },
+          {
+            "name": "index_ARCHIVE_LOCAL_STATE_HISTORY_TIME",
+            "unique": false,
+            "columnNames": [
+              "HISTORY_TIME"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_HISTORY_TIME` ON `${TABLE_NAME}` (`HISTORY_TIME`)"
+          },
+          {
+            "name": "index_ARCHIVE_LOCAL_STATE_FAVORITE_TIME",
+            "unique": false,
+            "columnNames": [
+              "FAVORITE_TIME"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_FAVORITE_TIME` ON `${TABLE_NAME}` (`FAVORITE_TIME`)"
+          },
+          {
+            "name": "index_ARCHIVE_LOCAL_STATE_DOWNLOAD_LABEL",
+            "unique": false,
+            "columnNames": [
+              "DOWNLOAD_LABEL"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_DOWNLOAD_LABEL` ON `${TABLE_NAME}` (`DOWNLOAD_LABEL`)"
+          }
+        ],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9bcb7de046bc1732a929749a3a67c678')"
+    ]
+  }
+}
