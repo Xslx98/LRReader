@@ -382,13 +382,19 @@ class GalleryDetailViewModel : ViewModel() {
     private var detailPreloadJob: Job? = null
 
     /**
-     * Preload 2 pages (at the reading progress position) into the reader's
-     * cache so that opening the reader produces an immediate cache hit.
+     * Warm up the reader before the user taps "open". For downloaded
+     * archives we list the local directory and decode the start page
+     * straight into the [ReaderPageCache] decoded slot. For LRR-only
+     * archives we fall back to [ReaderPageCache.preloadForDetail],
+     * which downloads bytes and decode-warms the same slot.
+     *
+     * Either way, [DirGalleryProvider]/[com.hippo.ehviewer.gallery.LRRGalleryProvider]
+     * gets a chance to skip the first-page decode on next reader open.
      */
     private fun triggerReadingPreload(arcId: String, serverProgress: Int) {
         detailPreloadJob?.cancel()
-        val serverUrl = LRRAuthManager.getServerUrl() ?: return
         val context = ServiceRegistry.appModule.getContext()
+        val archive = _detailLoaded.replayCache.firstOrNull()?.archive ?: return
 
         val localProgress = GalleryProvider2.loadReadingProgress(context, arcId)
         val startPage = when {
@@ -399,7 +405,23 @@ class GalleryDetailViewModel : ViewModel() {
             else -> 0
         }
 
-        detailPreloadJob = ReaderPageCache.preloadForDetail(context, arcId, serverUrl, startPage)
+        detailPreloadJob = viewModelScope.launch {
+            // Resolve the local download directory (DB lookup) off the
+            // main thread before deciding which warmup path to use.
+            val dir = withContext(Dispatchers.IO) {
+                com.hippo.ehviewer.ui.GalleryOpenHelper
+                    .getLocalDownloadDir(context, archive)
+            }
+            if (dir != null) {
+                val uniFile = com.hippo.unifile.UniFile.fromFile(dir)
+                if (uniFile != null) {
+                    ReaderPageCache.warmDir(context, arcId, uniFile).join()
+                    return@launch
+                }
+            }
+            val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
+            ReaderPageCache.preloadForDetail(context, arcId, serverUrl, startPage).join()
+        }
     }
 
     // -------------------------------------------------------------------------

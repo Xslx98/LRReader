@@ -2,7 +2,10 @@ package com.hippo.ehviewer.ui
 
 import android.content.Context
 import android.content.Intent
+import com.hippo.ehviewer.gallery.ReaderPageCache
 import com.hippo.ehviewer.spider.SpiderDen
+import com.hippo.unifile.UniFile
+import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.domain.Archive
 import java.io.File
 
@@ -32,10 +35,25 @@ object GalleryOpenHelper {
             intent.action = GalleryActivity.ACTION_DIR
             intent.putExtra(GalleryActivity.KEY_FILENAME, downloadDir.absolutePath)
             intent.putExtra(GalleryActivity.KEY_ARCHIVE, archive)
+            // Fire-and-forget Dir warmup so DirGalleryProvider.start()'s
+            // consumeDecodedPage call has a chance of hitting before the
+            // user sees the loading placeholder.
+            UniFile.fromFile(downloadDir)?.let { uniFile ->
+                ReaderPageCache.warmDir(context, archive.arcid, uniFile)
+            }
         } else {
             // No local files — stream from LANraragi server
             intent.action = GalleryActivity.ACTION_LRR
             intent.putExtra(GalleryActivity.KEY_ARCHIVE, archive)
+            // Fire-and-forget LRR warmup. preloadForDetail downloads the
+            // bytes and decode-warms the slot. Idempotent w.r.t. an
+            // earlier detail-page trigger; the slot's
+            // store-replaces-and-recycles semantics handle a duplicate.
+            val serverUrl = LRRAuthManager.getServerUrl()
+            if (serverUrl != null) {
+                val centerPage = (archive.progress - 1).coerceAtLeast(0)
+                ReaderPageCache.preloadForDetail(context, archive.arcid, serverUrl, centerPage)
+            }
         }
 
         return intent
