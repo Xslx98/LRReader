@@ -246,15 +246,18 @@ class DirGalleryProvider : GalleryProvider2 {
             // Cross-session decoded slot (filled by the detail-page
             // warmup or the open-helper warm trigger). On a hit we
             // bypass the per-page decode for the start page and the
-            // user sees the page on the very next frame. The warm
-            // path uses the SP-stored 0-indexed progress; if the
-            // server-progress branch later resolves to a different
-            // page, the slot simply won't match and the regular
-            // decode pipeline runs.
+            // user sees the page on the very next frame.
+            // awaitInflightWarmMs bridges the openHelper-trigger
+            // race: when warm and provider start race in parallel
+            // (the openHelper trigger fires ~70-150ms before this
+            // consume call but warm needs ~130ms to complete), a
+            // brief wait turns the otherwise-MISS into a HIT.
             val targetArcid = arcId
             if (targetArcid != null) {
                 val warmIndex = startPageValue.coerceIn(0, files.size - 1)
-                val warmed = ReaderPageCache.consumeDecodedPage(targetArcid, warmIndex)
+                val warmed = ReaderPageCache.consumeDecodedPage(
+                    targetArcid, warmIndex, awaitInflightWarmMs = WARM_AWAIT_MS
+                )
                 if (warmed != null) {
                     Log.i(TAG, "[PROGRESS] decoded slot HIT for page=$warmIndex")
                     notifyPageSucceed(warmIndex, warmed)
@@ -462,5 +465,15 @@ class DirGalleryProvider : GalleryProvider2 {
          * the queue to outrun the visible window on a fast scroll.
          */
         private const val PRELOAD_RADIUS = 2
+
+        /**
+         * Bound on how long the consumer waits for an in-flight warm
+         * to land in the slot before falling through to the regular
+         * decode pipeline. 300ms is roughly 2× a typical Dir warm
+         * (~130ms); enough headroom that a warm that started just
+         * before us still wins, but bounded so a slow warm doesn't
+         * make the cold path worse.
+         */
+        private const val WARM_AWAIT_MS: Long = 300L
     }
 }
