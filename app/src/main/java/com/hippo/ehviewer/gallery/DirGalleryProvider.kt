@@ -243,6 +243,24 @@ class DirGalleryProvider : GalleryProvider2 {
             sizeValue = files.size
             notifyDataChanged()
 
+            // Cross-session decoded slot (filled by the detail-page
+            // warmup or the open-helper warm trigger). On a hit we
+            // bypass the per-page decode for the start page and the
+            // user sees the page on the very next frame. The warm
+            // path uses the SP-stored 0-indexed progress; if the
+            // server-progress branch later resolves to a different
+            // page, the slot simply won't match and the regular
+            // decode pipeline runs.
+            val targetArcid = arcId
+            if (targetArcid != null) {
+                val warmIndex = startPageValue.coerceIn(0, files.size - 1)
+                val warmed = ReaderPageCache.consumeDecodedPage(targetArcid, warmIndex)
+                if (warmed != null) {
+                    Log.i(TAG, "[PROGRESS] decoded slot HIT for page=$warmIndex")
+                    notifyPageSucceed(warmIndex, warmed)
+                }
+            }
+
             startDecodeWorkers(scope, files.size)
         }
     }
