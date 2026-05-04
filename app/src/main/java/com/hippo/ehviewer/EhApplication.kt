@@ -26,6 +26,7 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.os.Debug
+import android.os.Trace
 import android.util.Log
 import com.hippo.Native
 import com.hippo.a7zip.A7Zip
@@ -111,15 +112,22 @@ class EhApplication : RecordingApplication() {
 
         super.onCreate()
 
-        GetText.initialize(this)
-        com.hippo.network.StatusCodeException.initialize(this)
-        Settings.initialize(this)
-        LRRAuthManager.initialize(this)
-        ReadableTime.initialize(this)
-        AppConfig.initialize(this)
+        // Wrap each main-thread initialiser in a Trace section so cold-start
+        // profiles in Android Studio (or perfetto) show exactly which step
+        // dominates EhApplication.onCreate. Tracing is built into the OS and
+        // free at runtime (a short string lookup); we still gate writes on
+        // BuildConfig.DEBUG to keep release-build trace output empty.
+        traceDebug("EhApp.GetText.init") { GetText.initialize(this) }
+        traceDebug("EhApp.StatusCodeException.init") {
+            com.hippo.network.StatusCodeException.initialize(this)
+        }
+        traceDebug("EhApp.Settings.init") { Settings.initialize(this) }
+        traceDebug("EhApp.LRRAuthManager.init") { LRRAuthManager.initialize(this) }
+        traceDebug("EhApp.ReadableTime.init") { ReadableTime.initialize(this) }
+        traceDebug("EhApp.AppConfig.init") { AppConfig.initialize(this) }
         // Skip SpiderDen disk cache in LRR mode — it's EH-specific and wastes 40-640MB
         // SpiderDen.initialize(this);
-        EhDB.initialize(this)
+        traceDebug("EhApp.EhDB.init") { EhDB.initialize(this) }
 
         // Load active server profile into LRRAuthManager asynchronously, and verify
         // every profile has its API key still encrypted in storage. If any profile
@@ -166,10 +174,10 @@ class EhApplication : RecordingApplication() {
             }
         }
 
-        LRRClientProvider.init(this)
+        traceDebug("EhApp.LRRClientProvider.init") { LRRClientProvider.init(this) }
 
         // Initialize ServiceRegistry (must be after Settings/EhDB)
-        ServiceRegistry.initialize(this)
+        traceDebug("EhApp.ServiceRegistry.init") { ServiceRegistry.initialize(this) }
         // Eagerly start network monitoring so isAvailable() is ready before first API call
         ServiceRegistry.networkModule.networkMonitor
 
@@ -400,6 +408,25 @@ class EhApplication : RecordingApplication() {
 
     fun removeTempCache(key: String): Any? {
         return ServiceRegistry.appModule.removeTempCache(key)
+    }
+
+    /**
+     * Wrap [block] in a [Trace] section so cold-start profiles attribute time
+     * to a named slice. Sections are only emitted under `BuildConfig.DEBUG`
+     * to keep release-build trace output empty (Trace.beginSection itself is
+     * cheap, but the string allocation is wasted work for users).
+     */
+    private inline fun traceDebug(name: String, block: () -> Unit) {
+        if (BuildConfig.DEBUG) {
+            Trace.beginSection(name)
+            try {
+                block()
+            } finally {
+                Trace.endSection()
+            }
+        } else {
+            block()
+        }
     }
 
     companion object {
