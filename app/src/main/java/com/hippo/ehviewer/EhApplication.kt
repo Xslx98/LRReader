@@ -144,6 +144,13 @@ class EhApplication : RecordingApplication() {
                 // it (or initialize() did), and MainActivity will surface the dialog.
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load server profiles during init", e)
+                // Surface non-KeyStore failures (DB corruption, migration error,
+                // generic loader exception) to the first UI that can show a
+                // dialog. Without this the failure was completely silent — user
+                // saw the app come up as if no profiles existed, with no way
+                // to distinguish "fresh install" from "DB blew up".
+                AppModule.bootProfileLoadError.set(e)
+                Analytics.recordException(e)
             } finally {
                 // Always complete the deferred so awaiters never hang, even on the
                 // failure path. complete() is a no-op if already completed.
