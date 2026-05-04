@@ -18,6 +18,7 @@ package com.hippo.lib.glgallery;
 
 import android.util.LruCache;
 
+import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
 import androidx.annotation.UiThread;
 
@@ -64,6 +65,32 @@ public abstract class GalleryProvider {
 
     public void setGLRoot(GLRoot glRoot) {
         mGLRoot = glRoot;
+    }
+
+    /**
+     * Schedule [callback] to fire on the GL render thread strictly AFTER any
+     * NotifyTask currently queued via {@link #notifyDataChanged()} et al has
+     * been dispatched. Subclasses can use this to install a barrier that
+     * fires once the render thread has consumed every pending data-change
+     * notification — useful for sequencing a follow-up render-thread call
+     * (e.g. setCurrentPageScrollFraction) so it cannot land in the same
+     * frame as the onDataChanged that would reset the layout state.
+     *
+     * If GLRoot has not yet been wired up (provider not attached to an
+     * Activity GL surface), the callback runs synchronously on the caller's
+     * thread to avoid silently dropping it.
+     */
+    @AnyThread
+    protected final void postBarrierAfterPendingNotifications(Runnable callback) {
+        GLRoot glRoot = mGLRoot;
+        if (glRoot == null) {
+            callback.run();
+            return;
+        }
+        glRoot.addOnGLIdleListener((canvas, renderRequested) -> {
+            callback.run();
+            return false;
+        });
     }
 
     /**
