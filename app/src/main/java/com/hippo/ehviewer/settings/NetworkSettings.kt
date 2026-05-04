@@ -5,18 +5,10 @@ import com.hippo.ehviewer.Settings
 
 /**
  * Network-related settings extracted from Settings.java.
- * Covers DNS-over-HTTPS and proxy configuration.
+ * Covers proxy configuration. (DNS-over-HTTPS scaffolding was removed
+ * as never-wired dead code; NetworkModule resolves via Dns.SYSTEM.)
  */
 object NetworkSettings {
-
-    // --- DNS-over-HTTPS ---
-    const val KEY_DOH = "dns_over_https"
-
-    @JvmStatic
-    fun getDoH(): Boolean = Settings.getBoolean(KEY_DOH, false)
-
-    @JvmStatic
-    fun putDoH(value: Boolean) = Settings.putBoolean(KEY_DOH, value)
 
     // --- Proxy Type ---
     private const val KEY_PROXY_TYPE = "proxy_type"

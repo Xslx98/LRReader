@@ -19,8 +19,6 @@
 <resources>
 
     <!--  black list  -->
-    <string name="settings_advanced_dns_over_http_title">Sicheres DNS (DoH)</string>
-    <string name="settings_advanced_dns_over_http_summary">DNS-Verschmutzung in bestimmten Regionen beheben</string>
     <string name="settings_advanced_domain_fronting_title">Domain Fronting</string>
     <string name="settings_advanced_domain_fronting_summary">SNI-Blockierung umgehen</string>
     <string name="settings_advanced_url_replace_title">URL-Verschleierung, SNI muss deaktiviert sein</string>

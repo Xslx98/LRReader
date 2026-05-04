@@ -90,7 +90,6 @@ serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-jso
 # --- Third-party ---
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
-okhttp-dnsoverhttps = { module = "com.squareup.okhttp3:okhttp-dnsoverhttps", version.ref = "okhttp" }
 okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "okhttp" }
 relinker = { module = "com.getkeepsafe.relinker:relinker", version.ref = "relinker" }
 ucrop = { module = "com.github.yalantis:ucrop", version.ref = "ucrop" }

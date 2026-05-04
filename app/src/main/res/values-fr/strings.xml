@@ -17,8 +17,6 @@
 <!-- French translations by UShimamura -->
 <resources>
     <!--  black list  -->
-    <string name="settings_advanced_dns_over_http_title">DNS sécurisé (DoH)</string>
-    <string name="settings_advanced_dns_over_http_summary">Résoudre la pollution DNS dans certaines régions</string>
     <string name="settings_advanced_domain_fronting_title">Masquage de domaine</string>
     <string name="settings_advanced_domain_fronting_summary">Contourner le blocage SNI</string>
     <string name="settings_advanced_url_replace_title">Déguisement d\'URL, nécessite de fermer SNI</string>

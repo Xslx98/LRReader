@@ -636,8 +636,6 @@
     <string name="settings_about_beta_update_channel_summary">测试版可能在你的设备上出现不可预知的错误</string>
 
     <!--  black list  -->
-    <string name="settings_advanced_dns_over_http_title">安全 DNS（DoH）</string>
-    <string name="settings_advanced_dns_over_http_summary">解决某些地区的 DNS 污染问题</string>
     <string name="settings_advanced_domain_fronting_title">域名前置</string>
     <string name="settings_advanced_domain_fronting_summary">绕过 SNI 封锁</string>
     <string name="settings_advanced_url_replace_title">url伪装,需关闭SNI</string>

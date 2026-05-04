@@ -16,8 +16,6 @@
   -->
 <resources>
     <!--  black list  -->
-    <string name="settings_advanced_dns_over_http_title">セキュアDNS (DoH)</string>
-    <string name="settings_advanced_dns_over_http_summary">特定地域のDNS汚染を修正</string>
     <string name="settings_advanced_domain_fronting_title">ドメインフロンティング</string>
     <string name="settings_advanced_domain_fronting_summary">SNI ブロックをバイパスします</string>
     <string name="settings_advanced_url_replace_title">URL マスカレード、SNI を OFF にする必要があります</string>
