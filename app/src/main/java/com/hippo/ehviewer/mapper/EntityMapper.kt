@@ -129,6 +129,8 @@ fun ArchiveLocalState.toDownloadInfoView(): DownloadInfo {
     info.title = archive.title
     info.thumb = archive.thumbnailUrl
     info.rating = archive.rating
+    // LRR API never populates simpleLanguage; column has no producer post-L1.
+    // See DownloadInfo.updateInfo for the canonical explanation.
     info.simpleLanguage = null
     info.simpleTags = archive.flatTags.toTypedArray()
     info.serverProfileId = serverProfileId
@@ -150,6 +152,8 @@ fun ArchiveLocalState.toHistoryInfoView(): HistoryInfo {
     info.title = archive.title
     info.thumb = archive.thumbnailUrl
     info.rating = archive.rating
+    // LRR API never populates simpleLanguage; column has no producer post-L1.
+    // See DownloadInfo.updateInfo for the canonical explanation.
     info.simpleLanguage = null
     info.simpleTags = archive.flatTags.toTypedArray()
     info.serverProfileId = serverProfileId
@@ -168,6 +172,8 @@ fun ArchiveLocalState.toLocalFavoriteInfoView(): LocalFavoriteInfo {
     info.title = archive.title
     info.thumb = archive.thumbnailUrl
     info.rating = archive.rating
+    // LRR API never populates simpleLanguage; column has no producer post-L1.
+    // See DownloadInfo.updateInfo for the canonical explanation.
     info.simpleLanguage = null
     info.simpleTags = archive.flatTags.toTypedArray()
     info.serverProfileId = serverProfileId
