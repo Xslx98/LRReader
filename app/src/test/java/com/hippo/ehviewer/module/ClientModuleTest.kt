@@ -14,16 +14,16 @@ class ClientModuleTest {
 
     private val MB = 1024L * 1024
 
-    // --- Tier 1: < 512 MB → 16 MB ---
+    // --- Tier 1: < 512 MB → 8 MB (lowered from 16 MB to relieve heap pressure) ---
 
     @Test
-    fun tieredCacheSize_256MB_returns16MB() {
-        assertEquals(16 * MB, ClientModule.tieredCacheSize(256 * MB))
+    fun tieredCacheSize_256MB_returns8MB() {
+        assertEquals(8 * MB, ClientModule.tieredCacheSize(256 * MB))
     }
 
     @Test
-    fun tieredCacheSize_511MB_returns16MB() {
-        assertEquals(16 * MB, ClientModule.tieredCacheSize(511 * MB))
+    fun tieredCacheSize_511MB_returns8MB() {
+        assertEquals(8 * MB, ClientModule.tieredCacheSize(511 * MB))
     }
 
     // --- Tier 2: 512 MB ..< 1 GB → 32 MB ---
@@ -61,5 +61,37 @@ class ClientModuleTest {
     @Test
     fun tieredCacheSize_8GB_returns128MB() {
         assertEquals(128 * MB, ClientModule.tieredCacheSize(8192 * MB))
+    }
+
+    // --- Disk cache tiers: 80 / 160 / 320 MB ---
+
+    @Test
+    fun tieredDiskCacheSize_256MB_returns80MB() {
+        assertEquals(80 * MB, ClientModule.tieredDiskCacheSize(256 * MB))
+    }
+
+    @Test
+    fun tieredDiskCacheSize_511MB_returns80MB() {
+        assertEquals(80 * MB, ClientModule.tieredDiskCacheSize(511 * MB))
+    }
+
+    @Test
+    fun tieredDiskCacheSize_512MB_returns160MB() {
+        assertEquals(160 * MB, ClientModule.tieredDiskCacheSize(512 * MB))
+    }
+
+    @Test
+    fun tieredDiskCacheSize_999MB_returns160MB() {
+        assertEquals(160 * MB, ClientModule.tieredDiskCacheSize(999 * MB))
+    }
+
+    @Test
+    fun tieredDiskCacheSize_1GB_returns320MB() {
+        assertEquals(320 * MB, ClientModule.tieredDiskCacheSize(1024 * MB))
+    }
+
+    @Test
+    fun tieredDiskCacheSize_8GB_returns320MB() {
+        assertEquals(320 * MB, ClientModule.tieredDiskCacheSize(8192 * MB))
     }
 }

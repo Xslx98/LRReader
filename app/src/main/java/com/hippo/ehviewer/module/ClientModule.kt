@@ -34,7 +34,7 @@ class ClientModule(
             memoryCacheMaxSize = memoryCacheMaxSize()
             hasDiskCache = true
             diskCacheDir = File(context.cacheDir, "thumb")
-            diskCacheMaxSize = 320 * 1024 * 1024 // 320MB
+            diskCacheMaxSize = diskCacheMaxSize()
             okHttpClient = networkModule.okHttpClient
             objectHelper = imageBitmapHelper
             debug = false
@@ -53,20 +53,33 @@ class ClientModule(
         private const val TIER_MID = 1024 * MB      // < 1GB heap
         private const val TIER_HIGH = 3072 * MB     // < 3GB heap
 
-        // Cache sizes per tier
-        private const val CACHE_LOW = 16 * MB       // low-end devices
+        // Memory cache sizes per tier — kept conservative on low-end heaps
+        // because the previous 16 MB ceiling on a 256 MB heap was 6.25% of
+        // total app memory, large enough to push the heap toward GC pressure
+        // when paired with adapter Bitmaps and Glide-style decode buffers.
+        private const val CACHE_LOW = 8 * MB        // low-end devices
         private const val CACHE_MID = 32 * MB       // mid-range
         private const val CACHE_HIGH = 80 * MB      // flagships
         private const val CACHE_ULTRA = 128 * MB    // high-memory flagships
 
+        // Disk cache sizes per tier — small devices typically also have
+        // limited internal storage, so cap thumbnail cache aggressively
+        // there. High-end devices keep the historical 320 MB ceiling.
+        private const val DISK_LOW = 80 * MB
+        private const val DISK_MID = 160 * MB
+        private const val DISK_HIGH = 320 * MB
+
         internal fun memoryCacheMaxSize(): Int =
             tieredCacheSize(Runtime.getRuntime().maxMemory()).toInt()
+
+        internal fun diskCacheMaxSize(): Int =
+            tieredDiskCacheSize(Runtime.getRuntime().maxMemory()).toInt()
 
         /**
          * Returns the image memory cache size for the given per-app heap limit.
          *
          * Tiers:
-         * - `maxMemoryBytes < 512MB` → 16 MB
+         * - `maxMemoryBytes < 512MB` → 8 MB
          * - `maxMemoryBytes < 1 GB`  → 32 MB
          * - `maxMemoryBytes < 3 GB`  → 80 MB
          * - `maxMemoryBytes >= 3 GB` → 128 MB
@@ -76,6 +89,23 @@ class ClientModule(
             maxMemoryBytes < TIER_MID -> CACHE_MID
             maxMemoryBytes < TIER_HIGH -> CACHE_HIGH
             else -> CACHE_ULTRA
+        }
+
+        /**
+         * Returns the image disk cache size for the given per-app heap limit.
+         *
+         * We use heap as a proxy for overall device capability — devices with
+         * tiny per-app heaps almost always have limited storage too.
+         *
+         * Tiers:
+         * - `maxMemoryBytes < 512MB` → 80 MB
+         * - `maxMemoryBytes < 1 GB`  → 160 MB
+         * - `maxMemoryBytes >= 1 GB` → 320 MB
+         */
+        internal fun tieredDiskCacheSize(maxMemoryBytes: Long): Long = when {
+            maxMemoryBytes < TIER_LOW -> DISK_LOW
+            maxMemoryBytes < TIER_MID -> DISK_MID
+            else -> DISK_HIGH
         }
     }
 }
