@@ -3,6 +3,8 @@ package com.lanraragi.reader.client.api
 import com.lanraragi.reader.client.api.*
 import com.lanraragi.reader.client.api.data.*
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -124,11 +126,14 @@ class LRRPluginApiTest {
     // ── runPlugin ──────────────────────────────────────────────────
 
     @Test
-    fun runPlugin_success() = runTest {
+    fun runPlugin_success_objectData() = runTest {
+        // Per OpenAPI v0.9.6 spec, the success response shape is
+        // { operation, type, success, error, data: object }
         server.enqueue(MockResponse().setBody("""{
+            "operation":"use_plugin",
+            "type":"metadata",
             "success":1,
-            "message":"Tags updated successfully",
-            "data":"artist:test, date_added:123"
+            "data":{"new_tags":"pages:45"}
         }"""))
 
         val result = LRRPluginApi.runPlugin(
@@ -137,9 +142,13 @@ class LRRPluginApiTest {
             archiveId = "abc123",
             arg = "extra_arg"
         )
+        assertEquals("use_plugin", result.operation)
+        assertEquals("metadata", result.type)
         assertEquals(1, result.success)
-        assertEquals("Tags updated successfully", result.message)
-        assertEquals("artist:test, date_added:123", result.data)
+        assertNull(result.error)
+        // data is a JsonElement object — pluck the plugin-specific field
+        val dataObj = result.data!!.jsonObject
+        assertEquals("pages:45", dataObj["new_tags"]!!.jsonPrimitive.content)
 
         val req = server.takeRequest()
         assertEquals("POST", req.method)
@@ -150,8 +159,27 @@ class LRRPluginApiTest {
     }
 
     @Test
+    fun runPlugin_failure_nullDataAndErrorString() = runTest {
+        server.enqueue(MockResponse().setBody("""{
+            "operation":"use_plugin",
+            "type":null,
+            "success":0,
+            "error":"Plugin crashed",
+            "data":null
+        }"""))
+
+        val result = LRRPluginApi.runPlugin(client, baseUrl, namespace = "broken")
+        assertEquals(0, result.success)
+        assertEquals("Plugin crashed", result.error)
+        assertNull(result.type)
+        assertNull(result.data)
+    }
+
+    @Test
     fun runPlugin_withoutOptionalParams() = runTest {
-        server.enqueue(MockResponse().setBody("""{"success":1,"message":"OK","data":""}"""))
+        server.enqueue(MockResponse().setBody("""{
+            "operation":"use_plugin","success":1,"data":{}
+        }"""))
 
         LRRPluginApi.runPlugin(client, baseUrl, namespace = "chaika")
 
@@ -198,8 +226,10 @@ class LRRPluginApiTest {
     @Test
     fun pluginRunResult_defaults() {
         val result = LRRPluginApi.PluginRunResult()
+        assertEquals("", result.operation)
+        assertNull(result.type)
         assertEquals(0, result.success)
-        assertEquals("", result.message)
-        assertEquals("", result.data)
+        assertNull(result.error)
+        assertNull(result.data)
     }
 }
