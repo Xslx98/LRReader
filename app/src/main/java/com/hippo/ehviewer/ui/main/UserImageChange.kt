@@ -6,7 +6,6 @@ import android.app.Activity
 import android.content.ContentUris
 import android.content.DialogInterface
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
@@ -27,6 +26,7 @@ import com.hippo.content.FileProvider
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.callBack.ImageChangeCallBack
 import com.hippo.ehviewer.settings.AppearanceSettings
+import com.hippo.ehviewer.util.ImageDecodeUtils
 import com.hippo.ehviewer.callBack.PermissionCallBack
 import com.hippo.ehviewer.ui.MainActivity
 import com.hippo.util.FileUtils
@@ -262,7 +262,7 @@ class UserImageChange(
         if (dialogType == CHANGE_BACKGROUND) {
             imageChangeCallBack.backgroundSourceChange(persistentFile)
         } else if (avatar != null) {
-            avatar.setImageBitmap(BitmapFactory.decodeFile(persistentFile.absolutePath))
+            avatar.setImageBitmap(ImageDecodeUtils.decodeSampledBitmap(persistentFile.absolutePath))
         }
     }
 
@@ -292,7 +292,7 @@ class UserImageChange(
         if (dialogType == CHANGE_BACKGROUND) {
             imageChangeCallBack.backgroundSourceChange(File(output.path))
         } else {
-            avatar?.setImageBitmap(BitmapFactory.decodeFile(output.path))
+            avatar?.setImageBitmap(ImageDecodeUtils.decodeSampledBitmap(output.path))
         }
     }
 
@@ -361,7 +361,7 @@ class UserImageChange(
         if (dialogType == CHANGE_BACKGROUND) {
             imageChangeCallBack.backgroundSourceChange(File(newImagePath))
         } else {
-            avatar?.setImageBitmap(BitmapFactory.decodeFile(toFile.path))
+            avatar?.setImageBitmap(ImageDecodeUtils.decodeSampledBitmap(toFile.path))
         }
     }
 
