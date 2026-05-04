@@ -35,7 +35,7 @@ object LRRMiscApi {
         val urlBuilder = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/download_url")
             .addQueryParameter("url", url)
-        if (!catid.isNullOrEmpty()) urlBuilder.addQueryParameter("catid", catid)
+        if (!catid.isNullOrEmpty()) urlBuilder.addQueryParameter("catid", requireValidCategoryId(catid))
 
         val request = Request.Builder()
             .url(urlBuilder.build())

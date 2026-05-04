@@ -104,7 +104,7 @@ object LRRPluginApi {
         val urlBuilder = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/plugins/use")
             .addQueryParameter("plugin", namespace)
-        if (!archiveId.isNullOrEmpty()) urlBuilder.addQueryParameter("id", archiveId)
+        if (!archiveId.isNullOrEmpty()) urlBuilder.addQueryParameter("id", requireValidArcid(archiveId))
         if (!arg.isNullOrEmpty()) urlBuilder.addQueryParameter("arg", arg)
 
         val request = Request.Builder()

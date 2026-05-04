@@ -56,6 +56,48 @@ class LRRMissingFieldException(field: String) : IOException("Missing field: $fie
 class LRRPlaintextRefusedException(message: String) : IOException(message)
 
 /**
+ * Thrown by client-side validators when an API method is called with an
+ * argument that the OpenAPI spec would reject (wrong length, wrong format).
+ * Catching this client-side prevents the malformed request from leaving the
+ * device — strictly cheaper and more debuggable than waiting for the server
+ * to 422 it.
+ */
+class LRRClientValidationException(message: String) : IllegalArgumentException(message)
+
+/**
+ * Validate that [arcid] is a 40-character lowercase SHA-1 hex string,
+ * matching the `id` path parameter constraint on every `archives/{id}/...`
+ * endpoint in the OpenAPI spec (`minLength: 40, maxLength: 40`).
+ *
+ * Returns the input unchanged so call sites can chain inline:
+ * `addPathSegment(requireValidArcid(arcid))`.
+ */
+internal fun requireValidArcid(arcid: String): String {
+    if (arcid.length != 40 || !arcid.all { it.isDigit() || it in 'a'..'f' || it in 'A'..'F' }) {
+        throw LRRClientValidationException(
+            "Invalid archive id (expected 40-char SHA-1 hex): '$arcid' (len=${arcid.length})"
+        )
+    }
+    return arcid
+}
+
+/**
+ * Validate that [categoryId] is exactly 14 characters long, matching the
+ * spec's `id` constraint on category endpoints (`minLength: 14, maxLength: 14`).
+ * LANraragi category IDs are formatted `SET_xxxxxxxxxx`.
+ *
+ * Returns the input unchanged so call sites can chain inline.
+ */
+internal fun requireValidCategoryId(categoryId: String): String {
+    if (categoryId.length != 14) {
+        throw LRRClientValidationException(
+            "Invalid category id (expected 14 chars): '$categoryId' (len=${categoryId.length})"
+        )
+    }
+    return categoryId
+}
+
+/**
  * Ensure the HTTP response is successful (2xx) and carries a JSON body.
  * Throws [LRRHttpException] on non-2xx status, or [IOException] if
  * the server returned a non-JSON content type (e.g., an HTML error page

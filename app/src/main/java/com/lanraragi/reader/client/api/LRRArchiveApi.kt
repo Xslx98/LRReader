@@ -43,7 +43,7 @@ object LRRArchiveApi {
         withContext(Dispatchers.IO) {
             val url = parseBaseUrl(baseUrl).newBuilder()
                 .addPathSegments("api/archives")
-                .addPathSegment(arcid)
+                .addPathSegment(requireValidArcid(arcid))
                 .addPathSegment("metadata")
                 .build()
             val request = Request.Builder()
@@ -72,7 +72,7 @@ object LRRArchiveApi {
     ) = withContext(Dispatchers.IO) {
         val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
-            .addPathSegment(arcid)
+            .addPathSegment(requireValidArcid(arcid))
             .addPathSegment("metadata")
             .addQueryParameter("tags", tags)
             .build()
@@ -110,7 +110,7 @@ object LRRArchiveApi {
     ): Unit = withContext(Dispatchers.IO) {
         val urlBuilder = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
-            .addPathSegment(arcid)
+            .addPathSegment(requireValidArcid(arcid))
             .addPathSegment("metadata")
         if (title != null) urlBuilder.addQueryParameter("title", title)
         if (tags != null) urlBuilder.addQueryParameter("tags", tags)
@@ -138,7 +138,7 @@ object LRRArchiveApi {
     ): Array<String> = withContext(Dispatchers.IO) {
         val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
-            .addPathSegment(arcid)
+            .addPathSegment(requireValidArcid(arcid))
             .addPathSegment("files")
             .build()
         val request = Request.Builder()
@@ -170,7 +170,7 @@ object LRRArchiveApi {
     ): String = withContext(Dispatchers.IO) {
         val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
-            .addPathSegment(arcid)
+            .addPathSegment(requireValidArcid(arcid))
             .build()
         val request = Request.Builder()
             .url(url)
@@ -248,7 +248,7 @@ object LRRArchiveApi {
     fun getPageUrl(baseUrl: String, arcid: String, pagePath: String): String {
         return parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
-            .addPathSegment(arcid)
+            .addPathSegment(requireValidArcid(arcid))
             .addPathSegment("page")
             .addQueryParameter("path", pagePath)
             .build()
@@ -266,7 +266,7 @@ object LRRArchiveApi {
     ) = withContext(Dispatchers.IO) {
         val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
-            .addPathSegment(arcid)
+            .addPathSegment(requireValidArcid(arcid))
             .addPathSegment("isnew")
             .build()
         val request = Request.Builder()
@@ -290,7 +290,7 @@ object LRRArchiveApi {
     ) = withContext(Dispatchers.IO) {
         val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
-            .addPathSegment(arcid)
+            .addPathSegment(requireValidArcid(arcid))
             .addPathSegment("progress")
             .addPathSegment(page.toString())
             .build()

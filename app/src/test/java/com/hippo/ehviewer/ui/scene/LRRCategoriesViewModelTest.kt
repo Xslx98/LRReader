@@ -127,7 +127,7 @@ class LRRCategoriesViewModelTest {
     @Test
     fun loadCategories_success_populatesStateFlow() {
         server.enqueue(MockResponse().setBody("""[
-            {"id":"c1","name":"Favorites","archives":["a1"],"pinned":"1","search":""},
+            {"id":"SET_aaaaaaaaaa","name":"Favorites","archives":["a1"],"pinned":"1","search":""},
             {"id":"c2","name":"Dynamic","archives":[],"pinned":"0","search":"artist:foo"}
         ]"""))
 
@@ -142,7 +142,7 @@ class LRRCategoriesViewModelTest {
     @Test
     fun loadCategories_pinnedSortFirst() {
         server.enqueue(MockResponse().setBody("""[
-            {"id":"c1","name":"Unpinned","archives":[],"pinned":"0","search":""},
+            {"id":"SET_aaaaaaaaaa","name":"Unpinned","archives":[],"pinned":"0","search":""},
             {"id":"c2","name":"Pinned","archives":[],"pinned":"1","search":""}
         ]"""))
 
@@ -158,7 +158,7 @@ class LRRCategoriesViewModelTest {
     @Test
     fun loadCategories_skipsNamelessEntries() {
         server.enqueue(MockResponse().setBody("""[
-            {"id":"c1","name":"Valid","archives":[],"pinned":"0","search":""},
+            {"id":"SET_aaaaaaaaaa","name":"Valid","archives":[],"pinned":"0","search":""},
             {"id":"c2","name":"","archives":[],"pinned":"0","search":""},
             {"id":"c3","name":null,"archives":[],"pinned":"0","search":""}
         ]"""))
@@ -242,14 +242,14 @@ class LRRCategoriesViewModelTest {
     fun editCategory_success_emitsShowSuccessAndReloads() {
         server.enqueue(MockResponse().setBody("""{"success":1}"""))
         server.enqueue(MockResponse().setBody("""[
-            {"id":"c1","name":"Edited","archives":[],"pinned":"1","search":""}
+            {"id":"SET_aaaaaaaaaa","name":"Edited","archives":[],"pinned":"1","search":""}
         ]"""))
 
         val vm = LRRCategoriesViewModel()
         val events = CopyOnWriteArrayList<LRRCategoriesViewModel.CategoriesUiEvent>()
         eventScope.launch { vm.uiEvent.collect { events.add(it) } }
 
-        vm.editCategory("c1", "Edited", null, true)
+        vm.editCategory("SET_aaaaaaaaaa", "Edited", null, true)
 
         awaitCondition { vm.categories.value.isNotEmpty() }
         assertTrue("Should emit ShowSuccess",
@@ -268,7 +268,7 @@ class LRRCategoriesViewModelTest {
         val events = CopyOnWriteArrayList<LRRCategoriesViewModel.CategoriesUiEvent>()
         eventScope.launch { vm.uiEvent.collect { events.add(it) } }
 
-        vm.deleteCategory("c1")
+        vm.deleteCategory("SET_aaaaaaaaaa")
 
         awaitCondition { events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess } }
         assertTrue("Should emit ShowSuccess",

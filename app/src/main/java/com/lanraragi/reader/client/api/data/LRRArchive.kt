@@ -82,7 +82,7 @@ class LRRArchive() : Parcelable {
     fun getThumbnailUrl(baseUrl: String): String =
         com.lanraragi.reader.client.api.parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
-            .addPathSegment(arcid)
+            .addPathSegment(com.lanraragi.reader.client.api.requireValidArcid(arcid))
             .addPathSegment("thumbnail")
             .build()
             .toString()
