@@ -240,4 +240,9 @@
     <!-- Destructive action accent (e.g. archive delete confirm button text). -->
     <color name="destructive_action">#F44336</color>
 
+    <!-- Server list — active row tint, inactive labels. Overridden in values-night. -->
+    <color name="server_active_row_bg">#1A4CAF50</color>
+    <color name="server_inactive_name">#999999</color>
+    <color name="server_inactive_url">#BBBBBB</color>
+
 </resources>

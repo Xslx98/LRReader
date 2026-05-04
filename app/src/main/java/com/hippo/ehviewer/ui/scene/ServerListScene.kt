@@ -2,6 +2,7 @@ package com.hippo.ehviewer.ui.scene
 
 import android.graphics.Color
 import android.os.Bundle
+import androidx.core.content.ContextCompat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -283,17 +284,25 @@ class ServerListScene : BaseScene() {
             holder.name.text = profile.name
             holder.url.text = profile.url
 
-            // Highlight the currently active/connected server
+            // Highlight the currently active/connected server. All four colors come
+            // from resources so values-night/colors.xml can override them for dark
+            // mode (the previous Color.parseColor("#…") literals stayed light-mode
+            // even when the rest of the UI flipped).
+            val ctx = holder.itemView.context
             if (profile.isActive) {
                 holder.activeIcon.visibility = View.VISIBLE
-                holder.name.setTextColor(
-                    holder.itemView.context.resources.getColor(R.color.colorPrimary)
+                holder.name.setTextColor(ContextCompat.getColor(ctx, R.color.colorPrimary))
+                holder.itemView.setBackgroundColor(
+                    ContextCompat.getColor(ctx, R.color.server_active_row_bg)
                 )
-                holder.itemView.setBackgroundColor(Color.parseColor("#1A4CAF50"))
             } else {
                 holder.activeIcon.visibility = View.INVISIBLE
-                holder.name.setTextColor(Color.parseColor("#999999"))
-                holder.url.setTextColor(Color.parseColor("#BBBBBB"))
+                holder.name.setTextColor(
+                    ContextCompat.getColor(ctx, R.color.server_inactive_name)
+                )
+                holder.url.setTextColor(
+                    ContextCompat.getColor(ctx, R.color.server_inactive_url)
+                )
                 holder.itemView.setBackgroundColor(Color.TRANSPARENT)
             }
 
