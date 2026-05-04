@@ -112,21 +112,21 @@ class EhApplication : RecordingApplication() {
         super.onCreate()
 
         // Wrap each main-thread initialiser in a Trace section so cold-start
-        // profiles in Android Studio (or perfetto) show exactly which step
-        // dominates EhApplication.onCreate. Tracing is built into the OS and
-        // free at runtime (a short string lookup); we still gate writes on
-        // BuildConfig.DEBUG to keep release-build trace output empty.
-        traceDebug("EhApp.GetText.init") { GetText.initialize(this) }
-        traceDebug("EhApp.StatusCodeException.init") {
+        // profiles in Android Studio Profiler / perfetto show exactly which
+        // step dominates EhApplication.onCreate. Tracing is built into the OS
+        // and is essentially free at runtime — kept enabled for release too
+        // so production cold-start traces are not a black box.
+        trace("EhApp.GetText.init") { GetText.initialize(this) }
+        trace("EhApp.StatusCodeException.init") {
             com.hippo.network.StatusCodeException.initialize(this)
         }
-        traceDebug("EhApp.Settings.init") { Settings.initialize(this) }
-        traceDebug("EhApp.LRRAuthManager.init") { LRRAuthManager.initialize(this) }
-        traceDebug("EhApp.ReadableTime.init") { ReadableTime.initialize(this) }
-        traceDebug("EhApp.AppConfig.init") { AppConfig.initialize(this) }
+        trace("EhApp.Settings.init") { Settings.initialize(this) }
+        trace("EhApp.LRRAuthManager.init") { LRRAuthManager.initialize(this) }
+        trace("EhApp.ReadableTime.init") { ReadableTime.initialize(this) }
+        trace("EhApp.AppConfig.init") { AppConfig.initialize(this) }
         // Skip SpiderDen disk cache in LRR mode — it's EH-specific and wastes 40-640MB
         // SpiderDen.initialize(this);
-        traceDebug("EhApp.EhDB.init") { EhDB.initialize(this) }
+        trace("EhApp.EhDB.init") { EhDB.initialize(this) }
 
         // Load active server profile into LRRAuthManager asynchronously, and verify
         // every profile has its API key still encrypted in storage. If any profile
@@ -173,10 +173,10 @@ class EhApplication : RecordingApplication() {
             }
         }
 
-        traceDebug("EhApp.LRRClientProvider.init") { LRRClientProvider.init(this) }
+        trace("EhApp.LRRClientProvider.init") { LRRClientProvider.init(this) }
 
         // Initialize ServiceRegistry (must be after Settings/EhDB)
-        traceDebug("EhApp.ServiceRegistry.init") { ServiceRegistry.initialize(this) }
+        trace("EhApp.ServiceRegistry.init") { ServiceRegistry.initialize(this) }
         // Eagerly start network monitoring so isAvailable() is ready before first API call
         ServiceRegistry.networkModule.networkMonitor
 
@@ -417,20 +417,22 @@ class EhApplication : RecordingApplication() {
 
     /**
      * Wrap [block] in a [Trace] section so cold-start profiles attribute time
-     * to a named slice. Sections are only emitted under `BuildConfig.DEBUG`
-     * to keep release-build trace output empty (Trace.beginSection itself is
-     * cheap, but the string allocation is wasted work for users).
+     * to a named slice.
+     *
+     * Trace is enabled in release as well: `Trace.beginSection` is a thin
+     * native call (~microseconds) and the section name is a compile-time
+     * `const String`, so no per-call allocation. The win is that
+     * **production cold-start profiles in Android Studio Profiler / perfetto
+     * also see the named slices**, which is what the basline P2 C6 audit
+     * recommendation called for. Restricting to `BuildConfig.DEBUG` would
+     * have left release builds as a black box for boot-time analysis.
      */
-    private inline fun traceDebug(name: String, block: () -> Unit) {
-        if (BuildConfig.DEBUG) {
-            Trace.beginSection(name)
-            try {
-                block()
-            } finally {
-                Trace.endSection()
-            }
-        } else {
+    private inline fun trace(name: String, block: () -> Unit) {
+        Trace.beginSection(name)
+        try {
             block()
+        } finally {
+            Trace.endSection()
         }
     }
 
