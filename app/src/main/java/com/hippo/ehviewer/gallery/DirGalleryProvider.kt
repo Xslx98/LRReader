@@ -157,13 +157,30 @@ class DirGalleryProvider : GalleryProvider2 {
     override fun putScrollFraction(fraction: Float) {
         val targetArcid = arcId ?: return
         val clamped = fraction.coerceIn(0f, 1f)
-        // Suppress fraction = 0 writes during the initial restore window:
-        // the very first onUpdateCurrentIndex(0) callback fires before
-        // [start]'s async metadata + DB read has consumed the stored
-        // value, and without this guard the cold-open fraction of 0
-        // overwrites the user's saved progress. Non-zero writes always
-        // pass (the user has actually scrolled).
-        if (clamped == 0f && !initialRestoreCompleted.get()) {
+        // NEVER persist fraction == 0 in long-strip mode. Reasons:
+        //
+        // - Cold-open initial onUpdateCurrentIndex(INVALID → 0) fires
+        //   before the async restore can apply the stored value, and
+        //   currentScrollFraction at that point is 0. Without this guard
+        //   the saved fraction is overwritten before we ever read it.
+        //
+        // - GalleryActivity.onPause unconditionally writes
+        //   currentScrollFraction even when no rendering has happened yet
+        //   (e.g. user opens then immediately backs out, or the restore
+        //   async failed for any reason — file enum error, KeyStore
+        //   failure, OOM). currentScrollFraction is 0 in those cases too,
+        //   so an unconditional write would clobber the previous value.
+        //
+        // - The user-visible cost of never saving 0 is minor: if they
+        //   genuinely scroll to the top of a page and exit, the next
+        //   open restores to whatever non-zero value was saved last
+        //   (often the same scroll session's earlier position). They
+        //   scroll a few pixels up to confirm "top". The cost of saving
+        //   0 is data loss on every restore-side failure path.
+        //
+        // Long-strip "I'm at the top of page N" is not a meaningful save
+        // state — it's the indistinguishable-from-cold-open state.
+        if (clamped == 0f) {
             return
         }
         ServiceRegistry.coroutineModule.ioScope.launch {
@@ -329,60 +346,59 @@ class DirGalleryProvider : GalleryProvider2 {
         // both in a single launched coroutine so workers don't start
         // looking at fileList before it's published.
         scope.launch {
-            val files = try {
-                runInterruptible(Dispatchers.IO) { DirImageFiles.listSorted(dir) }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.w(TAG, "listFiles failed: ${e.message}")
-                null
-            }
-
-            if (files == null) {
-                sizeValue = STATE_ERROR
-                errorMessage = GetText.getString(R.string.error_not_folder_path)
-                notifyDataChanged()
-                Log.i(TAG, "ImageDecoder end with error")
-                return@launch
-            }
-
-            fileList.lazySet(files)
-            sizeValue = files.size
-            notifyDataChanged()
-            // Signal restore coroutine that the data-change notification
-            // is now in the GLRoot's idle queue. The restore coroutine
-            // tacks on a render-thread barrier that fires only AFTER
-            // onDataChanged has run, so the follow-up
-            // setCurrentPageScrollFraction can never land in the same
-            // frame as the resetParameters() it would race with. Without
-            // this, the layout-manager wipe of mPendingStartFraction /
-            // mKeepTopPageIndex / mKeepTop produced the visible
-            // "snap to fraction → snap back to top" double-flicker on
-            // downloaded long-strip archives.
-            notifyDataChangedEnqueued.complete(Unit)
-
-            // Cross-session decoded slot (filled by the detail-page
-            // warmup or the open-helper warm trigger). On a hit we
-            // bypass the per-page decode for the start page and the
-            // user sees the page on the very next frame.
-            // awaitInflightWarmMs bridges the openHelper-trigger
-            // race: when warm and provider start race in parallel
-            // (the openHelper trigger fires ~70-150ms before this
-            // consume call but warm needs ~130ms to complete), a
-            // brief wait turns the otherwise-MISS into a HIT.
-            val targetArcid = arcId
-            if (targetArcid != null) {
-                val warmIndex = startPageValue.coerceIn(0, files.size - 1)
-                val warmed = ReaderPageCache.consumeDecodedPage(
-                    targetArcid, warmIndex, awaitInflightWarmMs = WARM_AWAIT_MS
-                )
-                if (warmed != null) {
-                    Log.i(TAG, "[PROGRESS] decoded slot HIT for page=$warmIndex")
-                    notifyPageSucceed(warmIndex, warmed)
+            try {
+                val files = try {
+                    runInterruptible(Dispatchers.IO) { DirImageFiles.listSorted(dir) }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.w(TAG, "listFiles failed: ${e.message}")
+                    null
                 }
-            }
 
-            startDecodeWorkers(scope, files.size)
+                if (files == null) {
+                    sizeValue = STATE_ERROR
+                    errorMessage = GetText.getString(R.string.error_not_folder_path)
+                    notifyDataChanged()
+                    Log.i(TAG, "ImageDecoder end with error")
+                    return@launch
+                }
+
+                fileList.lazySet(files)
+                sizeValue = files.size
+                notifyDataChanged()
+
+                // Cross-session decoded slot (filled by the detail-page
+                // warmup or the open-helper warm trigger). On a hit we
+                // bypass the per-page decode for the start page and the
+                // user sees the page on the very next frame.
+                // awaitInflightWarmMs bridges the openHelper-trigger
+                // race: when warm and provider start race in parallel
+                // (the openHelper trigger fires ~70-150ms before this
+                // consume call but warm needs ~130ms to complete), a
+                // brief wait turns the otherwise-MISS into a HIT.
+                val targetArcid = arcId
+                if (targetArcid != null) {
+                    val warmIndex = startPageValue.coerceIn(0, files.size - 1)
+                    val warmed = ReaderPageCache.consumeDecodedPage(
+                        targetArcid, warmIndex, awaitInflightWarmMs = WARM_AWAIT_MS
+                    )
+                    if (warmed != null) {
+                        Log.i(TAG, "[PROGRESS] decoded slot HIT for page=$warmIndex")
+                        notifyPageSucceed(warmIndex, warmed)
+                    }
+                }
+
+                startDecodeWorkers(scope, files.size)
+            } finally {
+                // ALWAYS release the restore coroutine, even on the error
+                // / cancellation path. Otherwise restore.await() hangs
+                // forever, the GL barrier never fires, and any saved
+                // scroll fraction never gets applied — which on next
+                // exit is then clobbered by the unconditional onPause
+                // putScrollFraction(0).
+                notifyDataChangedEnqueued.complete(Unit)
+            }
         }
     }
 
