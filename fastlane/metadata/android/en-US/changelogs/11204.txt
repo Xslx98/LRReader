@@ -1,0 +1,4 @@
+- The 3-second cooldown on the Delete button is now optional — toggle "Delete confirmation countdown" in Settings → Privacy.
+- After deleting an archive, the tile vanishes from the list with a smooth animation. No more manual pull-to-refresh, no more tapping back into a now-404 detail page.
+- Long-strip scroll position now persists for downloaded archives. User-supplied avatar/background images are sample-decoded to prevent OOM crashes.
+- API hardening + stability improvements.
