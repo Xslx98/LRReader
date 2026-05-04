@@ -19,6 +19,7 @@ package com.hippo.ehviewer.download
 import android.content.Context
 import android.os.Looper
 import android.util.Log
+import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.DownloadLabel
@@ -123,6 +124,7 @@ class DownloadManager(
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Background rating sync failed", e)
+                Analytics.recordException(e)
             }
         }
     }
