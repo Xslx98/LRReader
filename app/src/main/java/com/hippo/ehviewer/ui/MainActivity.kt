@@ -23,7 +23,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
 import android.net.ConnectivityManager
 import android.os.Bundle
@@ -57,6 +56,7 @@ import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.callBack.ImageChangeCallBack
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.data.ListUrlBuilder
+import com.hippo.ehviewer.util.ImageDecodeUtils
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.ui.main.UserImageChange
 import com.hippo.ehviewer.ui.scene.AnalyticsScene
@@ -641,21 +641,8 @@ class MainActivity : StageActivity(),
         }
     }
 
-    /**
-     * Decode a file with inSampleSize to avoid OOM on large images.
-     */
-    private fun decodeSampledBitmap(path: String, maxDim: Int = MAX_IMAGE_DIMENSION): Bitmap? {
-        val options = BitmapFactory.Options()
-        options.inJustDecodeBounds = true
-        BitmapFactory.decodeFile(path, options)
-        var sampleSize = 1
-        while (options.outWidth / sampleSize > maxDim || options.outHeight / sampleSize > maxDim) {
-            sampleSize *= 2
-        }
-        options.inJustDecodeBounds = false
-        options.inSampleSize = sampleSize
-        return BitmapFactory.decodeFile(path, options)
-    }
+    private fun decodeSampledBitmap(path: String, maxDim: Int = MAX_IMAGE_DIMENSION): Bitmap? =
+        ImageDecodeUtils.decodeSampledBitmap(path, maxDim)
 
     fun updateProfile() {
         mAvatar?.let { avatar ->
