@@ -61,8 +61,13 @@ class LRRArchivePagingSourceTest {
 
     // ---- JSON fixtures ----
 
-    private fun archiveJson(id: String, title: String) =
-        """{"arcid":"$id","title":"$title","tags":"","isnew":"false","extension":"zip","filename":"$id.zip","pagecount":10,"progress":0,"lastreadtime":0}"""
+    private fun archiveJson(id: String, title: String): String {
+        // OpenAPI v0.9.6 requires arcid to be a 40-char SHA-1 hex; pad short
+        // fixture ids with '0' so requireValidArcid (used by LRRArchive helpers
+        // like getThumbnailUrl) doesn't reject them mid-test.
+        val arcid = id.padEnd(40, '0').take(40)
+        return """{"arcid":"$arcid","title":"$title","tags":"","isnew":"false","extension":"zip","filename":"$arcid.zip","pagecount":10,"progress":0,"lastreadtime":0}"""
+    }
 
     private fun searchResultJson(archives: List<Pair<String, String>>, total: Int): String {
         val dataJson = archives.joinToString(",") { (id, title) -> archiveJson(id, title) }
@@ -187,7 +192,7 @@ class LRRArchivePagingSourceTest {
             MockResponse().setBody(searchResultJson(listOf("a1" to "A"), 1))
         )
 
-        val source = createPagingSource(filter = "my search", category = "cat123")
+        val source = createPagingSource(filter = "my search", category = "SET_aaaaaaaaaa")
         source.load(
             PagingSource.LoadParams.Refresh(key = null, loadSize = 100, placeholdersEnabled = false)
         )
@@ -195,7 +200,7 @@ class LRRArchivePagingSourceTest {
         val request = server.takeRequest()
         val path = request.path!!
         assertTrue("Path should contain filter param", path.contains("filter="))
-        assertTrue("Path should contain category=cat123", path.contains("category=cat123"))
+        assertTrue("Path should contain category=SET_aaaaaaaaaa", path.contains("category=SET_aaaaaaaaaa"))
     }
 
     @Test
