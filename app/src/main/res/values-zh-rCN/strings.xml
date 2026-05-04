@@ -1005,6 +1005,7 @@
     <string name="lrr_delete_countdown">删除（%d秒）</string>
     <string name="lrr_delete_success">「%s」已删除</string>
     <string name="lrr_delete_failed">删除失败: %s</string>
+    <string name="lrr_unknown_title">未知</string>
 
 
     <!-- Auto-generated missing translations -->

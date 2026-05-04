@@ -944,6 +944,7 @@
     <string name="lrr_delete_confirm_title">削除の確認</string>
     <string name="lrr_delete_countdown">削除 (%d秒)</string>
     <string name="lrr_delete_failed">削除失敗: %s</string>
+    <string name="lrr_unknown_title">不明</string>
     <string name="lrr_delete_server">サーバーを削除</string>
     <string name="lrr_delete_server_confirm">サーバー\"%s\"を削除しますか？</string>
     <string name="lrr_delete_success">\"%s\" を削除しました</string>

@@ -999,6 +999,7 @@
     <string name="lrr_delete_confirm_title">Delete Archive</string>
     <string name="lrr_delete_countdown">Delete (%ds)</string>
     <string name="lrr_delete_failed">ลบล้มเหลว: %s</string>
+    <string name="lrr_unknown_title">ไม่ทราบ</string>
     <string name="lrr_delete_server">ลบเซิร์ฟเวอร์</string>
     <string name="lrr_delete_server_confirm">ลบเซิร์ฟเวอร์ \"%s\" หรือไม่?</string>
     <string name="lrr_delete_success">\"%s\" ถูกลบแล้ว</string>

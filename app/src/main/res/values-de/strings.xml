@@ -936,6 +936,7 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_delete_confirm_title">Löschung bestätigen</string>
     <string name="lrr_delete_countdown">Löschen (%ds)</string>
     <string name="lrr_delete_failed">Löschen fehlgeschlagen: %s</string>
+    <string name="lrr_unknown_title">Unbekannt</string>
     <string name="lrr_delete_server">Server löschen</string>
     <string name="lrr_delete_server_confirm">Server \"%s\" löschen?</string>
     <string name="lrr_delete_success">\"%s\" gelöscht</string>

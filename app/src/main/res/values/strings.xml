@@ -1128,6 +1128,7 @@
     <string name="lrr_delete_countdown">Delete (%ds)</string>
     <string name="lrr_delete_success">\"%s\" deleted</string>
     <string name="lrr_delete_failed">Delete failed: %s</string>
+    <string name="lrr_unknown_title">Unknown</string>
     <string name="lrr_loading_categories">Loading categories…</string>
     <string name="lrr_no_static_categories">No static categories available</string>
     <string name="lrr_add_to_category">Add to category</string>

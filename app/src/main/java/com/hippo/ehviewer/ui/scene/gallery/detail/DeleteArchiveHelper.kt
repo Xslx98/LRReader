@@ -1,12 +1,12 @@
 package com.hippo.ehviewer.ui.scene.gallery.detail
 
 import android.app.Activity
-import android.graphics.Color
 import android.os.CountDownTimer
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.event.AppEventBus
@@ -40,7 +40,7 @@ object DeleteArchiveHelper {
     fun show(activity: Activity?, archive: Archive?, callback: Callback?) {
         if (activity == null || archive == null) return
 
-        val title = archive.title.ifEmpty { "Unknown" }
+        val title = archive.title.ifEmpty { activity.getString(R.string.lrr_unknown_title) }
         val arcid = archive.arcid
 
         val dialog = AlertDialog.Builder(activity)
@@ -59,7 +59,9 @@ object DeleteArchiveHelper {
 
         dialog.setOnShowListener {
             val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-            positiveButton.setTextColor(Color.parseColor("#F44336"))
+            positiveButton.setTextColor(
+                ContextCompat.getColor(activity, R.color.destructive_action)
+            )
 
             if (PrivacySettings.getDeleteConfirmCountdown()) {
                 positiveButton.isEnabled = false

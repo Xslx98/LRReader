@@ -237,4 +237,7 @@
     <color name="light_blue_50">#FFE1F5FE</color>
     <color name="light_blue_200">#FF81D4FA</color>
 
+    <!-- Destructive action accent (e.g. archive delete confirm button text). -->
+    <color name="destructive_action">#F44336</color>
+
 </resources>
