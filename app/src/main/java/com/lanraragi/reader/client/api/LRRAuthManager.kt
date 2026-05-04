@@ -118,10 +118,15 @@ object LRRAuthManager {
             )
         } catch (e: GeneralSecurityException) {
             Log.e(TAG, "KeyStore unavailable — credentials will not persist this session", e)
-            // Wipe any stale data from a prior encrypted store so it cannot be read as plaintext.
-            context.applicationContext
-                .getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-                .edit().clear().apply()
+            // DO NOT wipe the encrypted SP file here. The values are AES-GCM
+            // ciphertext (base64-encoded in the underlying xml) and have no
+            // plaintext leakage risk. Wiping makes a transient KeyStore
+            // failure (system update, biometric re-enroll, etc.) permanently
+            // destroy the user's API keys; preserving the blobs lets them
+            // become readable again once KeyStore recovers on a later launch.
+            // If the failure is permanent (e.g., MasterKey regenerated and
+            // the old key is gone), [markReauthIfProfilesUnprotected] will
+            // detect missing-per-profile entries on the next session.
             sPrefs = null
             // Only prompt reauth if the user had previously configured a server
             sNeedsReauthentication = plainPrefs.getBoolean(KEY_WAS_CONFIGURED, false)
