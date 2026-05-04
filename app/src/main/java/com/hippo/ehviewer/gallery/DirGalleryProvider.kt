@@ -34,6 +34,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -42,6 +43,7 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.PriorityBlockingQueue
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.max
@@ -83,6 +85,23 @@ class DirGalleryProvider : GalleryProvider2 {
     @Volatile
     private var sizeValue: Int = STATE_WAIT
     private var errorMessage: String? = null
+
+    /**
+     * False until the first [start] cycle has either applied a stored
+     * scroll fraction or decided there is none worth restoring. While
+     * false, [putScrollFraction] suppresses writes that would clobber
+     * the stored fraction with `0` — the GalleryView's first
+     * onUpdateCurrentIndex(0) callback fires almost instantly for a
+     * downloaded archive (local file enum is synchronous), and without
+     * this guard the saved fraction is overwritten before the async
+     * metadata + DB read in [start] has a chance to consume it.
+     *
+     * Online (LRRGalleryProvider) avoids the race because its file list
+     * round-trip is slow enough that the parallel-async fraction read
+     * always lands first; we add the guard here for symmetry and to
+     * cover any future scenario where the file list arrives quickly.
+     */
+    private val initialRestoreCompleted = AtomicBoolean(false)
 
     /** Legacy constructor (no progress tracking). */
     constructor(dir: UniFile) {
@@ -127,6 +146,15 @@ class DirGalleryProvider : GalleryProvider2 {
     override fun putScrollFraction(fraction: Float) {
         val targetArcid = arcId ?: return
         val clamped = fraction.coerceIn(0f, 1f)
+        // Suppress fraction = 0 writes during the initial restore window:
+        // the very first onUpdateCurrentIndex(0) callback fires before
+        // [start]'s async metadata + DB read has consumed the stored
+        // value, and without this guard the cold-open fraction of 0
+        // overwrites the user's saved progress. Non-zero writes always
+        // pass (the user has actually scrolled).
+        if (clamped == 0f && !initialRestoreCompleted.get()) {
+            return
+        }
         ServiceRegistry.coroutineModule.ioScope.launch {
             try {
                 ServiceRegistry.dataModule.historyRepository
@@ -140,6 +168,11 @@ class DirGalleryProvider : GalleryProvider2 {
     override fun start() {
         super.start()
 
+        // Reset the save gate for this start cycle. stop() may have
+        // flipped it earlier; we want each fresh open to re-do the
+        // initial restore window.
+        initialRestoreCompleted.set(false)
+
         // SupervisorJob so a single failed worker doesn't tear down the
         // sibling worker(s). Anchored on Dispatchers.IO; the actual decode
         // work hops onto decoderDispatcher inside processRequest below.
@@ -150,35 +183,55 @@ class DirGalleryProvider : GalleryProvider2 {
         providerScope = scope
 
         // Async: load server progress + local intra-page scroll fraction
-        // and jump if newer / non-zero.
-        if (arcId != null && serverUrl != null && context != null) {
+        // and jump if newer / non-zero. The fraction read runs in
+        // parallel with the metadata fetch so its value is captured
+        // before any onUpdateCurrentIndex(0) callback can clobber the
+        // stored row — see the [initialRestoreCompleted] KDoc above.
+        if (arcId != null && context != null) {
             scope.launch {
-                try {
-                    val client = ServiceRegistry.networkModule.okHttpClient
-                    val metadata = runSuspend {
-                        LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcId)
-                    }
-                    val savedFraction = try {
+                // Kick off both reads in parallel. fractionDeferred is
+                // a fast local DB hit; metadataDeferred is a network
+                // round-trip and may fail / be skipped offline.
+                val fractionDeferred = async {
+                    try {
                         ServiceRegistry.dataModule.historyRepository
                             .getHistoryScrollFraction(arcId!!) ?: 0f
                     } catch (e: Exception) {
                         Log.w(TAG, "[PROGRESS] Failed to load scroll fraction: ${e.message}")
                         0f
                     }.coerceIn(0f, 1f)
-                    Log.i(TAG, "[PROGRESS] Server metadata: progress=${metadata.progress}" +
-                            " lastreadtime=${metadata.lastreadtime}" +
-                            " savedFraction=$savedFraction")
-                    if (metadata.progress > 0 || savedFraction > 0f) {
-                        val serverPage0 = (metadata.progress - 1).coerceAtLeast(0)
-                        val serverTs = metadata.lastreadtime
+                }
+                val metadataDeferred = async {
+                    if (serverUrl != null) {
+                        try {
+                            val client = ServiceRegistry.networkModule.okHttpClient
+                            runSuspend { LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcId) }
+                        } catch (e: Exception) {
+                            Log.w(TAG, "[PROGRESS] Failed to load server metadata: ${e.message}")
+                            null
+                        }
+                    } else {
+                        null
+                    }
+                }
+                try {
+                    val savedFraction = fractionDeferred.await()
+                    val metadata = metadataDeferred.await()
+                    val serverProgress = metadata?.progress ?: 0
+                    val serverTs = metadata?.lastreadtime ?: 0L
+                    Log.i(TAG, "[PROGRESS] Server metadata: progress=$serverProgress" +
+                            " lastreadtime=$serverTs savedFraction=$savedFraction")
+                    if (serverProgress > 0 || savedFraction > 0f) {
+                        val serverPage0 = (serverProgress - 1).coerceAtLeast(0)
                         val localTs = if (arcId != null) loadReadingTimestamp(context, arcId!!) else 0L
                         Log.i(TAG, "[PROGRESS] serverPage0=$serverPage0" +
                                 " serverTs=$serverTs localTs=$localTs" +
                                 " localPage=$startPageValue")
                         val resolvedPage: Int
-                        if (metadata.progress <= 0) {
-                            // Server has no progress, but we still might have a
-                            // local intra-page fraction to restore on page 0.
+                        if (serverProgress <= 0) {
+                            // No server progress (offline, missing metadata, or
+                            // genuinely page 0). Stick with the local SP-saved
+                            // page and let the intra-page fraction restore on it.
                             resolvedPage = startPageValue
                         } else if (serverTs > localTs) {
                             resolvedPage = serverPage0
@@ -199,23 +252,46 @@ class DirGalleryProvider : GalleryProvider2 {
                             val gv = galleryView
                             if (gv != null) {
                                 Handler(Looper.getMainLooper()).postDelayed({
-                                    val gvNow = galleryView ?: return@postDelayed
-                                    if (savedFraction > 0f) {
-                                        gvNow.setCurrentPageScrollFraction(resolvedPage, savedFraction)
-                                        Log.i(TAG, "[PROGRESS] setCurrentPageScrollFraction(" +
-                                                "$resolvedPage, $savedFraction) called")
-                                    } else {
-                                        gvNow.setCurrentPage(resolvedPage)
-                                        Log.i(TAG, "[PROGRESS] setCurrentPage($resolvedPage) called")
+                                    try {
+                                        val gvNow = galleryView ?: return@postDelayed
+                                        if (savedFraction > 0f) {
+                                            gvNow.setCurrentPageScrollFraction(resolvedPage, savedFraction)
+                                            Log.i(TAG, "[PROGRESS] setCurrentPageScrollFraction(" +
+                                                    "$resolvedPage, $savedFraction) called")
+                                        } else {
+                                            gvNow.setCurrentPage(resolvedPage)
+                                            Log.i(TAG, "[PROGRESS] setCurrentPage($resolvedPage) called")
+                                        }
+                                    } finally {
+                                        // Open the save gate after the restore
+                                        // call lands. Subsequent putScrollFraction
+                                        // writes (including 0 from a user-driven
+                                        // scroll back to top) are now persisted.
+                                        initialRestoreCompleted.set(true)
                                     }
                                 }, 300)
+                            } else {
+                                initialRestoreCompleted.set(true)
                             }
+                        } else {
+                            // Nothing to restore. Open the save gate so
+                            // future user scrolls can persist 0 if needed.
+                            initialRestoreCompleted.set(true)
                         }
+                    } else {
+                        // No saved fraction and no server progress — open
+                        // the gate immediately.
+                        initialRestoreCompleted.set(true)
                     }
                 } catch (e: Exception) {
-                    Log.w(TAG, "[PROGRESS] Failed to load server progress: ${e.message}")
+                    Log.w(TAG, "[PROGRESS] Restore flow failed: ${e.message}")
+                    initialRestoreCompleted.set(true)
                 }
             }
+        } else {
+            // Provider was constructed without arcid/context — no save
+            // path is possible anyway, but flip the gate for symmetry.
+            initialRestoreCompleted.set(true)
         }
 
         // Build the file list, then spin up the decode workers. We do
