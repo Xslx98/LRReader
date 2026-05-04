@@ -8,7 +8,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import okhttp3.FormBody
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
@@ -89,14 +88,16 @@ object LRRArchiveApi {
     }
 
     /**
-     * PUT /api/archives/:id/metadata — Update archive title and/or tags via form body.
+     * PUT /api/archives/:id/metadata — Update archive title, tags, and/or summary.
      *
-     * Unlike [updateArchiveMetadata] which only sends tags as a query parameter,
-     * this method uses a form-encoded request body and supports updating both
-     * the title and tags in a single call.
+     * Per the OpenAPI spec, this endpoint takes its inputs as **query parameters**
+     * (the spec declares `parameters: [title, tags, summary]` and no requestBody).
+     * The previous form-body implementation worked against historical Mojolicious
+     * leniency but is rejected by spec-strict server builds.
      *
-     * @param title new title, or null to leave unchanged
-     * @param tags  new comma-separated tags, or null to leave unchanged
+     * @param title   new title, or null to leave unchanged
+     * @param tags    new comma-separated tags, or null to leave unchanged
+     * @param summary new summary, or null to leave unchanged
      */
     @JvmStatic
     suspend fun updateMetadata(
@@ -104,19 +105,19 @@ object LRRArchiveApi {
         baseUrl: String,
         arcid: String,
         title: String? = null,
-        tags: String? = null
+        tags: String? = null,
+        summary: String? = null
     ): Unit = withContext(Dispatchers.IO) {
-        val formBody = FormBody.Builder()
-        if (title != null) formBody.add("title", title)
-        if (tags != null) formBody.add("tags", tags)
-        val url = parseBaseUrl(baseUrl).newBuilder()
+        val urlBuilder = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
             .addPathSegment(arcid)
             .addPathSegment("metadata")
-            .build()
+        if (title != null) urlBuilder.addQueryParameter("title", title)
+        if (tags != null) urlBuilder.addQueryParameter("tags", tags)
+        if (summary != null) urlBuilder.addQueryParameter("summary", summary)
         val request = Request.Builder()
-            .url(url)
-            .put(formBody.build())
+            .url(urlBuilder.build())
+            .put(EMPTY_REQUEST_BODY)
             .build()
         client.newCall(request).execute().use { response ->
             ensureSuccess(response)
@@ -313,8 +314,12 @@ object LRRArchiveApi {
         updateArchiveMetadata(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), arcid, tags)
 
     @JvmStatic
-    suspend fun updateMetadata(arcid: String, title: String? = null, tags: String? = null) =
-        updateMetadata(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), arcid, title, tags)
+    suspend fun updateMetadata(
+        arcid: String,
+        title: String? = null,
+        tags: String? = null,
+        summary: String? = null
+    ) = updateMetadata(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), arcid, title, tags, summary)
 
     @JvmStatic
     suspend fun getFileList(arcid: String): Array<String> =
