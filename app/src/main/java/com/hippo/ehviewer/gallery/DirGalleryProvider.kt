@@ -16,8 +16,6 @@
 package com.hippo.ehviewer.gallery
 
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import com.hippo.ehviewer.GetText
 import com.hippo.ehviewer.R
@@ -246,30 +244,44 @@ class DirGalleryProvider : GalleryProvider2 {
                             startPageValue = resolvedPage
                             Log.i(TAG, "[PROGRESS] Timestamps equal, using max: page $resolvedPage")
                         }
-                        // Jump GalleryView if needed (page jump and/or
-                        // intra-page fraction restore).
+                        // Jump GalleryView if needed. Hop to Main and call
+                        // setCurrentPageScrollFraction immediately (no
+                        // postDelayed) — setStartScrollFraction is robust
+                        // to being called before the target page has
+                        // loaded; the pending state sits there and applies
+                        // on whichever later fillPages first sees the
+                        // target page with a real height. The previous
+                        // 300 ms delay caused a visible "flicker" on
+                        // downloaded archives: the local file enum is
+                        // synchronous so the GalleryView rendered the
+                        // top of the start page for the entire 300 ms
+                        // window before snapping to the saved fraction.
+                        // LRRGalleryProvider uses the same no-delay
+                        // pattern.
                         if (resolvedPage > 0 || savedFraction > 0f) {
                             val gv = galleryView
                             if (gv != null) {
-                                Handler(Looper.getMainLooper()).postDelayed({
-                                    try {
-                                        val gvNow = galleryView ?: return@postDelayed
-                                        if (savedFraction > 0f) {
-                                            gvNow.setCurrentPageScrollFraction(resolvedPage, savedFraction)
-                                            Log.i(TAG, "[PROGRESS] setCurrentPageScrollFraction(" +
-                                                    "$resolvedPage, $savedFraction) called")
-                                        } else {
-                                            gvNow.setCurrentPage(resolvedPage)
-                                            Log.i(TAG, "[PROGRESS] setCurrentPage($resolvedPage) called")
+                                withContext(Dispatchers.Main) {
+                                    val gvNow = galleryView
+                                    if (gvNow != null) {
+                                        try {
+                                            if (savedFraction > 0f) {
+                                                gvNow.setCurrentPageScrollFraction(
+                                                    resolvedPage, savedFraction
+                                                )
+                                                Log.i(TAG, "[PROGRESS] setCurrentPageScrollFraction(" +
+                                                        "$resolvedPage, $savedFraction) called")
+                                            } else {
+                                                gvNow.setCurrentPage(resolvedPage)
+                                                Log.i(TAG, "[PROGRESS] setCurrentPage($resolvedPage) called")
+                                            }
+                                        } finally {
+                                            initialRestoreCompleted.set(true)
                                         }
-                                    } finally {
-                                        // Open the save gate after the restore
-                                        // call lands. Subsequent putScrollFraction
-                                        // writes (including 0 from a user-driven
-                                        // scroll back to top) are now persisted.
+                                    } else {
                                         initialRestoreCompleted.set(true)
                                     }
-                                }, 300)
+                                }
                             } else {
                                 initialRestoreCompleted.set(true)
                             }
