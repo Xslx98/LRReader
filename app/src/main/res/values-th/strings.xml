@@ -742,6 +742,9 @@
     <string name="settings_privacy">ความเป็นส่วนตัว</string>
     <string name="settings_privacy_secure">ป้องกันการบันทึกภาพหน้าจอ</string>
     <string name="settings_privacy_secure_summary">ป้องกันเนื้อหาต่างๆของตัวแอปจากการถูกบันทึกหน้าจอ หรือถูกแสดงในหน้ารายการ \"แอพล่าสุด\" ตอนสลับหรือระหว่างสลับไปแอปอื่น.</string>
+    <string name="settings_privacy_delete_confirm_countdown">ตัวนับถอยหลังการยืนยันการลบ</string>
+    <string name="settings_privacy_delete_confirm_countdown_summary_on">ปุ่ม \"ลบ\" จะถูกปิดใช้งาน 3 วินาทีก่อนจะสามารถกดได้</string>
+    <string name="settings_privacy_delete_confirm_countdown_summary_off">ปุ่ม \"ลบ\" สามารถกดได้ทันที เร็วกว่าแต่อาจลบโดยไม่ตั้งใจได้ง่าย</string>
 
     <string name="download_service">บริการดาวน์โหลด</string>
     <string name="favorite_name">หมวดหมู่</string>

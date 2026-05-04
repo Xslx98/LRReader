@@ -20,4 +20,16 @@ object AppEventBus {
         _galleryActivityEvent.tryEmit(event)
     }
 
+    // Non-sticky: each delete is a one-shot signal — late subscribers should not
+    // re-process old deletions. Generous extraBufferCapacity so we never drop on
+    // burst (multi-select delete in the future).
+    private val _archiveDeletedEvent = MutableSharedFlow<ArchiveDeletedEvent>(
+        extraBufferCapacity = 16
+    )
+    val archiveDeletedEvent = _archiveDeletedEvent.asSharedFlow()
+
+    fun postArchiveDeletedEvent(event: ArchiveDeletedEvent) {
+        _archiveDeletedEvent.tryEmit(event)
+    }
+
 }

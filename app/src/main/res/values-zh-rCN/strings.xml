@@ -768,6 +768,9 @@
     <string name="settings_privacy">隐私</string>
     <string name="settings_privacy_secure">不允许屏幕抓取</string>
     <string name="settings_privacy_secure_summary">启用后，将不能截取该应用的屏幕截图，同时，将不会在系统任务切换器中显示该应用的内容预览\n\n重新启动应用以生效此更改</string>
+    <string name="settings_privacy_delete_confirm_countdown">删除确认倒计时</string>
+    <string name="settings_privacy_delete_confirm_countdown_summary_on">「删除」按钮在弹出后 3 秒内不可点击，避免误删</string>
+    <string name="settings_privacy_delete_confirm_countdown_summary_off">「删除」按钮立即可点。操作更快，但容易误删</string>
     <!-- Preference framework strings. -->
     <string name="download_service">下载服务</string>
     <string name="favorite_name">分类画廊</string>

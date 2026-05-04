@@ -765,6 +765,9 @@
     <string name="settings_privacy">개인 정보</string>
     <string name="settings_privacy_secure">화면 캡처 허용 안 함</string>
     <string name="settings_privacy_secure_summary">이 앱에서 스크린샷을 찍을 수 없게 하며, \"최근 앱\" 화면에서 앱의 내용을 보이지 않게 합니다.</string>
+    <string name="settings_privacy_delete_confirm_countdown">삭제 확인 카운트다운</string>
+    <string name="settings_privacy_delete_confirm_countdown_summary_on">삭제 버튼이 표시된 후 3초 동안 비활성화됩니다.</string>
+    <string name="settings_privacy_delete_confirm_countdown_summary_off">삭제 버튼을 즉시 누를 수 있습니다. 더 빠르지만 실수로 삭제하기 쉽습니다.</string>
 
     <string name="download_service">다운로드 서비스</string>
     <string name="favorite_name">카테고리</string>

@@ -718,6 +718,9 @@
 
     <string name="settings_privacy_secure">Prevenir capturas de pantalla</string>
     <string name="settings_privacy_secure_summary">Prevenir que se tomen capturas de pantalla del contenido de la aplicación o que se muestre en la lista de \"Aplicaciones recientes\".</string>
+    <string name="settings_privacy_delete_confirm_countdown">Cuenta atrás de confirmación de eliminación</string>
+    <string name="settings_privacy_delete_confirm_countdown_summary_on">El botón Eliminar permanece deshabilitado durante 3 segundos antes de poder pulsarse.</string>
+    <string name="settings_privacy_delete_confirm_countdown_summary_off">El botón Eliminar se puede pulsar de inmediato. Más rápido, pero es más fácil eliminar por error.</string>
     <string name="download_service">Servicio de descarga</string>
     <string name="favorite_name">Categoría</string>
     <string name="u_config">Ajustes LANraragi</string>

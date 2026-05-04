@@ -886,6 +886,9 @@
     <string name="settings_privacy">Privacy</string>
     <string name="settings_privacy_secure">Prevent screenshots</string>
     <string name="settings_privacy_secure_summary">Prevent the content of the app from being taken screenshots of or shown in the \"Recent Apps\" list.</string>
+    <string name="settings_privacy_delete_confirm_countdown">Delete confirmation countdown</string>
+    <string name="settings_privacy_delete_confirm_countdown_summary_on">The Delete button stays disabled for 3 seconds before it can be tapped.</string>
+    <string name="settings_privacy_delete_confirm_countdown_summary_off">The Delete button is tappable immediately. Faster, but easier to delete by mistake.</string>
 
     <string name="download_service">Download Service</string>
     <string name="favorite_name">Favorite</string>
