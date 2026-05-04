@@ -3,9 +3,7 @@ package com.lanraragi.reader.client.api
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.JsonElement
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
@@ -35,11 +33,29 @@ object LRRPluginApi {
         val desc: String = ""
     )
 
+    /**
+     * Response shape for `POST /plugins/use` (operationId `usePluginSync`).
+     *
+     * Per the OpenAPI v0.9.6 spec:
+     * - `operation` is always the string `"use_plugin"`
+     * - `type` is the plugin category (download / login / metadata / script),
+     *   nullable for plugins that do not declare one
+     * - `success` is a 0/1 integer flag
+     * - `error` is a nullable string that is set when `success == 0`
+     * - `data` is an arbitrary JSON object whose shape is plugin-defined
+     *   (e.g. `{"new_tags": "pages:45"}` for a metadata plugin) — must be
+     *   typed as a generic [JsonElement] to deserialise without locking the
+     *   client to one specific plugin's schema. The previous String-typed
+     *   field would throw `JsonDecodingException` on every spec-compliant
+     *   response.
+     */
     @Serializable
     data class PluginRunResult(
+        val operation: String = "",
+        val type: String? = null,
         val success: Int = 0,
-        val message: String = "",
-        val data: String = ""
+        val error: String? = null,
+        val data: JsonElement? = null,
     )
 
     /**
