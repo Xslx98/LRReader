@@ -94,7 +94,7 @@ class LRRArchiveApiTest {
         assertTrue(req.path!!.contains("tags="))
     }
 
-    // ── updateMetadata (form-body PUT) ─────────────────────────────
+    // ── updateMetadata (query-parameter PUT, per OpenAPI spec) ─────
 
     @Test
     fun updateMetadata_sendsCorrectRequest() = runTest {
@@ -104,10 +104,11 @@ class LRRArchiveApiTest {
 
         val req = server.takeRequest()
         assertEquals("PUT", req.method)
-        assertEquals("/api/archives/abc/metadata", req.path)
-        val body = req.body.readUtf8()
-        assertTrue(body.contains("tags="))
-        assertTrue(body.contains("artist"))
+        assertTrue(req.path!!.startsWith("/api/archives/abc/metadata"))
+        // Per spec, inputs travel as query parameters (no requestBody node).
+        assertTrue("path should carry tags= query param", req.path!!.contains("tags="))
+        assertTrue("path should encode the artist tag", req.path!!.contains("artist"))
+        assertEquals("body must be empty for spec-compliant PUT", 0L, req.bodySize)
     }
 
     @Test
@@ -118,9 +119,24 @@ class LRRArchiveApiTest {
 
         val req = server.takeRequest()
         assertEquals("PUT", req.method)
-        val body = req.body.readUtf8()
-        assertTrue(body.contains("title="))
-        assertTrue(body.contains("tags="))
+        assertTrue("path should carry title= query param", req.path!!.contains("title="))
+        assertTrue("path should carry tags= query param", req.path!!.contains("tags="))
+        assertEquals("body must be empty for spec-compliant PUT", 0L, req.bodySize)
+    }
+
+    @Test
+    fun updateMetadata_withSummary_sendsSummary() = runTest {
+        server.enqueue(MockResponse().setBody("""{"operation":"update_metadata","success":1}"""))
+
+        LRRArchiveApi.updateMetadata(client, baseUrl, "abc", summary = "A new summary line")
+
+        val req = server.takeRequest()
+        assertEquals("PUT", req.method)
+        assertTrue("path should carry summary= query param", req.path!!.contains("summary="))
+        // null fields are omitted entirely
+        assertTrue("title should not be present when null", !req.path!!.contains("title="))
+        assertTrue("tags should not be present when null", !req.path!!.contains("tags="))
+        assertEquals(0L, req.bodySize)
     }
 
     @Test
