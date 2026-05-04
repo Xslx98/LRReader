@@ -951,6 +951,7 @@ Cette action est irréversible.</string>
     <string name="lrr_delete_confirm_title">Confirmer la suppression</string>
     <string name="lrr_delete_countdown">Supprimer (%ds)</string>
     <string name="lrr_delete_failed">Suppression échouée : %s</string>
+    <string name="lrr_unknown_title">Inconnu</string>
     <string name="lrr_delete_server">Supprimer le serveur</string>
     <string name="lrr_delete_server_confirm">Supprimer le serveur \"%s\" ?</string>
     <string name="lrr_delete_success">\"%s\" supprimé</string>

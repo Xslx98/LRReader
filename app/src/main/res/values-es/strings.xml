@@ -1000,6 +1000,7 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_delete_confirm_title">Confirmar eliminación</string>
     <string name="lrr_delete_countdown">Eliminar (%ds)</string>
     <string name="lrr_delete_failed">Error al eliminar: %s</string>
+    <string name="lrr_unknown_title">Desconocido</string>
     <string name="lrr_delete_server">Eliminar servidor</string>
     <string name="lrr_delete_server_confirm">¿Eliminar servidor \"%s\"?</string>
     <string name="lrr_delete_success">\"%s\" eliminado</string>

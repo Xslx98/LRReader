@@ -1037,6 +1037,7 @@
     <string name="lrr_delete_confirm_title">確認刪除</string>
     <string name="lrr_delete_countdown">刪除 (%ds)</string>
     <string name="lrr_delete_failed">刪除失敗: %s</string>
+    <string name="lrr_unknown_title">未知</string>
     <string name="lrr_delete_server">刪除伺服器</string>
     <string name="lrr_delete_server_confirm">確定刪除伺服器\"%s\"？</string>
     <string name="lrr_delete_success">「%s」已刪除</string>

@@ -918,6 +918,7 @@
     <string name="lrr_delete_confirm_title">Delete Archive</string>
     <string name="lrr_delete_countdown">Delete (%ds)</string>
     <string name="lrr_delete_failed">Delete failed: %s</string>
+    <string name="lrr_unknown_title">Unknown</string>
     <string name="lrr_delete_server">Delete server</string>
     <string name="lrr_delete_server_confirm">Delete server \"%s\"?</string>
     <string name="lrr_delete_success">\"%s\" deleted</string>
