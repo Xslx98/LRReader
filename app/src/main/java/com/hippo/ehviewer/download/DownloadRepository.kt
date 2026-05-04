@@ -37,9 +37,20 @@ import java.util.Collections
 /**
  * Owns download collection state and DB persistence.
  *
- * All in-memory collections are main-thread-only. Background DB writes are
- * dispatched via [scope]. The class provides query, mutation, and label CRUD
- * methods that [DownloadManager] (facade) and future DownloadScheduler consume.
+ * ## Thread safety
+ *
+ * All direct access to the in-memory collections ([allInfoList], [allInfoMap],
+ * [labelInfoMap], [labelCountMap], [labelList], [labelSet], [defaultInfoList])
+ * MUST occur on the main thread. The contract is enforced at runtime by
+ * [assertMainThread]. No synchronization wrappers are used so that iteration
+ * during notification dispatch remains predictable and lock-free.
+ *
+ * Background callers (e.g., IO scope, [DownloadManager.syncRatingsFromServer])
+ * must hop with `withContext(Dispatchers.Main)` before touching collections.
+ * Background DB writes are dispatched via [scope] (IO).
+ *
+ * The class provides query, mutation, and label CRUD methods that
+ * [DownloadManager] (facade) and the DownloadScheduler consume.
  */
 class DownloadRepository(
     private val context: Context,
