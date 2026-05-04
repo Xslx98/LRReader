@@ -17,8 +17,6 @@
 <!-- 한국어 -->
 <resources>
     <!--  black list  -->
-    <string name="settings_advanced_dns_over_http_title">보안 DNS (DoH)</string>
-    <string name="settings_advanced_dns_over_http_summary">특정 지역의 DNS 오염 해결</string>
     <string name="settings_advanced_domain_fronting_title">도메인 프론팅</string>
     <string name="settings_advanced_domain_fronting_summary">SNI 차단 우회</string>
     <string name="settings_advanced_url_replace_title">URL 위장, SNI를 닫아야 함</string>

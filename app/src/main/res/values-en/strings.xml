@@ -963,8 +963,6 @@
     <string name="settings_about_issue_help">Issue Help</string>
     <string name="settings_advanced_built_ex_hosts_summary">Host-to-IP mapping provided by the app\nCan be overridden by custom hosts.txt</string>
     <string name="settings_advanced_built_ex_hosts_title">Built-in LANraragi hosts.txt</string>
-    <string name="settings_advanced_dns_over_http_summary">Fix DNS pollution in certain regions</string>
-    <string name="settings_advanced_dns_over_http_title">Secure DNS (DoH)</string>
     <string name="settings_advanced_domain_fronting_summary">Bypass SNI blocking</string>
     <string name="settings_advanced_domain_fronting_title">Domain Fronting</string>
     <string name="settings_advanced_url_replace_summary">URL masking (requires restart, disables account features)</string>

@@ -197,7 +197,6 @@ dependencies {
     implementation libs.advrecyclerview
 
     implementation libs.okhttp
-    implementation libs.okhttp.dnsoverhttps
     debugImplementation libs.request.inspector
 
     // Room database (replaces GreenDAO)
