@@ -29,6 +29,7 @@ import com.hippo.unifile.UniFile
 import com.hippo.lib.yorozuya.FileUtils
 import com.hippo.lib.yorozuya.IOUtils
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -37,7 +38,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.resume
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.PriorityBlockingQueue
@@ -100,6 +103,16 @@ class DirGalleryProvider : GalleryProvider2 {
      * cover any future scenario where the file list arrives quickly.
      */
     private val initialRestoreCompleted = AtomicBoolean(false)
+
+    /**
+     * Signalled from the file enum coroutine right after notifyDataChanged
+     * is enqueued. The restore coroutine awaits this **and** a render-thread
+     * barrier on top, so that setCurrentPageScrollFraction can never land
+     * in the same frame as the onDataChanged it would race with — see the
+     * race write-up in [start]. Re-created on every [start] cycle.
+     */
+    @Volatile
+    private var notifyDataChangedEnqueued: CompletableDeferred<Unit> = CompletableDeferred()
 
     /** Legacy constructor (no progress tracking). */
     constructor(dir: UniFile) {
@@ -170,6 +183,10 @@ class DirGalleryProvider : GalleryProvider2 {
         // flipped it earlier; we want each fresh open to re-do the
         // initial restore window.
         initialRestoreCompleted.set(false)
+
+        // Each start cycle gets a fresh notify-enqueued signal — we
+        // can't reuse a completed Deferred across re-opens.
+        notifyDataChangedEnqueued = CompletableDeferred()
 
         // SupervisorJob so a single failed worker doesn't tear down the
         // sibling worker(s). Anchored on Dispatchers.IO; the actual decode
@@ -244,23 +261,25 @@ class DirGalleryProvider : GalleryProvider2 {
                             startPageValue = resolvedPage
                             Log.i(TAG, "[PROGRESS] Timestamps equal, using max: page $resolvedPage")
                         }
-                        // Jump GalleryView if needed. Hop to Main and call
-                        // setCurrentPageScrollFraction immediately (no
-                        // postDelayed) — setStartScrollFraction is robust
-                        // to being called before the target page has
-                        // loaded; the pending state sits there and applies
-                        // on whichever later fillPages first sees the
-                        // target page with a real height. The previous
-                        // 300 ms delay caused a visible "flicker" on
-                        // downloaded archives: the local file enum is
-                        // synchronous so the GalleryView rendered the
-                        // top of the start page for the entire 300 ms
-                        // window before snapping to the saved fraction.
-                        // LRRGalleryProvider uses the same no-delay
-                        // pattern.
+                        // Jump GalleryView if needed. Order matters:
+                        //   1. wait for the file enum coroutine to finish
+                        //      enqueuing notifyDataChanged (deferred signal),
+                        //   2. install a render-thread barrier so we resume
+                        //      strictly AFTER onDataChanged has been
+                        //      consumed by the GL renderer,
+                        //   3. only then post setCurrentPageScrollFraction.
+                        //
+                        // Skipping any of these steps lets onDataChanged →
+                        // resetParameters() wipe the mPendingStartFraction
+                        // / mKeepTopPageIndex / mKeepTop we just set,
+                        // producing the visible "snap to fraction → snap
+                        // back to top" double-flicker on cold opens of
+                        // downloaded long-strip archives.
                         if (resolvedPage > 0 || savedFraction > 0f) {
                             val gv = galleryView
                             if (gv != null) {
+                                notifyDataChangedEnqueued.await()
+                                awaitGlIdleBarrier()
                                 withContext(Dispatchers.Main) {
                                     val gvNow = galleryView
                                     if (gvNow != null) {
@@ -330,6 +349,17 @@ class DirGalleryProvider : GalleryProvider2 {
             fileList.lazySet(files)
             sizeValue = files.size
             notifyDataChanged()
+            // Signal restore coroutine that the data-change notification
+            // is now in the GLRoot's idle queue. The restore coroutine
+            // tacks on a render-thread barrier that fires only AFTER
+            // onDataChanged has run, so the follow-up
+            // setCurrentPageScrollFraction can never land in the same
+            // frame as the resetParameters() it would race with. Without
+            // this, the layout-manager wipe of mPendingStartFraction /
+            // mKeepTopPageIndex / mKeepTop produced the visible
+            // "snap to fraction → snap back to top" double-flicker on
+            // downloaded long-strip archives.
+            notifyDataChangedEnqueued.complete(Unit)
 
             // Cross-session decoded slot (filled by the detail-page
             // warmup or the open-helper warm trigger). On a hit we
@@ -353,6 +383,19 @@ class DirGalleryProvider : GalleryProvider2 {
             }
 
             startDecodeWorkers(scope, files.size)
+        }
+    }
+
+    /**
+     * Suspend until the GL render thread fires a one-shot idle barrier
+     * scheduled via [postBarrierAfterPendingNotifications]. The barrier is
+     * appended after any NotifyTask currently in the GLRoot's idle queue,
+     * so resumption is guaranteed to happen STRICTLY AFTER the most
+     * recently enqueued onDataChanged has been dispatched.
+     */
+    private suspend fun awaitGlIdleBarrier() = suspendCancellableCoroutine<Unit> { cont ->
+        postBarrierAfterPendingNotifications {
+            if (cont.isActive) cont.resume(Unit)
         }
     }
 
