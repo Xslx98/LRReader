@@ -366,20 +366,15 @@ class UserImageChange(
     }
 
     private fun getImagePath(uri: Uri, selection: String?): String? {
-        var path: String? = null
-        // 通过Uri和selection来获取真实的图片路径
-        val cursor = activity.contentResolver.query(uri, null, selection, null, null)
-        if (cursor != null) {
-            if (cursor.moveToFirst()) {
-                val columnIndex = cursor.getColumnIndex(MediaStore.Images.Media.DATA)
-                if (columnIndex == -1) {
-                    return null
-                }
-                path = cursor.getString(columnIndex)
-            }
-            cursor.close()
+        // Cursor was previously closed only on the success branch; the
+        // `columnIndex == -1` early-return leaked the cursor. `use { }` closes
+        // the cursor on every exit path including thrown exceptions.
+        return activity.contentResolver.query(uri, null, selection, null, null)?.use { cursor ->
+            if (!cursor.moveToFirst()) return@use null
+            val columnIndex = cursor.getColumnIndex(MediaStore.Images.Media.DATA)
+            if (columnIndex == -1) return@use null
+            cursor.getString(columnIndex)
         }
-        return path
     }
 
     /**
