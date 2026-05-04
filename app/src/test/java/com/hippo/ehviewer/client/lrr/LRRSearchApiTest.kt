@@ -48,7 +48,7 @@ class LRRSearchApiTest {
         val result = LRRSearchApi.searchArchives(
             client, baseUrl,
             filter = "test query",
-            category = "cat1",
+            category = "SET_aaaaaaaaaa",
             start = 10,
             sortby = "date_added",
             order = "desc",
@@ -62,7 +62,7 @@ class LRRSearchApiTest {
         val path = req.path!!
         assertTrue(path.startsWith("/api/search"))
         assertTrue(path.contains("filter="))
-        assertTrue(path.contains("category=cat1"))
+        assertTrue(path.contains("category=SET_aaaaaaaaaa"))
         assertTrue(path.contains("start=10"))
         assertTrue(path.contains("sortby=date_added"))
         assertTrue(path.contains("order=desc"))

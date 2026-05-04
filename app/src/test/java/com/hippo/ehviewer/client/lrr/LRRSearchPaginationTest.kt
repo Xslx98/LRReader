@@ -59,11 +59,17 @@ class LRRSearchPaginationTest {
         untaggedonly = false
     )
 
-    private fun archiveJson(id: String, title: String) = """
-        {"arcid":"$id","title":"$title","tags":"","isnew":"false",
-         "extension":"zip","filename":"$id.zip","pagecount":10,
-         "progress":0,"lastreadtime":0}
-    """.trimIndent()
+    private fun archiveJson(id: String, title: String): String {
+        // OpenAPI v0.9.6 requires arcid to be a 40-char SHA-1 hex; pad short
+        // fixture ids so requireValidArcid (used by LRRArchive helpers like
+        // getThumbnailUrl) doesn't reject them mid-test.
+        val arcid = id.padEnd(40, '0').take(40)
+        return """
+            {"arcid":"$arcid","title":"$title","tags":"","isnew":"false",
+             "extension":"zip","filename":"$arcid.zip","pagecount":10,
+             "progress":0,"lastreadtime":0}
+        """.trimIndent()
+    }
 
     private fun searchResultJson(archives: List<String>, total: Int): String {
         val data = archives.joinToString(",")
@@ -124,7 +130,7 @@ class LRRSearchPaginationTest {
     fun combinedFilters_allParamsSentOnEveryPage() = runTest {
         val source = createPagingSource(
             filter = "artist:test",
-            category = "manga",
+            category = "SET_aaaaaaaaaa",
             sortby = "title",
             order = "asc"
         )
@@ -137,7 +143,7 @@ class LRRSearchPaginationTest {
         val req0 = server.takeRequest()
         val path0 = req0.path!!
         assertTrue("filter param missing", path0.contains("filter=artist"))
-        assertTrue("category param missing", path0.contains("category=manga"))
+        assertTrue("category param missing", path0.contains("category=SET_aaaaaaaaaa"))
         assertTrue("sortby param missing", path0.contains("sortby=title"))
         assertTrue("order param missing", path0.contains("order=asc"))
         assertFalse("start omitted when 0", path0.contains("start="))

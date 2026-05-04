@@ -125,9 +125,10 @@ class LRRArchiveTest {
 
     @Test
     fun getThumbnailUrl() {
-        val archive = makeArchive(arcid = "abc123")
+        val arcid = "a".repeat(40)
+        val archive = makeArchive(arcid = arcid)
         assertEquals(
-            "https://server.test/api/archives/abc123/thumbnail",
+            "https://server.test/api/archives/$arcid/thumbnail",
             archive.getThumbnailUrl("https://server.test")
         )
     }
