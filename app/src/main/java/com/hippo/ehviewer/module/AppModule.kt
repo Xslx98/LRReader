@@ -13,6 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import java.lang.ref.WeakReference
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Application-level utilities: global object registry and temp cache.
@@ -125,6 +126,22 @@ class AppModule(private val context: Context) : IAppModule {
          */
         @JvmStatic
         val activeProfileIdDeferred: CompletableDeferred<Long?> = CompletableDeferred()
+
+        /**
+         * Sticky one-shot for non-KeyStore boot failures (DB corruption, Room
+         * migration error, generic loader exception). Set by [EhApplication]
+         * when the profile-load path catches a non-secure-storage exception;
+         * read+cleared by the first UI that can surface a dialog (typically
+         * [com.hippo.ehviewer.ui.MainActivity.onCreate]).
+         *
+         * Cleared with [AtomicReference.getAndSet]`(null)` so each failure is
+         * shown exactly once. KeyStore-specific failures continue to flow
+         * through [com.lanraragi.reader.client.api.LRRAuthManager.isNeedsReauthentication]
+         * and the existing reauth dialog — this slot is for the "everything
+         * else" branch that previously vanished into Log.e.
+         */
+        @JvmStatic
+        val bootProfileLoadError: AtomicReference<Throwable?> = AtomicReference(null)
 
         /**
          * Build a [CoroutineExceptionHandler] from injectable function references.

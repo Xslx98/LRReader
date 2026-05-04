@@ -56,6 +56,7 @@ import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.callBack.ImageChangeCallBack
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.data.ListUrlBuilder
+import com.hippo.ehviewer.module.AppModule
 import com.hippo.ehviewer.util.ImageDecodeUtils
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.ui.main.UserImageChange
@@ -415,6 +416,18 @@ class MainActivity : StageActivity(),
                     startScene(Announcer(ServerListScene::class.java))
                 }
                 .setCancelable(false)
+                .show()
+        }
+
+        // Surface non-KeyStore boot failures (e.g., DB corruption, Room migration
+        // error). Sticky one-shot — getAndSet(null) so each failure is shown
+        // exactly once. KeyStore-only failures take precedence above.
+        AppModule.bootProfileLoadError.getAndSet(null)?.let { err ->
+            AlertDialog.Builder(this)
+                .setTitle(R.string.lrr_boot_load_failed_title)
+                .setMessage(getString(R.string.lrr_boot_load_failed_message, err.message ?: err.javaClass.simpleName))
+                .setPositiveButton(android.R.string.ok, null)
+                .setCancelable(true)
                 .show()
         }
     }
