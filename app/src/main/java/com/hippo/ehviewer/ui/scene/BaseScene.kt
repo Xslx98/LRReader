@@ -36,6 +36,23 @@ import com.hippo.ehviewer.ui.MainActivity
 import com.hippo.scene.SceneFragment
 import com.hippo.util.AppHelper
 
+/**
+ * Base class for all in-app scenes.
+ *
+ * ## Host coupling
+ *
+ * Scenes are intentionally **scoped to [MainActivity] as their sole host**.
+ * Drawer lock mode, profile-avatar refresh, snackbar overlay management, and
+ * navigation drawer open/close all delegate via `if (activity is MainActivity)`
+ * casts. This is acceptable because the project ships a single drawer-bearing
+ * Activity; the cost is that any other Activity hosting a Scene would silently
+ * no-op these calls.
+ *
+ * If multi-host support is ever needed (e.g., tablet dual-pane, popup overlay),
+ * extract a `SceneHost` interface that [MainActivity] implements, replace the
+ * `is MainActivity` casts with `(activity as? SceneHost)?.…`, and update Scene
+ * Factory wiring. Do not add per-call host probes — keep the contract centralised.
+ */
 abstract class BaseScene : SceneFragment() {
 
     private var mThemeContext: Context? = null
