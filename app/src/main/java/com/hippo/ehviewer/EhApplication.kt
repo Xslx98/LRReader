@@ -37,7 +37,6 @@ import com.hippo.ehviewer.module.AppModule
 import kotlinx.coroutines.launch
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.hippo.ehviewer.settings.DownloadSettings
-import com.hippo.ehviewer.settings.GuideSettings
 import com.hippo.ehviewer.settings.PrivacySettings
 import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.lib.image.Image
@@ -279,6 +278,19 @@ class EhApplication : RecordingApplication() {
         initialized = true
     }
 
+    /**
+     * Persist the current package's versionCode so future first-launch hooks
+     * can detect upgrades. The historical EhViewer code keyed first-launch
+     * tutorials off `version < 52` here; that branch was unreachable under
+     * LR Reader's `MAJOR*10000 + MINOR*100 + PATCH` scheme (smallest
+     * value 10000) so it was removed. If a real first-launch hook is needed
+     * later, gate it on `Settings.getVersionCode() == 0` (fresh install).
+     */
+    private fun update() {
+        // Intentionally empty — kept as the documented integration point for
+        // future versionCode-driven upgrades.
+    }
+
     private fun clearTempDir() {
         var dir = AppConfig.getTempDir()
         if (dir != null) {
@@ -290,13 +302,6 @@ class EhApplication : RecordingApplication() {
         }
         // Add .nomedia to external temp dir
         CommonOperations.ensureNoMediaFile(UniFile.fromFile(AppConfig.getExternalTempDir()))
-    }
-
-    private fun update() {
-        val version = Settings.getVersionCode()
-        if (version < 52) {
-            GuideSettings.putGuideGallery(true)
-        }
     }
 
     override fun onTrimMemory(level: Int) {
