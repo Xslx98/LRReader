@@ -59,9 +59,28 @@ object LRRPluginApi {
     )
 
     /**
-     * GET /api/plugins/:type — List available plugins.
+     * Plugin type categories accepted by `GET /plugins/{type}` per the
+     * OpenAPI spec's `type` path-parameter enum. Use `ALL` to list every
+     * registered plugin regardless of category.
+     */
+    enum class PluginType(val wireValue: String) {
+        DOWNLOAD("download"),
+        LOGIN("login"),
+        METADATA("metadata"),
+        SCRIPT("script"),
+        ALL("all"),
+    }
+
+    private val pluginTypeWireValues: Set<String> =
+        PluginType.entries.map { it.wireValue }.toSet()
+
+    /**
+     * GET /api/plugins/{type} — List available plugins.
      *
-     * @param type Plugin type: "metadata", "script", "download", "login"
+     * @param type Plugin type — must be one of the spec-defined wire values
+     *   (`download`, `login`, `metadata`, `script`, `all`). Prefer the
+     *   typed [getPlugins] overload that takes a [PluginType] enum below.
+     * @throws LRRClientValidationException when [type] is not in the spec enum
      */
     @JvmStatic
     suspend fun getPlugins(
@@ -69,6 +88,11 @@ object LRRPluginApi {
         baseUrl: String,
         type: String
     ): List<PluginInfo> = withContext(Dispatchers.IO) {
+        if (type !in pluginTypeWireValues) {
+            throw LRRClientValidationException(
+                "Invalid plugin type '$type'. Spec enum: $pluginTypeWireValues"
+            )
+        }
         val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegment("api")
             .addPathSegment("plugins")
@@ -85,6 +109,18 @@ object LRRPluginApi {
             lrrJson.decodeFromString<List<PluginInfo>>(body)
         }
     }
+
+    /**
+     * Typed overload of [getPlugins] that cannot be called with an out-of-spec
+     * value at the call site. Prefer this for new call sites; the String
+     * overload is kept for legacy interop and validates at runtime.
+     */
+    @JvmStatic
+    suspend fun getPlugins(
+        client: OkHttpClient,
+        baseUrl: String,
+        type: PluginType
+    ): List<PluginInfo> = getPlugins(client, baseUrl, type.wireValue)
 
     /**
      * POST /api/plugins/use — Execute a plugin (OpenAPI spec compliant).
