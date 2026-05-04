@@ -51,6 +51,7 @@ import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.dao.QuickSearch
 import com.hippo.ehviewer.download.DownloadManager
+import com.hippo.ehviewer.event.AppEventBus
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.settings.GuideSettings
 import com.hippo.ehviewer.ui.scene.BaseScene
@@ -107,6 +108,13 @@ class GalleryListScene : BaseScene(),
     private var mNavCheckedId = 0
     private var mPressBackTime: Long = 0
     private var mRestoredState = GalleryStateHelper.STATE_NORMAL
+
+    /**
+     * arcids deleted while this scene was off-screen (covered by the detail page).
+     * Drained in [onResume] so the RecyclerView remove + reflow animation plays
+     * after the user is actually looking at the list, not while it's hidden.
+     */
+    private val pendingDeletedArcIds = mutableSetOf<String>()
 
     private var mShowcaseView: ShowcaseView? = null
     internal lateinit var downloadManager: DownloadManager
@@ -220,6 +228,18 @@ class GalleryListScene : BaseScene(),
         // Observe favourite status changes to refresh all visible items
         collectFlow(this, viewModel.favouriteStatusChanged) {
             adapter?.notifyItemRangeChanged(0, adapter?.itemCount ?: 0)
+        }
+
+        // Server-side archive deletion: drop the row from this list. If the scene is
+        // currently visible, remove inline so the user sees the fade + reflow animation.
+        // If hidden (covered by the detail page), defer to onResume so the animation
+        // plays after the back-stack pop instead of being burned off-screen.
+        collectFlow(this, AppEventBus.archiveDeletedEvent) { event ->
+            if (isResumed) {
+                removeArchiveLocally(event.arcid)
+            } else {
+                pendingDeletedArcIds.add(event.arcid)
+            }
         }
 
         if (savedInstanceState == null) {
@@ -563,6 +583,16 @@ class GalleryListScene : BaseScene(),
         }
         mDrawerHelper?.onResume()
 
+        // Drain deletions that arrived while we were hidden, deferred one frame so
+        // the RecyclerView has laid out before the remove animation kicks off.
+        if (pendingDeletedArcIds.isNotEmpty() && ::recyclerView.isInitialized) {
+            val drained = pendingDeletedArcIds.toList()
+            pendingDeletedArcIds.clear()
+            recyclerView.post {
+                drained.forEach { removeArchiveLocally(it) }
+            }
+        }
+
         // Auto-refresh when active server config changed (edit/switch/add)
         val currentVersion = LRRAuthManager.serverConfigVersion
         if (currentVersion != mLastServerConfigVersion) {
@@ -634,6 +664,16 @@ class GalleryListScene : BaseScene(),
     }
 
     // Inner adapter — too small to extract
+
+    private fun removeArchiveLocally(arcid: String) {
+        val helper = mHelper ?: return
+        for (i in 0 until helper.size()) {
+            if (helper.getDataAtEx(i)?.arcid == arcid) {
+                helper.removeAt(i)
+                return
+            }
+        }
+    }
 
     private inner class GalleryListAdapter(
         inflater: LayoutInflater,

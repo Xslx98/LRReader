@@ -824,6 +824,9 @@
     <string name="settings_privacy">私隱</string>
     <string name="settings_privacy_secure">禁止螢幕擷取</string>
     <string name="settings_privacy_secure_summary">啟用後，將無法在本應用程式中擷取螢幕，同時，將不會在系統任務切換器中顯示本應用程式的內容預覽\n\n重新啟動應用程式以套用此設定</string>
+    <string name="settings_privacy_delete_confirm_countdown">刪除確認倒數計時</string>
+    <string name="settings_privacy_delete_confirm_countdown_summary_on">「刪除」按鈕在彈出後 3 秒內無法點擊，避免誤刪</string>
+    <string name="settings_privacy_delete_confirm_countdown_summary_off">「刪除」按鈕立即可點。操作更快，但容易誤刪</string>
 
     <string name="download_service">下載服務</string>
     <string name="favorite_name">分類畫廊</string>

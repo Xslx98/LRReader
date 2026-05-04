@@ -552,6 +552,9 @@
     <string name="settings_privacy">Datenschutzoptionen</string>
     <string name="settings_privacy_secure">Screenshot verhindern</string>
     <string name="settings_privacy_secure_summary">Screenshots werden verhindert. Inhalt der App wird in Aktuelle Apps-Liste nicht angezeigt.</string>
+    <string name="settings_privacy_delete_confirm_countdown">Löschbestätigung-Countdown</string>
+    <string name="settings_privacy_delete_confirm_countdown_summary_on">Der Löschen-Button bleibt 3 Sekunden lang deaktiviert, bevor er angetippt werden kann.</string>
+    <string name="settings_privacy_delete_confirm_countdown_summary_off">Der Löschen-Button ist sofort antippbar. Schneller, aber leichter versehentlich zu löschen.</string>
     <string name="press_twice_exit">Darauf erneut antippen, um die App zu beenden</string>
     <string name="app_waring">Inhalt dieser App kommt aus dem Internet, von dem einige dir körperlichen oder emotionalen Schaden zufügen kann. Du hast es wirklich erfahrt und möchtest immer noch fortsetzen.</string>
     <string name="error_username_cannot_empty">Gibt den Nutzername ein</string>

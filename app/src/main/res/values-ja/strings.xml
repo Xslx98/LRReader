@@ -694,6 +694,9 @@
     <string name="settings_privacy">プライバシー</string>
     <string name="settings_privacy_secure">スクリーンキャプチャを防ぐ</string>
     <string name="settings_privacy_secure_summary">有効化すると、アプリの画面をキャプチャーできなくなり、アプリの内容も「最近のアプリ」リストに表示されません。\n\n変更を適用するには、アプリを再起動してください。</string>
+    <string name="settings_privacy_delete_confirm_countdown">削除確認のカウントダウン</string>
+    <string name="settings_privacy_delete_confirm_countdown_summary_on">「削除」ボタンは表示後 3 秒間タップできません。誤操作を防ぎます。</string>
+    <string name="settings_privacy_delete_confirm_countdown_summary_off">「削除」ボタンはすぐにタップできます。素早く操作できますが、誤って削除する恐れがあります。</string>
     <string name="download_service">ダウンロードサービス</string>
     <string name="favorite_name">カテゴリ</string>
     <!--  排行榜  -->

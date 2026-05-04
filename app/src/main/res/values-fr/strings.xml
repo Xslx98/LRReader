@@ -702,6 +702,9 @@
     <string name="settings_privacy">Confidentialité</string>
     <string name="settings_privacy_secure">Empêcher les captures d\'écran</string>
     <string name="settings_privacy_secure_summary">Quand cette option est activée, vous ne pouvez prendre aucune capture d\'écran de l\'application, et le système n\'affiche pas le contenu d\'écran dans le sélecteur de tâches.\n\nRedémarrage de l\'application est nécessaire pour appliquer le changement</string>
+    <string name="settings_privacy_delete_confirm_countdown">Compte à rebours de confirmation de suppression</string>
+    <string name="settings_privacy_delete_confirm_countdown_summary_on">Le bouton Supprimer reste désactivé pendant 3 secondes avant de pouvoir être touché.</string>
+    <string name="settings_privacy_delete_confirm_countdown_summary_off">Le bouton Supprimer est immédiatement utilisable. Plus rapide, mais plus facile à supprimer par erreur.</string>
     <string name="hosts">Personnalisé hosts.txt</string>
     <string name="hosts_tip">hosts.txt</string>
     <string name="hosts_host">Hôte</string>

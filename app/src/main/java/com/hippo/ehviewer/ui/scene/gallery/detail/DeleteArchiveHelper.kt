@@ -9,6 +9,9 @@ import androidx.activity.ComponentActivity
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.event.AppEventBus
+import com.hippo.ehviewer.event.ArchiveDeletedEvent
+import com.hippo.ehviewer.settings.PrivacySettings
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.api.LRRClientProvider
@@ -19,9 +22,13 @@ import kotlinx.coroutines.launch
 /**
  * Two-stage confirmation dialog for deleting an archive from the LANraragi server.
  * Stage 1: AlertDialog with warning text.
- * Stage 2: Confirm button has a 3-second countdown before it becomes clickable.
+ * Stage 2: Confirm button is initially disabled with a 3-second cooldown timer.
+ *         The cooldown can be skipped via [PrivacySettings.getDeleteConfirmCountdown].
  */
 object DeleteArchiveHelper {
+
+    private const val COUNTDOWN_MILLIS = 3000L
+    private const val COUNTDOWN_INTERVAL = 1000L
 
     fun interface Callback {
         fun onDeleteSuccess(title: String)
@@ -44,21 +51,26 @@ object DeleteArchiveHelper {
         dialog.setOnShowListener {
             val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
             positiveButton.setTextColor(Color.parseColor("#F44336"))
-            positiveButton.isEnabled = false
 
-            object : CountDownTimer(3000, 1000) {
-                override fun onTick(millisUntilFinished: Long) {
-                    positiveButton.text = activity.getString(
-                        R.string.lrr_delete_countdown,
-                        (millisUntilFinished / 1000).toInt() + 1
-                    )
-                }
+            if (PrivacySettings.getDeleteConfirmCountdown()) {
+                positiveButton.isEnabled = false
+                object : CountDownTimer(COUNTDOWN_MILLIS, COUNTDOWN_INTERVAL) {
+                    override fun onTick(millisUntilFinished: Long) {
+                        positiveButton.text = activity.getString(
+                            R.string.lrr_delete_countdown,
+                            (millisUntilFinished / 1000).toInt() + 1
+                        )
+                    }
 
-                override fun onFinish() {
-                    positiveButton.setText(R.string.lrr_delete_confirm_button)
-                    positiveButton.isEnabled = true
-                }
-            }.start()
+                    override fun onFinish() {
+                        positiveButton.setText(R.string.lrr_delete_confirm_button)
+                        positiveButton.isEnabled = true
+                    }
+                }.start()
+            } else {
+                positiveButton.isEnabled = true
+                positiveButton.setText(R.string.lrr_delete_confirm_button)
+            }
 
             positiveButton.setOnClickListener {
                 dialog.dismiss()
@@ -82,6 +94,7 @@ object DeleteArchiveHelper {
                     )
                 }
 
+                AppEventBus.postArchiveDeletedEvent(ArchiveDeletedEvent(arcid))
                 activity.runOnUiThread {
                     callback?.onDeleteSuccess(title)
                 }
