@@ -30,7 +30,7 @@ An Android client for [LANraragi](https://github.com/Difegue/LANraragi), built u
 | 🔐 **安全认证 / Secure Auth** | API Key 加密存储 + 定向请求鉴权 / Encrypted API Key storage + per-request auth |
 | 🖥️ **多服务器 / Multi-Server** | 支持配置和切换多个 LANraragi 实例 / Configure and switch between server instances |
 | 📤 **上传管理 / Upload** | 从设备上传档案 / 通过 URL 下载到服务器 / Upload from device or by URL |
-| 🗑️ **远程删除 / Remote Delete** | 带倒计时确认的服务器档案删除 / Server-side archive deletion with countdown |
+| 🗑️ **远程删除 / Remote Delete** | 服务器档案删除，带可选 3 秒确认倒计时 / Server-side deletion with optional 3-second confirmation cooldown |
 | 🌐 **10 种语言 / 10 Languages** | 中文简繁/粤语、日/韩/英/法/德/西/泰 / CJK + EN/FR/DE/ES/TH |
 | 🌙 **深色模式 / Dark Mode** | 跟随系统主题，支持纯黑模式 / System theme + AMOLED black |
 
@@ -89,33 +89,40 @@ RELEASE_KEY_PASSWORD=<your-key-password>
 
 | 层 / Layer | 技术 / Technology |
 |---|---|
-| **语言 / Language** | Java / Kotlin hybrid |
+| **语言 / Language** | Kotlin (业务代码 100%) + Java (GLView / widget 遗留框架) / Kotlin (all business code) + Java (legacy GLView / widget framework) |
 | **网络 / Network** | OkHttp 4.12 + Kotlin Coroutines |
 | **API 序列化 / Serialization** | kotlinx-serialization (all JSON) |
-| **数据库 / Database** | Room 2.6.1 + KSP (schema v11) |
+| **数据库 / Database** | Room 2.6.1 + KSP (schema v25) |
 | **图像解码 / Image Decoding** | Custom C/JNI engine (libjpeg-turbo, libpng, libwebp) |
-| **安全 / Security** | EncryptedSharedPreferences (API Key) |
+| **安全 / Security** | EncryptedSharedPreferences (API Key, 模式锁 / pattern lock) |
 | **构建 / Build** | Gradle + R8/ProGuard |
-| **ABI** | arm64-v8a, x86_64 |
+| **ABI** | Release: arm64-v8a · Debug: arm64-v8a + x86_64 |
 
 ## 📂 项目结构 | Project Structure
 
 ```
 LRReader/
 ├── app/src/main/
-│   ├── java/com/hippo/ehviewer/  # Main source (EhViewer framework)
-│   │   ├── client/lrr/           # LANraragi REST API client
-│   │   ├── dao/                  # Room Database (AppDatabase.kt)
-│   │   ├── ui/                   # Activity & Fragment
-│   │   └── Settings.java         # App preferences
-│   ├── cpp/                      # C/JNI native image decoder
-│   ├── res/                      # Resources (10 languages)
-│   └── assets/                   # License pages
-├── keystore/                     # Signing keys (gitignored)
-├── CONTRIBUTING.md               # Contributing guide
-├── PRIVACY_POLICY.md             # Privacy policy
-├── NOTICE                        # Upstream credits
-└── LICENSE                       # GPLv3
+│   ├── java/
+│   │   ├── com/hippo/ehviewer/         # Business code (Kotlin)
+│   │   │   ├── dao/                    # Room Database (AppDatabase.kt, schema v25)
+│   │   │   ├── download/               # Download subsystem (DownloadManager facade)
+│   │   │   ├── settings/               # Modular settings (Privacy, Network, Reading, …)
+│   │   │   ├── ui/                     # Activities, Scenes, Fragments, ViewModels
+│   │   │   └── Settings.kt             # Shared preferences entry
+│   │   ├── com/lanraragi/reader/       # LANraragi-specific code
+│   │   │   ├── client/api/             # REST API client (LRRArchiveApi, LRRClientProvider, …)
+│   │   │   └── domain/                 # Domain models (Archive, …)
+│   │   └── com/hippo/{glview,widget,…} # Legacy GLView / Conaco / widget framework (Java)
+│   ├── cpp/                            # C/JNI native image decoder
+│   ├── res/                            # Resources (10 languages)
+│   └── assets/                         # Open-source license page
+├── fastlane/metadata/android/          # Play Store metadata + per-release changelogs
+├── keystore/                           # Signing keys (gitignored)
+├── CONTRIBUTING.md                     # Contributing guide
+├── PRIVACY_POLICY.md                   # Privacy policy
+├── NOTICE                              # Upstream credits
+└── LICENSE                             # GPLv3
 ```
 
 ## 🙏 致谢 | Acknowledgments
