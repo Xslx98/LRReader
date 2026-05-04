@@ -4,13 +4,17 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Server info returned by GET /api/info.
+ * Server info returned by `GET /api/info` (operationId `getServerInfo`).
  * This endpoint does NOT require authentication.
  *
- * Field types match the actual LANraragi API response:
- * - name, motd, version, version_name → String
- * - has_password, debug_mode, nofun_mode, server_resizes_images, server_tracks_progress → Int (0/1)
- * - archives_per_page, cache_last_cleared → Int
+ * Field types follow the OpenAPI v0.9.6 ServerInfo schema. Spec-defined
+ * fields not consumed by this client today are omitted intentionally —
+ * `ignoreUnknownKeys = true` on [com.lanraragi.reader.client.api.lrrJson]
+ * means future server fields are tolerated without a client release.
+ *
+ * Spec fields not yet surfaced in UI (add when needed): `version_desc`,
+ * `authenticated_progress`, `total_pages_read`, `total_archives`,
+ * `excluded_namespaces`.
  */
 @Serializable
 class LRRServerInfo {
