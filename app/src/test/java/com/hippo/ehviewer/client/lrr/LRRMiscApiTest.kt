@@ -39,14 +39,14 @@ class LRRMiscApiTest {
     fun downloadUrl_success() = runTest {
         server.enqueue(MockResponse().setBody("""{"success":1,"job":42,"operation":"download_url"}"""))
 
-        val jobId = LRRMiscApi.downloadUrl(client, baseUrl, "https://example.com/file.zip", catid = "cat1")
+        val jobId = LRRMiscApi.downloadUrl(client, baseUrl, "https://example.com/file.zip", catid = "SET_aaaaaaaaaa")
         assertEquals(42, jobId)
 
         val req = server.takeRequest()
         assertEquals("POST", req.method)
         assertTrue(req.path!!.contains("/api/download_url"))
         assertTrue(req.path!!.contains("url="))
-        assertTrue(req.path!!.contains("catid=cat1"))
+        assertTrue(req.path!!.contains("catid=SET_aaaaaaaaaa"))
     }
 
     @Test(expected = IOException::class)

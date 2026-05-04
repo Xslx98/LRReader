@@ -45,37 +45,37 @@ class LRRArchiveApiTest {
     @Test
     fun getArchiveMetadata_success() = runTest {
         server.enqueue(MockResponse().setBody("""{
-            "arcid":"abc","title":"Test Archive","tags":"artist:foo","isnew":"false",
+            "arcid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","title":"Test Archive","tags":"artist:foo","isnew":"false",
             "extension":"zip","filename":"test.zip","pagecount":10,"progress":3,"lastreadtime":0
         }"""))
 
-        val archive = LRRArchiveApi.getArchiveMetadata(client, baseUrl, "abc")
-        assertEquals("abc", archive.arcid)
+        val archive = LRRArchiveApi.getArchiveMetadata(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+        assertEquals("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", archive.arcid)
         assertEquals("Test Archive", archive.title)
         assertEquals(10, archive.pagecount)
 
         val req = server.takeRequest()
         assertEquals("GET", req.method)
-        assertEquals("/api/archives/abc/metadata", req.path)
+        assertEquals("/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/metadata", req.path)
     }
 
     @Test
     fun getFileList_success() = runTest {
         server.enqueue(MockResponse().setBody("""{"pages":["./page1.jpg","./page2.jpg","./page3.jpg"]}"""))
 
-        val pages = LRRArchiveApi.getFileList(client, baseUrl, "abc")
+        val pages = LRRArchiveApi.getFileList(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         assertEquals(3, pages.size)
         assertEquals("./page1.jpg", pages[0])
 
         val req = server.takeRequest()
-        assertEquals("/api/archives/abc/files", req.path)
+        assertEquals("/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/files", req.path)
     }
 
     @Test
     fun getFileList_missingPages() = runTest {
         server.enqueue(MockResponse().setBody("""{"job": 1}"""))
         try {
-            LRRArchiveApi.getFileList(client, baseUrl, "abc")
+            LRRArchiveApi.getFileList(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
             fail("Should have thrown")
         } catch (e: IOException) {
             assertTrue(e.message!!.contains("pages"))
@@ -86,11 +86,11 @@ class LRRArchiveApiTest {
     fun updateArchiveMetadata_sendsTags() = runTest {
         server.enqueue(MockResponse().setBody("""{"operation":"update_metadata","success":1}"""))
 
-        LRRArchiveApi.updateArchiveMetadata(client, baseUrl, "abc", "artist:test, rating:⭐⭐")
+        LRRArchiveApi.updateArchiveMetadata(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "artist:test, rating:⭐⭐")
 
         val req = server.takeRequest()
         assertEquals("PUT", req.method)
-        assertTrue(req.path!!.contains("/api/archives/abc/metadata"))
+        assertTrue(req.path!!.contains("/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/metadata"))
         assertTrue(req.path!!.contains("tags="))
     }
 
@@ -100,11 +100,11 @@ class LRRArchiveApiTest {
     fun updateMetadata_sendsCorrectRequest() = runTest {
         server.enqueue(MockResponse().setBody("""{"operation":"update_metadata","success":1}"""))
 
-        LRRArchiveApi.updateMetadata(client, baseUrl, "abc", tags = "artist:foo, parody:bar")
+        LRRArchiveApi.updateMetadata(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", tags = "artist:foo, parody:bar")
 
         val req = server.takeRequest()
         assertEquals("PUT", req.method)
-        assertTrue(req.path!!.startsWith("/api/archives/abc/metadata"))
+        assertTrue(req.path!!.startsWith("/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/metadata"))
         // Per spec, inputs travel as query parameters (no requestBody node).
         assertTrue("path should carry tags= query param", req.path!!.contains("tags="))
         assertTrue("path should encode the artist tag", req.path!!.contains("artist"))
@@ -115,7 +115,7 @@ class LRRArchiveApiTest {
     fun updateMetadata_withTitle_sendsTitle() = runTest {
         server.enqueue(MockResponse().setBody("""{"operation":"update_metadata","success":1}"""))
 
-        LRRArchiveApi.updateMetadata(client, baseUrl, "abc", title = "New Title", tags = "artist:test")
+        LRRArchiveApi.updateMetadata(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", title = "New Title", tags = "artist:test")
 
         val req = server.takeRequest()
         assertEquals("PUT", req.method)
@@ -128,7 +128,7 @@ class LRRArchiveApiTest {
     fun updateMetadata_withSummary_sendsSummary() = runTest {
         server.enqueue(MockResponse().setBody("""{"operation":"update_metadata","success":1}"""))
 
-        LRRArchiveApi.updateMetadata(client, baseUrl, "abc", summary = "A new summary line")
+        LRRArchiveApi.updateMetadata(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", summary = "A new summary line")
 
         val req = server.takeRequest()
         assertEquals("PUT", req.method)
@@ -144,7 +144,7 @@ class LRRArchiveApiTest {
         server.enqueue(MockResponse().setResponseCode(500))
 
         try {
-            LRRArchiveApi.updateMetadata(client, baseUrl, "abc", tags = "test:tag")
+            LRRArchiveApi.updateMetadata(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", tags = "test:tag")
             fail("Should have thrown")
         } catch (e: LRRHttpException) {
             assertEquals(500, e.code)
@@ -155,41 +155,41 @@ class LRRArchiveApiTest {
     fun clearNewFlag_sendsDelete() = runTest {
         server.enqueue(MockResponse().setBody("""{"operation":"clear_new","success":1}"""))
 
-        LRRArchiveApi.clearNewFlag(client, baseUrl, "abc")
+        LRRArchiveApi.clearNewFlag(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 
         val req = server.takeRequest()
         assertEquals("DELETE", req.method)
-        assertEquals("/api/archives/abc/isnew", req.path)
+        assertEquals("/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/isnew", req.path)
     }
 
     @Test
     fun updateProgress_sendsPut() = runTest {
         server.enqueue(MockResponse().setBody("""{"operation":"update_progress","success":1}"""))
 
-        LRRArchiveApi.updateProgress(client, baseUrl, "abc", 5)
+        LRRArchiveApi.updateProgress(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 5)
 
         val req = server.takeRequest()
         assertEquals("PUT", req.method)
-        assertEquals("/api/archives/abc/progress/5", req.path)
+        assertEquals("/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/progress/5", req.path)
     }
 
     @Test
     fun deleteArchive_success() = runTest {
         server.enqueue(MockResponse().setBody("""{"success":1,"filename":"deleted.zip"}"""))
 
-        val filename = LRRArchiveApi.deleteArchive(client, baseUrl, "abc")
+        val filename = LRRArchiveApi.deleteArchive(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         assertEquals("deleted.zip", filename)
 
         val req = server.takeRequest()
         assertEquals("DELETE", req.method)
-        assertEquals("/api/archives/abc", req.path)
+        assertEquals("/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", req.path)
     }
 
     @Test
     fun deleteArchive_failure() = runTest {
         server.enqueue(MockResponse().setBody("""{"success":0,"error":"Not found"}"""))
         try {
-            LRRArchiveApi.deleteArchive(client, baseUrl, "abc")
+            LRRArchiveApi.deleteArchive(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
             fail("Should have thrown")
         } catch (e: IOException) {
             assertTrue(e.message!!.contains("Not found"))
@@ -198,8 +198,8 @@ class LRRArchiveApiTest {
 
     @Test
     fun getPageUrl_buildsCorrectUrl() {
-        val url = LRRArchiveApi.getPageUrl("https://server.test", "abc", "./page 1.jpg")
-        assertTrue(url.startsWith("https://server.test/api/archives/abc/page"))
+        val url = LRRArchiveApi.getPageUrl("https://server.test", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "./page 1.jpg")
+        assertTrue(url.startsWith("https://server.test/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/page"))
         assertTrue(url.contains("path="))
     }
 

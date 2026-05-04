@@ -72,32 +72,32 @@ class LRRCategoryApiTest {
     fun addToCategory_url() = runTest {
         server.enqueue(MockResponse().setBody("""{"operation":"add_to_category","success":1}"""))
 
-        LRRCategoryApi.addToCategory(client, baseUrl, "cat1", "arc1")
+        LRRCategoryApi.addToCategory(client, baseUrl, "SET_aaaaaaaaaa", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 
         val req = server.takeRequest()
         assertEquals("PUT", req.method)
-        assertEquals("/api/categories/cat1/arc1", req.path)
+        assertEquals("/api/categories/SET_aaaaaaaaaa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", req.path)
     }
 
     @Test
     fun removeFromCategory_sendsDelete() = runTest {
         server.enqueue(MockResponse().setBody("""{"operation":"remove_from_category","success":1}"""))
 
-        LRRCategoryApi.removeFromCategory(client, baseUrl, "cat1", "arc1")
+        LRRCategoryApi.removeFromCategory(client, baseUrl, "SET_aaaaaaaaaa", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 
         val req = server.takeRequest()
         assertEquals("DELETE", req.method)
-        assertEquals("/api/categories/cat1/arc1", req.path)
+        assertEquals("/api/categories/SET_aaaaaaaaaa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", req.path)
     }
 
     @Test
     fun deleteCategory_sendsDelete() = runTest {
         server.enqueue(MockResponse().setBody("""{"operation":"delete_category","success":1}"""))
 
-        LRRCategoryApi.deleteCategory(client, baseUrl, "cat1")
+        LRRCategoryApi.deleteCategory(client, baseUrl, "SET_aaaaaaaaaa")
 
         val req = server.takeRequest()
         assertEquals("DELETE", req.method)
-        assertEquals("/api/categories/cat1", req.path)
+        assertEquals("/api/categories/SET_aaaaaaaaaa", req.path)
     }
 }

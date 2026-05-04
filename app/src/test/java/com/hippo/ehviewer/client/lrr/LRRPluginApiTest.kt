@@ -139,7 +139,7 @@ class LRRPluginApiTest {
         val result = LRRPluginApi.runPlugin(
             client, baseUrl,
             namespace = "ehentai",
-            archiveId = "abc123",
+            archiveId = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             arg = "extra_arg"
         )
         assertEquals("use_plugin", result.operation)
@@ -154,7 +154,7 @@ class LRRPluginApiTest {
         assertEquals("POST", req.method)
         assertTrue(req.path!!.contains("/api/plugins/use"))
         assertTrue(req.path!!.contains("plugin=ehentai"))
-        assertTrue(req.path!!.contains("id=abc123"))
+        assertTrue(req.path!!.contains("id=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"))
         assertTrue(req.path!!.contains("arg=extra_arg"))
     }
 
