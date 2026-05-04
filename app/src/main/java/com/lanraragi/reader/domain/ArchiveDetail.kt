@@ -2,6 +2,7 @@ package com.lanraragi.reader.domain
 
 import android.os.Parcel
 import android.os.Parcelable
+import androidx.core.os.ParcelCompat
 
 /**
  * Extended archive information for the detail view.
@@ -19,10 +20,12 @@ data class ArchiveDetail(
     val size: String?,
 ) : Parcelable {
 
-    @Suppress("DEPRECATION")
+    // ParcelCompat dispatches to the type-safe Parcel.readParcelable(loader, clazz)
+    // overload on API 33+ and falls back to the legacy untyped overload on older
+    // platforms — without forcing every caller to wear a @Suppress("DEPRECATION").
     constructor(parcel: Parcel) : this(
         archive = requireNotNull(
-            parcel.readParcelable(Archive::class.java.classLoader)
+            ParcelCompat.readParcelable(parcel, Archive::class.java.classLoader, Archive::class.java)
         ) { "ArchiveDetail Parcel missing required Archive" },
         tagGroups = ArrayList<TagGroup>().also { list ->
             parcel.readTypedList(list, TagGroup.CREATOR)
