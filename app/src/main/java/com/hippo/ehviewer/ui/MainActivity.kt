@@ -38,6 +38,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.IdRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
@@ -101,7 +102,6 @@ class MainActivity : StageActivity(),
 
     companion object {
         private const val TAG = "MainActivity"
-        private const val REQUEST_CODE_SETTINGS = 0
         private const val KEY_NAV_CHECKED_ITEM = "nav_checked_item"
         /** Max dimension for user avatar/background decode to prevent OOM. */
         private const val MAX_IMAGE_DIMENSION = 1024
@@ -148,6 +148,14 @@ class MainActivity : StageActivity(),
     private var mHeaderBackground: ImageView? = null
     private var mDisplayName: TextView? = null
     private var userImageChange: UserImageChange? = null
+
+    private val settingsLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            refreshTopScene()
+        }
+    }
 
     private var mNavCheckedItem = 0
 
@@ -801,9 +809,7 @@ class MainActivity : StageActivity(),
             R.id.nav_history -> startScene(Announcer(HistoryScene::class.java))
             R.id.nav_downloads -> startScene(Announcer(DownloadsScene::class.java))
             R.id.nav_settings -> {
-                val intent = Intent(this, SettingsActivity::class.java)
-                @Suppress("DEPRECATION")
-                startActivityForResult(intent, REQUEST_CODE_SETTINGS)
+                settingsLauncher.launch(Intent(this, SettingsActivity::class.java))
             }
             R.id.nav_server_config -> {
                 // Show server list if profiles exist, otherwise direct to config
@@ -833,12 +839,6 @@ class MainActivity : StageActivity(),
 
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == REQUEST_CODE_SETTINGS) {
-            if (RESULT_OK == resultCode) {
-                refreshTopScene()
-            }
-            return
-        }
         val imageChange = userImageChange
         if ((requestCode == UserImageChange.TAKE_CAMERA ||
                     requestCode == UserImageChange.PICK_PHOTO ||
