@@ -2,27 +2,36 @@ package com.lanraragi.reader.client.api
 
 import android.util.Base64
 import android.util.Log
+import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.dao.ServerProfile
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Interceptor
 import okhttp3.Response
 
 /**
- * OkHttp interceptor that injects the LANraragi Bearer token ONLY for requests
- * targeting the configured LANraragi server. This prevents leaking the API key
- * to third-party hosts (e.g., external image CDNs or link previews).
+ * OkHttp interceptor that injects the LANraragi Bearer token for requests
+ * targeting any **configured** LANraragi server profile. Resolves the
+ * profile synchronously through [ProfileLookupCache] so cross-profile
+ * downloads (e.g. background worker on profile A while UI is on profile B)
+ * use the correct credentials without the user having to switch.
  *
  * Token format: Bearer Base64(api_key)
  *
- * Hardening notes (W0-2):
+ * Hardening notes:
  *  - Match logic is **pure string equality** on host + port + scheme. No DNS
  *    resolution happens here, so DNS rebinding cannot bypass the host check
  *    and OkHttp worker threads are never blocked on synchronous lookups.
- *  - Scheme participates in matching: an HTTPS-configured server with an HTTP
- *    request (or vice versa) is treated as a credential-downgrade attempt and
- *    aborted with [LRRPlaintextRefusedException] before the token is sent.
+ *  - Scheme participates in matching: a request whose host+port matches a
+ *    profile but whose scheme differs is treated as a credential-downgrade
+ *    attempt and aborted with [LRRPlaintextRefusedException] before the
+ *    token leaves the device.
  *  - URLs containing userInfo (`user:pass@`) or a fragment (`#`) are rejected
- *    outright, since both would be a sign of a malformed/malicious server URL.
+ *    outright.
+ *  - When the cache is cold (boot edge: app started but the Room flow has
+ *    not delivered its first emission yet), falls back to legacy active-only
+ *    matching against [LRRAuthManager.getServerUrl] so requests issued
+ *    during the first few ms of process life still authenticate correctly.
  */
 class LRRAuthInterceptor : Interceptor {
 
@@ -31,6 +40,63 @@ class LRRAuthInterceptor : Interceptor {
     }
 
     override fun intercept(chain: Interceptor.Chain): Response {
+        val original = chain.request()
+        val cache = runCatching { ServiceRegistry.dataModule.profileLookupCache }
+            .getOrNull()
+        val candidates = cache?.findCandidatesByHostPort(
+            original.url.host, original.url.port,
+        ).orEmpty()
+
+        if (candidates.isEmpty()) {
+            // Either a third-party host (no profile owns it — pass through),
+            // or the cache is still cold. Fall back to legacy active-only
+            // matching so cold-start requests still authenticate.
+            return interceptViaActive(chain)
+        }
+
+        val match = pickSchemeMatch(candidates, original.url)
+        if (match == null) {
+            Log.e(TAG, "Refusing to send API key: scheme mismatch with configured profile")
+            throw LRRPlaintextRefusedException(
+                "Scheme mismatch between request and configured profile"
+            )
+        }
+
+        if (hasSuspiciousComponents(original.url)) {
+            throw LRRPlaintextRefusedException("Request URL contains userInfo or fragment")
+        }
+        val cfgUrl = match.url.toHttpUrlOrNull()
+            ?: throw LRRPlaintextRefusedException(
+                "Configured profile URL is not a valid HTTP(S) URL"
+            )
+        if (hasSuspiciousComponents(cfgUrl)) {
+            throw LRRPlaintextRefusedException(
+                "Configured profile URL contains userInfo or fragment"
+            )
+        }
+
+        val apiKey = LRRAuthManager.getApiKeyForProfile(match.id)
+        if (apiKey.isNullOrEmpty()) {
+            // Profile is configured but has no per-profile key (legacy or
+            // intentionally open server). Pass through without injecting;
+            // the server will respond with 401 if it actually requires auth.
+            return chain.proceed(original)
+        }
+
+        val token = Base64.encodeToString(apiKey.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+        val authed = original.newBuilder()
+            .header("Authorization", "Bearer $token")
+            .build()
+        return chain.proceed(authed)
+    }
+
+    /**
+     * Legacy fallback path: match against [LRRAuthManager.getServerUrl] and
+     * inject [LRRAuthManager.getApiKey]. Preserves the pre-cache behaviour
+     * for boot-edge requests and for tests that wire only the auth-manager
+     * singleton without populating the Room SERVER_PROFILES table.
+     */
+    private fun interceptViaActive(chain: Interceptor.Chain): Response {
         val apiKey = LRRAuthManager.getApiKey()
         val original = chain.request()
 
@@ -56,19 +122,32 @@ class LRRAuthInterceptor : Interceptor {
                 return chain.proceed(authed)
             }
             ServerMatchResult.SCHEME_DOWNGRADE -> {
-                // Host:port matches but scheme differs — credential downgrade attempt.
-                // Abort the request before the API key leaves the device.
                 Log.e(TAG, "Refusing to send API key: scheme mismatch with configured server")
                 throw LRRPlaintextRefusedException(
                     "Scheme mismatch between request and configured server"
                 )
             }
             ServerMatchResult.MISMATCH -> {
-                // Different host or port — not our server. Pass through without injecting.
                 return chain.proceed(original)
             }
         }
     }
+}
+
+/**
+ * Pick the profile in [candidates] whose configured scheme matches
+ * [requestUrl]. Returns null when every candidate has the wrong scheme
+ * (a credential-downgrade attempt — caller should reject).
+ */
+internal fun pickSchemeMatch(
+    candidates: List<ServerProfile>,
+    requestUrl: HttpUrl,
+): ServerProfile? {
+    for (profile in candidates) {
+        val cfg = profile.url.toHttpUrlOrNull() ?: continue
+        if (cfg.scheme == requestUrl.scheme) return profile
+    }
+    return null
 }
 
 /**

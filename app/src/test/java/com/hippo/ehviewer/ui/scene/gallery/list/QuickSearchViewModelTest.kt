@@ -81,6 +81,7 @@ class QuickSearchViewModelTest {
                     HistoryRepository(db.archiveLocalStateDao(), db)
                 override val profileRepository get() =
                     ProfileRepository(db.miscDao())
+                override val profileLookupCache get() = throw NotImplementedError("not needed")
                 override val downloadDbRepository get() =
                     throw NotImplementedError("Not needed for QuickSearchViewModel tests")
                 override val downloadManager: DownloadManager

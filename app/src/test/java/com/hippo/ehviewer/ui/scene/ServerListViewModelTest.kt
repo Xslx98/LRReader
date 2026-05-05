@@ -113,6 +113,7 @@ class ServerListViewModelTest {
 
         val testDataModule = object : IDataModule {
             override val profileRepository get() = ProfileRepository(db.miscDao())
+            override val profileLookupCache get() = throw NotImplementedError("not needed")
             override val historyRepository get() = throw NotImplementedError("not needed")
             override val quickSearchRepository get() = throw NotImplementedError("not needed")
             override val favoritesRepository get() = throw NotImplementedError("not needed")

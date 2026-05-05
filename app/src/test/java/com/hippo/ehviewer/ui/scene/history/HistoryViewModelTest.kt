@@ -72,6 +72,7 @@ class HistoryViewModelTest {
             data = object : IDataModule {
                 override val historyRepository get() = HistoryRepository(db.archiveLocalStateDao(), db)
                 override val profileRepository get() = ProfileRepository(db.miscDao())
+                override val profileLookupCache get() = throw NotImplementedError("not needed")
                 override val quickSearchRepository get() = throw NotImplementedError("not needed")
                 override val favoritesRepository get() = throw NotImplementedError("not needed")
                 override val downloadDbRepository get() = throw NotImplementedError("not needed")

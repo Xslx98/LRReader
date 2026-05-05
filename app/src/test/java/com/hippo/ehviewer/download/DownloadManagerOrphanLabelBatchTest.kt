@@ -77,6 +77,7 @@ class DownloadManagerOrphanLabelBatchTest {
                 override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
                 override val historyRepository get() = com.hippo.ehviewer.dao.HistoryRepository(db.archiveLocalStateDao(), db)
                 override val profileRepository get() = throw NotImplementedError("not needed")
+                override val profileLookupCache get() = throw NotImplementedError("not needed")
                 override val quickSearchRepository get() = throw NotImplementedError("not needed")
                 override val favoritesRepository get() = throw NotImplementedError("not needed")
                 override val archiveDetailCache get() = throw NotImplementedError("not needed")
