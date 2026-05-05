@@ -35,6 +35,7 @@ import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemAdapter
 import com.h6ah4i.android.widget.advrecyclerview.draggable.ItemDraggableRange
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemViewHolder
 import com.hippo.android.resource.AttrResources
+import com.hippo.drawable.RoundSideRectDrawable
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.R
@@ -254,15 +255,19 @@ class DownloadAdapter(
      *
      *  - Hidden when the download's source profile matches the active one
      *    (single-profile users see no extra noise).
-     *  - Shows the profile name in accent colour when the download came from
-     *    a non-active profile — so the user can tell at a glance which
-     *    server the half-finished download will resume against.
-     *  - Shows the localised "source deleted" string in error red when the
-     *    profile id doesn't resolve (orphan after profile delete).
+     *  - Pill-shaped chip in [R.attr.tagBackgroundColor] tinted background
+     *    showing the profile name when the download came from a
+     *    non-active profile.
+     *  - Same chip in `colorError` background showing the localised
+     *    "source deleted" label when the profile id no longer resolves
+     *    (orphan after profile delete).
      *
-     * Read off [com.lanraragi.reader.client.api.ProfileLookupCache] which
-     * tracks SERVER_PROFILES via Room flow; profile rename / delete is
-     * picked up on the next bind because the cache snapshot is shared.
+     * Visual style mirrors the gallery-detail tag chips
+     * ([com.hippo.drawable.RoundSideRectDrawable]) for cross-screen
+     * consistency. Resolution goes through
+     * [com.lanraragi.reader.client.api.ProfileLookupCache] which tracks
+     * SERVER_PROFILES via Room flow; profile rename / delete is picked
+     * up on the next bind because the cache snapshot is shared.
      */
     private fun bindSourceBadge(holder: DownloadHolder, info: DownloadInfo) {
         val badge = holder.sourceServer
@@ -277,27 +282,21 @@ class DownloadAdapter(
             badge.visibility = View.GONE
             return
         }
+        val context = mScene.ehContext ?: return
         val cache = ServiceRegistry.dataModule.profileLookupCache
         val profile = cache.findById(info.serverProfileId)
         if (profile == null) {
             badge.text = mScene.getString(R.string.lrr_download_source_deleted)
-            badge.setTextColor(
-                AttrResources.getAttrColor(
-                    mScene.ehContext ?: return,
-                    androidx.appcompat.R.attr.colorError
-                )
+            badge.background = RoundSideRectDrawable(
+                AttrResources.getAttrColor(context, androidx.appcompat.R.attr.colorError)
             )
-            badge.visibility = View.VISIBLE
         } else {
             badge.text = profile.name
-            badge.setTextColor(
-                AttrResources.getAttrColor(
-                    mScene.ehContext ?: return,
-                    R.attr.textColorThemeAccent
-                )
+            badge.background = RoundSideRectDrawable(
+                AttrResources.getAttrColor(context, R.attr.tagBackgroundColor)
             )
-            badge.visibility = View.VISIBLE
         }
+        badge.visibility = View.VISIBLE
     }
 
     private fun bindForState(holder: DownloadHolder, info: DownloadInfo) {

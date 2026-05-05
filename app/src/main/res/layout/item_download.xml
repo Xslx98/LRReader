@@ -99,21 +99,19 @@
 
             <TextView
                 android:id="@+id/source_server"
+                style="@style/CardMessage"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignBottom="@id/thumb"
                 android:layout_toEndOf="@id/read_progress"
                 android:layout_marginBottom="8dp"
                 android:layout_marginStart="6dp"
-                android:paddingStart="6dp"
-                android:paddingEnd="6dp"
-                android:paddingTop="2dp"
-                android:paddingBottom="2dp"
-                android:singleLine="true"
-                android:ellipsize="end"
-                android:maxWidth="120dp"
-                android:textSize="@dimen/text_super_small"
-                android:textColor="?attr/textColorThemeAccent"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:maxWidth="140dp"
+                android:textColor="@android:color/white"
                 android:visibility="gone" />
 
             <FrameLayout
