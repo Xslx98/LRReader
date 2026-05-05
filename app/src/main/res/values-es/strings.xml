@@ -1063,6 +1063,7 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_title_copied">Título copiado</string>
     <string name="lrr_download_failed_invalid">Descarga fallida: archivo inválido, toca para reintentar</string>
     <string name="lrr_download_failed_not_image">Descarga fallida: no es un formato de imagen, toca para reintentar</string>
+    <string name="lrr_download_orphan_profile">Descarga pausada: el perfil del servidor de origen ha sido eliminado</string>
     <string name="lrr_decode_failed">Error al decodificar imagen, toca para reintentar</string>
     <string name="lrr_subscription_profile_missing">Perfil no encontrado, intenta reiniciar</string>
     <string name="lrr_empty_response">El servidor devolvió una respuesta vacía</string>

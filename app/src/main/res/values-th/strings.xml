@@ -1070,6 +1070,7 @@
     <string name="lrr_title_copied">คัดลอกชื่อแล้ว</string>
     <string name="lrr_download_failed_invalid">ดาวน์โหลดล้มเหลว: ไฟล์ไม่ถูกต้อง แตะเพื่อลองอีกครั้ง</string>
     <string name="lrr_download_failed_not_image">ดาวน์โหลดล้มเหลว: ไม่ใช่รูปแบบรูปภาพ แตะเพื่อลองอีกครั้ง</string>
+    <string name="lrr_download_orphan_profile">หยุดดาวน์โหลดชั่วคราว: โปรไฟล์เซิร์ฟเวอร์ต้นทางถูกลบ</string>
     <string name="lrr_decode_failed">ถอดรหัสรูปภาพล้มเหลว แตะเพื่อลองอีกครั้ง</string>
     <string name="lrr_subscription_profile_missing">ไม่พบโปรไฟล์ ลองรีสตาร์ต</string>
     <string name="lrr_empty_response">เซิร์ฟเวอร์ส่งการตอบกลับว่างเปล่า</string>

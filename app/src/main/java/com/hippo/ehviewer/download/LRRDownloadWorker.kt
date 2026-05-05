@@ -2,6 +2,7 @@ package com.hippo.ehviewer.download
 
 import android.content.Context
 import android.util.Log
+import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRAuthManager
@@ -32,6 +33,16 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
+ * Thrown by [LRRDownloadWorker] when the [DownloadInfo.serverProfileId]
+ * does not resolve to a known [com.hippo.ehviewer.dao.ServerProfile] —
+ * i.e. the user deleted the source profile while the download was
+ * queued. Surfaced through the worker's normal failure path with a
+ * localised user-facing message.
+ */
+internal class OrphanProfileException(val profileId: Long) :
+    IOException("Source profile id=$profileId no longer exists")
+
+/**
  * Downloads all pages of a LANraragi archive to the download directory.
  * Replaces SpiderQueen's MODE_DOWNLOAD for LANraragi galleries.
  *
@@ -42,7 +53,14 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
 
     private val context: Context = context.applicationContext
     private val arcId: String = checkNotNull(info.arcid) { "DownloadInfo.arcid must not be null" }
-    private val serverUrl: String = checkNotNull(LRRAuthManager.getServerUrl()) { "Server URL must be configured" }
+
+    /**
+     * Resolved at the start of [doDownload] so the cache has time to
+     * hydrate from Room and the worker can route by [DownloadInfo.serverProfileId]
+     * instead of always pointing at the active profile. See
+     * [resolveServerUrl] for the fallback semantics.
+     */
+    private lateinit var serverUrl: String
 
     var listener: SpiderQueen.OnSpiderListener? = null
 
@@ -78,6 +96,26 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
     }
 
     private suspend fun doDownload() {
+        // Step 0: Route this worker to the archive's source profile. If the
+        // user has switched the active profile (or no profile is active),
+        // we still continue the download against the original server.
+        // Failing to resolve means the source profile was deleted while
+        // the download was queued — surface a localised error and stop.
+        try {
+            serverUrl = resolveServerUrl()
+        } catch (e: OrphanProfileException) {
+            Log.w(TAG, "Source profile ${e.profileId} no longer exists for arcid $arcId")
+            listener?.run {
+                onPageFailure(
+                    0,
+                    context.getString(R.string.lrr_download_orphan_profile),
+                    0, 0, 0,
+                )
+                onFinish(0, 0, 0)
+            }
+            return
+        }
+
         val client = ServiceRegistry.networkModule.okHttpClient
         // Dedicated client for page body GETs:
         //  - 30 s read timeout (large archives may need on-the-fly extraction)
@@ -341,6 +379,36 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                 tmpFile.delete()
             }
         }
+    }
+
+    /**
+     * Resolve the LANraragi base URL this worker should fetch pages from.
+     *
+     * Routing rules:
+     *  1. `info.serverProfileId == 0` is treated as **legacy data** (rows
+     *     written before SERVER_PROFILES was indexed on the download
+     *     subsystem). For these we fall back to the active profile's URL,
+     *     mirroring the historical behaviour so an in-flight download
+     *     started under the old code path does not start failing after
+     *     an upgrade.
+     *  2. Any other id is resolved against [ProfileLookupCache] (which
+     *     mirrors the SERVER_PROFILES Room table). Cache misses mean the
+     *     user deleted the source profile while the download was queued
+     *     — surface as [OrphanProfileException] so the caller can fail
+     *     fast with a localised error.
+     */
+    private suspend fun resolveServerUrl(): String {
+        val cache = ServiceRegistry.dataModule.profileLookupCache
+        cache.awaitInitialized()
+
+        if (info.serverProfileId == 0L) {
+            return LRRAuthManager.getServerUrl()
+                ?: throw OrphanProfileException(0L)
+        }
+
+        val profile = cache.findById(info.serverProfileId)
+            ?: throw OrphanProfileException(info.serverProfileId)
+        return profile.url
     }
 
     private suspend fun getDownloadDir(): File? {
