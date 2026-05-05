@@ -271,6 +271,16 @@ interface ArchiveLocalStateDao {
     )
     suspend fun backfillDownloadRootUri(uri: String)
 
+    /**
+     * Lightweight lookup used by SpiderDen / GalleryProvider on the
+     * read path: resolve the download tree URI persisted with this
+     * archive. Returns NULL when the archive has no download row OR
+     * when the row pre-dates the v25→v26 backfill — the caller falls
+     * back to `DownloadSettings.getDownloadLocation()` in that case.
+     */
+    @Query("SELECT DOWNLOAD_ROOT_URI FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid")
+    suspend fun getDownloadRootUri(arcid: String): String?
+
     @Query(
         "INSERT OR IGNORE INTO ARCHIVE_LOCAL_STATE " +
             "(ARCID, SERVER_PROFILE_ID, ARCHIVE_JSON, HISTORY_TIME, HISTORY_MODE) " +

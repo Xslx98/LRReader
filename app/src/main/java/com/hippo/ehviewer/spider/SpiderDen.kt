@@ -16,7 +16,10 @@
 
 package com.hippo.ehviewer.spider
 
+import android.net.Uri
+import android.util.Log
 import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.unifile.FilenameFilter
@@ -36,11 +39,24 @@ import java.util.Locale
  */
 object SpiderDen {
 
+    private const val TAG = "SpiderDen"
+
     /**
      * Resolves the download directory for the given archive.
      *
      * Suspend because it calls [com.hippo.ehviewer.dao.DownloadDbRepository].
      * Callers must be in a coroutine context.
+     *
+     * Resolution chain for the download root (post-v26):
+     *  1. [rootUriOverride] when the caller already holds a
+     *     [com.hippo.ehviewer.dao.DownloadInfo.downloadRootUri] in memory.
+     *  2. The URI persisted on the archive's `ARCHIVE_LOCAL_STATE` row
+     *     (`DOWNLOAD_ROOT_URI`) — set when the archive was first added
+     *     to the download subsystem, so it survives later changes to
+     *     [DownloadSettings.getDownloadLocation].
+     *  3. The current [DownloadSettings.getDownloadLocation] as the
+     *     final fallback for legacy rows that have not been backfilled
+     *     and for arcids with no download row at all.
      *
      * @param arcid LANraragi archive id (the directory's primary key)
      * @param title display title — used only when the directory has to be
@@ -49,17 +65,22 @@ object SpiderDen {
      *   listing directories so that very old installs (pre-W34-1) whose
      *   on-disk dirs are gid-prefixed can still be matched. Pass `null` if
      *   the caller has no gid value (e.g. arcid-only contexts).
+     * @param rootUriOverride explicit override skipping the DB lookup;
+     *   pass `info.downloadRootUri` when the caller already has a
+     *   `DownloadInfo` in scope.
      */
     @JvmStatic
     suspend fun getGalleryDownloadDir(
         arcid: String,
         title: String?,
         legacyGid: Long? = null,
+        rootUriOverride: String? = null,
     ): UniFile? {
-        val dir = DownloadSettings.getDownloadLocation() ?: return null
+        val downloadDbRepo = ServiceRegistry.dataModule.downloadDbRepository
+        val storedUri = rootUriOverride ?: downloadDbRepo.getDownloadRootUri(arcid)
+        val dir = resolveRootDir(storedUri) ?: return null
 
         // Read from DB
-        val downloadDbRepo = ServiceRegistry.dataModule.downloadDbRepository
         var dirname = downloadDbRepo.getDownloadDirname(arcid)
         if (dirname != null) {
             // Some dirname may be invalid in some version
@@ -124,6 +145,30 @@ object SpiderDen {
             if (file != null) return file
         }
         return null
+    }
+
+    /**
+     * Build a [UniFile] for the supplied tree URI, falling back to
+     * [DownloadSettings.getDownloadLocation] when [storedUri] is null,
+     * malformed, or no longer accessible (SAF permission revoked,
+     * directory deleted). This is the per-archive root resolver used
+     * by the download read paths so a setting change after-the-fact
+     * doesn't orphan a previously-downloaded archive — and a SAF
+     * revoke surfaces as a `null` from the entire helper rather than
+     * a crash.
+     */
+    private fun resolveRootDir(storedUri: String?): UniFile? {
+        if (!storedUri.isNullOrEmpty()) {
+            try {
+                val parsed = Uri.parse(storedUri)
+                val file = UniFile.fromUri(Settings.getContext(), parsed)
+                if (file != null) return file
+                Log.w(TAG, "Stored DOWNLOAD_ROOT_URI no longer resolvable, falling back to current setting")
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to parse stored DOWNLOAD_ROOT_URI, falling back to current setting", e)
+            }
+        }
+        return DownloadSettings.getDownloadLocation()
     }
 
     private class StartWithFilenameFilter(private val prefix: String) : FilenameFilter {
