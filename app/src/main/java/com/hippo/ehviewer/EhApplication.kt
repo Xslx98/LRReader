@@ -184,6 +184,24 @@ class EhApplication : RecordingApplication() {
         // touching the lazy here kicks off the Room flow on app scope.
         ServiceRegistry.dataModule.profileLookupCache
 
+        // One-shot v25→v26 backfill: any download row whose
+        // DOWNLOAD_ROOT_URI is still NULL pre-dates the schema bump,
+        // so adopt the user's current download-location URI as its
+        // persistent root. The DAO UPDATE is gated on the column being
+        // NULL — subsequent boots are no-ops, even after the user
+        // changes the location again.
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            try {
+                val rootUri = DownloadSettings.getCurrentDownloadRootUri()
+                if (!rootUri.isNullOrEmpty()) {
+                    ServiceRegistry.dataModule.downloadDbRepository
+                        .backfillDownloadRootUri(rootUri)
+                }
+            } catch (t: Throwable) {
+                Log.w(TAG, "Download root URI backfill failed; will retry next boot", t)
+            }
+        }
+
         // Defer heavy JNI/native initialization to background thread.
         // These are not needed until the user actually opens a gallery or downloads.
         ServiceRegistry.coroutineModule.ioScope.launch {
