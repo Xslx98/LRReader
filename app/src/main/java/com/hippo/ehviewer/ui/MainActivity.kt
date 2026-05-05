@@ -21,7 +21,6 @@ import android.content.ClipboardManager
 import android.util.Log
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.net.ConnectivityManager
@@ -102,7 +101,6 @@ class MainActivity : StageActivity(),
 
     companion object {
         private const val TAG = "MainActivity"
-        private const val PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE = 0
         private const val REQUEST_CODE_SETTINGS = 0
         private const val KEY_NAV_CHECKED_ITEM = "nav_checked_item"
         /** Max dimension for user avatar/background decode to prevent OOM. */
@@ -607,20 +605,6 @@ class MainActivity : StageActivity(),
 
     private fun checkClipboardUrlInternal() {
         // LANraragi: clipboard URL monitoring disabled (was E-Hentai specific)
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        if (requestCode == PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE) {
-            if (grantResults.size == 1 && grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, R.string.you_rejected_me, Toast.LENGTH_SHORT).show()
-            }
-        } else {
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        }
     }
 
     @SuppressLint("RtlHardcoded")
