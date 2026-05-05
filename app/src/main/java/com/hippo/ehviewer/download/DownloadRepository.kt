@@ -446,6 +446,7 @@ class DownloadRepository(
         info.label = label
         info.state = state
         info.time = System.currentTimeMillis()
+        info.downloadRootUri = com.hippo.ehviewer.settings.DownloadSettings.getCurrentDownloadRootUri()
 
         val list = getInfoListForLabel(info.label)
         if (!labelCountMap.containsKey(label)) {
@@ -474,6 +475,9 @@ class DownloadRepository(
         info.label = label
         info.state = DownloadState.NONE
         if (info.time == 0L) info.time = System.currentTimeMillis()
+        if (info.downloadRootUri == null) {
+            info.downloadRootUri = com.hippo.ehviewer.settings.DownloadSettings.getCurrentDownloadRootUri()
+        }
         val list = getInfoListForLabel(info.label) ?: run {
             Log.e(TAG, "Can't find download info list with label: $label")
             return false

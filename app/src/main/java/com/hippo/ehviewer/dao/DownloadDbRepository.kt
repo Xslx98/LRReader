@@ -122,6 +122,28 @@ class DownloadDbRepository(
     }
 
     /**
+     * Resolve the persisted download tree URI for [arcid]. SpiderDen
+     * uses this in [com.hippo.ehviewer.spider.SpiderDen.getGalleryDownloadDir]
+     * to keep already-downloaded archives reachable after the user
+     * changes [com.hippo.ehviewer.settings.DownloadSettings.getDownloadLocation].
+     * Returns NULL for legacy rows that have not been backfilled yet
+     * (caller falls back to the current setting).
+     */
+    suspend fun getDownloadRootUri(arcid: String): String? =
+        archiveLocalStateDao.getDownloadRootUri(arcid)
+
+    /**
+     * One-shot UPDATE driven by the boot-time backfill in
+     * [com.hippo.ehviewer.EhApplication]. Sets DOWNLOAD_ROOT_URI on
+     * every download row that still has it as NULL, so legacy rows
+     * adopt the current download location as their persistent root
+     * before the user can change the setting again.
+     */
+    suspend fun backfillDownloadRootUri(uri: String) {
+        archiveLocalStateDao.backfillDownloadRootUri(uri)
+    }
+
+    /**
      * Update the rating for a download identified by [arcid]. The
      * rating lives in `archive_json`, so the in-row update has to
      * load, patch, and rewrite the JSON column.

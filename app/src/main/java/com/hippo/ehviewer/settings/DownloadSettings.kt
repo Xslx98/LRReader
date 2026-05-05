@@ -50,6 +50,17 @@ object DownloadSettings {
         return dir ?: UniFile.fromFile(AppConfig.getDefaultDownloadDir())
     }
 
+    /**
+     * Snapshot of the current download root as a stable URI string.
+     * Captured by the download write path at archive-add time so the
+     * row's `DOWNLOAD_ROOT_URI` survives a later setting change. Returns
+     * null when no location is configured (extremely rare — fresh
+     * installs have a default fallback dir).
+     */
+    @JvmStatic
+    fun getCurrentDownloadRootUri(): String? =
+        getDownloadLocation()?.uri?.toString()
+
     @JvmStatic
     fun putDownloadLocation(location: UniFile) {
         val uri = location.uri

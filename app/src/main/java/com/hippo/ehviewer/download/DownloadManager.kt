@@ -197,7 +197,12 @@ class DownloadManager(
                 scheduler.ensureDownload()
             }
         } else {
-            val info = archive.toDownloadInfoView().apply { this.label = label; state = DownloadState.WAIT; time = System.currentTimeMillis() }
+            val info = archive.toDownloadInfoView().apply {
+                this.label = label
+                state = DownloadState.WAIT
+                time = System.currentTimeMillis()
+                downloadRootUri = DownloadSettings.getCurrentDownloadRootUri()
+            }
             val list = repo.getInfoListForLabel(info.label) ?: run { Log.e(TAG, "Can't find download info list with label: $label"); return }
             list.add(0, info)
             repo.allInfoList.add(0, info)
