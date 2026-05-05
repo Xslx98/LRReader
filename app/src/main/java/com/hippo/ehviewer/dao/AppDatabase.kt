@@ -44,7 +44,7 @@ import kotlinx.serialization.json.Json
         ServerProfile::class,
         ArchiveLocalState::class
     ],
-    version = 25,
+    version = 26,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class, DownloadStateConverter::class)
@@ -67,7 +67,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "eh.db"
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26)
                     .build()
                     .also { INSTANCE = it }
             }
@@ -285,6 +285,27 @@ abstract class AppDatabase : RoomDatabase() {
         internal val MIGRATION_24_25 = object : Migration(24, 25) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE ARCHIVE_LOCAL_STATE ADD COLUMN HISTORY_SCROLL_FRACTION REAL")
+            }
+        }
+
+        /**
+         * v25 → v26: Add `DOWNLOAD_ROOT_URI` column to
+         * `ARCHIVE_LOCAL_STATE`.
+         *
+         * Stores the SAF tree URI of the download root in effect when
+         * this archive was persisted to the download subsystem, so a
+         * later change of `DownloadSettings.getDownloadLocation()` does
+         * not orphan already-downloaded archives. The migration adds
+         * the column as NULL on every existing row; legacy rows are
+         * backfilled at boot from the current download-location setting
+         * (see `EhApplication.backfillLegacyDownloadRootUri`). Once a
+         * row has its URI set, subsequent boots are no-ops because the
+         * backfill UPDATE is gated on `DOWNLOAD_ROOT_URI IS NULL`.
+         */
+        @VisibleForTesting
+        internal val MIGRATION_25_26 = object : Migration(25, 26) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE ARCHIVE_LOCAL_STATE ADD COLUMN DOWNLOAD_ROOT_URI TEXT")
             }
         }
 

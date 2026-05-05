@@ -139,6 +139,7 @@ fun ArchiveLocalState.toDownloadInfoView(): DownloadInfo {
     info.time = downloadTime ?: 0L
     info.label = downloadLabel
     info.archiveUri = downloadArchiveUri
+    info.downloadRootUri = downloadRootUri
     return info
 }
 

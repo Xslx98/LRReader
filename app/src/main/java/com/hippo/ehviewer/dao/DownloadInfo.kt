@@ -76,6 +76,19 @@ class DownloadInfo() : Parcelable {
     @JvmField
     var archiveUri: String? = null
 
+    /**
+     * SAF tree URI of the download root in effect when this archive was
+     * downloaded. Mirrored from `ARCHIVE_LOCAL_STATE.DOWNLOAD_ROOT_URI`.
+     * NULL means "use the current `DownloadSettings.getDownloadLocation()`"
+     * — applies to legacy rows before the v25→v26 boot backfill runs,
+     * and to future rows where the user cleared the download location
+     * entirely. Read paths (gallery viewer, resume worker, delete) prefer
+     * this value over the current setting so old downloads stay
+     * reachable after the user changes the setting.
+     */
+    @JvmField
+    var downloadRootUri: String? = null
+
     // ── Transient, non-persisted helpers ──
 
     /**
@@ -115,6 +128,7 @@ class DownloadInfo() : Parcelable {
         time = `in`.readLong()
         label = `in`.readString()
         archiveUri = `in`.readString()
+        downloadRootUri = `in`.readString()
         simpleTags = `in`.createStringArray()
         @Suppress("UNCHECKED_CAST")
         tgList = `in`.readArrayList(String::class.java.classLoader) as? ArrayList<String>
@@ -135,6 +149,7 @@ class DownloadInfo() : Parcelable {
         dest.writeLong(time)
         dest.writeString(label)
         dest.writeString(archiveUri)
+        dest.writeString(downloadRootUri)
         dest.writeStringArray(simpleTags)
         dest.writeList(tgList)
         dest.writeLong(fileSize)

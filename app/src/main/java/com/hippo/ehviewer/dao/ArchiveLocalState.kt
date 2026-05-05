@@ -77,6 +77,23 @@ data class ArchiveLocalState(
     @ColumnInfo(name = "DOWNLOAD_ARCHIVE_URI")
     val downloadArchiveUri: String? = null,
 
+    /**
+     * SAF tree URI of the download root in effect when this archive was
+     * first persisted to the download subsystem. Resolves the
+     * "user changed download path after the archive was downloaded"
+     * problem: read paths (gallery viewer, resume worker, delete) prefer
+     * this stored URI over the current `DownloadSettings.getDownloadLocation()`,
+     * so an old download stays reachable at its original tree even after
+     * the setting flips. NULL on:
+     *   - rows lifted from pre-v26 databases before the boot backfill runs
+     *     (see EhApplication startup), and
+     *   - rows where the download was added before the column existed and
+     *     the user has since cleared the download location.
+     * NULL is the "use current setting" sentinel.
+     */
+    @ColumnInfo(name = "DOWNLOAD_ROOT_URI")
+    val downloadRootUri: String? = null,
+
     // ── History subsystem ──────────────────────────────────────
     /** Non-null iff the archive has reading history. */
     @ColumnInfo(name = "HISTORY_TIME")
