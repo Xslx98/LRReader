@@ -179,6 +179,10 @@ class EhApplication : RecordingApplication() {
         trace("EhApp.ServiceRegistry.init") { ServiceRegistry.initialize(this) }
         // Eagerly start network monitoring so isAvailable() is ready before first API call
         ServiceRegistry.networkModule.networkMonitor
+        // Eagerly start the profile snapshot collector. Interceptors and the
+        // download worker need a populated snapshot before their first read;
+        // touching the lazy here kicks off the Room flow on app scope.
+        ServiceRegistry.dataModule.profileLookupCache
 
         // Defer heavy JNI/native initialization to background thread.
         // These are not needed until the user actually opens a gallery or downloads.

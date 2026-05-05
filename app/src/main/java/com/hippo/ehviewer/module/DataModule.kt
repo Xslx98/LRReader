@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.collection.LruCache
 import com.hippo.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.FavouriteStatusRouter
+import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.dao.DownloadDbRepository
@@ -13,6 +14,7 @@ import com.hippo.ehviewer.dao.HistoryRepository
 import com.hippo.ehviewer.dao.ProfileRepository
 import com.hippo.ehviewer.dao.QuickSearchRepository
 import com.hippo.ehviewer.download.DownloadManager
+import com.lanraragi.reader.client.api.ProfileLookupCache
 import java.io.File
 
 /**
@@ -37,6 +39,13 @@ class DataModule(private val context: Context) : IDataModule, Cacheable {
 
     override val profileRepository: ProfileRepository by lazy {
         ProfileRepository(AppDatabase.getInstance(context).miscDao())
+    }
+
+    override val profileLookupCache: ProfileLookupCache by lazy {
+        ProfileLookupCache(
+            repo = profileRepository,
+            scope = ServiceRegistry.coroutineModule.applicationScope,
+        )
     }
 
     override val quickSearchRepository: QuickSearchRepository by lazy {

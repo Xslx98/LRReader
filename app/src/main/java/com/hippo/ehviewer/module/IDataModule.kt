@@ -10,6 +10,7 @@ import com.hippo.ehviewer.dao.HistoryRepository
 import com.hippo.ehviewer.dao.ProfileRepository
 import com.hippo.ehviewer.dao.QuickSearchRepository
 import com.hippo.ehviewer.download.DownloadManager
+import com.lanraragi.reader.client.api.ProfileLookupCache
 
 /**
  * Abstraction over [DataModule] to allow ServiceRegistry consumers to depend on the
@@ -29,6 +30,13 @@ interface IDataModule {
 
     /** Server profile domain repository backed by [com.hippo.ehviewer.dao.MiscRoomDao]. */
     val profileRepository: ProfileRepository
+
+    /**
+     * Synchronous in-memory snapshot of [ProfileRepository.observeAll], used by
+     * OkHttp interceptors (no suspending) and the download worker (sync
+     * resolve at construction) to look up profiles by id / request URL.
+     */
+    val profileLookupCache: ProfileLookupCache
 
     /** Quick search domain repository backed by BrowsingRoomDao. */
     val quickSearchRepository: QuickSearchRepository
