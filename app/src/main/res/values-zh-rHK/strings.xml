@@ -1096,6 +1096,7 @@
     <string name="lrr_download_failed_invalid">下載失敗：無效的檔案，點擊重試</string>
     <string name="lrr_download_failed_not_image">下載失敗：非圖片格式，點擊重試</string>
     <string name="lrr_download_orphan_profile">下載暫停：來源站點的伺服器設定已被刪除</string>
+    <string name="lrr_download_source_deleted">來源已刪除</string>
     <string name="lrr_decode_failed">圖片解碼失敗，點擊重試</string>
     <string name="lrr_subscription_profile_missing">找不到設定檔，請嘗試重新啟動</string>
     <string name="lrr_empty_response">伺服器傳回空回應</string>

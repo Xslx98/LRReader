@@ -1070,6 +1070,7 @@ Cette action est irréversible.</string>
     <string name="lrr_download_failed_invalid">Téléchargement échoué : fichier invalide, appuyer pour réessayer</string>
     <string name="lrr_download_failed_not_image">Téléchargement échoué : format non image, appuyer pour réessayer</string>
     <string name="lrr_download_orphan_profile">Téléchargement suspendu : le profil du serveur source a été supprimé</string>
+    <string name="lrr_download_source_deleted">Source supprimée</string>
     <string name="lrr_decode_failed">Décodage de l\'image échoué, appuyer pour réessayer</string>
     <string name="lrr_subscription_profile_missing">Profil introuvable, essayez de redémarrer</string>
     <string name="lrr_empty_response">Le serveur a retourné une réponse vide</string>

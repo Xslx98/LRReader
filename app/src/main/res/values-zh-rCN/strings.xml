@@ -1105,6 +1105,7 @@
     <string name="lrr_download_failed_invalid">下载失败：文件无效，请点击重试</string>
     <string name="lrr_download_failed_not_image">下载失败：非图片格式，请点击重试</string>
     <string name="lrr_download_orphan_profile">下载暂停：源站点的服务器配置已被删除</string>
+    <string name="lrr_download_source_deleted">源已删除</string>
     <string name="lrr_decode_failed">图片解码失败，请点击重试</string>
     <string name="lrr_subscription_profile_missing">描述文件未找到？？？重启试试~</string>
     <string name="lrr_empty_response">服务器返回空响应体</string>

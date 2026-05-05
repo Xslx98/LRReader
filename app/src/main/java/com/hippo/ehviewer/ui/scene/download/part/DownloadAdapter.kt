@@ -53,6 +53,7 @@ import com.hippo.ehviewer.ui.scene.download.DownloadsScene
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.ehviewer.ui.scene.gallery.list.EnterGalleryDetailTransaction
 import com.hippo.ehviewer.widget.SimpleRatingView
+import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.ripple.Ripple
 import com.hippo.scene.Announcer
@@ -228,6 +229,8 @@ class DownloadAdapter(
             } else {
                 category.visibility = View.GONE
             }
+
+            bindSourceBadge(holder, info)
             bindForState(holder, info)
 
             ViewCompat.setTransitionName(holder.thumb, TransitionNameFactory.getThumbTransitionName(info.arcid))
@@ -244,6 +247,57 @@ class DownloadAdapter(
         }
         val count = listSize - mCallback.pageSize * (mCallback.indexPage - 1)
         return count.coerceAtMost(mCallback.pageSize)
+    }
+
+    /**
+     * Render the cross-profile badge on a download row.
+     *
+     *  - Hidden when the download's source profile matches the active one
+     *    (single-profile users see no extra noise).
+     *  - Shows the profile name in accent colour when the download came from
+     *    a non-active profile — so the user can tell at a glance which
+     *    server the half-finished download will resume against.
+     *  - Shows the localised "source deleted" string in error red when the
+     *    profile id doesn't resolve (orphan after profile delete).
+     *
+     * Read off [com.lanraragi.reader.client.api.ProfileLookupCache] which
+     * tracks SERVER_PROFILES via Room flow; profile rename / delete is
+     * picked up on the next bind because the cache snapshot is shared.
+     */
+    private fun bindSourceBadge(holder: DownloadHolder, info: DownloadInfo) {
+        val badge = holder.sourceServer
+        // Legacy rows (pre-SERVER_PROFILE_ID) carry id 0 — treat them as
+        // implicitly belonging to the current active profile, no badge.
+        if (info.serverProfileId == 0L) {
+            badge.visibility = View.GONE
+            return
+        }
+        val activeId = LRRAuthManager.getActiveProfileId()
+        if (info.serverProfileId == activeId) {
+            badge.visibility = View.GONE
+            return
+        }
+        val cache = ServiceRegistry.dataModule.profileLookupCache
+        val profile = cache.findById(info.serverProfileId)
+        if (profile == null) {
+            badge.text = mScene.getString(R.string.lrr_download_source_deleted)
+            badge.setTextColor(
+                AttrResources.getAttrColor(
+                    mScene.ehContext ?: return,
+                    androidx.appcompat.R.attr.colorError
+                )
+            )
+            badge.visibility = View.VISIBLE
+        } else {
+            badge.text = profile.name
+            badge.setTextColor(
+                AttrResources.getAttrColor(
+                    mScene.ehContext ?: return,
+                    R.attr.textColorThemeAccent
+                )
+            )
+            badge.visibility = View.VISIBLE
+        }
     }
 
     private fun bindForState(holder: DownloadHolder, info: DownloadInfo) {
@@ -605,6 +659,7 @@ class DownloadAdapter(
         @JvmField val rating: SimpleRatingView = itemView.findViewById(R.id.rating)
         @JvmField val category: TextView = itemView.findViewById(R.id.category)
         @JvmField val readProgress: TextView = itemView.findViewById(R.id.read_progress)
+        @JvmField val sourceServer: TextView = itemView.findViewById(R.id.source_server)
         @JvmField val start: View = itemView.findViewById(R.id.start)
         @JvmField val stop: View = itemView.findViewById(R.id.stop)
         @JvmField val state: TextView = itemView.findViewById(R.id.state)
