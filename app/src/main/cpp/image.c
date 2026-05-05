@@ -19,6 +19,45 @@
 // OpenGL ES spec mandates single-thread-per-context, so no mutex needed.
 static char tile_buffer[IMAGE_TILE_MAX_SIZE * 4];
 
+// Replicate image edge pixels into the BORDER region around them so GL_LINEAR
+// sampling at the image outer edges blends real pixels instead of (0,0,0,0)
+// from the memset above. Without this, the bottom/top row of every page is
+// rendered as half-alpha and bleeds the GL clear colour through, producing
+// the dark hairline seam that users see between vertically stacked pages.
+static void clampEdgesIntoBorder(char *buf, int buf_w, int buf_h,
+                                  int cx0, int cy0, int cx1, int cy1) {
+    if (cx0 >= cx1 || cy0 >= cy1) return;
+    if (cx0 <= 0 && cy0 <= 0 && cx1 >= buf_w && cy1 >= buf_h) return;
+    int row_stride = buf_w * 4;
+    int span_bytes = (cx1 - cx0) * 4;
+    // Vertical extension: rows above/below content copy the nearest content row
+    if (cy0 > 0) {
+        char *src_row = buf + cy0 * row_stride + cx0 * 4;
+        for (int y = 0; y < cy0; y++) {
+            memcpy(buf + y * row_stride + cx0 * 4, src_row, (size_t) span_bytes);
+        }
+    }
+    if (cy1 < buf_h) {
+        char *src_row = buf + (cy1 - 1) * row_stride + cx0 * 4;
+        for (int y = cy1; y < buf_h; y++) {
+            memcpy(buf + y * row_stride + cx0 * 4, src_row, (size_t) span_bytes);
+        }
+    }
+    // Horizontal extension: every row's leftmost / rightmost border pixels
+    // copy the nearest in-content pixel of that row (covers corners too).
+    for (int y = 0; y < buf_h; y++) {
+        char *row = buf + y * row_stride;
+        if (cx0 > 0) {
+            char *first = row + cx0 * 4;
+            for (int x = 0; x < cx0; x++) memcpy(row + x * 4, first, 4);
+        }
+        if (cx1 < buf_w) {
+            char *last = row + (cx1 - 1) * 4;
+            for (int x = cx1; x < buf_w; x++) memcpy(row + x * 4, last, 4);
+        }
+    }
+}
+
 bool copyPixels(const void *src, int src_w, int src_h, int src_x, int src_y,
                  void *dst, int dst_w, int dst_h, int dst_x, int dst_y,
                  int width, int height) {
@@ -119,6 +158,17 @@ Java_com_hippo_lib_image_ImageKt_nativeTexImage(JNIEnv *env, jclass clazz, jobje
     memset(tile_buffer, 0, (size_t)(width * height * 4));
     copyPixels(pixels, info.width, info.height, offset_x, offset_y, tile_buffer, width, height, 0, 0, width, height);
     AndroidBitmap_unlockPixels(env, bitmap);
+    // Compute actual content rect inside tile_buffer and clamp edge pixels
+    // outwards so GL_LINEAR border sampling stays opaque (no seam line).
+    int cx0 = offset_x < 0 ? -offset_x : 0;
+    int cy0 = offset_y < 0 ? -offset_y : 0;
+    int cx1 = (int) info.width - offset_x;
+    int cy1 = (int) info.height - offset_y;
+    if (cx1 > width) cx1 = width;
+    if (cy1 > height) cy1 = height;
+    if (cx0 > width) cx0 = width;
+    if (cy0 > height) cy0 = height;
+    clampEdgesIntoBorder(tile_buffer, width, height, cx0, cy0, cx1, cy1);
     if (init) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
                      tile_buffer);
@@ -164,6 +214,17 @@ Java_com_hippo_lib_image_Image_nativeTexImage(JNIEnv *env, jclass clazz, jobject
     memset(tile_buffer, 0, (size_t)(width * height * 4));
     copyPixels(pixels, info.width, info.height, offset_x, offset_y, tile_buffer, width, height, 0, 0, width, height);
     AndroidBitmap_unlockPixels(env, bitmap);
+    // Compute actual content rect inside tile_buffer and clamp edge pixels
+    // outwards so GL_LINEAR border sampling stays opaque (no seam line).
+    int cx0 = offset_x < 0 ? -offset_x : 0;
+    int cy0 = offset_y < 0 ? -offset_y : 0;
+    int cx1 = (int) info.width - offset_x;
+    int cy1 = (int) info.height - offset_y;
+    if (cx1 > width) cx1 = width;
+    if (cy1 > height) cy1 = height;
+    if (cx0 > width) cx0 = width;
+    if (cy0 > height) cy0 = height;
+    clampEdgesIntoBorder(tile_buffer, width, height, cx0, cy0, cx1, cy1);
     if (init) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
                      tile_buffer);
