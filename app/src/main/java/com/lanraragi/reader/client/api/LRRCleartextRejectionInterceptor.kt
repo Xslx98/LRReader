@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import com.hippo.ehviewer.ServiceRegistry
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Interceptor
@@ -14,12 +15,14 @@ import okhttp3.Response
  * BEFORE any application interceptor runs). So `network_security_config.xml`
  * keeps cleartext globally allowed and this interceptor enforces the real policy:
  *
- *   - HTTPS                                                → allow
- *   - HTTP, no active server configured                    → reject
- *   - HTTP, host:port doesn't match active server          → reject
- *   - HTTP, scheme doesn't match active server (downgrade) → reject
- *   - HTTP, host:port matches but allowCleartext == false  → reject
- *   - HTTP, host:port matches and allowCleartext == true   → allow
+ *   - HTTPS                                                              → allow
+ *   - HTTP, host:port matches a configured profile, scheme matches,
+ *     and that profile's allowCleartext == true                          → allow
+ *   - HTTP, host:port matches a configured profile, scheme matches,
+ *     but allowCleartext == false                                        → reject
+ *   - HTTP, host:port matches a configured profile, scheme differs       → reject
+ *   - HTTP, no profile matches host:port (cache empty / cold-start) →
+ *     fall back to legacy active-only check against [LRRAuthManager]
  *
  * Reject = throw [LRRCleartextRefusedException], a subclass of [java.io.IOException]
  * so OkHttp surfaces it as a normal network failure handled by existing
@@ -28,8 +31,7 @@ import okhttp3.Response
  * Comparison is done as **pure string match** on host (lowercased) and on the
  * effective port (URL's `port` field, which OkHttp normalises to the scheme
  * default automatically). No `InetAddress.getByName` — that would add IO and
- * a DNS-based bypass surface (DNS rebinding). The active server URL is read
- * synchronously via [LRRAuthManager.getServerUrl] / [LRRAuthManager.getAllowCleartext].
+ * a DNS-based bypass surface (DNS rebinding).
  */
 class LRRCleartextRejectionInterceptor : Interceptor {
 
@@ -42,7 +44,51 @@ class LRRCleartextRejectionInterceptor : Interceptor {
             return chain.proceed(request)
         }
 
-        // 2. Cleartext requires an active server profile.
+        // 2. Find configured profiles owning this host:port (any scheme).
+        val cache = runCatching { ServiceRegistry.dataModule.profileLookupCache }
+            .getOrNull()
+        val candidates = cache?.findCandidatesByHostPort(url.host, url.port).orEmpty()
+
+        if (candidates.isNotEmpty()) {
+            return enforceProfileBased(chain, request, url, candidates)
+        }
+
+        // 3. Cache cold-start or unconfigured host. Fall back to legacy
+        //    active-only matching so requests issued before the Room flow
+        //    delivers its first emission still pass policy gates correctly.
+        return enforceActiveBased(chain, request, url)
+    }
+
+    private fun enforceProfileBased(
+        chain: Interceptor.Chain,
+        request: okhttp3.Request,
+        url: HttpUrl,
+        candidates: List<com.hippo.ehviewer.dao.ServerProfile>,
+    ): Response {
+        // Scheme equality: pick the candidate whose configured URL is also HTTP.
+        val match = candidates.firstOrNull {
+            it.url.toHttpUrlOrNull()?.scheme.equals("http", ignoreCase = true)
+        }
+        if (match == null) {
+            // Host:port matches a profile but every candidate is HTTPS —
+            // request is attempting cleartext on an HTTPS-configured profile.
+            throw LRRCleartextRefusedException(
+                "Cleartext request refused: configured profile is HTTPS, request is HTTP."
+            )
+        }
+        if (!match.allowCleartext) {
+            throw LRRCleartextRefusedException(
+                "Cleartext request refused: profile does not allow plain HTTP."
+            )
+        }
+        return chain.proceed(request)
+    }
+
+    private fun enforceActiveBased(
+        chain: Interceptor.Chain,
+        request: okhttp3.Request,
+        url: HttpUrl,
+    ): Response {
         val serverUrlStr = LRRAuthManager.getServerUrl()
             ?: throw LRRCleartextRefusedException(
                 "Cleartext request refused: no active LANraragi server configured."
@@ -53,33 +99,25 @@ class LRRCleartextRejectionInterceptor : Interceptor {
                 "Cleartext request refused: configured server URL is malformed."
             )
 
-        // 3. Active server scheme must match the request scheme.
-        //    (Prevents an attacker from downgrading https://lrr.local to http://lrr.local.)
+        // Active server scheme must match the request scheme.
         if (!serverUrl.scheme.equals("http", ignoreCase = true)) {
             throw LRRCleartextRefusedException(
                 "Cleartext request refused: active server is HTTPS, request is HTTP."
             )
         }
 
-        // 4. Host comparison (case-insensitive). HttpUrl.host is already lowercased
-        //    by OkHttp for ASCII hostnames; the explicit equals(ignoreCase) keeps
-        //    things obvious.
         if (!url.host.equals(serverUrl.host, ignoreCase = true)) {
             throw LRRCleartextRefusedException(
                 "Cleartext request refused: host does not match active server."
             )
         }
 
-        // 5. Port comparison. HttpUrl.port returns the explicit port if set,
-        //    otherwise the default for the scheme (80 for http). Both URLs are
-        //    parsed by HttpUrl so the comparison is normalized.
         if (url.port != serverUrl.port) {
             throw LRRCleartextRefusedException(
                 "Cleartext request refused: port does not match active server."
             )
         }
 
-        // 6. Per-profile opt-in.
         if (!LRRAuthManager.getAllowCleartext()) {
             throw LRRCleartextRefusedException(
                 "Cleartext request refused: profile does not allow plain HTTP."

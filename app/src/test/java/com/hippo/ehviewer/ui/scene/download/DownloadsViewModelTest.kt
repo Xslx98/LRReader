@@ -105,6 +105,7 @@ class DownloadsViewModelTest {
                 override val historyRepository get() =
                     com.hippo.ehviewer.dao.HistoryRepository(db.archiveLocalStateDao(), db)
                 override val profileRepository get() = ProfileRepository(db.miscDao())
+                override val profileLookupCache get() = throw NotImplementedError("not needed")
                 override val quickSearchRepository get() =
                     com.hippo.ehviewer.dao.QuickSearchRepository(db.browsingDao())
                 override val favoritesRepository get() =
