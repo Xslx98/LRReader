@@ -1143,6 +1143,7 @@
     <string name="lrr_download_failed_invalid">Download failed: invalid file, tap to retry</string>
     <string name="lrr_download_failed_not_image">Download failed: not an image format, tap to retry</string>
     <string name="lrr_download_orphan_profile">Download paused: source server profile was deleted</string>
+    <string name="lrr_download_source_deleted">Source deleted</string>
     <string name="lrr_decode_failed">Image decode failed, tap to retry</string>
     <string name="lrr_subscription_profile_missing">Profile not found, try restarting</string>
     <string name="lrr_empty_response">Server returned empty response</string>

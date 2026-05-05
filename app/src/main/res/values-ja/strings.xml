@@ -1008,6 +1008,7 @@
     <string name="lrr_download_failed_invalid">ダウンロード失敗：無効なファイルです。タップして再試行</string>
     <string name="lrr_download_failed_not_image">ダウンロード失敗：画像形式ではありません。タップして再試行</string>
     <string name="lrr_download_orphan_profile">ダウンロード一時停止：ソースサーバーのプロファイルが削除されました</string>
+    <string name="lrr_download_source_deleted">ソース削除済み</string>
     <string name="lrr_decode_failed">画像のデコードに失敗しました。タップして再試行</string>
     <string name="lrr_subscription_profile_missing">プロファイルが見つかりません。再起動してください</string>
     <string name="lrr_empty_response">サーバーが空のレスポンスを返しました</string>

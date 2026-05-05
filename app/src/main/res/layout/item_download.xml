@@ -97,6 +97,25 @@
                 android:paddingBottom="2dp"
                 android:textAllCaps="true" />
 
+            <TextView
+                android:id="@+id/source_server"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBottom="@id/thumb"
+                android:layout_toEndOf="@id/read_progress"
+                android:layout_marginBottom="8dp"
+                android:layout_marginStart="6dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:maxWidth="120dp"
+                android:textSize="@dimen/text_super_small"
+                android:textColor="?attr/textColorThemeAccent"
+                android:visibility="gone" />
+
             <FrameLayout
                 android:id="@+id/actions"
                 android:layout_width="wrap_content"
