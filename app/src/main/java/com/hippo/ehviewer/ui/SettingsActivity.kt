@@ -15,7 +15,6 @@
  */
 package com.hippo.ehviewer.ui
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
 import com.hippo.ehviewer.R
@@ -66,17 +65,6 @@ class SettingsActivity : EhActivity() {
         }
     }
 
-    @Suppress("deprecation")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == REQUEST_CODE_FRAGMENT) {
-            if (resultCode == RESULT_OK) {
-                setResult(RESULT_OK)
-            }
-        } else {
-            super.onActivityResult(requestCode, resultCode, data)
-        }
-    }
-
     fun setSettingsTitle(res: Int) {
         supportActionBar?.let {
             it.setTitle(res)
@@ -91,9 +79,5 @@ class SettingsActivity : EhActivity() {
             return
         }
         title = res
-    }
-
-    companion object {
-        private const val REQUEST_CODE_FRAGMENT = 0
     }
 }
