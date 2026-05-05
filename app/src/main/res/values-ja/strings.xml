@@ -946,7 +946,7 @@
     <string name="lrr_delete_failed">削除失敗: %s</string>
     <string name="lrr_unknown_title">不明</string>
     <string name="lrr_delete_server">サーバーを削除</string>
-    <string name="lrr_delete_server_confirm">サーバー\"%s\"を削除しますか？</string>
+    <string name="lrr_delete_server_confirm">サーバー \"%s\" を削除しますか？\n\nこのサーバーからのダウンロードは一覧に残りますが、削除後は再開できなくなります。</string>
     <string name="lrr_delete_success">\"%s\" を削除しました</string>
     <string name="lrr_edit_server">サーバーを編集</string>
     <string name="lrr_edit_server_name">サーバー名</string>

@@ -920,7 +920,7 @@
     <string name="lrr_delete_failed">Delete failed: %s</string>
     <string name="lrr_unknown_title">Unknown</string>
     <string name="lrr_delete_server">Delete server</string>
-    <string name="lrr_delete_server_confirm">Delete server \"%s\"?</string>
+    <string name="lrr_delete_server_confirm">Delete server \"%s\"?\n\nDownloads from this server will remain in the list but cannot be resumed once the server is deleted.</string>
     <string name="lrr_delete_success">\"%s\" deleted</string>
     <string name="lrr_edit_server">Edit server</string>
     <string name="lrr_edit_server_name">Server name</string>

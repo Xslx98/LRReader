@@ -938,7 +938,7 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_delete_failed">Löschen fehlgeschlagen: %s</string>
     <string name="lrr_unknown_title">Unbekannt</string>
     <string name="lrr_delete_server">Server löschen</string>
-    <string name="lrr_delete_server_confirm">Server \"%s\" löschen?</string>
+    <string name="lrr_delete_server_confirm">Server \"%s\" löschen?\n\nDownloads dieses Servers bleiben in der Liste, können aber nach dem Löschen nicht fortgesetzt werden.</string>
     <string name="lrr_delete_success">\"%s\" gelöscht</string>
     <string name="lrr_edit_server">Server bearbeiten</string>
     <string name="lrr_edit_server_name">Servername</string>
