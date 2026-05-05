@@ -1002,7 +1002,7 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_delete_failed">Error al eliminar: %s</string>
     <string name="lrr_unknown_title">Desconocido</string>
     <string name="lrr_delete_server">Eliminar servidor</string>
-    <string name="lrr_delete_server_confirm">¿Eliminar servidor \"%s\"?</string>
+    <string name="lrr_delete_server_confirm">¿Eliminar servidor \"%s\"?\n\nLas descargas de este servidor permanecerán en la lista, pero no podrán reanudarse tras eliminarlo.</string>
     <string name="lrr_delete_success">\"%s\" eliminado</string>
     <string name="lrr_edit_server">Editar servidor</string>
     <string name="lrr_edit_server_name">Nombre del servidor</string>

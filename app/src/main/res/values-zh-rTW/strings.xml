@@ -1022,7 +1022,7 @@
     <string name="lrr_delete_failed">刪除失敗: %s</string>
     <string name="lrr_unknown_title">未知</string>
     <string name="lrr_delete_server">刪除伺服器</string>
-    <string name="lrr_delete_server_confirm">確定刪除伺服器\"%s\"？</string>
+    <string name="lrr_delete_server_confirm">確定刪除伺服器 \"%s\"？\n\n來自此伺服器的下載將保留在列表中，刪除後將無法繼續下載。</string>
     <string name="lrr_delete_success">「%s」已刪除</string>
     <string name="lrr_edit_server">編輯伺服器</string>
     <string name="lrr_edit_server_name">伺服器名稱</string>

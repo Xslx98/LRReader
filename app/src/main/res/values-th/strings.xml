@@ -1001,7 +1001,7 @@
     <string name="lrr_delete_failed">ลบล้มเหลว: %s</string>
     <string name="lrr_unknown_title">ไม่ทราบ</string>
     <string name="lrr_delete_server">ลบเซิร์ฟเวอร์</string>
-    <string name="lrr_delete_server_confirm">ลบเซิร์ฟเวอร์ \"%s\" หรือไม่?</string>
+    <string name="lrr_delete_server_confirm">ลบเซิร์ฟเวอร์ \"%s\" หรือไม่?\n\nรายการดาวน์โหลดจากเซิร์ฟเวอร์นี้จะยังอยู่ในรายการ แต่ไม่สามารถดำเนินการต่อหลังจากลบ</string>
     <string name="lrr_delete_success">\"%s\" ถูกลบแล้ว</string>
     <string name="lrr_edit_server">แก้ไขเซิร์ฟเวอร์</string>
     <string name="lrr_edit_server_name">ชื่อเซิร์ฟเวอร์</string>

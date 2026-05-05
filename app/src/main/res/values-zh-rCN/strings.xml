@@ -978,7 +978,7 @@
     <string name="lrr_add_server">添加服务器</string>
     <string name="lrr_server_active">已启用</string>
     <string name="lrr_delete_server">删除服务器</string>
-    <string name="lrr_delete_server_confirm">确定删除服务器\"%s\"？</string>
+    <string name="lrr_delete_server_confirm">确定删除服务器 \"%s\"？\n\n来自该服务器的下载将保留在列表中，但删除后无法继续下载。</string>
     <string name="lrr_server_switched">已切换到 %s</string>
     <string name="lrr_edit_server">编辑服务器</string>
     <string name="lrr_edit_server_name">服务器名称</string>

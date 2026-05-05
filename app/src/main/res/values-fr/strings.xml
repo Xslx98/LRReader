@@ -953,7 +953,7 @@ Cette action est irréversible.</string>
     <string name="lrr_delete_failed">Suppression échouée : %s</string>
     <string name="lrr_unknown_title">Inconnu</string>
     <string name="lrr_delete_server">Supprimer le serveur</string>
-    <string name="lrr_delete_server_confirm">Supprimer le serveur \"%s\" ?</string>
+    <string name="lrr_delete_server_confirm">Supprimer le serveur \"%s\" ?\n\nLes téléchargements de ce serveur resteront dans la liste, mais ne pourront pas être repris après suppression.</string>
     <string name="lrr_delete_success">\"%s\" supprimé</string>
     <string name="lrr_edit_server">Modifier le serveur</string>
     <string name="lrr_edit_server_name">Nom du serveur</string>
