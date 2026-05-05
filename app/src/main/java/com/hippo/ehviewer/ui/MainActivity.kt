@@ -157,6 +157,24 @@ class MainActivity : StageActivity(),
         }
     }
 
+    private val cameraLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        userImageChange?.handleCameraResult(result.resultCode, mAvatar)
+    }
+
+    private val albumLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        userImageChange?.handleAlbumResult(result.resultCode, result.data, mAvatar)
+    }
+
+    private val cropLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        userImageChange?.handleCropResult(result.resultCode, result.data, mAvatar)
+    }
+
     private var mNavCheckedItem = 0
 
     @JvmField
@@ -693,7 +711,10 @@ class MainActivity : StageActivity(),
             UserImageChange.CHANGE_BACKGROUND,
             layoutInflater,
             LayoutInflater.from(this@MainActivity),
-            this
+            this,
+            cameraLauncher,
+            albumLauncher,
+            cropLauncher,
         )
         userImageChange = change
         change.showImageChangeDialog()
@@ -708,7 +729,10 @@ class MainActivity : StageActivity(),
             UserImageChange.CHANGE_AVATAR,
             layoutInflater,
             LayoutInflater.from(this@MainActivity),
-            this
+            this,
+            cameraLauncher,
+            albumLauncher,
+            cropLauncher,
         )
         userImageChange = change
         change.showImageChangeDialog()
@@ -835,19 +859,6 @@ class MainActivity : StageActivity(),
         }
 
         return true
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        val imageChange = userImageChange
-        if ((requestCode == UserImageChange.TAKE_CAMERA ||
-                    requestCode == UserImageChange.PICK_PHOTO ||
-                    requestCode == UserImageChange.CROP_PHOTO) && imageChange != null
-        ) {
-            imageChange.saveImageForResult(requestCode, resultCode, data, mAvatar)
-            return
-        }
-        super.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun onDrawerSlide(drawerView: View, percent: Float) {
