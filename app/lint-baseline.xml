@@ -8676,28 +8676,6 @@
 
     <issue
         id="StaticFieldLeak"
-        message="Do not place Android context classes in static fields (static reference to `AppConfig` which has field `sContext` pointing to `Context`); this is a memory leak"
-        errorLine1="object AppConfig {"
-        errorLine2="^">
-        <location
-            file="src/main/java/com/hippo/ehviewer/AppConfig.kt"
-            line="31"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="StaticFieldLeak"
-        message="Do not place Android context classes in static fields; this is a memory leak"
-        errorLine1="    public static Context sContext;"
-        errorLine2="           ~~~~~~">
-        <location
-            file="src/main/java/com/hippo/util/BitmapUtils.java"
-            line="31"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="StaticFieldLeak"
         message="Do not place Android context classes in static fields (static reference to `GalleryListSceneDialog` which has field `context` pointing to `Context`); this is a memory leak"
         errorLine1="    /** Cached [GalleryListSceneDialog] instance for tag long-press. */"
         errorLine2="    ^">
@@ -8705,17 +8683,6 @@
             file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/detail/GalleryTagHelper.kt"
             line="44"
             column="5"/>
-    </issue>
-
-    <issue
-        id="StaticFieldLeak"
-        message="Do not place Android context classes in static fields (static reference to `Settings` which has field `sContext` pointing to `Context`); this is a memory leak"
-        errorLine1="object Settings {"
-        errorLine2="^">
-        <location
-            file="src/main/java/com/hippo/ehviewer/Settings.kt"
-            line="28"
-            column="1"/>
     </issue>
 
     <issue

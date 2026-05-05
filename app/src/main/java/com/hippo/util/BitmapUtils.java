@@ -16,6 +16,7 @@
 
 package com.hippo.util;
 
+import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -28,6 +29,7 @@ import java.io.IOException;
 public final class BitmapUtils {
     private BitmapUtils() {}
 
+    @SuppressLint("StaticFieldLeak") // Safe: holds Application Context, not Activity
     public static Context sContext;
 
     public static void initialize(Context context) {
