@@ -25,6 +25,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
@@ -56,6 +57,36 @@ class DownloadFragment : PreferenceFragmentCompat(),
     Preference.OnPreferenceClickListener {
 
     private var mDownloadLocation: Preference? = null
+
+    private val openDirLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode != Activity.RESULT_OK) return@registerForActivityResult
+        val treeUri = result.data?.data ?: return@registerForActivityResult
+        requireActivity().contentResolver.takePersistableUriPermission(
+            treeUri,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        )
+        val uniFile = UniFile.fromTreeUri(activity, treeUri)
+        if (uniFile != null) {
+            DownloadSettings.putDownloadLocation(uniFile)
+            onUpdateDownloadLocation()
+        } else {
+            Toast.makeText(
+                activity,
+                R.string.settings_download_cant_get_download_location,
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    private val importFileLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            executeImportDownload(result.data?.data)
+        }
+    }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         addPreferencesFromResource(R.xml.download_settings)
@@ -123,8 +154,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
     private fun openDirPickerL() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
         try {
-            @Suppress("DEPRECATION")
-            startActivityForResult(intent, REQUEST_CODE_PICK_IMAGE_DIR_L)
+            openDirLauncher.launch(intent)
         } catch (e: Throwable) {
             ExceptionUtils.throwIfFatal(e)
             Toast.makeText(activity, R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
@@ -176,64 +206,10 @@ class DownloadFragment : PreferenceFragmentCompat(),
         val intent = Intent(Intent.ACTION_GET_CONTENT)
         intent.type = "*/*"
         try {
-            @Suppress("DEPRECATION")
-            startActivityForResult(intent, REQUEST_CODE_PICK_DOWNLOAD_IMPORT_FILE)
+            importFileLauncher.launch(intent)
         } catch (e: Throwable) {
             ExceptionUtils.throwIfFatal(e)
             Toast.makeText(activity, R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    @Suppress("DEPRECATION")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (data == null) {
-            super.onActivityResult(requestCode, resultCode, null)
-            return
-        }
-        when (requestCode) {
-            REQUEST_CODE_PICK_IMAGE_DIR -> {
-                if (resultCode == Activity.RESULT_OK) {
-                    val uniFile = UniFile.fromUri(activity, data.data)
-                    if (uniFile != null) {
-                        DownloadSettings.putDownloadLocation(uniFile)
-                        onUpdateDownloadLocation()
-                    } else {
-                        Toast.makeText(
-                            activity,
-                            R.string.settings_download_cant_get_download_location,
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            }
-            REQUEST_CODE_PICK_IMAGE_DIR_L -> {
-                if (resultCode == Activity.RESULT_OK) {
-                    val treeUri = data.data
-                    if (treeUri != null) {
-                        requireActivity().contentResolver.takePersistableUriPermission(
-                            treeUri,
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                        )
-                        val uniFile = UniFile.fromTreeUri(activity, treeUri)
-                        if (uniFile != null) {
-                            DownloadSettings.putDownloadLocation(uniFile)
-                            onUpdateDownloadLocation()
-                        } else {
-                            Toast.makeText(
-                                activity,
-                                R.string.settings_download_cant_get_download_location,
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
-                }
-            }
-            REQUEST_CODE_PICK_DOWNLOAD_IMPORT_FILE -> {
-                if (resultCode == Activity.RESULT_OK) {
-                    executeImportDownload(data.data)
-                }
-            }
-            else -> super.onActivityResult(requestCode, resultCode, data)
         }
     }
 
@@ -545,9 +521,6 @@ class DownloadFragment : PreferenceFragmentCompat(),
 
     companion object {
         private const val TAG = "DownloadFragment"
-        const val REQUEST_CODE_PICK_IMAGE_DIR = 0
-        const val REQUEST_CODE_PICK_IMAGE_DIR_L = 1
-        private const val REQUEST_CODE_PICK_DOWNLOAD_IMPORT_FILE = 2
 
         const val KEY_DOWNLOAD_LOCATION = "download_location"
         const val KEY_EXPORT_DOWNLOAD_ITEMS = "export_download_items"
