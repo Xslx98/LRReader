@@ -41,9 +41,6 @@ object GalleryTagHelper {
     /** Cached [EhTagDatabase] instance from the last [bindTags] call. */
     private var ehTags: EhTagDatabase? = null
 
-    /** Cached [GalleryListSceneDialog] instance for tag long-press. */
-    private var tagDialog: GalleryListSceneDialog? = null
-
     fun getEhTags(): EhTagDatabase? = ehTags
 
     /**
@@ -110,14 +107,12 @@ object GalleryTagHelper {
      * Show the tag long-press dialog with options (open definition, copy, etc.).
      */
     fun showTagDialog(baseScene: BaseScene, context: Context, tag: String) {
-        if (tagDialog == null) {
-            tagDialog = GalleryListSceneDialog(baseScene)
-        }
         if (ehTags == null) {
             ehTags = EhTagDatabase.getInstance(context)
         }
-        tagDialog!!.setTagName(tag)
-        tagDialog!!.showTagLongPressDialog(ehTags)
+        val dialog = GalleryListSceneDialog(baseScene)
+        dialog.setTagName(tag)
+        dialog.showTagLongPressDialog(ehTags)
     }
 
     /**
@@ -125,6 +120,5 @@ object GalleryTagHelper {
      */
     fun destroy() {
         ehTags = null
-        tagDialog = null
     }
 }
