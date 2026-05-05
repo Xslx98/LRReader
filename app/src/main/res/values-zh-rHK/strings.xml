@@ -144,6 +144,7 @@
     <string name="error_please_login_first">請先登入</string>
     <string name="error_empty_html">空白頁面內容</string>
     <string name="error_cant_get_image">無法獲取圖片</string>
+    <string name="lrr_error_load_pages_failed">無法載入頁面</string>
     <string name="error_igneous_wrong">錯誤的igneous\n檢查帳號權限後重新登入</string>
     <string name="gallery_gl_fallback_title">OpenGL 渲染器無法使用</string>
     <string name="gallery_gl_fallback_message">目前裝置暫時無法初始化 EGL，請返回後稍後再試。</string>

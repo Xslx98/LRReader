@@ -99,6 +99,7 @@
     <string name="error_please_login_first">Vous devez d\'abord vous connecter</string>
     <string name="error_empty_html">Page vide</string>
     <string name="error_cant_get_image">Impossible d\'obtenir l\'image</string>
+    <string name="lrr_error_load_pages_failed">Impossible de charger les pages</string>
     <string name="error_igneous_wrong">Ignous incorrect\nassurez-vous d\'avoir les permissions et reconnectez-vous</string>
     <string name="gallery_gl_fallback_title">Le moteur OpenGL est indisponible</string>
     <string name="gallery_gl_fallback_message">Cet appareil ne peut pas initialiser EGL pour le moment. Revenez en arrière et réessayez plus tard.</string>

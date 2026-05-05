@@ -92,6 +92,7 @@
     <string name="error_invalid_number">Nummer ungültig</string>
     <string name="error_empty_html">Leere Seite</string>
     <string name="error_cant_get_image">Bild konnte nicht abgerufen werden</string>
+    <string name="lrr_error_load_pages_failed">Seiten können nicht geladen werden</string>
     <string name="error_igneous_wrong">Falsches igneous\nStellen Sie sicher, dass Sie die Berechtigung haben und melden Sie sich erneut an</string>
     <string name="gallery_gl_fallback_title">OpenGL-Renderer nicht verfügbar</string>
     <string name="gallery_gl_fallback_message">Dieses Gerät kann EGL derzeit nicht initialisieren. Bitte gehen Sie zurück und versuchen Sie es später erneut.</string>

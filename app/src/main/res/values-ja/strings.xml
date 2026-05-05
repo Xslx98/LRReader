@@ -97,6 +97,7 @@
     <string name="error_please_login_first">ログインをしてください</string>
     <string name="error_empty_html">空のページ</string>
     <string name="error_cant_get_image">画像を取得できませんでした</string>
+    <string name="lrr_error_load_pages_failed">ページを読み込めません</string>
     <string name="error_igneous_wrong">igneousが間違っています\n権限を確認して再ログインしてください</string>
     <string name="gallery_gl_fallback_title">OpenGLレンダラーを利用できません</string>
     <string name="gallery_gl_fallback_message">このデバイスでは現在EGLを初期化できません。戻ってしばらくしてから再試行してください。</string>
