@@ -5,7 +5,6 @@ import com.hippo.ehviewer.download.DownloadState
 import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.mapper.toArchiveJson
 import com.hippo.ehviewer.mapper.toDownloadInfoView
-import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -50,11 +49,7 @@ class DownloadDbRepository(
     // ═══════════════════════════════════════════════════════════
 
     suspend fun getAllDownloadInfo(): List<DownloadInfo> {
-        val profileId = LRRAuthManager.getActiveProfileId()
-        val rows = if (profileId > 0)
-            archiveLocalStateDao.getDownloadsByServer(profileId)
-        else
-            archiveLocalStateDao.getAllDownloads()
+        val rows = archiveLocalStateDao.getAllDownloads()
         val list = rows.map { it.toDownloadInfoView() }
         for (info in list) {
             // Reset transient WAIT/DOWNLOAD states (process restart →
@@ -71,16 +66,18 @@ class DownloadDbRepository(
      * the persisted download fields change. The adapter to memory
      * views is applied on each emission.
      *
-     * Profile-aware: filters by the active server profile when one is
-     * set.
+     * **Profile-agnostic**: returns downloads from every configured
+     * profile. Cross-profile UX (badge on `serverProfileId != active`,
+     * orphan handling, per-archive resume) treats the list as a global
+     * inventory of "what's on disk", with profile membership rendered
+     * per-row. Filtering by `getActiveProfileId()` here would race
+     * against profile switching — the captured id is stale by the time
+     * the user navigates back to the downloads list — and surfaced as
+     * the "empty list after switch" symptom.
      */
     fun observeDownloads(): Flow<List<DownloadInfo>> {
-        val profileId = LRRAuthManager.getActiveProfileId()
-        val flow = if (profileId > 0)
-            archiveLocalStateDao.observeDownloadsByServer(profileId)
-        else
-            archiveLocalStateDao.observeAllDownloads()
-        return flow.map { rows -> rows.map { it.toDownloadInfoView() } }
+        return archiveLocalStateDao.observeAllDownloads()
+            .map { rows -> rows.map { it.toDownloadInfoView() } }
     }
 
     /**
