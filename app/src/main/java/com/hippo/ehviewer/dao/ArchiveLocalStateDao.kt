@@ -115,7 +115,8 @@ interface ArchiveLocalStateDao {
     @Query(
         "UPDATE ARCHIVE_LOCAL_STATE SET " +
             "DOWNLOAD_STATE = NULL, DOWNLOAD_LEGACY = 0, DOWNLOAD_TIME = NULL, " +
-            "DOWNLOAD_LABEL = NULL, DOWNLOAD_ARCHIVE_URI = NULL " +
+            "DOWNLOAD_LABEL = NULL, DOWNLOAD_ARCHIVE_URI = NULL, " +
+            "DOWNLOAD_ROOT_URI = NULL " +
             "WHERE ARCID = :arcid"
     )
     suspend fun clearDownloadSubsystem(arcid: String)
@@ -216,9 +217,10 @@ interface ArchiveLocalStateDao {
     @Query(
         "INSERT OR IGNORE INTO ARCHIVE_LOCAL_STATE " +
             "(ARCID, SERVER_PROFILE_ID, ARCHIVE_JSON, DOWNLOAD_STATE, DOWNLOAD_LEGACY, " +
-            "DOWNLOAD_TIME, DOWNLOAD_LABEL, DOWNLOAD_ARCHIVE_URI) " +
+            "DOWNLOAD_TIME, DOWNLOAD_LABEL, DOWNLOAD_ARCHIVE_URI, DOWNLOAD_ROOT_URI) " +
             "VALUES (:arcid, :serverProfileId, :archiveJson, :downloadState, " +
-            ":downloadLegacy, :downloadTime, :downloadLabel, :downloadArchiveUri)"
+            ":downloadLegacy, :downloadTime, :downloadLabel, :downloadArchiveUri, " +
+            ":downloadRootUri)"
     )
     suspend fun insertOrIgnoreDownload(
         arcid: String,
@@ -229,6 +231,7 @@ interface ArchiveLocalStateDao {
         downloadTime: Long,
         downloadLabel: String?,
         downloadArchiveUri: String?,
+        downloadRootUri: String?,
     )
 
     @Suppress("LongParameterList")
@@ -240,7 +243,8 @@ interface ArchiveLocalStateDao {
             "DOWNLOAD_LEGACY = :downloadLegacy, " +
             "DOWNLOAD_TIME = :downloadTime, " +
             "DOWNLOAD_LABEL = :downloadLabel, " +
-            "DOWNLOAD_ARCHIVE_URI = :downloadArchiveUri " +
+            "DOWNLOAD_ARCHIVE_URI = :downloadArchiveUri, " +
+            "DOWNLOAD_ROOT_URI = :downloadRootUri " +
             "WHERE ARCID = :arcid"
     )
     suspend fun updateDownloadFields(
@@ -252,7 +256,20 @@ interface ArchiveLocalStateDao {
         downloadTime: Long,
         downloadLabel: String?,
         downloadArchiveUri: String?,
+        downloadRootUri: String?,
     )
+
+    /**
+     * Backfill legacy download rows that pre-date the
+     * DOWNLOAD_ROOT_URI column with the user's current download
+     * location URI. Idempotent — only NULL rows are touched, so
+     * subsequent boots have no work to do.
+     */
+    @Query(
+        "UPDATE ARCHIVE_LOCAL_STATE SET DOWNLOAD_ROOT_URI = :uri " +
+            "WHERE DOWNLOAD_STATE IS NOT NULL AND DOWNLOAD_ROOT_URI IS NULL"
+    )
+    suspend fun backfillDownloadRootUri(uri: String)
 
     @Query(
         "INSERT OR IGNORE INTO ARCHIVE_LOCAL_STATE " +

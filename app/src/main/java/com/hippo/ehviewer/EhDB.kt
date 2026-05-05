@@ -254,6 +254,7 @@ object EhDB {
                             downloadTime = time,
                             downloadLabel = null,
                             downloadArchiveUri = null,
+                            downloadRootUri = null,
                         )
                         archiveLocalStateDao.updateDownloadFields(
                             arcid = gi.arcid,
@@ -264,6 +265,7 @@ object EhDB {
                             downloadTime = time,
                             downloadLabel = null,
                             downloadArchiveUri = null,
+                            downloadRootUri = null,
                         )
                         it.moveToNext()
                         i++

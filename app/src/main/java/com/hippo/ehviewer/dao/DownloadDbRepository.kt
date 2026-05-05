@@ -169,6 +169,7 @@ class DownloadDbRepository(
             downloadTime = downloadInfo.time,
             downloadLabel = downloadInfo.label,
             downloadArchiveUri = downloadInfo.archiveUri,
+            downloadRootUri = downloadInfo.downloadRootUri,
         )
         archiveLocalStateDao.updateDownloadFields(
             arcid = downloadInfo.arcid,
@@ -179,6 +180,7 @@ class DownloadDbRepository(
             downloadTime = downloadInfo.time,
             downloadLabel = downloadInfo.label,
             downloadArchiveUri = downloadInfo.archiveUri,
+            downloadRootUri = downloadInfo.downloadRootUri,
         )
     }
 
