@@ -22,6 +22,7 @@ import android.widget.PopupWindow
 import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
 import com.hippo.content.FileProvider
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.callBack.ImageChangeCallBack
@@ -43,7 +44,10 @@ class UserImageChange(
     private val dialogType: Int,
     private val layoutInflater: LayoutInflater,
     private val rootLayoutInflater: LayoutInflater,
-    private val imageChangeCallBack: ImageChangeCallBack
+    private val imageChangeCallBack: ImageChangeCallBack,
+    private val cameraLauncher: ActivityResultLauncher<Intent>,
+    private val albumLauncher: ActivityResultLauncher<Intent>,
+    private val cropLauncher: ActivityResultLauncher<Intent>,
 ) : PermissionCallBack {
 
     private val key: String = if (dialogType == CHANGE_AVATAR) {
@@ -163,9 +167,29 @@ class UserImageChange(
         )
     }
 
-    fun saveImageForResult(requestCode: Int, resultCode: Int, data: Intent?, avatar: AvatarImageView?) {
+    fun handleCameraResult(resultCode: Int, avatar: AvatarImageView?) {
+        if (resultCode != Activity.RESULT_OK) return
+        val uri = imageUri
+        if (uri != null) {
+            startCrop(uri)
+            return
+        }
+        saveImageFromCamera(avatar)
+    }
+
+    fun handleAlbumResult(resultCode: Int, data: Intent?, avatar: AvatarImageView?) {
+        if (resultCode != Activity.RESULT_OK) return
+        if (data == null) return
+        val pickedUri = data.data
+        if (pickedUri != null) {
+            startCrop(pickedUri)
+            return
+        }
+        saveImageFromAlbum(data, avatar)
+    }
+
+    fun handleCropResult(resultCode: Int, data: Intent?, avatar: AvatarImageView?) {
         if (resultCode != Activity.RESULT_OK) {
-            // Check UCrop error
             if (resultCode == UCrop.RESULT_ERROR && data != null) {
                 val cropError = UCrop.getError(data)
                 if (cropError != null) {
@@ -174,27 +198,7 @@ class UserImageChange(
             }
             return
         }
-        if (requestCode == CROP_PHOTO) {
-            // UCrop completed — save the cropped image
-            saveCroppedImage(data, avatar)
-            return
-        }
-        if (requestCode == PICK_PHOTO) {
-            checkNotNull(data)
-            val pickedUri = data.data
-            if (pickedUri != null) {
-                startCrop(pickedUri)
-                return
-            }
-            saveImageFromAlbum(data, avatar)
-        } else if (requestCode == TAKE_CAMERA) {
-            val uri = imageUri
-            if (uri != null) {
-                startCrop(uri)
-                return
-            }
-            saveImageFromCamera(avatar)
-        }
+        saveCroppedImage(data, avatar)
     }
 
     private fun startCrop(sourceUri: Uri) {
@@ -232,7 +236,7 @@ class UserImageChange(
             .withAspectRatio(aspectX, aspectY)
             .withMaxResultSize(maxW, maxH)
             .withOptions(options)
-            .start(activity)
+            .start(activity, cropLauncher)
     }
 
     private fun saveCroppedImage(data: Intent?, avatar: AvatarImageView?) {
@@ -384,14 +388,12 @@ class UserImageChange(
         if (permissionCode == REQUEST_CAMERA_PERMISSION) {
             val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
             intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri)
-            @Suppress("DEPRECATION")
-            activity.startActivityForResult(intent, TAKE_CAMERA)
+            cameraLauncher.launch(intent)
         }
         if (permissionCode == REQUEST_STORAGE_PERMISSION) {
             val intent = Intent(Intent.ACTION_GET_CONTENT)
             intent.type = "image/*"
-            @Suppress("DEPRECATION")
-            activity.startActivityForResult(intent, PICK_PHOTO)
+            albumLauncher.launch(intent)
         }
     }
 
@@ -400,12 +402,6 @@ class UserImageChange(
         val CHANGE_BACKGROUND = 0
         @JvmField
         val CHANGE_AVATAR = 1
-        @JvmField
-        val TAKE_CAMERA = 101
-        @JvmField
-        val PICK_PHOTO = 102
-        @JvmField
-        val CROP_PHOTO = UCrop.REQUEST_CROP
         @JvmField
         val REQUEST_CAMERA_PERMISSION = 1
         @JvmField
