@@ -60,12 +60,28 @@
                 android:layout_below="@id/title"
                 android:layout_marginTop="2dp"/>
 
+            <TextView
+                android:id="@+id/source_server"
+                style="@style/CardMessage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignLeft="@id/title"
+                android:layout_below="@id/uploader"
+                android:layout_marginTop="2dp"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:maxWidth="140dp"
+                android:textColor="@android:color/white"
+                android:visibility="gone" />
+
             <com.hippo.ehviewer.widget.SimpleRatingView
                 android:id="@+id/rating"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignLeft="@id/title"
-                android:layout_below="@id/uploader"
+                android:layout_below="@id/source_server"
                 android:layout_marginTop="2dp"/>
 
             <TextView
@@ -96,23 +112,6 @@
                 android:paddingRight="8dp"
                 android:paddingBottom="2dp"
                 android:textAllCaps="true" />
-
-            <TextView
-                android:id="@+id/source_server"
-                style="@style/CardMessage"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignBottom="@id/thumb"
-                android:layout_toEndOf="@id/read_progress"
-                android:layout_marginBottom="8dp"
-                android:layout_marginStart="6dp"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:paddingTop="3dp"
-                android:paddingBottom="3dp"
-                android:maxWidth="140dp"
-                android:textColor="@android:color/white"
-                android:visibility="gone" />
 
             <FrameLayout
                 android:id="@+id/actions"
