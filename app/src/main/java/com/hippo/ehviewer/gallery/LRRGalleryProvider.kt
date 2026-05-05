@@ -2,6 +2,7 @@ package com.hippo.ehviewer.gallery
 
 import android.content.Context
 import android.util.Log
+import com.hippo.ehviewer.GetText
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRArchiveApi
@@ -11,6 +12,7 @@ import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.lib.glgallery.GalleryProvider
 import com.hippo.lib.image.Image
 import com.hippo.unifile.UniFile
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -87,8 +89,21 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
         super.start()
 
         // Initialize the provider's coroutine scope. Every background launch
-        // in this class is scoped here and cancelled in stop().
-        providerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        // in this class is scoped here and cancelled in stop(). Install the
+        // app-wide [com.hippo.ehviewer.module.CoroutineModule.exceptionHandler]
+        // so any uncaught exception (e.g. an `async` child whose failure
+        // races the outer `try { … pagesDeferred.await() … }` and reaches
+        // the supervisor before await rethrows) is logged + reported to
+        // Analytics instead of taking down the process via the default
+        // thread UEH. Without this, a single LRRHttpException from the
+        // file-list fetch crashed the gallery viewer when an archive's
+        // local files were unreachable and the streaming fallback hit a
+        // different server's 400.
+        providerScope = CoroutineScope(
+            SupervisorJob() +
+                Dispatchers.IO +
+                ServiceRegistry.coroutineModule.exceptionHandler
+        )
 
         // Prepare cache directory (handles .nomedia and LRU access timestamp)
         cacheDir = ReaderPageCache.ensureCacheDir(context, arcId)
@@ -117,11 +132,28 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
                 // The file list is the typical cold-open bottleneck on a
                 // server with many files per archive. Try the in-memory
                 // cross-session cache first; on miss fetch and store.
+                //
+                // The fetch is wrapped in its own try/catch and returns null
+                // on failure — without this, a transport-level error (e.g.
+                // HTTP 400 because the archive lives on a different profile
+                // than the active one, or a network drop) would propagate
+                // out of `async` to the parent Job and reach the supervisor
+                // unhandled, crashing the process even though the outer
+                // `start` body has its own catch. Sentinel + null check is
+                // the idiom that survives any exception-propagation-vs-
+                // cancellation race here.
                 val pagesDeferred = async {
-                    LrrFileListCache.get(arcId) ?: run {
-                        val fetched = LRRArchiveApi.getFileList(client, serverUrl, arcId)
-                        LrrFileListCache.put(arcId, fetched)
-                        fetched
+                    try {
+                        LrrFileListCache.get(arcId) ?: run {
+                            val fetched = LRRArchiveApi.getFileList(client, serverUrl, arcId)
+                            LrrFileListCache.put(arcId, fetched)
+                            fetched
+                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Log.w(TAG, "[FETCH] file list failed for arcid=$arcId", e)
+                        null
                     }
                 }
                 val metadataDeferred = async {
@@ -144,6 +176,15 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
 
                 // As soon as file list is ready, notify UI — page requests can start immediately
                 val pages = pagesDeferred.await()
+                if (pages == null) {
+                    // file-list fetch failed (handled inside the async); surface
+                    // a STATE_ERROR so GalleryActivity shows the inline error
+                    // view instead of an indefinite spinner.
+                    errorMessage = GetText.getString(R.string.lrr_error_load_pages_failed)
+                    stateRef.updateAndGet { it.copy(count = GalleryProvider.STATE_ERROR) }
+                    notifyDataChanged()
+                    return@launch
+                }
                 stateRef.set(ProviderState(paths = pages, count = pages.size))
                 Log.d(TAG, "Extracted ${pages.size} pages for $arcId")
                 notifyDataChanged()

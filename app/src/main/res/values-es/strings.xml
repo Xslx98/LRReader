@@ -98,6 +98,7 @@
     <string name="error_please_login_first">Por favor inicie sesión primero</string>
     <string name="error_empty_html">Página vacía</string>
     <string name="error_cant_get_image">No se puede obtener la imagen</string>
+    <string name="lrr_error_load_pages_failed">No se pueden cargar las páginas</string>
     <string name="error_igneous_wrong">igneous incorrecto\nasegúrate de tener permisos y vuelve a iniciar sesión</string>
     <string name="gallery_gl_fallback_title">El renderizador OpenGL no está disponible</string>
     <string name="gallery_gl_fallback_message">Este dispositivo no puede inicializar EGL por ahora. Vuelve atrás e inténtalo de nuevo más tarde.</string>
