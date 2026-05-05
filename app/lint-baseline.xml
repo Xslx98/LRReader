@@ -8709,28 +8709,6 @@
 
     <issue
         id="StaticFieldLeak"
-        message="Do not place Android context classes in static fields (static reference to `ProgressHelper` which has field `tvText` pointing to `TextView`); this is a memory leak"
-        errorLine1="object ProgressHelper {"
-        errorLine2="^">
-        <location
-            file="src/main/java/com/hippo/ehviewer/widget/ProgressHelper.kt"
-            line="13"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="StaticFieldLeak"
-        message="Do not place Android context classes in static fields; this is a memory leak"
-        errorLine1="    private var tvText: TextView? = null"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/widget/ProgressHelper.kt"
-            line="16"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="StaticFieldLeak"
         message="Do not place Android context classes in static fields (static reference to `Settings` which has field `sContext` pointing to `Context`); this is a memory leak"
         errorLine1="object Settings {"
         errorLine2="^">
