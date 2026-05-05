@@ -1,0 +1,4 @@
+- Multi-server downloads share one list, with a badge marking each archive's source. Resume auto-routes to the right server.
+- Changing the download folder no longer orphans existing archives. The reader still finds local files at their original path.
+- Fixes: download list no longer blanks after a server switch; opening an unreachable archive shows an error instead of crashing.
+- Database upgrade (schema v26, auto-migrates on first launch) and stability improvements.
