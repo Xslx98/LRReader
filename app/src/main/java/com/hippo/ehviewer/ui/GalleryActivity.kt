@@ -38,9 +38,11 @@ import androidx.appcompat.app.AlertDialog
 import com.hippo.android.resource.AttrResources
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.settings.AppLockGate
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.settings.GuideSettings
 import com.hippo.ehviewer.settings.ReadingSettings
+import com.hippo.ehviewer.settings.SecuritySettings
 import com.hippo.ehviewer.event.AppEventBus
 import com.hippo.ehviewer.event.GalleryActivityEvent
 import com.hippo.ehviewer.gallery.ArchiveGalleryProvider
@@ -523,7 +525,41 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
 
     override fun onResume() {
         super.onResume()
+        // EhActivity.onForegroundLockCheck may have launched MainActivity for
+        // the security re-prompt — when CLEAR_TOP pops us, we end up
+        // finishing. Don't touch GL resources on a doomed activity.
+        if (isFinishing) return
         mGLRootView?.onResume()
+    }
+
+    /**
+     * Before the EhActivity default bounces us back to MainActivity for the
+     * security prompt, stash a self-resume intent so SecurityScene can
+     * re-launch the reader on the same page after a successful unlock.
+     * The stash is process-scoped — process death drops it, which is fine
+     * since process death = cold start = lock comes from `getLaunchAnnouncer`.
+     */
+    override fun onForegroundLockCheck() {
+        if (AppLockGate.shouldRelock && SecuritySettings.hasPattern()) {
+            buildResumeIntent()?.let { AppLockGate.stashResumeIntent(it) }
+        }
+        super.onForegroundLockCheck()
+    }
+
+    private fun buildResumeIntent(): Intent? {
+        val original = intent ?: return null
+        val currentPage = mSliderController.currentIndex.takeIf { it >= 0 } ?: mPage
+        return Intent(this, GalleryActivity::class.java).apply {
+            action = original.action
+            // Preserve action-specific extras (filename / uri / archive),
+            // then override KEY_PAGE with the page the user was actually on.
+            original.extras?.let { putExtras(it) }
+            original.data?.let { data = it }
+            putExtra(KEY_PAGE, currentPage)
+            // Don't carry over DATA_IN_EVENT — sticky-event consumption
+            // already happened on the original launch.
+            removeExtra(DATA_IN_EVENT)
+        }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
