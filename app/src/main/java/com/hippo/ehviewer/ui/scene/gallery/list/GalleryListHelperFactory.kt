@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
+import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import com.google.android.material.chip.ChipGroup
@@ -159,8 +160,8 @@ internal object GalleryListHelperFactory {
             override fun getHostContext(): Context? = scene.ehContext
             override fun getHostString(resId: Int): String = scene.getString(resId)
             override fun getHostString(resId: Int, vararg formatArgs: Any): String = scene.getString(resId, *formatArgs)
-            override fun startActivityForResult(intent: Intent, requestCode: Int) =
-                scene.startActivityForResult(intent, requestCode)
+            override fun pickArchive(intent: Intent, onPicked: (Uri?) -> Unit) =
+                scene.launchPickArchive(intent, onPicked)
         })
 
         val searchBarHelper = GallerySearchBarHelper(
@@ -170,7 +171,10 @@ internal object GalleryListHelperFactory {
             contentHelper = { scene.mHelper },
             setDrawerLockMode = scene::setDrawerLockMode,
             doBackPress = scene::onBackPressed,
-            doStartActivityForResult = scene::startActivityForResult,
+            doPickImage = scene::launchPickImage,
+            setImageUri = { uri ->
+                if (uri != null) scene.searchLayout.setImageUri(uri)
+            },
             doGetString = scene::getString
         )
 

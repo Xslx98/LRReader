@@ -2,6 +2,7 @@ package com.hippo.ehviewer.ui.scene.gallery.list
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.net.Uri
 import android.view.Gravity
 import androidx.recyclerview.widget.RecyclerView
 import com.hippo.drawerlayout.DrawerLayout
@@ -30,7 +31,14 @@ internal class GallerySearchBarHelper(
     private val contentHelper: () -> GalleryListDataHelper?,
     private val setDrawerLockMode: (Int, Int) -> Unit,
     private val doBackPress: () -> Unit,
-    private val doStartActivityForResult: (Intent, Int) -> Unit,
+    /**
+     * Launches an image picker on behalf of the helper. The Scene-side
+     * implementation registers an `ActivityResultLauncher` once and forwards
+     * [Intent] / result through this lambda; the picked [Uri] (or `null` on
+     * cancel) flows into [setImageUri].
+     */
+    private val doPickImage: (Intent, (Uri?) -> Unit) -> Unit,
+    private val setImageUri: (Uri?) -> Unit,
     private val doGetString: (Int) -> String
 ) : SearchBar.Helper, SearchBar.OnStateChangeListener,
     FastScroller.OnDragHandlerListener, SearchLayout.Helper,
@@ -93,9 +101,9 @@ internal class GallerySearchBarHelper(
         val intent = Intent()
         intent.type = "image/*"
         intent.action = Intent.ACTION_GET_CONTENT
-        doStartActivityForResult(
+        doPickImage(
             Intent.createChooser(intent, doGetString(R.string.select_image)),
-            GalleryListScene.REQUEST_CODE_SELECT_IMAGE
+            setImageUri,
         )
     }
 

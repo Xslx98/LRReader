@@ -35,7 +35,14 @@ class GalleryUploadHelper(private val mCallback: Callback) {
         fun getHostContext(): Context?
         fun getHostString(resId: Int): String
         fun getHostString(resId: Int, vararg formatArgs: Any): String
-        fun startActivityForResult(intent: Intent, requestCode: Int)
+
+        /**
+         * Launches an archive file picker. The Scene-side implementation is
+         * expected to forward [intent] to a previously-registered
+         * `ActivityResultLauncher` and invoke [onPicked] with the picked Uri
+         * (or `null` when the user cancels).
+         */
+        fun pickArchive(intent: Intent, onPicked: (Uri?) -> Unit)
     }
 
     /**
@@ -52,13 +59,12 @@ class GalleryUploadHelper(private val mCallback: Callback) {
         intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
         intent.addCategory(Intent.CATEGORY_OPENABLE)
         try {
-            mCallback.startActivityForResult(
+            mCallback.pickArchive(
                 Intent.createChooser(
                     intent,
                     mCallback.getHostString(R.string.lrr_upload_choose_file)
-                ),
-                GalleryListScene.REQUEST_CODE_UPLOAD_ARCHIVE
-            )
+                )
+            ) { uri -> if (uri != null) handleUploadResult(uri) }
         } catch (e: Exception) {
             mCallback.showTip(R.string.lrr_upload_no_file_manager, BaseScene.LENGTH_SHORT)
         }
