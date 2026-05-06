@@ -37,6 +37,14 @@
             android:showDividers="middle"
             android:dividerPadding="@dimen/keyline_margin">
 
+            <!-- Use the same header background tone the gallery header
+                 itself does so the banner reads as a continuation of
+                 the header strip rather than a foreign panel. The
+                 Material3-only ?attr/colorSurfaceVariant exists in the
+                 Material 1.13 library but is *not* assigned a value in
+                 the project's Theme.MaterialComponents.Light chain,
+                 so referencing it here previously crashed inflation
+                 with a TypedArray.getDrawable UnsupportedOperationException. -->
             <LinearLayout
                 android:id="@+id/source_error_banner"
                 android:layout_width="match_parent"
@@ -45,14 +53,14 @@
                 android:gravity="center_vertical"
                 android:visibility="gone"
                 android:padding="@dimen/keyline_margin"
-                android:background="?attr/colorSurfaceVariant">
+                android:background="?attr/galleryDetailHeaderBackgroundColor">
 
                 <TextView
                     android:id="@+id/source_error_text"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textColor="@android:color/white"
                     style="@style/TextAppearance.AppCompat.Body2"/>
 
                 <Button
@@ -60,6 +68,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/lrr_retry"
+                    android:textColor="@android:color/white"
                     style="?attr/borderlessButtonStyle"/>
             </LinearLayout>
 
