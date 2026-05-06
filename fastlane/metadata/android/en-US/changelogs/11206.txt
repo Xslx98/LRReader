@@ -1,0 +1,3 @@
+- Security: the pattern / fingerprint lock now re-prompts whenever the app returns from background. Previously, after one unlock the app stayed open until the process was killed.
+- After unlock, the reader resumes on the same page you were on.
+- Reader: the thin seam line between tiles in vertical-continuous mode is gone.
