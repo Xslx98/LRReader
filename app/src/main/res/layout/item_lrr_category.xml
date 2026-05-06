@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Single item layout for a LANraragi category row -->
+<!-- Single item layout for a LANraragi category row.
+     Root background carries the ripple feedback for row taps; required. -->
 
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -13,7 +15,8 @@
     android:paddingBottom="12dp"
     android:background="?attr/selectableItemBackground"
     android:clickable="true"
-    android:focusable="true">
+    android:focusable="true"
+    tools:ignore="Overdraw">
 
     <LinearLayout
         android:layout_width="match_parent"

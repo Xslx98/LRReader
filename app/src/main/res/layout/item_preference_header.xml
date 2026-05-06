@@ -15,14 +15,17 @@
   ~ limitations under the License.
   -->
 
+<!-- Root background visually distinguishes a preference header row; required. -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:gravity="center_vertical"
     android:minHeight="72dp"
     android:orientation="horizontal"
-    android:background="?attr/preferenceHeaderBackground">
+    android:background="?attr/preferenceHeaderBackground"
+    tools:ignore="Overdraw">
 
     <ImageView
         android:id="@android:id/icon"
