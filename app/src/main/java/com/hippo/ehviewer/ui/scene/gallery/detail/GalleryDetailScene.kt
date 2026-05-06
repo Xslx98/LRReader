@@ -819,7 +819,13 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         return when {
             e is com.lanraragi.reader.client.api.OrphanProfileException ->
                 ctx.getString(R.string.lrr_detail_source_profile_orphan)
-            e is com.lanraragi.reader.client.api.LRRHttpException && e.code == 404 ->
+            // LANraragi returns HTTP 400 ("Invalid id") for unknown
+            // arcids on /api/archives/{arcid}/metadata — semantically
+            // equivalent to the archive having been deleted server-side.
+            // 404 is also handled for forward-compat with Shinobu / future
+            // servers that follow the more conventional REST mapping.
+            e is com.lanraragi.reader.client.api.LRRHttpException &&
+                (e.code == 400 || e.code == 404) ->
                 ctx.getString(R.string.lrr_detail_source_archive_deleted, profileName)
             e is java.net.UnknownHostException ||
                 e is java.net.SocketTimeoutException ||
