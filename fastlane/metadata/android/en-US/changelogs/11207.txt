@@ -1,0 +1,4 @@
+- Cross-server downloads: tapping a cover from a server that isn't the active one used to fail with HTTP 400. The detail page now routes to the originating server automatically.
+- Detail page renders local cache instantly so it never goes blank while live data loads.
+- Friendlier messages when the source server is offline / has deleted the archive / has been removed, with a Retry button.
+- New source-server badge in the detail header for cross-server items.
