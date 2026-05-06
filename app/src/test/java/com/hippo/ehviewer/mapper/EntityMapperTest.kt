@@ -64,6 +64,28 @@ class EntityMapperTest {
     }
 
     @Test
+    fun `Archive toDegradedArchiveDetail seeds tagGroups for cache-first render`() {
+        // The detail page falls back to this mapper when the live LRR
+        // metadata fetch hasn't returned (cross-server source offline,
+        // orphan profile, server-side delete) but the navigation arg
+        // already carries a usable Archive snapshot. The tag groups
+        // need to ride through unchanged so the binder can paint the
+        // tag rows; language/size are server-only and collapse to null.
+        val ad = archive().toDegradedArchiveDetail()
+
+        assertEquals("ga1", ad.archive.arcid)
+        assertEquals("Direct Archive", ad.archive.title)
+        // tagGroups preserves the source map's namespaces with their tags.
+        val byNs = ad.tagGroups.associate { it.namespace to it.tags }
+        assertEquals(listOf("alice", "bob"), byNs["artist"])
+        assertEquals(listOf("english"), byNs["language"])
+        // language / size are derived from server-only LRRArchive fields
+        // we don't have on the navigation Archive — null is the contract.
+        assertEquals(null, ad.language)
+        assertEquals(null, ad.size)
+    }
+
+    @Test
     fun `DownloadInfo toArchive groups simple tags by namespace`() {
         val di = archive().toDownloadInfoView()
         // Mimic a tag-namespaced flat array as written by the legacy
