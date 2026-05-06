@@ -1131,6 +1131,13 @@
     <string name="lrr_empty_namespace">หมวดหมู่ไม่สามารถเว้นว่างได้</string>
     <string name="lrr_keystore_failed_title">ที่เก็บข้อมูลรับรองไม่พร้อมใช้งาน</string>
     <string name="lrr_keystore_failed_message">คีย์สโตร์ของอุปกรณ์ไม่พร้อมใช้งาน ไม่สามารถโหลด API Key ได้ กรุณากรอกข้อมูลรับรองเซิร์ฟเวอร์อีกครั้ง</string>
+    <string name="lrr_boot_load_failed_title">เกิดข้อผิดพลาดในการเริ่มต้น</string>
+    <string name="lrr_boot_load_failed_message">ไม่สามารถโหลดโปรไฟล์เซิร์ฟเวอร์ที่บันทึกไว้เมื่อเริ่มต้น แอปกำลังทำงานโดยไม่มีโปรไฟล์ใด ๆ คุณอาจต้องตั้งค่าใหม่หรือติดตั้งแอปใหม่\n\nรายละเอียด: %1$s</string>
+    <string name="lrr_boot_load_failed_retry">ลองใหม่</string>
+    <string name="lrr_boot_load_failed_reset_db">รีเซ็ตฐานข้อมูล</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_title">รีเซ็ตฐานข้อมูล?</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_message">การดำเนินการนี้จะลบข้อมูลที่จัดเก็บในเครื่องทั้งหมดอย่างถาวร ได้แก่ โปรไฟล์เซิร์ฟเวอร์ ประวัติการอ่าน รายการโปรด บันทึกการดาวน์โหลด และประวัติการค้นหา ไฟล์อาร์ไคฟ์ที่ดาวน์โหลดไว้บนดิสก์จะไม่ได้รับผลกระทบ แอปจะรีสตาร์ทเสมือนเป็นการติดตั้งใหม่</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_yes">รีเซ็ตและรีสตาร์ท</string>
     <string name="lrr_secure_storage_write_failed">คีย์สโตร์ของอุปกรณ์ไม่พร้อมใช��งาน จึงไม่สามารถบันทึกการเปลี่ยนแปลงอย่างปลอดภัยได้ กรุณารีสตาร์ทอุปกรณ์แล้วลองอีกครั้ง หรือติดตั้งแอปใหม่หากปัญหายังคงอยู่</string>
     <string name="reauth_required_title">ต้องยืนยันตัวตนใหม่</string>
     <string name="reauth_required_message">คีย์สโตร์ความปลอดภัยไม่พร้อมใช้งาน กรุณากรอก API Key ของแต่ละเซิร์ฟเวอร์อีกครั้ง</string>

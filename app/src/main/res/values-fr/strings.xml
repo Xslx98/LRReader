@@ -1130,6 +1130,13 @@ Cette action est irréversible.</string>
     <string name="lrr_empty_namespace">La catégorie ne peut pas être vide</string>
     <string name="lrr_keystore_failed_title">Stockage des identifiants indisponible</string>
     <string name="lrr_keystore_failed_message">Le magasin de clés de l\'appareil est indisponible. Votre clé API n\'a pas pu être chargée. Veuillez saisir à nouveau vos identifiants de serveur.</string>
+    <string name="lrr_boot_load_failed_title">Erreur de démarrage</string>
+    <string name="lrr_boot_load_failed_message">Impossible de charger vos profils serveur enregistrés au démarrage. L\'application fonctionne sans profil chargé ; vous devrez peut-être reconfigurer ou réinstaller.\n\nDétails : %1$s</string>
+    <string name="lrr_boot_load_failed_retry">Réessayer</string>
+    <string name="lrr_boot_load_failed_reset_db">Réinitialiser la base</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_title">Réinitialiser la base ?</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_message">Cette action supprimera définitivement toutes les données stockées localement : profils serveur, historique de lecture, favoris, téléchargements et recherches. Les fichiers d\'archives déjà téléchargés sur le disque ne sont pas affectés. L\'application redémarrera dans un état neuf.</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_yes">Réinitialiser et redémarrer</string>
     <string name="lrr_secure_storage_write_failed">Le magasin de clés de l\'appareil est indisponible, vos modifications n\'ont pas pu être enregistrées en toute sécurité. Veuillez redémarrer l\'appareil et réessayer, ou réinstaller l\'application si le problème persiste.</string>
     <string name="reauth_required_title">Ré-authentification requise</string>
     <string name="reauth_required_message">Le magasin de clés sécurisé est devenu indisponible. Veuillez saisir à nouveau la clé API de chaque serveur.</string>
