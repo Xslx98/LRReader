@@ -100,15 +100,35 @@
         app:layout_constraintStart_toStartOf="@id/title"
         app:layout_constraintTop_toBottomOf="@id/title" />
 
-    <!-- Anchor the action area below whichever of thumb / uploader extends
-         further. With long titles uploader pushes lower; with very short
-         titles thumb is the lower edge. -->
+    <!-- Source-server origin badge — visible only when the archive's
+         source server differs from the active profile, so the user has
+         a visual cue that this item is "from elsewhere" and matches the
+         badge they already saw on the download list. Bound by
+         DetailHeaderBinder.bindSourceBadge via SourceBadgeBinder. -->
+    <TextView
+        android:id="@+id/source_badge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:textSize="@dimen/text_little_small"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="@id/uploader"
+        app:layout_constraintTop_toBottomOf="@id/uploader" />
+
+    <!-- Anchor the action area below whichever of thumb / uploader / badge
+         extends further. With long titles uploader pushes lower; with very
+         short titles thumb is the lower edge; cross-server archives push
+         the badge below uploader so the barrier needs to track all three. -->
     <androidx.constraintlayout.widget.Barrier
         android:id="@+id/view_head_bottom"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:barrierDirection="bottom"
-        app:constraint_referenced_ids="thumb,uploader" />
+        app:constraint_referenced_ids="thumb,uploader,source_badge" />
 
     <com.hippo.ehviewer.widget.ArchiverDownloadProgress
         android:id="@+id/archiver_download_progress"

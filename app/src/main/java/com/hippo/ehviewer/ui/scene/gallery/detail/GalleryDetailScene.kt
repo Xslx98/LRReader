@@ -312,13 +312,15 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         val tags = ViewUtils.`$$`(belowHeader, R.id.tags) as LinearLayout
         val noTags = ViewUtils.`$$`(tags, R.id.no_tags) as TextView
+        val sourceBadge = ViewUtils.`$$`(mHeader, R.id.source_badge) as TextView
 
         // Initialize helpers
         val headerBinder = DetailHeaderBinder(
             viewModel, viewLifecycleOwner,
             thumb, title, uploader, pages, size,
             ratingText, rating, heart, heartOutline,
-            archiverDownloadProgress, colorBg, tags, noTags
+            archiverDownloadProgress, colorBg, tags, noTags,
+            sourceBadge,
         )
         mHeaderBinder = headerBinder
         headerBinder.ensureActionDrawable(nonNullContext)
