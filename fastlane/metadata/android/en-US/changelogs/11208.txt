@@ -1,0 +1,2 @@
+- Fix: cross-server archive's source-server badge used to flip to the active profile after a refresh, and the next refresh then routed to the wrong server, leaving the page stuck on a stale error. Source attribution and routing now stay correct.
+- Smarter "source unavailable" message: when the source server is stopped (or its proxy responds 4xx on its behalf), the banner now reads "unreachable" instead of falsely claiming the archive was deleted.
