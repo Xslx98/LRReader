@@ -171,6 +171,9 @@ dependencies {
     implementation libs.lifecycle.runtime.ktx
     // ViewModel for Paging 3 gallery list
     implementation libs.lifecycle.viewmodel.ktx
+    // ProcessLifecycleOwner — used by AppLockGate to detect background→foreground
+    // transitions and re-prompt the security pattern.
+    implementation libs.lifecycle.process
     // Paging 3 — paginated gallery list loading
     implementation libs.paging.runtime
     // kotlinx-serialization (LRR data classes)

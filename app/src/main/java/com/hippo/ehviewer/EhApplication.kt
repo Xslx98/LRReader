@@ -36,8 +36,12 @@ import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.module.AppModule
 import kotlinx.coroutines.launch
 import com.lanraragi.reader.client.api.LRRClientProvider
+import com.hippo.ehviewer.settings.AppLockGate
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.settings.PrivacySettings
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.lib.image.Image
 import android.os.Handler
@@ -214,6 +218,19 @@ class EhApplication : RecordingApplication() {
         if (PrivacySettings.getEnableAnalytics()) {
             Analytics.start(this)
         }
+
+        // Re-prompt the security pattern whenever the whole app returns from
+        // background. ProcessLifecycleOwner debounces by ~700 ms, so config
+        // changes (rotation), the notification shade, BiometricPrompt, and
+        // other transient overlays do NOT fire ON_STOP and therefore do not
+        // trigger a spurious lock. EhActivity / MainActivity consume the flag
+        // from onResume and gate on hasPattern() there — keeping the
+        // EncryptedSharedPreferences read off the lifecycle hot path.
+        ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onStop(owner: LifecycleOwner) {
+                AppLockGate.onAppBackgrounded()
+            }
+        })
 
         // Do io tasks in background thread
         ServiceRegistry.coroutineModule.ioScope.launch {

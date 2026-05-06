@@ -30,6 +30,7 @@ import androidx.core.content.ContextCompat
 import com.hippo.ehviewer.R
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
+import com.hippo.ehviewer.settings.AppLockGate
 import com.hippo.ehviewer.settings.SecuritySettings
 import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.widget.lockpattern.LockPatternView
@@ -116,6 +117,10 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
                 showStorageErrorDialog()
                 return
             }
+            // Pattern just cleared — drop any pending re-lock state so the
+            // user isn't bounced back to a now-impossible lock prompt next
+            // time they background the app.
+            AppLockGate.reset()
             finish()
             return
         }

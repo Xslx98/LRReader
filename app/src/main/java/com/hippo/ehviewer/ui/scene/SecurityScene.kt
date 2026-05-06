@@ -35,6 +35,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.settings.AppLockGate
 import com.hippo.ehviewer.settings.SecuritySettings
 import com.hippo.ehviewer.ui.scene.SecurityViewModel.SecurityUiEvent
 import com.hippo.ehviewer.util.collectFlow
@@ -54,6 +55,34 @@ class SecurityScene : SolidScene(),
         private const val LOCKOUT_UPDATE_INTERVAL_MS = 1000L
 
         private const val KEY_RETRY_TIMES = "retry_times"
+
+        /**
+         * If true, this scene was pushed by the foreground re-lock flow
+         * (AppLockGate). On successful unlock just pop back to the previous
+         * scene instead of running the cold-start `startSceneForCheckStep`
+         * logic, which would otherwise reset navigation to GalleryListScene.
+         */
+        const val KEY_RELOCK_MODE = "relock_mode"
+    }
+
+    private val isRelockMode: Boolean
+        get() = arguments?.getBoolean(KEY_RELOCK_MODE, false) == true
+
+    private fun dismissAfterUnlock() {
+        if (ehContext == null || !isAdded) return
+        if (isRelockMode) {
+            // Capture context + resume intent BEFORE finishing — finish()
+            // detaches this fragment so ehContext may turn null right after.
+            val ctx = ehContext
+            val resumeIntent = AppLockGate.consumeResumeIntent()
+            finish()
+            if (ctx != null && resumeIntent != null) {
+                ctx.startActivity(resumeIntent)
+            }
+        } else {
+            startSceneForCheckStep(CHECK_STEP_SECURITY, arguments)
+            finish()
+        }
     }
 
     private lateinit var viewModel: SecurityViewModel
@@ -109,6 +138,16 @@ class SecurityScene : SolidScene(),
         mSensorManager = null
         mAccelerometer = null
         mShakeDetector = null
+
+        // If a re-lock prompt is being torn down without a successful unlock
+        // (user pressed back, scene replaced, etc.), drop the stashed reader
+        // resume intent so a later unrelated unlock doesn't revive a stale
+        // page. Successful-unlock paths consume the intent in
+        // dismissAfterUnlock before calling finish(), so this is a no-op
+        // in the happy path.
+        if (isRelockMode) {
+            AppLockGate.consumeResumeIntent()
+        }
     }
 
     override fun onResume() {
@@ -184,10 +223,7 @@ class SecurityScene : SolidScene(),
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     mFingerprintIcon.setImageResource(R.drawable.fingerprint_success)
                     mFingerprintIcon.postDelayed({
-                        if (ehContext != null && isAdded) {
-                            startSceneForCheckStep(CHECK_STEP_SECURITY, arguments)
-                            finish()
-                        }
+                        dismissAfterUnlock()
                     }, SUCCESS_DELAY_MILLIS)
                 }
             })
@@ -245,10 +281,7 @@ class SecurityScene : SolidScene(),
     private fun handleUiEvent(event: SecurityUiEvent) {
         when (event) {
             is SecurityUiEvent.PatternVerified -> {
-                if (ehContext != null && isAdded) {
-                    startSceneForCheckStep(CHECK_STEP_SECURITY, arguments)
-                    finish()
-                }
+                dismissAfterUnlock()
             }
 
             is SecurityUiEvent.PatternFailed -> {
@@ -349,7 +382,7 @@ class SecurityScene : SolidScene(),
 
     override fun onShake(count: Int) {
         if (count == 10) {
-            val activity = activity2 ?: return
+            if (activity2 == null) return
             try {
                 SecuritySettings.setPattern("")
             } catch (e: LRRSecureStorageUnavailableException) {
@@ -361,10 +394,11 @@ class SecurityScene : SolidScene(),
                     .show()
                 return
             }
-            if (ehContext != null && isAdded) {
-                startSceneForCheckStep(CHECK_STEP_SECURITY, arguments)
-                finish()
-            }
+            // Pattern just cleared — drop any pending re-lock state so the
+            // user isn't bounced back to a now-impossible lock prompt next
+            // time they background the app.
+            AppLockGate.reset()
+            dismissAfterUnlock()
         }
     }
 

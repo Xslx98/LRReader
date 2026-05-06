@@ -49,6 +49,7 @@ import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.settings.AppLockGate
 import com.hippo.ehviewer.settings.SecuritySettings
 import com.hippo.ehviewer.settings.NetworkSettings
 import com.hippo.ehviewer.settings.DownloadSettings
@@ -593,6 +594,29 @@ class MainActivity : StageActivity(),
         setNavCheckedItem(mNavCheckedItem)
 
         checkClipboardUrl()
+    }
+
+    /**
+     * MainActivity hosts the SecurityScene, so when the app returns from
+     * background and a re-lock is pending, push a fresh SecurityScene on top
+     * of the existing scene stack instead of bouncing through the
+     * EhActivity default. The scene is launched in re-lock mode so
+     * successful unlock just pops it back to the previous scene without
+     * resetting navigation.
+     */
+    override fun onForegroundLockCheck() {
+        if (!AppLockGate.consumeShouldRelock()) return
+        // Always consume above so a removed pattern doesn't leave the flag set
+        // forever. Push SecurityScene only if a pattern is still configured.
+        if (!SecuritySettings.hasPattern()) return
+        // Skip if SecurityScene is already on top — avoids stacking a
+        // duplicate when the user backgrounds the lock prompt itself.
+        val top = topSceneClass
+        if (top != null && SecurityScene::class.java.isAssignableFrom(top)) return
+        val args = Bundle().apply {
+            putBoolean(SecurityScene.KEY_RELOCK_MODE, true)
+        }
+        startScene(Announcer(SecurityScene::class.java).setArgs(args))
     }
 
     override fun onTransactScene() {

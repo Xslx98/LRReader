@@ -17,6 +17,7 @@
 package com.hippo.ehviewer.ui
 
 import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.os.Build
@@ -27,6 +28,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.hippo.content.ContextLocalWrapper
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.EhApplication
+import com.hippo.ehviewer.settings.AppLockGate
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.settings.SecuritySettings
 import java.util.Locale
@@ -77,6 +79,41 @@ abstract class EhActivity : AppCompatActivity() {
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
+        onForegroundLockCheck()
+    }
+
+    /**
+     * Called from [onResume] after the secure-flag check. Default behavior:
+     * surface MainActivity (the SecurityScene host) so it can re-prompt the
+     * pattern. MainActivity is declared `singleTask` in the manifest, so
+     * `FLAG_ACTIVITY_CLEAR_TOP` correctly handles both topologies:
+     *   - this activity sits above MainActivity in the same task → the
+     *     intermediate activities (including this one) are popped;
+     *   - this activity is the root of its own task (e.g. GalleryActivity
+     *     launched via Samsung S-Pen `REMOTE_ACTION` intent-filter) →
+     *     MainActivity's existing task is brought to foreground, or a fresh
+     *     MainActivity task is created.
+     *
+     * MainActivity overrides this to push SecurityScene directly instead of
+     * launching itself.
+     *
+     * Subclasses that override [onResume] and run additional work after
+     * `super.onResume()` should bail out via `if (isFinishing) return`.
+     */
+    protected open fun onForegroundLockCheck() {
+        if (!AppLockGate.shouldRelock) return
+        if (!SecuritySettings.hasPattern()) {
+            // Pattern was removed while we were backgrounded — drop the
+            // stale flag so it can't fire spuriously later.
+            AppLockGate.consumeShouldRelock()
+            return
+        }
+        // Leave the flag set: MainActivity's own onResume will consume it and
+        // push SecurityScene. Routing through MainActivity guarantees the
+        // lock prompt always appears even when this activity is the task root.
+        val intent = Intent(this, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        startActivity(intent)
     }
 
     override fun attachBaseContext(newBase: Context) {
