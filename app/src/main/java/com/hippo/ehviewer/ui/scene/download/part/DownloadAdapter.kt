@@ -30,8 +30,6 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.RelativeLayout
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.content.res.AppCompatResources
-import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemAdapter
@@ -56,7 +54,6 @@ import com.hippo.ehviewer.ui.scene.download.DownloadsScene
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.ehviewer.ui.scene.gallery.list.EnterGalleryDetailTransaction
 import com.hippo.ehviewer.widget.SimpleRatingView
-import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.ripple.Ripple
 import com.hippo.scene.Announcer
@@ -285,39 +282,10 @@ class DownloadAdapter(
         val badge = holder.sourceServer
         val context = mScene.ehContext ?: return
 
-        // Legacy rows: best-effort attribute to the current active profile.
-        // If active profile is also unset (degenerate fresh-install state)
-        // effectiveId stays 0 and the cache lookup falls through to orphan.
-        val effectiveId = if (info.serverProfileId == 0L) {
-            LRRAuthManager.getActiveProfileId() ?: 0L
-        } else {
-            info.serverProfileId
-        }
-
-        val cache = ServiceRegistry.dataModule.profileLookupCache
-        val profile = cache.findById(effectiveId)
-        val bgColor: Int
-        val fgColor: Int
-        if (profile == null) {
-            badge.text = mScene.getString(R.string.lrr_download_source_deleted)
-            bgColor = AttrResources.getAttrColor(context, androidx.appcompat.R.attr.colorError)
-            fgColor = android.graphics.Color.WHITE
-        } else {
-            badge.text = profile.name
-            val (bgAttr, fgAttr) = attrPairForProfile(profile.id)
-            bgColor = AttrResources.getAttrColor(context, bgAttr)
-            fgColor = AttrResources.getAttrColor(context, fgAttr)
-        }
-        // Square badge drawable (lrr_server_badge_bg) shared across rows;
-        // mutate() so each ViewHolder's tint state is independent — without
-        // it, RecyclerView recycling would let one ViewHolder's tint bleed
-        // into another binding the same drawable instance.
-        val bg = AppCompatResources.getDrawable(context, R.drawable.lrr_server_badge_bg)
-            ?.mutate()
-            ?: return
-        DrawableCompat.setTint(bg, bgColor)
-        badge.background = bg
-        badge.setTextColor(fgColor)
+        // Visual binding (text + colour pair + drawable tint) is shared
+        // with the detail-header badge so both surfaces show identical
+        // labels / colours for the same profile.
+        com.hippo.ehviewer.ui.widget.bindSourceServerBadge(badge, info.serverProfileId)
 
         // The XML pins source_server 8dp above thumb's bottom — fine when
         // category is GONE (the LRR-archive default). For imported archives
@@ -336,23 +304,10 @@ class DownloadAdapter(
             params.bottomMargin = margin
             badge.layoutParams = params
         }
+        // bindSourceServerBadge already set visibility = VISIBLE; this
+        // re-assertion is a defence against a previous bind having
+        // hidden the view (e.g. category-switching codepaths upstream).
         badge.visibility = View.VISIBLE
-    }
-
-    /**
-     * Map a server profile id to one of the [SERVER_BADGE_ATTR_PAIRS]
-     * (bg-attr, fg-attr) tuples. id is the Room autoGenerate primary key
-     * (Long, starts at 1, never changes), so the modulo result is stable
-     * across renames and survives on-device data unchanged.
-     *
-     * Wraparound (>8 profiles) is acceptable: practical setups have 1-3
-     * profiles, and even at 9+ the duplicate slot is far better UX than
-     * the prior "everything green" baseline.
-     */
-    private fun attrPairForProfile(profileId: Long): Pair<Int, Int> {
-        val idx = ((profileId - 1L).rem(SERVER_BADGE_ATTR_PAIRS.size).toInt() +
-            SERVER_BADGE_ATTR_PAIRS.size) % SERVER_BADGE_ATTR_PAIRS.size
-        return SERVER_BADGE_ATTR_PAIRS[idx]
     }
 
     private fun bindForState(holder: DownloadHolder, info: DownloadInfo) {
@@ -792,25 +747,6 @@ class DownloadAdapter(
 
         @JvmField
         var DRAG_ENABLE = false
-
-        /**
-         * Source-server badge palette indexed via theme-attr pairs
-         * `(bg-attr, fg-attr)` following the Material 3 container /
-         * on-container tonal pattern. Each of the project's three themes
-         * (Light / Dark / Black) supplies its own variant — see
-         * attrs.xml + themes.xml + colors.xml. Indexed by
-         * `(profileId - 1) % size` in [attrPairForProfile].
-         */
-        private val SERVER_BADGE_ATTR_PAIRS = arrayOf(
-            R.attr.serverBadge0Bg to R.attr.serverBadge0Fg,
-            R.attr.serverBadge1Bg to R.attr.serverBadge1Fg,
-            R.attr.serverBadge2Bg to R.attr.serverBadge2Fg,
-            R.attr.serverBadge3Bg to R.attr.serverBadge3Fg,
-            R.attr.serverBadge4Bg to R.attr.serverBadge4Fg,
-            R.attr.serverBadge5Bg to R.attr.serverBadge5Fg,
-            R.attr.serverBadge6Bg to R.attr.serverBadge6Fg,
-            R.attr.serverBadge7Bg to R.attr.serverBadge7Fg,
-        )
 
         /** Bottom margin for source_server when the row's category is hidden (LRR default). */
         private const val BADGE_MARGIN_BOTTOM_DEFAULT_DP = 8

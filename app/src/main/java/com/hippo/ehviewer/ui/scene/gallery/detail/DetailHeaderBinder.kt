@@ -13,9 +13,11 @@ import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
 
+import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
+import com.hippo.ehviewer.ui.widget.bindSourceServerBadge
 import com.hippo.ehviewer.widget.ArchiverDownloadProgress
 import com.hippo.reveal.ViewAnimationUtils
 import com.hippo.util.DrawableManager
@@ -44,6 +46,7 @@ internal class DetailHeaderBinder(
     private val colorBg: View,
     private val tags: LinearLayout,
     private val noTags: TextView,
+    private val sourceBadge: TextView,
 ) {
 
     var useNetWorkLoadThumb: Boolean = false
@@ -109,6 +112,26 @@ internal class DetailHeaderBinder(
             // Archive has no uploader (LRR never populates it); clear the
             // field so a previous binding does not leak through.
             uploader.text = null
+            bindSourceBadge(archive)
+        }
+    }
+
+    /**
+     * Show the source-server badge when the archive's source profile
+     * differs from the active profile. Single-profile users (and
+     * archives whose source is the active profile) see no badge — the
+     * badge is intentionally not a permanent ornament; it only tags
+     * cross-server items so the user understands "this comes from
+     * somewhere else than the server I'm currently connected to".
+     */
+    fun bindSourceBadge(archive: Archive) {
+        val sid = archive.serverProfileId
+        val activeId = LRRAuthManager.getActiveProfileId()
+        val isCrossServer = sid != 0L && sid != activeId
+        if (isCrossServer) {
+            bindSourceServerBadge(sourceBadge, sid)
+        } else {
+            sourceBadge.visibility = View.GONE
         }
     }
 
@@ -136,6 +159,7 @@ internal class DetailHeaderBinder(
         title.text = archive.title
         // LRR has no uploader concept — clear the slot.
         uploader.text = null
+        bindSourceBadge(archive)
 
         bindReadProgress(archive.progress, archive.pagecount)
 
