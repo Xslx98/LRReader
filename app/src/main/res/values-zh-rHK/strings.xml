@@ -1156,6 +1156,13 @@
     <string name="lrr_empty_namespace">分類名不能為空</string>
     <string name="lrr_keystore_failed_title">憑證儲存不可用</string>
     <string name="lrr_keystore_failed_message">裝置金鑰庫不可用，無法載入 API Key。請重新輸入伺服器憑證。</string>
+    <string name="lrr_boot_load_failed_title">啟動錯誤</string>
+    <string name="lrr_boot_load_failed_message">啟動時無法載入已儲存的伺服器設定檔。目前以無設定檔狀態執行，您可能需要重新設定或重新安裝。\n\n詳細資訊：%1$s</string>
+    <string name="lrr_boot_load_failed_retry">重試</string>
+    <string name="lrr_boot_load_failed_reset_db">重置資料庫</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_title">重置資料庫？</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_message">此操作將永久刪除應用程式本機資料庫中的所有資料：伺服器設定檔、閱讀歷史、收藏、下載記錄與搜尋歷史。已下載到磁碟的檔案不受影響。應用程式將重新啟動並以全新狀態執行。</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_yes">重置並重啟</string>
     <string name="lrr_secure_storage_write_failed">裝置金鑰庫不可用，無法安全儲存變更。請重新啟動裝置後重試，若問題持續請重新安裝應用程式。</string>
     <string name="reauth_required_title">需要重新驗證</string>
     <string name="reauth_required_message">安全金鑰庫已失效，請為每個伺服器重新輸入 API Key。</string>

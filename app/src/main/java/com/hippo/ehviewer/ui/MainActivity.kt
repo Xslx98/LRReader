@@ -17,6 +17,8 @@
 package com.hippo.ehviewer.ui
 
 import android.annotation.SuppressLint
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.ClipboardManager
 import android.util.Log
 import android.content.Context
@@ -29,6 +31,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Message
 import android.os.PersistableBundle
+import android.os.Process
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -57,6 +60,7 @@ import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.callBack.ImageChangeCallBack
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.data.ListUrlBuilder
+import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.module.AppModule
 import com.hippo.ehviewer.util.ImageDecodeUtils
 import com.lanraragi.reader.client.api.LRRAuthManager
@@ -448,13 +452,100 @@ class MainActivity : StageActivity(),
         // error). Sticky one-shot — getAndSet(null) so each failure is shown
         // exactly once. KeyStore-only failures take precedence above.
         AppModule.bootProfileLoadError.getAndSet(null)?.let { err ->
-            AlertDialog.Builder(this)
-                .setTitle(R.string.lrr_boot_load_failed_title)
-                .setMessage(getString(R.string.lrr_boot_load_failed_message, err.message ?: err.javaClass.simpleName))
-                .setPositiveButton(android.R.string.ok, null)
-                .setCancelable(true)
-                .show()
+            showBootFailureDialog(err)
         }
+    }
+
+    /**
+     * Three-button recovery dialog for non-KeyStore boot failures (DB
+     * corruption, Room migration error, generic loader exception). Without
+     * a recovery path the user gets stuck restarting into the same broken
+     * state — see backlog Stage 1 / fix-roadmap S2-2.
+     *
+     * - **Retry**: simple process restart. The original error may have been
+     *   transient (e.g. `SQLiteException: disk I/O error` from a flaky FS).
+     * - **Reset Database**: opens a second confirm dialog before deleting
+     *   `eh.db` and restarting. Destructive and non-undoable.
+     * - **Cancel**: dismiss and continue with no profile loaded — same
+     *   behaviour as the previous OK-only dialog. Set non-cancelable so the
+     *   user must consciously dismiss.
+     */
+    private fun showBootFailureDialog(err: Throwable) {
+        val detail = err.message ?: err.javaClass.simpleName
+        AlertDialog.Builder(this)
+            .setTitle(R.string.lrr_boot_load_failed_title)
+            .setMessage(getString(R.string.lrr_boot_load_failed_message, detail))
+            .setPositiveButton(R.string.lrr_boot_load_failed_retry) { _, _ ->
+                triggerRebirth()
+            }
+            .setNegativeButton(R.string.lrr_boot_load_failed_reset_db) { _, _ ->
+                showResetDatabaseConfirm()
+            }
+            .setNeutralButton(android.R.string.cancel, null)
+            .setCancelable(false)
+            .show()
+    }
+
+    /**
+     * Second-stage confirm for the destructive "reset database" branch.
+     * Cancellable so back / outside-tap aborts; positive button calls
+     * [resetDatabaseAndRestart].
+     */
+    private fun showResetDatabaseConfirm() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.lrr_boot_load_failed_reset_db_confirm_title)
+            .setMessage(R.string.lrr_boot_load_failed_reset_db_confirm_message)
+            .setPositiveButton(R.string.lrr_boot_load_failed_reset_db_confirm_yes) { _, _ ->
+                resetDatabaseAndRestart()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .setCancelable(true)
+            .show()
+    }
+
+    /**
+     * Delete `eh.db` (plus its `-journal`, `-wal`, `-shm` siblings handled
+     * by the framework) on IO, then trigger a process restart so the next
+     * `AppDatabase.getInstance` call rebuilds an empty schema.
+     */
+    private fun resetDatabaseAndRestart() {
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                try {
+                    applicationContext.deleteDatabase(AppDatabase.DB_NAME)
+                } catch (t: Throwable) {
+                    Log.w(TAG, "deleteDatabase failed during boot-failure reset", t)
+                }
+            }
+            triggerRebirth()
+        }
+    }
+
+    /**
+     * Restart the whole app process. Schedules a one-shot inexact alarm to
+     * relaunch the launcher activity ~100 ms after the current process is
+     * killed; standard ProcessPhoenix-style pattern, no extra permission
+     * needed (`AlarmManager.set` with `RTC` is inexact and exempt from
+     * SCHEDULE_EXACT_ALARM on API 31+). Uses `getLaunchIntentForPackage` so
+     * the relaunched task starts at whichever Activity is the registered
+     * launcher in the current build.
+     */
+    private fun triggerRebirth() {
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.also {
+            it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        }
+        if (launchIntent != null) {
+            val pendingIntent = PendingIntent.getActivity(
+                this,
+                0,
+                launchIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+            val alarm = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            alarm.set(AlarmManager.RTC, System.currentTimeMillis() + 100, pendingIntent)
+        }
+        finishAffinity()
+        Process.killProcess(Process.myPid())
     }
 
     override fun onStart() {

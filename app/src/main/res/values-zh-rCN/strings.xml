@@ -1156,6 +1156,13 @@
     <string name="lrr_empty_namespace">分类名不能为空</string>
     <string name="lrr_keystore_failed_title">凭据存储不可用</string>
     <string name="lrr_keystore_failed_message">设备密钥库不可用，无法加载 API Key。请重新输入服务器凭据。</string>
+    <string name="lrr_boot_load_failed_title">启动错误</string>
+    <string name="lrr_boot_load_failed_message">启动时无法加载已保存的服务器配置。当前以无配置状态运行，您可能需要重新配置或重新安装。\n\n详细信息：%1$s</string>
+    <string name="lrr_boot_load_failed_retry">重试</string>
+    <string name="lrr_boot_load_failed_reset_db">重置数据库</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_title">重置数据库？</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_message">此操作将永久删除应用本地数据库中的所有数据：服务器配置、阅读历史、收藏、下载记录与搜索历史。已下载到磁盘的档案文件不受影响。应用将重启并以全新状态运行。</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_yes">重置并重启</string>
     <string name="lrr_secure_storage_write_failed">设备密钥库不可用，无法安全保存更改。请重启设备后重试，若问题持续请重新安装应用。</string>
     <string name="reauth_required_title">需要重新认证</string>
     <string name="reauth_required_message">安全密钥库已失效，请为每个服务器重新输入 API Key。</string>

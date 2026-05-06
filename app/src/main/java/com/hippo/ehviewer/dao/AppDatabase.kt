@@ -56,6 +56,14 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun archiveLocalStateDao(): ArchiveLocalStateDao
 
     companion object {
+        /**
+         * On-disk file name of the Room database. Used by [getInstance] when
+         * building the singleton, and by recovery paths (e.g. the boot-failure
+         * "reset database" entry in [com.hippo.ehviewer.ui.MainActivity]) that
+         * need to delete the file via `Context.deleteDatabase(DB_NAME)`.
+         */
+        const val DB_NAME = "eh.db"
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -65,7 +73,7 @@ abstract class AppDatabase : RoomDatabase() {
                 INSTANCE ?: Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "eh.db"
+                    DB_NAME
                 )
                     .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26)
                     .build()

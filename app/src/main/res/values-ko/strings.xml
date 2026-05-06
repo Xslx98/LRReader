@@ -1147,6 +1147,13 @@
     <string name="lrr_empty_namespace">네임스페이스는 비워둘 수 없습니다</string>
     <string name="lrr_keystore_failed_title">자격 증명 저장소 사용 불가</string>
     <string name="lrr_keystore_failed_message">기기 키스토어를 사용할 수 없습니다. API 키를 불러올 수 없습니다. 서버 자격 증명을 다시 입력하세요.</string>
+    <string name="lrr_boot_load_failed_title">시작 오류</string>
+    <string name="lrr_boot_load_failed_message">시작 시 저장된 서버 프로필을 불러올 수 없습니다. 프로필이 로드되지 않은 상태로 실행 중입니다. 다시 구성하거나 재설치해야 할 수 있습니다.\n\n세부 정보: %1$s</string>
+    <string name="lrr_boot_load_failed_retry">다시 시도</string>
+    <string name="lrr_boot_load_failed_reset_db">데이터베이스 재설정</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_title">데이터베이스를 재설정하시겠습니까?</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_message">이 작업은 앱 로컬 데이터베이스의 모든 데이터(서버 프로필, 읽기 기록, 즐겨찾기, 다운로드 기록, 검색 기록)를 영구적으로 삭제합니다. 디스크에 저장된 다운로드 파일은 영향을 받지 않습니다. 앱이 새로 설치된 상태로 재시작됩니다.</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_yes">재설정 및 재시작</string>
     <string name="lrr_secure_storage_write_failed">기기 키스토어를 사용할 수 없어 변경 사항을 안전하게 저장할 수 없습니다. 기기를 재시작한 후 다시 시도하거나, 문제가 지속되면 앱을 재설치하세요.</string>
     <string name="reauth_required_title">��인증 필요</string>
     <string name="reauth_required_message">보안 키스토어를 사용할 수 없게 되었습니다. 각 서버의 API 키를 다시 입력하세요.</string>

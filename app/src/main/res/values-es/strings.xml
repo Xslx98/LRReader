@@ -1124,6 +1124,13 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_empty_namespace">La categoría no puede estar vacía</string>
     <string name="lrr_keystore_failed_title">Almacenamiento de credenciales no disponible</string>
     <string name="lrr_keystore_failed_message">El almacén de claves del dispositivo no está disponible. No se pudo cargar la clave API. Por favor, vuelva a introducir las credenciales del servidor.</string>
+    <string name="lrr_boot_load_failed_title">Error de inicio</string>
+    <string name="lrr_boot_load_failed_message">No se pudieron cargar tus perfiles de servidor guardados al iniciar. La aplicación se está ejecutando sin un perfil cargado; es posible que necesites reconfigurar o reinstalar.\n\nDetalles: %1$s</string>
+    <string name="lrr_boot_load_failed_retry">Reintentar</string>
+    <string name="lrr_boot_load_failed_reset_db">Restablecer base de datos</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_title">¿Restablecer la base de datos?</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_message">Esto eliminará permanentemente todos los datos almacenados localmente: perfiles de servidor, historial de lectura, favoritos, registros de descargas e historial de búsqueda. Los archivos descargados en disco no se verán afectados. La aplicación se reiniciará como una instalación nueva.</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_yes">Restablecer y reiniciar</string>
     <string name="lrr_secure_storage_write_failed">El almacén de claves del dispositivo no está disponible, por lo que los cambios no se pudieron guardar de forma segura. Reinicie el dispositivo e inténtelo de nuevo, o reinstale la aplicación si el problema persiste.</string>
     <string name="reauth_required_title">Se requiere re-autenticación</string>
     <string name="reauth_required_message">El almacén de claves seguro dejó de estar disponible. Por favor, vuelva a introducir la clave API de cada servidor.</string>

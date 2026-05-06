@@ -1064,6 +1064,13 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_empty_namespace">Kategorie darf nicht leer sein</string>
     <string name="lrr_keystore_failed_title">Anmeldedatenspeicher nicht verfügbar</string>
     <string name="lrr_keystore_failed_message">Der Schlüsselspeicher des Geräts ist nicht verfügbar. Ihr API-Schlüssel konnte nicht geladen werden. Bitte geben Sie Ihre Serveranmeldedaten erneut ein.</string>
+    <string name="lrr_boot_load_failed_title">Startfehler</string>
+    <string name="lrr_boot_load_failed_message">Beim Start konnten Ihre gespeicherten Server-Profile nicht geladen werden. Die App läuft ohne geladenes Profil; eine Neukonfiguration oder Neuinstallation ist möglicherweise erforderlich.\n\nDetails: %1$s</string>
+    <string name="lrr_boot_load_failed_retry">Wiederholen</string>
+    <string name="lrr_boot_load_failed_reset_db">Datenbank zurücksetzen</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_title">Datenbank zurücksetzen?</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_message">Hierdurch werden alle lokal gespeicherten Daten dauerhaft gelöscht: Server-Profile, Leseverlauf, Favoriten, Download-Einträge und Suchverlauf. Bereits heruntergeladene Archive auf der Festplatte bleiben erhalten. Die App startet im Zustand einer Neuinstallation neu.</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_yes">Zurücksetzen &amp; Neustart</string>
     <string name="lrr_secure_storage_write_failed">Der Schlüsselspeicher des Geräts ist nicht verfügbar, Ihre Änderungen konnten nicht sicher gespeichert werden. Bitte starten Sie das Gerät neu und versuchen Sie es erneut, oder installieren Sie die App neu, wenn das Problem weiterhin besteht.</string>
     <string name="reauth_required_title">Erneute Authentifizierung erforderlich</string>
     <string name="reauth_required_message">Der sichere Schlüsselspeicher ist nicht mehr verfügbar. Bitte geben Sie den API-Schlüssel für jeden Server erneut ein.</string>

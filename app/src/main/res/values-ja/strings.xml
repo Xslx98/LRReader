@@ -1068,6 +1068,13 @@
     <string name="lrr_empty_namespace">名前空間は空にできません</string>
     <string name="lrr_keystore_failed_title">認証情報ストレージが利用不可</string>
     <string name="lrr_keystore_failed_message">デバイスのキーストアが利用できません。API キーを読み込めませんでした。サーバーの認証情報を再入力してください。</string>
+    <string name="lrr_boot_load_failed_title">起動エラー</string>
+    <string name="lrr_boot_load_failed_message">起動時に保存済みのサーバープロファイルを読み込めませんでした。プロファイルが読み込まれていない状態で実行中です。再設定または再インストールが必要かもしれません。\n\n詳細：%1$s</string>
+    <string name="lrr_boot_load_failed_retry">再試行</string>
+    <string name="lrr_boot_load_failed_reset_db">データベースをリセット</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_title">データベースをリセットしますか？</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_message">この操作によりアプリのローカルデータベース内のすべてのデータ（サーバープロファイル、閲覧履歴、お気に入り、ダウンロード記録、検索履歴）が完全に削除されます。ディスク上のダウンロード済みアーカイブファイルは影響を受けません。アプリは新規インストール状態で再起動します。</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_yes">リセットして再起動</string>
     <string name="lrr_secure_storage_write_failed">デバイスのキーストアが利用できないため、変更を安全に保存できませんでした。デバイスを再起動して再試行するか、問題が解決しない場合はア��リを再インストールしてください。</string>
     <string name="reauth_required_title">再認証が必要です</string>
     <string name="reauth_required_message">セキュアキーストアが利用できなくなりました。各サーバーの API キーを再入力してください。</string>
