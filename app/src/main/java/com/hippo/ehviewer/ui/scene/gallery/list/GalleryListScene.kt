@@ -24,8 +24,10 @@ import android.content.res.Resources
 import android.graphics.Color
 import android.graphics.Point
 import android.graphics.drawable.ColorDrawable
+import android.net.Uri
 import android.os.Bundle
 import android.text.TextUtils
+import androidx.activity.result.contract.ActivityResultContracts
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -135,6 +137,52 @@ class GalleryListScene : BaseScene(),
     private var mDrawerHelper: GalleryDrawerHelper? = null
     private var mFabHelper: GalleryFabHelper? = null
     private var searchBarHelper: GallerySearchBarHelper? = null
+
+    /**
+     * Stored Uri-callback for the in-flight pick. Cleared on result. Two
+     * separate slots (one per launcher) avoid cross-talk if a future flow
+     * pre-arms one before the other returns.
+     */
+    private var pendingSelectImageCallback: ((Uri?) -> Unit)? = null
+    private var pendingUploadArchiveCallback: ((Uri?) -> Unit)? = null
+
+    /**
+     * Image-picker launcher used by [GallerySearchBarHelper.onSelectImage].
+     * Registered as a property so registration completes before the Fragment
+     * reaches STARTED — required by the AndroidX activity-result API.
+     */
+    private val selectImageLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val cb = pendingSelectImageCallback
+        pendingSelectImageCallback = null
+        val uri = if (result.resultCode == Activity.RESULT_OK) result.data?.data else null
+        cb?.invoke(uri)
+    }
+
+    /**
+     * Archive-picker launcher used by [GalleryUploadHelper.showUploadFilePicker].
+     */
+    private val uploadArchiveLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val cb = pendingUploadArchiveCallback
+        pendingUploadArchiveCallback = null
+        val uri = if (result.resultCode == Activity.RESULT_OK) result.data?.data else null
+        cb?.invoke(uri)
+    }
+
+    /** Bridge for [GallerySearchBarHelper] — see its `doPickImage` parameter. */
+    internal fun launchPickImage(intent: Intent, onPicked: (Uri?) -> Unit) {
+        pendingSelectImageCallback = onPicked
+        selectImageLauncher.launch(intent)
+    }
+
+    /** Bridge for [GalleryUploadHelper.Callback.pickArchive]. */
+    internal fun launchPickArchive(intent: Intent, onPicked: (Uri?) -> Unit) {
+        pendingUploadArchiveCallback = onPicked
+        uploadArchiveLauncher.launch(intent)
+    }
 
     private val mOnScrollListener: RecyclerView.OnScrollListener = object : RecyclerView.OnScrollListener() {
         override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {}
@@ -647,22 +695,6 @@ class GalleryListScene : BaseScene(),
     // SearchBar, SearchLayout, SearchBarMover, FastScroller callbacks are
     // handled by GallerySearchBarHelper (registered in initHelpers)
 
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (REQUEST_CODE_SELECT_IMAGE == requestCode) {
-            if (Activity.RESULT_OK == resultCode && ::searchLayout.isInitialized && data != null) {
-                searchLayout.setImageUri(data.data)
-            }
-        } else if (REQUEST_CODE_UPLOAD_ARCHIVE == requestCode) {
-            val uri = data?.data
-            if (Activity.RESULT_OK == resultCode && uri != null) {
-                uploadHelper?.handleUploadResult(uri)
-            }
-        } else {
-            super.onActivityResult(requestCode, resultCode, data)
-        }
-    }
-
     // Inner adapter — too small to extract
 
     private fun removeArchiveLocally(arcid: String) {
@@ -693,9 +725,6 @@ class GalleryListScene : BaseScene(),
         private const val TAG = "GalleryListScene"
 
         private const val BACK_PRESSED_INTERVAL = 2000
-
-        const val REQUEST_CODE_SELECT_IMAGE = 0
-        const val REQUEST_CODE_UPLOAD_ARCHIVE = 1
 
         const val KEY_ACTION = "action"
         const val ACTION_HOMEPAGE = "action_homepage"
