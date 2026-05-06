@@ -44,6 +44,24 @@ jobs:
       - name: Lint
         run: ./gradlew app:lintAppReleaseDebug
 
+      - name: Lint baseline must not grow
+        # Reject PRs that append new issues to app/lint-baseline.xml instead of
+        # fixing them. Compares the per-`<issue>` line count between the PR
+        # branch and origin/main; passes when removals >= additions, errors
+        # otherwise. Skipped on push events because origin/main IS the new
+        # HEAD there, so the diff would be empty.
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          git fetch origin main --depth=50
+          ADDED=$(git diff origin/main HEAD -- app/lint-baseline.xml | grep -c '^+ *<issue' || true)
+          REMOVED=$(git diff origin/main HEAD -- app/lint-baseline.xml | grep -c '^- *<issue' || true)
+          if [ "$ADDED" -gt "$REMOVED" ]; then
+            echo "::error::lint-baseline.xml grew (+$ADDED -$REMOVED <issue> entries) — fix the issues, do not append to baseline"
+            exit 1
+          fi
+          echo "OK: lint-baseline.xml has +$ADDED / -$REMOVED <issue> entries vs origin/main"
+
       - name: Detekt
         run: ./gradlew detektMain
 
