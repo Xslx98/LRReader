@@ -6,8 +6,9 @@ import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRArchiveApi
-import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRCategoryApi
+import com.lanraragi.reader.client.api.OrphanProfileException
+import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.client.api.runSuspend
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
@@ -215,8 +216,7 @@ class GalleryDetailViewModel : ViewModel() {
         pendingRatingJob?.cancel()
         pendingRatingJob = viewModelScope.launch(Dispatchers.IO) {
             try {
-                val serverUrl = LRRAuthManager.getServerUrl()
-                    ?: throw IllegalStateException("LANraragi server URL not configured")
+                val serverUrl = resolveSourceServerUrl()
                 val client = ServiceRegistry.networkModule.okHttpClient
 
                 // Fetch latest tags so we don't clobber edits the user
@@ -348,6 +348,21 @@ class GalleryDetailViewModel : ViewModel() {
         return _archiveDetail.value?.archive ?: _archive.value
     }
 
+    /**
+     * Resolve the LANraragi base URL that owns this archive. Routes by
+     * the archive's `serverProfileId` so a download originally fetched
+     * from server B is contacted at server B even when the user has
+     * since switched the active profile to server A.
+     *
+     * @throws OrphanProfileException when the source profile no longer
+     *         exists (deleted) and there is no active-profile fallback.
+     */
+    private suspend fun resolveSourceServerUrl(): String {
+        val sid = getEffectiveArchive()?.serverProfileId ?: 0L
+        val cache = ServiceRegistry.dataModule.profileLookupCache
+        return resolveSourceBaseUrl(sid, cache)
+    }
+
     // -------------------------------------------------------------------------
     // Local reading progress (reactive)
     //
@@ -423,7 +438,14 @@ class GalleryDetailViewModel : ViewModel() {
                     return@launch
                 }
             }
-            val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
+            val serverUrl = try {
+                resolveSourceServerUrl()
+            } catch (_: OrphanProfileException) {
+                // Source profile is gone — preloading from network is
+                // impossible. The reader will surface a localised tip
+                // when the user actually opens the gallery.
+                return@launch
+            }
             android.util.Log.i(
                 TAG,
                 "[WARM] detailVM LRR trigger arcid=$arcId page=$startPage"
@@ -592,8 +614,7 @@ class GalleryDetailViewModel : ViewModel() {
         categoryCountSuffix: String
     ): Boolean {
         val arcid = getEffectiveArcid()
-        val serverUrl = LRRAuthManager.getServerUrl()
-        if (arcid.isNullOrEmpty() || serverUrl.isNullOrEmpty()) {
+        if (arcid.isNullOrEmpty()) {
             return false
         }
 
@@ -604,6 +625,11 @@ class GalleryDetailViewModel : ViewModel() {
         requestJob?.cancel()
         requestJob = viewModelScope.launch(Dispatchers.IO) {
             try {
+                // Resolve inside the coroutine: ProfileLookupCache may be
+                // cold on first launch and resolveSourceBaseUrl suspends
+                // until it hydrates. OrphanProfileException is surfaced
+                // through _detailError just like any other fetch failure.
+                val serverUrl = resolveSourceServerUrl()
                 val archive = runSuspend {
                     LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcid)
                 }
