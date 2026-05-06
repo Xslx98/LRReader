@@ -123,9 +123,16 @@ internal class DetailHeaderBinder(
      * badge is intentionally not a permanent ornament; it only tags
      * cross-server items so the user understands "this comes from
      * somewhere else than the server I'm currently connected to".
+     *
+     * Always reads the source id from the navigation argument (the
+     * persistent record from Room), never from a passed-in Archive.
+     * The detail-page success path can hand us an Archive whose
+     * `serverProfileId` rode in from a 1.12.7-era polluted LRU entry,
+     * which would flip the badge to the active profile despite the
+     * archive really belonging elsewhere.
      */
-    fun bindSourceBadge(archive: Archive) {
-        val sid = archive.serverProfileId
+    fun bindSourceBadge(@Suppress("UNUSED_PARAMETER") archive: Archive) {
+        val sid = viewModel.archive.value?.serverProfileId ?: 0L
         val activeId = LRRAuthManager.getActiveProfileId()
         val isCrossServer = sid != 0L && sid != activeId
         if (isCrossServer) {

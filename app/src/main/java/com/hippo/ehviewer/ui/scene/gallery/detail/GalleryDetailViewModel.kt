@@ -8,7 +8,9 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.mapper.toDegradedArchiveDetail
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRCategoryApi
+import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.OrphanProfileException
+import com.lanraragi.reader.client.api.probeSourceHealthy
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.client.api.runSuspend
 import com.lanraragi.reader.domain.Archive
@@ -60,6 +62,8 @@ class GalleryDetailViewModel : ViewModel() {
         const val STATE_REFRESH = 1
         const val STATE_REFRESH_HEADER = 2
         const val STATE_FAILED = 3
+        private const val HTTP_BAD_REQUEST = 400
+        private const val HTTP_NOT_FOUND = 404
     }
 
     // -------------------------------------------------------------------------
@@ -350,6 +354,20 @@ class GalleryDetailViewModel : ViewModel() {
     }
 
     /**
+     * The archive's true source profile id, sourced from the navigation
+     * argument (which the Scene populates from Room's
+     * ARCHIVE_LOCAL_STATE — the canonical persistent record). We
+     * deliberately avoid [getEffectiveArchive] here because that
+     * accessor prefers `_archiveDetail`, which can be hydrated from
+     * the in-memory LRU detail cache. A 1.12.7-era cache entry would
+     * carry a stale `serverProfileId = active profile` (regression
+     * fixed in 1.12.8), so falling through to detail's snapshot would
+     * keep routing the user back to the wrong server even after the
+     * underlying mapper bug was fixed.
+     */
+    private fun getSourceProfileId(): Long = _archive.value?.serverProfileId ?: 0L
+
+    /**
      * Resolve the LANraragi base URL that owns this archive. Routes by
      * the archive's `serverProfileId` so a download originally fetched
      * from server B is contacted at server B even when the user has
@@ -359,9 +377,8 @@ class GalleryDetailViewModel : ViewModel() {
      *         exists (deleted) and there is no active-profile fallback.
      */
     private suspend fun resolveSourceServerUrl(): String {
-        val sid = getEffectiveArchive()?.serverProfileId ?: 0L
         val cache = ServiceRegistry.dataModule.profileLookupCache
-        return resolveSourceBaseUrl(sid, cache)
+        return resolveSourceBaseUrl(getSourceProfileId(), cache)
     }
 
     // -------------------------------------------------------------------------
@@ -650,7 +667,23 @@ class GalleryDetailViewModel : ViewModel() {
                 val archive = runSuspend {
                     LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcid)
                 }
-                val ad = archive.toArchiveDetail()
+                // Tag the converted Archive with the *source* profile id
+                // and *source* base URL — not the active profile. Without
+                // this, every cross-server detail fetch overwrites the
+                // archive's serverProfileId in `_archiveDetail` and
+                // `archiveDetailCache` with the active profile id, which
+                // (a) flips the source-server badge to the active profile,
+                // and (b) routes the next refresh to the active server,
+                // 400-ing in a perpetual loop until the LRU cache evicts.
+                //
+                // Read the source id from `_archive` (Room nav arg), not
+                // from `getEffectiveArchive` — the latter would echo a
+                // 1.12.7-era polluted LRU entry back into the freshly
+                // built ArchiveDetail, perpetuating the wrong sid.
+                val ad = archive.toArchiveDetail(
+                    sourceProfileId = getSourceProfileId(),
+                    sourceBaseUrl = serverUrl,
+                )
 
                 // Query LANraragi categories to determine favorite status.
                 // Failure here is non-fatal — keep the previously known
@@ -707,10 +740,46 @@ class GalleryDetailViewModel : ViewModel() {
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 android.util.Log.e(TAG, "LRR metadata fetch failed", e)
-                emitDetailFailure(e)
+                emitDetailFailure(disambiguateSourceFailure(e, client))
             }
         }
         return true
+    }
+
+    /**
+     * Re-classify a 4xx-flavoured fetch failure based on whether the
+     * source server itself is alive. Reverse proxies in front of an
+     * offline LANraragi backend often respond 400/404/502 on every
+     * request — without a probe we cannot distinguish that from a
+     * genuinely missing archive, so the banner can falsely promise
+     * `已删除` when the user only stopped the server.
+     *
+     * The probe runs only on those status codes so the happy path is
+     * unaffected; on any other exception type (including the
+     * connect/timeout cases) we return the original unchanged.
+     */
+    private suspend fun disambiguateSourceFailure(
+        e: Exception,
+        client: okhttp3.OkHttpClient,
+    ): Exception {
+        if (e !is LRRHttpException) return e
+        if (e.code != HTTP_BAD_REQUEST && e.code != HTTP_NOT_FOUND) return e
+        val baseUrl = runCatching { resolveSourceServerUrl() }
+            .getOrElse { return e }
+        val healthy = probeSourceHealthy(client, baseUrl)
+        return if (healthy) {
+            // Server answered /api/info → the original 4xx really was
+            // about this archive; keep the original exception so the
+            // classifier maps it to the `已删除 / not found` banner.
+            e
+        } else {
+            // Probe also failed → the upstream is offline (or a proxy
+            // is misbehaving). Surface as a connection failure so the
+            // banner reads `不可达`, matching the genuine-down case.
+            java.net.ConnectException("Source server health probe failed").also {
+                it.initCause(e)
+            }
+        }
     }
 
     /**
