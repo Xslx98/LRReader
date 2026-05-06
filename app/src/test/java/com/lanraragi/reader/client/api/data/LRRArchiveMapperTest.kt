@@ -184,4 +184,39 @@ class LRRArchiveMapperTest {
         result.data = emptyList()
         assertTrue(result.toArchiveList().isEmpty())
     }
+
+    @Test
+    fun `toArchive accepts explicit sourceProfileId for cross-server fetches`() {
+        // Regression: when the gallery-detail VM fetches metadata against
+        // a non-active profile (i.e. archive originally downloaded from
+        // server B while user is connected to server A), toArchive() must
+        // tag the resulting Archive with the *source* profile id, NOT
+        // the active one. Without the explicit parameter the in-memory
+        // _archiveDetail and the LRU detail cache would be corrupted to
+        // point at the active profile, flipping the source-server badge
+        // and re-routing subsequent refreshes to the wrong server.
+        // Use a 40-char SHA-1 arcid because getThumbnailUrl() validates.
+        val archive = createLRRArchive(arcid = "0".repeat(40)).toArchive(
+            sourceProfileId = 42L,
+            sourceBaseUrl = "http://server-b.local:3000",
+        )
+        assertEquals(42L, archive.serverProfileId)
+        // Thumbnail URL must be built against the source server, not the
+        // active one — otherwise a cache miss falls through to a 404 on
+        // the active server (which doesn't have this arcid).
+        assertTrue(
+            "thumbnailUrl built for source server, was: ${archive.thumbnailUrl}",
+            archive.thumbnailUrl.startsWith("http://server-b.local:3000/"),
+        )
+    }
+
+    @Test
+    fun `toArchiveDetail threads source context into nested archive`() {
+        val ad = createLRRArchive(arcid = "0".repeat(40)).toArchiveDetail(
+            sourceProfileId = 7L,
+            sourceBaseUrl = "http://server-c.local:3000",
+        )
+        assertEquals(7L, ad.archive.serverProfileId)
+        assertTrue(ad.archive.thumbnailUrl.startsWith("http://server-c.local:3000/"))
+    }
 }
