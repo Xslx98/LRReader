@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Root background carries the ripple feedback for row taps; required. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:padding="16dp"
     android:gravity="center_vertical"
     android:background="?attr/selectableItemBackground"
-    android:minHeight="72dp">
+    android:minHeight="72dp"
+    tools:ignore="Overdraw">
 
     <ImageView
         android:id="@+id/icon_active"
