@@ -73,6 +73,13 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     // Below header
     private var mBelowHeader: View? = null
 
+    // Source-server error banner (shown when the source LANraragi
+    // server is unreachable / orphan / has deleted the archive but
+    // we still have local-cache data to display).
+    private var mSourceErrorBanner: View? = null
+    private var mSourceErrorText: TextView? = null
+    private var mSourceErrorRetry: View? = null
+
     // Actions
     private var mActions: View? = null
     private var mHeartGroup: View? = null
@@ -257,6 +264,13 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         val belowHeader: View = mainView.findViewById(R.id.below_header)
         mBelowHeader = belowHeader
+        mSourceErrorBanner = belowHeader.findViewById(R.id.source_error_banner)
+        mSourceErrorText = belowHeader.findViewById(R.id.source_error_text)
+        mSourceErrorRetry = belowHeader.findViewById(R.id.source_error_retry)
+        mSourceErrorRetry?.setOnClickListener {
+            mSourceErrorBanner?.visibility = View.GONE
+            requestRefresh()
+        }
         val isDarkTheme = !AttrResources.getAttrBoolean(nonNullContext, androidx.appcompat.R.attr.isLightTheme)
         mHeader = ViewUtils.`$$`(belowHeader, R.id.header)
         val colorBg = ViewUtils.`$$`(mHeader, R.id.color_bg)
@@ -439,6 +453,23 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 onGetGalleryDetailFailure(e)
             }
         }
+        // Cache-first failure: page is already painted from local data
+        // (LRU cache or a degraded ArchiveDetail seeded from the nav-arg
+        // Archive). Show a non-blocking banner so the user can read the
+        // archive offline and retry the source server when it returns.
+        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
+            viewModel.detailErrorBanner.collect { e ->
+                showSourceErrorBanner(e)
+            }
+        }
+        // A successful refresh after a banner-flagged failure dismisses
+        // the banner — the live data is now displayed and the warning
+        // is no longer applicable.
+        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
+            viewModel.detailLoaded.collect {
+                mSourceErrorBanner?.visibility = View.GONE
+            }
+        }
         // After a rollback the optimistic write to currentRating /
         // archiveDetail has been reverted on the IO thread; reflect the
         // restored value on the rating bar and toast the error so the
@@ -526,6 +557,9 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mActionGroup = null
         mRead = null
         mBelowHeader = null
+        mSourceErrorBanner = null
+        mSourceErrorText = null
+        mSourceErrorRetry = null
 
         mActions = null
         mHeartGroup = null
@@ -733,6 +767,28 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             val error = ExceptionUtils.getReadableString(e)
             tip.text = error
             adjustViewVisibility(STATE_FAILED, true)
+        }
+    }
+
+    /**
+     * Show the cache-first error banner above the detail content. The
+     * page is already rendered (LRU detail cache hit, or a degraded
+     * detail seeded from the navigation Archive) so we keep the user
+     * on STATE_NORMAL and surface the failure as a dismissible bar
+     * with a Retry button. A subsequent successful load auto-hides it
+     * via the [GalleryDetailViewModel.detailLoaded] observer.
+     */
+    private fun showSourceErrorBanner(e: Exception) {
+        val ctx = getEHContext() ?: return
+        val banner = mSourceErrorBanner ?: return
+        val text = mSourceErrorText ?: return
+        text.text = com.lanraragi.reader.client.api.friendlyError(ctx, e)
+        banner.visibility = View.VISIBLE
+        // The banner is informational on top of cached data — make sure
+        // the page itself stays in NORMAL so the cached content remains
+        // interactive (cancel buttons, read button, etc.).
+        if (mState != STATE_NORMAL) {
+            adjustViewVisibility(STATE_NORMAL, true)
         }
     }
 

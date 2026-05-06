@@ -37,6 +37,32 @@
             android:showDividers="middle"
             android:dividerPadding="@dimen/keyline_margin">
 
+            <LinearLayout
+                android:id="@+id/source_error_banner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:visibility="gone"
+                android:padding="@dimen/keyline_margin"
+                android:background="?attr/colorSurfaceVariant">
+
+                <TextView
+                    android:id="@+id/source_error_text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    style="@style/TextAppearance.AppCompat.Body2"/>
+
+                <Button
+                    android:id="@+id/source_error_retry"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/lrr_retry"
+                    style="?attr/borderlessButtonStyle"/>
+            </LinearLayout>
+
             <include
                 layout="@layout/gallery_detail_header"/>
 

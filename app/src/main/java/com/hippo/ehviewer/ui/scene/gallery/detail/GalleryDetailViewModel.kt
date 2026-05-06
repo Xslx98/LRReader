@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.mapper.toDegradedArchiveDetail
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.OrphanProfileException
@@ -460,8 +461,24 @@ class GalleryDetailViewModel : ViewModel() {
 
     private val _detailError = MutableSharedFlow<Exception>(extraBufferCapacity = 1)
 
-    /** Emitted once when a gallery detail fetch fails. Observe to show error UI. */
+    /**
+     * Emitted when a gallery detail fetch fails AND there is no usable
+     * fallback content to render — the Scene shows the full-screen
+     * `mTip` error pane.
+     */
     val detailError: SharedFlow<Exception> = _detailError.asSharedFlow()
+
+    private val _detailErrorBanner = MutableSharedFlow<Exception>(extraBufferCapacity = 1)
+
+    /**
+     * Emitted when a gallery detail fetch fails BUT we already have
+     * displayable data (LRU detail cache hit, or a degraded detail
+     * seeded from the navigation [archive] argument). The Scene leaves
+     * the main content visible and surfaces a non-blocking banner so
+     * the page stays useful when the source server is offline / orphan
+     * / has deleted the archive.
+     */
+    val detailErrorBanner: SharedFlow<Exception> = _detailErrorBanner.asSharedFlow()
 
     private val _detailLoaded = MutableSharedFlow<ArchiveDetail>(extraBufferCapacity = 1)
 
@@ -690,10 +707,36 @@ class GalleryDetailViewModel : ViewModel() {
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 android.util.Log.e(TAG, "LRR metadata fetch failed", e)
-                _detailError.tryEmit(e)
+                emitDetailFailure(e)
             }
         }
         return true
+    }
+
+    /**
+     * Route a detail-fetch failure to either the banner flow (cache-
+     * first: the page already has displayable data, banner stays atop
+     * content) or the full-screen flow (no usable data → big sad
+     * pandroid). Falls back to seeding [_archiveDetail] from the
+     * navigation [_archive] when nothing else is on hand: the local
+     * Archive entity carries enough fields (title / thumb / tags) to
+     * paint a useful page even if the source server is unreachable.
+     */
+    private fun emitDetailFailure(e: Exception) {
+        if (_archiveDetail.value == null) {
+            val arg = _archive.value
+            if (arg != null) {
+                _archiveDetail.value = arg.toDegradedArchiveDetail()
+                if (_currentRating.value == null) {
+                    _currentRating.value = arg.rating
+                }
+            }
+        }
+        if (_archiveDetail.value != null) {
+            _detailErrorBanner.tryEmit(e)
+        } else {
+            _detailError.tryEmit(e)
+        }
     }
 
     // -------------------------------------------------------------------------

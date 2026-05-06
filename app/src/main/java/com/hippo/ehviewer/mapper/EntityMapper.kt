@@ -7,6 +7,8 @@ import com.hippo.ehviewer.dao.HistoryInfo
 import com.hippo.ehviewer.dao.LocalFavoriteInfo
 import com.hippo.ehviewer.download.DownloadState
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.domain.ArchiveDetail
+import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.domain.groupFlatTags
 
 // ═══════════════════════════════════════════════════════════════════
@@ -20,6 +22,26 @@ import com.lanraragi.reader.domain.groupFlatTags
 //  shape an Archive (or an ArchiveLocalState row) into the view
 //  callers expect, and back again when the caller writes.
 // ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Build a degraded [ArchiveDetail] from an [Archive] for cache-first
+ * rendering when the live LRR metadata fetch is in flight or has failed
+ * (e.g., the source server is offline). The detail page can render
+ * immediately with locally-known title / thumb / tags / pagecount
+ * instead of going blank; the live fetch (if it succeeds) overwrites
+ * this with richer data afterwards.
+ *
+ * `language` and `size` collapse to null because they are server-
+ * derived and not carried on the navigation-arg [Archive]; the binder
+ * already tolerates nulls there.
+ */
+fun Archive.toDegradedArchiveDetail(): ArchiveDetail =
+    ArchiveDetail(
+        archive = this,
+        tagGroups = tags.map { (ns, values) -> TagGroup(ns, values) },
+        language = null,
+        size = null,
+    )
 
 /**
  * Build a fresh [DownloadInfo] view from an [Archive] domain model.
