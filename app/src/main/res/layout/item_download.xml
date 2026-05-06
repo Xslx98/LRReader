@@ -60,29 +60,54 @@
                 android:layout_below="@id/title"
                 android:layout_marginTop="2dp"/>
 
-            <TextView
-                android:id="@+id/source_server"
-                style="@style/CardMessage"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignLeft="@id/title"
-                android:layout_below="@id/uploader"
-                android:layout_marginTop="2dp"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:paddingTop="3dp"
-                android:paddingBottom="3dp"
-                android:maxWidth="140dp"
-                android:textColor="@android:color/white"
-                android:visibility="gone" />
+            <!--
+              source_server is pinned 8dp above thumb's bottom edge for a
+              consistent bottom-anchored visual. rating sits directly
+              above with a 2dp gap so the rating-badge pair keeps a fixed
+              vertical position regardless of title/uploader length.
 
+              Imported-archive case: when category becomes VISIBLE it
+              uses the same alignBottom anchor; DownloadAdapter
+              dynamically lifts source_server's bottomMargin in code to
+              clear category in that path (rare branch, no XML cost on
+              the main flow).
+
+              Typography references: Apple footnote (13pt) + Material
+              label-medium for size; Apple All-Caps Tracking +0.05em for
+              letterSpacing; Material chip compact padding for 10dp/4dp;
+              iOS Continuous-Curve small-chip 4dp corner radius.
+
+              Top stack (title + uploader) is bounded by
+              CardTitle.maxLines=2 + CardMessage.maxLines=1, so it
+              cannot grow into the bottom region.
+            -->
             <com.hippo.ehviewer.widget.SimpleRatingView
                 android:id="@+id/rating"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignLeft="@id/title"
-                android:layout_below="@id/source_server"
-                android:layout_marginTop="2dp"/>
+                android:layout_above="@id/source_server"
+                android:layout_marginBottom="2dp"/>
+
+            <TextView
+                android:id="@+id/source_server"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignLeft="@id/title"
+                android:layout_alignBottom="@id/thumb"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/lrr_server_badge_bg"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:maxWidth="140dp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-medium"
+                android:textSize="13sp"
+                android:textAllCaps="true"
+                android:letterSpacing="0.04" />
 
             <TextView
                 android:id="@+id/category"

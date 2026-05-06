@@ -28,14 +28,16 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.RelativeLayout
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemAdapter
 import com.h6ah4i.android.widget.advrecyclerview.draggable.ItemDraggableRange
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemViewHolder
 import com.hippo.android.resource.AttrResources
-import com.hippo.drawable.RoundSideRectDrawable
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.R
@@ -251,52 +253,106 @@ class DownloadAdapter(
     }
 
     /**
-     * Render the cross-profile badge on a download row.
+     * Render the source-server badge on a download row. Always visible —
+     * uniform layout regardless of which profile the row originates from.
      *
-     *  - Hidden when the download's source profile matches the active one
-     *    (single-profile users see no extra noise).
-     *  - Pill-shaped chip in [R.attr.tagBackgroundColor] tinted background
-     *    showing the profile name when the download came from a
-     *    non-active profile.
-     *  - Same chip in `colorError` background showing the localised
-     *    "source deleted" label when the profile id no longer resolves
-     *    (orphan after profile delete).
+     * Color scheme follows Material 3 "container / on-container" tonal
+     * pairs (also: GitHub Issues labels, Linear project tags): each
+     * profile-id slot has BG (`?attr/serverBadge{N}Bg`) + FG
+     * (`?attr/serverBadge{N}Fg`) channels resolved from the current theme,
+     * so the badge surface harmonises with the surrounding card surface
+     * (light tint on light card, dark shade on dark card).
      *
-     * Visual style mirrors the gallery-detail tag chips
-     * ([com.hippo.drawable.RoundSideRectDrawable]) for cross-screen
-     * consistency. Resolution goes through
+     *  - Active profile or non-active profile (id resolves): square chip
+     *    showing `profile.name` with theme-paired bg + fg colors.
+     *  - Legacy row (`serverProfileId == 0`, pre-SERVER_PROFILE_ID
+     *    schema): treat as belonging to the active profile and show its
+     *    name + color. Most legacy rows pre-date the multi-profile era
+     *    when only one profile existed; this is the closest faithful
+     *    attribution we can make. If no active profile exists, falls
+     *    through to the orphan path below.
+     *  - Orphan (id non-zero but cache miss): square chip with
+     *    `?attr/colorError` tint, white fg, and the localised "source
+     *    deleted" label. Distinct from the regular palette so it reads
+     *    as warning state across all themes.
+     *
+     * Resolution goes through
      * [com.lanraragi.reader.client.api.ProfileLookupCache] which tracks
      * SERVER_PROFILES via Room flow; profile rename / delete is picked
      * up on the next bind because the cache snapshot is shared.
      */
     private fun bindSourceBadge(holder: DownloadHolder, info: DownloadInfo) {
         val badge = holder.sourceServer
-        // Legacy rows (pre-SERVER_PROFILE_ID) carry id 0 — treat them as
-        // implicitly belonging to the current active profile, no badge.
-        if (info.serverProfileId == 0L) {
-            badge.visibility = View.GONE
-            return
-        }
-        val activeId = LRRAuthManager.getActiveProfileId()
-        if (info.serverProfileId == activeId) {
-            badge.visibility = View.GONE
-            return
-        }
         val context = mScene.ehContext ?: return
+
+        // Legacy rows: best-effort attribute to the current active profile.
+        // If active profile is also unset (degenerate fresh-install state)
+        // effectiveId stays 0 and the cache lookup falls through to orphan.
+        val effectiveId = if (info.serverProfileId == 0L) {
+            LRRAuthManager.getActiveProfileId() ?: 0L
+        } else {
+            info.serverProfileId
+        }
+
         val cache = ServiceRegistry.dataModule.profileLookupCache
-        val profile = cache.findById(info.serverProfileId)
+        val profile = cache.findById(effectiveId)
+        val bgColor: Int
+        val fgColor: Int
         if (profile == null) {
             badge.text = mScene.getString(R.string.lrr_download_source_deleted)
-            badge.background = RoundSideRectDrawable(
-                AttrResources.getAttrColor(context, androidx.appcompat.R.attr.colorError)
-            )
+            bgColor = AttrResources.getAttrColor(context, androidx.appcompat.R.attr.colorError)
+            fgColor = android.graphics.Color.WHITE
         } else {
             badge.text = profile.name
-            badge.background = RoundSideRectDrawable(
-                AttrResources.getAttrColor(context, R.attr.tagBackgroundColor)
-            )
+            val (bgAttr, fgAttr) = attrPairForProfile(profile.id)
+            bgColor = AttrResources.getAttrColor(context, bgAttr)
+            fgColor = AttrResources.getAttrColor(context, fgAttr)
+        }
+        // Square badge drawable (lrr_server_badge_bg) shared across rows;
+        // mutate() so each ViewHolder's tint state is independent — without
+        // it, RecyclerView recycling would let one ViewHolder's tint bleed
+        // into another binding the same drawable instance.
+        val bg = AppCompatResources.getDrawable(context, R.drawable.lrr_server_badge_bg)
+            ?.mutate()
+            ?: return
+        DrawableCompat.setTint(bg, bgColor)
+        badge.background = bg
+        badge.setTextColor(fgColor)
+
+        // The XML pins source_server 8dp above thumb's bottom — fine when
+        // category is GONE (the LRR-archive default). For imported archives
+        // category becomes VISIBLE at the same alignBottom anchor; lift the
+        // badge ~30dp so they don't overlap. Niche branch — keep the XML
+        // optimised for the main case and pay the runtime cost only when
+        // category is actually shown.
+        val params = badge.layoutParams as RelativeLayout.LayoutParams
+        val density = context.resources.displayMetrics.density
+        val margin = if (holder.category.visibility == View.VISIBLE) {
+            (BADGE_MARGIN_BOTTOM_WHEN_CATEGORY_VISIBLE_DP * density).toInt()
+        } else {
+            (BADGE_MARGIN_BOTTOM_DEFAULT_DP * density).toInt()
+        }
+        if (params.bottomMargin != margin) {
+            params.bottomMargin = margin
+            badge.layoutParams = params
         }
         badge.visibility = View.VISIBLE
+    }
+
+    /**
+     * Map a server profile id to one of the [SERVER_BADGE_ATTR_PAIRS]
+     * (bg-attr, fg-attr) tuples. id is the Room autoGenerate primary key
+     * (Long, starts at 1, never changes), so the modulo result is stable
+     * across renames and survives on-device data unchanged.
+     *
+     * Wraparound (>8 profiles) is acceptable: practical setups have 1-3
+     * profiles, and even at 9+ the duplicate slot is far better UX than
+     * the prior "everything green" baseline.
+     */
+    private fun attrPairForProfile(profileId: Long): Pair<Int, Int> {
+        val idx = ((profileId - 1L).rem(SERVER_BADGE_ATTR_PAIRS.size).toInt() +
+            SERVER_BADGE_ATTR_PAIRS.size) % SERVER_BADGE_ATTR_PAIRS.size
+        return SERVER_BADGE_ATTR_PAIRS[idx]
     }
 
     private fun bindForState(holder: DownloadHolder, info: DownloadInfo) {
@@ -736,5 +792,30 @@ class DownloadAdapter(
 
         @JvmField
         var DRAG_ENABLE = false
+
+        /**
+         * Source-server badge palette indexed via theme-attr pairs
+         * `(bg-attr, fg-attr)` following the Material 3 container /
+         * on-container tonal pattern. Each of the project's three themes
+         * (Light / Dark / Black) supplies its own variant — see
+         * attrs.xml + themes.xml + colors.xml. Indexed by
+         * `(profileId - 1) % size` in [attrPairForProfile].
+         */
+        private val SERVER_BADGE_ATTR_PAIRS = arrayOf(
+            R.attr.serverBadge0Bg to R.attr.serverBadge0Fg,
+            R.attr.serverBadge1Bg to R.attr.serverBadge1Fg,
+            R.attr.serverBadge2Bg to R.attr.serverBadge2Fg,
+            R.attr.serverBadge3Bg to R.attr.serverBadge3Fg,
+            R.attr.serverBadge4Bg to R.attr.serverBadge4Fg,
+            R.attr.serverBadge5Bg to R.attr.serverBadge5Fg,
+            R.attr.serverBadge6Bg to R.attr.serverBadge6Fg,
+            R.attr.serverBadge7Bg to R.attr.serverBadge7Fg,
+        )
+
+        /** Bottom margin for source_server when the row's category is hidden (LRR default). */
+        private const val BADGE_MARGIN_BOTTOM_DEFAULT_DP = 8
+
+        /** Lifted bottom margin for the imported-archive branch where category is visible. */
+        private const val BADGE_MARGIN_BOTTOM_WHEN_CATEGORY_VISIBLE_DP = 30
     }
 }

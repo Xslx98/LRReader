@@ -62,6 +62,36 @@
         <attr name="tagGroupBackgroundColor" format="color" />
         <attr name="tagBackgroundColor" format="color" />
 
+        <!--
+          Source-server badge palette. 8 slots indexed by
+          (ServerProfile.id - 1) % 8 in DownloadAdapter.bindSourceBadge().
+          Each slot has BG + FG channels following the Material 3
+          "container / on-container" tonal pattern (also: GitHub Issues
+          labels, Linear project chips):
+            - Light theme: pastel BG (Tailwind 100) + deep FG (Tailwind 700)
+            - Dark theme:  shade BG (Tailwind 900) + tint FG (Tailwind 200)
+          Each theme overrides both channels in themes.xml. Project's
+          manual theme switcher uses Activity.setTheme rather than uiMode,
+          so values-night/ alone wouldn't adapt for users who pick
+          Dark/Black on a light-mode system — attr indirection is required.
+        -->
+        <attr name="serverBadge0Bg" format="color" />
+        <attr name="serverBadge1Bg" format="color" />
+        <attr name="serverBadge2Bg" format="color" />
+        <attr name="serverBadge3Bg" format="color" />
+        <attr name="serverBadge4Bg" format="color" />
+        <attr name="serverBadge5Bg" format="color" />
+        <attr name="serverBadge6Bg" format="color" />
+        <attr name="serverBadge7Bg" format="color" />
+        <attr name="serverBadge0Fg" format="color" />
+        <attr name="serverBadge1Fg" format="color" />
+        <attr name="serverBadge2Fg" format="color" />
+        <attr name="serverBadge3Fg" format="color" />
+        <attr name="serverBadge4Fg" format="color" />
+        <attr name="serverBadge5Fg" format="color" />
+        <attr name="serverBadge6Fg" format="color" />
+        <attr name="serverBadge7Fg" format="color" />
+
         <attr name="galleryDetailHeaderTitleColor" format="color" />
         <attr name="galleryDetailHeaderBackgroundColor" format="color" />
         <attr name="galleryDetailButtonBackgroundColor" format="color" />
