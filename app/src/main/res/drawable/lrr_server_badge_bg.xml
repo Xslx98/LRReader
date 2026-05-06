@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Background for the source-server badge in the download list row.
+  Square shape with subtle 2dp rounding (matches the MANGA / DOUJINSHI
+  category chip style elsewhere in the app — `widget_category_table.xml`).
+  Solid white at the drawable level; the actual per-profile color is
+  applied at runtime via DrawableCompat.setTint in DownloadAdapter.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="4dp" />
+    <solid android:color="@android:color/white" />
+</shape>

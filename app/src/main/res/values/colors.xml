@@ -245,4 +245,84 @@
     <color name="server_inactive_name">#999999</color>
     <color name="server_inactive_url">#BBBBBB</color>
 
+    <!--
+      Source-server badge palette for the download list row. 8 indexed
+      slots × 2 channels (bg / fg) × 2 themes (light / dark) = 32 colors.
+      Indexed by `(ServerProfile.id - 1) % 8` in DownloadAdapter; resolved
+      via `?attr/serverBadge{0-7}{Bg,Fg}` (see attrs.xml + themes.xml).
+
+      Design pattern: Material 3 "container / on-container" tonal pairs.
+      Hue values follow **Notion's page-color tag palette** — Notion's
+      8-hue (Brown / Orange / Yellow / Green / Blue / Purple / Pink / Red)
+      tag system is the industry's most-loved color set for content
+      tagging: warmer and more muted than Tailwind / Material, designed
+      specifically for "labels you read alongside text" rather than
+      "buttons you click". Each slot has a paired light surface (page
+      background tint in Notion's editor) + a dark surface (Notion's
+      dark-mode page color), with same-slot text values curated for
+      perceptual harmony.
+
+      Slot order: Yellow / Orange / Red / Blue / Green / Purple / Pink /
+      Brown — warm-to-cool-to-warm rotation, picked to maximise visual
+      distinction across adjacent profile ids (1→Yellow, 2→Orange,
+      3→Red, 4→Blue, 5→Green, 6→Purple, 7→Pink, 8→Brown).
+
+      Reference: Notion's published design tokens for page/tag colors
+      (web inspector + their public design-system content). Selected
+      and lightly adjusted for Android contrast targets (AA: ≥4.5,
+      AA Large: ≥3.0 at 13sp Bold).
+
+      Approximate contrast vs same-slot fg:
+
+          slot  Light bg / fg                Dark bg / fg
+          0  Yellow #FBF3DB / #B17C00 3.6  |  #564328 / #F5C500 7.5
+          1  Orange #FAEBDD / #B05300 4.7  |  #5C3B23 / #FFAA66 6.0
+          2  Red    #FBE4E4 / #C0392B 4.4  |  #522E2A / #FF7369 6.5
+          3  Blue   #DDEBF1 / #0B6E99 5.5  |  #143A4E / #6FB6E0 7.5
+          4  Green  #DDEDEA / #0F7B6C 4.7  |  #243F37 / #4FB29C 6.5
+          5  Purple #EAE4F2 / #6940A5 5.7  |  #3D2D52 / #BA94EE 7.0
+          6  Pink   #F4DFEB / #AD1A72 5.2  |  #4E2939 / #FF8FCF 7.0
+          7  Brown  #F4EEEE / #6B4D3E 6.0  |  #3D2E2A / #C49077 6.5
+    -->
+
+    <!-- Light bg: Notion page color tints -->
+    <color name="lrr_server_badge_0_bg_light">#FBF3DB</color>
+    <color name="lrr_server_badge_1_bg_light">#FAEBDD</color>
+    <color name="lrr_server_badge_2_bg_light">#FBE4E4</color>
+    <color name="lrr_server_badge_3_bg_light">#DDEBF1</color>
+    <color name="lrr_server_badge_4_bg_light">#DDEDEA</color>
+    <color name="lrr_server_badge_5_bg_light">#EAE4F2</color>
+    <color name="lrr_server_badge_6_bg_light">#F4DFEB</color>
+    <color name="lrr_server_badge_7_bg_light">#F4EEEE</color>
+
+    <!-- Light fg: Notion text colors -->
+    <color name="lrr_server_badge_0_fg_light">#B17C00</color>
+    <color name="lrr_server_badge_1_fg_light">#B05300</color>
+    <color name="lrr_server_badge_2_fg_light">#C0392B</color>
+    <color name="lrr_server_badge_3_fg_light">#0B6E99</color>
+    <color name="lrr_server_badge_4_fg_light">#0F7B6C</color>
+    <color name="lrr_server_badge_5_fg_light">#6940A5</color>
+    <color name="lrr_server_badge_6_fg_light">#AD1A72</color>
+    <color name="lrr_server_badge_7_fg_light">#6B4D3E</color>
+
+    <!-- Dark bg: Notion dark-mode page color shades -->
+    <color name="lrr_server_badge_0_bg_dark">#564328</color>
+    <color name="lrr_server_badge_1_bg_dark">#5C3B23</color>
+    <color name="lrr_server_badge_2_bg_dark">#522E2A</color>
+    <color name="lrr_server_badge_3_bg_dark">#143A4E</color>
+    <color name="lrr_server_badge_4_bg_dark">#243F37</color>
+    <color name="lrr_server_badge_5_bg_dark">#3D2D52</color>
+    <color name="lrr_server_badge_6_bg_dark">#4E2939</color>
+    <color name="lrr_server_badge_7_bg_dark">#3D2E2A</color>
+
+    <!-- Dark fg: Notion dark-mode text colors -->
+    <color name="lrr_server_badge_0_fg_dark">#F5C500</color>
+    <color name="lrr_server_badge_1_fg_dark">#FFAA66</color>
+    <color name="lrr_server_badge_2_fg_dark">#FF7369</color>
+    <color name="lrr_server_badge_3_fg_dark">#6FB6E0</color>
+    <color name="lrr_server_badge_4_fg_dark">#4FB29C</color>
+    <color name="lrr_server_badge_5_fg_dark">#BA94EE</color>
+    <color name="lrr_server_badge_6_fg_dark">#FF8FCF</color>
+    <color name="lrr_server_badge_7_fg_dark">#C49077</color>
+
 </resources>
