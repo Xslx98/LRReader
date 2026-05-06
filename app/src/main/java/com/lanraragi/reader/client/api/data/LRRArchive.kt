@@ -37,9 +37,25 @@ class LRRArchive() : Parcelable {
     /**
      * Convert this LRRArchive into an [Archive] domain model.
      * No hashing, no legacy field mapping — fields map 1:1.
+     *
+     * @param sourceProfileId id of the profile this metadata was fetched
+     *   against. Defaults to the active profile, which is correct for
+     *   search results / paging / any "browse the active server" path.
+     *   The detail view-model passes the archive's pinned source profile
+     *   id explicitly so a cross-server detail fetch (e.g. while active
+     *   is profile A but the archive belongs to profile B) does NOT
+     *   corrupt the in-memory Archive's `serverProfileId` to the active
+     *   value — that would make the badge flip and route subsequent
+     *   refreshes to the wrong server.
+     * @param sourceBaseUrl base URL of [sourceProfileId]'s server, used
+     *   to construct [Archive.thumbnailUrl]. Defaults to the active
+     *   server URL, again correct for the browse path. Cross-server
+     *   callers pass the originating server's URL.
      */
-    fun toArchive(): Archive {
-        val serverUrl = LRRAuthManager.getServerUrl()
+    fun toArchive(
+        sourceProfileId: Long = LRRAuthManager.getActiveProfileId(),
+        sourceBaseUrl: String? = LRRAuthManager.getServerUrl(),
+    ): Archive {
         return Archive(
             arcid = arcid,
             title = title,
@@ -48,25 +64,31 @@ class LRRArchive() : Parcelable {
             progress = progress,
             extension = extension,
             filename = filename,
-            thumbnailUrl = if (serverUrl != null) getThumbnailUrl(serverUrl) else "",
+            thumbnailUrl = if (sourceBaseUrl != null) getThumbnailUrl(sourceBaseUrl) else "",
             rating = parseRatingFromTags(tags),
             isnew = isNew(),
             lastreadtime = lastreadtime,
             summary = summary,
-            serverProfileId = LRRAuthManager.getActiveProfileId(),
+            serverProfileId = sourceProfileId,
         )
     }
 
     /**
      * Convert this LRRArchive into an [ArchiveDetail] for the detail view.
+     *
+     * @param sourceProfileId @see [toArchive]
+     * @param sourceBaseUrl @see [toArchive]
      */
-    fun toArchiveDetail(): ArchiveDetail {
+    fun toArchiveDetail(
+        sourceProfileId: Long = LRRAuthManager.getActiveProfileId(),
+        sourceBaseUrl: String? = LRRAuthManager.getServerUrl(),
+    ): ArchiveDetail {
         val parsedTags = getParsedTags()
         val tagGroups = parsedTags.map { (namespace, values) ->
             TagGroup(namespace, values)
         }
         return ArchiveDetail(
-            archive = toArchive(),
+            archive = toArchive(sourceProfileId, sourceBaseUrl),
             tagGroups = tagGroups,
             language = "N/A",
             size = extension.uppercase().ifEmpty { "N/A" },
