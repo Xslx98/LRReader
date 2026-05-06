@@ -1075,6 +1075,9 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_not_found_404">Recurso no encontrado (404)</string>
     <string name="lrr_server_error_code">Error del servidor (%1$d), inténtalo más tarde</string>
     <string name="lrr_request_failed_code">Solicitud fallida (HTTP %1$d)</string>
+    <string name="lrr_detail_source_profile_orphan">El perfil del servidor de origen de este archivo ya no existe.</string>
+    <string name="lrr_detail_source_unreachable">El servidor de origen \'%1$s\' no está disponible. Mostrando información en caché.</string>
+    <string name="lrr_detail_source_archive_deleted">El archivo se eliminó del servidor de origen \'%1$s\'.</string>
     <string name="lrr_timeout_error">Tiempo de conexión agotado, verifica la red o el estado del servidor</string>
     <string name="lrr_connect_error_check">No se puede conectar al servidor, verifica la dirección y la red</string>
     <string name="lrr_dns_error">No se puede resolver la dirección del servidor, verifica la URL</string>

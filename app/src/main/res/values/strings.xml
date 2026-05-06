@@ -1154,6 +1154,9 @@
     <string name="lrr_not_found_404">Resource not found (404)</string>
     <string name="lrr_server_error_code">Server error (%1$d), please try again later</string>
     <string name="lrr_request_failed_code">Request failed (HTTP %1$d)</string>
+    <string name="lrr_detail_source_profile_orphan">This archive\'s source server profile no longer exists.</string>
+    <string name="lrr_detail_source_unreachable">Source server \'%1$s\' is unreachable. Showing cached info.</string>
+    <string name="lrr_detail_source_archive_deleted">Archive deleted on source server \'%1$s\'.</string>
     <string name="lrr_timeout_error">Connection timeout, please check network or server status</string>
     <string name="lrr_offline_error">No network connection</string>
     <string name="lrr_connect_error_check">Cannot connect to server, please check address and network</string>

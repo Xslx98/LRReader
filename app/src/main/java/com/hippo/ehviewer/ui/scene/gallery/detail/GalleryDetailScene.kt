@@ -782,13 +782,48 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         val ctx = getEHContext() ?: return
         val banner = mSourceErrorBanner ?: return
         val text = mSourceErrorText ?: return
-        text.text = com.lanraragi.reader.client.api.friendlyError(ctx, e)
+        text.text = tieredSourceErrorText(ctx, e)
         banner.visibility = View.VISIBLE
         // The banner is informational on top of cached data — make sure
         // the page itself stays in NORMAL so the cached content remains
         // interactive (cancel buttons, read button, etc.).
         if (mState != STATE_NORMAL) {
             adjustViewVisibility(STATE_NORMAL, true)
+        }
+    }
+
+    /**
+     * Map a fetch failure to a tiered, user-actionable string. The four
+     * tiers (orphan / unreachable / 404 / generic) match the cross-
+     * server UX patterns established by Plex / email clients / RSS
+     * readers — distinguishing why the source is unavailable lets the
+     * user decide whether to retry, switch profiles, or give up.
+     *
+     * Profile name is looked up against the same [ProfileLookupCache]
+     * the auth interceptor uses, so the banner shows the user-chosen
+     * server label rather than a raw URL.
+     */
+    private fun tieredSourceErrorText(ctx: android.content.Context, e: Exception): String {
+        val sid = viewModel.getEffectiveArchive()?.serverProfileId ?: 0L
+        // Profile name comes from the same in-memory cache the auth
+        // interceptor consults, so the banner mirrors what the user
+        // sees in ServerListScene. If the lookup misses (orphan path
+        // is handled below; this guards against the rare race where
+        // the profile is deleted between request fire and response)
+        // the placeholder collapses to empty rather than crashing the
+        // resource formatter — the message still reads correctly.
+        val profileName = ServiceRegistry.dataModule.profileLookupCache
+            .findById(sid)?.name ?: ""
+        return when {
+            e is com.lanraragi.reader.client.api.OrphanProfileException ->
+                ctx.getString(R.string.lrr_detail_source_profile_orphan)
+            e is com.lanraragi.reader.client.api.LRRHttpException && e.code == 404 ->
+                ctx.getString(R.string.lrr_detail_source_archive_deleted, profileName)
+            e is java.net.UnknownHostException ||
+                e is java.net.SocketTimeoutException ||
+                e is java.net.ConnectException ->
+                ctx.getString(R.string.lrr_detail_source_unreachable, profileName)
+            else -> com.lanraragi.reader.client.api.friendlyError(ctx, e)
         }
     }
 
