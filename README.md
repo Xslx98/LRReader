@@ -92,7 +92,7 @@ RELEASE_KEY_PASSWORD=<your-key-password>
 | **语言 / Language** | Kotlin (业务代码 100%) + Java (GLView / widget 遗留框架) / Kotlin (all business code) + Java (legacy GLView / widget framework) |
 | **网络 / Network** | OkHttp 4.12 + Kotlin Coroutines |
 | **API 序列化 / Serialization** | kotlinx-serialization (all JSON) |
-| **数据库 / Database** | Room 2.6.1 + KSP (schema v25) |
+| **数据库 / Database** | Room 2.6.1 + KSP (schema v26) |
 | **图像解码 / Image Decoding** | Custom C/JNI engine (libjpeg-turbo, libpng, libwebp) |
 | **安全 / Security** | EncryptedSharedPreferences (API Key, 模式锁 / pattern lock) |
 | **构建 / Build** | Gradle + R8/ProGuard |
@@ -105,7 +105,7 @@ LRReader/
 ├── app/src/main/
 │   ├── java/
 │   │   ├── com/hippo/ehviewer/         # Business code (Kotlin)
-│   │   │   ├── dao/                    # Room Database (AppDatabase.kt, schema v25)
+│   │   │   ├── dao/                    # Room Database (AppDatabase.kt, schema v26)
 │   │   │   ├── download/               # Download subsystem (DownloadManager facade)
 │   │   │   ├── settings/               # Modular settings (Privacy, Network, Reading, …)
 │   │   │   ├── ui/                     # Activities, Scenes, Fragments, ViewModels
