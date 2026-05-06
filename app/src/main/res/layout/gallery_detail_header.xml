@@ -14,173 +14,171 @@
   ~ limitations under the License.
   -->
 
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Flattened from a 6-level FrameLayout > LinearLayout > LinearLayout >
+     RelativeLayout > LinearLayout > MaterialCardView > LinearLayout nest into
+     a 4-level ConstraintLayout. The colored ribbon (color_bg) was previously
+     a weighted child in a vertical LinearLayout sized to the layout height
+     minus a 24dp Space; it is now constrained to action_card.bottom with a
+     24dp marginBottom, which produces the same "card straddles the colored
+     band" composition Material-style. All public ids are preserved so
+     GalleryDetailScene's findViewById chain keeps working unchanged. -->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/header"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+    <View
+        android:id="@+id/color_bg"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginBottom="24dp"
+        android:background="?attr/galleryDetailHeaderBackgroundColor"
+        android:elevation="4dp"
+        app:layout_constraintBottom_toBottomOf="@id/action_card"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-        <View
-            android:id="@+id/color_bg"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:background="?attr/galleryDetailHeaderBackgroundColor"
-            android:elevation="4dp" />
+    <com.hippo.widget.LoadImageView
+        android:id="@+id/thumb"
+        android:layout_width="@dimen/gallery_detail_thumb_width"
+        android:layout_height="@dimen/gallery_detail_thumb_height"
+        android:layout_marginStart="@dimen/keyline_margin"
+        android:layout_marginTop="@dimen/keyline_margin"
+        android:layout_marginBottom="@dimen/keyline_margin"
+        android:scaleType="fitCenter"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-        <androidx.legacy.widget.Space
-            android:layout_width="match_parent"
-            android:layout_height="24dp" />
+    <ImageView
+        android:id="@+id/other_actions"
+        android:layout_width="48dp"
+        android:layout_height="56dp"
+        android:background="?selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:paddingLeft="12dp"
+        android:paddingTop="16dp"
+        android:paddingRight="12dp"
+        android:paddingBottom="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/v_dots_vertical_secondary_dark_x24" />
 
-    </LinearLayout>
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/keyline_margin"
+        android:ellipsize="end"
+        android:maxLines="5"
+        android:textColor="@android:color/white"
+        android:textSize="@dimen/text_little_large"
+        app:layout_constraintEnd_toStartOf="@id/other_actions"
+        app:layout_constraintStart_toEndOf="@id/thumb"
+        app:layout_constraintTop_toTopOf="@id/thumb" />
 
-    <LinearLayout
+    <TextView
+        android:id="@+id/uploader"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="@dimen/keyline_margin"
+        android:background="?selectableItemBackgroundBorderless"
+        android:ellipsize="end"
+        android:singleLine="true"
+        android:textColor="@android:color/white"
+        android:textSize="@dimen/text_little_small"
+        app:layout_constraintEnd_toStartOf="@id/other_actions"
+        app:layout_constraintStart_toStartOf="@id/title"
+        app:layout_constraintTop_toBottomOf="@id/title" />
+
+    <!-- Anchor the action area below whichever of thumb / uploader extends
+         further. With long titles uploader pushes lower; with very short
+         titles thumb is the lower edge. -->
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/view_head_bottom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="bottom"
+        app:constraint_referenced_ids="thumb,uploader" />
+
+    <com.hippo.ehviewer.widget.ArchiverDownloadProgress
+        android:id="@+id/archiver_download_progress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/view_head_bottom" />
 
-        <RelativeLayout
-            android:id="@+id/view_head"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@android:color/transparent">
+    <TextView
+        android:id="@+id/new_version"
+        style="@style/ButtonNewVersion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/keyline_margin"
+        android:layout_marginEnd="@dimen/keyline_margin"
+        android:clickable="true"
+        android:focusable="true"
+        android:text="@string/have_new_version"
+        android:textColor="?attr/textColorThemePrimary2"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/archiver_download_progress" />
 
-
-            <com.hippo.widget.LoadImageView
-                android:id="@+id/thumb"
-                android:layout_width="@dimen/gallery_detail_thumb_width"
-                android:layout_height="@dimen/gallery_detail_thumb_height"
-                android:layout_alignWithParentIfMissing="true"
-                android:layout_alignParentStart="true"
-                android:layout_marginStart="@dimen/keyline_margin"
-                android:layout_marginTop="@dimen/keyline_margin"
-                android:layout_marginBottom="@dimen/keyline_margin"
-                android:scaleType="fitCenter" />
-
-            <TextView
-                android:id="@+id/title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignTop="@id/thumb"
-                android:layout_marginLeft="@dimen/keyline_margin"
-                android:layout_toEndOf="@id/thumb"
-                android:layout_toStartOf="@id/other_actions"
-                android:ellipsize="end"
-                android:maxLines="5"
-                android:textColor="@android:color/white"
-                android:textSize="@dimen/text_little_large" />
-
-            <TextView
-                android:id="@+id/uploader"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/title"
-                android:layout_alignStart="@id/title"
-                android:layout_marginTop="8dp"
-                android:layout_marginEnd="@dimen/keyline_margin"
-                android:background="?selectableItemBackgroundBorderless"
-                android:ellipsize="end"
-                android:singleLine="true"
-                android:textColor="@android:color/white"
-                android:textSize="@dimen/text_little_small" />
-
-
-            <ImageView xmlns:app="http://schemas.android.com/apk/res-auto"
-                android:id="@+id/other_actions"
-                android:layout_width="48dp"
-                android:layout_height="56dp"
-                android:layout_alignParentTop="true"
-                android:layout_alignParentEnd="true"
-                android:background="?selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true"
-                android:paddingLeft="12dp"
-                android:paddingTop="16dp"
-                android:paddingRight="12dp"
-                android:paddingBottom="16dp"
-                app:srcCompat="@drawable/v_dots_vertical_secondary_dark_x24" />
-
-        </RelativeLayout>
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/action_card"
+        style="@style/CardView.Normal"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/keyline_margin"
+        android:layout_marginEnd="@dimen/keyline_margin"
+        app:cardUseCompatPadding="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/new_version">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <com.hippo.ehviewer.widget.ArchiverDownloadProgress
-                android:id="@+id/archiver_download_progress"
-                android:visibility="gone"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+            android:orientation="horizontal">
 
             <TextView
-                android:id="@+id/new_version"
-                style="@style/ButtonNewVersion"
-                android:layout_width="wrap_content"
+                android:id="@+id/download"
+                style="@style/ButtonInCard"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="@dimen/keyline_margin"
-                android:layout_marginRight="@dimen/keyline_margin"
+                android:layout_weight="1"
+                android:background="?selectableItemBackgroundBorderless"
                 android:clickable="true"
                 android:focusable="true"
-                android:text="@string/have_new_version"
-                android:textColor="?attr/textColorThemePrimary2"
-                android:visibility="gone" />
+                android:textColor="?attr/textColorThemePrimary" />
 
-            <com.google.android.material.card.MaterialCardView xmlns:app="http://schemas.android.com/apk/res-auto"
-                android:id="@+id/action_card"
-                style="@style/CardView.Normal"
-                android:layout_width="match_parent"
+            <View
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:background="?attr/dividerColor" />
+
+            <TextView
+                android:id="@+id/read"
+                style="@style/ButtonInCard"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="@dimen/keyline_margin"
-                android:layout_marginRight="@dimen/keyline_margin"
-                app:cardUseCompatPadding="true">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/download"
-                        style="@style/ButtonInCard"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:background="?selectableItemBackgroundBorderless"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:textColor="?attr/textColorThemePrimary" />
-
-                    <View
-                        android:layout_width="1dp"
-                        android:layout_height="match_parent"
-                        android:layout_marginTop="8dp"
-                        android:layout_marginBottom="8dp"
-                        android:background="?attr/dividerColor" />
-
-                    <TextView
-                        android:id="@+id/read"
-                        style="@style/ButtonInCard"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:background="?selectableItemBackgroundBorderless"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:text="@string/read"
-                        android:textColor="?attr/textColorThemeAccent" />
-
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
+                android:layout_weight="1"
+                android:background="?selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:text="@string/read"
+                android:textColor="?attr/textColorThemeAccent" />
 
         </LinearLayout>
 
-    </LinearLayout>
-</FrameLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
