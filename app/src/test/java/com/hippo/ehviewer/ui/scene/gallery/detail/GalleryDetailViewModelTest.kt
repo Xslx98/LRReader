@@ -51,6 +51,37 @@ class GalleryDetailViewModelTest {
     )
 
     @Test
+    fun getEffectiveArchive_preservesServerProfileIdFromNavArg() {
+        // The detail VM resolves the source server URL from this id; if
+        // the navigation argument's serverProfileId were dropped, every
+        // cross-server detail fetch would be routed to the active profile
+        // and 400 on archives that live elsewhere.
+        val vm = GalleryDetailViewModel()
+        val navArchive = archive("xprof").copy(serverProfileId = 42L)
+        vm.setArchive(navArchive)
+
+        assertEquals(42L, vm.getEffectiveArchive()?.serverProfileId)
+    }
+
+    @Test
+    fun getEffectiveArchive_prefersDetailServerProfileId_whenLoaded() {
+        // After the live metadata lands, archiveDetail wins over the
+        // navigation arg. The id must travel through this transition
+        // intact so subsequent rate / refresh PUTs still hit the source
+        // server even when the nav-arg shape diverges from the loaded
+        // detail's shape.
+        val vm = GalleryDetailViewModel()
+        vm.setArchive(archive("xprof").copy(serverProfileId = 0L))
+        vm.setArchiveDetail(
+            archiveDetail("xprof").copy(
+                archive = archive("xprof").copy(serverProfileId = 7L)
+            )
+        )
+
+        assertEquals(7L, vm.getEffectiveArchive()?.serverProfileId)
+    }
+
+    @Test
     fun secondNavigation_afterReset_returnsNewGalleryArcid_notStaleDetail() {
         val vm = GalleryDetailViewModel()
 
