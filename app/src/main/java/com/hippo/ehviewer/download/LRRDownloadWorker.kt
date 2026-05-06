@@ -5,7 +5,8 @@ import android.util.Log
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRArchiveApi
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.OrphanProfileException
+import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.spider.SpiderDen
@@ -31,16 +32,6 @@ import java.io.IOException
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
-
-/**
- * Thrown by [LRRDownloadWorker] when the [DownloadInfo.serverProfileId]
- * does not resolve to a known [com.hippo.ehviewer.dao.ServerProfile] —
- * i.e. the user deleted the source profile while the download was
- * queued. Surfaced through the worker's normal failure path with a
- * localised user-facing message.
- */
-internal class OrphanProfileException(val profileId: Long) :
-    IOException("Source profile id=$profileId no longer exists")
 
 /**
  * Downloads all pages of a LANraragi archive to the download directory.
@@ -381,35 +372,11 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         }
     }
 
-    /**
-     * Resolve the LANraragi base URL this worker should fetch pages from.
-     *
-     * Routing rules:
-     *  1. `info.serverProfileId == 0` is treated as **legacy data** (rows
-     *     written before SERVER_PROFILES was indexed on the download
-     *     subsystem). For these we fall back to the active profile's URL,
-     *     mirroring the historical behaviour so an in-flight download
-     *     started under the old code path does not start failing after
-     *     an upgrade.
-     *  2. Any other id is resolved against [ProfileLookupCache] (which
-     *     mirrors the SERVER_PROFILES Room table). Cache misses mean the
-     *     user deleted the source profile while the download was queued
-     *     — surface as [OrphanProfileException] so the caller can fail
-     *     fast with a localised error.
-     */
-    private suspend fun resolveServerUrl(): String {
-        val cache = ServiceRegistry.dataModule.profileLookupCache
-        cache.awaitInitialized()
-
-        if (info.serverProfileId == 0L) {
-            return LRRAuthManager.getServerUrl()
-                ?: throw OrphanProfileException(0L)
-        }
-
-        val profile = cache.findById(info.serverProfileId)
-            ?: throw OrphanProfileException(info.serverProfileId)
-        return profile.url
-    }
+    private suspend fun resolveServerUrl(): String =
+        resolveSourceBaseUrl(
+            info.serverProfileId,
+            ServiceRegistry.dataModule.profileLookupCache,
+        )
 
     private suspend fun getDownloadDir(): File? {
         // Use the same download location as SpiderDen (DownloadSettings.getDownloadLocation())
