@@ -1081,6 +1081,9 @@ Cette action est irréversible.</string>
     <string name="lrr_not_found_404">Ressource introuvable (404)</string>
     <string name="lrr_server_error_code">Erreur serveur (%1$d), veuillez réessayer plus tard</string>
     <string name="lrr_request_failed_code">Requête échouée (HTTP %1$d)</string>
+    <string name="lrr_detail_source_profile_orphan">Le profil du serveur source de cette archive n\'existe plus.</string>
+    <string name="lrr_detail_source_unreachable">Le serveur source \'%1$s\' est injoignable. Affichage des informations en cache.</string>
+    <string name="lrr_detail_source_archive_deleted">L\'archive a été supprimée sur le serveur source \'%1$s\'.</string>
     <string name="lrr_timeout_error">Délai de connexion dépassé, vérifiez le réseau ou l\'état du serveur</string>
     <string name="lrr_connect_error_check">Impossible de se connecter au serveur, vérifiez l\'adresse et le réseau</string>
     <string name="lrr_dns_error">Impossible de résoudre l\'adresse du serveur, vérifiez l\'URL</string>

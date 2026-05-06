@@ -1116,6 +1116,9 @@
     <string name="lrr_not_found_404">资源未找到 (404)</string>
     <string name="lrr_server_error_code">服务器错误 (%1$d)，请稍后重试</string>
     <string name="lrr_request_failed_code">请求失败 (HTTP %1$d)</string>
+    <string name="lrr_detail_source_profile_orphan">该档案对应的源站点配置已被删除。</string>
+    <string name="lrr_detail_source_unreachable">源站点 \'%1$s\' 当前不可达，正在显示本地缓存。</string>
+    <string name="lrr_detail_source_archive_deleted">档案已在源站点 \'%1$s\' 被删除。</string>
     <string name="lrr_timeout_error">连接超时，请检查网络或服务器状态</string>
     <string name="lrr_connect_error_check">无法连接到服务器，请检查地址和网络</string>
     <string name="lrr_dns_error">无法解析服务器地址，请检查 URL</string>

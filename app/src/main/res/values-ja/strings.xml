@@ -1019,6 +1019,9 @@
     <string name="lrr_not_found_404">リソースが見つかりません (404)</string>
     <string name="lrr_server_error_code">サーバーエラー (%1$d)。しばらくしてから再試行してください</string>
     <string name="lrr_request_failed_code">リクエスト失敗 (HTTP %1$d)</string>
+    <string name="lrr_detail_source_profile_orphan">このアーカイブのソースサーバープロファイルは存在しません。</string>
+    <string name="lrr_detail_source_unreachable">ソースサーバー \'%1$s\' に接続できません。キャッシュを表示しています。</string>
+    <string name="lrr_detail_source_archive_deleted">アーカイブはソースサーバー \'%1$s\' で削除されました。</string>
     <string name="lrr_timeout_error">接続タイムアウト。ネットワークまたはサーバーの状態を確認してください</string>
     <string name="lrr_connect_error_check">サーバーに接続できません。アドレスとネットワークを確認してください</string>
     <string name="lrr_dns_error">サーバーアドレスを解決できません。URLを確認してください</string>

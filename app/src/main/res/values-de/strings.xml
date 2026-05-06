@@ -1015,6 +1015,9 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_not_found_404">Ressource nicht gefunden (404)</string>
     <string name="lrr_server_error_code">Serverfehler (%1$d), bitte später erneut versuchen</string>
     <string name="lrr_request_failed_code">Anfrage fehlgeschlagen (HTTP %1$d)</string>
+    <string name="lrr_detail_source_profile_orphan">Das Quell-Serverprofil dieses Archivs existiert nicht mehr.</string>
+    <string name="lrr_detail_source_unreachable">Quellserver \'%1$s\' ist nicht erreichbar. Zeige zwischengespeicherte Daten.</string>
+    <string name="lrr_detail_source_archive_deleted">Archiv wurde auf dem Quellserver \'%1$s\' gelöscht.</string>
     <string name="lrr_timeout_error">Verbindungstimeout, bitte Netzwerk- oder Serverstatus prüfen</string>
     <string name="lrr_connect_error_check">Verbindung zum Server nicht möglich, bitte Adresse und Netzwerk prüfen</string>
     <string name="lrr_dns_error">Serveradresse kann nicht aufgelöst werden, bitte URL prüfen</string>
