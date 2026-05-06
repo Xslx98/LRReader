@@ -29,13 +29,18 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
+    <!-- No android:elevation here — in the original FrameLayout-with-LinearLayout-
+         wrappers structure the 4dp elevation only cast a shadow within the wrapper
+         and didn't affect z-order vs the content tree. As a direct sibling of
+         thumb/title/uploader/action_card in this ConstraintLayout, any positive
+         elevation pushes color_bg to the front and hides everything else. The
+         (rarely visible) shadow loss is acceptable. -->
     <View
         android:id="@+id/color_bg"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginBottom="24dp"
         android:background="?attr/galleryDetailHeaderBackgroundColor"
-        android:elevation="4dp"
         app:layout_constraintBottom_toBottomOf="@id/action_card"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
