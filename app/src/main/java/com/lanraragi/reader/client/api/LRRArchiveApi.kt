@@ -8,6 +8,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.long
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
@@ -20,16 +21,38 @@ import java.io.IOException
  * API class for LANraragi archive operations.
  *
  * Endpoints:
- * - GET    /api/archives/:id/metadata    — Get metadata
- * - PUT    /api/archives/:id/metadata    — Update metadata (tags)
- * - GET    /api/archives/:id/files       — Extract archive, get page list
- * - GET    /api/archives/:id/page        — Get specific page image URL
- * - DELETE /api/archives/:id/isnew       — Clear "new" flag
- * - PUT    /api/archives/:id/progress/:p — Update reading progress
- * - DELETE /api/archives/:id             — Delete archive
- * - PUT    /api/archives/upload          — Upload archive file
+ * - GET    /api/archives/:id/metadata          — Get metadata
+ * - PUT    /api/archives/:id/metadata          — Update metadata (tags)
+ * - GET    /api/archives/:id/files             — Extract archive, get page list
+ * - GET    /api/archives/:id/page              — Get specific page image URL
+ * - GET    /api/archives/:id/thumbnail?page=N  — Get per-page thumbnail (200 jpeg / 202 job)
+ * - DELETE /api/archives/:id/isnew             — Clear "new" flag
+ * - PUT    /api/archives/:id/progress/:p       — Update reading progress
+ * - DELETE /api/archives/:id                   — Delete archive
+ * - PUT    /api/archives/upload                — Upload archive file
  */
 object LRRArchiveApi {
+
+    /**
+     * Result of a per-page thumbnail fetch. LANraragi answers
+     * `GET /api/archives/:id/thumbnail?page=N` with two distinct
+     * 2xx states that the caller must dispatch differently:
+     *  - **200 + image/jpeg**: thumbnail is already on disk → [Ready].
+     *  - **202 + application/json `{job: <id>}`**: a Minion worker is
+     *    generating the thumbnail asynchronously → [Pending].
+     */
+    sealed class PageThumbnailFetchResult {
+        /** Server returned the image bytes. */
+        class Ready(val bytes: ByteArray) : PageThumbnailFetchResult()
+
+        /**
+         * Server queued the thumbnail for async generation. [jobId] is
+         * the Minion job id if the response body parsed cleanly, or
+         * null when the JSON envelope was unparsable (in which case the
+         * caller should still treat the request as pending and retry).
+         */
+        data class Pending(val jobId: Long?) : PageThumbnailFetchResult()
+    }
 
     /**
      * GET /api/archives/:id/metadata — Get archive metadata.
@@ -254,6 +277,90 @@ object LRRArchiveApi {
             .build()
             .toString()
     }
+
+    /**
+     * Construct the URL for a per-page thumbnail.
+     *
+     * `no_fallback=true` tells LANraragi to return 202 + a job
+     * descriptor rather than substituting the cover thumbnail while
+     * the page-specific thumbnail is being generated. Without this
+     * we cannot tell "thumb ready" from "cover stand-in" and the
+     * preview grid would render the same cover for every page until
+     * the user reopens the detail page.
+     *
+     * @param page 0-indexed page number (server expects this convention).
+     */
+    @JvmStatic
+    fun getPageThumbnailUrl(baseUrl: String, arcid: String, page: Int): String {
+        return parseBaseUrl(baseUrl).newBuilder()
+            .addPathSegments("api/archives")
+            .addPathSegment(requireValidArcid(arcid))
+            .addPathSegment("thumbnail")
+            .addQueryParameter("page", page.toString())
+            .addQueryParameter("no_fallback", "true")
+            .build()
+            .toString()
+    }
+
+    /**
+     * GET /api/archives/:id/thumbnail?page=N — Fetch a single page thumbnail.
+     *
+     * Returns [PageThumbnailFetchResult.Ready] when the server has the
+     * thumbnail on disk (HTTP 200 + JPEG bytes), or
+     * [PageThumbnailFetchResult.Pending] when generation is in progress
+     * (HTTP 202 + JSON job descriptor). The caller is responsible for
+     * polling on Pending (typically with backoff) until either a Ready
+     * lands or a retry budget is exhausted.
+     *
+     * Unlike most archive endpoints this one is **not** wrapped in
+     * [retryOnFailure]: the per-page thumbnail loader runs its own
+     * 202-aware backoff loop and a second outer retry layer would
+     * double the attempt budget without adding signal.
+     *
+     * @param page 0-indexed page number.
+     */
+    @JvmStatic
+    suspend fun fetchPageThumbnail(
+        client: OkHttpClient,
+        baseUrl: String,
+        arcid: String,
+        page: Int
+    ): PageThumbnailFetchResult = withContext(Dispatchers.IO) {
+        val url = parseBaseUrl(baseUrl).newBuilder()
+            .addPathSegments("api/archives")
+            .addPathSegment(requireValidArcid(arcid))
+            .addPathSegment("thumbnail")
+            .addQueryParameter("page", page.toString())
+            .addQueryParameter("no_fallback", "true")
+            .build()
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .build()
+        client.newCall(request).execute().use { response ->
+            when (response.code) {
+                HTTP_OK -> {
+                    val bytes = response.body?.bytes()
+                        ?: throw LRREmptyBodyException()
+                    PageThumbnailFetchResult.Ready(bytes)
+                }
+                HTTP_ACCEPTED -> {
+                    val body = response.body?.string().orEmpty()
+                    val jobId = runCatching {
+                        lrrJson.parseToJsonElement(body)
+                            .jsonObject["job"]
+                            ?.jsonPrimitive
+                            ?.long
+                    }.getOrNull()
+                    PageThumbnailFetchResult.Pending(jobId)
+                }
+                else -> throw LRRHttpException(response.code)
+            }
+        }
+    }
+
+    private const val HTTP_OK = 200
+    private const val HTTP_ACCEPTED = 202
 
     /**
      * DELETE /api/archives/:id/isnew — Clear the "new" flag.

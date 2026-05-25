@@ -1083,6 +1083,16 @@
     <string name="lrr_detail_source_profile_orphan">This archive\'s source server profile no longer exists.</string>
     <string name="lrr_detail_source_unreachable">Source server \'%1$s\' is unreachable. Showing cached info.</string>
     <string name="lrr_detail_source_archive_deleted">Archive deleted on source server \'%1$s\'.</string>
+    <!-- Detail-page page-thumbnail grid -->
+    <string name="lrr_page_thumbnails_title">Pages</string>
+    <string name="lrr_page_thumbnails_jump">Go to…</string>
+    <string name="lrr_page_thumbnails_unreachable">Can\'t reach the source server</string>
+    <string name="lrr_page_thumbnails_deleted">Archive has been removed</string>
+    <string name="lrr_page_thumbnails_generic">Couldn\'t load page list</string>
+    <string name="lrr_page_thumbnails_jump_dialog_title">Go to page</string>
+    <string name="lrr_page_thumbnails_jump_dialog_hint">1–%1$d</string>
+    <string name="lrr_page_thumbnails_jump_dialog_ok">Go</string>
+    <string name="lrr_page_thumbnails_jump_dialog_out_of_range">Page must be between 1 and %1$d</string>
     <string name="lrr_timeout_error">Connection timeout, please check network or server status</string>
     <string name="lrr_connect_error_check">Cannot connect to server, please check address and network</string>
     <string name="lrr_dns_error">Cannot resolve server address, please check URL</string>

@@ -1101,6 +1101,16 @@
     <string name="lrr_detail_source_profile_orphan">이 아카이브의 소스 서버 프로필이 더 이상 존재하지 않습니다.</string>
     <string name="lrr_detail_source_unreachable">소스 서버 \'%1$s\'에 연결할 수 없습니다. 캐시된 정보를 표시합니다.</string>
     <string name="lrr_detail_source_archive_deleted">아카이브가 소스 서버 \'%1$s\'에서 삭제되었습니다.</string>
+    <!-- 상세 페이지의 페이지 썸네일 그리드 -->
+    <string name="lrr_page_thumbnails_title">페이지</string>
+    <string name="lrr_page_thumbnails_jump">이동…</string>
+    <string name="lrr_page_thumbnails_unreachable">소스 서버에 연결할 수 없습니다</string>
+    <string name="lrr_page_thumbnails_deleted">아카이브가 삭제되었습니다</string>
+    <string name="lrr_page_thumbnails_generic">페이지 목록을 불러올 수 없습니다</string>
+    <string name="lrr_page_thumbnails_jump_dialog_title">페이지로 이동</string>
+    <string name="lrr_page_thumbnails_jump_dialog_hint">1–%1$d</string>
+    <string name="lrr_page_thumbnails_jump_dialog_ok">이동</string>
+    <string name="lrr_page_thumbnails_jump_dialog_out_of_range">페이지 번호는 1과 %1$d 사이여야 합니다</string>
     <string name="lrr_timeout_error">연결 시간 초과, 네트워크 또는 서버 상태를 확인하세요</string>
     <string name="lrr_connect_error_check">서버에 연결할 수 없습니다. 주소와 네트워크를 확인하세요</string>
     <string name="lrr_dns_error">서버 주소를 확인할 수 없습니다. URL을 확인하세요</string>

@@ -1085,6 +1085,16 @@
     <string name="lrr_detail_source_profile_orphan">โปรไฟล์เซิร์ฟเวอร์ต้นทางของไฟล์นี้ไม่มีอยู่อีกต่อไปแล้ว</string>
     <string name="lrr_detail_source_unreachable">ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ต้นทาง \'%1$s\' กำลังแสดงข้อมูลที่แคชไว้</string>
     <string name="lrr_detail_source_archive_deleted">ไฟล์ถูกลบบนเซิร์ฟเวอร์ต้นทาง \'%1$s\' แล้ว</string>
+    <!-- ตารางภาพย่อหน้าในหน้ารายละเอียด -->
+    <string name="lrr_page_thumbnails_title">หน้า</string>
+    <string name="lrr_page_thumbnails_jump">ไปที่…</string>
+    <string name="lrr_page_thumbnails_unreachable">ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ต้นทางได้</string>
+    <string name="lrr_page_thumbnails_deleted">ไฟล์เก็บถาวรถูกลบแล้ว</string>
+    <string name="lrr_page_thumbnails_generic">ไม่สามารถโหลดรายการหน้าได้</string>
+    <string name="lrr_page_thumbnails_jump_dialog_title">ไปยังหน้า</string>
+    <string name="lrr_page_thumbnails_jump_dialog_hint">1–%1$d</string>
+    <string name="lrr_page_thumbnails_jump_dialog_ok">ไป</string>
+    <string name="lrr_page_thumbnails_jump_dialog_out_of_range">หมายเลขหน้าต้องอยู่ระหว่าง 1 ถึง %1$d</string>
     <string name="lrr_timeout_error">หมดเวลาการเชื่อมต่อ โปรดตรวจสอบเครือข่ายหรือสถานะเซิร์ฟเวอร์</string>
     <string name="lrr_connect_error_check">ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ โปรดตรวจสอบที่อยู่และเครือข่าย</string>
     <string name="lrr_dns_error">ไม่สามารถแก้ไขที่อยู่เซิร์ฟเวอร์ได้ โปรดตรวจสอบ URL</string>

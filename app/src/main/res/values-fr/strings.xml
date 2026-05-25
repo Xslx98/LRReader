@@ -1084,6 +1084,16 @@ Cette action est irréversible.</string>
     <string name="lrr_detail_source_profile_orphan">Le profil du serveur source de cette archive n\'existe plus.</string>
     <string name="lrr_detail_source_unreachable">Le serveur source \'%1$s\' est injoignable. Affichage des informations en cache.</string>
     <string name="lrr_detail_source_archive_deleted">L\'archive a été supprimée sur le serveur source \'%1$s\'.</string>
+    <!-- Grille de vignettes de pages sur la page de détails -->
+    <string name="lrr_page_thumbnails_title">Pages</string>
+    <string name="lrr_page_thumbnails_jump">Aller à…</string>
+    <string name="lrr_page_thumbnails_unreachable">Serveur source inaccessible</string>
+    <string name="lrr_page_thumbnails_deleted">L\'archive a été supprimée</string>
+    <string name="lrr_page_thumbnails_generic">Impossible de charger la liste des pages</string>
+    <string name="lrr_page_thumbnails_jump_dialog_title">Aller à la page</string>
+    <string name="lrr_page_thumbnails_jump_dialog_hint">1–%1$d</string>
+    <string name="lrr_page_thumbnails_jump_dialog_ok">Aller</string>
+    <string name="lrr_page_thumbnails_jump_dialog_out_of_range">La page doit être comprise entre 1 et %1$d</string>
     <string name="lrr_timeout_error">Délai de connexion dépassé, vérifiez le réseau ou l\'état du serveur</string>
     <string name="lrr_connect_error_check">Impossible de se connecter au serveur, vérifiez l\'adresse et le réseau</string>
     <string name="lrr_dns_error">Impossible de résoudre l\'adresse du serveur, vérifiez l\'URL</string>

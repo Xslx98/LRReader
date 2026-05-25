@@ -1022,6 +1022,16 @@
     <string name="lrr_detail_source_profile_orphan">このアーカイブのソースサーバープロファイルは存在しません。</string>
     <string name="lrr_detail_source_unreachable">ソースサーバー \'%1$s\' に接続できません。キャッシュを表示しています。</string>
     <string name="lrr_detail_source_archive_deleted">アーカイブはソースサーバー \'%1$s\' で削除されました。</string>
+    <!-- 詳細ページのサムネイルグリッド -->
+    <string name="lrr_page_thumbnails_title">ページ</string>
+    <string name="lrr_page_thumbnails_jump">ジャンプ…</string>
+    <string name="lrr_page_thumbnails_unreachable">ソースサーバーに接続できません</string>
+    <string name="lrr_page_thumbnails_deleted">アーカイブは削除されました</string>
+    <string name="lrr_page_thumbnails_generic">ページ一覧を読み込めません</string>
+    <string name="lrr_page_thumbnails_jump_dialog_title">ページに移動</string>
+    <string name="lrr_page_thumbnails_jump_dialog_hint">1–%1$d</string>
+    <string name="lrr_page_thumbnails_jump_dialog_ok">移動</string>
+    <string name="lrr_page_thumbnails_jump_dialog_out_of_range">ページ番号は 1 から %1$d の間で指定してください</string>
     <string name="lrr_timeout_error">接続タイムアウト。ネットワークまたはサーバーの状態を確認してください</string>
     <string name="lrr_connect_error_check">サーバーに接続できません。アドレスとネットワークを確認してください</string>
     <string name="lrr_dns_error">サーバーアドレスを解決できません。URLを確認してください</string>

@@ -125,6 +125,12 @@
     <dimen name="gallery_detail_thumb_width">128dp</dimen>
     <dimen name="gallery_detail_thumb_height">192dp</dimen>
 
+    <!-- Per-page thumbnail in the detail-page preview grid. Width is
+         determined by GridLayoutManager spanCount, height is fixed.
+         140dp gives a useful frame at 3-6 columns on phones/tablets. -->
+    <dimen name="gallery_detail_page_thumb_height">140dp</dimen>
+    <dimen name="gallery_detail_page_thumb_grid_max_height">500dp</dimen>
+
     <dimen name="gallery_page_text">56sp</dimen>
     <dimen name="gallery_widget_margin_h">12dp</dimen>
     <dimen name="gallery_widget_margin_v">12dp</dimen>

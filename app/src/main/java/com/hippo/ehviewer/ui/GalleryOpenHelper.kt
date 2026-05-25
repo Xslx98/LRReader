@@ -25,10 +25,18 @@ object GalleryOpenHelper {
      *
      * @param context Context
      * @param archive Archive to open
+     * @param startPage 0-indexed start page; `-1` (default) means "use whatever
+     *   the GalleryProvider would default to" — typically the last-read
+     *   progress. Pass an explicit page to jump straight there (e.g. from a
+     *   thumbnail-grid tap on the detail page).
      * @return Intent ready for startActivity()
      */
     @JvmStatic
-    suspend fun buildReadIntent(context: Context, archive: Archive): Intent {
+    suspend fun buildReadIntent(
+        context: Context,
+        archive: Archive,
+        startPage: Int = -1,
+    ): Intent {
         val intent = Intent(context, GalleryActivity::class.java)
 
         // Check if local downloaded files exist
@@ -55,10 +63,24 @@ object GalleryOpenHelper {
             // store-replaces-and-recycles semantics handle a duplicate.
             val serverUrl = LRRAuthManager.getServerUrl()
             if (serverUrl != null) {
-                val centerPage = (archive.progress - 1).coerceAtLeast(0)
-                Log.i(TAG, "[WARM] openHelper LRR trigger arcid=${archive.arcid} page=$centerPage")
-                ReaderPageCache.preloadForDetail(context, archive.arcid, serverUrl, centerPage)
+                // Warmup the slot the user will actually land on: an
+                // explicit startPage overrides the saved progress so
+                // tapping a thumbnail decodes that exact page next.
+                val warmupPage = if (startPage >= 0) {
+                    startPage
+                } else {
+                    (archive.progress - 1).coerceAtLeast(0)
+                }
+                Log.i(TAG, "[WARM] openHelper LRR trigger arcid=${archive.arcid} page=$warmupPage")
+                ReaderPageCache.preloadForDetail(context, archive.arcid, serverUrl, warmupPage)
             }
+        }
+
+        // Override the reader's default start page when the caller knows where
+        // to land (e.g. the detail page's thumbnail grid). Negative values fall
+        // through to GalleryProvider2.getStartPage().
+        if (startPage >= 0) {
+            intent.putExtra(GalleryActivity.KEY_PAGE, startPage)
         }
 
         return intent
