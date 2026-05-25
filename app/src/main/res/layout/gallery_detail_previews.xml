@@ -48,7 +48,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/lrr_page_thumbnails_title"
-            android:textColor="?attr/textColorThemeAccent"
+            android:textColor="?attr/textColorThemePrimary"
             android:textStyle="bold"/>
 
         <TextView
@@ -90,7 +90,7 @@
             android:layout_gravity="center"
             android:padding="@dimen/keyline_margin"
             android:gravity="center"
-            android:textColor="?attr/textColorThemeAccent"
+            android:textColor="?attr/textColorThemePrimary2"
             android:visibility="gone"/>
     </FrameLayout>
 
