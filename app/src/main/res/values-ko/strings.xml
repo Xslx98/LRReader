@@ -495,6 +495,7 @@
     <string name="settings_eh_detail_size_long">길게</string>
     <string name="settings_eh_detail_size_short">짧게</string>
     <string name="settings_eh_thumb_size">섬네일 크기</string>
+    <string name="settings_eh_detail_page_thumb_size">페이지 섬네일 크기</string>
     <string name="settings_eh_thumb_size_large">크게</string>
     <string name="settings_eh_thumb_size_middle">중간</string>
     <string name="settings_eh_thumb_size_small">작게</string>
