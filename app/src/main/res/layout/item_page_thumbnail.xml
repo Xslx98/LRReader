@@ -9,21 +9,31 @@
   ~     http://www.apache.org/licenses/LICENSE-2.0
   -->
 
+<!--
+  Locked 2:3 portrait tile (aspect 0.667). Tile height follows the
+  grid-derived width so every row is visually aligned regardless of
+  spanCount, and the smart-crop rule in AspectClampedImageView
+  (CENTER_CROP when source ratio ∈ (0.5, 0.8), else FIT_CENTER) keeps
+  long horizontal scans from getting heads-and-feet sliced.
+-->
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="@dimen/gallery_detail_page_thumb_height"
+    android:layout_height="wrap_content"
     android:layout_margin="2dp"
     android:background="@color/page_thumb_placeholder_bg"
     android:foreground="?attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true">
 
-    <ImageView
+    <com.hippo.ehviewer.ui.widget.AspectClampedImageView
         android:id="@+id/page_thumb_image"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="centerCrop"
+        android:layout_height="wrap_content"
+        app:aspect="0.667"
+        app:minAspect="0.5"
+        app:maxAspect="0.8"
         android:contentDescription="@null"/>
 
     <TextView
