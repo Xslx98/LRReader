@@ -32,13 +32,6 @@
     <color name="theme_change_light">@color/colorAccent</color>
     <color name="theme_change_other">@color/colorPrimary</color>
 
-    <!-- Page-thumbnail badge in the detail-page preview grid. Always
-         a dark translucent background with white text so the page
-         number stays legible over arbitrary thumbnail content; same
-         convention as Android Photos' selection badge. -->
-    <color name="page_thumb_badge_bg">#99000000</color>
-    <color name="page_thumb_badge_text">#FFFFFFFF</color>
-
     <!-- Placeholder fill for empty / loading thumbnail cells.
          A low-alpha neutral grey works on both light and dark
          themes without an attr lookup. -->
