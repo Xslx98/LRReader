@@ -32,11 +32,6 @@
     <color name="theme_change_light">@color/colorAccent</color>
     <color name="theme_change_other">@color/colorPrimary</color>
 
-    <!-- Placeholder fill for empty / loading thumbnail cells.
-         A low-alpha neutral grey works on both light and dark
-         themes without an attr lookup. -->
-    <color name="page_thumb_placeholder_bg">#22808080</color>
-
     <color name="popupWindow_background_light">#ffF2F2F2</color>
     <color name="popupWindow_background_dark">#ff2E2E2E</color>
     <color name="popupWindow_background_black">#ff151515</color>

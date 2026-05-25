@@ -39,7 +39,6 @@
         android:id="@+id/page_thumb_image"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/page_thumb_placeholder_bg"
         app:aspect="0.667"
         app:minAspect="0.5"
         app:maxAspect="0.8"
