@@ -23,6 +23,7 @@ An Android client for [LANraragi](https://github.com/Difegue/LANraragi), built u
 |---|---|
 | 🔍 **全功能搜索 / Full Search** | 关键词、分类筛选、排序、随机推荐 / Keywords, categories, sorting, random |
 | 📖 **高性能阅读 / High-Performance Reader** | C 层图像解码引擎 + 智能预加载 / Native C image decoder + smart preloading |
+| 🖼️ **页面预览 / Page Previews** | 详情页全页面缩略图网格，支持跳页与密度调节 / Per-page thumbnail grid on detail page with jump-to-page and configurable density |
 | ⬇️ **离线下载 / Offline Download** | 后台下载整本档案，支持断点续传 / Background archive download with resume |
 | 🏷️ **标签翻译 / Tag Translation** | 中文环境下自动翻译标签 / Auto-translate tags in Chinese locale (EhTagDatabase) |
 | ⭐ **档案评分 / Archive Rating** | 基于标签的 emoji 星级评分 / Tag-based emoji star rating |
