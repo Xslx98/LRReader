@@ -7,6 +7,7 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.gallery.ReaderPageCache
 import com.lanraragi.reader.client.api.LRRTagCache
 import com.lanraragi.reader.client.api.LrrFileListCache
+import com.lanraragi.reader.client.api.PageThumbnailCache
 import com.hippo.lib.image.Image
 import java.io.File
 
@@ -24,6 +25,7 @@ class ClientModule(
         ServiceRegistry.registerCacheable(LRRTagCache)
         ServiceRegistry.registerCacheable(LrrFileListCache)
         ServiceRegistry.registerCacheable(ReaderPageCache)
+        ServiceRegistry.registerCacheable(PageThumbnailCache)
     }
 
     override val imageBitmapHelper: ImageBitmapHelper by lazy { ImageBitmapHelper() }

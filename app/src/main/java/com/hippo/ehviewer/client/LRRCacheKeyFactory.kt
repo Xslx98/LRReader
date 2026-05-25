@@ -25,4 +25,15 @@ object LRRCacheKeyFactory {
     @JvmStatic
     fun getImageKey(arcid: String, index: Int): String =
         "image:$arcid:$index"
+
+    /**
+     * Cache key for the per-page thumbnail used by the detail-page
+     * preview grid. Distinct namespace (`preview:page:`) from the
+     * cover thumbnail key (`preview:large:`) so the two never collide.
+     *
+     * @param page 0-indexed page number.
+     */
+    @JvmStatic
+    fun getPageThumbKey(arcid: String, page: Int): String =
+        "preview:page:$arcid:$page"
 }

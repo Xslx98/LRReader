@@ -1110,6 +1110,16 @@
     <string name="lrr_detail_source_profile_orphan">該檔案對應的來源站點設定檔已被刪除。</string>
     <string name="lrr_detail_source_unreachable">來源站點 \'%1$s\' 目前無法連線，正顯示本地快取。</string>
     <string name="lrr_detail_source_archive_deleted">檔案已在來源站點 \'%1$s\' 被刪除。</string>
+    <!-- 詳情頁面縮圖網格 -->
+    <string name="lrr_page_thumbnails_title">頁面</string>
+    <string name="lrr_page_thumbnails_jump">跳頁…</string>
+    <string name="lrr_page_thumbnails_unreachable">無法連線到來源伺服器</string>
+    <string name="lrr_page_thumbnails_deleted">檔案已被刪除</string>
+    <string name="lrr_page_thumbnails_generic">無法載入頁面清單</string>
+    <string name="lrr_page_thumbnails_jump_dialog_title">跳至指定頁</string>
+    <string name="lrr_page_thumbnails_jump_dialog_hint">1–%1$d</string>
+    <string name="lrr_page_thumbnails_jump_dialog_ok">跳轉</string>
+    <string name="lrr_page_thumbnails_jump_dialog_out_of_range">頁碼必須在 1 到 %1$d 之間</string>
     <string name="lrr_timeout_error">連線逾時，請檢查網路或伺服器狀態</string>
     <string name="lrr_connect_error_check">無法連接至伺服器，請檢查地址和網路</string>
     <string name="lrr_dns_error">無法解析伺服器地址，請檢查網址</string>

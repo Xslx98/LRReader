@@ -1119,6 +1119,16 @@
     <string name="lrr_detail_source_profile_orphan">该档案对应的源站点配置已被删除。</string>
     <string name="lrr_detail_source_unreachable">源站点 \'%1$s\' 当前不可达，正在显示本地缓存。</string>
     <string name="lrr_detail_source_archive_deleted">档案已在源站点 \'%1$s\' 被删除。</string>
+    <!-- 详情页页面缩略图网格 -->
+    <string name="lrr_page_thumbnails_title">页面</string>
+    <string name="lrr_page_thumbnails_jump">跳页…</string>
+    <string name="lrr_page_thumbnails_unreachable">无法连接源服务器</string>
+    <string name="lrr_page_thumbnails_deleted">档案已被删除</string>
+    <string name="lrr_page_thumbnails_generic">无法加载页面列表</string>
+    <string name="lrr_page_thumbnails_jump_dialog_title">跳转到指定页</string>
+    <string name="lrr_page_thumbnails_jump_dialog_hint">1–%1$d</string>
+    <string name="lrr_page_thumbnails_jump_dialog_ok">跳转</string>
+    <string name="lrr_page_thumbnails_jump_dialog_out_of_range">页码必须在 1 到 %1$d 之间</string>
     <string name="lrr_timeout_error">连接超时，请检查网络或服务器状态</string>
     <string name="lrr_connect_error_check">无法连接到服务器，请检查地址和网络</string>
     <string name="lrr_dns_error">无法解析服务器地址，请检查 URL</string>
