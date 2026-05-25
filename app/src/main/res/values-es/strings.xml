@@ -448,6 +448,7 @@
     <string name="settings_eh_detail_size_long">Largo</string>
     <string name="settings_eh_detail_size_short">Corto</string>
     <string name="settings_eh_thumb_size">Tamaño de vista previa</string>
+    <string name="settings_eh_detail_page_thumb_size">Tamaño de miniatura de página</string>
     <string name="settings_eh_thumb_size_large">Largo</string>
     <string name="settings_eh_thumb_size_middle">Medio</string>
     <string name="settings_eh_thumb_size_small">Pequeño</string>

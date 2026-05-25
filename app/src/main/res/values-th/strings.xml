@@ -486,6 +486,7 @@
     <string name="settings_eh_detail_size_long">อย่างยาว</string>
     <string name="settings_eh_detail_size_short">อย่างสั้น</string>
     <string name="settings_eh_thumb_size">ขนาดภาพตัวอย่าง</string>
+    <string name="settings_eh_detail_page_thumb_size">ขนาดภาพตัวอย่างหน้า</string>
     <string name="settings_eh_thumb_size_large">ใหญ่</string>
     <string name="settings_eh_thumb_size_middle">กลาง</string>
     <string name="settings_eh_thumb_size_small">เล็ก</string>

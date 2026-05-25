@@ -100,6 +100,26 @@ object AppearanceSettings {
         else -> R.dimen.gallery_grid_column_width_middle
     }
 
+    // --- Detail Page Thumb Size ---
+    // Picks the target tile width for the per-page thumbnail grid on
+    // the archive detail page. Separate from KEY_THUMB_SIZE (which
+    // sizes the gallery-list grid) so the user can run a dense list
+    // with chunky preview tiles or vice versa.
+    const val KEY_DETAIL_PAGE_THUMB_SIZE = "detail_page_thumb_size"
+    private const val DEFAULT_DETAIL_PAGE_THUMB_SIZE = 1
+
+    @JvmStatic
+    fun getDetailPageThumbSize(): Int =
+        Settings.getIntFromStr(KEY_DETAIL_PAGE_THUMB_SIZE, DEFAULT_DETAIL_PAGE_THUMB_SIZE)
+
+    @JvmStatic
+    @DimenRes
+    fun getDetailPageThumbSizeResId(): Int = when (getDetailPageThumbSize()) {
+        0 -> R.dimen.page_thumb_target_width_large
+        2 -> R.dimen.page_thumb_target_width_small
+        else -> R.dimen.page_thumb_target_width_middle
+    }
+
     // --- Show Gallery Pages ---
     private const val KEY_SHOW_GALLERY_PAGES = "show_gallery_pages"
 

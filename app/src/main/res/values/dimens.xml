@@ -132,6 +132,16 @@
          actually engages inside the outer NestedScrollView. -->
     <dimen name="gallery_detail_page_thumb_grid_max_height">500dp</dimen>
 
+    <!-- Target tile width for the detail-page page-thumbnail grid.
+         GridLayoutManager spanCount is derived as
+         floor(screen_width / target_width). User picks small/middle/
+         large via KEY_DETAIL_PAGE_THUMB_SIZE in AppearanceSettings;
+         small densifies the grid (≈4-5 cols on a phone), large
+         goes chunkier (≈2-3 cols). -->
+    <dimen name="page_thumb_target_width_small">96dp</dimen>
+    <dimen name="page_thumb_target_width_middle">120dp</dimen>
+    <dimen name="page_thumb_target_width_large">160dp</dimen>
+
     <dimen name="gallery_page_text">56sp</dimen>
     <dimen name="gallery_widget_margin_h">12dp</dimen>
     <dimen name="gallery_widget_margin_v">12dp</dimen>

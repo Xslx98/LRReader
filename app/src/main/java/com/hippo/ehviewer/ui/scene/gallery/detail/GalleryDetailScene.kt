@@ -45,6 +45,7 @@ import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.settings.AppearanceSettings
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.client.api.LRRAuthManager
@@ -473,8 +474,17 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mPageThumbEmpty = empty
 
         val displayMetrics = resources.displayMetrics
-        val widthDp = displayMetrics.widthPixels / displayMetrics.density
-        val spanCount = (widthDp / SPAN_TARGET_DP).toInt().coerceIn(SPAN_MIN, SPAN_MAX)
+        // Target tile width is resolved at bind time from the user's
+        // AppearanceSettings.KEY_DETAIL_PAGE_THUMB_SIZE preference,
+        // not hard-coded — so a user can pick a chunkier (large)
+        // or denser (small) grid without rebuilding the app. SPAN_MIN
+        // / SPAN_MAX still clamp the result so an extreme display
+        // never collapses the grid or runs more than 6 columns.
+        val targetWidthPx = resources.getDimensionPixelSize(
+            AppearanceSettings.getDetailPageThumbSizeResId()
+        ).coerceAtLeast(1)
+        val spanCount = (displayMetrics.widthPixels / targetWidthPx)
+            .coerceIn(SPAN_MIN, SPAN_MAX)
         mPageThumbSpanCount = spanCount
 
         val adapter = PageThumbnailAdapter(
@@ -1100,9 +1110,12 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         private const val KEY_REQUEST_ID = "request_id"
 
         // Thumbnail grid column count is derived from screen width:
-        // each cell targets ~120dp so a 360dp phone gets 3 columns
-        // and a 720dp tablet gets 6.
-        private const val SPAN_TARGET_DP: Float = 120f
+        // floor(screen_width / target_tile_width), clamped here so a
+        // foldable / tablet never blows past 6 columns and a narrow
+        // phone never collapses below 3. The target tile width is
+        // resolved per-bind from AppearanceSettings.getDetailPageThumb
+        // SizeResId() so the user's small/medium/large preference
+        // takes effect on next Scene entry.
         private const val SPAN_MIN: Int = 3
         private const val SPAN_MAX: Int = 6
 

@@ -397,6 +397,7 @@
     <string name="settings_eh_detail_size_long">Lange</string>
     <string name="settings_eh_detail_size_short">Kurz</string>
     <string name="settings_eh_thumb_size">Größe des Miniaturbilds</string>
+    <string name="settings_eh_detail_page_thumb_size">Größe der Seitenminiatur</string>
     <string name="settings_eh_thumb_size_large">Groß</string>
     <string name="settings_eh_thumb_size_middle">Mittel</string>
     <string name="settings_eh_thumb_size_small">Klein</string>
