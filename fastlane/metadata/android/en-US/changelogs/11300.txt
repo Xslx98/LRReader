@@ -1,0 +1,3 @@
+- New: Page thumbnail grid on the archive detail page. See every page at a glance, tap any tile to jump into the reader, or use "Go to…" to skip to a specific page.
+- Settings → Page thumbnail size now lets you pick Small / Middle / Large to fit your screen and content style.
+- Tiles share a uniform 2:3 shape with smart crop (landscape scans letterbox instead of losing heads and feet), fade in as they load, and use a calmer palette so artwork stays the focus.
