@@ -9,6 +9,11 @@
  */
 package com.hippo.ehviewer.ui.scene.gallery.detail
 
+import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.TransitionDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -37,7 +42,16 @@ import java.util.Locale
  * `notifyItemRange*`; per-cell status changes use
  * `notifyItemChanged(pos, PAYLOAD_STATE)` and a payloads-aware
  * `onBindViewHolder` so only the ImageView is touched on partial
- * rebinds — no flicker on the page-number badge.
+ * rebinds — no flicker on the page-number caption.
+ *
+ * **Fade-in on first arrival.** When a bitmap lands in the cache for
+ * a cell that previously showed nothing (or a failure icon), the
+ * image is crossfaded in over 300 ms via [TransitionDrawable] for a
+ * gallery-style "tiles pop in" feel. When the recycler rebinds a cell
+ * that already shows a bitmap (typical during scroll), the swap is
+ * instant — fading every tile during a fast scroll would look like
+ * the whole grid is flashing. Per-VH [VH.imageBindState] tracks what
+ * was last set so the decision survives recycler churn.
  */
 internal class PageThumbnailAdapter(
     private val onPageClick: (page: Int) -> Unit,
@@ -147,23 +161,71 @@ internal class PageThumbnailAdapter(
         val currentArcid = arcid
         if (currentArcid == null) {
             holder.image.setImageDrawable(null)
+            holder.imageBindState = ImageBindState.EMPTY
             return
         }
         val cachedBitmap = PageThumbnailCache.get(currentArcid, position)
         when {
-            cachedBitmap != null -> holder.image.setImageBitmap(cachedBitmap)
-            states[position] is PageThumbnailsViewModel.PageState.Failed ->
+            cachedBitmap != null -> {
+                if (holder.imageBindState == ImageBindState.BITMAP) {
+                    // Fast swap during recycler churn (scroll): a cell
+                    // that already shows another archive's bitmap is
+                    // being rebound to its new page. Fading every tile
+                    // here would look like the whole grid is flashing.
+                    holder.image.setImageBitmap(cachedBitmap)
+                } else {
+                    // Empty → bitmap (first arrival after a cache miss
+                    // resolved) or Failed → bitmap (recovery after the
+                    // user tapped a broken tile and the retry landed).
+                    // 300 ms crossfade softens the transition so the
+                    // grid feels like it is breathing rather than
+                    // hard-cutting.
+                    fadeInBitmap(holder.image, cachedBitmap)
+                }
+                holder.imageBindState = ImageBindState.BITMAP
+            }
+            states[position] is PageThumbnailsViewModel.PageState.Failed -> {
                 holder.image.setImageResource(R.drawable.image_failed_new)
-            else -> holder.image.setImageDrawable(null)
+                holder.imageBindState = ImageBindState.FAILED
+            }
+            else -> {
+                holder.image.setImageDrawable(null)
+                holder.imageBindState = ImageBindState.EMPTY
+            }
         }
     }
+
+    private fun fadeInBitmap(imageView: ImageView, bitmap: Bitmap) {
+        val from = ColorDrawable(Color.TRANSPARENT)
+        val to = BitmapDrawable(imageView.resources, bitmap)
+        // LayerDrawable.getIntrinsicWidth/Height returns the max of
+        // children — ColorDrawable reports -1, so the transition's
+        // intrinsic size equals the bitmap's. That keeps the smart
+        // CENTER_CROP/FIT_CENTER decision in AspectClampedImageView
+        // working on the transitioning drawable too.
+        val transition = TransitionDrawable(arrayOf(from, to))
+        transition.isCrossFadeEnabled = true
+        imageView.setImageDrawable(transition)
+        transition.startTransition(FADE_DURATION_MS)
+    }
+
+    internal enum class ImageBindState { EMPTY, FAILED, BITMAP }
 
     internal class VH(view: View) : RecyclerView.ViewHolder(view) {
         val image: ImageView = view.findViewById(R.id.page_thumb_image)
         val pageNumber: TextView = view.findViewById(R.id.page_thumb_number)
+
+        /**
+         * Last drawable kind set on [image]. Used by [bindImage] to
+         * decide whether to crossfade (transition from empty/failed
+         * to a bitmap) or do an instant swap (one bitmap → another,
+         * typical during scroll rebind).
+         */
+        var imageBindState: ImageBindState = ImageBindState.EMPTY
     }
 
     private companion object {
         const val PAYLOAD_STATE: String = "page_state"
+        const val FADE_DURATION_MS: Int = 300
     }
 }
