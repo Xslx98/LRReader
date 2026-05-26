@@ -16,7 +16,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.util.Date
 import java.util.concurrent.locks.ReentrantLock
 
 /**
@@ -113,7 +112,7 @@ object AppUpdater {
             ContextCompat.getMainExecutor(activity).execute {
                 UpdateDialog(activity).showUpdateDialog(release)
             }
-            UpdateSettings.putUpdateTime(Date().time)
+            UpdateSettings.putUpdateTime(System.currentTimeMillis())
         } finally {
             lock.unlock()
         }

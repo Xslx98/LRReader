@@ -101,7 +101,6 @@ import com.hippo.lib.yorozuya.ViewUtils
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.util.Date
 import com.hippo.ehviewer.BuildConfig
 import com.hippo.ehviewer.settings.UpdateSettings
 import com.hippo.ehviewer.updater.AppUpdater
@@ -689,7 +688,7 @@ class MainActivity : StageActivity(),
             // checkInBackground() is a pure fetch — write the 1-day throttle
             // timestamp ourselves once the network round-trip succeeds. Failed
             // checks (release == null) don't burn the cooldown by design.
-            UpdateSettings.putUpdateTime(Date().time)
+            UpdateSettings.putUpdateTime(System.currentTimeMillis())
             val remoteCode = release.versionCode
             if (remoteCode <= 0) return@launch        // unparseable tag — same guard as AppUpdater.isNewer()
             if (remoteCode <= BuildConfig.VERSION_CODE) return@launch
