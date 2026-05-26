@@ -136,9 +136,9 @@
     <!-- Update -->
     <string name="new_version">新版本</string>
     <string name="update">更新</string>
-    <string name="update_fail">检查更新失败</string>
+    <string name="update_fail">檢查更新失敗</string>
     <string name="update_plain">版本：%1$s\n大小：%2$s\n\n%3$s</string>
-    <string name="update_fail_info">点击 是 跳转至Github主页</string>
+    <string name="update_fail_info">點擊「是」前往 GitHub 首頁</string>
     <string name="update_to_date">LR Reader 已是最新版本</string>
     <string name="no_updates_available">已是最新版本</string>
     <string name="update_to">更新至</string>
@@ -227,7 +227,7 @@
     <string name="duplicate_quick_search">已存在相同的快速搜尋，名稱為“%s”。</string>
     <string name="duplicate_name">已經有重複的名稱了</string>
 
-    <string name="subscription_tip">點擊 “+” 添加訂閱</string>
+    <string name="subscription_tip">點擊「+」新增訂閱</string>
 
     <string name="go_to_hint">第 %1$d 頁，共 %2$d 頁</string>
 
@@ -795,12 +795,12 @@
     <string name="settings_advanced_url_replace_summary">url偽裝(需重啟，開啟後帳號功能失效)</string>
     <string name="share_favorites_dialog_title">分享分類</string>
     <string name="share_favorites_dialog_message">分享分類 %s ？</string>
-    <string name="add_favorites_dialog_message">添加分類 %s ？</string>
+    <string name="add_favorites_dialog_message">新增分類 %s ？</string>
     <string name="settings_advanced_built_ex_hosts_title">內建LANraragi hosts.txt</string>
     <string name="settings_advanced_built_ex_hosts_summary">應用提供的主機到IP的映射\n可被自訂 hosts.txt 覆蓋</string>
     <string name="network_remind">檢測到開啟了vpn，請注意您的網路安全</string>
 
-    <!-- 下载通知   -->
+    <!-- 下載通知 -->
     <string name="download_torrent_name">種子: %s</string>
     <string name="download_torrent_state">狀態: </string>
     <string name="download_torrent_path">路徑: %s</string>
@@ -816,7 +816,7 @@
     <string name="subscription_hidden">排除</string>
     <string name="delete_subscription_title">刪除標籤</string>
     <string name="can_not_use_this_tag">標籤不可用</string>
-    <string name="add_tag_dialog_title">添加標籤</string>
+    <string name="add_tag_dialog_title">新增標籤</string>
     <string name="tag_title">標籤欄</string>
     <string name="empty_subscription">訂閱內容為空</string>
     <string name="subscription_success">%s成功</string>
@@ -844,7 +844,7 @@
     <string name="wifi_send_done">遷移資料完成</string>
     <string name="wifi_send_start">開始遷移%s</string>
     <string name="wifi_send_stop">停止遷移%s</string>
-    <string name="wifi_sending">資料遷移中請稍候或退出重試</string>
+    <string name="wifi_sending">資料遷移中請稍候，或離開後重試</string>
     <string name="wifi_send_text">發送資料</string>
     <string name="wifi_server_illustrate">請確保要接收資料的手機以連接本機熱點，並再遷移完成前切勿斷開連結或返回上層頁面！</string>
     <string name="wifi_server_connect">連接</string>
@@ -878,7 +878,7 @@
     <string name="cookie_login_import_in_clipboard">從剪貼簿匯入</string>
     <string name="no_cookie_in_clipboard">剪貼簿中找不到有效資料</string>
     <string name="gallery_update_dialog_title">更新方式</string>
-    <string name="gallery_update_dialog_message">覆蓋舊圖庫：僅保留下載的版本，舊版本將被刪除。\n下載為新圖庫：下載的圖庫將作為新圖庫存在，新圖庫和舊圖庫都將被保存。</string>
+    <string name="gallery_update_dialog_message">覆蓋舊圖庫：僅保留下載的版本，舊版本將被刪除。\n下載為新圖庫：下載的圖庫將作為新圖庫存在，新圖庫和舊圖庫都將被儲存。</string>
     <string name="gallery_update_download_as_new">下載為新圖庫</string>
     <string name="gallery_update_override_old">覆蓋舊圖庫</string>
     <string name="loading_db_file">資料載入中…</string>
