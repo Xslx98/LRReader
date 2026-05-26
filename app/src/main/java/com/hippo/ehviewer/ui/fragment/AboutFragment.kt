@@ -24,7 +24,6 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ui.LicenseActivity
 import com.hippo.ehviewer.updater.AppUpdater
 import com.hippo.util.AppHelper
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class AboutFragment : BasePreferenceFragmentCompat(),
@@ -71,16 +70,16 @@ class AboutFragment : BasePreferenceFragmentCompat(),
             }
             KEY_CHECK_FOR_UPDATES -> {
                 setCheckingState(true)
-                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main) {
+                viewLifecycleOwner.lifecycleScope.launch {
                     AppUpdater.update(activity, manualChecking = true)
-                    // AppUpdater.update returns immediately after dispatching to IO;
-                    // result UI (toast/dialog) is delivered asynchronously by the
-                    // updater. We restore the preference state right away so the user
-                    // can re-tap if the network call hangs (lock prevents duplicate
-                    // in-flight requests anyway).
+                    // update() is now suspend — this resumes only after the network
+                    // call completes (or the lock is busy / Activity gone). The
+                    // preference is genuinely disabled with the "Checking…" summary
+                    // visible to the user during the request.
                     setCheckingState(false)
                 }
             }
+            else -> return false
         }
         return true
     }
