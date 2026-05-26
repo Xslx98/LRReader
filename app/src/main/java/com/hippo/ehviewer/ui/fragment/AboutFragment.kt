@@ -18,10 +18,12 @@ package com.hippo.ehviewer.ui.fragment
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ui.LicenseActivity
+import com.hippo.ehviewer.ui.dialog.UpdateDialog
 import com.hippo.ehviewer.updater.AppUpdater
 import com.hippo.util.AppHelper
 import kotlinx.coroutines.launch
@@ -71,11 +73,16 @@ class AboutFragment : BasePreferenceFragmentCompat(),
             KEY_CHECK_FOR_UPDATES -> {
                 setCheckingState(true)
                 viewLifecycleOwner.lifecycleScope.launch {
-                    AppUpdater.update(activity, manualChecking = true)
-                    // update() is now suspend — this resumes only after the network
-                    // call completes (or the lock is busy / Activity gone). The
-                    // preference is genuinely disabled with the "Checking…" summary
-                    // visible to the user during the request.
+                    val result = AppUpdater.update(manualChecking = true)
+                    when (result) {
+                        is AppUpdater.UpdateResult.NewerAvailable ->
+                            UpdateDialog(activity).showUpdateDialog(result.release)
+                        AppUpdater.UpdateResult.UpToDate ->
+                            Toast.makeText(activity, R.string.update_to_date, Toast.LENGTH_LONG).show()
+                        AppUpdater.UpdateResult.NetworkError ->
+                            UpdateDialog(activity).showCheckFailDialog()
+                        AppUpdater.UpdateResult.Skipped -> Unit  // lock busy — silent re-tap will retry
+                    }
                     setCheckingState(false)
                 }
             }

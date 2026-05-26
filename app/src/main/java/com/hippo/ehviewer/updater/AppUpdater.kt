@@ -1,15 +1,10 @@
 package com.hippo.ehviewer.updater
 
-import android.app.Activity
 import android.util.Log
-import android.widget.Toast
-import androidx.core.content.ContextCompat
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.BuildConfig
-import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.UpdateSettings
-import com.hippo.ehviewer.ui.dialog.UpdateDialog
 import com.hippo.util.ExceptionUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -19,14 +14,20 @@ import okhttp3.Request
 import java.util.concurrent.locks.ReentrantLock
 
 /**
- * GitHub Releases API adapter. Two entry surfaces:
+ * GitHub Releases API adapter. Pure data layer — returns a sealed [UpdateResult]
+ * describing what the caller should do; never touches Activity, Toast, Dialog, or
+ * R.string. UI rendering is the caller's responsibility.
  *
- * - [update] — manual or auto-flow with UI feedback (toasts + dialog). Manual mode
- *   surfaces failures via [UpdateDialog.showCheckFailDialog]; auto mode is silent.
- *   Manual mode bypasses the 1-day throttle; auto mode respects it.
+ * Two semantic modes via [update]'s `manualChecking` flag:
  *
- * - [checkInBackground] — pure suspend function returning [GhRelease] or null, no UI.
- *   Used by MainActivity to feed the cold-start Snackbar pathway.
+ * - **manual** (true): bypasses the 1-day throttle and skip-version filter — the
+ *   user explicitly asked for a check, surface whatever we get back.
+ * - **auto** (false): honors both throttle and skip-version, returning [Skipped]
+ *   in either case so the caller can silently no-op.
+ *
+ * On any successful network round-trip (newer or up-to-date), the 1-day throttle
+ * timestamp is advanced. Failed checks (network error) leave the cooldown intact
+ * so the next attempt isn't pushed out by a transient failure.
  *
  * Network: single GET to api.github.com/repos/Xslx98/LRReader/releases/latest
  * (unauthenticated; 60 req/hr per IP — well below the 1-day throttle ceiling).
@@ -43,35 +44,32 @@ object AppUpdater {
     private val lock = ReentrantLock()
 
     /**
-     * Background-suspend check. Used by [com.hippo.ehviewer.ui.MainActivity] auto path.
-     * Returns null on network failure or non-2xx response (silent — caller decides
-     * whether to surface).
+     * Sealed result. Callers `when`-branch this to drive UI:
+     *
+     * - [NewerAvailable] — show update dialog / Snackbar with [release].
+     * - [UpToDate] — show "no updates" toast (manual) or silent (auto).
+     * - [NetworkError] — show "check failed" dialog (manual) or silent (auto).
+     * - [Skipped] — already throttled / skip-versioned / lock-busy; no-op.
      */
-    suspend fun checkInBackground(): GhRelease? = withContext(Dispatchers.IO) {
-        try {
-            fetchLatestRelease(ServiceRegistry.networkModule.okHttpClient)
-        } catch (t: Throwable) {
-            ExceptionUtils.throwIfFatal(t)
-            if (BuildConfig.DEBUG) Log.w(TAG, "checkInBackground failed", t)
-            null
-        }
+    sealed class UpdateResult {
+        data class NewerAvailable(val release: GhRelease) : UpdateResult()
+        object UpToDate : UpdateResult()
+        object NetworkError : UpdateResult()
+        object Skipped : UpdateResult()
     }
 
     /**
-     * Manual or auto entry point with UI feedback. Bypasses 1-day throttle when
-     * [manualChecking] is true; respects it otherwise. Reentrant — `tryLock` so
-     * simultaneous taps no-op.
-     *
-     * Suspends until the network call completes (or the lock is busy), so callers
-     * can render busy state for the duration of the request.
+     * Query the GitHub Releases API and classify the result. See class KDoc for
+     * the [manualChecking] semantics. Suspends until network round-trip completes
+     * or the lock is busy.
      */
-    suspend fun update(activity: Activity, manualChecking: Boolean) = withContext(Dispatchers.IO) {
+    suspend fun update(manualChecking: Boolean): UpdateResult = withContext(Dispatchers.IO) {
         if (!manualChecking && !UpdateSettings.getIsUpdateTime()) {
-            return@withContext
+            return@withContext UpdateResult.Skipped
         }
 
         if (!lock.tryLock()) {
-            return@withContext
+            return@withContext UpdateResult.Skipped
         }
         try {
             val release = try {
@@ -79,40 +77,28 @@ object AppUpdater {
             } catch (t: Throwable) {
                 ExceptionUtils.throwIfFatal(t)
                 Analytics.recordException(t)
-                null
+                return@withContext UpdateResult.NetworkError
             }
 
             if (release == null) {
-                if (manualChecking) {
-                    ContextCompat.getMainExecutor(activity).execute {
-                        UpdateDialog(activity).showCheckFailDialog()
-                    }
-                }
-                return@withContext
+                return@withContext UpdateResult.NetworkError
             }
+
+            // Successful network round-trip — advance the 1-day throttle regardless
+            // of whether we found a newer release or not. Failed checks (NetworkError
+            // above) intentionally leave the cooldown intact.
+            UpdateSettings.putUpdateTime(System.currentTimeMillis())
 
             if (!isNewer(release)) {
-                if (manualChecking) {
-                    ContextCompat.getMainExecutor(activity).execute {
-                        Toast.makeText(
-                            activity,
-                            R.string.update_to_date,
-                            Toast.LENGTH_LONG,
-                        ).show()
-                    }
-                }
-                return@withContext
+                return@withContext UpdateResult.UpToDate
             }
 
-            // Manual mode ignores skip-version (user explicitly asked); auto mode honors it.
+            // Auto mode honors skip-version; manual mode bypasses (user explicitly asked).
             if (!manualChecking && release.versionCode == UpdateSettings.getSkipUpdateVersion()) {
-                return@withContext
+                return@withContext UpdateResult.Skipped
             }
 
-            ContextCompat.getMainExecutor(activity).execute {
-                UpdateDialog(activity).showUpdateDialog(release)
-            }
-            UpdateSettings.putUpdateTime(System.currentTimeMillis())
+            UpdateResult.NewerAvailable(release)
         } finally {
             lock.unlock()
         }
