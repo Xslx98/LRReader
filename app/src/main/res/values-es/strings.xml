@@ -141,6 +141,14 @@
     <string name="update_plain">Versión: %1$s\nTamaño: %2$s\n\n%3$s</string>
     <string name="update_fail_info">Haga clic en Sí para ir a la página de inicio de Github</string>
     <string name="update_to_date">Está usando la última versión de LR Reader.</string>
+    <string name="settings_about_check_for_updates">Buscar actualizaciones</string>
+    <string name="settings_about_check_for_updates_summary">Toca para consultar GitHub Releases ahora</string>
+    <string name="settings_about_check_for_updates_in_progress">Comprobando…</string>
+    <string name="settings_about_auto_check_for_updates">Comprobar actualizaciones automáticamente</string>
+    <string name="settings_about_auto_check_for_updates_summary">Buscar nuevas versiones en GitHub una vez al día</string>
+    <string name="update_snackbar_text">Nueva versión %1$s disponible</string>
+    <string name="update_snackbar_action">Ver</string>
+    <string name="update_check_in_progress_toast">Comprobando actualizaciones…</string>
     <string name="update_ignore">Ignorar</string>
 
     <!-- Gallery List -->
@@ -597,7 +605,6 @@
     <string name="settings_privacy_enable_analytics">Habilitar analytics</string>
     <string name="settings_privacy_about_analytics">Acerca de analytics</string>
     <string name="settings_about_version">Versión de compilación</string>
-    <string name="settings_about_check_for_updates">Verificar actualizaciones</string>
     <string name="settings_close_automatic_updates">Desactivar actualizaciones automáticas</string>
     <string name="settings_about_beta_update_channel">Canal de versiones de prueba</string>
     <string name="settings_about_beta_update_channel_summary">Las versiones de prueba podrían tener errores</string>
