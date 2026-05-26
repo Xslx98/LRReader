@@ -2,7 +2,6 @@ package com.hippo.ehviewer.settings
 
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.Settings
-import java.util.Date
 
 /**
  * Update-related settings: auto-check, beta channel, skip version, last-check time.
@@ -59,7 +58,7 @@ object UpdateSettings {
     @JvmStatic
     fun getIsUpdateTime(): Boolean {
         val lastUpdateTime = Settings.getLong(KEY_LAST_UPDATE_TIME, DEFAULT_LAST_UPDATE_TIME)
-        val now = Date().time
+        val now = System.currentTimeMillis()
         val msNum = now - lastUpdateTime
         val dayNum = msNum / (1000 * 60 * 60 * 24)
         return dayNum >= 1
