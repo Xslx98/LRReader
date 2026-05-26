@@ -128,7 +128,7 @@
     <string name="new_version">新しいバージョン</string>
     <string name="update">更新</string>
     <string name="update_fail">更新の確認に失敗しました</string>
-    <string name="update_to">更新日時</string>
+    <string name="update_to">更新</string>
     <string name="no_updates_available">最新のバージョンです</string>
     <string name="update_plain">バージョン: %1$s\nサイズ: %2$s\n\n%3$s</string>
     <string name="update_fail_info">「はい」をタップで GitHub のページに移動します</string>
