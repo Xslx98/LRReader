@@ -40,16 +40,16 @@ class UpdateSettingsTest {
 
     @Test
     fun setterAndGetterRoundTrip() {
-        UpdateSettings.setAutoCheckUpdates(false)
+        UpdateSettings.putAutoCheckUpdates(false)
         assertFalse(UpdateSettings.getAutoCheckUpdates())
 
-        UpdateSettings.setAutoCheckUpdates(true)
+        UpdateSettings.putAutoCheckUpdates(true)
         assertTrue(UpdateSettings.getAutoCheckUpdates())
     }
 
     @Test
     fun setterPersistsAcrossGets() {
-        UpdateSettings.setAutoCheckUpdates(false)
+        UpdateSettings.putAutoCheckUpdates(false)
         // Read twice to ensure value comes from SharedPreferences, not a memoized cache
         assertFalse(UpdateSettings.getAutoCheckUpdates())
         assertFalse(UpdateSettings.getAutoCheckUpdates())

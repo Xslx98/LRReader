@@ -47,7 +47,7 @@ object UpdateSettings {
         Settings.getBoolean(KEY_AUTO_CHECK_UPDATES, DEFAULT_AUTO_CHECK_UPDATES)
 
     @JvmStatic
-    fun setAutoCheckUpdates(value: Boolean) =
+    fun putAutoCheckUpdates(value: Boolean) =
         Settings.putBoolean(KEY_AUTO_CHECK_UPDATES, value)
 
     // --- Last Update Time (1-day throttle for auto-check) ---
