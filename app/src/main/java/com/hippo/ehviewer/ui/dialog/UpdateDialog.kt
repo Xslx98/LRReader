@@ -14,7 +14,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.updater.UpdateInfo
+import com.hippo.ehviewer.updater.GhRelease
 import com.hippo.okhttp.ChromeRequestBuilder
 import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.util.ExceptionUtils
@@ -29,9 +29,9 @@ import kotlin.properties.Delegates
 
 class UpdateDialog(private val activity: Activity) {
     companion object {
-        const val GITHUB_RELEASE_URL = "https://github.com/xiaojieonly/Ehviewer_CN_SXJ/releases"
+        const val GITHUB_RELEASE_URL = "https://github.com/Xslx98/LRReader/releases"
         const val GITHUB_README_URL =
-            "https://github.com/xiaojieonly/Ehviewer_CN_SXJ/blob/BiLi_PC_Gamer/README.md"
+            "https://github.com/Xslx98/LRReader/blob/main/README.md"
         const val INSTALL_PERMISSION_CODE = 1002
 
         // EH-LEGACY: multi-language lock not implemented, Chinese-only is sufficient
@@ -71,14 +71,19 @@ class UpdateDialog(private val activity: Activity) {
         }
     }
 
-    fun showUpdateDialog(updateInfo: UpdateInfo) {
+    fun showUpdateDialog(release: GhRelease) {
         try {
-            val version = updateInfo.version
-            val mustUpdate = updateInfo.mustUpdate
-            val content = updateInfo.updateContent
-            val title = content.title
-            val contentSts = content.content.toTypedArray()
-            val downloadUrl = content.fileDownloadUrl
+            val version = release.tagName
+            val title = if (release.name.isNotBlank()) release.name else release.tagName
+            // body lines for setItems (split GitHub markdown body into lines, dropping blanks)
+            val contentLines = release.body
+                .lineSequence()
+                .map { it.trimEnd() }
+                .filter { it.isNotBlank() }
+                .toList()
+                .toTypedArray()
+            val downloadUrl = release.apkAsset?.browserDownloadUrl.orEmpty()
+
             ContextCompat.getMainExecutor(activity).execute {
                 if (!isActivityAlive()) {
                     return@execute
@@ -86,17 +91,16 @@ class UpdateDialog(private val activity: Activity) {
                 val alertDialog = AlertDialog.Builder(activity).apply {
                     setIcon(R.mipmap.ic_launcher)
                     setTitle(title)
-                    setItems(contentSts) { _, _ ->
+                    if (contentLines.isNotEmpty()) {
+                        setItems(contentLines) { _, _ -> /* informational only */ }
+                    } else if (release.body.isNotBlank()) {
+                        setMessage(release.body)
                     }
                     setPositiveButton(R.string.update) { dialog, id ->
                         downloadApk(dialog, id, downloadUrl, version)
                     }
-                    if (!mustUpdate) {
-                        setNegativeButton(R.string.cancel) { dialog, _ ->
-                            dialog.dismiss()
-                        }
-                    } else {
-                        setCancelable(false)
+                    setNegativeButton(R.string.cancel) { dialog, _ ->
+                        dialog.dismiss()
                     }
                 }.create()
                 if (isActivityAlive()) {
