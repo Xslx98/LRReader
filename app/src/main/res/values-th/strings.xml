@@ -149,6 +149,14 @@
     <string name="update_plain">เวอร์ชั่น: %1$s\nขนาดไฟล์: %2$s\n\n%3$s</string>
     <string name="update_fail_info">คลิกใช่เพื่อไปยังหน้าแรกของ Github</string>
     <string name="update_to_date">คุณกำลังใช้เวอร์ชั่นล่าสุดของ LR Reader.</string>
+    <string name="settings_about_check_for_updates">ตรวจสอบการอัพเดต</string>
+    <string name="settings_about_check_for_updates_summary">แตะเพื่อตรวจสอบ GitHub Releases ทันที</string>
+    <string name="settings_about_check_for_updates_in_progress">กำลังตรวจสอบ…</string>
+    <string name="settings_about_auto_check_for_updates">ตรวจสอบการอัพเดตอัตโนมัติ</string>
+    <string name="settings_about_auto_check_for_updates_summary">ตรวจสอบเวอร์ชั่นใหม่บน GitHub วันละครั้ง</string>
+    <string name="update_snackbar_text">มีเวอร์ชั่นใหม่ %1$s</string>
+    <string name="update_snackbar_action">ดู</string>
+    <string name="update_check_in_progress_toast">กำลังตรวจสอบการอัพเดต…</string>
     <string name="update_ignore">ข้ามไป</string>
     <string name="no_updates_available">มันเป็นเวอร์ชั่นล่าสุด</string>
 
@@ -629,7 +637,6 @@
     <string name="settings_privacy_enable_analytics">เปิดการวิเคราะห์ข้อมูล</string>
     <string name="settings_privacy_about_analytics">เกี่ยวกับการวิเคราะห์ข้อมูล</string>
     <string name="settings_about_version">เวอร์ชั่นแอป</string>
-    <string name="settings_about_check_for_updates">ตรวจสอบการอัพเดต</string>
     <string name="settings_close_automatic_updates">ปิดการอัพเดตอัตโนมัติ</string>
     <string name="settings_about_beta_update_channel">ใช้เวอร์ชั่นทดสอบ (Beta)</string>
     <string name="settings_about_beta_update_channel_summary">ในเวอร์ชั่นทดสอบอาจมีบัคที่ยังไม่ได้แก้ไข</string>

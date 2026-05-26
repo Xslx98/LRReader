@@ -137,6 +137,14 @@
     <string name="update_plain">Version : %1$s\nTaille : %2$s\n\n%3$s</string>
     <string name="update_fail_info">Cliquez sur Oui pour accéder à la page d\'accueil de Github</string>
     <string name="update_to_date">LR Reader est à jour.</string>
+    <string name="settings_about_check_for_updates">Vérifier les mises à jour</string>
+    <string name="settings_about_check_for_updates_summary">Toucher pour interroger GitHub Releases maintenant</string>
+    <string name="settings_about_check_for_updates_in_progress">Vérification…</string>
+    <string name="settings_about_auto_check_for_updates">Vérification automatique des mises à jour</string>
+    <string name="settings_about_auto_check_for_updates_summary">Vérifier GitHub une fois par jour pour de nouvelles versions</string>
+    <string name="update_snackbar_text">Nouvelle version %1$s disponible</string>
+    <string name="update_snackbar_action">Voir</string>
+    <string name="update_check_in_progress_toast">Vérification des mises à jour…</string>
     <string name="update_ignore">Ignorer</string>
     <string name="no_updates_available">Est déjà la dernière version</string>
 
@@ -579,7 +587,6 @@
     <string name="settings_privacy_enable_analytics">Activer l\'analyse</string>
     <string name="settings_privacy_about_analytics">A propos de l\'analyse</string>
     <string name="settings_about_version">Numéro de version</string>
-    <string name="settings_about_check_for_updates">Chercher mise à jour</string>
     <string name="settings_close_automatic_updates">Désactiver les mises à jour automatiques</string>
     <string name="settings_about_beta_update_channel">Chaîne de mises à jour beta</string>
     <string name="settings_about_beta_update_channel_summary">Les versions beta risquent de ne pas fonctionner correctement sur votre appareil</string>

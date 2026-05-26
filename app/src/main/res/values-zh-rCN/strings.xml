@@ -138,6 +138,14 @@
     <string name="update_to">更新至</string>
     <string name="update_plain">版本：%1$s\n大小：%2$s\n\n%3$s</string>
     <string name="update_to_date">LR Reader 已是最新版本</string>
+    <string name="settings_about_check_for_updates">检查更新</string>
+    <string name="settings_about_check_for_updates_summary">点击立即查询 GitHub Releases</string>
+    <string name="settings_about_check_for_updates_in_progress">正在检查…</string>
+    <string name="settings_about_auto_check_for_updates">自动检查更新</string>
+    <string name="settings_about_auto_check_for_updates_summary">每日自动检查 GitHub 是否有新版本</string>
+    <string name="update_snackbar_text">发现新版本 %1$s</string>
+    <string name="update_snackbar_action">查看</string>
+    <string name="update_check_in_progress_toast">正在检查更新…</string>
     <string name="update_ignore">忽略</string>
     <string name="no_updates_available">已是最新版本</string>
 
@@ -632,7 +640,6 @@
     <string name="settings_privacy_enable_analytics">启用数据统计</string>
     <string name="settings_privacy_about_analytics">关于数据统计</string>
     <string name="settings_about_version">版本号</string>
-    <string name="settings_about_check_for_updates">检查更新</string>
     <string name="settings_close_automatic_updates">关闭自动更新</string>
     <string name="settings_about_beta_update_channel">更新测试版</string>
     <string name="settings_about_beta_update_channel_summary">测试版可能在你的设备上出现不可预知的错误</string>
