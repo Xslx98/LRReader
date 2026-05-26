@@ -101,6 +101,11 @@ import com.hippo.lib.yorozuya.ViewUtils
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import com.hippo.ehviewer.BuildConfig
+import com.hippo.ehviewer.settings.UpdateSettings
+import com.hippo.ehviewer.updater.AppUpdater
+import com.hippo.ehviewer.updater.GhRelease
+import com.hippo.ehviewer.ui.dialog.UpdateDialog
 
 class MainActivity : StageActivity(),
     NavigationView.OnNavigationItemSelectedListener, ImageChangeCallBack, DrawerLayout.DrawerListener {
@@ -454,6 +459,11 @@ class MainActivity : StageActivity(),
         AppModule.bootProfileLoadError.getAndSet(null)?.let { err ->
             showBootFailureDialog(err)
         }
+
+        // Cold-start auto update check. No-op if user disabled the toggle, the
+        // 1-day throttle hasn't expired, or the latest release is the skipped
+        // version. Surfaces newer release via Snackbar with "View" action.
+        maybeAutoCheckUpdates()
     }
 
     /**
@@ -657,6 +667,43 @@ class MainActivity : StageActivity(),
 
     private fun onInit() {
         // EH cookie auth check removed -- login state is managed via LRRAuthManager
+    }
+
+    /**
+     * Cold-start auto check. Honors:
+     * - User toggle (UpdateSettings.getAutoCheckUpdates, default true)
+     * - 1-day throttle (UpdateSettings.getIsUpdateTime)
+     * - Skip-version (UpdateSettings.getSkipUpdateVersion — set when user taps
+     *   "Ignore this version" on the UpdateDialog)
+     *
+     * Failure modes (network error, GitHub API non-2xx, unparseable tag) are
+     * silent — user discovers via the next day's check or via manual entry.
+     */
+    private fun maybeAutoCheckUpdates() {
+        if (!UpdateSettings.getAutoCheckUpdates()) return
+        if (!UpdateSettings.getIsUpdateTime()) return
+
+        lifecycleScope.launch {
+            val release = AppUpdater.checkInBackground() ?: return@launch
+            val remoteCode = release.versionCode
+            if (remoteCode <= BuildConfig.VERSION_CODE) return@launch
+            if (remoteCode == UpdateSettings.getSkipUpdateVersion()) return@launch
+            showUpdateSnackbar(release)
+        }
+    }
+
+    private fun showUpdateSnackbar(release: GhRelease) {
+        val host = mDrawerLayout ?: return
+        val versionLabel = release.tagName
+        Snackbar.make(
+            host,
+            getString(R.string.update_snackbar_text, versionLabel),
+            Snackbar.LENGTH_LONG,
+        )
+            .setAction(R.string.update_snackbar_action) {
+                UpdateDialog(this).showUpdateDialog(release)
+            }
+            .show()
     }
 
     private fun onRestore(savedInstanceState: Bundle) {
