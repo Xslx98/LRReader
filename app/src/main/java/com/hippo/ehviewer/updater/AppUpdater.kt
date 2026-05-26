@@ -53,7 +53,7 @@ object AppUpdater {
             fetchLatestRelease(ServiceRegistry.networkModule.okHttpClient)
         } catch (t: Throwable) {
             ExceptionUtils.throwIfFatal(t)
-            Log.w(TAG, "checkInBackground failed", t)
+            if (BuildConfig.DEBUG) Log.w(TAG, "checkInBackground failed", t)
             null
         }
     }
