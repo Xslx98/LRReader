@@ -54,13 +54,6 @@ class UpdateDialog(private val activity: Activity) {
         try {
             val version = release.tagName
             val title = if (release.name.isNotBlank()) release.name else release.tagName
-            // body lines for setItems (split GitHub markdown body into lines, dropping blanks)
-            val contentLines = release.body
-                .lineSequence()
-                .map { it.trimEnd() }
-                .filter { it.isNotBlank() }
-                .toList()
-                .toTypedArray()
             val downloadUrl = release.apkAsset?.browserDownloadUrl.orEmpty()
 
             ContextCompat.getMainExecutor(activity).execute {
@@ -70,9 +63,7 @@ class UpdateDialog(private val activity: Activity) {
                 val alertDialog = AlertDialog.Builder(activity).apply {
                     setIcon(R.mipmap.ic_launcher)
                     setTitle(title)
-                    if (contentLines.isNotEmpty()) {
-                        setItems(contentLines) { _, _ -> /* informational only */ }
-                    } else if (release.body.isNotBlank()) {
+                    if (release.body.isNotBlank()) {
                         setMessage(release.body)
                     }
                     setPositiveButton(R.string.update) { dialog, id ->
