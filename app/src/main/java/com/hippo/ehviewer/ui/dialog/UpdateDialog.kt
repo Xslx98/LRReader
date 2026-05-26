@@ -2,29 +2,14 @@ package com.hippo.ehviewer.ui.dialog
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.DownloadManager
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
-import android.database.Cursor
-import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.updater.GhRelease
-import com.hippo.okhttp.ChromeRequestBuilder
-import com.hippo.lib.yorozuya.IOUtils
-import com.hippo.util.ExceptionUtils
-import okhttp3.OkHttpClient
-import java.io.File
-import java.io.FileOutputStream
-import java.net.URISyntaxException
-import java.util.concurrent.locks.Lock
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.properties.Delegates
 
 
 class UpdateDialog(private val activity: Activity) {
@@ -33,13 +18,7 @@ class UpdateDialog(private val activity: Activity) {
         const val GITHUB_README_URL =
             "https://github.com/Xslx98/LRReader/blob/main/README.md"
         const val INSTALL_PERMISSION_CODE = 1002
-
-        // EH-LEGACY: multi-language lock not implemented, Chinese-only is sufficient
-        private val lock: Lock = ReentrantLock()
     }
-
-    private var myDownloadId by Delegates.notNull<Long>()
-    private var downloadReceiver: DownloadReceiver? = null
 
     private fun isActivityAlive(): Boolean {
         return !(activity.isFinishing || activity.isDestroyed)
@@ -133,10 +112,6 @@ class UpdateDialog(private val activity: Activity) {
         dialog.dismiss()
     }
 
-    private fun onDownloadFailed(c: Cursor) {
-        showCheckFailDialog()
-    }
-
 //    private fun installApp(apkFile: File) {
 //        if (ContextCompat.checkSelfPermission(
 //                activity,
@@ -191,79 +166,4 @@ class UpdateDialog(private val activity: Activity) {
 //        }
 //    }
 
-    private fun save(client: OkHttpClient, url: String, file: File): Boolean {
-        val request = ChromeRequestBuilder(url).get().build()
-        val call = client.newCall(request)
-        try {
-            call.execute().use { response ->
-                if (!response.isSuccessful) {
-                    return false
-                }
-                val body = response.body ?: return false
-
-                body.byteStream().use { `is` ->
-                    FileOutputStream(file).use { os ->
-                        IOUtils.copy(`is`, os)
-                    }
-                }
-                return true
-            }
-        } catch (t: Throwable) {
-            ExceptionUtils.throwIfFatal(t)
-            Analytics.recordException(t)
-            return false
-        }
-    }
-
-    private class DownloadReceiver(
-        private val updateDialog: UpdateDialog,
-        private val myDownloadId: Long
-    ) : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            val action = intent.action
-            if (DownloadManager.ACTION_DOWNLOAD_COMPLETE == action) {
-                val downloadId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, 0)
-                if (myDownloadId != downloadId) {
-                    return
-                }
-                val downloadManager =
-                    context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-                //检查下载状态
-                checkDownloadStatus(downloadId, downloadManager)
-            }
-        }
-
-        fun checkDownloadStatus(downloadId: Long, downloadManager: DownloadManager) {
-            val query = DownloadManager.Query()
-            query.setFilterById(downloadId) //筛选下载任务，传入任务ID，可变参数
-            try {
-                downloadManager.query(query).use { c ->
-                    if (c.moveToFirst()) {
-                        val status =
-                            c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
-                        when (status) {
-                            DownloadManager.STATUS_PAUSED -> Log.i(TAG, ">>>下载暂停")
-                            DownloadManager.STATUS_PENDING -> Log.i(TAG, ">>>下载延迟")
-                            DownloadManager.STATUS_SUCCESSFUL -> {
-                                Log.i(TAG, ">>>下载完成")
-//                                updateDialog.installApp(c)
-                            }
-
-                            DownloadManager.STATUS_FAILED -> updateDialog.onDownloadFailed(c)
-                            DownloadManager.STATUS_RUNNING -> Log.i(TAG, ">>>正在下载") // 此处无法监听到
-                            else -> Log.i(TAG, ">>>正在下载")
-                        }
-                    }
-                }
-            } catch (e: IllegalArgumentException) {
-                Log.e(TAG, e.message, e)
-            } catch (e: URISyntaxException) {
-                Log.e(TAG, e.message, e)
-            }
-        }
-
-        companion object {
-            private const val TAG = "AppUpdateDownloadReceiver"
-        }
-    }
 }
