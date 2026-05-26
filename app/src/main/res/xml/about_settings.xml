@@ -25,6 +25,18 @@
         android:title="@string/settings_about_license"
         app:allowDividerAbove="true" />
 
+    <Preference
+        android:key="check_for_updates"
+        android:title="@string/settings_about_check_for_updates"
+        android:summary="@string/settings_about_check_for_updates_summary"
+        app:allowDividerAbove="true" />
+
+    <SwitchPreference
+        android:key="auto_check_for_updates"
+        android:title="@string/settings_about_auto_check_for_updates"
+        android:summary="@string/settings_about_auto_check_for_updates_summary"
+        android:defaultValue="true" />
+
     <com.hippo.ehviewer.preference.VersionPreference
         android:key="version"
         app:allowDividerAbove="true" />

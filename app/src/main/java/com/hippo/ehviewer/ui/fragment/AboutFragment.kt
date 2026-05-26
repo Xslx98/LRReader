@@ -18,13 +18,19 @@ package com.hippo.ehviewer.ui.fragment
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ui.LicenseActivity
+import com.hippo.ehviewer.updater.AppUpdater
 import com.hippo.util.AppHelper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class AboutFragment : BasePreferenceFragmentCompat(),
     Preference.OnPreferenceClickListener {
+
+    private var checkUpdatePreference: Preference? = null
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         addPreferencesFromResource(R.xml.about_settings)
@@ -39,25 +45,60 @@ class AboutFragment : BasePreferenceFragmentCompat(),
         if (license != null) {
             license.onPreferenceClickListener = this
         }
+
+        checkUpdatePreference = findPreference<Preference>(KEY_CHECK_FOR_UPDATES)?.apply {
+            onPreferenceClickListener = this@AboutFragment
+        }
+        // SwitchPreference at KEY_AUTO_CHECK_UPDATES is auto-wired by androidx Preference
+        // to SharedPreferences (default true via android:defaultValue="true" in XML).
     }
 
     override fun onPreferenceClick(preference: Preference): Boolean {
         val key = preference.key
         val activity = activity ?: return true
 
-        if (KEY_AUTHOR == key) {
-            AppHelper.sendEmail(
-                activity, com.hippo.ehviewer.module.AppModule.getDeveloperEmail(),
-                "About LR Reader", null
-            )
-        } else if (KEY_LICENSE == key) {
-            activity.startActivity(Intent(activity, LicenseActivity::class.java))
+        when (key) {
+            KEY_AUTHOR -> {
+                AppHelper.sendEmail(
+                    activity,
+                    com.hippo.ehviewer.module.AppModule.getDeveloperEmail(),
+                    "About LR Reader",
+                    null,
+                )
+            }
+            KEY_LICENSE -> {
+                activity.startActivity(Intent(activity, LicenseActivity::class.java))
+            }
+            KEY_CHECK_FOR_UPDATES -> {
+                setCheckingState(true)
+                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main) {
+                    AppUpdater.update(activity, manualChecking = true)
+                    // AppUpdater.update returns immediately after dispatching to IO;
+                    // result UI (toast/dialog) is delivered asynchronously by the
+                    // updater. We restore the preference state right away so the user
+                    // can re-tap if the network call hangs (lock prevents duplicate
+                    // in-flight requests anyway).
+                    setCheckingState(false)
+                }
+            }
         }
         return true
+    }
+
+    private fun setCheckingState(checking: Boolean) {
+        checkUpdatePreference?.apply {
+            isEnabled = !checking
+            summary = if (checking) {
+                getString(R.string.settings_about_check_for_updates_in_progress)
+            } else {
+                getString(R.string.settings_about_check_for_updates_summary)
+            }
+        }
     }
 
     companion object {
         private const val KEY_AUTHOR = "author"
         private const val KEY_LICENSE = "license"
+        private const val KEY_CHECK_FOR_UPDATES = "check_for_updates"
     }
 }
