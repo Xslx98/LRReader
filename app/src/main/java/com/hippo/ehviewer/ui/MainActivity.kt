@@ -101,7 +101,6 @@ import com.hippo.lib.yorozuya.ViewUtils
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import com.hippo.ehviewer.BuildConfig
 import com.hippo.ehviewer.settings.UpdateSettings
 import com.hippo.ehviewer.updater.AppUpdater
 import com.hippo.ehviewer.updater.GhRelease
@@ -670,30 +669,23 @@ class MainActivity : StageActivity(),
     }
 
     /**
-     * Cold-start auto check. Honors:
-     * - User toggle (UpdateSettings.getAutoCheckUpdates, default true)
-     * - 1-day throttle (UpdateSettings.getIsUpdateTime)
-     * - Skip-version (UpdateSettings.getSkipUpdateVersion — set when user taps
-     *   "Ignore this version" on the UpdateDialog)
+     * Cold-start auto check. Honors the user toggle; all other guards
+     * (1-day throttle, skip-version, versionCode comparison) are internal
+     * to AppUpdater and surfaced via the sealed UpdateResult.
      *
      * Failure modes (network error, GitHub API non-2xx, unparseable tag) are
      * silent — user discovers via the next day's check or via manual entry.
      */
     private fun maybeAutoCheckUpdates() {
         if (!UpdateSettings.getAutoCheckUpdates()) return
-        if (!UpdateSettings.getIsUpdateTime()) return
 
         lifecycleScope.launch {
-            val release = AppUpdater.checkInBackground() ?: return@launch
-            // checkInBackground() is a pure fetch — write the 1-day throttle
-            // timestamp ourselves once the network round-trip succeeds. Failed
-            // checks (release == null) don't burn the cooldown by design.
-            UpdateSettings.putUpdateTime(System.currentTimeMillis())
-            val remoteCode = release.versionCode
-            if (remoteCode <= 0) return@launch        // unparseable tag — same guard as AppUpdater.isNewer()
-            if (remoteCode <= BuildConfig.VERSION_CODE) return@launch
-            if (remoteCode == UpdateSettings.getSkipUpdateVersion()) return@launch
-            showUpdateSnackbar(release)
+            val result = AppUpdater.update(manualChecking = false)
+            if (result is AppUpdater.UpdateResult.NewerAvailable) {
+                showUpdateSnackbar(result.release)
+            }
+            // UpToDate / NetworkError / Skipped — auto path is silent for all of these.
+            // AppUpdater handles throttle, skip-version, and putUpdateTime internally.
         }
     }
 
