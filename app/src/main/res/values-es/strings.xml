@@ -605,7 +605,6 @@
     <string name="settings_privacy_enable_analytics">Habilitar analytics</string>
     <string name="settings_privacy_about_analytics">Acerca de analytics</string>
     <string name="settings_about_version">Versión de compilación</string>
-    <string name="settings_close_automatic_updates">Desactivar actualizaciones automáticas</string>
     <string name="settings_about_beta_update_channel">Canal de versiones de prueba</string>
     <string name="settings_about_beta_update_channel_summary">Las versiones de prueba podrían tener errores</string>
 

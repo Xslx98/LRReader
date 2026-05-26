@@ -587,7 +587,6 @@
     <string name="settings_privacy_enable_analytics">Activer l\'analyse</string>
     <string name="settings_privacy_about_analytics">A propos de l\'analyse</string>
     <string name="settings_about_version">Numéro de version</string>
-    <string name="settings_close_automatic_updates">Désactiver les mises à jour automatiques</string>
     <string name="settings_about_beta_update_channel">Chaîne de mises à jour beta</string>
     <string name="settings_about_beta_update_channel_summary">Les versions beta risquent de ne pas fonctionner correctement sur votre appareil</string>
 

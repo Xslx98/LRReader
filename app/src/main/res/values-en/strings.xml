@@ -984,7 +984,6 @@
     <string name="settings_advanced_wifi_client_summary">Receive migration data from Wi Fi hotspots</string>
     <string name="settings_advanced_wifi_sander_summary">Data Migration via Wi-Fi Hotspot</string>
     <string name="settings_advanced_wifi_sender">WiFi data migration</string>
-    <string name="settings_close_automatic_updates">Turn off automatic updates</string>
     <string name="settings_download_clean_invalid_done">Cleaned %d download items</string>
     <string name="settings_download_clean_invalid_download">Clean invaild download</string>
     <string name="settings_download_clean_invalid_download_confirm">Clear all invalid download items?</string>
