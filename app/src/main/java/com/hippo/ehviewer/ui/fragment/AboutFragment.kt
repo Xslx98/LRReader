@@ -76,11 +76,11 @@ class AboutFragment : BasePreferenceFragmentCompat(),
                     val result = AppUpdater.update(manualChecking = true)
                     when (result) {
                         is AppUpdater.UpdateResult.NewerAvailable ->
-                            UpdateDialog(activity).showUpdateDialog(result.release)
+                            UpdateDialog.showUpdateDialog(activity, result.release)
                         AppUpdater.UpdateResult.UpToDate ->
                             Toast.makeText(activity, R.string.update_to_date, Toast.LENGTH_LONG).show()
                         AppUpdater.UpdateResult.NetworkError ->
-                            UpdateDialog(activity).showCheckFailDialog()
+                            UpdateDialog.showCheckFailDialog(activity)
                         AppUpdater.UpdateResult.Skipped -> Unit  // lock busy — silent re-tap will retry
                     }
                     setCheckingState(false)

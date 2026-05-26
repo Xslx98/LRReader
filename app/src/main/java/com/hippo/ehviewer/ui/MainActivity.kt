@@ -698,7 +698,7 @@ class MainActivity : StageActivity(),
             Snackbar.LENGTH_LONG,
         )
             .setAction(R.string.update_snackbar_action) {
-                UpdateDialog(this).showUpdateDialog(release)
+                UpdateDialog.showUpdateDialog(this, release)
             }
             .show()
     }
