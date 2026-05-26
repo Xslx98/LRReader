@@ -12,22 +12,20 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.updater.GhRelease
 
 
-class UpdateDialog(private val activity: Activity) {
-    companion object {
-        const val GITHUB_RELEASE_URL = "https://github.com/Xslx98/LRReader/releases"
-        const val GITHUB_README_URL =
-            "https://github.com/Xslx98/LRReader/blob/main/README.md"
-        const val INSTALL_PERMISSION_CODE = 1002
-    }
+object UpdateDialog {
+    const val GITHUB_RELEASE_URL = "https://github.com/Xslx98/LRReader/releases"
+    const val GITHUB_README_URL =
+        "https://github.com/Xslx98/LRReader/blob/main/README.md"
+    const val INSTALL_PERMISSION_CODE = 1002
 
-    private fun isActivityAlive(): Boolean {
+    private fun isActivityAlive(activity: Activity): Boolean {
         return !(activity.isFinishing || activity.isDestroyed)
     }
 
-    fun showCheckFailDialog() {
+    fun showCheckFailDialog(activity: Activity) {
         try {
             ContextCompat.getMainExecutor(activity).execute {
-                if (!isActivityAlive()) {
+                if (!isActivityAlive(activity)) {
                     return@execute
                 }
                 val alertDialog = AlertDialog.Builder(activity)
@@ -35,13 +33,13 @@ class UpdateDialog(private val activity: Activity) {
                     .setTitle(R.string.update_fail)
                     .setMessage(R.string.update_fail_info)
                     .setPositiveButton(R.string.yes) { dialog, id ->
-                        gotoGithub(dialog, id)
+                        gotoGithub(activity, dialog, id)
                     }
                     .setNegativeButton(R.string.cancel) { dialog, _ ->
                         dialog.dismiss()
                     }
                     .create()
-                if (isActivityAlive()) {
+                if (isActivityAlive(activity)) {
                     alertDialog.show()
                 }
             }
@@ -50,14 +48,14 @@ class UpdateDialog(private val activity: Activity) {
         }
     }
 
-    fun showUpdateDialog(release: GhRelease) {
+    fun showUpdateDialog(activity: Activity, release: GhRelease) {
         try {
             val version = release.tagName
             val title = if (release.name.isNotBlank()) release.name else release.tagName
             val downloadUrl = release.apkAsset?.browserDownloadUrl.orEmpty()
 
             ContextCompat.getMainExecutor(activity).execute {
-                if (!isActivityAlive()) {
+                if (!isActivityAlive(activity)) {
                     return@execute
                 }
                 val alertDialog = AlertDialog.Builder(activity).apply {
@@ -67,13 +65,13 @@ class UpdateDialog(private val activity: Activity) {
                         setMessage(release.body)
                     }
                     setPositiveButton(R.string.update) { dialog, id ->
-                        downloadApk(dialog, id, downloadUrl, version)
+                        downloadApk(activity, dialog, id, downloadUrl, version)
                     }
                     setNegativeButton(R.string.cancel) { dialog, _ ->
                         dialog.dismiss()
                     }
                 }.create()
-                if (isActivityAlive()) {
+                if (isActivityAlive(activity)) {
                     alertDialog.show()
                 }
             }
@@ -84,6 +82,7 @@ class UpdateDialog(private val activity: Activity) {
 
     @SuppressLint("UnsafeImplicitIntentLaunch")
     private fun downloadApk(
+        activity: Activity,
         dialog: DialogInterface?,
         id: Int,
         downloadUrl: String,
@@ -96,7 +95,7 @@ class UpdateDialog(private val activity: Activity) {
     }
 
     @SuppressLint("UnsafeImplicitIntentLaunch")
-    private fun gotoGithub(dialog: DialogInterface, id: Int) {
+    private fun gotoGithub(activity: Activity, dialog: DialogInterface, id: Int) {
         val uri = GITHUB_RELEASE_URL.toUri()
         val intent = Intent(Intent.ACTION_VIEW, uri)
         activity.startActivity(intent)
@@ -156,5 +155,4 @@ class UpdateDialog(private val activity: Activity) {
 //            activity.startActivity(intent)
 //        }
 //    }
-
 }
