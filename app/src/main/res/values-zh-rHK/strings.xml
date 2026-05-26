@@ -691,7 +691,6 @@
     <string name="settings_privacy_enable_analytics">啟用數據統計</string>
     <string name="settings_privacy_about_analytics">關於數據統計</string>
     <string name="settings_about_version">版本號碼</string>
-    <string name="settings_close_automatic_updates">關閉自動更新</string>
     <string name="settings_about_beta_update_channel">更新測試版</string>
     <string name="settings_about_beta_update_channel_summary">測試版可能會出現不可預期的錯誤</string>
 

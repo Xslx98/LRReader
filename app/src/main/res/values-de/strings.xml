@@ -647,7 +647,6 @@
     <string name="settings_save_image_weChat">WeChat-QR-Code speichern</string>
     <string name="settings_about_donate_copy">E-Mail kopieren</string>
     <string name="settings_about_donate_copied">Kopiert</string>
-    <string name="settings_close_automatic_updates">Automatische Updates deaktivieren</string>
     <string name="settings_eh_identity_cookies">Konto-Cookies</string>
     <string name="settings_eh_identity_cookies_summary">Die Cookies, die dich angemeldet halten.</string>
     <string name="settings_eh_identity_cookies_signed">Wenn jemand die folgenden Informationen hat, kann er sich als du anmelden. &lt;br&gt;&lt;b&gt;ALSO GEHEIM HALTEN!&lt;/b&gt;&lt;br&gt;&lt;br&gt;%s</string>

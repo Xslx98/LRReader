@@ -754,7 +754,6 @@
     <string name="settings_privacy_enable_analytics">Enable analytics</string>
     <string name="settings_privacy_about_analytics">About analytics</string>
     <string name="settings_about_version">Build version</string>
-    <string name="settings_close_automatic_updates">Turn off automatic updates</string>
     <string name="settings_about_beta_update_channel">Beta update channel</string>
     <string name="settings_about_beta_update_channel_summary">Beta versions may contain unsolved bugs.</string>
 
