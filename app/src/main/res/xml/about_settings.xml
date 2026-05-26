@@ -34,8 +34,7 @@
     <SwitchPreference
         android:key="auto_check_for_updates"
         android:title="@string/settings_about_auto_check_for_updates"
-        android:summary="@string/settings_about_auto_check_for_updates_summary"
-        android:defaultValue="true" />
+        android:summary="@string/settings_about_auto_check_for_updates_summary" />
 
     <com.hippo.ehviewer.preference.VersionPreference
         android:key="version"
