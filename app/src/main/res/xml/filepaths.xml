@@ -32,4 +32,11 @@
     <external-cache-path
         name="camera"
         path="camera" />
+
+    <!-- APK downloads from in-app update flow (UpdateDialog → ApkDownloader),
+         exposed via FileProvider so PackageInstaller can read content:// URIs. -->
+    <cache-path
+        name="updates"
+        path="updates" />
+
 </paths>
