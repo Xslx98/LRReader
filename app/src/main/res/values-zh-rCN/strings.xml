@@ -138,6 +138,11 @@
     <string name="update_to">更新至</string>
     <string name="update_plain">版本：%1$s\n大小：%2$s\n\n%3$s</string>
     <string name="update_to_date">LR Reader 已是最新版本</string>
+    <string name="update_downloading_title">正在下载 %1$s</string>
+    <string name="update_download_failed">下载失败，请重试或在浏览器中打开</string>
+    <string name="update_install_permission_needed">需要授予「安装未知应用」权限来完成更新，点击打开系统设置</string>
+    <string name="update_open_settings">打开设置</string>
+    <string name="update_open_in_browser">在浏览器中打开</string>
     <string name="settings_about_check_for_updates">检查更新</string>
     <string name="settings_about_check_for_updates_summary">点击立即查询 GitHub Releases</string>
     <string name="settings_about_check_for_updates_in_progress">正在检查…</string>
