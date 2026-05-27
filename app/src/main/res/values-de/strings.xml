@@ -115,6 +115,11 @@
     <string name="update_plain">Version: %1$s\nGröße: %2$s\n\n%3$s</string>
     <string name="update_fail_info">Auf Ja klicken, um zur Github-Startseite zu springen</string>
     <string name="update_to_date">LR Reader ist auf dem neusten Stand.</string>
+    <string name="update_downloading_title">Lade %1$s herunter</string>
+    <string name="update_download_failed">Download fehlgeschlagen. Erneut versuchen oder im Browser öffnen.</string>
+    <string name="update_install_permission_needed">LR Reader benötigt die Berechtigung, Updates zu installieren. Öffne die Systemeinstellungen, um sie zu erteilen.</string>
+    <string name="update_open_settings">Einstellungen öffnen</string>
+    <string name="update_open_in_browser">Im Browser öffnen</string>
     <string name="settings_about_check_for_updates">Auf Updates prüfen</string>
     <string name="settings_about_check_for_updates_summary">Tippen, um GitHub Releases jetzt abzufragen</string>
     <string name="settings_about_check_for_updates_in_progress">Wird geprüft…</string>

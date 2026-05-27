@@ -184,6 +184,11 @@
     <string name="update_plain">版本：%1$s\n大小：%2$s\n\n%3$s</string>
     <string name="update_fail_info">點擊「是」跳轉至 Github 主頁</string>
     <string name="update_to_date">您正在使用最新版本的 LR Reader。</string>
+    <string name="update_downloading_title">正在下載 %1$s</string>
+    <string name="update_download_failed">下載失敗，請重試或在瀏覽器中開啟</string>
+    <string name="update_install_permission_needed">需要授予「安裝未知應用程式」權限來完成更新，請開啟系統設定</string>
+    <string name="update_open_settings">開啟設定</string>
+    <string name="update_open_in_browser">在瀏覽器中開啟</string>
     <string name="settings_about_check_for_updates">檢查更新</string>
     <string name="settings_about_check_for_updates_summary">點擊立即查詢 GitHub Releases</string>
     <string name="settings_about_check_for_updates_in_progress">正在檢查…</string>

@@ -133,6 +133,11 @@
     <string name="update_plain">バージョン: %1$s\nサイズ: %2$s\n\n%3$s</string>
     <string name="update_fail_info">「はい」をタップで GitHub のページに移動します</string>
     <string name="update_to_date">LR Reader は既に最新のバージョンです。</string>
+    <string name="update_downloading_title">%1$s をダウンロード中</string>
+    <string name="update_download_failed">ダウンロードに失敗しました。再試行するかブラウザで開いてください。</string>
+    <string name="update_install_permission_needed">LR Reader が更新をインストールするための権限が必要です。システム設定を開いて許可してください。</string>
+    <string name="update_open_settings">設定を開く</string>
+    <string name="update_open_in_browser">ブラウザで開く</string>
     <string name="settings_about_check_for_updates">更新の確認</string>
     <string name="settings_about_check_for_updates_summary">GitHub Releases を今すぐ確認</string>
     <string name="settings_about_check_for_updates_in_progress">確認中…</string>

@@ -149,6 +149,11 @@
     <string name="update_plain">เวอร์ชั่น: %1$s\nขนาดไฟล์: %2$s\n\n%3$s</string>
     <string name="update_fail_info">คลิกใช่เพื่อไปยังหน้าแรกของ Github</string>
     <string name="update_to_date">คุณกำลังใช้เวอร์ชั่นล่าสุดของ LR Reader.</string>
+    <string name="update_downloading_title">กำลังดาวน์โหลด %1$s</string>
+    <string name="update_download_failed">ดาวน์โหลดล้มเหลว ลองอีกครั้งหรือเปิดในเบราว์เซอร์</string>
+    <string name="update_install_permission_needed">LR Reader ต้องการสิทธิ์ในการติดตั้งอัพเดต เปิดการตั้งค่าระบบเพื่ออนุญาต</string>
+    <string name="update_open_settings">เปิดการตั้งค่า</string>
+    <string name="update_open_in_browser">เปิดในเบราว์เซอร์</string>
     <string name="settings_about_check_for_updates">ตรวจสอบการอัพเดต</string>
     <string name="settings_about_check_for_updates_summary">แตะเพื่อตรวจสอบ GitHub Releases ทันที</string>
     <string name="settings_about_check_for_updates_in_progress">กำลังตรวจสอบ…</string>
