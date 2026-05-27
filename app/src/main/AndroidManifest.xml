@@ -28,7 +28,7 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
-    <!-- LANraragi: Removed REQUEST_INSTALL_PACKAGES (EH auto-update) -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- LANraragi: Removed ACCESS_DOWNLOAD_MANAGER (EH system downloader) -->
 
     <uses-feature
