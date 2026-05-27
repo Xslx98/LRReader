@@ -1,0 +1,4 @@
+- In-app update checks: Settings → About → Check for updates queries GitHub Releases and shows release notes in a dialog.
+- Auto-check toggle (default on). On cold start, newer releases surface as a Snackbar with "View" — no obtrusive popup.
+- Tap "Update" to download the APK in-dialog (progress + cancel) before the system installer takes over. Canceling deletes the partial file.
+- If "Install unknown apps" is off, opens Settings; auto-resumes install when you return.
