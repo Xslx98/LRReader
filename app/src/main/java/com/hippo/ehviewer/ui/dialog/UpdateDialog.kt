@@ -19,6 +19,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.settings.UpdateSettings
 import com.hippo.ehviewer.updater.ApkDownloader
 import com.hippo.ehviewer.updater.DownloadProgress
 import com.hippo.ehviewer.updater.GhRelease
@@ -79,6 +80,13 @@ object UpdateDialog {
                     setPositiveButton(R.string.update) { dialog, _ ->
                         dialog.dismiss()
                         startDownload(activity, release)
+                    }
+                    setNeutralButton(R.string.update_ignore) { dialog, _ ->
+                        // Persist this version as skipped. Auto cold-start checks honor
+                        // skip-version (→ silent Skipped); manual checks bypass it, so the
+                        // user can re-surface the update from About → Check for updates.
+                        UpdateSettings.putSkipUpdateVersion(release.versionCode)
+                        dialog.dismiss()
                     }
                     setNegativeButton(R.string.cancel) { dialog, _ ->
                         dialog.dismiss()
