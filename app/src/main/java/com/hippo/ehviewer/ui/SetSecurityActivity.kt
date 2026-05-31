@@ -27,6 +27,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import com.hippo.ehviewer.R
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
@@ -145,7 +146,7 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
         try {
             SecuritySettings.setPattern(security)
             SecuritySettings.putEnableFingerprint(
-                fingerprint != null && fingerprint.visibility == View.VISIBLE &&
+                fingerprint != null && fingerprint.isVisible &&
                     fingerprint.isChecked && security.isNotEmpty()
             )
         } catch (e: LRRSecureStorageUnavailableException) {
@@ -190,7 +191,7 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
                     try {
                         LRRAuthManager.setPatternWithCipher(security, authCipher)
                         SecuritySettings.putEnableFingerprint(
-                            fp != null && fp.visibility == View.VISIBLE &&
+                            fp != null && fp.isVisible &&
                                 fp.isChecked && security.isNotEmpty()
                         )
                     } catch (e: LRRSecureStorageUnavailableException) {

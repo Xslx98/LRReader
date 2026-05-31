@@ -12,6 +12,7 @@ package com.hippo.ehviewer.ui.widget
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
+import androidx.core.content.withStyledAttributes
 import com.hippo.ehviewer.R
 import com.hippo.widget.FixedAspectImageView
 
@@ -47,14 +48,14 @@ class AspectClampedImageView @JvmOverloads constructor(
     defStyle: Int = 0,
 ) : FixedAspectImageView(context, attrs, defStyle) {
 
-    private var minAspect: Float
-    private var maxAspect: Float
+    private var minAspect: Float = 0f
+    private var maxAspect: Float = Float.MAX_VALUE
 
     init {
-        val a = context.obtainStyledAttributes(attrs, R.styleable.FixedThumb, defStyle, 0)
-        minAspect = a.getFloat(R.styleable.FixedThumb_minAspect, 0f)
-        maxAspect = a.getFloat(R.styleable.FixedThumb_maxAspect, Float.MAX_VALUE)
-        a.recycle()
+        context.withStyledAttributes(attrs, R.styleable.FixedThumb, defStyle, 0) {
+            minAspect = getFloat(R.styleable.FixedThumb_minAspect, 0f)
+            maxAspect = getFloat(R.styleable.FixedThumb_maxAspect, Float.MAX_VALUE)
+        }
     }
 
     override fun setImageDrawable(drawable: Drawable?) {

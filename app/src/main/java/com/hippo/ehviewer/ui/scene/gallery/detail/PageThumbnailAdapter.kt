@@ -11,8 +11,7 @@ package com.hippo.ehviewer.ui.scene.gallery.detail
 
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.ColorDrawable
+import androidx.core.graphics.drawable.toDrawable
 import android.graphics.drawable.TransitionDrawable
 import android.view.LayoutInflater
 import android.view.View
@@ -196,8 +195,8 @@ internal class PageThumbnailAdapter(
     }
 
     private fun fadeInBitmap(imageView: ImageView, bitmap: Bitmap) {
-        val from = ColorDrawable(Color.TRANSPARENT)
-        val to = BitmapDrawable(imageView.resources, bitmap)
+        val from = Color.TRANSPARENT.toDrawable()
+        val to = bitmap.toDrawable(imageView.resources)
         // LayerDrawable.getIntrinsicWidth/Height returns the max of
         // children — ColorDrawable reports -1, so the transition's
         // intrinsic size equals the bitmap's. That keeps the smart

@@ -20,7 +20,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import android.net.Uri
+import androidx.core.net.toUri
 import android.provider.Browser
 import android.text.TextUtils
 import android.widget.Toast
@@ -45,7 +45,7 @@ object UrlOpener {
             return
         }
 
-        val uri = Uri.parse(url)
+        val uri = (url ?: return).toUri()
 
         if (ehUrl) {
             val announcer = LRRUrlOpener.parseUrl(url)

@@ -19,6 +19,7 @@ package com.hippo.ehviewer.widget
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
+import androidx.core.graphics.withSave
 import android.util.AttributeSet
 import android.view.View
 import com.hippo.ehviewer.R
@@ -65,21 +66,21 @@ class SimpleRatingView @JvmOverloads constructor(
         val step = mRatingSize + mRatingInterval
         var numStar = ratingInt / 2
         val numStarHalf = ratingInt % 2
-        val saved = canvas.save()
-        while (numStar-- > 0) {
-            mStarDrawable.draw(canvas)
-            canvas.translate(step.toFloat(), 0f)
+        canvas.withSave {
+            while (numStar-- > 0) {
+                mStarDrawable.draw(this)
+                translate(step.toFloat(), 0f)
+            }
+            if (numStarHalf == 1) {
+                mStarHalfDrawable.draw(this)
+                translate(step.toFloat(), 0f)
+            }
+            var numOutline = 5 - ratingInt / 2 - numStarHalf
+            while (numOutline-- > 0) {
+                mStarOutlineDrawable.draw(this)
+                translate(step.toFloat(), 0f)
+            }
         }
-        if (numStarHalf == 1) {
-            mStarHalfDrawable.draw(canvas)
-            canvas.translate(step.toFloat(), 0f)
-        }
-        var numOutline = 5 - ratingInt / 2 - numStarHalf
-        while (numOutline-- > 0) {
-            mStarOutlineDrawable.draw(canvas)
-            canvas.translate(step.toFloat(), 0f)
-        }
-        canvas.restoreToCount(saved)
     }
 
     fun setRating(rating: Float) {

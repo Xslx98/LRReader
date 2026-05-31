@@ -19,7 +19,7 @@ package com.hippo.ehviewer.ui
 import android.app.Dialog
 import android.content.DialogInterface
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
+import androidx.core.graphics.drawable.toDrawable
 import android.os.Bundle
 import android.util.Pair
 import android.view.LayoutInflater
@@ -88,7 +88,7 @@ class HostsActivity : ToolbarActivity(),
             Ripple.generateRippleDrawable(
                 this,
                 !AttrResources.getAttrBoolean(this, androidx.appcompat.R.attr.isLightTheme),
-                ColorDrawable(Color.TRANSPARENT)
+                Color.TRANSPARENT.toDrawable()
             )
         )
         recyclerView.setHasFixedSize(true)

@@ -19,6 +19,7 @@ package com.hippo.ehviewer.widget
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
+import androidx.core.content.withStyledAttributes
 import com.hippo.ehviewer.R
 import com.hippo.widget.LoadImageView
 
@@ -32,10 +33,10 @@ class FixedThumb @JvmOverloads constructor(
     private var maxAspect: Float = 0f
 
     init {
-        val a = context.obtainStyledAttributes(attrs, R.styleable.FixedThumb, defStyle, 0)
-        minAspect = a.getFloat(R.styleable.FixedThumb_minAspect, 0.0f)
-        maxAspect = a.getFloat(R.styleable.FixedThumb_maxAspect, 0.0f)
-        a.recycle()
+        context.withStyledAttributes(attrs, R.styleable.FixedThumb, defStyle, 0) {
+            minAspect = getFloat(R.styleable.FixedThumb_minAspect, 0.0f)
+            maxAspect = getFloat(R.styleable.FixedThumb_maxAspect, 0.0f)
+        }
     }
 
     fun setFix(minAspect: Float, maxAspect: Float) {

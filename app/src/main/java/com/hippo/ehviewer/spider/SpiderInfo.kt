@@ -19,6 +19,7 @@ package com.hippo.ehviewer.spider
 import android.text.TextUtils
 import android.util.Log
 import android.util.SparseArray
+import androidx.core.util.size
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.unifile.UniFile
@@ -69,7 +70,7 @@ class SpiderInfo {
             writer.write("\n")
             val map = pTokenMap
             if (map != null) {
-                for (i in 0 until map.size()) {
+                for (i in 0 until map.size) {
                     val key = map.keyAt(i)
                     val value = map.valueAt(i)
                     if (TOKEN_FAILED == value || TextUtils.isEmpty(value)) {

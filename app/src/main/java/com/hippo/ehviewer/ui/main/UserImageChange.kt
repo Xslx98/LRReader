@@ -8,6 +8,7 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
+import androidx.core.net.toUri
 import android.os.Build
 import android.provider.DocumentsContract
 import android.provider.MediaStore
@@ -315,7 +316,7 @@ class UserImageChange(
             } else if ("com.android.providers.downloads.documents" == uri.authority) {
                 try {
                     val contentUri = ContentUris.withAppendedId(
-                        Uri.parse("content: //downloads/public_downloads"),
+                        "content: //downloads/public_downloads".toUri(),
                         docId.toLong()
                     )
                     imagePath = getImagePath(contentUri, null)

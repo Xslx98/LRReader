@@ -17,7 +17,7 @@ package com.hippo.ehviewer.ui.scene.download
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
+import androidx.core.net.toUri
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.ActivityResult
@@ -101,7 +101,7 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
         context: Context,
         downloadInfo: DownloadInfo
     ): Boolean {
-        val archiveUri = Uri.parse(downloadInfo.archiveUri)
+        val archiveUri = (downloadInfo.archiveUri ?: return false).toUri()
         try {
             // Test if we can access the URI
             context.contentResolver.openInputStream(archiveUri)?.use { testStream ->

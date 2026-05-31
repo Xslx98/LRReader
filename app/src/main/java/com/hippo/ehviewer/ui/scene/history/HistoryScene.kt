@@ -18,7 +18,7 @@ package com.hippo.ehviewer.ui.scene.history
 
 import android.content.DialogInterface
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
+import androidx.core.graphics.drawable.toDrawable
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -136,7 +136,7 @@ class HistoryScene : ToolbarScene(),
             Ripple.generateRippleDrawable(
                 context,
                 !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme),
-                ColorDrawable(Color.TRANSPARENT)
+                Color.TRANSPARENT.toDrawable()
             )
         )
         mRecyclerView.setDrawSelectorOnTop(true)

@@ -20,6 +20,8 @@ import android.animation.Animator
 import android.animation.ObjectAnimator
 import android.content.Context
 import android.graphics.Canvas
+import androidx.core.graphics.withSave
+import androidx.core.view.isVisible
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -493,7 +495,7 @@ class SearchBar : CardView,
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         super.onLayout(changed, left, top, right, bottom)
-        if (mListContainer.visibility == VISIBLE) {
+        if (mListContainer.isVisible) {
             mWidth = right - left
             mHeight = bottom - top
         }
@@ -510,12 +512,12 @@ class SearchBar : CardView,
 
     override fun draw(canvas: Canvas) {
         if (mInAnimation) {
-            val state = canvas.save()
-            val bottom = MathUtils.lerp(mBaseHeight, mHeight, mProgress)
-            mRect.set(0, 0, mWidth, bottom)
-            canvas.clipRect(mRect)
-            super.draw(canvas)
-            canvas.restoreToCount(state)
+            canvas.withSave {
+                val bottom = MathUtils.lerp(mBaseHeight, mHeight, mProgress)
+                mRect.set(0, 0, mWidth, bottom)
+                clipRect(mRect)
+                super@SearchBar.draw(this)
+            }
         } else {
             super.draw(canvas)
         }

@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.net.Uri
 import android.provider.Settings
 import android.view.LayoutInflater
 import android.widget.TextView
@@ -193,7 +192,7 @@ object UpdateDialog {
             .setPositiveButton(R.string.update_open_settings) { _, _ ->
                 val intent = Intent(
                     Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                    Uri.parse("package:${activity.packageName}"),
+                    "package:${activity.packageName}".toUri(),
                 ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 try {
                     activity.startActivity(intent)

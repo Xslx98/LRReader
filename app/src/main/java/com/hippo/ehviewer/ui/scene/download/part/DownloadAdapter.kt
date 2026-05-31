@@ -21,6 +21,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import androidx.core.net.toUri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -31,6 +32,7 @@ import android.widget.TextView
 import android.widget.RelativeLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemAdapter
 import com.h6ah4i.android.widget.advrecyclerview.draggable.ItemDraggableRange
@@ -193,8 +195,8 @@ class DownloadAdapter(
             if (isImportedArchive) {
                 title = "📦 $title"
             }
-            if (isImportedArchive) {
-                loadArchiveThumbnail(holder.thumb, Uri.parse(archiveUri))
+            if (isImportedArchive && archiveUri != null) {
+                loadArchiveThumbnail(holder.thumb, archiveUri.toUri())
             } else {
                 holder.thumb.load(
                     LRRCacheKeyFactory.getThumbKey(info.arcid), archive.thumbnailUrl,
@@ -295,7 +297,7 @@ class DownloadAdapter(
         // category is actually shown.
         val params = badge.layoutParams as RelativeLayout.LayoutParams
         val density = context.resources.displayMetrics.density
-        val margin = if (holder.category.visibility == View.VISIBLE) {
+        val margin = if (holder.category.isVisible) {
             (BADGE_MARGIN_BOTTOM_WHEN_CATEGORY_VISIBLE_DP * density).toInt()
         } else {
             (BADGE_MARGIN_BOTTOM_DEFAULT_DP * density).toInt()

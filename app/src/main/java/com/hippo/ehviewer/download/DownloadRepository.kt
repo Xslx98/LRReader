@@ -18,7 +18,7 @@ package com.hippo.ehviewer.download
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
+import androidx.core.net.toUri
 import android.os.Looper
 import android.util.Log
 import com.hippo.ehviewer.ServiceRegistry
@@ -180,7 +180,7 @@ class DownloadRepository(
             val archiveUri = info.archiveUri
             if (archiveUri != null && archiveUri.startsWith("content://")) {
                 try {
-                    val uri = Uri.parse(archiveUri)
+                    val uri = archiveUri.toUri()
                     context.contentResolver.takePersistableUriPermission(
                         uri,
                         Intent.FLAG_GRANT_READ_URI_PERMISSION
