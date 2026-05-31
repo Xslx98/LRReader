@@ -232,7 +232,6 @@
     <string name="read">閲覧</string>
     <string name="more_information">詳細情報を見る</string>
     <plurals name="page_count">
-        <item quantity="one">%d ページ</item>
         <item quantity="other">%d ページ</item>
     </plurals>
     <string name="favored_times">\u2665 %d</string>
