@@ -2,6 +2,7 @@ package com.hippo.ehviewer.gallery
 
 import android.content.Context
 import android.util.Log
+import androidx.core.content.edit
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.module.Cacheable
 import com.hippo.lib.image.Image
@@ -81,9 +82,9 @@ object ReaderPageCache : Cacheable {
         }
 
         appContext.getSharedPreferences(SP_CACHE_ACCESS, Context.MODE_PRIVATE)
-            .edit()
-            .putLong(arcId, System.currentTimeMillis())
-            .apply()
+            .edit {
+                putLong(arcId, System.currentTimeMillis())
+            }
 
         return dir
     }
@@ -277,16 +278,16 @@ object ReaderPageCache : Cacheable {
         val sp = appContext.getSharedPreferences(SP_CACHE_ACCESS, Context.MODE_PRIVATE)
         dirList.sortWith(Comparator.comparingLong { dir -> sp.getLong(dir.name, 0L) })
 
-        val editor = sp.edit()
-        for (dir in dirList) {
-            if (totalSize <= maxTotalBytes) break
-            val dirSize = getDirSize(dir)
-            deleteDir(dir)
-            editor.remove(dir.name)
-            totalSize -= dirSize
-            Log.d(TAG, "Evicted cache: ${dir.name} (${dirSize / 1024} KB)")
+        sp.edit {
+            for (dir in dirList) {
+                if (totalSize <= maxTotalBytes) break
+                val dirSize = getDirSize(dir)
+                deleteDir(dir)
+                remove(dir.name)
+                totalSize -= dirSize
+                Log.d(TAG, "Evicted cache: ${dir.name} (${dirSize / 1024} KB)")
+            }
         }
-        editor.apply()
     }
 
     private fun getDirSize(dir: File): Long {

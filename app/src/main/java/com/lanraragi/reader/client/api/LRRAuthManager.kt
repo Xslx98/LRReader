@@ -6,6 +6,7 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import android.util.Log
+import androidx.core.content.edit
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import java.io.IOException
@@ -141,12 +142,12 @@ object LRRAuthManager {
         // Migrate away from v1 SHA-256 pattern hash: remove stale key so hasPattern()
         // correctly returns false and prompts the user to re-enroll with PBKDF2.
         if (prefs?.contains("pattern_hash") == true) {
-            prefs.edit().remove("pattern_hash").apply()
+            prefs.edit { remove("pattern_hash") }
         }
         // Persist "was_configured" flag when a server URL exists, so we can detect
         // KeyStore corruption vs fresh install on next startup.
         if (prefs?.getString(KEY_SERVER_URL, null) != null) {
-            plainPrefs.edit().putBoolean(KEY_WAS_CONFIGURED, true).apply()
+            plainPrefs.edit { putBoolean(KEY_WAS_CONFIGURED, true) }
         }
     }
 
@@ -206,7 +207,7 @@ object LRRAuthManager {
         if (cleanUrl.endsWith("/")) {
             cleanUrl = cleanUrl.substring(0, cleanUrl.length - 1)
         }
-        prefs.edit().putString(KEY_SERVER_URL, cleanUrl).apply()
+        prefs.edit { putString(KEY_SERVER_URL, cleanUrl) }
     }
 
     /**
@@ -221,7 +222,7 @@ object LRRAuthManager {
     @Throws(LRRSecureStorageUnavailableException::class)
     fun setApiKey(apiKey: String?) {
         val prefs = requireSecurePrefs("setApiKey")
-        prefs.edit().putString(KEY_API_KEY, apiKey).apply()
+        prefs.edit { putString(KEY_API_KEY, apiKey) }
     }
 
     /**
@@ -236,7 +237,7 @@ object LRRAuthManager {
     @Throws(LRRSecureStorageUnavailableException::class)
     fun setServerName(name: String?) {
         val prefs = requireSecurePrefs("setServerName")
-        prefs.edit().putString(KEY_SERVER_NAME, name).apply()
+        prefs.edit { putString(KEY_SERVER_NAME, name) }
     }
 
     /**
@@ -261,7 +262,7 @@ object LRRAuthManager {
     fun setActiveProfileId(id: Long) {
         sActiveProfileId = id
         val prefs = requireSecurePrefs("setActiveProfileId")
-        prefs.edit().putLong(KEY_ACTIVE_PROFILE_ID, id).apply()
+        prefs.edit { putLong(KEY_ACTIVE_PROFILE_ID, id) }
     }
 
     /**
@@ -287,7 +288,7 @@ object LRRAuthManager {
     @Throws(LRRSecureStorageUnavailableException::class)
     fun setAllowCleartext(allow: Boolean) {
         val prefs = requireSecurePrefs("setAllowCleartext")
-        prefs.edit().putBoolean(KEY_ALLOW_CLEARTEXT, allow).apply()
+        prefs.edit { putBoolean(KEY_ALLOW_CLEARTEXT, allow) }
     }
 
     /**
@@ -348,7 +349,7 @@ object LRRAuthManager {
         val prefKey = "api_key_$profileId"
         // Store empty string (not remove) so markReauthIfProfilesUnprotected can
         // distinguish "intentionally no key" from "key lost due to KeyStore failure".
-        prefs.edit().putString(prefKey, apiKey ?: "").apply()
+        prefs.edit { putString(prefKey, apiKey ?: "") }
     }
 
     /** @return the API key for the given profile, or null if none stored / empty. */
@@ -362,7 +363,7 @@ object LRRAuthManager {
     @Throws(LRRSecureStorageUnavailableException::class)
     fun clearApiKeyForProfile(profileId: Long) {
         val prefs = requireSecurePrefs("clearApiKeyForProfile")
-        prefs.edit().remove("api_key_$profileId").apply()
+        prefs.edit { remove("api_key_$profileId") }
     }
 
     // ── Persistent failure lockout ──────────────────────────────────────
@@ -398,22 +399,23 @@ object LRRAuthManager {
     fun recordFailure() {
         val plain = sPlainPrefs ?: return
         val count = plain.getInt(KEY_PATTERN_FAIL_COUNT, 0) + 1
-        val editor = plain.edit().putInt(KEY_PATTERN_FAIL_COUNT, count)
-        when {
-            count >= LOCKOUT_THRESHOLD_SECOND -> {
-                editor.putLong(
-                    KEY_PATTERN_LOCKOUT_UNTIL,
-                    clockMillis() + LOCKOUT_DURATION_SECOND_MS
-                )
-            }
-            count >= LOCKOUT_THRESHOLD_FIRST -> {
-                editor.putLong(
-                    KEY_PATTERN_LOCKOUT_UNTIL,
-                    clockMillis() + LOCKOUT_DURATION_FIRST_MS
-                )
+        plain.edit {
+            putInt(KEY_PATTERN_FAIL_COUNT, count)
+            when {
+                count >= LOCKOUT_THRESHOLD_SECOND -> {
+                    putLong(
+                        KEY_PATTERN_LOCKOUT_UNTIL,
+                        clockMillis() + LOCKOUT_DURATION_SECOND_MS
+                    )
+                }
+                count >= LOCKOUT_THRESHOLD_FIRST -> {
+                    putLong(
+                        KEY_PATTERN_LOCKOUT_UNTIL,
+                        clockMillis() + LOCKOUT_DURATION_FIRST_MS
+                    )
+                }
             }
         }
-        editor.apply()
     }
 
     /**
@@ -422,10 +424,10 @@ object LRRAuthManager {
     @JvmStatic
     fun resetFailures() {
         val plain = sPlainPrefs ?: return
-        plain.edit()
-            .remove(KEY_PATTERN_FAIL_COUNT)
-            .remove(KEY_PATTERN_LOCKOUT_UNTIL)
-            .apply()
+        plain.edit {
+            remove(KEY_PATTERN_FAIL_COUNT)
+            remove(KEY_PATTERN_LOCKOUT_UNTIL)
+        }
     }
 
     /**
@@ -555,13 +557,13 @@ object LRRAuthManager {
     fun setPattern(pattern: String?) {
         val prefs = requireSecurePrefs("setPattern")
         if (pattern.isNullOrEmpty()) {
-            prefs.edit()
-                .remove(KEY_PATTERN_HASH_V2)
-                .remove(KEY_PATTERN_SALT)
-                .remove(KEY_PATTERN_ENCRYPTED)
-                .remove(KEY_PATTERN_IV)
-                .apply()
-            sPlainPrefs?.edit()?.remove(KEY_PATTERN_KEYSTORE_BOUND)?.apply()
+            prefs.edit {
+                remove(KEY_PATTERN_HASH_V2)
+                remove(KEY_PATTERN_SALT)
+                remove(KEY_PATTERN_ENCRYPTED)
+                remove(KEY_PATTERN_IV)
+            }
+            sPlainPrefs?.edit { remove(KEY_PATTERN_KEYSTORE_BOUND) }
             deletePatternKeystoreKey()
             resetFailures()
             return
@@ -573,13 +575,13 @@ object LRRAuthManager {
         try {
             val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
             val hash = factory.generateSecret(spec).encoded
-            prefs.edit()
-                .putString(KEY_PATTERN_HASH_V2, Base64.encodeToString(hash, Base64.NO_WRAP))
-                .putString(KEY_PATTERN_SALT, Base64.encodeToString(salt, Base64.NO_WRAP))
-                .remove(KEY_PATTERN_ENCRYPTED)
-                .remove(KEY_PATTERN_IV)
-                .apply()
-            sPlainPrefs?.edit()?.putBoolean(KEY_PATTERN_KEYSTORE_BOUND, false)?.apply()
+            prefs.edit {
+                putString(KEY_PATTERN_HASH_V2, Base64.encodeToString(hash, Base64.NO_WRAP))
+                putString(KEY_PATTERN_SALT, Base64.encodeToString(salt, Base64.NO_WRAP))
+                remove(KEY_PATTERN_ENCRYPTED)
+                remove(KEY_PATTERN_IV)
+            }
+            sPlainPrefs?.edit { putBoolean(KEY_PATTERN_KEYSTORE_BOUND, false) }
         } catch (e: Exception) {
             throw RuntimeException("PBKDF2WithHmacSHA256 not available on this device", e)
         } finally {
@@ -613,13 +615,13 @@ object LRRAuthManager {
             // Encrypt the PBKDF2 hash with the KeyStore-backed AES-GCM cipher
             val encrypted = authenticatedCipher.doFinal(hash)
             val iv = authenticatedCipher.iv
-            prefs.edit()
-                .putString(KEY_PATTERN_ENCRYPTED, Base64.encodeToString(encrypted, Base64.NO_WRAP))
-                .putString(KEY_PATTERN_IV, Base64.encodeToString(iv, Base64.NO_WRAP))
-                .putString(KEY_PATTERN_SALT, Base64.encodeToString(salt, Base64.NO_WRAP))
-                .remove(KEY_PATTERN_HASH_V2)
-                .apply()
-            sPlainPrefs?.edit()?.putBoolean(KEY_PATTERN_KEYSTORE_BOUND, true)?.apply()
+            prefs.edit {
+                putString(KEY_PATTERN_ENCRYPTED, Base64.encodeToString(encrypted, Base64.NO_WRAP))
+                putString(KEY_PATTERN_IV, Base64.encodeToString(iv, Base64.NO_WRAP))
+                putString(KEY_PATTERN_SALT, Base64.encodeToString(salt, Base64.NO_WRAP))
+                remove(KEY_PATTERN_HASH_V2)
+            }
+            sPlainPrefs?.edit { putBoolean(KEY_PATTERN_KEYSTORE_BOUND, true) }
         } catch (e: Exception) {
             throw RuntimeException("Failed to encrypt pattern hash with KeyStore cipher", e)
         } finally {
@@ -673,10 +675,12 @@ object LRRAuthManager {
                     val specMigrate = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS)
                     try {
                         val newHash = factory.generateSecret(specMigrate).encoded
-                        prefs.edit()
-                            .putString(KEY_PATTERN_HASH_V2,
-                                Base64.encodeToString(newHash, Base64.NO_WRAP))
-                            .apply()
+                        prefs.edit {
+                            putString(
+                                KEY_PATTERN_HASH_V2,
+                                Base64.encodeToString(newHash, Base64.NO_WRAP)
+                            )
+                        }
                     } finally {
                         specMigrate.clearPassword()
                     }
@@ -749,15 +753,15 @@ object LRRAuthManager {
                     val specMigrate = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS)
                     try {
                         val newHash = factory.generateSecret(specMigrate).encoded
-                        prefs.edit()
-                            .putString(KEY_PATTERN_HASH_V2,
-                                Base64.encodeToString(newHash, Base64.NO_WRAP))
-                            .remove(KEY_PATTERN_ENCRYPTED)
-                            .remove(KEY_PATTERN_IV)
-                            .apply()
-                        sPlainPrefs?.edit()
-                            ?.putBoolean(KEY_PATTERN_KEYSTORE_BOUND, false)
-                            ?.apply()
+                        prefs.edit {
+                            putString(
+                                KEY_PATTERN_HASH_V2,
+                                Base64.encodeToString(newHash, Base64.NO_WRAP)
+                            )
+                            remove(KEY_PATTERN_ENCRYPTED)
+                            remove(KEY_PATTERN_IV)
+                        }
+                        sPlainPrefs?.edit { putBoolean(KEY_PATTERN_KEYSTORE_BOUND, false) }
                     } finally {
                         specMigrate.clearPassword()
                     }
@@ -810,12 +814,12 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun clear() {
-        sPrefs?.edit()?.clear()?.apply()
-        sPlainPrefs?.edit()
-            ?.remove(KEY_PATTERN_KEYSTORE_BOUND)
-            ?.remove(KEY_PATTERN_FAIL_COUNT)
-            ?.remove(KEY_PATTERN_LOCKOUT_UNTIL)
-            ?.apply()
+        sPrefs?.edit { clear() }
+        sPlainPrefs?.edit {
+            remove(KEY_PATTERN_KEYSTORE_BOUND)
+            remove(KEY_PATTERN_FAIL_COUNT)
+            remove(KEY_PATTERN_LOCKOUT_UNTIL)
+        }
         deletePatternKeystoreKey()
         sActiveProfileId = 0
         sNeedsReauthentication = false

@@ -17,6 +17,7 @@
 package com.hippo.ehviewer.gallery
 
 import android.content.Context
+import androidx.core.content.edit
 import com.hippo.lib.glgallery.GalleryProvider
 import com.hippo.lib.glgallery.GalleryView
 import com.hippo.unifile.UniFile
@@ -74,10 +75,10 @@ abstract class GalleryProvider2 : GalleryProvider() {
         fun saveReadingProgress(ctx: Context, gid: Long, page: Int) {
             ctx.applicationContext
                 .getSharedPreferences(SP_READING_PROGRESS, Context.MODE_PRIVATE)
-                .edit()
-                .putInt(gid.toString(), page)
-                .putLong("${gid}_ts", System.currentTimeMillis() / 1000L)
-                .apply()
+                .edit {
+                    putInt(gid.toString(), page)
+                    putLong("${gid}_ts", System.currentTimeMillis() / 1000L)
+                }
         }
 
         /**
@@ -89,10 +90,10 @@ abstract class GalleryProvider2 : GalleryProvider() {
         fun saveReadingProgress(ctx: Context, arcid: String, page: Int) {
             ctx.applicationContext
                 .getSharedPreferences(SP_READING_PROGRESS, Context.MODE_PRIVATE)
-                .edit()
-                .putInt(arcid, page)
-                .putLong("${arcid}_ts", System.currentTimeMillis() / 1000L)
-                .apply()
+                .edit {
+                    putInt(arcid, page)
+                    putLong("${arcid}_ts", System.currentTimeMillis() / 1000L)
+                }
             ReadingProgressTracker.setProgress(arcid, page)
         }
 

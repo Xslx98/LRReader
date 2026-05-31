@@ -20,6 +20,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.settings.ReadingSettings
@@ -63,7 +64,7 @@ object Settings {
 
     @JvmStatic
     fun putBoolean(key: String, value: Boolean) {
-        sSettingsPre.edit().putBoolean(key, value).apply()
+        sSettingsPre.edit { putBoolean(key, value) }
     }
 
     @JvmStatic
@@ -78,7 +79,7 @@ object Settings {
 
     @JvmStatic
     fun putInt(key: String, value: Int) {
-        sSettingsPre.edit().putInt(key, value).apply()
+        sSettingsPre.edit { putInt(key, value) }
     }
 
     @JvmStatic
@@ -93,7 +94,7 @@ object Settings {
 
     @JvmStatic
     fun putLong(key: String, value: Long) {
-        sSettingsPre.edit().putLong(key, value).apply()
+        sSettingsPre.edit { putLong(key, value) }
     }
 
     @JvmStatic
@@ -108,7 +109,7 @@ object Settings {
 
     @JvmStatic
     fun putFloat(key: String, value: Float) {
-        sSettingsPre.edit().putFloat(key, value).apply()
+        sSettingsPre.edit { putFloat(key, value) }
     }
 
     @JvmStatic
@@ -123,7 +124,7 @@ object Settings {
 
     @JvmStatic
     fun putString(key: String, value: String?) {
-        sSettingsPre.edit().putString(key, value).apply()
+        sSettingsPre.edit { putString(key, value) }
     }
 
     @JvmStatic
@@ -138,7 +139,7 @@ object Settings {
 
     @JvmStatic
     fun putIntToStr(key: String, value: Int) {
-        sSettingsPre.edit().putString(key, value.toString()).apply()
+        sSettingsPre.edit { putString(key, value.toString()) }
     }
 
     private const val KEY_VERSION_CODE = "version_code"

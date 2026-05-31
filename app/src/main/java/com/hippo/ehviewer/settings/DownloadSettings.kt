@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
 import androidx.annotation.Nullable
+import androidx.core.content.edit
 import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.ui.CommonOperations
@@ -181,11 +182,11 @@ object DownloadSettings {
 
     @JvmStatic
     fun putArchiverDownloadId(arcid: String, downloadId: Long) {
-        sArchiverPre.edit().putLong("${arcid}DId", downloadId).apply()
+        sArchiverPre.edit { putLong("${arcid}DId", downloadId) }
     }
 
     @JvmStatic
     fun deleteArchiverDownloadId(arcid: String) {
-        sArchiverPre.edit().remove("${arcid}DId").apply()
+        sArchiverPre.edit { remove("${arcid}DId") }
     }
 }
