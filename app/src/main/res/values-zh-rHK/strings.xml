@@ -296,7 +296,6 @@
     <string name="read">閲讀</string>
     <string name="more_information">查看更多資訊</string>
     <plurals name="page_count">
-        <item quantity="one">%d 頁</item>
         <item quantity="other">%d 頁</item>
     </plurals>
     <string name="favored_times">\u2665 %d</string>
@@ -782,34 +781,27 @@
     <string name="from_the_future">來自未來</string>
     <string name="just_now">剛剛</string>
     <plurals name="some_minutes_ago">
-        <item quantity="one">一分鐘前</item>
         <item quantity="other">%d 分鐘前</item>
     </plurals>
     <plurals name="some_hours_ago">
-        <item quantity="one">一小時前</item>
         <item quantity="other">%d 小時前</item>
     </plurals>
     <string name="yesterday">昨天</string>
     <string name="some_days_ago">%d 天前</string>
 
     <plurals name="second">
-        <item quantity="one">秒</item>
         <item quantity="other">秒</item>
     </plurals>
     <plurals name="minute">
-        <item quantity="one">分鐘</item>
         <item quantity="other">分鐘</item>
     </plurals>
     <plurals name="hour">
-        <item quantity="one">小時</item>
         <item quantity="other">小時</item>
     </plurals>
     <plurals name="day">
-        <item quantity="one">天</item>
         <item quantity="other">天</item>
     </plurals>
     <plurals name="year">
-        <item quantity="one">年</item>
         <item quantity="other">年</item>
     </plurals>
     <string name="dialog_archive_title">通過 H@H 下載</string>
