@@ -38,7 +38,6 @@
     <string name="history">Verlauf</string>
     <string name="downloads">Downloads</string>
     <string name="settings">Einstellungen</string>
-    <string name="stub" translatable="false">Stub</string>
     <string name="news">Neuigkeiten</string>
 
     <string name="username">Benutzername</string>
@@ -589,7 +588,6 @@
     <string name="settings_advanced_built_in_hosts_title">Standard-hosts.txt</string>
     <string name="settings_download_pick_dir_kk">Die App kann keine Daten auf Android 4.4 zum externen Speicher beschreiben, wenn du das System nicht hackst. Sie aber kann zu /Android/data/com.hippo.LR Reader beschreiben.</string>
     <string name="settings_about_website">Webseite</string>
-    <string name="settings_about_declaration" translatable="false">LR Reader</string>
     <string name="settings_about_declaration_summary">LR Reader verbindet sich in keiner Weise mit LANraragi.</string>
     <string name="settings_about_source">Quellcode</string>
     <string name="settings_about_changelog">Änderungsprotokoll</string>
@@ -634,7 +632,6 @@
     <string name="settings_about">Über die App</string>
     <string name="settings_about_author">Entwickler</string>
     <string name="settings_about_latest_release">Aktuelle Version</string>
-    <string name="settings_about_telegram">Telegram</string>
     <string name="settings_advanced_built_in_hosts_summary">Host auf die IP, die nach die App festgelegt werden, umstellen\nKann von angepasstem hosts.txt überschrieben werden</string>
     <string name="settings_advanced_custom_hosts_title">Angepasstes hosts.txt</string>
     <string name="settings_advanced_custom_hosts_summary">Hostname auf die angepassten IP umstellen\nDie Regeln können die von der App festgelegt überschreiben</string>
@@ -858,24 +855,10 @@
 
     <!-- Auto-generated missing translations -->
     <string name="add_favorites_dialog_title">Favorit hinzufügen</string>
-    <string name="app_language_de" translatable="false">Deutsch</string>
-    <string name="app_language_en" translatable="false">English</string>
-    <string name="app_language_es" translatable="false">Español</string>
-    <string name="app_language_fr" translatable="false">Français</string>
-    <string name="app_language_ja" translatable="false">日本語</string>
-    <string name="app_language_ko" translatable="false">한국어</string>
-    <string name="app_language_th" translatable="false">ไทย</string>
-    <string name="app_language_zh_cn" translatable="false">中文（大陆）</string>
-    <string name="app_language_zh_hk" translatable="false">中文（香港）</string>
-    <string name="app_language_zh_tw" translatable="false">中文（臺灣）</string>
-    <string name="artist_cg">Künstler-CG</string>
-    <string name="asian_porn">Asiatische Pornografie</string>
     <string name="cloud_favorites">Cloud-Favoriten</string>
-    <string name="cosplay">Cosplay</string>
     <string name="default_favorites_collection">Standard-Favoritensammlung</string>
     <string name="delete_favorites_dialog_message">Aus Favoriten entfernen?</string>
     <string name="delete_favorites_dialog_title">Favorit entfernen</string>
-    <string name="doujinshi">Doujinshi</string>
     <string name="error_status_code_400">Ungültige Anfrage (400)</string>
     <string name="error_status_code_401">Authentifizierung fehlgeschlagen (401)</string>
     <string name="error_status_code_402">Zahlung erforderlich (402)</string>
@@ -905,9 +888,7 @@
     <string name="favorites_search_bar_hint">%s suchen</string>
     <string name="favorites_title">%s</string>
     <string name="favorites_title_2">%1$s - %2$s</string>
-    <string name="game_cg">Spiel-CG</string>
     <string name="image_save_success">Bild erfolgreich gespeichert</string>
-    <string name="image_set">Bilderset</string>
     <string name="local_favorites">Lokale Kategorien</string>
     <string name="lrr_add_server">Server hinzufügen</string>
     <string name="lrr_api_key_helper">API-Schlüssel in LANraragi-Einstellungen finden</string>
@@ -979,14 +960,10 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_url_download_hint">URL zum Herunterladen eingeben</string>
     <string name="lrr_url_download_success">Download-Auftrag gesendet (Job #%d)</string>
     <string name="lrr_url_download_title">URL-Download</string>
-    <string name="manga" translatable="false">MANGA</string>
-    <string name="misc">Sonstiges</string>
     <string name="move_favorites_dialog_title">Favorit verschieben</string>
-    <string name="non_h">Jugendfrei</string>
     <string name="reset_to_default">Auf Standard zurücksetzen</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="search_sp_suffix" />
-    <string name="settings_about_author_summary" translatable="false">Xslx98</string>
     <string name="settings_download_clean_invalid_download">Ungültige Downloads bereinigen</string>
     <string name="settings_download_clean_invalid_download_summary">Ungültige Download-Einträge entfernen</string>
     <string name="settings_eh_system_theme">Systemdesign</string>
@@ -1000,7 +977,6 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="theme_dark">Dunkles Design</string>
     <string name="theme_light">Helles Design</string>
     <string name="unknown" translatable="false">UNKNOWN</string>
-    <string name="western">Western</string>
     <string name="lrr_category_label_dynamic">Dynamisch</string>
     <string name="lrr_save_and_connect">Speichern &amp; Verbinden</string>
     <string name="lrr_error_title">Fehler aufgetreten</string>

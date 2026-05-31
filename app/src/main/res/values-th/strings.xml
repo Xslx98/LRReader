@@ -620,10 +620,8 @@
     <string name="settings_advanced_wifi_client_summary">รับข้อมูลการย้ายจาก Wi-Fi Hotspot</string>
 
     <string name="settings_about">เกี่ยวกับ</string>
-    <string name="settings_about_declaration" translatable="false">LR Reader</string>
     <string name="settings_about_declaration_summary">LR Reader ไม่มีความแตกต่างจากตัวเว็บ LANraragi แต่อย่างใด</string>
     <string name="settings_about_author">นักพัฒนา</string>
-    <string name="settings_about_telegram">Telegram</string>
     <string name="settings_about_website">เว็บไซต์</string>
     <string name="settings_about_source">ซอร์สโค้ด</string>
     <string name="settings_about_changelog">บันทึกการเปลี่ยนแปลง</string>
@@ -921,27 +919,13 @@
 
     <!-- Auto-generated missing translations -->
     <string name="add_favorites_dialog_title">เพิ่มรายการโปรด</string>
-    <string name="app_language_de" translatable="false">Deutsch</string>
-    <string name="app_language_en" translatable="false">English</string>
-    <string name="app_language_es" translatable="false">Español</string>
-    <string name="app_language_fr" translatable="false">Français</string>
-    <string name="app_language_ja" translatable="false">日本語</string>
-    <string name="app_language_ko" translatable="false">한국어</string>
-    <string name="app_language_th" translatable="false">ไทย</string>
-    <string name="app_language_zh_cn" translatable="false">中文（大陆）</string>
-    <string name="app_language_zh_hk" translatable="false">中文（香港）</string>
-    <string name="app_language_zh_tw" translatable="false">中文（臺灣）</string>
     <string name="application_file_directory">App file directory %d (it will be remove after uninstalling the app)</string>
-    <string name="artist_cg">CG ศิลปิน</string>
-    <string name="asian_porn">หนังเอเชีย</string>
     <string name="cancel">ยกเลิก</string>
     <string name="cloud_favorites">Cloud categories</string>
-    <string name="cosplay">คอสเพลย์</string>
     <string name="default_directory">ไดเรกทอรีเริ่มต้น</string>
     <string name="default_favorites_collection">Default category</string>
     <string name="delete_favorites_dialog_message">Delete %d items from favorites?</string>
     <string name="delete_favorites_dialog_title">Delete from favorites</string>
-    <string name="doujinshi">โดจินชิ</string>
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
     <string name="error_status_code_400">คำขอไม่ถูกต้อง (400)</string>
@@ -973,8 +957,6 @@
     <string name="favorites_search_bar_hint">ค้นหา %s</string>
     <string name="favorites_title">%s</string>
     <string name="favorites_title_2">%1$s - %2$s</string>
-    <string name="game_cg">CG เกม</string>
-    <string name="image_set">ชุดภาพ</string>
     <string name="local_favorites">หมวดหมู่ในเครื่อง</string>
     <string name="lrr_add_server">เพิ่มเซิร์ฟเวอร์</string>
     <string name="lrr_api_key_helper">Enter the API Key from LANraragi settings (not the web login password)</string>
@@ -1042,11 +1024,8 @@
     <string name="lrr_url_download_hint">Enter download URL</string>
     <string name="lrr_url_download_success">Download queued (Job #%d)</string>
     <string name="lrr_url_download_title">ดาวน์โหลด URL</string>
-    <string name="manga" translatable="false">MANGA</string>
-    <string name="misc">อื่นๆ</string>
     <string name="move_favorites_dialog_title">Move categories</string>
     <string name="my_tags">My tags</string>
-    <string name="non_h">ทุกวัย</string>
     <string name="preset">Preset</string>
     <string name="rating_none" translatable="false">(´_ゝ`)</string>
     <string name="reset_to_default">รีเซ็ตเป็นค่าเริ่มต้น</string>
@@ -1064,9 +1043,7 @@
     <string name="settings_read_screen_rotation_sensor">Auto rotate</string>
     <string name="site_e" translatable="false">LANraragi</string>
     <string name="site_ex" translatable="false">LANraragi</string>
-    <string name="stub" translatable="false">Stub</string>
     <string name="unknown" translatable="false">UNKNOWN</string>
-    <string name="western">ตะวันตก</string>
     <string name="yes">Yes</string>
     <string name="lrr_category_label_dynamic">ไดนามิก</string>
     <string name="lrr_save_and_connect">บันทึกและเชื่อมต่อ</string>

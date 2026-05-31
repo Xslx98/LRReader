@@ -40,16 +40,6 @@
     <string name="theme_black">Black Theme</string>
 
     <!-- Category -->
-    <string name="doujinshi" translatable="false">DOUJINSHI</string>
-    <string name="manga" translatable="false">MANGA</string>
-    <string name="artist_cg" translatable="false">ARTIST CG</string>
-    <string name="game_cg" translatable="false">GAME CG</string>
-    <string name="western" translatable="false">WESTERN</string>
-    <string name="non_h" translatable="false">NON-H</string>
-    <string name="image_set" translatable="false">IMAGE SET</string>
-    <string name="cosplay" translatable="false">COSPLAY</string>
-    <string name="asian_porn" translatable="false">ASIAN PORN</string>
-    <string name="misc" translatable="false">MISC</string>
 
     <string name="homepage">Homepage</string>
     <string name="subscription">Subscription</string>
@@ -59,7 +49,6 @@
     <string name="history">History</string>
     <string name="downloads">Downloads</string>
     <string name="settings">Settings</string>
-    <string name="stub" translatable="false">Stub</string>
 
     <string name="username">Username</string>
     <string name="password">Password</string>
@@ -618,10 +607,8 @@
     <string name="settings_advanced_import_data_successfully">Data imported successfully</string>
 
     <string name="settings_about">About</string>
-    <string name="settings_about_declaration" translatable="false">LR Reader</string>
     <string name="settings_about_declaration_summary">LR Reader is not affiliated with LANraragi in any way</string>
     <string name="settings_about_author">Author</string>
-    <string name="settings_about_telegram">Telegram</string>
     <string name="settings_about_latest_release">Latest release</string>
     <string name="settings_about_website">Website</string>
     <string name="settings_about_source">Source</string>
@@ -657,16 +644,6 @@
     <string name="cant_read_the_file">Can\'t read the file</string>
 
     <string name="app_language_system">System Language (Default)</string>
-    <string name="app_language_de">Deutsch</string>
-    <string name="app_language_en" translatable="false">English</string>
-    <string name="app_language_es" translatable="false">Español</string>
-    <string name="app_language_fr" translatable="false">Français</string>
-    <string name="app_language_ja" translatable="false">日本語</string>
-    <string name="app_language_ko" translatable="false">한국어</string>
-    <string name="app_language_th" translatable="false">ไทย</string>
-    <string name="app_language_zh_cn" translatable="false">中文（大陆）</string>
-    <string name="app_language_zh_hk" translatable="false">中文（香港）</string>
-    <string name="app_language_zh_tw" translatable="false">中文（臺灣）</string>
 
     <!-- ExcludedLanguagesScene -->
     <string name="excluded_languages">Excluded languages</string>

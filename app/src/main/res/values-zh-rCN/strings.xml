@@ -1023,23 +1023,9 @@
 
     <!-- Auto-generated missing translations -->
     <string name="add_widget">添加小部件</string>
-    <string name="app_language_de" translatable="false">Deutsch</string>
-    <string name="app_language_en" translatable="false">English</string>
-    <string name="app_language_es" translatable="false">Español</string>
-    <string name="app_language_fr" translatable="false">Français</string>
-    <string name="app_language_ja" translatable="false">日本語</string>
-    <string name="app_language_ko" translatable="false">한국어</string>
-    <string name="app_language_th" translatable="false">ไทย</string>
-    <string name="app_language_zh_cn" translatable="false">中文（大陆）</string>
-    <string name="app_language_zh_hk" translatable="false">中文（香港）</string>
-    <string name="app_language_zh_tw" translatable="false">中文（臺灣）</string>
     <string name="app_widget_description">显示下载进度的小部件</string>
     <string name="appwidget_text">示例小部件</string>
     <string name="archiver_dialog_cost">下载成本：%s</string>
-    <string name="artist_cg">艺术家CG</string>
-    <string name="asian_porn">亚洲写真</string>
-    <string name="cosplay">Cosplay</string>
-    <string name="doujinshi">同人志</string>
     <string name="download_status_not_started">未开始</string>
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
@@ -1067,8 +1053,6 @@
     <string name="error_status_code_503">服务不可用 (503)</string>
     <string name="error_status_code_504">网关超时 (504)</string>
     <string name="error_status_code_505">HTTP版本不支持 (505)</string>
-    <string name="game_cg">游戏CG</string>
-    <string name="image_set">图集</string>
     <string name="lrr_category_action_delete">删除</string>
     <string name="lrr_category_action_edit">编辑</string>
     <string name="lrr_category_action_pin">置顶</string>
@@ -1086,23 +1070,15 @@
     <string name="lrr_category_type_dynamic">动态（搜索）</string>
     <string name="lrr_category_type_static">静态（手动）</string>
     <string name="lrr_category_updated">分类已更新</string>
-    <string name="manga" translatable="false">MANGA</string>
-    <string name="misc">其他</string>
-    <string name="non_h">全年龄</string>
     <string name="rating_none" translatable="false">(´_ゝ`)</string>
     <string name="reset_to_default">恢复默认</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="search_sp_suffix" />
-    <string name="settings_about_author_summary" translatable="false">Xslx98</string>
-    <string name="settings_about_declaration" translatable="false">LR Reader</string>
-    <string name="settings_about_telegram" translatable="false">Telegram</string>
     <string name="settings_save_image_aliPay">保存支付宝收款码</string>
     <string name="settings_save_image_weChat">保存微信收款码</string>
     <string name="site_e" translatable="false">LANraragi</string>
     <string name="site_ex" translatable="false">LANraragi</string>
-    <string name="stub" translatable="false">Stub</string>
     <string name="unknown" translatable="false">UNKNOWN</string>
-    <string name="western">西方</string>
     <string name="lrr_category_label_dynamic">动态</string>
     <string name="lrr_loading_categories">加载分类列表...</string>
     <string name="lrr_no_static_categories">没有可用的静态分类</string>

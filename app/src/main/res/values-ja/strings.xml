@@ -581,10 +581,8 @@
     <string name="settings_advanced_wifi_client">Wi-Fi で移行をするデータを受信</string>
     <string name="settings_advanced_wifi_client_summary">Wi-Fi ホットスポット経由で移行をするデータを受信します</string>
     <string name="settings_about">このアプリについて</string>
-    <string name="settings_about_declaration" translatable="false">LR Reader</string>
     <string name="settings_about_declaration_summary">LR Reader は LANraragi と一切の関係がございません。</string>
     <string name="settings_about_author">開発者</string>
-    <string name="settings_about_telegram" translatable="false">Telegram</string>
     <string name="settings_about_latest_release">最新バージョン</string>
     <string name="settings_about_website">サイト</string>
     <string name="settings_about_source">ソース</string>
@@ -867,24 +865,10 @@
 
     <!-- Auto-generated missing translations -->
     <string name="add_favorites_dialog_title">お気に入り追加</string>
-    <string name="app_language_de" translatable="false">Deutsch</string>
-    <string name="app_language_en" translatable="false">English</string>
-    <string name="app_language_es" translatable="false">Español</string>
-    <string name="app_language_fr" translatable="false">Français</string>
-    <string name="app_language_ja" translatable="false">日本語</string>
-    <string name="app_language_ko" translatable="false">한국어</string>
-    <string name="app_language_th" translatable="false">ไทย</string>
-    <string name="app_language_zh_cn" translatable="false">中文（大陆）</string>
-    <string name="app_language_zh_hk" translatable="false">中文（香港）</string>
-    <string name="app_language_zh_tw" translatable="false">中文（臺灣）</string>
-    <string name="artist_cg">アーティストCG</string>
-    <string name="asian_porn">アジアンポルノ</string>
     <string name="cloud_favorites">クラウドお気に入り</string>
-    <string name="cosplay">コスプレ</string>
     <string name="default_favorites_collection">デフォルトお気に入り</string>
     <string name="delete_favorites_dialog_message">お気に入りから削除しますか？</string>
     <string name="delete_favorites_dialog_title">お気に入り削除</string>
-    <string name="doujinshi">同人誌</string>
     <string name="error_status_code_400">不正なリクエスト (400)</string>
     <string name="error_status_code_401">認証失敗 (401)</string>
     <string name="error_status_code_402">支払いが必要 (402)</string>
@@ -914,8 +898,6 @@
     <string name="favorites_search_bar_hint">%s を検索</string>
     <string name="favorites_title">%s</string>
     <string name="favorites_title_2">%1$s - %2$s</string>
-    <string name="game_cg">ゲームCG</string>
-    <string name="image_set">イメージセット</string>
     <string name="local_favorites">ローカルカテゴリ</string>
     <string name="lrr_add_server">サーバーを追加</string>
     <string name="lrr_api_key_helper">LANraragi設定でAPIキーを確認</string>
@@ -987,10 +969,7 @@
     <string name="lrr_url_download_hint">ダウンロードするURLを入力</string>
     <string name="lrr_url_download_success">ダウンロードジョブを送信しました (Job #%d)</string>
     <string name="lrr_url_download_title">URLダウンロード</string>
-    <string name="manga" translatable="false">MANGA</string>
-    <string name="misc">その他</string>
     <string name="move_favorites_dialog_title">お気に入り移動</string>
-    <string name="non_h">全年齢</string>
     <string name="reset_to_default">デフォルトに戻す</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="settings_download_clean_invalid_download">無効なダウンロードを削除</string>
@@ -1002,9 +981,7 @@
     <string name="settings_read_picture_decoding_method_origin">システムデコード</string>
     <string name="site_e" translatable="false">LANraragi</string>
     <string name="site_ex" translatable="false">LANraragi</string>
-    <string name="stub" translatable="false">Stub</string>
     <string name="unknown" translatable="false">UNKNOWN</string>
-    <string name="western">西洋</string>
     <string name="lrr_category_label_dynamic">動的</string>
     <string name="lrr_save_and_connect">保存して接続</string>
     <string name="lrr_error_title">エラーが発生しました</string>

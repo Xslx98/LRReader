@@ -51,7 +51,6 @@
     <string name="downloads">下載</string>
     <string name="news">新聞</string>
     <string name="settings">設定</string>
-    <string name="stub" translatable="false">Stub</string>
 
     <string name="username">用戶名</string>
     <string name="password">密碼</string>
@@ -671,10 +670,8 @@
     <string name="settings_advanced_wifi_client_summary">從 Wi-Fi 熱點接收遷移數據</string>
 
     <string name="settings_about">關於</string>
-    <string name="settings_about_declaration" translatable="false">LR Reader</string>
     <string name="settings_about_declaration_summary">LR Reader 與 LANraragi 無任何聯繫</string>
     <string name="settings_about_author">作者</string>
-    <string name="settings_about_telegram" translatable="false">Telegram</string>
     <string name="settings_about_latest_release">最新版本</string>
     <string name="settings_about_website">網站</string>
     <string name="settings_about_source">源碼</string>
@@ -743,16 +740,6 @@
     <string name="cant_read_the_file">無法讀取檔案</string>
 
     <string name="app_language_system">系統語言（預設）</string>
-    <string name="app_language_de" translatable="false">Deutsch</string>
-    <string name="app_language_en" translatable="false">English</string>
-    <string name="app_language_es" translatable="false">Español</string>
-    <string name="app_language_fr" translatable="false">Français</string>
-    <string name="app_language_ja" translatable="false">日本語</string>
-    <string name="app_language_ko" translatable="false">한국어</string>
-    <string name="app_language_th" translatable="false">ไทย</string>
-    <string name="app_language_zh_cn" translatable="false">中文（大陆）</string>
-    <string name="app_language_zh_hk" translatable="false">中文（香港）</string>
-    <string name="app_language_zh_tw" translatable="false">中文（臺灣）</string>
 
     <!-- License -->
     <string name="license">授權</string>
@@ -1008,12 +995,6 @@
 
 
     <!-- Auto-generated missing translations -->
-    <string name="artist_cg">藝術家CG</string>
-    <string name="asian_porn">亞洲寫真</string>
-    <string name="cosplay">Cosplay</string>
-    <string name="doujinshi">同人誌</string>
-    <string name="game_cg">遊戲CG</string>
-    <string name="image_set">圖集</string>
     <string name="lrr_add_server">新增伺服器</string>
     <string name="lrr_api_key_helper">在LANraragi設定中查找API密鑰</string>
     <string name="lrr_api_key_hint">API密鑰（選填）</string>
@@ -1080,9 +1061,6 @@
     <string name="lrr_url_download_hint">輸入要下載的URL</string>
     <string name="lrr_url_download_success">下載任務已提交 (Job #%d)</string>
     <string name="lrr_url_download_title">URL下載</string>
-    <string name="manga" translatable="false">MANGA</string>
-    <string name="misc">其他</string>
-    <string name="non_h">全年齡</string>
     <string name="reset_to_default">恢復預設</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="settings_download_clean_invalid_download">清理無效下載</string>
@@ -1092,7 +1070,6 @@
     <string name="settings_read_picture_decoding_method_native">開源C++解碼庫</string>
     <string name="settings_read_picture_decoding_method_origin">系統解碼</string>
     <string name="unknown" translatable="false">UNKNOWN</string>
-    <string name="western">西方</string>
     <string name="lrr_category_label_dynamic">動態</string>
     <string name="lrr_save_and_connect">儲存並連接</string>
     <string name="lrr_error_title">出錯了</string>
