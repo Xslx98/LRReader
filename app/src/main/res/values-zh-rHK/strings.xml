@@ -24,7 +24,6 @@
     <string name="settings_advanced_url_replace_summary">url偽装(需重啟，開啟後帳戶功能失效)</string>
     <string name="share_favorites_dialog_title">分享分類</string>
     <string name="share_favorites_dialog_message">分享分類 %s ？</string>
-    <string name="add_favorites_dialog_message">新增分類 %s ？</string>
     <string name="settings_advanced_built_ex_hosts_title">内置LANraragi hosts.txt</string>
     <string name="settings_advanced_built_ex_hosts_summary">應用提供的主機到IP的映射\n可被自訂 hosts.txt 覆蓋</string>
     <string name="network_remind">檢測到開啟了 VPN，請注意您的網絡安全</string>
@@ -751,7 +750,6 @@
     <string name="favorites_title">%s</string>
     <string name="favorites_title_2">%1$s - %2$s</string>
     <string name="delete_favorites_dialog_title">移除分類</string>
-    <string name="delete_favorites_dialog_message">移除 %d 項分類？</string>
     <string name="move_favorites_dialog_title">移動分類</string>
     <string name="default_favorites_collection">預設分類</string>
     <string name="let_me_select">讓我選擇</string>
@@ -908,7 +906,6 @@
     <string name="from_torrent_completions">%s 來自種子完成</string>
     <string name="from_archive_download">%s 來自歸檔下載</string>
     <string name="from_hentai_home">%s 來自 Hentai@Home</string>
-    <string name="current_moderation_power">當前審核權力 %s</string>
     <string name="reset_cost">重置成本 %s</string>
     <string name="ip_base_limits">基於 IP 的配額</string>
     <string name="limit_unneed_reset">目前無需重置配額，請在重新整理後再試～</string>
@@ -999,7 +996,6 @@
     <string name="lrr_category_created">分類已建立</string>
     <string name="lrr_category_delete_confirm">確定刪除分類「%1$s」？</string>
     <string name="lrr_category_deleted">分類已刪除</string>
-    <string name="lrr_category_dynamic">動態</string>
     <string name="lrr_category_edit">編輯分類</string>
     <string name="lrr_category_name_empty">請輸入分類名稱</string>
     <string name="lrr_category_name_hint">分類名稱</string>

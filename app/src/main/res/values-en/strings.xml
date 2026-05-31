@@ -685,7 +685,6 @@
     <string name="favorites_title">%s</string>
     <string name="favorites_title_2">%1$s - %2$s</string>
     <string name="delete_favorites_dialog_title">Delete from favorites</string>
-    <string name="delete_favorites_dialog_message">Delete %d items from favorites?</string>
     <string name="move_favorites_dialog_title">Move favorites</string>
     <string name="default_favorites_collection">Default favorites collection</string>
     <string name="let_me_select">Let me select</string>
@@ -811,7 +810,6 @@
 
 
     <!-- Auto-generated missing translations -->
-    <string name="add_favorites_dialog_message">Add category %s ?</string>
     <string name="add_widget">Add widget</string>
     <string name="all_time_top_list">All Time TopList</string>
     <string name="app_widget_description">This is an app widget description</string>
@@ -825,7 +823,6 @@
     <string name="change_background_title">Are you sure you want to change the background?</string>
     <string name="choose_from_the_album">Choose from the album</string>
     <string name="copy_tag">Copy</string>
-    <string name="current_moderation_power">Current Moderation Power %s</string>
     <string name="default_sort">Default</string>
     <string name="download_filter_by_status">Filter by status</string>
     <string name="download_search">Search in download list</string>
@@ -885,7 +882,6 @@
     <string name="lrr_category_created">Category created</string>
     <string name="lrr_category_delete_confirm">Delete category \"%1$s\"?</string>
     <string name="lrr_category_deleted">Category deleted</string>
-    <string name="lrr_category_dynamic">Search: %s</string>
     <string name="lrr_category_edit">Edit Category</string>
     <string name="lrr_category_name_empty">Please enter a category name</string>
     <string name="lrr_category_name_hint">Category Name</string>

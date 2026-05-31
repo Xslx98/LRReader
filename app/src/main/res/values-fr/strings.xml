@@ -845,7 +845,6 @@
     <string name="settings_download_restore_download_items_get_gallery_info">Restaurer les éléments téléchargés dans la galerie</string>
     <string name="share_favorites_dialog_title">Partager la catégorie</string>
     <string name="share_favorites_dialog_message">Partager la catégorie %s ?</string>
-    <string name="add_favorites_dialog_message">Sélectionner le dossier de favoris</string>
     <string name="download_search">Rechercher dans la liste de téléchargement</string>
 
     <string name="nav_server_config">Changer de serveur</string>
@@ -865,9 +864,7 @@
     <string name="choose_from_the_album">Choisir dans l\'album</string>
     <string name="cloud_favorites">Favoris cloud</string>
     <string name="copy_tag">Copier le tag</string>
-    <string name="current_moderation_power">Pouvoir de modération actuel</string>
     <string name="default_favorites_collection">Collection de favoris par défaut</string>
-    <string name="delete_favorites_dialog_message">Supprimer des favoris ?</string>
     <string name="delete_favorites_dialog_title">Supprimer le favori</string>
     <string name="download_service">Download Service</string>
     <string name="download_torrent_name">torrent: %s</string>
@@ -930,7 +927,6 @@
     <string name="lrr_category_created">Catégorie créée</string>
     <string name="lrr_category_delete_confirm">Supprimer la catégorie \"%1$s\" ?</string>
     <string name="lrr_category_deleted">Catégorie supprimée</string>
-    <string name="lrr_category_dynamic">Dynamique</string>
     <string name="lrr_category_edit">Modifier la catégorie</string>
     <string name="lrr_category_name_empty">Veuillez entrer un nom de catégorie</string>
     <string name="lrr_category_name_hint">Nom de la catégorie</string>

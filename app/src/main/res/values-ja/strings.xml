@@ -786,7 +786,6 @@
     <string name="from_torrent_completions">%s 件の Torrent の完了</string>
     <string name="from_archive_download">%s 件のアーカイブのダウンロード</string>
     <string name="from_hentai_home">%s 件の Hentai@Home</string>
-    <string name="current_moderation_power">現在のモデレーション権限</string>
     <string name="reset_cost">コスト %s をリセットする</string>
     <string name="ip_base_limits">IPベースの制限</string>
     <string name="limit_unneed_reset">現在、クオータをリセットする必要はありません。更新後にもう一度お試しください～</string>
@@ -856,7 +855,6 @@
     <string name="settings_download_restore_download_items_get_gallery_info">ギャラリー内のダウンロード項目を復元</string>
     <string name="share_favorites_dialog_title">カテゴリを共有</string>
     <string name="share_favorites_dialog_message">カテゴリ %s を共有しますか？</string>
-    <string name="add_favorites_dialog_message">お気に入りフォルダを選択</string>
 
     <string name="nav_server_config">サーバー切替</string>
 
@@ -865,7 +863,6 @@
     <string name="add_favorites_dialog_title">お気に入り追加</string>
     <string name="cloud_favorites">クラウドお気に入り</string>
     <string name="default_favorites_collection">デフォルトお気に入り</string>
-    <string name="delete_favorites_dialog_message">お気に入りから削除しますか？</string>
     <string name="delete_favorites_dialog_title">お気に入り削除</string>
     <string name="error_status_code_400">不正なリクエスト (400)</string>
     <string name="error_status_code_401">認証失敗 (401)</string>
@@ -912,7 +909,6 @@
     <string name="lrr_category_created">カテゴリを作成しました</string>
     <string name="lrr_category_delete_confirm">カテゴリ \"%1$s\" を削除しますか？</string>
     <string name="lrr_category_deleted">カテゴリを削除しました</string>
-    <string name="lrr_category_dynamic">動的</string>
     <string name="lrr_category_edit">カテゴリ編集</string>
     <string name="lrr_category_name_empty">カテゴリ名を入力してください</string>
     <string name="lrr_category_name_hint">カテゴリ名</string>
