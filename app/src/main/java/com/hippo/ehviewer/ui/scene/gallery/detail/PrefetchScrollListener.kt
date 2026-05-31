@@ -54,7 +54,18 @@ internal class PrefetchScrollListener(
     }
 
     companion object {
-        /** Default number of grid rows below the last-visible row to prefetch. */
+        /**
+         * Default number of grid rows below the last-visible row to
+         * prefetch.
+         *
+         * **Cache-budget invariant:** the scroll working set is the
+         * visible viewport plus these prefetch rows. It must stay below
+         * [com.lanraragi.reader.client.api.PageThumbnailCache]'s entry
+         * capacity, otherwise the LRU evicts tiles that are still on
+         * screen and they flicker on rebind. Growing this (or the grid's
+         * span count) widens the working set — re-check the cache budget
+         * tiers and the working-set assertion in PageThumbnailCacheBudgetTest.
+         */
         const val ROWS_AHEAD_DEFAULT = 3
     }
 }
