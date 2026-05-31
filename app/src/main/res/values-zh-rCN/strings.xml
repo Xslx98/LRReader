@@ -1070,15 +1070,11 @@
     <string name="lrr_category_type_dynamic">动态（搜索）</string>
     <string name="lrr_category_type_static">静态（手动）</string>
     <string name="lrr_category_updated">分类已更新</string>
-    <string name="rating_none" translatable="false">(´_ゝ`)</string>
     <string name="reset_to_default">恢复默认</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="search_sp_suffix" />
     <string name="settings_save_image_aliPay">保存支付宝收款码</string>
     <string name="settings_save_image_weChat">保存微信收款码</string>
-    <string name="site_e" translatable="false">LANraragi</string>
-    <string name="site_ex" translatable="false">LANraragi</string>
-    <string name="unknown" translatable="false">UNKNOWN</string>
     <string name="lrr_category_label_dynamic">动态</string>
     <string name="lrr_loading_categories">加载分类列表...</string>
     <string name="lrr_no_static_categories">没有可用的静态分类</string>

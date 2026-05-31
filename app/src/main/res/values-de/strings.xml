@@ -233,7 +233,6 @@
     <string name="remember_favorite_collection">Kategorie merken</string>
     <string name="copy_tag">Tag kopieren</string>
     <string name="rating10">EIN MEISTERSTÜCK</string>
-    <string name="rating_none" translatable="false">(´_ゝ`)</string>
     <string name="rating9">WUNDERVOLL</string>
     <string name="rating8">SEHR GUT</string>
     <string name="rating7">GUT</string>
@@ -970,13 +969,10 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="settings_read_picture_decoding_method">Bild-Dekodierungsmethode</string>
     <string name="settings_read_picture_decoding_method_native">Open-Source C++ Dekodierungsbibliothek</string>
     <string name="settings_read_picture_decoding_method_origin">System-Dekodierung</string>
-    <string name="site_e" translatable="false">LANraragi</string>
-    <string name="site_ex" translatable="false">LANraragi</string>
     <string name="subscription_tip">Click “+” to add Subscription</string>
     <string name="theme_black">Schwarzes Design</string>
     <string name="theme_dark">Dunkles Design</string>
     <string name="theme_light">Helles Design</string>
-    <string name="unknown" translatable="false">UNKNOWN</string>
     <string name="lrr_category_label_dynamic">Dynamisch</string>
     <string name="lrr_save_and_connect">Speichern &amp; Verbinden</string>
     <string name="lrr_error_title">Fehler aufgetreten</string>

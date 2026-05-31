@@ -31,8 +31,6 @@
 
     <string name="app_name">LR Reader</string>
 
-    <string name="site_e" translatable="false">LANraragi</string>
-    <string name="site_ex" translatable="false">LANraragi</string>
 
     <!-- Theme -->
     <string name="theme_light">Light Theme</string>
@@ -311,7 +309,6 @@
     <string name="rating2">PAINFUL</string>
     <string name="rating1">UNBEARABLE</string>
     <string name="rating0">DISASTER</string>
-    <string name="rating_none" translatable="false">(´_ゝ`)</string>
 
     <!-- Gallery Info -->
     <string name="gallery_info">Gallery Info</string>
@@ -1016,7 +1013,6 @@
     <string name="top_lists">Top Lists</string>
     <string name="torrent_exist">File already exists: %s</string>
     <string name="try_again">Try Again</string>
-    <string name="unknown" translatable="false">UNKNOWN</string>
     <string name="update_to">Update to</string>
     <string name="wifi_client">WiFiClient</string>
     <string name="wifi_send_bookmark">Migrate bookmarks</string>

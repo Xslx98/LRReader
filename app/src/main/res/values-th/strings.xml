@@ -1027,7 +1027,6 @@
     <string name="move_favorites_dialog_title">Move categories</string>
     <string name="my_tags">My tags</string>
     <string name="preset">Preset</string>
-    <string name="rating_none" translatable="false">(´_ゝ`)</string>
     <string name="reset_to_default">รีเซ็ตเป็นค่าเริ่มต้น</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="settings_about_issue_help">Issue Help</string>
@@ -1041,9 +1040,6 @@
     <string name="settings_read_picture_decoding_method_origin">ถอดรหัสระบบ</string>
     <string name="settings_read_reverse_volume_page">Reverse volume key translation direction</string>
     <string name="settings_read_screen_rotation_sensor">Auto rotate</string>
-    <string name="site_e" translatable="false">LANraragi</string>
-    <string name="site_ex" translatable="false">LANraragi</string>
-    <string name="unknown" translatable="false">UNKNOWN</string>
     <string name="yes">Yes</string>
     <string name="lrr_category_label_dynamic">ไดนามิก</string>
     <string name="lrr_save_and_connect">บันทึกและเชื่อมต่อ</string>
