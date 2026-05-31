@@ -23,7 +23,7 @@ import android.content.Intent
 import android.content.res.Resources
 import android.graphics.Color
 import android.graphics.Point
-import android.graphics.drawable.ColorDrawable
+import androidx.core.graphics.drawable.toDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.text.TextUtils
@@ -433,7 +433,7 @@ class GalleryListScene : BaseScene(),
         })
         recyclerView.selector = Ripple.generateRippleDrawable(
             context, !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme),
-            ColorDrawable(Color.TRANSPARENT)
+            Color.TRANSPARENT.toDrawable()
         )
         recyclerView.setDrawSelectorOnTop(true)
         recyclerView.setClipToPadding(false)

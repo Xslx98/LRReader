@@ -25,6 +25,8 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.drawable.toDrawable
 import android.net.ConnectivityManager
 import android.os.Bundle
 import android.os.Handler
@@ -591,7 +593,7 @@ class MainActivity : StageActivity(),
                 gifHandler = gif
                 val width = gif.width
                 val height = gif.height
-                backgroundBit = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                backgroundBit = createBitmap(width, height)
                 val nextFrame = gif.updateFrame(backgroundBit)
                 handlerB.sendEmptyMessageDelayed(1, nextFrame.toLong())
             } else {
@@ -620,7 +622,7 @@ class MainActivity : StageActivity(),
         if (userAvatarFile != null) {
             val bitmap = decodeSampledBitmap(userAvatarFile.path)
             if (bitmap != null) {
-                avatar.load(BitmapDrawable(avatar.resources, bitmap))
+                avatar.load(bitmap.toDrawable(avatar.resources))
             } else {
                 avatar.load(R.drawable.default_avatar)
             }

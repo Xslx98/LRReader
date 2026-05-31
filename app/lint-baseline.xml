@@ -2,6 +2,17 @@
 <issues format="6" by="lint 8.13.2" type="baseline" client="gradle" dependencies="false" name="AGP (8.13.2)" variant="all" version="8.13.2">
 
     <issue
+        id="UseKtx"
+        message="Use the KTX extension function `Bitmap.toDrawable` instead?"
+        errorLine1="                    val drawable = BitmapDrawable(avatar.resources, bitmap)"
+        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/MainActivity.kt"
+            line="838"
+            column="36"/>
+    </issue>
+
+    <issue
         id="SuspiciousImport"
         message="Don&apos;t include `android.R` here; use a fully qualified name for each usage instead"
         errorLine1="import android.R"
@@ -16690,166 +16701,12 @@
 
     <issue
         id="UseKtx"
-        message="Use the KTX extension function `String.toColorInt` instead?"
-        errorLine1="            positiveButton.setTextColor(Color.parseColor(&quot;#F44336&quot;))"
-        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/detail/DeleteArchiveHelper.kt"
-            line="46"
-            column="41"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `String.toUri` instead?"
-        errorLine1="                loadArchiveThumbnail(holder.thumb, Uri.parse(archiveUri))"
-        errorLine2="                                                   ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/part/DownloadAdapter.kt"
-            line="168"
-            column="52"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension property `SparseBooleanArray.size` instead?"
-        errorLine1="        for (i in 0 until stateArray.size()) {"
-        errorLine2="                          ~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadBatchOpsHelper.kt"
-            line="102"
-            column="27"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `String.toUri` instead?"
-        errorLine1="                    val uri = Uri.parse(archiveUri)"
-        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/download/DownloadRepository.kt"
-            line="169"
-            column="31"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Int.toDrawable` instead?"
-        errorLine1="            ColorDrawable(Color.TRANSPARENT)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadsScene.kt"
-            line="362"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Int.toDrawable` instead?"
-        errorLine1="            ColorDrawable(Color.TRANSPARENT)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadsScene.kt"
-            line="362"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `String.toUri` instead?"
-        errorLine1="                val archiveUri = Uri.parse(downloadInfo.archiveUri)"
-        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadsScene.kt"
-            line="681"
-            column="34"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
         message="Use the KTX extension function `Context.withStyledAttributes` instead?"
         errorLine1="        val a = context.obtainStyledAttributes(attrs, SIZE_ATTRS)"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hippo/widget/DrawerView.kt"
             line="45"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Context.withStyledAttributes` instead?"
-        errorLine1="        val a = context.obtainStyledAttributes(attrs, R.styleable.FixedThumb, defStyle, 0)"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/widget/FixedThumb.kt"
-            line="35"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Context.withStyledAttributes` instead?"
-        errorLine1="        val a = context.obtainStyledAttributes(attrs, R.styleable.FixedThumbNew, defStyle, 0)"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/widget/FixedThumbNew.kt"
-            line="35"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Int.toDrawable` instead?"
-        errorLine1="            ColorDrawable(Color.TRANSPARENT)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryListScene.kt"
-            line="372"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Int.toDrawable` instead?"
-        errorLine1="            ColorDrawable(Color.TRANSPARENT)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryListScene.kt"
-            line="372"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension property `View.isVisible` instead?"
-        errorLine1="        if (seekBarPanel.visibility == View.VISIBLE) {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/gallery/GallerySliderController.kt"
-            line="203"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Int.toDrawable` instead?"
-        errorLine1="                ColorDrawable(Color.TRANSPARENT)"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/history/HistoryScene.kt"
-            line="136"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Int.toDrawable` instead?"
-        errorLine1="                ColorDrawable(Color.TRANSPARENT)"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/HostsActivity.kt"
-            line="91"
             column="17"/>
     </issue>
 
@@ -16866,39 +16723,6 @@
 
     <issue
         id="UseKtx"
-        message="Use the KTX function `createBitmap` instead?"
-        errorLine1="                backgroundBit = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)"
-        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/MainActivity.kt"
-            line="451"
-            column="33"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Bitmap.toDrawable` instead?"
-        errorLine1="                mAvatar!!.load(BitmapDrawable(mAvatar!!.resources, bitmap))"
-        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/MainActivity.kt"
-            line="482"
-            column="32"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Bitmap.toDrawable` instead?"
-        errorLine1="                    val drawable = BitmapDrawable(mAvatar!!.resources, bitmap)"
-        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/MainActivity.kt"
-            line="662"
-            column="36"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
         message="Use the KTX extension function `Canvas.withClip` instead?"
         errorLine1="                val saveCount = canvas.save()"
         errorLine2="                                ~~~~~~~~~~~~~">
@@ -16906,127 +16730,6 @@
             file="src/main/java/com/hippo/drawable/PreciselyClipDrawable.kt"
             line="95"
             column="33"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension property `View.isVisible` instead?"
-        errorLine1="        if (mListContainer.visibility == VISIBLE) {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/widget/SearchBar.kt"
-            line="491"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Canvas.withSave` instead?"
-        errorLine1="            val state = canvas.save()"
-        errorLine2="                        ~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/widget/SearchBar.kt"
-            line="508"
-            column="25"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `String.toColorInt` instead?"
-        errorLine1="                holder.itemView.setBackgroundColor(Color.parseColor(&quot;#1A4CAF50&quot;)) // subtle green tint"
-        errorLine2="                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/ServerListScene.kt"
-            line="250"
-            column="52"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `String.toColorInt` instead?"
-        errorLine1="                holder.name.setTextColor(Color.parseColor(&quot;#999999&quot;))"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/ServerListScene.kt"
-            line="253"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `String.toColorInt` instead?"
-        errorLine1="                holder.url.setTextColor(Color.parseColor(&quot;#BBBBBB&quot;))"
-        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/ServerListScene.kt"
-            line="254"
-            column="41"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension property `View.isVisible` instead?"
-        errorLine1="                mFingerprint!!.visibility == View.VISIBLE &amp;&amp;"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/SetSecurityActivity.kt"
-            line="140"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension property `View.isVisible` instead?"
-        errorLine1="                            mFingerprint!!.visibility == View.VISIBLE &amp;&amp;"
-        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/SetSecurityActivity.kt"
-            line="184"
-            column="29"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Canvas.withSave` instead?"
-        errorLine1="        val saved = canvas.save()"
-        errorLine2="                    ~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/widget/SimpleRatingView.kt"
-            line="68"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension property `SparseArray.size` instead?"
-        errorLine1="                for (i in 0 until map.size()) {"
-        errorLine2="                                  ~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/spider/SpiderInfo.kt"
-            line="77"
-            column="35"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `String.toUri` instead?"
-        errorLine1="        val uri = Uri.parse(url)"
-        errorLine2="                  ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/UrlOpener.kt"
-            line="44"
-            column="19"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `String.toUri` instead?"
-        errorLine1="                        Uri.parse(&quot;content: //downloads/public_downloads&quot;),"
-        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/main/UserImageChange.kt"
-            line="311"
-            column="25"/>
     </issue>
 
     <issue

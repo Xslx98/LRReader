@@ -21,6 +21,7 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.util.size
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.dao.DownloadInfo
@@ -98,7 +99,7 @@ internal class DownloadBatchOpsHelper(private val callback: Callback) {
         if (collectDownloadInfo) downloadInfoList = java.util.LinkedList()
 
         val stateArray = recyclerView.checkedItemPositions ?: return
-        for (i in 0 until stateArray.size()) {
+        for (i in 0 until stateArray.size) {
             if (stateArray.valueAt(i)) {
                 val info = list[callback.positionInList(stateArray.keyAt(i))]
                 downloadInfoList?.add(info)

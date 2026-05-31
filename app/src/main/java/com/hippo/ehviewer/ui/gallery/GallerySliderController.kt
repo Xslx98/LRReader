@@ -19,6 +19,7 @@ package com.hippo.ehviewer.ui.gallery
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.view.View
+import androidx.core.view.isVisible
 import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
@@ -200,7 +201,7 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
 
         mainHandler.removeCallbacks(mHideSliderRunnable)
 
-        if (seekBarPanel.visibility == View.VISIBLE) {
+        if (seekBarPanel.isVisible) {
             hideSlider(seekBarPanel, mSeekBarPanelAnimator)
             hideSlider(autoTransferPanel, mAutoTransferAnimator)
         } else {

@@ -16,7 +16,7 @@
 
 package com.hippo.ehviewer.spider
 
-import android.net.Uri
+import androidx.core.net.toUri
 import android.util.Log
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.Settings
@@ -160,7 +160,7 @@ object SpiderDen {
     private fun resolveRootDir(storedUri: String?): UniFile? {
         if (!storedUri.isNullOrEmpty()) {
             try {
-                val parsed = Uri.parse(storedUri)
+                val parsed = storedUri.toUri()
                 val file = UniFile.fromUri(Settings.getContext(), parsed)
                 if (file != null) return file
                 Log.w(TAG, "Stored DOWNLOAD_ROOT_URI no longer resolvable, falling back to current setting")

@@ -19,7 +19,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
+import androidx.core.graphics.drawable.toDrawable
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -360,7 +360,7 @@ class DownloadsScene : ToolbarScene(),
         mRecyclerView.selector = Ripple.generateRippleDrawable(
             context,
             !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme),
-            ColorDrawable(Color.TRANSPARENT)
+            Color.TRANSPARENT.toDrawable()
         )
         mRecyclerView.setDrawSelectorOnTop(true)
         mRecyclerView.clipToPadding = false
