@@ -1,0 +1,4 @@
+- "Ignore this version" button in the update dialog: skip a release so auto-check stays silent for it. Manual "Check for updates" still re-surfaces it.
+- Fix: the auto-check toggle now shows ON on a fresh install (it was rendering OFF while still running).
+- Localization: HTTP error messages are now translated; plural forms fixed for ja/ko/zh/es/fr; outdated strings removed.
+- Under the hood: androidx-ktx modernization + dead-code cleanup (lint baseline 1801 → 1157).
