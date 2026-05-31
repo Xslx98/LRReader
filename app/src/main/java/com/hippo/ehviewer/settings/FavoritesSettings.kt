@@ -1,5 +1,6 @@
 package com.hippo.ehviewer.settings
 
+import androidx.core.content.edit
 import com.hippo.ehviewer.Settings
 import com.hippo.lib.yorozuya.AssertUtils
 
@@ -29,11 +30,11 @@ object FavoritesSettings {
     @JvmStatic
     fun putFavCat(value: Array<String>) {
         AssertUtils.assertEquals(10, value.size)
-        val editor = Settings.getPreferences().edit()
-        for (i in 0..9) {
-            editor.putString(KEYS_FAV_CAT[i], value[i])
+        Settings.getPreferences().edit {
+            for (i in 0..9) {
+                putString(KEYS_FAV_CAT[i], value[i])
+            }
         }
-        editor.apply()
     }
 
     // --- Favorite Counts ---
@@ -52,11 +53,11 @@ object FavoritesSettings {
     @JvmStatic
     fun putFavCount(count: IntArray) {
         AssertUtils.assertEquals(10, count.size)
-        val editor = Settings.getPreferences().edit()
-        for (i in 0..9) {
-            editor.putInt(KEYS_FAV_COUNT[i], count[i])
+        Settings.getPreferences().edit {
+            for (i in 0..9) {
+                putInt(KEYS_FAV_COUNT[i], count[i])
+            }
         }
-        editor.apply()
     }
 
     // --- Local/Cloud Fav Count ---
