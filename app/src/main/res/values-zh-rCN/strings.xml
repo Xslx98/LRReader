@@ -655,7 +655,6 @@
     <string name="settings_advanced_url_replace_summary">url伪装(需重启，开启后账户功能失效)</string>
     <string name="share_favorites_dialog_title">分享分类</string>
     <string name="share_favorites_dialog_message">分享分类 %s ？</string>
-    <string name="add_favorites_dialog_message">添加分类 %s ？</string>
     <string name="settings_advanced_built_ex_hosts_title">内置LANraragi hosts.txt</string>
     <string name="settings_advanced_built_ex_hosts_summary">应用提供的主机到IP的映射\n可被自定义 hosts.txt 覆盖</string>
     <string name="network_remind">检测到开启了vpn，请注意您的网络安全</string>
@@ -719,7 +718,6 @@
     <string name="favorites_title">%s</string>
     <string name="favorites_title_2">%1$s - %2$s</string>
     <string name="delete_favorites_dialog_title">删除分类</string>
-    <string name="delete_favorites_dialog_message">删除 %d 项分类？</string>
     <string name="move_favorites_dialog_title">移动分类</string>
     <string name="default_favorites_collection">默认分类</string>
     <string name="let_me_select">让我选择</string>
@@ -874,7 +872,6 @@
     <string name="from_torrent_completions">%s 来自种子下载</string>
     <string name="from_archive_download">%s 来自内容下载</string>
     <string name="from_hentai_home">%s 来自Hentai@Home</string>
-    <string name="current_moderation_power">每分钟恢复 %s</string>
     <string name="reset_cost">花费 %s 重置</string>
     <string name="ip_base_limits">IP基础限制</string>
     <string name="limit_unneed_reset">当前无需重置配额，请在刷新后重试~</string>
@@ -948,7 +945,6 @@
     <string name="lrr_nav_archives">档案库</string>
     <string name="lrr_nav_categories">分类</string>
     <string name="lrr_nav_server">服务器</string>
-    <string name="lrr_category_dynamic">搜索: %s</string>
 
     <!-- LANraragi Sort Options -->
     <string name="lrr_sort_by_label">排序方式</string>

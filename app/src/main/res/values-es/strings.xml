@@ -890,7 +890,6 @@
     <string name="from_torrent_completions">%s de finalizaciones de torrent</string>
     <string name="from_archive_download">%s de descarga de archivo</string>
     <string name="from_hentai_home">%s de Hentai@Home</string>
-    <string name="current_moderation_power">Poder de moderación actual</string>
     <string name="reset_cost">Costo %s para reiniciar</string>
     <string name="ip_base_limits">Límites basados en IP</string>
     <string name="limit_unneed_reset">Actualmente no hay necesidad de reiniciar las cuotas, por favor intente nuevamente después de actualizar~</string>
@@ -917,7 +916,6 @@
     <string name="settings_download_restore_download_items_get_gallery_info">Restaurar elementos de descarga en la galería</string>
     <string name="share_favorites_dialog_title">Compartir categoría</string>
     <string name="share_favorites_dialog_message">¿Compartir categoría %s?</string>
-    <string name="add_favorites_dialog_message">Seleccionar carpeta de favoritos</string>
 
     <string name="nav_server_config">Cambiar servidor</string>
 
@@ -928,7 +926,6 @@
     <string name="cloud_favorites">Favoritos en la nube</string>
     <string name="default_favorites_collection">Colección de favoritos predeterminada</string>
     <string name="delete">Eliminar</string>
-    <string name="delete_favorites_dialog_message">¿Eliminar de favoritos?</string>
     <string name="delete_favorites_dialog_title">Eliminar favorito</string>
     <string name="dir_picker">Dir picker</string>
     <string name="directory_not_writable">The directory is not writable</string>
@@ -977,7 +974,6 @@
     <string name="lrr_category_created">Categoría creada</string>
     <string name="lrr_category_delete_confirm">¿Eliminar categoría \"%1$s\"?</string>
     <string name="lrr_category_deleted">Categoría eliminada</string>
-    <string name="lrr_category_dynamic">Dinámica</string>
     <string name="lrr_category_edit">Editar categoría</string>
     <string name="lrr_category_name_empty">Ingrese un nombre de categoría</string>
     <string name="lrr_category_name_hint">Nombre de categoría</string>

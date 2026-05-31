@@ -893,7 +893,6 @@
     <string name="settings_download_restore_download_items_get_gallery_info">갤러리의 다운로드 항목 복원</string>
     <string name="share_favorites_dialog_title">카테고리 공유</string>
     <string name="share_favorites_dialog_message">카테고리 %s 를 공유하시겠습니까?</string>
-    <string name="add_favorites_dialog_message">즐겨찾기 폴더 선택</string>
 
     <string name="nav_server_config">서버 전환</string>
 
@@ -901,9 +900,7 @@
     <!-- Auto-generated missing translations -->
     <string name="add_favorites_dialog_title">즐겨찾기 추가</string>
     <string name="cloud_favorites">클라우드 즐겨찾기</string>
-    <string name="current_moderation_power">현재 관리 권한</string>
     <string name="default_favorites_collection">기본 즐겨찾기</string>
-    <string name="delete_favorites_dialog_message">즐겨찾기에서 제거하시겠습니까?</string>
     <string name="delete_favorites_dialog_title">즐겨찾기 삭제</string>
     <string name="error_status_code_400">잘못된 요청 (400)</string>
     <string name="error_status_code_401">인증 실패 (401)</string>
@@ -956,7 +953,6 @@
     <string name="lrr_category_created">카테고리가 생성되었습니다</string>
     <string name="lrr_category_delete_confirm">카테고리 \"%1$s\" 을(를) 삭제하시겠습니까?</string>
     <string name="lrr_category_deleted">카테고리가 삭제되었습니다</string>
-    <string name="lrr_category_dynamic">동적</string>
     <string name="lrr_category_edit">카테고리 편집</string>
     <string name="lrr_category_name_empty">카테고리 이름을 입력해 주세요</string>
     <string name="lrr_category_name_hint">카테고리 이름</string>

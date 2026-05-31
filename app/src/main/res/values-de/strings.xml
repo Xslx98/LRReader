@@ -751,7 +751,6 @@
     <string name="from_torrent_completions">%s von Torrent-Abschlüssen</string>
     <string name="from_archive_download">%s von Archiv-Downloads</string>
     <string name="from_hentai_home">%s von Hentai@Home</string>
-    <string name="current_moderation_power">Aktuelle Moderationsrechte</string>
     <string name="reset_cost">Kosten %s zum Zurücksetzen</string>
     <string name="ip_base_limits">IP-basierte Limits</string>
     <string name="limit_unneed_reset">Es besteht derzeit keine Notwendigkeit, Kontingente zurückzusetzen, bitte nach dem Aktualisieren erneut versuchen~</string>
@@ -847,7 +846,6 @@
     <string name="settings_download_restore_download_items_get_gallery_info">Download-Elemente in der Galerie wiederherstellen</string>
     <string name="share_favorites_dialog_title">Kategorie teilen</string>
     <string name="share_favorites_dialog_message">Kategorie %s teilen?</string>
-    <string name="add_favorites_dialog_message">Favoritenordner wählen</string>
 
     <string name="nav_server_config">Server wechseln</string>
 
@@ -856,7 +854,6 @@
     <string name="add_favorites_dialog_title">Favorit hinzufügen</string>
     <string name="cloud_favorites">Cloud-Favoriten</string>
     <string name="default_favorites_collection">Standard-Favoritensammlung</string>
-    <string name="delete_favorites_dialog_message">Aus Favoriten entfernen?</string>
     <string name="delete_favorites_dialog_title">Favorit entfernen</string>
     <string name="error_status_code_400">Ungültige Anfrage (400)</string>
     <string name="error_status_code_401">Authentifizierung fehlgeschlagen (401)</string>
@@ -904,7 +901,6 @@
     <string name="lrr_category_created">Kategorie erstellt</string>
     <string name="lrr_category_delete_confirm">Kategorie \"%1$s\" löschen?</string>
     <string name="lrr_category_deleted">Kategorie gelöscht</string>
-    <string name="lrr_category_dynamic">Dynamisch</string>
     <string name="lrr_category_edit">Kategorie bearbeiten</string>
     <string name="lrr_category_name_empty">Bitte Kategorienamen eingeben</string>
     <string name="lrr_category_name_hint">Kategoriename</string>

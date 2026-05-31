@@ -23,7 +23,6 @@
     <string name="settings_about_donate_guide">Donation Guide</string>
     <string name="share_favorites_dialog_title">Share Category</string>
     <string name="share_favorites_dialog_message">Share category %s ?</string>
-    <string name="add_favorites_dialog_message">Add category %s ?</string>
     <string name="settings_advanced_built_ex_hosts_title">Built-in LANraragi hosts.txt</string>
     <string name="settings_advanced_built_ex_hosts_summary">Host-to-IP mapping provided by the app\nCan be overridden by custom hosts.txt</string>
     <string name="network_remind">VPN detected, please be aware of your network security</string>
@@ -827,7 +826,6 @@
     <string name="favorites_title">%s</string>
     <string name="favorites_title_2">%1$s - %2$s</string>
     <string name="delete_favorites_dialog_title">Delete from favorites</string>
-    <string name="delete_favorites_dialog_message">Delete %d items from favorites?</string>
     <string name="move_favorites_dialog_title">Move categories</string>
     <string name="default_favorites_collection">Default category</string>
     <string name="let_me_select">Let me select</string>
@@ -988,7 +986,6 @@
     <string name="from_torrent_completions">%s from torrent completions</string>
     <string name="from_archive_download">%s from archive download</string>
     <string name="from_hentai_home">%s from Hentai@Home</string>
-    <string name="current_moderation_power">Current Moderation Power %s</string>
     <string name="reset_cost">Cost %s To Reset</string>
     <string name="ip_base_limits">IP-based limits</string>
     <string name="limit_unneed_reset">There is currently no need to reset quotas, please try again after refreshing~</string>
@@ -1057,7 +1054,6 @@
     <string name="lrr_nav_archives">Archives</string>
     <string name="lrr_nav_categories">Categories</string>
     <string name="lrr_nav_server">Server</string>
-    <string name="lrr_category_dynamic">Search: %s</string>
     <string name="lrr_category_label_dynamic">Dynamic</string>
 
     <!-- LANraragi Sort Options -->

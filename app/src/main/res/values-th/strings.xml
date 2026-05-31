@@ -882,7 +882,6 @@
     <string name="from_torrent_completions">%s จากการเสร็จสิ้น torrent</string>
     <string name="from_archive_download">%s จากการดาวน์โหลดไฟล์บีบอัด</string>
     <string name="from_hentai_home">%s จาก Hentai@Home</string>
-    <string name="current_moderation_power">พลังการดูแลปัจจุบัน %s</string>
     <string name="reset_cost">ค่าใช้จ่าย %s เพื่อรีเซ็ต</string>
     <string name="ip_base_limits">ขีดจำกัดตาม IP</string>
     <string name="limit_unneed_reset">ปัจจุบันไม่จำเป็นต้องรีเซ็ตโควต้า กรุณาลองอีกครั้งหลังจากรีเฟรช~</string>
@@ -912,7 +911,6 @@
     <string name="settings_download_restore_download_items_get_gallery_info">กู้คืนรายการดาวน์โหลดในแกลเลอรี</string>
     <string name="share_favorites_dialog_title">แชร์หมวดหมู่</string>
     <string name="share_favorites_dialog_message">แชร์หมวดหมู่ %s ?</string>
-    <string name="add_favorites_dialog_message">เลือกโฟลเดอร์รายการโปรด</string>
 
     <string name="nav_server_config">เปลี่ยนเซิร์ฟเวอร์</string>
 
@@ -924,7 +922,6 @@
     <string name="cloud_favorites">Cloud categories</string>
     <string name="default_directory">ไดเรกทอรีเริ่มต้น</string>
     <string name="default_favorites_collection">Default category</string>
-    <string name="delete_favorites_dialog_message">Delete %d items from favorites?</string>
     <string name="delete_favorites_dialog_title">Delete from favorites</string>
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
@@ -973,7 +970,6 @@
     <string name="lrr_category_created">Category created</string>
     <string name="lrr_category_delete_confirm">Delete category \"%1$s\"?</string>
     <string name="lrr_category_deleted">Category deleted</string>
-    <string name="lrr_category_dynamic">Search: %s</string>
     <string name="lrr_category_edit">แก้ไขหมวดหมู่</string>
     <string name="lrr_category_name_empty">กรุณาป้อนชื่อหมวดหมู่</string>
     <string name="lrr_category_name_hint">Category Name</string>
