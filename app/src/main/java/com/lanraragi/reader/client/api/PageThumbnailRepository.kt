@@ -161,10 +161,75 @@ object PageThumbnailRepository {
         )
     }
 
+    /**
+     * Decode the JPEG bytes into a grid-sized bitmap.
+     *
+     * Two passes:
+     *  1. `inJustDecodeBounds` reads the source dimensions without
+     *     allocating pixels.
+     *  2. A real decode with [computeInSampleSize] downsamples any
+     *     oversized server thumbnail toward the on-screen tile size, and
+     *     [Bitmap.Config.RGB_565] halves the per-pixel cost (page
+     *     thumbnails are opaque JPEGs — the alpha channel is dead
+     *     weight).
+     *
+     * Both bound the per-entry memory of [PageThumbnailCache] so its
+     * fixed byte budget holds the grid's full scroll working set
+     * instead of evicting tiles that are still on screen — the root
+     * cause of the preview grid flickering during scroll.
+     */
     private suspend fun decodeBitmap(bytes: ByteArray): Bitmap? = withContext(Dispatchers.IO) {
-        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        val opts = BitmapFactory.Options().apply {
+            inSampleSize = computeInSampleSize(
+                bounds.outWidth,
+                bounds.outHeight,
+                TARGET_DECODE_WIDTH_PX,
+                TARGET_DECODE_HEIGHT_PX,
+            )
+            inPreferredConfig = Bitmap.Config.RGB_565
+        }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
+    }
+
+    /**
+     * Largest power-of-two subsample that keeps a [srcWidth] × [srcHeight]
+     * source at or above the [reqWidth] × [reqHeight] target. Mirrors the
+     * canonical `BitmapFactory` recipe; returns 1 (no downsample) when
+     * the source already fits or when the bounds pass failed (negative /
+     * zero dimensions).
+     */
+    @JvmStatic
+    internal fun computeInSampleSize(
+        srcWidth: Int,
+        srcHeight: Int,
+        reqWidth: Int,
+        reqHeight: Int,
+    ): Int {
+        if (srcWidth <= 0 || srcHeight <= 0) return 1
+        var inSampleSize = 1
+        if (srcHeight > reqHeight || srcWidth > reqWidth) {
+            val halfHeight = srcHeight / 2
+            val halfWidth = srcWidth / 2
+            while ((halfHeight / inSampleSize) >= reqHeight && (halfWidth / inSampleSize) >= reqWidth) {
+                inSampleSize *= 2
+            }
+        }
+        return inSampleSize
     }
 
     private const val HTTP_CLIENT_ERR_START = 400
     private const val HTTP_CLIENT_ERR_END = 499
+
+    /**
+     * Decode-target tile size in pixels. Sized to the largest grid tile
+     * (`page_thumb_target_width_large` = 160dp) at a high display density
+     * so even chunky tiles on hi-DPI screens stay crisp, with the 2:3
+     * page aspect for height. Sources larger than ~2× this get
+     * subsampled; typical ~500px server thumbnails pass through 1:1 and
+     * lean on RGB_565 alone for the memory win.
+     */
+    private const val TARGET_DECODE_WIDTH_PX = 480
+    private const val TARGET_DECODE_HEIGHT_PX = 720
 }
