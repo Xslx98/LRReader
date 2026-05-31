@@ -1225,534 +1225,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_400&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_400&quot;>錯誤請求 (400)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="95"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_401&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_401&quot;>認證失敗 (401)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="96"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_402&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_402&quot;>需要付費 (402)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="97"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_400&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_400&quot; translatable=&quot;false&quot;>Bad Request&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="98"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_403&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_403&quot;>禁止存取 (403)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="98"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_401&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_401&quot; translatable=&quot;false&quot;>Unauthorized&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="99"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_404&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_404&quot;>未找到 (404)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="99"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_402&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_402&quot; translatable=&quot;false&quot;>Payment Required&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="100"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_405&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_405&quot;>方法不允許 (405)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="100"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_403&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_403&quot; translatable=&quot;false&quot;>Forbidden&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="101"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_406&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_406&quot;>不可接受 (406)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="101"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_404&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_404&quot; translatable=&quot;false&quot;>Not Found&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="102"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_407&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_407&quot;>需要代理認證 (407)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="102"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_405&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_405&quot; translatable=&quot;false&quot;>Method Not Allowed&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="103"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_408&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_408&quot;>請求逾時 (408)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="103"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_406&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_406&quot; translatable=&quot;false&quot;>Not Acceptable&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="104"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_409&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_409&quot;>衝突 (409)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="104"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_407&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_407&quot; translatable=&quot;false&quot;>Proxy Authentication Required&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="105"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_410&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_410&quot;>已刪除 (410)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="105"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_408&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_408&quot; translatable=&quot;false&quot;>Request Timeout&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="106"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_411&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_411&quot;>需要內容長度 (411)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="106"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_409&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_409&quot; translatable=&quot;false&quot;>Conflict&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="107"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_412&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_412&quot;>前提條件失敗 (412)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="107"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_410&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_410&quot; translatable=&quot;false&quot;>Gone&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="108"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_413&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_413&quot;>請求實體太大 (413)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="108"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_411&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_411&quot; translatable=&quot;false&quot;>Length Required&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="109"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_414&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_414&quot;>請求URI太長 (414)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="109"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_412&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_412&quot; translatable=&quot;false&quot;>Precondition Failed&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="110"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_415&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_415&quot;>不支援的媒體類型 (415)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="110"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_413&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_413&quot; translatable=&quot;false&quot;>Request Entity Too Large&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="111"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_416&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_416&quot;>請求範圍不符 (416)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="111"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_414&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_414&quot; translatable=&quot;false&quot;>Request-URI Too Long&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="112"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_417&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_417&quot;>期望失敗 (417)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="112"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_415&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_415&quot; translatable=&quot;false&quot;>Unsupported Media Type&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="113"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_416&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_416&quot; translatable=&quot;false&quot;>Requested Range Not Satisfiable&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="114"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_500&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_500&quot;>伺服器錯誤 (500)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="114"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_417&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_417&quot; translatable=&quot;false&quot;>Expectation Failed&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="115"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_501&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_501&quot;>未實作 (501)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="115"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_502&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_502&quot;>閘道器錯誤 (502)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="116"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_500&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_500&quot; translatable=&quot;false&quot;>Internal Server Error&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="117"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_503&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_503&quot;>服務不可用 (503)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="117"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_501&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_501&quot; translatable=&quot;false&quot;>Not Implemented&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="118"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_504&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_504&quot;>閘道器逾時 (504)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="118"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_502&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_502&quot; translatable=&quot;false&quot;>Bad Gateway&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="119"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_505&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_505&quot;>HTTP版本不支援 (505)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rHK/strings.xml"
-            line="119"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_503&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_503&quot; translatable=&quot;false&quot;>Service Unavailable&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="120"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_504&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_504&quot; translatable=&quot;false&quot;>Gateway Timeout&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="121"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_505&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;en&quot; (English) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_505&quot; translatable=&quot;false&quot;>HTTP Version Not Supported&lt;/string>"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="122"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;rating_none&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;de&quot; (German) here"
         errorLine1="    &lt;string name=&quot;rating_none&quot; translatable=&quot;false&quot;>(´_ゝ`)&lt;/string>"
         errorLine2="                               ~~~~~~~~~~~~~~~~~~~~">
@@ -2644,33 +2116,11 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_400&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_400&quot;>Ungültige Anfrage (400)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="881"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;artist_cg&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
         errorLine1="    &lt;string name=&quot;artist_cg&quot;>アーティストCG&lt;/string>"
         errorLine2="            ~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values-ja/strings.xml"
-            line="882"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_401&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_401&quot;>Authentifizierung fehlgeschlagen (401)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
             line="882"
             column="13"/>
     </issue>
@@ -2688,78 +2138,12 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_402&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_402&quot;>Zahlung erforderlich (402)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="883"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_403&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_403&quot;>Zugriff verboten (403)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="884"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;cosplay&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
         errorLine1="    &lt;string name=&quot;cosplay&quot;>コスプレ&lt;/string>"
         errorLine2="            ~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values-ja/strings.xml"
             line="885"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_404&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_404&quot;>Nicht gefunden (404)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="885"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_405&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_405&quot;>Methode nicht erlaubt (405)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="886"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_406&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_406&quot;>Nicht akzeptabel (406)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="887"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_407&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_407&quot;>Proxy-Authentifizierung erforderlich (407)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="888"
             column="13"/>
     </issue>
 
@@ -2776,655 +2160,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_400&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_400&quot;>Requête incorrecte (400)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="889"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_408&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_408&quot;>Zeitüberschreitung (408)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="889"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_400&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_400&quot;>不正なリクエスト (400)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="890"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_401&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_401&quot;>Authentification échouée (401)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="890"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_409&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_409&quot;>Konflikt (409)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="890"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_401&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_401&quot;>認証失敗 (401)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="891"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_402&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_402&quot;>Paiement requis (402)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="891"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_410&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_410&quot;>Entfernt (410)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="891"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_402&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_402&quot;>支払いが必要 (402)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="892"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_403&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_403&quot;>Accès interdit (403)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="892"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_411&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_411&quot;>Länge erforderlich (411)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="892"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_403&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_403&quot;>アクセス禁止 (403)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="893"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_404&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_404&quot;>Non trouvé (404)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="893"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_412&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_412&quot;>Vorbedingung fehlgeschlagen (412)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="893"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_404&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_404&quot;>見つかりません (404)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="894"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_405&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_405&quot;>Méthode non autorisée (405)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="894"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_413&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_413&quot;>Anfrage zu groß (413)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="894"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_405&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_405&quot;>メソッド不許可 (405)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="895"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_406&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_406&quot;>Non acceptable (406)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="895"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_414&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_414&quot;>URI zu lang (414)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="895"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_406&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_406&quot;>受理不可 (406)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="896"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_407&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_407&quot;>Authentification proxy requise (407)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="896"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_415&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_415&quot;>Nicht unterstützter Medientyp (415)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="896"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_407&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_407&quot;>プロキシ認証が必要 (407)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="897"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_408&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_408&quot;>Délai d\&apos;attente dépassé (408)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="897"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_416&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_416&quot;>Bereich nicht erfüllbar (416)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="897"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_408&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_408&quot;>リクエストタイムアウト (408)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="898"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_409&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_409&quot;>Conflit (409)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="898"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_417&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_417&quot;>Erwartung fehlgeschlagen (417)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="898"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_409&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_409&quot;>競合 (409)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="899"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_410&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_410&quot;>Supprimé (410)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="899"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_500&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_500&quot;>Serverfehler (500)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="899"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_410&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_410&quot;>消滅 (410)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="900"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_411&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_411&quot;>Longueur requise (411)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="900"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_501&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_501&quot;>Nicht implementiert (501)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="900"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_411&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_411&quot;>長さが必要 (411)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="901"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_412&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_412&quot;>Précondition échouée (412)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="901"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_502&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_502&quot;>Gateway-Fehler (502)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="901"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_412&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_412&quot;>前提条件の失敗 (412)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="902"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_413&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_413&quot;>Entité de requête trop grande (413)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="902"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_503&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_503&quot;>Dienst nicht verfügbar (503)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="902"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_413&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_413&quot;>リクエストエンティティが大きすぎる (413)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="903"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_414&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_414&quot;>URI de requête trop longue (414)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="903"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_504&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_504&quot;>Gateway-Zeitüberschreitung (504)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="903"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_414&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_414&quot;>リクエストURIが長すぎる (414)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="904"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_415&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_415&quot;>Type de média non supporté (415)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="904"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_505&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_505&quot;>HTTP-Version nicht unterstützt (505)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-de/strings.xml"
-            line="904"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_415&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_415&quot;>サポートされていないメディアタイプ (415)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="905"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_416&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_416&quot;>Plage non satisfaisable (416)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="905"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_416&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_416&quot;>要求範囲が不正 (416)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="906"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_417&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_417&quot;>Attente échouée (417)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="906"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_417&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_417&quot;>期待に沿えない (417)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="907"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_500&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_500&quot;>Erreur serveur (500)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="907"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_500&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_500&quot;>サーバーエラー (500)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="908"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_501&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_501&quot;>Non implémenté (501)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="908"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_501&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_501&quot;>未実装 (501)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="909"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_502&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_502&quot;>Erreur de passerelle (502)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="909"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_502&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_502&quot;>ゲートウェイエラー (502)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="910"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_503&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_503&quot;>Service indisponible (503)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="910"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;game_cg&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
         errorLine1="    &lt;string name=&quot;game_cg&quot;>Spiel-CG&lt;/string>"
         errorLine2="            ~~~~~~~~~~~~~~">
@@ -3436,67 +2171,12 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_503&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_503&quot;>サービス利用不可 (503)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="911"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_504&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_504&quot;>Délai de passerelle dépassé (504)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="911"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_504&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_504&quot;>ゲートウェイタイムアウト (504)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="912"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_505&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;fr&quot; (French) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_505&quot;>Version HTTP non supportée (505)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-fr/strings.xml"
-            line="912"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;image_set&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
         errorLine1="    &lt;string name=&quot;image_set&quot;>Bilderset&lt;/string>"
         errorLine2="            ~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values-de/strings.xml"
             line="912"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_505&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_505&quot;>HTTPバージョン非対応 (505)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ja/strings.xml"
-            line="913"
             column="13"/>
     </issue>
 
@@ -3920,17 +2600,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_400&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_400&quot;>잘못된 요청 (400)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="934"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;app_language_zh_tw&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;th&quot; (Thai) here"
         errorLine1="    &lt;string name=&quot;app_language_zh_tw&quot; translatable=&quot;false&quot;>中文（臺灣）&lt;/string>"
         errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~">
@@ -3953,44 +2622,11 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_401&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_401&quot;>인증 실패 (401)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="935"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_402&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_402&quot;>결제 필요 (402)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="936"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;artist_cg&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
         errorLine1="    &lt;string name=&quot;artist_cg&quot;>CG ศิลปิน&lt;/string>"
         errorLine2="            ~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values-th/strings.xml"
-            line="937"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_403&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_403&quot;>접근 금지 (403)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
             line="937"
             column="13"/>
     </issue>
@@ -4019,39 +2655,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_404&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_404&quot;>찾을 수 없음 (404)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="938"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_405&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_405&quot;>허용되지 않는 메서드 (405)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="939"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_406&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_406&quot;>수용 불가 (406)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="940"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;cosplay&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
         errorLine1="    &lt;string name=&quot;cosplay&quot;>คอสเพลย์&lt;/string>"
         errorLine2="            ~~~~~~~~~~~~~~">
@@ -4063,66 +2666,11 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_407&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_407&quot;>프록시 인증 필요 (407)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="941"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_408&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_408&quot;>요청 시간 초과 (408)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="942"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_409&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_409&quot;>충돌 (409)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="943"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_410&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_410&quot;>사라짐 (410)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="944"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;doujinshi&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
         errorLine1="    &lt;string name=&quot;doujinshi&quot;>Doujinshi&lt;/string>"
         errorLine2="            ~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values-es/strings.xml"
-            line="945"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_411&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_411&quot;>길이 필요 (411)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
             line="945"
             column="13"/>
     </issue>
@@ -4140,457 +2688,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_400&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_400&quot;>Solicitud incorrecta (400)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="946"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_412&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_412&quot;>전제 조건 실패 (412)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="946"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_401&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_401&quot;>Autenticación fallida (401)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="947"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_413&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_413&quot;>요청 엔터티 너무 큼 (413)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="947"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_402&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_402&quot;>Pago requerido (402)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="948"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_414&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_414&quot;>요청 URI 너무 김 (414)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="948"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_400&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_400&quot;>คำขอไม่ถูกต้อง (400)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="949"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_403&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_403&quot;>Acceso prohibido (403)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="949"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_415&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_415&quot;>지원하지 않는 미디어 유형 (415)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="949"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_401&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_401&quot;>การยืนยันตัวตนล้มเหลว (401)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="950"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_404&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_404&quot;>No encontrado (404)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="950"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_416&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_416&quot;>요청 범위 불충분 (416)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="950"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_402&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_402&quot;>ต้องชำระเงิน (402)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="951"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_405&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_405&quot;>Método no permitido (405)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="951"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_417&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_417&quot;>기대 실패 (417)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="951"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_403&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_403&quot;>ห้ามเข้าถึง (403)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="952"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_406&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_406&quot;>No aceptable (406)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="952"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_500&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_500&quot;>서버 오류 (500)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="952"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_404&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_404&quot;>ไม่พบ (404)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="953"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_407&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_407&quot;>Autenticación de proxy requerida (407)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="953"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_501&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_501&quot;>미구현 (501)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="953"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_405&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_405&quot;>วิธีการไม่อนุญาต (405)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="954"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_408&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_408&quot;>Tiempo de espera agotado (408)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="954"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_502&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_502&quot;>게이트웨이 오류 (502)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="954"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_406&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_406&quot;>ไม่ยอมรับ (406)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="955"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_409&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_409&quot;>Conflicto (409)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="955"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_503&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_503&quot;>서비스 사용 불가 (503)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="955"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_407&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_407&quot;>ต้องยืนยันตัวตนพร็อกซี (407)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="956"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_410&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_410&quot;>Eliminado (410)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="956"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_504&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_504&quot;>게이트웨이 시간 초과 (504)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="956"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_408&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_408&quot;>หมดเวลาคำขอ (408)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="957"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_411&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_411&quot;>Longitud requerida (411)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="957"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_505&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_505&quot;>HTTP 버전 미지원 (505)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-ko/strings.xml"
-            line="957"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_409&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_409&quot;>ขัดแย้ง (409)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="958"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_412&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_412&quot;>Precondición fallida (412)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="958"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_410&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_410&quot;>ถูกลบ (410)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="959"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_413&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_413&quot;>Entidad de solicitud demasiado grande (413)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="959"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_411&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_411&quot;>ต้องระบุความยาว (411)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="960"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_414&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_414&quot;>URI de solicitud demasiado larga (414)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="960"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_412&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_412&quot;>เงื่อนไขเบื้องต้นล้มเหลว (412)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="961"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_415&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_415&quot;>Tipo de medio no soportado (415)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="961"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;app_language_de&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;zh&quot; (Chinese) here"
         errorLine1="    &lt;string name=&quot;app_language_de&quot; translatable=&quot;false&quot;>Deutsch&lt;/string>"
         errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~">
@@ -4598,28 +2695,6 @@
             file="src/main/res/values-zh-rTW/strings.xml"
             line="962"
             column="36"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_413&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_413&quot;>เนื้อหาคำขอใหญ่เกินไป (413)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="962"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_416&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_416&quot;>Rango no satisfactorio (416)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="962"
-            column="13"/>
     </issue>
 
     <issue
@@ -4635,28 +2710,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_414&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_414&quot;>URI คำขอยาวเกินไป (414)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="963"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_417&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_417&quot;>Expectativa fallida (417)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="963"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;app_language_es&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;zh&quot; (Chinese) here"
         errorLine1="    &lt;string name=&quot;app_language_es&quot; translatable=&quot;false&quot;>Español&lt;/string>"
         errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~">
@@ -4664,28 +2717,6 @@
             file="src/main/res/values-zh-rTW/strings.xml"
             line="964"
             column="36"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_415&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_415&quot;>ประเภทสื่อไม่รองรับ (415)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="964"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_500&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_500&quot;>Error del servidor (500)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="964"
-            column="13"/>
     </issue>
 
     <issue
@@ -4701,28 +2732,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_416&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_416&quot;>ช่วงที่ร้องขอไม่ถูกต้อง (416)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="965"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_501&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_501&quot;>No implementado (501)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="965"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;app_language_ja&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;zh&quot; (Chinese) here"
         errorLine1="    &lt;string name=&quot;app_language_ja&quot; translatable=&quot;false&quot;>日本語&lt;/string>"
         errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~">
@@ -4734,28 +2743,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_417&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_417&quot;>ความคาดหวังล้มเหลว (417)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="966"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_502&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_502&quot;>Error de puerta de enlace (502)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="966"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;app_language_ko&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;zh&quot; (Chinese) here"
         errorLine1="    &lt;string name=&quot;app_language_ko&quot; translatable=&quot;false&quot;>한국어&lt;/string>"
         errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~">
@@ -4763,28 +2750,6 @@
             file="src/main/res/values-zh-rTW/strings.xml"
             line="967"
             column="36"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_500&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_500&quot;>ข้อผิดพลาดเซิร์ฟเวอร์ (500)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="967"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_503&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_503&quot;>Servicio no disponible (503)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="967"
-            column="13"/>
     </issue>
 
     <issue
@@ -4811,28 +2776,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_501&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_501&quot;>ยังไม่ได้ติดตั้ง (501)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="968"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_504&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_504&quot;>Tiempo de espera del gateway (504)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="968"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;image_set&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ko&quot; (Korean) here"
         errorLine1="    &lt;string name=&quot;image_set&quot;>이미지 세트&lt;/string>"
         errorLine2="            ~~~~~~~~~~~~~~~~">
@@ -4855,28 +2798,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_502&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_502&quot;>ข้อผิดพลาดเกตเวย์ (502)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="969"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_505&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_505&quot;>Versión HTTP no soportada (505)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-es/strings.xml"
-            line="969"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;app_language_zh_hk&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;zh&quot; (Chinese) here"
         errorLine1="    &lt;string name=&quot;app_language_zh_hk&quot; translatable=&quot;false&quot;>中文（香港）&lt;/string>"
         errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~">
@@ -4884,17 +2805,6 @@
             file="src/main/res/values-zh-rTW/strings.xml"
             line="970"
             column="39"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_503&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_503&quot;>บริการไม่พร้อมใช้งาน (503)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="970"
-            column="13"/>
     </issue>
 
     <issue
@@ -4910,33 +2820,11 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_504&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_504&quot;>เกตเวย์หมดเวลา (504)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
-            line="971"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;artist_cg&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
         errorLine1="    &lt;string name=&quot;artist_cg&quot;>藝術家CG&lt;/string>"
         errorLine2="            ~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values-zh-rTW/strings.xml"
-            line="972"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_505&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_505&quot;>ไม่รองรับเวอร์ชัน HTTP (505)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-th/strings.xml"
             line="972"
             column="13"/>
     </issue>
@@ -4987,45 +2875,12 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_400&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_400&quot;>錯誤請求 (400)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="976"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;image_set&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
         errorLine1="    &lt;string name=&quot;image_set&quot;>Conjunto de imágenes&lt;/string>"
         errorLine2="            ~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values-es/strings.xml"
             line="976"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_401&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_401&quot;>認證失敗 (401)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="977"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_402&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_402&quot;>需要付費 (402)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="978"
             column="13"/>
     </issue>
 
@@ -5042,67 +2897,12 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_403&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_403&quot;>禁止存取 (403)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="979"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;image_set&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;th&quot; (Thai) here"
         errorLine1="    &lt;string name=&quot;image_set&quot;>ชุดภาพ&lt;/string>"
         errorLine2="            ~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values-th/strings.xml"
             line="979"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_404&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_404&quot;>未找到 (404)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="980"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_405&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_405&quot;>方法不允許 (405)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="981"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_406&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_406&quot;>不可接受 (406)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="982"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_407&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_407&quot;>需要代理認證 (407)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="983"
             column="13"/>
     </issue>
 
@@ -5119,45 +2919,12 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_408&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_408&quot;>請求逾時 (408)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="984"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;misc&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;de&quot; (German) here"
         errorLine1="    &lt;string name=&quot;misc&quot;>Sonstiges&lt;/string>"
         errorLine2="            ~~~~~~~~~~~">
         <location
             file="src/main/res/values-de/strings.xml"
             line="984"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_409&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_409&quot;>衝突 (409)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="985"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_410&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_410&quot;>已刪除 (410)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="986"
             column="13"/>
     </issue>
 
@@ -5174,50 +2941,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_411&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_411&quot;>需要內容長度 (411)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="987"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_412&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_412&quot;>前提條件失敗 (412)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="988"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_413&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_413&quot;>請求實體太大 (413)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="989"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_414&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_414&quot;>請求URI太長 (414)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="990"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;settings_about_author_summary&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;de&quot; (German) here"
         errorLine1="    &lt;string name=&quot;settings_about_author_summary&quot; translatable=&quot;false&quot;>LR Reader Contributors&lt;/string>"
         errorLine2="                                                 ~~~~~~~~~~~~~~~~~~~~">
@@ -5225,17 +2948,6 @@
             file="src/main/res/values-de/strings.xml"
             line="990"
             column="50"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_415&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_415&quot;>不支援的媒體類型 (415)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="991"
-            column="13"/>
     </issue>
 
     <issue
@@ -5251,45 +2963,12 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_416&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_416&quot;>請求範圍不符 (416)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="992"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;misc&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;ja&quot; (Japanese) here"
         errorLine1="    &lt;string name=&quot;misc&quot;>その他&lt;/string>"
         errorLine2="            ~~~~~~~~~~~">
         <location
             file="src/main/res/values-ja/strings.xml"
             line="992"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_417&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_417&quot;>期望失敗 (417)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="993"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_500&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_500&quot;>伺服器錯誤 (500)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="994"
             column="13"/>
     </issue>
 
@@ -5306,39 +2985,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_501&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_501&quot;>未實作 (501)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="995"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_502&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_502&quot;>閘道器錯誤 (502)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="996"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_503&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_503&quot;>服務不可用 (503)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="997"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;site_e&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;de&quot; (German) here"
         errorLine1="    &lt;string name=&quot;site_e&quot; translatable=&quot;false&quot;>LANraragi&lt;/string>"
         errorLine2="                          ~~~~~~~~~~~~~~~~~~~~">
@@ -5346,17 +2992,6 @@
             file="src/main/res/values-de/strings.xml"
             line="997"
             column="27"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_504&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_504&quot;>閘道器逾時 (504)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="998"
-            column="13"/>
     </issue>
 
     <issue
@@ -5379,17 +3014,6 @@
             file="src/main/res/values-de/strings.xml"
             line="998"
             column="28"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_505&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_505&quot;>HTTP版本不支援 (505)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rTW/strings.xml"
-            line="999"
-            column="13"/>
     </issue>
 
     <issue
@@ -5878,17 +3502,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_400&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_400&quot;>错误请求 (400)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1047"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;manga&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;es&quot; (Spanish) here"
         errorLine1="    &lt;string name=&quot;manga&quot; translatable=&quot;false&quot;>MANGA&lt;/string>"
         errorLine2="                         ~~~~~~~~~~~~~~~~~~~~">
@@ -5922,45 +3535,12 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_401&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_401&quot;>认证失败 (401)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1048"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;misc&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
         errorLine1="    &lt;string name=&quot;misc&quot;>Varios&lt;/string>"
         errorLine2="            ~~~~~~~~~~~">
         <location
             file="src/main/res/values-es/strings.xml"
             line="1048"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_402&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_402&quot;>需要付费 (402)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1049"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_403&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_403&quot;>禁止访问 (403)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1050"
             column="13"/>
     </issue>
 
@@ -5977,34 +3557,12 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_404&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_404&quot;>未找到 (404)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1051"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;non_h&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;es&quot; (Spanish) here"
         errorLine1="    &lt;string name=&quot;non_h&quot;>Para todos los públicos&lt;/string>"
         errorLine2="            ~~~~~~~~~~~~">
         <location
             file="src/main/res/values-es/strings.xml"
             line="1051"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_405&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_405&quot;>方法不允许 (405)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1052"
             column="13"/>
     </issue>
 
@@ -6021,72 +3579,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_406&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_406&quot;>不可接受 (406)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1053"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_407&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_407&quot;>需要代理认证 (407)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1054"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_408&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_408&quot;>请求超时 (408)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1055"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_409&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_409&quot;>冲突 (409)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1056"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_410&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_410&quot;>已删除 (410)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1057"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_411&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_411&quot;>需要内容长度 (411)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1058"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;site_e&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;ko&quot; (Korean) here"
         errorLine1="    &lt;string name=&quot;site_e&quot; translatable=&quot;false&quot;>LANraragi&lt;/string>"
         errorLine2="                          ~~~~~~~~~~~~~~~~~~~~">
@@ -6098,17 +3590,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_412&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_412&quot;>前提条件失败 (412)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1059"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;site_ex&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;ko&quot; (Korean) here"
         errorLine1="    &lt;string name=&quot;site_ex&quot; translatable=&quot;false&quot;>LANraragi&lt;/string>"
         errorLine2="                           ~~~~~~~~~~~~~~~~~~~~">
@@ -6116,17 +3597,6 @@
             file="src/main/res/values-ko/strings.xml"
             line="1059"
             column="28"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_413&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_413&quot;>请求实体太大 (413)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1060"
-            column="13"/>
     </issue>
 
     <issue
@@ -6153,17 +3623,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_414&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_414&quot;>请求URI太长 (414)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1061"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;site_ex&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;es&quot; (Spanish) here"
         errorLine1="    &lt;string name=&quot;site_ex&quot; translatable=&quot;false&quot;>LANraragi&lt;/string>"
         errorLine2="                           ~~~~~~~~~~~~~~~~~~~~">
@@ -6182,17 +3641,6 @@
             file="src/main/res/values-ko/strings.xml"
             line="1061"
             column="28"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_415&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_415&quot;>不支持的媒体类型 (415)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1062"
-            column="13"/>
     </issue>
 
     <issue
@@ -6219,17 +3667,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_416&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_416&quot;>请求范围不符 (416)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1063"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;unknown&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;es&quot; (Spanish) here"
         errorLine1="    &lt;string name=&quot;unknown&quot; translatable=&quot;false&quot;>UNKNOWN&lt;/string>"
         errorLine2="                           ~~~~~~~~~~~~~~~~~~~~">
@@ -6237,17 +3674,6 @@
             file="src/main/res/values-es/strings.xml"
             line="1063"
             column="28"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_417&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_417&quot;>期望失败 (417)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1064"
-            column="13"/>
     </issue>
 
     <issue
@@ -6263,28 +3689,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_500&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_500&quot;>服务器错误 (500)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1065"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_501&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_501&quot;>未实现 (501)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1066"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;site_e&quot; is marked as translatable=&quot;false&quot;, but is translated to &quot;th&quot; (Thai) here"
         errorLine1="    &lt;string name=&quot;site_e&quot; translatable=&quot;false&quot;>LANraragi&lt;/string>"
         errorLine2="                          ~~~~~~~~~~~~~~~~~~~~">
@@ -6292,17 +3696,6 @@
             file="src/main/res/values-th/strings.xml"
             line="1066"
             column="27"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_502&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_502&quot;>网关错误 (502)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1067"
-            column="13"/>
     </issue>
 
     <issue
@@ -6329,17 +3722,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_503&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_503&quot;>服务不可用 (503)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1068"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;misc&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
         errorLine1="    &lt;string name=&quot;misc&quot;>其他&lt;/string>"
         errorLine2="            ~~~~~~~~~~~">
@@ -6362,17 +3744,6 @@
 
     <issue
         id="Untranslatable"
-        message="The resource string &quot;error_status_code_504&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_504&quot;>网关超时 (504)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1069"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
         message="The resource string &quot;non_h&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
         errorLine1="    &lt;string name=&quot;non_h&quot;>全年齡&lt;/string>"
         errorLine2="            ~~~~~~~~~~~~">
@@ -6391,17 +3762,6 @@
             file="src/main/res/values-th/strings.xml"
             line="1069"
             column="28"/>
-    </issue>
-
-    <issue
-        id="Untranslatable"
-        message="The resource string &quot;error_status_code_505&quot; has been marked as translatable=&quot;false&quot; elsewhere (usually in the `values` folder), but is translated to &quot;zh&quot; (Chinese) here"
-        errorLine1="    &lt;string name=&quot;error_status_code_505&quot;>HTTP版本不支持 (505)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-zh-rCN/strings.xml"
-            line="1070"
-            column="13"/>
     </issue>
 
     <issue
