@@ -21,7 +21,9 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
+import androidx.preference.SwitchPreference
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.settings.UpdateSettings
 import com.hippo.ehviewer.ui.LicenseActivity
 import com.hippo.ehviewer.ui.dialog.UpdateDialog
 import com.hippo.ehviewer.updater.AppUpdater
@@ -50,8 +52,14 @@ class AboutFragment : BasePreferenceFragmentCompat(),
         checkUpdatePreference = findPreference<Preference>(KEY_CHECK_FOR_UPDATES)?.apply {
             onPreferenceClickListener = this@AboutFragment
         }
-        // SwitchPreference at KEY_AUTO_CHECK_UPDATES is auto-wired by androidx Preference
-        // to SharedPreferences (default true via android:defaultValue="true" in XML).
+
+        // The XML SwitchPreference carries no android:defaultValue (project convention:
+        // the modular UpdateSettings object owns the default). Bind its checked state from
+        // the authoritative getter so the widget reflects the real auto-check behavior on a
+        // fresh install — without this the toggle renders OFF while cold-start auto-check
+        // actually runs (DEFAULT_AUTO_CHECK_UPDATES = true).
+        findPreference<SwitchPreference>(UpdateSettings.KEY_AUTO_CHECK_UPDATES)?.isChecked =
+            UpdateSettings.getAutoCheckUpdates()
     }
 
     override fun onPreferenceClick(preference: Preference): Boolean {
