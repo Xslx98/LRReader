@@ -31,11 +31,20 @@ import com.hippo.ehviewer.module.Cacheable
  * from cover thumbnails — a long manhwa filling this cache cannot
  * evict the user's recently-browsed cover thumbnails.
  *
- * **Size budget:** byte-sized LRU at [MAX_BYTES]. Tiered against the
- * 250×350 ≈ 350 KB JPEG decoded size typical of LANraragi server
- * thumbnails, so a 6 MB budget holds ~17 entries — enough for the
- * default 3-column × 5-row visible viewport plus 3 rows of
- * prefetch.
+ * **Size budget:** byte-sized LRU at [budgetBytesFor], a heap-tiered
+ * budget mirroring the cover-image cache in
+ * [com.hippo.ehviewer.module.ClientModule]. It must exceed the grid's
+ * *scroll working set* — the visible viewport (≈3 rows × 3 cols) plus
+ * [com.hippo.ehviewer.ui.scene.gallery.detail.PrefetchScrollListener]'s
+ * 3 prefetch rows ≈ 18 distinct pages, plus a screen of scroll-back.
+ * The previous fixed 6 MB budget assumed an optimistic 350 KB decode;
+ * real page thumbnails decode larger, so the cache held fewer entries
+ * than the working set and the LRU evicted tiles that were still on
+ * screen. On rebind those cells missed the cache, blanked, re-fetched
+ * and crossfaded back in — the preview grid flickered during scroll.
+ * Paired with the RGB_565 + downsample decode in
+ * [PageThumbnailRepository], the tiered budget now holds the working
+ * set with scroll-back headroom on every heap tier.
  *
  * **Lifetime:** cleared on profile switch via [Cacheable.clearCache]
  * (registered in [com.hippo.ehviewer.module.ClientModule]). The
@@ -57,14 +66,43 @@ import com.hippo.ehviewer.module.Cacheable
  */
 object PageThumbnailCache : Cacheable {
 
-    /**
-     * Maximum total byte size of cached bitmaps. Hand-tuned against
-     * LANraragi default thumbnail dimensions (≈350 KB decoded).
-     * 6 MB ≈ 17 entries.
-     */
-    private const val MAX_BYTES: Int = 6 * 1024 * 1024
+    private const val MB: Long = 1024L * 1024
 
-    private val lru = object : LruCache<String, Bitmap>(MAX_BYTES) {
+    // Heap tiers (per-app limit from Runtime.maxMemory()), matching the
+    // thresholds the cover-image cache uses in ClientModule so the two
+    // caches scale together rather than fighting for the same heap.
+    private const val TIER_LOW: Long = 512 * MB
+    private const val TIER_MID: Long = 1024 * MB
+    private const val TIER_HIGH: Long = 3072 * MB
+
+    // Page-thumb budgets per tier. Smaller than the cover cache (this is
+    // a secondary surface) but every tier clears the ~18-page scroll
+    // working set plus scroll-back: at the RGB_565 + downsampled ≈700 KB
+    // worst-case entry size, 16 MB ≈ 23 entries, 48 MB ≈ 68.
+    private const val BUDGET_LOW: Long = 16 * MB
+    private const val BUDGET_MID: Long = 24 * MB
+    private const val BUDGET_HIGH: Long = 40 * MB
+    private const val BUDGET_ULTRA: Long = 48 * MB
+
+    /**
+     * Resolve the cache byte budget for the given per-app heap limit.
+     * Tiered so low-RAM devices stay conservative while still holding
+     * the grid's scroll working set:
+     *  - `< 512 MB` heap → 16 MB
+     *  - `< 1 GB`  heap → 24 MB
+     *  - `< 3 GB`  heap → 40 MB
+     *  - `>= 3 GB` heap → 48 MB
+     */
+    internal fun budgetBytesFor(maxMemoryBytes: Long): Int = when {
+        maxMemoryBytes < TIER_LOW -> BUDGET_LOW
+        maxMemoryBytes < TIER_MID -> BUDGET_MID
+        maxMemoryBytes < TIER_HIGH -> BUDGET_HIGH
+        else -> BUDGET_ULTRA
+    }.toInt()
+
+    private val lru = object : LruCache<String, Bitmap>(
+        budgetBytesFor(Runtime.getRuntime().maxMemory())
+    ) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
     }
 
