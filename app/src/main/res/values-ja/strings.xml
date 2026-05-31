@@ -272,7 +272,6 @@
     <string name="rating2">目の障害になる</string>
     <string name="rating1">悪くて呼吸できない</string>
     <string name="rating0">…</string>
-    <string name="rating_none" translatable="false">(´_ゝ`)</string>
     <!-- Gallery Info -->
     <string name="gallery_info">ギャラリー詳細</string>
     <string name="copied_to_clipboard">クリップボードにコピーされました。</string>
@@ -979,9 +978,6 @@
     <string name="settings_read_picture_decoding_method">画像デコード方式</string>
     <string name="settings_read_picture_decoding_method_native">オープンソースC++デコードライブラリ</string>
     <string name="settings_read_picture_decoding_method_origin">システムデコード</string>
-    <string name="site_e" translatable="false">LANraragi</string>
-    <string name="site_ex" translatable="false">LANraragi</string>
-    <string name="unknown" translatable="false">UNKNOWN</string>
     <string name="lrr_category_label_dynamic">動的</string>
     <string name="lrr_save_and_connect">保存して接続</string>
     <string name="lrr_error_title">エラーが発生しました</string>

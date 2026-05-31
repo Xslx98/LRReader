@@ -1022,7 +1022,6 @@
     <string name="move_favorites_dialog_title">즐겨찾기 이동</string>
     <string name="pagination_count">count</string>
     <string name="pagination_page_and_item">r/p</string>
-    <string name="rating_none" translatable="false">(´_ゝ`)</string>
     <string name="refresh_limits">Refresh Limits Usage</string>
     <string name="reset_cost">Cost %s To Reset</string>
     <string name="reset_to_default">기본값으로 재설정</string>
@@ -1033,9 +1032,6 @@
     <string name="settings_read_picture_decoding_method">이미지 디코딩 방식</string>
     <string name="settings_read_picture_decoding_method_native">오픈소스 C++ 디코딩 라이브러리</string>
     <string name="settings_read_picture_decoding_method_origin">시스템 디코딩</string>
-    <string name="site_e" translatable="false">LANraragi</string>
-    <string name="site_ex" translatable="false">LANraragi</string>
-    <string name="unknown" translatable="false">UNKNOWN</string>
     <string name="wifi_client">WiFiClient</string>
     <string name="wifi_send_bookmark">Migrate bookmarks</string>
     <string name="wifi_send_done">Migrate data done</string>

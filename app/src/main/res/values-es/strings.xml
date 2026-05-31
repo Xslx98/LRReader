@@ -289,7 +289,6 @@
     <string name="rating2">DOLOROSO</string>
     <string name="rating1">INSORPOTABLE</string>
     <string name="rating0">DESASTRE</string>
-    <string name="rating_none" translatable="false">(´_ゝ`)</string>
 
     <!-- Gallery Info -->
     <string name="gallery_info">Información de la galería</string>
@@ -1035,9 +1034,6 @@ Esta acción no se puede deshacer.</string>
     <string name="settings_read_picture_decoding_method">Método de decodificación de imagen</string>
     <string name="settings_read_picture_decoding_method_native">Biblioteca C++ de código abierto</string>
     <string name="settings_read_picture_decoding_method_origin">Decodificación del sistema</string>
-    <string name="site_e" translatable="false">LANraragi</string>
-    <string name="site_ex" translatable="false">LANraragi</string>
-    <string name="unknown" translatable="false">UNKNOWN</string>
     <string name="lrr_category_label_dynamic">Dinámica</string>
     <string name="lrr_save_and_connect">Guardar y conectar</string>
     <string name="lrr_error_title">Ocurrió un error</string>

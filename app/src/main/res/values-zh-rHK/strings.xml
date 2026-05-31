@@ -34,8 +34,6 @@
 
     <string name="app_name">LR Reader</string>
 
-    <string name="site_e" translatable="false">LANraragi</string>
-    <string name="site_ex" translatable="false">LANraragi</string>
 
     <!-- Theme -->
     <string name="theme_light">亮色主題</string>
@@ -341,7 +339,6 @@
     <string name="rating2">講還講唔好貼圖</string>
     <string name="rating1">想嘔</string>
     <string name="rating0">不如一槍打死我</string>
-    <string name="rating_none" translatable="false">(´_ゝ`)</string>
 
     <!-- Gallery Info -->
     <string name="gallery_info">畫廊資訊</string>
@@ -1069,7 +1066,6 @@
     <string name="settings_read_picture_decoding_method">圖片解碼方式</string>
     <string name="settings_read_picture_decoding_method_native">開源C++解碼庫</string>
     <string name="settings_read_picture_decoding_method_origin">系統解碼</string>
-    <string name="unknown" translatable="false">UNKNOWN</string>
     <string name="lrr_category_label_dynamic">動態</string>
     <string name="lrr_save_and_connect">儲存並連接</string>
     <string name="lrr_error_title">出錯了</string>
