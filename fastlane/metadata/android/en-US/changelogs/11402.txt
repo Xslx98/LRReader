@@ -1,0 +1,2 @@
+- Fixed: the page-thumbnail preview grid on a gallery's detail page flickered while scrolling — already-loaded thumbnails would disappear and reload. They now stay put as you scroll.
+- Under the hood: page thumbnails decode in RGB_565 and the preview cache is sized to the grid's scroll working set, so its LRU no longer evicts tiles that are still on screen.
