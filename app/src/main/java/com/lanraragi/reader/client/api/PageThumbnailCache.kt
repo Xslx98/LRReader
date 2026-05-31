@@ -47,10 +47,14 @@ import com.hippo.ehviewer.module.Cacheable
  * set with scroll-back headroom on every heap tier.
  *
  * **Lifetime:** cleared on profile switch via [Cacheable.clearCache]
- * (registered in [com.hippo.ehviewer.module.ClientModule]). The
- * Repository also calls [invalidate] when a new archive enters the
- * detail page so stale thumbs from the previous archive cannot leak
- * into the new grid via a fast back-then-forward navigation.
+ * (registered in [com.hippo.ehviewer.module.ClientModule]). It is
+ * deliberately *not* invalidated on detail-page navigation — the
+ * ViewModel keeps it warm so a back→forward navigation reuses already
+ * decoded thumbnails (see
+ * [com.hippo.ehviewer.ui.scene.gallery.detail.PageThumbnailsViewModel.resetForNewEntry]).
+ * Per-page keys are arcid-scoped so a different archive's pages can
+ * never collide. [invalidate] is available for explicit per-archive
+ * eviction but currently has no caller.
  *
  * **Thread safety:** all mutations are synchronized on the LRU
  * instance. Bitmaps stored here are immutable from the writer's
