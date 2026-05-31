@@ -580,7 +580,6 @@
     <string name="settings_about_declaration_summary">LR Reader ne s\'affilie à LANraragi de aucune manière.</string>
     <string name="settings_about_author">Développeur</string>
     <string name="settings_about_latest_release">Dernière version</string>
-    <string name="settings_about_telegram">Telegram</string>
     <string name="settings_about_website">Site</string>
     <string name="settings_about_source">Source</string>
     <string name="settings_about_changelog">Historique de changements</string>
@@ -848,20 +847,8 @@
     <string name="add_favorites_dialog_title">Ajouter aux favoris</string>
     <string name="add_widget">Ajouter un widget</string>
     <string name="all_time_top_list">Classement de tous les temps</string>
-    <string name="app_language_de" translatable="false">Deutsch</string>
-    <string name="app_language_en" translatable="false">English</string>
-    <string name="app_language_es" translatable="false">Español</string>
-    <string name="app_language_fr" translatable="false">Français</string>
-    <string name="app_language_ja" translatable="false">日本語</string>
-    <string name="app_language_ko" translatable="false">한국어</string>
-    <string name="app_language_th" translatable="false">ไทย</string>
-    <string name="app_language_zh_cn" translatable="false">中文（大陆）</string>
-    <string name="app_language_zh_hk" translatable="false">中文（香港）</string>
-    <string name="app_language_zh_tw" translatable="false">中文（臺灣）</string>
     <string name="app_widget_description">Widget de progression de téléchargement</string>
     <string name="appwidget_text">Texte du widget</string>
-    <string name="artist_cg">CG d\'artiste</string>
-    <string name="asian_porn">Porno asiatique</string>
     <string name="cancel">Annuler</string>
     <string name="change_avatar_message">Choisir une méthode pour changer l\'avatar</string>
     <string name="change_avatar_title">Changer l\'avatar</string>
@@ -870,12 +857,10 @@
     <string name="choose_from_the_album">Choisir dans l\'album</string>
     <string name="cloud_favorites">Favoris cloud</string>
     <string name="copy_tag">Copier le tag</string>
-    <string name="cosplay">Cosplay</string>
     <string name="current_moderation_power">Pouvoir de modération actuel</string>
     <string name="default_favorites_collection">Collection de favoris par défaut</string>
     <string name="delete_favorites_dialog_message">Supprimer des favoris ?</string>
     <string name="delete_favorites_dialog_title">Supprimer le favori</string>
-    <string name="doujinshi">Doujinshi</string>
     <string name="download_service">Download Service</string>
     <string name="download_torrent_name">torrent: %s</string>
     <string name="download_torrent_path">path: %s</string>
@@ -918,8 +903,6 @@
     <string name="from_gallery_visits">%s from gallery visits</string>
     <string name="from_hentai_home">%s from Hentai@Home</string>
     <string name="from_torrent_completions">%s from torrent completions</string>
-    <string name="game_cg">CG de jeu</string>
-    <string name="image_set">Ensemble d\'images</string>
     <string name="ip_base_limits">Limites basées sur l\'IP</string>
     <string name="kokomade_tip">Settings->Eh->Gallery Site->LANraragi</string>
     <string name="limit_unneed_reset">There is currently no need to reset quotas, please try again after refreshing~</string>
@@ -994,10 +977,7 @@ Cette action est irréversible.</string>
     <string name="lrr_url_download_hint">Entrer l\'URL à télécharger</string>
     <string name="lrr_url_download_success">Tâche de téléchargement soumise (Job #%d)</string>
     <string name="lrr_url_download_title">Téléchargement URL</string>
-    <string name="manga" translatable="false">MANGA</string>
-    <string name="misc">Divers</string>
     <string name="move_favorites_dialog_title">Déplacer le favori</string>
-    <string name="non_h">Tous publics</string>
     <string name="open_directory">Open Directory</string>
     <string name="pagination_count">count</string>
     <string name="pagination_page_and_item">r/p</string>
@@ -1011,8 +991,6 @@ Cette action est irréversible.</string>
     <string name="reset_to_default">Réinitialiser par défaut</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="search_sp_suffix" />
-    <string name="settings_about_author_summary" translatable="false">Xslx98</string>
-    <string name="settings_about_declaration" translatable="false">LR Reader</string>
     <string name="settings_download_clean_invalid_download">Nettoyer les téléchargements invalides</string>
     <string name="settings_download_clean_invalid_download_summary">Supprimer les téléchargements invalides</string>
     <string name="settings_eh_show_tag_translations">Show tag translations</string>
@@ -1030,7 +1008,6 @@ Cette action est irréversible.</string>
     <string name="settings_save_image_weChat">Save WeChat QR Code</string>
     <string name="site_e" translatable="false">LANraragi</string>
     <string name="site_ex" translatable="false">LANraragi</string>
-    <string name="stub" translatable="false">Stub</string>
     <string name="sure">OK</string>
     <string name="take_a_photograph">Take a photograph</string>
     <string name="theme_black">Thème noir</string>
@@ -1039,7 +1016,6 @@ Cette action est irréversible.</string>
     <string name="torrent_exist">File already exists: %s</string>
     <string name="try_again">Try Again</string>
     <string name="unknown" translatable="false">UNKNOWN</string>
-    <string name="western">Occidental</string>
     <string name="wifi_client">WiFiClient</string>
     <string name="wifi_send_bookmark">Migrate bookmarks</string>
     <string name="wifi_send_done">Migrate data done</string>

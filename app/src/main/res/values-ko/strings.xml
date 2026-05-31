@@ -633,10 +633,8 @@
     <string name="settings_advanced_wifi_client_summary">Wi-Fi 핫스팟에서 마이그레이션 데이터 수신</string>
 
     <string name="settings_about">앱 정보</string>
-    <string name="settings_about_declaration" translatable="false">LR Reader</string>
     <string name="settings_about_declaration_summary">LR Reader는 LANraragi 사이트와 아무런 관계가 없습니다.</string>
     <string name="settings_about_author">개발자</string>
-    <string name="settings_about_telegram" translatable="false">Telegram</string>
     <string name="settings_about_latest_release">최신 버전</string>
     <string name="settings_about_website">웹사이트</string>
     <string name="settings_about_source">소스 코드</string>
@@ -910,25 +908,11 @@
 
     <!-- Auto-generated missing translations -->
     <string name="add_favorites_dialog_title">즐겨찾기 추가</string>
-    <string name="app_language_de" translatable="false">Deutsch</string>
-    <string name="app_language_en" translatable="false">English</string>
-    <string name="app_language_es" translatable="false">Español</string>
-    <string name="app_language_fr" translatable="false">Français</string>
-    <string name="app_language_ja" translatable="false">日本語</string>
-    <string name="app_language_ko" translatable="false">한국어</string>
-    <string name="app_language_th" translatable="false">ไทย</string>
-    <string name="app_language_zh_cn" translatable="false">中文（大陆）</string>
-    <string name="app_language_zh_hk" translatable="false">中文（香港）</string>
-    <string name="app_language_zh_tw" translatable="false">中文（臺灣）</string>
-    <string name="artist_cg">아티스트 CG</string>
-    <string name="asian_porn">아시안 포르노</string>
     <string name="cloud_favorites">클라우드 즐겨찾기</string>
-    <string name="cosplay">코스프레</string>
     <string name="current_moderation_power">현재 관리 권한</string>
     <string name="default_favorites_collection">기본 즐겨찾기</string>
     <string name="delete_favorites_dialog_message">즐겨찾기에서 제거하시겠습니까?</string>
     <string name="delete_favorites_dialog_title">즐겨찾기 삭제</string>
-    <string name="doujinshi">동인지</string>
     <string name="error_status_code_400">잘못된 요청 (400)</string>
     <string name="error_status_code_401">인증 실패 (401)</string>
     <string name="error_status_code_402">결제 필요 (402)</string>
@@ -962,8 +946,6 @@
     <string name="from_gallery_visits">%s from gallery visits</string>
     <string name="from_hentai_home">%s from Hentai@Home</string>
     <string name="from_torrent_completions">%s from torrent completions</string>
-    <string name="game_cg">게임 CG</string>
-    <string name="image_set">이미지 세트</string>
     <string name="ip_base_limits">IP 기반 제한</string>
     <string name="limit_unneed_reset">There is currently no need to reset quotas, please try again after refreshing~</string>
     <string name="local_favorites">로컬 카테고리</string>
@@ -1037,10 +1019,7 @@
     <string name="lrr_url_download_hint">다운로드할 URL 입력</string>
     <string name="lrr_url_download_success">다운로드 작업이 제출되었습니다 (Job #%d)</string>
     <string name="lrr_url_download_title">URL 다운로드</string>
-    <string name="manga" translatable="false">MANGA</string>
-    <string name="misc">기타</string>
     <string name="move_favorites_dialog_title">즐겨찾기 이동</string>
-    <string name="non_h">전연령</string>
     <string name="pagination_count">count</string>
     <string name="pagination_page_and_item">r/p</string>
     <string name="rating_none" translatable="false">(´_ゝ`)</string>
@@ -1056,9 +1035,7 @@
     <string name="settings_read_picture_decoding_method_origin">시스템 디코딩</string>
     <string name="site_e" translatable="false">LANraragi</string>
     <string name="site_ex" translatable="false">LANraragi</string>
-    <string name="stub" translatable="false">Stub</string>
     <string name="unknown" translatable="false">UNKNOWN</string>
-    <string name="western">서양</string>
     <string name="wifi_client">WiFiClient</string>
     <string name="wifi_send_bookmark">Migrate bookmarks</string>
     <string name="wifi_send_done">Migrate data done</string>
