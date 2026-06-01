@@ -367,12 +367,15 @@ internal class DownloadScheduler(
                 activeTasks.remove(info)
                 activeWorkers.remove(info)
                 if (activeTasks.isEmpty()) speedTracker.stop()
-                // Update state
+                // Update state. A real LANraragi archive always has >=1 page, so a
+                // zero-page finish (extract failure / offline-at-start / orphan
+                // profile, all of which report onFinish(0,0,0)) is a failure, not a
+                // success — guard total<=0 explicitly so legacy==0 cannot mean FINISH.
                 info.legacy = event.total - event.finished
-                if (info.legacy == 0) {
-                    info.state = DownloadState.FINISH
+                info.state = if (event.total <= 0 || info.legacy != 0) {
+                    DownloadState.FAILED
                 } else {
-                    info.state = DownloadState.FAILED
+                    DownloadState.FINISH
                 }
                 // Mirror final values into tracker, then drop the live entry
                 // (download is no longer active → progress not live).

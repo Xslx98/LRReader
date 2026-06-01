@@ -305,6 +305,50 @@ class DownloadSchedulerTest {
     }
 
     @Test
+    fun dispatchEvent_onFinish_zeroPages_marksFailedNotFinish() {
+        val info = makeInfo(5L)
+        scheduler.activeTasks.add(info)
+        info.state = DownloadState.DOWNLOAD
+
+        // Extract failure / offline-at-start reports onFinish(0, 0, 0).
+        scheduler.dispatchEvent(
+            DownloadScheduler.DownloadEvent.OnFinish(
+                taskInfo = info,
+                finished = 0,
+                downloaded = 0,
+                total = 0
+            )
+        )
+        ShadowLooper.idleMainLooper()
+
+        assertEquals(
+            "Zero-page finish must be FAILED, not FINISH",
+            DownloadState.FAILED,
+            info.state
+        )
+    }
+
+    @Test
+    fun dispatchEvent_onFinish_partial_marksFailed() {
+        val info = makeInfo(6L)
+        scheduler.activeTasks.add(info)
+        info.state = DownloadState.DOWNLOAD
+
+        scheduler.dispatchEvent(
+            DownloadScheduler.DownloadEvent.OnFinish(
+                taskInfo = info,
+                finished = 8,
+                downloaded = 8,
+                total = 10
+            )
+        )
+        ShadowLooper.idleMainLooper()
+
+        assertEquals(DownloadState.FAILED, info.state)
+        assertEquals(2, info.legacy)
+    }
+
+    @Test
     fun dispatchEvent_onGetPages_updatesProgressTracker() {
         val info = makeInfo(2L)
         scheduler.activeTasks.add(info)
