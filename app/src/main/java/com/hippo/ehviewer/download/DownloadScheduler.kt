@@ -144,6 +144,7 @@ internal class DownloadScheduler(
                 activeIt.remove()
                 if (activeTasks.isEmpty()) speedTracker.stop()
                 info.state = DownloadState.NONE
+                DownloadResumeBanner.markResumed(info.arcid)
                 progressTracker.clear(info.arcid)
                 repo.persistInfo(info)
                 eventBus.getDownloadListener()?.onCancel(info)
@@ -185,6 +186,7 @@ internal class DownloadScheduler(
         if (stopped.isEmpty()) return null
         for (info in stopped) {
             info.state = DownloadState.NONE
+            DownloadResumeBanner.markResumed(info.arcid)
             progressTracker.clear(info.arcid)
             repo.persistInfo(info)
             eventBus.getDownloadListener()?.onCancel(info)
