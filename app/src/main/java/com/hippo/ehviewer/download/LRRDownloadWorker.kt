@@ -2,8 +2,10 @@ package com.hippo.ehviewer.download
 
 import android.content.Context
 import android.util.Log
+import com.hippo.ehviewer.BuildConfig
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.settings.DownloadSettings
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.OrphanProfileException
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
@@ -18,6 +20,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -31,6 +35,7 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -54,6 +59,21 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
     private lateinit var serverUrl: String
 
     var listener: SpiderQueen.OnSpiderListener? = null
+
+    /** Network-wait lifecycle, surfaced to the scheduler for notifications/banner. */
+    enum class NetworkWaitEvent { WAITING, RESUMED, TIMED_OUT }
+
+    var onNetworkWaitEvent: ((NetworkWaitEvent) -> Unit)? = null
+
+    /** Pages currently blocked waiting for the network (drives WAITING/RESUMED edges). */
+    private val waitingPages = AtomicInteger(0)
+
+    /** Fired at most once per run when the wait budget is exhausted. */
+    private val timedOut = AtomicBoolean(false)
+
+    private lateinit var waitBudget: NetworkWaitBudget
+
+    private val networkMonitor get() = ServiceRegistry.networkModule.networkMonitor
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -84,9 +104,17 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
     fun cancel() {
         cancelled = true
         job?.cancel()
+        // Page downloads run on `scope` (siblings of `job`); cancel the whole
+        // scope so any coroutine suspended in NetworkWaitBudget.awaitNetworkOrExpire
+        // unblocks immediately instead of hanging until the network returns.
+        // Workers are single-use (the scheduler creates a fresh one per promotion),
+        // so cancel() is terminal — do not call start() again after cancel().
+        scope.cancel()
     }
 
     private suspend fun doDownload() {
+        waitBudget = NetworkWaitBudget.fromMinutes(DownloadSettings.getNetworkResumeTimeoutMinutes())
+
         // Step 0: Route this worker to the archive's source profile. If the
         // user has switched the active profile (or no profile is active),
         // we still continue the download against the original server.
@@ -118,28 +146,43 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
             .cache(null)
             .build()
 
-        // Step 1: Extract archive to get page list
-        val pagePaths: Array<String>
-        try {
-            pagePaths = runSuspend {
-                LRRArchiveApi.getFileList(
-                    ServiceRegistry.networkModule.longReadClient,
-                    serverUrl,
-                    arcId
-                )
+        // Step 1: Extract archive to get page list. Retry across network outages
+        // (bounded by waitBudget); genuine failures (non-network) stop the download.
+        var pagePaths: Array<String>? = null
+        while (pagePaths == null && !cancelled) {
+            try {
+                pagePaths = runSuspend {
+                    LRRArchiveApi.getFileList(
+                        ServiceRegistry.networkModule.longReadClient,
+                        serverUrl,
+                        arcId
+                    )
+                }
+            } catch (e: Exception) {
+                if (!cancelled && !networkMonitor.isAvailable) {
+                    if (BuildConfig.DEBUG) Log.w(TAG, "Extract failed: network down, waiting", e)
+                    if (!waitForNetworkIfDown()) {
+                        listener?.run {
+                            onPageFailure(0, "Network timeout", 0, 0, 0)
+                            onFinish(0, 0, 0)
+                        }
+                        return
+                    }
+                    // network returned -- loop and retry getFileList
+                } else {
+                    Log.e(TAG, "Failed to extract archive", e)
+                    listener?.run {
+                        onPageFailure(0, "Extract failed: ${e.message}", 0, 0, 0)
+                        onFinish(0, 0, 0)
+                    }
+                    return
+                }
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to extract archive", e)
-            listener?.run {
-                onPageFailure(0, "Extract failed: ${e.message}", 0, 0, 0)
-                onFinish(0, 0, 0)
-            }
-            return
         }
-
         if (cancelled) return
+        val resolvedPagePaths = pagePaths ?: return
 
-        val total = pagePaths.size
+        val total = resolvedPagePaths.size
         listener?.onGetPages(total)
 
         // Step 2: Prepare download directory
@@ -170,11 +213,11 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         val downloaded = AtomicInteger(0)
         val semaphore = Semaphore(PARALLEL_PAGES)
 
-        val jobs = pagePaths.indices.map { i ->
+        val jobs = resolvedPagePaths.indices.map { i ->
             scope.async {
                 if (cancelled) return@async
 
-                val pagePath = pagePaths[i]
+                val pagePath = resolvedPagePaths[i]
                 val ext = getExtension(pagePath)
                 val pageFile = File(downloadDir, "%04d%s".format(i + 1, ext))
 
@@ -191,34 +234,43 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                     if (cancelled) return@withPermit
 
                     var success = false
-                    for (attempt in 0 until MAX_RETRY) {
-                        if (cancelled) break
-
-                        if (attempt > 0) {
-                            Log.w(TAG, "Retry page $i (attempt ${attempt + 1})")
-                            if (pageFile.exists()) pageFile.delete()
-                        }
-
+                    var attempt = 0
+                    while (!cancelled && !success) {
                         try {
-                            // downloadPage validates image magic in-stream (first
-                            // 16 bytes peeked from the HTTP response before the
-                            // body is written). If that check fails it throws
-                            // before the tmp file is renamed, so here we only
-                            // verify the final file exists and meets MIN_IMAGE_SIZE.
                             downloadPage(pageClient, pagePath, pageFile, i, total)
                             if (!pageFile.exists() || pageFile.length() < MIN_IMAGE_SIZE) {
                                 if (pageFile.exists()) pageFile.delete()
                                 throw IOException("Downloaded file too small or missing")
                             }
                             success = true
-                            break
                         } catch (e: IOException) {
-                            Log.e(TAG, "Failed to download page $i (attempt ${attempt + 1})", e)
-                            if (attempt == MAX_RETRY - 1) {
-                                listener?.onPageFailure(
-                                    i, e.message ?: "Unknown error",
-                                    finished.get(), downloaded.get(), total
-                                )
+                            if (cancelled) break
+                            if (!networkMonitor.isAvailable) {
+                                // Network-induced failure: pause and wait for the
+                                // network instead of consuming a retry. Loop to
+                                // re-attempt the same page once it returns.
+                                if (BuildConfig.DEBUG) Log.w(TAG, "Page $i: network down, waiting", e)
+                                if (pageFile.exists()) pageFile.delete()
+                                val resumed = waitForNetworkIfDown()
+                                if (!resumed) {
+                                    listener?.onPageFailure(
+                                        i, e.message ?: "Network timeout",
+                                        finished.get(), downloaded.get(), total
+                                    )
+                                    break
+                                }
+                            } else {
+                                // Genuine error (HTTP 4xx, corrupt image, etc.).
+                                attempt++
+                                Log.e(TAG, "Failed to download page $i (attempt $attempt)", e)
+                                if (attempt >= MAX_RETRY) {
+                                    listener?.onPageFailure(
+                                        i, e.message ?: "Unknown error",
+                                        finished.get(), downloaded.get(), total
+                                    )
+                                    break
+                                }
+                                if (pageFile.exists()) pageFile.delete()
                             }
                         }
                     }
@@ -241,6 +293,32 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
 
         // Step 4: Report finish
         listener?.onFinish(finished.get(), downloaded.get(), total)
+    }
+
+    /**
+     * Wait for the network if it is the reason a step failed. Returns true if the
+     * caller should retry (network came back within budget), false if it should
+     * give up (budget exhausted) or it was already a non-network failure.
+     */
+    private suspend fun waitForNetworkIfDown(): Boolean {
+        if (networkMonitor.isAvailable) return false // genuine (non-network) failure
+        if (waitingPages.getAndIncrement() == 0) {
+            onNetworkWaitEvent?.invoke(NetworkWaitEvent.WAITING)
+        }
+        val resumed = try {
+            waitBudget.awaitNetworkOrExpire(networkMonitor.isAvailableFlow)
+        } finally {
+            if (waitingPages.decrementAndGet() == 0 && networkMonitor.isAvailable) {
+                onNetworkWaitEvent?.invoke(NetworkWaitEvent.RESUMED)
+            }
+        }
+        if (!resumed && timedOut.compareAndSet(false, true)) {
+            onNetworkWaitEvent?.invoke(NetworkWaitEvent.TIMED_OUT)
+        }
+        if (resumed) {
+            delay(NETWORK_RESUME_BACKOFF_MS)
+        }
+        return resumed
     }
 
     @Throws(IOException::class)
@@ -406,6 +484,10 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         private const val MIN_IMAGE_SIZE = 1024L       // 1KB minimum valid image
         private const val MAX_RETRY = 2                // Try up to 2 times per page
         private const val MAX_PAGE_SIZE = 200L * 1024 * 1024 // 200MB per page
+        /** Settle delay after the network returns before re-attempting, so a
+         *  rapidly flapping link cannot hot-spin the download→fail→wait→resume
+         *  loop (the "never time out" mode has no budget bound otherwise). */
+        private const val NETWORK_RESUME_BACKOFF_MS = 1000L
         /**
          * Minimum wall time between progress notifications per page. Each
          * notification posts to the main thread via

@@ -92,6 +92,16 @@ internal class DownloadScheduler(
             activeTasks.add(info)
             activeWorkers[info] = worker
             worker.listener = PerTaskListener(info)
+            worker.onNetworkWaitEvent = { ev ->
+                when (ev) {
+                    LRRDownloadWorker.NetworkWaitEvent.WAITING ->
+                        postEvent(DownloadEvent.OnNetworkWait(info, true))
+                    LRRDownloadWorker.NetworkWaitEvent.RESUMED ->
+                        postEvent(DownloadEvent.OnNetworkWait(info, false))
+                    LRRDownloadWorker.NetworkWaitEvent.TIMED_OUT ->
+                        postEvent(DownloadEvent.OnNetworkTimeout(info))
+                }
+            }
             info.state = DownloadState.DOWNLOAD
             info.legacy = -1
             progressTracker.resetForStart(info.arcid)
@@ -303,6 +313,8 @@ internal class DownloadScheduler(
             val downloaded: Int,
             val total: Int
         ) : DownloadEvent
+        data class OnNetworkWait(val taskInfo: DownloadInfo, val waiting: Boolean) : DownloadEvent
+        data class OnNetworkTimeout(val taskInfo: DownloadInfo) : DownloadEvent
     }
 
     /**
@@ -398,6 +410,19 @@ internal class DownloadScheduler(
                 }
                 // Start next download
                 ensureDownload()
+            }
+            is DownloadEvent.OnNetworkWait -> {
+                val info = event.taskInfo
+                if (event.waiting) {
+                    DownloadResumeBanner.markPaused(info.arcid, info.title)
+                } else {
+                    DownloadResumeBanner.markResumed(info.arcid)
+                }
+                eventBus.getDownloadListener()?.onNetworkWait(info, event.waiting)
+            }
+            is DownloadEvent.OnNetworkTimeout -> {
+                val info = event.taskInfo
+                DownloadResumeBanner.markTimedOut(info.arcid, info.title)
             }
         }
     }

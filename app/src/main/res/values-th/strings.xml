@@ -406,6 +406,7 @@
     <string name="download_service_label">บริการดาวน์โหลดของ LR Reader</string>
     <string name="download_speed_text">%s</string>
     <string name="download_speed_text_2">%1$s, เหลือ %2$s</string>
+    <string name="download_waiting_for_network">กำลังรอเครือข่าย…</string>
     <string name="remember_download_label">จดจำป้ายชื่อดาวน์โหลด</string>
     <string name="default_download_label">ป้ายชื่อดาวน์โหลดเริ่มต้น</string>
     <string name="added_to_download_list">เพิ่มเข้าในรายการดาวน์โหลดแล้ว</string>
