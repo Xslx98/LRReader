@@ -397,6 +397,10 @@
     <string name="download_speed_text">%s</string>
     <string name="download_speed_text_2">%1$s, %2$s left</string>
     <string name="download_waiting_for_network">Waiting for network…</string>
+    <string name="download_resume_paused_snackbar">Downloads paused — waiting for network</string>
+    <string name="download_resume_timed_out_snackbar">%d download(s) stopped: no network</string>
+    <string name="download_resume_view_action">View</string>
+    <string name="download_resume_retry_action">Retry</string>
     <string name="remember_download_label">Remember download label</string>
     <string name="default_download_label">Default download label</string>
     <string name="added_to_download_list">Added to download list</string>

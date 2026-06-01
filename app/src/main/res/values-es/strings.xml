@@ -396,6 +396,10 @@
     <string name="download_speed_text">%s</string>
     <string name="download_speed_text_2">%1$s, %2$s restantes</string>
     <string name="download_waiting_for_network">Esperando red…</string>
+    <string name="download_resume_paused_snackbar">Descargas en pausa: esperando red</string>
+    <string name="download_resume_timed_out_snackbar">%d descarga(s) detenida(s): sin red</string>
+    <string name="download_resume_view_action">Ver</string>
+    <string name="download_resume_retry_action">Reintentar</string>
     <string name="remember_download_label">Recordar etiqueta de descarga</string>
     <string name="default_download_label">Etiqueta predeterminada de descarga</string>
     <string name="added_to_download_list">Añadido a la lista de descargas</string>

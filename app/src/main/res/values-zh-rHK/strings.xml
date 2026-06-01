@@ -444,6 +444,10 @@
     <string name="download_speed_text">%s</string>
     <string name="download_speed_text_2">%1$s，剩餘 %2$s</string>
     <string name="download_waiting_for_network">等待網路…</string>
+    <string name="download_resume_paused_snackbar">下載已暫停,正在等待網路</string>
+    <string name="download_resume_timed_out_snackbar">%d 個下載因無網路已停止</string>
+    <string name="download_resume_view_action">查看</string>
+    <string name="download_resume_retry_action">重試</string>
     <string name="remember_download_label">記住下載標籤</string>
     <string name="default_download_label">預設下載標籤</string>
     <string name="added_to_download_list">已新增至下載列表</string>
