@@ -561,6 +561,12 @@
     <string name="settings_download_media_scan">การอนุญาตให้สแกนสื่อ</string>
     <string name="settings_download_media_scan_summary_on">โปรดซ่อนแอปแกลเลอรี่หรือแอปดูรูปในเครื่องของคุณจากคนอื่นด้วย</string>
     <string name="settings_download_media_scan_summary_off">แอปแกลเลอรี่ส่วนใหญ่จะข้ามการสแกนรูปภาพในแหล่งดาวน์โหลด</string>
+    <string name="settings_download_network_timeout_title">หมดเวลารอเครือข่าย</string>
+    <string name="settings_download_network_timeout_1m">1 นาที</string>
+    <string name="settings_download_network_timeout_5m">5 นาที</string>
+    <string name="settings_download_network_timeout_15m">15 นาที</string>
+    <string name="settings_download_network_timeout_30m">30 นาที</string>
+    <string name="settings_download_network_timeout_never">ไม่หมดเวลา</string>
     <string name="settings_download_multi_thread_download">ดาวน์โหลดแบบหลายเธด</string>
     <string name="settings_download_multi_thread_download_summary">โหลดถึง %s ภาพ</string>
     <string name="settings_download_image_resolution">ความละเอียดของภาพ</string>

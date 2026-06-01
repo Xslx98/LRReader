@@ -574,6 +574,12 @@
     <string name="settings_download_media_scan">允许媒体扫描</string>
     <string name="settings_download_media_scan_summary_on">请避免他人翻看你的图库应用</string>
     <string name="settings_download_media_scan_summary_off">大多数图库应用将不会显示下载目录中的图片</string>
+    <string name="settings_download_network_timeout_title">断网等待超时</string>
+    <string name="settings_download_network_timeout_1m">1 分钟</string>
+    <string name="settings_download_network_timeout_5m">5 分钟</string>
+    <string name="settings_download_network_timeout_15m">15 分钟</string>
+    <string name="settings_download_network_timeout_30m">30 分钟</string>
+    <string name="settings_download_network_timeout_never">永不超时</string>
     <string name="settings_download_restore_download_items">恢复下载项</string>
     <string name="settings_download_restore_download_items_summary">恢复下载目录里的所有下载项</string>
     <string name="settings_download_restoring">恢复中</string>

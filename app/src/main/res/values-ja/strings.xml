@@ -522,6 +522,12 @@
     <string name="settings_download_media_scan">メディアスキャンを許可する</string>
     <string name="settings_download_media_scan_summary_on">ギャラリーアプリを他人に見せないでください</string>
     <string name="settings_download_media_scan_summary_off">ほとんどのギャラリーアプリはダウンロードパスの内容を表示しません</string>
+    <string name="settings_download_network_timeout_title">ネットワーク待機タイムアウト</string>
+    <string name="settings_download_network_timeout_1m">1 分</string>
+    <string name="settings_download_network_timeout_5m">5 分</string>
+    <string name="settings_download_network_timeout_15m">15 分</string>
+    <string name="settings_download_network_timeout_30m">30 分</string>
+    <string name="settings_download_network_timeout_never">タイムアウトしない</string>
     <string name="settings_download_multi_thread_download">ダウンロードスレッド数</string>
     <string name="settings_download_multi_thread_download_summary">同時に最大 %s 枚の画像をダウンロードします</string>
     <string name="settings_download_image_resolution">画像の解像度</string>

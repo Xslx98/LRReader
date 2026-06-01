@@ -162,6 +162,17 @@ object DownloadSettings {
     fun setConcurrentDownloads(value: Int) =
         Settings.putIntToStr(KEY_CONCURRENT_DOWNLOADS, value.coerceIn(1, 3))
 
+    // --- Network-wait timeout (minutes; 0 = never time out) ---
+    // How long a download keeps pausing/waiting for the network to return
+    // before giving up and being marked FAILED. Stored as a string (ListPreference)
+    // and parsed via getIntFromStr, matching the other list-backed settings.
+    private const val KEY_NETWORK_RESUME_TIMEOUT = "network_resume_timeout"
+    private const val DEFAULT_NETWORK_RESUME_TIMEOUT = 5
+
+    @JvmStatic
+    fun getNetworkResumeTimeoutMinutes(): Int =
+        Settings.getIntFromStr(KEY_NETWORK_RESUME_TIMEOUT, DEFAULT_NETWORK_RESUME_TIMEOUT)
+
     // --- Remove Image Files (delete-with-files checkbox default) ---
     private const val KEY_REMOVE_IMAGE_FILES = "include_pic"
     private const val DEFAULT_REMOVE_IMAGE_FILES = true
