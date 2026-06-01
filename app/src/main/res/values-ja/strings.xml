@@ -374,6 +374,10 @@
     <string name="download_speed_text">%s</string>
     <string name="download_speed_text_2">%1$s、残り %2$s</string>
     <string name="download_waiting_for_network">ネットワークを待機中…</string>
+    <string name="download_resume_paused_snackbar">ダウンロードを一時停止 — ネットワークを待機中</string>
+    <string name="download_resume_timed_out_snackbar">%d 件のダウンロードを停止: ネットワークなし</string>
+    <string name="download_resume_view_action">表示</string>
+    <string name="download_resume_retry_action">再試行</string>
     <string name="remember_download_label">ダウンロードラベルを記憶する</string>
     <string name="default_download_label">デフォルトのダウンロードラベル</string>
     <string name="added_to_download_list">ダウンロードリストに追加しました</string>

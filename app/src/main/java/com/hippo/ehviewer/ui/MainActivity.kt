@@ -61,6 +61,8 @@ import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.callBack.ImageChangeCallBack
 import com.hippo.ehviewer.client.EhTagDatabase
+import com.hippo.ehviewer.download.DownloadResumeBanner
+import com.hippo.ehviewer.download.DownloadService
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.module.AppModule
@@ -562,6 +564,45 @@ class MainActivity : StageActivity(),
     override fun onStart() {
         super.onStart()
         // LANraragi: EhViewer auto-update check disabled
+        maybeShowDownloadResumeBanner()
+    }
+
+    /**
+     * On return to the foreground, surface any downloads that paused waiting for
+     * the network or gave up after the wait timeout. One-shot (consume()).
+     */
+    private fun maybeShowDownloadResumeBanner() {
+        // Note: if app-lock is active, this fires in onStart() before SecurityScene
+        // is pushed in onResume(), so the Snackbar appears briefly behind the lock and
+        // its consumed state will not re-show after unlock. Accepted v1 limitation.
+        val host = mDrawerLayout ?: return
+        when (val snapshot = DownloadResumeBanner.consume()) {
+            is DownloadResumeBanner.Snapshot.Paused -> {
+                Snackbar.make(
+                    host,
+                    getString(R.string.download_resume_paused_snackbar),
+                    Snackbar.LENGTH_LONG,
+                ).setAction(R.string.download_resume_view_action) {
+                    startScene(Announcer(DownloadsScene::class.java))
+                }.show()
+            }
+            is DownloadResumeBanner.Snapshot.TimedOut -> {
+                Snackbar.make(
+                    host,
+                    getString(R.string.download_resume_timed_out_snackbar, snapshot.count),
+                    Snackbar.LENGTH_LONG,
+                ).setAction(R.string.download_resume_retry_action) {
+                    val intent = Intent(this, DownloadService::class.java)
+                        .setAction(DownloadService.ACTION_START_RANGE)
+                        .putStringArrayListExtra(
+                            DownloadService.KEY_ARCID_LIST,
+                            ArrayList(snapshot.arcids),
+                        )
+                    startService(intent)
+                }.show()
+            }
+            DownloadResumeBanner.Snapshot.None -> { /* nothing to show */ }
+        }
     }
 
     private fun initUserImage() {
