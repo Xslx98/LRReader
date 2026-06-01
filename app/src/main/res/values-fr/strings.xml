@@ -522,6 +522,12 @@
     <string name="settings_download_media_scan">Permettre le scannage multimédia</string>
     <string name="settings_download_media_scan_summary_on">Ne montrez jamais vos applications galerie à personne</string>
     <string name="settings_download_media_scan_summary_off">La plupart d\'applications galerie ignorent les images dans le chemin de téléchargement</string>
+    <string name="settings_download_network_timeout_title">Délai d\'attente réseau</string>
+    <string name="settings_download_network_timeout_1m">1 minute</string>
+    <string name="settings_download_network_timeout_5m">5 minutes</string>
+    <string name="settings_download_network_timeout_15m">15 minutes</string>
+    <string name="settings_download_network_timeout_30m">30 minutes</string>
+    <string name="settings_download_network_timeout_never">Jamais</string>
     <string name="settings_download_multi_thread_download">Téléchargement multi-thread</string>
     <string name="settings_download_multi_thread_download_summary">Jusqu\'à %s image(s)</string>
     <string name="settings_download_image_resolution">Resolution d\'image</string>

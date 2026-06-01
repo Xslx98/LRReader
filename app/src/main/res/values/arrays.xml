@@ -315,5 +315,21 @@
         <item>@string/wifi_send_download</item>
     </string-array>
 
+    <string-array name="network_resume_timeout_entries" translatable="false">
+        <item>@string/settings_download_network_timeout_1m</item>
+        <item>@string/settings_download_network_timeout_5m</item>
+        <item>@string/settings_download_network_timeout_15m</item>
+        <item>@string/settings_download_network_timeout_30m</item>
+        <item>@string/settings_download_network_timeout_never</item>
+    </string-array>
+
+    <string-array name="network_resume_timeout_entry_values" translatable="false">
+        <item>1</item>
+        <item>5</item>
+        <item>15</item>
+        <item>30</item>
+        <item>0</item>
+    </string-array>
+
 
 </resources>

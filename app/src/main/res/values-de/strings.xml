@@ -470,6 +470,12 @@
     <string name="settings_download_media_scan">Medienscan erlauben</string>
     <string name="settings_download_media_scan_summary_on">Du solltest deine Galerie-Apps verstecken</string>
     <string name="settings_download_media_scan_summary_off">Meisten Galerie-Apps ignorieren die Bilder im Downloadpfad</string>
+    <string name="settings_download_network_timeout_title">Netzwerk-Warte-Timeout</string>
+    <string name="settings_download_network_timeout_1m">1 Minute</string>
+    <string name="settings_download_network_timeout_5m">5 Minuten</string>
+    <string name="settings_download_network_timeout_15m">15 Minuten</string>
+    <string name="settings_download_network_timeout_30m">30 Minuten</string>
+    <string name="settings_download_network_timeout_never">Nie</string>
     <string name="settings_download_multi_thread_download">Multi-Thread-Download</string>
     <string name="settings_download_multi_thread_download_summary">Bis zu %s Bild(er)</string>
     <string name="settings_download_image_resolution">Auflösung der Bilder</string>

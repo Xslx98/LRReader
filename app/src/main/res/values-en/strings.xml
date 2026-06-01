@@ -551,6 +551,12 @@
     <string name="settings_download_media_scan">Allow media scan</string>
     <string name="settings_download_media_scan_summary_on">Please hide your gallery apps away from other people</string>
     <string name="settings_download_media_scan_summary_off">Most gallery apps will ignore pictures in the download path</string>
+    <string name="settings_download_network_timeout_title">Network wait timeout</string>
+    <string name="settings_download_network_timeout_1m">1 minute</string>
+    <string name="settings_download_network_timeout_5m">5 minutes</string>
+    <string name="settings_download_network_timeout_15m">15 minutes</string>
+    <string name="settings_download_network_timeout_30m">30 minutes</string>
+    <string name="settings_download_network_timeout_never">Never time out</string>
     <string name="settings_download_multi_thread_download">Multi-threaded download</string>
     <string name="settings_download_multi_thread_download_summary">Up to %s images</string>
     <string name="settings_download_export_items">Export download items</string>

@@ -576,6 +576,12 @@
     <string name="settings_download_media_scan">允許其他程式進行媒體掃描</string>
     <string name="settings_download_media_scan_summary_on">請別讓別人看到你的相簿</string>
     <string name="settings_download_media_scan_summary_off">大部分相簿軟體將會忽略顯示下載路徑中的影像</string>
+    <string name="settings_download_network_timeout_title">斷網等待逾時</string>
+    <string name="settings_download_network_timeout_1m">1 分鐘</string>
+    <string name="settings_download_network_timeout_5m">5 分鐘</string>
+    <string name="settings_download_network_timeout_15m">15 分鐘</string>
+    <string name="settings_download_network_timeout_30m">30 分鐘</string>
+    <string name="settings_download_network_timeout_never">永不逾時</string>
     <string name="settings_download_restore_download_items">回復下載的檔案</string>
     <string name="settings_download_restore_download_items_summary">回復下載路徑中的所有下載的檔案</string>
     <string name="settings_download_restoring">回復中</string>

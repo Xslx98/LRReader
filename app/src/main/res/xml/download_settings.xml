@@ -30,6 +30,13 @@
         app:summaryOff="@string/settings_download_media_scan_summary_off"
         app:summaryOn="@string/settings_download_media_scan_summary_on" />
 
+    <com.hippo.preference.ListPreference
+        android:defaultValue="5"
+        android:key="network_resume_timeout"
+        android:summary="%s"
+        android:title="@string/settings_download_network_timeout_title"
+        app:entries="@array/network_resume_timeout_entries"
+        app:entryValues="@array/network_resume_timeout_entry_values" />
 
     <!-- LANraragi: removed download_thread, preload_image, list_pagination, image_size, download_origin_image, download_timeout, download_order_asc -->
 
