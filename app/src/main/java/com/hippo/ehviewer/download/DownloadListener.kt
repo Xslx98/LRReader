@@ -49,4 +49,11 @@ interface DownloadListener {
      * Download done
      */
     fun onCancel(info: DownloadInfo)
+
+    /**
+     * Worker entered (`waiting == true`) or left (`waiting == false`) a
+     * "waiting for network" pause. Default no-op so non-notification listeners
+     * (tests, speed tracker) need not implement it.
+     */
+    fun onNetworkWait(info: DownloadInfo, waiting: Boolean) {}
 }

@@ -394,6 +394,7 @@
     <string name="download_service_label">Service du téléchargement LR Reader</string>
     <string name="download_speed_text">%s</string>
     <string name="download_speed_text_2">%1$s, encore %2$s</string>
+    <string name="download_waiting_for_network">En attente du réseau…</string>
     <string name="remember_download_label">Enregistrer le label de téléchargement</string>
     <string name="default_download_label">Label de téléchargement par défaut</string>
     <string name="added_to_download_list">Ajouté à la liste de téléchargement</string>

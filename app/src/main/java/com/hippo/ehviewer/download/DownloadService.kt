@@ -79,6 +79,11 @@ class DownloadService : Service(), DownloadListener {
     private var mLastNotifiedArcid: String? = null
     private var mLastNotifiedFinished: Int = -1
 
+    /** True while a download is paused waiting for the network — suppresses
+     *  speed-tracker-driven onUpdate rebuilds so the "Waiting for network…"
+     *  notification is not clobbered. */
+    private var mPausedForNetwork = false
+
     /**
      * Service-scoped CoroutineScope for background awaits (notably
      * [DownloadManager.awaitInitAsync]). Cancelled in [onDestroy] to clean
@@ -388,6 +393,7 @@ class DownloadService : Service(), DownloadListener {
         // the same numeric value).
         mLastNotifiedArcid = null
         mLastNotifiedFinished = -1
+        mPausedForNetwork = false
 
         ensureDownloadingBuilder()
 
@@ -416,6 +422,7 @@ class DownloadService : Service(), DownloadListener {
         if (mNotifyManager == null) {
             return
         }
+        if (mPausedForNetwork) return
         ensureDownloadingBuilder()
 
         val snap = mDownloadManager?.progressFor(info.arcid)
@@ -469,6 +476,7 @@ class DownloadService : Service(), DownloadListener {
         if (mNotifyManager == null) {
             return
         }
+        mPausedForNetwork = false
 
         // The active task is gone; clear the progress-delta gate so the next
         // task's first onUpdate fires unconditionally (see onStart).
@@ -586,6 +594,27 @@ class DownloadService : Service(), DownloadListener {
         }
 
         checkStopSelf()
+    }
+
+    override fun onNetworkWait(info: DownloadInfo, waiting: Boolean) {
+        if (mNotifyManager == null) return
+        if (waiting) {
+            mPausedForNetwork = true
+            ensureDownloadingBuilder()
+            val dlBuilder = mDownloadingBuilder ?: return
+            dlBuilder.setContentTitle(info.title)
+                .setContentText(getString(R.string.download_waiting_for_network))
+                .setContentInfo(null)
+                .setProgress(0, 0, true)
+            mDownloadingDelay?.startForeground()
+        } else {
+            // Resumed: clear the pause guard and force the next onUpdate to redraw
+            // real progress (it is gated on a finished-count delta which a resume
+            // would otherwise suppress).
+            mPausedForNetwork = false
+            mLastNotifiedArcid = null
+            mLastNotifiedFinished = -1
+        }
     }
 
     private fun checkStopSelf() {
