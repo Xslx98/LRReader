@@ -126,6 +126,7 @@ class DownloadSchedulerTest {
         ShadowLooper.idleMainLooper()
         db.close()
         LRRAuthManager.clear()
+        DownloadResumeBanner.clear()
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -392,6 +393,23 @@ class DownloadSchedulerTest {
         assertNull(
             "Progress tracker entry should be cleared on stop",
             progressTracker.snapshot(info.arcid)
+        )
+    }
+
+    @Test
+    fun stopDownload_clearsNetworkPauseBanner() {
+        val info = makeInfo(7L)
+        scheduler.activeTasks.add(info)
+        info.state = DownloadState.DOWNLOAD
+        // Simulate a network pause having recorded this arcid.
+        DownloadResumeBanner.markPaused(info.arcid, info.title)
+
+        scheduler.stopDownload(info.arcid)
+
+        assertEquals(
+            "Stopping a paused download must clear its network-pause banner entry",
+            DownloadResumeBanner.Snapshot.None,
+            DownloadResumeBanner.consume()
         )
     }
 }
