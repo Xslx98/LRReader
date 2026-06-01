@@ -61,6 +61,14 @@ class DownloadService : Service(), DownloadListener {
     private var mDownloadedDelay: NotificationDelay? = null
     private var m509Delay: NotificationDelay? = null
 
+    /**
+     * Holds a CPU + Wi-Fi lock for the duration of a download session so
+     * downloads keep running when the screen is off. The foreground service
+     * alone only keeps the *process* alive, not the CPU/radio. Bracketed by
+     * onCreate/onDestroy, which the service scopes to "has download work".
+     */
+    private var mKeepAlive: DownloadKeepAlive? = null
+
     // Last-emitted (arcid, finished) for the in-progress notification. The
     // AOSP DownloadProvider gates progress notifications on BOTH a 2 s
     // time-delta and a 64 KB byte-delta; we already have the time gate
@@ -104,12 +112,21 @@ class DownloadService : Service(), DownloadListener {
         }
         mDownloadManager = ServiceRegistry.dataModule.downloadManager
         mDownloadManager?.setDownloadListener(this)
+
+        // Keep the CPU + Wi-Fi awake for as long as this service lives. The
+        // service only exists while there is download work (it stopSelf's when
+        // the scheduler reports idle), so onCreate→onDestroy brackets exactly
+        // one download session. Without this the download stalls the instant
+        // the screen turns off, even though the foreground notification stays up.
+        mKeepAlive = DownloadKeepAlive(this).also { it.acquire() }
     }
 
     override fun onDestroy() {
         super.onDestroy()
 
         serviceScope.cancel()
+        mKeepAlive?.release()
+        mKeepAlive = null
         mNotifyManager = null
         mDownloadManager?.setDownloadListener(null)
         mDownloadManager = null
