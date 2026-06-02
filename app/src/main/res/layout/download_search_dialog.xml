@@ -10,8 +10,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/download_search_hint"
-        android:layout_marginLeft="@dimen/gallery_search_bar_margin_h"
+        android:layout_marginStart="@dimen/gallery_search_bar_margin_h"
         android:layout_marginTop="@dimen/gallery_search_bar_margin_v"
-        android:layout_marginRight="@dimen/gallery_search_bar_margin_h" />
+        android:layout_marginEnd="@dimen/gallery_search_bar_margin_h" />
 
 </LinearLayout>

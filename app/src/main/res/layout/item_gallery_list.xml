@@ -38,10 +38,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
-            android:layout_marginLeft="8dp"
+            android:layout_marginStart="8dp"
             android:layout_marginTop="4dp"
-            android:layout_marginRight="8dp"
-            android:layout_toRightOf="@id/thumb" />
+            android:layout_marginEnd="8dp"
+            android:layout_toEndOf="@id/thumb" />
 
         <TextView
             android:id="@+id/uploader"
@@ -49,7 +49,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@id/title"
-            android:layout_alignLeft="@id/title"
+            android:layout_alignStart="@id/title"
             android:layout_marginTop="2dp" />
 
         <TextView
@@ -63,7 +63,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignBottom="@id/thumb"
-            android:layout_alignLeft="@id/title"
+            android:layout_alignStart="@id/title"
             android:layout_marginBottom="8dp" />
 
         <TextView
@@ -72,16 +72,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignBottom="@id/thumb"
-            android:layout_alignParentRight="true"
-            android:layout_marginRight="6dp"
+            android:layout_alignParentEnd="true"
+            android:layout_marginEnd="6dp"
             android:layout_marginBottom="4dp" />
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_above="@id/posted"
-            android:layout_alignParentRight="true"
-            android:layout_marginRight="6dp"
+            android:layout_alignParentEnd="true"
+            android:layout_marginEnd="6dp"
             android:divider="@drawable/spacer_x6"
             android:gravity="center_vertical"
             android:orientation="horizontal"

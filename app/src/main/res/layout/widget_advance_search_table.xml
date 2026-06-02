@@ -26,7 +26,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginRight="@dimen/advance_search_table_item_margin"
+            android:layout_marginEnd="@dimen/advance_search_table_item_margin"
             android:layout_gravity="center_vertical"
             android:checked="true"
             android:text="@string/search_sname"/>
@@ -36,7 +36,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginLeft="@dimen/advance_search_table_item_margin"
+            android:layout_marginStart="@dimen/advance_search_table_item_margin"
             android:layout_gravity="center_vertical"
             android:checked="true"
             android:text="@string/search_stags"/>
@@ -53,7 +53,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginRight="@dimen/advance_search_table_item_margin"
+            android:layout_marginEnd="@dimen/advance_search_table_item_margin"
             android:layout_gravity="center_vertical"
             android:text="@string/search_sdesc"/>
 
@@ -62,7 +62,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginLeft="@dimen/advance_search_table_item_margin"
+            android:layout_marginStart="@dimen/advance_search_table_item_margin"
             android:layout_gravity="center_vertical"
             android:text="@string/search_storr"/>
     </LinearLayout>
@@ -78,7 +78,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginRight="@dimen/advance_search_table_item_margin"
+            android:layout_marginEnd="@dimen/advance_search_table_item_margin"
             android:layout_gravity="center_vertical"
             android:text="@string/search_sto"/>
 
@@ -87,7 +87,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginLeft="@dimen/advance_search_table_item_margin"
+            android:layout_marginStart="@dimen/advance_search_table_item_margin"
             android:layout_gravity="center_vertical"
             android:text="@string/search_sdt1"/>
     </LinearLayout>
@@ -103,7 +103,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginRight="@dimen/advance_search_table_item_margin"
+            android:layout_marginEnd="@dimen/advance_search_table_item_margin"
             android:layout_gravity="center_vertical"
             android:text="@string/search_sdt2"/>
 
@@ -112,7 +112,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginLeft="@dimen/advance_search_table_item_margin"
+            android:layout_marginStart="@dimen/advance_search_table_item_margin"
             android:layout_gravity="center_vertical"
             android:text="@string/search_sh"/>
     </LinearLayout>
@@ -128,7 +128,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginRight="@dimen/advance_search_table_item_margin"
+            android:layout_marginEnd="@dimen/advance_search_table_item_margin"
             android:layout_gravity="center_vertical"
             android:text="@string/search_sr"/>
 
@@ -137,7 +137,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginLeft="@dimen/advance_search_table_item_margin"
+            android:layout_marginStart="@dimen/advance_search_table_item_margin"
             android:layout_gravity="center_vertical"
             android:entries="@array/search_min_rating"/>
     </LinearLayout>
@@ -152,7 +152,7 @@
             android:id="@+id/pages_setting"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginRight="@dimen/advance_search_table_item_margin"
+            android:layout_marginEnd="@dimen/advance_search_table_item_margin"
             android:layout_gravity="center_vertical"
             android:text="@string/search_sp"/>
 
@@ -160,8 +160,8 @@
             android:id="@+id/spf"
             android:layout_width="64dp"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/advance_search_table_item_margin"
-            android:layout_marginRight="@dimen/advance_search_table_item_margin"
+            android:layout_marginStart="@dimen/advance_search_table_item_margin"
+            android:layout_marginEnd="@dimen/advance_search_table_item_margin"
             android:layout_gravity="center_vertical"
             android:inputType="number"
             android:maxLines="1"
@@ -170,8 +170,8 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/advance_search_table_item_margin"
-            android:layout_marginRight="@dimen/advance_search_table_item_margin"
+            android:layout_marginStart="@dimen/advance_search_table_item_margin"
+            android:layout_marginEnd="@dimen/advance_search_table_item_margin"
             android:layout_gravity="center_vertical"
             android:text="@string/search_sp_to"
             android:textColor="?android:attr/textColorPrimary"/>
@@ -180,8 +180,8 @@
             android:id="@+id/spt"
             android:layout_width="64dp"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/advance_search_table_item_margin"
-            android:layout_marginRight="@dimen/advance_search_table_item_margin"
+            android:layout_marginStart="@dimen/advance_search_table_item_margin"
+            android:layout_marginEnd="@dimen/advance_search_table_item_margin"
             android:layout_gravity="center_vertical"
             android:inputType="number"
             android:maxLines="1"
@@ -190,7 +190,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/advance_search_table_item_margin"
+            android:layout_marginStart="@dimen/advance_search_table_item_margin"
             android:layout_gravity="center_vertical"
             android:text="@string/search_sp_suffix"
             android:textColor="?android:attr/textColorPrimary"/>
@@ -220,7 +220,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginRight="@dimen/advance_search_table_item_margin"
+            android:layout_marginEnd="@dimen/advance_search_table_item_margin"
             android:layout_gravity="center_vertical"
             android:text="@string/search_sfl"/>
 
@@ -229,8 +229,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginLeft="@dimen/advance_search_table_item_margin"
-            android:layout_marginRight="@dimen/advance_search_table_item_margin"
+            android:layout_marginStart="@dimen/advance_search_table_item_margin"
+            android:layout_marginEnd="@dimen/advance_search_table_item_margin"
             android:layout_gravity="center_vertical"
             android:text="@string/search_sfu"/>
 
@@ -239,7 +239,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginLeft="@dimen/advance_search_table_item_margin"
+            android:layout_marginStart="@dimen/advance_search_table_item_margin"
             android:layout_gravity="center_vertical"
             android:text="@string/search_sft"/>
     </LinearLayout>
