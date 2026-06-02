@@ -2609,16 +2609,6 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.purple_500` appears to be unused"
-        errorLine1="    &lt;color name=&quot;purple_500&quot;>#ff9c27b0&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="80"
-            column="12"/>
-    </issue>
 
     <issue
         id="UnusedResources"
@@ -2680,16 +2670,6 @@
             column="12"/>
     </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.light_blue_A200` appears to be unused"
-        errorLine1="    &lt;color name=&quot;light_blue_A200&quot;>#FF40C4FF&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="196"
-            column="12"/>
-    </issue>
 
     <issue
         id="UnusedResources"
@@ -2819,27 +2799,7 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.settings_advanced_dns_over_http_title` appears to be unused"
-        errorLine1="    &lt;string name=&quot;settings_advanced_dns_over_http_title&quot;>Secure DNS (DoH)&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="19"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.settings_advanced_dns_over_http_summary` appears to be unused"
-        errorLine1="    &lt;string name=&quot;settings_advanced_dns_over_http_summary&quot;>Fix DNS pollution in certain regions&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="20"
-            column="13"/>
-    </issue>
 
 
 
@@ -2927,16 +2887,6 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.update_ignore` appears to be unused"
-        errorLine1="    &lt;string name=&quot;update_ignore&quot;>Ignore&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="245"
-            column="13"/>
-    </issue>
 
 
 
@@ -3156,27 +3106,7 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.settings_about_check_for_updates` appears to be unused"
-        errorLine1="    &lt;string name=&quot;settings_about_check_for_updates&quot;>Check for updates&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="762"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.settings_close_automatic_updates` appears to be unused"
-        errorLine1="    &lt;string name=&quot;settings_close_automatic_updates&quot;>Turn off automatic updates&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="763"
-            column="13"/>
-    </issue>
 
 
 
