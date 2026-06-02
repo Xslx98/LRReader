@@ -580,21 +580,6 @@
             file="src/main/res/layout/preference_widget_seekbar.xml"/>
     </issue>
 
-    <issue
-        id="SpUsage"
-        message="Should use &quot;`sp`&quot; instead of &quot;`dp`&quot; for text sizes (`@dimen/dad_bar_size` is defined as `18dp` in `values/dimens.xml`"
-        errorLine1="        android:textSize=&quot;@dimen/dad_bar_size&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/activity_wifi_server.xml"
-            line="16"
-            column="9"/>
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="83"
-            column="32"
-            message="This dp dimension is used as a text size"/>
-    </issue>
 
     <issue
         id="SwitchIntDef"
@@ -1157,16 +1142,6 @@
             column="25"/>
     </issue>
 
-    <issue
-        id="ObsoleteLayoutParam"
-        message="Invalid layout param in a `FrameLayout`: `layout_weight`"
-        errorLine1="            android:layout_weight=&quot;1&quot;>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/subscription_draw.xml"
-            line="33"
-            column="13"/>
-    </issue>
 
     <issue
         id="ObsoleteSdkInt"
@@ -1905,16 +1880,6 @@
             column="17"/>
     </issue>
 
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="        val minDate = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {"
-        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/widget/JumpDateSelector.kt"
-            line="50"
-            column="27"/>
-    </issue>
 
     <issue
         id="ObsoleteSdkInt"
@@ -2289,38 +2254,8 @@
             file="src/main/res/xml-v25"/>
     </issue>
 
-    <issue
-        id="UseCompoundDrawables"
-        message="This tag and its children can be replaced by one `&lt;TextView/>` and a compound drawable"
-        errorLine1="        &lt;LinearLayout"
-        errorLine2="         ~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/item_blacklist.xml"
-            line="31"
-            column="10"/>
-    </issue>
 
-    <issue
-        id="UseCompoundDrawables"
-        message="This tag and its children can be replaced by one `&lt;TextView/>` and a compound drawable"
-        errorLine1="        &lt;LinearLayout"
-        errorLine2="         ~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/item_filter.xml"
-            line="30"
-            column="10"/>
-    </issue>
 
-    <issue
-        id="UseCompoundDrawables"
-        message="This tag and its children can be replaced by one `&lt;TextView/>` and a compound drawable"
-        errorLine1="        &lt;LinearLayout"
-        errorLine2="         ~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/subscription_list_item.xml"
-            line="31"
-            column="10"/>
-    </issue>
 
     <issue
         id="AnimatorKeep"
@@ -2505,16 +2440,6 @@
             column="2"/>
     </issue>
 
-    <issue
-        id="DisableBaselineAlignment"
-        message="Set `android:baselineAligned=&quot;false&quot;` on this element for better performance"
-        errorLine1="        &lt;LinearLayout"
-        errorLine2="         ~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/dialog_archiver.xml"
-            line="20"
-            column="10"/>
-    </issue>
 
     <issue
         id="DisableBaselineAlignment"
@@ -2538,16 +2463,6 @@
             column="2"/>
     </issue>
 
-    <issue
-        id="InefficientWeight"
-        message="Use a `layout_width` of `0dp` instead of `1dp` for better performance"
-        errorLine1="                    android:layout_width=&quot;1dp&quot;"
-        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/notification_contentview.xml"
-            line="51"
-            column="21"/>
-    </issue>
 
     <issue
         id="NestedWeights"
@@ -3361,16 +3276,6 @@
             column="22"/>
     </issue>
 
-    <issue
-        id="UselessParent"
-        message="This `TableRow` layout or its `TableLayout` parent is unnecessary"
-        errorLine1="    &lt;TableRow"
-        errorLine2="     ~~~~~~~~">
-        <location
-            file="src/main/res/layout/dialog_donate.xml"
-            line="83"
-            column="6"/>
-    </issue>
 
     <issue
         id="UselessParent"
@@ -3643,23 +3548,7 @@
             file="src/main/res/drawable-mdpi-v15/sadpanda_low_poly.webp"/>
     </issue>
 
-    <issue
-        id="IconDuplicatesConfig"
-        message="The `drawer_shadow_left.9.png` icon has identical contents in the following configuration folders: drawable-xxhdpi, drawable-xxxhdpi">
-        <location
-            file="src/main/res/drawable-xxxhdpi/drawer_shadow_left.9.png"/>
-        <location
-            file="src/main/res/drawable-xxhdpi/drawer_shadow_left.9.png"/>
-    </issue>
 
-    <issue
-        id="IconDuplicatesConfig"
-        message="The `drawer_shadow_right.9.png` icon has identical contents in the following configuration folders: drawable-xxhdpi, drawable-xxxhdpi">
-        <location
-            file="src/main/res/drawable-xxxhdpi/drawer_shadow_right.9.png"/>
-        <location
-            file="src/main/res/drawable-xxhdpi/drawer_shadow_right.9.png"/>
-    </issue>
 
     <issue
         id="IconDuplicatesConfig"
@@ -3813,12 +3702,6 @@
             file="src/main/res/drawable-xxhdpi-v15/sadpanda_low_poly.webp"/>
     </issue>
 
-    <issue
-        id="IconExtension"
-        message="Misleading file extension; named `.jpg` but the file format is `png`">
-        <location
-            file="src/main/res/drawable-xxhdpi-v15/zhifubao.jpg"/>
-    </issue>
 
     <issue
         id="Autofill"
@@ -3974,27 +3857,7 @@
             column="6"/>
     </issue>
 
-    <issue
-        id="ContentDescription"
-        message="Missing `contentDescription` attribute on image"
-        errorLine1="        &lt;ImageView"
-        errorLine2="         ~~~~~~~~~">
-        <location
-            file="src/main/res/layout/dialog_donate.xml"
-            line="39"
-            column="10"/>
-    </issue>
 
-    <issue
-        id="ContentDescription"
-        message="Missing `contentDescription` attribute on image"
-        errorLine1="        &lt;ImageView"
-        errorLine2="         ~~~~~~~~~">
-        <location
-            file="src/main/res/layout/dialog_donate.xml"
-            line="56"
-            column="10"/>
-    </issue>
 
     <issue
         id="ContentDescription"
@@ -4007,16 +3870,6 @@
             column="14"/>
     </issue>
 
-    <issue
-        id="ContentDescription"
-        message="Missing `contentDescription` attribute on image"
-        errorLine1="            &lt;ImageView"
-        errorLine2="             ~~~~~~~~~">
-        <location
-            file="src/main/res/layout/item_blacklist.xml"
-            line="36"
-            column="14"/>
-    </issue>
 
     <issue
         id="ContentDescription"
@@ -4062,16 +3915,6 @@
             column="14"/>
     </issue>
 
-    <issue
-        id="ContentDescription"
-        message="Missing `contentDescription` attribute on image"
-        errorLine1="            &lt;ImageView"
-        errorLine2="             ~~~~~~~~~">
-        <location
-            file="src/main/res/layout/item_filter.xml"
-            line="35"
-            column="14"/>
-    </issue>
 
     <issue
         id="ContentDescription"
@@ -4150,27 +3993,7 @@
             column="14"/>
     </issue>
 
-    <issue
-        id="ContentDescription"
-        message="Missing `contentDescription` attribute on image"
-        errorLine1="            &lt;ImageView"
-        errorLine2="             ~~~~~~~~~">
-        <location
-            file="src/main/res/layout/item_subscription.xml"
-            line="36"
-            column="14"/>
-    </issue>
 
-    <issue
-        id="ContentDescription"
-        message="Missing `contentDescription` attribute on image"
-        errorLine1="            &lt;ImageView"
-        errorLine2="             ~~~~~~~~~">
-        <location
-            file="src/main/res/layout/item_subscription.xml"
-            line="57"
-            column="14"/>
-    </issue>
 
     <issue
         id="ContentDescription"
@@ -4381,27 +4204,7 @@
             column="14"/>
     </issue>
 
-    <issue
-        id="ContentDescription"
-        message="Missing `contentDescription` attribute on image"
-        errorLine1="    &lt;ImageView"
-        errorLine2="     ~~~~~~~~~">
-        <location
-            file="src/main/res/layout/scene_warning.xml"
-            line="26"
-            column="6"/>
-    </issue>
 
-    <issue
-        id="ContentDescription"
-        message="Missing `contentDescription` attribute on image"
-        errorLine1="            &lt;ImageView"
-        errorLine2="             ~~~~~~~~~">
-        <location
-            file="src/main/res/layout/subscription_list_item.xml"
-            line="36"
-            column="14"/>
-    </issue>
 
     <issue
         id="ContentDescription"
@@ -4535,27 +4338,7 @@
             column="32"/>
     </issue>
 
-    <issue
-        id="HardcodedText"
-        message="Hardcoded string &quot;init&quot;, should use `@string` resource"
-        errorLine1="        android:text=&quot;init&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/activity_wifi_client.xml"
-            line="17"
-            column="9"/>
-    </issue>
 
-    <issue
-        id="HardcodedText"
-        message="Hardcoded string &quot;status&quot;, should use `@string` resource"
-        errorLine1="        android:text=&quot;status&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/activity_wifi_client.xml"
-            line="28"
-            column="9"/>
-    </issue>
 
     <issue
         id="HardcodedText"
@@ -4656,27 +4439,7 @@
             column="17"/>
     </issue>
 
-    <issue
-        id="RtlSymmetry"
-        message="When you define `paddingLeft` you should probably also define `paddingRight` for right-to-left symmetry"
-        errorLine1="        android:paddingLeft=&quot;?attr/listPreferredItemPaddingLeft&quot;/>"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/item_drawer_favorites.xml"
-            line="34"
-            column="9"/>
-    </issue>
 
-    <issue
-        id="RtlSymmetry"
-        message="When you define `paddingRight` you should probably also define `paddingLeft` for right-to-left symmetry"
-        errorLine1="        android:paddingRight=&quot;?attr/listPreferredItemPaddingRight&quot;/>"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/item_drawer_favorites.xml"
-            line="43"
-            column="9"/>
-    </issue>
 
     <issue
         id="RtlSymmetry"
@@ -5316,27 +5079,7 @@
             column="17"/>
     </issue>
 
-    <issue
-        id="RtlHardcoded"
-        message="Consider replacing `android:paddingLeft` with `android:paddingStart=&quot;?attr/listPreferredItemPaddingLeft&quot;` to better support right-to-left layouts"
-        errorLine1="        android:paddingLeft=&quot;?attr/listPreferredItemPaddingLeft&quot;/>"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/item_drawer_favorites.xml"
-            line="34"
-            column="9"/>
-    </issue>
 
-    <issue
-        id="RtlHardcoded"
-        message="Consider replacing `android:paddingRight` with `android:paddingEnd=&quot;?attr/listPreferredItemPaddingRight&quot;` to better support right-to-left layouts"
-        errorLine1="        android:paddingRight=&quot;?attr/listPreferredItemPaddingRight&quot;/>"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/item_drawer_favorites.xml"
-            line="43"
-            column="9"/>
-    </issue>
 
     <issue
         id="RtlHardcoded"
@@ -5558,27 +5301,7 @@
             column="13"/>
     </issue>
 
-    <issue
-        id="RtlHardcoded"
-        message="Consider replacing `android:layout_marginLeft` with `android:layout_marginStart=&quot;16dp&quot;` to better support right-to-left layouts"
-        errorLine1="        android:layout_marginLeft=&quot;16dp&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/item_preference_header.xml"
-            line="32"
-            column="9"/>
-    </issue>
 
-    <issue
-        id="RtlHardcoded"
-        message="Consider replacing `android:layout_marginRight` with `android:layout_marginEnd=&quot;32dp&quot;` to better support right-to-left layouts"
-        errorLine1="        android:layout_marginRight=&quot;32dp&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/item_preference_header.xml"
-            line="33"
-            column="9"/>
-    </issue>
 
     <issue
         id="RtlHardcoded"
@@ -5624,27 +5347,7 @@
             column="5"/>
     </issue>
 
-    <issue
-        id="RtlHardcoded"
-        message="Consider replacing `android:paddingLeft` with `android:paddingStart=&quot;?attr/listPreferredItemPaddingLeft&quot;` to better support right-to-left layouts"
-        errorLine1="    android:paddingLeft=&quot;?attr/listPreferredItemPaddingLeft&quot;"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/item_simple_list_2.xml"
-            line="22"
-            column="5"/>
-    </issue>
 
-    <issue
-        id="RtlHardcoded"
-        message="Consider replacing `android:paddingRight` with `android:paddingEnd=&quot;?attr/listPreferredItemPaddingRight&quot;` to better support right-to-left layouts"
-        errorLine1="    android:paddingRight=&quot;?attr/listPreferredItemPaddingRight&quot;"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/item_simple_list_2.xml"
-            line="23"
-            column="5"/>
-    </issue>
 
     <issue
         id="RtlHardcoded"
