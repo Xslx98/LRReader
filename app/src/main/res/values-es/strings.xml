@@ -72,7 +72,6 @@
     <string name="error_invalid_archive">Archivo inválido</string>
 
 
-    <string name="app_waring">El contenido de esta aplicación es de Internet. Algunas de ellas pueden causarle daño psicológico. Ahora sabes los riesgos anteriormente mencionado y te gustaría asumirlos</string>
     <string name="press_twice_exit">Presione una vez más para salir</string>
     <string name="you_rejected_me">Duele</string>
     <string name="analytics_explain">¿Le importaría si el desarrollador recopila información de su dispositivo y su uso? Ayudará mucho al desarrollador.&lt;br&gt;&lt;br&gt;El servicio de análisis de datos es proporcionado por Google Analytics for Firebase. Su política de privacidad se puede encontrar en &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt;.&lt;br&gt;&lt;br&gt;Si acepta unirse al análisis de datos, se recopilará información de su dispositivo y su uso, incluida pero no limitada a la versión de la API de Android, modelo del equipo, residencia de idioma, versión de la aplicación, tiempo de conversión, tiempos de función. El desarrollador promete que esta información NO se recopilará, incluido el número de teléfono, dirección de correo electrónico, IMEI.&lt;br&gt;&lt;br&gt;Su información no se recopilará hasta que acepte unirse al análisis de datos.&lt;br&gt;&lt;br&gt;La información recopilada será analizada por Google Analytics for Firebase. El informe de análisis solo puede ser visto por el desarrollador de esta aplicación.</string>
@@ -201,11 +200,9 @@
     <string name="copied_to_clipboard">Copiado al portapapeles</string>
 
     <!-- Gallery Comments -->
-    <string name="no_one_comments_gallery">Sin comentarios.</string>
 
     <!-- Gallery Previews -->
     <string name="go_to">Ir a</string>
-    <string name="tag_filter">Filtrar etiqueta</string>
 
     <!-- Download -->
     <string name="no_download_info">Las galerías descargadas se mostrarán acá</string>
@@ -282,7 +279,6 @@
     <string name="clear_all">Limpiar todo</string>
     <string name="clear_all_history">¿Limpiar historial?</string>
 
-    <string name="tip">Consejo</string>
     <string name="show_definition">Mostrar definición</string>
 
     <!-- Set Security -->
@@ -302,7 +298,6 @@
     <string name="image_saved">Imagen guardada en  %s</string>
 
     <string name="settings_eh">Pantalla</string>
-    <string name="settings_eh_identity_cookies_tourist">No ha iniciado sesión.</string>
     <string name="settings_eh_list_mode">Modo lista</string>
     <string name="settings_eh_list_mode_detail">Con detalles</string>
     <string name="settings_eh_list_mode_thumb">Solo portada</string>
@@ -396,28 +391,14 @@
     <string name="settings_about_author">Autor</string>
     <string name="settings_about_license">Licencia</string>
     <string name="settings_about_license_summary">LR Reader es posible gracias a varios proyectos de código abierto</string>
-    <string name="settings_about_donate_message">Su donación no puede traerle ningún privilegio. Pero me ayuda a mantener esta aplicación.</string>
-    <string name="settings_about_donate_alipay">Alipay</string>
-    <string name="settings_about_donate_copy">Copiar correo</string>
-    <string name="settings_save_image_aliPay">Guardar código QR de Alipay</string>
-    <string name="settings_save_image_weChat">Guardar código QR de WeChat</string>
     <string name="settings_about_version">Versión de compilación</string>
 
     <string name="proxy_direct">Directo</string>
     <string name="proxy_system">Proxy del sistema</string>
-    <string name="proxy_host_or_ip">Host o IP</string>
-    <string name="proxy_port">Puerto</string>
 
     <string name="app_language_system">Lenguaje del sistema (Defecto)</string>
 
     <!-- ExcludedLanguagesScene -->
-    <string name="select_all">Seleccionar todo</string>
-    <string name="deselect_all">Ninguno</string>
-    <string name="invert_selection">Invertir</string>
-    <string name="language">Idioma</string>
-    <string name="original">Original</string>
-    <string name="translated">Traducido</string>
-    <string name="rewrite">Reescrito</string>
 
     <string name="please_wait">Espere</string>
 
@@ -512,7 +493,6 @@
     <string name="settings_eh_theme_light">Claro</string>
     <string name="settings_eh_theme_dark">Oscuro</string>
     <string name="settings_eh_theme_black">Negro</string>
-    <string name="settings_about_donate_guide">Guía de apoyo</string>
 
     <!--  排行榜  -->
     <string name="gallery_toplists">Listas principales de galerías</string>
@@ -529,10 +509,6 @@
     <string name="request_storage_permission">LR Reader solicitará acceso al álbum de fotos del dispositivo para obtener imágenes. ¿Le gustaría autorizar?</string>
     <!-- 下载通知   -->
     <string name="history_info_unlimited">Ilimitado</string>
-    <string name="archiver_dialog_current_funds">Fondos actuales:</string>
-    <string name="archiver_dialog_download_original">Descargar archivo original</string>
-    <string name="archiver_dialog_download_resample">Descargar archivo remuestreado</string>
-    <string name="archiver_dialog_size">Tamaño estimado:  %s</string>
     <string name="have_new_version">Haga clic para ver la nueva versión de la galería</string>
     <string name="archiver_downloading">Descargando archivo %s</string>
     <string name="sort_by_pub_time">Tiempo de publicación</string>
@@ -557,14 +533,10 @@
     <string name="imported_archive_category">Importación local</string>
     <string name="pagination_count">contar</string>
     <string name="pagination_page_and_item">r/p</string>
-    <string name="archiver_dialog_cost">Costo de descarga: %s</string>
     <!--  wifi server -->
     <string name="wifi_send_bookmark">Migrar marcadores</string>
     <string name="wifi_send_favorite">Migrar categorías</string>
     <string name="wifi_send_download">Migrar datos de descarga</string>
-    <string name="wifi_send_text">Enviar datos</string>
-    <string name="wifi_server_illustrate">¡Por favor asegúrese de que el teléfono móvil que recibe datos esté conectado al punto de acceso local, y no se desconecte o regrese a la página principal antes de que la migración esté completa!</string>
-    <string name="wifi_server_connect">Conectar</string>
     <!--  wifi server  -->
     <!--  limits  -->
     <string name="yes">Sí</string>

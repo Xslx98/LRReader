@@ -27,7 +27,6 @@
     <string name="cleanup_toplists">Cleanup Toplists</string>
     <string name="rating_reviewing_toplists">Rating&#038;Reviewing Toplists</string>
 
-    <string name="settings_about_donate_guide">guide</string>
 
     <string name="app_name">LR Reader</string>
 
@@ -111,7 +110,6 @@
     <string name="gallery_gl_fallback_toast">GL rendering failed, switched to safe fallback page</string>
 
 
-    <string name="app_waring">The content of this application is from the Internet. Some of it may do physical or mental harm to you. You have learnt the risks above and would like to undertake them.</string>
     <string name="press_twice_exit">Press twice to exit</string>
     <string name="you_rejected_me">It hurts</string>
     <string name="analytics_explain">Would you mind if the developer collected your device information and your usage? It will help the developer a lot.&lt;br&gt;&lt;br&gt;Data analysis service is provided by Google Analytics for Firebase. Its privacy policy can be found at &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt;.&lt;br&gt;&lt;br&gt;If you agree to join data analysis, your device information and your usage will be collected, including but not limited to Android API version, equipment model, language residence, the application version, conversion time, function times. The developer promise that these information will NOT be collected, including phone number, e-mail address, IMEI.&lt;br&gt;&lt;br&gt;Your information will not be collected until you agree to join data analysis.&lt;br&gt;&lt;br&gt;The collected information will be analyzed by Google Analytics for Firebase. The analysis report can only be viewed by the developer of this application.</string>
@@ -227,7 +225,6 @@
     <string name="copied_to_clipboard">Copied to clipboard</string>
 
     <!-- Gallery Comments -->
-    <string name="no_one_comments_gallery">No comment.</string>
 
     <!-- Gallery Previews -->
     <string name="go_to">Go to</string>
@@ -289,7 +286,6 @@
     <string name="clear_all">Clear all</string>
     <string name="clear_all_history">Clear all history?</string>
 
-    <string name="tip">Tip</string>
     <string name="show_definition">Show definition</string>
 
     <!-- Set Security -->
@@ -330,7 +326,6 @@
     <string name="image_saved">Image saved to %s</string>
 
     <string name="settings_eh">Display</string>
-    <string name="settings_eh_identity_cookies_tourist">Not signed in.</string>
     <string name="settings_eh_theme">Theme</string>
     <string name="settings_eh_theme_light">Light</string>
     <string name="settings_eh_theme_dark">Dark</string>
@@ -428,27 +423,15 @@
     <string name="settings_about_author">Author</string>
     <string name="settings_about_license">License</string>
     <string name="settings_about_license_summary">LR Reader is made possible thanks to many open source projects</string>
-    <string name="settings_about_donate_message">Your donation can not bring you any privileges. But it helps me maintain this app.</string>
-    <string name="settings_about_donate_alipay">Alipay</string>
-    <string name="settings_about_donate_copy">Copy</string>
     <string name="settings_about_version">Build version</string>
 
     <string name="proxy_direct">Direct</string>
     <string name="proxy_system">System Proxy</string>
-    <string name="proxy_host_or_ip">Host or IP</string>
-    <string name="proxy_port">Port</string>
 
 
     <string name="app_language_system">System Language (Default)</string>
 
     <!-- ExcludedLanguagesScene -->
-    <string name="select_all">All</string>
-    <string name="deselect_all">None</string>
-    <string name="invert_selection">Invert</string>
-    <string name="language">Language</string>
-    <string name="original">Original</string>
-    <string name="translated">Translated</string>
-    <string name="rewrite">Rewrite</string>
 
     <string name="please_wait">Pleas wait</string>
 
@@ -519,10 +502,6 @@
 
     <string name="download_service">Download Service</string>
     <string name="history_info_unlimited">Unlimited</string>
-    <string name="archiver_dialog_current_funds">Current Funds:</string>
-    <string name="archiver_dialog_download_original">Download Original Archive</string>
-    <string name="archiver_dialog_download_resample">Download Resample Archive</string>
-    <string name="archiver_dialog_size">Estimated Size:  %s</string>
     <string name="have_new_version">Click to see new gallery version</string>
     <string name="archiver_downloading">Arc Downloading %s</string>
     <string name="sort_by_pub_time">Published Time</string>
@@ -545,7 +524,6 @@
 
 
     <!-- Auto-generated missing translations -->
-    <string name="archiver_dialog_cost">Download Cost:  %s</string>
     <string name="cancel">Cancel</string>
     <string name="category_all">All</string>
     <string name="choose_from_the_album">Choose from the album</string>
@@ -661,8 +639,6 @@
     <string name="settings_read_picture_decoding_method_native">Open source C++ decoding library</string>
     <string name="settings_read_picture_decoding_method_origin">System Decoding</string>
     <string name="settings_read_reverse_volume_page">Reverse volume key translation direction</string>
-    <string name="settings_save_image_aliPay">Save Alipay QR Code</string>
-    <string name="settings_save_image_weChat">Save WeChat QR Code</string>
     <string name="sort_by_create_time_asc">By Create Time Asc</string>
     <string name="sort_by_create_time_desc">By Create Time Desc</string>
     <string name="sort_by_file_size_asc">By File Size Asc</string>
@@ -676,14 +652,10 @@
     <string name="sort_download_list">Sort List</string>
     <string name="spen_next_page">Next page</string>
     <string name="spen_previous_page">Previous page</string>
-    <string name="tag_filter">Filter tag</string>
     <string name="take_a_photograph">Take a photograph</string>
     <string name="wifi_send_bookmark">Migrate bookmarks</string>
     <string name="wifi_send_download">Migrate download data</string>
     <string name="wifi_send_favorite">Migrate favorite</string>
-    <string name="wifi_send_text">Send Data</string>
-    <string name="wifi_server_connect">Connect</string>
-    <string name="wifi_server_illustrate">Please make sure that the mobile phone to receive data is connected to the local hotspot, and do not disconnect or return to the parent page before the migration is complete! </string>
     <string name="yes">Yes</string>
     <string name="lrr_category_label_dynamic">Dynamic</string>
     <string name="lrr_save_and_connect">Save &amp; Connect</string>

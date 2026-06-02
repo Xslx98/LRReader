@@ -2560,60 +2560,10 @@
             column="13"/>
     </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.menu.activity_blick_list` appears to be unused"
-        errorLine1="&lt;menu"
-        errorLine2="^">
-        <location
-            file="src/main/res/menu/activity_blick_list.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.menu.activity_filter` appears to be unused"
-        errorLine1="&lt;menu"
-        errorLine2="^">
-        <location
-            file="src/main/res/menu/activity_filter.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.activity_my_tags` appears to be unused"
-        errorLine1="&lt;FrameLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/activity_my_tags.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.activity_wifi_client` appears to be unused"
-        errorLine1="&lt;LinearLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/activity_wifi_client.xml"
-            line="2"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.activity_wifi_server` appears to be unused"
-        errorLine1="&lt;LinearLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/activity_wifi_server.xml"
-            line="2"
-            column="1"/>
-    </issue>
 
     <issue
         id="UnusedResources"
@@ -2824,27 +2774,7 @@
             column="1"/>
     </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.big_filter` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/big_filter.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.bottom_popup_shape` appears to be unused"
-        errorLine1="&lt;shape xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/bottom_popup_shape.xml"
-            line="2"
-            column="1"/>
-    </issue>
 
     <issue
         id="UnusedResources"
@@ -3407,82 +3337,12 @@
             column="12"/>
     </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.dialog_archive_list` appears to be unused"
-        errorLine1="&lt;FrameLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/dialog_archive_list.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.dialog_archiver` appears to be unused"
-        errorLine1="&lt;LinearLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/dialog_archiver.xml"
-            line="2"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.dialog_donate` appears to be unused"
-        errorLine1="&lt;LinearLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/dialog_donate.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.dialog_go_to` appears to be unused"
-        errorLine1="&lt;LinearLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/dialog_go_to.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.dialog_rate` appears to be unused"
-        errorLine1="&lt;LinearLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/dialog_rate.xml"
-            line="17"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.dialog_recycler_view` appears to be unused"
-        errorLine1="&lt;com.hippo.easyrecyclerview.EasyRecyclerView"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/dialog_recycler_view.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.dialog_torrent_list` appears to be unused"
-        errorLine1="&lt;FrameLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/dialog_torrent_list.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
     <issue
         id="UnusedResources"
@@ -3770,642 +3630,74 @@
             column="12"/>
     </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.drag_handler_background` appears to be unused"
-        errorLine1="&lt;shape xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/drag_handler_background.xml"
-            line="2"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.drawer_list_rv` appears to be unused"
-        errorLine1="&lt;LinearLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/drawer_list_rv.xml"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.drawer_shadow_left` appears to be unused">
-        <location
-            file="src/main/res/drawable-hdpi/drawer_shadow_left.9.png"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.drawer_shadow_right` appears to be unused">
-        <location
-            file="src/main/res/drawable-hdpi/drawer_shadow_right.9.png"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.home_item_shape` appears to be unused"
-        errorLine1="&lt;shape xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/home_item_shape.xml"
-            line="2"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.ic_baseline_subscriptions_24` appears to be unused"
-        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/ic_baseline_subscriptions_24.xml"
-            line="1"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.ic_baseline_visibility_24` appears to be unused"
-        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/ic_baseline_visibility_24.xml"
-            line="1"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.ic_baseline_visibility_off_24` appears to be unused"
-        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/ic_baseline_visibility_off_24.xml"
-            line="1"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.ic_twotone_sort_24` appears to be unused"
-        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/ic_twotone_sort_24.xml"
-            line="1"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.item_blacklist` appears to be unused"
-        errorLine1="&lt;FrameLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/item_blacklist.xml"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.item_blacklist_header` appears to be unused"
-        errorLine1="&lt;TextView"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/item_blacklist_header.xml"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.item_drawer_favorites` appears to be unused"
-        errorLine1="&lt;LinearLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/item_drawer_favorites.xml"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.item_excluded_languages` appears to be unused"
-        errorLine1="&lt;LinearLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/item_excluded_languages.xml"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.item_filter` appears to be unused"
-        errorLine1="&lt;FrameLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/item_filter.xml"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.item_filter_header` appears to be unused"
-        errorLine1="&lt;TextView"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/item_filter_header.xml"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.item_gallery_preview` appears to be unused"
-        errorLine1="&lt;LinearLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/item_gallery_preview.xml"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.item_preference_header` appears to be unused"
-        errorLine1="&lt;LinearLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/item_preference_header.xml"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.item_simple_list_2` appears to be unused"
-        errorLine1="&lt;LinearLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/item_simple_list_2.xml"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.item_subscription` appears to be unused"
-        errorLine1="&lt;FrameLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/item_subscription.xml"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.jump_selector_shape` appears to be unused"
-        errorLine1="&lt;shape xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/jump_selector_shape.xml"
-            line="2"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.limits_shape` appears to be unused"
-        errorLine1="&lt;shape xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/limits_shape.xml"
-            line="2"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.new_version_style` appears to be unused"
-        errorLine1="&lt;shape xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/new_version_style.xml"
-            line="2"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.notification_contentview` appears to be unused"
-        errorLine1="&lt;LinearLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/notification_contentview.xml"
-            line="2"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_close` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_close&quot; translatable=&quot;false&quot;>M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="20"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_folder_share` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_folder_share&quot; translatable=&quot;false&quot;>M5,21Q5,12 11,7L6,8Q13,3 21,4Q15,8 13,15L14,9Q8,12 5,21Z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="25"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_folder_add` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_folder_add&quot; translatable=&quot;false&quot;>M10,1L14,1L14,10L23,10L23,14L14,14L14,23L10,23L10,14L1,14L1,10L10,10Z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="26"
-            column="13"/>
-    </issue>
-
-
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_fire` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_fire&quot; translatable=&quot;false&quot;>M11.71,19C9.93,19 8.5,17.59 8.5,15.86C8.5,14.24 9.53,13.1 11.3,12.74C13.07,12.38 14.9,11.53 15.92,10.16C16.31,11.45 16.5,12.81 16.5,14.2C16.5,16.84 14.36,19 11.71,19M13.5,0.67C13.5,0.67 14.24,3.32 14.24,5.47C14.24,7.53 12.89,9.2 10.83,9.2C8.76,9.2 7.2,7.53 7.2,5.47L7.23,5.1C5.21,7.5 4,10.61 4,14A8,8 0 0,0 12,22A8,8 0 0,0 20,14C20,8.6 17.41,3.8 13.5,0.67Z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="33"
-            column="13"/>
-    </issue>
-
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_help_circle` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_help_circle&quot; translatable=&quot;false&quot;>M15.07,11.25L14.17,12.17C13.45,12.89 13,13.5 13,15H11V14.5C11,13.39 11.45,12.39 12.17,11.67L13.41,10.41C13.78,10.05 14,9.55 14,9C14,7.89 13.1,7 12,7A2,2 0 0,0 10,9H8A4,4 0 0,1 12,5A4,4 0 0,1 16,9C16,9.88 15.64,10.67 15.07,11.25M13,19H11V17H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="43"
-            column="13"/>
-    </issue>
-
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_reply` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_reply&quot; translatable=&quot;false&quot;>M10,9V5L3,12L10,19V14.9C15,14.9 18.5,16.5 21,20C20,15 17,10 10,9Z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="48"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_send` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_send&quot; translatable=&quot;false&quot;>M2,21L23,12L2,3V10L17,12L2,14V21Z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="49"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_share` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_share&quot; translatable=&quot;false&quot;>M21,11L14,4V8C7,9 4,14 3,19C5.5,15.5 9,13.9 14,13.9V18L21,11Z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="50"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_thumb_up` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_thumb_up&quot; translatable=&quot;false&quot;>M23,10C23,8.89 22.1,8 21,8H14.68L15.64,3.43C15.66,3.33 15.67,3.22 15.67,3.11C15.67,2.7 15.5,2.32 15.23,2.05L14.17,1L7.59,7.58C7.22,7.95 7,8.45 7,9V19A2,2 0 0,0 9,21H18C18.83,21 19.54,20.5 19.84,19.78L22.86,12.73C22.95,12.5 23,12.26 23,12V10.08L23,10M1,21H5V9H1V21Z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="51"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_utorrent` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_utorrent&quot; translatable=&quot;false&quot;>M2,11.5C2.2,6.3,7.2,1.7,12.5,2C18.1,2.2,23,7.9,21.9,13.5C21,13.5,20.1,13.2,19.6,12.4C18.3,10.4,17.7,8.1,16.5,6.1C15.6,6.2,14.8,6.4,14,6.6C14.3,8.9,15.8,10.8,16.3,13C16.1,14.9,13.6,16,11.9,15.1C10.5,14.6,9.9,13.1,9.4,11.8C8.9,10.5,8.4,9.1,7.7,7.9C6.6,7.9,5.5,7.9,4.5,8.4C5.4,12.9,7.9,16.9,8.9,21.4C4.8,20.1,1.8,15.8,2,11.5M14.8,17.1C15.8,16.5,16.6,15.6,17.5,14.8C18.8,15.1,20,15.3,21.3,15.4C19.9,18.7,16.9,21.2,13.3,21.9C12.3,20.5,11.7,18.9,11.3,17.3C12.5,17.4,13.7,17.5,14.8,17.1Z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="52"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_heart_box` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_heart_box&quot; translatable=&quot;false&quot;>M5,3H19A2,2 0 0,1 21,5V19A2,2 0 0,1 19,21H5A2,2 0 0,1 3,19V5A2,2 0 0,1 5,3M12,17L12.72,16.34C15.3,14 17,12.46 17,10.57C17,9.03 15.79,7.82 14.25,7.82C13.38,7.82 12.55,8.23 12,8.87C11.45,8.23 10.62,7.82 9.75,7.82C8.21,7.82 7,9.03 7,10.57C7,12.46 8.7,14 11.28,16.34L12,17Z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="57"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_cookie` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_cookie&quot; translatable=&quot;false&quot;>M12,3A9,9 0 0,0 3,12A9,9 0 0,0 12,21A9,9 0 0,0 21,12C21,11.5 20.96,11 20.87,10.5C20.6,10 20,10 20,10H18V9C18,8 17,8 17,8H15V7C15,6 14,6 14,6H13V4C13,3 12,3 12,3M9.5,6A1.5,1.5 0 0,1 11,7.5A1.5,1.5 0 0,1 9.5,9A1.5,1.5 0 0,1 8,7.5A1.5,1.5 0 0,1 9.5,6M6.5,10A1.5,1.5 0 0,1 8,11.5A1.5,1.5 0 0,1 6.5,13A1.5,1.5 0 0,1 5,11.5A1.5,1.5 0 0,1 6.5,10M11.5,11A1.5,1.5 0 0,1 13,12.5A1.5,1.5 0 0,1 11.5,14A1.5,1.5 0 0,1 10,12.5A1.5,1.5 0 0,1 11.5,11M16.5,13A1.5,1.5 0 0,1 18,14.5A1.5,1.5 0 0,1 16.5,16H16.5A1.5,1.5 0 0,1 15,14.5H15A1.5,1.5 0 0,1 16.5,13M11,16A1.5,1.5 0 0,1 12.5,17.5A1.5,1.5 0 0,1 11,19A1.5,1.5 0 0,1 9.5,17.5A1.5,1.5 0 0,1 11,16Z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="60"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_bug` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_bug&quot; translatable=&quot;false&quot;>M14,12H10V10H14M14,16H10V14H14M20,8H17.19C16.74,7.22 16.12,6.55 15.37,6.04L17,4.41L15.59,3L13.42,5.17C12.96,5.06 12.5,5 12,5C11.5,5 11.04,5.06 10.59,5.17L8.41,3L7,4.41L8.62,6.04C7.88,6.55 7.26,7.22 6.81,8H4V10H6.09C6.04,10.33 6,10.66 6,11V12H4V14H6V15C6,15.34 6.04,15.67 6.09,16H4V18H6.81C7.85,19.79 9.78,21 12,21C14.22,21 16.15,19.79 17.19,18H20V16H17.91C17.96,15.67 18,15.34 18,15V14H20V12H18V11C18,10.66 17.96,10.33 17.91,10H20V8Z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="61"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_info_outline` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_info_outline&quot; translatable=&quot;false&quot;>M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="63"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_similar` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_similar&quot; translatable=&quot;false&quot;>M2,20L17,10L22,22M14,9L2,8L11,2Z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="65"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_file_find` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_file_find&quot; translatable=&quot;false&quot;>M9,13A3,3 0 0,0 12,16A3,3 0 0,0 15,13A3,3 0 0,0 12,10A3,3 0 0,0 9,13M20,19.59V8L14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18C18.45,22 18.85,21.85 19.19,21.6L14.76,17.17C13.96,17.69 13,18 12,18A5,5 0 0,1 7,13A5,5 0 0,1 12,8A5,5 0 0,1 17,13C17,14 16.69,14.96 16.17,15.75L20,19.59Z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="68"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_eh_subscription` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_eh_subscription&quot; translatable=&quot;false&quot;>M20,8H4V6h16V8 M18,2H6v2h12V2 M20,10H4c-1.1,0-2,0.9-2,2v8c0,1.1,0.9,2,2,2h16c1.1,0,2-0.9,2-2v-8C22,10.9,21.1,10,20,10zM11,14H7v1h4v2H7v1h4v2H5v-8h6V14z M19,20h-2v-3h-2v3h-2v-8h2v3h2v-3h2V20z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="73"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_copy` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_copy&quot; translatable=&quot;false&quot;>M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="74"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_pencil` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_pencil&quot; translatable=&quot;false&quot;>M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="75"
-            column="13"/>
-    </issue>
-
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.pd_big_filter` appears to be unused"
-        errorLine1="    &lt;string name=&quot;pd_big_filter&quot; translatable=&quot;false&quot;>M22.9,2.84C24,0.44,15.08,0,12,0C9.06,0,0,0.43,1.1,2.84C1.6,3.94,10,15.76,10,15.76V21L14,24V15.76S22.4,3.96,22.9,2.84ZM12,1.94C16.25,1.94,20.15,2.51,20.15,3.17S16.25,4.34,12,4.34S3.97,3.8,3.97,3.17S7.76,1.94,12,1.94Z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="82"
-            column="13"/>
-    </issue>
-
-
-
-
-
-
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.ic_subscription` appears to be unused"
-        errorLine1="    &lt;string name=&quot;ic_subscription&quot; translatable=&quot;false&quot;>M20,8L4,8L4,6h16v2zM18,2L6,2v2h12L18,2zM22,12v8c0,1.1 -0.9,2 -2,2L4,22c-1.1,0 -2,-0.9 -2,-2v-8c0,-1.1 0.9,-2 2,-2h16c1.1,0 2,0.9 2,2zM16,16l-6,-3.27v6.53L16,16z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="110"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.ic_visibility` appears to be unused"
-        errorLine1="    &lt;string name=&quot;ic_visibility&quot; translatable=&quot;false&quot;>M12,4.5C7,4.5 2.73,7.61 1,12c1.73,4.39 6,7.5 11,7.5s9.27,-3.11 11,-7.5c-1.73,-4.39 -6,-7.5 -11,-7.5zM12,17c-2.76,0 -5,-2.24 -5,-5s2.24,-5 5,-5 5,2.24 5,5 -2.24,5 -5,5zM12,9c-1.66,0 -3,1.34 -3,3s1.34,3 3,3 3,-1.34 3,-3 -1.34,-3 -3,-3z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="111"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.ic_visibility_off` appears to be unused"
-        errorLine1="    &lt;string name=&quot;ic_visibility_off&quot; translatable=&quot;false&quot;>M12,7c2.76,0 5,2.24 5,5 0,0.65 -0.13,1.26 -0.36,1.83l2.92,2.92c1.51,-1.26 2.7,-2.89 3.43,-4.75 -1.73,-4.39 -6,-7.5 -11,-7.5 -1.4,0 -2.74,0.25 -3.98,0.7l2.16,2.16C10.74,7.13 11.35,7 12,7zM2,4.27l2.28,2.28 0.46,0.46C3.08,8.3 1.78,10.02 1,12c1.73,4.39 6,7.5 11,7.5 1.55,0 3.03,-0.3 4.38,-0.84l0.42,0.42L19.73,22 21,20.73 3.27,3 2,4.27zM7.53,9.8l1.55,1.55c-0.05,0.21 -0.08,0.43 -0.08,0.65 0,1.66 1.34,3 3,3 0.22,0 0.44,-0.03 0.65,-0.08l1.55,1.55c-0.67,0.33 -1.41,0.53 -2.2,0.53 -2.76,0 -5,-2.24 -5,-5 0,-0.79 0.2,-1.53 0.53,-2.2zM11.84,9.02l3.15,3.15 0.02,-0.16c0,-1.66 -1.34,-3 -3,-3l-0.17,0.01z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="112"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.ic_twotone_sort` appears to be unused"
-        errorLine1="    &lt;string name=&quot;ic_twotone_sort&quot; translatable=&quot;false&quot;>M3,18h6v-2L3,16v2zM3,6v2h18L21,6L3,6zM3,13h12v-2L3,11v2z&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/pathdata.xml"
-            line="113"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.preference_dialog_excluded_tag_namespaces` appears to be unused"
-        errorLine1="&lt;com.hippo.widget.IndicatingScrollView"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/preference_dialog_excluded_tag_namespaces.xml"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.preference_dialog_proxy` appears to be unused"
-        errorLine1="&lt;LinearLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/preference_dialog_proxy.xml"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.reset_limits_shape` appears to be unused"
-        errorLine1="&lt;shape xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/reset_limits_shape.xml"
-            line="2"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.sb_anthor` appears to be unused">
-        <location
-            file="src/main/res/drawable-xxhdpi-v15/sb_anthor.png"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.scene_excluded_languages` appears to be unused"
-        errorLine1="&lt;LinearLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/scene_excluded_languages.xml"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.menu.scene_gallery_filter` appears to be unused"
-        errorLine1="&lt;menu"
-        errorLine2="^">
-        <location
-            file="src/main/res/menu/scene_gallery_filter.xml"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.scene_gallery_previews` appears to be unused"
-        errorLine1="&lt;com.hippo.widget.ContentLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/scene_gallery_previews.xml"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.menu.scene_gallery_previews` appears to be unused"
-        errorLine1="&lt;menu"
-        errorLine2="^">
-        <location
-            file="src/main/res/menu/scene_gallery_previews.xml"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.scene_progress` appears to be unused"
-        errorLine1="&lt;FrameLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/scene_progress.xml"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.scene_warning` appears to be unused"
-        errorLine1="&lt;LinearLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/scene_warning.xml"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.shadow_top` appears to be unused"
-        errorLine1="&lt;shape"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/shadow_top.xml"
-            line="18"
-            column="1"/>
-    </issue>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     <issue
         id="UnusedResources"
@@ -4453,16 +3745,6 @@
             column="13"/>
     </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.settings_about_donate_guide` appears to be unused"
-        errorLine1="    &lt;string name=&quot;settings_about_donate_guide&quot;>Donation Guide&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="25"
-            column="13"/>
-    </issue>
 
 
 
@@ -4508,16 +3790,6 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.app_waring` appears to be unused"
-        errorLine1="    &lt;string name=&quot;app_waring&quot;>The content of this application is from the Internet. Some of it may do physical or mental harm to you. You have learnt the risks above and would like to undertake them.&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="213"
-            column="13"/>
-    </issue>
 
 
 
@@ -4625,16 +3897,6 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.no_one_comments_gallery` appears to be unused"
-        errorLine1="    &lt;string name=&quot;no_one_comments_gallery&quot;>No comment.&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="425"
-            column="13"/>
-    </issue>
 
 
 
@@ -4655,31 +3917,6 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.tag_filter` appears to be unused"
-        errorLine1="    &lt;string name=&quot;tag_filter&quot;>Filter tag&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="448"
-            column="13"/>
-    </issue>
-
-
-
-
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.tip` appears to be unused"
-        errorLine1="    &lt;string name=&quot;tip&quot;>Tip&lt;/string>"
-        errorLine2="            ~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="525"
-            column="13"/>
-    </issue>
 
 
 
@@ -4695,16 +3932,11 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.settings_eh_identity_cookies_tourist` appears to be unused"
-        errorLine1="    &lt;string name=&quot;settings_eh_identity_cookies_tourist&quot;>Not signed in.&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="582"
-            column="13"/>
-    </issue>
+
+
+
+
+
 
 
 
@@ -4814,62 +4046,12 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.settings_about_donate_message` appears to be unused"
-        errorLine1="    &lt;string name=&quot;settings_about_donate_message&quot;>Your donation can not bring you any privileges. But it helps me maintain this app.&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="751"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.settings_about_donate_alipay` appears to be unused"
-        errorLine1="    &lt;string name=&quot;settings_about_donate_alipay&quot;>Alipay&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="752"
-            column="13"/>
-    </issue>
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.settings_about_donate_copy` appears to be unused"
-        errorLine1="    &lt;string name=&quot;settings_about_donate_copy&quot;>CopyEmail&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="755"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.settings_save_image_aliPay` appears to be unused"
-        errorLine1="    &lt;string name=&quot;settings_save_image_aliPay&quot;>Save Alipay QR Code&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="756"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.settings_save_image_weChat` appears to be unused"
-        errorLine1="    &lt;string name=&quot;settings_save_image_weChat&quot;>Save WeChat QR Code&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="757"
-            column="13"/>
-    </issue>
+
 
 
 
@@ -4923,27 +4105,6 @@
             column="13"/>
     </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.proxy_host_or_ip` appears to be unused"
-        errorLine1="    &lt;string name=&quot;proxy_host_or_ip&quot;>Host or IP&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="772"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.proxy_port` appears to be unused"
-        errorLine1="    &lt;string name=&quot;proxy_port&quot;>Port&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="773"
-            column="13"/>
-    </issue>
 
 
 
@@ -4951,82 +4112,13 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.select_all` appears to be unused"
-        errorLine1="    &lt;string name=&quot;select_all&quot;>All&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="795"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.deselect_all` appears to be unused"
-        errorLine1="    &lt;string name=&quot;deselect_all&quot;>None&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="796"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.invert_selection` appears to be unused"
-        errorLine1="    &lt;string name=&quot;invert_selection&quot;>Invert&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="797"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.language` appears to be unused"
-        errorLine1="    &lt;string name=&quot;language&quot;>Language&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="798"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.original` appears to be unused"
-        errorLine1="    &lt;string name=&quot;original&quot;>Original&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="799"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.translated` appears to be unused"
-        errorLine1="    &lt;string name=&quot;translated&quot;>Translated&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="800"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.rewrite` appears to be unused"
-        errorLine1="    &lt;string name=&quot;rewrite&quot;>Rewrite&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="801"
-            column="13"/>
-    </issue>
+
 
 
 
@@ -5211,38 +4303,8 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.wifi_send_text` appears to be unused"
-        errorLine1="    &lt;string name=&quot;wifi_send_text&quot;>Send Data&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="971"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.wifi_server_illustrate` appears to be unused"
-        errorLine1="    &lt;string name=&quot;wifi_server_illustrate&quot;>Please make sure that the mobile phone to receive data is connected to the local hotspot, and do not disconnect or return to the parent page before the migration is complete! &lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="972"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.wifi_server_connect` appears to be unused"
-        errorLine1="    &lt;string name=&quot;wifi_server_connect&quot;>Connect&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="973"
-            column="13"/>
-    </issue>
 
 
 
@@ -5284,60 +4346,10 @@
     </issue>
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.archiver_dialog_current_funds` appears to be unused"
-        errorLine1="    &lt;string name=&quot;archiver_dialog_current_funds&quot;>Current Funds:&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1012"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.archiver_dialog_cost` appears to be unused"
-        errorLine1="    &lt;string name=&quot;archiver_dialog_cost&quot;>Download Cost:  %s&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1013"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.archiver_dialog_download_original` appears to be unused"
-        errorLine1="    &lt;string name=&quot;archiver_dialog_download_original&quot;>Download Original Archive&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1014"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.archiver_dialog_download_resample` appears to be unused"
-        errorLine1="    &lt;string name=&quot;archiver_dialog_download_resample&quot;>Download Resample Archive&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1015"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.archiver_dialog_size` appears to be unused"
-        errorLine1="    &lt;string name=&quot;archiver_dialog_size&quot;>Estimated Size:  %s&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1016"
-            column="13"/>
-    </issue>
 
 
 
@@ -5503,27 +4515,7 @@
             column="12"/>
     </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.subscription_draw` appears to be unused"
-        errorLine1="&lt;LinearLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/subscription_draw.xml"
-            line="3"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.subscription_list_item` appears to be unused"
-        errorLine1="&lt;FrameLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/subscription_list_item.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
     <issue
         id="UnusedResources"
@@ -5569,283 +4561,31 @@
             column="12"/>
     </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_archiver_primary_x48` appears to be unused"
-        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_archiver_primary_x48.xml"
-            line="1"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_bug_black_x48` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_bug_black_x48.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_close_dark_x24` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_close_dark_x24.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_cookie_brown_x48` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_cookie_brown_x48.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_copy_x24` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_copy_x24.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_delete_outline_dark_x24` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_delete_outline_dark_x24.xml"
-            line="3"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_delete_red_x24` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_delete_red_x24.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_download_dark_x24` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_download_dark_x24.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_eh_subscription_black_x24` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_eh_subscription_black_x24.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_file_find_primary_x48` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_file_find_primary_x48.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_fire_black_x24` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_fire_black_x24.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_folder_add_dark_x24` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_folder_add_dark_x24.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_folder_share_dark_x24` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_folder_share_dark_x24.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_heart_box_dark_x24` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_heart_box_dark_x24.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_help_circle_x24` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_help_circle_x24.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_info_dark_x24` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_info_dark_x24.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_info_outline_dark_x24` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_info_outline_dark_x24.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_pencil_dark_x24` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_pencil_dark_x24.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_reply_dark_x24` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_reply_dark_x24.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_send_dark_x24` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_send_dark_x24.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_share_primary_x48` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_share_primary_x48.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_similar_primary_x48` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_similar_primary_x48.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_thumb_up_primary_x48` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_thumb_up_primary_x48.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.v_utorrent_primary_x48` appears to be unused"
-        errorLine1="&lt;vector"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/v_utorrent_primary_x48.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.weixin` appears to be unused">
-        <location
-            file="src/main/res/drawable-xxhdpi-v15/weixin.png"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.zhifubao` appears to be unused">
-        <location
-            file="src/main/res/drawable-xxhdpi-v15/zhifubao.jpg"/>
-    </issue>
 
     <issue
         id="UselessLeaf"

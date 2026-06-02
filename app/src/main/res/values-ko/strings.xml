@@ -19,7 +19,6 @@
     <!--  black list  -->
     <string name="settings_advanced_url_replace_title">URL 위장, SNI를 닫아야 함</string>
     <string name="settings_advanced_url_replace_summary">URL 위장 (재시작 필요, 활성화 후 계정 기능이 작동하지 않음)</string>
-    <string name="settings_about_donate_guide">지원 가이드</string>
     <string name="network_remind">VPN이 활성화된 것으로 감지되었습니다. 네트워크 보안에 주의하세요</string>
 
 
@@ -78,7 +77,6 @@
     <string name="gallery_gl_fallback_toast">OpenGL을 사용할 수 없어 갤러리를 표시할 수 없습니다</string>
 
 
-    <string name="app_waring">이 앱의 내용은 인터넷에서 받아옵니다. 이 앱을 사용하기 위해서는 받아온 내용 중 일부가 사용자에게 가할 수 있는 신체적 또는 정신적 피해를 감수해야 합니다.</string>
     <string name="press_twice_exit">한 번 더 누르면 종료됩니다.</string>
     <string name="you_rejected_me">안돼요</string>
     <string name="analytics_explain">앱 개발자에게 기기 및 사용 정보를 보내시겠습니까? 앱 개발에 굉장한 도움이 됩니다. &lt;br&gt;&lt;br&gt;데이터 분석 서비스는 Google Analytics for Firebase를 사용하며, 개인 정보 보호 정책은 &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt; 에서 확인하실 수 있습니다.&lt;br&gt;&lt;br&gt;데이터 분석을 허용하면 사용자의 기기 및 앱 사용 정보가 수집됩니다. 전화번호나 이메일 주소, IMEI와 같은 개인 정보는 수집하지 않습니다.&lt;br&gt;&lt;br&gt;데이터 분석을 허용하기 전까지는 정보를 수집하지 않습니다.&lt;br&gt;&lt;br&gt;수집한 정보는 Google Analytics for Firebase에 의해 분석됩니다. 분석된 정보는 이 애플리케이션의 개발자만 볼 수 있습니다.</string>
@@ -210,11 +208,9 @@
     <string name="copied_to_clipboard">클립보드에 복사했습니다.</string>
 
     <!-- Gallery Comments -->
-    <string name="no_one_comments_gallery">코멘트가 없습니다.</string>
 
     <!-- Gallery Previews -->
     <string name="go_to">이동</string>
-    <string name="tag_filter">태그 필터링</string>
 
     <!-- Download -->
     <string name="no_download_info">다운로드한 항목이 여기에 표시됩니다.</string>
@@ -291,7 +287,6 @@
     <string name="clear_all">모두 지우기</string>
     <string name="clear_all_history">모든 방문 기록을 지우시겠습니까?</string>
 
-    <string name="tip">팁</string>
     <string name="show_definition">정의 표시</string>
 
     <!-- Set Security -->
@@ -333,7 +328,6 @@
 
     <!-- Settings -->
     <string name="settings_eh">화면</string>
-    <string name="settings_eh_identity_cookies_tourist">로그인 상태가 아닙니다.</string>
     <string name="settings_eh_theme">테마</string>
     <string name="settings_eh_theme_light">밝은 테마</string>
     <string name="settings_eh_theme_dark">어두운 테마</string>
@@ -431,28 +425,14 @@
     <string name="settings_about_author">개발자</string>
     <string name="settings_about_license">라이선스</string>
     <string name="settings_about_license_summary">LR Reader는 많은 오픈 소스 프로젝트 덕분에 만들 수 있었습니다.</string>
-    <string name="settings_about_donate_message">후원은 특권을 가져다주지 않습니다. 하지만 이 앱을 유지하는 데 도움이 됩니다.</string>
-    <string name="settings_about_donate_alipay">알리페이</string>
-    <string name="settings_about_donate_copy">이메일 복사</string>
-    <string name="settings_save_image_aliPay">알리페이 QR 코드 저장</string>
-    <string name="settings_save_image_weChat">위챗 QR 코드 저장</string>
     <string name="settings_about_version">빌드 버전</string>
 
     <!-- ExcludedLanguagesScene -->
-    <string name="select_all">모두 선택</string>
-    <string name="deselect_all">모두 선택 해제</string>
-    <string name="invert_selection">선택 반전</string>
-    <string name="language">언어</string>
-    <string name="original">원어</string>
-    <string name="translated">역본</string>
-    <string name="rewrite">재필</string>
 
     <string name="please_wait">잠시만 기다려 주세요</string>
 
     <string name="proxy_direct">다이렉트</string>
     <string name="proxy_system">시스템 프록시</string>
-    <string name="proxy_host_or_ip">호스트 또는 IP</string>
-    <string name="proxy_port">포트</string>
 
 
     <string name="app_language_system">시스템 언어 (기본값)</string>
@@ -541,11 +521,6 @@
     <string name="yes">예</string>
     <string name="cancel">취소</string>
     <string name="history_info_unlimited">무제한</string>
-    <string name="archiver_dialog_current_funds">현재 자금:</string>
-    <string name="archiver_dialog_cost">다운로드 비용: %s</string>
-    <string name="archiver_dialog_download_original">원본 아카이브 다운로드</string>
-    <string name="archiver_dialog_download_resample">리샘플 아카이브 다운로드</string>
-    <string name="archiver_dialog_size">예상 크기:  %s</string>
     <string name="have_new_version">새 갤러리 버전 보기</string>
     <string name="archiver_downloading">아카이브 다운로드 중 %s</string>
     <string name="sort_by_pub_time">게시 시간</string>
@@ -690,9 +665,6 @@
     <string name="wifi_send_bookmark">Migrate bookmarks</string>
     <string name="wifi_send_download">Migrate download data</string>
     <string name="wifi_send_favorite">Migrate favorite</string>
-    <string name="wifi_send_text">Send Data</string>
-    <string name="wifi_server_connect">Connect</string>
-    <string name="wifi_server_illustrate">Please make sure that the mobile phone to receive data is connected to the local hotspot, and do not disconnect or return to the parent page before the migration is complete! </string>
     <string name="lrr_category_label_dynamic">동적</string>
     <string name="lrr_save_and_connect">저장 후 연결</string>
     <string name="lrr_error_title">오류가 발생했습니다</string>

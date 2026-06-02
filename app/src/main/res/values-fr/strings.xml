@@ -19,7 +19,6 @@
     <!--  black list  -->
     <string name="settings_advanced_url_replace_title">Déguisement d\'URL, nécessite de fermer SNI</string>
     <string name="settings_advanced_url_replace_summary">Déguisement d\'URL (redémarrage requis, les fonctionnalités de compte seront désactivées après activation)</string>
-    <string name="settings_about_donate_guide">Guide de soutien</string>
     <string name="network_remind">VPN détecté, veuillez faire attention à votre sécurité réseau</string>
 
     <string name="app_name">LR Reader</string>
@@ -70,7 +69,6 @@
     <string name="gallery_gl_fallback_action_close">Retour</string>
     <string name="gallery_gl_fallback_toast">OpenGL non disponible, impossible d\'afficher la galerie</string>
 
-    <string name="app_waring">Le contenu de l\'application provient de l\'Internet, dont quelque chose peut vous causer le dommage physique ou mentale. Vous l\'avez bien compris et voulez continuer quand même.</string>
     <string name="press_twice_exit">Appuyez encore une fois pour quitter</string>
     <string name="you_rejected_me">C\'est pas sympa T_T</string>
     <string name="analytics_explain">Ça vous dérange si le développeur rassemble vos informations de l\'appareil et votre usage de l\'application ? Les informations sont très utiles pour le développeur.&lt;br&gt;&lt;br&gt;L\'analyse de données est fournie par Google Analytics for Firebase. Sa politique de confidentialité se trouve à &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt;.&lt;br&gt;&lt;br&gt;Si vous acceptez d\'aider l\'analyse données, vos informations de l\'appareil seront rassemblées, y compris, mais sans s\'y limiter, votre version API Android, modèle de l\'appareil, les durées de sessions et usages.&lt;br&gt;&lt;br&gt;Le développeur vous promet à ne rassembler AUCUNE donnée à moins que vous ne l\'acceptiez.&lt;br&gt;&lt;br&gt;Les données rassemblées seront analysées à l\'aide de  Google Analytics for Firebase. Le rapport d\'analyse ne peut être lu que par le développeur de l\'application.</string>
@@ -201,11 +199,9 @@
     <string name="copied_to_clipboard">Copié à presse-papiers</string>
 
     <!-- Gallery Comments -->
-    <string name="no_one_comments_gallery">Personne n\'a commenté sur la galerie</string>
 
     <!-- Gallery Previews -->
     <string name="go_to">Aller à</string>
-    <string name="tag_filter">Filtrer le tag</string>
 
     <!-- Download -->
     <string name="no_download_info">Vos téléchargements s\'afficheront ici</string>
@@ -282,7 +278,6 @@
     <string name="clear_all">Tout effacer</string>
     <string name="clear_all_history">Effacer toute l\'historique ?</string>
 
-    <string name="tip">Astuce</string>
     <string name="show_definition">Montrer les expliques</string>
 
 
@@ -399,18 +394,9 @@
 
     <string name="proxy_direct">Directement</string>
     <string name="proxy_system">Déterminé par le systéme</string>
-    <string name="proxy_host_or_ip">Nom d\'hôte ou IP</string>
-    <string name="proxy_port">Port</string>
 
 
     <!-- ExcludedLanguagesScene -->
-    <string name="select_all">Toute</string>
-    <string name="deselect_all">Aucune</string>
-    <string name="invert_selection">Inverser</string>
-    <string name="language">Langue</string>
-    <string name="original">Originale</string>
-    <string name="translated">Traduction</string>
-    <string name="rewrite">Rewrite</string>
 
     <string name="please_wait">Merci de patienter</string>
 
@@ -507,10 +493,6 @@
     <string name="settings_eh_theme_dark">Gris</string>
     <string name="settings_eh_theme_black">Noir</string>
     <string name="settings_eh_theme_auto_switch">Suivre le mode sombre du système</string>
-    <string name="settings_about_donate_message">Faire un don ne verrouille aucune fonction cachée, mais vous m\'aiderez à maintenir cette application.</string>
-    <string name="settings_about_donate_alipay">Alipay</string>
-    <string name="settings_about_donate_copy">Copier</string>
-    <string name="settings_eh_identity_cookies_tourist">Vous ne vous êtes pas connecté.</string>
 
     <!--  排行榜  -->
     <string name="gallery_toplists">Galerie Classement</string>
@@ -521,11 +503,6 @@
     <string name="cleanup_toplists">Nettoyage Classement</string>
     <string name="rating_reviewing_toplists">Notation&#038;Révision Classement</string>
     <string name="history_info_unlimited">Illimité</string>
-    <string name="archiver_dialog_current_funds">Fonds actuels :</string>
-    <string name="archiver_dialog_download_original">Télécharger l\'archive originale</string>
-    <string name="archiver_dialog_download_resample">Télécharger l\'archive rééchantillonnée</string>
-    <string name="archiver_dialog_size">Taille estimée : %s</string>
-    <string name="archiver_dialog_cost">Coût de téléchargement : %s</string>
     <string name="have_new_version">Cliquez pour voir la nouvelle version de la galerie</string>
     <string name="archiver_downloading">Téléchargement d\'archive %s</string>
     <string name="sort_by_pub_time">Date de publication</string>
@@ -678,8 +655,6 @@ Cette action est irréversible.</string>
     <string name="settings_read_picture_decoding_method_origin">Décodage système</string>
     <string name="settings_read_reverse_volume_page">Reverse volume key translation direction</string>
     <string name="settings_read_screen_rotation_sensor">Auto rotate</string>
-    <string name="settings_save_image_aliPay">Save Alipay QR Code</string>
-    <string name="settings_save_image_weChat">Save WeChat QR Code</string>
     <string name="take_a_photograph">Take a photograph</string>
     <string name="theme_black">Thème noir</string>
     <string name="theme_dark">Thème sombre</string>
@@ -687,9 +662,6 @@ Cette action est irréversible.</string>
     <string name="wifi_send_bookmark">Migrate bookmarks</string>
     <string name="wifi_send_download">Migrate download data</string>
     <string name="wifi_send_favorite">Migrate favorite</string>
-    <string name="wifi_send_text">Send Data</string>
-    <string name="wifi_server_connect">Connect</string>
-    <string name="wifi_server_illustrate">Please make sure that the mobile phone to receive data is connected to the local hotspot, and do not disconnect or return to the parent page before the migration is complete! </string>
     <string name="yes">Yes</string>
     <string name="lrr_category_label_dynamic">Dynamique</string>
     <string name="lrr_save_and_connect">Enregistrer et connecter</string>

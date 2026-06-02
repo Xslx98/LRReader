@@ -19,7 +19,6 @@
     <!--  black list  -->
     <string name="settings_advanced_url_replace_title">ปลอมแปลง URL, ต้องปิด SNI</string>
     <string name="settings_advanced_url_replace_summary">ปลอมแปลง URL (ต้องรีสตาร์ท, เปิดใช้งานแล้วฟังก์ชันบัญชีจะไม่ทำงาน)</string>
-    <string name="settings_about_donate_guide">คู่มือการสนับสนุน</string>
     <string name="network_remind">ตรวจพบว่าเปิดใช้งาน VPN แล้ว โปรดระวังความปลอดภัยเครือข่ายของคุณ</string>
 
     <string name="app_name">LR Reader</string>
@@ -77,7 +76,6 @@
     <string name="gallery_gl_fallback_toast">การเรนเดอร์ GL ล้มเหลว จึงสลับไปยังหน้าสำรองที่ปลอดภัย</string>
 
 
-    <string name="app_waring">เนื้อหาภายในแอปพลิเคชั่นนี้มาจากอินเทอร์เน็ตทั้งหมด อาจมีเนื้อหาบางอย่างที่มีผลต่อร่างกายหรือจิตใจของคุณ คุณจะต้องยอมรับความเสี่ยงที่ดังกล่าว และดำเนินการต่อไป</string>
     <string name="press_twice_exit">กดสองครั้งเพื่อออก</string>
     <string name="you_rejected_me">เอื้อออออ เจ็บจัง</string>
     <string name="analytics_explain">จะว่าอะไรไหมถ้านักพัฒนาจะขออนุญาตรวบรวมข้อมูลอุปกรณ์และประวัติการใช้งานแอปนี้ของคุณ? มันจะช่วยนักพัฒนาอย่างมากเลยนะ&lt;br&gt;&lt;br&gt;บริการวิเคราะห์ข้อมูลที่เราใช้นั้นเป็นบริการของ Google Analytics สำหรับ Firebase ในส่วนของนโยบายความเป็นส่วนตัวเราใช้ตามที่อยู่ในลิงค์ &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt;&lt;br&gt;&lt;br&gt;ถ้าคุณยินยอมการส่งข้อมูลวิเคราะห์นี้ ทั้งข้อมูลอุปกรณ์และประวัติการใช้งานแอปนี้ของคุณจะถูกจัดเก็บ รวมไปถึงแต่ไม่จำกัดเพียงแค่เวอร์ชั่น API ของ Android, แบบจำลองอุปกรณ์, ภาษาของผู้ใช้, เวอร์ชั่นของแอปพลิเคชั่น, เวลาในการใช้งาน, และจำนวนฟังก์ชั่นที่ใช้ นักพัฒนาขอให้คำมั่นสัญญาว่าเราจะไม่เก็บข้อมูลส่วนตัวของผู้ใช้ไม่ว่าจะเบอร์มือถือ, อีเมล, และหมายเลข IMEI&lt;br&gt;&lt;br&gt;ข้อมูลของคุณจะไม่ถูกจัดเก็บจนกว่าจะกดปุ่ม \'ยินยอม\' ให้จัดเก็บเพื่อนำมาวิเคราะห์ข้อมูล&lt;br&gt;&lt;br&gt;การจัดเก็บข้อมูลจะถูกวิเคราะห์โดยบริการ Google Analytics สำหรับ Firebase รายงานการวิเคราะห์ข้อมูลจะสามารถดูได้เพียงนักพัฒนาของแอปนี้เพียงคนเดียวเท่านั้น</string>
@@ -208,11 +206,9 @@
     <string name="copied_to_clipboard">คัดลอกลงคลิปบอร์ดแล้ว</string>
 
     <!-- Gallery Comments -->
-    <string name="no_one_comments_gallery">ไม่มีความคิดเห็น</string>
 
     <!-- Gallery Previews -->
     <string name="go_to">ไปที่</string>
-    <string name="tag_filter">กรองแท็ก</string>
 
     <!-- Download -->
     <string name="no_download_info">รายการดาวน์โหลดจะอยู่ตรงนี้</string>
@@ -289,7 +285,6 @@
     <string name="clear_all">ลบทั้งหมด</string>
     <string name="clear_all_history">จะลบประวัติทั้งหมดเลยหรือไม่?</string>
 
-    <string name="tip">คำแนะนำ</string>
     <string name="show_definition">แสดงความหมาย</string>
     <string name="copy_tag">คัดลอกแท็ก</string>
 
@@ -324,7 +319,6 @@
     <string name="image_saved">ภาพถูกบันทึกไปที่ %s</string>
 
     <string name="settings_eh">การแสดงผล</string>
-    <string name="settings_eh_identity_cookies_tourist">ยังไม่ลงชื่อเข้าสู่ระบบ</string>
     <string name="settings_eh_theme">ธีม</string>
     <string name="settings_eh_theme_light">สว่าง</string>
     <string name="settings_eh_theme_dark">มืด</string>
@@ -420,29 +414,15 @@
     <string name="settings_about_author">นักพัฒนา</string>
     <string name="settings_about_license">ใบอนุญาต</string>
     <string name="settings_about_license_summary">LR Reader ต้องขอขอบคุณโครงการโอเพ่นซอร์สหลายๆโครงการเป็นอย่างสูง</string>
-    <string name="settings_about_donate_message">เงินบริจาคของคุณจะไม่ได้บริการพิเศษ แต่จะทำให้แอปพัฒนาไปได้ไกลมากขึ้น</string>
-    <string name="settings_about_donate_alipay">Alipay</string>
-    <string name="settings_about_donate_copy">คัดลอก</string>
-    <string name="settings_save_image_aliPay">บันทึกรหัส QR Alipay</string>
-    <string name="settings_save_image_weChat">บันทึกรหัส QR WeChat</string>
     <string name="settings_about_version">เวอร์ชั่นแอป</string>
 
     <string name="proxy_direct">โดยตรง</string>
     <string name="proxy_system">พร็อกซี่ของระบบ</string>
-    <string name="proxy_host_or_ip">โฮสต์ หรือ ไอพี</string>
-    <string name="proxy_port">พอร์ต</string>
 
 
     <string name="app_language_system">ภาษาของระบบ (ค่าเริ่มต้น)</string>
 
     <!-- ExcludedLanguagesScene -->
-    <string name="select_all">ทั้งหมด</string>
-    <string name="deselect_all">ไม่ทั้งหมด</string>
-    <string name="invert_selection">เลือกตรงกันข้าม</string>
-    <string name="language">ภาษา</string>
-    <string name="original">ต้นฉบับ</string>
-    <string name="translated">แปล</string>
-    <string name="rewrite">ถูกทำใหม่</string>
 
     <string name="please_wait">รอสักครู่</string>
 
@@ -514,11 +494,6 @@
     <string name="cleanup_toplists">ล้างข้อมูล อันดับ</string>
     <string name="rating_reviewing_toplists">การจัด อันดับ&#038;กำลังตรวจสอบ อันดับ</string>
     <string name="history_info_unlimited">ไม่จำกัด</string>
-    <string name="archiver_dialog_current_funds">เงินทุนปัจจุบัน:</string>
-    <string name="archiver_dialog_cost">ค่าใช้จ่ายดาวน์โหลด: %s</string>
-    <string name="archiver_dialog_download_original">ดาวน์โหลดไฟล์บีบอัดต้นฉบับ</string>
-    <string name="archiver_dialog_download_resample">ดาวน์โหลดไฟล์บีบอัดที่ปรับขนาดแล้ว</string>
-    <string name="archiver_dialog_size">ขนาดโดยประมาณ:  %s</string>
     <string name="have_new_version">คลิกเพื่อดูเวอร์ชั่นแกลเลอรี่ใหม่</string>
     <string name="archiver_downloading">กำลังดาวน์โหลด Arc %s</string>
     <string name="sort_by_pub_time">เวลาที่เผยแพร่</string>
@@ -551,9 +526,6 @@
     <string name="wifi_send_bookmark">ย้ายบุคมาร์ก</string>
     <string name="wifi_send_favorite">ย้ายหมวดหมู่</string>
     <string name="wifi_send_download">ย้ายข้อมูลดาวน์โหลด</string>
-    <string name="wifi_send_text">ส่งข้อมูล</string>
-    <string name="wifi_server_illustrate">โปรดตรวจสอบให้แน่ใจว่าโทรศัพท์มือถือที่จะรับข้อมูลเชื่อมต่อกับฮอตสปอตท้องถิ่นแล้ว และอย่าตัดการเชื่อมต่อหรือกลับไปหน้าหลักก่อนการย้ายจะเสร็จสมบูรณ์!</string>
-    <string name="wifi_server_connect">เชื่อมต่อ</string>
     <!--  wifi server  -->
 
     <!--  limits  -->

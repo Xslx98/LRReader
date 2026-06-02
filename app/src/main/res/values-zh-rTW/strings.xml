@@ -71,7 +71,6 @@
     <string name="gallery_gl_fallback_toast">GL 渲染失敗，已切換到安全占位頁</string>
 
 
-    <string name="app_waring">本應用程式中內容來自網際網路，部分內容可能對您的生理及心理造成難以恢復的傷害。本應用程式的作者不會對由其所造成的任何影響負責。\n\n未成年人應在監護人指導下使用本應用程式。</string>
     <string name="press_twice_exit">再按一次離開</string>
     <string name="you_rejected_me">好難過</string>
     <string name="analytics_explain">您同意讓開發者收集您的裝置資訊與使用方式嗎？這對開發有很大幫助。&lt;br&gt;&lt;br&gt;資料統計服務由 Google Analytics for Firebase 提供，其隱私政策可在 &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt; 檢視。&lt;br&gt;&lt;br&gt;若您同意參與資料統計，您的裝置資訊與應用使用情況將會被記錄，其包括但不限於：Android API 版本、裝置型號、語言所在地、本應用版本號、會話時長、應用功能使用次數。開發者承諾以下資訊並不會被記錄：電話號碼、電子郵件地址、IMEI。&lt;br&gt;&lt;br&gt;在您同意參與資料統計之前，您的資訊不會被記錄。&lt;br&gt;&lt;br&gt;被記錄的資料會由 Google Analytics for Firebase 進行分析，分析報表僅由此應用程式開發者存取。</string>
@@ -204,11 +203,9 @@
     <string name="copied_to_clipboard">已複製到剪貼簿</string>
 
     <!-- Gallery Comments -->
-    <string name="no_one_comments_gallery">目前沒有留言</string>
 
     <!-- Gallery Previews -->
     <string name="go_to">跳到</string>
-    <string name="tag_filter">篩選標籤</string>
 
     <!-- Download -->
     <string name="no_download_info">下載的物件將會顯示在此</string>
@@ -285,7 +282,6 @@
     <string name="clear_all">全部清除</string>
     <string name="clear_all_history">清除所有歷史紀錄？</string>
 
-    <string name="tip">提示</string>
     <string name="show_definition">檢視定義</string>
 
     <!-- Set Security -->
@@ -327,7 +323,6 @@
 
     <!-- Settings -->
     <string name="settings_eh">顯示</string>
-    <string name="settings_eh_identity_cookies_tourist">未登入</string>
     <string name="settings_eh_theme">主題</string>
     <string name="settings_eh_theme_light">亮色</string>
     <string name="settings_eh_theme_dark">暗色</string>
@@ -426,29 +421,14 @@
     <string name="settings_about_author">作者</string>
     <string name="settings_about_license">授權</string>
     <string name="settings_about_license_summary">LR Reader 的誕生離不開許多開源專案</string>
-    <string name="settings_about_donate_message">您的贊助將不會替您產生任何特權，但能夠幫助我能夠繼續維護這個程式。</string>
-    <string name="settings_about_donate_alipay">支付寶</string>
-    <string name="settings_about_donate_guide">支持指南</string>
-    <string name="settings_about_donate_copy">複製</string>
-    <string name="settings_save_image_aliPay">儲存支付寶二維碼</string>
-    <string name="settings_save_image_weChat">儲存微信二維碼</string>
     <string name="settings_about_version">版本號碼</string>
 
     <!-- ExcludedLanguagesScene -->
-    <string name="select_all">全選</string>
-    <string name="deselect_all">全取消</string>
-    <string name="invert_selection">反轉選取</string>
-    <string name="language">語言</string>
-    <string name="original">原始作品</string>
-    <string name="translated">翻譯版</string>
-    <string name="rewrite">改寫</string>
 
     <string name="please_wait">請稍候</string>
 
     <string name="proxy_direct">直接連線</string>
     <string name="proxy_system">系統代理</string>
-    <string name="proxy_host_or_ip">主機或 IP</string>
-    <string name="proxy_port">通訊埠</string>
 
 
     <string name="app_language_system">系統語言（預設）</string>
@@ -545,9 +525,6 @@
     <string name="wifi_send_bookmark">遷移書籤</string>
     <string name="wifi_send_favorite">遷移分類</string>
     <string name="wifi_send_download">遷移下載資料</string>
-    <string name="wifi_send_text">發送資料</string>
-    <string name="wifi_server_illustrate">請確保要接收資料的手機以連接本機熱點，並再遷移完成前切勿斷開連結或返回上層頁面！</string>
-    <string name="wifi_server_connect">連接</string>
     <!--  wifi server  -->
 
     <!--  limits  -->
@@ -555,11 +532,6 @@
     <string name="pagination_count">計數</string>
     <string name="pagination_page_and_item">r/p</string>
     <string name="history_info_unlimited">無限制</string>
-    <string name="archiver_dialog_current_funds">當前資金：</string>
-    <string name="archiver_dialog_cost">下載成本：  %s</string>
-    <string name="archiver_dialog_download_original">下載原始歸檔</string>
-    <string name="archiver_dialog_download_resample">下載重採樣歸檔</string>
-    <string name="archiver_dialog_size">預估大小：  %s</string>
     <string name="have_new_version">點擊查看新圖庫版本</string>
     <string name="archiver_downloading">歸檔下載中 %s</string>
     <string name="sort_by_pub_time">發布時間</string>

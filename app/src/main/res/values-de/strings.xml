@@ -21,7 +21,6 @@
     <!--  black list  -->
     <string name="settings_advanced_url_replace_title">URL-Verschleierung, SNI muss deaktiviert sein</string>
     <string name="settings_advanced_url_replace_summary">URL-Verschleierung (Neustart erforderlich, Kontofunktionen werden nach Aktivierung deaktiviert)</string>
-    <string name="settings_about_donate_guide">guide</string>
     <string name="network_remind">VPN wurde erkannt, bitte achte auf deine Netzwerksicherheit</string>
 
     <string name="app_name">LR Reader</string>
@@ -161,9 +160,7 @@
     <string name="not_favorited">Nicht Zur Kategorie hinzugefügt</string>
     <string name="copy_tag">Tag kopieren</string>
     <string name="copied_to_clipboard">Text in Zwischenablage kopiert</string>
-    <string name="no_one_comments_gallery">Keine Kommentare</string>
     <string name="go_to">Gehe zu</string>
-    <string name="tag_filter">Etikett filtern</string>
     <string name="no_download_info">Downloads werden hier angezeigt</string>
     <string name="download_state_none">Pausiert</string>
     <string name="download_state_wait">In der Warteschlange</string>
@@ -231,7 +228,6 @@
     <string name="no_history">Deiner Lesungsverlauf wird hier angezeigt.</string>
     <string name="clear_all">Verlaufdaten löschen</string>
     <string name="clear_all_history">Verlaufdaten löschen?</string>
-    <string name="tip">Hinweis</string>
     <string name="show_definition">Definition anzeigen</string>
     <string name="set_pattern_protection">Sperrmuster festlegen</string>
     <string name="set_pattern_protection_tip">Zeichne ein Muster, um es als Sperrmuster festzulegen.\nLasse frei, um das Sperrmuster zu entfernen.</string>
@@ -385,7 +381,6 @@
     <string name="settings_privacy_delete_confirm_countdown_summary_on">Der Löschen-Button bleibt 3 Sekunden lang deaktiviert, bevor er angetippt werden kann.</string>
     <string name="settings_privacy_delete_confirm_countdown_summary_off">Der Löschen-Button ist sofort antippbar. Schneller, aber leichter versehentlich zu löschen.</string>
     <string name="press_twice_exit">Darauf erneut antippen, um die App zu beenden</string>
-    <string name="app_waring">Inhalt dieser App kommt aus dem Internet, von dem einige dir körperlichen oder emotionalen Schaden zufügen kann. Du hast es wirklich erfahrt und möchtest immer noch fortsetzen.</string>
     <string name="you_rejected_me">Mir ist weh ums Herz</string>
     <string name="settings_advanced_clear_memory_cache">Zwischenspeicher löschen</string>
     <string name="settings_advanced_clear_memory_cache_summary">Zwischenspeicher der Miniaturbilder und der Galerie-Info löschen</string>
@@ -396,8 +391,6 @@
     <string name="settings_about_version">Versionnummer</string>
     <string name="proxy_direct">Direkt</string>
     <string name="proxy_system">Vom System festgelegt</string>
-    <string name="proxy_host_or_ip">Hostname oder IP</string>
-    <string name="proxy_port">Port</string>
     <string name="app_language_system">Sprache des Systems (Standard)</string>
     <string name="please_wait">Bitte warte</string>
     <string name="settings_privacy_pattern_protection_title">Sperrmuster</string>
@@ -413,22 +406,9 @@
     <string name="settings_eh_theme_light">Weiß</string>
     <string name="settings_eh_theme_dark">Dunkel</string>
     <string name="settings_eh_theme_black">Schwarz</string>
-    <string name="settings_about_donate_message">Du bekommest kein Privileg davon. Deine Spende hilft mir dabei, diese App instand zu halten.</string>
-    <string name="settings_about_donate_alipay">Alipay</string>
-    <string name="settings_save_image_aliPay">Alipay-QR-Code speichern</string>
-    <string name="settings_save_image_weChat">WeChat-QR-Code speichern</string>
-    <string name="settings_about_donate_copy">E-Mail kopieren</string>
-    <string name="settings_eh_identity_cookies_tourist">Du hast dich noch nicht angemeldet.</string>
     <string name="settings_eh_theme_auto_switch">System-Dunkelmodus folgen</string>
 
     <!-- ExcludedLanguagesScene -->
-    <string name="select_all">Alle</string>
-    <string name="deselect_all">Keine</string>
-    <string name="invert_selection">Umkehren</string>
-    <string name="language">Sprache</string>
-    <string name="original">Original</string>
-    <string name="translated">Übersetzt</string>
-    <string name="rewrite">Umschreiben</string>
 
     <!-- DirPickerActivity -->
     <string name="preset">Voreinstellung</string>
@@ -451,9 +431,6 @@
     <string name="wifi_send_bookmark">Lesezeichen migrieren</string>
     <string name="wifi_send_favorite">Kategorien migrieren</string>
     <string name="wifi_send_download">Download-Daten migrieren</string>
-    <string name="wifi_send_text">Daten senden</string>
-    <string name="wifi_server_illustrate">Bitte stelle sicher, dass das Mobiltelefon zum Empfangen von Daten mit dem lokalen Hotspot verbunden ist, und trenne nicht oder kehre nicht zur übergeordneten Seite zurück, bevor die Migration abgeschlossen ist!</string>
-    <string name="wifi_server_connect">Verbinden</string>
     <!--  wifi server  -->
 
     <!--  limits  -->
@@ -475,11 +452,6 @@
     <string name="cleanup_toplists">Säuberungsaktion Die Charts.</string>
     <string name="rating_reviewing_toplists">Bewertung&#038;Nachprüfend Die Charts.</string>
     <string name="history_info_unlimited">Unbegrenzt</string>
-    <string name="archiver_dialog_current_funds">Aktuelle Mittel:</string>
-    <string name="archiver_dialog_cost">Download-Kosten: %s</string>
-    <string name="archiver_dialog_download_original">Original-Archiv herunterladen</string>
-    <string name="archiver_dialog_download_resample">Neu abgetastetes Archiv herunterladen</string>
-    <string name="archiver_dialog_size">Geschätzte Größe:  %s</string>
     <string name="have_new_version">Klicken, um neue Galerieversion zu sehen</string>
     <string name="archiver_downloading">Archiv wird heruntergeladen %s</string>
     <string name="sort_by_pub_time">Veröffentlichungszeit</string>
