@@ -53,7 +53,6 @@
     <string name="error_invalid_url">URL ungültig</string>
     <string name="error_cant_create_temp_file">Die Temporäre Datei konnte erstellt nicht werden</string>
     <string name="error_cant_save_image">Das Bild konnte nicht gespeichert werden</string>
-    <string name="error_invalid_number">Nummer ungültig</string>
     <string name="error_cant_get_image">Bild konnte nicht abgerufen werden</string>
     <string name="lrr_error_load_pages_failed">Seiten können nicht geladen werden</string>
     <string name="gallery_gl_fallback_title">OpenGL-Renderer nicht verfügbar</string>
@@ -80,25 +79,10 @@
     <string name="settings_about_auto_check_for_updates_summary">Einmal täglich auf GitHub nach neuen Versionen suchen</string>
     <string name="update_snackbar_text">Neue Version %1$s verfügbar</string>
     <string name="update_snackbar_action">Anzeigen</string>
-    <string name="update_check_in_progress_toast">Updates werden geprüft…</string>
     <string name="update_ignore">Ignorieren</string>
     <string name="gallery_list_search_bar_hint_exhentai">LANraragi durchsuchen</string>
     <string name="gallery_list_search_bar_hint_e_hentai">LANraragi durchsuchen</string>
     <string name="gallery_list_empty_hit">Die Welt ist so groß und der Panda sitzt ganz allein</string>
-    <string name="gallery_list_no_more_data">Es gibt keine weiteren Daten für die aktuelle Liste</string>
-    <string name="gallery_list_date_jump_1d">Gestern</string>
-    <string name="gallery_list_date_jump_3d">Vor drei Tagen</string>
-    <string name="gallery_list_date_jump_1w">Vor einer Woche</string>
-    <string name="gallery_list_date_jump_2w">Vor zwei Wochen</string>
-    <string name="gallery_list_date_jump_1m">Vor einem Monat</string>
-    <string name="gallery_list_date_jump_6m">Vor sechs Monaten</string>
-    <string name="gallery_list_date_jump_1y">Vor einem Jahr</string>
-    <string name="gallery_list_date_jump_2y">Vor zwei Jahren</string>
-    <string name="gallery_list_select_jump_date">Datumsauswahl verwenden</string>
-    <string name="gallery_list_select_jump_node">Knotenauswahl verwenden</string>
-    <string name="gallery_list_jump_now">Jetzt springen</string>
-    <string name="gallery_list_time_jump_dialog_title">Spring-Auswahl</string>
-    <string name="gallery_list_time_jump_dialog_found_message">%s Ergebnisse gefunden</string>
     <string name="gallery_tag_copy">Etikett kopiert</string>
     <string name="search">Suchen</string>
     <string name="keyword_search">"Suche nach dem Schlüsselwort "</string>
@@ -139,7 +123,6 @@
     <string name="image_search_not_quick_search">Die Bildsuchen können als Sofortsuchen gespeichert nicht werden.</string>
     <string name="duplicate_quick_search">Eine Sofortsuche, deren Name ist %s, bereits besteht.</string>
     <string name="duplicate_name">Dieser Name ist bereits besetzt.</string>
-    <string name="go_to_hint">Seite %1$d, insgesamt %2$d Seiten</string>
     <string name="star_2">2 Sterne</string>
     <string name="star_3">3 Sterne</string>
     <string name="star_4">4 Sterne</string>
@@ -156,7 +139,6 @@
     <string name="not_favorited">Nicht Zur Kategorie hinzugefügt</string>
     <string name="copy_tag">Tag kopieren</string>
     <string name="copied_to_clipboard">Text in Zwischenablage kopiert</string>
-    <string name="go_to">Gehe zu</string>
     <string name="no_download_info">Downloads werden hier angezeigt</string>
     <string name="download_state_none">Pausiert</string>
     <string name="download_state_wait">In der Warteschlange</string>
@@ -376,7 +358,6 @@
     <string name="settings_privacy_delete_confirm_countdown_summary_on">Der Löschen-Button bleibt 3 Sekunden lang deaktiviert, bevor er angetippt werden kann.</string>
     <string name="settings_privacy_delete_confirm_countdown_summary_off">Der Löschen-Button ist sofort antippbar. Schneller, aber leichter versehentlich zu löschen.</string>
     <string name="press_twice_exit">Darauf erneut antippen, um die App zu beenden</string>
-    <string name="you_rejected_me">Mir ist weh ums Herz</string>
     <string name="settings_advanced_clear_memory_cache">Zwischenspeicher löschen</string>
     <string name="settings_advanced_clear_memory_cache_summary">Zwischenspeicher der Miniaturbilder und der Galerie-Info löschen</string>
     <string name="settings_advanced_read_cache_size">Größe des Lesezwischenspeichers</string>
@@ -431,7 +412,6 @@
     <!-- S-Pen Actions(Samsung only) -->
     <string name="spen_previous_page">Vorherige Seite</string>
     <string name="spen_next_page">Nächste Seite</string>
-    <string name="category_all">Alle</string>
 
     <!--  排行榜  -->
     <string name="have_new_version">Klicken, um neue Galerieversion zu sehen</string>

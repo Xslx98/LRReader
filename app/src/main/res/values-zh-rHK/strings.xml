@@ -97,7 +97,6 @@
     <string name="error_invalid_url">無效連結</string>
     <string name="error_cant_create_temp_file">無法建立暫存檔案</string>
     <string name="error_cant_save_image">無法儲存圖片</string>
-    <string name="error_invalid_number">無效的數字</string>
     <string name="error_cant_get_image">無法獲取圖片</string>
     <string name="lrr_error_load_pages_failed">無法載入頁面</string>
     <string name="gallery_gl_fallback_title">OpenGL 渲染器無法使用</string>
@@ -107,7 +106,6 @@
 
 
     <string name="press_twice_exit">再按一次退出</string>
-    <string name="you_rejected_me">好痛</string>
     <string name="analytics_explain">您同意讓開發者收集您的裝置資訊與使用情況嗎？這將對開發有很大幫助。&lt;br&gt;&lt;br&gt;數據統計服務由 Google Analytics for Firebase 提供，其隱私政策可在 &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt; 查看。&lt;br&gt;&lt;br&gt;若您同意參與數據統計，您的裝置資訊與應用程式使用情況將會被記錄，其包括但不限於：Android API 版本、裝置型號、語言所在地、本應用程式版本、會話時長、應用功能使用次數。開發者承諾以下資訊並不會被記錄：電話號碼、電郵地址、IMEI。&lt;br&gt;&lt;br&gt;在您同意參與數據統計之前，您的資訊不會被記錄。&lt;br&gt;&lt;br&gt;被記錄的數據會交由 Google Analytics for Firebase 分析，分析報告僅可被本應用程式開發者存取。</string>
     <string name="get_it">知道了</string>
     <string name="accept">接受</string>
@@ -133,7 +131,6 @@
     <string name="settings_about_auto_check_for_updates_summary">每日自動檢查 GitHub 是否有新版本</string>
     <string name="update_snackbar_text">發現新版本 %1$s</string>
     <string name="update_snackbar_action">查看</string>
-    <string name="update_check_in_progress_toast">正在檢查更新…</string>
     <string name="update_ignore">略過</string>
 
     <!-- Gallery List -->
@@ -141,20 +138,6 @@
     <string name="gallery_list_search_bar_hint_e_hentai">在 LANraragi 搜尋</string>
     <string name="gallery_list_empty_hit">甚麼都沒有找到</string>
 
-    <string name="gallery_list_no_more_data">當前列表沒有更多數據</string>
-    <string name="gallery_list_date_jump_1d">昨天</string>
-    <string name="gallery_list_date_jump_3d">三天前</string>
-    <string name="gallery_list_date_jump_1w">一週前</string>
-    <string name="gallery_list_date_jump_2w">兩週前</string>
-    <string name="gallery_list_date_jump_1m">一個月前</string>
-    <string name="gallery_list_date_jump_6m">六個月前</string>
-    <string name="gallery_list_date_jump_1y">一年前</string>
-    <string name="gallery_list_date_jump_2y">兩年前</string>
-    <string name="gallery_list_select_jump_date">使用日期選擇器</string>
-    <string name="gallery_list_select_jump_node">使用節點選擇器</string>
-    <string name="gallery_list_jump_now">立即跳轉</string>
-    <string name="gallery_list_time_jump_dialog_title">跳轉選擇器</string>
-    <string name="gallery_list_time_jump_dialog_found_message">找到 %s 個結果</string>
     <string name="gallery_tag_copy">標籤已複製</string>
 
     <string name="search">搜尋</string>
@@ -208,7 +191,6 @@
     <string name="duplicate_name">名稱重覆</string>
 
 
-    <string name="go_to_hint">第 %1$d 頁，共 %2$d 頁</string>
 
     <!-- search_min_rating -->
     <string name="star_2">2 星</string>
@@ -237,7 +219,6 @@
     <!-- Gallery Comments -->
 
     <!-- Gallery Previews -->
-    <string name="go_to">跳到</string>
 
     <!-- Download -->
     <string name="no_download_info">下載項目會顯示在此</string>
@@ -555,7 +536,6 @@
     <!-- S-Pen Actions(Samsung only) -->
     <string name="spen_previous_page">上一頁</string>
     <string name="spen_next_page">下一頁</string>
-    <string name="category_all">全部</string>
     <string name="import_local_archive">匯入本機歸檔</string>
     <string name="import_archive_title">選擇歸檔檔案</string>
     <string name="import_archive_failed">匯入歸檔失敗</string>

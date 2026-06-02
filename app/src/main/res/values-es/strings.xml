@@ -62,7 +62,6 @@
     <string name="error_invalid_url">Url invalida</string>
     <string name="error_cant_create_temp_file">Imposible crear archivo temporal</string>
     <string name="error_cant_save_image">Imposible guardar la imagen</string>
-    <string name="error_invalid_number">Número invalido</string>
     <string name="error_cant_get_image">No se puede obtener la imagen</string>
     <string name="lrr_error_load_pages_failed">No se pueden cargar las páginas</string>
     <string name="gallery_gl_fallback_title">El renderizador OpenGL no está disponible</string>
@@ -73,7 +72,6 @@
 
 
     <string name="press_twice_exit">Presione una vez más para salir</string>
-    <string name="you_rejected_me">Duele</string>
     <string name="analytics_explain">¿Le importaría si el desarrollador recopila información de su dispositivo y su uso? Ayudará mucho al desarrollador.&lt;br&gt;&lt;br&gt;El servicio de análisis de datos es proporcionado por Google Analytics for Firebase. Su política de privacidad se puede encontrar en &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt;.&lt;br&gt;&lt;br&gt;Si acepta unirse al análisis de datos, se recopilará información de su dispositivo y su uso, incluida pero no limitada a la versión de la API de Android, modelo del equipo, residencia de idioma, versión de la aplicación, tiempo de conversión, tiempos de función. El desarrollador promete que esta información NO se recopilará, incluido el número de teléfono, dirección de correo electrónico, IMEI.&lt;br&gt;&lt;br&gt;Su información no se recopilará hasta que acepte unirse al análisis de datos.&lt;br&gt;&lt;br&gt;La información recopilada será analizada por Google Analytics for Firebase. El informe de análisis solo puede ser visto por el desarrollador de esta aplicación.</string>
     <string name="get_it">Entendido</string>
     <string name="accept">Aceptar</string>
@@ -99,27 +97,12 @@
     <string name="settings_about_auto_check_for_updates_summary">Buscar nuevas versiones en GitHub una vez al día</string>
     <string name="update_snackbar_text">Nueva versión %1$s disponible</string>
     <string name="update_snackbar_action">Ver</string>
-    <string name="update_check_in_progress_toast">Comprobando actualizaciones…</string>
     <string name="update_ignore">Ignorar</string>
 
     <!-- Gallery List -->
     <string name="gallery_list_search_bar_hint_exhentai">Buscar LANraragi</string>
     <string name="gallery_list_search_bar_hint_e_hentai">Buscar LANraragi</string>
     <string name="gallery_list_empty_hit">El mundo es grande y el panda está sentado solo</string>
-    <string name="gallery_list_no_more_data">No hay más datos para la lista actual</string>
-    <string name="gallery_list_date_jump_1d">Ayer</string>
-    <string name="gallery_list_date_jump_3d">Hace tres días</string>
-    <string name="gallery_list_date_jump_1w">Hace una semana</string>
-    <string name="gallery_list_date_jump_2w">Hace dos semanas</string>
-    <string name="gallery_list_date_jump_1m">Hace un mes</string>
-    <string name="gallery_list_date_jump_6m">Hace seis meses</string>
-    <string name="gallery_list_date_jump_1y">Hace un año</string>
-    <string name="gallery_list_date_jump_2y">Hace dos años</string>
-    <string name="gallery_list_select_jump_date">Usar selector de fecha</string>
-    <string name="gallery_list_select_jump_node">Usar selector de nodo</string>
-    <string name="gallery_list_jump_now">Saltar ahora</string>
-    <string name="gallery_list_time_jump_dialog_title">Selector de salto</string>
-    <string name="gallery_list_time_jump_dialog_found_message">Se encontraron %s resultados</string>
     <string name="gallery_tag_copy">etiqueta copiada</string>
 
     <string name="search">Buscar</string>
@@ -168,7 +151,6 @@
     <string name="duplicate_quick_search">Búsqueda rápida duplicada. El nombre es \"%s\".</string>
     <string name="duplicate_name">Este nombre ya está en uso.</string>
 
-    <string name="go_to_hint">Página %1$d, total %2$d páginas</string>
 
     <!-- search_min_rating -->
     <string name="star_2">2 estrellas</string>
@@ -197,7 +179,6 @@
     <!-- Gallery Comments -->
 
     <!-- Gallery Previews -->
-    <string name="go_to">Ir a</string>
 
     <!-- Download -->
     <string name="no_download_info">Las galerías descargadas se mostrarán acá</string>
@@ -499,7 +480,6 @@
     <!-- S-Pen Actions(Samsung only) -->
     <string name="spen_previous_page">Página anterior</string>
     <string name="spen_next_page">Página siguiente</string>
-    <string name="category_all">Todos</string>
     <!--  订阅服务  -->
     <string name="import_local_archive">Importar archivo local</string>
     <string name="import_archive_title">Seleccionar archivo</string>
