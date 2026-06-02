@@ -274,11 +274,11 @@ class GalleryStateHelper(private val callback: Callback) {
         }
 
         if (newState == STATE_NORMAL || newState == STATE_SIMPLE_SEARCH) {
-            callback.setDrawerLockMode(LOCK_MODE_UNLOCKED, Gravity.LEFT)
-            callback.setDrawerLockMode(LOCK_MODE_UNLOCKED, Gravity.RIGHT)
+            callback.setDrawerLockMode(LOCK_MODE_UNLOCKED, Gravity.START)
+            callback.setDrawerLockMode(LOCK_MODE_UNLOCKED, Gravity.END)
         } else {
-            callback.setDrawerLockMode(LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)
-            callback.setDrawerLockMode(LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)
+            callback.setDrawerLockMode(LOCK_MODE_LOCKED_CLOSED, Gravity.START)
+            callback.setDrawerLockMode(LOCK_MODE_LOCKED_CLOSED, Gravity.END)
         }
     }
 
@@ -289,12 +289,12 @@ class GalleryStateHelper(private val callback: Callback) {
         val actionFabDrawable = callback.getActionFabDrawable() ?: return
 
         if (expanded) {
-            callback.setDrawerLockMode(LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)
-            callback.setDrawerLockMode(LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)
+            callback.setDrawerLockMode(LOCK_MODE_LOCKED_CLOSED, Gravity.START)
+            callback.setDrawerLockMode(LOCK_MODE_LOCKED_CLOSED, Gravity.END)
             actionFabDrawable.setDelete(ANIMATE_TIME)
         } else {
-            callback.setDrawerLockMode(LOCK_MODE_UNLOCKED, Gravity.LEFT)
-            callback.setDrawerLockMode(LOCK_MODE_UNLOCKED, Gravity.RIGHT)
+            callback.setDrawerLockMode(LOCK_MODE_UNLOCKED, Gravity.START)
+            callback.setDrawerLockMode(LOCK_MODE_UNLOCKED, Gravity.END)
             actionFabDrawable.setAdd(ANIMATE_TIME)
         }
     }

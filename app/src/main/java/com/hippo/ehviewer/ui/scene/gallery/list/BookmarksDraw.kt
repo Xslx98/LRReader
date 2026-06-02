@@ -92,7 +92,7 @@ class BookmarksDraw(
                     scene.onUpdateUrlBuilder()
                     helper.refresh()
                     scene.setState(GalleryListScene.STATE_NORMAL)
-                    scene.closeDrawer(Gravity.RIGHT)
+                    scene.closeDrawer(Gravity.END)
                 }
 
                 toolbar.setOnMenuItemClickListener { item ->

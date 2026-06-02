@@ -42,12 +42,12 @@ internal class DownloadSelectionHelper(private val callback: Callback) {
     fun onExpand(expanded: Boolean) {
         val drawable = callback.actionFabDrawable ?: return
         if (expanded) {
-            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)
-            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)
+            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.START)
+            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.END)
             drawable.setDelete(ANIMATE_TIME)
         } else {
-            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.LEFT)
-            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)
+            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.START)
+            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.END)
             drawable.setAdd(ANIMATE_TIME)
         }
     }
@@ -81,15 +81,15 @@ internal class DownloadSelectionHelper(private val callback: Callback) {
                 it.isLongClickable = false
             }
             callback.mFabLayout?.setExpanded(true)
-            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)
-            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)
+            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.START)
+            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.END)
         }
 
         override fun onOutOfCustomChoice(view: EasyRecyclerView) {
             callback.mRecyclerView?.setOnItemLongClickListener(callback.longClickListener)
             callback.mFabLayout?.setExpanded(false)
-            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.LEFT)
-            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)
+            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.START)
+            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.END)
         }
 
         override fun onItemCheckedStateChanged(view: EasyRecyclerView, position: Int, id: Long, checked: Boolean) {

@@ -221,9 +221,9 @@ abstract class BaseScene : SceneFragment() {
 
         // Update left drawer locked state
         if (needShowLeftDrawer()) {
-            setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.LEFT)
+            setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.START)
         } else {
-            setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)
+            setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.START)
         }
 
         // Update nav checked item
