@@ -637,13 +637,13 @@ class DownloadsScene : ToolbarScene(),
 
     override fun onStartDragHandler() {
         // Lock right drawer
-        setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)
+        setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.END)
     }
 
     override fun onEndDragHandler() {
         // Restore right drawer
         if (::mRecyclerView.isInitialized && !mRecyclerView.isInCustomChoice) {
-            setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)
+            setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.END)
         }
     }
 

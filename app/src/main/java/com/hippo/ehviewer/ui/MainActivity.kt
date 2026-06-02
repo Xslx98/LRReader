@@ -848,11 +848,11 @@ class MainActivity : StageActivity(),
             )
             if (drawerView != null) {
                 rightDrawer.addView(drawerView)
-                drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)
+                drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.END)
             } else {
                 drawerLayout.setDrawerLockMode(
                     DrawerLayout.LOCK_MODE_LOCKED_CLOSED,
-                    Gravity.RIGHT
+                    Gravity.END
                 )
             }
         }
@@ -1005,8 +1005,8 @@ class MainActivity : StageActivity(),
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         val drawer = mDrawerLayout
-        if (drawer != null && (drawer.isDrawerOpen(Gravity.LEFT) ||
-                drawer.isDrawerOpen(Gravity.RIGHT))
+        if (drawer != null && (drawer.isDrawerOpen(Gravity.START) ||
+                drawer.isDrawerOpen(Gravity.END))
         ) {
             drawer.closeDrawers()
         } else {

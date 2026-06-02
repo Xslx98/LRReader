@@ -140,7 +140,7 @@ internal class DownloadGuideHelper(
                     this@DownloadGuideHelper.showcaseView = null
                     ViewUtils.removeFromParent(showcaseView)
                     GuideSettings.putGuideDownloadLabels(false)
-                    scene.openDrawer(Gravity.RIGHT)
+                    scene.openDrawer(Gravity.END)
                 }
             }).build()
     }
