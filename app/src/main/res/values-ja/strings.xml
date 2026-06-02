@@ -158,9 +158,6 @@
     <string name="error_cannot_find_gallery">ギャラリーが見つかりませんでした</string>
     <string name="download">ダウンロード</string>
     <string name="read">閲覧</string>
-    <plurals name="page_count">
-        <item quantity="other">%d ページ</item>
-    </plurals>
     <string name="share">共有</string>
     <string name="no_tags">タグなし</string>
     <string name="refresh">更新</string>
@@ -344,7 +341,6 @@
     <string name="settings_download_network_timeout_15m">15 分</string>
     <string name="settings_download_network_timeout_30m">30 分</string>
     <string name="settings_download_network_timeout_never">タイムアウトしない</string>
-    <string name="settings_download_image_resolution_auto">自動</string>
     <string name="settings_download_clean_redundancy">ダウンロードフォルダの不要なファイルを整理</string>
     <string name="settings_download_clean_redundancy_summary">ダウンロードディレクトリからダウンロードタスクにない画像ファイルを削除します</string>
     <string name="settings_download_clean_redundancy_no_redundancy">不要なファイルが見つかりませんでした</string>
@@ -374,8 +370,6 @@
     <string name="settings_about_license">オープンソースライセンス</string>
     <string name="settings_about_license_summary">いろんなオープンソースプロジェクトなしで、LR Readerが生まれることはありません</string>
     <string name="settings_about_version">バージョン</string>
-    <string name="proxy_direct">ダイレクト</string>
-    <string name="proxy_system">システムプロキシ</string>
     <string name="app_language_system">システム言語 (デフォルト)</string>
     <!-- ExcludedLanguagesScene -->
     <string name="please_wait">お待ちください</string>
@@ -432,13 +426,6 @@
     <string name="settings_privacy_delete_confirm_countdown_summary_off">「削除」ボタンはすぐにタップできます。素早く操作できますが、誤って削除する恐れがあります。</string>
     <string name="download_service">ダウンロードサービス</string>
     <!--  排行榜  -->
-    <string name="gallery_toplists">ギャラリーのトップリスト</string>
-    <string name="uploader_toplists">アップローダーのトップリスト</string>
-    <string name="tagging_toplists">タグのトップリスト</string>
-    <string name="hentai_home_toplists">Hentai@Home のトップリスト</string>
-    <string name="ehtracker_toplists">EHTracker のトップリスト</string>
-    <string name="cleanup_toplists">トップリストのクリーンアップ</string>
-    <string name="rating_reviewing_toplists">評価とトップリストのレビュー</string>
     <!--  侧滑栏头像和背景修改  -->
     <string name="take_a_photograph">写真を撮る</string>
     <string name="choose_from_the_album">アルバムから選択</string>
@@ -449,18 +436,12 @@
     <string name="yes">はい</string>
     <string name="cancel">キャンセル</string>
     <!--  wifi server -->
-    <string name="wifi_send_bookmark">ブックマークを移行</string>
-    <string name="wifi_send_favorite">カテゴリを移行</string>
-    <string name="wifi_send_download">ダウンロードデータを移行</string>
     <!--  wifi server  -->
     <!--  limits  -->
     <string name="pagination_count">カウント</string>
     <string name="pagination_page_and_item">r/p</string>
-    <string name="history_info_unlimited">無制限</string>
     <string name="have_new_version">タップで新しいギャラリーのバージョンを表示</string>
     <string name="archiver_downloading">アーカイブをダウンロード中 %s</string>
-    <string name="sort_by_pub_time">公開日時</string>
-    <string name="sort_by_fav_time">カテゴリをした日時</string>
     <string name="settings_eh_theme_auto_switch">システムのダークモードに従う</string>
     <!-- S-Pen Actions(Samsung only) -->
     <string name="spen_previous_page">前のページ</string>

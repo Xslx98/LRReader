@@ -185,9 +185,6 @@
     <string name="error_cannot_find_gallery">找不到圖庫</string>
     <string name="download">下載</string>
     <string name="read">閱讀</string>
-    <plurals name="page_count">
-        <item quantity="other">%d 頁</item>
-    </plurals>
     <string name="share">分享</string>
     <string name="no_tags">還沒有標籤</string>
     <string name="refresh">重新整理</string>
@@ -381,7 +378,6 @@
     <string name="settings_download_download_location">下載路徑</string>
     <string name="settings_download_invalid_download_location">無效的下載路徑</string>
     <string name="settings_download_cant_get_download_location">無法取得下載路徑</string>
-    <string name="settings_download_image_resolution_auto">自動</string>
     <string name="settings_download_media_scan">允許其他程式進行媒體掃描</string>
     <string name="settings_download_media_scan_summary_on">請別讓別人看到你的相簿</string>
     <string name="settings_download_media_scan_summary_off">大部分相簿軟體將會忽略顯示下載路徑中的影像</string>
@@ -427,8 +423,6 @@
 
     <string name="please_wait">請稍候</string>
 
-    <string name="proxy_direct">直接連線</string>
-    <string name="proxy_system">系統代理</string>
 
 
     <string name="app_language_system">系統語言（預設）</string>
@@ -494,13 +488,6 @@
     <string name="download_service">下載服務</string>
 
     <!--  排行榜  -->
-    <string name="gallery_toplists">圖庫 排行榜</string>
-    <string name="uploader_toplists">上傳 排行榜</string>
-    <string name="tagging_toplists">標籤 排行榜</string>
-    <string name="hentai_home_toplists">Hentai@Home 排行榜</string>
-    <string name="ehtracker_toplists">EH訂閱 排行榜</string>
-    <string name="cleanup_toplists">整理 排行榜</string>
-    <string name="rating_reviewing_toplists">等級&#038;審核 排行榜</string>
 
 
     <!--  black list  -->
@@ -522,20 +509,14 @@
     <string name="request_storage_permission">為了獲取相片，LR Reader 將請求裝置的圖片相簿之權限。您願意授權嗎？</string>
 
     <!--  wifi server -->
-    <string name="wifi_send_bookmark">遷移書籤</string>
-    <string name="wifi_send_favorite">遷移分類</string>
-    <string name="wifi_send_download">遷移下載資料</string>
     <!--  wifi server  -->
 
     <!--  limits  -->
 
     <string name="pagination_count">計數</string>
     <string name="pagination_page_and_item">r/p</string>
-    <string name="history_info_unlimited">無限制</string>
     <string name="have_new_version">點擊查看新圖庫版本</string>
     <string name="archiver_downloading">歸檔下載中 %s</string>
-    <string name="sort_by_pub_time">發布時間</string>
-    <string name="sort_by_fav_time">分類時間</string>
     <string name="import_local_archive">匯入本機歸檔</string>
     <string name="import_archive_title">選擇歸檔檔案</string>
     <string name="import_archive_failed">匯入歸檔失敗</string>

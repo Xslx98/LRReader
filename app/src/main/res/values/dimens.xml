@@ -16,7 +16,6 @@
 
 <resources>
 
-    <dimen name="progress_bar_height">24dp</dimen>
     <dimen name="keyline_margin">16dp</dimen>
     <dimen name="progress_padding">18dp</dimen>
     <dimen name="single_max_width">260dp</dimen>
@@ -28,7 +27,6 @@
 
     <!-- Text size -->
     <dimen name="text_super_large">24sp</dimen>
-    <dimen name="text_large">22sp</dimen>
     <dimen name="text_little_large">20sp</dimen>
     <dimen name="text_medium">18sp</dimen>
     <dimen name="text_little_small">16sp</dimen>
@@ -98,7 +96,6 @@
     <dimen name="advance_search_table_item_margin">4dp</dimen>
 
     <!-- Search item -->
-    <dimen name="search_item_interval">8dp</dimen>
     <dimen name="search_category_padding_h">@dimen/keyline_margin</dimen>
     <dimen name="search_category_padding_v">@dimen/keyline_margin</dimen>
     <dimen name="search_category_title_height">48dp</dimen>
@@ -106,7 +103,6 @@
     <dimen name="image_search_max_size">240dp</dimen>
 
     <!-- Switch padding -->
-    <dimen name="switch_padding">8dp</dimen>
 
     <!-- FabLayout -->
     <dimen name="fab_layout_primary_margin">24dp</dimen>
@@ -142,7 +138,6 @@
     <dimen name="page_thumb_target_width_middle">120dp</dimen>
     <dimen name="page_thumb_target_width_large">160dp</dimen>
 
-    <dimen name="gallery_page_text">56sp</dimen>
     <dimen name="gallery_widget_margin_h">12dp</dimen>
     <dimen name="gallery_widget_margin_v">12dp</dimen>
 
@@ -165,43 +160,22 @@
     <dimen name="gallery_progress_size">56dp</dimen>
     <dimen name="gallery_page_text_size">56sp</dimen>
     <dimen name="gallery_error_text_size">24sp</dimen>
-    <dimen name="gallery_tab_layout_pad">2dp</dimen>
     <dimen name="gallery_tab_layout_spacing">3dp</dimen>
 
     <!-- TOP List -->
-    <dimen name="top_list_spinner_height">50dp</dimen>
-    <dimen name="top_list_spinner_elevation">3dp</dimen>
-    <dimen name="top_list_spinner_margin">12dp</dimen>
-    <dimen name="top_list_scrollview_margin_top">74dp</dimen>
-    <dimen name="top_list_item_table_margin">18dp</dimen>
-    <dimen name="top_list_item_margin_bottom">7dp</dimen>
-    <dimen name="top_list_item_radius">5dp</dimen>
-    <dimen name="top_list_item_margin_width">24dp</dimen>
 
     <!--  底部弹窗相关  -->
-    <dimen name="photo_select_margin_top">12dp</dimen>
-    <dimen name="photo_select_margin_bottom">12dp</dimen>
-    <dimen name="popup_text_padding">4dp</dimen>
-    <dimen name="popup_text_margin">12dp</dimen>
 
-    <dimen name="download_search_bar_height">40dp</dimen>
     <dimen name="button_space_between">20dp</dimen>
 
     <!--  socket  -->
-    <dimen name="spinner_horizontal_padding">16dp</dimen>
 
-    <dimen name="spacing">8dp</dimen>
 
     <!--  padding  -->
-    <dimen name="limits_layout_margin_h">24dp</dimen>
-    <dimen name="limits_home_item_margin_h">30dp</dimen>
-    <dimen name="limits_layout_margin_v">2dp</dimen>
-    <dimen name="limits_layout_padding">12dp</dimen>
 
     <!--
 Refer to App Widget Documentation for margin information
 http://developer.android.com/guide/topics/appwidgets/index.html#CreatingLayout
     -->
-    <dimen name="widget_margin">0dp</dimen>
 
 </resources>

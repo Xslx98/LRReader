@@ -17,33 +17,8 @@
 
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <string-array name="fav_sort">
-        <item>@string/sort_by_fav_time</item>
-        <item>@string/sort_by_pub_time</item>
-    </string-array>
 
-    <string-array name="top_list_type">
-        <item>@string/gallery_toplists</item>
-        <item>@string/uploader_toplists</item>
-        <item>@string/tagging_toplists</item>
-        <item>@string/hentai_home_toplists</item>
-        <item>@string/ehtracker_toplists</item>
-        <item>@string/cleanup_toplists</item>
-        <item>@string/rating_reviewing_toplists</item>
-    </string-array>
 
-    <string-array name="top_list_history_list_test_data">
-        <item>@string/gallery_toplists</item>
-        <item>@string/uploader_toplists</item>
-        <item>@string/tagging_toplists</item>
-        <item>@string/hentai_home_toplists</item>
-        <item>@string/ehtracker_toplists</item>
-        <item>@string/cleanup_toplists</item>
-        <item>@string/rating_reviewing_toplists</item>
-        <item>@string/rating_reviewing_toplists</item>
-        <item>@string/rating_reviewing_toplists</item>
-        <item>@string/rating_reviewing_toplists</item>
-    </string-array>
 
     <string-array name="theme_entries" translatable="false">
         <item>@string/settings_eh_theme_light</item>
@@ -67,17 +42,7 @@
         <item>1</item>
     </string-array>
 
-    <string-array name="launch_page_entries" translatable="false">
-        <item>@string/homepage</item>
-        <item>@string/subscription</item>
-        <item>@string/whats_hot</item>
-    </string-array>
 
-    <string-array name="launch_page_entry_values" translatable="false">
-        <item>0</item>
-        <item>1</item>
-        <item>2</item>
-    </string-array>
 
     <string-array name="detail_size_entries" translatable="false">
         <item>@string/settings_eh_detail_size_long</item>
@@ -101,25 +66,7 @@
         <item>2</item>
     </string-array>
 
-    <string-array name="history_info_size_entries" translatable="false">
-        <item>100</item>
-        <item>500</item>
-        <item>1000</item>
-        <item>5000</item>
-        <item>10000</item>
-        <item>20000</item>
-<!--        <item>@string/history_info_unlimited</item>-->
-    </string-array>
 
-    <string-array name="history_info_size_entry_values" translatable="false">
-        <item>100</item>
-        <item>500</item>
-        <item>1000</item>
-        <item>5000</item>
-        <item>10000</item>
-        <item>20000</item>
-<!--        <item>-1</item>-->
-    </string-array>
 
     <string-array name="search_min_rating">
         <item>@string/star_2</item>
@@ -128,37 +75,9 @@
         <item>@string/star_5</item>
     </string-array>
 
-    <string-array name="multi_thread_download_entries" translatable="false">
-        <item>1</item>
-        <item>3</item>
-        <item>5</item>
-        <item>7</item>
-    </string-array>
 
-    <string-array name="multi_thread_download_entry_values" translatable="false">
-        <item>1</item>
-        <item>3</item>
-        <item>5</item>
-        <item>7</item>
-    </string-array>
 
-    <string-array name="image_resolution_entries" translatable="false">
-        <item>@string/settings_download_image_resolution_auto</item>
-        <item>780x</item>
-<!--        <item>980x</item>-->
-        <item>1280x</item>
-        <item>1600x</item>
-        <item>2400x</item>
-    </string-array>
 
-    <string-array name="image_resolution_entry_values" translatable="false">
-        <item>a</item>
-        <item>780</item>
-<!--        <item>980</item>-->
-        <item>1280</item>
-        <item>1600</item>
-        <item>2400</item>
-    </string-array>
 
     <string-array name="screen_rotation_entries">
         <item>@string/settings_read_screen_rotation_default</item>
@@ -287,33 +206,8 @@
         <item>https://raw.githubusercontent.com/Mapaler/EhViewer/tag-translations/tag-translations/tag-translations-zh-rCN</item>
     </string-array>
 
-    <string-array name="proxy_types">
-        <item>@string/proxy_direct</item>
-        <item>@string/proxy_system</item>
-        <item>HTTP</item>
-        <item>SOCKS</item>
-    </string-array>
 
-    <array name="socket_colors">
-        <item>@color/socket0</item>
-        <item>@color/socket1</item>
-        <item>@color/socket2</item>
-        <item>@color/socket3</item>
-        <item>@color/socket4</item>
-        <item>@color/socket5</item>
-        <item>@color/socket6</item>
-        <item>@color/socket7</item>
-        <item>@color/socket8</item>
-        <item>@color/socket9</item>
-        <item>@color/socket10</item>
-        <item>@color/socket11</item>
-    </array>
 
-    <string-array name="migrate_data_types">
-        <item>@string/wifi_send_bookmark</item>
-        <item>@string/wifi_send_favorite</item>
-        <item>@string/wifi_send_download</item>
-    </string-array>
 
     <string-array name="network_resume_timeout_entries" translatable="false">
         <item>@string/settings_download_network_timeout_1m</item>

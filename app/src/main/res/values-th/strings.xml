@@ -189,9 +189,6 @@
     <string name="error_cannot_find_gallery">ไม่สามารถค้นหาแกลเลอรี่ได้</string>
     <string name="download">ดาวน์โหลด</string>
     <string name="read">อ่าน</string>
-    <plurals name="page_count">
-        <item quantity="other">%d หน้า</item>
-    </plurals>
     <string name="share">แชร์</string>
     <string name="no_tags">ไม่มีแท็ก</string>
     <string name="refresh">รีเฟรช</string>
@@ -383,7 +380,6 @@
     <string name="settings_download_network_timeout_15m">15 นาที</string>
     <string name="settings_download_network_timeout_30m">30 นาที</string>
     <string name="settings_download_network_timeout_never">ไม่หมดเวลา</string>
-    <string name="settings_download_image_resolution_auto">อัตโนมัติ</string>
     <string name="settings_download_clean_redundancy">ลบการดาวน์โหลดที่ไม่จำเป็น</string>
     <string name="settings_download_clean_redundancy_summary">ลบรูปภาพแกลเลอรี่ที่ไม่ได้อยู่ในรายการดาวน์โหลด แต่อยู่ในแหล่งดาวน์โหลด</string>
     <string name="settings_download_clean_redundancy_no_redundancy">ไม่มีสิ่งที่ไม่จำเป็น</string>
@@ -416,8 +412,6 @@
     <string name="settings_about_license_summary">LR Reader ต้องขอขอบคุณโครงการโอเพ่นซอร์สหลายๆโครงการเป็นอย่างสูง</string>
     <string name="settings_about_version">เวอร์ชั่นแอป</string>
 
-    <string name="proxy_direct">โดยตรง</string>
-    <string name="proxy_system">พร็อกซี่ของระบบ</string>
 
 
     <string name="app_language_system">ภาษาของระบบ (ค่าเริ่มต้น)</string>
@@ -486,18 +480,8 @@
     <string name="download_service">บริการดาวน์โหลด</string>
 
     <!--  排行榜  -->
-    <string name="gallery_toplists">แกลเลอรี อันดับ</string>
-    <string name="uploader_toplists">ตัวโหลด อันดับ</string>
-    <string name="tagging_toplists">แท็ก อันดับ</string>
-    <string name="hentai_home_toplists">Hentai@Home อันดับ</string>
-    <string name="ehtracker_toplists">EHแทร็กเกอร์ อันดับ</string>
-    <string name="cleanup_toplists">ล้างข้อมูล อันดับ</string>
-    <string name="rating_reviewing_toplists">การจัด อันดับ&#038;กำลังตรวจสอบ อันดับ</string>
-    <string name="history_info_unlimited">ไม่จำกัด</string>
     <string name="have_new_version">คลิกเพื่อดูเวอร์ชั่นแกลเลอรี่ใหม่</string>
     <string name="archiver_downloading">กำลังดาวน์โหลด Arc %s</string>
-    <string name="sort_by_pub_time">เวลาที่เผยแพร่</string>
-    <string name="sort_by_fav_time">เวลาที่เพิ่มในหมวดหมู่</string>
     <!--  订阅服务  -->
     <string name="import_local_archive">นำเข้าไฟล์บีบอัดท้องถิ่น</string>
     <string name="import_archive_title">เลือกไฟล์บีบอัด</string>
@@ -523,9 +507,6 @@
     <!-- 下载通知   -->
 
     <!--  wifi server -->
-    <string name="wifi_send_bookmark">ย้ายบุคมาร์ก</string>
-    <string name="wifi_send_favorite">ย้ายหมวดหมู่</string>
-    <string name="wifi_send_download">ย้ายข้อมูลดาวน์โหลด</string>
     <!--  wifi server  -->
 
     <!--  limits  -->

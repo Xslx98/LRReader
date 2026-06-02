@@ -180,11 +180,6 @@
     <string name="error_cannot_find_gallery">La galerie introuvable</string>
     <string name="download">Télécharger</string>
     <string name="read">Lire</string>
-    <plurals name="page_count">
-        <item quantity="one">%d page</item>
-        <item quantity="other">%d pages</item>
-        <item quantity="many">%d pages</item>
-    </plurals>
     <string name="share">Partager</string>
     <string name="no_tags">Aucun tag</string>
     <string name="refresh">Rafraîchir</string>
@@ -358,7 +353,6 @@
     <string name="settings_download_network_timeout_15m">15 minutes</string>
     <string name="settings_download_network_timeout_30m">30 minutes</string>
     <string name="settings_download_network_timeout_never">Jamais</string>
-    <string name="settings_download_image_resolution_auto">Auto</string>
     <string name="settings_download_clean_redundancy">Effacer fichiers inutiles de téléchargement</string>
     <string name="settings_download_clean_redundancy_summary">Effacer les fichiers des galeries qui ne sont pas dans la liste de téléchargement mais se trouvent dans la destination de téléchargement</string>
     <string name="settings_download_clean_redundancy_no_redundancy">Rien à effacer</string>
@@ -392,8 +386,6 @@
     <string name="settings_about_license_summary">LR Reader ne peut être né qu\'à grâce de beaucoup de projets Open Source.</string>
     <string name="settings_about_version">Numéro de version</string>
 
-    <string name="proxy_direct">Directement</string>
-    <string name="proxy_system">Déterminé par le systéme</string>
 
 
     <!-- ExcludedLanguagesScene -->
@@ -495,18 +487,8 @@
     <string name="settings_eh_theme_auto_switch">Suivre le mode sombre du système</string>
 
     <!--  排行榜  -->
-    <string name="gallery_toplists">Galerie Classement</string>
-    <string name="uploader_toplists">Téléchargement Classement</string>
-    <string name="tagging_toplists">Marquage Classement</string>
-    <string name="hentai_home_toplists">Hentai@Home Classement</string>
-    <string name="ehtracker_toplists">EHTraceur Classement</string>
-    <string name="cleanup_toplists">Nettoyage Classement</string>
-    <string name="rating_reviewing_toplists">Notation&#038;Révision Classement</string>
-    <string name="history_info_unlimited">Illimité</string>
     <string name="have_new_version">Cliquez pour voir la nouvelle version de la galerie</string>
     <string name="archiver_downloading">Téléchargement d\'archive %s</string>
-    <string name="sort_by_pub_time">Date de publication</string>
-    <string name="sort_by_fav_time">Date d\'ajout aux catégories</string>
     <!--  订阅服务  -->
     <string name="import_local_archive">Importer une archive locale</string>
     <string name="import_archive_title">Sélectionner le fichier d\'archive</string>
@@ -659,9 +641,6 @@ Cette action est irréversible.</string>
     <string name="theme_black">Thème noir</string>
     <string name="theme_dark">Thème sombre</string>
     <string name="theme_light">Thème clair</string>
-    <string name="wifi_send_bookmark">Migrate bookmarks</string>
-    <string name="wifi_send_download">Migrate download data</string>
-    <string name="wifi_send_favorite">Migrate favorite</string>
     <string name="yes">Yes</string>
     <string name="lrr_category_label_dynamic">Dynamique</string>
     <string name="lrr_save_and_connect">Enregistrer et connecter</string>
