@@ -28,7 +28,7 @@
     android:textAppearance="?android:attr/textAppearanceListItemSmall"
     android:textColor="?android:attr/textColorAlertDialogListItem"
     android:gravity="center_vertical"
-    android:paddingLeft="?attr/listPreferredItemPaddingLeft"
-    android:paddingRight="?attr/listPreferredItemPaddingRight"
+    android:paddingStart="?attr/listPreferredItemPaddingLeft"
+    android:paddingEnd="?attr/listPreferredItemPaddingRight"
     android:drawablePadding="@dimen/keyline_margin"
     android:ellipsize="marquee"/>
