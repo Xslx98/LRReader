@@ -61,7 +61,6 @@
     <string name="error_invalid_url">URL invalide</string>
     <string name="error_cant_create_temp_file">Impossible de créer un fichier temporaire</string>
     <string name="error_cant_save_image">Impossible d\'enregistrer l\'image</string>
-    <string name="error_invalid_number">Nombre invalide</string>
     <string name="error_cant_get_image">Impossible d\'obtenir l\'image</string>
     <string name="lrr_error_load_pages_failed">Impossible de charger les pages</string>
     <string name="gallery_gl_fallback_title">Le moteur OpenGL est indisponible</string>
@@ -70,7 +69,6 @@
     <string name="gallery_gl_fallback_toast">OpenGL non disponible, impossible d\'afficher la galerie</string>
 
     <string name="press_twice_exit">Appuyez encore une fois pour quitter</string>
-    <string name="you_rejected_me">C\'est pas sympa T_T</string>
     <string name="analytics_explain">Ça vous dérange si le développeur rassemble vos informations de l\'appareil et votre usage de l\'application ? Les informations sont très utiles pour le développeur.&lt;br&gt;&lt;br&gt;L\'analyse de données est fournie par Google Analytics for Firebase. Sa politique de confidentialité se trouve à &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt;.&lt;br&gt;&lt;br&gt;Si vous acceptez d\'aider l\'analyse données, vos informations de l\'appareil seront rassemblées, y compris, mais sans s\'y limiter, votre version API Android, modèle de l\'appareil, les durées de sessions et usages.&lt;br&gt;&lt;br&gt;Le développeur vous promet à ne rassembler AUCUNE donnée à moins que vous ne l\'acceptiez.&lt;br&gt;&lt;br&gt;Les données rassemblées seront analysées à l\'aide de  Google Analytics for Firebase. Le rapport d\'analyse ne peut être lu que par le développeur de l\'application.</string>
     <string name="get_it">Compris</string>
     <string name="accept">Accepter</string>
@@ -96,27 +94,12 @@
     <string name="settings_about_auto_check_for_updates_summary">Vérifier GitHub une fois par jour pour de nouvelles versions</string>
     <string name="update_snackbar_text">Nouvelle version %1$s disponible</string>
     <string name="update_snackbar_action">Voir</string>
-    <string name="update_check_in_progress_toast">Vérification des mises à jour…</string>
     <string name="update_ignore">Ignorer</string>
 
     <!-- Gallery List -->
     <string name="gallery_list_search_bar_hint_exhentai">Chercher sur LANraragi</string>
     <string name="gallery_list_search_bar_hint_e_hentai">Chercher sur LANraragi</string>
     <string name="gallery_list_empty_hit">Le monde est grand et le panda s\'assied tout seul.</string>
-    <string name="gallery_list_no_more_data">Il n\'y a plus de données pour la liste actuelle</string>
-    <string name="gallery_list_date_jump_1d">Hier</string>
-    <string name="gallery_list_date_jump_3d">Il y a trois jours</string>
-    <string name="gallery_list_date_jump_1w">Il y a une semaine</string>
-    <string name="gallery_list_date_jump_2w">Il y a deux semaines</string>
-    <string name="gallery_list_date_jump_1m">Il y a un mois</string>
-    <string name="gallery_list_date_jump_6m">Il y a six mois</string>
-    <string name="gallery_list_date_jump_1y">Il y a un an</string>
-    <string name="gallery_list_date_jump_2y">Il y a deux ans</string>
-    <string name="gallery_list_select_jump_date">Utiliser le sélecteur de date</string>
-    <string name="gallery_list_select_jump_node">Utiliser le sélecteur de nœud</string>
-    <string name="gallery_list_jump_now">Aller maintenant</string>
-    <string name="gallery_list_time_jump_dialog_title">Sélecteur de saut</string>
-    <string name="gallery_list_time_jump_dialog_found_message">%s résultats trouvés</string>
     <string name="gallery_tag_copy">tag copié</string>
 
     <string name="search">Chercher</string>
@@ -168,7 +151,6 @@
     <string name="duplicate_name">Ce nom déjà existe</string>
 
 
-    <string name="go_to_hint">Page %1$d, avec un totale de %2$d pages</string>
 
     <!-- search_min_rating -->
     <string name="star_2">2 étoiles</string>
@@ -196,7 +178,6 @@
     <!-- Gallery Comments -->
 
     <!-- Gallery Previews -->
-    <string name="go_to">Aller à</string>
 
     <!-- Download -->
     <string name="no_download_info">Vos téléchargements s\'afficheront ici</string>
@@ -506,7 +487,6 @@
     <!-- S-Pen Actions(Samsung only) -->
     <string name="spen_previous_page">Page précédente</string>
     <string name="spen_next_page">Page suivante</string>
-    <string name="category_all">Tous</string>
 
 
     <!-- Missing download settings translations -->

@@ -94,7 +94,6 @@
     <string name="error_invalid_url">Invalid url</string>
     <string name="error_cant_create_temp_file">Couldn\'t create temp file</string>
     <string name="error_cant_save_image">Can\'t save image</string>
-    <string name="error_invalid_number">Invalid number</string>
     <string name="error_cant_get_image">Can\'t get image</string>
     <string name="lrr_error_load_pages_failed">Can\'t load pages</string>
     <string name="gallery_gl_fallback_title">OpenGL renderer unavailable</string>
@@ -104,7 +103,6 @@
 
 
     <string name="press_twice_exit">Press twice to exit</string>
-    <string name="you_rejected_me">It hurts</string>
     <string name="analytics_explain">Would you mind if the developer collected your device information and your usage? It will help the developer a lot.&lt;br&gt;&lt;br&gt;Data analysis service is provided by Google Analytics for Firebase. Its privacy policy can be found at &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt;.&lt;br&gt;&lt;br&gt;If you agree to join data analysis, your device information and your usage will be collected, including but not limited to Android API version, equipment model, language residence, the application version, conversion time, function times. The developer promise that these information will NOT be collected, including phone number, e-mail address, IMEI.&lt;br&gt;&lt;br&gt;Your information will not be collected until you agree to join data analysis.&lt;br&gt;&lt;br&gt;The collected information will be analyzed by Google Analytics for Firebase. The analysis report can only be viewed by the developer of this application.</string>
     <string name="get_it">Got it</string>
     <string name="accept">Accept</string>
@@ -130,7 +128,6 @@
     <string name="settings_about_auto_check_for_updates_summary">Check GitHub for new versions once a day</string>
     <string name="update_snackbar_text">New version %1$s available</string>
     <string name="update_snackbar_action">View</string>
-    <string name="update_check_in_progress_toast">Checking for updates…</string>
     <string name="update_ignore">Ignore</string>
 
     <!-- Gallery List -->
@@ -188,7 +185,6 @@
     <string name="duplicate_quick_search">A duplicate quick search exists. The name is \"%s\".</string>
     <string name="duplicate_name">This name is already in use.</string>
 
-    <string name="go_to_hint">Page %1$d, total %2$d pages</string>
 
     <!-- search_min_rating -->
     <string name="star_2">2 stars</string>
@@ -216,7 +212,6 @@
     <!-- Gallery Comments -->
 
     <!-- Gallery Previews -->
-    <string name="go_to">Go to</string>
 
     <!-- Download -->
     <string name="no_download_info">Download items will be shown here</string>
@@ -508,7 +503,6 @@
 
     <!-- Auto-generated missing translations -->
     <string name="cancel">Cancel</string>
-    <string name="category_all">All</string>
     <string name="choose_from_the_album">Choose from the album</string>
     <string name="copy_tag">Copy</string>
     <string name="default_sort">Default</string>
@@ -518,20 +512,6 @@
     <string name="download_searching">Searching please wait</string>
     <string name="download_sort_list">Sort</string>
     <string name="download_status_all">All</string>
-    <string name="gallery_list_date_jump_1d">Yesterday</string>
-    <string name="gallery_list_date_jump_1m">One month ago</string>
-    <string name="gallery_list_date_jump_1w">One week ago</string>
-    <string name="gallery_list_date_jump_1y">One year ago</string>
-    <string name="gallery_list_date_jump_2w">Two weeks ago</string>
-    <string name="gallery_list_date_jump_2y">Two years ago</string>
-    <string name="gallery_list_date_jump_3d">Three days ago</string>
-    <string name="gallery_list_date_jump_6m">Six months ago</string>
-    <string name="gallery_list_jump_now">Jump Now</string>
-    <string name="gallery_list_no_more_data">There is no more data for the current listing</string>
-    <string name="gallery_list_select_jump_date">Use date selector</string>
-    <string name="gallery_list_select_jump_node">Use node selector</string>
-    <string name="gallery_list_time_jump_dialog_found_message">Found %s Results</string>
-    <string name="gallery_list_time_jump_dialog_title">Jump Selector</string>
     <string name="gallery_tag_copy">tag copied</string>
     <string name="lrr_add_server">Add Server</string>
     <string name="lrr_api_key_helper">Enter the API Key from LANraragi settings (not the web login password)</string>

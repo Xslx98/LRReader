@@ -68,7 +68,6 @@
     <string name="error_invalid_url">잘못된 URL</string>
     <string name="error_cant_create_temp_file">임시 파일을 만들 수 없음</string>
     <string name="error_cant_save_image">이미지를 저장할 수 없음</string>
-    <string name="error_invalid_number">잘못된 번호</string>
     <string name="error_cant_get_image">이미지를 가져올 수 없음</string>
     <string name="lrr_error_load_pages_failed">페이지를 불러올 수 없습니다</string>
     <string name="gallery_gl_fallback_title">OpenGL 렌더러를 사용할 수 없습니다</string>
@@ -78,7 +77,6 @@
 
 
     <string name="press_twice_exit">한 번 더 누르면 종료됩니다.</string>
-    <string name="you_rejected_me">안돼요</string>
     <string name="analytics_explain">앱 개발자에게 기기 및 사용 정보를 보내시겠습니까? 앱 개발에 굉장한 도움이 됩니다. &lt;br&gt;&lt;br&gt;데이터 분석 서비스는 Google Analytics for Firebase를 사용하며, 개인 정보 보호 정책은 &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt; 에서 확인하실 수 있습니다.&lt;br&gt;&lt;br&gt;데이터 분석을 허용하면 사용자의 기기 및 앱 사용 정보가 수집됩니다. 전화번호나 이메일 주소, IMEI와 같은 개인 정보는 수집하지 않습니다.&lt;br&gt;&lt;br&gt;데이터 분석을 허용하기 전까지는 정보를 수집하지 않습니다.&lt;br&gt;&lt;br&gt;수집한 정보는 Google Analytics for Firebase에 의해 분석됩니다. 분석된 정보는 이 애플리케이션의 개발자만 볼 수 있습니다.</string>
     <string name="get_it">알겠습니다</string>
     <string name="accept">동의</string>
@@ -104,7 +102,6 @@
     <string name="settings_about_auto_check_for_updates_summary">하루에 한 번 GitHub에서 새 버전 확인</string>
     <string name="update_snackbar_text">새 버전 %1$s 사용 가능</string>
     <string name="update_snackbar_action">보기</string>
-    <string name="update_check_in_progress_toast">업데이트 확인 중…</string>
     <string name="update_ignore">무시</string>
 
     <!-- Gallery List -->
@@ -113,20 +110,6 @@
     <string name="gallery_list_empty_hit">LANraragi에서 아카이브를 찾을 수 없습니다</string>
     <string name="search">검색</string>
 
-    <string name="gallery_list_no_more_data">현재 목록에 더 이상 데이터가 없습니다</string>
-    <string name="gallery_list_date_jump_1d">어제</string>
-    <string name="gallery_list_date_jump_3d">3일 전</string>
-    <string name="gallery_list_date_jump_1w">일주일 전</string>
-    <string name="gallery_list_date_jump_2w">2주 전</string>
-    <string name="gallery_list_date_jump_1m">한 달 전</string>
-    <string name="gallery_list_date_jump_6m">6개월 전</string>
-    <string name="gallery_list_date_jump_1y">1년 전</string>
-    <string name="gallery_list_date_jump_2y">2년 전</string>
-    <string name="gallery_list_select_jump_date">날짜 선택기 사용</string>
-    <string name="gallery_list_select_jump_node">노드 선택기 사용</string>
-    <string name="gallery_list_jump_now">지금 이동</string>
-    <string name="gallery_list_time_jump_dialog_title">이동 선택기</string>
-    <string name="gallery_list_time_jump_dialog_found_message">%s개 결과 발견</string>
     <string name="gallery_tag_copy">태그 복사됨</string>
 
     <string name="keyword_search">키워드 검색</string>
@@ -178,7 +161,6 @@
     <string name="duplicate_name">같은 이름의 항목이 이미 있습니다.</string>
 
 
-    <string name="go_to_hint">페이지 %1$d, 총 %2$d 페이지</string>
 
     <!-- search_min_rating -->
     <string name="star_2">2개</string>
@@ -207,7 +189,6 @@
     <!-- Gallery Comments -->
 
     <!-- Gallery Previews -->
-    <string name="go_to">이동</string>
 
     <!-- Download -->
     <string name="no_download_info">다운로드한 항목이 여기에 표시됩니다.</string>
@@ -514,7 +495,6 @@
     <!-- S-Pen Actions(Samsung only) -->
     <string name="spen_previous_page">이전 페이지</string>
     <string name="spen_next_page">다음 페이지</string>
-    <string name="category_all">전체</string>
     <string name="import_local_archive">로컬 아카이브 가져오기</string>
     <string name="import_archive_title">아카이브 파일 선택</string>
     <string name="import_archive_failed">아카이브 가져오기 실패</string>

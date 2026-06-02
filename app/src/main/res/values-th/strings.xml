@@ -67,7 +67,6 @@
     <string name="error_invalid_url">URL ไม่ถูกต้อง</string>
     <string name="error_cant_create_temp_file">ไม่สามารถสร้างไฟล์ชั่วคราวได้</string>
     <string name="error_cant_save_image">ไม่สามารถบันทึกรูปภาพได้</string>
-    <string name="error_invalid_number">จำนวนไม่ถูกต้อง</string>
     <string name="error_cant_get_image">ไม่สามารถรับรูปภาพได้</string>
     <string name="lrr_error_load_pages_failed">โหลดหน้าไม่ได้</string>
     <string name="gallery_gl_fallback_title">ไม่สามารถใช้ตัวเรนเดอร์ OpenGL ได้</string>
@@ -77,7 +76,6 @@
 
 
     <string name="press_twice_exit">กดสองครั้งเพื่อออก</string>
-    <string name="you_rejected_me">เอื้อออออ เจ็บจัง</string>
     <string name="analytics_explain">จะว่าอะไรไหมถ้านักพัฒนาจะขออนุญาตรวบรวมข้อมูลอุปกรณ์และประวัติการใช้งานแอปนี้ของคุณ? มันจะช่วยนักพัฒนาอย่างมากเลยนะ&lt;br&gt;&lt;br&gt;บริการวิเคราะห์ข้อมูลที่เราใช้นั้นเป็นบริการของ Google Analytics สำหรับ Firebase ในส่วนของนโยบายความเป็นส่วนตัวเราใช้ตามที่อยู่ในลิงค์ &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt;&lt;br&gt;&lt;br&gt;ถ้าคุณยินยอมการส่งข้อมูลวิเคราะห์นี้ ทั้งข้อมูลอุปกรณ์และประวัติการใช้งานแอปนี้ของคุณจะถูกจัดเก็บ รวมไปถึงแต่ไม่จำกัดเพียงแค่เวอร์ชั่น API ของ Android, แบบจำลองอุปกรณ์, ภาษาของผู้ใช้, เวอร์ชั่นของแอปพลิเคชั่น, เวลาในการใช้งาน, และจำนวนฟังก์ชั่นที่ใช้ นักพัฒนาขอให้คำมั่นสัญญาว่าเราจะไม่เก็บข้อมูลส่วนตัวของผู้ใช้ไม่ว่าจะเบอร์มือถือ, อีเมล, และหมายเลข IMEI&lt;br&gt;&lt;br&gt;ข้อมูลของคุณจะไม่ถูกจัดเก็บจนกว่าจะกดปุ่ม \'ยินยอม\' ให้จัดเก็บเพื่อนำมาวิเคราะห์ข้อมูล&lt;br&gt;&lt;br&gt;การจัดเก็บข้อมูลจะถูกวิเคราะห์โดยบริการ Google Analytics สำหรับ Firebase รายงานการวิเคราะห์ข้อมูลจะสามารถดูได้เพียงนักพัฒนาของแอปนี้เพียงคนเดียวเท่านั้น</string>
     <string name="get_it">เข้าใจแล้ว ไม่ต้องแสดงอีก</string>
     <string name="accept">ยินยอม</string>
@@ -103,7 +101,6 @@
     <string name="settings_about_auto_check_for_updates_summary">ตรวจสอบเวอร์ชั่นใหม่บน GitHub วันละครั้ง</string>
     <string name="update_snackbar_text">มีเวอร์ชั่นใหม่ %1$s</string>
     <string name="update_snackbar_action">ดู</string>
-    <string name="update_check_in_progress_toast">กำลังตรวจสอบการอัพเดต…</string>
     <string name="update_ignore">ข้ามไป</string>
 
     <!-- Gallery List -->
@@ -111,20 +108,6 @@
     <string name="gallery_list_search_bar_hint_e_hentai">ค้นหาใน LANraragi</string>
     <string name="gallery_list_empty_hit">โลกนั้นนะมันกว้างงงงงใหญ่ไพรศาล และแพนด้านั่งโดดเดี่ยวเดียวดายในโลกกลมๆ</string>
 
-    <string name="gallery_list_no_more_data">ไม่มีข้อมูลเพิ่มเติมสำหรับรายการปัจจุบัน</string>
-    <string name="gallery_list_date_jump_1d">เมื่อวาน</string>
-    <string name="gallery_list_date_jump_3d">สามวันที่แล้ว</string>
-    <string name="gallery_list_date_jump_1w">หนึ่งสัปดาห์ที่แล้ว</string>
-    <string name="gallery_list_date_jump_2w">สองสัปดาห์ที่แล้ว</string>
-    <string name="gallery_list_date_jump_1m">หนึ่งเดือนที่แล้ว</string>
-    <string name="gallery_list_date_jump_6m">หกเดือนที่แล้ว</string>
-    <string name="gallery_list_date_jump_1y">หนึ่งปีที่แล้ว</string>
-    <string name="gallery_list_date_jump_2y">สองปีที่แล้ว</string>
-    <string name="gallery_list_select_jump_date">ใช้ตัวเลือกวันที่</string>
-    <string name="gallery_list_select_jump_node">ใช้ตัวเลือกโหนด</string>
-    <string name="gallery_list_jump_now">ข้ามไปตอนนี้</string>
-    <string name="gallery_list_time_jump_dialog_title">ตัวเลือกการข้าม</string>
-    <string name="gallery_list_time_jump_dialog_found_message">พบ %s ผลลัพธ์</string>
     <string name="gallery_tag_copy">คัดลอกแท็กแล้ว</string>
 
     <string name="search">ค้นหา</string>
@@ -177,7 +160,6 @@
     <string name="duplicate_name">ชื่อนี้มีการใช้งานอยู่แล้ว</string>
 
 
-    <string name="go_to_hint">หน้า %1$d, มีทั้งหมด %2$d หน้า</string>
 
     <!-- search_min_rating -->
     <string name="star_2">2 ดาว</string>
@@ -205,7 +187,6 @@
     <!-- Gallery Comments -->
 
     <!-- Gallery Previews -->
-    <string name="go_to">ไปที่</string>
 
     <!-- Download -->
     <string name="no_download_info">รายการดาวน์โหลดจะอยู่ตรงนี้</string>
@@ -517,7 +498,6 @@
     <!-- S-Pen Actions(Samsung only) -->
     <string name="spen_previous_page">หน้าก่อนหน้า</string>
     <string name="spen_next_page">หน้าถัดไป</string>
-    <string name="category_all">ทั้งหมด</string>
 
 
     <!-- Missing download settings translations -->

@@ -166,7 +166,6 @@
 
     <!--  底部弹窗相关  -->
 
-    <dimen name="button_space_between">20dp</dimen>
 
     <!--  socket  -->
 

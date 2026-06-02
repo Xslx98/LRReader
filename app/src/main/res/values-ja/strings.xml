@@ -55,7 +55,6 @@
     <string name="error_invalid_url">無効なリンクです。</string>
     <string name="error_cant_create_temp_file">一時ファイルを作成できませんでした</string>
     <string name="error_cant_save_image">画像を保存できませんでした</string>
-    <string name="error_invalid_number">無効な数字です</string>
     <string name="error_cant_get_image">画像を取得できませんでした</string>
     <string name="lrr_error_load_pages_failed">ページを読み込めません</string>
     <string name="gallery_gl_fallback_title">OpenGLレンダラーを利用できません</string>
@@ -63,7 +62,6 @@
     <string name="gallery_gl_fallback_action_close">戻る</string>
     <string name="gallery_gl_fallback_toast">OpenGLが利用できないため、ギャラリーを表示できません</string>
     <string name="press_twice_exit">もう一度押して終了します。</string>
-    <string name="you_rejected_me">痛い</string>
     <string name="analytics_explain">ご使用のデバイスの情報やこのアプリの利用情報を収集するように同意しますか？収集情報はアプリ向上のために使用されます。&lt;br&gt;&lt;br&gt;データ分析サービスは Google Analytics for Firebase によって提供されます。 &lt;a href=\"https://www.google.com/policies/privacy/\"&gt;https://www.google.com/policies/privacy/&lt;/a&gt;にプライバシーポリシーをご覧ください。&lt;br&gt;&lt;br&gt;アプリ利用情報収集に参加すると、Android API バージョン、デバイスモデル、言語、地域、アプリバージョンや、セッション時間などの情報は収集されます。開発者は、電話番号、電子メールアドレス、IMEI 情報などを記録しないことを保証します。&lt;br&gt;&lt;br&gt;同意しない限り、データは収集されません。&lt;br&gt;&lt;br&gt;送信されたデータは Google Analytics for Firebase で分析され、分析レポートにはこのアプリ開発者しかアクセスできません。</string>
     <string name="get_it">了解</string>
     <string name="accept">同意</string>
@@ -86,26 +84,11 @@
     <string name="settings_about_auto_check_for_updates_summary">1日1回 GitHub で新しいバージョンを確認します</string>
     <string name="update_snackbar_text">新しいバージョン %1$s が利用可能です</string>
     <string name="update_snackbar_action">表示</string>
-    <string name="update_check_in_progress_toast">更新を確認中…</string>
     <string name="update_ignore">無視</string>
     <!-- Gallery List -->
     <string name="gallery_list_search_bar_hint_exhentai">LANraragi を検索</string>
     <string name="gallery_list_search_bar_hint_e_hentai">LANraragi を検索</string>
     <string name="gallery_list_empty_hit">何も見つかりませんでした。</string>
-    <string name="gallery_list_no_more_data">現在のリストにはこれ以上のデータはありません</string>
-    <string name="gallery_list_date_jump_1d">昨日</string>
-    <string name="gallery_list_date_jump_3d">3 日前</string>
-    <string name="gallery_list_date_jump_1w">1 週間前</string>
-    <string name="gallery_list_date_jump_2w">2 週間前</string>
-    <string name="gallery_list_date_jump_1m">1 ヶ月前</string>
-    <string name="gallery_list_date_jump_6m">6 ヶ月前</string>
-    <string name="gallery_list_date_jump_1y">1 年前</string>
-    <string name="gallery_list_date_jump_2y">2 年前</string>
-    <string name="gallery_list_select_jump_date">日付セレクターを使用する</string>
-    <string name="gallery_list_select_jump_node">ノードセレクターを使用する</string>
-    <string name="gallery_list_jump_now">今すぐ移動</string>
-    <string name="gallery_list_time_jump_dialog_title">移動の選択</string>
-    <string name="gallery_list_time_jump_dialog_found_message">%s 件の結果が見つかりました</string>
     <string name="gallery_tag_copy">タグをコピーしました</string>
     <string name="search">検索</string>
     <string name="keyword_search">キーワードで検索</string>
@@ -148,7 +131,6 @@
     <string name="image_search_not_quick_search">画像検索をクイック検索として追加できませんでした。</string>
     <string name="duplicate_quick_search">「%s」というクイック検索は既に存在しています。</string>
     <string name="duplicate_name">この名前は既に使用されています。</string>
-    <string name="go_to_hint">ページ %1$d、合計 %2$d ページ</string>
     <!-- search_min_rating -->
     <string name="star_2">2 つ星</string>
     <string name="star_3">3 つ星</string>
@@ -171,7 +153,6 @@
     <string name="copied_to_clipboard">クリップボードにコピーされました。</string>
     <!-- Gallery Comments -->
     <!-- Gallery Previews -->
-    <string name="go_to">ページに移動</string>
     <!-- Download -->
     <string name="no_download_info">ダウンロードタスクはここに表示されます</string>
     <string name="download_state_none">一時停止中</string>
@@ -446,7 +427,6 @@
     <!-- S-Pen Actions(Samsung only) -->
     <string name="spen_previous_page">前のページ</string>
     <string name="spen_next_page">次のページ</string>
-    <string name="category_all">すべて</string>
     <string name="import_local_archive">ローカルアーカイブをインポート</string>
     <string name="import_archive_title">アーカイブファイルを選択</string>
     <string name="import_archive_failed">アーカイブのインポートに失敗しました</string>

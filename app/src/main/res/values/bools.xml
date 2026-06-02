@@ -17,7 +17,6 @@
 
 <resources>
 
-    <bool name="beta">false</bool>
     <bool name="dad_spin_bars">true</bool>
 
 </resources>
