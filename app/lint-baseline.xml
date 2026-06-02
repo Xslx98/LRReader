@@ -2565,148 +2565,18 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.app_widget_background` appears to be unused"
-        errorLine1="&lt;shape xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable-v21/app_widget_background.xml"
-            line="6"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.app_widget_inner_view_background` appears to be unused"
-        errorLine1="&lt;shape xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable-v21/app_widget_inner_view_background.xml"
-            line="6"
-            column="1"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.array.fav_sort` appears to be unused"
-        errorLine1="    &lt;string-array name=&quot;fav_sort&quot;>"
-        errorLine2="                  ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/arrays.xml"
-            line="20"
-            column="19"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.array.top_list_type` appears to be unused"
-        errorLine1="    &lt;string-array name=&quot;top_list_type&quot;>"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/arrays.xml"
-            line="25"
-            column="19"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.array.top_list_history_list_test_data` appears to be unused"
-        errorLine1="    &lt;string-array name=&quot;top_list_history_list_test_data&quot;>"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/arrays.xml"
-            line="35"
-            column="19"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.array.launch_page_entries` appears to be unused"
-        errorLine1="    &lt;string-array name=&quot;launch_page_entries&quot; translatable=&quot;false&quot;>"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/arrays.xml"
-            line="80"
-            column="19"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.array.launch_page_entry_values` appears to be unused"
-        errorLine1="    &lt;string-array name=&quot;launch_page_entry_values&quot; translatable=&quot;false&quot;>"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/arrays.xml"
-            line="86"
-            column="19"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.array.history_info_size_entries` appears to be unused"
-        errorLine1="    &lt;string-array name=&quot;history_info_size_entries&quot; translatable=&quot;false&quot;>"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/arrays.xml"
-            line="114"
-            column="19"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.array.history_info_size_entry_values` appears to be unused"
-        errorLine1="    &lt;string-array name=&quot;history_info_size_entry_values&quot; translatable=&quot;false&quot;>"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/arrays.xml"
-            line="124"
-            column="19"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.array.multi_thread_download_entries` appears to be unused"
-        errorLine1="    &lt;string-array name=&quot;multi_thread_download_entries&quot; translatable=&quot;false&quot;>"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/arrays.xml"
-            line="162"
-            column="19"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.array.multi_thread_download_entry_values` appears to be unused"
-        errorLine1="    &lt;string-array name=&quot;multi_thread_download_entry_values&quot; translatable=&quot;false&quot;>"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/arrays.xml"
-            line="169"
-            column="19"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.array.image_resolution_entries` appears to be unused"
-        errorLine1="    &lt;string-array name=&quot;image_resolution_entries&quot; translatable=&quot;false&quot;>"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/arrays.xml"
-            line="194"
-            column="19"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.array.image_resolution_entry_values` appears to be unused"
-        errorLine1="    &lt;string-array name=&quot;image_resolution_entry_values&quot; translatable=&quot;false&quot;>"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/arrays.xml"
-            line="203"
-            column="19"/>
-    </issue>
 
     <issue
         id="UnusedResources"
@@ -2730,84 +2600,14 @@
             column="19"/>
     </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.array.proxy_types` appears to be unused"
-        errorLine1="    &lt;string-array name=&quot;proxy_types&quot;>"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/arrays.xml"
-            line="344"
-            column="19"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.array.socket_colors` appears to be unused"
-        errorLine1="    &lt;array name=&quot;socket_colors&quot;>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/arrays.xml"
-            line="351"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.array.migrate_data_types` appears to be unused"
-        errorLine1="    &lt;string-array name=&quot;migrate_data_types&quot;>"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/arrays.xml"
-            line="366"
-            column="19"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.xml.backup_scheme` appears to be unused"
-        errorLine1="&lt;full-backup-content>"
-        errorLine2="^">
-        <location
-            file="src/main/res/xml/backup_scheme.xml"
-            line="18"
-            column="1"/>
-    </issue>
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.background_dark` appears to be unused"
-        errorLine1="    &lt;color name=&quot;background_dark&quot;>#ff303030&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="42"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.background_light` appears to be unused"
-        errorLine1="    &lt;color name=&quot;background_light&quot;>#fffafafa&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="43"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.widget_light` appears to be unused"
-        errorLine1="    &lt;color name=&quot;widget_light&quot;>@color/grey_200&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="53"
-            column="12"/>
-    </issue>
+
+
+
 
     <issue
         id="UnusedResources"
@@ -2831,302 +2631,32 @@
             column="12"/>
     </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.blue_FA` appears to be unused"
-        errorLine1="    &lt;color name=&quot;blue_FA&quot;>#ff58ACFA&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="85"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.deep_green_600` appears to be unused"
-        errorLine1="    &lt;color name=&quot;deep_green_600&quot;>#ff31B404&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="87"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_975` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_975&quot;>#ff080808&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="91"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_950` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_950&quot;>#ff111111&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="92"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_750` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_750&quot;>#ff525252&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="100"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_725` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_725&quot;>#ff595959&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="101"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_650` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_650&quot;>#ff6b6b6b&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="104"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_625` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_625&quot;>#ff707070&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="105"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_575` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_575&quot;>#ff7f7f7f&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="107"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_550` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_550&quot;>#ff8a8a8a&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="108"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_525` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_525&quot;>#ff949494&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="109"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_475` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_475&quot;>#ffa6a6a6&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="111"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_450` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_450&quot;>#ffaeaeae&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="112"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_425` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_425&quot;>#ffb5b5b5&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="113"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_400` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_400&quot;>#ffbdbdbd&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="114"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_375` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_375&quot;>#ffc6c6c6&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="115"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_325` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_325&quot;>#ffd7d7d7&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="117"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_275` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_275&quot;>#ffe4e4e4&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="119"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_250` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_250&quot;>#ffe7e7e7&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="120"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_225` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_225&quot;>#ffebebeb&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="121"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_175` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_175&quot;>#fff0f0f0&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="123"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_150` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_150&quot;>#fff2f2f2&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="124"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.grey_125` appears to be unused"
-        errorLine1="    &lt;color name=&quot;grey_125&quot;>#fff3f3f3&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="125"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.brown_500` appears to be unused"
-        errorLine1="    &lt;color name=&quot;brown_500&quot;>#ff795548&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="127"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.new_version_bg_color` appears to be unused"
-        errorLine1="    &lt;color name=&quot;new_version_bg_color&quot;>#E6FFEB3B&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="152"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.unknown_bg` appears to be unused"
-        errorLine1="    &lt;color name=&quot;unknown_bg&quot;>@android:color/black&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="169"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.big_icon` appears to be unused"
-        errorLine1="    &lt;color name=&quot;big_icon&quot;>#1f000000&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="182"
-            column="12"/>
-    </issue>
 
     <issue
         id="UnusedResources"
@@ -3172,170 +2702,6 @@
             column="12"/>
     </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.black_overlay` appears to be unused"
-        errorLine1="    &lt;color name=&quot;black_overlay&quot;>#66000000&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="198"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.socket0` appears to be unused"
-        errorLine1="    &lt;color name=&quot;socket0&quot;>#e21400&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="202"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.socket1` appears to be unused"
-        errorLine1="    &lt;color name=&quot;socket1&quot;>#91580f&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="203"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.socket2` appears to be unused"
-        errorLine1="    &lt;color name=&quot;socket2&quot;>#f8a700&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="204"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.socket3` appears to be unused"
-        errorLine1="    &lt;color name=&quot;socket3&quot;>#f78b00&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="205"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.socket4` appears to be unused"
-        errorLine1="    &lt;color name=&quot;socket4&quot;>#58dc00&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="206"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.socket5` appears to be unused"
-        errorLine1="    &lt;color name=&quot;socket5&quot;>#287b00&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="207"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.socket6` appears to be unused"
-        errorLine1="    &lt;color name=&quot;socket6&quot;>#a8f07a&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="208"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.socket7` appears to be unused"
-        errorLine1="    &lt;color name=&quot;socket7&quot;>#4ae8c4&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="209"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.socket8` appears to be unused"
-        errorLine1="    &lt;color name=&quot;socket8&quot;>#3b88eb&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="210"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.socket9` appears to be unused"
-        errorLine1="    &lt;color name=&quot;socket9&quot;>#3824aa&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="211"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.socket10` appears to be unused"
-        errorLine1="    &lt;color name=&quot;socket10&quot;>#a700ff&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="212"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.socket11` appears to be unused"
-        errorLine1="    &lt;color name=&quot;socket11&quot;>#d300e7&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="213"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.light_blue_50` appears to be unused"
-        errorLine1="    &lt;color name=&quot;light_blue_50&quot;>#FFE1F5FE&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="225"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.light_blue_200` appears to be unused"
-        errorLine1="    &lt;color name=&quot;light_blue_200&quot;>#FF81D4FA&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="226"
-            column="12"/>
-    </issue>
 
 
 
@@ -3344,291 +2710,45 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.progress_bar_height` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;progress_bar_height&quot;>24dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="19"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.text_large` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;text_large&quot;>22sp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="31"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.search_item_interval` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;search_item_interval&quot;>8dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="101"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.switch_padding` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;switch_padding&quot;>8dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="109"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.gallery_page_text` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;gallery_page_text&quot;>56sp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="128"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.gallery_tab_layout_pad` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;gallery_tab_layout_pad&quot;>2dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="152"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.top_list_spinner_height` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;top_list_spinner_height&quot;>50dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="156"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.top_list_spinner_elevation` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;top_list_spinner_elevation&quot;>3dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="157"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.top_list_spinner_margin` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;top_list_spinner_margin&quot;>12dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="158"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.top_list_scrollview_margin_top` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;top_list_scrollview_margin_top&quot;>74dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="159"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.top_list_item_table_margin` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;top_list_item_table_margin&quot;>18dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="160"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.top_list_item_margin_bottom` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;top_list_item_margin_bottom&quot;>7dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="161"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.top_list_item_radius` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;top_list_item_radius&quot;>5dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="162"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.top_list_item_margin_width` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;top_list_item_margin_width&quot;>24dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="163"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.photo_select_margin_top` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;photo_select_margin_top&quot;>12dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="166"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.photo_select_margin_bottom` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;photo_select_margin_bottom&quot;>12dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="167"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.popup_text_padding` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;popup_text_padding&quot;>4dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="168"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.popup_text_margin` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;popup_text_margin&quot;>12dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="169"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.download_search_bar_height` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;download_search_bar_height&quot;>40dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="171"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.spinner_horizontal_padding` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;spinner_horizontal_padding&quot;>16dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="175"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.spacing` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;spacing&quot;>8dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="177"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.limits_layout_margin_h` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;limits_layout_margin_h&quot;>24dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="180"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.limits_home_item_margin_h` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;limits_home_item_margin_h&quot;>30dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="181"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.limits_layout_margin_v` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;limits_layout_margin_v&quot;>2dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="182"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.limits_layout_padding` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;limits_layout_padding&quot;>12dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="183"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.widget_margin` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;widget_margin&quot;>0dp&lt;/dimen>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="189"
-            column="12"/>
-    </issue>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3832,16 +2952,6 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.plurals.page_count` appears to be unused"
-        errorLine1="    &lt;plurals name=&quot;page_count&quot;>"
-        errorLine2="             ~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="347"
-            column="14"/>
-    </issue>
 
 
 
@@ -3999,16 +3109,6 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.settings_download_image_resolution_auto` appears to be unused"
-        errorLine1="    &lt;string name=&quot;settings_download_image_resolution_auto&quot;>Auto&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="678"
-            column="13"/>
-    </issue>
 
 
 
@@ -4083,27 +3183,7 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.proxy_direct` appears to be unused"
-        errorLine1="    &lt;string name=&quot;proxy_direct&quot;>Direct&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="770"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.proxy_system` appears to be unused"
-        errorLine1="    &lt;string name=&quot;proxy_system&quot;>System Proxy&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="771"
-            column="13"/>
-    </issue>
 
 
 
@@ -4158,82 +3238,12 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.gallery_toplists` appears to be unused"
-        errorLine1="    &lt;string name=&quot;gallery_toplists&quot;>Gallery Toplists&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="909"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.uploader_toplists` appears to be unused"
-        errorLine1="    &lt;string name=&quot;uploader_toplists&quot;>Uploader Toplists&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="910"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.tagging_toplists` appears to be unused"
-        errorLine1="    &lt;string name=&quot;tagging_toplists&quot;>Tagging Toplists&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="911"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.hentai_home_toplists` appears to be unused"
-        errorLine1="    &lt;string name=&quot;hentai_home_toplists&quot;>Hentai@Home Toplists&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="912"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.ehtracker_toplists` appears to be unused"
-        errorLine1="    &lt;string name=&quot;ehtracker_toplists&quot;>EHTracker Toplists&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="913"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.cleanup_toplists` appears to be unused"
-        errorLine1="    &lt;string name=&quot;cleanup_toplists&quot;>Cleanup Toplists&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="914"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.rating_reviewing_toplists` appears to be unused"
-        errorLine1="    &lt;string name=&quot;rating_reviewing_toplists&quot;>Rating&amp;#038;Reviewing Toplists&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="915"
-            column="13"/>
-    </issue>
 
 
 
@@ -4266,38 +3276,8 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.wifi_send_bookmark` appears to be unused"
-        errorLine1="    &lt;string name=&quot;wifi_send_bookmark&quot;>Migrate bookmarks&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="964"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.wifi_send_favorite` appears to be unused"
-        errorLine1="    &lt;string name=&quot;wifi_send_favorite&quot;>Migrate favorite&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="965"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.wifi_send_download` appears to be unused"
-        errorLine1="    &lt;string name=&quot;wifi_send_download&quot;>Migrate download data&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="966"
-            column="13"/>
-    </issue>
 
 
 
@@ -4334,16 +3314,6 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.history_info_unlimited` appears to be unused"
-        errorLine1="    &lt;string name=&quot;history_info_unlimited&quot;>Unlimited&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1010"
-            column="13"/>
-    </issue>
 
 
 
@@ -4361,27 +3331,7 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.sort_by_pub_time` appears to be unused"
-        errorLine1="    &lt;string name=&quot;sort_by_pub_time&quot;>Published Time&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1032"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.sort_by_fav_time` appears to be unused"
-        errorLine1="    &lt;string name=&quot;sort_by_fav_time&quot;>Categorized Time&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1033"
-            column="13"/>
-    </issue>
 
 
 
@@ -4394,172 +3344,22 @@
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.style.ProgressView_Small` appears to be unused"
-        errorLine1="    &lt;style name=&quot;ProgressView.Small&quot;>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/styles.xml"
-            line="35"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.style.ProgressView_Large` appears to be unused"
-        errorLine1="    &lt;style name=&quot;ProgressView.Large&quot;>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/styles.xml"
-            line="40"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.style.TextAppearance_TopListItem` appears to be unused"
-        errorLine1="    &lt;style name=&quot;TextAppearance.TopListItem&quot;>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/styles.xml"
-            line="81"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.style.TopListItem` appears to be unused"
-        errorLine1="    &lt;style name=&quot;TopListItem&quot;>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/styles.xml"
-            line="86"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.style.CardMessageMultipleLines` appears to be unused"
-        errorLine1="    &lt;style name=&quot;CardMessageMultipleLines&quot;>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/styles.xml"
-            line="110"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.style.ButtonInCard_Accent` appears to be unused"
-        errorLine1="    &lt;style name=&quot;ButtonInCard.Accent&quot;>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/styles.xml"
-            line="172"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.style.Slider` appears to be unused"
-        errorLine1="    &lt;style name=&quot;Slider&quot;>"
-        errorLine2="           ~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/styles.xml"
-            line="176"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.style.Slider_Dark` appears to be unused"
-        errorLine1="    &lt;style name=&quot;Slider.Dark&quot;>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/styles.xml"
-            line="185"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.style.Widget_AppTheme_ButtonBar_Fullscreen` appears to be unused"
-        errorLine1="    &lt;style name=&quot;Widget.AppTheme.ButtonBar.Fullscreen&quot; parent=&quot;&quot;>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/styles.xml"
-            line="263"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.style.Widget_Ehviewer_AppWidget_Container` appears to be unused"
-        errorLine1="    &lt;style name=&quot;Widget.Ehviewer.AppWidget.Container&quot; parent=&quot;android:Widget&quot;>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/styles.xml"
-            line="267"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.style.Widget_Ehviewer_AppWidget_InnerView` appears to be unused"
-        errorLine1="    &lt;style name=&quot;Widget.Ehviewer.AppWidget.InnerView&quot; parent=&quot;android:Widget&quot;>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/styles.xml"
-            line="272"
-            column="12"/>
-    </issue>
 
 
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.style.CommentEditText` appears to be unused"
-        errorLine1="    &lt;style name=&quot;CommentEditText&quot; parent=&quot;ThemeOverlay.AppCompat&quot;>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/themes.xml"
-            line="262"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.style.ThemeOverlay_Ehviewer_FullscreenContainer` appears to be unused"
-        errorLine1="    &lt;style name=&quot;ThemeOverlay.Ehviewer.FullscreenContainer&quot; parent=&quot;&quot;>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/themes.xml"
-            line="273"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.style.AppTheme_AppWidgetContainerParent` appears to be unused"
-        errorLine1="    &lt;style name=&quot;AppTheme.AppWidgetContainerParent&quot; parent=&quot;@android:style/Theme.DeviceDefault&quot;>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/themes.xml"
-            line="277"
-            column="12"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.style.AppTheme_AppWidgetContainer` appears to be unused"
-        errorLine1="    &lt;style name=&quot;AppTheme.AppWidgetContainer&quot; parent=&quot;AppTheme.AppWidgetContainerParent&quot;>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/themes.xml"
-            line="287"
-            column="12"/>
-    </issue>
 
 
 

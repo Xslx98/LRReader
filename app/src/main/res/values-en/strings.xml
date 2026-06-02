@@ -19,13 +19,6 @@
 <resources>
 
     <!--  排行榜  -->
-    <string name="gallery_toplists">Gallery Toplists</string>
-    <string name="uploader_toplists">Uploader Toplists</string>
-    <string name="tagging_toplists">tagging Toplists</string>
-    <string name="hentai_home_toplists">Hentai@Home Toplists</string>
-    <string name="ehtracker_toplists">EHTracker Toplists</string>
-    <string name="cleanup_toplists">Cleanup Toplists</string>
-    <string name="rating_reviewing_toplists">Rating&#038;Reviewing Toplists</string>
 
 
     <string name="app_name">LR Reader</string>
@@ -207,10 +200,6 @@
     <string name="error_cannot_find_gallery">Couldn\'t find the gallery</string>
     <string name="download">Download</string>
     <string name="read">Read</string>
-    <plurals name="page_count">
-        <item quantity="one">%d page</item>
-        <item quantity="other">%d pages</item>
-    </plurals>
     <string name="share">Share</string>
     <string name="no_tags">No tags</string>
     <string name="refresh">Refresh</string>
@@ -392,7 +381,6 @@
     <string name="settings_download_network_timeout_never">Never time out</string>
     <string name="settings_download_export_items">Export download items</string>
     <string name="settings_download_import_items">Import download items</string>
-    <string name="settings_download_image_resolution_auto">Auto</string>
     <string name="settings_download_clean_redundancy">Clear download redundancy</string>
     <string name="settings_download_clean_redundancy_summary">Remove gallery images which are not in download list but in download location</string>
     <string name="settings_download_clean_redundancy_no_redundancy">No redundancy</string>
@@ -425,8 +413,6 @@
     <string name="settings_about_license_summary">LR Reader is made possible thanks to many open source projects</string>
     <string name="settings_about_version">Build version</string>
 
-    <string name="proxy_direct">Direct</string>
-    <string name="proxy_system">System Proxy</string>
 
 
     <string name="app_language_system">System Language (Default)</string>
@@ -501,11 +487,8 @@
     <string name="settings_privacy_delete_confirm_countdown_summary_off">The Delete button is tappable immediately. Faster, but easier to delete by mistake.</string>
 
     <string name="download_service">Download Service</string>
-    <string name="history_info_unlimited">Unlimited</string>
     <string name="have_new_version">Click to see new gallery version</string>
     <string name="archiver_downloading">Arc Downloading %s</string>
-    <string name="sort_by_pub_time">Published Time</string>
-    <string name="sort_by_fav_time">Favorited Time</string>
     <!--  订阅服务  -->
     <string name="import_local_archive">Import local archive</string>
     <string name="import_archive_title">Select archive file</string>
@@ -653,9 +636,6 @@
     <string name="spen_next_page">Next page</string>
     <string name="spen_previous_page">Previous page</string>
     <string name="take_a_photograph">Take a photograph</string>
-    <string name="wifi_send_bookmark">Migrate bookmarks</string>
-    <string name="wifi_send_download">Migrate download data</string>
-    <string name="wifi_send_favorite">Migrate favorite</string>
     <string name="yes">Yes</string>
     <string name="lrr_category_label_dynamic">Dynamic</string>
     <string name="lrr_save_and_connect">Save &amp; Connect</string>

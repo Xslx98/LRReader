@@ -182,9 +182,6 @@
     <string name="error_cannot_find_gallery">找不到画廊</string>
     <string name="download">下载</string>
     <string name="read">阅读</string>
-    <plurals name="page_count">
-        <item quantity="other">%d 页</item>
-    </plurals>
     <string name="share">分享</string>
     <string name="no_tags">暂无标签</string>
     <string name="refresh">刷新</string>
@@ -380,7 +377,6 @@
     <string name="settings_download_download_location">下载路径</string>
     <string name="settings_download_invalid_download_location">无效的下载路径</string>
     <string name="settings_download_cant_get_download_location">无法获取下载路径</string>
-    <string name="settings_download_image_resolution_auto">自动</string>
     <string name="settings_download_media_scan">允许媒体扫描</string>
     <string name="settings_download_media_scan_summary_on">请避免他人翻看你的图库应用</string>
     <string name="settings_download_media_scan_summary_off">大多数图库应用将不会显示下载目录中的图片</string>
@@ -433,8 +429,6 @@
 
     <string name="please_wait">请稍候</string>
 
-    <string name="proxy_direct">直接连接</string>
-    <string name="proxy_system">系统代理</string>
 
 
     <string name="app_language_system">系统语言（默认）</string>
@@ -502,13 +496,6 @@
 
 
     <!--  排行榜  -->
-    <string name="gallery_toplists">画廊 排行榜</string>
-    <string name="uploader_toplists">上传 排行榜</string>
-    <string name="tagging_toplists">标签 排行榜</string>
-    <string name="hentai_home_toplists">Hentai@Home 排行榜</string>
-    <string name="ehtracker_toplists">EH订阅 排行榜</string>
-    <string name="cleanup_toplists">整理 排行榜</string>
-    <string name="rating_reviewing_toplists">等级&#038;审核 排行榜</string>
 
 
 
@@ -526,9 +513,6 @@
     <string name="cancel">取消</string>
 
     <!--  wifi server -->
-    <string name="wifi_send_bookmark">迁移书签</string>
-    <string name="wifi_send_favorite">迁移本地分类</string>
-    <string name="wifi_send_download">迁移下载数据</string>
     <!--  wifi server  -->
 
     <!--  limits  -->
@@ -536,11 +520,8 @@
 
     <string name="pagination_count">共</string>
     <string name="pagination_page_and_item">条/页</string>
-    <string name="history_info_unlimited">无限制</string>
     <string name="have_new_version">点击查看新的画廊版本</string>
     <string name="archiver_downloading">档案下载中 %s</string>
-    <string name="sort_by_pub_time">按上传时间</string>
-    <string name="sort_by_fav_time">按分类时间</string>
     <string name="settings_eh_theme_auto_switch">深色跟随系统</string>
 
     <!-- S-Pen Actions(Samsung only) -->

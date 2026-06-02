@@ -140,10 +140,6 @@
     <string name="duplicate_quick_search">Eine Sofortsuche, deren Name ist %s, bereits besteht.</string>
     <string name="duplicate_name">Dieser Name ist bereits besetzt.</string>
     <string name="go_to_hint">Seite %1$d, insgesamt %2$d Seiten</string>
-    <plurals name="page_count">
-        <item quantity="one">%d Seite</item>
-        <item quantity="other">%d Seiten</item>
-    </plurals>
     <string name="star_2">2 Sterne</string>
     <string name="star_3">3 Sterne</string>
     <string name="star_4">4 Sterne</string>
@@ -313,7 +309,6 @@
     <string name="settings_download_network_timeout_15m">15 Minuten</string>
     <string name="settings_download_network_timeout_30m">30 Minuten</string>
     <string name="settings_download_network_timeout_never">Nie</string>
-    <string name="settings_download_image_resolution_auto">Automatisch</string>
     <string name="settings_download_clean_redundancy">Unnötige Dateien löschen</string>
     <string name="settings_download_clean_redundancy_summary">Bilddateien, die sich im Downloadpfad befinden, aber nicht in Downloadliste, löschen</string>
     <string name="settings_download_clean_redundancy_no_redundancy">Keine zu löschenden Dateien gefunden</string>
@@ -389,8 +384,6 @@
     <string name="settings_about_license">Lizenzen</string>
     <string name="settings_about_license_summary">LR Reader wurde dank vieler Open Source-Projekte entwicklt.</string>
     <string name="settings_about_version">Versionnummer</string>
-    <string name="proxy_direct">Direkt</string>
-    <string name="proxy_system">Vom System festgelegt</string>
     <string name="app_language_system">Sprache des Systems (Standard)</string>
     <string name="please_wait">Bitte warte</string>
     <string name="settings_privacy_pattern_protection_title">Sperrmuster</string>
@@ -428,9 +421,6 @@
     <!-- 下载通知   -->
 
     <!--  wifi server -->
-    <string name="wifi_send_bookmark">Lesezeichen migrieren</string>
-    <string name="wifi_send_favorite">Kategorien migrieren</string>
-    <string name="wifi_send_download">Download-Daten migrieren</string>
     <!--  wifi server  -->
 
     <!--  limits  -->
@@ -444,18 +434,8 @@
     <string name="category_all">Alle</string>
 
     <!--  排行榜  -->
-    <string name="gallery_toplists">Galerie Die Charts.</string>
-    <string name="uploader_toplists">Uploader Die Charts.</string>
-    <string name="tagging_toplists">identifizieren Die Charts.</string>
-    <string name="hentai_home_toplists">Hentai@Home Die Charts.</string>
-    <string name="ehtracker_toplists">EHAufspürer Die Charts.</string>
-    <string name="cleanup_toplists">Säuberungsaktion Die Charts.</string>
-    <string name="rating_reviewing_toplists">Bewertung&#038;Nachprüfend Die Charts.</string>
-    <string name="history_info_unlimited">Unbegrenzt</string>
     <string name="have_new_version">Klicken, um neue Galerieversion zu sehen</string>
     <string name="archiver_downloading">Archiv wird heruntergeladen %s</string>
-    <string name="sort_by_pub_time">Veröffentlichungszeit</string>
-    <string name="sort_by_fav_time">Zur Kategorie hinzugefügt am</string>
 
     <!--  订阅服务  -->
     <string name="import_local_archive">Lokales Archiv importieren</string>

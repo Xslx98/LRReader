@@ -272,10 +272,6 @@
     <string name="error_cannot_find_gallery">Couldn\'t find the gallery</string>
     <string name="download">Download</string>
     <string name="read">Read</string>
-    <plurals name="page_count">
-        <item quantity="one">%d page</item>
-        <item quantity="other">%d pages</item>
-    </plurals>
     <string name="share">Share</string>
     <string name="no_tags">No tags</string>
     <string name="refresh">Refresh</string>
@@ -482,7 +478,6 @@
     <string name="settings_download_network_timeout_15m">15 minutes</string>
     <string name="settings_download_network_timeout_30m">30 minutes</string>
     <string name="settings_download_network_timeout_never">Never time out</string>
-    <string name="settings_download_image_resolution_auto">Auto</string>
     <string name="settings_download_clean_redundancy">Clear download redundancy</string>
     <string name="settings_download_clean_redundancy_summary">Remove gallery images which are not in download list but in download location</string>
     <string name="settings_download_clean_redundancy_no_redundancy">No redundancy</string>
@@ -519,8 +514,6 @@
     <string name="settings_about_license_summary">GPLv3 — LR Reader is made possible thanks to many open source projects</string>
     <string name="settings_about_version">Build version</string>
 
-    <string name="proxy_direct">Direct</string>
-    <string name="proxy_system">System Proxy</string>
 
 
     <string name="app_language_system">System Language (Default)</string>
@@ -607,13 +600,6 @@
     <string name="download_service">Download Service</string>
 
     <!--  排行榜  -->
-    <string name="gallery_toplists">Gallery Toplists</string>
-    <string name="uploader_toplists">Uploader Toplists</string>
-    <string name="tagging_toplists">Tagging Toplists</string>
-    <string name="hentai_home_toplists">Hentai@Home Toplists</string>
-    <string name="ehtracker_toplists">EHTracker Toplists</string>
-    <string name="cleanup_toplists">Cleanup Toplists</string>
-    <string name="rating_reviewing_toplists">Rating&#038;Reviewing Toplists</string>
 
 
     <!--  侧滑栏头像和背景修改  -->
@@ -631,9 +617,6 @@
     <string name="cancel">Cancel</string>
 
     <!--  wifi server -->
-    <string name="wifi_send_bookmark">Migrate bookmarks</string>
-    <string name="wifi_send_favorite">Migrate favorite</string>
-    <string name="wifi_send_download">Migrate download data</string>
     <!--  wifi server  -->
 
     <!--  limits  -->
@@ -641,11 +624,8 @@
 
     <string name="pagination_count">count</string>
     <string name="pagination_page_and_item">r/p</string>
-    <string name="history_info_unlimited">Unlimited</string>
     <string name="have_new_version">Click to see new gallery version</string>
     <string name="archiver_downloading">Arc Downloading %s</string>
-    <string name="sort_by_pub_time">Published Time</string>
-    <string name="sort_by_fav_time">Categorized Time</string>
     <string name="settings_eh_theme_auto_switch">Follow system dark mode</string>
 
     <!-- S-Pen Actions(Samsung only) -->

@@ -180,11 +180,6 @@
     <string name="error_cannot_find_gallery">No se encuentra la galería</string>
     <string name="download">Descargar</string>
     <string name="read">Leer</string>
-    <plurals name="page_count">
-        <item quantity="one">%d páginas</item>
-        <item quantity="other">%d páginas</item>
-        <item quantity="many">%d páginas</item>
-    </plurals>
     <string name="share">Compartir</string>
     <string name="no_tags">Sin etiquetas</string>
     <string name="refresh">Actualizar</string>
@@ -360,7 +355,6 @@
     <string name="settings_download_network_timeout_15m">15 minutos</string>
     <string name="settings_download_network_timeout_30m">30 minutos</string>
     <string name="settings_download_network_timeout_never">Nunca</string>
-    <string name="settings_download_image_resolution_auto">Auto</string>
     <string name="settings_download_clean_redundancy">Borrar imágenes sobrantes</string>
     <string name="settings_download_clean_redundancy_summary">Elimina las imágenes almacenadas en la ruta de descarga que no se encuentran en la lista de descarga</string>
     <string name="settings_download_clean_redundancy_no_redundancy">Sin redundancia</string>
@@ -393,8 +387,6 @@
     <string name="settings_about_license_summary">LR Reader es posible gracias a varios proyectos de código abierto</string>
     <string name="settings_about_version">Versión de compilación</string>
 
-    <string name="proxy_direct">Directo</string>
-    <string name="proxy_system">Proxy del sistema</string>
 
     <string name="app_language_system">Lenguaje del sistema (Defecto)</string>
 
@@ -495,24 +487,14 @@
     <string name="settings_eh_theme_black">Negro</string>
 
     <!--  排行榜  -->
-    <string name="gallery_toplists">Listas principales de galerías</string>
-    <string name="uploader_toplists">Listas principales de uploaders</string>
-    <string name="tagging_toplists">Listas principales de etiquetado</string>
-    <string name="hentai_home_toplists">Listas principales de Hentai@Home</string>
-    <string name="ehtracker_toplists">Listas principales de EHTracker</string>
-    <string name="cleanup_toplists">Listas principales de limpieza</string>
-    <string name="rating_reviewing_toplists">Listas principales de valoración y revisión</string>
     <!--  侧滑栏头像和背景修改  -->
     <string name="take_a_photograph">Tomar una fotografía</string>
     <string name="choose_from_the_album">Elegir del álbum</string>
     <string name="request_camera_permission">LR Reader solicitará acceso a la cámara del dispositivo para tomar fotografías. ¿Le gustaría autorizar?</string>
     <string name="request_storage_permission">LR Reader solicitará acceso al álbum de fotos del dispositivo para obtener imágenes. ¿Le gustaría autorizar?</string>
     <!-- 下载通知   -->
-    <string name="history_info_unlimited">Ilimitado</string>
     <string name="have_new_version">Haga clic para ver la nueva versión de la galería</string>
     <string name="archiver_downloading">Descargando archivo %s</string>
-    <string name="sort_by_pub_time">Tiempo de publicación</string>
-    <string name="sort_by_fav_time">Tiempo de favorito</string>
     <string name="settings_eh_theme_auto_switch">Seguir modo oscuro del sistema</string>
     <!-- S-Pen Actions(Samsung only) -->
     <string name="spen_previous_page">Página anterior</string>
@@ -534,9 +516,6 @@
     <string name="pagination_count">contar</string>
     <string name="pagination_page_and_item">r/p</string>
     <!--  wifi server -->
-    <string name="wifi_send_bookmark">Migrar marcadores</string>
-    <string name="wifi_send_favorite">Migrar categorías</string>
-    <string name="wifi_send_download">Migrar datos de descarga</string>
     <!--  wifi server  -->
     <!--  limits  -->
     <string name="yes">Sí</string>
