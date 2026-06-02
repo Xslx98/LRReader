@@ -18,7 +18,6 @@
     <!--  black list  -->
     <string name="settings_advanced_url_replace_title">URL マスカレード、SNI を OFF にする必要があります</string>
     <string name="settings_advanced_url_replace_summary">URL の偽装 (再起動が必要です。開くとアカウント機能が無効になります)</string>
-    <string name="settings_about_donate_guide">サポートガイド</string>
     <string name="network_remind">VPN が有効になっていることが検出されました。ネットワークセキュリティに注意してください</string>
     <!---->
     <string name="app_name">LR Reader</string>
@@ -63,7 +62,6 @@
     <string name="gallery_gl_fallback_message">このデバイスでは現在EGLを初期化できません。戻ってしばらくしてから再試行してください。</string>
     <string name="gallery_gl_fallback_action_close">戻る</string>
     <string name="gallery_gl_fallback_toast">OpenGLが利用できないため、ギャラリーを表示できません</string>
-    <string name="app_waring">このアプリの内容はインターネットから取得したものです。その内容の一部は使用者のお体や心理に傷つける恐れがあります。それでも続行しますか？</string>
     <string name="press_twice_exit">もう一度押して終了します。</string>
     <string name="you_rejected_me">痛い</string>
     <string name="analytics_explain">ご使用のデバイスの情報やこのアプリの利用情報を収集するように同意しますか？収集情報はアプリ向上のために使用されます。&lt;br&gt;&lt;br&gt;データ分析サービスは Google Analytics for Firebase によって提供されます。 &lt;a href=\"https://www.google.com/policies/privacy/\"&gt;https://www.google.com/policies/privacy/&lt;/a&gt;にプライバシーポリシーをご覧ください。&lt;br&gt;&lt;br&gt;アプリ利用情報収集に参加すると、Android API バージョン、デバイスモデル、言語、地域、アプリバージョンや、セッション時間などの情報は収集されます。開発者は、電話番号、電子メールアドレス、IMEI 情報などを記録しないことを保証します。&lt;br&gt;&lt;br&gt;同意しない限り、データは収集されません。&lt;br&gt;&lt;br&gt;送信されたデータは Google Analytics for Firebase で分析され、分析レポートにはこのアプリ開発者しかアクセスできません。</string>
@@ -175,10 +173,8 @@
     <!-- Gallery Info -->
     <string name="copied_to_clipboard">クリップボードにコピーされました。</string>
     <!-- Gallery Comments -->
-    <string name="no_one_comments_gallery">コメントはまだありません。</string>
     <!-- Gallery Previews -->
     <string name="go_to">ページに移動</string>
-    <string name="tag_filter">タグをフィルター</string>
     <!-- Download -->
     <string name="no_download_info">ダウンロードタスクはここに表示されます</string>
     <string name="download_state_none">一時停止中</string>
@@ -251,7 +247,6 @@
     <string name="no_history">閲覧履歴はここに表示されます</string>
     <string name="clear_all">すべて削除</string>
     <string name="clear_all_history">閲覧履歴をすべて削除しますか？</string>
-    <string name="tip">ヒント</string>
     <string name="show_definition">ヘルプを表示</string>
     <!-- Set Security -->
     <string name="set_pattern_protection">パターン保護を設定</string>
@@ -285,7 +280,6 @@
     <string name="share_image">画像を共有</string>
     <string name="image_saved">画像は「%s」に保存されました</string>
     <string name="settings_eh">表示</string>
-    <string name="settings_eh_identity_cookies_tourist">まだログインしていません</string>
     <string name="settings_eh_theme">テーマ</string>
     <string name="settings_eh_theme_light">ライト</string>
     <string name="settings_eh_theme_dark">ダーク</string>
@@ -379,25 +373,11 @@
     <string name="settings_about_author">開発者</string>
     <string name="settings_about_license">オープンソースライセンス</string>
     <string name="settings_about_license_summary">いろんなオープンソースプロジェクトなしで、LR Readerが生まれることはありません</string>
-    <string name="settings_about_donate_message">寄付していただいても追加の機能を解禁したりはありませんが、このアプリの開発を支援できます</string>
-    <string name="settings_about_donate_alipay">AliPay</string>
-    <string name="settings_about_donate_copy">コピー</string>
-    <string name="settings_save_image_aliPay">AliPay の QR コードを保存</string>
-    <string name="settings_save_image_weChat">WeChat の QR コードを保存</string>
     <string name="settings_about_version">バージョン</string>
     <string name="proxy_direct">ダイレクト</string>
     <string name="proxy_system">システムプロキシ</string>
-    <string name="proxy_host_or_ip">ホスト名または IP</string>
-    <string name="proxy_port">ポート</string>
     <string name="app_language_system">システム言語 (デフォルト)</string>
     <!-- ExcludedLanguagesScene -->
-    <string name="select_all">すべて選択</string>
-    <string name="deselect_all">すべてキャンセル</string>
-    <string name="invert_selection">選択を反転</string>
-    <string name="language">言語</string>
-    <string name="original">オリジナル</string>
-    <string name="translated">翻訳</string>
-    <string name="rewrite">書き換え</string>
     <string name="please_wait">お待ちください</string>
     <!-- License -->
     <string name="license">オープンソースライセンス</string>
@@ -472,19 +452,11 @@
     <string name="wifi_send_bookmark">ブックマークを移行</string>
     <string name="wifi_send_favorite">カテゴリを移行</string>
     <string name="wifi_send_download">ダウンロードデータを移行</string>
-    <string name="wifi_send_text">データを送信</string>
-    <string name="wifi_server_illustrate">データを受信するデバイスが、ローカルホットスポットに接続されている事を確認し、移行が完了する前に切断や親ページに戻したりをしないでください！</string>
-    <string name="wifi_server_connect">接続する</string>
     <!--  wifi server  -->
     <!--  limits  -->
     <string name="pagination_count">カウント</string>
     <string name="pagination_page_and_item">r/p</string>
     <string name="history_info_unlimited">無制限</string>
-    <string name="archiver_dialog_current_funds">現在の Funds:</string>
-    <string name="archiver_dialog_cost">ダウンロード費用: %s</string>
-    <string name="archiver_dialog_download_original">オリジナルのアーカイブをダウンロード</string>
-    <string name="archiver_dialog_download_resample">リサンプルアーカイブをダウンロード</string>
-    <string name="archiver_dialog_size">推定サイズ: %s</string>
     <string name="have_new_version">タップで新しいギャラリーのバージョンを表示</string>
     <string name="archiver_downloading">アーカイブをダウンロード中 %s</string>
     <string name="sort_by_pub_time">公開日時</string>

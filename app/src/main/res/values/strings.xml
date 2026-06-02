@@ -18,7 +18,6 @@
     <!--  black list  -->
     <string name="settings_advanced_url_replace_title">URL Masking (requires SNI off)</string>
     <string name="settings_advanced_url_replace_summary">URL masking (requires restart, disables account features)</string>
-    <string name="settings_about_donate_guide">Donation Guide</string>
     <string name="network_remind">VPN detected, please be aware of your network security</string>
     <!--    <string name="network_remind">It has been detected that the vpn is enabled, please pay attention to network security</string>-->
 
@@ -159,7 +158,6 @@
     <string name="gallery_gl_fallback_toast">GL rendering failed, switched to safe fallback page</string>
 
 
-    <string name="app_waring">The content of this application is from the Internet. Some of it may do physical or mental harm to you. You have learnt the risks above and would like to undertake them.</string>
     <string name="press_twice_exit">Press twice to exit</string>
     <string name="you_rejected_me">It hurts</string>
     <string name="analytics_explain">Would you mind if the developer collected your device information and your usage? It will help the developer a lot.&lt;br&gt;&lt;br&gt;Data analysis service is provided by Google Analytics for Firebase. Its privacy policy can be found at &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt;.&lt;br&gt;&lt;br&gt;If you agree to join data analysis, your device information and your usage will be collected, including but not limited to Android API version, equipment model, language residence, the application version, conversion time, function times. The developer promise that these information will NOT be collected, including phone number, e-mail address, IMEI.&lt;br&gt;&lt;br&gt;Your information will not be collected until you agree to join data analysis.&lt;br&gt;&lt;br&gt;The collected information will be analyzed by Google Analytics for Firebase. The analysis report can only be viewed by the developer of this application.</string>
@@ -293,11 +291,9 @@
     <string name="copied_to_clipboard">Copied to clipboard</string>
 
     <!-- Gallery Comments -->
-    <string name="no_one_comments_gallery">No comment.</string>
 
     <!-- Gallery Previews -->
     <string name="go_to">Go to</string>
-    <string name="tag_filter">Filter tag</string>
 
     <!-- Download -->
     <string name="scene_download_title_new">%s(%s)</string>
@@ -375,7 +371,6 @@
     <string name="clear_all">Clear all</string>
     <string name="clear_all_history">Clear all history?</string>
 
-    <string name="tip">Tip</string>
     <string name="show_definition">Show definition</string>
 
     <!-- Set Security -->
@@ -418,7 +413,6 @@
     <string name="settings_eh">Display</string>
 <!--    <string name="settings_eh_lock_cookies_igneous">Lock the Cookie igneous field</string>-->
 <!--    <string name="settings_eh_lock_cookies_igneous_summary">It is not recommended to enable it except in special circumstances.</string>-->
-    <string name="settings_eh_identity_cookies_tourist">Not signed in.</string>
     <string name="settings_eh_theme">Theme</string>
     <string name="settings_eh_theme_light">Light</string>
     <string name="settings_eh_theme_dark">Dark</string>
@@ -523,17 +517,10 @@
     <string name="settings_about_author_summary" translatable="false">Xslx98</string>
     <string name="settings_about_license">License</string>
     <string name="settings_about_license_summary">GPLv3 — LR Reader is made possible thanks to many open source projects</string>
-    <string name="settings_about_donate_message">Your donation can not bring you any privileges. But it helps me maintain this app.</string>
-    <string name="settings_about_donate_alipay">Alipay</string>
-    <string name="settings_about_donate_copy">CopyEmail</string>
-    <string name="settings_save_image_aliPay">Save Alipay QR Code</string>
-    <string name="settings_save_image_weChat">Save WeChat QR Code</string>
     <string name="settings_about_version">Build version</string>
 
     <string name="proxy_direct">Direct</string>
     <string name="proxy_system">System Proxy</string>
-    <string name="proxy_host_or_ip">Host or IP</string>
-    <string name="proxy_port">Port</string>
 
 
     <string name="app_language_system">System Language (Default)</string>
@@ -549,13 +536,6 @@
     <string name="app_language_zh_tw" translatable="false">中文（臺灣）</string>
 
     <!-- ExcludedLanguagesScene -->
-    <string name="select_all">All</string>
-    <string name="deselect_all">None</string>
-    <string name="invert_selection">Invert</string>
-    <string name="language">Language</string>
-    <string name="original">Original</string>
-    <string name="translated">Translated</string>
-    <string name="rewrite">Rewrite</string>
 
     <string name="please_wait">Pleas wait</string>
 
@@ -654,9 +634,6 @@
     <string name="wifi_send_bookmark">Migrate bookmarks</string>
     <string name="wifi_send_favorite">Migrate favorite</string>
     <string name="wifi_send_download">Migrate download data</string>
-    <string name="wifi_send_text">Send Data</string>
-    <string name="wifi_server_illustrate">Please make sure that the mobile phone to receive data is connected to the local hotspot, and do not disconnect or return to the parent page before the migration is complete! </string>
-    <string name="wifi_server_connect">Connect</string>
     <!--  wifi server  -->
 
     <!--  limits  -->
@@ -665,11 +642,6 @@
     <string name="pagination_count">count</string>
     <string name="pagination_page_and_item">r/p</string>
     <string name="history_info_unlimited">Unlimited</string>
-    <string name="archiver_dialog_current_funds">Current Funds:</string>
-    <string name="archiver_dialog_cost">Download Cost:  %s</string>
-    <string name="archiver_dialog_download_original">Download Original Archive</string>
-    <string name="archiver_dialog_download_resample">Download Resample Archive</string>
-    <string name="archiver_dialog_size">Estimated Size:  %s</string>
     <string name="have_new_version">Click to see new gallery version</string>
     <string name="archiver_downloading">Arc Downloading %s</string>
     <string name="sort_by_pub_time">Published Time</string>

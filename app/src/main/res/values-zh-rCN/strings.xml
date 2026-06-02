@@ -71,7 +71,6 @@
     <string name="gallery_gl_fallback_toast">GL 渲染失败，已切换到安全占位页</string>
 
 
-    <string name="app_waring">本应用中内容来自互联网，部分内容可能对您的生理及心理造成难以恢复的伤害。本应用作者不会对由本应用造成的任何后果负责。\n\n未成年人应在监护人指导下使用本应用。</string>
     <string name="press_twice_exit">再按一次退出</string>
     <string name="you_rejected_me">好痛</string>
     <string name="analytics_explain">您同意让开发者收集您的设备信息与使用情况吗？这将对开发有很大帮助。&lt;br&gt;&lt;br&gt;数据统计服务由 Google Analytics for Firebase 提供，其隐私政策可在 &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt; 查看。&lt;br&gt;&lt;br&gt;若您同意参与数据统计，您的设备信息与应用使用情况将会被记录，其包括但不限于：Android API 版本、设备型号、语言所在地、本应用版本号、会话时长、应用功能使用次数。开发者承诺以下信息并不会被记录：电话号码、电子邮件地址、IMEI。&lt;br&gt;&lt;br&gt;在您同意参与数据统计之前，您的信息不会被记录。&lt;br&gt;&lt;br&gt;被记录的数据会由 Google Analytics for Firebase 进行分析，分析报表仅可被本应用开发者访问。</string>
@@ -201,11 +200,9 @@
     <string name="copied_to_clipboard">已复制到剪切板</string>
 
     <!-- Gallery Comments -->
-    <string name="no_one_comments_gallery">暂时没有评论</string>
 
     <!-- Gallery Previews -->
     <string name="go_to">跳页</string>
-    <string name="tag_filter">标签过滤</string>
 
     <!-- Download -->
     <string name="no_download_info">这里是下载项目</string>
@@ -282,7 +279,6 @@
     <string name="clear_all">全部清除</string>
     <string name="clear_all_history">清除所有阅读历史？</string>
 
-    <string name="tip">提示</string>
     <string name="show_definition">查看定义</string>
 
     <!-- Set Security -->
@@ -324,7 +320,6 @@
 
     <!-- Settings -->
     <string name="settings_eh">显示</string>
-    <string name="settings_eh_identity_cookies_tourist">未登录</string>
     <string name="settings_eh_theme">主题</string>
     <string name="settings_eh_theme_light">亮色</string>
     <string name="settings_eh_theme_dark">暗色</string>
@@ -427,10 +422,6 @@
     <string name="settings_about_author">作者</string>
     <string name="settings_about_license">开源许可</string>
     <string name="settings_about_license_summary">LR Reader 的诞生离不开许多开源项目</string>
-    <string name="settings_about_donate_message">你的捐赠不能为你带来特权，但能帮助我继续维护这个应用。</string>
-    <string name="settings_about_donate_alipay">邮箱</string>
-    <string name="settings_about_donate_guide">支持指南</string>
-    <string name="settings_about_donate_copy">复制邮箱</string>
     <string name="settings_about_version">版本号</string>
 
     <!--  black list  -->
@@ -439,20 +430,11 @@
     <string name="network_remind">检测到开启了vpn，请注意您的网络安全</string>
 
     <!-- ExcludedLanguagesScene -->
-    <string name="select_all">全选</string>
-    <string name="deselect_all">全取消</string>
-    <string name="invert_selection">反选</string>
-    <string name="language">语言</string>
-    <string name="original">原作</string>
-    <string name="translated">翻译</string>
-    <string name="rewrite">改写</string>
 
     <string name="please_wait">请稍候</string>
 
     <string name="proxy_direct">直接连接</string>
     <string name="proxy_system">系统代理</string>
-    <string name="proxy_host_or_ip">主机或 IP</string>
-    <string name="proxy_port">端口</string>
 
 
     <string name="app_language_system">系统语言（默认）</string>
@@ -547,9 +529,6 @@
     <string name="wifi_send_bookmark">迁移书签</string>
     <string name="wifi_send_favorite">迁移本地分类</string>
     <string name="wifi_send_download">迁移下载数据</string>
-    <string name="wifi_send_text">发送数据</string>
-    <string name="wifi_server_illustrate">请确保要接收数据的手机链接上本机热点，并且在迁移完成前请勿断开链接或者返回上级页面！ </string>
-    <string name="wifi_server_connect">连接</string>
     <!--  wifi server  -->
 
     <!--  limits  -->
@@ -558,10 +537,6 @@
     <string name="pagination_count">共</string>
     <string name="pagination_page_and_item">条/页</string>
     <string name="history_info_unlimited">无限制</string>
-    <string name="archiver_dialog_current_funds">当前拥有:</string>
-    <string name="archiver_dialog_download_original">下载原始档案</string>
-    <string name="archiver_dialog_download_resample">下载压缩档案</string>
-    <string name="archiver_dialog_size">预计大小:  %s</string>
     <string name="have_new_version">点击查看新的画廊版本</string>
     <string name="archiver_downloading">档案下载中 %s</string>
     <string name="sort_by_pub_time">按上传时间</string>
@@ -672,7 +647,6 @@
 
 
     <!-- Auto-generated missing translations -->
-    <string name="archiver_dialog_cost">下载成本：%s</string>
     <string name="error_status_code_400">错误请求 (400)</string>
     <string name="error_status_code_401">认证失败 (401)</string>
     <string name="error_status_code_402">需要付费 (402)</string>
@@ -717,8 +691,6 @@
     <string name="reset_to_default">恢复默认</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="search_sp_suffix" />
-    <string name="settings_save_image_aliPay">保存支付宝收款码</string>
-    <string name="settings_save_image_weChat">保存微信收款码</string>
     <string name="lrr_category_label_dynamic">动态</string>
     <string name="lrr_loading_categories">加载分类列表...</string>
     <string name="lrr_no_static_categories">没有可用的静态分类</string>
