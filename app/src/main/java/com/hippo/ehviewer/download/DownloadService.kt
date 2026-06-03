@@ -79,10 +79,13 @@ class DownloadService : Service(), DownloadListener {
     private var mLastNotifiedArcid: String? = null
     private var mLastNotifiedFinished: Int = -1
 
-    /** True while a download is paused waiting for the network — suppresses
-     *  speed-tracker-driven onUpdate rebuilds so the "Waiting for network…"
-     *  notification is not clobbered. */
-    private var mPausedForNetwork = false
+    /** Arcids currently paused waiting for the network. While an arcid is in
+     *  this set its own onUpdate rebuilds are suppressed so the "Waiting for
+     *  network…" notification is not clobbered by speed-tracker ticks — but a
+     *  different, still-downloading archive can keep updating the notification
+     *  (a single global flag froze every concurrent download instead). All
+     *  access is on the main thread. */
+    private val mPausedArcids = HashSet<String>()
 
     /**
      * Service-scoped CoroutineScope for background awaits (notably
@@ -393,7 +396,7 @@ class DownloadService : Service(), DownloadListener {
         // the same numeric value).
         mLastNotifiedArcid = null
         mLastNotifiedFinished = -1
-        mPausedForNetwork = false
+        mPausedArcids.remove(info.arcid)
 
         ensureDownloadingBuilder()
 
@@ -422,7 +425,7 @@ class DownloadService : Service(), DownloadListener {
         if (mNotifyManager == null) {
             return
         }
-        if (mPausedForNetwork) return
+        if (info.arcid in mPausedArcids) return
         ensureDownloadingBuilder()
 
         val snap = mDownloadManager?.progressFor(info.arcid)
@@ -476,7 +479,7 @@ class DownloadService : Service(), DownloadListener {
         if (mNotifyManager == null) {
             return
         }
-        mPausedForNetwork = false
+        mPausedArcids.remove(info.arcid)
 
         // The active task is gone; clear the progress-delta gate so the next
         // task's first onUpdate fires unconditionally (see onStart).
@@ -599,7 +602,7 @@ class DownloadService : Service(), DownloadListener {
     override fun onNetworkWait(info: DownloadInfo, waiting: Boolean) {
         if (mNotifyManager == null) return
         if (waiting) {
-            mPausedForNetwork = true
+            mPausedArcids.add(info.arcid)
             ensureDownloadingBuilder()
             val dlBuilder = mDownloadingBuilder ?: return
             dlBuilder.setContentTitle(info.title)
@@ -608,10 +611,10 @@ class DownloadService : Service(), DownloadListener {
                 .setProgress(0, 0, true)
             mDownloadingDelay?.startForeground()
         } else {
-            // Resumed: clear the pause guard and force the next onUpdate to redraw
-            // real progress (it is gated on a finished-count delta which a resume
-            // would otherwise suppress).
-            mPausedForNetwork = false
+            // Resumed: clear this arcid's pause guard and force the next onUpdate
+            // to redraw real progress (it is gated on a finished-count delta
+            // which a resume would otherwise suppress).
+            mPausedArcids.remove(info.arcid)
             mLastNotifiedArcid = null
             mLastNotifiedFinished = -1
         }
