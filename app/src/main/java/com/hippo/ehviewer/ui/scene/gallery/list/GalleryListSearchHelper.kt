@@ -43,7 +43,7 @@ internal class GalleryListSearchHelper(private val callback: Callback) {
     fun onClickLeftIcon() {
         val searchBar = callback.getSearchBar() ?: return
         if (searchBar.getState() == SearchBar.STATE_NORMAL) {
-            callback.toggleDrawer(Gravity.START)
+            callback.toggleDrawer(Gravity.LEFT)
         } else {
             callback.getStateHelper()?.setState(GalleryStateHelper.STATE_NORMAL)
         }

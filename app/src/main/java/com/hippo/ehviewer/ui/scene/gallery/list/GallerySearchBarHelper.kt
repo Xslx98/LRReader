@@ -82,12 +82,12 @@ internal class GallerySearchBarHelper(
 
     @SuppressLint("RtlHardcoded")
     override fun onStartDragHandler() {
-        setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.END)
+        setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)
     }
 
     @SuppressLint("RtlHardcoded")
     override fun onEndDragHandler() {
-        setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.END)
+        setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)
         searchBarMover()?.returnSearchBarPosition()
     }
 
