@@ -199,7 +199,9 @@ internal class DetailActionHandler(
 
     private fun showCategoryDialog(activity: android.app.Activity) {
         val arcid = viewModel.getEffectiveArcid() ?: return
-        CategoryDialogHelper.showCategoryDialog(activity, arcid) { isFavorited, favoriteName ->
+        CategoryDialogHelper.showCategoryDialog(
+            activity, arcid, viewModel.getSourceProfileId()
+        ) { isFavorited, favoriteName ->
             viewModel.updateFavoriteState(FavoriteState(isFavorited, favoriteName))
             onFavoriteChanged?.invoke(arcid)
         }
