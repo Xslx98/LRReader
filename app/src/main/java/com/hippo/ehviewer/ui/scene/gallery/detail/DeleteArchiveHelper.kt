@@ -9,12 +9,14 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.event.AppEventBus
 import com.hippo.ehviewer.event.ArchiveDeletedEvent
 import com.hippo.ehviewer.settings.PrivacySettings
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.api.LRRClientProvider
+import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.client.api.runSuspend
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -36,8 +38,16 @@ object DeleteArchiveHelper {
         fun onDeleteSuccess(title: String)
     }
 
+    /**
+     * @param serverProfileId the source profile that owns [archive], sourced
+     *   from the VM's authoritative `_archive` (Room SSOT), NOT from
+     *   `getEffectiveArchive()`. The delete is routed to that server so a
+     *   cross-server archive is not deleted from the wrong (active) one —
+     *   LANraragi arcids are content-hash based, so the same file can exist
+     *   on multiple servers under the same id.
+     */
     @JvmStatic
-    fun show(activity: Activity?, archive: Archive?, callback: Callback?) {
+    fun show(activity: Activity?, archive: Archive?, serverProfileId: Long, callback: Callback?) {
         if (activity == null || archive == null) return
 
         val title = archive.title.ifEmpty { activity.getString(R.string.lrr_unknown_title) }
@@ -86,7 +96,7 @@ object DeleteArchiveHelper {
             positiveButton.setOnClickListener {
                 countdownTimer?.cancel()
                 dialog.dismiss()
-                performDelete(activity, arcid, title, callback)
+                performDelete(activity, arcid, title, serverProfileId, callback)
             }
         }
 
@@ -98,16 +108,28 @@ object DeleteArchiveHelper {
         dialog.show()
     }
 
-    private fun performDelete(activity: Activity, arcid: String, title: String, callback: Callback?) {
+    private fun performDelete(
+        activity: Activity,
+        arcid: String,
+        title: String,
+        serverProfileId: Long,
+        callback: Callback?,
+    ) {
         if (arcid.isEmpty()) return
 
         val componentActivity = activity as ComponentActivity
         componentActivity.lifecycleScope.launch(Dispatchers.IO) {
             try {
+                // Resolve the owning server from the archive's source profile,
+                // not the active profile (see show()'s serverProfileId doc).
+                val baseUrl = resolveSourceBaseUrl(
+                    serverProfileId,
+                    ServiceRegistry.dataModule.profileLookupCache,
+                )
                 runSuspend {
                     LRRArchiveApi.deleteArchive(
                         LRRClientProvider.getClient(),
-                        LRRClientProvider.getBaseUrl(),
+                        baseUrl,
                         arcid
                     )
                 }

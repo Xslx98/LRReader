@@ -365,7 +365,7 @@ class GalleryDetailViewModel : ViewModel() {
      * keep routing the user back to the wrong server even after the
      * underlying mapper bug was fixed.
      */
-    private fun getSourceProfileId(): Long = _archive.value?.serverProfileId ?: 0L
+    fun getSourceProfileId(): Long = _archive.value?.serverProfileId ?: 0L
 
     /**
      * Resolve the LANraragi base URL that owns this archive. Routes by

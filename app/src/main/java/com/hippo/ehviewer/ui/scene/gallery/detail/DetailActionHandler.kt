@@ -89,7 +89,11 @@ internal class DetailActionHandler(
                     scene.requestRefresh()
                 }
                 R.id.action_lrr_delete -> {
-                    DeleteArchiveHelper.show(scene.activity2, viewModel.getEffectiveArchive()) { title ->
+                    DeleteArchiveHelper.show(
+                        scene.activity2,
+                        viewModel.getEffectiveArchive(),
+                        viewModel.getSourceProfileId(),
+                    ) { title ->
                         scene.showTip(
                             scene.getString(R.string.lrr_delete_success, title),
                             BaseScene.LENGTH_LONG
