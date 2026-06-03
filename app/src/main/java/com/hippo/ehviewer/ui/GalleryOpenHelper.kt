@@ -5,9 +5,11 @@ import android.content.Intent
 import android.util.Log
 import com.hippo.ehviewer.BuildConfig
 import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.gallery.ReaderPageCache
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.spider.SpiderDen
+import com.hippo.lib.yorozuya.StringUtils
 import com.hippo.unifile.UniFile
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.domain.Archive
@@ -161,20 +163,19 @@ object GalleryOpenHelper {
     }
 
     /**
-     * Check if a directory contains at least one image file.
+     * Check if a directory contains at least one image file, matching against
+     * the shared [GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS] whitelist so this
+     * routing check recognises exactly what the reader's dir lister
+     * ([com.hippo.ehviewer.gallery.DirImageFiles]) will enumerate.
      */
     @JvmStatic
     fun hasImageFiles(dir: File): Boolean {
         val files = dir.listFiles() ?: return false
         return files.any { f ->
-            if (f.isFile) {
-                val name = f.name.lowercase()
-                name.endsWith(".jpg") || name.endsWith(".jpeg") ||
-                    name.endsWith(".png") || name.endsWith(".gif") ||
-                    name.endsWith(".webp") || name.endsWith(".bmp")
-            } else {
-                false
-            }
+            f.isFile && StringUtils.endsWith(
+                f.name.lowercase(),
+                GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS
+            )
         }
     }
 }
