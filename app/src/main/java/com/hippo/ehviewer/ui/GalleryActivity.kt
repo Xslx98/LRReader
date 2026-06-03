@@ -486,6 +486,9 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
     override fun onDestroy() {
         mInputHandler.shutdown()
         mSliderController.destroy()
+        // Drop pending posts (queued NotifyTasks + the 300ms onWindowFocusChanged
+        // runnable) so none run against a destroyed Activity/window.
+        mainHandler.removeCallbacksAndMessages(null)
 
         mGLRootView = null
         mGalleryView = null
@@ -497,6 +500,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         }
         mGalleryProvider = null
 
+        mSystemUiHelper = null
         mMaskView = null
         mClock = null
         mProgress = null
