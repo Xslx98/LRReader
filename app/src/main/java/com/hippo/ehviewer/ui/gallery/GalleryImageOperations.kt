@@ -22,6 +22,7 @@ import android.content.Intent
 import android.os.Environment
 import android.provider.MediaStore
 import android.text.TextUtils
+import android.util.Log
 import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.activity.result.ActivityResult
@@ -221,12 +222,16 @@ class GalleryImageOperations(private val mActivity: Activity) {
         var outputStream: java.io.OutputStream? = null
         val resolver = mActivity.contentResolver
 
+        var success = false
         try {
             inputStream = FileInputStream(cacheFile)
             outputStream = resolver.openOutputStream(uri)
-            IOUtils.copy(inputStream, outputStream)
+            if (outputStream != null) {
+                IOUtils.copy(inputStream, outputStream)
+                success = true
+            }
         } catch (e: IOException) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to copy image to chosen location", e)
         } finally {
             IOUtils.closeQuietly(inputStream)
             IOUtils.closeQuietly(outputStream)
@@ -235,6 +240,14 @@ class GalleryImageOperations(private val mActivity: Activity) {
         val deleted = cacheFile.delete()
         if (!deleted) {
             cacheFile.deleteOnExit()
+        }
+
+        // The copy can fail (destination unwritable, out of space, provider
+        // error). Don't claim success / trigger a media scan when nothing was
+        // written — that left users with a "saved" toast over an empty file.
+        if (!success) {
+            Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
+            return
         }
 
         Toast.makeText(
@@ -293,6 +306,8 @@ class GalleryImageOperations(private val mActivity: Activity) {
     }
 
     companion object {
+        private const val TAG = "GalleryImageOperations"
+
         /**
          * Sanitize a string for use as a filename.
          */

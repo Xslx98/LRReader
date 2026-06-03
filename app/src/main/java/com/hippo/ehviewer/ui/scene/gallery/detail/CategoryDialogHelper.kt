@@ -18,6 +18,7 @@ import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.data.LRRCategory
 import com.lanraragi.reader.client.api.friendlyError
+import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.client.api.runSuspend
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -39,17 +40,27 @@ object CategoryDialogHelper {
      * Show the category selection dialog for an [arcid]. Loads categories
      * from the server, presents a checkbox list, and applies changes on
      * confirmation. Useful from any context (detail page, gallery list
-     * long-press, shortcuts) — only the arcid is required.
+     * long-press, shortcuts).
+     *
+     * @param serverProfileId source profile that owns the archive; the dialog
+     *   reads and writes categories on THAT server, not the active one.
+     *   Categories live per-server and arcids are content-hash based, so
+     *   editing via the active server would touch the wrong one for a
+     *   cross-server archive. Pass 0 to fall back to the active profile.
      */
     @JvmStatic
-    fun showCategoryDialog(activity: Activity?, arcid: String?, callback: Callback?) {
+    fun showCategoryDialog(activity: Activity?, arcid: String?, serverProfileId: Long, callback: Callback?) {
         if (activity == null || arcid.isNullOrEmpty()) return
-        val serverUrl = LRRAuthManager.getServerUrl() ?: return
+        if (LRRAuthManager.getServerUrl() == null) return
 
         Toast.makeText(activity, R.string.lrr_loading_categories, Toast.LENGTH_SHORT).show()
 
         (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
             try {
+                val serverUrl = resolveSourceBaseUrl(
+                    serverProfileId,
+                    ServiceRegistry.dataModule.profileLookupCache,
+                )
                 val client = ServiceRegistry.networkModule.okHttpClient
                 val categories = runSuspend {
                     LRRCategoryApi.getCategories(client, serverUrl)

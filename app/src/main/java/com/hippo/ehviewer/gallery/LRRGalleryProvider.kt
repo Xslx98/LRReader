@@ -28,6 +28,7 @@ import java.io.IOException
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.LockSupport
 
@@ -56,6 +57,11 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
 
     // Atomic provider state -- replaces individual @Volatile fields for pagePaths/pageCount/stopped
     private val stateRef = AtomicReference(ProviderState())
+
+    // Monotonic counter for server progress syncs. Each putStartPage() bumps it
+    // and the launched sync skips if a newer write has since been submitted, so
+    // only the latest progress reaches the server.
+    private val progressSyncSeq = AtomicLong(0)
 
     @Volatile
     private var errorMessage: String? = null
@@ -187,6 +193,26 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
                 }
                 stateRef.set(ProviderState(paths = pages, count = pages.size))
                 Log.d(TAG, "Extracted ${pages.size} pages for $arcId")
+
+                // Publish the warm decoded slot for the known local start page
+                // BEFORE notifyDataChanged(), mirroring DirGalleryProvider:
+                // notifyPageSucceed puts the image in the provider ImageCache so
+                // the layout's first bind of the start page is a cache HIT and
+                // never launches a redundant decode whose late delivery would
+                // swap the texture and replay the 300ms fade-in (the open
+                // flicker). The post-reconciliation consume below still covers
+                // the case where server progress resolves to a different page:
+                // consumeDecodedPage is index-matched and leaves a non-matching
+                // slot intact, so at most one of the two consumes hits.
+                val warmStartPage = startPageValue.coerceIn(0, pages.size - 1)
+                val warmedStart = ReaderPageCache.consumeDecodedPage(
+                    arcId, warmStartPage, awaitInflightWarmMs = WARM_AWAIT_MS
+                )
+                if (warmedStart != null) {
+                    Log.i(TAG, "[PROGRESS] decoded slot HIT (pre-notify) for page=$warmStartPage")
+                    notifyPageSucceed(warmStartPage, warmedStart)
+                }
+
                 notifyDataChanged()
 
                 // Resolve reading progress from server metadata (may already be available)
@@ -324,8 +350,17 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
         // Sync progress to LANraragi server (1-indexed). Use the app-wide IO
         // scope: putStartPage may be called during stop()/teardown when the
         // provider scope is already cancelled, and we still want to persist.
+        //
+        // On cold open the GalleryView first lays out the locally-saved page
+        // (firing this for the stale page) and then the reconciliation jump
+        // fires it again for the resolved page. Both syncs run on the unordered
+        // ioScope, so without a guard the stale write could land last and
+        // clobber newer cross-device progress. The monotonic sequence makes a
+        // superseded write skip its server sync (also coalesces rapid paging).
+        val seq = progressSyncSeq.incrementAndGet()
         ServiceRegistry.coroutineModule.ioScope.launch {
             try {
+                if (seq != progressSyncSeq.get()) return@launch
                 val client = ServiceRegistry.networkModule.okHttpClient
                 runSuspend<Unit> {
                     LRRArchiveApi.updateProgress(client, serverUrl, arcId, page + 1)

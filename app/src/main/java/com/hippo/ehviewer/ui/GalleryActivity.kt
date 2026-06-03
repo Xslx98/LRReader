@@ -486,6 +486,9 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
     override fun onDestroy() {
         mInputHandler.shutdown()
         mSliderController.destroy()
+        // Drop pending posts (queued NotifyTasks + the 300ms onWindowFocusChanged
+        // runnable) so none run against a destroyed Activity/window.
+        mainHandler.removeCallbacksAndMessages(null)
 
         mGLRootView = null
         mGalleryView = null
@@ -497,6 +500,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         }
         mGalleryProvider = null
 
+        mSystemUiHelper = null
         mMaskView = null
         mClock = null
         mProgress = null
@@ -520,6 +524,8 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         if (gv != null && provider != null && gv.layoutMode == GalleryView.LAYOUT_TOP_TO_BOTTOM) {
             provider.putScrollFraction(gv.currentScrollFraction)
         }
+        // Suspend auto page-turn while backgrounded; resumed in onResume().
+        mInputHandler.pauseAutoRead()
         mGLRootView?.onPause()
     }
 
@@ -530,6 +536,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         // finishing. Don't touch GL resources on a doomed activity.
         if (isFinishing) return
         mGLRootView?.onResume()
+        mInputHandler.resumeAutoRead()
     }
 
     /**
@@ -596,18 +603,26 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
     // ======== GalleryView.Listener (delegated to helpers) ========
 
     override fun onUpdateCurrentIndex(index: Int) {
-        val provider = mGalleryProvider
-        provider?.putStartPage(index)
-        // Persist intra-page fraction in lockstep with page-index
-        // changes — this is the same cadence the existing local SP
-        // page progress uses, plus an onPause() backstop. Vertical
-        // mode only: pager modes always report 0 and would just
-        // overwrite a saved fraction with 0 every time the user
-        // crossed a page boundary.
-        val gv = mGalleryView
-        if (provider != null && gv != null
-            && gv.layoutMode == GalleryView.LAYOUT_TOP_TO_BOTTOM) {
-            provider.putScrollFraction(gv.currentScrollFraction)
+        // A transient layout with no page on screen reports INVALID_INDEX (-1)
+        // (e.g. right after a data change or an error view). Persisting it would
+        // store a negative page locally and push progress=0 ("unread") to the
+        // server, clobbering real (possibly cross-device) progress. Skip
+        // persistence for it but still forward to the slider below so the UI
+        // tracks the state change.
+        if (index >= 0) {
+            val provider = mGalleryProvider
+            provider?.putStartPage(index)
+            // Persist intra-page fraction in lockstep with page-index
+            // changes — this is the same cadence the existing local SP
+            // page progress uses, plus an onPause() backstop. Vertical
+            // mode only: pager modes always report 0 and would just
+            // overwrite a saved fraction with 0 every time the user
+            // crossed a page boundary.
+            val gv = mGalleryView
+            if (provider != null && gv != null
+                && gv.layoutMode == GalleryView.LAYOUT_TOP_TO_BOTTOM) {
+                provider.putScrollFraction(gv.currentScrollFraction)
+            }
         }
         var task = mNotifyTaskPool.pop()
         if (task == null) {

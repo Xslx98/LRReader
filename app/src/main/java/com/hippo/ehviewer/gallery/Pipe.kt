@@ -37,7 +37,9 @@ internal class Pipe(private val capacity: Int) {
             synchronized(this@Pipe) {
                 val bytes = ByteArray(1)
                 return if (read(bytes, 0, 1) != -1) {
-                    bytes[0].toInt()
+                    // Mask to 0..255 — InputStream.read() must not sign-extend,
+                    // else a legitimate 0xFF data byte reads as -1 (false EOF).
+                    bytes[0].toInt() and 0xFF
                 } else {
                     -1
                 }

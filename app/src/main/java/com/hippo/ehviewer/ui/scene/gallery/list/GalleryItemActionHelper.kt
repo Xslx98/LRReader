@@ -155,7 +155,9 @@ class GalleryItemActionHelper(private val callback: Callback) {
                         }
                     }
                     2 -> { // Categories — open LANraragi category picker
-                        CategoryDialogHelper.showCategoryDialog(activity, gi.arcid, null)
+                        CategoryDialogHelper.showCategoryDialog(
+                            activity, gi.arcid, gi.serverProfileId, null
+                        )
                     }
                 }
             }.show()

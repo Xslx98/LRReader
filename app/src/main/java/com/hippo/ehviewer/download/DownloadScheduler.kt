@@ -376,8 +376,20 @@ internal class DownloadScheduler(
                 }
             }
             is DownloadEvent.OnFinish -> {
-                speedTracker.onFinish()
                 val info = event.taskInfo
+                // A cancelled worker (user pressed stop, or the row was being
+                // deleted) can still post a late onFinish before its coroutine
+                // fully unwinds: cancel() makes awaitAll() throw, the worker
+                // swallows the CancellationException and falls through to its
+                // listener.onFinish(...) call. By the time that event is
+                // dispatched here, stopDownload/deleteDownload has already run
+                // on the main thread — the task is gone from activeTasks (and
+                // its Room row may already be deleted). Ignore the stale event
+                // so it cannot override the NONE state with FAILED, fire a
+                // spurious "download failed" notification, or resurrect a
+                // just-deleted download via persistInfo.
+                if (info !in activeTasks) return
+                speedTracker.onFinish()
                 activeTasks.remove(info)
                 activeWorkers.remove(info)
                 if (activeTasks.isEmpty()) speedTracker.stop()

@@ -307,7 +307,9 @@ class HistoryScene : ToolbarScene(),
             .setItems(items) { _, which ->
                 when (which) {
                     0 -> CommonOperations.startDownload(activity, gi.toArchive(), false)
-                    1 -> CategoryDialogHelper.showCategoryDialog(activity, gi.arcid, null)
+                    1 -> CategoryDialogHelper.showCategoryDialog(
+                        activity, gi.arcid, gi.serverProfileId, null
+                    )
                 }
             }.show()
         return true
