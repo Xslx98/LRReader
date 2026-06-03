@@ -1,0 +1,5 @@
+- Fixed: HEIC/HEIF pages now load and download (they failed before).
+- Fixed: auto page-turn now pauses when the app is backgrounded, instead of turning pages off-screen.
+- Fixed: stopping or deleting a download no longer leaves it "failed" or revives a deleted one.
+- Fixed: Delete and category edits now act on the archive's own server, not the active one.
+- Fixed: gallery list no longer shows duplicate/skipped items; fixed a possible crash in detail view.
