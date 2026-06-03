@@ -193,6 +193,26 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
                 }
                 stateRef.set(ProviderState(paths = pages, count = pages.size))
                 Log.d(TAG, "Extracted ${pages.size} pages for $arcId")
+
+                // Publish the warm decoded slot for the known local start page
+                // BEFORE notifyDataChanged(), mirroring DirGalleryProvider:
+                // notifyPageSucceed puts the image in the provider ImageCache so
+                // the layout's first bind of the start page is a cache HIT and
+                // never launches a redundant decode whose late delivery would
+                // swap the texture and replay the 300ms fade-in (the open
+                // flicker). The post-reconciliation consume below still covers
+                // the case where server progress resolves to a different page:
+                // consumeDecodedPage is index-matched and leaves a non-matching
+                // slot intact, so at most one of the two consumes hits.
+                val warmStartPage = startPageValue.coerceIn(0, pages.size - 1)
+                val warmedStart = ReaderPageCache.consumeDecodedPage(
+                    arcId, warmStartPage, awaitInflightWarmMs = WARM_AWAIT_MS
+                )
+                if (warmedStart != null) {
+                    Log.i(TAG, "[PROGRESS] decoded slot HIT (pre-notify) for page=$warmStartPage")
+                    notifyPageSucceed(warmStartPage, warmedStart)
+                }
+
                 notifyDataChanged()
 
                 // Resolve reading progress from server metadata (may already be available)
