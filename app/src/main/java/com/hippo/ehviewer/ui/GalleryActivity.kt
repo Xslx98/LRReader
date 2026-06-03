@@ -520,6 +520,8 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         if (gv != null && provider != null && gv.layoutMode == GalleryView.LAYOUT_TOP_TO_BOTTOM) {
             provider.putScrollFraction(gv.currentScrollFraction)
         }
+        // Suspend auto page-turn while backgrounded; resumed in onResume().
+        mInputHandler.pauseAutoRead()
         mGLRootView?.onPause()
     }
 
@@ -530,6 +532,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         // finishing. Don't touch GL resources on a doomed activity.
         if (isFinishing) return
         mGLRootView?.onResume()
+        mInputHandler.resumeAutoRead()
     }
 
     /**

@@ -180,28 +180,62 @@ class GalleryInputHandler(private val mCallback: Callback) {
 
         if (!isAutoTransferring) {
             panel.setImageResource(R.drawable.ic_start_play_24)
-            mTransferService?.shutdown()
+            stopAutoReadTimer()
         } else {
             panel.setImageResource(R.drawable.ic_pause_circle)
-            if (mTransferService?.isShutdown == true) {
-                mTransferService = Executors.newSingleThreadScheduledExecutor()
-            }
-            val initialDelay = ReadingSettings.getStartTransferTime().toLong()
-            val waitTime = initialDelay * 2L
-            try {
-                mTransferService?.scheduleWithFixedDelay({
-                    mTransHandle.post {
-                        val gv = galleryView ?: return@post
-                        if (layoutMode == GalleryView.LAYOUT_RIGHT_TO_LEFT) {
-                            gv.pageLeft()
-                        } else {
-                            gv.pageRight()
-                        }
-                    }
-                }, initialDelay, waitTime, TimeUnit.SECONDS)
-            } catch (e: IllegalArgumentException) {
-                Log.d(TAG, "Schedule auto-read timer", e)
-            }
+            startAutoReadTimer()
+        }
+    }
+
+    /** Start (or restart) the periodic auto-read page-turn timer. */
+    private fun startAutoReadTimer() {
+        if (mTransferService?.isShutdown != false) {
+            mTransferService = Executors.newSingleThreadScheduledExecutor()
+        }
+        val initialDelay = ReadingSettings.getStartTransferTime().toLong()
+        val waitTime = initialDelay * 2L
+        try {
+            mTransferService?.scheduleWithFixedDelay({
+                mTransHandle.post {
+                    // The tick may land after the user stopped/paused auto-read
+                    // (toggle off, or onPause shutting the timer down) — bail
+                    // out instead of turning a page on a paused reader.
+                    if (!isAutoTransferring) return@post
+                    val gv = galleryView ?: return@post
+                    pageForward(gv)
+                }
+            }, initialDelay, waitTime, TimeUnit.SECONDS)
+        } catch (e: IllegalArgumentException) {
+            Log.d(TAG, "Schedule auto-read timer", e)
+        }
+    }
+
+    /**
+     * Stop the auto-read timer and drop any page-turn already posted to the
+     * main thread but not yet run, so a turn cannot slip through after a stop.
+     */
+    private fun stopAutoReadTimer() {
+        mTransferService?.shutdown()
+        mTransHandle.removeCallbacksAndMessages(null)
+    }
+
+    /**
+     * Pause auto-read when the reader leaves the foreground
+     * ([android.app.Activity.onPause]) without clearing the user's on/off
+     * intent. Without this the executor keeps firing while backgrounded,
+     * advancing pages off-screen (the GL thread is paused, so the queued
+     * turns all replay at once on return) and burning battery.
+     */
+    fun pauseAutoRead() {
+        if (isAutoTransferring) {
+            stopAutoReadTimer()
+        }
+    }
+
+    /** Resume auto-read on return to the foreground ([android.app.Activity.onResume]) if it was on. */
+    fun resumeAutoRead() {
+        if (isAutoTransferring) {
+            startAutoReadTimer()
         }
     }
 
@@ -214,6 +248,7 @@ class GalleryInputHandler(private val mCallback: Callback) {
 
     /** Shut down the auto-read executor. Call from Activity.onDestroy(). */
     fun shutdown() {
+        mTransHandle.removeCallbacksAndMessages(null)
         mTransferService?.let {
             if (!it.isShutdown) {
                 it.shutdown()
