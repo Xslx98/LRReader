@@ -366,7 +366,6 @@ class DirGalleryProvider : GalleryProvider2 {
 
                 fileList.lazySet(files)
                 sizeValue = files.size
-                notifyDataChanged()
 
                 // Cross-session decoded slot (filled by the detail-page
                 // warmup or the open-helper warm trigger). On a hit we
@@ -377,6 +376,16 @@ class DirGalleryProvider : GalleryProvider2 {
                 // (the openHelper trigger fires ~70-150ms before this
                 // consume call but warm needs ~130ms to complete), a
                 // brief wait turns the otherwise-MISS into a HIT.
+                //
+                // This MUST run before notifyDataChanged(): notifyPageSucceed
+                // synchronously publishes the warm image into the provider's
+                // ImageCache, so the layout's first bind of the start page
+                // (triggered by onDataChanged) is a cache HIT and never calls
+                // onRequest. If we notified data-changed first, the bind would
+                // race ahead, miss the cache, and launch a redundant decode
+                // whose late delivery swaps the page texture and replays the
+                // 300ms fade-in — the visible flicker when opening a
+                // downloaded archive.
                 val targetArcid = arcId
                 if (targetArcid != null) {
                     val warmIndex = startPageValue.coerceIn(0, files.size - 1)
@@ -388,6 +397,8 @@ class DirGalleryProvider : GalleryProvider2 {
                         notifyPageSucceed(warmIndex, warmed)
                     }
                 }
+
+                notifyDataChanged()
 
                 startDecodeWorkers(scope, files.size)
             } finally {

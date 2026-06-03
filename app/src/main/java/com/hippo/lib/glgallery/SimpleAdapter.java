@@ -80,6 +80,16 @@ public class SimpleAdapter extends GalleryView.Adapter implements GalleryProvide
     public void onPageWait(int index) {
         GalleryPageView page = findPageByIndex(index);
         if (page != null) {
+            // Don't tear a page that already shows its image back down to the
+            // white loading spinner. A wait can be re-delivered for a visible,
+            // already-loaded page (cache-eviction re-bind, preload churn, the
+            // recycled-image re-request path) and blanking it to showInfo() was
+            // the visible image -> white -> image flicker. Keep the image up;
+            // if a decode is genuinely in flight, onPageSucceed replaces it in
+            // place when it lands.
+            if (page.isLoaded()) {
+                return;
+            }
             page.showInfo();
             page.setImage(null);
             if (mShowIndex) {
@@ -96,6 +106,11 @@ public class SimpleAdapter extends GalleryView.Adapter implements GalleryProvide
     public void onPagePercent(int index, float percent) {
         GalleryPageView page = findPageByIndex(index);
         if (page != null) {
+            // Same guard as onPageWait: a percent update for an
+            // already-displayed page must not blank it back to the spinner.
+            if (page.isLoaded()) {
+                return;
+            }
             page.showInfo();
             page.setImage(null);
             if (mShowIndex) {

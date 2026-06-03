@@ -52,14 +52,26 @@ abstract class GalleryProvider2 : GalleryProvider() {
     abstract fun save(index: Int, dir: UniFile, filename: String): UniFile?
 
     companion object {
-        // With dot
+        // Single source of truth for "is this a local page file", shared by
+        // routing (GalleryOpenHelper.hasImageFiles), the reader's dir lister
+        // (DirImageFiles) and archive listing (A7ZipArchive). Keep it a subset
+        // of what the download worker writes AND what the system decoder reads
+        // (Image.kt: ImageDecoder/BitmapFactory). Extensions include the dot.
+        //
+        // .jxl is intentionally absent: the platform ships no JPEG XL decoder
+        // at any API level (minSdk 28), so listing it would surface
+        // undecodable pages instead of a clean fallback.
         @JvmField
         val SUPPORT_IMAGE_EXTENSIONS = arrayOf(
             ".jpg",  // Joint Photographic Experts Group
             ".jpeg",
             ".png",  // Portable Network Graphics
             ".gif",  // Graphics Interchange Format
-            ".webp"
+            ".webp",
+            ".bmp",  // Bitmap — decoded on every API level
+            ".avif", // AV1 Image File Format — system decoder on API 31+
+            ".heif", // High Efficiency Image Format — API 28+ (= minSdk)
+            ".heic"  // HEVC-coded HEIF — API 28+ (= minSdk)
         )
 
         /** SharedPreferences name for local reading progress storage. */

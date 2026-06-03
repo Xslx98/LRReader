@@ -365,7 +365,7 @@ class GalleryDetailViewModel : ViewModel() {
      * keep routing the user back to the wrong server even after the
      * underlying mapper bug was fixed.
      */
-    private fun getSourceProfileId(): Long = _archive.value?.serverProfileId ?: 0L
+    fun getSourceProfileId(): Long = _archive.value?.serverProfileId ?: 0L
 
     /**
      * Resolve the LANraragi base URL that owns this archive. Routes by
@@ -598,7 +598,14 @@ class GalleryDetailViewModel : ViewModel() {
      */
     fun recordHistory(archive: Archive) {
         viewModelScope.launch(Dispatchers.IO) {
-            ServiceRegistry.dataModule.historyRepository.putHistoryInfo(archive)
+            // viewModelScope has no CoroutineExceptionHandler, so an
+            // unguarded Room failure here (constraint, disk full, locked DB)
+            // would crash the app during normal browsing. Swallow + log.
+            try {
+                ServiceRegistry.dataModule.historyRepository.putHistoryInfo(archive)
+            } catch (e: Exception) {
+                android.util.Log.e(TAG, "Failed to record history", e)
+            }
         }
     }
 
@@ -607,7 +614,11 @@ class GalleryDetailViewModel : ViewModel() {
      */
     fun persistDownloadInfo(info: DownloadInfo) {
         viewModelScope.launch(Dispatchers.IO) {
-            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
+            try {
+                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
+            } catch (e: Exception) {
+                android.util.Log.e(TAG, "Failed to persist download info", e)
+            }
         }
     }
 

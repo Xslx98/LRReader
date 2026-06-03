@@ -3,8 +3,13 @@ package com.hippo.ehviewer.ui
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.hippo.ehviewer.BuildConfig
+import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.gallery.ReaderPageCache
+import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.spider.SpiderDen
+import com.hippo.lib.yorozuya.StringUtils
 import com.hippo.unifile.UniFile
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.domain.Archive
@@ -39,9 +44,11 @@ object GalleryOpenHelper {
     ): Intent {
         val intent = Intent(context, GalleryActivity::class.java)
 
-        // Check if local downloaded files exist
+        // Check if local downloaded files exist. getLocalDownloadDir only
+        // returns a directory that actually contains page images, so no
+        // separate hasImageFiles re-check is needed here.
         val downloadDir = getLocalDownloadDir(context, archive)
-        if (downloadDir != null && hasImageFiles(downloadDir)) {
+        if (downloadDir != null) {
             // Local files available — read offline (instant)
             intent.action = GalleryActivity.ACTION_DIR
             intent.putExtra(GalleryActivity.KEY_FILENAME, downloadDir.absolutePath)
@@ -87,44 +94,88 @@ object GalleryOpenHelper {
     }
 
     /**
-     * Get the local download directory for a gallery, if it exists.
-     * Uses SpiderDen.getGalleryDownloadDir() for consistency with LRRDownloadWorker.
+     * Resolve the local download directory for an archive, or null if the
+     * archive isn't readable offline. A non-null result is guaranteed to be
+     * an existing `file://` directory that actually contains page images, so
+     * callers can route straight to [GalleryActivity.ACTION_DIR].
+     *
+     * Resolution is layered so a stale persisted pointer can't silently send
+     * a fully-downloaded archive to network streaming (the bug this guards):
+     *  1. Primary — [SpiderDen.getGalleryDownloadDir] maps arcid → the DB
+     *     `dirname` under the recorded root. Fast path; hits for almost every
+     *     archive.
+     *  2. Recovery — when the primary path is missing or empty, re-find the
+     *     folder by its `arcid-` prefix under the current download root (the
+     *     same naming [SpiderDen] creates) and repair the DB pointer so the
+     *     primary path succeeds next time. Covers a dirname that drifted from
+     *     the real folder (sanitisation change, title edit, aborted move,
+     *     legacy row).
+     *  3. Legacy — the pre-W34 app-private, title-named folder.
      */
     @JvmStatic
     suspend fun getLocalDownloadDir(context: Context, archive: Archive): File? {
-        val uniDir = SpiderDen.getGalleryDownloadDir(archive.arcid, archive.title)
-        if (uniDir != null) {
-            val uri = uniDir.uri
-            if ("file" == uri.scheme) {
-                val dir = File(uri.path ?: return null)
-                if (dir.isDirectory) {
-                    return dir
+        // 1. Primary resolution.
+        fileDirFromUni(SpiderDen.getGalleryDownloadDir(archive.arcid, archive.title))
+            ?.let { primary -> if (hasImageFiles(primary)) return primary }
+
+        // 2. Defensive recovery by arcid prefix under the current root.
+        fileDirFromUni(DownloadSettings.getDownloadLocation())?.let { root ->
+            val recovered = root.listFiles()?.firstOrNull { f ->
+                f.isDirectory && f.name.startsWith("${archive.arcid}-") && hasImageFiles(f)
+            }
+            if (recovered != null) {
+                if (BuildConfig.DEBUG) {
+                    Log.w(
+                        TAG,
+                        "[DIR-RESCUE] primary resolution missed arcid=${archive.arcid}; " +
+                            "recovered '${recovered.name}' by prefix scan"
+                    )
                 }
+                // Self-heal the DB pointer so the fast path hits next time
+                // (and so the download worker doesn't orphan into a new dir).
+                runCatching {
+                    ServiceRegistry.dataModule.downloadDbRepository
+                        .putDownloadDirname(archive.arcid, recovered.name)
+                }
+                return recovered
             }
         }
-        // Fallback: check old app-private path for backwards compatibility
+
+        // 3. Legacy app-private fallback.
         val title = archive.title.takeIf { it.isNotEmpty() } ?: return null
         val baseDir = File(context.getExternalFilesDir(null), "download")
         val dirName = title.replace("[\\\\/:*?\"<>|]".toRegex(), "_").trim()
         val oldDir = File(baseDir, dirName)
-        return if (oldDir.isDirectory) oldDir else null
+        return if (oldDir.isDirectory && hasImageFiles(oldDir)) oldDir else null
     }
 
     /**
-     * Check if a directory contains at least one image file.
+     * Map a [UniFile] to a [File] only when it is a `file://` directory.
+     * Returns null for content:// (SAF) trees — those can't be handed to
+     * [GalleryActivity.ACTION_DIR], which expects a filesystem path — and for
+     * non-existent paths.
+     */
+    private fun fileDirFromUni(uni: UniFile?): File? {
+        val uri = uni?.uri ?: return null
+        if ("file" != uri.scheme) return null
+        val dir = File(uri.path ?: return null)
+        return if (dir.isDirectory) dir else null
+    }
+
+    /**
+     * Check if a directory contains at least one image file, matching against
+     * the shared [GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS] whitelist so this
+     * routing check recognises exactly what the reader's dir lister
+     * ([com.hippo.ehviewer.gallery.DirImageFiles]) will enumerate.
      */
     @JvmStatic
     fun hasImageFiles(dir: File): Boolean {
         val files = dir.listFiles() ?: return false
         return files.any { f ->
-            if (f.isFile) {
-                val name = f.name.lowercase()
-                name.endsWith(".jpg") || name.endsWith(".jpeg") ||
-                    name.endsWith(".png") || name.endsWith(".gif") ||
-                    name.endsWith(".webp") || name.endsWith(".bmp")
-            } else {
-                false
-            }
+            f.isFile && StringUtils.endsWith(
+                f.name.lowercase(),
+                GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS
+            )
         }
     }
 }

@@ -209,7 +209,9 @@ class DownloadManager(
             repo.allInfoMap[archive.arcid] = info
             scheduler.waitList.add(info)
             repo.persistInfo(info)
-            eventBus.forEachListener { it.onAdd(info, list, list.size - 1) }
+            // Inserted at index 0 (newest-first) above, so the listener
+            // position is 0 — not list.size - 1, which pointed at the wrong row.
+            eventBus.forEachListener { it.onAdd(info, list, 0) }
             scheduler.ensureDownload()
             repo.persistHistory(info)
         }
@@ -290,7 +292,9 @@ class DownloadManager(
     fun addDownload(archive: Archive, label: String?, state: DownloadState) {
         repo.assertMainThread()
         val result = repo.addSingleDownload(archive, label, state) ?: return
-        eventBus.forEachListener { it.onAdd(result.first, result.second, result.second.size - 1) }
+        // addSingleDownload inserts at index 0 (newest-first); report that
+        // position instead of size - 1.
+        eventBus.forEachListener { it.onAdd(result.first, result.second, 0) }
     }
 
     fun addDownload(archive: Archive, label: String?) { addDownload(archive, label, DownloadState.NONE) }
@@ -334,6 +338,9 @@ class DownloadManager(
     fun deleteDownload(arcid: String) {
         repo.assertMainThread()
         scheduler.stopDownload(arcid)
+        // scheduler.stopDownload only clears the resume banner for active/waiting
+        // tasks; a timed-out (FAILED) download is neither, so clear it here too.
+        DownloadResumeBanner.markResumed(arcid)
         val result = repo.deleteInfo(arcid) ?: return
         val (info, list, index) = result
         if (index >= 0) eventBus.forEachListener { it.onRemove(info, list, index) }
@@ -344,6 +351,7 @@ class DownloadManager(
         repo.assertMainThread()
         scheduler.stopRangeDownload(arcidList)
         repo.deleteInfoRange(arcidList.toHashSet())
+        arcidList.forEach { DownloadResumeBanner.markResumed(it) }
         eventBus.forEachListener { it.onReload() }
         scheduler.ensureDownload()
     }

@@ -168,6 +168,14 @@ class ServerListViewModel : ViewModel() {
         newUrl: String,
         newKey: String
     ) {
+        // Snapshot the active credentials. connectWithFallback writes the URL
+        // under test into the global active config, and we set the active key
+        // below, both purely to drive the authenticated test request. If the
+        // edited profile is NOT the active one (or the test fails), restore the
+        // active config so editing profile B can't repoint active profile A at
+        // B's server/key.
+        val oldUrl: String? = LRRAuthManager.getServerUrl()
+        val oldKey: String? = LRRAuthManager.getApiKey()
         try {
             LRRAuthManager.setApiKey(newKey.ifEmpty { null })
         } catch (e: LRRSecureStorageUnavailableException) {
@@ -188,16 +196,38 @@ class ServerListViewModel : ViewModel() {
                         info: LRRServerInfo,
                         usedHttpFallback: Boolean
                     ) {
+                        // saveEditedProfile re-applies the active config only when
+                        // the edited profile is active; for a non-active edit,
+                        // restore what the test clobbered.
+                        if (!profile.isActive) {
+                            restoreActiveAuth(oldUrl, oldKey)
+                        }
                         saveEditedProfile(profile, position, newName, resolvedUrl, newKey, usedHttpFallback)
                     }
 
                     override fun onFailure(error: Exception) {
+                        restoreActiveAuth(oldUrl, oldKey)
                         _uiEvent.tryEmit(
                             ServerListUiEvent.EditConnectionFailed(error.message ?: "Unknown error")
                         )
                     }
                 }
             )
+        }
+    }
+
+    /**
+     * Restore the global active server URL + API key after a connection test
+     * that mutated them as a side effect. Secure-storage failures are logged
+     * and swallowed — losing the restore is non-fatal (the next profile switch
+     * rewrites the active config).
+     */
+    private fun restoreActiveAuth(url: String?, key: String?) {
+        try {
+            if (url != null) LRRAuthManager.setServerUrl(url)
+            LRRAuthManager.setApiKey(key)
+        } catch (e: LRRSecureStorageUnavailableException) {
+            Log.w(TAG, "Failed to restore active auth after connection test", e)
         }
     }
 
