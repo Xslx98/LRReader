@@ -85,7 +85,14 @@ class NetworkModule(private val context: Context) : INetworkModule, Cacheable {
                 }
             }
             .proxySelector(proxySelector)
-            .addInterceptor(com.lanraragi.reader.client.api.LRRCleartextRejectionInterceptor())
+            // Cleartext gate must be a NETWORK interceptor, not an application
+            // one: with followRedirects(true) an HTTPS→HTTP redirect is a new
+            // hop that an application interceptor (runs once, on the original
+            // request) never sees, silently downgrading a cleartext-disabled
+            // profile to plain HTTP. A network interceptor re-evaluates every
+            // hop. Placed before the auth interceptor so a rejected hop never
+            // gets an API key attached.
+            .addNetworkInterceptor(com.lanraragi.reader.client.api.LRRCleartextRejectionInterceptor())
             .addNetworkInterceptor(com.lanraragi.reader.client.api.LRRAuthInterceptor())
             .build()
     }
