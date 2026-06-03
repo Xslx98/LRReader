@@ -169,7 +169,7 @@ class DownloadLabelDraw(
             } else {
                 callback.updateView()
             }
-            callback.closeDrawer(Gravity.END)
+            callback.closeDrawer(Gravity.RIGHT)
         }
     }
 }

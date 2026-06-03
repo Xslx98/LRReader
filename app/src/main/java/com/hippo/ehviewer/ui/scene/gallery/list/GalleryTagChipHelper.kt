@@ -156,7 +156,7 @@ class GalleryTagChipHelper(private val callback: Callback) {
 
     fun onTagClick(tagName: String) {
         if (callback.isDrawersVisible()) {
-            callback.closeDrawer(Gravity.END)
+            callback.closeDrawer(Gravity.RIGHT)
         }
         val helper = callback.getContentHelper()
         val urlBuilder = callback.getUrlBuilder()

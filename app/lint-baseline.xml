@@ -4397,6 +4397,226 @@
 
     <issue
         id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="                    scene.closeDrawer(Gravity.RIGHT)"
+        errorLine2="                                              ~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/BookmarksDraw.kt"
+            line="96"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="                    scene.openDrawer(Gravity.RIGHT)"
+        errorLine2="                                             ~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadGuideHelper.kt"
+            line="143"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="                scene.closeDrawer(Gravity.RIGHT)"
+        errorLine2="                                          ~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadLabelDraw.kt"
+            line="109"
+            column="43"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="                scene.closeDrawer(Gravity.RIGHT)"
+        errorLine2="                                          ~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadLabelDraw.kt"
+            line="158"
+            column="43"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="        setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)"
+        errorLine2="                                                                        ~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadsScene.kt"
+            line="650"
+            column="73"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)"
+        errorLine2="                                                                       ~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadsScene.kt"
+            line="656"
+            column="72"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)"
+        errorLine2="                                                                            ~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadsScene.kt"
+            line="910"
+            column="77"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)"
+        errorLine2="                                                                            ~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadsScene.kt"
+            line="911"
+            column="77"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.LEFT)"
+        errorLine2="                                                                       ~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadsScene.kt"
+            line="918"
+            column="72"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)"
+        errorLine2="                                                                       ~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadsScene.kt"
+            line="919"
+            column="72"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.toggleDrawer(Gravity.LEFT)"
+        errorLine2="                                          ~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryListSearchHelper.kt"
+            line="46"
+            column="43"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(LOCK_MODE_UNLOCKED, Gravity.LEFT)"
+        errorLine2="                                                                   ~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryStateHelper.kt"
+            line="277"
+            column="68"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(LOCK_MODE_UNLOCKED, Gravity.RIGHT)"
+        errorLine2="                                                                   ~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryStateHelper.kt"
+            line="278"
+            column="68"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)"
+        errorLine2="                                                                        ~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryStateHelper.kt"
+            line="280"
+            column="73"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)"
+        errorLine2="                                                                        ~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryStateHelper.kt"
+            line="281"
+            column="73"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)"
+        errorLine2="                                                                        ~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryStateHelper.kt"
+            line="292"
+            column="73"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)"
+        errorLine2="                                                                        ~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryStateHelper.kt"
+            line="293"
+            column="73"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(LOCK_MODE_UNLOCKED, Gravity.LEFT)"
+        errorLine2="                                                                   ~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryStateHelper.kt"
+            line="296"
+            column="68"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(LOCK_MODE_UNLOCKED, Gravity.RIGHT)"
+        errorLine2="                                                                   ~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryStateHelper.kt"
+            line="297"
+            column="68"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.closeDrawer(Gravity.RIGHT)"
+        errorLine2="                                         ~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryTagChipHelper.kt"
+            line="157"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
         message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
         errorLine1="        mPopup.showAtLocation(this, Gravity.TOP | Gravity.LEFT, mPopupX, mPopupY);"
         errorLine2="                                                          ~~~~">

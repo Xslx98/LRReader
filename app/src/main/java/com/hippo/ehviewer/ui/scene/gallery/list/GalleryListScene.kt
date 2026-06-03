@@ -540,7 +540,7 @@ class GalleryListScene : BaseScene(),
                     mShowcaseView = null
                     ViewUtils.removeFromParent(showcaseView)
                     GuideSettings.putGuideQuickSearch(false)
-                    openDrawer(Gravity.END)
+                    openDrawer(Gravity.RIGHT)
                 }
             }).build()
     }
