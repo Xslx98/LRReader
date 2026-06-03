@@ -50,6 +50,19 @@ object ReaderPageCache : Cacheable {
     private const val DETAIL_PRELOAD_RADIUS = 1 // Pages before and after the progress page
 
     /**
+     * Major brands of ISO-BMFF image containers the platform decoder can read:
+     * AVIF (API 31+) plus HEIF/HEIC (API 28+ = minSdk). All share the "ftyp"
+     * box at bytes 4-7 with a 4-char brand at bytes 8-11. Kept in sync with
+     * [GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS] (.avif/.heif/.heic) and the
+     * download worker's copy in [com.hippo.ehviewer.download.LRRDownloadWorker].
+     */
+    private val ISO_BMFF_IMAGE_BRANDS = setOf(
+        "avif", "avis", // AV1 Image File Format (still / sequence)
+        "heic", "heix", "hevc", "hevx", "heim", "heis", "hevm", "hevs", // HEVC-coded
+        "mif1", "msf1", // generic HEIF (image / sequence)
+    )
+
+    /**
      * TTL for the decoded-page slot. Long enough to bridge a typical
      * "tap read → reader Activity visible" transition; short enough
      * that a user who backs out of the detail page doesn't leave a
@@ -129,12 +142,14 @@ object ReaderPageCache : Cacheable {
                 // BMP: 42 4D
                 if (header[0] == 0x42.toByte() && header[1] == 0x4D.toByte()) return true
 
-                // AVIF: ....ftypavif
+                // ISO-BMFF (AVIF / HEIF / HEIC): "ftyp" at bytes 4-7, 4-char
+                // major brand at bytes 8-11. Accept any brand the platform
+                // decoder can read so HEIC/HEIF pages — listed as supported
+                // page files — are not rejected as "not an image".
                 if (read >= 12 &&
                     header[4] == 'f'.code.toByte() && header[5] == 't'.code.toByte() &&
                     header[6] == 'y'.code.toByte() && header[7] == 'p'.code.toByte() &&
-                    header[8] == 'a'.code.toByte() && header[9] == 'v'.code.toByte() &&
-                    header[10] == 'i'.code.toByte() && header[11] == 'f'.code.toByte()
+                    String(header, 8, 4, Charsets.US_ASCII) in ISO_BMFF_IMAGE_BRANDS
                 ) return true
 
                 // JXL naked codestream: FF 0A

@@ -506,6 +506,20 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         private const val HEADER_PEEK_BYTES = 16
 
         /**
+         * Major brands of ISO-BMFF image containers the platform decoder can
+         * read: AVIF (API 31+) plus HEIF/HEIC (API 28+ = minSdk). All share the
+         * "ftyp" box at bytes 4-7 with a 4-char brand at bytes 8-11. Kept in sync
+         * with [com.hippo.ehviewer.gallery.GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS]
+         * (.avif/.heif/.heic) and the reader's copy in
+         * [com.hippo.ehviewer.gallery.ReaderPageCache].
+         */
+        private val ISO_BMFF_IMAGE_BRANDS = setOf(
+            "avif", "avis", // AV1 Image File Format (still / sequence)
+            "heic", "heix", "hevc", "hevx", "heim", "heis", "hevm", "hevs", // HEVC-coded
+            "mif1", "msf1", // generic HEIF (image / sequence)
+        )
+
+        /**
          * Pure header-byte image format check. Used both by
          * [validateImageFile] (on-disk, for resume) and by [downloadPage]
          * (in-stream, after peeking the HTTP response).
@@ -535,11 +549,12 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                     && header[10] == 'B'.code.toByte() && header[11] == 'P'.code.toByte() -> true
                 // BMP: 42 4D
                 header[0] == 0x42.toByte() && header[1] == 0x4D.toByte() -> true
-                // AVIF: ....ftypavif
+                // ISO-BMFF (AVIF / HEIF / HEIC): "ftyp" at bytes 4-7, 4-char
+                // major brand at bytes 8-11. Accept any brand the platform
+                // decoder can read so HEIC/HEIF pages download successfully.
                 read >= 12 && header[4] == 'f'.code.toByte() && header[5] == 't'.code.toByte()
                     && header[6] == 'y'.code.toByte() && header[7] == 'p'.code.toByte()
-                    && header[8] == 'a'.code.toByte() && header[9] == 'v'.code.toByte()
-                    && header[10] == 'i'.code.toByte() && header[11] == 'f'.code.toByte() -> true
+                    && String(header, 8, 4, Charsets.US_ASCII) in ISO_BMFF_IMAGE_BRANDS -> true
                 // JXL naked codestream: FF 0A
                 header[0] == 0xFF.toByte() && header[1] == 0x0A.toByte() -> true
                 // JXL ISOBMFF container: 00 00 00 0C 4A 58 4C 20 0D 0A 87 0A
