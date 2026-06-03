@@ -3,6 +3,7 @@ package com.lanraragi.reader.client.api
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.lanraragi.reader.domain.Archive
+import kotlinx.coroutines.CancellationException
 import okhttp3.OkHttpClient
 
 /**
@@ -51,6 +52,11 @@ class LRRArchivePagingSource(
                 prevKey = if (page > 0) page - 1 else null,
                 nextKey = if (items.size >= params.loadSize) page + 1 else null
             )
+        } catch (e: CancellationException) {
+            // A superseded search (flatMapLatest) or a torn-down Scene cancels
+            // the load. Let Paging observe the cancellation instead of turning
+            // it into a spurious LoadResult.Error that flashes a retry/error UI.
+            throw e
         } catch (e: Exception) {
             LoadResult.Error(e)
         }
