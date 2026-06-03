@@ -334,6 +334,9 @@ class DownloadManager(
     fun deleteDownload(arcid: String) {
         repo.assertMainThread()
         scheduler.stopDownload(arcid)
+        // scheduler.stopDownload only clears the resume banner for active/waiting
+        // tasks; a timed-out (FAILED) download is neither, so clear it here too.
+        DownloadResumeBanner.markResumed(arcid)
         val result = repo.deleteInfo(arcid) ?: return
         val (info, list, index) = result
         if (index >= 0) eventBus.forEachListener { it.onRemove(info, list, index) }
@@ -344,6 +347,7 @@ class DownloadManager(
         repo.assertMainThread()
         scheduler.stopRangeDownload(arcidList)
         repo.deleteInfoRange(arcidList.toHashSet())
+        arcidList.forEach { DownloadResumeBanner.markResumed(it) }
         eventBus.forEachListener { it.onReload() }
         scheduler.ensureDownload()
     }

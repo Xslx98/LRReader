@@ -30,6 +30,11 @@ object DownloadResumeBanner {
     @Synchronized
     fun markResumed(arcid: String) {
         paused.remove(arcid)
+        // Also drop any timed-out entry: this is the "clear the banner for this
+        // arcid" call used by network-resume AND by stop/delete paths. Without
+        // clearing timedOut too, deleting a download that already gave up left a
+        // ghost "N downloads timed out" Snackbar on the next foreground.
+        timedOut.remove(arcid)
     }
 
     @Synchronized
