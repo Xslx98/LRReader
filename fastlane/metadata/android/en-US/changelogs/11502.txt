@@ -1,0 +1,2 @@
+- Fixed: the app could crash on launch right after updating to 1.15.1. This hotfix resolves it.
+- If your app keeps crashing after the 1.15.1 update, reinstall this version manually (in-app update can't recover a crash-on-launch).
