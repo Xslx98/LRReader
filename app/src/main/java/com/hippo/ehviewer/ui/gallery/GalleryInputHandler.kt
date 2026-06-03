@@ -58,22 +58,20 @@ class GalleryInputHandler(private val mCallback: Callback) {
      */
     fun handleKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         val galleryView = galleryView ?: return false
-        val unReverse = !ReadingSettings.getReverseVolumePage()
         // Volume keys
         if (ReadingSettings.getVolumePage()) {
+            val reverse = ReadingSettings.getReverseVolumePage()
             if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
-                if (layoutMode == GalleryView.LAYOUT_RIGHT_TO_LEFT && unReverse) {
-                    galleryView.pageRight()
-                } else {
-                    galleryView.pageLeft()
-                }
+                // Default: volume-up = previous page; reversed: next page.
+                // Resolve forward/back first, then map to the reading
+                // direction — the previous code only consulted the reverse
+                // flag in right-to-left mode, so toggling it did nothing in
+                // left-to-right or vertical reading.
+                if (reverse) pageForward(galleryView) else pageBackward(galleryView)
                 return true
             } else if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-                if (layoutMode == GalleryView.LAYOUT_RIGHT_TO_LEFT && unReverse) {
-                    galleryView.pageLeft()
-                } else {
-                    galleryView.pageRight()
-                }
+                // Default: volume-down = next page; reversed: previous page.
+                if (reverse) pageBackward(galleryView) else pageForward(galleryView)
                 return true
             }
         }
@@ -161,6 +159,16 @@ class GalleryInputHandler(private val mCallback: Callback) {
             }
         }
         return false
+    }
+
+    /** Advance one page in the reading direction (RTL: left, otherwise: right). */
+    private fun pageForward(gv: GalleryView) {
+        if (layoutMode == GalleryView.LAYOUT_RIGHT_TO_LEFT) gv.pageLeft() else gv.pageRight()
+    }
+
+    /** Go back one page in the reading direction (RTL: right, otherwise: left). */
+    private fun pageBackward(gv: GalleryView) {
+        if (layoutMode == GalleryView.LAYOUT_RIGHT_TO_LEFT) gv.pageRight() else gv.pageLeft()
     }
 
     /**
