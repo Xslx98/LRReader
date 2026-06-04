@@ -28,6 +28,7 @@ import kotlinx.coroutines.withContext
 import com.hippo.ehviewer.ui.dialog.SelectItemWithIconAdapter
 import com.hippo.ehviewer.ui.scene.download.DownloadLabelHelper
 import com.hippo.ehviewer.ui.scene.gallery.detail.CategoryDialogHelper
+import com.hippo.ehviewer.ui.scene.gallery.detail.DeleteArchiveHelper
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.scene.Announcer
 import com.hippo.scene.SceneFragment
@@ -102,12 +103,14 @@ class GalleryItemActionHelper(private val callback: Callback) {
             context.getString(R.string.read),
             context.getString(if (downloaded) R.string.delete_downloads else R.string.download),
             context.getString(R.string.lrr_menu_categories),
+            context.getString(R.string.lrr_delete_confirm_title),
         )
 
         val icons = intArrayOf(
             R.drawable.v_book_open_x24,
             if (downloaded) R.drawable.v_delete_x24 else R.drawable.v_download_x24,
             R.drawable.v_heart_x24,
+            R.drawable.v_delete_x24,
         )
 
         @SuppressLint("InflateParams")
@@ -158,6 +161,15 @@ class GalleryItemActionHelper(private val callback: Callback) {
                         CategoryDialogHelper.showCategoryDialog(
                             activity, gi.arcid, gi.serverProfileId, null
                         )
+                    }
+                    3 -> { // Delete archive from the server (same flow as detail page)
+                        DeleteArchiveHelper.show(activity, gi, gi.serverProfileId) { title ->
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.lrr_delete_success, title),
+                                Toast.LENGTH_LONG,
+                            ).show()
+                        }
                     }
                 }
             }.show()
