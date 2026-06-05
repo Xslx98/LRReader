@@ -64,6 +64,18 @@ class LRRServerApiTest {
     }
 
     @Test
+    fun getServerInfo_cachesProgressCapability() = runTest {
+        // getServerInfo must record server_tracks_progress so updateProgress can
+        // skip the call (which 400s) on clientside-progress servers, per spec.
+        ServerCapabilityCache.clear()
+        server.enqueue(MockResponse().setBody("""{"name":"T","version":"1.0","server_tracks_progress":false}"""))
+
+        LRRServerApi.getServerInfo(client, baseUrl)
+
+        assertEquals(false, ServerCapabilityCache.tracksProgress(baseUrl))
+    }
+
+    @Test
     fun getServerInfo_httpError() = runTest {
         // retryOnFailure does 2 retries + 1 initial = 3 total
         repeat(3) {
