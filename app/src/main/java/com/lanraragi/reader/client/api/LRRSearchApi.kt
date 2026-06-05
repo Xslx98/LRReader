@@ -15,6 +15,8 @@ import okhttp3.Request
  */
 object LRRSearchApi {
 
+    private const val HTTP_NO_CONTENT = 204
+
     /**
      * GET /api/search — Search archives.
      */
@@ -50,10 +52,17 @@ object LRRSearchApi {
                 .get()
                 .build()
             client.newCall(request).execute().use { response ->
-                ensureSuccess(response)
-                val body = response.body?.string()
-                    ?: throw LRREmptyBodyException()
-                lrrJson.decodeFromString<LRRSearchResult>(body)
+                if (response.code == HTTP_NO_CONTENT) {
+                    // 204: the search engine is still initializing — return an empty
+                    // result rather than parsing the empty body (which throws and
+                    // surfaces as a paging error instead of a transient empty state).
+                    LRRSearchResult()
+                } else {
+                    ensureSuccess(response)
+                    val body = response.body?.string()
+                        ?: throw LRREmptyBodyException()
+                    lrrJson.decodeFromString<LRRSearchResult>(body)
+                }
             }
         }
     }
