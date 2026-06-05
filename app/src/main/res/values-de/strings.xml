@@ -533,6 +533,9 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_upload_failed">Upload fehlgeschlagen: %s</string>
     <string name="lrr_upload_no_file_manager">Kein Dateimanager gefunden</string>
     <string name="lrr_upload_success">Upload erfolgreich</string>
+    <string name="lrr_upload_preparing">Archiv wird geprüft…</string>
+    <string name="lrr_upload_uploading">Wird hochgeladen…</string>
+    <string name="lrr_upload_duplicate">Dieses Archiv existiert bereits auf dem Server, Upload übersprungen</string>
     <string name="lrr_url_download_empty">Bitte URL eingeben</string>
     <string name="lrr_url_download_failed">Download fehlgeschlagen: %s</string>
     <string name="lrr_url_download_hint">URL zum Herunterladen eingeben</string>
