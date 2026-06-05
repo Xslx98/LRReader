@@ -81,6 +81,18 @@ internal fun requireValidArcid(arcid: String): String {
     return arcid
 }
 
+/** Prefix of LANraragi Tankoubon IDs (e.g. "TANK_1688616437"). */
+internal const val TANKOUBON_ID_PREFIX = "TANK_"
+
+/**
+ * True if [id] is a Tankoubon ID (15-char `TANK_##########`) rather than a
+ * 40-char archive SHA-1. Search with `groupby_tanks` enabled mixes these into
+ * the results; the archive pipeline (toArchive → getThumbnailUrl →
+ * requireValidArcid) can't render them, so browse/search paths filter them out
+ * defensively (the request also sends `groupby_tanks=false`).
+ */
+internal fun isTankoubonId(id: String): Boolean = id.startsWith(TANKOUBON_ID_PREFIX)
+
 /**
  * Validate that [categoryId] is exactly 14 characters long, matching the
  * spec's `id` constraint on category endpoints (`minLength: 14, maxLength: 14`).

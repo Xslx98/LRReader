@@ -105,8 +105,9 @@ class LRRArchivePagingSourceTest {
         )
 
         val request = server.takeRequest()
-        // Page 0 with loadSize 100 → start=0 (omitted from URL since start <= 0)
-        assertEquals("/api/search?sortby=date_added&order=desc", request.path)
+        // Page 0 with loadSize 100 → start=0 (omitted from URL since start <= 0).
+        // groupby_tanks=false is always sent so the server doesn't fold in TANK_ ids.
+        assertEquals("/api/search?sortby=date_added&order=desc&groupby_tanks=false", request.path)
     }
 
     @Test
@@ -143,6 +144,28 @@ class LRRArchivePagingSourceTest {
         val page = result as PagingSource.LoadResult.Page
         assertEquals(1, page.data.size)
         assertNull(page.nextKey)
+    }
+
+    @Test
+    fun load_dropsTankoubonEntries() = runTest {
+        // With groupby_tanks enabled the server returns 15-char TANK_ ids mixed in.
+        // toArchive()/getThumbnailUrl()/requireValidArcid() can't render a TANK_ id,
+        // so the paging source must drop them instead of failing the whole page.
+        val tank = """{"arcid":"TANK_1688616437","title":"A tank","tags":"","isnew":"false","extension":"zip","filename":"t.zip","pagecount":1,"progress":0,"lastreadtime":0}"""
+        val real = archiveJson("a1", "Real")
+        server.enqueue(
+            MockResponse().setBody("""{"data":[$tank,$real],"draw":1,"recordsFiltered":2,"recordsTotal":2}""")
+        )
+
+        val source = createPagingSource()
+        val result = source.load(
+            PagingSource.LoadParams.Refresh(key = null, loadSize = 100, placeholdersEnabled = false)
+        )
+
+        assertTrue(result is PagingSource.LoadResult.Page)
+        val page = result as PagingSource.LoadResult.Page
+        assertEquals(1, page.data.size)
+        assertFalse(page.data.any { it.arcid.startsWith("TANK_") })
     }
 
     @Test
