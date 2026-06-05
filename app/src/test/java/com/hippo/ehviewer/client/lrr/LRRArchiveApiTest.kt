@@ -264,6 +264,26 @@ class LRRArchiveApiTest {
     }
 
     @Test
+    fun uploadArchive_sendsSummaryAndChecksum() = runTest {
+        server.enqueue(MockResponse().setBody("""{"success":1,"id":"x"}"""))
+
+        val testFile = tempFolder.newFile("with_meta.zip")
+        testFile.writeBytes(ByteArray(20))
+
+        LRRArchiveApi.uploadArchive(
+            client, baseUrl, testFile,
+            summary = "A great manga",
+            fileChecksum = "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d"
+        )
+
+        val body = server.takeRequest().body.readUtf8()
+        assertTrue(body.contains("summary"))
+        assertTrue(body.contains("A great manga"))
+        assertTrue(body.contains("file_checksum"))
+        assertTrue(body.contains("aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d"))
+    }
+
+    @Test
     fun uploadArchive_failure() = runTest {
         server.enqueue(MockResponse().setBody("""{"success":0,"error":"File too large"}"""))
 
