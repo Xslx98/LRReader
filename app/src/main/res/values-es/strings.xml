@@ -608,6 +608,7 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_upload_preparing">Comprobando archivo…</string>
     <string name="lrr_upload_uploading">Subiendo…</string>
     <string name="lrr_upload_duplicate">Este archivo ya existe en el servidor, subida omitida</string>
+    <string name="lrr_upload_failed_connection">Subida interrumpida: el servidor o un proxy inverso puede limitar el tamaño de subida, o la conexión es inestable</string>
     <string name="lrr_url_download_empty">Ingrese una URL</string>
     <string name="lrr_url_download_failed">Error de descarga: %s</string>
     <string name="lrr_url_download_hint">Ingrese URL para descargar</string>

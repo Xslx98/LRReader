@@ -591,6 +591,7 @@
     <string name="lrr_upload_preparing">正在检查档案…</string>
     <string name="lrr_upload_uploading">正在上传…</string>
     <string name="lrr_upload_duplicate">该档案已存在于服务器，已跳过上传</string>
+    <string name="lrr_upload_failed_connection">上传连接中断：可能是服务器或反向代理限制了上传大小，或网络不稳定</string>
 
     <!-- LRR URL 下载 -->
     <string name="lrr_url_download_title">从 URL 下载</string>

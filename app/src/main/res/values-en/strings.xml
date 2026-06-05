@@ -574,6 +574,7 @@
     <string name="lrr_upload_preparing">Checking archive…</string>
     <string name="lrr_upload_uploading">Uploading…</string>
     <string name="lrr_upload_duplicate">This archive already exists on the server, upload skipped</string>
+    <string name="lrr_upload_failed_connection">Upload interrupted — the server or a reverse proxy may limit the upload size, or the connection is unstable</string>
     <string name="lrr_url_download_empty">Please enter a URL</string>
     <string name="lrr_url_download_failed">Download failed: %s</string>
     <string name="lrr_url_download_hint">Enter download URL</string>

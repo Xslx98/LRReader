@@ -626,6 +626,7 @@
     <string name="lrr_upload_preparing">正在檢查檔案…</string>
     <string name="lrr_upload_uploading">正在上傳…</string>
     <string name="lrr_upload_duplicate">該檔案已存在於伺服器，已略過上傳</string>
+    <string name="lrr_upload_failed_connection">上傳連線中斷：可能是伺服器或反向代理限制了上傳大小，或網路不穩定</string>
     <string name="lrr_url_download_empty">請輸入URL</string>
     <string name="lrr_url_download_failed">下載失敗: %s</string>
     <string name="lrr_url_download_hint">輸入要下載的URL</string>

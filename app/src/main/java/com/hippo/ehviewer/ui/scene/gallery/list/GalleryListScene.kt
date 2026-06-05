@@ -573,13 +573,22 @@ class GalleryListScene : BaseScene(),
 
             is GalleryListViewModel.UploadUiState.Failed -> {
                 dismissUploadProgressDialog()
-                val context = ehContext
-                val message = if (context != null) {
-                    friendlyError(context, state.error)
+                val error = state.error
+                if (error is java.net.SocketException || error is javax.net.ssl.SSLException) {
+                    // Connection torn down mid-transfer (broken pipe / connection
+                    // reset / TLS record error). Usually a server or reverse-proxy
+                    // upload-size limit or an unstable link — a bare "Broken pipe"
+                    // tells the user nothing actionable, so point at the likely cause.
+                    showTip(R.string.lrr_upload_failed_connection, BaseScene.LENGTH_LONG)
                 } else {
-                    state.error.message ?: ""
+                    val context = ehContext
+                    val message = if (context != null) {
+                        friendlyError(context, error)
+                    } else {
+                        error.message ?: ""
+                    }
+                    showTip(getString(R.string.lrr_upload_failed, message), BaseScene.LENGTH_LONG)
                 }
-                showTip(getString(R.string.lrr_upload_failed, message), BaseScene.LENGTH_LONG)
                 viewModel.resetUploadState()
             }
         }

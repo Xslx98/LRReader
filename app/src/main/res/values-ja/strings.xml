@@ -545,6 +545,7 @@
     <string name="lrr_upload_preparing">アーカイブを確認中…</string>
     <string name="lrr_upload_uploading">アップロード中…</string>
     <string name="lrr_upload_duplicate">このアーカイブはサーバーに既に存在します。アップロードをスキップしました</string>
+    <string name="lrr_upload_failed_connection">アップロードが中断されました：サーバーまたはリバースプロキシのアップロードサイズ制限、もしくは接続が不安定な可能性があります</string>
     <string name="lrr_url_download_empty">URLを入力してください</string>
     <string name="lrr_url_download_failed">ダウンロード失敗: %s</string>
     <string name="lrr_url_download_hint">ダウンロードするURLを入力</string>
