@@ -95,12 +95,11 @@ class GalleryUploadHelper(private val mCallback: Callback) {
                 }
 
                 val finalTempFile = tempFile
-                val arcid = runSuspend {
-                    LRRArchiveApi.uploadArchive(
-                        LRRClientProvider.getClient(),
-                        LRRClientProvider.getBaseUrl(),
-                        finalTempFile, null, null, null
-                    )
+                // Use the dedicated long-timeout upload client (via the
+                // convenience overload) so large archives on a slow LAN/WAN
+                // don't trip the default client's short timeouts.
+                runSuspend {
+                    LRRArchiveApi.uploadArchive(finalTempFile)
                 }
 
                 val activity = mCallback.getHostActivity()
