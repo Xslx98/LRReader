@@ -399,6 +399,9 @@ object LRRArchiveApi {
         arcid: String,
         page: Int
     ) = withContext(Dispatchers.IO) {
+        // Spec: check /api/info before calling — on clientside-progress servers
+        // this endpoint 400s. Skip the doomed call when a prior /api/info said so.
+        if (ServerCapabilityCache.tracksProgress(baseUrl) == false) return@withContext
         val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
             .addPathSegment(requireValidArcid(arcid))

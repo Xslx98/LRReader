@@ -33,7 +33,11 @@ object LRRServerApi {
                     ensureSuccess(response)
                     val body = response.body?.string()
                         ?: throw LRREmptyBodyException()
-                    lrrJson.decodeFromString<LRRServerInfo>(body)
+                    val info = lrrJson.decodeFromString<LRRServerInfo>(body)
+                    // Record the progress-tracking capability so updateProgress can
+                    // honor the spec's "check /api/info first" guidance per server.
+                    ServerCapabilityCache.setTracksProgress(baseUrl, info.serverTracksProgress)
+                    info
                 }
             }
         }

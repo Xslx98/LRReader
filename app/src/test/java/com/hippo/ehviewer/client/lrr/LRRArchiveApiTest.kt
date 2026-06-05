@@ -174,6 +174,21 @@ class LRRArchiveApiTest {
     }
 
     @Test
+    fun updateProgress_skipsWhenServerUsesClientsideTracking() = runTest {
+        // Spec: check /api/info first. On a clientside-progress server this
+        // endpoint 400s, so when a prior /api/info recorded
+        // server_tracks_progress=false we skip the doomed call entirely.
+        ServerCapabilityCache.setTracksProgress(baseUrl, false)
+        try {
+            server.enqueue(MockResponse().setBody("""{"operation":"update_progress","success":1}"""))
+            LRRArchiveApi.updateProgress(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 5)
+            assertEquals("no request should be sent on a clientside-progress server", 0, server.requestCount)
+        } finally {
+            ServerCapabilityCache.clear()
+        }
+    }
+
+    @Test
     fun deleteArchive_success() = runTest {
         server.enqueue(MockResponse().setBody("""{"success":1,"filename":"deleted.zip"}"""))
 
