@@ -392,5 +392,47 @@ class LRRArchiveApiTest {
         )
         assertNotEquals(allA, lastByteDiffers)
     }
+
+    // ── archiveExists (pre-upload duplicate probe) ──────────────────
+
+    @Test
+    fun archiveExists_returnsTrueWhenMetadataFound() = runTest {
+        server.enqueue(
+            MockResponse().setBody(
+                """{"arcid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","title":"T","tags":"",
+                   "isnew":"false","extension":"zip","filename":"t.zip","pagecount":1,
+                   "progress":0,"lastreadtime":0}"""
+            )
+        )
+
+        val exists = LRRArchiveApi.archiveExists(
+            client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        )
+        assertTrue(exists)
+
+        val req = server.takeRequest()
+        assertEquals("GET", req.method)
+        assertEquals("/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/metadata", req.path)
+    }
+
+    @Test
+    fun archiveExists_returnsFalseOnBadRequest() = runTest {
+        // LANraragi answers an unknown arcid with HTTP 400 (not 404).
+        server.enqueue(
+            MockResponse().setResponseCode(400)
+                .setBody("""{"success":0,"error":"This ID does not exist"}""")
+        )
+        assertFalse(
+            LRRArchiveApi.archiveExists(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+        )
+    }
+
+    @Test
+    fun archiveExists_returnsFalseOnNotFound() = runTest {
+        server.enqueue(MockResponse().setResponseCode(404))
+        assertFalse(
+            LRRArchiveApi.archiveExists(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+        )
+    }
 }
 
