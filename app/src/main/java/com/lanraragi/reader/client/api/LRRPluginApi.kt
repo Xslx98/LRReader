@@ -23,7 +23,8 @@ object LRRPluginApi {
         val type: String = "",
         val description: String = "",
         val icon: String = "",
-        val oneshot_arg: String = "",
+        // Nullable per spec ([string, "null"]): login/script plugins have no one-shot arg.
+        val oneshot_arg: String? = null,
         val parameters: List<PluginParameter> = emptyList()
     )
 
