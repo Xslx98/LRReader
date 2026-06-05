@@ -89,6 +89,19 @@ class LRRPluginApiTest {
     }
 
     @Test
+    fun getPlugins_nullOneshotArg_parses() = runTest {
+        // login/script plugins have no one-shot arg; the spec types oneshot_arg as
+        // [string, "null"]. A null must parse, not throw (which kills the whole list).
+        server.enqueue(MockResponse().setBody("""[
+            {"name":"Login","namespace":"login","type":"login","description":"d","oneshot_arg":null,"parameters":[]}
+        ]"""))
+
+        val plugins = LRRPluginApi.getPlugins(client, baseUrl, "login")
+        assertEquals(1, plugins.size)
+        assertNull(plugins[0].oneshot_arg)
+    }
+
+    @Test
     fun getPlugins_emptyList() = runTest {
         server.enqueue(MockResponse().setBody("[]"))
 
@@ -212,7 +225,7 @@ class LRRPluginApiTest {
         assertEquals("", info.type)
         assertEquals("", info.description)
         assertEquals("", info.icon)
-        assertEquals("", info.oneshot_arg)
+        assertNull(info.oneshot_arg)
         assertTrue(info.parameters.isEmpty())
     }
 
