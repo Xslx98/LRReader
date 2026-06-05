@@ -604,6 +604,7 @@
     <string name="lrr_upload_preparing">กำลังตรวจสอบไฟล์เก็บถาวร…</string>
     <string name="lrr_upload_uploading">กำลังอัปโหลด…</string>
     <string name="lrr_upload_duplicate">ไฟล์เก็บถาวรนี้มีอยู่บนเซิร์ฟเวอร์แล้ว ข้ามการอัปโหลด</string>
+    <string name="lrr_upload_failed_connection">การอัปโหลดถูกขัดจังหวะ: เซิร์ฟเวอร์หรือ reverse proxy อาจจำกัดขนาดการอัปโหลด หรือการเชื่อมต่อไม่เสถียร</string>
     <string name="lrr_url_download_empty">Please enter a URL</string>
     <string name="lrr_url_download_failed">ดาวน์โหลดล้มเหลว: %s</string>
     <string name="lrr_url_download_hint">Enter download URL</string>

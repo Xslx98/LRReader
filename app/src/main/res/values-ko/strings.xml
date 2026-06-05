@@ -615,6 +615,7 @@
     <string name="lrr_upload_preparing">아카이브 확인 중…</string>
     <string name="lrr_upload_uploading">업로드 중…</string>
     <string name="lrr_upload_duplicate">이 아카이브는 서버에 이미 존재합니다. 업로드를 건너뛰었습니다</string>
+    <string name="lrr_upload_failed_connection">업로드가 중단되었습니다: 서버 또는 리버스 프록시의 업로드 크기 제한이거나 연결이 불안정할 수 있습니다</string>
     <string name="lrr_url_download_empty">URL을 입력해 주세요</string>
     <string name="lrr_url_download_failed">다운로드 실패: %s</string>
     <string name="lrr_url_download_hint">다운로드할 URL 입력</string>

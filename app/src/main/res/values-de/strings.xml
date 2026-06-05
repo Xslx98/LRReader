@@ -536,6 +536,7 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_upload_preparing">Archiv wird geprüft…</string>
     <string name="lrr_upload_uploading">Wird hochgeladen…</string>
     <string name="lrr_upload_duplicate">Dieses Archiv existiert bereits auf dem Server, Upload übersprungen</string>
+    <string name="lrr_upload_failed_connection">Upload unterbrochen – der Server oder ein Reverse-Proxy begrenzt evtl. die Uploadgröße, oder die Verbindung ist instabil</string>
     <string name="lrr_url_download_empty">Bitte URL eingeben</string>
     <string name="lrr_url_download_failed">Download fehlgeschlagen: %s</string>
     <string name="lrr_url_download_hint">URL zum Herunterladen eingeben</string>
