@@ -220,16 +220,24 @@ object LRRArchiveApi {
      * @param title optional title override
      * @param tags optional comma-separated tags
      * @param categoryId optional category to add the archive to
+     * @param summary optional archive summary
+     * @param fileChecksum optional SHA-1 (40 hex chars) of [file] for the
+     *   server's in-transit integrity check; a mismatch is rejected with HTTP 417
      * @return the arcid of the uploaded archive.
      */
+    // The parameter count mirrors the upload endpoint's flat multipart contract
+    // (file + optional title/tags/category/summary/checksum), not poor design.
     @JvmStatic
+    @Suppress("LongParameterList")
     suspend fun uploadArchive(
         client: OkHttpClient,
         baseUrl: String,
         file: File,
         title: String? = null,
         tags: String? = null,
-        categoryId: String? = null
+        categoryId: String? = null,
+        summary: String? = null,
+        fileChecksum: String? = null
     ): String = withContext(Dispatchers.IO) {
         val bodyBuilder = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
@@ -240,6 +248,8 @@ object LRRArchiveApi {
         if (!title.isNullOrEmpty()) bodyBuilder.addFormDataPart("title", title)
         if (!tags.isNullOrEmpty()) bodyBuilder.addFormDataPart("tags", tags)
         if (!categoryId.isNullOrEmpty()) bodyBuilder.addFormDataPart("category_id", categoryId)
+        if (!summary.isNullOrEmpty()) bodyBuilder.addFormDataPart("summary", summary)
+        if (!fileChecksum.isNullOrEmpty()) bodyBuilder.addFormDataPart("file_checksum", fileChecksum)
 
         val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives/upload")
@@ -456,6 +466,16 @@ object LRRArchiveApi {
         deleteArchive(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), arcid)
 
     @JvmStatic
-    suspend fun uploadArchive(file: File, title: String? = null, tags: String? = null, categoryId: String? = null): String =
-        uploadArchive(ServiceRegistry.networkModule.uploadClient, LRRClientProvider.getBaseUrl(), file, title, tags, categoryId)
+    suspend fun uploadArchive(
+        file: File,
+        title: String? = null,
+        tags: String? = null,
+        categoryId: String? = null,
+        summary: String? = null,
+        fileChecksum: String? = null
+    ): String =
+        uploadArchive(
+            ServiceRegistry.networkModule.uploadClient, LRRClientProvider.getBaseUrl(),
+            file, title, tags, categoryId, summary, fileChecksum
+        )
 }
