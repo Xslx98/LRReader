@@ -1,0 +1,3 @@
+- New: uploading an archive now shows live progress, and archives already on the server are detected and skipped before the upload starts.
+- New: delete an archive directly from its long-press menu.
+- Fixed: search no longer crashes on some servers; manga page thumbnails were off by one; clearer messages when an upload or the server fails.
