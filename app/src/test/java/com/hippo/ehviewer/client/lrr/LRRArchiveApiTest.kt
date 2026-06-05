@@ -344,5 +344,18 @@ class LRRArchiveApiTest {
         )
         assertTrue("expected page=1 for grid index 0, url: $url", url.contains("page=1"))
     }
+
+    // ── computeFileChecksum ─────────────────────────────────────────
+
+    @Test
+    fun computeFileChecksum_matchesKnownSha1() {
+        val testFile = tempFolder.newFile("checksum.bin")
+        testFile.writeBytes("hello".toByteArray())
+        // SHA-1("hello") = aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d
+        assertEquals(
+            "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d",
+            LRRArchiveApi.computeFileChecksum(testFile)
+        )
+    }
 }
 
