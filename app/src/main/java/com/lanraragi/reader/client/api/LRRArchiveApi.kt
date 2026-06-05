@@ -16,6 +16,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import java.io.IOException
+import java.security.MessageDigest
 
 /**
  * API class for LANraragi archive operations.
@@ -270,6 +271,24 @@ object LRRArchiveApi {
             }
             jsonObj["id"]?.jsonPrimitive?.content ?: ""
         }
+    }
+
+    /**
+     * Compute the SHA-1 checksum (40 lowercase hex chars) of [file], in the
+     * format LANraragi's upload endpoint expects for the optional
+     * `file_checksum` field used for in-transit integrity validation.
+     */
+    @JvmStatic
+    fun computeFileChecksum(file: File): String {
+        val digest = MessageDigest.getInstance("SHA-1")
+        file.inputStream().use { input ->
+            val buffer = ByteArray(8192)
+            var read: Int
+            while (input.read(buffer).also { read = it } != -1) {
+                digest.update(buffer, 0, read)
+            }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xFF) }
     }
 
     /**
