@@ -186,6 +186,21 @@ class LRRArchiveMapperTest {
     }
 
     @Test
+    fun `toArchiveList drops tankoubon entries`() {
+        // groupby_tanks returns 15-char TANK_ ids the archive pipeline can't
+        // render; the list mapper must drop them rather than throw.
+        val result = LRRSearchResult()
+        result.data = listOf(
+            createLRRArchive(arcid = "0".repeat(40), title = "Real archive"),
+            createLRRArchive(arcid = "TANK_1688616437", title = "A tankoubon"),
+        )
+
+        val archives = result.toArchiveList()
+        assertEquals(1, archives.size)
+        assertEquals("0".repeat(40), archives[0].arcid)
+    }
+
+    @Test
     fun `toArchive accepts explicit sourceProfileId for cross-server fetches`() {
         // Regression: when the gallery-detail VM fetches metadata against
         // a non-active profile (i.e. archive originally downloaded from

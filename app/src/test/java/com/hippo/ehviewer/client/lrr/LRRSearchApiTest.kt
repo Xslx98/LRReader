@@ -81,7 +81,10 @@ class LRRSearchApiTest {
 
         val req = server.takeRequest()
         val path = req.path!!
-        assertEquals("/api/search", path)
+        // groupby_tanks must be explicitly disabled — the server defaults it to
+        // true, which returns 15-char TANK_ ids the archive pipeline can't render.
+        assertTrue(path.startsWith("/api/search"))
+        assertTrue(path.contains("groupby_tanks=false"))
     }
 
     @Test
@@ -94,5 +97,6 @@ class LRRSearchApiTest {
         val path = req.path!!
         assertTrue(path.startsWith("/api/search/random"))
         assertTrue(path.contains("count=5"))
+        assertTrue(path.contains("groupby_tanks=false"))
     }
 }

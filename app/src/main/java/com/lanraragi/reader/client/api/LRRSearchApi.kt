@@ -41,7 +41,9 @@ object LRRSearchApi {
             if (!order.isNullOrEmpty()) urlBuilder.addQueryParameter("order", order)
             if (newonly) urlBuilder.addQueryParameter("newonly", "true")
             if (untaggedonly) urlBuilder.addQueryParameter("untaggedonly", "true")
-            if (groupbyTanks) urlBuilder.addQueryParameter("groupby_tanks", "true")
+            // Always send groupby_tanks: the server defaults it to true, which folds
+            // Tankoubons into results as 15-char TANK_ ids the archive pipeline can't render.
+            urlBuilder.addQueryParameter("groupby_tanks", groupbyTanks.toString())
 
             val request = Request.Builder()
                 .url(urlBuilder.build())
@@ -77,7 +79,8 @@ object LRRSearchApi {
         if (!category.isNullOrEmpty()) urlBuilder.addQueryParameter("category", requireValidCategoryId(category))
         if (newonly) urlBuilder.addQueryParameter("newonly", "true")
         if (untaggedonly) urlBuilder.addQueryParameter("untaggedonly", "true")
-        if (groupbyTanks) urlBuilder.addQueryParameter("groupby_tanks", "true")
+        // Always send groupby_tanks (see searchArchives): server defaults it to true.
+        urlBuilder.addQueryParameter("groupby_tanks", groupbyTanks.toString())
 
         val request = Request.Builder()
             .url(urlBuilder.build())

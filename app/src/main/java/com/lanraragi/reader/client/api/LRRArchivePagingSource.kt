@@ -46,11 +46,14 @@ class LRRArchivePagingSource(
                 newonly = newonly,
                 untaggedonly = untaggedonly
             )
-            val items = result.data.map { it.toArchive() }
+            // Drop Tankoubon entries the server may fold in (groupby_tanks): the
+            // archive pipeline can't render 15-char TANK_ ids. nextKey keys off the
+            // raw (pre-filter) count so dropping a tank doesn't prematurely end paging.
+            val items = result.data.filterNot { isTankoubonId(it.arcid) }.map { it.toArchive() }
             LoadResult.Page(
                 data = items,
                 prevKey = if (page > 0) page - 1 else null,
-                nextKey = if (items.size >= params.loadSize) page + 1 else null
+                nextKey = if (result.data.size >= params.loadSize) page + 1 else null
             )
         } catch (e: CancellationException) {
             // A superseded search (flatMapLatest) or a torn-down Scene cancels
