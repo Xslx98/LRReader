@@ -101,6 +101,25 @@ class LRRDatabaseApiTest {
     }
 
     @Test
+    fun getTagStats_nullNamespace_parses() = runTest {
+        // LANraragi returns namespace: null for un-namespaced ("misc") tags such as
+        // "artbook"; the spec types namespace as [string, "null"]. The row must parse,
+        // not throw a SerializationException (which would silently kill the tag cache).
+        val statsJson = """[
+            {"namespace":"artist","text":"foo","weight":5},
+            {"namespace":null,"text":"artbook","weight":3}
+        ]"""
+        server.enqueue(MockResponse().setBody(statsJson))
+
+        val result = LRRDatabaseApi.getTagStats(client, baseUrl)
+        assertEquals(2, result.size)
+        assertEquals("artist", result[0].namespace)
+        assertNull(result[1].namespace)
+        assertEquals("artbook", result[1].text)
+        assertEquals(3, result[1].weight)
+    }
+
+    @Test
     fun getTagStats_emptyArray() = runTest {
         server.enqueue(MockResponse().setBody("[]"))
 

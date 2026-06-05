@@ -220,7 +220,8 @@ class SearchBar : CardView,
         if (text.isNotEmpty()) {
             val lrrTags = LRRTagCache.suggest(text)
             for (tag in lrrTags) {
-                val fullTag = "${tag.namespace}:${tag.text}"
+                val ns = tag.namespace
+                val fullTag = if (ns.isNullOrEmpty()) tag.text else "$ns:${tag.text}"
                 if (fullTag.lowercase() !in existingTagKeys) {
                     mSuggestionList.add(TagSuggestion(null, fullTag))
                 }

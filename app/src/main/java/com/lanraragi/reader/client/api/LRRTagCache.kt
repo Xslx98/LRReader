@@ -50,7 +50,7 @@ object LRRTagCache : Cacheable {
                 if (needsRefresh()) {
                     try {
                         val fetched = LRRDatabaseApi.getTagStats()
-                        val keys = fetched.map { "${it.namespace}:${it.text}".lowercase() }
+                        val keys = fetched.map { "${it.namespace ?: ""}:${it.text}".lowercase() }
                         snapshot = CacheSnapshot(fetched, keys)
                         lastFetchTime = System.currentTimeMillis()
                     } catch (e: Exception) {
@@ -92,7 +92,8 @@ object LRRTagCache : Cacheable {
         val results = mutableListOf<LRRTagStat>()
         for (i in currentTags.indices) {
             val tag = currentTags[i]
-            if (tag.namespace in EXCLUDED_NAMESPACES) continue
+            val ns = tag.namespace
+            if (ns != null && ns in EXCLUDED_NAMESPACES) continue
             if (i < currentKeys.size && currentKeys[i].contains(lower)) {
                 results.add(tag)
             }
