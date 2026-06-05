@@ -36,8 +36,10 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.github.amlcurran.showcaseview.ShowcaseView
 import com.github.amlcurran.showcaseview.SimpleShowcaseEventListener
 import com.github.amlcurran.showcaseview.targets.PointTarget
@@ -71,6 +73,7 @@ import com.hippo.widget.ContentLayout
 import com.hippo.widget.FabLayout
 import com.hippo.widget.SearchBarMover
 import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.friendlyError
 
 class GalleryListScene : BaseScene(),
     EasyRecyclerView.OnItemClickListener, EasyRecyclerView.OnItemLongClickListener,
@@ -137,6 +140,12 @@ class GalleryListScene : BaseScene(),
     private var mDrawerHelper: GalleryDrawerHelper? = null
     private var mFabHelper: GalleryFabHelper? = null
     private var searchBarHelper: GallerySearchBarHelper? = null
+
+    /** Determinate archive-upload progress dialog (mirrors the in-app update style). */
+    private var uploadProgressDialog: AlertDialog? = null
+    private var uploadProgressBar: LinearProgressIndicator? = null
+    private var uploadProgressTitle: TextView? = null
+    private var uploadProgressPercent: TextView? = null
 
     /**
      * Stored Uri-callback for the in-flight pick. Cleared on result. Two
@@ -276,6 +285,11 @@ class GalleryListScene : BaseScene(),
         // Observe favourite status changes to refresh all visible items
         collectFlow(this, viewModel.favouriteStatusChanged) {
             adapter?.notifyItemRangeChanged(0, adapter?.itemCount ?: 0)
+        }
+
+        // Observe archive upload progress/result to drive the progress dialog + tips.
+        collectFlow(this, viewModel.uploadState) { state ->
+            renderUploadState(state)
         }
 
         // Server-side archive deletion: drop the row from this list. If the scene is
@@ -515,6 +529,89 @@ class GalleryListScene : BaseScene(),
         mDrawerHelper = result.drawerHelper
     }
 
+    /** Entry point for [GalleryUploadHelper] — hand the prepared request to the ViewModel. */
+    internal fun startArchiveUpload(request: GalleryListViewModel.UploadRequest) {
+        viewModel.uploadArchive(request)
+    }
+
+    /**
+     * Render the upload [state] into the determinate progress dialog and one-shot
+     * tips. Terminal states reset the ViewModel back to Idle so they are not
+     * replayed if the Scene re-subscribes (e.g. after a configuration change).
+     */
+    private fun renderUploadState(state: GalleryListViewModel.UploadUiState) {
+        when (state) {
+            GalleryListViewModel.UploadUiState.Idle ->
+                dismissUploadProgressDialog()
+
+            GalleryListViewModel.UploadUiState.Preparing -> {
+                showUploadProgressDialog()
+                uploadProgressTitle?.setText(R.string.lrr_upload_preparing)
+                uploadProgressBar?.progress = 0
+                uploadProgressPercent?.text = ""
+            }
+
+            is GalleryListViewModel.UploadUiState.Uploading -> {
+                showUploadProgressDialog()
+                uploadProgressTitle?.setText(R.string.lrr_upload_uploading)
+                uploadProgressBar?.progress = state.percent
+                uploadProgressPercent?.text = "${state.percent}%"
+            }
+
+            is GalleryListViewModel.UploadUiState.DuplicateSkipped -> {
+                dismissUploadProgressDialog()
+                showTip(R.string.lrr_upload_duplicate, BaseScene.LENGTH_LONG)
+                viewModel.resetUploadState()
+            }
+
+            is GalleryListViewModel.UploadUiState.Success -> {
+                dismissUploadProgressDialog()
+                showTip(R.string.lrr_upload_success, BaseScene.LENGTH_LONG)
+                mHelper?.refresh()
+                viewModel.resetUploadState()
+            }
+
+            is GalleryListViewModel.UploadUiState.Failed -> {
+                dismissUploadProgressDialog()
+                val context = ehContext
+                val message = if (context != null) {
+                    friendlyError(context, state.error)
+                } else {
+                    state.error.message ?: ""
+                }
+                showTip(getString(R.string.lrr_upload_failed, message), BaseScene.LENGTH_LONG)
+                viewModel.resetUploadState()
+            }
+        }
+    }
+
+    private fun showUploadProgressDialog() {
+        if (uploadProgressDialog?.isShowing == true) return
+        val activity = activity2 ?: return
+        val view = LayoutInflater.from(activity)
+            .inflate(R.layout.dialog_upload_progress, null, false)
+        uploadProgressTitle = view.findViewById(R.id.upload_progress_title)
+        uploadProgressBar = view.findViewById(R.id.upload_progress_bar)
+        uploadProgressPercent = view.findViewById(R.id.upload_progress_percent)
+        uploadProgressDialog = AlertDialog.Builder(activity)
+            .setView(view)
+            .setNegativeButton(R.string.cancel) { d, _ -> d.cancel() }
+            .setCancelable(true)
+            .create()
+            .also { dialog ->
+                dialog.setOnCancelListener { viewModel.cancelUpload() }
+                dialog.show()
+            }
+    }
+
+    private fun dismissUploadProgressDialog() {
+        uploadProgressDialog?.dismiss()
+        uploadProgressDialog = null
+        uploadProgressBar = null
+        uploadProgressTitle = null
+        uploadProgressPercent = null
+    }
+
     private fun guideQuickSearch() {
         val activity = activity2
         if (activity == null || !GuideSettings.getGuideQuickSearch()) {
@@ -566,6 +663,8 @@ class GalleryListScene : BaseScene(),
         if (::fabLayout.isInitialized) {
             removeAboveSnackView(fabLayout)
         }
+
+        dismissUploadProgressDialog()
 
         mAdapterImpl = null
         viewTransition = null
