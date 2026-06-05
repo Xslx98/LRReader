@@ -20,7 +20,7 @@ class LRRTagStatTest {
     fun parseWithDefaults() {
         val json = """{}"""
         val tag = lrrJson.decodeFromString<LRRTagStat>(json)
-        assertEquals("", tag.namespace)
+        assertNull(tag.namespace)
         assertEquals("", tag.text)
         assertEquals(0, tag.weight)
     }
