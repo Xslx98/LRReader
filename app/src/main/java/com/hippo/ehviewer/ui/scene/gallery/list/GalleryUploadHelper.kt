@@ -95,11 +95,15 @@ class GalleryUploadHelper(private val mCallback: Callback) {
                 }
 
                 val finalTempFile = tempFile
+                // Compute the SHA-1 up front so the server can run its optional
+                // in-transit integrity check on the uploaded bytes (HTTP 417 on
+                // mismatch).
+                val checksum = LRRArchiveApi.computeFileChecksum(finalTempFile)
                 // Use the dedicated long-timeout upload client (via the
                 // convenience overload) so large archives on a slow LAN/WAN
                 // don't trip the default client's short timeouts.
                 runSuspend {
-                    LRRArchiveApi.uploadArchive(finalTempFile)
+                    LRRArchiveApi.uploadArchive(finalTempFile, fileChecksum = checksum)
                 }
 
                 val activity = mCallback.getHostActivity()
