@@ -12,7 +12,7 @@ import okhttp3.Request
  *
  * Endpoints:
  * - GET  /api/plugins/:type     — List available plugins by type
- * - POST /api/plugins/:id/run   — Execute a plugin on an archive
+ * - POST /api/plugins/use       — Execute a plugin (operationId usePluginSync)
  */
 object LRRPluginApi {
 
