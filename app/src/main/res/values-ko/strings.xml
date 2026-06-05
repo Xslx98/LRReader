@@ -612,6 +612,9 @@
     <string name="lrr_upload_failed">업로드 실패: %s</string>
     <string name="lrr_upload_no_file_manager">파일 관리자를 찾을 수 없습니다</string>
     <string name="lrr_upload_success">업로드 성공</string>
+    <string name="lrr_upload_preparing">아카이브 확인 중…</string>
+    <string name="lrr_upload_uploading">업로드 중…</string>
+    <string name="lrr_upload_duplicate">이 아카이브는 서버에 이미 존재합니다. 업로드를 건너뛰었습니다</string>
     <string name="lrr_url_download_empty">URL을 입력해 주세요</string>
     <string name="lrr_url_download_failed">다운로드 실패: %s</string>
     <string name="lrr_url_download_hint">다운로드할 URL 입력</string>

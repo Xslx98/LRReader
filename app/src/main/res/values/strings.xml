@@ -685,6 +685,9 @@
     <string name="lrr_upload_no_file_manager">No file manager found</string>
     <string name="lrr_upload_success">Upload successful, archive added to library</string>
     <string name="lrr_upload_failed">Upload failed: %s</string>
+    <string name="lrr_upload_preparing">Checking archive…</string>
+    <string name="lrr_upload_uploading">Uploading…</string>
+    <string name="lrr_upload_duplicate">This archive already exists on the server, upload skipped</string>
 
     <!-- LRR URL Download -->
     <string name="lrr_url_download_title">Download from URL</string>

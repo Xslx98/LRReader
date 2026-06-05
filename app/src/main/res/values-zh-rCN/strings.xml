@@ -588,6 +588,9 @@
     <string name="lrr_upload_no_file_manager">未找到文件管理器</string>
     <string name="lrr_upload_success">上传成功，档案已添加到库中</string>
     <string name="lrr_upload_failed">上传失败: %s</string>
+    <string name="lrr_upload_preparing">正在检查档案…</string>
+    <string name="lrr_upload_uploading">正在上传…</string>
+    <string name="lrr_upload_duplicate">该档案已存在于服务器，已跳过上传</string>
 
     <!-- LRR URL 下载 -->
     <string name="lrr_url_download_title">从 URL 下载</string>

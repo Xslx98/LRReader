@@ -542,6 +542,9 @@
     <string name="lrr_upload_failed">アップロード失敗: %s</string>
     <string name="lrr_upload_no_file_manager">ファイルマネージャーが見つかりません</string>
     <string name="lrr_upload_success">アップロード成功</string>
+    <string name="lrr_upload_preparing">アーカイブを確認中…</string>
+    <string name="lrr_upload_uploading">アップロード中…</string>
+    <string name="lrr_upload_duplicate">このアーカイブはサーバーに既に存在します。アップロードをスキップしました</string>
     <string name="lrr_url_download_empty">URLを入力してください</string>
     <string name="lrr_url_download_failed">ダウンロード失敗: %s</string>
     <string name="lrr_url_download_hint">ダウンロードするURLを入力</string>

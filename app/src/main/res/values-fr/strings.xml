@@ -595,6 +595,9 @@ Cette action est irréversible.</string>
     <string name="lrr_upload_failed">Échec du téléversement : %s</string>
     <string name="lrr_upload_no_file_manager">Gestionnaire de fichiers introuvable</string>
     <string name="lrr_upload_success">Téléversement réussi</string>
+    <string name="lrr_upload_preparing">Vérification de l\'archive…</string>
+    <string name="lrr_upload_uploading">Téléversement…</string>
+    <string name="lrr_upload_duplicate">Cette archive existe déjà sur le serveur, téléversement ignoré</string>
     <string name="lrr_url_download_empty">Veuillez entrer une URL</string>
     <string name="lrr_url_download_failed">Échec du téléchargement : %s</string>
     <string name="lrr_url_download_hint">Entrer l\'URL à télécharger</string>
