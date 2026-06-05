@@ -88,6 +88,21 @@ class LRRSearchApiTest {
     }
 
     @Test
+    fun searchArchives_noContent204_returnsEmpty() = runTest {
+        // 204 = the search engine is still initializing. Must return an empty
+        // result, not throw on the empty body (which would surface as a paging error).
+        server.enqueue(MockResponse().setResponseCode(204))
+
+        val result = LRRSearchApi.searchArchives(
+            client, baseUrl,
+            filter = "anything", category = null, start = 0,
+            sortby = null, order = null, newonly = false
+        )
+        assertEquals(0, result.data.size)
+        assertEquals(0, result.recordsTotal)
+    }
+
+    @Test
     fun getRandomArchives_countParam() = runTest {
         server.enqueue(MockResponse().setBody(searchResponseJson))
 
