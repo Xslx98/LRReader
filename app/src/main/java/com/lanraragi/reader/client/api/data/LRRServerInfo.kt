@@ -22,12 +22,12 @@ class LRRServerInfo {
     @JvmField @SerialName("motd") var motd: String? = null
     @JvmField @SerialName("version") var version: String? = null
     @JvmField @SerialName("version_name") var versionName: String? = null
-    @JvmField @SerialName("has_password") var hasPassword: Boolean = false
-    @JvmField @SerialName("debug_mode") var debugMode: Boolean = false
-    @JvmField @SerialName("nofun_mode") var nofunMode: Boolean = false
+    @JvmField @SerialName("has_password") @Serializable(with = FlexibleBooleanSerializer::class) var hasPassword: Boolean = false
+    @JvmField @SerialName("debug_mode") @Serializable(with = FlexibleBooleanSerializer::class) var debugMode: Boolean = false
+    @JvmField @SerialName("nofun_mode") @Serializable(with = FlexibleBooleanSerializer::class) var nofunMode: Boolean = false
     @JvmField @SerialName("archives_per_page") var archivesPerPage: Int = 100
-    @JvmField @SerialName("server_resizes_images") var serverResizesImages: Boolean = false
-    @JvmField @SerialName("server_tracks_progress") var serverTracksProgress: Boolean = false
+    @JvmField @SerialName("server_resizes_images") @Serializable(with = FlexibleBooleanSerializer::class) var serverResizesImages: Boolean = false
+    @JvmField @SerialName("server_tracks_progress") @Serializable(with = FlexibleBooleanSerializer::class) var serverTracksProgress: Boolean = false
     @JvmField @SerialName("cache_last_cleared") var cacheLastCleared: Long = 0
 
     override fun toString(): String =

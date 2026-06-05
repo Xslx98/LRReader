@@ -36,6 +36,28 @@ class LRRServerInfoTest {
     }
 
     @Test
+    fun parseIntegerBooleansFromOlderServers() {
+        // Older LRR servers serialize these flags as integers (0/1) rather than
+        // JSON booleans; the OpenAPI ServerInfo schema documents both. They must
+        // parse, not throw a SerializationException (which fails the connect flow).
+        val json = """{
+            "name": "Old server",
+            "version": "0.8.0",
+            "has_password": 1,
+            "debug_mode": 0,
+            "nofun_mode": 1,
+            "server_resizes_images": 1,
+            "server_tracks_progress": 0
+        }"""
+        val info = lrrJson.decodeFromString<LRRServerInfo>(json)
+        assertTrue(info.hasPassword)
+        assertFalse(info.debugMode)
+        assertTrue(info.nofunMode)
+        assertTrue(info.serverResizesImages)
+        assertFalse(info.serverTracksProgress)
+    }
+
+    @Test
     fun parseWithMissingOptionalFields() {
         val json = """{"name": "Minimal", "version": "0.9.0"}"""
         val info = lrrJson.decodeFromString<LRRServerInfo>(json)
