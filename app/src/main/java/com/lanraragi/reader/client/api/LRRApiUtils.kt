@@ -6,6 +6,9 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -38,8 +41,16 @@ internal val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaTypeOrNu
 /** Empty request body for POST/PUT calls that don't send data. */
 internal val EMPTY_REQUEST_BODY: RequestBody = ByteArray(0).toRequestBody()
 
-/** Thrown when the server returns a non-2xx HTTP status code. */
-class LRRHttpException(val code: Int) : IOException("HTTP $code")
+/**
+ * Thrown when the server returns a non-2xx HTTP status code. [serverError]
+ * carries the `error` message from the response body when LANraragi sent a JSON
+ * `{success:0, error:"…"}` envelope (e.g. 409 duplicate, 417 checksum, 423
+ * locked, 400 "Server-side Progress Tracking is disabled"), so callers can
+ * surface the server's reason instead of a bare status code. Null when the body
+ * was absent or not a JSON error envelope (e.g. an HTML reverse-proxy page).
+ */
+class LRRHttpException(val code: Int, val serverError: String? = null) :
+    IOException(serverError ?: "HTTP $code")
 
 /** Thrown when the server returns a 2xx response but an empty body. */
 class LRREmptyBodyException : IOException()
@@ -117,13 +128,28 @@ internal fun requireValidCategoryId(categoryId: String): String {
  */
 internal fun ensureSuccess(response: Response) {
     if (!response.isSuccessful) {
-        throw LRRHttpException(response.code)
+        // Surface the server's JSON error message when present. LANraragi sends a
+        // `{success:0, error:"…"}` body on documented non-2xx responses (409
+        // duplicate, 417 checksum, 423 locked, 400 "tracking disabled", …) that a
+        // bare status code throws away. Reading the body here is safe: the caller
+        // never reads it on the error path because this throws.
+        val serverError = runCatching { response.body?.string()?.let(::parseLrrError) }.getOrNull()
+        throw LRRHttpException(response.code, serverError)
     }
     val contentType = response.body?.contentType()
     if (contentType != null && !contentType.subtype.contains("json")) {
         throw IOException("Expected JSON response but got $contentType")
     }
 }
+
+/**
+ * Extract the `error` message from a LANraragi JSON error envelope, or null if
+ * [body] isn't JSON or has no non-blank `error` field (e.g. a plain-text/HTML
+ * error page from a reverse proxy).
+ */
+private fun parseLrrError(body: String): String? = runCatching {
+    lrrJson.parseToJsonElement(body).jsonObject["error"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
+}.getOrNull()
 
 /**
  * Map common network exceptions to a localized user-friendly message.
@@ -137,6 +163,9 @@ fun friendlyError(context: Context, e: Exception): String {
     return when {
         e is LRROfflineException                 -> context.getString(R.string.lrr_offline_error)
         e is LRRCleartextRefusedException        -> context.getString(R.string.lrr_cleartext_refused_error)
+        // Prefer the server's own error message when LANraragi provided one
+        // (e.g. duplicate archive, locked resource, progress tracking disabled).
+        e is LRRHttpException && !e.serverError.isNullOrBlank() -> e.serverError
         e is LRRHttpException -> when (e.code) {
             401, 403 -> context.getString(R.string.lrr_auth_failed_check_key)
             404      -> context.getString(R.string.lrr_not_found_404)

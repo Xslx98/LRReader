@@ -56,6 +56,23 @@ class LRRMiscApiTest {
     }
 
     @Test
+    fun downloadUrl_surfacesServerErrorBodyOn400() = runTest {
+        // LANraragi returns a JSON {error} envelope on a documented 400. ensureSuccess
+        // must surface that message instead of throwing a bare "HTTP 400".
+        server.enqueue(
+            MockResponse().setResponseCode(400)
+                .setBody("""{"operation":"download_url","error":"URL is not valid","success":0}""")
+        )
+        try {
+            LRRMiscApi.downloadUrl(client, baseUrl, "not-a-url")
+            fail("Should have thrown")
+        } catch (e: LRRHttpException) {
+            assertEquals(400, e.code)
+            assertTrue("message should carry server error, was: ${e.message}", e.message!!.contains("URL is not valid"))
+        }
+    }
+
+    @Test
     fun downloadUrl_noCatid() = runTest {
         server.enqueue(MockResponse().setBody("""{"success":1,"job":1}"""))
 
