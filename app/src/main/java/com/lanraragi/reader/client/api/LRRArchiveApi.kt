@@ -278,6 +278,30 @@ object LRRArchiveApi {
      * format LANraragi's upload endpoint expects for the optional
      * `file_checksum` field used for in-transit integrity validation.
      */
+    /**
+     * Compute the LANraragi archive id (arcid) for [input] locally: the SHA-1
+     * (40 lowercase hex chars) of the **first [ARCHIVE_ID_HASH_BYTES] bytes**
+     * of the stream, mirroring the server's `compute_id`. Reads at most that
+     * many bytes, so a large archive can be fingerprinted from its Uri without
+     * a full copy — enabling a cheap pre-upload duplicate check.
+     *
+     * The caller owns [input] and is responsible for closing it.
+     */
+    @JvmStatic
+    fun computeArchiveId(input: java.io.InputStream): String {
+        val digest = MessageDigest.getInstance("SHA-1")
+        val buffer = ByteArray(8192)
+        var remaining = ARCHIVE_ID_HASH_BYTES
+        while (remaining > 0) {
+            val toRead = minOf(buffer.size, remaining)
+            val read = input.read(buffer, 0, toRead)
+            if (read == -1) break
+            digest.update(buffer, 0, read)
+            remaining -= read
+        }
+        return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xFF) }
+    }
+
     @JvmStatic
     fun computeFileChecksum(file: File): String {
         val digest = MessageDigest.getInstance("SHA-1")
@@ -394,6 +418,15 @@ object LRRArchiveApi {
 
     private const val HTTP_OK = 200
     private const val HTTP_ACCEPTED = 202
+
+    /**
+     * Number of leading file bytes LANraragi's `compute_id` hashes to derive an
+     * archive id (the first 512 KB). Must match the server constant exactly: if
+     * it drifts, [computeArchiveId] simply stops matching and the pre-upload
+     * dedup check degrades to a no-op (the server's own check still catches
+     * duplicates), so the failure mode is safe rather than wrong.
+     */
+    private const val ARCHIVE_ID_HASH_BYTES = 512_000
 
     /**
      * DELETE /api/archives/:id/isnew — Clear the "new" flag.

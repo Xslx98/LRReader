@@ -13,6 +13,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import com.lanraragi.reader.client.api.*
 import com.lanraragi.reader.client.api.data.*
+import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -356,6 +357,40 @@ class LRRArchiveApiTest {
             "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d",
             LRRArchiveApi.computeFileChecksum(testFile)
         )
+    }
+
+    // ── computeArchiveId (LANraragi arcid = SHA-1 of first 512000 bytes) ──
+
+    @Test
+    fun computeArchiveId_smallStream_isSha1OfWholeContent() {
+        // For files <= 512000 bytes the arcid is just the SHA-1 of the full
+        // content. SHA-1("hello") = aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d,
+        // matching how LANraragi's compute_id hashes the leading bytes.
+        val id = LRRArchiveApi.computeArchiveId(ByteArrayInputStream("hello".toByteArray()))
+        assertEquals("aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d", id)
+    }
+
+    @Test
+    fun computeArchiveId_ignoresBytesPastFirst512000() {
+        // Bytes beyond the 512000-byte window must not affect the id — this is
+        // exactly what the server does, so a local pre-upload dedup check can
+        // reproduce the arcid without reading the whole (large) file.
+        val window = ByteArray(512_000) { 0x41 } // 512000 × 'A'
+        val onlyWindow = LRRArchiveApi.computeArchiveId(ByteArrayInputStream(window))
+        val windowPlusTail =
+            LRRArchiveApi.computeArchiveId(ByteArrayInputStream(window + ByteArray(100) { 0x42 }))
+        assertEquals(onlyWindow, windowPlusTail)
+    }
+
+    @Test
+    fun computeArchiveId_includesByteAt512000Boundary() {
+        // The 512000th byte IS part of the window: changing it changes the id.
+        // Together with the previous test this pins the window to exactly 512000.
+        val allA = LRRArchiveApi.computeArchiveId(ByteArrayInputStream(ByteArray(512_000) { 0x41 }))
+        val lastByteDiffers = LRRArchiveApi.computeArchiveId(
+            ByteArrayInputStream(ByteArray(511_999) { 0x41 } + byteArrayOf(0x42))
+        )
+        assertNotEquals(allA, lastByteDiffers)
     }
 }
 
