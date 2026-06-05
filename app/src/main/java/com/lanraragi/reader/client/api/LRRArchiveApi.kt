@@ -288,7 +288,10 @@ object LRRArchiveApi {
      * preview grid would render the same cover for every page until
      * the user reopens the detail page.
      *
-     * @param page 0-indexed page number (server expects this convention).
+     * @param page 0-indexed page number. Converted to the server's 1-indexed
+     *   page on the wire (`page + 1`): LANraragi stores per-page thumbnails as
+     *   1.jpg..N.jpg and treats `page=0` as the cover, so sending the raw
+     *   0-indexed value shows every tile one page off (and never the last page).
      */
     @JvmStatic
     fun getPageThumbnailUrl(baseUrl: String, arcid: String, page: Int): String {
@@ -296,7 +299,7 @@ object LRRArchiveApi {
             .addPathSegments("api/archives")
             .addPathSegment(requireValidArcid(arcid))
             .addPathSegment("thumbnail")
-            .addQueryParameter("page", page.toString())
+            .addQueryParameter("page", (page + 1).toString())
             .addQueryParameter("no_fallback", "true")
             .build()
             .toString()
@@ -317,7 +320,8 @@ object LRRArchiveApi {
      * 202-aware backoff loop and a second outer retry layer would
      * double the attempt budget without adding signal.
      *
-     * @param page 0-indexed page number.
+     * @param page 0-indexed page number. Sent to the server as `page + 1`
+     *   (LANraragi per-page thumbnails are 1-indexed; `page=0` is the cover).
      */
     @JvmStatic
     suspend fun fetchPageThumbnail(
@@ -330,7 +334,7 @@ object LRRArchiveApi {
             .addPathSegments("api/archives")
             .addPathSegment(requireValidArcid(arcid))
             .addPathSegment("thumbnail")
-            .addQueryParameter("page", page.toString())
+            .addQueryParameter("page", (page + 1).toString())
             .addQueryParameter("no_fallback", "true")
             .build()
         val request = Request.Builder()
