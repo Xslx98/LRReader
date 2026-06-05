@@ -162,6 +162,8 @@ internal object GalleryListHelperFactory {
             override fun getHostString(resId: Int, vararg formatArgs: Any): String = scene.getString(resId, *formatArgs)
             override fun pickArchive(intent: Intent, onPicked: (Uri?) -> Unit) =
                 scene.launchPickArchive(intent, onPicked)
+            override fun startUpload(request: GalleryListViewModel.UploadRequest) =
+                scene.startArchiveUpload(request)
         })
 
         val searchBarHelper = GallerySearchBarHelper(

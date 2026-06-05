@@ -10,16 +10,12 @@ import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.hippo.app.EditTextDialogBuilder
 import com.hippo.ehviewer.R
-import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.lanraragi.reader.client.api.LRRMiscApi
 import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.ehviewer.ui.scene.BaseScene
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
 
 /**
  * Handles archive upload and URL download operations for GalleryListScene.
@@ -43,6 +39,14 @@ class GalleryUploadHelper(private val mCallback: Callback) {
          * (or `null` when the user cancels).
          */
         fun pickArchive(intent: Intent, onPicked: (Uri?) -> Unit)
+
+        /**
+         * Hand the prepared [request] to the ViewModel, which owns the upload
+         * orchestration (pre-upload dedup + progress) and emits UI state the
+         * Scene observes. The helper only resolves the Android [Uri]; it does
+         * not perform the transfer itself.
+         */
+        fun startUpload(request: GalleryListViewModel.UploadRequest)
     }
 
     /**
@@ -71,64 +75,20 @@ class GalleryUploadHelper(private val mCallback: Callback) {
     }
 
     /**
-     * Handle the selected file for archive upload.
+     * Resolve the picked [uri] into an [GalleryListViewModel.UploadRequest] and
+     * hand it to the ViewModel. The application context is used so the upload —
+     * which runs in the ViewModel scope and can outlive this Scene's view — does
+     * not capture an Activity.
      */
     fun handleUploadResult(uri: Uri) {
-        val context = mCallback.getHostContext() ?: return
-        val owner = mCallback.getHostActivity() as? ComponentActivity ?: return
-
-        owner.lifecycleScope.launch(Dispatchers.IO) {
-            var tempFile: File? = null
-            try {
-                var fileName = getFileNameFromUri(context, uri)
-                if (fileName == null) fileName = "upload_archive"
-                tempFile = File(context.cacheDir, fileName)
-                context.contentResolver.openInputStream(uri).use { inputStream ->
-                    FileOutputStream(tempFile).use { fos ->
-                        if (inputStream == null) throw IOException("Cannot open file")
-                        val buffer = ByteArray(8192)
-                        var read: Int
-                        while (inputStream.read(buffer).also { read = it } != -1) {
-                            fos.write(buffer, 0, read)
-                        }
-                    }
-                }
-
-                val finalTempFile = tempFile
-                // Compute the SHA-1 up front so the server can run its optional
-                // in-transit integrity check on the uploaded bytes (HTTP 417 on
-                // mismatch).
-                val checksum = LRRArchiveApi.computeFileChecksum(finalTempFile)
-                // Use the dedicated long-timeout upload client (via the
-                // convenience overload) so large archives on a slow LAN/WAN
-                // don't trip the default client's short timeouts.
-                runSuspend {
-                    LRRArchiveApi.uploadArchive(finalTempFile, fileChecksum = checksum)
-                }
-
-                val activity = mCallback.getHostActivity()
-                activity?.runOnUiThread {
-                    mCallback.showTip(
-                        mCallback.getHostString(R.string.lrr_upload_success),
-                        BaseScene.LENGTH_LONG
-                    )
-                    mCallback.refreshList()
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Upload failed", e)
-                val activity = mCallback.getHostActivity()
-                activity?.runOnUiThread {
-                    mCallback.showTip(
-                        mCallback.getHostString(R.string.lrr_upload_failed, e.message ?: ""),
-                        BaseScene.LENGTH_LONG
-                    )
-                }
-            } finally {
-                if (tempFile != null && tempFile.exists()) {
-                    tempFile.delete()
-                }
-            }
-        }
+        val context = mCallback.getHostContext()?.applicationContext ?: return
+        val fileName = getFileNameFromUri(context, uri) ?: "upload_archive"
+        val request = GalleryListViewModel.UploadRequest(
+            displayName = fileName,
+            cacheDir = context.cacheDir,
+            openStream = { context.contentResolver.openInputStream(uri) }
+        )
+        mCallback.startUpload(request)
     }
 
     /**
