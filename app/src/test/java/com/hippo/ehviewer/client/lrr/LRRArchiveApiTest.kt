@@ -285,6 +285,25 @@ class LRRArchiveApiTest {
     }
 
     @Test
+    fun uploadArchive_reportsProgressToTotal() = runTest {
+        server.enqueue(MockResponse().setBody("""{"success":1,"id":"x"}"""))
+
+        val testFile = tempFolder.newFile("prog.zip")
+        testFile.writeBytes(ByteArray(5000) { it.toByte() })
+
+        var lastWritten = 0L
+        var reportedTotal = -1L
+        LRRArchiveApi.uploadArchive(
+            client, baseUrl, testFile,
+            progressListener = { written, total -> lastWritten = written; reportedTotal = total }
+        )
+        server.takeRequest()
+
+        assertEquals("listener should see the file's full byte count as total", 5000L, reportedTotal)
+        assertEquals("final progress should reach 100% of the bytes", 5000L, lastWritten)
+    }
+
+    @Test
     fun uploadArchive_failure() = runTest {
         server.enqueue(MockResponse().setBody("""{"success":0,"error":"File too large"}"""))
 
