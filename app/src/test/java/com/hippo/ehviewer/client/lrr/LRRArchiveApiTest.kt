@@ -279,5 +279,35 @@ class LRRArchiveApiTest {
             assertEquals(500, e.code)
         }
     }
+
+    // ── per-page thumbnail (1-indexed on the wire) ─────────────────
+
+    @Test
+    fun fetchPageThumbnail_sendsOneIndexedPage() = runTest {
+        // The grid passes 0-indexed page numbers; LANraragi stores per-page
+        // thumbnails 1-indexed (1.jpg..N.jpg; page=0 is the cover), so the wire
+        // value must be page + 1 — otherwise every tile is off by one and the
+        // last page is never requested.
+        server.enqueue(MockResponse().setResponseCode(200).setBody("imgbytes"))
+
+        LRRArchiveApi.fetchPageThumbnail(
+            client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 0
+        )
+
+        val req = server.takeRequest()
+        assertEquals("GET", req.method)
+        val path = req.path!!
+        assertTrue("path: $path", path.startsWith("/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/thumbnail"))
+        assertTrue("expected page=1 for grid index 0, path: $path", path.contains("page=1"))
+        assertTrue(path.contains("no_fallback=true"))
+    }
+
+    @Test
+    fun getPageThumbnailUrl_isOneIndexed() {
+        val url = LRRArchiveApi.getPageThumbnailUrl(
+            baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 0
+        )
+        assertTrue("expected page=1 for grid index 0, url: $url", url.contains("page=1"))
+    }
 }
 
