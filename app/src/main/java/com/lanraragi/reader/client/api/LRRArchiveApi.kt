@@ -9,11 +9,17 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
+import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import okio.Buffer
+import okio.BufferedSink
+import okio.ForwardingSink
+import okio.buffer
 import java.io.File
 import java.io.IOException
 import java.security.MessageDigest
@@ -238,14 +244,18 @@ object LRRArchiveApi {
         tags: String? = null,
         categoryId: String? = null,
         summary: String? = null,
-        fileChecksum: String? = null
+        fileChecksum: String? = null,
+        progressListener: ((written: Long, total: Long) -> Unit)? = null
     ): String = withContext(Dispatchers.IO) {
+        val fileBody = file.asRequestBody("application/octet-stream".toMediaType())
+        val filePart = if (progressListener != null) {
+            ProgressRequestBody(fileBody, progressListener)
+        } else {
+            fileBody
+        }
         val bodyBuilder = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
-            .addFormDataPart(
-                "file", file.name,
-                file.asRequestBody("application/octet-stream".toMediaType())
-            )
+            .addFormDataPart("file", file.name, filePart)
         if (!title.isNullOrEmpty()) bodyBuilder.addFormDataPart("title", title)
         if (!tags.isNullOrEmpty()) bodyBuilder.addFormDataPart("tags", tags)
         if (!categoryId.isNullOrEmpty()) bodyBuilder.addFormDataPart("category_id", categoryId)
@@ -274,10 +284,35 @@ object LRRArchiveApi {
     }
 
     /**
-     * Compute the SHA-1 checksum (40 lowercase hex chars) of [file], in the
-     * format LANraragi's upload endpoint expects for the optional
-     * `file_checksum` field used for in-transit integrity validation.
+     * A [RequestBody] decorator that reports upload progress as bytes are
+     * written to the network. [listener] receives the running byte count and
+     * the part's total size on each chunk, ending at (total, total). Used to
+     * drive a determinate upload progress bar.
      */
+    private class ProgressRequestBody(
+        private val delegate: RequestBody,
+        private val listener: (written: Long, total: Long) -> Unit
+    ) : RequestBody() {
+        override fun contentType(): MediaType? = delegate.contentType()
+
+        override fun contentLength(): Long = delegate.contentLength()
+
+        override fun writeTo(sink: BufferedSink) {
+            val total = contentLength()
+            val countingSink = object : ForwardingSink(sink) {
+                private var written = 0L
+                override fun write(source: Buffer, byteCount: Long) {
+                    super.write(source, byteCount)
+                    written += byteCount
+                    listener(written, total)
+                }
+            }
+            val buffered = countingSink.buffer()
+            delegate.writeTo(buffered)
+            buffered.flush()
+        }
+    }
+
     /**
      * Probe whether [arcid] already exists on the server, for a pre-upload
      * duplicate check. Returns true when `GET /metadata` succeeds (200), false
@@ -319,6 +354,11 @@ object LRRArchiveApi {
         return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xFF) }
     }
 
+    /**
+     * Compute the SHA-1 checksum (40 lowercase hex chars) of [file], in the
+     * format LANraragi's upload endpoint expects for the optional
+     * `file_checksum` field used for in-transit integrity validation.
+     */
     @JvmStatic
     fun computeFileChecksum(file: File): String {
         val digest = MessageDigest.getInstance("SHA-1")
@@ -541,16 +581,18 @@ object LRRArchiveApi {
         deleteArchive(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), arcid)
 
     @JvmStatic
+    @Suppress("LongParameterList")
     suspend fun uploadArchive(
         file: File,
         title: String? = null,
         tags: String? = null,
         categoryId: String? = null,
         summary: String? = null,
-        fileChecksum: String? = null
+        fileChecksum: String? = null,
+        progressListener: ((written: Long, total: Long) -> Unit)? = null
     ): String =
         uploadArchive(
             ServiceRegistry.networkModule.uploadClient, LRRClientProvider.getBaseUrl(),
-            file, title, tags, categoryId, summary, fileChecksum
+            file, title, tags, categoryId, summary, fileChecksum, progressListener
         )
 }
