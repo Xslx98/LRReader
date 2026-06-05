@@ -279,6 +279,23 @@ object LRRArchiveApi {
      * `file_checksum` field used for in-transit integrity validation.
      */
     /**
+     * Probe whether [arcid] already exists on the server, for a pre-upload
+     * duplicate check. Returns true when `GET /metadata` succeeds (200), false
+     * when the server reports the id is unknown (HTTP 400 — LANraragi's answer
+     * for a non-existent arcid — or 404). Any other failure (network, 5xx,
+     * reverse-proxy) propagates so the caller can decide; the upload path treats
+     * an inconclusive probe as "not a confirmed duplicate" and proceeds.
+     */
+    @JvmStatic
+    suspend fun archiveExists(client: OkHttpClient, baseUrl: String, arcid: String): Boolean =
+        try {
+            getArchiveMetadata(client, baseUrl, arcid)
+            true
+        } catch (e: LRRHttpException) {
+            if (e.code == HTTP_BAD_REQUEST || e.code == HTTP_NOT_FOUND) false else throw e
+        }
+
+    /**
      * Compute the LANraragi archive id (arcid) for [input] locally: the SHA-1
      * (40 lowercase hex chars) of the **first [ARCHIVE_ID_HASH_BYTES] bytes**
      * of the stream, mirroring the server's `compute_id`. Reads at most that
@@ -418,6 +435,8 @@ object LRRArchiveApi {
 
     private const val HTTP_OK = 200
     private const val HTTP_ACCEPTED = 202
+    private const val HTTP_BAD_REQUEST = 400
+    private const val HTTP_NOT_FOUND = 404
 
     /**
      * Number of leading file bytes LANraragi's `compute_id` hashes to derive an
@@ -484,6 +503,10 @@ object LRRArchiveApi {
     @JvmStatic
     suspend fun getArchiveMetadata(arcid: String): LRRArchive =
         getArchiveMetadata(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), arcid)
+
+    @JvmStatic
+    suspend fun archiveExists(arcid: String): Boolean =
+        archiveExists(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), arcid)
 
     @JvmStatic
     suspend fun updateArchiveMetadata(arcid: String, tags: String) =
