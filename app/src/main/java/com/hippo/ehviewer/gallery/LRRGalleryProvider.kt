@@ -8,7 +8,6 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LrrFileListCache
-import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.lib.glgallery.GalleryProvider
 import com.hippo.lib.image.Image
 import com.hippo.unifile.UniFile
@@ -29,7 +28,6 @@ import java.io.IOException
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.LockSupport
 
@@ -59,10 +57,13 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
     // Atomic provider state -- replaces individual @Volatile fields for pagePaths/pageCount/stopped
     private val stateRef = AtomicReference(ProviderState())
 
-    // Monotonic counter for server progress syncs. Each putStartPage() bumps it
-    // and the launched sync skips if a newer write has since been submitted, so
-    // only the latest progress reaches the server.
-    private val progressSyncSeq = AtomicLong(0)
+    /** Serialized + conflated server progress sync (app-scoped, survives stop()). */
+    private val progressSyncer = ReadingProgressSyncer(
+        ServiceRegistry.coroutineModule.ioScope
+    ) { page0 ->
+        val client = ServiceRegistry.networkModule.okHttpClient
+        LRRArchiveApi.updateProgress(client, serverUrl, arcId, page0 + 1)
+    }
 
     @Volatile
     private var errorMessage: String? = null
@@ -373,28 +374,10 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
         // Persist locally for instant restore on next open
         saveReadingProgress(context, arcId, page)
 
-        // Sync progress to LANraragi server (1-indexed). Use the app-wide IO
-        // scope: putStartPage may be called during stop()/teardown when the
-        // provider scope is already cancelled, and we still want to persist.
-        //
-        // On cold open the GalleryView first lays out the locally-saved page
-        // (firing this for the stale page) and then the reconciliation jump
-        // fires it again for the resolved page. Both syncs run on the unordered
-        // ioScope, so without a guard the stale write could land last and
-        // clobber newer cross-device progress. The monotonic sequence makes a
-        // superseded write skip its server sync (also coalesces rapid paging).
-        val seq = progressSyncSeq.incrementAndGet()
-        ServiceRegistry.coroutineModule.ioScope.launch {
-            try {
-                if (seq != progressSyncSeq.get()) return@launch
-                val client = ServiceRegistry.networkModule.okHttpClient
-                runSuspend<Unit> {
-                    LRRArchiveApi.updateProgress(client, serverUrl, arcId, page + 1)
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to sync progress: ${e.message}")
-            }
-        }
+        // Sync progress to LANraragi server (1-indexed), serialized and
+        // conflated so the last page of a fast-flip burst — not an
+        // arbitrary racing PUT — is what the server ends up with.
+        progressSyncer.submit(page)
     }
 
     /**

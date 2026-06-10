@@ -22,7 +22,6 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.lib.glgallery.GalleryPageView
 import com.hippo.lib.image.Image
 import com.hippo.unifile.UniFile
@@ -140,6 +139,16 @@ class DirGalleryProvider : GalleryProvider2 {
     @Volatile
     private var startPageBaseline = 0
 
+    /** Serialized + conflated server progress sync (app-scoped, survives stop()). */
+    private val progressSyncer = ReadingProgressSyncer(
+        ServiceRegistry.coroutineModule.ioScope
+    ) sync@{ page0 ->
+        val url = serverUrl ?: return@sync
+        val id = arcId ?: return@sync
+        val client = ServiceRegistry.networkModule.okHttpClient
+        LRRArchiveApi.updateProgress(client, url, id, page0 + 1)
+    }
+
     /**
      * Signalled from the file enum coroutine right after notifyDataChanged
      * is enqueued. The restore coroutine awaits this **and** a render-thread
@@ -179,18 +188,10 @@ class DirGalleryProvider : GalleryProvider2 {
         if (context != null && arcId != null) {
             saveReadingProgress(context, arcId!!, page)
         }
-        // Sync progress to LANraragi server (1-indexed)
+        // Sync progress to LANraragi server (1-indexed), serialized and
+        // conflated — see ReadingProgressSyncer.
         if (arcId != null && serverUrl != null) {
-            ServiceRegistry.coroutineModule.ioScope.launch {
-                try {
-                    val client = ServiceRegistry.networkModule.okHttpClient
-                    runSuspend<Unit> {
-                        LRRArchiveApi.updateProgress(client, serverUrl, arcId, page + 1)
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to sync progress: ${e.message}")
-                }
-            }
+            progressSyncer.submit(page)
         }
     }
 
