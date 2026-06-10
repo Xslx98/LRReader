@@ -11,7 +11,7 @@ import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.lib.yorozuya.StringUtils
 import com.hippo.unifile.UniFile
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import java.io.File
 
@@ -98,7 +98,14 @@ object GalleryOpenHelper {
             // bytes and decode-warms the slot. Idempotent w.r.t. an
             // earlier detail-page trigger; the slot's
             // store-replaces-and-recycles semantics handle a duplicate.
-            val serverUrl = LRRAuthManager.getServerUrl()
+            // Resolve the archive's source profile (not the active one) so
+            // the warm hits the same server the reader will stream from.
+            val serverUrl = runCatching {
+                resolveSourceBaseUrl(
+                    archive.serverProfileId,
+                    ServiceRegistry.dataModule.profileLookupCache,
+                )
+            }.getOrNull()
             if (serverUrl != null) {
                 // Warmup the slot the user will actually land on: an
                 // explicit startPage overrides the saved progress so
