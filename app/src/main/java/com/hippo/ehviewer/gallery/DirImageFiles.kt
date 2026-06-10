@@ -52,6 +52,59 @@ internal object DirImageFiles {
     }
 
     /**
+     * Map 0-indexed page number -> position in [names] for directories
+     * whose files use the download worker's zero-padded numeric naming
+     * ("0001.jpg", "0002.png", ...; legacy 8-digit names too). Returns
+     * null when any name doesn't parse as a pure positive number —
+     * callers fall back to positional mapping (legacy title-named dirs,
+     * arbitrary user content).
+     *
+     * Why: positional mapping silently SHIFTS every page after a gap (a
+     * page the download worker failed on while its siblings completed),
+     * so page N renders page N+1's image and the reported size is short.
+     * Numeric mapping keeps real page numbers and turns gaps into
+     * explicit per-page errors.
+     */
+    fun numericPageIndices(names: List<String>): Map<Int, Int>? {
+        if (names.isEmpty()) return null
+        val map = HashMap<Int, Int>(names.size)
+        names.forEachIndexed { pos, name ->
+            val stem = name.substringBeforeLast('.')
+            if (stem.isEmpty() || stem.length > MAX_NUMERIC_STEM || !stem.all { it.isDigit() }) {
+                return null
+            }
+            val page1 = stem.toInt()
+            if (page1 < 1) return null
+            if (map.put(page1 - 1, pos) != null) return null
+        }
+        return map
+    }
+
+    /** Longest digit run still safely parseable as Int (download worker writes 4). */
+    private const val MAX_NUMERIC_STEM = 9
+
+    /**
+     * Page-space size of a directory: how many pages the reader exposes.
+     *
+     * - No numeric [map] (positional dir): the file count, exactly.
+     * - Numeric map: `max(highestPageNumber + 1, expectedPageCount)` so a
+     *   *trailing* gap (the archive is N pages but only the first M
+     *   downloaded) still shows the missing tail as explicit error pages
+     *   rather than silently ending early.
+     *
+     * Trade-off: if [expectedPageCount] is stale-HIGH for a *fully*
+     * downloaded archive (server metadata's `pagecount` drifted above the
+     * real `/files` length after a re-tag/re-upload), the extra tail slots
+     * render as error pages until the next detail fetch corrects pagecount.
+     * Accepted: surfacing a genuine missing tail is worth the rare phantom.
+     */
+    fun pageSpaceSize(map: Map<Int, Int>?, fileCount: Int, expectedPageCount: Int): Int {
+        if (map == null) return fileCount
+        val maxPage = (map.keys.maxOrNull() ?: -1) + 1
+        return maxOf(maxPage, expectedPageCount)
+    }
+
+    /**
      * Decode a single image file. Hops through a temp file when the
      * source isn't a [FileInputStream] (e.g. SAF `content://` URIs)
      * so the native decoder can mmap it. Caller should run on the
