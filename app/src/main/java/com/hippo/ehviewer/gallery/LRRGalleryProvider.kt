@@ -226,31 +226,20 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
                         "[PROGRESS] Server metadata: progress=${metadata.progress}" +
                             " lastreadtime=${metadata.lastreadtime} arcid=${metadata.arcid}"
                     )
-                    if (metadata.progress > 0) {
-                        val serverPage0 = metadata.progress - 1 // convert 1-indexed to 0-indexed
-                        val serverTs = metadata.lastreadtime
-                        val localTs = loadReadingTimestamp(context, arcId)
-                        Log.i(
-                            TAG,
-                            "[PROGRESS] serverPage0=$serverPage0 serverTs=$serverTs localTs=$localTs"
-                        )
-                        if (serverTs > localTs) {
-                            serverPage = serverPage0
-                            startPageValue = serverPage0
-                            saveReadingProgress(context, arcId, serverPage0)
-                            Log.i(TAG, "[PROGRESS] Using SERVER progress: page $serverPage0")
-                        } else if (localTs > serverTs && startPageValue > 0) {
-                            serverPage = startPageValue
-                            Log.i(TAG, "[PROGRESS] Using LOCAL progress: page $startPageValue")
-                        } else {
-                            serverPage = maxOf(serverPage0, startPageValue)
-                            startPageValue = serverPage
-                            Log.i(TAG, "[PROGRESS] Timestamps equal, using max page: $serverPage")
-                        }
-                    } else {
-                        Log.i(TAG, "[PROGRESS] Server progress=0, using local page=$startPageValue")
-                        serverPage = startPageValue
+                    val localTs = loadReadingTimestamp(context, arcId)
+                    val resolved = ReadingProgressReconciler.resolve(
+                        startPageValue, localTs, metadata.progress, metadata.lastreadtime
+                    )
+                    Log.i(
+                        TAG,
+                        "[PROGRESS] resolved page=$resolved (localPage0=$startPageValue/$localTs" +
+                            " serverProgress1=${metadata.progress}/${metadata.lastreadtime})"
+                    )
+                    if (resolved != startPageValue) {
+                        startPageValue = resolved
+                        saveReadingProgress(context, arcId, resolved)
                     }
+                    serverPage = resolved
                 }
 
                 val finalPage = serverPage

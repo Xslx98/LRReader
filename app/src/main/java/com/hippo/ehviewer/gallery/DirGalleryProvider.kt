@@ -47,7 +47,6 @@ import java.util.concurrent.PriorityBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.math.max
 
 class DirGalleryProvider : GalleryProvider2 {
 
@@ -266,31 +265,19 @@ class DirGalleryProvider : GalleryProvider2 {
                     Log.i(TAG, "[PROGRESS] Server metadata: progress=$serverProgress" +
                             " lastreadtime=$serverTs savedFraction=$savedFraction")
                     if (serverProgress > 0 || savedFraction > 0f) {
-                        val serverPage0 = (serverProgress - 1).coerceAtLeast(0)
                         val localTs = if (arcId != null) loadReadingTimestamp(context, arcId!!) else 0L
-                        Log.i(TAG, "[PROGRESS] serverPage0=$serverPage0" +
-                                " serverTs=$serverTs localTs=$localTs" +
-                                " localPage=$startPageValue")
-                        val resolvedPage: Int
-                        if (serverProgress <= 0) {
-                            // No server progress (offline, missing metadata, or
-                            // genuinely page 0). Stick with the local SP-saved
-                            // page and let the intra-page fraction restore on it.
-                            resolvedPage = startPageValue
-                        } else if (serverTs > localTs) {
-                            resolvedPage = serverPage0
-                            startPageValue = serverPage0
-                            readAnchor = startPageValue
-                            if (arcId != null) saveReadingProgress(context, arcId!!, serverPage0)
-                            Log.i(TAG, "[PROGRESS] Using SERVER progress: page $serverPage0")
-                        } else if (localTs > serverTs && startPageValue > 0) {
-                            resolvedPage = startPageValue
-                            Log.i(TAG, "[PROGRESS] Using LOCAL progress: page $startPageValue")
-                        } else {
-                            resolvedPage = max(serverPage0, startPageValue)
+                        val resolvedPage = ReadingProgressReconciler.resolve(
+                            startPageValue, localTs, serverProgress, serverTs
+                        )
+                        Log.i(
+                            TAG,
+                            "[PROGRESS] resolved page=$resolvedPage" +
+                                " (localPage0=$startPageValue/$localTs serverProgress1=$serverProgress/$serverTs)"
+                        )
+                        if (resolvedPage != startPageValue) {
                             startPageValue = resolvedPage
                             readAnchor = startPageValue
-                            Log.i(TAG, "[PROGRESS] Timestamps equal, using max: page $resolvedPage")
+                            if (arcId != null) saveReadingProgress(context, arcId!!, resolvedPage)
                         }
                         // Jump GalleryView if needed. Order matters:
                         //   1. wait for the file enum coroutine to finish
