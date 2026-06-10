@@ -117,6 +117,16 @@ public abstract class GalleryProvider {
         mImageCache.remove(index);
     }
 
+    /**
+     * @return true when a decoded image for {@code index} currently sits in
+     * the memory cache. Lets providers skip redundant preload decodes — the
+     * LruCache stays the single source of truth (the {@code get} also bumps
+     * the entry's recency, which is desirable for pages near the reader).
+     */
+    public final boolean hasCache(int index) {
+        return mImageCache.get(index) != null;
+    }
+
     protected abstract void onRequest(int index);
 
     protected abstract void onForceRequest(int index);
