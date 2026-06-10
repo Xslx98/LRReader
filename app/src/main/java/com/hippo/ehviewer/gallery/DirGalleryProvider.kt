@@ -516,7 +516,11 @@ class DirGalleryProvider : GalleryProvider2 {
                 // 300ms fade-in — the visible flicker when opening a
                 // downloaded archive.
                 val targetArcid = arcId
-                if (targetArcid != null) {
+                // files.isNotEmpty() guard: coerceIn(0, files.size - 1) throws
+                // for an empty dir (coerceIn(0, -1) is an empty range), and the
+                // exception would skip notifyDataChanged() below, leaving the
+                // reader stuck on a permanent spinner.
+                if (targetArcid != null && files.isNotEmpty()) {
                     val warmIndex = startPageValue.coerceIn(0, files.size - 1)
                     val warmed = ReaderPageCache.consumeDecodedPage(
                         targetArcid, warmIndex, awaitInflightWarmMs = WARM_AWAIT_MS
