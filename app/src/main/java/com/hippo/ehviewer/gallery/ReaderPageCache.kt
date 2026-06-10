@@ -470,7 +470,12 @@ object ReaderPageCache : Cacheable {
      * picks a different page the slot simply won't match on consume
      * and the regular decode path runs.
      */
-    fun warmDir(context: Context, arcId: String, dir: UniFile): Job {
+    fun warmDir(
+        context: Context,
+        arcId: String,
+        dir: UniFile,
+        startPageOverride: Int = -1,
+    ): Job {
         // CoroutineStart.LAZY so we can publish the Job into
         // activeWarmups *before* it begins running — otherwise a
         // provider racing the launch could observe activeWarmups[arcId]
@@ -490,9 +495,13 @@ object ReaderPageCache : Cacheable {
                     Log.i(TAG, "[WARM] warmDir abort empty-dir arcid=$arcId")
                     return@launch
                 }
-                val pageIndex = GalleryProvider2
-                    .loadReadingProgress(context.applicationContext, arcId)
-                    .coerceIn(0, files.size - 1)
+                val pageIndex = (
+                    if (startPageOverride >= 0) {
+                        startPageOverride
+                    } else {
+                        GalleryProvider2.loadReadingProgress(context.applicationContext, arcId)
+                    }
+                    ).coerceIn(0, files.size - 1)
                 val image = withContext(
                     ServiceRegistry.coroutineModule.decoderDispatcher
                 ) {

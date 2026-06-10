@@ -521,7 +521,9 @@ class DirGalleryProvider : GalleryProvider2 {
                 // exception would skip notifyDataChanged() below, leaving the
                 // reader stuck on a permanent spinner.
                 if (targetArcid != null && files.isNotEmpty()) {
-                    val warmIndex = startPageValue.coerceIn(0, files.size - 1)
+                    val warmIndex = (
+                        if (initialPageOverride >= 0) initialPageOverride else startPageValue
+                        ).coerceIn(0, files.size - 1)
                     val warmed = ReaderPageCache.consumeDecodedPage(
                         targetArcid, warmIndex, awaitInflightWarmMs = WARM_AWAIT_MS
                     )

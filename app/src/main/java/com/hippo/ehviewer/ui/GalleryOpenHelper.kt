@@ -79,7 +79,9 @@ object GalleryOpenHelper {
             // user sees the loading placeholder.
             UniFile.fromFile(downloadDir)?.let { uniFile ->
                 Log.i(TAG, "[WARM] openHelper DIR trigger arcid=${archive.arcid}")
-                ReaderPageCache.warmDir(context, archive.arcid, uniFile)
+                // Pass the explicit start page (thumbnail tap) so the warm
+                // decodes the page the reader will actually open on.
+                ReaderPageCache.warmDir(context, archive.arcid, uniFile, startPage)
             }
         } else {
             // No local files, or an incomplete local copy with network up —

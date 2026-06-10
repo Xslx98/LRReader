@@ -28,6 +28,17 @@ abstract class GalleryProvider2 : GalleryProvider() {
     @Volatile
     var galleryView: GalleryView? = null
 
+    /**
+     * Explicit start page from the launch intent (KEY_PAGE, e.g. a
+     * thumbnail-grid tap), or -1 when the provider's own saved progress
+     * decides. Providers use it to warm / consume the decoded slot for the
+     * page the reader will actually land on, instead of the SP-saved one
+     * (a thumbnail tap to a far page otherwise always missed the warm and
+     * replayed the open fade-in).
+     */
+    @Volatile
+    var initialPageOverride: Int = -1
+
     open fun getStartPage(): Int = 0
 
     open fun putStartPage(page: Int) {}
