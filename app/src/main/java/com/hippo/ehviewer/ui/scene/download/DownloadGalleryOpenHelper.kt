@@ -27,6 +27,7 @@ import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.DownloadInfo
+import com.hippo.ehviewer.download.DownloadState
 import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.spider.SpiderInfo
 import com.hippo.ehviewer.ui.GalleryActivity
@@ -81,12 +82,18 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
         }
 
         // Use GalleryOpenHelper to prefer local files over server
-        // buildReadIntent is suspend (resolves download dir from DB)
+        // buildReadIntent is suspend (resolves download dir from DB).
+        // toArchive() zeroes pagecount, so pass the download's own state as
+        // the authoritative completeness signal: only a FINISH download is a
+        // complete local copy — a paused/failed/in-progress one streams.
         val archive = downloadInfo.toArchive()
+        val knownComplete = downloadInfo.state == DownloadState.FINISH
         callback.viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val readIntent = withContext(Dispatchers.IO) {
-                    GalleryOpenHelper.buildReadIntent(activity, archive)
+                    GalleryOpenHelper.buildReadIntent(
+                        activity, archive, knownComplete = knownComplete
+                    )
                 }
                 callback.launchGallery(readIntent)
             } catch (e: Exception) {

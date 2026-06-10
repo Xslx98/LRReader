@@ -36,19 +36,40 @@ object GalleryOpenHelper {
      *   thumbnail-grid tap on the detail page).
      * @return Intent ready for startActivity()
      */
+    /**
+     * @param knownComplete authoritative local-completeness from the caller,
+     *   overriding the [archive.pagecount] heuristic. The downloads list
+     *   passes `state == FINISH` here: a [DownloadInfo] reaches the reader
+     *   via the lossy `toArchive()` mapper, which zeroes `pagecount`, so the
+     *   count heuristic alone would treat every partial download as
+     *   "complete" (unknown pagecount). `null` (detail page / history / list)
+     *   falls back to the pagecount heuristic.
+     */
     @JvmStatic
     suspend fun buildReadIntent(
         context: Context,
         archive: Archive,
         startPage: Int = -1,
+        knownComplete: Boolean? = null,
     ): Intent {
         val intent = Intent(context, GalleryActivity::class.java)
 
-        // Check if local downloaded files exist. getLocalDownloadDir only
-        // returns a directory that actually contains page images, so no
-        // separate hasImageFiles re-check is needed here.
+        // Check if local downloaded files exist AND are complete. A partial
+        // copy (download paused / failed / in progress) routes to streaming
+        // so the page sequence is whole and correctly ordered; the partial
+        // dir is only used when there is no network to stream from.
         val downloadDir = getLocalDownloadDir(context, archive)
-        if (downloadDir != null) {
+        val localComplete = downloadDir != null &&
+            (knownComplete ?: isLocalCopyComplete(downloadDir, archive.pagecount))
+        val networkAvailable = ServiceRegistry.networkModule.networkMonitor.isAvailable
+        if (downloadDir != null && (localComplete || !networkAvailable)) {
+            if (!localComplete && BuildConfig.DEBUG) {
+                Log.i(
+                    TAG,
+                    "[ROUTE] incomplete local copy for arcid=${archive.arcid}" +
+                        " opened offline (no network)"
+                )
+            }
             // Local files available — read offline (instant)
             intent.action = GalleryActivity.ACTION_DIR
             intent.putExtra(GalleryActivity.KEY_FILENAME, downloadDir.absolutePath)
@@ -61,7 +82,16 @@ object GalleryOpenHelper {
                 ReaderPageCache.warmDir(context, archive.arcid, uniFile)
             }
         } else {
-            // No local files — stream from LANraragi server
+            // No local files, or an incomplete local copy with network up —
+            // stream from LANraragi server.
+            if (downloadDir != null && BuildConfig.DEBUG) {
+                Log.i(
+                    TAG,
+                    "[ROUTE] incomplete local copy for arcid=${archive.arcid}" +
+                        " (${countImageFiles(downloadDir)}/${archive.pagecount})," +
+                        " streaming from server instead"
+                )
+            }
             intent.action = GalleryActivity.ACTION_LRR
             intent.putExtra(GalleryActivity.KEY_ARCHIVE, archive)
             // Fire-and-forget LRR warmup. preloadForDetail downloads the
@@ -177,5 +207,28 @@ object GalleryOpenHelper {
                 GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS
             )
         }
+    }
+
+    /** Count page-image files in [dir] using the same extension whitelist as [hasImageFiles]. */
+    @JvmStatic
+    fun countImageFiles(dir: File): Int {
+        val files = dir.listFiles() ?: return 0
+        return files.count { f ->
+            f.isFile && StringUtils.endsWith(
+                f.name.lowercase(),
+                GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS
+            )
+        }
+    }
+
+    /**
+     * A local copy is complete when it holds at least [expectedPages] page
+     * images. An unknown server pagecount (<= 0) is treated as complete —
+     * we have no basis to second-guess the directory.
+     */
+    @JvmStatic
+    fun isLocalCopyComplete(dir: File, expectedPages: Int): Boolean {
+        if (expectedPages <= 0) return true
+        return countImageFiles(dir) >= expectedPages
     }
 }
