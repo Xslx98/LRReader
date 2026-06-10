@@ -173,7 +173,9 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
             ACTION_LRR -> {
                 val archive = mArchive
                 if (archive != null) {
-                    mGalleryProvider = LRRGalleryProvider(this, archive.arcid)
+                    mGalleryProvider = LRRGalleryProvider(
+                        this, archive.arcid, archive.serverProfileId
+                    )
                 }
             }
             Intent.ACTION_VIEW -> {

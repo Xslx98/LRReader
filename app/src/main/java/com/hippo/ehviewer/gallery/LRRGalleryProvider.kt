@@ -6,12 +6,13 @@ import com.hippo.ehviewer.GetText
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRArchiveApi
-import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LrrFileListCache
+import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.hippo.lib.glgallery.GalleryProvider
 import com.hippo.lib.image.Image
 import com.hippo.unifile.UniFile
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -39,7 +40,11 @@ import java.util.concurrent.locks.LockSupport
  * 2. onRequest(index) -> downloads the specific page image, decodes it, notifies UI
  * 3. Adjacent pages are preloaded (download only) for faster navigation
  */
-class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryProvider2() {
+class LRRGalleryProvider(
+    context: Context,
+    private val arcId: String,
+    private val serverProfileId: Long = 0L,
+) : GalleryProvider2() {
 
     /**
      * Immutable snapshot of provider state. All three fields are read/written atomically
@@ -52,7 +57,20 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
     )
 
     private val context: Context = context.applicationContext
-    private val serverUrl: String = LRRAuthManager.getServerUrl() ?: ""
+
+    /**
+     * Source-profile base URL, resolved once at the top of [start] from
+     * [serverProfileId] via [resolveSourceBaseUrl] so page downloads,
+     * metadata and progress sync hit the server this archive belongs to —
+     * not whatever profile is active (CLAUDE.md multi-profile rule). The
+     * [serverUrlDeferred] is completed on the app IO scope (so a quick
+     * stop() can't strand the progress syncer awaiting it); [serverUrl] is
+     * the resolved value, set before the page-list fetch and therefore
+     * before any onRequest page download can run.
+     */
+    @Volatile
+    private var serverUrl: String = ""
+    private val serverUrlDeferred = CompletableDeferred<String?>()
 
     // Atomic provider state -- replaces individual @Volatile fields for pagePaths/pageCount/stopped
     private val stateRef = AtomicReference(ProviderState())
@@ -60,9 +78,10 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
     /** Serialized + conflated server progress sync (app-scoped, survives stop()). */
     private val progressSyncer = ReadingProgressSyncer(
         ServiceRegistry.coroutineModule.ioScope
-    ) { page0 ->
+    ) sync@{ page0 ->
+        val url = serverUrlDeferred.await() ?: return@sync
         val client = ServiceRegistry.networkModule.okHttpClient
-        LRRArchiveApi.updateProgress(client, serverUrl, arcId, page0 + 1)
+        LRRArchiveApi.updateProgress(client, url, arcId, page0 + 1)
     }
 
     @Volatile
@@ -106,6 +125,29 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
         userNavigated = false
         startPageBaseline = startPageValue
 
+        // Resolve the archive's source-profile base URL once, app-scoped so a
+        // stop() that cancels providerScope can't strand the progress syncer
+        // (which awaits this deferred). The page-list coroutine below awaits
+        // the same deferred before fetching anything.
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            if (!serverUrlDeferred.isCompleted) {
+                val url = try {
+                    resolveSourceBaseUrl(
+                        serverProfileId,
+                        ServiceRegistry.dataModule.profileLookupCache,
+                    )
+                } catch (e: Exception) {
+                    // resolveSourceBaseUrl never returns null — a deleted /
+                    // orphaned source profile (or no active profile on the
+                    // id==0 path) THROWS. Swallow to null here; the page-list
+                    // coroutine turns that into an inline STATE_ERROR.
+                    Log.w(TAG, "Source profile resolve failed for arcid=$arcId: ${e.message}")
+                    null
+                }
+                serverUrlDeferred.complete(url)
+            }
+        }
+
         // Initialize the provider's coroutine scope. Every background launch
         // in this class is scoped here and cancelled in stop(). Install the
         // app-wide [com.hippo.ehviewer.module.CoroutineModule.exceptionHandler]
@@ -135,6 +177,21 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
         // Load page list and metadata on background threads
         providerScope?.launch {
             try {
+                // Wait for the source-profile URL before any fetch. Unlike
+                // the Dir provider (whose file list is local and resolves in
+                // parallel), this await is intrinsic: getFileList needs the
+                // URL. A null resolution (the swallowed throw above) means
+                // there is no server to stream from — surface an inline error
+                // instead of an indefinite spinner.
+                val resolvedUrl = serverUrlDeferred.await()
+                if (resolvedUrl == null) {
+                    errorMessage = GetText.getString(R.string.lrr_error_load_pages_failed)
+                    stateRef.updateAndGet { it.copy(count = GalleryProvider.STATE_ERROR) }
+                    notifyDataChanged()
+                    return@launch
+                }
+                serverUrl = resolvedUrl
+
                 val client = ServiceRegistry.networkModule.longReadClient
 
                 // Fire-and-forget: clear "new" flag (independent, no need to wait)
