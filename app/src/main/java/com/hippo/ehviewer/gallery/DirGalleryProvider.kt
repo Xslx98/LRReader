@@ -40,10 +40,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.PriorityBlockingQueue
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
@@ -114,6 +116,31 @@ class DirGalleryProvider : GalleryProvider2 {
     private val initialRestoreCompleted = AtomicBoolean(false)
 
     /**
+     * Set on the first user-driven page change after open (any
+     * putStartPage whose page differs from the page the reader opened
+     * on — including an explicit KEY_PAGE override from a thumbnail
+     * tap). Once set, the async restore in [start] must NOT apply its
+     * setCurrentPage / setCurrentPageScrollFraction: yanking the user
+     * away from a page they navigated to is worse than losing the
+     * restore.
+     */
+    @Volatile
+    private var userNavigated = false
+
+    /**
+     * The page the GalleryView was BUILT with (saved progress snapshot
+     * taken in start(), before the async reconciler can mutate
+     * [startPageValue]). [putStartPage] compares the incoming page
+     * against this immutable baseline so neither the reconciler's own
+     * startPageValue rewrite nor the initial layout echo is mistaken for
+     * user navigation. A KEY_PAGE thumbnail tap (built-with != saved
+     * progress) still flags navigation on the first echo, intentionally
+     * suppressing the restore.
+     */
+    @Volatile
+    private var startPageBaseline = 0
+
+    /**
      * Signalled from the file enum coroutine right after notifyDataChanged
      * is enqueued. The restore coroutine awaits this **and** a render-thread
      * barrier on top, so that setCurrentPageScrollFraction can never land
@@ -145,6 +172,9 @@ class DirGalleryProvider : GalleryProvider2 {
 
     override fun putStartPage(page: Int) {
         readAnchor = page
+        if (page != startPageBaseline) {
+            userNavigated = true
+        }
         startPageValue = page
         if (context != null && arcId != null) {
             saveReadingProgress(context, arcId!!, page)
@@ -210,6 +240,8 @@ class DirGalleryProvider : GalleryProvider2 {
         // flipped it earlier; we want each fresh open to re-do the
         // initial restore window.
         initialRestoreCompleted.set(false)
+        userNavigated = false
+        startPageBaseline = startPageValue
         readAnchor = startPageValue
 
         // Each start cycle gets a fresh notify-enqueued signal — we
@@ -246,12 +278,29 @@ class DirGalleryProvider : GalleryProvider2 {
                 }
                 val metadataDeferred = async {
                     if (serverUrl != null) {
-                        try {
-                            val client = ServiceRegistry.networkModule.okHttpClient
-                            runSuspend { LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcId) }
-                        } catch (e: Exception) {
-                            Log.w(TAG, "[PROGRESS] Failed to load server metadata: ${e.message}")
-                            null
+                        // Bounded: an unreachable server (reading downloaded
+                        // content away from the LAN) must not keep the restore
+                        // pending. withTimeoutOrNull is the coroutine-level
+                        // backstop; the callTimeout-bounded client makes the
+                        // in-flight HTTP attempt actually abort near the same
+                        // deadline (a blocking execute() would otherwise hold
+                        // the thread past the coroutine cancel). Call the
+                        // suspend API directly — wrapping it in runSuspend
+                        // (runBlocking) blocks the IO thread and defeats the
+                        // timeout entirely.
+                        withTimeoutOrNull(METADATA_TIMEOUT_MS) {
+                            try {
+                                val client = ServiceRegistry.networkModule.okHttpClient
+                                    .newBuilder()
+                                    .callTimeout(METADATA_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                                    .build()
+                                LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcId)
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                Log.w(TAG, "[PROGRESS] Failed to load server metadata: ${e.message}")
+                                null
+                            }
                         }
                     } else {
                         null
@@ -293,24 +342,31 @@ class DirGalleryProvider : GalleryProvider2 {
                         // producing the visible "snap to fraction → snap
                         // back to top" double-flicker on cold opens of
                         // downloaded long-strip archives.
-                        if (resolvedPage > 0 || savedFraction > 0f) {
+                        if (!userNavigated && (resolvedPage > 0 || savedFraction > 0f)) {
                             val gv = galleryView
                             if (gv != null) {
                                 notifyDataChangedEnqueued.await()
                                 awaitGlIdleBarrier()
                                 withContext(Dispatchers.Main) {
                                     val gvNow = galleryView
-                                    if (gvNow != null) {
+                                    if (gvNow != null && !userNavigated) {
+                                        // sizeValue is published by the file-enum
+                                        // coroutine before notifyDataChanged, which
+                                        // we awaited above.
+                                        val maxIndex = sizeValue - 1
+                                        val target = if (maxIndex >= 0) {
+                                            resolvedPage.coerceIn(0, maxIndex)
+                                        } else {
+                                            resolvedPage
+                                        }
                                         try {
                                             if (savedFraction > 0f) {
-                                                gvNow.setCurrentPageScrollFraction(
-                                                    resolvedPage, savedFraction
-                                                )
+                                                gvNow.setCurrentPageScrollFraction(target, savedFraction)
                                                 Log.i(TAG, "[PROGRESS] setCurrentPageScrollFraction(" +
-                                                        "$resolvedPage, $savedFraction) called")
+                                                        "$target, $savedFraction) called")
                                             } else {
-                                                gvNow.setCurrentPage(resolvedPage)
-                                                Log.i(TAG, "[PROGRESS] setCurrentPage($resolvedPage) called")
+                                                gvNow.setCurrentPage(target)
+                                                Log.i(TAG, "[PROGRESS] setCurrentPage($target) called")
                                             }
                                         } finally {
                                             initialRestoreCompleted.set(true)
@@ -323,8 +379,11 @@ class DirGalleryProvider : GalleryProvider2 {
                                 initialRestoreCompleted.set(true)
                             }
                         } else {
-                            // Nothing to restore. Open the save gate so
-                            // future user scrolls can persist 0 if needed.
+                            // Nothing to restore, or the user already navigated —
+                            // open the save gate and leave them where they are.
+                            if (userNavigated) {
+                                Log.i(TAG, "[PROGRESS] restore skipped: user navigated")
+                            }
                             initialRestoreCompleted.set(true)
                         }
                     } else {
@@ -645,5 +704,8 @@ class DirGalleryProvider : GalleryProvider2 {
          * make the cold path worse.
          */
         private const val WARM_AWAIT_MS: Long = 300L
+
+        /** Bound on the start()-time metadata fetch for progress restore. */
+        private const val METADATA_TIMEOUT_MS = 3_000L
     }
 }
