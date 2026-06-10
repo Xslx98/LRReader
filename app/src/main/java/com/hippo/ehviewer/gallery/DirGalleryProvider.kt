@@ -307,7 +307,9 @@ class DirGalleryProvider : GalleryProvider2 {
                         // surfaces an orphan-profile error: a reader must not
                         // nag on every open. Metadata + progress sync just skip
                         // (local progress is still saved on-device).
-                        Log.w(TAG, "source profile resolve failed: ${e.message}")
+                        if (BuildConfig.DEBUG) {
+                            Log.w(TAG, "source profile resolve failed: ${e.message}")
+                        }
                         null
                     }
                     serverUrlDeferred.complete(url)
