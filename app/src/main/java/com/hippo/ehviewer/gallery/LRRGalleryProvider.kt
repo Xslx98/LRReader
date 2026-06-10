@@ -2,6 +2,7 @@ package com.hippo.ehviewer.gallery
 
 import android.content.Context
 import android.util.Log
+import com.hippo.ehviewer.BuildConfig
 import com.hippo.ehviewer.GetText
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
@@ -141,7 +142,9 @@ class LRRGalleryProvider(
                     // orphaned source profile (or no active profile on the
                     // id==0 path) THROWS. Swallow to null here; the page-list
                     // coroutine turns that into an inline STATE_ERROR.
-                    Log.w(TAG, "Source profile resolve failed for arcid=$arcId: ${e.message}")
+                    if (BuildConfig.DEBUG) {
+                        Log.w(TAG, "Source profile resolve failed for arcid=$arcId: ${e.message}")
+                    }
                     null
                 }
                 serverUrlDeferred.complete(url)

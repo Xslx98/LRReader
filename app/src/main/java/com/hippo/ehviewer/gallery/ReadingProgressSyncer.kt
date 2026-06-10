@@ -10,6 +10,7 @@
 package com.hippo.ehviewer.gallery
 
 import android.util.Log
+import com.hippo.ehviewer.BuildConfig
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -56,7 +57,9 @@ internal class ReadingProgressSyncer(
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
-                        Log.w(TAG, "Progress sync failed for page=$page: ${e.message}")
+                        if (BuildConfig.DEBUG) {
+                            Log.w(TAG, "Progress sync failed for page=$page: ${e.message}")
+                        }
                     }
                 }
             } finally {
