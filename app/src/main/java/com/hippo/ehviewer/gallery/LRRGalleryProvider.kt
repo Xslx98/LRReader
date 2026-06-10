@@ -21,6 +21,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
 import java.io.File
 import java.io.FileInputStream
@@ -90,9 +91,19 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
     @Volatile
     private var pendingStartScrollFraction: Float = 0f
 
+    /** See DirGalleryProvider.userNavigated — same guard for the online reader. */
+    @Volatile
+    private var userNavigated = false
+
+    /** See DirGalleryProvider.startPageBaseline — snapshot taken in start(). */
+    @Volatile
+    private var startPageBaseline = 0
+
 
     override fun start() {
         super.start()
+        userNavigated = false
+        startPageBaseline = startPageValue
 
         // Initialize the provider's coroutine scope. Every background launch
         // in this class is scoped here and cancelled in stop(). Install the
@@ -163,11 +174,23 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
                     }
                 }
                 val metadataDeferred = async {
-                    try {
-                        LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcId)
-                    } catch (e: Exception) {
-                        Log.w(TAG, "[PROGRESS] Failed to load server progress: ${e.message}")
-                        null
+                    // Bounded: longReadClient has a 120s read timeout (sized for
+                    // archive extraction); a restore decision must not wait near
+                    // that long. withTimeoutOrNull is the coroutine backstop and
+                    // the callTimeout-bounded client aborts the in-flight HTTP
+                    // attempt near the same deadline.
+                    val metaClient = client.newBuilder()
+                        .callTimeout(METADATA_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                        .build()
+                    withTimeoutOrNull(METADATA_TIMEOUT_MS) {
+                        try {
+                            LRRArchiveApi.getArchiveMetadata(metaClient, serverUrl, arcId)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            Log.w(TAG, "[PROGRESS] Failed to load server progress: ${e.message}")
+                            null
+                        }
                     }
                 }
                 val fractionDeferred = async {
@@ -270,7 +293,7 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
                 // setCurrentPageScrollFraction() both post to the GL
                 // method queue, which is drained in order — no delay
                 // needed.
-                if (finalPage > 0 || finalFraction > 0f) {
+                if (!userNavigated && (finalPage > 0 || finalFraction > 0f)) {
                     val gv = galleryView
                     Log.i(TAG, "[PROGRESS] GalleryView ref=${if (gv != null) "OK" else "NULL"}")
                     if (gv != null) {
@@ -278,24 +301,35 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
                             if (stateRef.get().stopped) return@launch
                             val gvRef = galleryView ?: return@launch
                             withContext(Dispatchers.Main) {
-                                if (!stateRef.get().stopped) {
+                                if (!stateRef.get().stopped && !userNavigated) {
+                                    // Defensive: an empty page list would make
+                                    // coerceIn throw (max < min). Mirror
+                                    // DirGalleryProvider's guard.
+                                    val maxIndex = pages.size - 1
+                                    val target = if (maxIndex >= 0) {
+                                        finalPage.coerceIn(0, maxIndex)
+                                    } else {
+                                        finalPage
+                                    }
                                     if (finalFraction > 0f) {
-                                        gvRef.setCurrentPageScrollFraction(finalPage, finalFraction)
+                                        gvRef.setCurrentPageScrollFraction(target, finalFraction)
                                         Log.i(
                                             TAG,
                                             "[PROGRESS] setCurrentPageScrollFraction(" +
-                                                "$finalPage, $finalFraction) called"
+                                                "$target, $finalFraction) called"
                                         )
                                     } else {
-                                        gvRef.setCurrentPage(finalPage)
-                                        Log.i(TAG, "[PROGRESS] setCurrentPage($finalPage) called")
+                                        gvRef.setCurrentPage(target)
+                                        Log.i(TAG, "[PROGRESS] setCurrentPage($target) called")
                                     }
                                 } else {
-                                    Log.w(TAG, "[PROGRESS] GalleryView gone before setCurrentPage")
+                                    Log.w(TAG, "[PROGRESS] skip jump (stopped or user navigated)")
                                 }
                             }
                         }
                     }
+                } else if (userNavigated) {
+                    Log.i(TAG, "[PROGRESS] restore skipped: user navigated")
                 }
 
                 // Start preloading from resolved page
@@ -331,6 +365,9 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
     override fun getStartPage(): Int = startPageValue
 
     override fun putStartPage(page: Int) {
+        if (page != startPageBaseline) {
+            userNavigated = true
+        }
         startPageValue = page
 
         // Persist locally for instant restore on next open
@@ -625,5 +662,8 @@ class LRRGalleryProvider(context: Context, private val arcId: String) : GalleryP
          * is better skipped than waited on.
          */
         private const val WARM_AWAIT_MS: Long = 300L
+
+        /** Bound on the start()-time metadata fetch for progress restore. */
+        private const val METADATA_TIMEOUT_MS = 3_000L
     }
 }
