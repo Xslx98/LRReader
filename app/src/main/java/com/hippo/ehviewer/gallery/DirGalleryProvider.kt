@@ -57,6 +57,16 @@ class DirGalleryProvider : GalleryProvider2 {
     private val serverUrl: String?
     private var startPageValue: Int = 0
 
+    /**
+     * The reader's current page — updated on every page turn via
+     * [putStartPage] and seeded from the saved progress in [start].
+     * Preload spawning in [processRequest] is bounded to
+     * `readAnchor + PRELOAD_RADIUS` so the decode chain cannot march
+     * away from the reader (see [DirPreloadPolicy]).
+     */
+    @Volatile
+    private var readAnchor = 0
+
     private val fileList = AtomicReference<Array<UniFile>?>()
 
     /**
@@ -135,6 +145,7 @@ class DirGalleryProvider : GalleryProvider2 {
     override fun getStartPage(): Int = startPageValue
 
     override fun putStartPage(page: Int) {
+        readAnchor = page
         startPageValue = page
         if (context != null && arcId != null) {
             saveReadingProgress(context, arcId!!, page)
@@ -200,6 +211,7 @@ class DirGalleryProvider : GalleryProvider2 {
         // flipped it earlier; we want each fresh open to re-do the
         // initial restore window.
         initialRestoreCompleted.set(false)
+        readAnchor = startPageValue
 
         // Each start cycle gets a fresh notify-enqueued signal — we
         // can't reuse a completed Deferred across re-opens.
@@ -268,6 +280,7 @@ class DirGalleryProvider : GalleryProvider2 {
                         } else if (serverTs > localTs) {
                             resolvedPage = serverPage0
                             startPageValue = serverPage0
+                            readAnchor = startPageValue
                             if (arcId != null) saveReadingProgress(context, arcId!!, serverPage0)
                             Log.i(TAG, "[PROGRESS] Using SERVER progress: page $serverPage0")
                         } else if (localTs > serverTs && startPageValue > 0) {
@@ -276,6 +289,7 @@ class DirGalleryProvider : GalleryProvider2 {
                         } else {
                             resolvedPage = max(serverPage0, startPageValue)
                             startPageValue = resolvedPage
+                            readAnchor = startPageValue
                             Log.i(TAG, "[PROGRESS] Timestamps equal, using max: page $resolvedPage")
                         }
                         // Jump GalleryView if needed. Order matters:
@@ -534,29 +548,40 @@ class DirGalleryProvider : GalleryProvider2 {
                     } catch (e: InterruptedException) {
                         break
                     }
-                    pendingIndices.remove(request.index)
-                    processRequest(request.index, totalPages)
+                    try {
+                        processRequest(request, totalPages)
+                    } finally {
+                        pendingIndices.remove(request.index)
+                    }
                 }
             }
         }
     }
 
-    private suspend fun processRequest(index: Int, totalPages: Int) {
+    private suspend fun processRequest(request: PageRequest, totalPages: Int) {
+        val index = request.index
         val files = fileList.get() ?: return
         if (index < 0 || index >= files.size) {
             notifyPageFailed(index, GetText.getString(R.string.error_out_of_range))
+            return
+        }
+        // A preload whose page is already decoded has nothing to do. The
+        // skip must stay limited to PRELOAD priority: CURRENT requests are
+        // either cache misses (GalleryProvider.request serves hits without
+        // queueing) or explicit force-redecodes from onForceRequest, which
+        // must bypass the cache.
+        if (request.priority == PRIO_PRELOAD && hasCache(index)) {
             return
         }
         try {
             val image = decodePage(files[index])
             if (image != null) {
                 notifyPageSucceed(index, image)
-                // Successful decode — queue the next few neighbours at
-                // PRELOAD priority so the upcoming scroll has decoded
-                // pages waiting. Bounded by [PRELOAD_RADIUS].
-                for (i in 1..PRELOAD_RADIUS) {
-                    val next = index + i
-                    if (next >= totalPages) break
+                // Reader-anchored preload window — never marches past
+                // readAnchor + PRELOAD_RADIUS, skips cached pages.
+                DirPreloadPolicy.preloadTargets(
+                    index, readAnchor, totalPages, PRELOAD_RADIUS, ::hasCache
+                ).forEach { next ->
                     enqueueRequest(next, PRIO_PRELOAD)
                 }
             } else {
