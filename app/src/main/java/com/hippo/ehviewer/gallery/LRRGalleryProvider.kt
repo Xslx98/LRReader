@@ -285,7 +285,9 @@ class LRRGalleryProvider(
                 // the case where server progress resolves to a different page:
                 // consumeDecodedPage is index-matched and leaves a non-matching
                 // slot intact, so at most one of the two consumes hits.
-                val warmStartPage = startPageValue.coerceIn(0, pages.size - 1)
+                val warmStartPage = (
+                    if (initialPageOverride >= 0) initialPageOverride else startPageValue
+                    ).coerceIn(0, pages.size - 1)
                 val warmedStart = ReaderPageCache.consumeDecodedPage(
                     arcId, warmStartPage, awaitInflightWarmMs = WARM_AWAIT_MS
                 )

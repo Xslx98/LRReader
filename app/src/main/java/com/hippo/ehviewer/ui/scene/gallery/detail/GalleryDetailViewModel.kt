@@ -452,7 +452,7 @@ class GalleryDetailViewModel : ViewModel() {
                         TAG,
                         "[WARM] detailVM DIR trigger arcid=$arcId page=$startPage"
                     )
-                    ReaderPageCache.warmDir(context, arcId, uniFile).join()
+                    ReaderPageCache.warmDir(context, arcId, uniFile, startPage).join()
                     return@launch
                 }
             }

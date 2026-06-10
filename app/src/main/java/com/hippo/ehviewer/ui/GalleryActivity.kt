@@ -185,6 +185,10 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                 }
             }
         }
+        // KEY_PAGE override (e.g. a detail-page thumbnail tap) so the
+        // provider warms / consumes the decoded slot for the page the
+        // reader actually opens on. -1 = use saved progress.
+        mGalleryProvider?.initialPageOverride = mPage
     }
 
     // ======== Sticky event ========
