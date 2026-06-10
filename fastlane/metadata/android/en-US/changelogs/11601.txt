@@ -1,0 +1,3 @@
+- Fixed: reading a downloaded archive is smooth again — no more stray loading screens between page turns.
+- Fixed: the reader no longer jumps back to the start after you turn pages, and resumes on the right page.
+- Fixed: partially-downloaded archives open correctly, and archives from another server read and sync as expected.
