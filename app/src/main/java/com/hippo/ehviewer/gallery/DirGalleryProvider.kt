@@ -22,7 +22,7 @@ import com.hippo.ehviewer.GetText
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRArchiveApi
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.hippo.lib.glgallery.GalleryPageView
 import com.hippo.lib.image.Image
 import com.hippo.unifile.UniFile
@@ -55,8 +55,21 @@ class DirGalleryProvider : GalleryProvider2 {
     private val dir: UniFile
     private val context: Context?
     private val arcId: String?
-    private val serverUrl: String?
+    private var serverProfileId: Long = 0L
     private var startPageValue: Int = 0
+
+    /**
+     * Source-profile base URL, resolved once in [start] via
+     * [resolveSourceBaseUrl] so the metadata fetch and the progress sync
+     * hit the server this archive was downloaded from — not whatever
+     * profile happens to be active (CLAUDE.md multi-profile rule). Null =
+     * no server context: the legacy constructor, or resolution failed
+     * (deleted/orphaned source profile, no active profile — these THROW
+     * inside [resolveSourceBaseUrl] and are swallowed to null below).
+     * Resolved on the app IO scope so a quick stop() can't strand a
+     * pending progress sync that awaits it.
+     */
+    private val serverUrlDeferred = CompletableDeferred<String?>()
 
     /**
      * The reader's current page — updated on every page turn via
@@ -160,7 +173,7 @@ class DirGalleryProvider : GalleryProvider2 {
     private val progressSyncer = ReadingProgressSyncer(
         ServiceRegistry.coroutineModule.ioScope
     ) sync@{ page0 ->
-        val url = serverUrl ?: return@sync
+        val url = serverUrlDeferred.await() ?: return@sync
         val id = arcId ?: return@sync
         val client = ServiceRegistry.networkModule.okHttpClient
         LRRArchiveApi.updateProgress(client, url, id, page0 + 1)
@@ -181,15 +194,15 @@ class DirGalleryProvider : GalleryProvider2 {
         this.dir = dir
         this.context = null
         this.arcId = null
-        this.serverUrl = null
+        serverUrlDeferred.complete(null)
     }
 
     /** Constructor with Context and arcid for reading progress persistence. */
-    constructor(dir: UniFile, context: Context, arcid: String) {
+    constructor(dir: UniFile, context: Context, arcid: String, serverProfileId: Long = 0L) {
         this.dir = dir
         this.context = context.applicationContext
         this.arcId = arcid
-        this.serverUrl = LRRAuthManager.getServerUrl()
+        this.serverProfileId = serverProfileId
         val ctx = this.context ?: return
         this.startPageValue = loadReadingProgress(ctx, arcid)
     }
@@ -206,8 +219,9 @@ class DirGalleryProvider : GalleryProvider2 {
             saveReadingProgress(context, arcId!!, page)
         }
         // Sync progress to LANraragi server (1-indexed), serialized and
-        // conflated — see ReadingProgressSyncer.
-        if (arcId != null && serverUrl != null) {
+        // conflated — see ReadingProgressSyncer. The syncer awaits the
+        // source-profile URL and drops the send if it resolves to null.
+        if (arcId != null) {
             progressSyncer.submit(page)
         }
     }
@@ -275,6 +289,32 @@ class DirGalleryProvider : GalleryProvider2 {
         )
         providerScope = scope
 
+        // Resolve the archive's source-profile base URL exactly once, on
+        // the app IO scope so a stop() that cancels providerScope can't
+        // strand the progress sync (which awaits this deferred). The
+        // metadata fetch below awaits the same deferred. The legacy
+        // constructor already completed it with null.
+        if (arcId != null) {
+            ServiceRegistry.coroutineModule.ioScope.launch {
+                if (!serverUrlDeferred.isCompleted) {
+                    val url = try {
+                        resolveSourceBaseUrl(
+                            serverProfileId,
+                            ServiceRegistry.dataModule.profileLookupCache,
+                        )
+                    } catch (e: Exception) {
+                        // Deliberately silent, unlike LRRDownloadWorker which
+                        // surfaces an orphan-profile error: a reader must not
+                        // nag on every open. Metadata + progress sync just skip
+                        // (local progress is still saved on-device).
+                        Log.w(TAG, "source profile resolve failed: ${e.message}")
+                        null
+                    }
+                    serverUrlDeferred.complete(url)
+                }
+            }
+        }
+
         // Async: load server progress + local intra-page scroll fraction
         // and jump if newer / non-zero. The fraction read runs in
         // parallel with the metadata fetch so its value is captured
@@ -295,7 +335,8 @@ class DirGalleryProvider : GalleryProvider2 {
                     }.coerceIn(0f, 1f)
                 }
                 val metadataDeferred = async {
-                    if (serverUrl != null) {
+                    val url = serverUrlDeferred.await()
+                    if (url != null) {
                         // Bounded: an unreachable server (reading downloaded
                         // content away from the LAN) must not keep the restore
                         // pending. withTimeoutOrNull is the coroutine-level
@@ -312,7 +353,7 @@ class DirGalleryProvider : GalleryProvider2 {
                                     .newBuilder()
                                     .callTimeout(METADATA_TIMEOUT_MS, TimeUnit.MILLISECONDS)
                                     .build()
-                                LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcId)
+                                LRRArchiveApi.getArchiveMetadata(client, url, arcId)
                             } catch (e: CancellationException) {
                                 throw e
                             } catch (e: Exception) {
