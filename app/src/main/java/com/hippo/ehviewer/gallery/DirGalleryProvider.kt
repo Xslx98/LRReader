@@ -17,6 +17,7 @@ package com.hippo.ehviewer.gallery
 
 import android.content.Context
 import android.util.Log
+import com.hippo.ehviewer.BuildConfig
 import com.hippo.ehviewer.GetText
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
@@ -68,6 +69,22 @@ class DirGalleryProvider : GalleryProvider2 {
     private var readAnchor = 0
 
     private val fileList = AtomicReference<Array<UniFile>?>()
+
+    /**
+     * Non-null when the dir uses the worker's numeric page naming:
+     * maps 0-indexed page -> position in [fileList]. Null = positional
+     * mapping (legacy title-named / arbitrary dirs). See
+     * [DirImageFiles.numericPageIndices].
+     */
+    private val pageIndexMap = AtomicReference<Map<Int, Int>?>()
+
+    /**
+     * Server-reported page count ([com.lanraragi.reader.domain.Archive.pagecount]),
+     * 0 when unknown. With numeric naming this lets the reader report the
+     * archive's true length so missing tail pages surface as explicit
+     * per-page errors instead of the archive silently "ending" early.
+     */
+    var expectedPageCount: Int = 0
 
     /**
      * Decode request queue with priority semantics:
@@ -426,7 +443,17 @@ class DirGalleryProvider : GalleryProvider2 {
                 }
 
                 fileList.lazySet(files)
-                sizeValue = files.size
+                val numeric = DirImageFiles.numericPageIndices(files.map { it.name ?: "" })
+                pageIndexMap.lazySet(numeric)
+                sizeValue = DirImageFiles.pageSpaceSize(numeric, files.size, expectedPageCount)
+                if (numeric != null && sizeValue != files.size && BuildConfig.DEBUG) {
+                    Log.w(
+                        TAG,
+                        "[GAPS] dir has ${files.size} files for $sizeValue pages" +
+                            " (expectedPageCount=$expectedPageCount) — missing pages" +
+                            " will show an explicit error"
+                    )
+                }
 
                 // Cross-session decoded slot (filled by the detail-page
                 // warmup or the open-helper warm trigger). On a hit we
@@ -461,7 +488,7 @@ class DirGalleryProvider : GalleryProvider2 {
 
                 notifyDataChanged()
 
-                startDecodeWorkers(scope, files.size)
+                startDecodeWorkers(scope, sizeValue)
             } finally {
                 // ALWAYS release the restore coroutine, even on the error
                 // / cancellation path. Otherwise restore.await() hangs
@@ -527,14 +554,11 @@ class DirGalleryProvider : GalleryProvider2 {
     }
 
     override fun save(index: Int, file: UniFile): Boolean {
-        val files = fileList.get() ?: return false
-        if (index < 0 || index >= files.size) {
-            return false
-        }
+        val src = fileAt(index) ?: return false
         var inputStream: java.io.InputStream? = null
         var outputStream: java.io.OutputStream? = null
         return try {
-            inputStream = files[index].openInputStream()
+            inputStream = src.openInputStream()
             outputStream = file.openOutputStream()
             IOUtils.copy(inputStream, outputStream)
             true
@@ -547,11 +571,7 @@ class DirGalleryProvider : GalleryProvider2 {
     }
 
     override fun save(index: Int, dir: UniFile, filename: String): UniFile? {
-        val files = fileList.get() ?: return null
-        if (index < 0 || index >= files.size) {
-            return null
-        }
-        val src = files[index]
+        val src = fileAt(index) ?: return null
         val extension = FileUtils.getExtensionFromFilename(src.name)
         val dst = dir.subFile(if (extension != null) "$filename.$extension" else filename)
                 ?: return null
@@ -572,10 +592,25 @@ class DirGalleryProvider : GalleryProvider2 {
 
     // ── Decode pipeline ──────────────────────────────────────────────
 
+    /**
+     * Resolve the file backing a 0-indexed page. With numeric naming the
+     * page -> file-position map is honoured (so a download gap yields null
+     * instead of a positionally-shifted neighbour); without it, the page
+     * index is the file-list position.
+     */
+    private fun fileAt(index: Int): UniFile? {
+        val files = fileList.get() ?: return null
+        val map = pageIndexMap.get() ?: return files.getOrNull(index)
+        val pos = map[index] ?: return null
+        return files.getOrNull(pos)
+    }
+
     private fun enqueueRequest(index: Int, priority: Int) {
         if (index < 0) return
-        val files = fileList.get()
-        if (files != null && index >= files.size) return
+        // Bound by the page-space size (which, with numeric naming, may
+        // exceed the file count); STATE_WAIT (-1) means "not sized yet".
+        val sz = sizeValue
+        if (sz >= 0 && index >= sz) return
         if (!pendingIndices.add(index)) return
         requestQueue.offer(PageRequest(index, priority, seqCounter.incrementAndGet()))
     }
@@ -607,8 +642,8 @@ class DirGalleryProvider : GalleryProvider2 {
 
     private suspend fun processRequest(request: PageRequest, totalPages: Int) {
         val index = request.index
-        val files = fileList.get() ?: return
-        if (index < 0 || index >= files.size) {
+        if (fileList.get() == null) return
+        if (index < 0 || index >= totalPages) {
             notifyPageFailed(index, GetText.getString(R.string.error_out_of_range))
             return
         }
@@ -620,8 +655,16 @@ class DirGalleryProvider : GalleryProvider2 {
         if (request.priority == PRIO_PRELOAD && hasCache(index)) {
             return
         }
+        val file = fileAt(index)
+        if (file == null) {
+            // Numeric naming and this page number is absent from the dir —
+            // a download gap. Surface it as an explicit per-page error
+            // instead of shifting a neighbour's image into this slot.
+            notifyPageFailed(index, GetText.getString(R.string.error_reading_failed))
+            return
+        }
         try {
-            val image = decodePage(files[index])
+            val image = decodePage(file)
             if (image != null) {
                 notifyPageSucceed(index, image)
                 // Reader-anchored preload window — never marches past

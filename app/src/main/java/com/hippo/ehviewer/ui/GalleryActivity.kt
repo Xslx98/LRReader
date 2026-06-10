@@ -160,7 +160,9 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                     val uniFile = UniFile.fromFile(File(filename)) ?: return
                     val archive = mArchive
                     mGalleryProvider = if (archive != null) {
-                        DirGalleryProvider(uniFile, this, archive.arcid)
+                        DirGalleryProvider(uniFile, this, archive.arcid).also {
+                            it.expectedPageCount = archive.pagecount
+                        }
                     } else {
                         DirGalleryProvider(uniFile)
                     }
