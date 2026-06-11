@@ -1,5 +1,7 @@
 package com.hippo.ehviewer.mapper
 
+import android.util.Log
+import com.hippo.ehviewer.BuildConfig
 import com.hippo.ehviewer.dao.ArchiveLocalState
 import com.hippo.ehviewer.dao.ArchiveLocalStateJson
 import com.hippo.ehviewer.dao.DownloadInfo
@@ -135,8 +137,30 @@ fun HistoryInfo.toArchive(): Archive {
 //  columns onto the view.
 // ═══════════════════════════════════════════════════════════════════
 
-private fun decodeArchive(archiveJson: String): Archive {
-    return ArchiveLocalStateJson.decodeFromString(Archive.serializer(), archiveJson)
+private fun decodeArchive(arcid: String, archiveJson: String): Archive {
+    return runCatching {
+        ArchiveLocalStateJson.decodeFromString(Archive.serializer(), archiveJson)
+    }.getOrElse { e ->
+        // A single corrupt / schema-incompatible row must not throw out of a list mapper
+        // and crash the scene (or blank the whole list at boot). Fall back to a minimal
+        // Archive carrying just the arcid so the row renders (blank) and stays operable.
+        if (BuildConfig.DEBUG) Log.w("EntityMapper", "Corrupt archive_json, using fallback", e)
+        Archive(
+            arcid = arcid,
+            title = "",
+            tags = emptyMap(),
+            pagecount = 0,
+            progress = 0,
+            extension = "",
+            filename = "",
+            thumbnailUrl = "",
+            rating = 0f,
+            isnew = false,
+            lastreadtime = 0L,
+            summary = null,
+            serverProfileId = 0L,
+        )
+    }
 }
 
 /**
@@ -145,7 +169,7 @@ private fun decodeArchive(archiveJson: String): Archive {
  * comes from `archive_json`.
  */
 fun ArchiveLocalState.toDownloadInfoView(): DownloadInfo {
-    val archive = decodeArchive(archiveJson)
+    val archive = decodeArchive(arcid, archiveJson)
     val info = DownloadInfo()
     info.arcid = arcid
     info.title = archive.title
@@ -169,7 +193,7 @@ fun ArchiveLocalState.toDownloadInfoView(): DownloadInfo {
  * Build a [HistoryInfo] view from an [ArchiveLocalState] row.
  */
 fun ArchiveLocalState.toHistoryInfoView(): HistoryInfo {
-    val archive = decodeArchive(archiveJson)
+    val archive = decodeArchive(arcid, archiveJson)
     val info = HistoryInfo()
     info.arcid = arcid
     info.title = archive.title
@@ -189,7 +213,7 @@ fun ArchiveLocalState.toHistoryInfoView(): HistoryInfo {
  * Build a [LocalFavoriteInfo] view from an [ArchiveLocalState] row.
  */
 fun ArchiveLocalState.toLocalFavoriteInfoView(): LocalFavoriteInfo {
-    val archive = decodeArchive(archiveJson)
+    val archive = decodeArchive(arcid, archiveJson)
     val info = LocalFavoriteInfo()
     info.arcid = arcid
     info.title = archive.title
@@ -208,7 +232,7 @@ fun ArchiveLocalState.toLocalFavoriteInfoView(): LocalFavoriteInfo {
  * Decode the `archive_json` column of an [ArchiveLocalState] row into
  * the [Archive] payload it contains.
  */
-fun ArchiveLocalState.toArchive(): Archive = decodeArchive(archiveJson)
+fun ArchiveLocalState.toArchive(): Archive = decodeArchive(arcid, archiveJson)
 
 /**
  * Encode an [Archive] for storage in the `ARCHIVE_JSON` column.
