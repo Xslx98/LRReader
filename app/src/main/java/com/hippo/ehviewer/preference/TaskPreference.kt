@@ -188,7 +188,16 @@ abstract class TaskPreference : DialogPreference {
         }
 
         override fun run() {
-            val result = doWork()
+            // doWork() can throw (SAF SecurityException, disk full, DB error). Without
+            // this guard the exception would propagate to the scope's handler and
+            // onPostExecute would never run, leaving the non-cancelable progress dialog
+            // up forever. Always post a result (null on failure) so it dismisses.
+            val result = try {
+                doWork()
+            } catch (e: Exception) {
+                android.util.Log.e("TaskPreference", "Task doWork failed", e)
+                null
+            }
             mMainHandler.post { onPostExecute(result) }
         }
 
