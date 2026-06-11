@@ -59,28 +59,6 @@ class DownloadFragment : PreferenceFragmentCompat(),
 
     private var mDownloadLocation: Preference? = null
 
-    private val openDirLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode != Activity.RESULT_OK) return@registerForActivityResult
-        val treeUri = result.data?.data ?: return@registerForActivityResult
-        requireActivity().contentResolver.takePersistableUriPermission(
-            treeUri,
-            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-        )
-        val uniFile = UniFile.fromTreeUri(activity, treeUri)
-        if (uniFile != null) {
-            DownloadSettings.putDownloadLocation(uniFile)
-            onUpdateDownloadLocation()
-        } else {
-            Toast.makeText(
-                activity,
-                R.string.settings_download_cant_get_download_location,
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-    }
-
     private val importFileLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -102,7 +80,9 @@ class DownloadFragment : PreferenceFragmentCompat(),
 
         mediaScan?.onPreferenceChangeListener = this
 
-        mDownloadLocation?.onPreferenceClickListener = this
+        // Downloads are written with java.io.File and must live in app file:// storage,
+        // so the location is fixed (no SAF tree picker). Show it as a read-only summary.
+        mDownloadLocation?.isSelectable = false
         exportDownloadItems?.onPreferenceClickListener = this
         importDownloadItems?.onPreferenceClickListener = this
         cleanInvalidDownload?.onPreferenceClickListener = this
@@ -127,10 +107,6 @@ class DownloadFragment : PreferenceFragmentCompat(),
     override fun onPreferenceClick(preference: Preference): Boolean {
         val key = preference.key
         when (key) {
-            KEY_DOWNLOAD_LOCATION -> {
-                openDirPickerL()
-                return true
-            }
             KEY_EXPORT_DOWNLOAD_ITEMS -> {
                 exportDownloadItems()
                 return true
@@ -150,16 +126,6 @@ class DownloadFragment : PreferenceFragmentCompat(),
             }
         }
         return false
-    }
-
-    private fun openDirPickerL() {
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-        try {
-            openDirLauncher.launch(intent)
-        } catch (e: Throwable) {
-            ExceptionUtils.throwIfFatal(e)
-            Toast.makeText(activity, R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
-        }
     }
 
     private fun exportDownloadItems() {
