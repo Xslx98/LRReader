@@ -186,6 +186,19 @@ class DownloadService : Service(), DownloadListener {
                     }
                 }
             }
+        } else {
+            // START_STICKY restart with a null intent: the in-memory download queue did
+            // not survive process death, so there is nothing to resume. Await init then
+            // stop, otherwise the placeholder foreground notification and the CPU/Wi-Fi
+            // wakelocks (acquired in onCreate) would be held indefinitely.
+            serviceScope.launch {
+                try {
+                    dm?.awaitInitAsync()
+                } catch (e: Exception) {
+                    Log.e(TAG, "awaitInitAsync failed on null-intent restart", e)
+                }
+                withContext(Dispatchers.Main) { checkStopSelf() }
+            }
         }
         return START_STICKY
     }
