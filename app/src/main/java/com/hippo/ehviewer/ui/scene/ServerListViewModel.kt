@@ -111,7 +111,8 @@ class ServerListViewModel : ViewModel() {
                             id = profile.id,
                             name = profile.name,
                             url = profile.url,
-                            isActive = true
+                            isActive = true,
+                            allowCleartext = profile.allowCleartext
                         )
                     )
                 }
@@ -239,13 +240,14 @@ class ServerListViewModel : ViewModel() {
         newKey: String,
         usedHttpFallback: Boolean
     ) {
-        val isHttpUrl = resolvedUrl.lowercase().startsWith("http://")
+        // Preserve the user's existing cleartext choice; only force it on when this edit
+        // actually went through an HTTP fallback (which implies the user confirmed it).
         val updated = ServerProfile(
             id = profile.id,
             name = newName,
             url = resolvedUrl,
             isActive = profile.isActive,
-            allowCleartext = if (isHttpUrl) true else true
+            allowCleartext = if (usedHttpFallback) true else profile.allowCleartext
         )
         val isActive = profile.isActive
         viewModelScope.launch {
