@@ -18,17 +18,25 @@ package com.hippo.ehviewer.ui.scene.download
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.util.size
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadService
+import com.hippo.ehviewer.download.DownloadState
 import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.ui.GalleryActivity
+import com.hippo.ehviewer.ui.GalleryOpenHelper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.hippo.ehviewer.ui.scene.download.part.DownloadAdapter.Companion.DRAG_ENABLE
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.widget.FabLayout
@@ -177,16 +185,25 @@ internal class DownloadBatchOpsHelper(private val callback: Callback) {
     }
 
     private fun viewRandom(list: List<DownloadInfo>) {
-        val position = (Math.random() * list.size).toInt()
-        if (position < 0 || position >= list.size) {
-            return
-        }
+        if (list.isEmpty()) return
+        val position = (Math.random() * list.size).toInt().coerceIn(0, list.size - 1)
         val activity = callback.activity2 ?: return
 
-        val intent = Intent(activity, GalleryActivity::class.java)
-        intent.action = GalleryActivity.ACTION_LRR
-        intent.putExtra(GalleryActivity.KEY_ARCHIVE, list[position].toArchive())
-        callback.launchGallery(intent)
+        // Route through GalleryOpenHelper so a fully-downloaded archive opens from local
+        // files (and works offline) instead of always streaming from the server.
+        val downloadInfo = list[position]
+        val archive = downloadInfo.toArchive()
+        val knownComplete = downloadInfo.state == DownloadState.FINISH
+        (activity as LifecycleOwner).lifecycleScope.launch {
+            try {
+                val intent = withContext(Dispatchers.IO) {
+                    GalleryOpenHelper.buildReadIntent(activity, archive, knownComplete = knownComplete)
+                }
+                callback.launchGallery(intent)
+            } catch (e: Exception) {
+                Log.e("DownloadBatchOps", "Failed to build random read intent", e)
+            }
+        }
     }
 
     private fun setDragEnable(fab: FloatingActionButton) {
