@@ -32,7 +32,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
-import android.os.PersistableBundle
 import android.os.Process
 import android.text.TextUtils
 import android.view.Gravity
@@ -772,7 +771,11 @@ class MainActivity : StageActivity(),
         mNavCheckedItem = savedInstanceState.getInt(KEY_NAV_CHECKED_ITEM)
     }
 
-    override fun onSaveInstanceState(outState: Bundle, outPersistentState: PersistableBundle) {
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // Use the single-arg overload: the two-arg PersistableBundle variant only fires
+        // for persistableMode activities (which MainActivity is not), so the nav item was
+        // never actually saved.
         outState.putInt(KEY_NAV_CHECKED_ITEM, mNavCheckedItem)
     }
 
