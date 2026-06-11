@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.withContext
 import com.hippo.ehviewer.download.DownloadState
 
 /**
@@ -492,8 +493,12 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
                     return@launch
                 }
 
-                // Check if already imported
-                if (downloadManager.containDownloadInfo(downloadInfo.arcid)) {
+                // Check if already imported. DownloadManager / DownloadRepository
+                // require main-thread access; addDownload persists asynchronously.
+                val alreadyImported = withContext(Dispatchers.Main) {
+                    downloadManager.containDownloadInfo(downloadInfo.arcid)
+                }
+                if (alreadyImported) {
                     _importToast.tryEmit(com.hippo.ehviewer.R.string.import_archive_already_imported)
                     return@launch
                 }
@@ -501,7 +506,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
                 // Add to download manager
                 val downloadList = ArrayList<DownloadInfo>()
                 downloadList.add(downloadInfo)
-                downloadManager.addDownload(downloadList)
+                withContext(Dispatchers.Main) { downloadManager.addDownload(downloadList) }
                 _importToast.tryEmit(com.hippo.ehviewer.R.string.import_archive_success)
                 _importSuccess.tryEmit(Unit)
             } catch (e: Exception) {
@@ -521,7 +526,10 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     private fun createArchiveDownloadInfo(uri: Uri, fileName: String): DownloadInfo? {
         return try {
             DownloadInfo().apply {
-                arcid = ""
+                // Imported archives have no server arcid; derive a stable unique id from
+                // the source URI so each import gets its own ARCHIVE_LOCAL_STATE row and
+                // re-importing the same file is correctly detected as "already imported".
+                arcid = syntheticArcidFor(uri)
                 title = fileName.replace("\\.[^.]*$".toRegex(), "")
                 thumb = null
                 rating = -1.0f
@@ -535,6 +543,13 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
             Log.e(TAG, "Failed to create DownloadInfo", e)
             null
         }
+    }
+
+    /** Stable 40-hex id (SHA-1 of the source URI) for a locally imported archive. */
+    private fun syntheticArcidFor(uri: Uri): String {
+        val bytes = java.security.MessageDigest.getInstance("SHA-1")
+            .digest(uri.toString().toByteArray(Charsets.UTF_8))
+        return bytes.joinToString("") { "%02x".format(it) }
     }
 
     // -------------------------------------------------------------------------
