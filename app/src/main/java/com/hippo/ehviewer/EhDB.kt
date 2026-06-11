@@ -339,6 +339,15 @@ object EhDB {
             return false
         }
 
+        // Flush the WAL into eh.db before the raw copy. Room journals in WAL mode, so
+        // committed transactions live in eh.db-wal until a checkpoint; a plain file copy
+        // of eh.db alone would silently omit the most recent writes from the backup.
+        try {
+            sDatabase.query("PRAGMA wal_checkpoint(TRUNCATE)", null).use { it.moveToFirst() }
+        } catch (e: Exception) {
+            Log.w(TAG, "WAL checkpoint before export failed; backup may miss recent writes", e)
+        }
+
         val dbFile = context.getDatabasePath("eh.db")
         if (dbFile == null || !dbFile.isFile) return false
         var inputStream: java.io.InputStream? = null
