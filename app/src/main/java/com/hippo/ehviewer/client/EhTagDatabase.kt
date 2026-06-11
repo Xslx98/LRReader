@@ -38,6 +38,7 @@ import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 
 class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
@@ -345,7 +346,12 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
                         }
                     }
 
-                    val client = ServiceRegistry.networkModule.okHttpClient
+                    // The translation DB files are multi-MB; disable the shared 30s
+                    // callTimeout so a slow link can't abort the download mid-stream.
+                    val client = ServiceRegistry.networkModule.okHttpClient.newBuilder()
+                        .callTimeout(0, TimeUnit.MILLISECONDS)
+                        .readTimeout(60, TimeUnit.SECONDS)
+                        .build()
 
                     // Save new sha1
                     val tempSha1File = File(dir, "$sha1Name.tmp")

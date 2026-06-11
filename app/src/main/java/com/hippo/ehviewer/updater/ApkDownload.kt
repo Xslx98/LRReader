@@ -14,6 +14,7 @@ import okhttp3.Response
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -67,7 +68,13 @@ object ApkDownloader {
      *   cancellation: awaitClose → call.cancel() + delete partial file.
      */
     fun download(url: String, dest: File): Flow<DownloadProgress> = callbackFlow {
-        val client = ServiceRegistry.networkModule.okHttpClient
+        // The whole APK (15-25 MB) streams inside this single call; the shared client's
+        // 30s callTimeout would abort it on slow links. Disable the call cap and rely on
+        // read/connect timeouts to catch genuine stalls.
+        val client = ServiceRegistry.networkModule.okHttpClient.newBuilder()
+            .callTimeout(0, TimeUnit.MILLISECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .build()
         val request = Request.Builder().url(url).build()
         val call = client.newCall(request)
         // Tracks whether we reached Success cleanly. Read from awaitClose to decide whether

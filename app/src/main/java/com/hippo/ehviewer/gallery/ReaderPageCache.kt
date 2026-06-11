@@ -563,6 +563,9 @@ object ReaderPageCache : Cacheable {
 
             val pageClient = ServiceRegistry.networkModule.okHttpClient.newBuilder()
                 .readTimeout(30, TimeUnit.SECONDS)
+                // Disable the shared 30s callTimeout so a large page body isn't aborted
+                // mid-transfer; readTimeout still catches genuine stalls.
+                .callTimeout(0, TimeUnit.MILLISECONDS)
                 .build()
 
             val start = (centerPage - DETAIL_PRELOAD_RADIUS).coerceAtLeast(0)
