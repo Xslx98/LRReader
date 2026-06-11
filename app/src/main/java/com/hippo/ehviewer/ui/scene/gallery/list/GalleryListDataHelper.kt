@@ -40,7 +40,12 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
 
     override fun getPageData(taskId: Int, type: Int, page: Int) {
         val serverUrl = LRRAuthManager.getServerUrl()
-        if (serverUrl.isNullOrEmpty()) return
+        if (serverUrl.isNullOrEmpty()) {
+            // Signal failure instead of returning silently, otherwise the refresh
+            // spinner spins forever when no server profile is configured.
+            onGetFailure(Exception(callback.getString(R.string.lrr_no_servers)), taskId)
+            return
+        }
 
         var filter: String? = null
         var categoryId: String? = null
