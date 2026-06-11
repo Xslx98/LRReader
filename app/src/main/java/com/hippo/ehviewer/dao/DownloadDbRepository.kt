@@ -62,6 +62,16 @@ class DownloadDbRepository(
     }
 
     /**
+     * Persist the boot-time reset of transient WAIT/DOWNLOAD rows to NONE so the
+     * Room-Flow-driven download list (which reads raw rows) agrees with the in-memory
+     * normalization in [getAllDownloadInfo]. Call once at process start only — at
+     * runtime those states are real.
+     */
+    suspend fun resetTransientDownloadStates() {
+        archiveLocalStateDao.resetTransientDownloadStates()
+    }
+
+    /**
      * Returns a [Flow] that emits the current download list whenever
      * the persisted download fields change. The adapter to memory
      * views is applied on each emission.

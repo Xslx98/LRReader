@@ -77,6 +77,17 @@ interface ArchiveLocalStateDao {
     )
     suspend fun getDownloadsByServer(profileId: Long): List<ArchiveLocalState>
 
+    /**
+     * Reset transient WAIT (1) / DOWNLOAD (2) states to NONE (0). Run once at process
+     * start: an in-flight download cannot survive process death, so any such persisted
+     * row is a ghost that would otherwise render as "downloading" forever (frozen
+     * progress, dead stop button). A NULL DOWNLOAD_STATE means "not a download", so the
+     * predicate never touches history/favorite-only rows. Codes are the frozen
+     * [com.hippo.ehviewer.download.DownloadState] integers.
+     */
+    @Query("UPDATE ARCHIVE_LOCAL_STATE SET DOWNLOAD_STATE = 0 WHERE DOWNLOAD_STATE = 1 OR DOWNLOAD_STATE = 2")
+    suspend fun resetTransientDownloadStates()
+
     // ── History subsystem ──────────────────────────────────────
 
     @Query(

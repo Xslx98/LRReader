@@ -161,6 +161,10 @@ class DownloadRepository(
     private suspend fun loadDataFromDb(onComplete: () -> Unit) {
         // ── IO phase ───────────────────────────────────────────────────
         val downloadDbRepo = ServiceRegistry.dataModule.downloadDbRepository
+        // Persist the reset of any WAIT/DOWNLOAD rows left over from a previous process:
+        // an in-flight download cannot survive process death, so without this the
+        // Room-Flow-driven list would render those ghosts as "downloading" forever.
+        downloadDbRepo.resetTransientDownloadStates()
         val loadedLabels = downloadDbRepo.getAllDownloadLabels()
         val loadedInfos = downloadDbRepo.getAllDownloadInfo()
 
