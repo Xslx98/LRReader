@@ -428,8 +428,10 @@ class MainActivity : StageActivity(),
         mHeaderBackground = headerBackground
         headerBackground.setOnClickListener { onBackgroundChange() }
         initUserImage()
-        updateProfile()
+        // Bind mDisplayName before updateProfile() so its display-name block actually runs
+        // on cold start (it was previously assigned after the call and stayed null).
         mDisplayName = ViewUtils.`$$`(headerLayout, R.id.display_name) as TextView
+        updateProfile()
         val mChangeTheme = ViewUtils.`$$`(this, R.id.change_theme) as TextView
 
         drawerLayout.setStatusBarColor(
@@ -916,7 +918,6 @@ class MainActivity : StageActivity(),
             if (TextUtils.isEmpty(displayName)) {
                 displayName = getString(R.string.default_display_name)
             }
-            Toast.makeText(this, displayName, Toast.LENGTH_LONG).show()
             displayNameView.text = displayName
         }
     }
