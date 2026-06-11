@@ -77,7 +77,11 @@ class LRRCategoriesViewModel : ViewModel() {
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
+                val serverUrl = LRRAuthManager.getServerUrl()
+                if (serverUrl == null) {
+                    _isLoading.value = false // otherwise the scene spins forever
+                    return@launch
+                }
                 val client = ServiceRegistry.networkModule.okHttpClient
 
                 val categories = LRRCategoryApi.getCategories(client, serverUrl)
