@@ -143,6 +143,9 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         //    avoids pointless cache-layer bookkeeping per request
         val pageClient = client.newBuilder()
             .readTimeout(30, TimeUnit.SECONDS)
+            // Disable the shared 30s callTimeout: a single large page (or on-the-fly
+            // extraction) can legitimately take longer; readTimeout still catches stalls.
+            .callTimeout(0, TimeUnit.MILLISECONDS)
             .cache(null)
             .build()
 

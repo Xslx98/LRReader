@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.util.concurrent.TimeUnit
 
 /**
  * API class for LANraragi database operations.
@@ -15,6 +16,16 @@ import okhttp3.Request
  * - POST /api/database/clean  — Clean orphaned entries (future)
  */
 object LRRDatabaseApi {
+
+    /**
+     * Derives a client with the call timeout disabled. The /api/database/stats
+     * response can be several MB on large libraries; the shared client's 30s
+     * callTimeout would truncate it on slow links.
+     */
+    private fun longCallClient(): OkHttpClient =
+        LRRClientProvider.getClient().newBuilder()
+            .callTimeout(0, TimeUnit.MILLISECONDS)
+            .build()
 
     /**
      * GET /api/database/stats — Get tag statistics.
@@ -40,7 +51,7 @@ object LRRDatabaseApi {
 
     @JvmStatic
     suspend fun getDatabaseStats(): String =
-        getDatabaseStats(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl())
+        getDatabaseStats(longCallClient(), LRRClientProvider.getBaseUrl())
 
     /**
      * GET /api/database/stats — Get tag statistics as typed objects.
@@ -67,7 +78,7 @@ object LRRDatabaseApi {
 
     @JvmStatic
     suspend fun getTagStats(): List<LRRTagStat> =
-        getTagStats(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl())
+        getTagStats(longCallClient(), LRRClientProvider.getBaseUrl())
 }
 
 /**

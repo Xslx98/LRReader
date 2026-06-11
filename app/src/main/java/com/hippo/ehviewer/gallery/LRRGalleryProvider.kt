@@ -175,6 +175,9 @@ class LRRGalleryProvider(
         val baseClient = ServiceRegistry.networkModule.okHttpClient
         pageClient = baseClient.newBuilder()
             .readTimeout(30, TimeUnit.SECONDS)
+            // Disable the shared 30s callTimeout so a large page body isn't aborted
+            // mid-transfer; readTimeout still catches genuine stalls.
+            .callTimeout(0, TimeUnit.MILLISECONDS)
             .build()
 
         // Load page list and metadata on background threads
