@@ -48,7 +48,15 @@ object DownloadSettings {
         } catch (e: Throwable) {
             ExceptionUtils.throwIfFatal(e)
         }
-        return dir ?: UniFile.fromFile(AppConfig.getDefaultDownloadDir())
+        // Only file:// locations are honored. The download worker writes pages with
+        // java.io.File and cannot write into a SAF tree (content://); a stored content://
+        // location used to silently degrade to app-private storage — invisible files that
+        // "delete with files" could never reclaim. Fall back to the default app file://
+        // directory for any non-file (or unresolved) location.
+        if (dir == null || dir.uri.scheme != "file") {
+            return UniFile.fromFile(AppConfig.getDefaultDownloadDir())
+        }
+        return dir
     }
 
     /**
