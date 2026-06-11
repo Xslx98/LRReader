@@ -118,8 +118,11 @@ class UserImageChange(
         }
         popupWindow?.exitTransition = exitTransitionSet
 
+        // Anchor to a real, attached view (the activity content root) — a freshly
+        // inflated activity_main has no window token, so showAtLocation against it risks
+        // BadTokenException / mispositioning and needlessly inflates the whole layout.
         popupWindow?.showAtLocation(
-            rootLayoutInflater.inflate(R.layout.activity_main, null),
+            activity.findViewById(android.R.id.content),
             Gravity.BOTTOM, 0, 0
         )
     }
@@ -151,11 +154,13 @@ class UserImageChange(
             Uri.fromFile(output)
         }
 
-        PermissionRequester.request(
-            activity, Manifest.permission.CAMERA,
-            activity.getString(R.string.request_camera_permission),
-            REQUEST_CAMERA_PERMISSION, this
-        )
+        // ACTION_IMAGE_CAPTURE delegates to an external camera app and the app no longer
+        // declares the CAMERA permission, so no runtime grant is needed — launch directly
+        // instead of going through the permission requester (which launched the camera
+        // before the grant resolved and crashed with SecurityException).
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri)
+        cameraLauncher.launch(intent)
     }
 
     private fun startAlbum() {

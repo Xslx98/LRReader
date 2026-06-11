@@ -25,7 +25,9 @@
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- No CAMERA permission: the app only delegates to an external camera app via
+         ACTION_IMAGE_CAPTURE. Declaring CAMERA would force a runtime grant and make
+         the capture intent throw SecurityException until granted. -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
