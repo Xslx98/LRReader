@@ -191,7 +191,23 @@ class DownloadDbRepository(
      * (history / favorite) on a pre-existing row stay untouched.
      */
     private suspend fun upsertDownloadSubsystem(downloadInfo: DownloadInfo) {
-        val archiveJson = downloadInfo.toArchive().toArchiveJson()
+        // Merge into any existing archive_json instead of overwriting it with the lossy
+        // DownloadInfo.toArchive() (which zeroes pagecount/progress/summary and drops tag
+        // namespaces). The row is shared with history/favorites and pagecount<=0 makes
+        // GalleryOpenHelper treat a partial download as "complete" — wholesale rewriting
+        // it on every state transition is what regressed truncated local reads. Overlay
+        // only the display fields the DownloadInfo actually owns.
+        val existing = archiveLocalStateDao.loadByArcid(downloadInfo.arcid)
+        val archiveJson = if (existing != null) {
+            existing.toArchive().copy(
+                title = downloadInfo.title ?: "",
+                thumbnailUrl = downloadInfo.thumb ?: "",
+                rating = downloadInfo.rating,
+                serverProfileId = downloadInfo.serverProfileId,
+            ).toArchiveJson()
+        } else {
+            downloadInfo.toArchive().toArchiveJson()
+        }
         archiveLocalStateDao.insertOrIgnoreDownload(
             arcid = downloadInfo.arcid,
             serverProfileId = downloadInfo.serverProfileId,
