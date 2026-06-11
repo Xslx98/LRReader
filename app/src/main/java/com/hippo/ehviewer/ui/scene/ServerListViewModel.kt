@@ -105,16 +105,10 @@ class ServerListViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    profileRepository.deactivateAll()
-                    profileRepository.update(
-                        ServerProfile(
-                            id = profile.id,
-                            name = profile.name,
-                            url = profile.url,
-                            isActive = true,
-                            allowCleartext = profile.allowCleartext
-                        )
-                    )
+                    // Single atomic statement: flips IS_ACTIVE for the chosen profile and
+                    // clears it for all others without a window where none is active. Other
+                    // columns (name/url/allowCleartext) are untouched and thus preserved.
+                    profileRepository.activateExclusive(profile.id)
                 }
                 // Scene handles LRRAuthManager update, cache clearing, DM reload, and navigation
                 _uiEvent.emit(ServerListUiEvent.ProfileActivated(profile))
