@@ -23,6 +23,8 @@ import com.hippo.ehviewer.R
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.client.api.LRRClientProvider
+import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRTagCache
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.runSuspend
@@ -109,6 +111,7 @@ object TagEditDialog {
         activity: Activity?,
         arcid: String?,
         tagGroups: List<TagGroup>?,
+        serverProfileId: Long,
         callback: Callback?
     ) {
         if (activity == null || arcid.isNullOrEmpty()) return
@@ -239,7 +242,7 @@ object TagEditDialog {
             .setView(scrollView)
             .setPositiveButton(R.string.lrr_save) { _, _ ->
                 val newTags = editableGroupsToString(groups)
-                performUpdate(activity, arcid, newTags, callback)
+                performUpdate(activity, arcid, newTags, serverProfileId, callback)
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
@@ -433,14 +436,22 @@ object TagEditDialog {
         activity: Activity,
         arcid: String,
         tags: String,
+        serverProfileId: Long,
         callback: Callback?
     ) {
         (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
             try {
+                // Resolve the owning server from the archive's source profile, not the
+                // active profile — editing tags on a cross-server archive must PUT to the
+                // server that actually holds it (mirrors DeleteArchiveHelper).
+                val baseUrl = resolveSourceBaseUrl(
+                    serverProfileId,
+                    ServiceRegistry.dataModule.profileLookupCache,
+                )
                 runSuspend {
                     LRRArchiveApi.updateMetadata(
                         LRRClientProvider.getClient(),
-                        LRRClientProvider.getBaseUrl(),
+                        baseUrl,
                         arcid,
                         tags = tags
                     )

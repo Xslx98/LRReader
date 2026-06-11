@@ -418,7 +418,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 if (ad != null) {
                     TagEditDialog.show(
                         activity2, ad.archive.arcid,
-                        ad.tagGroups
+                        ad.tagGroups, viewModel.getSourceProfileId()
                     ) {
                         if (mState != STATE_REFRESH && mState != STATE_REFRESH_HEADER) {
                             adjustViewVisibility(STATE_REFRESH, true)
