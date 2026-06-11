@@ -44,6 +44,7 @@ class GalleryItemActionHelper(private val callback: Callback) {
 
     companion object {
         const val REQUEST_CODE_GALLERY_DETAIL = 100
+        private const val ITEM_CLICK_DEBOUNCE_MS = 500L
     }
 
     interface Callback {
@@ -60,6 +61,8 @@ class GalleryItemActionHelper(private val callback: Callback) {
 
     var alertDialog: AlertDialog? = null
 
+    private var lastItemClickTime = 0L
+
     fun dismissDialog() {
         alertDialog?.dismiss()
     }
@@ -68,6 +71,13 @@ class GalleryItemActionHelper(private val callback: Callback) {
         if (gi == null) {
             return true
         }
+        // Debounce: a fast double-tap would otherwise push two identical (STANDARD launch
+        // mode) detail scenes onto the stack.
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now - lastItemClickTime < ITEM_CLICK_DEBOUNCE_MS) {
+            return true
+        }
+        lastItemClickTime = now
         alertDialog?.dismiss()
 
         val args = android.os.Bundle()
