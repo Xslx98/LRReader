@@ -165,6 +165,24 @@ interface ArchiveLocalStateDao {
     )
     suspend fun clearHistorySubsystemBeyond(maxCount: Int)
 
+    /**
+     * Per-profile variant of [clearHistorySubsystemBeyond]: keeps only the top [maxCount]
+     * history rows for [profileId]. The history list is shown per active profile, so a
+     * global trim let heavy reading on one profile evict another profile's still-visible
+     * history; this bounds each profile independently.
+     */
+    @Query(
+        "UPDATE ARCHIVE_LOCAL_STATE " +
+            "SET HISTORY_TIME = NULL, HISTORY_MODE = 0, HISTORY_SCROLL_FRACTION = NULL " +
+            "WHERE HISTORY_TIME IS NOT NULL AND SERVER_PROFILE_ID = :profileId " +
+            "AND ARCID NOT IN (" +
+            "  SELECT ARCID FROM ARCHIVE_LOCAL_STATE " +
+            "  WHERE HISTORY_TIME IS NOT NULL AND SERVER_PROFILE_ID = :profileId " +
+            "  ORDER BY HISTORY_TIME DESC LIMIT :maxCount" +
+            ")"
+    )
+    suspend fun clearHistorySubsystemBeyondForProfile(profileId: Long, maxCount: Int)
+
     // ── Empty-row collapse ─────────────────────────────────────
 
     @Query(
