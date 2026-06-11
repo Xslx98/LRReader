@@ -453,9 +453,11 @@ class LRRGalleryProvider(
      */
     override fun putScrollFraction(fraction: Float) {
         val clamped = fraction.coerceIn(0f, 1f)
-        // Pass NULL for "absent" instead of 0f so the column stays
-        // distinguishable from "user explicitly scrolled to 0".
-        // Storing 0 wastes a row but is harmless either way.
+        // Reject 0 (same guard as DirGalleryProvider): a 0 written on an early
+        // exit — before the first fill publishes a real fraction, or before the
+        // async restore applies — would otherwise clobber a previously saved
+        // mid-page position back to the top.
+        if (clamped == 0f) return
         ServiceRegistry.coroutineModule.ioScope.launch {
             try {
                 ServiceRegistry.dataModule.historyRepository
