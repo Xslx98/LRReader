@@ -115,13 +115,11 @@ class ServerConfigViewModelTest {
             data = testDataModule
         )
 
-        // NetworkMonitor starts with count=0 under Robolectric (no active network).
+        // NetworkMonitor starts empty under Robolectric (no active network).
         // retryOnFailure checks isAvailable and fast-fails with LRROfflineException
-        // if offline. Set the counter to 1 so API calls can proceed.
+        // if offline. Mark a network available so API calls can proceed.
         val monitor = ServiceRegistry.networkModule.networkMonitor
-        val countField = NetworkMonitor::class.java.getDeclaredField("mNetworkCount")
-        countField.isAccessible = true
-        (countField.get(monitor) as java.util.concurrent.atomic.AtomicInteger).set(1)
+        monitor.handleAvailable(org.robolectric.shadows.ShadowNetwork.newInstance(1))
     }
 
     @After
