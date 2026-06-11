@@ -188,6 +188,10 @@ class MainActivity : StageActivity(),
         userImageChange?.handleCropResult(result.resultCode, result.data, mAvatar)
     }
 
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* result ignored: if denied, download notifications simply stay hidden */ }
+
     private var mNavCheckedItem = 0
 
     @JvmField
@@ -356,6 +360,22 @@ class MainActivity : StageActivity(),
         return processAnnouncer(Announcer(clazz).setArgs(args))
     }
 
+    /**
+     * Request POST_NOTIFICATIONS once on Android 13+. Without the grant, download
+     * progress / completion / failure / "waiting for network" notifications are all
+     * silently dropped. The system shows the dialog at most twice then auto-denies, so
+     * launching unconditionally when not granted is safe (no nagging on later launches).
+     */
+    private fun maybeRequestNotificationPermission() {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) return
+        if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+    }
+
     override fun onCreate2(savedInstanceState: Bundle?) {
         var savedState = savedInstanceState
         val intent = intent
@@ -366,6 +386,8 @@ class MainActivity : StageActivity(),
             }
         }
         setContentView(R.layout.activity_main)
+
+        maybeRequestNotificationPermission()
 
         val drawerLayout = ViewUtils.`$$`(this, R.id.draw_view) as EhDrawerLayout
         mDrawerLayout = drawerLayout
