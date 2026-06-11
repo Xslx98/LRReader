@@ -15,6 +15,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Response
 import java.io.IOException
+import javax.net.ssl.SSLException
 
 /**
  * Shared utilities for all LRR API classes.
@@ -203,8 +204,9 @@ internal suspend fun <T> retryOnFailure(
         try {
             return block()
         } catch (e: IOException) {
-            // Client errors (4xx) are permanent — retrying cannot fix them.
-            if (e is LRRHttpException && e.code in 400..499) throw e
+            // Permanent failures (4xx, cleartext/plaintext policy refusals, TLS errors)
+            // cannot be fixed by retrying — fail fast instead of burning the backoff.
+            if (isPermanentFailure(e)) throw e
             lastException = e
             if (attempt < maxRetries) {
                 val delayMs = 500L * (1 shl attempt) // 500, 1000
@@ -214,4 +216,13 @@ internal suspend fun <T> retryOnFailure(
         }
     }
     throw lastException ?: IOException("Retry exhausted after ${maxRetries + 1} attempts")
+}
+
+/** IOExceptions that are deterministic policy/protocol failures — retrying is pointless. */
+private fun isPermanentFailure(e: IOException): Boolean = when {
+    e is LRRHttpException && e.code in 400..499 -> true
+    e is LRRCleartextRefusedException -> true
+    e is LRRPlaintextRefusedException -> true
+    e is SSLException -> true
+    else -> false
 }
