@@ -154,6 +154,26 @@ class ArchiveLocalStateDaoTest {
     }
 
     @Test
+    fun resetTransientDownloadStates_clearsWaitAndDownloadOnly() = runTest {
+        dao.upsert(row("waiting", downloadState = DownloadState.WAIT, downloadTime = 1L))
+        dao.upsert(row("active", downloadState = DownloadState.DOWNLOAD, downloadTime = 2L))
+        dao.upsert(row("done", downloadState = DownloadState.FINISH, downloadTime = 3L))
+        dao.upsert(row("failed", downloadState = DownloadState.FAILED, downloadTime = 4L))
+        dao.upsert(row("nonez", downloadState = DownloadState.NONE, downloadTime = 5L))
+        dao.upsert(row("history", historyTime = 6L)) // not a download
+
+        dao.resetTransientDownloadStates()
+
+        assertEquals(DownloadState.NONE, dao.loadByArcid("waiting")!!.downloadState)
+        assertEquals(DownloadState.NONE, dao.loadByArcid("active")!!.downloadState)
+        assertEquals(DownloadState.FINISH, dao.loadByArcid("done")!!.downloadState)
+        assertEquals(DownloadState.FAILED, dao.loadByArcid("failed")!!.downloadState)
+        assertEquals(DownloadState.NONE, dao.loadByArcid("nonez")!!.downloadState)
+        // A history-only row has no download state; the reset must not give it one.
+        assertNull(dao.loadByArcid("history")!!.downloadState)
+    }
+
+    @Test
     fun observeAllDownloads_emitsOnInsert() = runTest {
         // Initial empty state
         val initial = dao.observeAllDownloads().first()
