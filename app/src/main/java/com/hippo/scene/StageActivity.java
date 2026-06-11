@@ -569,6 +569,12 @@ public abstract class StageActivity extends EhActivity {
     @Override
     public void onBackPressed() {
         int size = mSceneTagList.size();
+        if (size == 0) {
+            // No scene on the stack (e.g. a URL-error finish path) — fall back to the
+            // default back behavior instead of indexing an empty list.
+            super.onBackPressed();
+            return;
+        }
         String tag = mSceneTagList.get(size - 1);
         SceneFragment scene;
         Fragment fragment = getSupportFragmentManager().findFragmentByTag(tag);
