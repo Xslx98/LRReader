@@ -39,4 +39,10 @@
         name="updates"
         path="updates" />
 
+    <!-- Temp page images shared from the reader via FileProvider.getUriForFile()
+         in GalleryImageOperations.shareImage() (AppConfig.getExternalTempDir()). -->
+    <external-files-path
+        name="temp"
+        path="temp" />
+
 </paths>
