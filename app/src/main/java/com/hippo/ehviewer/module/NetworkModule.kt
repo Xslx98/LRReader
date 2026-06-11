@@ -74,8 +74,14 @@ class NetworkModule(private val context: Context) : INetworkModule, Cacheable {
                 // URL pattern: {baseUrl}/api/archives/{arcid}/thumbnail (no query params)
                 // max-age=3600 → fresh for 1 h; stale-while-revalidate=82800 → serve
                 // stale while revalidating for the remaining 23 h (24 h total).
-                val url = chain.request().url.toString()
-                if (url.contains("/api/archives/") && url.contains("/thumbnail")) {
+                // Match on the parsed path segments, not substring containment: a page
+                // request like .../api/archives/{id}/page?path=Vol1/thumbnail.jpg also
+                // contains "/thumbnail" and would wrongly cache a multi-MB page body.
+                val segments = chain.request().url.pathSegments
+                val isThumbnail = segments.size >= 2 &&
+                    segments[segments.size - 1] == "thumbnail" &&
+                    segments.contains("archives")
+                if (isThumbnail) {
                     resp.newBuilder()
                         .header("Cache-Control", "public, max-age=3600, stale-while-revalidate=82800")
                         .removeHeader("Pragma")
