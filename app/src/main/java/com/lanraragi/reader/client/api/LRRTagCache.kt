@@ -5,6 +5,7 @@ import com.lanraragi.reader.client.api.data.LRRTagStat
 import com.hippo.ehviewer.module.Cacheable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * In-memory cache for LANraragi tag statistics from /api/database/stats.
@@ -53,6 +54,8 @@ object LRRTagCache : Cacheable {
                         val keys = fetched.map { "${it.namespace ?: ""}:${it.text}".lowercase() }
                         snapshot = CacheSnapshot(fetched, keys)
                         lastFetchTime = System.currentTimeMillis()
+                    } catch (e: CancellationException) {
+                        throw e // never swallow cooperative cancellation
                     } catch (e: Exception) {
                         Log.w(TAG, "Failed to fetch tag stats: ${e.message}")
                         // Return stale cache or empty list
