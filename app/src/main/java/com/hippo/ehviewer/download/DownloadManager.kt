@@ -179,6 +179,9 @@ class DownloadManager(
 
     fun startDownload(archive: Archive, label: String?) {
         repo.assertMainThread()
+        // Restarting a download clears any stale "paused/timed out" resume-banner entry,
+        // otherwise the next foreground would show a ghost banner for an active download.
+        DownloadResumeBanner.markResumed(archive.arcid)
         for (active in scheduler.activeTasks) { if (active.arcid == archive.arcid) return }
         val existing = repo.getDownloadInfo(archive.arcid)
         if (existing != null) {
@@ -225,6 +228,7 @@ class DownloadManager(
             for (arcid in arcidList) {
                 val info = repo.allInfoMap[arcid] ?: continue
                 if (info.state == DownloadState.NONE || info.state == DownloadState.FAILED || info.state == DownloadState.FINISH) {
+                    DownloadResumeBanner.markResumed(arcid)
                     update = true; info.state = DownloadState.WAIT; scheduler.waitList.add(info); repo.persistInfo(info)
                 }
             }
@@ -232,6 +236,7 @@ class DownloadManager(
             for (arcid in arcidList.reversed()) {
                 val info = repo.allInfoMap[arcid] ?: continue
                 if (info.state == DownloadState.NONE || info.state == DownloadState.FAILED || info.state == DownloadState.FINISH) {
+                    DownloadResumeBanner.markResumed(arcid)
                     update = true; info.state = DownloadState.WAIT; scheduler.waitList.add(info); repo.persistInfo(info)
                 }
             }
@@ -245,6 +250,7 @@ class DownloadManager(
         val downloadOrder = DownloadSettings.getDownloadOrder()
         for (info in repo.allInfoList) {
             if (info.state == DownloadState.NONE || info.state == DownloadState.FAILED) {
+                DownloadResumeBanner.markResumed(info.arcid)
                 update = true; info.state = DownloadState.WAIT
                 if (downloadOrder) scheduler.waitList.add(info) else scheduler.waitList.add(0, info)
                 repo.persistInfo(info)
