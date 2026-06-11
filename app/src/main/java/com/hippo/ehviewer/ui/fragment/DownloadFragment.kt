@@ -45,6 +45,7 @@ import com.hippo.util.ExceptionUtils
 import com.hippo.yorozuya.IOUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
@@ -246,33 +247,38 @@ class DownloadFragment : PreferenceFragmentCompat(),
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             var importCount = 0
             try {
-                requireActivity().contentResolver.openInputStream(uri)?.use { inputStream ->
+                // Parse the CSV on IO; the file read is the only IO work here.
+                val archives = requireActivity().contentResolver.openInputStream(uri)?.use { inputStream ->
                     val content = IOUtils.readString(inputStream, StandardCharsets.UTF_8.name())
-                    val lines = content.split("\n")
-                    val archives = lines.mapNotNull { line ->
+                    content.split("\n").mapNotNull { line ->
                         if (line.startsWith(DownloadManager.DOWNLOAD_INFO_HEADER)) {
                             null
                         } else {
                             archiveFromCsvLine(line)
                         }
                     }
+                }
+                if (archives == null) {
+                    mainHandler.post { dismissAndShowResult(dialog, 0) }
+                    return@launch
+                }
 
-                    val downloadManager = ServiceRegistry.dataModule.downloadManager
-                    val total = archives.size
-                    mainHandler.post { dialog.max = total; dialog.progress = 0 }
-
+                // DownloadManager / DownloadRepository require main-thread access; the
+                // facade calls persist asynchronously, so this stays cheap on the UI thread.
+                val downloadManager = ServiceRegistry.dataModule.downloadManager
+                importCount = withContext(Dispatchers.Main) {
+                    dialog.max = archives.size
+                    dialog.progress = 0
+                    var count = 0
                     for (i in archives.indices) {
                         val archive = archives[i]
                         if (downloadManager.getDownloadInfo(archive.arcid) == null) {
                             downloadManager.addDownload(archive, null)
-                            importCount++
+                            count++
                         }
-                        val progress = i + 1
-                        mainHandler.post { dialog.progress = progress }
+                        dialog.progress = i + 1
                     }
-                } ?: run {
-                    mainHandler.post { dismissAndShowResult(dialog, 0) }
-                    return@launch
+                    count
                 }
             } catch (e: IOException) {
                 // importCount stays 0
@@ -334,8 +340,6 @@ class DownloadFragment : PreferenceFragmentCompat(),
             val total = files.size
             mainHandler.post { dialog.max = total; dialog.progress = 0 }
 
-            val downloadManager = ServiceRegistry.dataModule.downloadManager
-
             for (i in files.indices) {
                 val dir = files[i]
                 val progress = i + 1
@@ -371,11 +375,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
                         // SpiderInfo v2: line[3] = arcid
                         val arcid = if (contentLines.size > 3) contentLines[3].trim() else null
                         if (!arcid.isNullOrEmpty()) {
-                            val gi = downloadManager.getDownloadInfo(arcid)
-                            if (gi != null) {
-                                gi.state = DownloadState.NONE
-                                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(gi)
-                            }
+                            resetDownloadStateToNone(arcid)
                         }
                         continue
                     }
@@ -402,11 +402,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
                         // SpiderInfo v2: line[3] = arcid
                         val arcid = if (contentLines.size > 3) contentLines[3].trim() else null
                         if (!arcid.isNullOrEmpty()) {
-                            val gi = downloadManager.getDownloadInfo(arcid)
-                            if (gi != null) {
-                                gi.state = DownloadState.NONE
-                                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(gi)
-                            }
+                            resetDownloadStateToNone(arcid)
                         }
                     }
                 } catch (e: IOException) {
@@ -425,6 +421,19 @@ class DownloadFragment : PreferenceFragmentCompat(),
             val resultCount = invalidCount
             mainHandler.post { dismissAndShowCleanResult(dialog, resultCount) }
         }
+    }
+
+    /**
+     * Resets a download row to [DownloadState.NONE]. The in-memory DownloadManager
+     * lookup/mutation must happen on the main thread (DownloadRepository asserts it);
+     * the Room write is a suspend call that hops to IO on its own.
+     */
+    private suspend fun resetDownloadStateToNone(arcid: String) {
+        val gi = withContext(Dispatchers.Main) {
+            ServiceRegistry.dataModule.downloadManager.getDownloadInfo(arcid)
+                ?.also { it.state = DownloadState.NONE }
+        } ?: return
+        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(gi)
     }
 
     @Suppress("DEPRECATION")
