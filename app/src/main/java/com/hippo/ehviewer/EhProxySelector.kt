@@ -72,7 +72,9 @@ class EhProxySelector : ProxySelector() {
     }
 
     override fun connectFailed(uri: URI, sa: SocketAddress, ioe: IOException) {
-        delegation?.select(uri)
+        // Report the failure (so the platform selector can fail over) instead of calling
+        // select() and discarding the result.
+        (delegation ?: alternative).connectFailed(uri, sa, ioe)
     }
 
     private class NullProxySelector : ProxySelector() {
