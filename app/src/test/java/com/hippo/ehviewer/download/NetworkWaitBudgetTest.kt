@@ -50,6 +50,28 @@ class NetworkWaitBudgetTest {
     }
 
     @Test
+    fun awaitNetworkOrExpire_resetsBudgetAfterNetworkReturns() = runTest {
+        var now = 0L
+        val flow = MutableStateFlow(false)
+        val budget = NetworkWaitBudget(totalBudgetMillis = 5_000L) { now }
+
+        // First outage at t=0: the network returns quickly, so the wait succeeds.
+        val first = async { budget.awaitNetworkOrExpire(flow) }
+        runCurrent()
+        flow.value = true
+        assertTrue(first.await())
+
+        // Long time passes while ONLINE — this must not count against the budget.
+        now = 100_000L
+        flow.value = false
+
+        // A new outage gets the full budget again, not a budget already exhausted by the
+        // online interval since the first wait.
+        budget.markWaitStartIfNeeded(now)
+        assertEquals(5_000L, budget.remainingMillis(now))
+    }
+
+    @Test
     fun awaitNetworkOrExpire_returnsTrueWhenNetworkReturnsInTime() = runTest {
         val flow = MutableStateFlow(false)
         // Injected clock fixed at 0 -> full budget remains; withTimeoutOrNull runs on the
