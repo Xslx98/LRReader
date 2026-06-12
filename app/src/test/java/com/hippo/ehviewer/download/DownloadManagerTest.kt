@@ -471,9 +471,15 @@ class DownloadManagerTest {
         // Reload — should pick up the DB-inserted download
         manager.reload()
 
-        // Wait for async reload to complete and process Handler callbacks
-        Thread.sleep(200)
-        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+        // Condition-based wait: the reload pipeline hops through a real IO
+        // dispatch, so a fixed sleep races it under full-suite load (observed
+        // flaking at 200 ms). Poll with a generous deadline instead; the
+        // normal case still completes in a few iterations.
+        val deadline = System.currentTimeMillis() + 5_000
+        while ("reload" !in events && System.currentTimeMillis() < deadline) {
+            Thread.sleep(20)
+            org.robolectric.shadows.ShadowLooper.idleMainLooper()
+        }
 
         // After reload, our download should be present (DB may also contain
         // data from prior tests since the in-memory DB is shared in the suite)
