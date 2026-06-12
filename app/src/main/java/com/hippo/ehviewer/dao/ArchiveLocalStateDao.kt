@@ -32,11 +32,17 @@ interface ArchiveLocalStateDao {
 
     // ── Row-level CRUD ─────────────────────────────────────────
 
+    /**
+     * REPLACE = DELETE + INSERT, which resets *every* column of an existing
+     * row to the values in [state] — including the sibling-subsystem columns
+     * (DOWNLOAD_STATE / HISTORY_TIME / FAVORITE_TIME / archive_json) that the
+     * caller didn't intend to touch. Production code must never round-trip a
+     * partial row through here; use [update] or a read-modify-write merge
+     * instead. Retained only as a test-seeding convenience for fresh inserts.
+     */
+    @Deprecated("REPLACE wipes sibling-subsystem columns; use update() or a merge-write")
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(state: ArchiveLocalState)
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertAll(states: List<ArchiveLocalState>)
 
     @Update
     suspend fun update(state: ArchiveLocalState)

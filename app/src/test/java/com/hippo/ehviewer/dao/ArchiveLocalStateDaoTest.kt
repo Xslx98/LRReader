@@ -31,6 +31,9 @@ import org.robolectric.annotation.Config
     sdk = [30],
     application = android.app.Application::class
 )
+// dao.upsert() is @Deprecated for production (REPLACE wipes sibling columns)
+// but is the right primitive for seeding fresh, distinct rows in these tests.
+@Suppress("DEPRECATION")
 class ArchiveLocalStateDaoTest {
 
     private lateinit var db: AppDatabase
