@@ -39,18 +39,10 @@ object Settings {
         sSettingsPre = PreferenceManager.getDefaultSharedPreferences(sContext)
         com.hippo.ehviewer.settings.DownloadSettings.initialize(sContext)
         if (AppearanceSettings.isThemeAutoSwitchAvailable()) {
-            // Mirror the current system mode in BOTH directions on cold start. The old
-            // one-directional check only switched to dark, so a process killed in dark
-            // mode relaunched dark even after the system returned to light. Only switch
-            // when actually crossing light<->dark so a chosen BLACK (a dark variant) is
-            // preserved while the system is dark instead of being overwritten with DARK.
-            val isDark = AppearanceSettings.getDarkModeStatus(context)
-            val theme = AppearanceSettings.getTheme()
-            if (isDark && theme == AppearanceSettings.THEME_LIGHT) {
-                AppearanceSettings.putTheme(AppearanceSettings.THEME_DARK)
-            } else if (!isDark && theme != AppearanceSettings.THEME_LIGHT) {
-                AppearanceSettings.putTheme(AppearanceSettings.THEME_LIGHT)
-            }
+            // Mirror the current system mode in BOTH directions on cold start,
+            // restoring the user's saved dark variant (DARK vs BLACK) on the
+            // dark transition. See AppearanceSettings.syncThemeWithSystem.
+            AppearanceSettings.syncThemeWithSystem(AppearanceSettings.getDarkModeStatus(context))
         }
         ReadingSettings.initialize()
     }
