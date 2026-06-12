@@ -180,12 +180,16 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
         val adapter = callback.mAdapter ?: return
         for (i in list.indices) {
             if (list[i].arcid == arcid) {
-                val position = callback.listIndexInPage(i)
+                // Skip when the row is not on the currently-displayed page:
+                // with pagination, the bare modulo mapping would land on a
+                // visible row's adapter position and fully rebind the wrong
+                // row (same bug class fixed in dispatchProgressChanges).
+                val position = callback.viewModel.adapterPositionForListIndex(i) ?: return
                 adapter.notifyItemChanged(position)
                 return
             }
         }
-        // If item not found in current page, no notification needed
+        // Item not in the full list — nothing to notify.
     }
 
     companion object {
