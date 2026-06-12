@@ -84,11 +84,11 @@ class DownloadAdapter(
 
     private val thumbnailCache = object : android.util.LruCache<String, Bitmap>(5 * 1024 * 1024) { // 5MB
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
-        override fun entryRemoved(evicted: Boolean, key: String, oldValue: Bitmap, newValue: Bitmap?) {
-            if (evicted && !oldValue.isRecycled) {
-                oldValue.recycle()
-            }
-        }
+        // Intentionally no entryRemoved/recycle: eviction means "over the size
+        // budget", not "no longer on screen". A RecyclerView holder may still be
+        // displaying the evicted bitmap, and recycling it would crash with
+        // "trying to use a recycled bitmap". ART (API 26+) reclaims the native
+        // allocation via GC once nothing references it.
     }
 
     interface DownloadAdapterCallback {
