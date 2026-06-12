@@ -207,9 +207,14 @@ class DownloadDbRepository(
         // only the display fields the DownloadInfo actually owns.
         val existing = archiveLocalStateDao.loadByArcid(downloadInfo.arcid)
         val archiveJson = if (existing != null) {
-            existing.toArchive().copy(
-                title = downloadInfo.title ?: "",
-                thumbnailUrl = downloadInfo.thumb ?: "",
+            // Keep the stored value when the in-memory DownloadInfo has no
+            // better one: a corrupt-json boot fallback or a legacy import
+            // carries a blank title/thumb, and overlaying "" here would blank
+            // the good values a later history/detail write already repaired.
+            val existingArchive = existing.toArchive()
+            existingArchive.copy(
+                title = downloadInfo.title?.takeUnless { it.isBlank() } ?: existingArchive.title,
+                thumbnailUrl = downloadInfo.thumb?.takeUnless { it.isBlank() } ?: existingArchive.thumbnailUrl,
                 rating = downloadInfo.rating,
                 serverProfileId = downloadInfo.serverProfileId,
             ).toArchiveJson()
