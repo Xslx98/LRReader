@@ -25,7 +25,6 @@ import com.hippo.ehviewer.BuildConfig
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toDrawable
 import android.net.ConnectivityManager
@@ -947,17 +946,11 @@ class MainActivity : StageActivity(),
         mAvatar?.let { avatar ->
             val avatarUrl = AppearanceSettings.getAvatar()
             if (TextUtils.isEmpty(avatarUrl)) {
-                val userAvatarFile = AppearanceSettings.getUserImageFile(AppearanceSettings.USER_AVATAR_IMAGE)
-                if (userAvatarFile != null) {
-                    // Decode off the main thread (see loadAvatar).
-                    lifecycleScope.launch {
-                        val bitmap = withContext(Dispatchers.IO) { decodeSampledBitmap(userAvatarFile.path) }
-                        val drawable = BitmapDrawable(avatar.resources, bitmap)
-                        avatar.load(drawable)
-                    }
-                } else {
-                    avatar.load(R.drawable.default_avatar)
-                }
+                // Same decode-user-avatar path as elsewhere — loadAvatar owns
+                // the off-main decode and the default_avatar fallback (which
+                // the previous inline copy here lacked, showing an empty
+                // drawable for a corrupt file).
+                loadAvatar()
             } else {
                 avatar.load(avatarUrl, avatarUrl)
             }
