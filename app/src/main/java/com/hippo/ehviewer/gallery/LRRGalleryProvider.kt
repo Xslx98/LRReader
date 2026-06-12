@@ -8,6 +8,7 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LrrFileListCache
+import com.lanraragi.reader.client.api.resolvePageUrl
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.hippo.lib.glgallery.GalleryProvider
 import com.hippo.lib.image.Image
@@ -600,7 +601,7 @@ class LRRGalleryProvider(
             if (index >= paths.size) {
                 throw IOException("Page index $index out of bounds (size=${paths.size})")
             }
-            val pageUrl = serverUrl + paths[index]
+            val pageUrl = resolvePageUrl(serverUrl, paths[index])
             val currentPageClient = pageClient
                 ?: ServiceRegistry.networkModule.okHttpClient
 

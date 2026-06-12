@@ -9,6 +9,7 @@ import com.hippo.lib.image.Image
 import com.hippo.unifile.UniFile
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LrrFileListCache
+import com.lanraragi.reader.client.api.resolvePageUrl
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -575,7 +576,7 @@ object ReaderPageCache : Cacheable {
                 val cacheFile = getCacheFile(appContext, arcId, pageIndex)
                 if (!(cacheFile.exists() && cacheFile.length() > MIN_IMAGE_SIZE)) {
                     try {
-                        val pageUrl = serverUrl + pages[pageIndex]
+                        val pageUrl = resolvePageUrl(serverUrl, pages[pageIndex])
                         downloadToFile(pageClient, pageUrl, cacheFile, pageIndex)
                         Log.d(TAG, "Detail preloaded page $pageIndex for $arcId")
                     } catch (e: Exception) {

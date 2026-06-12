@@ -8,6 +8,7 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.OrphanProfileException
+import com.lanraragi.reader.client.api.resolvePageUrl
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.ehviewer.dao.DownloadInfo
@@ -332,7 +333,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         index: Int,
         total: Int
     ) {
-        val pageUrl = serverUrl + pagePath
+        val pageUrl = resolvePageUrl(serverUrl, pagePath)
         val request = Request.Builder()
             .url(pageUrl)
             .get()

@@ -33,6 +33,21 @@ internal fun parseBaseUrl(baseUrl: String): okhttp3.HttpUrl {
         ?: throw IOException("Invalid server URL: $baseUrl")
 }
 
+/**
+ * Resolve a per-page link returned by the server against the configured
+ * [serverUrl]. LANraragi's documented page paths come in two shapes —
+ * absolute (`/api/archives/<id>/page?path=...`) and document-relative
+ * (`./api/...`, which the project's own test fixtures use). Bare string
+ * concatenation (`serverUrl + pagePath`) only works for the absolute form;
+ * a relative path produces a broken `http://host:3000./api/...`. Resolving
+ * through [okhttp3.HttpUrl] handles both shapes (and an already-absolute URL)
+ * without re-encoding the already-encoded link.
+ */
+internal fun resolvePageUrl(serverUrl: String, pagePath: String): String {
+    return parseBaseUrl(serverUrl).resolve(pagePath)?.toString()
+        ?: throw IOException("Cannot resolve page path '$pagePath' against $serverUrl")
+}
+
 /** Shared Json instance with lenient parsing. */
 internal val lrrJson = Json { ignoreUnknownKeys = true }
 
