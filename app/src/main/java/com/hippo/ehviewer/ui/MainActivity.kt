@@ -669,12 +669,26 @@ class MainActivity : StageActivity(),
                 // on every cold start because the bad path lives in SharedPreferences.
                 val ext = file.name.substringAfterLast('.', "").lowercase()
                 if (ext == "gif") {
-                    val gif = withContext(Dispatchers.IO) { GifHandler(file.absolutePath) }
-                    val bmp = createBitmap(gif.width, gif.height)
-                    val nextFrame = withContext(Dispatchers.IO) { gif.updateFrame(bmp) }
-                    gifHandler = gif
-                    backgroundBit = bmp
-                    handlerB.sendEmptyMessageDelayed(1, nextFrame.toLong())
+                    // GifHandler holds a raw native pointer with no finalizer —
+                    // only close() frees it, and cleanupBackgroundResources()
+                    // only knows about the published field. Keep the handle in
+                    // a var assigned INSIDE the IO block (so it survives even
+                    // when a cancelled withContext discards its return value)
+                    // and close it on any exit where it wasn't published.
+                    var gif: GifHandler? = null
+                    var published = false
+                    try {
+                        withContext(Dispatchers.IO) { gif = GifHandler(file.absolutePath) }
+                        val g = checkNotNull(gif)
+                        val bmp = createBitmap(g.width, g.height)
+                        val nextFrame = withContext(Dispatchers.IO) { g.updateFrame(bmp) }
+                        gifHandler = g
+                        published = true
+                        backgroundBit = bmp
+                        handlerB.sendEmptyMessageDelayed(1, nextFrame.toLong())
+                    } finally {
+                        if (!published) gif?.close()
+                    }
                 } else {
                     val bmp = withContext(Dispatchers.IO) { decodeSampledBitmap(file.path) }
                     backgroundBit = bmp
