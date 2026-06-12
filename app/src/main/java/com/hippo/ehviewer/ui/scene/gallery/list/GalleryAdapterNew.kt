@@ -246,7 +246,11 @@ abstract class GalleryAdapterNew(
                 thumb.setOnClickListener {
                     if (onThumbItemClickListener != null) {
                         val position = bindingAdapterPosition
-                        onThumbItemClickListener.onThumbItemClick(position, itemView, getDataAt(position))
+                        // Guard NO_POSITION: a click landing mid-removal/animation
+                        // would otherwise call getDataAt(-1).
+                        if (position != RecyclerView.NO_POSITION) {
+                            onThumbItemClickListener.onThumbItemClick(position, itemView, getDataAt(position))
+                        }
                     }
                 }
             }
