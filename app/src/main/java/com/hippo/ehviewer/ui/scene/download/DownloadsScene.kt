@@ -33,7 +33,9 @@ import androidx.core.content.res.ResourcesCompat
 import android.util.Log
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -183,7 +185,12 @@ class DownloadsScene : ToolbarScene(),
         // case where the view isn't built yet (stashes mInitPosition).
         lifecycleScope.launch {
             try {
-                viewModel.downloadManager.awaitInitAsync()
+                // awaitInitAsync asserts it is NOT on the main thread when init
+                // is still pending (the case this whole block exists for), so
+                // hop to IO for the wait; the lookup below resumes on Main.
+                withContext(Dispatchers.IO) {
+                    viewModel.downloadManager.awaitInitAsync()
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "awaitInitAsync failed; deep-link lookup skipped", e)
                 return@launch
