@@ -15,6 +15,7 @@ import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.ehviewer.spider.SpiderQueen
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -76,7 +77,20 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
 
     private val networkMonitor get() = ServiceRegistry.networkModule.networkMonitor
 
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    // The handler is the worker's last line of containment: start()'s
+    // `catch (e: Exception)` already swallows worker failures, but a Throwable
+    // that is NOT an Exception (NotImplementedError, AssertionError, …) would
+    // escape the catch and — with no handler on this private scope — reach the
+    // process default handler, crashing the app in production and poisoning
+    // kotlinx-coroutines-test's global exception collector in unit tests
+    // (UncaughtExceptionsBeforeTest on an unrelated later test). Mirrors the
+    // CoroutineModule scopes, which all carry a handler.
+    private val scope = CoroutineScope(
+        Dispatchers.IO + SupervisorJob() +
+            CoroutineExceptionHandler { _, t ->
+                Log.e(TAG, "Uncaught throwable in download worker scope", t)
+            }
+    )
 
     private var job: Job? = null
 
