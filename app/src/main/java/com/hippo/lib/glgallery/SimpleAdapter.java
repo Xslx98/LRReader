@@ -144,6 +144,13 @@ public class SimpleAdapter extends GalleryView.Adapter implements GalleryProvide
                 // UPSTREAM-LEGACY: potential infinite request loop if adapter keeps returning RESULT_ERROR
                 mProvider.request(index);
             }
+        } else if (image != null && Boolean.TRUE.equals(image.getAnimated())) {
+            // The target page is no longer bound (scrolled away before the
+            // decode finished). An animated image is never cached, so its
+            // refcount is still 0 and nothing else will recycle it — release
+            // it here to free the native memory. Non-animated pages are held
+            // by the provider's LRU cache and recycled on eviction.
+            image.release();
         }
     }
 
