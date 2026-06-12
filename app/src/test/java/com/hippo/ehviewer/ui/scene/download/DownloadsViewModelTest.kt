@@ -64,7 +64,17 @@ class DownloadsViewModelTest {
         Settings.initialize(context)
         ServiceRegistry.initializeForTest(CoroutineModule())
 
-        testScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        // Handler mirrors production scopes and contains the NotImplementedError
+        // thrown by the "not needed" fakes when fire-and-forget coroutines
+        // (DownloadManager.syncRatingsFromServer at init) reach them — without
+        // it the Error escapes to the global handler and fails an unrelated
+        // later runTest with UncaughtExceptionsBeforeTest (see DownloadManagerTest).
+        testScope = CoroutineScope(
+            SupervisorJob() + Dispatchers.Unconfined +
+                kotlinx.coroutines.CoroutineExceptionHandler { _, t ->
+                    println("testScope contained: $t")
+                }
+        )
 
         LRRAuthManager.initialize(context)
         val method = LRRAuthManager::class.java.declaredMethods.first {
