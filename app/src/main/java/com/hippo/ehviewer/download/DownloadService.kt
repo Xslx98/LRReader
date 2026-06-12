@@ -104,17 +104,30 @@ class DownloadService : Service(), DownloadListener {
     }
 
     private var CHANNEL_ID: String? = null
+    private var COMPLETE_CHANNEL_ID: String? = null
 
     override fun onCreate() {
         super.onCreate()
 
         CHANNEL_ID = "$packageName.download"
+        COMPLETE_CHANNEL_ID = "$packageName.download.complete"
         mNotifyManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Ongoing progress (foreground service) stays IMPORTANCE_LOW — a
+            // persistent bar should be silent and non-intrusive.
             mNotifyManager?.createNotificationChannel(
                 NotificationChannel(
                     CHANNEL_ID, getString(R.string.download_service),
                     NotificationManager.IMPORTANCE_LOW
+                )
+            )
+            // Terminal events (download finished / 509 rate-limited) go on a
+            // separate IMPORTANCE_DEFAULT channel so they get a sound and a
+            // heads-up instead of silently joining the LOW progress channel.
+            mNotifyManager?.createNotificationChannel(
+                NotificationChannel(
+                    COMPLETE_CHANNEL_ID, getString(R.string.stat_download_done_title),
+                    NotificationManager.IMPORTANCE_DEFAULT
                 )
             )
         }
@@ -352,7 +365,7 @@ class DownloadService : Service(), DownloadListener {
             activityIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val channelId = CHANNEL_ID ?: return
+        val channelId = COMPLETE_CHANNEL_ID ?: return
         mDownloadedBuilder = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setLargeIcon(cachedLargeIcon)
@@ -373,7 +386,7 @@ class DownloadService : Service(), DownloadListener {
             return
         }
 
-        val channelId = CHANNEL_ID ?: return
+        val channelId = COMPLETE_CHANNEL_ID ?: return
         m509dBuilder = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(R.drawable.ic_stat_alert)
             .setLargeIcon(cachedLargeIcon)
