@@ -365,6 +365,21 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
         return position
     }
 
+    /**
+     * Adapter position for a full-list [index], or null when pagination is on
+     * and the index is not on the currently-displayed page. With pagination,
+     * [listIndexInPage] is a bare modulo — an off-page index collides with a
+     * visible row's adapter position, so a notify keyed by it rebinds the
+     * wrong row. Only an on-page index round-trips back to itself through
+     * [positionInList] (identity when not paginating). Single home for this
+     * page-membership rule; use it before any notifyItem* keyed by a
+     * full-list index.
+     */
+    fun adapterPositionForListIndex(index: Int): Int? {
+        val inPage = listIndexInPage(index)
+        return if (positionInList(inPage) == index) inPage else null
+    }
+
     // -------------------------------------------------------------------------
     // Spider info
     // -------------------------------------------------------------------------
