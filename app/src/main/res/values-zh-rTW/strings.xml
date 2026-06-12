@@ -358,7 +358,6 @@
     <string name="settings_download">下載</string>
     <string name="settings_download_download_location">下載路徑</string>
     <string name="settings_download_invalid_download_location">無效的下載路徑</string>
-    <string name="settings_download_cant_get_download_location">無法取得下載路徑</string>
     <string name="settings_download_media_scan">允許其他程式進行媒體掃描</string>
     <string name="settings_download_media_scan_summary_on">請別讓別人看到你的相簿</string>
     <string name="settings_download_media_scan_summary_off">大部分相簿軟體將會忽略顯示下載路徑中的影像</string>
@@ -486,7 +485,6 @@
     <!--  側滑欄頭像和背景修改  -->
     <string name="take_a_photograph">拍照</string>
     <string name="choose_from_the_album">從相簿選擇</string>
-    <string name="request_camera_permission">為了拍照，LR Reader 將請求裝置相機的權限。您願意授權嗎？</string>
     <string name="request_storage_permission">為了獲取相片，LR Reader 將請求裝置的圖片相簿之權限。您願意授權嗎？</string>
 
     <!--  wifi server -->

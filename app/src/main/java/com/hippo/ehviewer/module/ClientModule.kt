@@ -6,7 +6,6 @@ import com.hippo.ehviewer.ImageBitmapHelper
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.gallery.ReaderPageCache
 import com.lanraragi.reader.client.api.LRRTagCache
-import com.lanraragi.reader.client.api.LrrFileListCache
 import com.lanraragi.reader.client.api.PageThumbnailCache
 import com.hippo.lib.image.Image
 import java.io.File
@@ -23,7 +22,10 @@ class ClientModule(
 
     init {
         ServiceRegistry.registerCacheable(LRRTagCache)
-        ServiceRegistry.registerCacheable(LrrFileListCache)
+        // LrrFileListCache is intentionally NOT registered: its entries are
+        // keyed by (serverUrl, arcid) and stay valid across profile switches —
+        // wiping them on switch would discard exactly the cross-profile warm
+        // hits the server-keying enables. The 30-minute TTL bounds staleness.
         ServiceRegistry.registerCacheable(ReaderPageCache)
         ServiceRegistry.registerCacheable(PageThumbnailCache)
     }

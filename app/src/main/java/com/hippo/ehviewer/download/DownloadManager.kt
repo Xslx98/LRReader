@@ -88,8 +88,8 @@ class DownloadManager(
     private fun syncRatingsFromServer() {
         scope.launch {
             try {
-                val serverUrl = com.lanraragi.reader.client.api.LRRAuthManager.getServerUrl() ?: return@launch
                 val client = ServiceRegistry.networkModule.okHttpClient
+                val cache = ServiceRegistry.dataModule.profileLookupCache
 
                 // Snapshot the list on main thread
                 val infos = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
@@ -97,12 +97,19 @@ class DownloadManager(
                 }
                 if (infos.isEmpty()) return@launch
 
-                // Fetch metadata for each archive and compare ratings
+                // Fetch metadata for each archive and collect rating changes.
+                val changes = ArrayList<Pair<DownloadInfo, Float>>()
                 for (info in infos) {
                     val arcid = info.arcid ?: continue
                     try {
+                        // Route to the archive's *source* server (resolved from its
+                        // serverProfileId), not the active one — a cross-profile download
+                        // otherwise hits the wrong server and, since arcids are content
+                        // hashes, could read another server's rating for the same id.
+                        val baseUrl = com.lanraragi.reader.client.api
+                            .resolveSourceBaseUrl(info.serverProfileId, cache)
                         val archive = com.lanraragi.reader.client.api.LRRArchiveApi
-                            .getArchiveMetadata(client, serverUrl, arcid)
+                            .getArchiveMetadata(client, baseUrl, arcid)
                         val serverRating = parseRatingFromTags(archive.tags)
                         // Only update if server has a meaningful rating that
                         // differs from the local value. -1 = no rating tag on
@@ -110,15 +117,22 @@ class DownloadManager(
                         val localEffective = if (info.rating <= 0) -1f else info.rating
                         val serverEffective = if (serverRating <= 0) -1f else serverRating
                         if (serverEffective != localEffective) {
-                            info.rating = if (serverRating < 0) 0f else serverRating
-                            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
+                            changes.add(info to if (serverRating < 0) 0f else serverRating)
                         }
                     } catch (e: Exception) {
                         // Skip this archive on error, continue with next
                     }
                 }
 
-                // Notify UI on main thread
+                if (changes.isEmpty()) return@launch
+
+                // DownloadInfo is main-thread-owned: mutate on Main, then persist + notify.
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    for ((info, rating) in changes) info.rating = rating
+                }
+                for ((info, _) in changes) {
+                    ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
+                }
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                     eventBus.forEachListener { it.onChange() }
                 }
@@ -179,6 +193,9 @@ class DownloadManager(
 
     fun startDownload(archive: Archive, label: String?) {
         repo.assertMainThread()
+        // Restarting a download clears any stale "paused/timed out" resume-banner entry,
+        // otherwise the next foreground would show a ghost banner for an active download.
+        DownloadResumeBanner.markResumed(archive.arcid)
         for (active in scheduler.activeTasks) { if (active.arcid == archive.arcid) return }
         val existing = repo.getDownloadInfo(archive.arcid)
         if (existing != null) {
@@ -225,6 +242,7 @@ class DownloadManager(
             for (arcid in arcidList) {
                 val info = repo.allInfoMap[arcid] ?: continue
                 if (info.state == DownloadState.NONE || info.state == DownloadState.FAILED || info.state == DownloadState.FINISH) {
+                    DownloadResumeBanner.markResumed(arcid)
                     update = true; info.state = DownloadState.WAIT; scheduler.waitList.add(info); repo.persistInfo(info)
                 }
             }
@@ -232,6 +250,7 @@ class DownloadManager(
             for (arcid in arcidList.reversed()) {
                 val info = repo.allInfoMap[arcid] ?: continue
                 if (info.state == DownloadState.NONE || info.state == DownloadState.FAILED || info.state == DownloadState.FINISH) {
+                    DownloadResumeBanner.markResumed(arcid)
                     update = true; info.state = DownloadState.WAIT; scheduler.waitList.add(info); repo.persistInfo(info)
                 }
             }
@@ -245,6 +264,7 @@ class DownloadManager(
         val downloadOrder = DownloadSettings.getDownloadOrder()
         for (info in repo.allInfoList) {
             if (info.state == DownloadState.NONE || info.state == DownloadState.FAILED) {
+                DownloadResumeBanner.markResumed(info.arcid)
                 update = true; info.state = DownloadState.WAIT
                 if (downloadOrder) scheduler.waitList.add(info) else scheduler.waitList.add(0, info)
                 repo.persistInfo(info)

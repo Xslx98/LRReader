@@ -27,6 +27,16 @@ class NetworkWaitBudget(
         firstWaitAt.compareAndSet(-1L, now)
     }
 
+    /**
+     * Clear the outage clock so the next wait starts a fresh budget. Called when the
+     * network returns: the budget measures a single *continuous* outage, not the total
+     * time since the very first outage (otherwise online time between two brief outages
+     * would be charged against the budget and fail the second one instantly).
+     */
+    fun reset() {
+        firstWaitAt.set(-1L)
+    }
+
     /** Remaining wait budget in millis; [Long.MAX_VALUE] when unbounded. */
     fun remainingMillis(now: Long): Long {
         if (totalBudgetMillis == Long.MAX_VALUE) return Long.MAX_VALUE
@@ -41,15 +51,21 @@ class NetworkWaitBudget(
      * budget, `false` if the budget ran out first.
      */
     suspend fun awaitNetworkOrExpire(availability: StateFlow<Boolean>): Boolean {
-        if (availability.value) return true
+        if (availability.value) {
+            reset() // network is up; clear any budget left from a resolved outage
+            return true
+        }
         markWaitStartIfNeeded(clock())
         val remaining = remainingMillis(clock())
         if (remaining <= 0L) return false
-        if (remaining == Long.MAX_VALUE) {
+        val resumed = if (remaining == Long.MAX_VALUE) {
             availability.first { it }
-            return true
+            true
+        } else {
+            withTimeoutOrNull(remaining) { availability.first { it } } != null
         }
-        return withTimeoutOrNull(remaining) { availability.first { it } } != null
+        if (resumed) reset() // outage resolved; the next outage gets a fresh budget
+        return resumed
     }
 
     companion object {

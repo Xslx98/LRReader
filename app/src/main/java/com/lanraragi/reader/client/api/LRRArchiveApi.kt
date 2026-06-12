@@ -111,9 +111,7 @@ object LRRArchiveApi {
             .put(EMPTY_REQUEST_BODY)
             .build()
         client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw LRRHttpException(response.code)
-            }
+            ensureSuccess(response)
         }
     }
 
@@ -351,7 +349,7 @@ object LRRArchiveApi {
             digest.update(buffer, 0, read)
             remaining -= read
         }
-        return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xFF) }
+        return digest.digest().toHexLower()
     }
 
     /**
@@ -369,7 +367,7 @@ object LRRArchiveApi {
                 digest.update(buffer, 0, read)
             }
         }
-        return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xFF) }
+        return digest.digest().toHexLower()
     }
 
     /**

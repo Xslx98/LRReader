@@ -40,7 +40,7 @@ import java.util.Collections
  * ## Thread safety
  *
  * All direct access to the in-memory collections ([allInfoList], [allInfoMap],
- * [labelInfoMap], [labelCountMap], [labelList], [labelSet], [defaultInfoList])
+ * [labelInfoMap], [labelList], [labelSet], [defaultInfoList])
  * MUST occur on the main thread. The contract is enforced at runtime by
  * [assertMainThread]. No synchronization wrappers are used so that iteration
  * during notification dispatch remains predictable and lock-free.
@@ -70,9 +70,6 @@ class DownloadRepository(
 
     /** Label string → per-label info list. Does NOT contain default (null-label) entries. */
     internal val labelInfoMap: MutableMap<String?, MutableList<DownloadInfo>> = HashMap()
-
-    /** Label string → count cache. */
-    internal val labelCountMap: MutableMap<String?, Long> = HashMap()
 
     /** All labels (without the implicit default label). */
     internal val labelList: MutableList<DownloadLabel> = mutableListOf()
@@ -161,6 +158,10 @@ class DownloadRepository(
     private suspend fun loadDataFromDb(onComplete: () -> Unit) {
         // ── IO phase ───────────────────────────────────────────────────
         val downloadDbRepo = ServiceRegistry.dataModule.downloadDbRepository
+        // Persist the reset of any WAIT/DOWNLOAD rows left over from a previous process:
+        // an in-flight download cannot survive process death, so without this the
+        // Room-Flow-driven list would render those ghosts as "downloading" forever.
+        downloadDbRepo.resetTransientDownloadStates()
         val loadedLabels = downloadDbRepo.getAllDownloadLabels()
         val loadedInfos = downloadDbRepo.getAllDownloadInfo()
 
@@ -244,10 +245,6 @@ class DownloadRepository(
             }
         }
 
-        for ((key, value) in labelInfoMap) {
-            labelCountMap[key] = value.size.toLong()
-        }
-        labelCountMap[null] = defaultInfoList.size.toLong()
 
         initialized = true
         initDeferred.complete(Unit)
@@ -293,7 +290,9 @@ class DownloadRepository(
 
     fun getLabelCount(label: String?): Long {
         assertMainThread()
-        return labelCountMap[label] ?: 0L
+        // Derive live from the in-memory list so the drawer count stays correct across
+        // adds, deletes, label changes, imports and reloads (a separate counter went stale).
+        return getInfoListForLabel(label)?.size?.toLong() ?: 0L
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -449,11 +448,6 @@ class DownloadRepository(
         info.downloadRootUri = com.hippo.ehviewer.settings.DownloadSettings.getCurrentDownloadRootUri()
 
         val list = getInfoListForLabel(info.label)
-        if (!labelCountMap.containsKey(label)) {
-            labelCountMap[label] = 1L
-        } else {
-            labelCountMap[label] = (labelCountMap[label] ?: 0L) + 1L
-        }
         if (list == null) {
             Log.e(TAG, "Can't find download info list with label: $label")
             return null

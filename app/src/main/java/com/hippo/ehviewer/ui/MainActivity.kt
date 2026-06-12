@@ -21,10 +21,10 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.ClipboardManager
 import android.util.Log
+import com.hippo.ehviewer.BuildConfig
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toDrawable
 import android.net.ConnectivityManager
@@ -32,7 +32,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
-import android.os.PersistableBundle
 import android.os.Process
 import android.text.TextUtils
 import android.view.Gravity
@@ -95,7 +94,9 @@ import com.hippo.unifile.UniFile
 import com.hippo.util.BitmapUtils
 import com.hippo.util.GifHandler
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.hippo.widget.AvatarImageView
@@ -188,6 +189,10 @@ class MainActivity : StageActivity(),
         userImageChange?.handleCropResult(result.resultCode, result.data, mAvatar)
     }
 
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* result ignored: if denied, download notifications simply stay hidden */ }
+
     private var mNavCheckedItem = 0
 
     @JvmField
@@ -195,6 +200,9 @@ class MainActivity : StageActivity(),
 
     @JvmField
     var backgroundBit: Bitmap? = null
+
+    /** In-flight background-image decode; cancelled before starting another. */
+    private var backgroundLoadJob: Job? = null
 
     private val handlerB: Handler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
@@ -356,6 +364,22 @@ class MainActivity : StageActivity(),
         return processAnnouncer(Announcer(clazz).setArgs(args))
     }
 
+    /**
+     * Request POST_NOTIFICATIONS once on Android 13+. Without the grant, download
+     * progress / completion / failure / "waiting for network" notifications are all
+     * silently dropped. The system shows the dialog at most twice then auto-denies, so
+     * launching unconditionally when not granted is safe (no nagging on later launches).
+     */
+    private fun maybeRequestNotificationPermission() {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) return
+        if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+    }
+
     override fun onCreate2(savedInstanceState: Bundle?) {
         var savedState = savedInstanceState
         val intent = intent
@@ -366,6 +390,8 @@ class MainActivity : StageActivity(),
             }
         }
         setContentView(R.layout.activity_main)
+
+        maybeRequestNotificationPermission()
 
         val drawerLayout = ViewUtils.`$$`(this, R.id.draw_view) as EhDrawerLayout
         mDrawerLayout = drawerLayout
@@ -407,8 +433,10 @@ class MainActivity : StageActivity(),
         mHeaderBackground = headerBackground
         headerBackground.setOnClickListener { onBackgroundChange() }
         initUserImage()
-        updateProfile()
+        // Bind mDisplayName before updateProfile() so its display-name block actually runs
+        // on cold start (it was previously assigned after the call and stayed null).
         mDisplayName = ViewUtils.`$$`(headerLayout, R.id.display_name) as TextView
+        updateProfile()
         val mChangeTheme = ViewUtils.`$$`(this, R.id.change_theme) as TextView
 
         drawerLayout.setStatusBarColor(
@@ -614,32 +642,69 @@ class MainActivity : StageActivity(),
         handlerB.removeCallbacksAndMessages(null)
         gifHandler?.close()
         gifHandler = null
-        backgroundBit?.let { bmp ->
-            if (!bmp.isRecycled) {
-                bmp.recycle()
-            }
-        }
+        // Don't recycle backgroundBit: now that decoding is async, this can run
+        // (on a new load) while the bitmap is still set on mHeaderBackground,
+        // and recycling a displayed bitmap crashes on the next draw. Drop the
+        // reference and let ART's GC reclaim the native allocation.
         backgroundBit = null
     }
 
     private fun initBackgroundImageData(file: File?) {
-        // Clean up previous resources
+        // Clean up previous resources + cancel any in-flight decode so a stale
+        // load can't stomp the new one.
+        backgroundLoadJob?.cancel()
         cleanupBackgroundResources()
 
-        if (file != null) {
-            val name = file.name
-            val ns = name.split("\\.".toRegex())
-            if (ns[1] == "gif" || ns[1] == "GIF") {
-                val gif = GifHandler(file.absolutePath)
-                gifHandler = gif
-                val width = gif.width
-                val height = gif.height
-                backgroundBit = createBitmap(width, height)
-                val nextFrame = gif.updateFrame(backgroundBit)
-                handlerB.sendEmptyMessageDelayed(1, nextFrame.toLong())
-            } else {
-                backgroundBit = decodeSampledBitmap(file.path)
-                mHeaderBackground?.setImageBitmap(backgroundBit)
+        if (file == null) return
+
+        // Decode off the main thread: this runs during cold-start onCreate and
+        // the background can be a full-screen image (or a GIF first frame).
+        // lifecycleScope cancels the job if the Activity is destroyed mid-decode.
+        backgroundLoadJob = lifecycleScope.launch {
+            try {
+                // substringAfterLast (not split[1]) so a dotless filename — older
+                // builds persisted the MediaStore display name verbatim — yields
+                // "" instead of throwing IndexOutOfBounds. A crash here would loop
+                // on every cold start because the bad path lives in SharedPreferences.
+                val ext = file.name.substringAfterLast('.', "").lowercase()
+                if (ext == "gif") {
+                    // GifHandler holds a raw native pointer with no finalizer —
+                    // only close() frees it, and cleanupBackgroundResources()
+                    // only knows about the published field. Keep the handle in
+                    // a var assigned INSIDE the IO block (so it survives even
+                    // when a cancelled withContext discards its return value)
+                    // and close it on any exit where it wasn't published.
+                    var gif: GifHandler? = null
+                    var published = false
+                    try {
+                        withContext(Dispatchers.IO) { gif = GifHandler(file.absolutePath) }
+                        val g = checkNotNull(gif)
+                        val bmp = createBitmap(g.width, g.height)
+                        val nextFrame = withContext(Dispatchers.IO) { g.updateFrame(bmp) }
+                        gifHandler = g
+                        published = true
+                        backgroundBit = bmp
+                        handlerB.sendEmptyMessageDelayed(1, nextFrame.toLong())
+                    } finally {
+                        if (!published) gif?.close()
+                    }
+                } else {
+                    val bmp = withContext(Dispatchers.IO) { decodeSampledBitmap(file.path) }
+                    backgroundBit = bmp
+                    mHeaderBackground?.setImageBitmap(bmp)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Corrupt / unreadable image: drop the saved path so the next
+                // launch starts clean instead of crash-looping, and fall back
+                // to the default background.
+                if (BuildConfig.DEBUG) {
+                    Log.w(TAG, "Background image load failed for ${file.name}: ${e.message}")
+                }
+                cleanupBackgroundResources()
+                AppearanceSettings.saveFilePath(AppearanceSettings.USER_BACKGROUND_IMAGE, null)
+                mHeaderBackground?.setImageResource(R.drawable.sadpanda_low_poly)
             }
         }
     }
@@ -660,15 +725,19 @@ class MainActivity : StageActivity(),
     fun loadAvatar() {
         val avatar = mAvatar ?: return
         val userAvatarFile = AppearanceSettings.getUserImageFile(AppearanceSettings.USER_AVATAR_IMAGE)
-        if (userAvatarFile != null) {
-            val bitmap = decodeSampledBitmap(userAvatarFile.path)
+        if (userAvatarFile == null) {
+            avatar.load(R.drawable.default_avatar)
+            return
+        }
+        // Decode off the main thread; lifecycleScope skips the set if the
+        // Activity is gone by the time the decode finishes.
+        lifecycleScope.launch {
+            val bitmap = withContext(Dispatchers.IO) { decodeSampledBitmap(userAvatarFile.path) }
             if (bitmap != null) {
                 avatar.load(bitmap.toDrawable(avatar.resources))
             } else {
                 avatar.load(R.drawable.default_avatar)
             }
-        } else {
-            avatar.load(R.drawable.default_avatar)
         }
     }
 
@@ -750,7 +819,11 @@ class MainActivity : StageActivity(),
         mNavCheckedItem = savedInstanceState.getInt(KEY_NAV_CHECKED_ITEM)
     }
 
-    override fun onSaveInstanceState(outState: Bundle, outPersistentState: PersistableBundle) {
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // Use the single-arg overload: the two-arg PersistableBundle variant only fires
+        // for persistableMode activities (which MainActivity is not), so the nav item was
+        // never actually saved.
         outState.putInt(KEY_NAV_CHECKED_ITEM, mNavCheckedItem)
     }
 
@@ -873,14 +946,11 @@ class MainActivity : StageActivity(),
         mAvatar?.let { avatar ->
             val avatarUrl = AppearanceSettings.getAvatar()
             if (TextUtils.isEmpty(avatarUrl)) {
-                val userAvatarFile = AppearanceSettings.getUserImageFile(AppearanceSettings.USER_AVATAR_IMAGE)
-                if (userAvatarFile != null) {
-                    val bitmap = decodeSampledBitmap(userAvatarFile.path)
-                    val drawable = BitmapDrawable(avatar.resources, bitmap)
-                    avatar.load(drawable)
-                } else {
-                    avatar.load(R.drawable.default_avatar)
-                }
+                // Same decode-user-avatar path as elsewhere — loadAvatar owns
+                // the off-main decode and the default_avatar fallback (which
+                // the previous inline copy here lacked, showing an empty
+                // drawable for a corrupt file).
+                loadAvatar()
             } else {
                 avatar.load(avatarUrl, avatarUrl)
             }
@@ -891,7 +961,6 @@ class MainActivity : StageActivity(),
             if (TextUtils.isEmpty(displayName)) {
                 displayName = getString(R.string.default_display_name)
             }
-            Toast.makeText(this, displayName, Toast.LENGTH_LONG).show()
             displayNameView.text = displayName
         }
     }

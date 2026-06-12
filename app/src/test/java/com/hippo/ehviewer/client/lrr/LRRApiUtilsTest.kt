@@ -188,6 +188,14 @@ class LRRApiUtilsTest {
     }
 
     @Test
+    fun friendlyError_callTimeoutInterruptedIOException() {
+        // OkHttp callTimeout throws a bare InterruptedIOException, which must
+        // map to the same localized timeout message as SocketTimeoutException.
+        val msg = friendlyError(ctx, java.io.InterruptedIOException("timeout"))
+        assertEquals(ctx.getString(R.string.lrr_timeout_error), msg)
+    }
+
+    @Test
     fun friendlyError_connect() {
         val msg = friendlyError(ctx, ConnectException("refused"))
         assertFalse(msg.isBlank())
@@ -221,6 +229,89 @@ class LRRApiUtilsTest {
     fun friendlyError_unknownException_passesMessageThrough() {
         val msg = friendlyError(ctx, RuntimeException("custom error"))
         assertEquals("custom error", msg)
+    }
+
+    // ── resolvePageUrl ─────────────────────────────────────────────
+
+    @Test
+    fun resolvePageUrl_absolutePath_noTrailingSlashBase() {
+        assertEquals(
+            "http://host:3000/api/archives/abc/page?path=a.jpg",
+            resolvePageUrl("http://host:3000", "/api/archives/abc/page?path=a.jpg")
+        )
+    }
+
+    @Test
+    fun resolvePageUrl_documentRelativeDotSlash() {
+        // The shape the project's own fixtures and LANraragi's docs can return.
+        // Bare concatenation would yield "http://host:3000./api/..." (broken).
+        assertEquals(
+            "http://host:3000/api/archives/abc/page?path=a.jpg",
+            resolvePageUrl("http://host:3000", "./api/archives/abc/page?path=a.jpg")
+        )
+    }
+
+    @Test
+    fun resolvePageUrl_bareRelativeAgainstTrailingSlashBase() {
+        assertEquals(
+            "http://host:3000/api/archives/abc/page",
+            resolvePageUrl("http://host:3000/", "api/archives/abc/page")
+        )
+    }
+
+    @Test
+    fun resolvePageUrl_alreadyAbsoluteUrlPassesThrough() {
+        assertEquals(
+            "http://other:9000/api/x",
+            resolvePageUrl("http://host:3000", "http://other:9000/api/x")
+        )
+    }
+
+    @Test
+    fun resolvePageUrl_preservesEncodedPath() {
+        assertEquals(
+            "http://host:3000/api/x?path=sub%20dir/a.jpg",
+            resolvePageUrl("http://host:3000", "/api/x?path=sub%20dir/a.jpg")
+        )
+    }
+
+    @Test
+    fun resolvePageUrl_invalidServerUrlThrows() {
+        try {
+            resolvePageUrl("not a url", "/api/x")
+            fail("Should have thrown")
+        } catch (e: IOException) {
+            // expected
+        }
+    }
+
+    @Test
+    fun resolvePageUrl_subpathBase_absolutePathKeepsPrefix() {
+        // Reverse-proxy sub-path deployment: a root-absolute page path means
+        // "relative to the LANraragi mount", not the host root. The /lanraragi
+        // prefix must survive (plain HttpUrl.resolve would drop it).
+        assertEquals(
+            "http://host/lanraragi/api/archives/abc/page?path=a.jpg",
+            resolvePageUrl("http://host/lanraragi", "/api/archives/abc/page?path=a.jpg")
+        )
+    }
+
+    @Test
+    fun resolvePageUrl_subpathBase_dotSlashKeepsPrefix() {
+        // "./" shape against a no-trailing-slash sub-path base: document-
+        // relative resolution would drop the last base segment; ours must not.
+        assertEquals(
+            "http://host/lanraragi/api/archives/abc/page?path=a.jpg",
+            resolvePageUrl("http://host/lanraragi", "./api/archives/abc/page?path=a.jpg")
+        )
+    }
+
+    @Test
+    fun resolvePageUrl_subpathBaseWithTrailingSlash() {
+        assertEquals(
+            "http://host/lanraragi/api/x",
+            resolvePageUrl("http://host/lanraragi/", "/api/x")
+        )
     }
 
     // ── retryOnFailure ─────────────────────────────────────────────

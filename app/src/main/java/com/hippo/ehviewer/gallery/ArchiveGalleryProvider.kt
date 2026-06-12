@@ -39,6 +39,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
+import java.io.Closeable
 import java.io.IOException
 import java.io.InputStream
 import java.util.Collections
@@ -77,6 +78,13 @@ class ArchiveGalleryProvider(context: Context, uri: Uri) : GalleryProvider2() {
      */
     private val decodeChannel = Channel<DecodeItem>(Channel.UNLIMITED)
 
+    /**
+     * Pipes whose output side is still open (extract not finished). On [stop] their
+     * streams are force-closed to unblock a decoder parked in [Pipe] read() or an
+     * extractor parked in write(), releasing the global decoder dispatcher permit.
+     */
+    private val livePipes: MutableSet<Pipe> = ConcurrentHashMap.newKeySet()
+
     override fun start() {
         super.start()
 
@@ -103,6 +111,14 @@ class ArchiveGalleryProvider(context: Context, uri: Uri) : GalleryProvider2() {
         providerScope = null
         extractQueue.clear()
         pendingExtract.clear()
+        // Force-close any in-flight pipe so a decoder blocked in Pipe.read() (a plain,
+        // non-interruptible Object.wait) reaches EOF and releases its decoderDispatcher
+        // permit — coroutine cancellation alone cannot unblock that wait.
+        for (pipe in livePipes) {
+            closeQuietly(pipe.outputStream)
+            closeQuietly(pipe.inputStream)
+        }
+        livePipes.clear()
     }
 
     override fun size(): Int = archiveSize
@@ -170,53 +186,82 @@ class ArchiveGalleryProvider(context: Context, uri: Uri) : GalleryProvider2() {
             Log.w(TAG, "A7ZipArchive.create failed: ${e.message}")
         }
         if (archive == null) {
+            closeQuietly(uraf)
             archiveSize = STATE_ERROR
             error = GetText.getString(R.string.error_invalid_archive)
             notifyDataChanged()
             return
         }
 
-        val entries = archive.archiveEntries
-        Collections.sort(entries, naturalComparator)
+        try {
+            val entries = archive.archiveEntries
+            Collections.sort(entries, naturalComparator)
 
-        archiveSize = entries.size
-        notifyDataChanged()
+            archiveSize = entries.size
+            notifyDataChanged()
 
-        while (scope.isActive) {
-            val request = try {
-                runInterruptible { extractQueue.take() }
-            } catch (e: CancellationException) {
-                break
-            } catch (e: InterruptedException) {
-                break
-            }
-            pendingExtract.remove(request.index)
-
-            val index = request.index
-            if (index < 0 || index >= entries.size) {
-                notifyPageFailed(index, GetText.getString(R.string.error_out_of_range))
-                continue
-            }
-
-            val pipe = Pipe(PIPE_BUFFER_BYTES)
-            // Hand the *input* end of the pipe off to the decoder
-            // before starting the extract — extract writes to the
-            // pipe's output side and would block once the pipe fills
-            // if the decoder hasn't begun draining.
-            decodeChannel.trySend(DecodeItem(index, pipe.inputStream))
-
-            try {
-                runInterruptible {
-                    entries[index].extract(pipe.outputStream)
+            while (scope.isActive) {
+                val request = try {
+                    runInterruptible { extractQueue.take() }
+                } catch (e: CancellationException) {
+                    break
+                } catch (e: InterruptedException) {
+                    break
                 }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: ArchiveException) {
-                Log.w(TAG, "extract failed for index=$index: ${e.message}")
-                // Decoder will see EOF on the stream and notify failure.
-            } catch (e: Exception) {
-                Log.w(TAG, "extract unexpected error for index=$index: ${e.message}")
+                pendingExtract.remove(request.index)
+
+                val index = request.index
+                if (index < 0 || index >= entries.size) {
+                    notifyPageFailed(index, GetText.getString(R.string.error_out_of_range))
+                    continue
+                }
+
+                val pipe = Pipe(PIPE_BUFFER_BYTES)
+                livePipes.add(pipe)
+                // Hand the *input* end of the pipe off to the decoder
+                // before starting the extract — extract writes to the
+                // pipe's output side and would block once the pipe fills
+                // if the decoder hasn't begun draining.
+                decodeChannel.trySend(DecodeItem(index, pipe.inputStream))
+
+                try {
+                    runInterruptible {
+                        entries[index].extract(pipe.outputStream)
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: ArchiveException) {
+                    Log.w(TAG, "extract failed for index=$index: ${e.message}")
+                } catch (e: Exception) {
+                    Log.w(TAG, "extract unexpected error for index=$index: ${e.message}")
+                } finally {
+                    // Always close the output side so the decoder reaches EOF instead of
+                    // parking forever in Pipe.read() — on success, failure, or cancel.
+                    closeQuietly(pipe.outputStream)
+                    livePipes.remove(pipe)
+                }
             }
+        } finally {
+            // Release the native 7z handle and the backing file on every exit path
+            // (normal stop, cancellation, or error) so they don't leak per open/close.
+            closeQuietly(archive)
+            closeQuietly(uraf)
+        }
+    }
+
+    private fun closeQuietly(closeable: Closeable?) {
+        try {
+            closeable?.close()
+        } catch (ignored: IOException) {
+            // Close failures during teardown are not actionable.
+        }
+    }
+
+    private fun closeQuietly(uraf: com.hippo.unifile.UniRandomAccessFile?) {
+        try {
+            uraf?.close()
+        } catch (ignored: IOException) {
+            // Close failures during teardown are not actionable.
         }
     }
 

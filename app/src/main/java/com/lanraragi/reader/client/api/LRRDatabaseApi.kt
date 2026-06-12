@@ -17,6 +17,16 @@ import okhttp3.Request
 object LRRDatabaseApi {
 
     /**
+     * The /api/database/stats response can be several MB on large libraries;
+     * the shared client's 30s callTimeout would truncate it on slow links.
+     * The shared large-file client has no call cap (and a 60s readTimeout
+     * instead of the inherited 10s — a deliberate loosening that's safe in
+     * the lenient direction for a streamed body).
+     */
+    private fun longCallClient(): OkHttpClient =
+        com.hippo.ehviewer.ServiceRegistry.networkModule.largeFileClient
+
+    /**
      * GET /api/database/stats — Get tag statistics.
      */
     @JvmStatic
@@ -40,7 +50,7 @@ object LRRDatabaseApi {
 
     @JvmStatic
     suspend fun getDatabaseStats(): String =
-        getDatabaseStats(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl())
+        getDatabaseStats(longCallClient(), LRRClientProvider.getBaseUrl())
 
     /**
      * GET /api/database/stats — Get tag statistics as typed objects.
@@ -67,7 +77,7 @@ object LRRDatabaseApi {
 
     @JvmStatic
     suspend fun getTagStats(): List<LRRTagStat> =
-        getTagStats(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl())
+        getTagStats(longCallClient(), LRRClientProvider.getBaseUrl())
 }
 
 /**

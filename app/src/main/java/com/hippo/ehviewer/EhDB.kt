@@ -177,10 +177,11 @@ object EhDB {
                     var i = 0L
                     while (!it.isAfterLast) {
                         val gid = it.getInt(0).toLong()
-                        val gi = map[gid] ?: run {
+                        val gi = map[gid]
+                        if (gi == null) {
                             Log.e(TAG, "Can't get legacy gallery row with gid: $gid")
                             it.moveToNext()
-                            return@use
+                            continue // skip this row, keep merging the rest of the table
                         }
                         val archive = shellArchive(gi.arcid, gi.title, gi.thumb, gi.rating)
                         val archiveJson = archive.toArchiveJson()
@@ -232,10 +233,11 @@ object EhDB {
                     var i = 0L
                     while (!it.isAfterLast) {
                         val gid = it.getInt(0).toLong()
-                        val gi = map[gid] ?: run {
+                        val gi = map[gid]
+                        if (gi == null) {
                             Log.e(TAG, "Can't get legacy gallery row with gid: $gid")
                             it.moveToNext()
-                            return@use
+                            continue // skip this row, keep merging the rest of the table
                         }
                         var state = com.hippo.ehviewer.download.DownloadState.fromCode(it.getInt(2))
                         val legacy = it.getInt(3)
@@ -283,10 +285,11 @@ object EhDB {
                 if (it.moveToFirst()) {
                     while (!it.isAfterLast) {
                         val gid = it.getInt(0).toLong()
-                        val gi = map[gid] ?: run {
+                        val gi = map[gid]
+                        if (gi == null) {
                             Log.e(TAG, "Can't get legacy gallery row with gid: $gid")
                             it.moveToNext()
-                            return@use
+                            continue // skip this row, keep merging the rest of the table
                         }
                         val mode = it.getInt(1)
                         val time = it.getLong(2)
@@ -334,6 +337,19 @@ object EhDB {
             (cacheDir == null || !canonical.startsWith(cacheDir))) {
             Log.e(TAG, "exportDB: target path outside app scope, rejected")
             return false
+        }
+
+        // Flush the WAL into eh.db before the raw copy. Room journals in WAL mode, so
+        // committed transactions live in eh.db-wal until a checkpoint; a plain file copy
+        // of eh.db alone would silently omit the most recent writes from the backup.
+        try {
+            sDatabase.query("PRAGMA wal_checkpoint(TRUNCATE)", null).use { it.moveToFirst() }
+        } catch (e: Exception) {
+            // Throwable-arg Log.w survives R8's -assumenosideeffects strip;
+            // gate it so release builds dead-code-eliminate the whole call.
+            if (BuildConfig.DEBUG) {
+                Log.w(TAG, "WAL checkpoint before export failed; backup may miss recent writes", e)
+            }
         }
 
         val dbFile = context.getDatabasePath("eh.db")

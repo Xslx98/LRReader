@@ -83,9 +83,16 @@ object SpiderDen {
         // Read from DB
         var dirname = downloadDbRepo.getDownloadDirname(arcid)
         if (dirname != null) {
-            // Some dirname may be invalid in some version
-            dirname = FileUtils.sanitizeFilename(dirname)
-            downloadDbRepo.putDownloadDirname(arcid, dirname)
+            // Some dirname may be invalid in some version. This runs on every
+            // thumbnail bind (a new ThumbDataContainer per bind, fast scroll),
+            // so only write back when sanitizing actually changed the value —
+            // an unconditional putDownloadDirname churned the DB with an
+            // identical value on every bind.
+            val sanitized = FileUtils.sanitizeFilename(dirname)
+            if (sanitized != dirname) {
+                downloadDbRepo.putDownloadDirname(arcid, sanitized)
+            }
+            dirname = sanitized
         }
 
         // Find it by arcid prefix (new format), then fall back to gid prefix (legacy)

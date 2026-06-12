@@ -140,12 +140,7 @@ abstract class EhActivity : AppCompatActivity() {
         super.onConfigurationChanged(newConfig)
         if (AppearanceSettings.isThemeAutoSwitchAvailable()) {
             val isDark = (newConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-            if ((AppearanceSettings.getTheme() == 0) == isDark) {
-                if (isDark) {
-                    AppearanceSettings.putTheme(AppearanceSettings.THEME_DARK)
-                } else {
-                    AppearanceSettings.putTheme(AppearanceSettings.THEME_LIGHT)
-                }
+            if (AppearanceSettings.syncThemeWithSystem(isDark)) {
                 (application as EhApplication).recreate()
             }
         }

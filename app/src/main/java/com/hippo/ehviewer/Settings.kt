@@ -38,8 +38,11 @@ object Settings {
         sContext = context.applicationContext
         sSettingsPre = PreferenceManager.getDefaultSharedPreferences(sContext)
         com.hippo.ehviewer.settings.DownloadSettings.initialize(sContext)
-        if (AppearanceSettings.getDarkModeStatus(context) && AppearanceSettings.isThemeAutoSwitchAvailable()) {
-            AppearanceSettings.putTheme(AppearanceSettings.THEME_DARK)
+        if (AppearanceSettings.isThemeAutoSwitchAvailable()) {
+            // Mirror the current system mode in BOTH directions on cold start,
+            // restoring the user's saved dark variant (DARK vs BLACK) on the
+            // dark transition. See AppearanceSettings.syncThemeWithSystem.
+            AppearanceSettings.syncThemeWithSystem(AppearanceSettings.getDarkModeStatus(context))
         }
         ReadingSettings.initialize()
     }

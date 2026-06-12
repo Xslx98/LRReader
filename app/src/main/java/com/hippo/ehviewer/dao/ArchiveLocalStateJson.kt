@@ -22,8 +22,12 @@ import kotlinx.serialization.json.Json
  * - `ignoreUnknownKeys = true`: forward-compat. Older builds reading
  *   rows that newer builds wrote will silently drop unknown keys
  *   instead of throwing.
+ * - `coerceInputValues = true`: a null/invalid value for a property that
+ *   has a default is coerced to that default instead of throwing, so a
+ *   slightly-off row degrades gracefully rather than failing to decode.
  */
 internal val ArchiveLocalStateJson: Json = Json {
     encodeDefaults = false
     ignoreUnknownKeys = true
+    coerceInputValues = true
 }

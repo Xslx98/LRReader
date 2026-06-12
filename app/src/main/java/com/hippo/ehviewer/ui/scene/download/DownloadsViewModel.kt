@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.DownloadSettings
+import com.lanraragi.reader.client.api.toHexLower
 import com.hippo.ehviewer.callBack.DownloadSearchCallback
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.util.FileUtils
@@ -29,7 +30,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.withContext
 import com.hippo.ehviewer.download.DownloadState
+import java.util.concurrent.CompletableFuture
 
 /**
  * Sealed interface representing all download-related UI events forwarded from
@@ -214,6 +217,23 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     val spiderInfoMap: StateFlow<Map<String, SpiderInfo>> = _spiderInfoMap.asStateFlow()
 
     // -------------------------------------------------------------------------
+    // Download dir cache (thumbnail binds)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Per-arcid download-dir resolutions shared by every thumbnail bind.
+     * Lives on the application ioScope (not viewModelScope) because
+     * ThumbDataContainer blocks on the future from Conaco's I/O threads —
+     * see [DownloadDirCache]. Invalidated from the [DownloadInfoListener]
+     * callbacks below so a deleted-then-re-added archive re-resolves.
+     */
+    private val downloadDirCache = DownloadDirCache(ServiceRegistry.coroutineModule.ioScope)
+
+    /** The shared (possibly in-flight) download-dir resolution for [info]. */
+    fun downloadDirFutureFor(info: DownloadInfo): CompletableFuture<UniFile?> =
+        downloadDirCache.futureFor(info)
+
+    // -------------------------------------------------------------------------
     // Label switching
     // -------------------------------------------------------------------------
 
@@ -364,6 +384,21 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
         return position
     }
 
+    /**
+     * Adapter position for a full-list [index], or null when pagination is on
+     * and the index is not on the currently-displayed page. With pagination,
+     * [listIndexInPage] is a bare modulo — an off-page index collides with a
+     * visible row's adapter position, so a notify keyed by it rebinds the
+     * wrong row. Only an on-page index round-trips back to itself through
+     * [positionInList] (identity when not paginating). Single home for this
+     * page-membership rule; use it before any notifyItem* keyed by a
+     * full-list index.
+     */
+    fun adapterPositionForListIndex(index: Int): Int? {
+        val inPage = listIndexInPage(index)
+        return if (positionInList(inPage) == index) inPage else null
+    }
+
     // -------------------------------------------------------------------------
     // Spider info
     // -------------------------------------------------------------------------
@@ -492,8 +527,12 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
                     return@launch
                 }
 
-                // Check if already imported
-                if (downloadManager.containDownloadInfo(downloadInfo.arcid)) {
+                // Check if already imported. DownloadManager / DownloadRepository
+                // require main-thread access; addDownload persists asynchronously.
+                val alreadyImported = withContext(Dispatchers.Main) {
+                    downloadManager.containDownloadInfo(downloadInfo.arcid)
+                }
+                if (alreadyImported) {
                     _importToast.tryEmit(com.hippo.ehviewer.R.string.import_archive_already_imported)
                     return@launch
                 }
@@ -501,7 +540,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
                 // Add to download manager
                 val downloadList = ArrayList<DownloadInfo>()
                 downloadList.add(downloadInfo)
-                downloadManager.addDownload(downloadList)
+                withContext(Dispatchers.Main) { downloadManager.addDownload(downloadList) }
                 _importToast.tryEmit(com.hippo.ehviewer.R.string.import_archive_success)
                 _importSuccess.tryEmit(Unit)
             } catch (e: Exception) {
@@ -521,7 +560,10 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     private fun createArchiveDownloadInfo(uri: Uri, fileName: String): DownloadInfo? {
         return try {
             DownloadInfo().apply {
-                arcid = ""
+                // Imported archives have no server arcid; derive a stable unique id from
+                // the source URI so each import gets its own ARCHIVE_LOCAL_STATE row and
+                // re-importing the same file is correctly detected as "already imported".
+                arcid = syntheticArcidFor(uri)
                 title = fileName.replace("\\.[^.]*$".toRegex(), "")
                 thumb = null
                 rating = -1.0f
@@ -537,6 +579,13 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
         }
     }
 
+    /** Stable 40-hex id (SHA-1 of the source URI) for a locally imported archive. */
+    private fun syntheticArcidFor(uri: Uri): String {
+        return java.security.MessageDigest.getInstance("SHA-1")
+            .digest(uri.toString().toByteArray(Charsets.UTF_8))
+            .toHexLower()
+    }
+
     // -------------------------------------------------------------------------
     // DownloadInfoListener implementation → sealed event emission
     // -------------------------------------------------------------------------
@@ -546,6 +595,8 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     }
 
     override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {
+        downloadDirCache.invalidate(oldInfo.arcid)
+        downloadDirCache.invalidate(newInfo.arcid)
         _downloadEvent.tryEmit(DownloadUiEvent.Replaced(newInfo, oldInfo))
     }
 
@@ -558,6 +609,9 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     }
 
     override fun onReload() {
+        // Bulk delete (deleteRangeDownload) also lands here — drop the whole
+        // dir cache so removed-then-re-added archives re-resolve.
+        downloadDirCache.clear()
         _downloadEvent.tryEmit(DownloadUiEvent.Reloaded)
     }
 
@@ -570,6 +624,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     }
 
     override fun onRemove(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
+        downloadDirCache.invalidate(info.arcid)
         _downloadEvent.tryEmit(DownloadUiEvent.ItemRemoved(info, list, position))
     }
 

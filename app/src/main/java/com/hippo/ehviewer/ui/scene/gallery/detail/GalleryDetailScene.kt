@@ -179,6 +179,22 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         }
     }
 
+    /**
+     * The [GalleryDetailViewModel] is Activity-scoped and shared across every stacked
+     * GalleryDetailScene. On re-attach (a sibling detail was pushed then popped) it may
+     * still hold the other scene's archive, which would render here as the wrong gallery
+     * — and route ratings/edits to the wrong arcid. This scene's own identity lives only
+     * in its nav [arguments]; if the VM's effective arcid no longer matches, replay
+     * [handleArgs] to reset and re-point both view models before binding.
+     */
+    private fun reassertOwnEntryIfStale() {
+        val args = arguments ?: return
+        val ownArcid = args.getParcelable<com.lanraragi.reader.domain.Archive>(KEY_ARCHIVE)?.arcid ?: return
+        if (viewModel.getEffectiveArcid() != ownArcid) {
+            handleArgs(args)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -243,6 +259,9 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         savedInstanceState: Bundle?
     ): View? {
         val context = getEHContext()
+        // Re-point the shared Activity-scoped ViewModel at this scene's archive if a
+        // sibling detail scene left it pointing elsewhere, before reading any VM state.
+        reassertOwnEntryIfStale()
         // Get download state
         viewModel.initDownloadState(viewModel.getEffectiveArcid())
 
@@ -418,7 +437,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 if (ad != null) {
                     TagEditDialog.show(
                         activity2, ad.archive.arcid,
-                        ad.tagGroups
+                        ad.tagGroups, viewModel.getSourceProfileId()
                     ) {
                         if (mState != STATE_REFRESH && mState != STATE_REFRESH_HEADER) {
                             adjustViewVisibility(STATE_REFRESH, true)

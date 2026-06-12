@@ -157,8 +157,11 @@ class HistoryScene : ToolbarScene(),
         handlerDrawable.setColor(AttrResources.getAttrColor(context, R.attr.widgetColorThemeAccent))
         fastScroller.setHandlerDrawable(handlerDrawable)
 
-        // Observe ViewModel list updates for DiffUtil dispatch
-        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
+        // Observe ViewModel list updates for DiffUtil dispatch. Scope to the *view*
+        // lifecycle, not the fragment: onCreateView3 re-runs on every detach/re-attach,
+        // so a fragment-scoped collector would accumulate across navigations and dispatch
+        // the same DiffResult N times — corrupting the RecyclerView on structural diffs.
+        viewLifecycleOwner.lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
             viewModel.listUpdate.collect { update ->
                 val adapterRef = mAdapter ?: return@collect
                 update.diffResult.dispatchUpdatesTo(adapterRef)

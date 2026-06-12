@@ -9,6 +9,7 @@ import com.hippo.lib.image.Image
 import com.hippo.unifile.UniFile
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LrrFileListCache
+import com.lanraragi.reader.client.api.resolvePageUrl
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -24,7 +25,6 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
-import java.util.concurrent.TimeUnit
 
 /**
  * Centralized cache management for reader page images.
@@ -554,16 +554,16 @@ object ReaderPageCache : Cacheable {
             val client = ServiceRegistry.networkModule.longReadClient
             // Reuse the file list cache so a re-entry to the same detail
             // page within the cache TTL avoids the /files round-trip.
-            val pages = LrrFileListCache.get(arcId) ?: run {
+            val pages = LrrFileListCache.get(serverUrl, arcId) ?: run {
                 val fetched = LRRArchiveApi.getFileList(client, serverUrl, arcId)
-                LrrFileListCache.put(arcId, fetched)
+                LrrFileListCache.put(serverUrl, arcId, fetched)
                 fetched
             }
             if (pages.isEmpty()) return@launch
 
-            val pageClient = ServiceRegistry.networkModule.okHttpClient.newBuilder()
-                .readTimeout(30, TimeUnit.SECONDS)
-                .build()
+            // Shared page-streaming client (no call cap, no HTTP cache) — see
+            // INetworkModule.pageStreamClient for the rationale.
+            val pageClient = ServiceRegistry.networkModule.pageStreamClient
 
             val start = (centerPage - DETAIL_PRELOAD_RADIUS).coerceAtLeast(0)
             val end = (centerPage + DETAIL_PRELOAD_RADIUS).coerceAtMost(pages.size - 1)
@@ -572,7 +572,7 @@ object ReaderPageCache : Cacheable {
                 val cacheFile = getCacheFile(appContext, arcId, pageIndex)
                 if (!(cacheFile.exists() && cacheFile.length() > MIN_IMAGE_SIZE)) {
                     try {
-                        val pageUrl = serverUrl + pages[pageIndex]
+                        val pageUrl = resolvePageUrl(serverUrl, pages[pageIndex])
                         downloadToFile(pageClient, pageUrl, cacheFile, pageIndex)
                         Log.d(TAG, "Detail preloaded page $pageIndex for $arcId")
                     } catch (e: Exception) {

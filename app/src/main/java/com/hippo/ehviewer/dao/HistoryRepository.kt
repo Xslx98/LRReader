@@ -48,7 +48,7 @@ class HistoryRepository(
             historyTime = now,
             historyMode = 0,
         )
-        trimHistory()
+        trimHistory(listOf(archive.serverProfileId))
     }
 
     suspend fun putHistoryInfoList(historyInfoList: List<HistoryInfo>) {
@@ -62,7 +62,7 @@ class HistoryRepository(
                 historyMode = info.mode,
             )
         }
-        trimHistory()
+        trimHistory(historyInfoList.map { it.serverProfileId })
     }
 
     suspend fun deleteHistoryInfo(info: HistoryInfo) {
@@ -115,11 +115,13 @@ class HistoryRepository(
         dao.updateHistoryFields(arcid, serverProfileId, archiveJson, historyTime, historyMode)
     }
 
-    private suspend fun trimHistory() {
+    private suspend fun trimHistory(profileIds: Collection<Long>) {
         val maxCount = AppearanceSettings.getHistoryInfoSize().let {
             if (it < 1) DEFAULT_HISTORY_MAX else it
         }
-        dao.clearHistorySubsystemBeyond(maxCount)
+        for (pid in profileIds.distinct()) {
+            dao.clearHistorySubsystemBeyondForProfile(pid, maxCount)
+        }
         dao.deleteAllEmptyRows()
     }
 

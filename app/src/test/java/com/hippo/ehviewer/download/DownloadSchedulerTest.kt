@@ -10,9 +10,9 @@ import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.module.CoroutineModule
+import com.hippo.ehviewer.containedTestScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import org.junit.After
 import org.junit.Assert.*
@@ -51,7 +51,9 @@ class DownloadSchedulerTest {
         Settings.initialize(context)
         ServiceRegistry.initializeForTest(CoroutineModule())
 
-        testScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        // Handler-bearing scope: see containedTestScope's KDoc (defensive
+        // convergence — a fake-reaching coroutine must not poison the suite).
+        testScope = containedTestScope()
 
         LRRAuthManager.initialize(context)
         val method = LRRAuthManager::class.java.declaredMethods.first {

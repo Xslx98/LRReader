@@ -362,7 +362,6 @@
     <string name="settings_download">다운로드</string>
     <string name="settings_download_download_location">다운로드 위치</string>
     <string name="settings_download_invalid_download_location">다운로드 위치가 잘못되었습니다.</string>
-    <string name="settings_download_cant_get_download_location">다운로드 위치를 가져올 수 없습니다.</string>
     <string name="settings_download_media_scan">미디어 스캔 허용</string>
     <string name="settings_download_media_scan_summary_on">다른 사람들에게 갤러리 앱을 들키지 마세요.</string>
     <string name="settings_download_media_scan_summary_off">대부분의 갤러리 앱에서 다운로드 경로에 있는 사진을 무시합니다.</string>
@@ -479,7 +478,6 @@
     <!--  ?滑??像和背景修改  -->
     <string name="take_a_photograph">사진 찍기</string>
     <string name="choose_from_the_album">앨범에서 선택</string>
-    <string name="request_camera_permission">LR Reader 사진을 찍을 수 있도록 카메라 접근 권한을 부여하시겠습니까?</string>
     <string name="request_storage_permission">LR Reader 이미지를 선택할 수 있도록 갤러리 접근 권한을 부여하시겠습니까?</string>
 
     <!--  ??服?  -->

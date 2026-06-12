@@ -5,7 +5,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.text.TextUtils
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.util.ExceptionUtils
 
 object ClipboardUtil {
 
@@ -14,26 +13,13 @@ object ClipboardUtil {
      */
     @JvmStatic
     fun copyText(text: String?) {
-        clearClipboard()
         if (!TextUtils.isEmpty(text)) {
             val cmb = ServiceRegistry.appModule.getContext()
                 .getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clipData = ClipData.newPlainText(null, text)
+            // setPrimaryClip replaces the existing clip; never read primaryClip first —
+            // a clipboard read triggers the Android 12+ "pasted from clipboard" toast.
             cmb.setPrimaryClip(clipData)
-        }
-    }
-
-    private fun clearClipboard() {
-        val manager = ServiceRegistry.appModule.getContext()
-            .getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-        if (manager != null) {
-            try {
-                manager.setPrimaryClip(manager.primaryClip!!)
-                @Suppress("DEPRECATION")
-                manager.text = null
-            } catch (e: Exception) {
-                ExceptionUtils.getReadableString(e)
-            }
         }
     }
 }

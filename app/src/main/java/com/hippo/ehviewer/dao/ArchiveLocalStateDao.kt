@@ -32,11 +32,17 @@ interface ArchiveLocalStateDao {
 
     // ── Row-level CRUD ─────────────────────────────────────────
 
+    /**
+     * REPLACE = DELETE + INSERT, which resets *every* column of an existing
+     * row to the values in [state] — including the sibling-subsystem columns
+     * (DOWNLOAD_STATE / HISTORY_TIME / FAVORITE_TIME / archive_json) that the
+     * caller didn't intend to touch. Production code must never round-trip a
+     * partial row through here; use [update] or a read-modify-write merge
+     * instead. Retained only as a test-seeding convenience for fresh inserts.
+     */
+    @Deprecated("REPLACE wipes sibling-subsystem columns; use update() or a merge-write")
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(state: ArchiveLocalState)
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertAll(states: List<ArchiveLocalState>)
 
     @Update
     suspend fun update(state: ArchiveLocalState)
@@ -76,6 +82,17 @@ interface ArchiveLocalStateDao {
             "ORDER BY DOWNLOAD_TIME DESC"
     )
     suspend fun getDownloadsByServer(profileId: Long): List<ArchiveLocalState>
+
+    /**
+     * Reset transient WAIT (1) / DOWNLOAD (2) states to NONE (0). Run once at process
+     * start: an in-flight download cannot survive process death, so any such persisted
+     * row is a ghost that would otherwise render as "downloading" forever (frozen
+     * progress, dead stop button). A NULL DOWNLOAD_STATE means "not a download", so the
+     * predicate never touches history/favorite-only rows. Codes are the frozen
+     * [com.hippo.ehviewer.download.DownloadState] integers.
+     */
+    @Query("UPDATE ARCHIVE_LOCAL_STATE SET DOWNLOAD_STATE = 0 WHERE DOWNLOAD_STATE = 1 OR DOWNLOAD_STATE = 2")
+    suspend fun resetTransientDownloadStates()
 
     // ── History subsystem ──────────────────────────────────────
 
@@ -153,6 +170,24 @@ interface ArchiveLocalStateDao {
             ")"
     )
     suspend fun clearHistorySubsystemBeyond(maxCount: Int)
+
+    /**
+     * Per-profile variant of [clearHistorySubsystemBeyond]: keeps only the top [maxCount]
+     * history rows for [profileId]. The history list is shown per active profile, so a
+     * global trim let heavy reading on one profile evict another profile's still-visible
+     * history; this bounds each profile independently.
+     */
+    @Query(
+        "UPDATE ARCHIVE_LOCAL_STATE " +
+            "SET HISTORY_TIME = NULL, HISTORY_MODE = 0, HISTORY_SCROLL_FRACTION = NULL " +
+            "WHERE HISTORY_TIME IS NOT NULL AND SERVER_PROFILE_ID = :profileId " +
+            "AND ARCID NOT IN (" +
+            "  SELECT ARCID FROM ARCHIVE_LOCAL_STATE " +
+            "  WHERE HISTORY_TIME IS NOT NULL AND SERVER_PROFILE_ID = :profileId " +
+            "  ORDER BY HISTORY_TIME DESC LIMIT :maxCount" +
+            ")"
+    )
+    suspend fun clearHistorySubsystemBeyondForProfile(profileId: Long, maxCount: Int)
 
     // ── Empty-row collapse ─────────────────────────────────────
 
@@ -294,9 +329,21 @@ interface ArchiveLocalStateDao {
         historyMode: Int,
     )
 
+    /**
+     * The CASE keeps a download-owned row's `SERVER_PROFILE_ID` intact:
+     * arcids are content hashes, so reading a mirror copy of a
+     * downloaded archive through another profile would otherwise
+     * re-home the download (source badge, resume routing, and the
+     * per-profile download query all key off this column). The
+     * download subsystem owns the attribution while
+     * `DOWNLOAD_STATE IS NOT NULL`; the history entry then surfaces
+     * under the owning profile — the accepted trade-off until the
+     * table moves to an (ARCID, SERVER_PROFILE_ID) composite key.
+     */
     @Query(
         "UPDATE ARCHIVE_LOCAL_STATE SET " +
-            "SERVER_PROFILE_ID = :serverProfileId, " +
+            "SERVER_PROFILE_ID = CASE WHEN DOWNLOAD_STATE IS NOT NULL " +
+            "THEN SERVER_PROFILE_ID ELSE :serverProfileId END, " +
             "ARCHIVE_JSON = :archiveJson, " +
             "HISTORY_TIME = :historyTime, " +
             "HISTORY_MODE = :historyMode " +
@@ -322,9 +369,15 @@ interface ArchiveLocalStateDao {
         favoriteTime: Long,
     )
 
+    /**
+     * Same download-ownership guard as [updateHistoryFields]: a
+     * favorite write must not re-home a downloaded archive's
+     * `SERVER_PROFILE_ID`.
+     */
     @Query(
         "UPDATE ARCHIVE_LOCAL_STATE SET " +
-            "SERVER_PROFILE_ID = :serverProfileId, " +
+            "SERVER_PROFILE_ID = CASE WHEN DOWNLOAD_STATE IS NOT NULL " +
+            "THEN SERVER_PROFILE_ID ELSE :serverProfileId END, " +
             "ARCHIVE_JSON = :archiveJson, " +
             "FAVORITE_TIME = :favoriteTime " +
             "WHERE ARCID = :arcid"

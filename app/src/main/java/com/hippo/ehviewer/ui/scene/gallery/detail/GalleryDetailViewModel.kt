@@ -3,6 +3,7 @@ package com.hippo.ehviewer.ui.scene.gallery.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hippo.ehviewer.EhDB
+import com.hippo.ehviewer.BuildConfig
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.mapper.toDegradedArchiveDetail
@@ -239,7 +240,7 @@ class GalleryDetailViewModel : ViewModel() {
                 // download list — keeps the Downloads page rating in sync
                 // without requiring a manual refresh.
                 syncRatingToDownloadInfo(arcid, rating)
-                android.util.Log.d(TAG, "Rating saved: $rating for $arcid")
+                if (BuildConfig.DEBUG) android.util.Log.d(TAG, "Rating saved: $rating for $arcid")
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 android.util.Log.e(TAG, "Rating PUT failed; rolling back", e)
@@ -448,10 +449,12 @@ class GalleryDetailViewModel : ViewModel() {
             if (dir != null) {
                 val uniFile = com.hippo.unifile.UniFile.fromFile(dir)
                 if (uniFile != null) {
-                    android.util.Log.i(
-                        TAG,
-                        "[WARM] detailVM DIR trigger arcid=$arcId page=$startPage"
-                    )
+                    if (BuildConfig.DEBUG) {
+                        android.util.Log.i(
+                            TAG,
+                            "[WARM] detailVM DIR trigger arcid=$arcId page=$startPage"
+                        )
+                    }
                     ReaderPageCache.warmDir(context, arcId, uniFile, startPage).join()
                     return@launch
                 }
@@ -464,10 +467,12 @@ class GalleryDetailViewModel : ViewModel() {
                 // when the user actually opens the gallery.
                 return@launch
             }
-            android.util.Log.i(
-                TAG,
-                "[WARM] detailVM LRR trigger arcid=$arcId page=$startPage"
-            )
+            if (BuildConfig.DEBUG) {
+                android.util.Log.i(
+                    TAG,
+                    "[WARM] detailVM LRR trigger arcid=$arcId page=$startPage"
+                )
+            }
             ReaderPageCache.preloadForDetail(context, arcId, serverUrl, startPage).join()
         }
     }
