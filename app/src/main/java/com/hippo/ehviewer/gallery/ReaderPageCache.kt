@@ -555,9 +555,9 @@ object ReaderPageCache : Cacheable {
             val client = ServiceRegistry.networkModule.longReadClient
             // Reuse the file list cache so a re-entry to the same detail
             // page within the cache TTL avoids the /files round-trip.
-            val pages = LrrFileListCache.get(arcId) ?: run {
+            val pages = LrrFileListCache.get(serverUrl, arcId) ?: run {
                 val fetched = LRRArchiveApi.getFileList(client, serverUrl, arcId)
-                LrrFileListCache.put(arcId, fetched)
+                LrrFileListCache.put(serverUrl, arcId, fetched)
                 fetched
             }
             if (pages.isEmpty()) return@launch
