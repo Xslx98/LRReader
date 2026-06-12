@@ -91,5 +91,18 @@ class NetworkMonitor(context: Context) {
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
             .build()
         cm.registerNetworkCallback(request, mCallback)
+
+        // Close the seed race: if the seed network died in the window between
+        // the activeNetwork read above and the registration, the system never
+        // delivers onAvailable/onLost for it (callbacks only cover networks
+        // satisfying the request from registration onward, and a returning
+        // network gets a fresh Network identity) — the dead entry would pin
+        // isAvailable=true for the process lifetime. Re-validate it now that
+        // the callback is registered: a null capabilities result means the
+        // network is gone. Any death from this point on is covered by onLost,
+        // and a live network is never removed (the check is a no-op for it).
+        if (active != null && cm.getNetworkCapabilities(active) == null) {
+            handleLost(active)
+        }
     }
 }
