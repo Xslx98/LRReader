@@ -345,7 +345,11 @@ object EhDB {
         try {
             sDatabase.query("PRAGMA wal_checkpoint(TRUNCATE)", null).use { it.moveToFirst() }
         } catch (e: Exception) {
-            Log.w(TAG, "WAL checkpoint before export failed; backup may miss recent writes", e)
+            // Throwable-arg Log.w survives R8's -assumenosideeffects strip;
+            // gate it so release builds dead-code-eliminate the whole call.
+            if (BuildConfig.DEBUG) {
+                Log.w(TAG, "WAL checkpoint before export failed; backup may miss recent writes", e)
+            }
         }
 
         val dbFile = context.getDatabasePath("eh.db")
