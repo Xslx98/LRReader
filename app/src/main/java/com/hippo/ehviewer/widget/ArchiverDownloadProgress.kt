@@ -9,6 +9,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.DownloadSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +34,13 @@ class ArchiverDownloadProgress @JvmOverloads constructor(
     @Volatile
     private var showing = false
     private var pollJob: Job? = null
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    // exceptionHandler keeps a non-RuntimeException Throwable escaping the
+    // poll loop (its catch only covers RuntimeException) from reaching a
+    // handler-less scope and crashing the process — this was the last
+    // production scope without one; every other scope composes it in.
+    private val scope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Main + ServiceRegistry.coroutineModule.exceptionHandler
+    )
 
     private var reasonString = "Unknown"
 
