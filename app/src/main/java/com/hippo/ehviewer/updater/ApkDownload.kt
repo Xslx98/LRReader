@@ -3,9 +3,10 @@ package com.hippo.ehviewer.updater
 import android.content.Context
 import com.hippo.ehviewer.ServiceRegistry
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
 import okhttp3.Call
@@ -86,10 +87,7 @@ object ApkDownloader {
         call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 if (!call.isCanceled()) {
-                    // Terminal event: must not be dropped if the 64-slot
-                    // callbackFlow buffer filled up with InProgress ticks,
-                    // or the consumer stalls forever at the last percent.
-                    trySendBlocking(DownloadProgress.Failed(e))
+                    trySend(DownloadProgress.Failed(e))
                 }
                 close()
             }
@@ -98,11 +96,11 @@ object ApkDownloader {
                 response.use {
                     try {
                         if (!response.isSuccessful) {
-                            trySendBlocking(DownloadProgress.Failed(IllegalStateException("HTTP ${response.code}")))
+                            trySend(DownloadProgress.Failed(IllegalStateException("HTTP ${response.code}")))
                             return
                         }
                         val body = response.body ?: run {
-                            trySendBlocking(DownloadProgress.Failed(IllegalStateException("Empty response body")))
+                            trySend(DownloadProgress.Failed(IllegalStateException("Empty response body")))
                             return
                         }
                         val totalBytes = body.contentLength()  // may be -1 for chunked
@@ -132,16 +130,14 @@ object ApkDownloader {
                             // with the consumer's potential cancel; success.set(true) wins.
                             success.set(true)
                             trySend(DownloadProgress.InProgress(downloaded, if (totalBytes > 0) totalBytes else downloaded))
-                            // Terminal event: block until delivered so a full
-                            // buffer can never strand the consumer at 100%.
-                            trySendBlocking(DownloadProgress.Success)
+                            trySend(DownloadProgress.Success)
                         }
                     } catch (t: Throwable) {
                         // Broad catch is intentional: onResponse runs on OkHttp's dispatcher
                         // pool (not a coroutine context), so CancellationException can never
                         // arrive here. Anything thrown is a genuine IO / parse / write error.
                         if (!call.isCanceled()) {
-                            trySendBlocking(DownloadProgress.Failed(t))
+                            trySend(DownloadProgress.Failed(t))
                         }
                     } finally {
                         close()
@@ -156,7 +152,15 @@ object ApkDownloader {
                 runCatching { dest.delete() }
             }
         }
-    }.flowOn(Dispatchers.IO)
+    }
+        // Fuses into the callbackFlow's channel: with unlimited capacity every
+        // trySend succeeds while the channel is open, so neither the terminal
+        // Success/Failed event nor an InProgress tick can be dropped by a slow
+        // consumer, and the OkHttp dispatcher thread never blocks on
+        // backpressure. Worst case is ~100 small InProgress objects for a
+        // 25 MB APK at the 256 KB emit interval.
+        .buffer(Channel.UNLIMITED)
+        .flowOn(Dispatchers.IO)
 
     private const val BUFFER_SIZE = 8 * 1024              // 8 KB read buffer
     private const val EMIT_INTERVAL_BYTES = 256 * 1024L   // emit InProgress every 256 KB
