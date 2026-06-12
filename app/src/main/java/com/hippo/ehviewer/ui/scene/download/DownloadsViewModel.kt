@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withContext
 import com.hippo.ehviewer.download.DownloadState
+import java.util.concurrent.CompletableFuture
 
 /**
  * Sealed interface representing all download-related UI events forwarded from
@@ -214,6 +215,23 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
 
     /** Cached spider info for reading progress display, keyed by arcid. */
     val spiderInfoMap: StateFlow<Map<String, SpiderInfo>> = _spiderInfoMap.asStateFlow()
+
+    // -------------------------------------------------------------------------
+    // Download dir cache (thumbnail binds)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Per-arcid download-dir resolutions shared by every thumbnail bind.
+     * Lives on the application ioScope (not viewModelScope) because
+     * ThumbDataContainer blocks on the future from Conaco's I/O threads —
+     * see [DownloadDirCache]. Invalidated from the [DownloadInfoListener]
+     * callbacks below so a deleted-then-re-added archive re-resolves.
+     */
+    private val downloadDirCache = DownloadDirCache(ServiceRegistry.coroutineModule.ioScope)
+
+    /** The shared (possibly in-flight) download-dir resolution for [info]. */
+    fun downloadDirFutureFor(info: DownloadInfo): CompletableFuture<UniFile?> =
+        downloadDirCache.futureFor(info)
 
     // -------------------------------------------------------------------------
     // Label switching
@@ -577,6 +595,8 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     }
 
     override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {
+        downloadDirCache.invalidate(oldInfo.arcid)
+        downloadDirCache.invalidate(newInfo.arcid)
         _downloadEvent.tryEmit(DownloadUiEvent.Replaced(newInfo, oldInfo))
     }
 
@@ -589,6 +609,9 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     }
 
     override fun onReload() {
+        // Bulk delete (deleteRangeDownload) also lands here — drop the whole
+        // dir cache so removed-then-re-added archives re-resolve.
+        downloadDirCache.clear()
         _downloadEvent.tryEmit(DownloadUiEvent.Reloaded)
     }
 
@@ -601,6 +624,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     }
 
     override fun onRemove(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
+        downloadDirCache.invalidate(info.arcid)
         _downloadEvent.tryEmit(DownloadUiEvent.ItemRemoved(info, list, position))
     }
 
