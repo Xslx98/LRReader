@@ -130,6 +130,12 @@ class NetworkModule(private val context: Context) : INetworkModule, Cacheable {
             .build()
     }
 
+    /** Cached instance of the interface-default page-streaming client. */
+    override val pageStreamClient: OkHttpClient by lazy { super.pageStreamClient }
+
+    /** Cached instance of the interface-default large-file client. */
+    override val largeFileClient: OkHttpClient by lazy { super.largeFileClient }
+
     /** Live connectivity monitor backed by NetworkCallback. */
     override val networkMonitor: NetworkMonitor by lazy { NetworkMonitor(context) }
 

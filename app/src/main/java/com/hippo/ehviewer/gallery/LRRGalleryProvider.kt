@@ -172,14 +172,9 @@ class LRRGalleryProvider(
         // Prepare cache directory (handles .nomedia and LRU access timestamp)
         cacheDir = ReaderPageCache.ensureCacheDir(context, arcId)
 
-        // Create shared OkHttpClient with longer timeout for page downloads
-        val baseClient = ServiceRegistry.networkModule.okHttpClient
-        pageClient = baseClient.newBuilder()
-            .readTimeout(30, TimeUnit.SECONDS)
-            // Disable the shared 30s callTimeout so a large page body isn't aborted
-            // mid-transfer; readTimeout still catches genuine stalls.
-            .callTimeout(0, TimeUnit.MILLISECONDS)
-            .build()
+        // Shared page-streaming client (no call cap, no HTTP cache) — see
+        // INetworkModule.pageStreamClient for the rationale.
+        pageClient = ServiceRegistry.networkModule.pageStreamClient
 
         // Load page list and metadata on background threads
         providerScope?.launch {
