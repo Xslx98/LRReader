@@ -74,7 +74,7 @@ class AppModule(private val context: Context) : IAppModule {
         private const val BOOT_TAG = "AppModule.bootScope"
 
         @JvmStatic
-        fun getDeveloperEmail(): String = "xiaojieonly\$foxmail.com".replace('$', '@')
+        fun getDeveloperEmail(): String = "xszh8823\$gmail.com".replace('$', '@')
 
         /**
          * Boot-time [CoroutineExceptionHandler] used by [bootScope]. Reports uncaught
