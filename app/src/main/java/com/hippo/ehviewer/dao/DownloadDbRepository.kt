@@ -7,6 +7,7 @@ import com.hippo.ehviewer.mapper.toArchiveJson
 import com.hippo.ehviewer.mapper.toDownloadInfoView
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 /**
@@ -86,7 +87,14 @@ class DownloadDbRepository(
      * the "empty list after switch" symptom.
      */
     fun observeDownloads(): Flow<List<DownloadInfo>> {
+        // ARCHIVE_LOCAL_STATE is shared with history/favorites, so a write to
+        // any subsystem invalidates this Room query and re-emits — even when
+        // the download rows are byte-for-byte identical. Drop those duplicate
+        // emissions before the per-row archive_json decode (O(N) JSON parse):
+        // ArchiveLocalState is a data class, so distinctUntilChanged compares
+        // the projected download rows by value.
         return archiveLocalStateDao.observeAllDownloads()
+            .distinctUntilChanged()
             .map { rows -> rows.map { it.toDownloadInfoView() } }
     }
 
