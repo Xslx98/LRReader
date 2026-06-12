@@ -4,6 +4,7 @@ import android.content.Context
 import com.hippo.ehviewer.ServiceRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
@@ -85,7 +86,10 @@ object ApkDownloader {
         call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 if (!call.isCanceled()) {
-                    trySend(DownloadProgress.Failed(e))
+                    // Terminal event: must not be dropped if the 64-slot
+                    // callbackFlow buffer filled up with InProgress ticks,
+                    // or the consumer stalls forever at the last percent.
+                    trySendBlocking(DownloadProgress.Failed(e))
                 }
                 close()
             }
@@ -94,11 +98,11 @@ object ApkDownloader {
                 response.use {
                     try {
                         if (!response.isSuccessful) {
-                            trySend(DownloadProgress.Failed(IllegalStateException("HTTP ${response.code}")))
+                            trySendBlocking(DownloadProgress.Failed(IllegalStateException("HTTP ${response.code}")))
                             return
                         }
                         val body = response.body ?: run {
-                            trySend(DownloadProgress.Failed(IllegalStateException("Empty response body")))
+                            trySendBlocking(DownloadProgress.Failed(IllegalStateException("Empty response body")))
                             return
                         }
                         val totalBytes = body.contentLength()  // may be -1 for chunked
@@ -128,14 +132,16 @@ object ApkDownloader {
                             // with the consumer's potential cancel; success.set(true) wins.
                             success.set(true)
                             trySend(DownloadProgress.InProgress(downloaded, if (totalBytes > 0) totalBytes else downloaded))
-                            trySend(DownloadProgress.Success)
+                            // Terminal event: block until delivered so a full
+                            // buffer can never strand the consumer at 100%.
+                            trySendBlocking(DownloadProgress.Success)
                         }
                     } catch (t: Throwable) {
                         // Broad catch is intentional: onResponse runs on OkHttp's dispatcher
                         // pool (not a coroutine context), so CancellationException can never
                         // arrive here. Anything thrown is a genuine IO / parse / write error.
                         if (!call.isCanceled()) {
-                            trySend(DownloadProgress.Failed(t))
+                            trySendBlocking(DownloadProgress.Failed(t))
                         }
                     } finally {
                         close()
