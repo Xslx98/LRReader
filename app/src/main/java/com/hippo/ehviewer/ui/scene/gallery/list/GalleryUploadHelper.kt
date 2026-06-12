@@ -16,6 +16,7 @@ import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.ehviewer.ui.scene.BaseScene
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Handles archive upload and URL download operations for GalleryListScene.
@@ -82,13 +83,19 @@ class GalleryUploadHelper(private val mCallback: Callback) {
      */
     fun handleUploadResult(uri: Uri) {
         val context = mCallback.getHostContext()?.applicationContext ?: return
-        val fileName = getFileNameFromUri(context, uri) ?: "upload_archive"
-        val request = GalleryListViewModel.UploadRequest(
-            displayName = fileName,
-            cacheDir = context.cacheDir,
-            openStream = { context.contentResolver.openInputStream(uri) }
-        )
-        mCallback.startUpload(request)
+        val owner = mCallback.getHostActivity() as? ComponentActivity ?: return
+        // getFileNameFromUri does a ContentResolver.query, which can block on a
+        // slow provider (cloud / SAF). Resolve the name off the main thread,
+        // then build the request and start the upload back on main.
+        owner.lifecycleScope.launch {
+            val fileName = withContext(Dispatchers.IO) { getFileNameFromUri(context, uri) } ?: "upload_archive"
+            val request = GalleryListViewModel.UploadRequest(
+                displayName = fileName,
+                cacheDir = context.cacheDir,
+                openStream = { context.contentResolver.openInputStream(uri) }
+            )
+            mCallback.startUpload(request)
+        }
     }
 
     /**
