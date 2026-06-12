@@ -106,6 +106,14 @@ class DownloadService : Service(), DownloadListener {
     private var CHANNEL_ID: String? = null
     private var COMPLETE_CHANNEL_ID: String? = null
 
+    /**
+     * True once this service instance has entered the foreground. Lets
+     * onStartCommand skip the placeholder notification on later commands —
+     * re-posting it over the live progress notification caused a visible
+     * flicker on every START/STOP command.
+     */
+    private var isForeground = false
+
     override fun onCreate() {
         super.onCreate()
 
@@ -178,7 +186,11 @@ class DownloadService : Service(), DownloadListener {
      */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // 1. Satisfy the foreground-service ANR window before anything else.
-        startForegroundPlaceholder()
+        //    Skip if we're already foreground — re-posting the placeholder over
+        //    the live progress notification flickers it on every command.
+        if (!isForeground) {
+            startForegroundPlaceholder()
+        }
 
         // 2. Await init off the main thread, then hand the intent back to
         //    main-thread handleIntent which is where the DownloadManager
@@ -245,6 +257,7 @@ class DownloadService : Service(), DownloadListener {
             } else {
                 startForeground(ID_DOWNLOADING, notification)
             }
+            isForeground = true
         } catch (e: Exception) {
             Log.e(TAG, "startForeground(placeholder) failed", e)
         }
