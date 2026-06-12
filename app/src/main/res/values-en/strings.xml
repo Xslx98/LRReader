@@ -583,7 +583,6 @@
     <string name="network_remind">It has been detected that the vpn is enabled, please pay attention to network security</string>
     <string name="pagination_count">count</string>
     <string name="pagination_page_and_item">r/p</string>
-    <string name="request_camera_permission">LR Reader will request access to the device camera in order to take pictures. Would you like to authorize?</string>
     <string name="request_storage_permission">LR Reader will request access to the device\'s photo album in order to obtain pictures. Would you like to authorize?</string>
     <string name="reset_to_default">Reset to default</string>
     <string name="scene_download_title_new">%s(%s)</string>

@@ -510,7 +510,6 @@
     <!--  侧滑栏头像和背景修改  -->
     <string name="take_a_photograph">拍照</string>
     <string name="choose_from_the_album">在相簿中選擇</string>
-    <string name="request_camera_permission">LR Reader 需要取得相機權限才能拍照。你願意授權嗎？</string>
     <string name="request_storage_permission">LR Reader 需要存取裝置相簿權限以取得圖片。您願意授權嗎？</string>
 
     <!-- 下载通知   -->
