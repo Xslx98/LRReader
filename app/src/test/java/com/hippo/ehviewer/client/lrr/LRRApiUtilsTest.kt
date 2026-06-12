@@ -223,6 +223,60 @@ class LRRApiUtilsTest {
         assertEquals("custom error", msg)
     }
 
+    // ── resolvePageUrl ─────────────────────────────────────────────
+
+    @Test
+    fun resolvePageUrl_absolutePath_noTrailingSlashBase() {
+        assertEquals(
+            "http://host:3000/api/archives/abc/page?path=a.jpg",
+            resolvePageUrl("http://host:3000", "/api/archives/abc/page?path=a.jpg")
+        )
+    }
+
+    @Test
+    fun resolvePageUrl_documentRelativeDotSlash() {
+        // The shape the project's own fixtures and LANraragi's docs can return.
+        // Bare concatenation would yield "http://host:3000./api/..." (broken).
+        assertEquals(
+            "http://host:3000/api/archives/abc/page?path=a.jpg",
+            resolvePageUrl("http://host:3000", "./api/archives/abc/page?path=a.jpg")
+        )
+    }
+
+    @Test
+    fun resolvePageUrl_bareRelativeAgainstTrailingSlashBase() {
+        assertEquals(
+            "http://host:3000/api/archives/abc/page",
+            resolvePageUrl("http://host:3000/", "api/archives/abc/page")
+        )
+    }
+
+    @Test
+    fun resolvePageUrl_alreadyAbsoluteUrlPassesThrough() {
+        assertEquals(
+            "http://other:9000/api/x",
+            resolvePageUrl("http://host:3000", "http://other:9000/api/x")
+        )
+    }
+
+    @Test
+    fun resolvePageUrl_preservesEncodedPath() {
+        assertEquals(
+            "http://host:3000/api/x?path=sub%20dir/a.jpg",
+            resolvePageUrl("http://host:3000", "/api/x?path=sub%20dir/a.jpg")
+        )
+    }
+
+    @Test
+    fun resolvePageUrl_invalidServerUrlThrows() {
+        try {
+            resolvePageUrl("not a url", "/api/x")
+            fail("Should have thrown")
+        } catch (e: IOException) {
+            // expected
+        }
+    }
+
     // ── retryOnFailure ─────────────────────────────────────────────
 
     @Test
