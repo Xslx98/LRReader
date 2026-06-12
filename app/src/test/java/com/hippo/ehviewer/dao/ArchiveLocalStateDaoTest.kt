@@ -188,4 +188,45 @@ class ArchiveLocalStateDaoTest {
         assertEquals(1, afterInsert.size)
         assertEquals("d-1", afterInsert[0].arcid)
     }
+
+    // ── DB-3 short-term mitigation: download owns SERVER_PROFILE_ID ──
+
+    @Test
+    fun updateHistoryFields_keepsDownloadOwnedServerProfileId() = runTest {
+        dao.upsert(row("mirror", serverProfileId = 7L, downloadState = DownloadState.FINISH, downloadTime = 1L))
+
+        // Reading the mirror copy through profile 9 records history but
+        // must not re-home the profile-7 download.
+        dao.insertOrIgnoreHistory("mirror", 9L, """{"arcid":"mirror","v":2}""", 2000L, 0)
+        dao.updateHistoryFields("mirror", 9L, """{"arcid":"mirror","v":2}""", 2000L, 0)
+
+        val loaded = dao.loadByArcid("mirror")!!
+        assertEquals(7L, loaded.serverProfileId)
+        assertEquals(2000L, loaded.historyTime)
+        assertEquals("""{"arcid":"mirror","v":2}""", loaded.archiveJson)
+    }
+
+    @Test
+    fun updateHistoryFields_reHomesRowWithoutDownload() = runTest {
+        dao.upsert(row("h-row", serverProfileId = 7L, historyTime = 1000L))
+
+        dao.insertOrIgnoreHistory("h-row", 9L, """{"arcid":"h-row"}""", 2000L, 0)
+        dao.updateHistoryFields("h-row", 9L, """{"arcid":"h-row"}""", 2000L, 0)
+
+        val loaded = dao.loadByArcid("h-row")!!
+        assertEquals(9L, loaded.serverProfileId)
+        assertEquals(2000L, loaded.historyTime)
+    }
+
+    @Test
+    fun updateFavoriteFields_keepsDownloadOwnedServerProfileId() = runTest {
+        dao.upsert(row("mirror-f", serverProfileId = 7L, downloadState = DownloadState.FINISH, downloadTime = 1L))
+
+        dao.insertOrIgnoreFavorite("mirror-f", 9L, """{"arcid":"mirror-f"}""", 3000L)
+        dao.updateFavoriteFields("mirror-f", 9L, """{"arcid":"mirror-f"}""", 3000L)
+
+        val loaded = dao.loadByArcid("mirror-f")!!
+        assertEquals(7L, loaded.serverProfileId)
+        assertEquals(3000L, loaded.favoriteTime)
+    }
 }

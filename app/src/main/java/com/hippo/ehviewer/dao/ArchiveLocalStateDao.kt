@@ -329,9 +329,21 @@ interface ArchiveLocalStateDao {
         historyMode: Int,
     )
 
+    /**
+     * The CASE keeps a download-owned row's `SERVER_PROFILE_ID` intact:
+     * arcids are content hashes, so reading a mirror copy of a
+     * downloaded archive through another profile would otherwise
+     * re-home the download (source badge, resume routing, and the
+     * per-profile download query all key off this column). The
+     * download subsystem owns the attribution while
+     * `DOWNLOAD_STATE IS NOT NULL`; the history entry then surfaces
+     * under the owning profile — the accepted trade-off until the
+     * table moves to an (ARCID, SERVER_PROFILE_ID) composite key.
+     */
     @Query(
         "UPDATE ARCHIVE_LOCAL_STATE SET " +
-            "SERVER_PROFILE_ID = :serverProfileId, " +
+            "SERVER_PROFILE_ID = CASE WHEN DOWNLOAD_STATE IS NOT NULL " +
+            "THEN SERVER_PROFILE_ID ELSE :serverProfileId END, " +
             "ARCHIVE_JSON = :archiveJson, " +
             "HISTORY_TIME = :historyTime, " +
             "HISTORY_MODE = :historyMode " +
@@ -357,9 +369,15 @@ interface ArchiveLocalStateDao {
         favoriteTime: Long,
     )
 
+    /**
+     * Same download-ownership guard as [updateHistoryFields]: a
+     * favorite write must not re-home a downloaded archive's
+     * `SERVER_PROFILE_ID`.
+     */
     @Query(
         "UPDATE ARCHIVE_LOCAL_STATE SET " +
-            "SERVER_PROFILE_ID = :serverProfileId, " +
+            "SERVER_PROFILE_ID = CASE WHEN DOWNLOAD_STATE IS NOT NULL " +
+            "THEN SERVER_PROFILE_ID ELSE :serverProfileId END, " +
             "ARCHIVE_JSON = :archiveJson, " +
             "FAVORITE_TIME = :favoriteTime " +
             "WHERE ARCID = :arcid"
