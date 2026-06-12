@@ -25,7 +25,6 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
-import java.util.concurrent.TimeUnit
 
 /**
  * Centralized cache management for reader page images.
@@ -562,12 +561,9 @@ object ReaderPageCache : Cacheable {
             }
             if (pages.isEmpty()) return@launch
 
-            val pageClient = ServiceRegistry.networkModule.okHttpClient.newBuilder()
-                .readTimeout(30, TimeUnit.SECONDS)
-                // Disable the shared 30s callTimeout so a large page body isn't aborted
-                // mid-transfer; readTimeout still catches genuine stalls.
-                .callTimeout(0, TimeUnit.MILLISECONDS)
-                .build()
+            // Shared page-streaming client (no call cap, no HTTP cache) — see
+            // INetworkModule.pageStreamClient for the rationale.
+            val pageClient = ServiceRegistry.networkModule.pageStreamClient
 
             val start = (centerPage - DETAIL_PRELOAD_RADIUS).coerceAtLeast(0)
             val end = (centerPage + DETAIL_PRELOAD_RADIUS).coerceAtMost(pages.size - 1)

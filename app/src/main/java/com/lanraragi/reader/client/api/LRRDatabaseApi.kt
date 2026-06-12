@@ -5,7 +5,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.util.concurrent.TimeUnit
 
 /**
  * API class for LANraragi database operations.
@@ -18,14 +17,14 @@ import java.util.concurrent.TimeUnit
 object LRRDatabaseApi {
 
     /**
-     * Derives a client with the call timeout disabled. The /api/database/stats
-     * response can be several MB on large libraries; the shared client's 30s
-     * callTimeout would truncate it on slow links.
+     * The /api/database/stats response can be several MB on large libraries;
+     * the shared client's 30s callTimeout would truncate it on slow links.
+     * The shared large-file client has no call cap (and a 60s readTimeout
+     * instead of the inherited 10s — a deliberate loosening that's safe in
+     * the lenient direction for a streamed body).
      */
     private fun longCallClient(): OkHttpClient =
-        LRRClientProvider.getClient().newBuilder()
-            .callTimeout(0, TimeUnit.MILLISECONDS)
-            .build()
+        com.hippo.ehviewer.ServiceRegistry.networkModule.largeFileClient
 
     /**
      * GET /api/database/stats — Get tag statistics.

@@ -36,7 +36,6 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.util.UUID
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -151,18 +150,9 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         }
 
         val client = ServiceRegistry.networkModule.okHttpClient
-        // Dedicated client for page body GETs:
-        //  - 30 s read timeout (large archives may need on-the-fly extraction)
-        //  - .cache(null): page responses are not HTTP-cacheable and we are
-        //    writing to disk ourselves; skipping the shared 200 MB http_cache
-        //    avoids pointless cache-layer bookkeeping per request
-        val pageClient = client.newBuilder()
-            .readTimeout(30, TimeUnit.SECONDS)
-            // Disable the shared 30s callTimeout: a single large page (or on-the-fly
-            // extraction) can legitimately take longer; readTimeout still catches stalls.
-            .callTimeout(0, TimeUnit.MILLISECONDS)
-            .cache(null)
-            .build()
+        // Shared page-streaming client (no call cap, no HTTP cache) — see
+        // INetworkModule.pageStreamClient for the rationale.
+        val pageClient = ServiceRegistry.networkModule.pageStreamClient
 
         // Step 1: Extract archive to get page list. Retry across network outages
         // (bounded by waitBudget); genuine failures (non-network) stop the download.
