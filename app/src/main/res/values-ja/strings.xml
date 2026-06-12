@@ -312,7 +312,6 @@
     <string name="settings_download">ダウンロード</string>
     <string name="settings_download_download_location">ダウンロードパス</string>
     <string name="settings_download_invalid_download_location">無効なダウンロードパス</string>
-    <string name="settings_download_cant_get_download_location">ダウンロードパスを取得できません</string>
     <string name="settings_download_media_scan">メディアスキャンを許可する</string>
     <string name="settings_download_media_scan_summary_on">ギャラリーアプリを他人に見せないでください</string>
     <string name="settings_download_media_scan_summary_off">ほとんどのギャラリーアプリはダウンロードパスの内容を表示しません</string>
