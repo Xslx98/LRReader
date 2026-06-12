@@ -192,6 +192,10 @@ fun friendlyError(context: Context, e: Exception): String {
         e is LRRMissingFieldException        -> context.getString(R.string.lrr_malformed_response)
         e is LRRPlaintextRefusedException    -> context.getString(R.string.lrr_plaintext_refused)
         e is java.net.SocketTimeoutException -> context.getString(R.string.lrr_timeout_error)
+        // OkHttp's callTimeout aborts with a bare InterruptedIOException("timeout"),
+        // not a SocketTimeoutException — map it to the same friendly message.
+        // (Must follow the SocketTimeoutException branch, which is a subclass.)
+        e is java.io.InterruptedIOException  -> context.getString(R.string.lrr_timeout_error)
         e is java.net.ConnectException       -> context.getString(R.string.lrr_connect_error_check)
         e is java.net.UnknownHostException   -> context.getString(R.string.lrr_dns_error)
         e is javax.net.ssl.SSLException      -> context.getString(R.string.lrr_ssl_error)
