@@ -71,9 +71,11 @@ import com.hippo.util.DrawableManager
 import com.hippo.view.ViewTransition
 import com.hippo.widget.FabLayout
 import com.hippo.widget.ProgressView
+import com.hippo.unifile.UniFile
 import com.hippo.widget.SearchBarMover
 import com.hippo.widget.recyclerview.AutoStaggeredGridLayoutManager
 import com.sxj.paginationlib.PaginationIndicator
+import java.util.concurrent.CompletableFuture
 
 class DownloadsScene : ToolbarScene(),
     EasyRecyclerView.OnItemClickListener,
@@ -715,6 +717,9 @@ class DownloadsScene : ToolbarScene(),
 
     override val recyclerView: EasyRecyclerView?
         get() = if (::mRecyclerView.isInitialized) mRecyclerView else null
+
+    override fun downloadDirFutureFor(info: DownloadInfo): CompletableFuture<UniFile?> =
+        viewModel.downloadDirFutureFor(info)
 
     override fun onClickTitle() {
         mSearchHelper?.enterSearchMode(true)

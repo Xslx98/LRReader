@@ -66,6 +66,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.hippo.ehviewer.download.DownloadState
+import java.util.concurrent.CompletableFuture
 
 /**
  * 下载列表适配器
@@ -102,6 +103,13 @@ class DownloadAdapter(
         val spiderInfoMap: Map<String, SpiderInfo>
         val downloadManager: DownloadManager?
         val recyclerView: EasyRecyclerView?
+
+        /**
+         * VM-cached download-dir resolution for [info]'s thumbnail, shared
+         * across rebinds of the same archive (DL-12). See
+         * [com.hippo.ehviewer.ui.scene.download.DownloadsViewModel.downloadDirFutureFor].
+         */
+        fun downloadDirFutureFor(info: DownloadInfo): CompletableFuture<UniFile?>
     }
 
     init {
@@ -200,7 +208,7 @@ class DownloadAdapter(
             } else {
                 holder.thumb.load(
                     LRRCacheKeyFactory.getThumbKey(info.arcid), archive.thumbnailUrl,
-                    ThumbDataContainer(info), true, false
+                    ThumbDataContainer(mCallback.downloadDirFutureFor(info)), true, false
                 )
             }
 
