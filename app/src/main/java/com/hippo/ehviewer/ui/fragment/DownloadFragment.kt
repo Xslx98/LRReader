@@ -46,6 +46,7 @@ import com.hippo.yorozuya.IOUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
@@ -249,6 +250,12 @@ class DownloadFragment : PreferenceFragmentCompat(),
                             count++
                         }
                         dialog.progress = i + 1
+                        // Re-dispatch between rows: without this the whole loop
+                        // is one uninterrupted main-thread block, the progress
+                        // bar never repaints, and a multi-thousand-row CSV
+                        // risks an ANR. (The manager calls themselves must
+                        // stay on the main thread — assertMainThread.)
+                        yield()
                     }
                     count
                 }
