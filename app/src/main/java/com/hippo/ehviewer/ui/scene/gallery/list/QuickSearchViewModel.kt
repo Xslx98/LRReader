@@ -76,13 +76,10 @@ class QuickSearchViewModel : ViewModel() {
 
     /**
      * Deletes a quick search entry. The in-memory list is updated
-     * synchronously (optimistically, like [moveQuickSearch]) so the Scene's
-     * immediate notifyItemRemoved stays consistent with getItemCount — doing
-     * the removal only after the async DB delete left the adapter reporting
-     * the old count against a structural-remove notification (RecyclerView
-     * "inconsistency detected" crash / a row that vanished while its data
-     * lingered). On DB failure we surface an error and let the next load
-     * reconcile, rather than re-inserting into the RecyclerView out of band.
+     * synchronously (optimistically, like [moveQuickSearch]); the Scene's
+     * DiffUtil collector turns the emission into the removal notification.
+     * On DB failure the list is reloaded from Room so the optimistic removal
+     * is rolled back and the UI stays consistent with what actually persisted.
      */
     fun deleteQuickSearch(quickSearch: QuickSearch) {
         _quickSearches.value = _quickSearches.value.filter { it.id != quickSearch.id }
@@ -95,6 +92,9 @@ class QuickSearchViewModel : ViewModel() {
                 _uiEvent.tryEmit(
                     QuickSearchUiEvent.ShowError("Failed to delete quick search")
                 )
+                // Reconcile: the row is still in the DB — reload so it
+                // reappears instead of leaving UI and DB diverged.
+                loadQuickSearches()
             }
         }
     }
