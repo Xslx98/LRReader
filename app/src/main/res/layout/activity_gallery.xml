@@ -96,8 +96,9 @@
 
             <TextView
                 android:id="@+id/left"
-                android:layout_width="32dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:minWidth="32dp"
                 android:layout_gravity="center_vertical"
                 android:gravity="center_horizontal" />
 
@@ -116,8 +117,9 @@
 
             <TextView
                 android:id="@+id/right"
-                android:layout_width="32dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:minWidth="32dp"
                 android:layout_gravity="center_vertical"
                 android:gravity="center_horizontal" />
 
