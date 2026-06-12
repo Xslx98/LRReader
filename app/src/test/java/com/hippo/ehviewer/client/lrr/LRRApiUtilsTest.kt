@@ -188,6 +188,14 @@ class LRRApiUtilsTest {
     }
 
     @Test
+    fun friendlyError_callTimeoutInterruptedIOException() {
+        // OkHttp callTimeout throws a bare InterruptedIOException, which must
+        // map to the same localized timeout message as SocketTimeoutException.
+        val msg = friendlyError(ctx, java.io.InterruptedIOException("timeout"))
+        assertEquals(ctx.getString(R.string.lrr_timeout_error), msg)
+    }
+
+    @Test
     fun friendlyError_connect() {
         val msg = friendlyError(ctx, ConnectException("refused"))
         assertFalse(msg.isBlank())
