@@ -610,7 +610,14 @@ class DownloadsScene : ToolbarScene(),
         for ((indexInList, info) in list.withIndex()) {
             val id = info.arcid ?: continue
             if (id !in affected) continue
-            adapter.notifyItemChanged(listIndexInPage(indexInList), PAYLOAD_PROGRESS)
+            val inPagePos = listIndexInPage(indexInList)
+            // Skip items that aren't on the page currently shown. With
+            // pagination on, listIndexInPage is `position % pageSize`, so an
+            // off-page item maps onto a visible row's adapter position and
+            // would rebind the wrong row. Only an on-page item round-trips
+            // back to its own full-list index (identity when not paginating).
+            if (positionInList(inPagePos) != indexInList) continue
+            adapter.notifyItemChanged(inPagePos, PAYLOAD_PROGRESS)
         }
     }
 
