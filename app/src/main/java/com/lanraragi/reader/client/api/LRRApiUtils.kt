@@ -64,6 +64,15 @@ internal fun resolvePageUrl(serverUrl: String, pagePath: String): String {
         ?: throw IOException("Cannot resolve page path '$pagePath' against $serverUrl")
 }
 
+/**
+ * Lowercase hex rendering shared by the SHA-1 fingerprint helpers
+ * ([LRRArchiveApi.computeArchiveId], [LRRArchiveApi.computeFileChecksum],
+ * the synthetic import arcid) — LANraragi ids/checksums are 40 lowercase
+ * hex chars.
+ */
+internal fun ByteArray.toHexLower(): String =
+    joinToString("") { "%02x".format(it.toInt() and 0xFF) }
+
 /** Shared Json instance with lenient parsing. */
 internal val lrrJson = Json { ignoreUnknownKeys = true }
 
