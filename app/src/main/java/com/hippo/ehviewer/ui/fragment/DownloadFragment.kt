@@ -144,28 +144,34 @@ class DownloadFragment : PreferenceFragmentCompat(),
         val sdf = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US)
         val fileName = "lrreader-download-${sdf.format(Date())}.csv"
 
-        val file = dir.createFile(fileName)
-        if (file == null) {
-            Toast.makeText(activity, R.string.settings_download_export_failed, Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        try {
-            file.openOutputStream().use { os ->
-                os.write(DownloadManager.DOWNLOAD_INFO_HEADER.toByteArray(StandardCharsets.UTF_8))
-                for (gi in list) {
-                    // 20-column wire format defined in EntitySerializer; kept stable so
-                    // CSV files exported by older versions still import via archiveFromCsvLine().
-                    os.write(gi.toCSV().toByteArray(StandardCharsets.UTF_8))
+        // Creating the file and streaming the whole list out can be slow for a
+        // large download list — do the IO off the main thread, report on main.
+        viewLifecycleOwner.lifecycleScope.launch {
+            val savedUri = withContext(Dispatchers.IO) {
+                try {
+                    val file = dir.createFile(fileName) ?: return@withContext null
+                    file.openOutputStream().use { os ->
+                        os.write(DownloadManager.DOWNLOAD_INFO_HEADER.toByteArray(StandardCharsets.UTF_8))
+                        for (gi in list) {
+                            // 20-column wire format defined in EntitySerializer; kept stable so
+                            // CSV files exported by older versions still import via archiveFromCsvLine().
+                            os.write(gi.toCSV().toByteArray(StandardCharsets.UTF_8))
+                        }
+                    }
+                    file.uri.toString()
+                } catch (e: IOException) {
+                    null
                 }
             }
-            Toast.makeText(
-                activity,
-                getString(R.string.settings_download_export_succeed, file.uri.toString()),
-                Toast.LENGTH_SHORT
-            ).show()
-        } catch (e: IOException) {
-            Toast.makeText(activity, R.string.settings_download_export_failed, Toast.LENGTH_SHORT).show()
+            if (savedUri != null) {
+                Toast.makeText(
+                    activity,
+                    getString(R.string.settings_download_export_succeed, savedUri),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                Toast.makeText(activity, R.string.settings_download_export_failed, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
