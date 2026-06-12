@@ -1,0 +1,5 @@
+- Fixed: crashes when importing download records or local archives.
+- Fixed: notification permission is now requested on Android 13+, with a sound when a download completes.
+- Fixed: tag edits and ratings on cross-server archives no longer hit the wrong server.
+- Fixed: dark theme following the system, and clipped layouts at large font sizes.
+- Improved: friendlier network error messages, plus performance and stability fixes.
