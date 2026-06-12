@@ -37,14 +37,30 @@ internal fun parseBaseUrl(baseUrl: String): okhttp3.HttpUrl {
  * Resolve a per-page link returned by the server against the configured
  * [serverUrl]. LANraragi's documented page paths come in two shapes —
  * absolute (`/api/archives/<id>/page?path=...`) and document-relative
- * (`./api/...`, which the project's own test fixtures use). Bare string
- * concatenation (`serverUrl + pagePath`) only works for the absolute form;
- * a relative path produces a broken `http://host:3000./api/...`. Resolving
- * through [okhttp3.HttpUrl] handles both shapes (and an already-absolute URL)
- * without re-encoding the already-encoded link.
+ * (`./api/...`, which the project's own test fixtures use). Both mean
+ * "relative to the server's mount root": the server does not know the
+ * external prefix when it is deployed behind a reverse proxy at a
+ * sub-path (e.g. `http://host/lanraragi`). A plain [okhttp3.HttpUrl.resolve]
+ * would therefore be wrong for both shapes — a root-absolute reference
+ * replaces the entire base path and `./` against a no-trailing-slash base
+ * drops its last segment, either way producing `http://host/api/...` and
+ * 404ing every page while the `addPathSegments`-built endpoints keep
+ * working. Instead, strip the `./`/`/` prefix and resolve against the
+ * base treated as a directory, which preserves the sub-path. An
+ * already-absolute URL passes through untouched. Resolution keeps the
+ * link's existing encoding (no re-encoding).
  */
 internal fun resolvePageUrl(serverUrl: String, pagePath: String): String {
-    return parseBaseUrl(serverUrl).resolve(pagePath)?.toString()
+    // Full absolute URL: pass through.
+    pagePath.toHttpUrlOrNull()?.let { return it.toString() }
+    val base = parseBaseUrl(serverUrl)
+    val relative = pagePath.removePrefix("./").removePrefix("/")
+    val baseDir = if (base.encodedPath.endsWith("/")) {
+        base
+    } else {
+        base.newBuilder().encodedPath(base.encodedPath + "/").build()
+    }
+    return baseDir.resolve(relative)?.toString()
         ?: throw IOException("Cannot resolve page path '$pagePath' against $serverUrl")
 }
 

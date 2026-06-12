@@ -285,6 +285,35 @@ class LRRApiUtilsTest {
         }
     }
 
+    @Test
+    fun resolvePageUrl_subpathBase_absolutePathKeepsPrefix() {
+        // Reverse-proxy sub-path deployment: a root-absolute page path means
+        // "relative to the LANraragi mount", not the host root. The /lanraragi
+        // prefix must survive (plain HttpUrl.resolve would drop it).
+        assertEquals(
+            "http://host/lanraragi/api/archives/abc/page?path=a.jpg",
+            resolvePageUrl("http://host/lanraragi", "/api/archives/abc/page?path=a.jpg")
+        )
+    }
+
+    @Test
+    fun resolvePageUrl_subpathBase_dotSlashKeepsPrefix() {
+        // "./" shape against a no-trailing-slash sub-path base: document-
+        // relative resolution would drop the last base segment; ours must not.
+        assertEquals(
+            "http://host/lanraragi/api/archives/abc/page?path=a.jpg",
+            resolvePageUrl("http://host/lanraragi", "./api/archives/abc/page?path=a.jpg")
+        )
+    }
+
+    @Test
+    fun resolvePageUrl_subpathBaseWithTrailingSlash() {
+        assertEquals(
+            "http://host/lanraragi/api/x",
+            resolvePageUrl("http://host/lanraragi/", "/api/x")
+        )
+    }
+
     // ── retryOnFailure ─────────────────────────────────────────────
 
     @Test
