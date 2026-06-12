@@ -482,7 +482,6 @@
     <!--  侧滑栏头像和背景修改  -->
     <string name="take_a_photograph">ถ่ายภาพ</string>
     <string name="choose_from_the_album">เลือกจากอัลบั้ม</string>
-    <string name="request_camera_permission">LR Reader จะขอสิทธิ์เข้าถึงกล้องของอุปกรณ์เพื่อถ่ายภาพ คุณต้องการอนุญาตหรือไม่?</string>
     <string name="request_storage_permission">LR Reader จะขอสิทธิ์เข้าถึงอัลบั้มภาพของอุปกรณ์เพื่อรับภาพ คุณต้องการอนุญาตหรือไม่?</string>
 
     <!-- 下载通知   -->

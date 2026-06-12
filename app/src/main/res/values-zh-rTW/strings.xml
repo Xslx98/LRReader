@@ -486,7 +486,6 @@
     <!--  側滑欄頭像和背景修改  -->
     <string name="take_a_photograph">拍照</string>
     <string name="choose_from_the_album">從相簿選擇</string>
-    <string name="request_camera_permission">為了拍照，LR Reader 將請求裝置相機的權限。您願意授權嗎？</string>
     <string name="request_storage_permission">為了獲取相片，LR Reader 將請求裝置的圖片相簿之權限。您願意授權嗎？</string>
 
     <!--  wifi server -->

@@ -479,7 +479,6 @@
     <!--  ?滑??像和背景修改  -->
     <string name="take_a_photograph">사진 찍기</string>
     <string name="choose_from_the_album">앨범에서 선택</string>
-    <string name="request_camera_permission">LR Reader 사진을 찍을 수 있도록 카메라 접근 권한을 부여하시겠습니까?</string>
     <string name="request_storage_permission">LR Reader 이미지를 선택할 수 있도록 갤러리 접근 권한을 부여하시겠습니까?</string>
 
     <!--  ??服?  -->

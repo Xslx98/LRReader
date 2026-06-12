@@ -391,11 +391,9 @@ class UserImageChange(
      * 获取权限的回调
      */
     override fun agree(permissionCode: Int) {
-        if (permissionCode == REQUEST_CAMERA_PERMISSION) {
-            val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-            intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri)
-            cameraLauncher.launch(intent)
-        }
+        // Camera no longer goes through a permission request (the CAMERA
+        // declaration was removed; startCamera launches the capture intent
+        // directly), so only the storage/album path remains.
         if (permissionCode == REQUEST_STORAGE_PERMISSION) {
             val intent = Intent(Intent.ACTION_GET_CONTENT)
             intent.type = "image/*"
@@ -408,8 +406,6 @@ class UserImageChange(
         val CHANGE_BACKGROUND = 0
         @JvmField
         val CHANGE_AVATAR = 1
-        @JvmField
-        val REQUEST_CAMERA_PERMISSION = 1
         @JvmField
         val REQUEST_STORAGE_PERMISSION = 2
 
