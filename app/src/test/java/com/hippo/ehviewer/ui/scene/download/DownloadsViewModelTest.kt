@@ -20,9 +20,9 @@ import com.hippo.ehviewer.dao.ProfileRepository
 import com.hippo.ehviewer.module.CoroutineModule
 import com.hippo.ehviewer.module.IDataModule
 import com.lanraragi.reader.client.api.LRRAuthManager
+import com.hippo.ehviewer.containedTestScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -64,17 +64,8 @@ class DownloadsViewModelTest {
         Settings.initialize(context)
         ServiceRegistry.initializeForTest(CoroutineModule())
 
-        // Handler mirrors production scopes and contains the NotImplementedError
-        // thrown by the "not needed" fakes when fire-and-forget coroutines
-        // (DownloadManager.syncRatingsFromServer at init) reach them — without
-        // it the Error escapes to the global handler and fails an unrelated
-        // later runTest with UncaughtExceptionsBeforeTest (see DownloadManagerTest).
-        testScope = CoroutineScope(
-            SupervisorJob() + Dispatchers.Unconfined +
-                kotlinx.coroutines.CoroutineExceptionHandler { _, t ->
-                    println("testScope contained: $t")
-                }
-        )
+        // Handler-bearing scope: see containedTestScope's KDoc.
+        testScope = containedTestScope()
 
         LRRAuthManager.initialize(context)
         val method = LRRAuthManager::class.java.declaredMethods.first {
