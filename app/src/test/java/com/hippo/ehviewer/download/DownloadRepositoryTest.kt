@@ -10,10 +10,10 @@ import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.dao.DownloadDbRepository
 import com.hippo.ehviewer.dao.DownloadInfo
+import com.hippo.ehviewer.containedTestScope
 import com.hippo.ehviewer.module.CoroutineModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -51,8 +51,12 @@ class DownloadRepositoryTest {
         // Initialize CoroutineModule for ServiceRegistry
         ServiceRegistry.initializeForTest(CoroutineModule())
 
-        // Create a test scope that runs on the unconfined dispatcher for synchronous execution
-        testScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        // Unconfined for synchronous execution; handler-bearing — see
+        // containedTestScope's KDoc (defensive convergence: this file's
+        // IDataModule fake throws NotImplementedError from unimplemented
+        // getters, and a future fire-and-forget path reaching one must not
+        // poison the suite).
+        testScope = containedTestScope()
 
         // Initialize LRRAuthManager
         LRRAuthManager.initialize(context)

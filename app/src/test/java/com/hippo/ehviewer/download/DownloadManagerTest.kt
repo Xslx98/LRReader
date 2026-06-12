@@ -13,6 +13,7 @@ import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.DownloadDbRepository
 import com.hippo.ehviewer.dao.DownloadLabel
 import com.hippo.ehviewer.module.CoroutineModule
+import com.hippo.ehviewer.containedTestScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -55,20 +56,10 @@ class DownloadManagerTest {
         ServiceRegistry.initializeForTest(CoroutineModule())
 
         // Create a test scope that runs on the unconfined dispatcher for synchronous execution
-        // The handler mirrors production (CoroutineModule scopes all carry one)
-        // and is load-bearing for suite stability: the fake IDataModule below
-        // throws NotImplementedError from "not needed" getters, and fire-and-
-        // forget coroutines on this scope (e.g. DownloadManager.
-        // syncRatingsFromServer at init) DO reach them. NotImplementedError is
-        // an Error, so the production `catch (e: Exception)` can't contain it;
-        // without a handler here it escapes to the global handler and fails an
-        // unrelated later runTest with UncaughtExceptionsBeforeTest.
-        testScope = CoroutineScope(
-            SupervisorJob() + Dispatchers.Unconfined +
-                kotlinx.coroutines.CoroutineExceptionHandler { _, t ->
-                    println("testScope contained: $t")
-                }
-        )
+        // Handler-bearing scope: see containedTestScope's KDoc for why the
+        // handler is load-bearing (NotImplementedError fakes + fire-and-forget
+        // coroutines would otherwise poison the whole suite).
+        testScope = containedTestScope()
 
         // Initialize LRRAuthManager — KeyStore unavailable under Robolectric,
         // but sActiveProfileId defaults to 0 which is fine for our tests.
