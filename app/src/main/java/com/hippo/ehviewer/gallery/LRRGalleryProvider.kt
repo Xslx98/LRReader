@@ -226,9 +226,9 @@ class LRRGalleryProvider(
                 // cancellation race here.
                 val pagesDeferred = async {
                     try {
-                        LrrFileListCache.get(arcId) ?: run {
+                        LrrFileListCache.get(serverUrl, arcId) ?: run {
                             val fetched = LRRArchiveApi.getFileList(client, serverUrl, arcId)
-                            LrrFileListCache.put(arcId, fetched)
+                            LrrFileListCache.put(serverUrl, arcId, fetched)
                             fetched
                         }
                     } catch (e: CancellationException) {

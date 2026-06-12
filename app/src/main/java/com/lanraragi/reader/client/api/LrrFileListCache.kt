@@ -9,14 +9,16 @@
  */
 package com.lanraragi.reader.client.api
 
-import android.util.Log
 import android.util.LruCache
 import com.hippo.ehviewer.module.Cacheable
 
 /**
  * In-memory LRU cache for LANraragi `GET /api/archives/:id/files`
- * responses. Keyed by `(activeProfileId, arcid)` so switching server
- * profiles doesn't surface stale paths from a different host.
+ * responses. Keyed by `(serverUrl, arcid)` — the server the file list
+ * was actually fetched from — so cross-profile reads (active profile A
+ * while the archive's source is profile B) never store under or hit the
+ * wrong server. Two archives that share an arcid on different servers
+ * stay distinct, and profiles pointing at the same server share a hit.
  *
  * **Why in-memory and not Room:**
  * The file list is *server-authoritative, mutable* state — an
@@ -38,13 +40,11 @@ import com.hippo.ehviewer.module.Cacheable
  */
 object LrrFileListCache : Cacheable {
 
-    private const val TAG = "LrrFileListCache"
-
     /** TTL for cached entries. */
     private const val TTL_MS: Long = 30 * 60 * 1000L // 30 minutes
 
     /**
-     * Max distinct (profile, arcid) entries held simultaneously.
+     * Max distinct (server, arcid) entries held simultaneously.
      * 32 covers the typical "user browses a handful of details
      * then dives into one to read"; surplus entries are evicted
      * LRU-style.
@@ -55,44 +55,40 @@ object LrrFileListCache : Cacheable {
 
     private val lru = LruCache<String, Entry>(MAX_ENTRIES)
 
-    private fun keyFor(profileId: Long, arcid: String): String = "$profileId|$arcid"
+    // Trim a trailing slash so "http://h:3000" and "http://h:3000/" — both
+    // valid resolveSourceBaseUrl outputs — map to the same cache key.
+    private fun keyFor(serverUrl: String, arcid: String): String =
+        "${serverUrl.trimEnd('/')}|$arcid"
 
     /**
-     * Look up the cached file list for [arcid] under the active
-     * server profile. Returns null on miss or expiry.
+     * Look up the cached file list for [arcid] on [serverUrl]. Returns
+     * null on miss or expiry.
      */
-    fun get(arcid: String): Array<String>? {
-        val profileId = LRRAuthManager.getActiveProfileId()
-        val key = keyFor(profileId, arcid)
+    fun get(serverUrl: String, arcid: String): Array<String>? {
+        val key = keyFor(serverUrl, arcid)
         val entry = synchronized(lru) { lru.get(key) }
         if (entry == null) {
-            Log.i(TAG, "[WARM] fileList MISS empty arcid=$arcid profile=$profileId")
             return null
         }
         if (System.currentTimeMillis() - entry.storedAt > TTL_MS) {
             synchronized(lru) { lru.remove(key) }
-            Log.i(TAG, "[WARM] fileList MISS expired arcid=$arcid profile=$profileId")
             return null
         }
-        Log.i(TAG, "[WARM] fileList HIT arcid=$arcid profile=$profileId pages=${entry.pages.size}")
         return entry.pages
     }
 
-    /** Store [pages] for [arcid] under the active server profile. */
-    fun put(arcid: String, pages: Array<String>) {
-        val profileId = LRRAuthManager.getActiveProfileId()
-        val key = keyFor(profileId, arcid)
+    /** Store [pages] for [arcid] on [serverUrl]. */
+    fun put(serverUrl: String, arcid: String, pages: Array<String>) {
+        val key = keyFor(serverUrl, arcid)
         synchronized(lru) { lru.put(key, Entry(pages, System.currentTimeMillis())) }
-        Log.i(TAG, "[WARM] fileList store arcid=$arcid profile=$profileId pages=${pages.size}")
     }
 
     /**
      * Remove a single arcid from the cache. Use after a server-side
      * mutation (re-extract / delete) the caller already knows about.
      */
-    fun invalidate(arcid: String) {
-        val profileId = LRRAuthManager.getActiveProfileId()
-        val key = keyFor(profileId, arcid)
+    fun invalidate(serverUrl: String, arcid: String) {
+        val key = keyFor(serverUrl, arcid)
         synchronized(lru) { lru.remove(key) }
     }
 
