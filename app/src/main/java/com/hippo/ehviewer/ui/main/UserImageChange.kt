@@ -23,7 +23,9 @@ import android.widget.PopupWindow
 import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
+import androidx.lifecycle.lifecycleScope
 import com.hippo.content.FileProvider
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.callBack.ImageChangeCallBack
@@ -35,13 +37,16 @@ import com.hippo.util.FileUtils
 import com.hippo.util.PermissionRequester
 import com.hippo.widget.AvatarImageView
 import com.yalantis.ucrop.UCrop
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 
 class UserImageChange(
-    private val activity: Activity,
+    private val activity: ComponentActivity,
     private val dialogType: Int,
     private val layoutInflater: LayoutInflater,
     private val rootLayoutInflater: LayoutInflater,
@@ -250,38 +255,51 @@ class UserImageChange(
         val resultUri = UCrop.getOutput(data) ?: return
         val croppedPath = resultUri.path ?: return
 
-        // Copy cropped file to persistent filesDir to avoid cache cleanup issues
+        // Copy cropped file to persistent filesDir to avoid cache cleanup issues.
+        // Copy + decode are disk work — run them off the main thread;
+        // lifecycleScope drops the UI update if the Activity is gone.
         val persistentName = if (dialogType == CHANGE_AVATAR) "avatar_image.jpg" else "background_image.jpg"
         val persistentFile = File(activity.filesDir, persistentName)
         val croppedFile = File(croppedPath)
 
-        try {
-            copyFile(croppedFile, persistentFile)
-        } catch (e: IOException) {
-            Toast.makeText(activity, activity.getString(R.string.error_save_image), Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        // Delete old saved image (only if it's different from the new persistent file)
-        val oldFile = AppearanceSettings.getUserImageFile(key)
-        if (oldFile != null && oldFile.absolutePath != persistentFile.absolutePath) {
-            oldFile.delete()
-        }
-
-        AppearanceSettings.saveFilePath(key, persistentFile.absolutePath)
-        if (dialogType == CHANGE_BACKGROUND) {
-            imageChangeCallBack.backgroundSourceChange(persistentFile)
-        } else if (avatar != null) {
-            avatar.setImageBitmap(ImageDecodeUtils.decodeSampledBitmap(persistentFile.absolutePath))
+        activity.lifecycleScope.launch {
+            val saved = withContext(Dispatchers.IO) {
+                try {
+                    copyFile(croppedFile, persistentFile)
+                    // Delete old saved image (only if it's different from the new persistent file)
+                    val oldFile = AppearanceSettings.getUserImageFile(key)
+                    if (oldFile != null && oldFile.absolutePath != persistentFile.absolutePath) {
+                        oldFile.delete()
+                    }
+                    AppearanceSettings.saveFilePath(key, persistentFile.absolutePath)
+                    true
+                } catch (e: IOException) {
+                    false
+                }
+            }
+            if (!saved) {
+                Toast.makeText(activity, activity.getString(R.string.error_save_image), Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            if (dialogType == CHANGE_BACKGROUND) {
+                imageChangeCallBack.backgroundSourceChange(persistentFile)
+            } else if (avatar != null) {
+                val bitmap = withContext(Dispatchers.IO) {
+                    ImageDecodeUtils.decodeSampledBitmap(persistentFile.absolutePath)
+                }
+                avatar.setImageBitmap(bitmap)
+            }
         }
     }
 
     private fun resetToDefault() {
         popupWindow?.dismiss()
 
-        // Delete saved image file
+        // Read the stored path before clearing it, then unlink off-main.
         val oldFile = AppearanceSettings.getUserImageFile(key)
-        oldFile?.delete()
+        activity.lifecycleScope.launch(Dispatchers.IO) {
+            oldFile?.delete()
+        }
 
         // Clear saved path
         AppearanceSettings.saveFilePath(key, "")
@@ -301,12 +319,44 @@ class UserImageChange(
         AppearanceSettings.saveFilePath(key, output.path)
         if (dialogType == CHANGE_BACKGROUND) {
             imageChangeCallBack.backgroundSourceChange(File(output.path))
-        } else {
-            avatar?.setImageBitmap(ImageDecodeUtils.decodeSampledBitmap(output.path))
+        } else if (avatar != null) {
+            // Decode off the main thread; set on main when ready.
+            activity.lifecycleScope.launch {
+                val bitmap = withContext(Dispatchers.IO) {
+                    ImageDecodeUtils.decodeSampledBitmap(output.path)
+                }
+                avatar.setImageBitmap(bitmap)
+            }
         }
     }
 
     private fun saveImageFromAlbum(data: Intent, avatar: AvatarImageView?) {
+        // Path resolution hits the ContentResolver and saveImage copies the
+        // file — both are disk work, so run them off the main thread.
+        activity.lifecycleScope.launch {
+            val imagePath = try {
+                withContext(Dispatchers.IO) { resolveAlbumImagePath(data) }
+            } catch (e: NumberFormatException) {
+                e.printStackTrace()
+                Toast.makeText(
+                    activity,
+                    activity.getString(R.string.error_cant_get_image),
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@launch
+            }
+            // 根据图片路径显示图片
+            saveImage(imagePath, avatar)
+        }
+    }
+
+    /**
+     * Resolve the picked album [data] to a filesystem path. Queries the
+     * ContentResolver — call from a background dispatcher. Throws
+     * [NumberFormatException] for a malformed downloads-document id (the
+     * caller surfaces it as a toast).
+     */
+    private fun resolveAlbumImagePath(data: Intent): String? {
         var imagePath: String? = null
         val uri = data.data
         if (DocumentsContract.isDocumentUri(activity, uri)) {
@@ -319,20 +369,11 @@ class UserImageChange(
                 val selection = MediaStore.Images.Media._ID + "=" + id
                 imagePath = getImagePath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, selection)
             } else if ("com.android.providers.downloads.documents" == uri.authority) {
-                try {
-                    val contentUri = ContentUris.withAppendedId(
-                        "content: //downloads/public_downloads".toUri(),
-                        docId.toLong()
-                    )
-                    imagePath = getImagePath(contentUri, null)
-                } catch (e: NumberFormatException) {
-                    e.printStackTrace()
-                    Toast.makeText(
-                        activity,
-                        activity.getString(R.string.error_cant_get_image),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+                val contentUri = ContentUris.withAppendedId(
+                    "content: //downloads/public_downloads".toUri(),
+                    docId.toLong()
+                )
+                imagePath = getImagePath(contentUri, null)
             }
         } else {
             checkNotNull(uri)
@@ -344,34 +385,36 @@ class UserImageChange(
                 imagePath = uri.path
             }
         }
-        // 根据图片路径显示图片
-        saveImage(imagePath, avatar)
+        return imagePath
     }
 
-    private fun saveImage(imagePath: String?, avatar: AvatarImageView?) {
+    private suspend fun saveImage(imagePath: String?, avatar: AvatarImageView?) {
         if (imagePath == null) {
             return
         }
 
-        val oldFile = AppearanceSettings.getUserImageFile(key)
-        oldFile?.delete()
+        val wantBitmap = dialogType != CHANGE_BACKGROUND && avatar != null
+        val (newImagePath, bitmap) = withContext(Dispatchers.IO) {
+            val oldFile = AppearanceSettings.getUserImageFile(key)
+            oldFile?.delete()
 
-        val newFile = File(imagePath)
-        val toFile = File(activity.externalCacheDir, newFile.name)
-        if (!toFile.exists()) {
-            try {
-                toFile.createNewFile()
-            } catch (ioException: IOException) {
-                ioException.printStackTrace()
+            val newFile = File(imagePath)
+            val toFile = File(activity.externalCacheDir, newFile.name)
+            if (!toFile.exists()) {
+                try {
+                    toFile.createNewFile()
+                } catch (ioException: IOException) {
+                    ioException.printStackTrace()
+                }
             }
+            FileUtils.copyFile(newFile, toFile)
+            AppearanceSettings.saveFilePath(key, toFile.path)
+            toFile.path to if (wantBitmap) ImageDecodeUtils.decodeSampledBitmap(toFile.path) else null
         }
-        FileUtils.copyFile(newFile, toFile)
-        val newImagePath = toFile.path
-        AppearanceSettings.saveFilePath(key, newImagePath)
         if (dialogType == CHANGE_BACKGROUND) {
             imageChangeCallBack.backgroundSourceChange(File(newImagePath))
         } else {
-            avatar?.setImageBitmap(ImageDecodeUtils.decodeSampledBitmap(toFile.path))
+            avatar?.setImageBitmap(bitmap)
         }
     }
 
