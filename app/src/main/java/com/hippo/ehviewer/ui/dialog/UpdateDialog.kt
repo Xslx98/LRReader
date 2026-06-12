@@ -116,10 +116,11 @@ object UpdateDialog {
             showDownloadFailedDialog(activity, release)
             return
         }
-        val scope = (activity as? AppCompatActivity)?.lifecycleScope ?: run {
+        val lifecycleOwner = activity as? AppCompatActivity ?: run {
             Analytics.recordException(IllegalStateException("UpdateDialog requires AppCompatActivity for download"))
             return
         }
+        val scope = lifecycleOwner.lifecycleScope
 
         val progressView = LayoutInflater.from(activity)
             .inflate(R.layout.dialog_update_progress, null, false)
@@ -157,6 +158,22 @@ object UpdateDialog {
             }
         }
         progressDialog.setOnCancelListener { job.cancel() }
+
+        // The dialog is attached to this Activity's window; a config change
+        // (rotation) or finish destroys the Activity and cancels the download
+        // job via lifecycleScope, but the AlertDialog would otherwise be left
+        // showing → leaked window. Dismiss it on destroy, and drop the
+        // observer once the dialog goes away so it isn't pinned.
+        val dismissOnDestroy = object : DefaultLifecycleObserver {
+            override fun onDestroy(owner: LifecycleOwner) {
+                if (progressDialog.isShowing) progressDialog.dismiss()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(dismissOnDestroy)
+        progressDialog.setOnDismissListener {
+            lifecycleOwner.lifecycle.removeObserver(dismissOnDestroy)
+        }
+
         progressDialog.show()
     }
 
