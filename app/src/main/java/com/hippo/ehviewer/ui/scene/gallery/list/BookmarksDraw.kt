@@ -2,6 +2,7 @@ package com.hippo.ehviewer.ui.scene.gallery.list
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -52,7 +53,14 @@ class BookmarksDraw(
         toolbar.inflateMenu(R.menu.drawer_gallery_list)
 
         ServiceRegistry.coroutineModule.ioScope.launch {
-            val quickSearchList = ServiceRegistry.dataModule.quickSearchRepository.getAll()
+            val quickSearchList = try {
+                ServiceRegistry.dataModule.quickSearchRepository.getAll()
+            } catch (e: Exception) {
+                // Red line: a DB launch must handle its own exceptions rather
+                // than fire-and-forget. On failure the drawer stays empty.
+                Log.e(TAG, "Failed to load quick searches for bookmarks drawer", e)
+                return@launch
+            }
             // tag translation updates are persisted on IO thread
             val judge = AppearanceSettings.getShowTagTranslations()
             val toUpdate = mutableListOf<QuickSearch>()
@@ -74,7 +82,13 @@ class BookmarksDraw(
                 }
             }
             if (toUpdate.isNotEmpty()) {
-                for (qs in toUpdate) ServiceRegistry.dataModule.quickSearchRepository.update(qs)
+                try {
+                    for (qs in toUpdate) ServiceRegistry.dataModule.quickSearchRepository.update(qs)
+                } catch (e: Exception) {
+                    // Non-fatal: the list still renders with translated names in
+                    // memory even if persisting them failed.
+                    Log.e(TAG, "Failed to persist quick-search tag translations", e)
+                }
             }
 
             val list = quickSearchList
@@ -151,6 +165,7 @@ class BookmarksDraw(
     }
 
     companion object {
+        private const val TAG = "BookmarksDraw"
         private const val QUICK_SEARCH_DRAW_SCROLL_Y = "QuickSearchDrawScrollY"
         private const val QUICK_SEARCH_DRAW_SCROLL_POS = "QuickSearchDrawScrollPos"
     }
