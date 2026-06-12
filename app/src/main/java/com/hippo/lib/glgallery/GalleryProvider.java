@@ -175,12 +175,18 @@ public abstract class GalleryProvider {
 
     private void notify(@NotifyTask.Type int type, int index, float percent, ImageWrapper image, String error) {
         Listener listener = mListener;
-        if (listener == null) {
-            return;
-        }
-
         GLRoot glRoot = mGLRoot;
-        if (glRoot == null) {
+        if (listener == null || glRoot == null) {
+            // The provider is being torn down (listener/GLRoot already cleared)
+            // yet an in-flight decode still completed. A successful animated
+            // page is never retained by mImageCache (see ImageCache.add), so if
+            // we drop the notification here nothing will ever recycle its
+            // native image. Release it to free the underlying Image. Non-
+            // animated pages are owned by the cache and must NOT be released.
+            if (type == NotifyTask.TYPE_SUCCEED && image != null
+                    && Boolean.TRUE.equals(image.getAnimated())) {
+                image.release();
+            }
             return;
         }
 
