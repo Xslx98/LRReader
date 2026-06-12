@@ -10,7 +10,6 @@
 package com.lanraragi.reader.client.api
 
 import android.util.LruCache
-import com.hippo.ehviewer.module.Cacheable
 
 /**
  * In-memory LRU cache for LANraragi `GET /api/archives/:id/files`
@@ -32,13 +31,15 @@ import com.hippo.ehviewer.module.Cacheable
  * handoff without inheriting that whole problem.
  *
  * **Lifetime:**
- * Cleared on profile switch via [Cacheable.clearCache] (registered
- * in [com.hippo.ehviewer.module.ClientModule]). Entries also expire
- * after [TTL_MS] — long enough to bridge "open detail → tap read"
- * but short enough that an out-of-band server change recovers
- * within minutes without manual intervention.
+ * Bounded by [TTL_MS] expiry plus the LRU cap — long enough to bridge
+ * "open detail → tap read", short enough that an out-of-band server
+ * change recovers within minutes without manual intervention.
+ * Deliberately NOT registered as a profile-switch Cacheable: entries
+ * are keyed by server URL, so they stay valid across switches, and
+ * wiping them would discard exactly the cross-profile warm hits the
+ * server-keying enables.
  */
-object LrrFileListCache : Cacheable {
+object LrrFileListCache {
 
     /** TTL for cached entries. */
     private const val TTL_MS: Long = 30 * 60 * 1000L // 30 minutes
@@ -83,16 +84,4 @@ object LrrFileListCache : Cacheable {
         synchronized(lru) { lru.put(key, Entry(pages, System.currentTimeMillis())) }
     }
 
-    /**
-     * Remove a single arcid from the cache. Use after a server-side
-     * mutation (re-extract / delete) the caller already knows about.
-     */
-    fun invalidate(serverUrl: String, arcid: String) {
-        val key = keyFor(serverUrl, arcid)
-        synchronized(lru) { lru.remove(key) }
-    }
-
-    override fun clearCache() {
-        synchronized(lru) { lru.evictAll() }
-    }
 }
