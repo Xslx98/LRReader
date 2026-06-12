@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.DownloadSettings
+import com.lanraragi.reader.client.api.toHexLower
 import com.hippo.ehviewer.callBack.DownloadSearchCallback
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.util.FileUtils
@@ -562,9 +563,9 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
 
     /** Stable 40-hex id (SHA-1 of the source URI) for a locally imported archive. */
     private fun syntheticArcidFor(uri: Uri): String {
-        val bytes = java.security.MessageDigest.getInstance("SHA-1")
+        return java.security.MessageDigest.getInstance("SHA-1")
             .digest(uri.toString().toByteArray(Charsets.UTF_8))
-        return bytes.joinToString("") { "%02x".format(it) }
+            .toHexLower()
     }
 
     // -------------------------------------------------------------------------

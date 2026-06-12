@@ -349,7 +349,7 @@ object LRRArchiveApi {
             digest.update(buffer, 0, read)
             remaining -= read
         }
-        return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xFF) }
+        return digest.digest().toHexLower()
     }
 
     /**
@@ -367,7 +367,7 @@ object LRRArchiveApi {
                 digest.update(buffer, 0, read)
             }
         }
-        return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xFF) }
+        return digest.digest().toHexLower()
     }
 
     /**
