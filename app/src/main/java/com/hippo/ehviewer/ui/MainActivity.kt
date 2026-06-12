@@ -21,6 +21,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.ClipboardManager
 import android.util.Log
+import com.hippo.ehviewer.BuildConfig
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -649,10 +650,15 @@ class MainActivity : StageActivity(),
         // Clean up previous resources
         cleanupBackgroundResources()
 
-        if (file != null) {
-            val name = file.name
-            val ns = name.split("\\.".toRegex())
-            if (ns[1] == "gif" || ns[1] == "GIF") {
+        if (file == null) return
+
+        try {
+            // substringAfterLast (not split[1]) so a dotless filename — older
+            // builds persisted the MediaStore display name verbatim — yields
+            // "" instead of throwing IndexOutOfBounds. A crash here would loop
+            // on every cold start because the bad path lives in SharedPreferences.
+            val ext = file.name.substringAfterLast('.', "").lowercase()
+            if (ext == "gif") {
                 val gif = GifHandler(file.absolutePath)
                 gifHandler = gif
                 val width = gif.width
@@ -664,6 +670,16 @@ class MainActivity : StageActivity(),
                 backgroundBit = decodeSampledBitmap(file.path)
                 mHeaderBackground?.setImageBitmap(backgroundBit)
             }
+        } catch (e: Exception) {
+            // Corrupt / unreadable image: drop the saved path so the next
+            // launch starts clean instead of crash-looping, and fall back
+            // to the default background.
+            if (BuildConfig.DEBUG) {
+                Log.w(TAG, "Background image load failed for ${file.name}: ${e.message}")
+            }
+            cleanupBackgroundResources()
+            AppearanceSettings.saveFilePath(AppearanceSettings.USER_BACKGROUND_IMAGE, null)
+            mHeaderBackground?.setImageResource(R.drawable.sadpanda_low_poly)
         }
     }
 
