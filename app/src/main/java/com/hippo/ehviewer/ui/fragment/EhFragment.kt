@@ -47,11 +47,11 @@ class EhFragment : BasePreferenceFragmentCompat(),
             requireActivity().setResult(Activity.RESULT_OK)
             return true
         } else if (AppearanceSettings.KEY_THEME_AUTO_SWITCH == key && java.lang.Boolean.TRUE == newValue) {
-            if (AppearanceSettings.getDarkModeStatus(requireContext())) {
-                AppearanceSettings.putTheme(AppearanceSettings.THEME_DARK)
-            } else {
-                AppearanceSettings.putTheme(AppearanceSettings.THEME_LIGHT)
-            }
+            // Preserves a currently-selected BLACK (the old code stomped it
+            // with DARK whenever the system was dark at enable time).
+            AppearanceSettings.syncThemeWithSystem(
+                AppearanceSettings.getDarkModeStatus(requireContext())
+            )
             (requireActivity().application as EhApplication).recreate()
             return true
         }

@@ -41,6 +41,49 @@ object AppearanceSettings {
     @JvmStatic
     fun isThemeAutoSwitchAvailable(): Boolean = Settings.getBoolean(KEY_THEME_AUTO_SWITCH, false)
 
+    // --- Dark theme variant ---
+    // Which dark theme (THEME_DARK or THEME_BLACK) auto-switch restores when
+    // the system turns dark. Without it, every dark transition hardcoded
+    // THEME_DARK and a chosen BLACK was permanently lost after one
+    // light/dark round trip.
+    const val KEY_DARK_THEME_VARIANT = "dark_theme_variant"
+
+    @JvmStatic
+    fun getDarkThemeVariant(): Int = Settings.getIntFromStr(KEY_DARK_THEME_VARIANT, THEME_DARK)
+
+    @JvmStatic
+    fun putDarkThemeVariant(theme: Int) = Settings.putIntToStr(KEY_DARK_THEME_VARIANT, theme)
+
+    /**
+     * Mirror the system dark mode into the app theme, preserving the user's
+     * chosen dark variant (DARK vs BLACK) across light/dark round trips.
+     * Shared by cold start ([com.hippo.ehviewer.Settings.initialize]), the
+     * runtime uiMode change (EhActivity.onConfigurationChanged), and enabling
+     * the auto-switch preference — previously three diverging copies, each of
+     * which hardcoded THEME_DARK on the dark transition.
+     *
+     * @return true when the persisted theme changed (caller should recreate).
+     */
+    @JvmStatic
+    fun syncThemeWithSystem(isSystemDark: Boolean): Boolean {
+        val theme = getTheme()
+        val isAppDark = theme != THEME_LIGHT
+        if (isSystemDark == isAppDark) {
+            // Already on the right side. Capture a manually-chosen dark
+            // variant so the next dark transition restores it.
+            if (isAppDark) putDarkThemeVariant(theme)
+            return false
+        }
+        if (isSystemDark) {
+            putTheme(getDarkThemeVariant())
+        } else {
+            // theme is a dark variant here — remember it before going light.
+            putDarkThemeVariant(theme)
+            putTheme(THEME_LIGHT)
+        }
+        return true
+    }
+
     // --- Gallery Site ---
     const val KEY_GALLERY_SITE = "gallery_site"
     private const val DEFAULT_GALLERY_SITE = 0
