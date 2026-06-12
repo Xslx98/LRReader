@@ -8,6 +8,7 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LrrFileListCache
+import com.lanraragi.reader.client.api.resolvePageUrl
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.hippo.lib.glgallery.GalleryProvider
 import com.hippo.lib.image.Image
@@ -171,11 +172,9 @@ class LRRGalleryProvider(
         // Prepare cache directory (handles .nomedia and LRU access timestamp)
         cacheDir = ReaderPageCache.ensureCacheDir(context, arcId)
 
-        // Create shared OkHttpClient with longer timeout for page downloads
-        val baseClient = ServiceRegistry.networkModule.okHttpClient
-        pageClient = baseClient.newBuilder()
-            .readTimeout(30, TimeUnit.SECONDS)
-            .build()
+        // Shared page-streaming client (no call cap, no HTTP cache) — see
+        // INetworkModule.pageStreamClient for the rationale.
+        pageClient = ServiceRegistry.networkModule.pageStreamClient
 
         // Load page list and metadata on background threads
         providerScope?.launch {
@@ -222,9 +221,9 @@ class LRRGalleryProvider(
                 // cancellation race here.
                 val pagesDeferred = async {
                     try {
-                        LrrFileListCache.get(arcId) ?: run {
+                        LrrFileListCache.get(serverUrl, arcId) ?: run {
                             val fetched = LRRArchiveApi.getFileList(client, serverUrl, arcId)
-                            LrrFileListCache.put(arcId, fetched)
+                            LrrFileListCache.put(serverUrl, arcId, fetched)
                             fetched
                         }
                     } catch (e: CancellationException) {
@@ -450,9 +449,11 @@ class LRRGalleryProvider(
      */
     override fun putScrollFraction(fraction: Float) {
         val clamped = fraction.coerceIn(0f, 1f)
-        // Pass NULL for "absent" instead of 0f so the column stays
-        // distinguishable from "user explicitly scrolled to 0".
-        // Storing 0 wastes a row but is harmless either way.
+        // Reject 0 (same guard as DirGalleryProvider): a 0 written on an early
+        // exit — before the first fill publishes a real fraction, or before the
+        // async restore applies — would otherwise clobber a previously saved
+        // mid-page position back to the top.
+        if (clamped == 0f) return
         ServiceRegistry.coroutineModule.ioScope.launch {
             try {
                 ServiceRegistry.dataModule.historyRepository
@@ -595,7 +596,7 @@ class LRRGalleryProvider(
             if (index >= paths.size) {
                 throw IOException("Page index $index out of bounds (size=${paths.size})")
             }
-            val pageUrl = serverUrl + paths[index]
+            val pageUrl = resolvePageUrl(serverUrl, paths[index])
             val currentPageClient = pageClient
                 ?: ServiceRegistry.networkModule.okHttpClient
 

@@ -281,7 +281,6 @@
     <string name="settings_download">Download</string>
     <string name="settings_download_download_location">Downloadziel</string>
     <string name="settings_download_invalid_download_location">Ungültiges Downloadziel</string>
-    <string name="settings_download_cant_get_download_location">Downloadziel konnte nicht geladen werden</string>
     <string name="settings_download_media_scan">Medienscan erlauben</string>
     <string name="settings_download_media_scan_summary_on">Du solltest deine Galerie-Apps verstecken</string>
     <string name="settings_download_media_scan_summary_off">Meisten Galerie-Apps ignorieren die Bilder im Downloadpfad</string>
@@ -396,7 +395,6 @@
     <!--  侧滑栏头像和背景修改  -->
     <string name="take_a_photograph">Foto aufnehmen</string>
     <string name="choose_from_the_album">Aus Album wählen</string>
-    <string name="request_camera_permission">LR Reader wird Zugriff auf die Gerätekamera anfordern, um Fotos aufzunehmen. Möchtest du autorisieren?</string>
     <string name="request_storage_permission">LR Reader wird Zugriff auf das Fotoalbum des Geräts anfordern, um Bilder zu erhalten. Möchtest du autorisieren?</string>
 
     <!-- 下载通知   -->

@@ -3,8 +3,10 @@ package com.hippo.ehviewer.updater
 import android.content.Context
 import com.hippo.ehviewer.ServiceRegistry
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
 import okhttp3.Call
@@ -67,7 +69,10 @@ object ApkDownloader {
      *   cancellation: awaitClose → call.cancel() + delete partial file.
      */
     fun download(url: String, dest: File): Flow<DownloadProgress> = callbackFlow {
-        val client = ServiceRegistry.networkModule.okHttpClient
+        // The whole APK (15-25 MB) streams inside this single call; the shared
+        // large-file client has no call cap so a slow link can't abort it
+        // mid-stream (see INetworkModule.largeFileClient).
+        val client = ServiceRegistry.networkModule.largeFileClient
         val request = Request.Builder().url(url).build()
         val call = client.newCall(request)
         // Tracks whether we reached Success cleanly. Read from awaitClose to decide whether
@@ -143,7 +148,15 @@ object ApkDownloader {
                 runCatching { dest.delete() }
             }
         }
-    }.flowOn(Dispatchers.IO)
+    }
+        // Fuses into the callbackFlow's channel: with unlimited capacity every
+        // trySend succeeds while the channel is open, so neither the terminal
+        // Success/Failed event nor an InProgress tick can be dropped by a slow
+        // consumer, and the OkHttp dispatcher thread never blocks on
+        // backpressure. Worst case is ~100 small InProgress objects for a
+        // 25 MB APK at the 256 KB emit interval.
+        .buffer(Channel.UNLIMITED)
+        .flowOn(Dispatchers.IO)
 
     private const val BUFFER_SIZE = 8 * 1024              // 8 KB read buffer
     private const val EMIT_INTERVAL_BYTES = 256 * 1024L   // emit InProgress every 256 KB

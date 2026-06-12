@@ -72,10 +72,10 @@ class ServerListViewModel : ViewModel() {
         data class EditSaved(val position: Int, val updated: ServerProfile) : ServerListUiEvent
 
         /** Connection test failed during edit — Scene re-enables button. */
-        data class EditConnectionFailed(val message: String) : ServerListUiEvent
+        data class EditConnectionFailed(val cause: Exception) : ServerListUiEvent
 
         /** Connection test failed during add — Scene re-enables button, auth is restored. */
-        data class AddConnectionFailed(val message: String) : ServerListUiEvent
+        data class AddConnectionFailed(val cause: Exception) : ServerListUiEvent
     }
 
     // -------------------------------------------------------------------------
@@ -105,15 +105,10 @@ class ServerListViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    profileRepository.deactivateAll()
-                    profileRepository.update(
-                        ServerProfile(
-                            id = profile.id,
-                            name = profile.name,
-                            url = profile.url,
-                            isActive = true
-                        )
-                    )
+                    // Single atomic statement: flips IS_ACTIVE for the chosen profile and
+                    // clears it for all others without a window where none is active. Other
+                    // columns (name/url/allowCleartext) are untouched and thus preserved.
+                    profileRepository.activateExclusive(profile.id)
                 }
                 // Scene handles LRRAuthManager update, cache clearing, DM reload, and navigation
                 _uiEvent.emit(ServerListUiEvent.ProfileActivated(profile))
@@ -208,7 +203,7 @@ class ServerListViewModel : ViewModel() {
                     override fun onFailure(error: Exception) {
                         restoreActiveAuth(oldUrl, oldKey)
                         _uiEvent.tryEmit(
-                            ServerListUiEvent.EditConnectionFailed(error.message ?: "Unknown error")
+                            ServerListUiEvent.EditConnectionFailed(error)
                         )
                     }
                 }
@@ -239,13 +234,14 @@ class ServerListViewModel : ViewModel() {
         newKey: String,
         usedHttpFallback: Boolean
     ) {
-        val isHttpUrl = resolvedUrl.lowercase().startsWith("http://")
+        // Preserve the user's existing cleartext choice; only force it on when this edit
+        // actually went through an HTTP fallback (which implies the user confirmed it).
         val updated = ServerProfile(
             id = profile.id,
             name = newName,
             url = resolvedUrl,
             isActive = profile.isActive,
-            allowCleartext = if (isHttpUrl) true else true
+            allowCleartext = if (usedHttpFallback) true else profile.allowCleartext
         )
         val isActive = profile.isActive
         viewModelScope.launch {
@@ -341,7 +337,7 @@ class ServerListViewModel : ViewModel() {
                             Log.w(TAG, "Restore auth after connection failure", e)
                         }
                         _uiEvent.tryEmit(
-                            ServerListUiEvent.AddConnectionFailed(error.message ?: "Unknown error")
+                            ServerListUiEvent.AddConnectionFailed(error)
                         )
                     }
                 }

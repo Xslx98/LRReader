@@ -118,10 +118,17 @@ class LRRCategoriesScene : BaseScene() {
             }
         }
 
-        // Observe loading state
+        // Observe loading state. When the load finishes we must re-evaluate empty vs list
+        // here, not only in the categories collector: a server with zero categories emits
+        // emptyList() which StateFlow dedupes against the initial emptyList(), so the
+        // categories collector never re-runs and the spinner would otherwise spin forever.
         collectFlow(viewLifecycleOwner, viewModel.isLoading) { loading ->
             if (loading) {
                 showProgress()
+            } else if (mCategories.isEmpty()) {
+                showEmpty(getString(R.string.lrr_categories_empty))
+            } else {
+                showList()
             }
         }
 

@@ -8,12 +8,14 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.OrphanProfileException
+import com.lanraragi.reader.client.api.resolvePageUrl
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.ehviewer.spider.SpiderQueen
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -34,7 +36,6 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.util.UUID
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -75,7 +76,20 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
 
     private val networkMonitor get() = ServiceRegistry.networkModule.networkMonitor
 
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    // The handler is the worker's last line of containment: start()'s
+    // `catch (e: Exception)` already swallows worker failures, but a Throwable
+    // that is NOT an Exception (NotImplementedError, AssertionError, …) would
+    // escape the catch and — with no handler on this private scope — reach the
+    // process default handler, crashing the app in production and poisoning
+    // kotlinx-coroutines-test's global exception collector in unit tests
+    // (UncaughtExceptionsBeforeTest on an unrelated later test). Mirrors the
+    // CoroutineModule scopes, which all carry a handler.
+    private val scope = CoroutineScope(
+        Dispatchers.IO + SupervisorJob() +
+            CoroutineExceptionHandler { _, t ->
+                Log.e(TAG, "Uncaught throwable in download worker scope", t)
+            }
+    )
 
     private var job: Job? = null
 
@@ -136,15 +150,9 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         }
 
         val client = ServiceRegistry.networkModule.okHttpClient
-        // Dedicated client for page body GETs:
-        //  - 30 s read timeout (large archives may need on-the-fly extraction)
-        //  - .cache(null): page responses are not HTTP-cacheable and we are
-        //    writing to disk ourselves; skipping the shared 200 MB http_cache
-        //    avoids pointless cache-layer bookkeeping per request
-        val pageClient = client.newBuilder()
-            .readTimeout(30, TimeUnit.SECONDS)
-            .cache(null)
-            .build()
+        // Shared page-streaming client (no call cap, no HTTP cache) — see
+        // INetworkModule.pageStreamClient for the rationale.
+        val pageClient = ServiceRegistry.networkModule.pageStreamClient
 
         // Step 1: Extract archive to get page list. Retry across network outages
         // (bounded by waitBudget); genuine failures (non-network) stop the download.
@@ -329,7 +337,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         index: Int,
         total: Int
     ) {
-        val pageUrl = serverUrl + pagePath
+        val pageUrl = resolvePageUrl(serverUrl, pagePath)
         val request = Request.Builder()
             .url(pageUrl)
             .get()

@@ -132,13 +132,13 @@ class PageThumbnailsViewModel : ViewModel() {
                 )
                 currentBaseUrl = baseUrl
 
-                // Best-effort warm path. LrrFileListCache is keyed by
-                // the *active* profile so this only hits when active ==
-                // source — a strict subset of the safe cross-server
-                // case. We always fall through to a fresh fetch on miss.
-                val cached = LrrFileListCache.get(arcid)
+                // Best-effort warm path. LrrFileListCache is keyed by the
+                // source server URL, so a cross-server read hits the entry
+                // stored for that server (not the active profile's). We
+                // always fall through to a fresh fetch on miss.
+                val cached = LrrFileListCache.get(baseUrl, arcid)
                 val pages = cached ?: LRRArchiveApi.getFileList(client, baseUrl, arcid).also {
-                    LrrFileListCache.put(arcid, it)
+                    LrrFileListCache.put(baseUrl, arcid, it)
                 }
 
                 // Race-guard: if the user navigated away (resetForNewEntry

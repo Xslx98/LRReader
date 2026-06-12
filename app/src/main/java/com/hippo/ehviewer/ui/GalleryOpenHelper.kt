@@ -78,7 +78,7 @@ object GalleryOpenHelper {
             // consumeDecodedPage call has a chance of hitting before the
             // user sees the loading placeholder.
             UniFile.fromFile(downloadDir)?.let { uniFile ->
-                Log.i(TAG, "[WARM] openHelper DIR trigger arcid=${archive.arcid}")
+                if (BuildConfig.DEBUG) Log.i(TAG, "[WARM] openHelper DIR trigger arcid=${archive.arcid}")
                 // Pass the explicit start page (thumbnail tap) so the warm
                 // decodes the page the reader will actually open on.
                 ReaderPageCache.warmDir(context, archive.arcid, uniFile, startPage)
@@ -117,7 +117,7 @@ object GalleryOpenHelper {
                 } else {
                     (archive.progress - 1).coerceAtLeast(0)
                 }
-                Log.i(TAG, "[WARM] openHelper LRR trigger arcid=${archive.arcid} page=$warmupPage")
+                if (BuildConfig.DEBUG) Log.i(TAG, "[WARM] openHelper LRR trigger arcid=${archive.arcid} page=$warmupPage")
                 ReaderPageCache.preloadForDetail(context, archive.arcid, serverUrl, warmupPage)
             }
         }

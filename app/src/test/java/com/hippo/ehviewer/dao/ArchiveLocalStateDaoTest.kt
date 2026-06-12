@@ -31,6 +31,9 @@ import org.robolectric.annotation.Config
     sdk = [30],
     application = android.app.Application::class
 )
+// dao.upsert() is @Deprecated for production (REPLACE wipes sibling columns)
+// but is the right primitive for seeding fresh, distinct rows in these tests.
+@Suppress("DEPRECATION")
 class ArchiveLocalStateDaoTest {
 
     private lateinit var db: AppDatabase
@@ -154,6 +157,26 @@ class ArchiveLocalStateDaoTest {
     }
 
     @Test
+    fun resetTransientDownloadStates_clearsWaitAndDownloadOnly() = runTest {
+        dao.upsert(row("waiting", downloadState = DownloadState.WAIT, downloadTime = 1L))
+        dao.upsert(row("active", downloadState = DownloadState.DOWNLOAD, downloadTime = 2L))
+        dao.upsert(row("done", downloadState = DownloadState.FINISH, downloadTime = 3L))
+        dao.upsert(row("failed", downloadState = DownloadState.FAILED, downloadTime = 4L))
+        dao.upsert(row("nonez", downloadState = DownloadState.NONE, downloadTime = 5L))
+        dao.upsert(row("history", historyTime = 6L)) // not a download
+
+        dao.resetTransientDownloadStates()
+
+        assertEquals(DownloadState.NONE, dao.loadByArcid("waiting")!!.downloadState)
+        assertEquals(DownloadState.NONE, dao.loadByArcid("active")!!.downloadState)
+        assertEquals(DownloadState.FINISH, dao.loadByArcid("done")!!.downloadState)
+        assertEquals(DownloadState.FAILED, dao.loadByArcid("failed")!!.downloadState)
+        assertEquals(DownloadState.NONE, dao.loadByArcid("nonez")!!.downloadState)
+        // A history-only row has no download state; the reset must not give it one.
+        assertNull(dao.loadByArcid("history")!!.downloadState)
+    }
+
+    @Test
     fun observeAllDownloads_emitsOnInsert() = runTest {
         // Initial empty state
         val initial = dao.observeAllDownloads().first()
@@ -164,5 +187,46 @@ class ArchiveLocalStateDaoTest {
         val afterInsert = dao.observeAllDownloads().first()
         assertEquals(1, afterInsert.size)
         assertEquals("d-1", afterInsert[0].arcid)
+    }
+
+    // ── DB-3 short-term mitigation: download owns SERVER_PROFILE_ID ──
+
+    @Test
+    fun updateHistoryFields_keepsDownloadOwnedServerProfileId() = runTest {
+        dao.upsert(row("mirror", serverProfileId = 7L, downloadState = DownloadState.FINISH, downloadTime = 1L))
+
+        // Reading the mirror copy through profile 9 records history but
+        // must not re-home the profile-7 download.
+        dao.insertOrIgnoreHistory("mirror", 9L, """{"arcid":"mirror","v":2}""", 2000L, 0)
+        dao.updateHistoryFields("mirror", 9L, """{"arcid":"mirror","v":2}""", 2000L, 0)
+
+        val loaded = dao.loadByArcid("mirror")!!
+        assertEquals(7L, loaded.serverProfileId)
+        assertEquals(2000L, loaded.historyTime)
+        assertEquals("""{"arcid":"mirror","v":2}""", loaded.archiveJson)
+    }
+
+    @Test
+    fun updateHistoryFields_reHomesRowWithoutDownload() = runTest {
+        dao.upsert(row("h-row", serverProfileId = 7L, historyTime = 1000L))
+
+        dao.insertOrIgnoreHistory("h-row", 9L, """{"arcid":"h-row"}""", 2000L, 0)
+        dao.updateHistoryFields("h-row", 9L, """{"arcid":"h-row"}""", 2000L, 0)
+
+        val loaded = dao.loadByArcid("h-row")!!
+        assertEquals(9L, loaded.serverProfileId)
+        assertEquals(2000L, loaded.historyTime)
+    }
+
+    @Test
+    fun updateFavoriteFields_keepsDownloadOwnedServerProfileId() = runTest {
+        dao.upsert(row("mirror-f", serverProfileId = 7L, downloadState = DownloadState.FINISH, downloadTime = 1L))
+
+        dao.insertOrIgnoreFavorite("mirror-f", 9L, """{"arcid":"mirror-f"}""", 3000L)
+        dao.updateFavoriteFields("mirror-f", 9L, """{"arcid":"mirror-f"}""", 3000L)
+
+        val loaded = dao.loadByArcid("mirror-f")!!
+        assertEquals(7L, loaded.serverProfileId)
+        assertEquals(3000L, loaded.favoriteTime)
     }
 }

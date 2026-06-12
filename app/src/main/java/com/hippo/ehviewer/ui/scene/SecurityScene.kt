@@ -145,7 +145,12 @@ class SecurityScene : SolidScene(),
         // page. Successful-unlock paths consume the intent in
         // dismissAfterUnlock before calling finish(), so this is a no-op
         // in the happy path.
-        if (isRelockMode) {
+        //
+        // Skip on a configuration change (rotation): the scene is being
+        // recreated, not dismissed, so consuming here would discard the
+        // resume intent and strand the user away from the reader after they
+        // unlock the re-created prompt.
+        if (isRelockMode && activity?.isChangingConfigurations != true) {
             AppLockGate.consumeResumeIntent()
         }
     }

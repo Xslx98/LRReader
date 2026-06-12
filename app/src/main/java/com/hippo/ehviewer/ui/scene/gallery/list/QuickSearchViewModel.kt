@@ -75,20 +75,26 @@ class QuickSearchViewModel : ViewModel() {
     // -------------------------------------------------------------------------
 
     /**
-     * Deletes a quick search entry from the database and removes it from the
-     * in-memory list.
+     * Deletes a quick search entry. The in-memory list is updated
+     * synchronously (optimistically, like [moveQuickSearch]); the Scene's
+     * DiffUtil collector turns the emission into the removal notification.
+     * On DB failure the list is reloaded from Room so the optimistic removal
+     * is rolled back and the UI stays consistent with what actually persisted.
      */
     fun deleteQuickSearch(quickSearch: QuickSearch) {
+        _quickSearches.value = _quickSearches.value.filter { it.id != quickSearch.id }
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) { ServiceRegistry.dataModule.quickSearchRepository.delete(quickSearch) }
-                _quickSearches.value = _quickSearches.value.filter { it.id != quickSearch.id }
                 _uiEvent.tryEmit(QuickSearchUiEvent.Deleted(quickSearch))
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to delete quick search", e)
                 _uiEvent.tryEmit(
                     QuickSearchUiEvent.ShowError("Failed to delete quick search")
                 )
+                // Reconcile: the row is still in the DB — reload so it
+                // reappears instead of leaving UI and DB diverged.
+                loadQuickSearches()
             }
         }
     }

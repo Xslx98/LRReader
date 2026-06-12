@@ -45,6 +45,8 @@ import com.hippo.util.ExceptionUtils
 import com.hippo.yorozuya.IOUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
@@ -57,28 +59,6 @@ class DownloadFragment : PreferenceFragmentCompat(),
     Preference.OnPreferenceClickListener {
 
     private var mDownloadLocation: Preference? = null
-
-    private val openDirLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode != Activity.RESULT_OK) return@registerForActivityResult
-        val treeUri = result.data?.data ?: return@registerForActivityResult
-        requireActivity().contentResolver.takePersistableUriPermission(
-            treeUri,
-            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-        )
-        val uniFile = UniFile.fromTreeUri(activity, treeUri)
-        if (uniFile != null) {
-            DownloadSettings.putDownloadLocation(uniFile)
-            onUpdateDownloadLocation()
-        } else {
-            Toast.makeText(
-                activity,
-                R.string.settings_download_cant_get_download_location,
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-    }
 
     private val importFileLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -101,7 +81,9 @@ class DownloadFragment : PreferenceFragmentCompat(),
 
         mediaScan?.onPreferenceChangeListener = this
 
-        mDownloadLocation?.onPreferenceClickListener = this
+        // Downloads are written with java.io.File and must live in app file:// storage,
+        // so the location is fixed (no SAF tree picker). Show it as a read-only summary.
+        mDownloadLocation?.isSelectable = false
         exportDownloadItems?.onPreferenceClickListener = this
         importDownloadItems?.onPreferenceClickListener = this
         cleanInvalidDownload?.onPreferenceClickListener = this
@@ -126,10 +108,6 @@ class DownloadFragment : PreferenceFragmentCompat(),
     override fun onPreferenceClick(preference: Preference): Boolean {
         val key = preference.key
         when (key) {
-            KEY_DOWNLOAD_LOCATION -> {
-                openDirPickerL()
-                return true
-            }
             KEY_EXPORT_DOWNLOAD_ITEMS -> {
                 exportDownloadItems()
                 return true
@@ -151,16 +129,6 @@ class DownloadFragment : PreferenceFragmentCompat(),
         return false
     }
 
-    private fun openDirPickerL() {
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-        try {
-            openDirLauncher.launch(intent)
-        } catch (e: Throwable) {
-            ExceptionUtils.throwIfFatal(e)
-            Toast.makeText(activity, R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
-        }
-    }
-
     private fun exportDownloadItems() {
         val list = ServiceRegistry.dataModule.downloadManager.downloadInfoList
         if (list.isEmpty()) {
@@ -177,28 +145,34 @@ class DownloadFragment : PreferenceFragmentCompat(),
         val sdf = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US)
         val fileName = "lrreader-download-${sdf.format(Date())}.csv"
 
-        val file = dir.createFile(fileName)
-        if (file == null) {
-            Toast.makeText(activity, R.string.settings_download_export_failed, Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        try {
-            file.openOutputStream().use { os ->
-                os.write(DownloadManager.DOWNLOAD_INFO_HEADER.toByteArray(StandardCharsets.UTF_8))
-                for (gi in list) {
-                    // 20-column wire format defined in EntitySerializer; kept stable so
-                    // CSV files exported by older versions still import via archiveFromCsvLine().
-                    os.write(gi.toCSV().toByteArray(StandardCharsets.UTF_8))
+        // Creating the file and streaming the whole list out can be slow for a
+        // large download list — do the IO off the main thread, report on main.
+        viewLifecycleOwner.lifecycleScope.launch {
+            val savedUri = withContext(Dispatchers.IO) {
+                try {
+                    val file = dir.createFile(fileName) ?: return@withContext null
+                    file.openOutputStream().use { os ->
+                        os.write(DownloadManager.DOWNLOAD_INFO_HEADER.toByteArray(StandardCharsets.UTF_8))
+                        for (gi in list) {
+                            // 20-column wire format defined in EntitySerializer; kept stable so
+                            // CSV files exported by older versions still import via archiveFromCsvLine().
+                            os.write(gi.toCSV().toByteArray(StandardCharsets.UTF_8))
+                        }
+                    }
+                    file.uri.toString()
+                } catch (e: IOException) {
+                    null
                 }
             }
-            Toast.makeText(
-                activity,
-                getString(R.string.settings_download_export_succeed, file.uri.toString()),
-                Toast.LENGTH_SHORT
-            ).show()
-        } catch (e: IOException) {
-            Toast.makeText(activity, R.string.settings_download_export_failed, Toast.LENGTH_SHORT).show()
+            if (savedUri != null) {
+                Toast.makeText(
+                    activity,
+                    getString(R.string.settings_download_export_succeed, savedUri),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                Toast.makeText(activity, R.string.settings_download_export_failed, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -246,33 +220,44 @@ class DownloadFragment : PreferenceFragmentCompat(),
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             var importCount = 0
             try {
-                requireActivity().contentResolver.openInputStream(uri)?.use { inputStream ->
+                // Parse the CSV on IO; the file read is the only IO work here.
+                val archives = requireActivity().contentResolver.openInputStream(uri)?.use { inputStream ->
                     val content = IOUtils.readString(inputStream, StandardCharsets.UTF_8.name())
-                    val lines = content.split("\n")
-                    val archives = lines.mapNotNull { line ->
+                    content.split("\n").mapNotNull { line ->
                         if (line.startsWith(DownloadManager.DOWNLOAD_INFO_HEADER)) {
                             null
                         } else {
                             archiveFromCsvLine(line)
                         }
                     }
+                }
+                if (archives == null) {
+                    mainHandler.post { dismissAndShowResult(dialog, 0) }
+                    return@launch
+                }
 
-                    val downloadManager = ServiceRegistry.dataModule.downloadManager
-                    val total = archives.size
-                    mainHandler.post { dialog.max = total; dialog.progress = 0 }
-
+                // DownloadManager / DownloadRepository require main-thread access; the
+                // facade calls persist asynchronously, so this stays cheap on the UI thread.
+                val downloadManager = ServiceRegistry.dataModule.downloadManager
+                importCount = withContext(Dispatchers.Main) {
+                    dialog.max = archives.size
+                    dialog.progress = 0
+                    var count = 0
                     for (i in archives.indices) {
                         val archive = archives[i]
                         if (downloadManager.getDownloadInfo(archive.arcid) == null) {
                             downloadManager.addDownload(archive, null)
-                            importCount++
+                            count++
                         }
-                        val progress = i + 1
-                        mainHandler.post { dialog.progress = progress }
+                        dialog.progress = i + 1
+                        // Re-dispatch between rows: without this the whole loop
+                        // is one uninterrupted main-thread block, the progress
+                        // bar never repaints, and a multi-thousand-row CSV
+                        // risks an ANR. (The manager calls themselves must
+                        // stay on the main thread — assertMainThread.)
+                        yield()
                     }
-                } ?: run {
-                    mainHandler.post { dismissAndShowResult(dialog, 0) }
-                    return@launch
+                    count
                 }
             } catch (e: IOException) {
                 // importCount stays 0
@@ -334,8 +319,6 @@ class DownloadFragment : PreferenceFragmentCompat(),
             val total = files.size
             mainHandler.post { dialog.max = total; dialog.progress = 0 }
 
-            val downloadManager = ServiceRegistry.dataModule.downloadManager
-
             for (i in files.indices) {
                 val dir = files[i]
                 val progress = i + 1
@@ -371,11 +354,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
                         // SpiderInfo v2: line[3] = arcid
                         val arcid = if (contentLines.size > 3) contentLines[3].trim() else null
                         if (!arcid.isNullOrEmpty()) {
-                            val gi = downloadManager.getDownloadInfo(arcid)
-                            if (gi != null) {
-                                gi.state = DownloadState.NONE
-                                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(gi)
-                            }
+                            resetDownloadStateToNone(arcid)
                         }
                         continue
                     }
@@ -402,11 +381,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
                         // SpiderInfo v2: line[3] = arcid
                         val arcid = if (contentLines.size > 3) contentLines[3].trim() else null
                         if (!arcid.isNullOrEmpty()) {
-                            val gi = downloadManager.getDownloadInfo(arcid)
-                            if (gi != null) {
-                                gi.state = DownloadState.NONE
-                                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(gi)
-                            }
+                            resetDownloadStateToNone(arcid)
                         }
                     }
                 } catch (e: IOException) {
@@ -425,6 +400,19 @@ class DownloadFragment : PreferenceFragmentCompat(),
             val resultCount = invalidCount
             mainHandler.post { dismissAndShowCleanResult(dialog, resultCount) }
         }
+    }
+
+    /**
+     * Resets a download row to [DownloadState.NONE]. The in-memory DownloadManager
+     * lookup/mutation must happen on the main thread (DownloadRepository asserts it);
+     * the Room write is a suspend call that hops to IO on its own.
+     */
+    private suspend fun resetDownloadStateToNone(arcid: String) {
+        val gi = withContext(Dispatchers.Main) {
+            ServiceRegistry.dataModule.downloadManager.getDownloadInfo(arcid)
+                ?.also { it.state = DownloadState.NONE }
+        } ?: return
+        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(gi)
     }
 
     @Suppress("DEPRECATION")

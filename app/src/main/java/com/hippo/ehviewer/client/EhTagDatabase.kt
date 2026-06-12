@@ -345,7 +345,10 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
                         }
                     }
 
-                    val client = ServiceRegistry.networkModule.okHttpClient
+                    // The translation DB files are multi-MB; the shared
+                    // large-file client has no call cap so a slow link can't
+                    // abort the download mid-stream (see INetworkModule).
+                    val client = ServiceRegistry.networkModule.largeFileClient
 
                     // Save new sha1
                     val tempSha1File = File(dir, "$sha1Name.tmp")

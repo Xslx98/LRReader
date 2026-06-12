@@ -42,4 +42,9 @@ interface MiscRoomDao {
 
     @Query("UPDATE SERVER_PROFILES SET IS_ACTIVE = 0")
     suspend fun deactivateAllProfiles()
+
+    /** Atomically make [id] the sole active profile — avoids the deactivate-then-activate
+     *  window where a crash could leave zero (or two) active profiles. */
+    @Query("UPDATE SERVER_PROFILES SET IS_ACTIVE = CASE WHEN ID = :id THEN 1 ELSE 0 END")
+    suspend fun setActiveProfileExclusive(id: Long)
 }

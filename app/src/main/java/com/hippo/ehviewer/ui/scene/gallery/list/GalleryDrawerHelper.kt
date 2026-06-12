@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.DialogInterface
 import android.os.Bundle
 import android.text.TextUtils
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -76,7 +77,10 @@ class GalleryDrawerHelper(private val callback: Callback) {
 
     @SuppressLint("RtlHardcoded", "NonConstantResourceId")
     private fun bookmarksViewBuild(inflater: LayoutInflater): View {
-        val context = callback.getHostContext() ?: return View(null)
+        // If the host context is gone, return a harmless empty View backed by
+        // the inflater's context — never `View(null)`, whose null Context NPEs
+        // the moment the ViewPager tries to measure/lay it out.
+        val context = callback.getHostContext() ?: return View(inflater.context)
         mBookmarksDraw = BookmarksDraw(context, inflater, callback.getEhTags())
         return mBookmarksDraw!!.onCreate(callback.getScene())
     }
@@ -180,7 +184,15 @@ class GalleryDrawerHelper(private val callback: Callback) {
             }
             val activity = callback.getHostActivity()
             ServiceRegistry.coroutineModule.ioScope.launch {
-                ServiceRegistry.dataModule.quickSearchRepository.insert(quickSearch)
+                try {
+                    ServiceRegistry.dataModule.quickSearchRepository.insert(quickSearch)
+                } catch (e: Exception) {
+                    // Red line: a DB launch must handle its own exceptions. On
+                    // failure don't touch the UI list so it stays in sync with
+                    // what actually persisted.
+                    Log.e(TAG, "Failed to add quick search", e)
+                    return@launch
+                }
                 activity?.runOnUiThread {
                     @Suppress("UNCHECKED_CAST")
                     (list as MutableList<QuickSearch>).add(quickSearch)
@@ -197,5 +209,9 @@ class GalleryDrawerHelper(private val callback: Callback) {
                 }
             }
         }
+    }
+
+    companion object {
+        private const val TAG = "GalleryDrawerHelper"
     }
 }

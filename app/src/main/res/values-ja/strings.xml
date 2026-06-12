@@ -312,7 +312,6 @@
     <string name="settings_download">ダウンロード</string>
     <string name="settings_download_download_location">ダウンロードパス</string>
     <string name="settings_download_invalid_download_location">無効なダウンロードパス</string>
-    <string name="settings_download_cant_get_download_location">ダウンロードパスを取得できません</string>
     <string name="settings_download_media_scan">メディアスキャンを許可する</string>
     <string name="settings_download_media_scan_summary_on">ギャラリーアプリを他人に見せないでください</string>
     <string name="settings_download_media_scan_summary_off">ほとんどのギャラリーアプリはダウンロードパスの内容を表示しません</string>
@@ -410,7 +409,6 @@
     <!--  侧滑栏头像和背景修改  -->
     <string name="take_a_photograph">写真を撮る</string>
     <string name="choose_from_the_album">アルバムから選択</string>
-    <string name="request_camera_permission">LR Reader は写真を撮影するためにカメラのアクセスを要求します。許可しますか？</string>
     <string name="request_storage_permission">LR Reader は写真を取得するためにデバイスのフォトアルバムへのアクセスを要求します。許可しますか？</string>
     <!-- 下载通知   -->
     <!--  订阅服务  -->

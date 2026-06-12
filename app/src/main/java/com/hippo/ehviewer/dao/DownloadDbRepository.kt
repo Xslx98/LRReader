@@ -7,6 +7,7 @@ import com.hippo.ehviewer.mapper.toArchiveJson
 import com.hippo.ehviewer.mapper.toDownloadInfoView
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 /**
@@ -62,6 +63,16 @@ class DownloadDbRepository(
     }
 
     /**
+     * Persist the boot-time reset of transient WAIT/DOWNLOAD rows to NONE so the
+     * Room-Flow-driven download list (which reads raw rows) agrees with the in-memory
+     * normalization in [getAllDownloadInfo]. Call once at process start only — at
+     * runtime those states are real.
+     */
+    suspend fun resetTransientDownloadStates() {
+        archiveLocalStateDao.resetTransientDownloadStates()
+    }
+
+    /**
      * Returns a [Flow] that emits the current download list whenever
      * the persisted download fields change. The adapter to memory
      * views is applied on each emission.
@@ -76,7 +87,14 @@ class DownloadDbRepository(
      * the "empty list after switch" symptom.
      */
     fun observeDownloads(): Flow<List<DownloadInfo>> {
+        // ARCHIVE_LOCAL_STATE is shared with history/favorites, so a write to
+        // any subsystem invalidates this Room query and re-emits — even when
+        // the download rows are byte-for-byte identical. Drop those duplicate
+        // emissions before the per-row archive_json decode (O(N) JSON parse):
+        // ArchiveLocalState is a data class, so distinctUntilChanged compares
+        // the projected download rows by value.
         return archiveLocalStateDao.observeAllDownloads()
+            .distinctUntilChanged()
             .map { rows -> rows.map { it.toDownloadInfoView() } }
     }
 
@@ -181,7 +199,28 @@ class DownloadDbRepository(
      * (history / favorite) on a pre-existing row stay untouched.
      */
     private suspend fun upsertDownloadSubsystem(downloadInfo: DownloadInfo) {
-        val archiveJson = downloadInfo.toArchive().toArchiveJson()
+        // Merge into any existing archive_json instead of overwriting it with the lossy
+        // DownloadInfo.toArchive() (which zeroes pagecount/progress/summary and drops tag
+        // namespaces). The row is shared with history/favorites and pagecount<=0 makes
+        // GalleryOpenHelper treat a partial download as "complete" — wholesale rewriting
+        // it on every state transition is what regressed truncated local reads. Overlay
+        // only the display fields the DownloadInfo actually owns.
+        val existing = archiveLocalStateDao.loadByArcid(downloadInfo.arcid)
+        val archiveJson = if (existing != null) {
+            // Keep the stored value when the in-memory DownloadInfo has no
+            // better one: a corrupt-json boot fallback or a legacy import
+            // carries a blank title/thumb, and overlaying "" here would blank
+            // the good values a later history/detail write already repaired.
+            val existingArchive = existing.toArchive()
+            existingArchive.copy(
+                title = downloadInfo.title?.takeUnless { it.isBlank() } ?: existingArchive.title,
+                thumbnailUrl = downloadInfo.thumb?.takeUnless { it.isBlank() } ?: existingArchive.thumbnailUrl,
+                rating = downloadInfo.rating,
+                serverProfileId = downloadInfo.serverProfileId,
+            ).toArchiveJson()
+        } else {
+            downloadInfo.toArchive().toArchiveJson()
+        }
         archiveLocalStateDao.insertOrIgnoreDownload(
             arcid = downloadInfo.arcid,
             serverProfileId = downloadInfo.serverProfileId,

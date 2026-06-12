@@ -386,6 +386,7 @@ class PagerLayoutManager extends GalleryView.LayoutManager {
                 adapter.bind(mPrevious, index - 1);
             } else if (mPrevious != null && index == 0) {
                 removePage(mPrevious);
+                mPrevious = null;
             }
             if (mNext == null && index < size - 1) {
                 mNext = obtainPage();
@@ -393,6 +394,7 @@ class PagerLayoutManager extends GalleryView.LayoutManager {
                 adapter.bind(mNext, index + 1);
             } else if (mNext != null && index == size - 1) {
                 removePage(mNext);
+                mNext = null;
             }
 
             GalleryPageView leftPage = getLeftPage();

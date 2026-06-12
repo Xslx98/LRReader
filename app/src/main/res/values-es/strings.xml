@@ -326,7 +326,6 @@
     <string name="settings_download">Descargas</string>
     <string name="settings_download_download_location">Ruta de descargas</string>
     <string name="settings_download_invalid_download_location">Ruta de descarga invalida</string>
-    <string name="settings_download_cant_get_download_location">No se puede obtener ruta de descargas</string>
     <string name="settings_download_media_scan">Permitir escaneo de medios</string>
     <string name="settings_download_media_scan_summary_on">Por favor oculte sus aplicaciones de galería de otras personas</string>
     <string name="settings_download_media_scan_summary_off">La mayoría de las aplicaciones de galería ignorarán las imágenes en la ruta de descarga</string>
@@ -471,7 +470,6 @@
     <!--  侧滑栏头像和背景修改  -->
     <string name="take_a_photograph">Tomar una fotografía</string>
     <string name="choose_from_the_album">Elegir del álbum</string>
-    <string name="request_camera_permission">LR Reader solicitará acceso a la cámara del dispositivo para tomar fotografías. ¿Le gustaría autorizar?</string>
     <string name="request_storage_permission">LR Reader solicitará acceso al álbum de fotos del dispositivo para obtener imágenes. ¿Le gustaría autorizar?</string>
     <!-- 下载通知   -->
     <string name="have_new_version">Haga clic para ver la nueva versión de la galería</string>

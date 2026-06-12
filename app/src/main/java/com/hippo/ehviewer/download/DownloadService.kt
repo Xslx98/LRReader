@@ -104,17 +104,38 @@ class DownloadService : Service(), DownloadListener {
     }
 
     private var CHANNEL_ID: String? = null
+    private var COMPLETE_CHANNEL_ID: String? = null
+
+    /**
+     * True once this service instance has entered the foreground. Lets
+     * onStartCommand skip the placeholder notification on later commands —
+     * re-posting it over the live progress notification caused a visible
+     * flicker on every START/STOP command.
+     */
+    private var isForeground = false
 
     override fun onCreate() {
         super.onCreate()
 
         CHANNEL_ID = "$packageName.download"
+        COMPLETE_CHANNEL_ID = "$packageName.download.complete"
         mNotifyManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Ongoing progress (foreground service) stays IMPORTANCE_LOW — a
+            // persistent bar should be silent and non-intrusive.
             mNotifyManager?.createNotificationChannel(
                 NotificationChannel(
                     CHANNEL_ID, getString(R.string.download_service),
                     NotificationManager.IMPORTANCE_LOW
+                )
+            )
+            // Terminal events (download finished / 509 rate-limited) go on a
+            // separate IMPORTANCE_DEFAULT channel so they get a sound and a
+            // heads-up instead of silently joining the LOW progress channel.
+            mNotifyManager?.createNotificationChannel(
+                NotificationChannel(
+                    COMPLETE_CHANNEL_ID, getString(R.string.stat_download_done_title),
+                    NotificationManager.IMPORTANCE_DEFAULT
                 )
             )
         }
@@ -165,7 +186,11 @@ class DownloadService : Service(), DownloadListener {
      */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // 1. Satisfy the foreground-service ANR window before anything else.
-        startForegroundPlaceholder()
+        //    Skip if we're already foreground — re-posting the placeholder over
+        //    the live progress notification flickers it on every command.
+        if (!isForeground) {
+            startForegroundPlaceholder()
+        }
 
         // 2. Await init off the main thread, then hand the intent back to
         //    main-thread handleIntent which is where the DownloadManager
@@ -185,6 +210,19 @@ class DownloadService : Service(), DownloadListener {
                         Log.e(TAG, "Unexpected NPE in handleIntent — intent=$intent", e)
                     }
                 }
+            }
+        } else {
+            // START_STICKY restart with a null intent: the in-memory download queue did
+            // not survive process death, so there is nothing to resume. Await init then
+            // stop, otherwise the placeholder foreground notification and the CPU/Wi-Fi
+            // wakelocks (acquired in onCreate) would be held indefinitely.
+            serviceScope.launch {
+                try {
+                    dm?.awaitInitAsync()
+                } catch (e: Exception) {
+                    Log.e(TAG, "awaitInitAsync failed on null-intent restart", e)
+                }
+                withContext(Dispatchers.Main) { checkStopSelf() }
             }
         }
         return START_STICKY
@@ -219,6 +257,7 @@ class DownloadService : Service(), DownloadListener {
             } else {
                 startForeground(ID_DOWNLOADING, notification)
             }
+            isForeground = true
         } catch (e: Exception) {
             Log.e(TAG, "startForeground(placeholder) failed", e)
         }
@@ -339,7 +378,7 @@ class DownloadService : Service(), DownloadListener {
             activityIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val channelId = CHANNEL_ID ?: return
+        val channelId = COMPLETE_CHANNEL_ID ?: return
         mDownloadedBuilder = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setLargeIcon(cachedLargeIcon)
@@ -360,7 +399,7 @@ class DownloadService : Service(), DownloadListener {
             return
         }
 
-        val channelId = CHANNEL_ID ?: return
+        val channelId = COMPLETE_CHANNEL_ID ?: return
         m509dBuilder = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(R.drawable.ic_stat_alert)
             .setLargeIcon(cachedLargeIcon)

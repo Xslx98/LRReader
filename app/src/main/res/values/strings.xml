@@ -449,7 +449,6 @@
     <string name="settings_download">Download</string>
     <string name="settings_download_download_location">Download location</string>
     <string name="settings_download_invalid_download_location">Invalid download location</string>
-    <string name="settings_download_cant_get_download_location">Can\'t get download location</string>
     <string name="settings_download_media_scan">Allow media scan</string>
     <string name="settings_download_media_scan_summary_on">Please hide your gallery apps away from other people</string>
     <string name="settings_download_media_scan_summary_off">Most gallery apps will ignore pictures in the download path</string>
@@ -587,7 +586,6 @@
     <string name="take_a_photograph">Take a photograph</string>
     <string name="choose_from_the_album">Choose from the album</string>
     <string name="reset_to_default">Reset to default</string>
-    <string name="request_camera_permission">LR Reader will request access to the device camera in order to take pictures. Would you like to authorize?</string>
     <string name="request_storage_permission">LR Reader will request access to the device\'s photo album in order to obtain pictures. Would you like to authorize?</string>
 
     <!-- 下载通知   -->
@@ -721,8 +719,8 @@
     <string name="lrr_no_static_categories">No static categories available</string>
     <string name="lrr_add_to_category">Add to category</string>
     <string name="lrr_menu_categories">Categories</string>
-    <string name="lrr_category_info_suffix"> etc.</string>
-    <string name="lrr_category_count_suffix"> categories</string>
+    <string name="lrr_category_info_suffix">" etc. "</string>
+    <string name="lrr_category_count_suffix">" categories"</string>
     <string name="lrr_category_updated_toast">Category updated</string>
     <string name="lrr_no_preview_tags">No preview tags</string>
     <string name="lrr_title_copied">Title copied</string>

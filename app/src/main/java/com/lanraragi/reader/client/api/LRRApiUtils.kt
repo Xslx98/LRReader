@@ -15,6 +15,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Response
 import java.io.IOException
+import javax.net.ssl.SSLException
 
 /**
  * Shared utilities for all LRR API classes.
@@ -31,6 +32,46 @@ internal fun parseBaseUrl(baseUrl: String): okhttp3.HttpUrl {
     return baseUrl.toHttpUrlOrNull()
         ?: throw IOException("Invalid server URL: $baseUrl")
 }
+
+/**
+ * Resolve a per-page link returned by the server against the configured
+ * [serverUrl]. LANraragi's documented page paths come in two shapes —
+ * absolute (`/api/archives/<id>/page?path=...`) and document-relative
+ * (`./api/...`, which the project's own test fixtures use). Both mean
+ * "relative to the server's mount root": the server does not know the
+ * external prefix when it is deployed behind a reverse proxy at a
+ * sub-path (e.g. `http://host/lanraragi`). A plain [okhttp3.HttpUrl.resolve]
+ * would therefore be wrong for both shapes — a root-absolute reference
+ * replaces the entire base path and `./` against a no-trailing-slash base
+ * drops its last segment, either way producing `http://host/api/...` and
+ * 404ing every page while the `addPathSegments`-built endpoints keep
+ * working. Instead, strip the `./`/`/` prefix and resolve against the
+ * base treated as a directory, which preserves the sub-path. An
+ * already-absolute URL passes through untouched. Resolution keeps the
+ * link's existing encoding (no re-encoding).
+ */
+internal fun resolvePageUrl(serverUrl: String, pagePath: String): String {
+    // Full absolute URL: pass through.
+    pagePath.toHttpUrlOrNull()?.let { return it.toString() }
+    val base = parseBaseUrl(serverUrl)
+    val relative = pagePath.removePrefix("./").removePrefix("/")
+    val baseDir = if (base.encodedPath.endsWith("/")) {
+        base
+    } else {
+        base.newBuilder().encodedPath(base.encodedPath + "/").build()
+    }
+    return baseDir.resolve(relative)?.toString()
+        ?: throw IOException("Cannot resolve page path '$pagePath' against $serverUrl")
+}
+
+/**
+ * Lowercase hex rendering shared by the SHA-1 fingerprint helpers
+ * ([LRRArchiveApi.computeArchiveId], [LRRArchiveApi.computeFileChecksum],
+ * the synthetic import arcid) — LANraragi ids/checksums are 40 lowercase
+ * hex chars.
+ */
+internal fun ByteArray.toHexLower(): String =
+    joinToString("") { "%02x".format(it.toInt() and 0xFF) }
 
 /** Shared Json instance with lenient parsing. */
 internal val lrrJson = Json { ignoreUnknownKeys = true }
@@ -176,6 +217,10 @@ fun friendlyError(context: Context, e: Exception): String {
         e is LRRMissingFieldException        -> context.getString(R.string.lrr_malformed_response)
         e is LRRPlaintextRefusedException    -> context.getString(R.string.lrr_plaintext_refused)
         e is java.net.SocketTimeoutException -> context.getString(R.string.lrr_timeout_error)
+        // OkHttp's callTimeout aborts with a bare InterruptedIOException("timeout"),
+        // not a SocketTimeoutException — map it to the same friendly message.
+        // (Must follow the SocketTimeoutException branch, which is a subclass.)
+        e is java.io.InterruptedIOException  -> context.getString(R.string.lrr_timeout_error)
         e is java.net.ConnectException       -> context.getString(R.string.lrr_connect_error_check)
         e is java.net.UnknownHostException   -> context.getString(R.string.lrr_dns_error)
         e is javax.net.ssl.SSLException      -> context.getString(R.string.lrr_ssl_error)
@@ -203,8 +248,9 @@ internal suspend fun <T> retryOnFailure(
         try {
             return block()
         } catch (e: IOException) {
-            // Client errors (4xx) are permanent — retrying cannot fix them.
-            if (e is LRRHttpException && e.code in 400..499) throw e
+            // Permanent failures (4xx, cleartext/plaintext policy refusals, TLS errors)
+            // cannot be fixed by retrying — fail fast instead of burning the backoff.
+            if (isPermanentFailure(e)) throw e
             lastException = e
             if (attempt < maxRetries) {
                 val delayMs = 500L * (1 shl attempt) // 500, 1000
@@ -214,4 +260,13 @@ internal suspend fun <T> retryOnFailure(
         }
     }
     throw lastException ?: IOException("Retry exhausted after ${maxRetries + 1} attempts")
+}
+
+/** IOExceptions that are deterministic policy/protocol failures — retrying is pointless. */
+private fun isPermanentFailure(e: IOException): Boolean = when {
+    e is LRRHttpException && e.code in 400..499 -> true
+    e is LRRCleartextRefusedException -> true
+    e is LRRPlaintextRefusedException -> true
+    e is SSLException -> true
+    else -> false
 }

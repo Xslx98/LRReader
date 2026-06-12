@@ -20,9 +20,9 @@ import com.hippo.ehviewer.dao.ProfileRepository
 import com.hippo.ehviewer.module.CoroutineModule
 import com.hippo.ehviewer.module.IDataModule
 import com.lanraragi.reader.client.api.LRRAuthManager
+import com.hippo.ehviewer.containedTestScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -64,7 +64,8 @@ class DownloadsViewModelTest {
         Settings.initialize(context)
         ServiceRegistry.initializeForTest(CoroutineModule())
 
-        testScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        // Handler-bearing scope: see containedTestScope's KDoc.
+        testScope = containedTestScope()
 
         LRRAuthManager.initialize(context)
         val method = LRRAuthManager::class.java.declaredMethods.first {

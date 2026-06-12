@@ -25,11 +25,14 @@ import android.text.TextUtils
 import android.util.Log
 import android.webkit.MimeTypeMap
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
+import com.hippo.content.FileProvider
 import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.gallery.GalleryProvider2
@@ -38,6 +41,9 @@ import com.hippo.ehviewer.settings.ReadingSettings
 import com.hippo.unifile.UniFile
 import com.hippo.util.ExceptionUtils
 import com.hippo.lib.yorozuya.IOUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -64,34 +70,49 @@ class GalleryImageOperations(private val mActivity: Activity) {
             Toast.makeText(mActivity, R.string.error_cant_create_temp_file, Toast.LENGTH_SHORT).show()
             return
         }
-        val file = provider.save(page, UniFile.fromFile(dir)!!, provider.getImageFilename(page))
-        if (file == null) {
-            Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
-            return
-        }
-        val filename = file.name
-        if (filename == null) {
-            Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
-            return
-        }
+        (mActivity as ComponentActivity).lifecycleScope.launch {
+            // Extracting/copying the page is file I/O — keep it off the main thread.
+            val file = withContext(Dispatchers.IO) {
+                provider.save(page, UniFile.fromFile(dir)!!, provider.getImageFilename(page))
+            }
+            val filename = file?.name
+            if (filename == null) {
+                Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
 
-        var mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(
-            MimeTypeMap.getFileExtensionFromUrl(filename)
-        )
-        if (TextUtils.isEmpty(mimeType)) {
-            mimeType = "image/jpeg"
-        }
+            var mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(
+                MimeTypeMap.getFileExtensionFromUrl(filename)
+            )
+            if (TextUtils.isEmpty(mimeType)) {
+                mimeType = "image/jpeg"
+            }
 
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            putExtra(Intent.EXTRA_STREAM, file.uri)
-            type = mimeType
-        }
+            // Hand the share target a readable content:// URI. A file:// URI into the app's
+            // external-files temp dir is unreadable to other apps on modern Android (and
+            // only avoided a FileUriExposedException via a StrictMode hack).
+            val uri = try {
+                val authority = mActivity.application.packageName + ".fileprovider"
+                FileProvider.getUriForFile(mActivity, authority, File(dir, filename))
+            } catch (e: IllegalArgumentException) {
+                Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
 
-        try {
-            mActivity.startActivity(Intent.createChooser(intent, mActivity.getString(R.string.share_image)))
-        } catch (e: Throwable) {
-            ExceptionUtils.throwIfFatal(e)
-            Toast.makeText(mActivity, R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                putExtra(Intent.EXTRA_STREAM, uri)
+                type = mimeType
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+
+            try {
+                mActivity.startActivity(
+                    Intent.createChooser(intent, mActivity.getString(R.string.share_image))
+                )
+            } catch (e: Throwable) {
+                ExceptionUtils.throwIfFatal(e)
+                Toast.makeText(mActivity, R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -105,76 +126,78 @@ class GalleryImageOperations(private val mActivity: Activity) {
             Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
             return
         }
-        val filename = provider.getImageFilename(page)
-        val tempFile = provider.save(page, UniFile.fromFile(cacheDir)!!, filename)
-        if (tempFile == null) {
-            Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        // Build display name with archive title prefix
-        val archiveTitle = archive?.title?.takeIf { it.isNotEmpty() }
-            ?.let { sanitizeFilename(it, 80) }
-            ?: "archive"
-        val displayName = archiveTitle + "_" + (filename ?: "page_$page")
-
-        // Determine MIME type
-        var mimeType: String? = null
-        if (filename != null) {
-            val ext = MimeTypeMap.getFileExtensionFromUrl(filename)
-            mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
-        }
-        if (TextUtils.isEmpty(mimeType)) {
-            mimeType = "image/jpeg"
-        }
-
-        // Insert into MediaStore (Pictures/LRReader album)
-        val values = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
-            put(MediaStore.Images.Media.MIME_TYPE, mimeType)
-            put(
-                MediaStore.Images.Media.RELATIVE_PATH,
-                Environment.DIRECTORY_PICTURES + "/LRReader"
-            )
-        }
-
-        val resolver = mActivity.contentResolver
-        val mediaUri = resolver.insert(
-            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values
-        )
-
-        if (mediaUri == null) {
-            Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
-            File(cacheDir, filename ?: "").delete()
-            return
-        }
-
-        // Copy temp file to MediaStore URI
-        var inputStream: java.io.InputStream? = null
-        var outputStream: java.io.OutputStream? = null
-        try {
-            inputStream = tempFile.openInputStream()
-            outputStream = resolver.openOutputStream(mediaUri)
-            if (inputStream != null && outputStream != null) {
-                IOUtils.copy(inputStream, outputStream)
+        (mActivity as ComponentActivity).lifecycleScope.launch {
+            val filename = provider.getImageFilename(page)
+            val tempFile = withContext(Dispatchers.IO) {
+                provider.save(page, UniFile.fromFile(cacheDir)!!, filename)
             }
-        } catch (e: IOException) {
-            Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
-            resolver.delete(mediaUri, null, null)
-            return
-        } finally {
-            IOUtils.closeQuietly(inputStream)
-            IOUtils.closeQuietly(outputStream)
+            if (tempFile == null) {
+                Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+
+            // Build display name with archive title prefix
+            val archiveTitle = archive?.title?.takeIf { it.isNotEmpty() }
+                ?.let { sanitizeFilename(it, 80) }
+                ?: "archive"
+            val displayName = archiveTitle + "_" + (filename ?: "page_$page")
+
+            // Determine MIME type
+            var mimeType: String? = null
+            if (filename != null) {
+                val ext = MimeTypeMap.getFileExtensionFromUrl(filename)
+                mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
+            }
+            if (TextUtils.isEmpty(mimeType)) {
+                mimeType = "image/jpeg"
+            }
+
+            // MediaStore insert + the full-file copy are I/O — run them off the main thread.
+            val saved = withContext(Dispatchers.IO) {
+                val values = ContentValues().apply {
+                    put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
+                    put(MediaStore.Images.Media.MIME_TYPE, mimeType)
+                    put(
+                        MediaStore.Images.Media.RELATIVE_PATH,
+                        Environment.DIRECTORY_PICTURES + "/LRReader"
+                    )
+                }
+                val resolver = mActivity.contentResolver
+                val mediaUri = resolver.insert(
+                    MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values
+                ) ?: run {
+                    File(cacheDir, filename ?: "").delete()
+                    return@withContext false
+                }
+                var copied = false
+                try {
+                    tempFile.openInputStream()?.use { input ->
+                        resolver.openOutputStream(mediaUri)?.use { output ->
+                            IOUtils.copy(input, output)
+                            copied = true
+                        }
+                    }
+                } catch (e: IOException) {
+                    Log.e(TAG, "Failed to copy image to MediaStore", e)
+                }
+                if (!copied) {
+                    resolver.delete(mediaUri, null, null)
+                    return@withContext false
+                }
+                tempFile.delete()
+                true
+            }
+
+            if (saved) {
+                Toast.makeText(
+                    mActivity,
+                    mActivity.getString(R.string.image_saved, "Pictures/LRReader/$displayName"),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
+            }
         }
-
-        // Clean up temp file
-        tempFile.delete()
-
-        Toast.makeText(
-            mActivity,
-            mActivity.getString(R.string.image_saved, "Pictures/LRReader/$displayName"),
-            Toast.LENGTH_SHORT
-        ).show()
     }
 
     // --- Save to user-chosen location (using ActivityResultLauncher) ---
@@ -182,27 +205,27 @@ class GalleryImageOperations(private val mActivity: Activity) {
     fun saveImageTo(page: Int) {
         val provider = galleryProvider ?: return
         val dir = mActivity.cacheDir
-        val file = provider.save(page, UniFile.fromFile(dir)!!, provider.getImageFilename(page))
-        if (file == null) {
-            Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
-            return
-        }
-        val filename = file.name
-        if (filename == null) {
-            Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
-            return
-        }
-        mCacheFileName = filename
-        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "image/*"
-            putExtra(Intent.EXTRA_TITLE, filename)
-        }
-        try {
-            saveToLauncher?.launch(intent)
-        } catch (e: Throwable) {
-            ExceptionUtils.throwIfFatal(e)
-            Toast.makeText(mActivity, R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
+        (mActivity as ComponentActivity).lifecycleScope.launch {
+            val file = withContext(Dispatchers.IO) {
+                provider.save(page, UniFile.fromFile(dir)!!, provider.getImageFilename(page))
+            }
+            val filename = file?.name
+            if (filename == null) {
+                Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            mCacheFileName = filename
+            val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "image/*"
+                putExtra(Intent.EXTRA_TITLE, filename)
+            }
+            try {
+                saveToLauncher?.launch(intent)
+            } catch (e: Throwable) {
+                ExceptionUtils.throwIfFatal(e)
+                Toast.makeText(mActivity, R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -218,44 +241,40 @@ class GalleryImageOperations(private val mActivity: Activity) {
         val filepath = mActivity.cacheDir.toString() + "/" + mCacheFileName
         val cacheFile = File(filepath)
 
-        var inputStream: java.io.InputStream? = null
-        var outputStream: java.io.OutputStream? = null
-        val resolver = mActivity.contentResolver
-
-        var success = false
-        try {
-            inputStream = FileInputStream(cacheFile)
-            outputStream = resolver.openOutputStream(uri)
-            if (outputStream != null) {
-                IOUtils.copy(inputStream, outputStream)
-                success = true
+        (mActivity as ComponentActivity).lifecycleScope.launch {
+            val success = withContext(Dispatchers.IO) {
+                var ok = false
+                try {
+                    FileInputStream(cacheFile).use { input ->
+                        mActivity.contentResolver.openOutputStream(uri)?.use { output ->
+                            IOUtils.copy(input, output)
+                            ok = true
+                        }
+                    }
+                } catch (e: IOException) {
+                    Log.e(TAG, "Failed to copy image to chosen location", e)
+                }
+                if (!cacheFile.delete()) {
+                    cacheFile.deleteOnExit()
+                }
+                ok
             }
-        } catch (e: IOException) {
-            Log.e(TAG, "Failed to copy image to chosen location", e)
-        } finally {
-            IOUtils.closeQuietly(inputStream)
-            IOUtils.closeQuietly(outputStream)
-        }
 
-        val deleted = cacheFile.delete()
-        if (!deleted) {
-            cacheFile.deleteOnExit()
-        }
+            // The copy can fail (destination unwritable, out of space, provider
+            // error). Don't claim success / trigger a media scan when nothing was
+            // written — that left users with a "saved" toast over an empty file.
+            if (!success) {
+                Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
 
-        // The copy can fail (destination unwritable, out of space, provider
-        // error). Don't claim success / trigger a media scan when nothing was
-        // written — that left users with a "saved" toast over an empty file.
-        if (!success) {
-            Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
-            return
+            Toast.makeText(
+                mActivity,
+                mActivity.getString(R.string.image_saved, uri.path),
+                Toast.LENGTH_SHORT
+            ).show()
+            mActivity.sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri))
         }
-
-        Toast.makeText(
-            mActivity,
-            mActivity.getString(R.string.image_saved, uri.path),
-            Toast.LENGTH_SHORT
-        ).show()
-        mActivity.sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri))
     }
 
     // --- Page dialog ---
