@@ -72,10 +72,10 @@ class ServerListViewModel : ViewModel() {
         data class EditSaved(val position: Int, val updated: ServerProfile) : ServerListUiEvent
 
         /** Connection test failed during edit — Scene re-enables button. */
-        data class EditConnectionFailed(val message: String) : ServerListUiEvent
+        data class EditConnectionFailed(val cause: Exception) : ServerListUiEvent
 
         /** Connection test failed during add — Scene re-enables button, auth is restored. */
-        data class AddConnectionFailed(val message: String) : ServerListUiEvent
+        data class AddConnectionFailed(val cause: Exception) : ServerListUiEvent
     }
 
     // -------------------------------------------------------------------------
@@ -203,7 +203,7 @@ class ServerListViewModel : ViewModel() {
                     override fun onFailure(error: Exception) {
                         restoreActiveAuth(oldUrl, oldKey)
                         _uiEvent.tryEmit(
-                            ServerListUiEvent.EditConnectionFailed(error.message ?: "Unknown error")
+                            ServerListUiEvent.EditConnectionFailed(error)
                         )
                     }
                 }
@@ -337,7 +337,7 @@ class ServerListViewModel : ViewModel() {
                             Log.w(TAG, "Restore auth after connection failure", e)
                         }
                         _uiEvent.tryEmit(
-                            ServerListUiEvent.AddConnectionFailed(error.message ?: "Unknown error")
+                            ServerListUiEvent.AddConnectionFailed(error)
                         )
                     }
                 }

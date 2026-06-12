@@ -171,7 +171,7 @@ class ServerListScene : BaseScene() {
                     ?.isEnabled = true
                 Toast.makeText(
                     ctx,
-                    getString(R.string.lrr_connection_failed, friendlyError(ctx, Exception(event.message))),
+                    getString(R.string.lrr_connection_failed, friendlyError(ctx, event.cause)),
                     Toast.LENGTH_LONG
                 ).show()
             }
@@ -182,7 +182,7 @@ class ServerListScene : BaseScene() {
                     ?.isEnabled = true
                 Toast.makeText(
                     ctx,
-                    getString(R.string.lrr_connection_failed, friendlyError(ctx, Exception(event.message))),
+                    getString(R.string.lrr_connection_failed, friendlyError(ctx, event.cause)),
                     Toast.LENGTH_LONG
                 ).show()
             }
