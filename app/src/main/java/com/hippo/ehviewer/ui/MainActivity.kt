@@ -95,7 +95,9 @@ import com.hippo.unifile.UniFile
 import com.hippo.util.BitmapUtils
 import com.hippo.util.GifHandler
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.hippo.widget.AvatarImageView
@@ -199,6 +201,9 @@ class MainActivity : StageActivity(),
 
     @JvmField
     var backgroundBit: Bitmap? = null
+
+    /** In-flight background-image decode; cancelled before starting another. */
+    private var backgroundLoadJob: Job? = null
 
     private val handlerB: Handler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
@@ -638,48 +643,56 @@ class MainActivity : StageActivity(),
         handlerB.removeCallbacksAndMessages(null)
         gifHandler?.close()
         gifHandler = null
-        backgroundBit?.let { bmp ->
-            if (!bmp.isRecycled) {
-                bmp.recycle()
-            }
-        }
+        // Don't recycle backgroundBit: now that decoding is async, this can run
+        // (on a new load) while the bitmap is still set on mHeaderBackground,
+        // and recycling a displayed bitmap crashes on the next draw. Drop the
+        // reference and let ART's GC reclaim the native allocation.
         backgroundBit = null
     }
 
     private fun initBackgroundImageData(file: File?) {
-        // Clean up previous resources
+        // Clean up previous resources + cancel any in-flight decode so a stale
+        // load can't stomp the new one.
+        backgroundLoadJob?.cancel()
         cleanupBackgroundResources()
 
         if (file == null) return
 
-        try {
-            // substringAfterLast (not split[1]) so a dotless filename — older
-            // builds persisted the MediaStore display name verbatim — yields
-            // "" instead of throwing IndexOutOfBounds. A crash here would loop
-            // on every cold start because the bad path lives in SharedPreferences.
-            val ext = file.name.substringAfterLast('.', "").lowercase()
-            if (ext == "gif") {
-                val gif = GifHandler(file.absolutePath)
-                gifHandler = gif
-                val width = gif.width
-                val height = gif.height
-                backgroundBit = createBitmap(width, height)
-                val nextFrame = gif.updateFrame(backgroundBit)
-                handlerB.sendEmptyMessageDelayed(1, nextFrame.toLong())
-            } else {
-                backgroundBit = decodeSampledBitmap(file.path)
-                mHeaderBackground?.setImageBitmap(backgroundBit)
+        // Decode off the main thread: this runs during cold-start onCreate and
+        // the background can be a full-screen image (or a GIF first frame).
+        // lifecycleScope cancels the job if the Activity is destroyed mid-decode.
+        backgroundLoadJob = lifecycleScope.launch {
+            try {
+                // substringAfterLast (not split[1]) so a dotless filename — older
+                // builds persisted the MediaStore display name verbatim — yields
+                // "" instead of throwing IndexOutOfBounds. A crash here would loop
+                // on every cold start because the bad path lives in SharedPreferences.
+                val ext = file.name.substringAfterLast('.', "").lowercase()
+                if (ext == "gif") {
+                    val gif = withContext(Dispatchers.IO) { GifHandler(file.absolutePath) }
+                    val bmp = createBitmap(gif.width, gif.height)
+                    val nextFrame = withContext(Dispatchers.IO) { gif.updateFrame(bmp) }
+                    gifHandler = gif
+                    backgroundBit = bmp
+                    handlerB.sendEmptyMessageDelayed(1, nextFrame.toLong())
+                } else {
+                    val bmp = withContext(Dispatchers.IO) { decodeSampledBitmap(file.path) }
+                    backgroundBit = bmp
+                    mHeaderBackground?.setImageBitmap(bmp)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Corrupt / unreadable image: drop the saved path so the next
+                // launch starts clean instead of crash-looping, and fall back
+                // to the default background.
+                if (BuildConfig.DEBUG) {
+                    Log.w(TAG, "Background image load failed for ${file.name}: ${e.message}")
+                }
+                cleanupBackgroundResources()
+                AppearanceSettings.saveFilePath(AppearanceSettings.USER_BACKGROUND_IMAGE, null)
+                mHeaderBackground?.setImageResource(R.drawable.sadpanda_low_poly)
             }
-        } catch (e: Exception) {
-            // Corrupt / unreadable image: drop the saved path so the next
-            // launch starts clean instead of crash-looping, and fall back
-            // to the default background.
-            if (BuildConfig.DEBUG) {
-                Log.w(TAG, "Background image load failed for ${file.name}: ${e.message}")
-            }
-            cleanupBackgroundResources()
-            AppearanceSettings.saveFilePath(AppearanceSettings.USER_BACKGROUND_IMAGE, null)
-            mHeaderBackground?.setImageResource(R.drawable.sadpanda_low_poly)
         }
     }
 
@@ -699,15 +712,19 @@ class MainActivity : StageActivity(),
     fun loadAvatar() {
         val avatar = mAvatar ?: return
         val userAvatarFile = AppearanceSettings.getUserImageFile(AppearanceSettings.USER_AVATAR_IMAGE)
-        if (userAvatarFile != null) {
-            val bitmap = decodeSampledBitmap(userAvatarFile.path)
+        if (userAvatarFile == null) {
+            avatar.load(R.drawable.default_avatar)
+            return
+        }
+        // Decode off the main thread; lifecycleScope skips the set if the
+        // Activity is gone by the time the decode finishes.
+        lifecycleScope.launch {
+            val bitmap = withContext(Dispatchers.IO) { decodeSampledBitmap(userAvatarFile.path) }
             if (bitmap != null) {
                 avatar.load(bitmap.toDrawable(avatar.resources))
             } else {
                 avatar.load(R.drawable.default_avatar)
             }
-        } else {
-            avatar.load(R.drawable.default_avatar)
         }
     }
 
@@ -918,9 +935,12 @@ class MainActivity : StageActivity(),
             if (TextUtils.isEmpty(avatarUrl)) {
                 val userAvatarFile = AppearanceSettings.getUserImageFile(AppearanceSettings.USER_AVATAR_IMAGE)
                 if (userAvatarFile != null) {
-                    val bitmap = decodeSampledBitmap(userAvatarFile.path)
-                    val drawable = BitmapDrawable(avatar.resources, bitmap)
-                    avatar.load(drawable)
+                    // Decode off the main thread (see loadAvatar).
+                    lifecycleScope.launch {
+                        val bitmap = withContext(Dispatchers.IO) { decodeSampledBitmap(userAvatarFile.path) }
+                        val drawable = BitmapDrawable(avatar.resources, bitmap)
+                        avatar.load(drawable)
+                    }
                 } else {
                     avatar.load(R.drawable.default_avatar)
                 }
