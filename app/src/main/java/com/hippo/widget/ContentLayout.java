@@ -46,7 +46,7 @@ import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.R;
 import com.hippo.refreshlayout.RefreshLayout;
 import com.hippo.util.DrawableManager;
-import com.hippo.util.ExceptionUtils;
+import static com.lanraragi.reader.client.api.LRRApiUtilsKt.friendlyError;
 import com.hippo.view.ViewTransition;
 import com.hippo.lib.yorozuya.IntIdGenerator;
 import com.hippo.lib.yorozuya.LayoutUtils;
@@ -872,7 +872,10 @@ public class ContentLayout extends FrameLayout {
                 String readableError;
                 if (e != null) {
                     e.printStackTrace();
-                    readableError = ExceptionUtils.getReadableString(e);
+                    // Route through the LRR-aware mapper so list/search failures
+                    // show a localized message (auth, 404, timeout, cleartext
+                    // refused, …) instead of a raw English socket/HTTP string.
+                    readableError = friendlyError(getContext(), e);
                 } else {
                     readableError = getContext().getString(R.string.error_unknown);
                 }
