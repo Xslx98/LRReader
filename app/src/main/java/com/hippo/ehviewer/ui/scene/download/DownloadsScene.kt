@@ -30,7 +30,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.res.ResourcesCompat
+import android.util.Log
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -163,38 +166,43 @@ class DownloadsScene : ToolbarScene(),
 
     override fun getNavCheckedItem(): Int = R.id.nav_downloads
 
-    private fun handleArguments(args: Bundle?): Boolean {
-        if (args == null) {
-            return false
-        }
+    private fun handleArguments(args: Bundle?) {
+        if (args == null) return
 
         if (ACTION_CLEAR_DOWNLOAD_SERVICE == args.getString(KEY_ACTION)) {
             DownloadService.Companion.clear()
         }
 
-        val dm = viewModel.downloadManager
-        val arcid = args.getString(KEY_ARCID)
-        if (arcid != null) {
-            val info = dm.getDownloadInfo(arcid)
-            if (info != null) {
-                viewModel.selectLabel(info.label)
-                updateForLabel()
-                updateView()
+        val arcid = args.getString(KEY_ARCID) ?: return
+        // The DownloadManager's in-memory list may still be loading on a cold
+        // start (it initializes asynchronously). Reading getDownloadInfo before
+        // that completes returns null and the deep link — e.g. tapping the
+        // "download complete" notification — silently no-ops. Await init first,
+        // then do the lookup on the main thread (where the manager's mutators
+        // are asserted to run). ::mRecyclerView.isInitialized already guards the
+        // case where the view isn't built yet (stashes mInitPosition).
+        lifecycleScope.launch {
+            try {
+                viewModel.downloadManager.awaitInitAsync()
+            } catch (e: Exception) {
+                Log.e(TAG, "awaitInitAsync failed; deep-link lookup skipped", e)
+                return@launch
+            }
+            val info = viewModel.downloadManager.getDownloadInfo(arcid) ?: return@launch
+            viewModel.selectLabel(info.label)
+            updateForLabel()
+            updateView()
 
-                // Get position
-                val list = mList
-                if (list != null) {
-                    val position = list.indexOf(info)
-                    if (position >= 0 && ::mRecyclerView.isInitialized) {
-                        mPaginationHelper?.initPage(position, mList, mRecyclerView, mPaginationIndicator)
-                    } else {
-                        mInitPosition = position
-                    }
+            val list = mList
+            if (list != null) {
+                val position = list.indexOf(info)
+                if (position >= 0 && ::mRecyclerView.isInitialized) {
+                    mPaginationHelper?.initPage(position, mList, mRecyclerView, mPaginationIndicator)
+                } else {
+                    mInitPosition = position
                 }
-                return true
             }
         }
-        return false
     }
 
     override fun onNewArguments(args: Bundle) {
@@ -266,10 +274,11 @@ class DownloadsScene : ToolbarScene(),
     }
 
     private fun onInit() {
-        if (!handleArguments(arguments)) {
-            // ViewModel already initializes with the recent label from settings
-            updateForLabel()
-        }
+        // Set up the default label immediately (the ViewModel initializes with
+        // the recent label from settings); handleArguments asynchronously
+        // refines to a deep-linked archive's label once the manager is ready.
+        updateForLabel()
+        handleArguments(arguments)
     }
 
     private fun onRestore(savedInstanceState: Bundle) {
