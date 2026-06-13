@@ -384,4 +384,47 @@ interface ArchiveLocalStateDao {
         archiveJson: String,
         favoriteTime: Long,
     )
+
+    // ── Composite-key (ARCID, SERVER_PROFILE_ID) additions (ADR-003) ──
+    //
+    // Profile-scoped variants for the per-(arcid, profile) subsystems
+    // (history / favorite / scroll-fraction) and download-predicate
+    // variants for the arcid-unique download row. Callers migrate onto
+    // these in later commits; the single-key methods above are removed
+    // once unreferenced.
+
+    /** The single download row for [arcid] (the "<=1 download per arcid" invariant). */
+    @Query("SELECT * FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid AND DOWNLOAD_STATE IS NOT NULL LIMIT 1")
+    suspend fun loadDownloadRowByArcid(arcid: String): ArchiveLocalState?
+
+    @Query("UPDATE ARCHIVE_LOCAL_STATE SET ARCHIVE_JSON = :archiveJson WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :profileId")
+    suspend fun updateArchiveJsonForProfile(arcid: String, profileId: Long, archiveJson: String)
+
+    @Query("UPDATE ARCHIVE_LOCAL_STATE SET ARCHIVE_JSON = :archiveJson WHERE ARCID = :arcid AND DOWNLOAD_STATE IS NOT NULL")
+    suspend fun updateArchiveJsonForDownload(arcid: String, archiveJson: String)
+
+    @Query("SELECT COUNT(*) FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :profileId AND FAVORITE_TIME IS NOT NULL")
+    suspend fun favoriteCountForProfile(arcid: String, profileId: Long): Int
+
+    @Query(
+        "UPDATE ARCHIVE_LOCAL_STATE SET HISTORY_TIME = NULL, HISTORY_MODE = 0, HISTORY_SCROLL_FRACTION = NULL " +
+            "WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :profileId"
+    )
+    suspend fun clearHistorySubsystemForProfile(arcid: String, profileId: Long)
+
+    @Query("UPDATE ARCHIVE_LOCAL_STATE SET FAVORITE_TIME = NULL WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :profileId")
+    suspend fun clearFavoriteSubsystemForProfile(arcid: String, profileId: Long)
+
+    @Query(
+        "DELETE FROM ARCHIVE_LOCAL_STATE " +
+            "WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :profileId " +
+            "AND DOWNLOAD_STATE IS NULL AND HISTORY_TIME IS NULL AND FAVORITE_TIME IS NULL"
+    )
+    suspend fun deleteIfNoSubsystemForProfile(arcid: String, profileId: Long)
+
+    @Query("UPDATE ARCHIVE_LOCAL_STATE SET HISTORY_SCROLL_FRACTION = :fraction WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :profileId")
+    suspend fun updateHistoryScrollFractionForProfile(arcid: String, profileId: Long, fraction: Float?)
+
+    @Query("SELECT HISTORY_SCROLL_FRACTION FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :profileId")
+    suspend fun getHistoryScrollFractionForProfile(arcid: String, profileId: Long): Float?
 }
