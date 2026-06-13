@@ -633,7 +633,7 @@ class GalleryDetailViewModel : ViewModel() {
      */
     suspend fun isLocalFavorite(arcid: String?): Boolean = withContext(Dispatchers.IO) {
         if (arcid != null) {
-            ServiceRegistry.dataModule.favoritesRepository.containsLocalFavorite(arcid)
+            ServiceRegistry.dataModule.favoritesRepository.containsLocalFavorite(arcid, getSourceProfileId())
         } else {
             false
         }
