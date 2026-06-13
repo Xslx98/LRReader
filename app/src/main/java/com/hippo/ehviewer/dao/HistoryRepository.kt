@@ -66,8 +66,8 @@ class HistoryRepository(
     }
 
     suspend fun deleteHistoryInfo(info: HistoryInfo) {
-        dao.clearHistorySubsystem(info.arcid)
-        dao.deleteIfNoSubsystem(info.arcid)
+        dao.clearHistorySubsystemForProfile(info.arcid, info.serverProfileId)
+        dao.deleteIfNoSubsystemForProfile(info.arcid, info.serverProfileId)
     }
 
     suspend fun clearHistory() {
@@ -79,10 +79,10 @@ class HistoryRepository(
      * Update the rating for a history entry identified by [arcid].
      * The rating lives in `archive_json` — load, patch, write back.
      */
-    suspend fun updateRating(arcid: String, rating: Float) {
-        val row = dao.loadByArcid(arcid) ?: return
+    suspend fun updateRating(arcid: String, profileId: Long, rating: Float) {
+        val row = dao.loadByArcidAndProfile(arcid, profileId) ?: return
         val archive = ArchiveLocalStateJson.decodeFromString(Archive.serializer(), row.archiveJson)
-        dao.updateArchiveJson(arcid, archive.copy(rating = rating).toArchiveJson())
+        dao.updateArchiveJsonForProfile(arcid, profileId, archive.copy(rating = rating).toArchiveJson())
     }
 
     /**
@@ -91,12 +91,12 @@ class HistoryRepository(
      * is a no-op if the archive doesn't yet have a history row, which
      * is fine: the next call after the row is created will land.
      */
-    suspend fun setHistoryScrollFraction(arcid: String, fraction: Float?) {
-        dao.updateHistoryScrollFraction(arcid, fraction)
+    suspend fun setHistoryScrollFraction(arcid: String, profileId: Long, fraction: Float?) {
+        dao.updateHistoryScrollFractionForProfile(arcid, profileId, fraction)
     }
 
-    suspend fun getHistoryScrollFraction(arcid: String): Float? =
-        dao.getHistoryScrollFraction(arcid)
+    suspend fun getHistoryScrollFraction(arcid: String, profileId: Long): Float? =
+        dao.getHistoryScrollFractionForProfile(arcid, profileId)
 
     /**
      * Idempotent INSERT-OR-IGNORE-then-UPDATE. The IGNORE step
