@@ -47,9 +47,6 @@ interface ArchiveLocalStateDao {
     @Update
     suspend fun update(state: ArchiveLocalState)
 
-    @Query("SELECT * FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid")
-    suspend fun loadByArcid(arcid: String): ArchiveLocalState?
-
     @Query("SELECT * FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :profileId")
     suspend fun loadByArcidAndProfile(arcid: String, profileId: Long): ArchiveLocalState?
 
@@ -122,9 +119,6 @@ interface ArchiveLocalStateDao {
     )
     suspend fun getAllFavorites(): List<ArchiveLocalState>
 
-    @Query("SELECT COUNT(*) FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid AND FAVORITE_TIME IS NOT NULL")
-    suspend fun favoriteCount(arcid: String): Int
-
     // ── Subsystem-scoped writes ────────────────────────────────
     //
     // Each "clear" sets the subsystem's columns to their absent
@@ -143,18 +137,9 @@ interface ArchiveLocalStateDao {
 
     @Query(
         "UPDATE ARCHIVE_LOCAL_STATE SET HISTORY_TIME = NULL, HISTORY_MODE = 0, HISTORY_SCROLL_FRACTION = NULL " +
-            "WHERE ARCID = :arcid"
-    )
-    suspend fun clearHistorySubsystem(arcid: String)
-
-    @Query(
-        "UPDATE ARCHIVE_LOCAL_STATE SET HISTORY_TIME = NULL, HISTORY_MODE = 0, HISTORY_SCROLL_FRACTION = NULL " +
             "WHERE HISTORY_TIME IS NOT NULL"
     )
     suspend fun clearAllHistorySubsystems()
-
-    @Query("UPDATE ARCHIVE_LOCAL_STATE SET FAVORITE_TIME = NULL WHERE ARCID = :arcid")
-    suspend fun clearFavoriteSubsystem(arcid: String)
 
     /**
      * Trim history: clear the history subsystem on every row that
@@ -196,15 +181,6 @@ interface ArchiveLocalStateDao {
 
     @Query(
         "DELETE FROM ARCHIVE_LOCAL_STATE " +
-            "WHERE ARCID = :arcid " +
-            "AND DOWNLOAD_STATE IS NULL " +
-            "AND HISTORY_TIME IS NULL " +
-            "AND FAVORITE_TIME IS NULL"
-    )
-    suspend fun deleteIfNoSubsystem(arcid: String)
-
-    @Query(
-        "DELETE FROM ARCHIVE_LOCAL_STATE " +
             "WHERE DOWNLOAD_STATE IS NULL " +
             "AND HISTORY_TIME IS NULL " +
             "AND FAVORITE_TIME IS NULL"
@@ -215,32 +191,6 @@ interface ArchiveLocalStateDao {
 
     @Query("UPDATE ARCHIVE_LOCAL_STATE SET DOWNLOAD_TIME = :time WHERE ARCID = :arcid AND DOWNLOAD_STATE IS NOT NULL")
     suspend fun updateDownloadTime(arcid: String, time: Long)
-
-    @Query("UPDATE ARCHIVE_LOCAL_STATE SET ARCHIVE_JSON = :archiveJson WHERE ARCID = :arcid")
-    suspend fun updateArchiveJson(arcid: String, archiveJson: String)
-
-    /**
-     * Update the per-archive intra-page scroll fraction. The UPDATE
-     * is a no-op if no row exists for [arcid] at all. We deliberately
-     * do *not* gate on `HISTORY_TIME IS NOT NULL`: the reader can be
-     * launched directly from the downloads list (via
-     * [com.hippo.ehviewer.ui.scene.download.DownloadGalleryOpenHelper])
-     * which bypasses the detail page and therefore never calls
-     * [HistoryRepository.putHistoryInfo] — in that case the row
-     * exists with `DOWNLOAD_STATE` set but `HISTORY_TIME = NULL`.
-     * The fraction is just a column; persisting it on whichever row
-     * already exists is the right behavior. The accompanying
-     * recordHistory call from GalleryActivity then upgrades the row
-     * to history-subsystem membership in parallel.
-     */
-    @Query(
-        "UPDATE ARCHIVE_LOCAL_STATE SET HISTORY_SCROLL_FRACTION = :fraction " +
-            "WHERE ARCID = :arcid"
-    )
-    suspend fun updateHistoryScrollFraction(arcid: String, fraction: Float?)
-
-    @Query("SELECT HISTORY_SCROLL_FRACTION FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid")
-    suspend fun getHistoryScrollFraction(arcid: String): Float?
 
     // ── Cross-subsystem-safe upsert pairs ──────────────────────
     //
