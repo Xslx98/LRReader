@@ -89,22 +89,22 @@ class ArchiveLocalStateDaoTest {
             favoriteTime = 1700000002000L,
         )
         dao.upsert(state)
-        val loaded = dao.loadByArcid("arc-1")
+        val loaded = dao.loadByArcidAndProfile("arc-1", 7L)
         assertNotNull(loaded)
         assertEquals(state, loaded)
     }
 
     @Test
     fun loadByArcid_missingReturnsNull() = runTest {
-        assertNull(dao.loadByArcid("nope"))
+        assertNull(dao.loadByArcidAndProfile("nope", 0L))
     }
 
     @Test
     fun deleteByArcid_removesRow() = runTest {
         dao.upsert(row("arc-d", downloadState = DownloadState.NONE, downloadTime = 1L))
-        assertNotNull(dao.loadByArcid("arc-d"))
+        assertNotNull(dao.loadByArcidAndProfile("arc-d", 0L))
         dao.deleteByArcid("arc-d")
-        assertNull(dao.loadByArcid("arc-d"))
+        assertNull(dao.loadByArcidAndProfile("arc-d", 0L))
     }
 
     @Test
@@ -167,13 +167,13 @@ class ArchiveLocalStateDaoTest {
 
         dao.resetTransientDownloadStates()
 
-        assertEquals(DownloadState.NONE, dao.loadByArcid("waiting")!!.downloadState)
-        assertEquals(DownloadState.NONE, dao.loadByArcid("active")!!.downloadState)
-        assertEquals(DownloadState.FINISH, dao.loadByArcid("done")!!.downloadState)
-        assertEquals(DownloadState.FAILED, dao.loadByArcid("failed")!!.downloadState)
-        assertEquals(DownloadState.NONE, dao.loadByArcid("nonez")!!.downloadState)
+        assertEquals(DownloadState.NONE, dao.loadByArcidAndProfile("waiting", 0L)!!.downloadState)
+        assertEquals(DownloadState.NONE, dao.loadByArcidAndProfile("active", 0L)!!.downloadState)
+        assertEquals(DownloadState.FINISH, dao.loadByArcidAndProfile("done", 0L)!!.downloadState)
+        assertEquals(DownloadState.FAILED, dao.loadByArcidAndProfile("failed", 0L)!!.downloadState)
+        assertEquals(DownloadState.NONE, dao.loadByArcidAndProfile("nonez", 0L)!!.downloadState)
         // A history-only row has no download state; the reset must not give it one.
-        assertNull(dao.loadByArcid("history")!!.downloadState)
+        assertNull(dao.loadByArcidAndProfile("history", 0L)!!.downloadState)
     }
 
     @Test
