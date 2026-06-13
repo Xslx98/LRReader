@@ -17,12 +17,12 @@ class FavoritesRepository(
     @Suppress("UNUSED_PARAMETER") database: AppDatabase,
 ) {
 
-    suspend fun removeLocalFavorite(arcid: String) {
-        dao.clearFavoriteSubsystem(arcid)
-        dao.deleteIfNoSubsystem(arcid)
+    suspend fun removeLocalFavorite(arcid: String, profileId: Long) {
+        dao.clearFavoriteSubsystemForProfile(arcid, profileId)
+        dao.deleteIfNoSubsystemForProfile(arcid, profileId)
     }
 
-    suspend fun containsLocalFavorite(arcid: String): Boolean {
-        return dao.favoriteCount(arcid) > 0
+    suspend fun containsLocalFavorite(arcid: String, profileId: Long): Boolean {
+        return dao.favoriteCountForProfile(arcid, profileId) > 0
     }
 }

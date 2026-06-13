@@ -258,7 +258,7 @@ class DirGalleryProvider : GalleryProvider2 {
         ServiceRegistry.coroutineModule.ioScope.launch {
             try {
                 ServiceRegistry.dataModule.historyRepository
-                    .setHistoryScrollFraction(targetArcid, clamped)
+                    .setHistoryScrollFraction(targetArcid, serverProfileId, clamped)
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to save scroll fraction: ${e.message}")
             }
@@ -330,7 +330,7 @@ class DirGalleryProvider : GalleryProvider2 {
                 val fractionDeferred = async {
                     try {
                         ServiceRegistry.dataModule.historyRepository
-                            .getHistoryScrollFraction(arcId!!) ?: 0f
+                            .getHistoryScrollFraction(arcId!!, serverProfileId) ?: 0f
                     } catch (e: Exception) {
                         Log.w(TAG, "[PROGRESS] Failed to load scroll fraction: ${e.message}")
                         0f

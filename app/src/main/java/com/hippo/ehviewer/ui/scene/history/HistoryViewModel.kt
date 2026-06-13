@@ -132,12 +132,12 @@ class HistoryViewModel : ViewModel() {
             // Persist to archive_json so the rating survives a reload/restart;
             // updating only the in-memory list would revert on the next
             // loadHistory(). arcid comes from the parallel raw list.
-            val arcid = rawHistoryList.getOrNull(position)?.arcid
-            if (arcid != null) {
+            val rawInfo = rawHistoryList.getOrNull(position)
+            if (rawInfo != null) {
                 viewModelScope.launch {
                     try {
                         withContext(Dispatchers.IO) {
-                            historyRepository.updateRating(arcid, newRating)
+                            historyRepository.updateRating(rawInfo.arcid, rawInfo.serverProfileId, newRating)
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed to persist history rating", e)

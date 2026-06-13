@@ -41,7 +41,7 @@ import com.hippo.ehviewer.download.DownloadState
  */
 @Entity(
     tableName = "ARCHIVE_LOCAL_STATE",
-    primaryKeys = ["ARCID"],
+    primaryKeys = ["ARCID", "SERVER_PROFILE_ID"],
     indices = [
         Index("SERVER_PROFILE_ID"),
         Index("DOWNLOAD_TIME"),

@@ -44,7 +44,7 @@ import kotlinx.serialization.json.Json
         ServerProfile::class,
         ArchiveLocalState::class
     ],
-    version = 26,
+    version = 27,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class, DownloadStateConverter::class)
@@ -75,7 +75,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DB_NAME
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27)
                     .build()
                     .also { INSTANCE = it }
             }
@@ -314,6 +314,58 @@ abstract class AppDatabase : RoomDatabase() {
         internal val MIGRATION_25_26 = object : Migration(25, 26) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE ARCHIVE_LOCAL_STATE ADD COLUMN DOWNLOAD_ROOT_URI TEXT")
+            }
+        }
+
+        /**
+         * v26 → v27: change ARCHIVE_LOCAL_STATE primary key from (ARCID)
+         * to composite (ARCID, SERVER_PROFILE_ID). Lets two profiles
+         * (mirror libraries that share a content-hash arcid) keep
+         * independent history / favorite / scroll-fraction state for the
+         * same archive. The "at most one download row per arcid"
+         * invariant is enforced in the app layer (DownloadManager is the
+         * main-thread SSOT, its in-memory map is keyed by arcid, plus a
+         * DAO pre-check) — NOT by a DB index: Room 2.6.1 validates
+         * indices by strict set-equality and would reject an undeclared
+         * partial unique index when the migrated DB is opened, so ADR-003
+         * §3's documented "repository-only constraint" fallback is taken.
+         * See docs/adr-003-composite-key-archive-local-state.md.
+         *
+         * minSdk 28 → SQLite 3.22 has no ALTER TABLE for primary keys:
+         * use the established recreate-table dance. Existing rows have a
+         * unique arcid, so the copy never conflicts on the new composite
+         * key. The five secondary indexes are recreated verbatim.
+         */
+        @VisibleForTesting
+        internal val MIGRATION_26_27 = object : Migration(26, 27) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `ARCHIVE_LOCAL_STATE_NEW` (" +
+                        "`ARCID` TEXT NOT NULL, `SERVER_PROFILE_ID` INTEGER NOT NULL DEFAULT 0, " +
+                        "`ARCHIVE_JSON` TEXT NOT NULL, `DOWNLOAD_STATE` INTEGER, " +
+                        "`DOWNLOAD_LEGACY` INTEGER NOT NULL DEFAULT 0, `DOWNLOAD_TIME` INTEGER, " +
+                        "`DOWNLOAD_LABEL` TEXT, `DOWNLOAD_ARCHIVE_URI` TEXT, `DOWNLOAD_ROOT_URI` TEXT, " +
+                        "`HISTORY_TIME` INTEGER, `HISTORY_MODE` INTEGER NOT NULL DEFAULT 0, " +
+                        "`HISTORY_SCROLL_FRACTION` REAL, `FAVORITE_TIME` INTEGER, " +
+                        "PRIMARY KEY(`ARCID`, `SERVER_PROFILE_ID`))"
+                )
+                db.execSQL(
+                    "INSERT INTO `ARCHIVE_LOCAL_STATE_NEW` (" +
+                        "ARCID, SERVER_PROFILE_ID, ARCHIVE_JSON, DOWNLOAD_STATE, DOWNLOAD_LEGACY, " +
+                        "DOWNLOAD_TIME, DOWNLOAD_LABEL, DOWNLOAD_ARCHIVE_URI, DOWNLOAD_ROOT_URI, " +
+                        "HISTORY_TIME, HISTORY_MODE, HISTORY_SCROLL_FRACTION, FAVORITE_TIME) " +
+                        "SELECT ARCID, SERVER_PROFILE_ID, ARCHIVE_JSON, DOWNLOAD_STATE, DOWNLOAD_LEGACY, " +
+                        "DOWNLOAD_TIME, DOWNLOAD_LABEL, DOWNLOAD_ARCHIVE_URI, DOWNLOAD_ROOT_URI, " +
+                        "HISTORY_TIME, HISTORY_MODE, HISTORY_SCROLL_FRACTION, FAVORITE_TIME " +
+                        "FROM `ARCHIVE_LOCAL_STATE`"
+                )
+                db.execSQL("DROP TABLE `ARCHIVE_LOCAL_STATE`")
+                db.execSQL("ALTER TABLE `ARCHIVE_LOCAL_STATE_NEW` RENAME TO `ARCHIVE_LOCAL_STATE`")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_SERVER_PROFILE_ID` ON `ARCHIVE_LOCAL_STATE` (`SERVER_PROFILE_ID`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_DOWNLOAD_TIME` ON `ARCHIVE_LOCAL_STATE` (`DOWNLOAD_TIME`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_HISTORY_TIME` ON `ARCHIVE_LOCAL_STATE` (`HISTORY_TIME`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_FAVORITE_TIME` ON `ARCHIVE_LOCAL_STATE` (`FAVORITE_TIME`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_DOWNLOAD_LABEL` ON `ARCHIVE_LOCAL_STATE` (`DOWNLOAD_LABEL`)")
             }
         }
 
