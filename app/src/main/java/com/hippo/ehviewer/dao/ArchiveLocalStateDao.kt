@@ -50,6 +50,9 @@ interface ArchiveLocalStateDao {
     @Query("SELECT * FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid")
     suspend fun loadByArcid(arcid: String): ArchiveLocalState?
 
+    @Query("SELECT * FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :profileId")
+    suspend fun loadByArcidAndProfile(arcid: String, profileId: Long): ArchiveLocalState?
+
     @Query("DELETE FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid")
     suspend fun deleteByArcid(arcid: String)
 
@@ -272,7 +275,6 @@ interface ArchiveLocalStateDao {
     @Suppress("LongParameterList")
     @Query(
         "UPDATE ARCHIVE_LOCAL_STATE SET " +
-            "SERVER_PROFILE_ID = :serverProfileId, " +
             "ARCHIVE_JSON = :archiveJson, " +
             "DOWNLOAD_STATE = :downloadState, " +
             "DOWNLOAD_LEGACY = :downloadLegacy, " +
@@ -280,7 +282,7 @@ interface ArchiveLocalStateDao {
             "DOWNLOAD_LABEL = :downloadLabel, " +
             "DOWNLOAD_ARCHIVE_URI = :downloadArchiveUri, " +
             "DOWNLOAD_ROOT_URI = :downloadRootUri " +
-            "WHERE ARCID = :arcid"
+            "WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :serverProfileId"
     )
     suspend fun updateDownloadFields(
         arcid: String,
@@ -330,24 +332,20 @@ interface ArchiveLocalStateDao {
     )
 
     /**
-     * The CASE keeps a download-owned row's `SERVER_PROFILE_ID` intact:
-     * arcids are content hashes, so reading a mirror copy of a
-     * downloaded archive through another profile would otherwise
-     * re-home the download (source badge, resume routing, and the
-     * per-profile download query all key off this column). The
-     * download subsystem owns the attribution while
-     * `DOWNLOAD_STATE IS NOT NULL`; the history entry then surfaces
-     * under the owning profile — the accepted trade-off until the
-     * table moves to an (ARCID, SERVER_PROFILE_ID) composite key.
+     * Update the history columns of the `(arcid, serverProfileId)` row.
+     * With the composite primary key each profile owns its own row, so a
+     * history write for a mirror copy read through another profile lands
+     * on that profile's row and never touches the download row of a
+     * different profile — the `c72cc28d` CASE guard that used to protect
+     * a download-owned `SERVER_PROFILE_ID` is no longer needed (retired
+     * with ADR-003).
      */
     @Query(
         "UPDATE ARCHIVE_LOCAL_STATE SET " +
-            "SERVER_PROFILE_ID = CASE WHEN DOWNLOAD_STATE IS NOT NULL " +
-            "THEN SERVER_PROFILE_ID ELSE :serverProfileId END, " +
             "ARCHIVE_JSON = :archiveJson, " +
             "HISTORY_TIME = :historyTime, " +
             "HISTORY_MODE = :historyMode " +
-            "WHERE ARCID = :arcid"
+            "WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :serverProfileId"
     )
     suspend fun updateHistoryFields(
         arcid: String,
@@ -370,17 +368,15 @@ interface ArchiveLocalStateDao {
     )
 
     /**
-     * Same download-ownership guard as [updateHistoryFields]: a
-     * favorite write must not re-home a downloaded archive's
-     * `SERVER_PROFILE_ID`.
+     * Update the favorite columns of the `(arcid, serverProfileId)` row.
+     * Per-profile rows make the old download-ownership CASE guard
+     * unnecessary (see [updateHistoryFields]).
      */
     @Query(
         "UPDATE ARCHIVE_LOCAL_STATE SET " +
-            "SERVER_PROFILE_ID = CASE WHEN DOWNLOAD_STATE IS NOT NULL " +
-            "THEN SERVER_PROFILE_ID ELSE :serverProfileId END, " +
             "ARCHIVE_JSON = :archiveJson, " +
             "FAVORITE_TIME = :favoriteTime " +
-            "WHERE ARCID = :arcid"
+            "WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :serverProfileId"
     )
     suspend fun updateFavoriteFields(
         arcid: String,
