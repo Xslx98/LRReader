@@ -137,7 +137,7 @@ interface ArchiveLocalStateDao {
             "DOWNLOAD_STATE = NULL, DOWNLOAD_LEGACY = 0, DOWNLOAD_TIME = NULL, " +
             "DOWNLOAD_LABEL = NULL, DOWNLOAD_ARCHIVE_URI = NULL, " +
             "DOWNLOAD_ROOT_URI = NULL " +
-            "WHERE ARCID = :arcid"
+            "WHERE ARCID = :arcid AND DOWNLOAD_STATE IS NOT NULL"
     )
     suspend fun clearDownloadSubsystem(arcid: String)
 
@@ -213,7 +213,7 @@ interface ArchiveLocalStateDao {
 
     // ── Targeted column updates ────────────────────────────────
 
-    @Query("UPDATE ARCHIVE_LOCAL_STATE SET DOWNLOAD_TIME = :time WHERE ARCID = :arcid")
+    @Query("UPDATE ARCHIVE_LOCAL_STATE SET DOWNLOAD_TIME = :time WHERE ARCID = :arcid AND DOWNLOAD_STATE IS NOT NULL")
     suspend fun updateDownloadTime(arcid: String, time: Long)
 
     @Query("UPDATE ARCHIVE_LOCAL_STATE SET ARCHIVE_JSON = :archiveJson WHERE ARCID = :arcid")
@@ -315,7 +315,7 @@ interface ArchiveLocalStateDao {
      * when the row pre-dates the v25→v26 backfill — the caller falls
      * back to `DownloadSettings.getDownloadLocation()` in that case.
      */
-    @Query("SELECT DOWNLOAD_ROOT_URI FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid")
+    @Query("SELECT DOWNLOAD_ROOT_URI FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid AND DOWNLOAD_STATE IS NOT NULL")
     suspend fun getDownloadRootUri(arcid: String): String?
 
     @Query(

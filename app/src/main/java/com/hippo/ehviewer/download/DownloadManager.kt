@@ -197,6 +197,10 @@ class DownloadManager(
         // otherwise the next foreground would show a ghost banner for an active download.
         DownloadResumeBanner.markResumed(archive.arcid)
         for (active in scheduler.activeTasks) { if (active.arcid == archive.arcid) return }
+        // Enforces the composite-key download invariant ("<=1 download row per
+        // arcid"): an arcid already present is re-used, never re-added under a
+        // second profile. arcid is a content hash, so a mirror copy on another
+        // profile shares the same single local download row + on-disk dir.
         val existing = repo.getDownloadInfo(archive.arcid)
         if (existing != null) {
             // Imported archives (content:// URIs) cannot be re-downloaded; the
