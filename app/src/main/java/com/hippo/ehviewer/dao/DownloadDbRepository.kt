@@ -167,14 +167,17 @@ class DownloadDbRepository(
      * load, patch, and rewrite the JSON column.
      */
     suspend fun updateRating(arcid: String, rating: Float) {
-        val row = archiveLocalStateDao.loadByArcid(arcid) ?: return
+        val row = archiveLocalStateDao.loadDownloadRowByArcid(arcid) ?: return
         val archive = ArchiveLocalStateJson.decodeFromString(Archive.serializer(), row.archiveJson)
-        archiveLocalStateDao.updateArchiveJson(arcid, archive.copy(rating = rating).toArchiveJson())
+        archiveLocalStateDao.updateArchiveJsonForDownload(arcid, archive.copy(rating = rating).toArchiveJson())
     }
 
     suspend fun removeDownloadInfoByArcid(arcid: String) {
+        // Resolve the download row's profile before clearing, so its
+        // (arcid, profile) row can be collapsed if no subsystem remains.
+        val pid = archiveLocalStateDao.loadDownloadRowByArcid(arcid)?.serverProfileId ?: return
         archiveLocalStateDao.clearDownloadSubsystem(arcid)
-        archiveLocalStateDao.deleteIfNoSubsystem(arcid)
+        archiveLocalStateDao.deleteIfNoSubsystemForProfile(arcid, pid)
     }
 
     suspend fun putDownloadInfoBatch(list: List<DownloadInfo>) {
@@ -187,8 +190,9 @@ class DownloadDbRepository(
     suspend fun removeDownloadInfoBatchByArcids(arcids: List<String>) {
         if (arcids.isEmpty()) return
         for (arcid in arcids) {
+            val pid = archiveLocalStateDao.loadDownloadRowByArcid(arcid)?.serverProfileId ?: continue
             archiveLocalStateDao.clearDownloadSubsystem(arcid)
-            archiveLocalStateDao.deleteIfNoSubsystem(arcid)
+            archiveLocalStateDao.deleteIfNoSubsystemForProfile(arcid, pid)
         }
     }
 
@@ -205,7 +209,7 @@ class DownloadDbRepository(
         // GalleryOpenHelper treat a partial download as "complete" — wholesale rewriting
         // it on every state transition is what regressed truncated local reads. Overlay
         // only the display fields the DownloadInfo actually owns.
-        val existing = archiveLocalStateDao.loadByArcid(downloadInfo.arcid)
+        val existing = archiveLocalStateDao.loadByArcidAndProfile(downloadInfo.arcid, downloadInfo.serverProfileId)
         val archiveJson = if (existing != null) {
             // Keep the stored value when the in-memory DownloadInfo has no
             // better one: a corrupt-json boot fallback or a legacy import
