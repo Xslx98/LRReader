@@ -246,4 +246,61 @@ class ArchiveLocalStateDaoTest {
         assertEquals(3000L, favoriteRow.favoriteTime)
         assertNull(favoriteRow.downloadState)
     }
+
+    // ── Composite-key additive method coverage (Task 2) ──
+
+    @Test
+    fun clearAndCollapse_areProfileScoped() = runTest {
+        dao.insertOrIgnoreHistory("y", 1L, "{}", 10L, 0); dao.updateHistoryFields("y", 1L, "{}", 10L, 0)
+        dao.insertOrIgnoreHistory("y", 2L, "{}", 20L, 0); dao.updateHistoryFields("y", 2L, "{}", 20L, 0)
+
+        dao.clearHistorySubsystemForProfile("y", 1L)
+        dao.deleteIfNoSubsystemForProfile("y", 1L)
+
+        assertNull(dao.loadByArcidAndProfile("y", 1L))                       // (y,1) collapsed
+        assertEquals(20L, dao.loadByArcidAndProfile("y", 2L)!!.historyTime)  // (y,2) intact
+    }
+
+    @Test
+    fun favoriteCountForProfile_isPerProfile() = runTest {
+        dao.insertOrIgnoreFavorite("f", 1L, "{}", 100L)
+        dao.updateFavoriteFields("f", 1L, "{}", 100L)
+        assertEquals(1, dao.favoriteCountForProfile("f", 1L))
+        assertEquals(0, dao.favoriteCountForProfile("f", 2L))
+    }
+
+    @Test
+    fun scrollFraction_isPerProfile() = runTest {
+        dao.insertOrIgnoreHistory("z", 1L, "{}", 10L, 0); dao.updateHistoryFields("z", 1L, "{}", 10L, 0)
+        dao.insertOrIgnoreHistory("z", 2L, "{}", 20L, 0); dao.updateHistoryFields("z", 2L, "{}", 20L, 0)
+
+        dao.updateHistoryScrollFractionForProfile("z", 1L, 0.4f)
+
+        assertEquals(0.4f, dao.getHistoryScrollFractionForProfile("z", 1L)!!, 0.001f)
+        assertNull(dao.getHistoryScrollFractionForProfile("z", 2L))
+    }
+
+    @Test
+    fun loadDownloadRowByArcid_returnsDownloadRow_ignoringOtherProfileRows() = runTest {
+        dao.upsert(row("d", serverProfileId = 5L, downloadState = DownloadState.FINISH, downloadTime = 1L))
+        dao.insertOrIgnoreHistory("d", 6L, "{}", 2L, 0)
+        dao.updateHistoryFields("d", 6L, "{}", 2L, 0)
+
+        val dl = dao.loadDownloadRowByArcid("d")!!
+        assertEquals(5L, dl.serverProfileId)
+        assertEquals(DownloadState.FINISH, dl.downloadState)
+    }
+
+    @Test
+    fun updateArchiveJson_profileVsDownload_targetTheRightRow() = runTest {
+        dao.upsert(row("j", serverProfileId = 5L, downloadState = DownloadState.FINISH, downloadTime = 1L))
+        dao.insertOrIgnoreHistory("j", 6L, """{"arcid":"j","v":0}""", 2L, 0)
+        dao.updateHistoryFields("j", 6L, """{"arcid":"j","v":0}""", 2L, 0)
+
+        dao.updateArchiveJsonForProfile("j", 6L, """{"arcid":"j","v":"hist"}""")
+        dao.updateArchiveJsonForDownload("j", """{"arcid":"j","v":"dl"}""")
+
+        assertEquals("""{"arcid":"j","v":"dl"}""", dao.loadByArcidAndProfile("j", 5L)!!.archiveJson)
+        assertEquals("""{"arcid":"j","v":"hist"}""", dao.loadByArcidAndProfile("j", 6L)!!.archiveJson)
+    }
 }
