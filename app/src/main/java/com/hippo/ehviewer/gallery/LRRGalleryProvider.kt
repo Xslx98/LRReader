@@ -256,7 +256,7 @@ class LRRGalleryProvider(
                 val fractionDeferred = async {
                     try {
                         ServiceRegistry.dataModule.historyRepository
-                            .getHistoryScrollFraction(arcId) ?: 0f
+                            .getHistoryScrollFraction(arcId, serverProfileId) ?: 0f
                     } catch (e: Exception) {
                         Log.w(TAG, "[PROGRESS] Failed to load scroll fraction: ${e.message}")
                         0f
@@ -457,7 +457,7 @@ class LRRGalleryProvider(
         ServiceRegistry.coroutineModule.ioScope.launch {
             try {
                 ServiceRegistry.dataModule.historyRepository
-                    .setHistoryScrollFraction(arcId, clamped)
+                    .setHistoryScrollFraction(arcId, serverProfileId, clamped)
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to save scroll fraction: ${e.message}")
             }
