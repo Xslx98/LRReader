@@ -643,4 +643,20 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_secure_storage_write_failed">Der Schlüsselspeicher des Geräts ist nicht verfügbar, Ihre Änderungen konnten nicht sicher gespeichert werden. Bitte starten Sie das Gerät neu und versuchen Sie es erneut, oder installieren Sie die App neu, wenn das Problem weiterhin besteht.</string>
     <string name="reauth_required_title">Erneute Authentifizierung erforderlich</string>
     <string name="reauth_required_message">Der sichere Schlüsselspeicher ist nicht mehr verfügbar. Bitte geben Sie den API-Schlüssel für jeden Server erneut ein.</string>
+
+    <!-- Content descriptions (D-A11y sprint) -->
+    <string name="cd_menu">Menü</string>
+    <string name="cd_more_options">Weitere Optionen</string>
+    <string name="cd_delete">Löschen</string>
+    <string name="cd_drag_handle">Zum Sortieren ziehen</string>
+    <string name="cd_start_download">Download starten</string>
+    <string name="cd_stop_download">Download stoppen</string>
+    <string name="cd_downloaded">Heruntergeladen</string>
+    <string name="cd_random">Zufällig</string>
+    <string name="cd_tag_filter">Tag-Filter</string>
+    <string name="cd_upload_archive">Archiv hochladen</string>
+    <string name="cd_select_all">Alle auswählen</string>
+    <string name="cd_toggle_drag_sort">Ziehsortierung umschalten</string>
+    <string name="cd_expand_fab_menu">Aktionen</string>
+    <string name="cd_fingerprint_unlock">Entsperren per Fingerabdruck</string>
 </resources>
