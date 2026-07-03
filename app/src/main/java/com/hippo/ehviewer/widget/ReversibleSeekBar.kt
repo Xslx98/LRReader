@@ -66,4 +66,8 @@ class ReversibleSeekBar : AppCompatSeekBar {
         }
         return result
     }
+
+    // Click handling lives in the super chain; override to satisfy the
+    // accessibility contract for views that override onTouchEvent.
+    override fun performClick(): Boolean = super.performClick()
 }
