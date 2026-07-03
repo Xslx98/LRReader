@@ -28,6 +28,8 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadState
+import com.hippo.ehviewer.gallery.ReadingContext
+import com.hippo.ehviewer.gallery.ReadingContextStore
 import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.spider.SpiderInfo
 import com.hippo.ehviewer.ui.GalleryActivity
@@ -88,6 +90,7 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
         // complete local copy — a paused/failed/in-progress one streams.
         val archive = downloadInfo.toArchive()
         val knownComplete = downloadInfo.state == DownloadState.FINISH
+        publishDownloadsContext(list, callback.positionInList(position), archive)
         callback.viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val readIntent = withContext(Dispatchers.IO) {
@@ -101,6 +104,24 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
             }
         }
         return true
+    }
+
+    /**
+     * Snapshot the forward slice of the downloads list so the reader can offer
+     * "next download". Uses the same list order the UI renders. Best-effort:
+     * never blocks or breaks the read flow.
+     */
+    private fun publishDownloadsContext(list: List<DownloadInfo>, index: Int, anchor: Archive) {
+        if (index !in list.indices || list[index].arcid != anchor.arcid) return
+        val forward = list.subList(index, minOf(list.size, index + ReadingContextStore.LOCAL_WINDOW))
+            .map { it.toArchive() }
+        ReadingContextStore.publish(
+            ReadingContext.LocalList(
+                kind = ReadingContext.LocalList.Kind.DOWNLOADS,
+                forwardArchives = forward,
+                anchorArcid = anchor.arcid,
+            )
+        )
     }
 
     private fun openImportedArchive(
