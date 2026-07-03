@@ -47,11 +47,12 @@ class SeekBarPanel @JvmOverloads constructor(
         event.offsetLocation(offsetX, offsetY)
         seekBar.onTouchEvent(event)
         event.offsetLocation(-offsetX, -offsetY)
+        if (event.action == MotionEvent.ACTION_UP) {
+            performClick()
+        }
         return true
     }
 
-    // Click handling lives in the super chain; override to satisfy the
-    // accessibility contract for views that override onTouchEvent.
     override fun performClick(): Boolean = super.performClick()
 
     @Suppress("DEPRECATION")

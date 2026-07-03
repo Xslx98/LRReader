@@ -64,10 +64,11 @@ class ReversibleSeekBar : AppCompatSeekBar {
         if (reverse) {
             event.setLocation(x, y)
         }
+        if (event.action == MotionEvent.ACTION_UP) {
+            performClick()
+        }
         return result
     }
 
-    // Click handling lives in the super chain; override to satisfy the
-    // accessibility contract for views that override onTouchEvent.
     override fun performClick(): Boolean = super.performClick()
 }
