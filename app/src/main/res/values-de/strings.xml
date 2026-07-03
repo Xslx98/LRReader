@@ -229,6 +229,18 @@
     <string name="gallery_menu_title">Menü</string>
     <string name="share_image">Das Bild teilen</string>
     <string name="image_saved">Das Bild wurde zu %s gespeichert</string>
+
+    <!-- Reader cross-archive continuation -->
+    <string name="continuation_end_title">Ende des Archivs</string>
+    <string name="continuation_next_label">Als Nächstes</string>
+    <string name="continuation_read_next">Weiterlesen</string>
+    <string name="continuation_back">Schließen</string>
+    <string name="continuation_end_of_list">Ende der Liste erreicht</string>
+    <string name="continuation_error">Nächstes Archiv konnte nicht geladen werden</string>
+    <string name="continuation_retry">Erneut versuchen</string>
+    <string name="continuation_loading">Nächstes Archiv wird gesucht…</string>
+    <string name="continuation_jump_toast">Nächstes: %s</string>
+
     <string name="settings_eh">Anzeige</string>
     <string name="settings_eh_list_mode">Liste-Ansicht</string>
     <string name="settings_eh_list_mode_detail">Details</string>
