@@ -44,6 +44,7 @@ import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.widget.LoadImageViewNew
 import com.hippo.widget.recyclerview.AutoStaggeredGridLayoutManager
 
+@SuppressLint("InflateParams")
 abstract class GalleryAdapterNew(
     private val mInflater: LayoutInflater,
     private val mResources: Resources,
@@ -62,7 +63,6 @@ abstract class GalleryAdapterNew(
     private var mGirdDecoration: MarginItemDecoration? = null
 
     // Measure-only calculator view, never attached to a hierarchy.
-    @get:SuppressLint("InflateParams")
     private val mListThumbHeight: Int by lazy {
         val calculator = mInflater.inflate(R.layout.item_gallery_list_thumb_height, null)
         ViewUtils.measureView(calculator, 1024, ViewGroup.LayoutParams.WRAP_CONTENT)
