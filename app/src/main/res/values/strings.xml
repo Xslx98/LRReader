@@ -777,4 +777,22 @@
     <string name="error_save_image">Failed to save image</string>
     <string name="reauth_required_title">Re-authentication Required</string>
     <string name="reauth_required_message">The secure keystore became unavailable. Please re-enter your API key for each server.</string>
+
+    <!-- Content descriptions (D-A11y sprint) -->
+    <string name="cd_menu">Menu</string>
+    <string name="cd_more_options">More options</string>
+    <string name="cd_delete">Delete</string>
+    <string name="cd_drag_handle">Drag to reorder</string>
+    <string name="cd_start_download">Start download</string>
+    <string name="cd_stop_download">Stop download</string>
+    <string name="cd_downloaded">Downloaded</string>
+    <string name="cd_random">Random</string>
+    <string name="cd_tag_filter">Tag filter</string>
+    <string name="cd_upload_archive">Upload archive</string>
+    <string name="cd_select_all">Select all</string>
+    <string name="cd_toggle_drag_sort">Toggle drag sorting</string>
+    <string name="cd_expand_fab_menu">Actions</string>
+    <string name="cd_fingerprint_unlock">Fingerprint unlock</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_clear_search">Clear search</string>
 </resources>

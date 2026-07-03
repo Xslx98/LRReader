@@ -16,6 +16,7 @@
 
 package com.hippo.ehviewer.ui.scene.history
 
+import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.graphics.Color
 import androidx.core.graphics.drawable.toDrawable
@@ -334,6 +335,8 @@ class HistoryScene : ToolbarScene(),
         }
     }
 
+    // InflateParams: the init-block calculator view is measure-only, never attached.
+    @SuppressLint("InflateParams")
     private inner class HistoryAdapter :
         RecyclerView.Adapter<HistoryHolder>(),
         SwipeableItemAdapter<HistoryHolder> {

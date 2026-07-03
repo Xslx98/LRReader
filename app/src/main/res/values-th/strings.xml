@@ -712,4 +712,22 @@
     <string name="lrr_secure_storage_write_failed">คีย์สโตร์ของอุปกรณ์ไม่พร้อมใช��งาน จึงไม่สามารถบันทึกการเปลี่ยนแปลงอย่างปลอดภัยได้ กรุณารีสตาร์ทอุปกรณ์แล้วลองอีกครั้ง หรือติดตั้งแอปใหม่หากปัญหายังคงอยู่</string>
     <string name="reauth_required_title">ต้องยืนยันตัวตนใหม่</string>
     <string name="reauth_required_message">คีย์สโตร์ความปลอดภัยไม่พร้อมใช้งาน กรุณากรอก API Key ของแต่ละเซิร์ฟเวอร์อีกครั้ง</string>
+
+    <!-- Content descriptions (D-A11y sprint) -->
+    <string name="cd_menu">เมนู</string>
+    <string name="cd_more_options">ตัวเลือกเพิ่มเติม</string>
+    <string name="cd_delete">ลบ</string>
+    <string name="cd_drag_handle">ลากเพื่อจัดลำดับ</string>
+    <string name="cd_start_download">เริ่มดาวน์โหลด</string>
+    <string name="cd_stop_download">หยุดดาวน์โหลด</string>
+    <string name="cd_downloaded">ดาวน์โหลดแล้ว</string>
+    <string name="cd_random">สุ่ม</string>
+    <string name="cd_tag_filter">ตัวกรองแท็ก</string>
+    <string name="cd_upload_archive">อัปโหลดไฟล์เก็บถาวร</string>
+    <string name="cd_select_all">เลือกทั้งหมด</string>
+    <string name="cd_toggle_drag_sort">สลับการจัดเรียงด้วยการลาก</string>
+    <string name="cd_expand_fab_menu">การดำเนินการ</string>
+    <string name="cd_fingerprint_unlock">ปลดล็อกด้วยลายนิ้วมือ</string>
+    <string name="cd_back">ย้อนกลับ</string>
+    <string name="cd_clear_search">ล้างการค้นหา</string>
 </resources>

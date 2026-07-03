@@ -52,6 +52,7 @@
       android:layout_height="wrap_content"
       app:srcCompat="@drawable/v_plus_dark_x24"
       app:backgroundTint="?attr/widgetColorThemePrimary"
+      android:contentDescription="@string/add_host"
       style="@style/Widget.Design.FloatingActionButton"/>
 
   </com.hippo.widget.FabLayout>

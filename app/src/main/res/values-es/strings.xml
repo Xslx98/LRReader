@@ -711,4 +711,22 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_secure_storage_write_failed">El almacén de claves del dispositivo no está disponible, por lo que los cambios no se pudieron guardar de forma segura. Reinicie el dispositivo e inténtelo de nuevo, o reinstale la aplicación si el problema persiste.</string>
     <string name="reauth_required_title">Se requiere re-autenticación</string>
     <string name="reauth_required_message">El almacén de claves seguro dejó de estar disponible. Por favor, vuelva a introducir la clave API de cada servidor.</string>
+
+    <!-- Content descriptions (D-A11y sprint) -->
+    <string name="cd_menu">Menú</string>
+    <string name="cd_more_options">Más opciones</string>
+    <string name="cd_delete">Eliminar</string>
+    <string name="cd_drag_handle">Arrastrar para reordenar</string>
+    <string name="cd_start_download">Iniciar descarga</string>
+    <string name="cd_stop_download">Detener descarga</string>
+    <string name="cd_downloaded">Descargado</string>
+    <string name="cd_random">Aleatorio</string>
+    <string name="cd_tag_filter">Filtro de etiquetas</string>
+    <string name="cd_upload_archive">Subir archivo</string>
+    <string name="cd_select_all">Seleccionar todo</string>
+    <string name="cd_toggle_drag_sort">Alternar ordenación por arrastre</string>
+    <string name="cd_expand_fab_menu">Acciones</string>
+    <string name="cd_fingerprint_unlock">Desbloqueo con huella</string>
+    <string name="cd_back">Atrás</string>
+    <string name="cd_clear_search">Borrar búsqueda</string>
 </resources>

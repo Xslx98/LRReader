@@ -92,6 +92,7 @@
                 android:layout_width="16dp"
                 android:layout_height="16dp"
                 android:visibility="gone"
+                android:contentDescription="@string/cd_downloaded"
                 app:srcCompat="@drawable/v_download_x16" />
 
             <ImageView
@@ -99,6 +100,7 @@
                 android:layout_width="16dp"
                 android:layout_height="16dp"
                 android:visibility="gone"
+                android:contentDescription="@string/favorited"
                 app:srcCompat="@drawable/v_heart_x16" />
 
             <TextView

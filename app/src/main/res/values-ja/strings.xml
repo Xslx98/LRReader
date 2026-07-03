@@ -648,4 +648,22 @@
     <string name="lrr_secure_storage_write_failed">デバイスのキーストアが利用できないため、変更を安全に保存できませんでした。デバイスを再起動して再試行するか、問題が解決しない場合はア��リを再インストールしてください。</string>
     <string name="reauth_required_title">再認証が必要です</string>
     <string name="reauth_required_message">セキュアキーストアが利用できなくなりました。各サーバーの API キーを再入力してください。</string>
+
+    <!-- Content descriptions (D-A11y sprint) -->
+    <string name="cd_menu">メニュー</string>
+    <string name="cd_more_options">その他のオプション</string>
+    <string name="cd_delete">削除</string>
+    <string name="cd_drag_handle">ドラッグして並べ替え</string>
+    <string name="cd_start_download">ダウンロード開始</string>
+    <string name="cd_stop_download">ダウンロード停止</string>
+    <string name="cd_downloaded">ダウンロード済み</string>
+    <string name="cd_random">ランダム</string>
+    <string name="cd_tag_filter">タグフィルター</string>
+    <string name="cd_upload_archive">アーカイブをアップロード</string>
+    <string name="cd_select_all">すべて選択</string>
+    <string name="cd_toggle_drag_sort">ドラッグ並べ替えの切り替え</string>
+    <string name="cd_expand_fab_menu">操作メニュー</string>
+    <string name="cd_fingerprint_unlock">指紋ロック解除</string>
+    <string name="cd_back">戻る</string>
+    <string name="cd_clear_search">検索をクリア</string>
 </resources>
