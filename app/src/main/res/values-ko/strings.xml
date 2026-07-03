@@ -720,4 +720,20 @@
     <string name="lrr_secure_storage_write_failed">기기 키스토어를 사용할 수 없어 변경 사항을 안전하게 저장할 수 없습니다. 기기를 재시작한 후 다시 시도하거나, 문제가 지속되면 앱을 재설치하세요.</string>
     <string name="reauth_required_title">��인증 필요</string>
     <string name="reauth_required_message">보안 키스토어를 사용할 수 없게 되었습니다. 각 서버의 API 키를 다시 입력하세요.</string>
+
+    <!-- Content descriptions (D-A11y sprint) -->
+    <string name="cd_menu">메뉴</string>
+    <string name="cd_more_options">더 보기</string>
+    <string name="cd_delete">삭제</string>
+    <string name="cd_drag_handle">드래그하여 순서 변경</string>
+    <string name="cd_start_download">다운로드 시작</string>
+    <string name="cd_stop_download">다운로드 중지</string>
+    <string name="cd_downloaded">다운로드됨</string>
+    <string name="cd_random">무작위</string>
+    <string name="cd_tag_filter">태그 필터</string>
+    <string name="cd_upload_archive">아카이브 업로드</string>
+    <string name="cd_select_all">모두 선택</string>
+    <string name="cd_toggle_drag_sort">드래그 정렬 전환</string>
+    <string name="cd_expand_fab_menu">작업 메뉴</string>
+    <string name="cd_fingerprint_unlock">지문 잠금 해제</string>
 </resources>

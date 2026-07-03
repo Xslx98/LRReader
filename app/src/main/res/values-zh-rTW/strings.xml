@@ -720,4 +720,20 @@
     <string name="lrr_secure_storage_write_failed">裝置金鑰庫不可用，無法安全儲存變更。請重新啟動裝置後重試，若問題持續請重新安裝應用程式。</string>
     <string name="reauth_required_title">需要重新驗證</string>
     <string name="reauth_required_message">安全金鑰庫已失效，請為每個伺服器重新輸入 API Key。</string>
+
+    <!-- Content descriptions (D-A11y sprint) -->
+    <string name="cd_menu">選單</string>
+    <string name="cd_more_options">更多選項</string>
+    <string name="cd_delete">刪除</string>
+    <string name="cd_drag_handle">拖曳排序</string>
+    <string name="cd_start_download">開始下載</string>
+    <string name="cd_stop_download">停止下載</string>
+    <string name="cd_downloaded">已下載</string>
+    <string name="cd_random">隨機</string>
+    <string name="cd_tag_filter">標籤篩選</string>
+    <string name="cd_upload_archive">上傳檔案</string>
+    <string name="cd_select_all">全選</string>
+    <string name="cd_toggle_drag_sort">開關拖曳排序</string>
+    <string name="cd_expand_fab_menu">操作選單</string>
+    <string name="cd_fingerprint_unlock">指紋解鎖</string>
 </resources>

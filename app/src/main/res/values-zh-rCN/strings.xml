@@ -736,4 +736,20 @@
     <string name="lrr_secure_storage_write_failed">设备密钥库不可用，无法安全保存更改。请重启设备后重试，若问题持续请重新安装应用。</string>
     <string name="reauth_required_title">需要重新认证</string>
     <string name="reauth_required_message">安全密钥库已失效，请为每个服务器重新输入 API Key。</string>
+
+    <!-- Content descriptions (D-A11y sprint) -->
+    <string name="cd_menu">菜单</string>
+    <string name="cd_more_options">更多选项</string>
+    <string name="cd_delete">删除</string>
+    <string name="cd_drag_handle">拖动排序</string>
+    <string name="cd_start_download">开始下载</string>
+    <string name="cd_stop_download">停止下载</string>
+    <string name="cd_downloaded">已下载</string>
+    <string name="cd_random">随机</string>
+    <string name="cd_tag_filter">标签筛选</string>
+    <string name="cd_upload_archive">上传档案</string>
+    <string name="cd_select_all">全选</string>
+    <string name="cd_toggle_drag_sort">开关拖动排序</string>
+    <string name="cd_expand_fab_menu">操作菜单</string>
+    <string name="cd_fingerprint_unlock">指纹解锁</string>
 </resources>
