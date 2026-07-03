@@ -304,6 +304,17 @@
     <string name="share_image">이미지 공유</string>
     <string name="image_saved">이미지를 %s 경로에 저장함</string>
 
+    <!-- Reader cross-archive continuation -->
+    <string name="continuation_end_title">마지막 페이지</string>
+    <string name="continuation_next_label">다음 작품</string>
+    <string name="continuation_read_next">이어서 읽기</string>
+    <string name="continuation_back">닫기</string>
+    <string name="continuation_end_of_list">목록의 끝까지 읽었습니다</string>
+    <string name="continuation_error">다음 작품을 불러올 수 없습니다</string>
+    <string name="continuation_retry">다시 시도</string>
+    <string name="continuation_loading">다음 작품 찾는 중…</string>
+    <string name="continuation_jump_toast">다음: %s</string>
+
     <!-- Settings -->
     <string name="settings_eh">화면</string>
     <string name="settings_eh_theme">테마</string>
