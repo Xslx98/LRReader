@@ -284,6 +284,8 @@
     <string name="continuation_retry">Réessayer</string>
     <string name="continuation_loading">Recherche de l\'archive suivante…</string>
     <string name="continuation_jump_toast">Suivant : %s</string>
+    <string name="settings_read_continuation">Afficher l\'archive suivante à la fin</string>
+    <string name="settings_read_continuation_swipe">Tourner la page ouvre l\'archive suivante</string>
 
     <string name="settings_eh">Affichage</string>
     <string name="settings_eh_list_mode">Mode de liste</string>

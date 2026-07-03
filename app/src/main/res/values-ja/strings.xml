@@ -268,6 +268,8 @@
     <string name="continuation_retry">再試行</string>
     <string name="continuation_loading">次の作品を検索中…</string>
     <string name="continuation_jump_toast">次：%s</string>
+    <string name="settings_read_continuation">読了時に次の作品を表示</string>
+    <string name="settings_read_continuation_swipe">ページ送りで次の作品へ</string>
 
     <string name="settings_eh">表示</string>
     <string name="settings_eh_theme">テーマ</string>

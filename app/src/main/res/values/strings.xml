@@ -397,6 +397,8 @@
     <string name="continuation_retry">Retry</string>
     <string name="continuation_loading">Finding next archive…</string>
     <string name="continuation_jump_toast">Next: %s</string>
+    <string name="settings_read_continuation">Show next archive when finished</string>
+    <string name="settings_read_continuation_swipe">Page forward into the next archive</string>
 
     <string name="settings_eh">Display</string>
 <!--    <string name="settings_eh_lock_cookies_igneous">Lock the Cookie igneous field</string>-->
