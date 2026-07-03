@@ -56,6 +56,8 @@ import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.dao.QuickSearch
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.event.AppEventBus
+import com.hippo.ehviewer.gallery.ReadingContext
+import com.hippo.ehviewer.gallery.ReadingContextStore
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.settings.GuideSettings
 import com.hippo.ehviewer.ui.scene.BaseScene
@@ -73,6 +75,7 @@ import com.hippo.widget.ContentLayout
 import com.hippo.widget.FabLayout
 import com.hippo.widget.SearchBarMover
 import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.LRRClientProvider
 import com.lanraragi.reader.client.api.friendlyError
 
 class GalleryListScene : BaseScene(),
@@ -790,8 +793,36 @@ class GalleryListScene : BaseScene(),
         }
     }
 
-    override fun onItemClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean =
-        itemActionHelper?.onItemClick(view, mHelper?.getDataAtEx(position)) ?: false
+    override fun onItemClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean {
+        val archive = mHelper?.getDataAtEx(position)
+        if (archive != null) {
+            publishReadingContext(archive, position)
+        }
+        return itemActionHelper?.onItemClick(view, archive) ?: false
+    }
+
+    /**
+     * Capture the browse/search context so the reader can offer "continue to the
+     * next archive in this list". Best-effort: must never break navigation.
+     */
+    private fun publishReadingContext(archive: Archive, position: Int) {
+        val baseUrl = LRRClientProvider.getBaseUrl()
+        val params = viewModel.currentSearchParams
+        ReadingContextStore.publish(
+            ReadingContext.OnlineSearch(
+                sourceProfileId = LRRAuthManager.getActiveProfileId(),
+                sourceBaseUrl = baseUrl,
+                filter = params.filter,
+                category = params.category,
+                sortby = params.sortby,
+                order = params.order,
+                newonly = params.newonly,
+                untaggedonly = params.untaggedonly,
+                anchorArcid = archive.arcid,
+                anchorIndex = position,
+            )
+        )
+    }
 
     override fun onItemLongClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean =
         itemActionHelper?.onItemLongClick(mHelper?.getDataAtEx(position), view) ?: false
