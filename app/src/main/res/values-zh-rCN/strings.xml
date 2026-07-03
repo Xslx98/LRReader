@@ -752,4 +752,6 @@
     <string name="cd_toggle_drag_sort">开关拖动排序</string>
     <string name="cd_expand_fab_menu">操作菜单</string>
     <string name="cd_fingerprint_unlock">指纹解锁</string>
+    <string name="cd_back">返回</string>
+    <string name="cd_clear_search">清除搜索</string>
 </resources>

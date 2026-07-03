@@ -701,4 +701,6 @@
     <string name="cd_toggle_drag_sort">Toggle drag sorting</string>
     <string name="cd_expand_fab_menu">Actions</string>
     <string name="cd_fingerprint_unlock">Fingerprint unlock</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_clear_search">Clear search</string>
 </resources>

@@ -727,4 +727,6 @@ Esta acción no se puede deshacer.</string>
     <string name="cd_toggle_drag_sort">Alternar ordenación por arrastre</string>
     <string name="cd_expand_fab_menu">Acciones</string>
     <string name="cd_fingerprint_unlock">Desbloqueo con huella</string>
+    <string name="cd_back">Atrás</string>
+    <string name="cd_clear_search">Borrar búsqueda</string>
 </resources>
