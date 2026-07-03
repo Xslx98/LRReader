@@ -61,6 +61,10 @@ class ReaderContinuationController(
      * is the caller-side guard.
      */
     fun onEndOfBookEvent(atLastPage: Boolean) {
+        // No archive (e.g. an ACTION_VIEW import session): resolveAsync could
+        // never run, so bail before any UI or the panel would sit on a
+        // perpetual "loading" state.
+        if (currentArcid == null) return
         if (!atLastPage || !ReadingSettings.getReaderContinuation()) return
         val now = SystemClock.elapsedRealtime()
         if (now - lastEventAt < DEBOUNCE_MS) return
