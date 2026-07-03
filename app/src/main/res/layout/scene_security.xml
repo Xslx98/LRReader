@@ -45,6 +45,8 @@
                 android:layout_height="wrap_content"
                 android:src="@drawable/ic_fp_40px"
                 android:layout_gravity="center_horizontal"
+                android:contentDescription="@null"
+                android:importantForAccessibility="no"
                 android:visibility="gone" />
 
             <TextView

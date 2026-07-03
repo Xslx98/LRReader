@@ -28,6 +28,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:padding="@dimen/keyline_margin"
+        android:contentDescription="@null"
+        android:importantForAccessibility="no"
         app:srcCompat="@drawable/v_chart_accent_x48"/>
 
     <com.hippo.widget.MaxSizeContainer
