@@ -728,4 +728,6 @@
     <string name="cd_toggle_drag_sort">สลับการจัดเรียงด้วยการลาก</string>
     <string name="cd_expand_fab_menu">การดำเนินการ</string>
     <string name="cd_fingerprint_unlock">ปลดล็อกด้วยลายนิ้วมือ</string>
+    <string name="cd_back">ย้อนกลับ</string>
+    <string name="cd_clear_search">ล้างการค้นหา</string>
 </resources>

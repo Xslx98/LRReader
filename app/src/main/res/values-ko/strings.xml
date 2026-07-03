@@ -736,4 +736,6 @@
     <string name="cd_toggle_drag_sort">드래그 정렬 전환</string>
     <string name="cd_expand_fab_menu">작업 메뉴</string>
     <string name="cd_fingerprint_unlock">지문 잠금 해제</string>
+    <string name="cd_back">뒤로</string>
+    <string name="cd_clear_search">검색 지우기</string>
 </resources>

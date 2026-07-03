@@ -732,4 +732,6 @@ Cette action est irréversible.</string>
     <string name="cd_toggle_drag_sort">Basculer le tri par glissement</string>
     <string name="cd_expand_fab_menu">Actions</string>
     <string name="cd_fingerprint_unlock">Déverrouillage par empreinte</string>
+    <string name="cd_back">Retour</string>
+    <string name="cd_clear_search">Effacer la recherche</string>
 </resources>

@@ -664,4 +664,6 @@
     <string name="cd_toggle_drag_sort">ドラッグ並べ替えの切り替え</string>
     <string name="cd_expand_fab_menu">操作メニュー</string>
     <string name="cd_fingerprint_unlock">指紋ロック解除</string>
+    <string name="cd_back">戻る</string>
+    <string name="cd_clear_search">検索をクリア</string>
 </resources>
