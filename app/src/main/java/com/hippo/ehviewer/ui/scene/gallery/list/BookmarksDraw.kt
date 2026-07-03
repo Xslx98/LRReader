@@ -6,6 +6,7 @@ import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.AbsListView
 import android.widget.ArrayAdapter
 import android.widget.ListView
@@ -36,8 +37,8 @@ class BookmarksDraw(
     private lateinit var listView: ListView
 
     @SuppressLint("NonConstantResourceId")
-    fun onCreate(scene: GalleryListScene): View {
-        val bookmarksView = inflater.inflate(R.layout.bookmarks_draw, null, false)
+    fun onCreate(scene: GalleryListScene, parent: ViewGroup): View {
+        val bookmarksView = inflater.inflate(R.layout.bookmarks_draw, parent, false)
 
         val toolbar = ViewUtils.`$$`(bookmarksView, R.id.toolbar) as Toolbar
         val tip = ViewUtils.`$$`(bookmarksView, R.id.tip) as TextView

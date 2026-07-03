@@ -64,7 +64,7 @@ class GalleryDrawerHelper(private val callback: Callback) {
 
         drawPager = view.findViewById(R.id.drawer_list_pager)
 
-        bookmarksView = bookmarksViewBuild(inflater)
+        bookmarksView = bookmarksViewBuild(inflater, drawPager)
 
         val views: MutableList<View> = ArrayList()
         views.add(bookmarksView)
@@ -76,13 +76,13 @@ class GalleryDrawerHelper(private val callback: Callback) {
     }
 
     @SuppressLint("RtlHardcoded", "NonConstantResourceId")
-    private fun bookmarksViewBuild(inflater: LayoutInflater): View {
+    private fun bookmarksViewBuild(inflater: LayoutInflater, parent: ViewGroup): View {
         // If the host context is gone, return a harmless empty View backed by
         // the inflater's context — never `View(null)`, whose null Context NPEs
         // the moment the ViewPager tries to measure/lay it out.
         val context = callback.getHostContext() ?: return View(inflater.context)
         mBookmarksDraw = BookmarksDraw(context, inflater, callback.getEhTags())
-        return mBookmarksDraw!!.onCreate(callback.getScene())
+        return mBookmarksDraw!!.onCreate(callback.getScene(), parent)
     }
 
     fun onResume() {
