@@ -223,6 +223,8 @@
     <string name="sort_download_list">Ordenar lista</string>
     <string name="download_start_all">Iniciar todo</string>
     <string name="download_stop_all">Detener todo</string>
+    <string name="download_start_selected">Iniciar seleccionados</string>
+    <string name="download_stop_selected">Detener seleccionados</string>
     <string name="download_search_gallery">Buscar galería</string>
     <string name="download_search_hint">Ingrese clave de búsqueda</string>
     <string name="download_service_label">Servicio de descarga LR Reader</string>

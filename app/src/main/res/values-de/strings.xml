@@ -182,6 +182,8 @@
     <string name="download_labels">Download-Etikette</string>
     <string name="download_start_all">Alle starten</string>
     <string name="download_stop_all">Alle stoppen</string>
+    <string name="download_start_selected">Ausgewählte starten</string>
+    <string name="download_stop_selected">Ausgewählte stoppen</string>
     <string name="download_service_label">LR Reader-Download-Dienst</string>
     <string name="download_speed_text">%s</string>
     <string name="download_speed_text_2">%1$s, noch %2$s übrig</string>

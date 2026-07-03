@@ -194,6 +194,8 @@
     <string name="sort_download_list">リストを並べ替え</string>
     <string name="download_start_all">すべて開始</string>
     <string name="download_stop_all">すべて停止</string>
+    <string name="download_start_selected">選択項目を開始</string>
+    <string name="download_stop_selected">選択項目を停止</string>
     <string name="download_reset_reading_progress">閲覧進捗をリセット</string>
     <string name="download_search_gallery">ギャラリーを検索</string>
     <string name="download_search_hint">検索キーを入力</string>

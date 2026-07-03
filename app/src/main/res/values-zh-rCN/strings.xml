@@ -223,6 +223,8 @@
     <string name="sort_by_file_size_desc">按文件大小降序</string>
     <string name="download_start_all">全部开始</string>
     <string name="download_stop_all">全部停止</string>
+    <string name="download_start_selected">开始所选</string>
+    <string name="download_stop_selected">停止所选</string>
     <string name="download_reset_reading_progress">重置阅读进度</string>
     <string name="download_search_gallery">搜索画廊</string>
     <string name="download_search_hint">输入关键字</string>
