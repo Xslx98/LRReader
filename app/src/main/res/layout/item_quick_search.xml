@@ -39,6 +39,7 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:padding="12dp"
+                android:contentDescription="@string/cd_delete"
                 app:srcCompat="@drawable/v_delete_x24"/>
 
             <TextView
@@ -60,6 +61,7 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:padding="12dp"
+                android:contentDescription="@string/cd_drag_handle"
                 app:srcCompat="@drawable/v_reorder_x24"/>
 
         </LinearLayout>

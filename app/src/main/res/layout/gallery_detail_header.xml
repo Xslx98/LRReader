@@ -70,7 +70,8 @@
         android:paddingBottom="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/v_dots_vertical_secondary_dark_x24" />
+        app:srcCompat="@drawable/v_dots_vertical_secondary_dark_x24"
+        android:contentDescription="@string/cd_more_options" />
 
     <TextView
         android:id="@+id/title"
