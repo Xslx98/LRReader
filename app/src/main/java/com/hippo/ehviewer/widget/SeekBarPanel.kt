@@ -47,8 +47,13 @@ class SeekBarPanel @JvmOverloads constructor(
         event.offsetLocation(offsetX, offsetY)
         seekBar.onTouchEvent(event)
         event.offsetLocation(-offsetX, -offsetY)
+        if (event.action == MotionEvent.ACTION_UP) {
+            performClick()
+        }
         return true
     }
+
+    override fun performClick(): Boolean = super.performClick()
 
     @Suppress("DEPRECATION")
     override fun fitSystemWindows(insets: Rect): Boolean {

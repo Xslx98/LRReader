@@ -24,6 +24,8 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:padding="@dimen/keyline_margin"
+                android:contentDescription="@null"
+                android:importantForAccessibility="no"
                 android:src="@mipmap/ic_launcher"/>
 
             <TextView

@@ -5,6 +5,7 @@ import android.view.Gravity
 import android.view.View
 import com.hippo.drawable.AddDeleteDrawable
 import com.hippo.drawable.DrawerArrowDrawable
+import com.hippo.ehviewer.R
 import com.hippo.ehviewer.widget.SearchBar
 import com.hippo.widget.FabLayout
 import com.hippo.widget.SearchBarMover
@@ -258,17 +259,23 @@ class GalleryStateHelper(private val callback: Callback) {
             SearchBar.STATE_NORMAL -> {
                 leftDrawable.setArrow(if (animation) ANIMATE_TIME else 0)
                 rightDrawable.setDelete(if (animation) ANIMATE_TIME else 0)
+                callback.getSearchBar()?.setLeftIconContentDescription(R.string.cd_back)
+                callback.getSearchBar()?.setRightIconContentDescription(R.string.cd_clear_search)
             }
             SearchBar.STATE_SEARCH -> {
                 if (newState == SearchBar.STATE_NORMAL) {
                     leftDrawable.setMenu(if (animation) ANIMATE_TIME else 0)
                     rightDrawable.setAdd(if (animation) ANIMATE_TIME else 0)
+                    callback.getSearchBar()?.setLeftIconContentDescription(R.string.cd_menu)
+                    callback.getSearchBar()?.setRightIconContentDescription(R.string.search)
                 }
             }
             SearchBar.STATE_SEARCH_LIST -> {
                 if (newState == STATE_NORMAL) {
                     leftDrawable.setMenu(if (animation) ANIMATE_TIME else 0)
                     rightDrawable.setAdd(if (animation) ANIMATE_TIME else 0)
+                    callback.getSearchBar()?.setLeftIconContentDescription(R.string.cd_menu)
+                    callback.getSearchBar()?.setRightIconContentDescription(R.string.search)
                 }
             }
         }

@@ -716,4 +716,22 @@ Cette action est irréversible.</string>
     <string name="lrr_secure_storage_write_failed">Le magasin de clés de l\'appareil est indisponible, vos modifications n\'ont pas pu être enregistrées en toute sécurité. Veuillez redémarrer l\'appareil et réessayer, ou réinstaller l\'application si le problème persiste.</string>
     <string name="reauth_required_title">Ré-authentification requise</string>
     <string name="reauth_required_message">Le magasin de clés sécurisé est devenu indisponible. Veuillez saisir à nouveau la clé API de chaque serveur.</string>
+
+    <!-- Content descriptions (D-A11y sprint) -->
+    <string name="cd_menu">Menu</string>
+    <string name="cd_more_options">Plus d\'options</string>
+    <string name="cd_delete">Supprimer</string>
+    <string name="cd_drag_handle">Glisser pour réorganiser</string>
+    <string name="cd_start_download">Démarrer le téléchargement</string>
+    <string name="cd_stop_download">Arrêter le téléchargement</string>
+    <string name="cd_downloaded">Téléchargé</string>
+    <string name="cd_random">Aléatoire</string>
+    <string name="cd_tag_filter">Filtre de tags</string>
+    <string name="cd_upload_archive">Téléverser une archive</string>
+    <string name="cd_select_all">Tout sélectionner</string>
+    <string name="cd_toggle_drag_sort">Basculer le tri par glissement</string>
+    <string name="cd_expand_fab_menu">Actions</string>
+    <string name="cd_fingerprint_unlock">Déverrouillage par empreinte</string>
+    <string name="cd_back">Retour</string>
+    <string name="cd_clear_search">Effacer la recherche</string>
 </resources>

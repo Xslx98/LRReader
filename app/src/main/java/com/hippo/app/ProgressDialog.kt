@@ -15,6 +15,7 @@
  */
 package com.hippo.app
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.DialogInterface
 import android.graphics.Typeface
@@ -80,6 +81,9 @@ class ProgressDialog : AlertDialog {
         mProgressPercentFormat!!.setMaximumFractionDigits(0)
     }
 
+    // Dialog custom views have no parent at inflate time; AlertDialog.setView
+    // supplies the LayoutParams.
+    @SuppressLint("InflateParams")
     override fun onCreate(savedInstanceState: Bundle?) {
         val inflater = LayoutInflater.from(context)
         if (mProgressStyle == STYLE_HORIZONTAL) {

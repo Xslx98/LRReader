@@ -97,6 +97,7 @@
                 style="@style/Widget.Design.FloatingActionButton.Mini"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:contentDescription="@string/cd_select_all"
                 app:backgroundTint="?attr/widgetColorThemeAccent"
                 app:srcCompat="@drawable/v_check_all_dark_x24" />
 
@@ -104,6 +105,7 @@
                 style="@style/Widget.Design.FloatingActionButton.Mini"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:contentDescription="@string/download_start_all"
                 app:backgroundTint="?attr/widgetColorThemeAccent"
                 app:srcCompat="@drawable/v_play_dark_x24" />
 
@@ -111,6 +113,7 @@
                 style="@style/Widget.Design.FloatingActionButton.Mini"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:contentDescription="@string/download_stop_all"
                 app:backgroundTint="?attr/widgetColorThemeAccent"
                 app:srcCompat="@drawable/v_pause_dark_x24" />
 
@@ -118,6 +121,7 @@
                 style="@style/Widget.Design.FloatingActionButton.Mini"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:contentDescription="@string/cd_delete"
                 app:backgroundTint="?attr/widgetColorThemeAccent"
                 app:srcCompat="@drawable/v_delete_dark_x24" />
 
@@ -125,6 +129,7 @@
                 style="@style/Widget.Design.FloatingActionButton.Mini"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:contentDescription="@string/download_move_dialog_title"
                 app:backgroundTint="?attr/widgetColorThemeAccent"
                 app:srcCompat="@drawable/v_folder_move_dark_x24" />
 
@@ -132,6 +137,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:scaleX="-1"
+                android:contentDescription="@string/cd_random"
                 app:srcCompat="@drawable/v_random_dark_x24"
                 app:backgroundTint="?attr/widgetColorThemeAccent"
                 style="@style/Widget.Design.FloatingActionButton.Mini"/>
@@ -139,6 +145,7 @@
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:contentDescription="@string/cd_toggle_drag_sort"
                 app:srcCompat="@drawable/v_mobile_hand_left_off_x24"
                 app:backgroundTint="?attr/widgetColorThemeAccent"
                 style="@style/Widget.Design.FloatingActionButton.Mini"/>
@@ -146,6 +153,7 @@
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:contentDescription="@string/cd_expand_fab_menu"
                 app:backgroundTint="?attr/widgetColorThemePrimary"
                 style="@style/Widget.Design.FloatingActionButton"/>
 

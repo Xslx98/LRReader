@@ -60,7 +60,9 @@ class SearchEditText : AppCompatEditText {
     @Suppress("TooGenericExceptionCaught")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (event.action == MotionEvent.ACTION_UP && mListener != null) {
-            mListener!!.onClick()
+            // First tap on a focusable-in-touch-mode view takes focus without a
+            // click, so dispatch explicitly instead of relying on View's detection.
+            performClick()
         }
         try {
             return super.onTouchEvent(event)
@@ -70,6 +72,14 @@ class SearchEditText : AppCompatEditText {
             ExceptionUtils.throwIfFatal(t)
             return false
         }
+    }
+
+    override fun performClick(): Boolean {
+        // May fire twice per tap when the view is already focused (explicit
+        // ACTION_UP dispatch above + View's own click detection). Safe only
+        // while every SearchEditTextListener.onClick() stays idempotent.
+        mListener?.onClick()
+        return super.performClick()
     }
 
     interface SearchEditTextListener {

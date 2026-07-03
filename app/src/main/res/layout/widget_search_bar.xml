@@ -32,7 +32,8 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:layout_gravity="start|center_vertical"
-                android:padding="12dp"/>
+                android:padding="12dp"
+                android:contentDescription="@string/cd_menu"/>
 
             <TextView
                 android:id="@+id/search_title"
@@ -51,7 +52,8 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:layout_gravity="end|center_vertical"
-                android:padding="12dp"/>
+                android:padding="12dp"
+                android:contentDescription="@string/search"/>
 
             <com.hippo.ehviewer.widget.SearchEditText
                 android:id="@+id/search_edit_text"

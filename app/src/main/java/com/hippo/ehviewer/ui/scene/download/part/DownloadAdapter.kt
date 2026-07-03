@@ -71,6 +71,8 @@ import java.util.concurrent.CompletableFuture
 /**
  * 下载列表适配器
  */
+// InflateParams: the init-block calculator view is measure-only, never attached.
+@SuppressLint("InflateParams")
 class DownloadAdapter(
     private val mScene: DownloadsScene,
     private val mCallback: DownloadAdapterCallback

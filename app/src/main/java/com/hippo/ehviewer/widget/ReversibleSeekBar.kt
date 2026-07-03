@@ -64,6 +64,11 @@ class ReversibleSeekBar : AppCompatSeekBar {
         if (reverse) {
             event.setLocation(x, y)
         }
+        if (event.action == MotionEvent.ACTION_UP) {
+            performClick()
+        }
         return result
     }
+
+    override fun performClick(): Boolean = super.performClick()
 }
