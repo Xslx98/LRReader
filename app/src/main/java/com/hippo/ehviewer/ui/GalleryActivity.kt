@@ -731,8 +731,15 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         lifecycleScope.launch {
             try {
                 val intent = GalleryOpenHelper.buildReadIntent(this@GalleryActivity, next)
-                startActivity(intent)
+                // singleTask (AndroidManifest): a live top instance would
+                // swallow the intent via onNewIntent (not overridden). Mark
+                // this instance finishing FIRST so the system creates a fresh
+                // instance for the next archive. finish() must be immediately
+                // followed by startActivity with no suspension in between —
+                // the lifecycleScope coroutine would be cancelled once the
+                // activity is destroyed.
                 finish()
+                startActivity(intent)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
