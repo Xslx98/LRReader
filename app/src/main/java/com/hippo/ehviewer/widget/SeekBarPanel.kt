@@ -50,6 +50,10 @@ class SeekBarPanel @JvmOverloads constructor(
         return true
     }
 
+    // Click handling lives in the super chain; override to satisfy the
+    // accessibility contract for views that override onTouchEvent.
+    override fun performClick(): Boolean = super.performClick()
+
     @Suppress("DEPRECATION")
     override fun fitSystemWindows(insets: Rect): Boolean {
         insets.top = 0
