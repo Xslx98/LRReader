@@ -102,6 +102,38 @@ object ReadingSettings {
         cachedKeepScreenOn = value
     }
 
+    // --- Reader Continuation (end-of-book next-archive panel) ---
+    const val KEY_READER_CONTINUATION = "reader_continuation"
+    private const val DEFAULT_READER_CONTINUATION = true
+
+    @Volatile
+    private var cachedReaderContinuation: Boolean = DEFAULT_READER_CONTINUATION
+
+    @JvmStatic
+    fun getReaderContinuation(): Boolean = cachedReaderContinuation
+
+    @JvmStatic
+    fun putReaderContinuation(value: Boolean) {
+        Settings.putBoolean(KEY_READER_CONTINUATION, value)
+        cachedReaderContinuation = value
+    }
+
+    // --- Reader Continuation Swipe-through (jump directly instead of panel) ---
+    const val KEY_READER_CONTINUATION_SWIPE = "reader_continuation_swipe"
+    private const val DEFAULT_READER_CONTINUATION_SWIPE = false
+
+    @Volatile
+    private var cachedReaderContinuationSwipe: Boolean = DEFAULT_READER_CONTINUATION_SWIPE
+
+    @JvmStatic
+    fun getReaderContinuationSwipe(): Boolean = cachedReaderContinuationSwipe
+
+    @JvmStatic
+    fun putReaderContinuationSwipe(value: Boolean) {
+        Settings.putBoolean(KEY_READER_CONTINUATION_SWIPE, value)
+        cachedReaderContinuationSwipe = value
+    }
+
     // --- Show Clock (hot-path, cached) ---
     const val KEY_SHOW_CLOCK = "gallery_show_clock"
     private const val DEFAULT_SHOW_CLOCK = true
@@ -267,6 +299,10 @@ object ReadingSettings {
                 )
                 KEY_KEEP_SCREEN_ON -> cachedKeepScreenOn =
                     Settings.getBoolean(KEY_KEEP_SCREEN_ON, DEFAULT_KEEP_SCREEN_ON)
+                KEY_READER_CONTINUATION -> cachedReaderContinuation =
+                    Settings.getBoolean(KEY_READER_CONTINUATION, DEFAULT_READER_CONTINUATION)
+                KEY_READER_CONTINUATION_SWIPE -> cachedReaderContinuationSwipe =
+                    Settings.getBoolean(KEY_READER_CONTINUATION_SWIPE, DEFAULT_READER_CONTINUATION_SWIPE)
                 KEY_SHOW_CLOCK -> cachedShowClock =
                     Settings.getBoolean(KEY_SHOW_CLOCK, DEFAULT_SHOW_CLOCK)
                 KEY_SHOW_PROGRESS -> cachedShowProgress =
@@ -304,6 +340,12 @@ object ReadingSettings {
             Settings.getIntFromStr(KEY_START_POSITION, DEFAULT_START_POSITION)
         )
         cachedKeepScreenOn = Settings.getBoolean(KEY_KEEP_SCREEN_ON, DEFAULT_KEEP_SCREEN_ON)
+        cachedReaderContinuation = Settings.getBoolean(
+            KEY_READER_CONTINUATION, DEFAULT_READER_CONTINUATION
+        )
+        cachedReaderContinuationSwipe = Settings.getBoolean(
+            KEY_READER_CONTINUATION_SWIPE, DEFAULT_READER_CONTINUATION_SWIPE
+        )
         cachedShowClock = Settings.getBoolean(KEY_SHOW_CLOCK, DEFAULT_SHOW_CLOCK)
         cachedShowProgress = Settings.getBoolean(KEY_SHOW_PROGRESS, DEFAULT_SHOW_PROGRESS)
         cachedShowBattery = Settings.getBoolean(KEY_SHOW_BATTERY, DEFAULT_SHOW_BATTERY)

@@ -131,4 +131,10 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <!-- End-of-book continuation overlay. Last child on purpose: it must
+         render above the GL view, the header widgets and the brightness
+         mask (same stacking the programmatically-added GalleryGuideView
+         relies on). -->
+    <include layout="@layout/reader_continuation_panel" />
+
 </FrameLayout>
