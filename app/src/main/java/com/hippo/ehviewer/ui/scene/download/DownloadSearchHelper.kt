@@ -70,6 +70,7 @@ internal class DownloadSearchHelper(private val callback: Callback) {
         bar.setIsComeFromDownload(true)
         bar.setEditTextHint(R.string.download_search_hint)
         bar.setLeftDrawable(drawable)
+        bar.setLeftIconDecorative()
         bar.setText(searchKey)
         if (!searchKey.isNullOrEmpty()) {
             bar.setTitle(searchKey)
