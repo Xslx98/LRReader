@@ -220,6 +220,8 @@
     <string name="sort_download_list">Trier la liste</string>
     <string name="download_start_all">Commencer tout</string>
     <string name="download_stop_all">Arrêter tout</string>
+    <string name="download_start_selected">Commencer la sélection</string>
+    <string name="download_stop_selected">Arrêter la sélection</string>
     <string name="download_reset_reading_progress">Réinitialiser les progrès de lecture</string>
     <string name="reset_reading_progress_message">Réinitialiser les progrès de lecture de toutes les galeries téléchargées ?</string>
     <string name="download_service_label">Service du téléchargement LR Reader</string>

@@ -314,6 +314,8 @@
     <string name="sort_download_list">Sort List</string>
     <string name="download_start_all">Start all</string>
     <string name="download_stop_all">Stop all</string>
+    <string name="download_start_selected">Start selected</string>
+    <string name="download_stop_selected">Stop selected</string>
     <string name="download_reset_reading_progress">Reset reading progress</string>
     <string name="download_search_gallery">Search gallery</string>
     <string name="download_search_hint">Input search key</string>

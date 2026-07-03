@@ -261,6 +261,8 @@
     <string name="sort_download_list">排序列表</string>
     <string name="download_start_all">全部開始</string>
     <string name="download_stop_all">全部停止</string>
+    <string name="download_start_selected">開始所選</string>
+    <string name="download_stop_selected">停止所選</string>
     <string name="download_reset_reading_progress">重設閱讀進度</string>
     <string name="download_search_gallery">搜尋畫廊</string>
     <string name="download_search_hint">輸入搜尋關鍵字</string>

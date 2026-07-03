@@ -229,6 +229,8 @@
     <string name="download_labels">ป้ายชื่อดาวน์โหลด</string>
     <string name="download_start_all">เริ่มทั้งหมด</string>
     <string name="download_stop_all">หยุดทั้งหมด</string>
+    <string name="download_start_selected">เริ่มรายการที่เลือก</string>
+    <string name="download_stop_selected">หยุดรายการที่เลือก</string>
     <string name="download_reset_reading_progress">รีเซ็ตตำแหน่งที่อ่าน</string>
     <string name="reset_reading_progress_message">รีเซ็ตตำแหน่งที่อ่านค้างไว้ทั้งหมดในแกลเลอรี่ที่โหลดไว้ทั้งหมดหรือไม่?</string>
     <string name="download_service_label">บริการดาวน์โหลดของ LR Reader</string>

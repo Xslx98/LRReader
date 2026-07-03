@@ -105,7 +105,7 @@
                 style="@style/Widget.Design.FloatingActionButton.Mini"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:contentDescription="@string/download_start_all"
+                android:contentDescription="@string/download_start_selected"
                 app:backgroundTint="?attr/widgetColorThemeAccent"
                 app:srcCompat="@drawable/v_play_dark_x24" />
 
@@ -113,7 +113,7 @@
                 style="@style/Widget.Design.FloatingActionButton.Mini"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:contentDescription="@string/download_stop_all"
+                android:contentDescription="@string/download_stop_selected"
                 app:backgroundTint="?attr/widgetColorThemeAccent"
                 app:srcCompat="@drawable/v_pause_dark_x24" />
 

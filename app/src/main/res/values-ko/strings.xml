@@ -231,6 +231,8 @@
     <string name="sort_download_list">목록 정렬</string>
     <string name="download_start_all">모두 시작</string>
     <string name="download_stop_all">모두 중지</string>
+    <string name="download_start_selected">선택 항목 시작</string>
+    <string name="download_stop_selected">선택 항목 중지</string>
     <string name="download_reset_reading_progress">독서 진행도 초기화</string>
     <string name="download_search_gallery">갤러리 검색</string>
     <string name="download_search_hint">키워드 입력</string>
