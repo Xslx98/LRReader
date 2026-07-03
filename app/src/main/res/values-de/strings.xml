@@ -240,6 +240,8 @@
     <string name="continuation_retry">Erneut versuchen</string>
     <string name="continuation_loading">Nächstes Archiv wird gesucht…</string>
     <string name="continuation_jump_toast">Nächstes: %s</string>
+    <string name="settings_read_continuation">Nächstes Archiv am Ende anzeigen</string>
+    <string name="settings_read_continuation_swipe">Weiterblättern öffnet nächstes Archiv</string>
 
     <string name="settings_eh">Anzeige</string>
     <string name="settings_eh_list_mode">Liste-Ansicht</string>

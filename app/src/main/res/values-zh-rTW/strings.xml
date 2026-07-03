@@ -309,6 +309,8 @@
     <string name="continuation_retry">重試</string>
     <string name="continuation_loading">正在尋找下一本…</string>
     <string name="continuation_jump_toast">下一本：%s</string>
+    <string name="settings_read_continuation">讀完顯示下一本</string>
+    <string name="settings_read_continuation_swipe">翻頁直接進入下一本</string>
 
     <!-- Settings -->
     <string name="settings_eh">顯示</string>
