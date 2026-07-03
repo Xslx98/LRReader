@@ -42,6 +42,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ListView
 import android.widget.TextView
+import androidx.annotation.StringRes
 import androidx.cardview.widget.CardView
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
@@ -311,6 +312,19 @@ class SearchBar : CardView,
 
     fun setRightDrawable(drawable: Drawable?) {
         mActionButton.setImageDrawable(drawable)
+    }
+
+    fun setLeftIconContentDescription(@StringRes resId: Int) {
+        mMenuButton.contentDescription = context.getString(resId)
+    }
+
+    fun setRightIconContentDescription(@StringRes resId: Int) {
+        mActionButton.contentDescription = context.getString(resId)
+    }
+
+    fun setLeftIconDecorative() {
+        mMenuButton.contentDescription = null
+        mMenuButton.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
     }
 
     fun setLeftIconVisibility(visibility: Int) {
