@@ -60,6 +60,9 @@ abstract class GalleryAdapterNew(
     private val mPaddingTopSB: Int = mResources.getDimensionPixelOffset(R.dimen.gallery_padding_top_search_bar)
     private var mListDecoration: MarginItemDecoration? = null
     private var mGirdDecoration: MarginItemDecoration? = null
+
+    // Measure-only calculator view, never attached to a hierarchy.
+    @get:SuppressLint("InflateParams")
     private val mListThumbHeight: Int by lazy {
         val calculator = mInflater.inflate(R.layout.item_gallery_list_thumb_height, null)
         ViewUtils.measureView(calculator, 1024, ViewGroup.LayoutParams.WRAP_CONTENT)
