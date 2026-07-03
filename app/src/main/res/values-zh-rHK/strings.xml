@@ -339,7 +339,7 @@
     <string name="continuation_next_label">下一本</string>
     <string name="continuation_read_next">繼續閱讀</string>
     <string name="continuation_back">關閉</string>
-    <string name="continuation_end_of_list">已讀完目前清單</string>
+    <string name="continuation_end_of_list">已讀完目前列表</string>
     <string name="continuation_error">無法取得下一本</string>
     <string name="continuation_retry">重試</string>
     <string name="continuation_loading">正在尋找下一本…</string>
