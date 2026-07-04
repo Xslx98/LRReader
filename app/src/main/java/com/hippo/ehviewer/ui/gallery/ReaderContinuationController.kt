@@ -56,6 +56,19 @@ class ReaderContinuationController(
     }
 
     /**
+     * Silently warm the next-archive resolution when the user reaches the
+     * last page, so the panel renders instantly and swipe-through can jump
+     * on the first forward attempt. Main thread. No UI is shown —
+     * [resolveAsync] only re-renders when the panel is already visible.
+     */
+    fun onPageShown(index: Int, pageCount: Int) {
+        if (currentArcid == null) return
+        if (!ReadingSettings.getReaderContinuation()) return
+        if (pageCount <= 0 || index < pageCount - 1) return
+        if (cached == null) resolveAsync()
+    }
+
+    /**
      * Forward attempt at the last page (or auto-read completion). The same GL
      * event also fires on TOP over-scroll in vertical mode, so [atLastPage]
      * is the caller-side guard.
