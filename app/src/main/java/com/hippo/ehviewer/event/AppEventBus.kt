@@ -24,7 +24,7 @@ object AppEventBus {
     // re-process old deletions. Generous extraBufferCapacity so we never drop on
     // burst (multi-select delete in the future).
     private val _archiveDeletedEvent = MutableSharedFlow<ArchiveDeletedEvent>(
-        extraBufferCapacity = 16
+        extraBufferCapacity = 128
     )
     val archiveDeletedEvent = _archiveDeletedEvent.asSharedFlow()
 
