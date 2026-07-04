@@ -61,6 +61,7 @@ import com.hippo.ehviewer.gallery.ReadingContextStore
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.settings.GuideSettings
 import com.hippo.ehviewer.ui.scene.BaseScene
+import com.hippo.ehviewer.ui.scene.ListMultiSelectHelper
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.ehviewer.widget.SearchBar
 import com.hippo.ehviewer.widget.SearchLayout
@@ -137,6 +138,7 @@ class GalleryListScene : BaseScene(),
     internal var stateHelper: GalleryStateHelper? = null
     internal var tagChipHelper: GalleryTagChipHelper? = null
     internal var itemActionHelper: GalleryItemActionHelper? = null
+    internal var multiSelectHelper: ListMultiSelectHelper? = null
     internal var uploadHelper: GalleryUploadHelper? = null
     private var mSearchHelper: GallerySearchHelper? = null
     internal var listSearchHelper: GalleryListSearchHelper? = null
@@ -367,6 +369,10 @@ class GalleryListScene : BaseScene(),
     }
 
     fun onUpdateUrlBuilder() {
+        // The query is changing (search / tag / bookmark / filter / new args):
+        // the list is about to reload and adapter positions become meaningless,
+        // so any in-flight multi-select must not survive it.
+        multiSelectHelper?.exit()
         val builder = mUrlBuilder
         val resources = resources2
         if (resources == null || builder == null || !::searchLayout.isInitialized) {
@@ -445,6 +451,10 @@ class GalleryListScene : BaseScene(),
         )
         mAdapterImpl?.setThumbItemClickListener(object : GalleryAdapterNew.OnThumbItemClickListener {
             override fun onThumbItemClick(position: Int, view: View, archive: Archive?) {
+                // The thumb owns its own click listener (bypasses the
+                // EasyRecyclerView item-click path) — in multi-select mode it
+                // must toggle the row instead of opening the tag-chip popup.
+                if (multiSelectHelper?.toggleChecked(position) == true) return
                 tagChipHelper?.onThumbItemClick(position, view, archive)
             }
         })
@@ -456,6 +466,22 @@ class GalleryListScene : BaseScene(),
         recyclerView.setClipToPadding(false)
         recyclerView.setOnItemClickListener(this)
         recyclerView.setOnItemLongClickListener(this)
+        val multiSelect = ListMultiSelectHelper(
+            recyclerView = { if (::recyclerView.isInitialized) recyclerView else null },
+            longClickListener = { this },
+            onModeChanged = { _ ->
+                // Task 4 wires the batch action bar here.
+            },
+            onCheckedChanged = { _ ->
+                // Task 4 wires the batch action bar here.
+            },
+        )
+        multiSelectHelper = multiSelect
+        // intoCustomChoiceMode() is a no-op unless the custom choice mode is
+        // configured, and it dispatches to the listener without a null check —
+        // both calls below are required before the mode can be entered.
+        recyclerView.setChoiceMode(EasyRecyclerView.CHOICE_MODE_MULTIPLE_CUSTOM)
+        recyclerView.setCustomCheckedListener(multiSelect.choiceListener)
         recyclerView.addOnScrollListener(mOnScrollListener)
         fastScroller.setPadding(
             fastScroller.paddingLeft, fastScroller.paddingTop + paddingTopSB,
@@ -683,6 +709,7 @@ class GalleryListScene : BaseScene(),
         leftDrawable = null
         rightDrawable = null
         actionFabDrawable = null
+        multiSelectHelper = null
         uploadHelper = null
         listSearchHelper = null
         mFabHelper = null
@@ -756,6 +783,9 @@ class GalleryListScene : BaseScene(),
         val currentVersion = LRRAuthManager.serverConfigVersion
         if (currentVersion != mLastServerConfigVersion) {
             mLastServerConfigVersion = currentVersion
+            // The whole result set is replaced by another server's data — a
+            // stale selection must not carry across profiles.
+            multiSelectHelper?.exit()
             mHelper?.refresh()
         }
     }
@@ -763,6 +793,12 @@ class GalleryListScene : BaseScene(),
     override fun onBackPressed() {
         tagChipHelper?.dismissPopup()
         if (mShowcaseView != null) {
+            return
+        }
+
+        val multiSelect = multiSelectHelper
+        if (multiSelect != null && multiSelect.isActive) {
+            multiSelect.exit()
             return
         }
 
@@ -794,6 +830,9 @@ class GalleryListScene : BaseScene(),
     }
 
     override fun onItemClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean {
+        // In multi-select mode a click toggles the row instead of navigating —
+        // the library does not toggle on click by itself (mirrors downloads).
+        multiSelectHelper?.let { if (it.isActive) return it.toggleChecked(position) }
         val archive = mHelper?.getDataAtEx(position)
         if (archive != null) {
             publishReadingContext(archive, position)
@@ -825,7 +864,7 @@ class GalleryListScene : BaseScene(),
     }
 
     override fun onItemLongClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean =
-        itemActionHelper?.onItemLongClick(mHelper?.getDataAtEx(position), view) ?: false
+        multiSelectHelper?.enterAndCheck(position) ?: false
 
     override fun onClick(v: View) {
         listSearchHelper?.onSearchFabClick()
