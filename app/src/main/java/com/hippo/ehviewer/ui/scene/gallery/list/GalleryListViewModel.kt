@@ -9,8 +9,12 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.event.AppEventBus
+import com.hippo.ehviewer.event.ArchiveDeletedEvent
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRArchivePagingSource
+import com.lanraragi.reader.client.api.LRRCategoryApi
+import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.hippo.ehviewer.dao.DownloadInfo
@@ -20,6 +24,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,11 +35,14 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * ViewModel for the gallery list screen. Exposes a [Flow] of [PagingData]
@@ -339,6 +348,112 @@ class GalleryListViewModel : ViewModel() {
     }
 
     // -------------------------------------------------------------------------
+    // Batch operations (multi-select)
+    // -------------------------------------------------------------------------
+
+    /** A batch operation applied to a multi-selection of archives. */
+    sealed interface BatchOp {
+        data object Download : BatchOp
+        data class AddToCategory(val categoryId: String) : BatchOp
+        data object ClearNew : BatchOp
+        data object DeleteArchives : BatchOp
+    }
+
+    /** One archive that failed within a batch, with a display-ready reason. */
+    data class BatchFailure(val arcid: String, val title: String, val reason: String)
+
+    /** Aggregate outcome of a [runBatch] / [runBatchDownload] invocation. */
+    data class BatchResult(
+        val op: BatchOp,
+        val succeeded: List<String>,
+        val failed: List<BatchFailure>,
+    )
+
+    private val _batchProgress = MutableStateFlow<Pair<Int, Int>?>(null)
+
+    /** Done-to-total progress of the running batch; null = idle. */
+    val batchProgress: StateFlow<Pair<Int, Int>?> = _batchProgress.asStateFlow()
+
+    private val _batchResultEvent = MutableSharedFlow<BatchResult>(extraBufferCapacity = 4)
+
+    /** One-shot aggregate result of a finished batch. */
+    val batchResultEvent: SharedFlow<BatchResult> = _batchResultEvent.asSharedFlow()
+
+    /**
+     * Resolves the base URL of the server that owns an archive (by its source
+     * profile id). Injectable so unit tests can point batches at a
+     * MockWebServer without registering server profiles; production always
+     * uses [resolveSourceBaseUrl] against the app's
+     * [com.lanraragi.reader.client.api.ProfileLookupCache] (cross-server
+     * rule: source context is per item, never blanket-active).
+     */
+    internal var baseUrlResolver: suspend (Long) -> String = { profileId ->
+        resolveSourceBaseUrl(profileId, ServiceRegistry.dataModule.profileLookupCache)
+    }
+
+    /**
+     * Batch download is main-thread queueing: [DownloadManager.startDownload]
+     * asserts the main thread and is itself asynchronous, so no IO hop or
+     * fault isolation is needed here.
+     */
+    fun runBatchDownload(archives: List<Archive>, downloadManager: DownloadManager) {
+        archives.forEach { downloadManager.startDownload(it, null) }
+        _batchResultEvent.tryEmit(BatchResult(BatchOp.Download, archives.map { it.arcid }, emptyList()))
+    }
+
+    /**
+     * Run a network batch operation over [archives] with bounded concurrency
+     * ([BATCH_CONCURRENCY]) and per-item fault isolation: one failing item is
+     * reported in [BatchResult.failed] without aborting the rest.
+     */
+    fun runBatch(op: BatchOp, archives: List<Archive>) {
+        viewModelScope.launch {
+            val semaphore = Semaphore(BATCH_CONCURRENCY)
+            val done = AtomicInteger(0)
+            _batchProgress.value = 0 to archives.size
+            val outcomes = archives.map { archive ->
+                async(Dispatchers.IO) {
+                    semaphore.withPermit {
+                        val outcome = try {
+                            executeOne(op, archive)
+                            null // success
+                        } catch (ce: CancellationException) {
+                            throw ce
+                        } catch (e: Exception) {
+                            BatchFailure(archive.arcid, archive.title, e.message ?: "unknown")
+                        }
+                        _batchProgress.value = done.incrementAndGet() to archives.size
+                        archive.arcid to outcome
+                    }
+                }
+            }.awaitAll()
+            _batchProgress.value = null
+            _batchResultEvent.tryEmit(
+                BatchResult(
+                    op = op,
+                    succeeded = outcomes.filter { it.second == null }.map { it.first },
+                    failed = outcomes.mapNotNull { it.second },
+                )
+            )
+        }
+    }
+
+    private suspend fun executeOne(op: BatchOp, archive: Archive) {
+        val baseUrl = baseUrlResolver(archive.serverProfileId)
+        val client = LRRClientProvider.getClient()
+        when (op) {
+            is BatchOp.AddToCategory ->
+                LRRCategoryApi.addToCategory(client, baseUrl, op.categoryId, archive.arcid)
+            BatchOp.ClearNew -> LRRArchiveApi.clearNewFlag(client, baseUrl, archive.arcid)
+            BatchOp.DeleteArchives -> {
+                LRRArchiveApi.deleteArchive(client, baseUrl, archive.arcid)
+                AppEventBus.postArchiveDeletedEvent(ArchiveDeletedEvent(archive.arcid))
+            }
+            BatchOp.Download -> error("use runBatchDownload")
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Lifecycle
     // -------------------------------------------------------------------------
 
@@ -359,5 +474,8 @@ class GalleryListViewModel : ViewModel() {
 
         /** Upload progress is reported on a 0..100 scale. */
         private const val PERCENT_MAX = 100
+
+        /** Max archives processed in parallel by [runBatch]. */
+        private const val BATCH_CONCURRENCY = 4
     }
 }
