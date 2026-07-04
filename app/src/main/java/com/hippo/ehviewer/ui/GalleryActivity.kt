@@ -35,7 +35,9 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.lifecycleScope
 import com.hippo.android.resource.AttrResources
+import com.hippo.ehviewer.BuildConfig
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.AppLockGate
@@ -50,10 +52,12 @@ import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.gallery.DirGalleryProvider
 import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.gallery.LRRGalleryProvider
+import com.hippo.ehviewer.gallery.NextArchiveResolver
 import com.hippo.ehviewer.ui.gallery.GalleryImageOperations
 import com.hippo.ehviewer.ui.gallery.GalleryInputHandler
 import com.hippo.ehviewer.ui.gallery.GalleryMenuHelper
 import com.hippo.ehviewer.ui.gallery.GallerySliderController
+import com.hippo.ehviewer.ui.gallery.ReaderContinuationController
 import com.hippo.ehviewer.ui.scene.download.DownloadsScene
 import com.hippo.ehviewer.widget.GalleryGuideView
 import com.hippo.ehviewer.widget.GalleryHeader
@@ -70,6 +74,7 @@ import com.hippo.lib.yorozuya.MathUtils
 import com.hippo.lib.yorozuya.ResourcesUtils
 import com.hippo.lib.yorozuya.ViewUtils
 import java.io.File
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.launch
 import javax.microedition.khronos.egl.EGL10
 import javax.microedition.khronos.egl.EGLContext
@@ -132,6 +137,8 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
     private var mBattery: View? = null
 
     private var canFinish = false
+
+    private var mContinuation: ReaderContinuationController? = null
 
     // --- Extracted helpers ---
     private val mInputHandler = GalleryInputHandler(this)
@@ -295,6 +302,21 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         }
         onCreateView(savedInstanceState)
         consumeStickyGalleryEvent()
+
+        // End-of-book continuation. The scrim only exists once onCreateView
+        // reached setContentView(R.layout.activity_gallery) — it is absent on
+        // the GL-fallback layout and on the finish-early (no provider) path,
+        // hence the nullable lookup. Runs after both init paths (intent /
+        // sticky event) so mArchive is final here.
+        findViewById<View>(R.id.continuation_scrim)?.let { scrim ->
+            mContinuation = ReaderContinuationController(
+                root = scrim,
+                scope = lifecycleScope,
+                resolver = NextArchiveResolver(ServiceRegistry.networkModule.okHttpClient),
+                launchNext = { next -> launchNextArchive(next) },
+            )
+            mArchive?.let { mContinuation?.setCurrentArchive(it.arcid) }
+        }
     }
 
     @Suppress("WrongConstant")
@@ -515,12 +537,17 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         mClock = null
         mProgress = null
         mBattery = null
+        mContinuation = null
 
         super.onDestroy()
     }
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
+        if (mContinuation?.isShowing == true) {
+            mContinuation?.hide()
+            return
+        }
         val intent = Intent()
         intent.putExtra(EXTRA_RESULT_ARCHIVE, mArchive)
         setResult(DownloadsScene.LOCAL_GALLERY_INFO_CHANGE, intent)
@@ -680,6 +707,47 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
 
     override fun onAutoTransferDone() {
         mInputHandler.onAutoTransferDone()
+        // Fires on the GL render thread: on a forward page-turn attempt at
+        // the last page (pager modes), on BOTTOM over-scroll at the end of
+        // the strip (vertical mode) — but ALSO on TOP over-scroll at the
+        // first page in vertical mode, which atLastPage filters out.
+        // isReachEnd() reads render-thread layout state — same thread here,
+        // so the read is safe. Unlike currentIndex (the first VISIBLE page),
+        // it stays accurate in scroll mode when a tall page dominates the
+        // viewport and the short last page is merely attached below it.
+        val gv = mGalleryView ?: return
+        val atEnd = gv.isReachEnd
+        mainHandler.post {
+            mContinuation?.onEndOfBookEvent(atLastPage = atEnd)
+        }
+    }
+
+    /**
+     * Launch the next archive picked by the continuation flow and finish this
+     * reader so back returns to the originating list, not a reader stack.
+     */
+    @Suppress("TooGenericExceptionCaught")
+    private fun launchNextArchive(next: Archive) {
+        lifecycleScope.launch {
+            try {
+                val intent = GalleryOpenHelper.buildReadIntent(this@GalleryActivity, next)
+                // singleTask (AndroidManifest): a live top instance would
+                // swallow the intent via onNewIntent (not overridden). Mark
+                // this instance finishing FIRST so the system creates a fresh
+                // instance for the next archive. finish() must be immediately
+                // followed by startActivity with no suspension in between —
+                // the lifecycleScope coroutine would be cancelled once the
+                // activity is destroyed.
+                finish()
+                startActivity(intent)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (BuildConfig.DEBUG) Log.e("GalleryActivity", "continuation launch failed", e)
+                Toast.makeText(this@GalleryActivity, R.string.continuation_error, Toast.LENGTH_SHORT)
+                    .show()
+            }
+        }
     }
 
     // ======== GalleryMenuHelper.SettingsCallback ========
@@ -794,7 +862,14 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                     mInputHandler.layoutMode = mValue
                 }
                 NOTIFY_KEY_SIZE -> mSliderController.size = mValue
-                NOTIFY_KEY_CURRENT_INDEX -> mSliderController.currentIndex = mValue
+                NOTIFY_KEY_CURRENT_INDEX -> {
+                    mSliderController.currentIndex = mValue
+                    // Reaching the last page silently warms the next-archive
+                    // resolution so the continuation panel (or the
+                    // swipe-through jump) is instant on the first forward
+                    // attempt instead of showing a loading state.
+                    mContinuation?.onPageShown(mValue, mGalleryProvider?.size() ?: 0)
+                }
                 NOTIFY_KEY_TAP_MENU_AREA -> doTapMenuArea()
                 NOTIFY_KEY_TAP_SLIDER_AREA -> mSliderController.onTapSliderArea()
                 NOTIFY_KEY_TAP_ERROR_TEXT -> mGalleryProvider?.forceRequest(mValue)

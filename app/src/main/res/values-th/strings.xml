@@ -296,6 +296,19 @@
     <string name="share_image">แชร์รูปภาพ</string>
     <string name="image_saved">ภาพถูกบันทึกไปที่ %s</string>
 
+    <!-- Reader cross-archive continuation -->
+    <string name="continuation_end_title">จบเล่มแล้ว</string>
+    <string name="continuation_next_label">เล่มถัดไป</string>
+    <string name="continuation_read_next">อ่านต่อ</string>
+    <string name="continuation_back">ปิด</string>
+    <string name="continuation_end_of_list">อ่านครบทั้งรายการแล้ว</string>
+    <string name="continuation_error">โหลดเล่มถัดไปไม่สำเร็จ</string>
+    <string name="continuation_retry">ลองอีกครั้ง</string>
+    <string name="continuation_loading">กำลังค้นหาเล่มถัดไป…</string>
+    <string name="continuation_jump_toast">ถัดไป: %s</string>
+    <string name="settings_read_continuation">แสดงเล่มถัดไปเมื่ออ่านจบ</string>
+    <string name="settings_read_continuation_swipe">พลิกหน้าเพื่อเข้าเล่มถัดไป</string>
+
     <string name="settings_eh">การแสดงผล</string>
     <string name="settings_eh_theme">ธีม</string>
     <string name="settings_eh_theme_light">สว่าง</string>

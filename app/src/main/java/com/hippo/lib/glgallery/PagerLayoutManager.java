@@ -439,6 +439,23 @@ class PagerLayoutManager extends GalleryView.LayoutManager {
             return;
         }
 
+        // A drag or fling that ends pulling the forward edge on the last page
+        // (mNext == null) is a page-turn attempt past the end, just like the
+        // boundary branches in onPageLeft()/onPageRight(). mDeltaX is only
+        // non-zero when the gesture ended in overScrollEdge(), and its sign
+        // tells which edge was pulled. Note mDeltaX reflects only the FINAL
+        // motion event's residual — the image-scroll branch in scrollInternal()
+        // re-zeroes it on every event while mOffset == 0 — which is what keeps
+        // a pull-then-retreat gesture from firing here. mCanScrollBetweenPages
+        // (horizontal-dominant gesture, set on first scroll) filters out
+        // vertical-dominant drags whose last event drifts a few pixels
+        // horizontally into the edge branch.
+        if (mOffset == 0 && mNext == null && mCanScrollBetweenPages &&
+                ((mMode == MODE_LEFT_TO_RIGHT && mDeltaX > 0) ||
+                        (mMode == MODE_RIGHT_TO_LEFT && mDeltaX < 0))) {
+            mGalleryView.onTransferEnd();
+        }
+
         // Scroll
         if (mOffset != 0) {
             int width = mGalleryView.getWidth();
@@ -805,6 +822,17 @@ class PagerLayoutManager extends GalleryView.LayoutManager {
         } else {
             return GalleryPageView.INVALID_INDEX;
         }
+    }
+
+    @Override
+    public boolean isReachEnd() {
+        GalleryView.Adapter adapter = mAdapter;
+        if (mCurrent == null || adapter == null) {
+            return false;
+        }
+        int size = adapter.size();
+        // size <= 0 means empty or not-yet-known: no meaningful end.
+        return size > 0 && mIndex >= size - 1;
     }
 
     @Override

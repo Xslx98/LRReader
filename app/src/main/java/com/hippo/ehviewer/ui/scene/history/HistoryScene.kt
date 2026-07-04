@@ -51,6 +51,8 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
 import com.hippo.ehviewer.client.LRRUtils
+import com.hippo.ehviewer.gallery.ReadingContext
+import com.hippo.ehviewer.gallery.ReadingContextStore
 import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.ui.CommonOperations
@@ -262,6 +264,14 @@ class HistoryScene : ToolbarScene(),
         val list = viewModel.historyList.value
         if (position >= list.size) return false
         val archive = list[position]
+
+        ReadingContextStore.publish(
+            ReadingContext.LocalList(
+                kind = ReadingContext.LocalList.Kind.HISTORY,
+                forwardArchives = list.subList(position, minOf(list.size, position + ReadingContextStore.LOCAL_WINDOW)).toList(),
+                anchorArcid = archive.arcid,
+            )
+        )
 
         val args = Bundle()
         args.putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_ARCHIVE)

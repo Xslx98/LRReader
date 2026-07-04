@@ -73,6 +73,10 @@ class GalleryListViewModel : ViewModel() {
 
     private val searchParams = MutableStateFlow(SearchParams())
 
+    /** Snapshot of the params driving [galleryFlow] right now (for ReadingContext capture). */
+    val currentSearchParams: SearchParams
+        get() = searchParams.value
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val galleryFlow: Flow<PagingData<Archive>> = searchParams.flatMapLatest { params ->
         Pager<Int, Archive>(

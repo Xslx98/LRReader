@@ -296,6 +296,19 @@
     <string name="share_image">分享图片</string>
     <string name="image_saved">图片已保存至 %s</string>
 
+    <!-- Reader cross-archive continuation -->
+    <string name="continuation_end_title">本篇完</string>
+    <string name="continuation_next_label">下一本</string>
+    <string name="continuation_read_next">继续阅读</string>
+    <string name="continuation_back">关闭</string>
+    <string name="continuation_end_of_list">已读完当前列表</string>
+    <string name="continuation_error">无法获取下一本</string>
+    <string name="continuation_retry">重试</string>
+    <string name="continuation_loading">正在查找下一本…</string>
+    <string name="continuation_jump_toast">下一本：%s</string>
+    <string name="settings_read_continuation">读完显示下一本</string>
+    <string name="settings_read_continuation_swipe">翻页直接进入下一本</string>
+
     <!-- Settings -->
     <string name="settings_eh">显示</string>
     <string name="settings_eh_theme">主题</string>

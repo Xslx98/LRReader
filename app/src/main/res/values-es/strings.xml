@@ -273,6 +273,19 @@
     <string name="share_image">Compartir imagen</string>
     <string name="image_saved">Imagen guardada en  %s</string>
 
+    <!-- Reader cross-archive continuation -->
+    <string name="continuation_end_title">Fin del archivo</string>
+    <string name="continuation_next_label">A continuación</string>
+    <string name="continuation_read_next">Seguir leyendo</string>
+    <string name="continuation_back">Cerrar</string>
+    <string name="continuation_end_of_list">Has llegado al final de esta lista</string>
+    <string name="continuation_error">No se pudo cargar el siguiente archivo</string>
+    <string name="continuation_retry">Reintentar</string>
+    <string name="continuation_loading">Buscando el siguiente archivo…</string>
+    <string name="continuation_jump_toast">Siguiente: %s</string>
+    <string name="settings_read_continuation">Mostrar el siguiente archivo al terminar</string>
+    <string name="settings_read_continuation_swipe">Pasar página abre el siguiente archivo</string>
+
     <string name="settings_eh">Pantalla</string>
     <string name="settings_eh_list_mode">Modo lista</string>
     <string name="settings_eh_list_mode_detail">Con detalles</string>
