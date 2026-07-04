@@ -905,6 +905,10 @@ class GalleryListScene : BaseScene(),
     // Inner adapter — too small to extract
 
     private fun removeArchiveLocally(arcid: String) {
+        // Removal left-shifts every later adapter position but the checked
+        // SparseArray does not remap — an in-flight multi-select must not
+        // survive it (same rationale as the getPageData refresh funnel).
+        multiSelectHelper?.exit()
         val helper = mHelper ?: return
         for (i in 0 until helper.size()) {
             if (helper.getDataAtEx(i)?.arcid == arcid) {

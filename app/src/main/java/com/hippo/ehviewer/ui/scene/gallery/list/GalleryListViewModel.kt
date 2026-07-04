@@ -432,9 +432,13 @@ class GalleryListViewModel : ViewModel() {
                             }
                             // Monotonic publication: concurrent items finish out of
                             // order — never let the visible counter go backwards.
+                            // Only advance a live pair: null (batch already ended or
+                            // cancelled) stays null, never revived by a straggler item.
+                            // The synchronous `0 to size` publish in runBatch guarantees
+                            // the first item compares against a live 0-pair, not null.
                             val d = done.incrementAndGet()
                             _batchProgress.update { cur ->
-                                if (cur == null || d > cur.first) d to archives.size else cur
+                                if (cur != null && d > cur.first) d to archives.size else cur
                             }
                             archive.arcid to outcome
                         }
