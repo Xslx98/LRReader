@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -407,34 +408,51 @@ class GalleryListViewModel : ViewModel() {
      * reported in [BatchResult.failed] without aborting the rest.
      */
     fun runBatch(op: BatchOp, archives: List<Archive>) {
+        require(op != BatchOp.Download) { "use runBatchDownload" }
+        // API-level re-entrancy guard: the UI also disables batch actions while
+        // a run is in flight, but reject overlapping runs here too.
+        if (_batchProgress.value != null) return
+        // Published synchronously (before the launch) so the guard above is
+        // effective for back-to-back calls within the same frame.
+        _batchProgress.value = 0 to archives.size
         viewModelScope.launch {
             val semaphore = Semaphore(BATCH_CONCURRENCY)
             val done = AtomicInteger(0)
-            _batchProgress.value = 0 to archives.size
-            val outcomes = archives.map { archive ->
-                async(Dispatchers.IO) {
-                    semaphore.withPermit {
-                        val outcome = try {
-                            executeOne(op, archive)
-                            null // success
-                        } catch (ce: CancellationException) {
-                            throw ce
-                        } catch (e: Exception) {
-                            BatchFailure(archive.arcid, archive.title, e.message ?: "unknown")
+            try {
+                val outcomes = archives.map { archive ->
+                    async(Dispatchers.IO) {
+                        semaphore.withPermit {
+                            val outcome = try {
+                                executeOne(op, archive)
+                                null // success
+                            } catch (ce: CancellationException) {
+                                throw ce
+                            } catch (e: Exception) {
+                                BatchFailure(archive.arcid, archive.title, e.message ?: "unknown")
+                            }
+                            // Monotonic publication: concurrent items finish out of
+                            // order — never let the visible counter go backwards.
+                            val d = done.incrementAndGet()
+                            _batchProgress.update { cur ->
+                                if (cur == null || d > cur.first) d to archives.size else cur
+                            }
+                            archive.arcid to outcome
                         }
-                        _batchProgress.value = done.incrementAndGet() to archives.size
-                        archive.arcid to outcome
                     }
-                }
-            }.awaitAll()
-            _batchProgress.value = null
-            _batchResultEvent.tryEmit(
-                BatchResult(
-                    op = op,
-                    succeeded = outcomes.filter { it.second == null }.map { it.first },
-                    failed = outcomes.mapNotNull { it.second },
+                }.awaitAll()
+                _batchResultEvent.tryEmit(
+                    BatchResult(
+                        op = op,
+                        succeeded = outcomes.filter { it.second == null }.map { it.first },
+                        failed = outcomes.mapNotNull { it.second },
+                    )
                 )
-            )
+            } finally {
+                // Progress must never stay stuck non-null, even if the batch is
+                // cancelled (viewModelScope teardown) or a future executeOne
+                // change lets an exception escape the per-item catch.
+                _batchProgress.value = null
+            }
         }
     }
 
