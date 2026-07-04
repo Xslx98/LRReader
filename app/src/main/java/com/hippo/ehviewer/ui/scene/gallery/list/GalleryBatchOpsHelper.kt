@@ -134,7 +134,9 @@ internal class GalleryBatchOpsHelper(
 
     private fun onCategoryClick() {
         // Capture the selection now: the picker is async (network load) and
-        // the selection is exited underneath it.
+        // may outlive selection changes. Selection is exited only once a
+        // category is actually picked — cancelling the picker (or the
+        // no-static-categories path) keeps it, matching delete's cancel path.
         val selected = takeSelection() ?: return
         CategoryDialogHelper.pickStaticCategory(
             callback.activity, callback.activeProfileId()
@@ -142,8 +144,8 @@ internal class GalleryBatchOpsHelper(
             callback.viewModel.runBatch(
                 GalleryListViewModel.BatchOp.AddToCategory(categoryId), selected
             )
+            callback.exitSelection()
         }
-        callback.exitSelection()
     }
 
     private fun onClearNewClick() {
