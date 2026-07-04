@@ -681,6 +681,29 @@ class ScrollLayoutManager extends GalleryView.LayoutManager {
         mBottomStateHasNext = hasNext;
     }
 
+    /**
+     * Whether the strip is scrolled to (or past) the bottom edge of the
+     * last page — the exact condition that gates the BOTTOM over-scroll
+     * branch in {@link #onPageRight()}. Reusing {@link #getBottomState()}
+     * out-of-band is safe: it only writes the mBottomState* scratch
+     * fields, and every other caller recomputes them immediately before
+     * reading. It does dereference mAdapter unconditionally though, so
+     * guard the detached/empty cases first.
+     *
+     * Known acceptable edge: a strip that fully fits on one screen
+     * reports true even during a TOP over-scroll, because the last
+     * page's bottom is always within the viewport then. Tolerable — the
+     * whole archive is visible, so "at the end" is still accurate.
+     */
+    @Override
+    public boolean isReachEnd() {
+        if (mAdapter == null || mPages.isEmpty() || mAdapter.size() <= 0) {
+            return false;
+        }
+        getBottomState();
+        return !mBottomStateHasNext && mBottomStateBottom <= mGalleryView.getHeight();
+    }
+
     // True for get top or bottom
     private boolean scrollInternal(float dx, float dy, boolean fling, float x, float y) {
         if (mPages.size() <= 0) {

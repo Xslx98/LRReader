@@ -490,6 +490,17 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
         return mCurrentIndex.get();
     }
 
+    /**
+     * Whether the reading position is at the very end of the gallery:
+     * pager mode = the last page is the current page; scroll mode = the
+     * strip is scrolled to (or past) the bottom of the last page.
+     * Render-thread state; safe to call from the render thread.
+     */
+    public boolean isReachEnd() {
+        LayoutManager layoutManager = mLayoutManager;
+        return layoutManager != null && layoutManager.isReachEnd();
+    }
+
     @Override
     public void requestLayout() {
         // Do not need requestLayout, because the size will not change
@@ -1250,6 +1261,14 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
         public abstract void onPageLeft();
 
         public abstract void onPageRight();
+
+        /**
+         * Whether the reading position is at the very end of the gallery.
+         * Pager mode: the current page is the last page. Scroll mode: the
+         * strip is scrolled to (or past) the bottom of the last page.
+         * Called on the render thread.
+         */
+        public abstract boolean isReachEnd();
 
         public abstract boolean isTapOrPressEnable();
 

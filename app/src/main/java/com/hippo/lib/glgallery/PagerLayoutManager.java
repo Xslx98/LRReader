@@ -825,6 +825,17 @@ class PagerLayoutManager extends GalleryView.LayoutManager {
     }
 
     @Override
+    public boolean isReachEnd() {
+        GalleryView.Adapter adapter = mAdapter;
+        if (mCurrent == null || adapter == null) {
+            return false;
+        }
+        int size = adapter.size();
+        // size <= 0 means empty or not-yet-known: no meaningful end.
+        return size > 0 && mIndex >= size - 1;
+    }
+
+    @Override
     public void setCurrentIndex(int index) {
         int size = mAdapter.size();
         if (size <= 0) {

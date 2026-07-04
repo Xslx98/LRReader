@@ -711,14 +711,14 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         // the last page (pager modes), on BOTTOM over-scroll at the end of
         // the strip (vertical mode) — but ALSO on TOP over-scroll at the
         // first page in vertical mode, which atLastPage filters out.
-        val provider = mGalleryProvider ?: return
-        val size = provider.size()
-        // GalleryView.getCurrentIndex() is an AtomicInteger read — safe from
-        // the render thread. 0-based: the slider renders "index + 1 / size",
-        // so the final page is exactly index == size - 1.
-        val index = mGalleryView?.currentIndex ?: return
+        // isReachEnd() reads render-thread layout state — same thread here,
+        // so the read is safe. Unlike currentIndex (the first VISIBLE page),
+        // it stays accurate in scroll mode when a tall page dominates the
+        // viewport and the short last page is merely attached below it.
+        val gv = mGalleryView ?: return
+        val atEnd = gv.isReachEnd
         mainHandler.post {
-            mContinuation?.onEndOfBookEvent(atLastPage = size > 0 && index >= size - 1)
+            mContinuation?.onEndOfBookEvent(atLastPage = atEnd)
         }
     }
 
