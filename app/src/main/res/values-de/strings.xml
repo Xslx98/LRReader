@@ -243,6 +243,20 @@
     <string name="settings_read_continuation">Nächstes Archiv am Ende anzeigen</string>
     <string name="settings_read_continuation_swipe">Weiterblättern öffnet nächstes Archiv</string>
 
+    <!-- List multi-select batch operations -->
+    <string name="batch_selected_count">%d ausgewählt</string>
+    <string name="batch_select_all">Alle</string>
+    <string name="batch_download">Herunterladen</string>
+    <string name="batch_add_to_category">Kategorie</string>
+    <string name="batch_clear_new">NEU entfernen</string>
+    <string name="batch_delete">Löschen</string>
+    <string name="batch_remove_history">Entfernen</string>
+    <string name="batch_delete_confirm_message">%d Archive endgültig vom Server löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.</string>
+    <string name="batch_remove_history_confirm">%d Einträge aus dem Verlauf entfernen?</string>
+    <string name="batch_running">Verarbeite %1$d/%2$d…</string>
+    <string name="batch_result_summary">%1$d erfolgreich, %2$d fehlgeschlagen</string>
+    <string name="batch_result_failures_title">Fehlgeschlagene Einträge</string>
+
     <string name="settings_eh">Anzeige</string>
     <string name="settings_eh_list_mode">Liste-Ansicht</string>
     <string name="settings_eh_list_mode_detail">Details</string>

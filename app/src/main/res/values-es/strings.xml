@@ -286,6 +286,20 @@
     <string name="settings_read_continuation">Mostrar el siguiente archivo al terminar</string>
     <string name="settings_read_continuation_swipe">Pasar página abre el siguiente archivo</string>
 
+    <!-- List multi-select batch operations -->
+    <string name="batch_selected_count">%d seleccionados</string>
+    <string name="batch_select_all">Todos</string>
+    <string name="batch_download">Descargar</string>
+    <string name="batch_add_to_category">Categoría</string>
+    <string name="batch_clear_new">Quitar NEW</string>
+    <string name="batch_delete">Eliminar</string>
+    <string name="batch_remove_history">Quitar</string>
+    <string name="batch_delete_confirm_message">¿Eliminar permanentemente %d archivos del servidor?\n\nEsta acción no se puede deshacer.</string>
+    <string name="batch_remove_history_confirm">¿Quitar %d entradas del historial?</string>
+    <string name="batch_running">Procesando %1$d/%2$d…</string>
+    <string name="batch_result_summary">%1$d correctos, %2$d fallidos</string>
+    <string name="batch_result_failures_title">Elementos fallidos</string>
+
     <string name="settings_eh">Pantalla</string>
     <string name="settings_eh_list_mode">Modo lista</string>
     <string name="settings_eh_list_mode_detail">Con detalles</string>

@@ -317,6 +317,20 @@
     <string name="settings_read_continuation">다 읽으면 다음 작품 표시</string>
     <string name="settings_read_continuation_swipe">페이지 넘김으로 다음 작품 열기</string>
 
+    <!-- List multi-select batch operations -->
+    <string name="batch_selected_count">%d개 선택됨</string>
+    <string name="batch_select_all">전체</string>
+    <string name="batch_download">다운로드</string>
+    <string name="batch_add_to_category">카테고리</string>
+    <string name="batch_clear_new">NEW 해제</string>
+    <string name="batch_delete">삭제</string>
+    <string name="batch_remove_history">제거</string>
+    <string name="batch_delete_confirm_message">서버에서 %d개의 아카이브를 영구 삭제할까요?\n\n이 작업은 되돌릴 수 없습니다.</string>
+    <string name="batch_remove_history_confirm">기록에서 %d개 항목을 제거할까요?</string>
+    <string name="batch_running">처리 중 %1$d/%2$d…</string>
+    <string name="batch_result_summary">성공 %1$d, 실패 %2$d</string>
+    <string name="batch_result_failures_title">실패한 항목</string>
+
     <!-- Settings -->
     <string name="settings_eh">화면</string>
     <string name="settings_eh_theme">테마</string>

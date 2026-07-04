@@ -309,6 +309,20 @@
     <string name="settings_read_continuation">读完显示下一本</string>
     <string name="settings_read_continuation_swipe">翻页直接进入下一本</string>
 
+    <!-- List multi-select batch operations -->
+    <string name="batch_selected_count">已选 %d 项</string>
+    <string name="batch_select_all">全选</string>
+    <string name="batch_download">下载</string>
+    <string name="batch_add_to_category">分类</string>
+    <string name="batch_clear_new">清除NEW</string>
+    <string name="batch_delete">删除</string>
+    <string name="batch_remove_history">移除</string>
+    <string name="batch_delete_confirm_message">从服务器永久删除 %d 个档案？\n\n此操作不可撤销。</string>
+    <string name="batch_remove_history_confirm">从历史中移除 %d 条记录？</string>
+    <string name="batch_running">处理中 %1$d/%2$d…</string>
+    <string name="batch_result_summary">成功 %1$d，失败 %2$d</string>
+    <string name="batch_result_failures_title">失败项</string>
+
     <!-- Settings -->
     <string name="settings_eh">显示</string>
     <string name="settings_eh_theme">主题</string>
