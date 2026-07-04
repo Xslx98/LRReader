@@ -309,6 +309,19 @@
     <string name="share_image">Share image</string>
     <string name="image_saved">Image saved to %s</string>
 
+    <!-- Reader cross-archive continuation -->
+    <string name="continuation_end_title">End of archive</string>
+    <string name="continuation_next_label">Up next</string>
+    <string name="continuation_read_next">Continue reading</string>
+    <string name="continuation_back">Close</string>
+    <string name="continuation_end_of_list">You\'ve reached the end of this list</string>
+    <string name="continuation_error">Couldn\'t load the next archive</string>
+    <string name="continuation_retry">Retry</string>
+    <string name="continuation_loading">Finding next archive…</string>
+    <string name="continuation_jump_toast">Next: %s</string>
+    <string name="settings_read_continuation">Show next archive when finished</string>
+    <string name="settings_read_continuation_swipe">Page forward into the next archive</string>
+
     <string name="settings_eh">Display</string>
     <string name="settings_eh_theme">Theme</string>
     <string name="settings_eh_theme_light">Light</string>

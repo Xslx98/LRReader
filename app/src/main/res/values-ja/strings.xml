@@ -257,6 +257,20 @@
     <string name="gallery_menu_title">メニュー</string>
     <string name="share_image">画像を共有</string>
     <string name="image_saved">画像は「%s」に保存されました</string>
+
+    <!-- Reader cross-archive continuation -->
+    <string name="continuation_end_title">読了</string>
+    <string name="continuation_next_label">次の作品</string>
+    <string name="continuation_read_next">続けて読む</string>
+    <string name="continuation_back">閉じる</string>
+    <string name="continuation_end_of_list">このリストの最後まで読みました</string>
+    <string name="continuation_error">次の作品を取得できませんでした</string>
+    <string name="continuation_retry">再試行</string>
+    <string name="continuation_loading">次の作品を検索中…</string>
+    <string name="continuation_jump_toast">次：%s</string>
+    <string name="settings_read_continuation">読了時に次の作品を表示</string>
+    <string name="settings_read_continuation_swipe">ページ送りで次の作品へ</string>
+
     <string name="settings_eh">表示</string>
     <string name="settings_eh_theme">テーマ</string>
     <string name="settings_eh_theme_light">ライト</string>
