@@ -862,7 +862,14 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                     mInputHandler.layoutMode = mValue
                 }
                 NOTIFY_KEY_SIZE -> mSliderController.size = mValue
-                NOTIFY_KEY_CURRENT_INDEX -> mSliderController.currentIndex = mValue
+                NOTIFY_KEY_CURRENT_INDEX -> {
+                    mSliderController.currentIndex = mValue
+                    // Reaching the last page silently warms the next-archive
+                    // resolution so the continuation panel (or the
+                    // swipe-through jump) is instant on the first forward
+                    // attempt instead of showing a loading state.
+                    mContinuation?.onPageShown(mValue, mGalleryProvider?.size() ?: 0)
+                }
                 NOTIFY_KEY_TAP_MENU_AREA -> doTapMenuArea()
                 NOTIFY_KEY_TAP_SLIDER_AREA -> mSliderController.onTapSliderArea()
                 NOTIFY_KEY_TAP_ERROR_TEXT -> mGalleryProvider?.forceRequest(mValue)
