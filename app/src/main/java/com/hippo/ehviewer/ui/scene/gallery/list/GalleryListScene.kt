@@ -139,6 +139,7 @@ class GalleryListScene : BaseScene(),
     internal var tagChipHelper: GalleryTagChipHelper? = null
     internal var itemActionHelper: GalleryItemActionHelper? = null
     internal var multiSelectHelper: ListMultiSelectHelper? = null
+    private var batchOpsHelper: GalleryBatchOpsHelper? = null
     internal var uploadHelper: GalleryUploadHelper? = null
     private var mSearchHelper: GallerySearchHelper? = null
     internal var listSearchHelper: GalleryListSearchHelper? = null
@@ -466,15 +467,29 @@ class GalleryListScene : BaseScene(),
         recyclerView.setClipToPadding(false)
         recyclerView.setOnItemClickListener(this)
         recyclerView.setOnItemLongClickListener(this)
+        val batchBar = ViewUtils.`$$`(mainLayout, R.id.batch_action_bar)
+        batchOpsHelper = GalleryBatchOpsHelper(batchBar, object : GalleryBatchOpsHelper.Callback {
+            override val activity: Activity? get() = activity2
+            override val viewModel: GalleryListViewModel get() = this@GalleryListScene.viewModel
+            override val downloadManager: DownloadManager
+                get() = this@GalleryListScene.downloadManager
+
+            override fun selectedArchives(): List<Archive> =
+                multiSelectHelper?.checkedPositions()
+                    ?.mapNotNull { mHelper?.getDataAtEx(it) }
+                    .orEmpty()
+
+            override fun activeProfileId(): Long = LRRAuthManager.getActiveProfileId()
+            override fun isSelectionActive(): Boolean = multiSelectHelper?.isActive == true
+            override fun exitSelection() { multiSelectHelper?.exit() }
+            override fun checkAllSelection() { multiSelectHelper?.checkAll() }
+            override fun refreshList() { mHelper?.refresh() }
+        })
         val multiSelect = ListMultiSelectHelper(
             recyclerView = { if (::recyclerView.isInitialized) recyclerView else null },
             longClickListener = { this },
-            onModeChanged = { _ ->
-                // Task 4 wires the batch action bar here.
-            },
-            onCheckedChanged = { _ ->
-                // Task 4 wires the batch action bar here.
-            },
+            onModeChanged = { active -> batchOpsHelper?.onModeChanged(active) },
+            onCheckedChanged = { count -> batchOpsHelper?.onCheckedChanged(count) },
         )
         multiSelectHelper = multiSelect
         // intoCustomChoiceMode() is a no-op unless the custom choice mode is
@@ -541,6 +556,19 @@ class GalleryListScene : BaseScene(),
         guideQuickSearch()
 
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        // Batch progress/result drive the bottom action bar. View-scoped (not
+        // fragment-scoped like the onCreate collectors) so a re-created view
+        // does not stack duplicate collectors targeting a dead helper.
+        collectFlow(viewLifecycleOwner, viewModel.batchProgress) {
+            batchOpsHelper?.onBatchProgress(it)
+        }
+        collectFlow(viewLifecycleOwner, viewModel.batchResultEvent) {
+            batchOpsHelper?.onBatchResult(it)
+        }
     }
 
     private fun initHelpers(context: Context) {
@@ -710,6 +738,7 @@ class GalleryListScene : BaseScene(),
         rightDrawable = null
         actionFabDrawable = null
         multiSelectHelper = null
+        batchOpsHelper = null
         uploadHelper = null
         listSearchHelper = null
         mFabHelper = null
