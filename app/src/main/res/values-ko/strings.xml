@@ -661,7 +661,6 @@
     <string name="lrr_loading_categories">카테고리 불러오는 중…</string>
     <string name="lrr_no_static_categories">사용 가능한 정적 카테고리가 없습니다</string>
     <string name="lrr_add_to_category">카테고리에 추가</string>
-    <string name="lrr_menu_categories">카테고리</string>
     <string name="lrr_category_info_suffix"> 외</string>
     <string name="lrr_category_count_suffix"> 카테고리</string>
     <string name="lrr_category_updated_toast">카테고리가 업데이트되었습니다</string>

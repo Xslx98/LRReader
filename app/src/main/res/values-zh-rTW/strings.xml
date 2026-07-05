@@ -661,7 +661,6 @@
     <string name="lrr_loading_categories">載入分類中…</string>
     <string name="lrr_no_static_categories">沒有可用的靜態分類</string>
     <string name="lrr_add_to_category">加入分類</string>
-    <string name="lrr_menu_categories">分類</string>
     <string name="lrr_category_info_suffix"> 等</string>
     <string name="lrr_category_count_suffix"> 個分類</string>
     <string name="lrr_category_updated_toast">分類已更新</string>

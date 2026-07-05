@@ -652,7 +652,6 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_loading_categories">Cargando categorías…</string>
     <string name="lrr_no_static_categories">No hay categorías estáticas disponibles</string>
     <string name="lrr_add_to_category">Añadir a categoría</string>
-    <string name="lrr_menu_categories">Categorías</string>
     <string name="lrr_category_info_suffix"> etc.</string>
     <string name="lrr_category_count_suffix"> categorías</string>
     <string name="lrr_category_updated_toast">Categoría actualizada</string>
