@@ -17,7 +17,6 @@ import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
-import com.lanraragi.reader.client.api.runSuspend
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -126,13 +125,11 @@ object DeleteArchiveHelper {
                     serverProfileId,
                     ServiceRegistry.dataModule.profileLookupCache,
                 )
-                runSuspend {
-                    LRRArchiveApi.deleteArchive(
-                        LRRClientProvider.getClient(),
-                        baseUrl,
-                        arcid
-                    )
-                }
+                LRRArchiveApi.deleteArchive(
+                    LRRClientProvider.getClient(),
+                    baseUrl,
+                    arcid
+                )
 
                 AppEventBus.postArchiveDeletedEvent(ArchiveDeletedEvent(arcid))
                 withContext(Dispatchers.Main) {

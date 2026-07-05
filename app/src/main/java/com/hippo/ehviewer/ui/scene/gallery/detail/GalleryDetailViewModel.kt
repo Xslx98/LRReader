@@ -15,7 +15,6 @@ import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.OrphanProfileException
 import com.lanraragi.reader.client.api.probeSourceHealthy
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
-import com.lanraragi.reader.client.api.runSuspend
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.domain.buildRatingEmoji
@@ -238,14 +237,10 @@ class GalleryDetailViewModel : ViewModel() {
 
                 // Fetch latest tags so we don't clobber edits the user
                 // made through other channels (tag editor, another client)
-                val serverArchive = runSuspend {
-                    LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcid)
-                }
+                val serverArchive = LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcid)
                 val updatedTags = mergeRatingIntoTags(serverArchive.tags, rating)
 
-                runSuspend {
-                    LRRArchiveApi.updateArchiveMetadata(client, serverUrl, arcid, updatedTags)
-                }
+                LRRArchiveApi.updateArchiveMetadata(client, serverUrl, arcid, updatedTags)
 
                 // Persist to local DownloadInfo if the archive is in the
                 // download list — keeps the Downloads page rating in sync
@@ -406,9 +401,7 @@ class GalleryDetailViewModel : ViewModel() {
                 val serverUrl = resolveSourceServerUrl()
                 if (TankoubonSupportGate.isUnsupported(serverUrl)) return@launch
                 val client = ServiceRegistry.networkModule.okHttpClient
-                val ids = runSuspend {
-                    LRRTankoubonApi.getArchiveTankoubons(client, serverUrl, arcid)
-                }
+                val ids = LRRTankoubonApi.getArchiveTankoubons(client, serverUrl, arcid)
                 if (ids.isEmpty()) {
                     _archiveTankoubons.value = emptyList()
                     return@launch
@@ -420,7 +413,7 @@ class GalleryDetailViewModel : ViewModel() {
                 val all = mutableListOf<LRRTankoubonApi.Tankoubon>()
                 var page = 0
                 while (page < MAX_TANK_PAGES) {
-                    val r = runSuspend { LRRTankoubonApi.getTankoubons(client, serverUrl, page) }
+                    val r = LRRTankoubonApi.getTankoubons(client, serverUrl, page)
                     all.addAll(r.result)
                     if (r.result.isEmpty() || all.size >= r.total) break
                     page++
@@ -734,9 +727,7 @@ class GalleryDetailViewModel : ViewModel() {
                 // until it hydrates. OrphanProfileException is surfaced
                 // through _detailError just like any other fetch failure.
                 val serverUrl = resolveSourceServerUrl()
-                val archive = runSuspend {
-                    LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcid)
-                }
+                val archive = LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcid)
                 // Tag the converted Archive with the *source* profile id
                 // and *source* base URL — not the active profile. Without
                 // this, every cross-server detail fetch overwrites the
@@ -759,9 +750,7 @@ class GalleryDetailViewModel : ViewModel() {
                 // Failure here is non-fatal — keep the previously known
                 // favorite state rather than blanking it.
                 try {
-                    val categories = runSuspend {
-                        LRRCategoryApi.getCategories(client, serverUrl)
-                    }
+                    val categories = LRRCategoryApi.getCategories(client, serverUrl)
                     val matchedNames = mutableListOf<String>()
                     for (cat in categories) {
                         if (!cat.isDynamic() && cat.archives.contains(arcid)) {
@@ -784,6 +773,7 @@ class GalleryDetailViewModel : ViewModel() {
                     favoriteStateCache[arcid] = newState
                     _favoriteState.value = newState
                 } catch (catEx: Exception) {
+                    if (catEx is kotlinx.coroutines.CancellationException) throw catEx
                     android.util.Log.w(
                         TAG,
                         "Failed to query categories for favorite status",

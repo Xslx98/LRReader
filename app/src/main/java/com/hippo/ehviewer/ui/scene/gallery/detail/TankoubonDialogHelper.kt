@@ -19,7 +19,6 @@ import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
-import com.lanraragi.reader.client.api.runSuspend
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -111,7 +110,7 @@ object TankoubonDialogHelper {
                 val url = serverUrl
                 val client = ServiceRegistry.networkModule.okHttpClient
                 val memberIds = if (arcid != null) {
-                    runSuspend { LRRTankoubonApi.getArchiveTankoubons(client, url, arcid) }.toSet()
+                    LRRTankoubonApi.getArchiveTankoubons(client, url, arcid).toSet()
                 } else {
                     emptySet()
                 }
@@ -119,7 +118,7 @@ object TankoubonDialogHelper {
                 // Server pages are 0-based (page 0 = parameterless request).
                 var page = 0
                 while (page < MAX_PAGES) {
-                    val r = runSuspend { LRRTankoubonApi.getTankoubons(client, url, page) }
+                    val r = LRRTankoubonApi.getTankoubons(client, url, page)
                     tanks.addAll(r.result)
                     if (r.result.isEmpty() || tanks.size >= r.total) break
                     page++
@@ -210,9 +209,9 @@ object TankoubonDialogHelper {
                     if (checked[i] == originalChecked[i]) continue
                     val tankId = tanks[i].id
                     if (checked[i]) {
-                        runSuspend { LRRTankoubonApi.addToTankoubon(client, serverUrl, tankId, arcid) }
+                        LRRTankoubonApi.addToTankoubon(client, serverUrl, tankId, arcid)
                     } else {
-                        runSuspend { LRRTankoubonApi.removeFromTankoubon(client, serverUrl, tankId, arcid) }
+                        LRRTankoubonApi.removeFromTankoubon(client, serverUrl, tankId, arcid)
                     }
                 }
                 val newIds = tanks.indices.filter { checked[it] }.map { tanks[it].id }
@@ -234,7 +233,7 @@ object TankoubonDialogHelper {
             (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
                 try {
                     val client = ServiceRegistry.networkModule.okHttpClient
-                    val newId = runSuspend { LRRTankoubonApi.createTankoubon(client, serverUrl, name) }
+                    val newId = LRRTankoubonApi.createTankoubon(client, serverUrl, name)
                     Handler(Looper.getMainLooper()).post { onCreated(newId) }
                 } catch (ce: CancellationException) {
                     throw ce
