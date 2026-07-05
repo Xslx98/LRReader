@@ -52,14 +52,14 @@
 
             <Button
                 android:id="@+id/continuation_secondary"
-                style="?android:attr/borderlessButtonStyle"
+                style="?attr/borderlessButtonStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/continuation_back" />
 
             <Button
                 android:id="@+id/continuation_primary"
-                style="?android:attr/borderlessButtonStyle"
+                style="?attr/borderlessButtonStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/continuation_read_next"
