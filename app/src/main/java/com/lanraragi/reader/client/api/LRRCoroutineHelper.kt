@@ -19,6 +19,12 @@ import kotlinx.coroutines.runBlocking
  *
  * IMPORTANT: Only call this on a background thread. Never call from the main thread.
  * The @WorkerThread annotation enables lint enforcement at call sites.
+ *
+ * IMPORTANT: This is a JAVA-ONLY bridge. Kotlin code that is already inside a
+ * coroutine (lifecycleScope/viewModelScope launch, suspend functions) must call
+ * the suspend API directly — wrapping it here blocks the worker thread inside
+ * runBlocking AND breaks structured cancellation (runBlocking starts a new root
+ * scope, so cancelling the outer job no longer cancels the wrapped call).
  */
 @WorkerThread
 fun <T> runSuspend(block: suspend kotlinx.coroutines.CoroutineScope.() -> T): T {
