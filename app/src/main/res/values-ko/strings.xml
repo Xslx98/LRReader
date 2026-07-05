@@ -145,7 +145,6 @@
     <string name="select_image_first">이미지를 먼저 선택해 주세요.</string>
 
 
-    <string name="delete_downloads">다운로드 삭제</string>
 
     <string name="quick_search">빠른 검색</string>
     <string name="quick_search_tip">빠른 검색을 추가하려면 \"+\" 버튼을 누르세요.</string>
@@ -667,7 +666,6 @@
     <string name="lrr_category_count_suffix"> 카테고리</string>
     <string name="lrr_category_updated_toast">카테고리가 업데이트되었습니다</string>
     <string name="lrr_no_preview_tags">미리보기 태그 없음</string>
-    <string name="lrr_title_copied">제목이 복사되었습니다</string>
     <string name="lrr_download_failed_invalid">다운로드 실패: 잘못된 파일, 탭하여 다시 시도</string>
     <string name="lrr_download_failed_not_image">다운로드 실패: 이미지 형식이 아님, 탭하여 다시 시도</string>
     <string name="lrr_download_orphan_profile">다운로드 일시 중지됨: 원본 서버 프로필이 삭제되었습니다</string>

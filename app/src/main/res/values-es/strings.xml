@@ -128,7 +128,6 @@
     <string name="search_osc">Buscar solo portadas</string>
     <string name="search_se">Mostrar borrados</string>
     <string name="select_image_first">Seleccione la imagen primero</string>
-    <string name="delete_downloads">Eliminar descargas</string>
     <string name="search_sp">Páginas:</string>
     <string name="search_sp_to">hasta</string>
     <!-- A placeholder for other languages -->
@@ -658,7 +657,6 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_category_count_suffix"> categorías</string>
     <string name="lrr_category_updated_toast">Categoría actualizada</string>
     <string name="lrr_no_preview_tags">Sin etiquetas de vista previa</string>
-    <string name="lrr_title_copied">Título copiado</string>
     <string name="lrr_download_failed_invalid">Descarga fallida: archivo inválido, toca para reintentar</string>
     <string name="lrr_download_failed_not_image">Descarga fallida: no es un formato de imagen, toca para reintentar</string>
     <string name="lrr_download_orphan_profile">Descarga pausada: el perfil del servidor de origen ha sido eliminado</string>

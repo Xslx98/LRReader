@@ -170,7 +170,6 @@
     <string name="select_image_first">Please select image first</string>
 
 
-    <string name="delete_downloads">Delete downloads</string>
 
     <string name="quick_search">Quick search</string>
     <string name="quick_search_tip">Tap \"+\" to add Quick Search</string>
@@ -656,7 +655,6 @@
     <string name="lrr_category_count_suffix"> categories</string>
     <string name="lrr_category_updated_toast">Category updated</string>
     <string name="lrr_no_preview_tags">No preview tags</string>
-    <string name="lrr_title_copied">Title copied</string>
     <string name="lrr_download_failed_invalid">Download failed: invalid file, tap to retry</string>
     <string name="lrr_download_failed_not_image">Download failed: not an image format, tap to retry</string>
     <string name="lrr_download_orphan_profile">Download paused: source server profile was deleted</string>

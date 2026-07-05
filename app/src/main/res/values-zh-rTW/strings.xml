@@ -140,7 +140,6 @@
     <string name="select_image_first">請先選擇圖片</string>
 
 
-    <string name="delete_downloads">刪除下載</string>
 
     <string name="quick_search">快速搜尋</string>
     <string name="quick_search_tip">點擊“+”以新增快速搜尋</string>
@@ -667,7 +666,6 @@
     <string name="lrr_category_count_suffix"> 個分類</string>
     <string name="lrr_category_updated_toast">分類已更新</string>
     <string name="lrr_no_preview_tags">沒有預覽標籤</string>
-    <string name="lrr_title_copied">已複製標題</string>
     <string name="lrr_download_failed_invalid">下載失敗：無效的檔案，點擊重試</string>
     <string name="lrr_download_failed_not_image">下載失敗：非圖片格式，點擊重試</string>
     <string name="lrr_download_orphan_profile">下載暫停：來源站點的伺服器設定已被刪除</string>

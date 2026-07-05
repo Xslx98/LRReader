@@ -135,7 +135,6 @@
     <string name="select_image_first">Sélectionnez une image</string>
 
 
-    <string name="delete_downloads">Supprimer les téléchargements</string>
 
     <string name="quick_search">Recherche rapide</string>
     <string name="quick_search_tip">Appuyez sur \"+\" pour ajouter une Recherche rapide</string>
@@ -663,7 +662,6 @@ Cette action est irréversible.</string>
     <string name="lrr_category_count_suffix"> catégories</string>
     <string name="lrr_category_updated_toast">Catégorie mise à jour</string>
     <string name="lrr_no_preview_tags">Aucun tag d\'aperçu</string>
-    <string name="lrr_title_copied">Titre copié</string>
     <string name="lrr_download_failed_invalid">Téléchargement échoué : fichier invalide, appuyer pour réessayer</string>
     <string name="lrr_download_failed_not_image">Téléchargement échoué : format non image, appuyer pour réessayer</string>
     <string name="lrr_download_orphan_profile">Téléchargement suspendu : le profil du serveur source a été supprimé</string>
