@@ -186,25 +186,14 @@ object LRRTankoubonApi {
 
     /** PUT /api/tankoubons 🔑 — create a new tankoubon, returns its id. */
     @JvmStatic
-    suspend fun createTankoubon(client: OkHttpClient, baseUrl: String, name: String): String =
-        createOrRename(client, baseUrl, name, existingId = null)
-
-    /** PUT /api/tankoubons 🔑 — rename an existing tankoubon. */
-    @JvmStatic
-    suspend fun renameTankoubon(client: OkHttpClient, baseUrl: String, tankId: String, name: String) {
-        createOrRename(client, baseUrl, name, existingId = requireValidTankId(tankId))
-    }
-
-    private suspend fun createOrRename(
+    suspend fun createTankoubon(
         client: OkHttpClient,
         baseUrl: String,
         name: String,
-        existingId: String?,
     ): String = withContext(Dispatchers.IO) {
         if (name.isBlank()) throw LRRClientValidationException("Tankoubon name must not be blank")
         val url = parseBaseUrl(baseUrl).newBuilder().addPathSegments("api/tankoubons").build()
         val form = FormBody.Builder().add("name", name)
-        if (existingId != null) form.add("id", existingId)
         val request = Request.Builder().url(url).put(form.build()).build()
         client.newCall(request).execute().use { response ->
             ensureSuccess(response)
@@ -213,6 +202,18 @@ object LRRTankoubonApi {
             if (parsed.success != 1) throw IOException(parsed.error ?: "create_tankoubon failed")
             parsed.tankoubonId ?: throw LRRMissingFieldException("tankoubon_id")
         }
+    }
+
+    /**
+     * Rename via the JSON metadata update (PUT /api/tankoubons/{id}) 🔑.
+     * NOT the create endpoint: the server ignores a submitted `id` form
+     * field there and silently creates a second tank (confirmed against a
+     * live 0.9.80 during the 2026-07-05 smoke).
+     */
+    @JvmStatic
+    suspend fun renameTankoubon(client: OkHttpClient, baseUrl: String, tankId: String, name: String) {
+        if (name.isBlank()) throw LRRClientValidationException("Tankoubon name must not be blank")
+        updateTankoubon(client, baseUrl, tankId, name = name)
     }
 
     /**
