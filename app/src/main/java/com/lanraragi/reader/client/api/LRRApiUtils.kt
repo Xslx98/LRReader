@@ -147,8 +147,10 @@ internal fun isTankoubonId(id: String): Boolean = id.startsWith(TANKOUBON_ID_PRE
 
 /** Validates a Tankoubon id ("TANK_" + epoch digits) before it is put on a URL path. */
 internal fun requireValidTankId(id: String): String {
-    if (!isTankoubonId(id) || id.length != 15 || !id.drop(TANKOUBON_ID_PREFIX.length).all { it.isDigit() }) {
-        throw LRRClientValidationException("Invalid tankoubon id: '$id'")
+    if (!isTankoubonId(id) || id.length != 15 || !id.drop(TANKOUBON_ID_PREFIX.length).all { it in '0'..'9' }) {
+        throw LRRClientValidationException(
+            "Invalid tankoubon id (expected TANK_ + 10 digits): '$id' (len=${id.length})"
+        )
     }
     return id
 }
