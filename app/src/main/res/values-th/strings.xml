@@ -329,6 +329,36 @@
     <string name="settings_read_stamps">แสดงสแตมป์ของหน้า</string>
     <string name="stamps_unsupported">เซิร์ฟเวอร์นี้ไม่รองรับสแตมป์ (ต้องใช้ LANraragi 0.9.8+)</string>
 
+    <!-- Tankoubon (ordered archive collections, LANraragi 0.9.8+) -->
+    <string name="tankoubons_title">ทังโคบง</string>
+    <string name="tankoubons_empty">ไม่มีทังโคบง</string>
+    <string name="tankoubons_unsupported">ฟีเจอร์ทังโคบงต้องใช้ LANraragi 0.9.8+</string>
+    <string name="tank_create">ทังโคบงใหม่</string>
+    <string name="tank_name_hint">ชื่อทังโคบง</string>
+    <string name="tank_rename">เปลี่ยนชื่อ</string>
+    <string name="tank_edit_meta">แก้ไขข้อมูลเมตา</string>
+    <string name="tank_summary_hint">สรุป</string>
+    <string name="tank_tags_hint">แท็กเพิ่มเติม (คั่นด้วยจุลภาค)</string>
+    <string name="tank_delete">ลบทังโคบง</string>
+    <string name="tank_delete_confirm">ลบทังโคบงนี้? ไฟล์ข้างในจะไม่ถูกลบ</string>
+    <string name="tank_locked">ทังโคบงถูกล็อกอยู่ โปรดลองใหม่ภายหลัง</string>
+    <string name="tank_op_done">เสร็จสิ้น</string>
+    <string name="tank_progress_page">อ่านถึงหน้า %1$d</string>
+    <string name="tank_read_from_start">อ่านตั้งแต่ต้น</string>
+    <string name="tank_continue_reading">อ่านต่อ (หน้า %1$d)</string>
+    <string name="tank_member_remove">นำออกจากทังโคบง</string>
+    <string name="tank_set_cover">ตั้งเป็นปก</string>
+    <string name="tank_cover_updated">อัปเดตปกแล้ว</string>
+    <string name="tank_reorder_failed">จัดลำดับไม่สำเร็จ คืนลำดับเดิมแล้ว</string>
+    <string name="tank_badge">ทังโคบง</string>
+    <string name="settings_eh_group_tanks">แสดงทังโคบงขณะเรียกดู</string>
+    <string name="settings_eh_group_tanks_summary">รวมไฟล์ของทังโคบงเป็นรายการเดียว (LANraragi 0.9.8+)</string>
+    <string name="detail_tankoubons_label">ทังโคบง</string>
+    <string name="detail_tankoubons_edit">แก้ไข</string>
+    <string name="tank_add_to">เพิ่มลงทังโคบง</string>
+    <string name="batch_add_to_tankoubon">Tank</string>
+    <string name="tank_none">ไม่มีทังโคบงบนเซิร์ฟเวอร์นี้</string>
+
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">เลือกแล้ว %d รายการ</string>
     <string name="batch_select_all">ทั้งหมด</string>

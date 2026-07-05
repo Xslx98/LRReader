@@ -342,6 +342,36 @@
     <string name="settings_read_stamps">Show page stamps</string>
     <string name="stamps_unsupported">This server doesn\'t support stamps (LANraragi 0.9.8+ required)</string>
 
+    <!-- Tankoubon (ordered archive collections, LANraragi 0.9.8+) -->
+    <string name="tankoubons_title">Tankoubons</string>
+    <string name="tankoubons_empty">No tankoubons</string>
+    <string name="tankoubons_unsupported">Tankoubon support requires LANraragi 0.9.8+</string>
+    <string name="tank_create">New tankoubon</string>
+    <string name="tank_name_hint">Tankoubon name</string>
+    <string name="tank_rename">Rename</string>
+    <string name="tank_edit_meta">Edit metadata</string>
+    <string name="tank_summary_hint">Summary</string>
+    <string name="tank_tags_hint">Additional tags (comma-separated)</string>
+    <string name="tank_delete">Delete tankoubon</string>
+    <string name="tank_delete_confirm">Delete this tankoubon? Archives inside are not deleted.</string>
+    <string name="tank_locked">Tankoubon is locked, try again later</string>
+    <string name="tank_op_done">Done</string>
+    <string name="tank_progress_page">Read up to page %1$d</string>
+    <string name="tank_read_from_start">Read from start</string>
+    <string name="tank_continue_reading">Continue reading (page %1$d)</string>
+    <string name="tank_member_remove">Remove from tankoubon</string>
+    <string name="tank_set_cover">Set as cover</string>
+    <string name="tank_cover_updated">Cover updated</string>
+    <string name="tank_reorder_failed">Reorder failed, restoring order</string>
+    <string name="tank_badge">Tankoubon</string>
+    <string name="settings_eh_group_tanks">Show Tankoubons in browse</string>
+    <string name="settings_eh_group_tanks_summary">Fold archives of a Tankoubon into a single entry (LANraragi 0.9.8+)</string>
+    <string name="detail_tankoubons_label">Tankoubons</string>
+    <string name="detail_tankoubons_edit">Edit</string>
+    <string name="tank_add_to">Add to Tankoubon</string>
+    <string name="batch_add_to_tankoubon">Tank</string>
+    <string name="tank_none">No tankoubons on this server</string>
+
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">%d selected</string>
     <string name="batch_select_all">All</string>

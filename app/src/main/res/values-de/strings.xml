@@ -263,6 +263,36 @@
     <string name="settings_read_stamps">Seiten-Stempel anzeigen</string>
     <string name="stamps_unsupported">Dieser Server unterstützt keine Stempel (LANraragi 0.9.8+ erforderlich)</string>
 
+    <!-- Tankoubon (ordered archive collections, LANraragi 0.9.8+) -->
+    <string name="tankoubons_title">Tankoubons</string>
+    <string name="tankoubons_empty">Keine Tankoubons</string>
+    <string name="tankoubons_unsupported">Tankoubon-Unterstützung erfordert LANraragi 0.9.8+</string>
+    <string name="tank_create">Neues Tankoubon</string>
+    <string name="tank_name_hint">Tankoubon-Name</string>
+    <string name="tank_rename">Umbenennen</string>
+    <string name="tank_edit_meta">Metadaten bearbeiten</string>
+    <string name="tank_summary_hint">Zusammenfassung</string>
+    <string name="tank_tags_hint">Zusätzliche Tags (kommagetrennt)</string>
+    <string name="tank_delete">Tankoubon löschen</string>
+    <string name="tank_delete_confirm">Dieses Tankoubon löschen? Die enthaltenen Archive werden nicht gelöscht.</string>
+    <string name="tank_locked">Tankoubon ist gesperrt, bitte später erneut versuchen</string>
+    <string name="tank_op_done">Fertig</string>
+    <string name="tank_progress_page">Gelesen bis Seite %1$d</string>
+    <string name="tank_read_from_start">Von vorn lesen</string>
+    <string name="tank_continue_reading">Weiterlesen (Seite %1$d)</string>
+    <string name="tank_member_remove">Aus Tankoubon entfernen</string>
+    <string name="tank_set_cover">Als Cover festlegen</string>
+    <string name="tank_cover_updated">Cover aktualisiert</string>
+    <string name="tank_reorder_failed">Neuordnung fehlgeschlagen, Reihenfolge wiederhergestellt</string>
+    <string name="tank_badge">Tankoubon</string>
+    <string name="settings_eh_group_tanks">Tankoubons beim Stöbern anzeigen</string>
+    <string name="settings_eh_group_tanks_summary">Archive eines Tankoubons zu einem Eintrag zusammenfassen (LANraragi 0.9.8+)</string>
+    <string name="detail_tankoubons_label">Tankoubons</string>
+    <string name="detail_tankoubons_edit">Bearbeiten</string>
+    <string name="tank_add_to">Zu Tankoubon hinzufügen</string>
+    <string name="batch_add_to_tankoubon">Tank</string>
+    <string name="tank_none">Keine Tankoubons auf diesem Server</string>
+
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">%d ausgewählt</string>
     <string name="batch_select_all">Alle</string>
