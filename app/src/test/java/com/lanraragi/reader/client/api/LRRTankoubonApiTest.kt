@@ -12,6 +12,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
+import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -37,6 +38,9 @@ class LRRTankoubonApiTest {
     @After
     fun tearDown() {
         server.shutdown()
+        // Process-wide singleton + OS port reuse could leak a stale capability
+        // flag into other test classes (LRRArchiveApiTest precedent).
+        ServerCapabilityCache.clear()
     }
 
     @Test
@@ -216,7 +220,10 @@ class LRRTankoubonApiTest {
 
         LRRTankoubonApi.renameTankoubon(client, baseUrl, tankId, "New name")
 
-        val body = server.takeRequest().body.readUtf8()
+        val req = server.takeRequest()
+        assertEquals("PUT", req.method)
+        assertEquals("/api/tankoubons", req.path)
+        val body = req.body.readUtf8()
         assertTrue(body.contains("id=$tankId"))
         assertTrue(body.contains("name=New%20name"))
     }
@@ -239,8 +246,30 @@ class LRRTankoubonApiTest {
         assertTrue(body.contains(""""archives":["$arcid"]"""))
         assertTrue(body.contains(""""summary":"s2""""))
         // keys not passed must be absent (server: absent key = untouched)
-        assertTrue(!body.contains(""""name""""))
-        assertTrue(!body.contains(""""tags""""))
+        assertFalse(body.contains(""""name""""))
+        assertFalse(body.contains(""""tags""""))
+    }
+
+    @Test
+    fun updateTankoubon_archivesOnly_omitsMetadataKey() = runTest {
+        server.enqueue(MockResponse().setBody("""{"operation":"update_tankoubon","success":1}"""))
+
+        LRRTankoubonApi.updateTankoubon(client, baseUrl, tankId, archives = listOf(arcid))
+
+        val body = server.takeRequest().body.readUtf8()
+        assertTrue(body.contains(""""archives":["$arcid"]"""))
+        assertFalse(body.contains(""""metadata""""))
+    }
+
+    @Test
+    fun updateTankoubon_summaryOnly_omitsArchivesKey() = runTest {
+        server.enqueue(MockResponse().setBody("""{"operation":"update_tankoubon","success":1}"""))
+
+        LRRTankoubonApi.updateTankoubon(client, baseUrl, tankId, summary = "x")
+
+        val body = server.takeRequest().body.readUtf8()
+        assertTrue(body.contains(""""summary":"x""""))
+        assertFalse(body.contains(""""archives""""))
     }
 
     @Test
@@ -315,5 +344,40 @@ class LRRTankoubonApiTest {
         LRRTankoubonApi.updateTankProgress(client, baseUrl, tankId, globalPage1 = 5)
 
         assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun createTankoubon_blankName_throwsClientValidation() = runTest {
+        try {
+            LRRTankoubonApi.createTankoubon(client, baseUrl, "   ")
+            fail("Should have thrown")
+        } catch (expected: LRRClientValidationException) {
+            // no request must have been sent
+            assertEquals(0, server.requestCount)
+        }
+    }
+
+    @Test
+    fun createTankoubon_inBodyFailure_surfacesServerError() = runTest {
+        server.enqueue(MockResponse().setBody("""{"operation":"create_tankoubon","error":"dup","success":0}"""))
+
+        try {
+            LRRTankoubonApi.createTankoubon(client, baseUrl, "Series A")
+            fail("Should have thrown")
+        } catch (e: IOException) {
+            assertTrue(e.message?.contains("dup") == true)
+        }
+    }
+
+    @Test
+    fun createTankoubon_successWithoutId_throwsMissingField() = runTest {
+        server.enqueue(MockResponse().setBody("""{"operation":"create_tankoubon","success":1}"""))
+
+        try {
+            LRRTankoubonApi.createTankoubon(client, baseUrl, "Series A")
+            fail("Should have thrown")
+        } catch (expected: LRRMissingFieldException) {
+            // contract violation: success:1 without a tankoubon_id
+        }
     }
 }
