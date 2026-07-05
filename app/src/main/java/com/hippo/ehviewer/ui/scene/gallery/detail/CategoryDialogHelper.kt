@@ -19,7 +19,6 @@ import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.data.LRRCategory
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
-import com.lanraragi.reader.client.api.runSuspend
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -109,9 +108,7 @@ object CategoryDialogHelper {
                     ServiceRegistry.dataModule.profileLookupCache,
                 )
                 val client = ServiceRegistry.networkModule.okHttpClient
-                val categories = runSuspend {
-                    LRRCategoryApi.getCategories(client, serverUrl)
-                }
+                val categories = LRRCategoryApi.getCategories(client, serverUrl)
 
                 // Filter to static categories only
                 val staticCats = categories.filter { it.search.isNullOrEmpty() }
@@ -198,13 +195,9 @@ object CategoryDialogHelper {
                     if (checked[i] != originalChecked[i]) {
                         val catId = staticCats[i].id!!
                         if (checked[i]) {
-                            runSuspend {
-                                LRRCategoryApi.addToCategory(c, serverUrl, catId, arcid)
-                            }
+                            LRRCategoryApi.addToCategory(c, serverUrl, catId, arcid)
                         } else {
-                            runSuspend {
-                                LRRCategoryApi.removeFromCategory(c, serverUrl, catId, arcid)
-                            }
+                            LRRCategoryApi.removeFromCategory(c, serverUrl, catId, arcid)
                         }
                     }
                 }
@@ -231,6 +224,9 @@ object CategoryDialogHelper {
                     }
                     Toast.makeText(activity, R.string.lrr_category_updated_toast, Toast.LENGTH_SHORT).show()
                 }
+            } catch (ce: CancellationException) {
+                // Lifecycle teardown cancelled the writes; not an error to toast.
+                throw ce
             } catch (e: Exception) {
                 Handler(Looper.getMainLooper()).post {
                     Toast.makeText(activity, friendlyError(activity, e), Toast.LENGTH_SHORT).show()
@@ -262,17 +258,16 @@ object CategoryDialogHelper {
                 (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
                     try {
                         val c = ServiceRegistry.networkModule.okHttpClient
-                        val newCatId = runSuspend {
-                            LRRCategoryApi.createCategory(c, serverUrl, catName, null, false)
-                        }
-                        runSuspend {
-                            LRRCategoryApi.addToCategory(c, serverUrl, newCatId, arcid)
-                        }
+                        val newCatId = LRRCategoryApi.createCategory(c, serverUrl, catName, null, false)
+                        LRRCategoryApi.addToCategory(c, serverUrl, newCatId, arcid)
 
                         Handler(Looper.getMainLooper()).post {
                             Toast.makeText(activity, R.string.lrr_category_created, Toast.LENGTH_SHORT).show()
                             callback?.onFavoriteStatusChanged(true, catName)
                         }
+                    } catch (ce: CancellationException) {
+                        // Lifecycle teardown cancelled the create; not an error to toast.
+                        throw ce
                     } catch (ex: Exception) {
                         Handler(Looper.getMainLooper()).post {
                             Toast.makeText(activity, friendlyError(activity, ex), Toast.LENGTH_SHORT).show()
