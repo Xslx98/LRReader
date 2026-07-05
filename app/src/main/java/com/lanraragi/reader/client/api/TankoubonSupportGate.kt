@@ -11,6 +11,8 @@ import java.util.concurrent.ConcurrentHashMap
  * Only a definite 404 marks UNSUPPORTED (the pre-0.9.8 server has no such
  * route). Network failures / 5xx / reverse-proxy noise never mark — a flaky
  * LAN must not permanently hide the feature (cache is process-lifetime only).
+ * Once marked, UNSUPPORTED is sticky for the process lifetime: a late
+ * success from a racing in-flight request never downgrades it back.
  */
 object TankoubonSupportGate {
 
@@ -28,7 +30,12 @@ object TankoubonSupportGate {
 
     @JvmStatic
     fun markSupported(baseUrl: String) {
-        states[key(baseUrl)] = Support.SUPPORTED
+        // UNSUPPORTED is sticky for the process lifetime: a late 200 from a
+        // request that was already in flight when the 404 landed must not
+        // un-mark a server that provably lacks the routes.
+        states.compute(key(baseUrl)) { _, cur ->
+            if (cur == Support.UNSUPPORTED) cur else Support.SUPPORTED
+        }
     }
 
     /** Returns true when [e] proves the server lacks tankoubon routes (marked). */
