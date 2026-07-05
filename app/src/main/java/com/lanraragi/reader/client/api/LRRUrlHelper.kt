@@ -2,6 +2,7 @@ package com.lanraragi.reader.client.api
 
 import android.util.Log
 import com.lanraragi.reader.client.api.data.LRRServerInfo
+import kotlinx.coroutines.CancellationException
 import okhttp3.OkHttpClient
 import java.net.URI
 import java.util.concurrent.TimeUnit
@@ -106,14 +107,12 @@ object LRRUrlHelper {
      * Attempt to connect to a server. If the user did not specify a protocol,
      * try HTTPS first, then fall back to HTTP.
      *
-     * This method **blocks** -- call from a background thread.
-     *
      * @param testClient   OkHttpClient with short timeouts
      * @param rawInput     user input, already normalised (no trailing slash)
-     * @param callback     result callback (called on the **calling** thread)
+     * @param callback     result callback (invoked in the calling coroutine
+     *   before this function returns)
      */
-    @JvmStatic
-    fun connectWithFallback(
+    suspend fun connectWithFallback(
         testClient: OkHttpClient,
         rawInput: String,
         callback: ConnectCallback
@@ -122,9 +121,11 @@ object LRRUrlHelper {
             if (hasExplicitScheme(rawInput)) {
                 LRRAuthManager.setServerUrl(rawInput)
                 try {
-                    val info = doConnect(testClient, rawInput)
+                    val info = LRRServerApi.getServerInfo(testClient, rawInput)
                     callback.onSuccess(rawInput, info, false)
                     return
+                } catch (ce: CancellationException) {
+                    throw ce
                 } catch (e: Exception) {
                     Log.d(TAG, "Explicit URL failed: ${e.message}")
                     // Explicit http:// — no fallback, report failure directly
@@ -141,8 +142,10 @@ object LRRUrlHelper {
                     LRRAuthManager.setServerUrl(httpUrl)
                     try {
                         Log.d(TAG, "Trying HTTP fallback for explicit HTTPS: $httpUrl")
-                        val info = doConnect(testClient, httpUrl)
+                        val info = LRRServerApi.getServerInfo(testClient, httpUrl)
                         callback.onSuccess(httpUrl, info, true)
+                    } catch (ce: CancellationException) {
+                        throw ce
                     } catch (e2: Exception) {
                         Log.d(TAG, "HTTP fallback also failed: ${e2.message}")
                         callback.onFailure(e2)
@@ -158,9 +161,11 @@ object LRRUrlHelper {
             LRRAuthManager.setServerUrl(httpsUrl)
             try {
                 Log.d(TAG, "Trying HTTPS: $httpsUrl")
-                val info = doConnect(testClient, httpsUrl)
+                val info = LRRServerApi.getServerInfo(testClient, httpsUrl)
                 callback.onSuccess(httpsUrl, info, false)
                 return
+            } catch (ce: CancellationException) {
+                throw ce
             } catch (e1: Exception) {
                 Log.d(TAG, "HTTPS failed: ${e1.message}")
             }
@@ -180,8 +185,10 @@ object LRRUrlHelper {
             LRRAuthManager.setServerUrl(httpUrl)
             try {
                 Log.d(TAG, "Trying HTTP fallback: $httpUrl")
-                val info = doConnect(testClient, httpUrl)
+                val info = LRRServerApi.getServerInfo(testClient, httpUrl)
                 callback.onSuccess(httpUrl, info, true)
+            } catch (ce: CancellationException) {
+                throw ce
             } catch (e2: Exception) {
                 Log.d(TAG, "HTTP fallback also failed: ${e2.message}")
                 callback.onFailure(e2)
@@ -190,12 +197,5 @@ object LRRUrlHelper {
             Log.e(TAG, "Secure storage unavailable during connect", e)
             callback.onFailure(e)
         }
-    }
-
-    /**
-     * Synchronous connection attempt -- must be called off main thread.
-     */
-    private fun doConnect(client: OkHttpClient, baseUrl: String): LRRServerInfo {
-        return runSuspend { LRRServerApi.getServerInfo(client, baseUrl) }
     }
 }

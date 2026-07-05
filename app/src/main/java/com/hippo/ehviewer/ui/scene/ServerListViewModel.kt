@@ -10,6 +10,7 @@ import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.client.api.LRRServerApi
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.client.api.data.LRRServerInfo
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -182,32 +183,39 @@ class ServerListViewModel : ViewModel() {
             val testClient = LRRUrlHelper.buildTestClient(
                 ServiceRegistry.networkModule.okHttpClient
             )
-            LRRUrlHelper.connectWithFallback(
-                testClient,
-                newUrl,
-                object : LRRUrlHelper.ConnectCallback {
-                    override fun onSuccess(
-                        resolvedUrl: String,
-                        info: LRRServerInfo,
-                        usedHttpFallback: Boolean
-                    ) {
-                        // saveEditedProfile re-applies the active config only when
-                        // the edited profile is active; for a non-active edit,
-                        // restore what the test clobbered.
-                        if (!profile.isActive) {
-                            restoreActiveAuth(oldUrl, oldKey)
+            try {
+                LRRUrlHelper.connectWithFallback(
+                    testClient,
+                    newUrl,
+                    object : LRRUrlHelper.ConnectCallback {
+                        override fun onSuccess(
+                            resolvedUrl: String,
+                            info: LRRServerInfo,
+                            usedHttpFallback: Boolean
+                        ) {
+                            // saveEditedProfile re-applies the active config only when
+                            // the edited profile is active; for a non-active edit,
+                            // restore what the test clobbered.
+                            if (!profile.isActive) {
+                                restoreActiveAuth(oldUrl, oldKey)
+                            }
+                            saveEditedProfile(profile, position, newName, resolvedUrl, newKey, usedHttpFallback)
                         }
-                        saveEditedProfile(profile, position, newName, resolvedUrl, newKey, usedHttpFallback)
-                    }
 
-                    override fun onFailure(error: Exception) {
-                        restoreActiveAuth(oldUrl, oldKey)
-                        _uiEvent.tryEmit(
-                            ServerListUiEvent.EditConnectionFailed(error)
-                        )
+                        override fun onFailure(error: Exception) {
+                            restoreActiveAuth(oldUrl, oldKey)
+                            _uiEvent.tryEmit(
+                                ServerListUiEvent.EditConnectionFailed(error)
+                            )
+                        }
                     }
-                }
-            )
+                )
+            } catch (ce: CancellationException) {
+                // ViewModel cleared mid-test: neither callback ran, so the
+                // active config still holds the URL/key under test.
+                restoreActiveAuth(oldUrl, oldKey)
+                throw ce
+            }
         }
     }
 
@@ -313,35 +321,37 @@ class ServerListViewModel : ViewModel() {
         val testClient = LRRUrlHelper.buildTestClient(baseClient)
 
         viewModelScope.launch(Dispatchers.IO) {
-            LRRUrlHelper.connectWithFallback(
-                testClient,
-                normalizedUrl,
-                object : LRRUrlHelper.ConnectCallback {
-                    override fun onSuccess(
-                        resolvedUrl: String,
-                        info: LRRServerInfo,
-                        usedHttpFallback: Boolean
-                    ) {
-                        performAddProfile(
-                            name, resolvedUrl, finalKey, allowCleartext,
-                            info, usedHttpFallback
-                        )
-                    }
-
-                    override fun onFailure(error: Exception) {
-                        // Restore old auth on failure
-                        try {
-                            oldUrl?.let { LRRAuthManager.setServerUrl(it) }
-                            LRRAuthManager.setApiKey(oldKey)
-                        } catch (e: LRRSecureStorageUnavailableException) {
-                            Log.w(TAG, "Restore auth after connection failure", e)
+            try {
+                LRRUrlHelper.connectWithFallback(
+                    testClient,
+                    normalizedUrl,
+                    object : LRRUrlHelper.ConnectCallback {
+                        override fun onSuccess(
+                            resolvedUrl: String,
+                            info: LRRServerInfo,
+                            usedHttpFallback: Boolean
+                        ) {
+                            performAddProfile(
+                                name, resolvedUrl, finalKey, allowCleartext,
+                                info, usedHttpFallback
+                            )
                         }
-                        _uiEvent.tryEmit(
-                            ServerListUiEvent.AddConnectionFailed(error)
-                        )
+
+                        override fun onFailure(error: Exception) {
+                            // Restore old auth on failure
+                            restoreActiveAuth(oldUrl, oldKey)
+                            _uiEvent.tryEmit(
+                                ServerListUiEvent.AddConnectionFailed(error)
+                            )
+                        }
                     }
-                }
-            )
+                )
+            } catch (ce: CancellationException) {
+                // ViewModel cleared mid-test: neither callback ran, so the
+                // active config still holds the URL/key under test.
+                restoreActiveAuth(oldUrl, oldKey)
+                throw ce
+            }
         }
     }
 
