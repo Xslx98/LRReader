@@ -36,9 +36,20 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
         fun showSearchBar()
         fun showActionFab()
         fun getString(resId: Int): String
+
+        /** Leave multi-select mode (no-op when it is not active). */
+        fun exitMultiSelect()
     }
 
     override fun getPageData(taskId: Int, type: Int, page: Int) {
+        // Any load that replaces or prepends rows invalidates adapter positions,
+        // so an in-flight multi-select must not survive it. This is the single
+        // funnel every refresh trigger passes through (pull-to-refresh, FAB
+        // refresh, sort change, upload-success refresh); only next-page appends
+        // keep existing positions valid.
+        if (type != TYPE_NEXT_PAGE && type != TYPE_NEXT_PAGE_KEEP_POS) {
+            callback.exitMultiSelect()
+        }
         val serverUrl = LRRAuthManager.getServerUrl()
         if (serverUrl.isNullOrEmpty()) {
             // Signal failure instead of returning silently, otherwise the refresh

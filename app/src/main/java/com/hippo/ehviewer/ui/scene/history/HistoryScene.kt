@@ -26,6 +26,7 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
@@ -53,14 +54,13 @@ import com.hippo.ehviewer.client.LRRCacheKeyFactory
 import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.gallery.ReadingContext
 import com.hippo.ehviewer.gallery.ReadingContextStore
-import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.settings.AppearanceSettings
-import com.hippo.ehviewer.ui.CommonOperations
+import com.hippo.ehviewer.ui.scene.ListMultiSelectHelper
 import com.hippo.ehviewer.ui.scene.ToolbarScene
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
-import com.hippo.ehviewer.ui.scene.gallery.detail.CategoryDialogHelper
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.ehviewer.ui.scene.gallery.list.EnterGalleryDetailTransaction
+import com.hippo.ehviewer.util.collectFlow
 import com.hippo.ehviewer.widget.SimpleRatingView
 import com.hippo.ripple.Ripple
 import com.hippo.scene.Announcer
@@ -70,6 +70,7 @@ import com.hippo.widget.LoadImageView
 import com.hippo.widget.recyclerview.AutoStaggeredGridLayoutManager
 import com.hippo.lib.yorozuya.AssertUtils
 import com.hippo.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.launch
 
 class HistoryScene : ToolbarScene(),
@@ -88,6 +89,13 @@ class HistoryScene : ToolbarScene(),
     private var mViewTransition: ViewTransition? = null
     private var mAdapter: RecyclerView.Adapter<*>? = null
     private lateinit var mLayoutManager: AutoStaggeredGridLayoutManager
+
+    /*---------------
+     Multi-select
+     ---------------*/
+    private var multiSelectHelper: ListMultiSelectHelper? = null
+    private var batchBar: View? = null
+    private var batchCountView: TextView? = null
 
     override fun getNavCheckedItem(): Int {
         return R.id.nav_history
@@ -146,6 +154,41 @@ class HistoryScene : ToolbarScene(),
         mRecyclerView.clipToPadding = false
         mRecyclerView.setOnItemClickListener(this)
         mRecyclerView.setOnItemLongClickListener(this)
+
+        // Bottom batch action bar (shared widget). History supports a single
+        // batch op — remove-from-history — so the gallery-specific buttons are
+        // hidden and the delete slot is repurposed with the remove label.
+        val bar = ViewUtils.`$$`(view, R.id.batch_action_bar)
+        batchBar = bar
+        batchCountView = bar.findViewById(R.id.batch_count)
+        bar.findViewById<Button>(R.id.batch_download).visibility = View.GONE
+        bar.findViewById<Button>(R.id.batch_category).visibility = View.GONE
+        bar.findViewById<Button>(R.id.batch_clear_new).visibility = View.GONE
+        bar.findViewById<Button>(R.id.batch_select_all)
+            .setOnClickListener { multiSelectHelper?.checkAll() }
+        bar.findViewById<Button>(R.id.batch_delete).apply {
+            setText(R.string.batch_remove_history)
+            setOnClickListener { onBatchRemoveClick() }
+        }
+        val multiSelect = ListMultiSelectHelper(
+            recyclerView = { if (::mRecyclerView.isInitialized) mRecyclerView else null },
+            longClickListener = { this },
+            onModeChanged = { active ->
+                batchBar?.visibility = if (active) View.VISIBLE else View.GONE
+            },
+            onCheckedChanged = { count ->
+                batchCountView?.let {
+                    it.text = it.context.getString(R.string.batch_selected_count, count)
+                }
+            },
+        )
+        multiSelectHelper = multiSelect
+        // intoCustomChoiceMode() is a no-op unless the custom choice mode is
+        // configured, and it dispatches to the listener without a null check —
+        // both calls below are required before the mode can be entered.
+        mRecyclerView.setChoiceMode(EasyRecyclerView.CHOICE_MODE_MULTIPLE_CUSTOM)
+        mRecyclerView.setCustomCheckedListener(multiSelect.choiceListener)
+
         val interval = resources.getDimensionPixelOffset(R.dimen.gallery_list_interval)
         val paddingH = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_h)
         val paddingV = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_v)
@@ -182,6 +225,10 @@ class HistoryScene : ToolbarScene(),
         super.onViewCreated(view, savedInstanceState)
         setTitle(R.string.history)
         setNavigationIcon(R.drawable.v_arrow_left_dark_x24)
+        // View-scoped so a re-created view does not stack duplicate collectors.
+        collectFlow(viewLifecycleOwner, viewModel.batchRemoveDone) { (ok, bad) ->
+            showTip(getString(R.string.batch_result_summary, ok, bad), LENGTH_SHORT)
+        }
     }
 
     override fun onResume() {
@@ -192,7 +239,10 @@ class HistoryScene : ToolbarScene(),
             mLayoutManager.setColumnSize(columnWidth)
             mRecyclerView.requestLayout()
         }
-        // Reload history to pick up rating changes made in detail page
+        // Reload history to pick up rating changes made in detail page.
+        // The reload replaces the list and invalidates adapter positions, so
+        // any in-flight multi-select must not survive it.
+        multiSelectHelper?.exit()
         viewModel.loadHistory()
     }
 
@@ -214,6 +264,19 @@ class HistoryScene : ToolbarScene(),
 
         mViewTransition = null
         mAdapter = null
+        multiSelectHelper = null
+        batchBar = null
+        batchCountView = null
+    }
+
+    override fun onBackPressed() {
+        // Back leaves multi-select mode before leaving the scene.
+        val multiSelect = multiSelectHelper
+        if (multiSelect != null && multiSelect.isActive) {
+            multiSelect.exit()
+            return
+        }
+        super.onBackPressed()
     }
 
     private fun updateView(animation: Boolean) {
@@ -242,6 +305,9 @@ class HistoryScene : ToolbarScene(),
                 if (DialogInterface.BUTTON_POSITIVE != which || mAdapter == null) {
                     return@setPositiveButton
                 }
+                // The list is about to empty out — checked positions become
+                // meaningless, so leave multi-select first.
+                multiSelectHelper?.exit()
                 viewModel.clearAllHistory()
             }.show()
     }
@@ -261,6 +327,9 @@ class HistoryScene : ToolbarScene(),
     }
 
     override fun onItemClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean {
+        // In multi-select mode a click toggles the row instead of navigating —
+        // the library does not toggle on click by itself (mirrors gallery list).
+        multiSelectHelper?.let { if (it.isActive) return it.toggleChecked(position) }
         val list = viewModel.historyList.value
         if (position >= list.size) return false
         val archive = list[position]
@@ -307,26 +376,30 @@ class HistoryScene : ToolbarScene(),
         super.onSceneResult(requestCode, resultCode, data)
     }
 
-    override fun onItemLongClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean {
-        val context = ehContext ?: return false
-        val activity = activity2 ?: return false
-        val gi = viewModel.getRawHistoryInfo(position) ?: return false
+    override fun onItemLongClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean =
+        multiSelectHelper?.enterAndCheck(position) ?: false
 
-        val items = arrayOf<CharSequence>(
-            context.getString(R.string.download),
-            context.getString(R.string.lrr_menu_categories),
-        )
+    /**
+     * Confirm-then-remove for the current selection. The selection is captured
+     * before the dialog (it cannot change under a modal dialog, but the exit
+     * below reorders the list) and multi-select is left only on confirm —
+     * cancelling keeps the selection, matching the gallery-list batch delete.
+     */
+    private fun onBatchRemoveClick() {
+        val context = ehContext ?: return
+        val multiSelect = multiSelectHelper ?: return
+        val list = viewModel.historyList.value
+        val selected: List<Archive> = multiSelect.checkedPositions().mapNotNull { list.getOrNull(it) }
+        if (selected.isEmpty()) return
         AlertDialog.Builder(context)
-            .setTitle(gi.title)
-            .setItems(items) { _, which ->
-                when (which) {
-                    0 -> CommonOperations.startDownload(activity, gi.toArchive(), false)
-                    1 -> CategoryDialogHelper.showCategoryDialog(
-                        activity, gi.arcid, gi.serverProfileId, null
-                    )
-                }
-            }.show()
-        return true
+            .setMessage(context.getString(R.string.batch_remove_history_confirm, selected.size))
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.batch_remove_history) { _, _ ->
+                // Exit before the removal: rows fall out and positions shift.
+                multiSelect.exit()
+                viewModel.removeHistories(selected)
+            }
+            .show()
     }
 
     private inner class HistoryHolder(itemView: View) : AbstractSwipeableItemViewHolder(itemView) {
@@ -410,6 +483,11 @@ class HistoryScene : ToolbarScene(),
         }
 
         override fun onGetSwipeReactionType(holder: HistoryHolder, position: Int, x: Int, y: Int): Int {
+            // Swiping a row away during multi-select would remove it and shift
+            // every later position while the checked SparseArray does not remap.
+            if (multiSelectHelper?.isActive == true) {
+                return SwipeableItemConstants.REACTION_CAN_NOT_SWIPE_ANY
+            }
             return SwipeableItemConstants.REACTION_CAN_SWIPE_LEFT
         }
 

@@ -137,7 +137,6 @@
     <string name="select_image_first">请先选择图片</string>
 
 
-    <string name="delete_downloads">删除下载</string>
 
     <string name="quick_search">书签栏</string>
     <string name="quick_search_tip">点击“+”来添加书签</string>
@@ -308,6 +307,20 @@
     <string name="continuation_jump_toast">下一本：%s</string>
     <string name="settings_read_continuation">读完显示下一本</string>
     <string name="settings_read_continuation_swipe">翻页直接进入下一本</string>
+
+    <!-- List multi-select batch operations -->
+    <string name="batch_selected_count">已选 %d 项</string>
+    <string name="batch_select_all">全选</string>
+    <string name="batch_download">下载</string>
+    <string name="batch_add_to_category">分类</string>
+    <string name="batch_clear_new">清除NEW</string>
+    <string name="batch_delete">删除</string>
+    <string name="batch_remove_history">移除</string>
+    <string name="batch_delete_confirm_message">从服务器永久删除 %d 个档案？\n\n此操作不可撤销。</string>
+    <string name="batch_remove_history_confirm">从历史中移除 %d 条记录？</string>
+    <string name="batch_running">处理中 %1$d/%2$d…</string>
+    <string name="batch_result_summary">成功 %1$d，失败 %2$d</string>
+    <string name="batch_result_failures_title">失败项</string>
 
     <!-- Settings -->
     <string name="settings_eh">显示</string>
@@ -671,12 +684,10 @@
     <string name="lrr_loading_categories">加载分类列表...</string>
     <string name="lrr_no_static_categories">没有可用的静态分类</string>
     <string name="lrr_add_to_category">加入分类</string>
-    <string name="lrr_menu_categories">分类</string>
     <string name="lrr_category_info_suffix"> 等</string>
     <string name="lrr_category_count_suffix">个分类</string>
     <string name="lrr_category_updated_toast">分类已更新</string>
     <string name="lrr_no_preview_tags">暂无预览标签</string>
-    <string name="lrr_title_copied">标题文本已复制</string>
     <string name="lrr_security_warning">⚠️ 安全警告：正在使用 HTTP 明文连接公网地址，API Key 可能被窃听。强烈建议配置 HTTPS。</string>
     <string name="lrr_https_fallback_warning">⚠️ HTTPS 连接失败，已回退到 HTTP 明文连接。建议在服务器上配置 HTTPS。</string>
     <string name="lrr_download_failed_invalid">下载失败：文件无效，请点击重试</string>

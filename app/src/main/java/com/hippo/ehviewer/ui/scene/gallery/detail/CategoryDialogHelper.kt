@@ -20,6 +20,7 @@ import com.lanraragi.reader.client.api.data.LRRCategory
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.client.api.runSuspend
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -51,6 +52,52 @@ object CategoryDialogHelper {
     @JvmStatic
     fun showCategoryDialog(activity: Activity?, arcid: String?, serverProfileId: Long, callback: Callback?) {
         if (activity == null || arcid.isNullOrEmpty()) return
+
+        loadStaticCategories(activity, serverProfileId) { staticCats, serverUrl ->
+            val names = categoryDisplayNames(staticCats)
+            val checked = BooleanArray(staticCats.size) { i ->
+                staticCats[i].archives?.contains(arcid) == true
+            }
+            val originalChecked = checked.clone()
+            showCategoryCheckboxDialog(
+                activity, staticCats, names, checked, originalChecked,
+                arcid, serverUrl, callback
+            )
+        }
+    }
+
+    /**
+     * Pick-only variant for batch operations: loads static categories from the
+     * server owning [serverProfileId] and presents a single-choice list. The
+     * caller performs whatever add operation it needs via [onPicked]; nothing
+     * is written here. Same loading/empty/error toasts as [showCategoryDialog].
+     */
+    @JvmStatic
+    fun pickStaticCategory(activity: Activity?, serverProfileId: Long, onPicked: (categoryId: String) -> Unit) {
+        if (activity == null) return
+
+        loadStaticCategories(activity, serverProfileId) { staticCats, _ ->
+            AlertDialog.Builder(activity)
+                .setTitle(R.string.lrr_add_to_category)
+                .setItems(categoryDisplayNames(staticCats)) { _, which ->
+                    staticCats[which].id?.let(onPicked)
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        }
+    }
+
+    /**
+     * Shared front half of both dialogs: resolve the owning server's base URL,
+     * fetch its categories on IO, filter to static ones, then hand the result
+     * to [onLoaded] on the main thread. Empty result and fetch errors surface
+     * as toasts and [onLoaded] is not called.
+     */
+    private fun loadStaticCategories(
+        activity: Activity,
+        serverProfileId: Long,
+        onLoaded: (staticCats: List<LRRCategory>, serverUrl: String) -> Unit,
+    ) {
         if (LRRAuthManager.getServerUrl() == null) return
 
         Toast.makeText(activity, R.string.lrr_loading_categories, Toast.LENGTH_SHORT).show()
@@ -76,21 +123,12 @@ object CategoryDialogHelper {
                     return@launch
                 }
 
-                val names = Array(staticCats.size) { i ->
-                    val cat = staticCats[i]
-                    "${cat.name} (${cat.archives?.size ?: 0})"
-                }
-                val checked = BooleanArray(staticCats.size) { i ->
-                    staticCats[i].archives?.contains(arcid) == true
-                }
-                val originalChecked = checked.clone()
-
                 Handler(Looper.getMainLooper()).post {
-                    showCategoryCheckboxDialog(
-                        activity, staticCats, names, checked, originalChecked,
-                        arcid, serverUrl, callback
-                    )
+                    onLoaded(staticCats, serverUrl)
                 }
+            } catch (ce: CancellationException) {
+                // Lifecycle teardown cancelled the fetch; not an error to toast.
+                throw ce
             } catch (e: Exception) {
                 Handler(Looper.getMainLooper()).post {
                     Toast.makeText(activity, friendlyError(activity, e), Toast.LENGTH_SHORT).show()
@@ -98,6 +136,12 @@ object CategoryDialogHelper {
             }
         }
     }
+
+    private fun categoryDisplayNames(staticCats: List<LRRCategory>): Array<String> =
+        Array(staticCats.size) { i ->
+            val cat = staticCats[i]
+            "${cat.name} (${cat.archives?.size ?: 0})"
+        }
 
     private fun showCategoryCheckboxDialog(
         activity: Activity, staticCats: List<LRRCategory>,

@@ -170,7 +170,6 @@
     <string name="select_image_first">Please select image first</string>
 
 
-    <string name="delete_downloads">Delete downloads</string>
 
     <string name="quick_search">Quick search</string>
     <string name="quick_search_tip">Tap \"+\" to add Quick Search</string>
@@ -321,6 +320,20 @@
     <string name="continuation_jump_toast">Next: %s</string>
     <string name="settings_read_continuation">Show next archive when finished</string>
     <string name="settings_read_continuation_swipe">Page forward into the next archive</string>
+
+    <!-- List multi-select batch operations -->
+    <string name="batch_selected_count">%d selected</string>
+    <string name="batch_select_all">All</string>
+    <string name="batch_download">Download</string>
+    <string name="batch_add_to_category">Category</string>
+    <string name="batch_clear_new">Clear NEW</string>
+    <string name="batch_delete">Delete</string>
+    <string name="batch_remove_history">Remove</string>
+    <string name="batch_delete_confirm_message">Permanently delete %d archives from the server?\n\nThis action cannot be undone.</string>
+    <string name="batch_remove_history_confirm">Remove %d entries from history?</string>
+    <string name="batch_running">Processing %1$d/%2$d…</string>
+    <string name="batch_result_summary">%1$d succeeded, %2$d failed</string>
+    <string name="batch_result_failures_title">Failed items</string>
 
     <string name="settings_eh">Display</string>
     <string name="settings_eh_theme">Theme</string>
@@ -637,12 +650,10 @@
     <string name="lrr_loading_categories">Loading categories…</string>
     <string name="lrr_no_static_categories">No static categories available</string>
     <string name="lrr_add_to_category">Add to category</string>
-    <string name="lrr_menu_categories">Categories</string>
     <string name="lrr_category_info_suffix"> etc.</string>
     <string name="lrr_category_count_suffix"> categories</string>
     <string name="lrr_category_updated_toast">Category updated</string>
     <string name="lrr_no_preview_tags">No preview tags</string>
-    <string name="lrr_title_copied">Title copied</string>
     <string name="lrr_download_failed_invalid">Download failed: invalid file, tap to retry</string>
     <string name="lrr_download_failed_not_image">Download failed: not an image format, tap to retry</string>
     <string name="lrr_download_orphan_profile">Download paused: source server profile was deleted</string>

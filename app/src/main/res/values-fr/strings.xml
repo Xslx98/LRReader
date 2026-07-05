@@ -135,7 +135,6 @@
     <string name="select_image_first">Sélectionnez une image</string>
 
 
-    <string name="delete_downloads">Supprimer les téléchargements</string>
 
     <string name="quick_search">Recherche rapide</string>
     <string name="quick_search_tip">Appuyez sur \"+\" pour ajouter une Recherche rapide</string>
@@ -286,6 +285,20 @@
     <string name="continuation_jump_toast">Suivant : %s</string>
     <string name="settings_read_continuation">Afficher l\'archive suivante à la fin</string>
     <string name="settings_read_continuation_swipe">Tourner la page ouvre l\'archive suivante</string>
+
+    <!-- List multi-select batch operations -->
+    <string name="batch_selected_count">%d sélectionnés</string>
+    <string name="batch_select_all">Tout</string>
+    <string name="batch_download">Télécharger</string>
+    <string name="batch_add_to_category">Catégorie</string>
+    <string name="batch_clear_new">Retirer NEW</string>
+    <string name="batch_delete">Supprimer</string>
+    <string name="batch_remove_history">Retirer</string>
+    <string name="batch_delete_confirm_message">Supprimer définitivement %d archives du serveur ?\n\nCette action est irréversible.</string>
+    <string name="batch_remove_history_confirm">Retirer %d entrées de l\'historique ?</string>
+    <string name="batch_running">Traitement %1$d/%2$d…</string>
+    <string name="batch_result_summary">%1$d réussis, %2$d échoués</string>
+    <string name="batch_result_failures_title">Éléments en échec</string>
 
     <string name="settings_eh">Affichage</string>
     <string name="settings_eh_list_mode">Mode de liste</string>
@@ -644,12 +657,10 @@ Cette action est irréversible.</string>
     <string name="lrr_loading_categories">Chargement des catégories…</string>
     <string name="lrr_no_static_categories">Aucune catégorie statique disponible</string>
     <string name="lrr_add_to_category">Ajouter à une catégorie</string>
-    <string name="lrr_menu_categories">Catégories</string>
     <string name="lrr_category_info_suffix"> etc.</string>
     <string name="lrr_category_count_suffix"> catégories</string>
     <string name="lrr_category_updated_toast">Catégorie mise à jour</string>
     <string name="lrr_no_preview_tags">Aucun tag d\'aperçu</string>
-    <string name="lrr_title_copied">Titre copié</string>
     <string name="lrr_download_failed_invalid">Téléchargement échoué : fichier invalide, appuyer pour réessayer</string>
     <string name="lrr_download_failed_not_image">Téléchargement échoué : format non image, appuyer pour réessayer</string>
     <string name="lrr_download_orphan_profile">Téléchargement suspendu : le profil du serveur source a été supprimé</string>

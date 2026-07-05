@@ -145,7 +145,6 @@
     <string name="select_image_first">이미지를 먼저 선택해 주세요.</string>
 
 
-    <string name="delete_downloads">다운로드 삭제</string>
 
     <string name="quick_search">빠른 검색</string>
     <string name="quick_search_tip">빠른 검색을 추가하려면 \"+\" 버튼을 누르세요.</string>
@@ -316,6 +315,20 @@
     <string name="continuation_jump_toast">다음: %s</string>
     <string name="settings_read_continuation">다 읽으면 다음 작품 표시</string>
     <string name="settings_read_continuation_swipe">페이지 넘김으로 다음 작품 열기</string>
+
+    <!-- List multi-select batch operations -->
+    <string name="batch_selected_count">%d개 선택됨</string>
+    <string name="batch_select_all">전체</string>
+    <string name="batch_download">다운로드</string>
+    <string name="batch_add_to_category">카테고리</string>
+    <string name="batch_clear_new">NEW 해제</string>
+    <string name="batch_delete">삭제</string>
+    <string name="batch_remove_history">제거</string>
+    <string name="batch_delete_confirm_message">서버에서 %d개의 아카이브를 영구 삭제할까요?\n\n이 작업은 되돌릴 수 없습니다.</string>
+    <string name="batch_remove_history_confirm">기록에서 %d개 항목을 제거할까요?</string>
+    <string name="batch_running">처리 중 %1$d/%2$d…</string>
+    <string name="batch_result_summary">성공 %1$d, 실패 %2$d</string>
+    <string name="batch_result_failures_title">실패한 항목</string>
 
     <!-- Settings -->
     <string name="settings_eh">화면</string>
@@ -648,12 +661,10 @@
     <string name="lrr_loading_categories">카테고리 불러오는 중…</string>
     <string name="lrr_no_static_categories">사용 가능한 정적 카테고리가 없습니다</string>
     <string name="lrr_add_to_category">카테고리에 추가</string>
-    <string name="lrr_menu_categories">카테고리</string>
     <string name="lrr_category_info_suffix"> 외</string>
     <string name="lrr_category_count_suffix"> 카테고리</string>
     <string name="lrr_category_updated_toast">카테고리가 업데이트되었습니다</string>
     <string name="lrr_no_preview_tags">미리보기 태그 없음</string>
-    <string name="lrr_title_copied">제목이 복사되었습니다</string>
     <string name="lrr_download_failed_invalid">다운로드 실패: 잘못된 파일, 탭하여 다시 시도</string>
     <string name="lrr_download_failed_not_image">다운로드 실패: 이미지 형식이 아님, 탭하여 다시 시도</string>
     <string name="lrr_download_orphan_profile">다운로드 일시 중지됨: 원본 서버 프로필이 삭제되었습니다</string>

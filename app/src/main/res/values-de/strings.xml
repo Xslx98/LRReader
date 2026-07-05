@@ -110,7 +110,6 @@
     <string name="search_osc">Nur nach Umschläge suchen</string>
     <string name="search_se">Die gelöschten Galerien anzeigen</string>
     <string name="select_image_first">Wähle ein Bild</string>
-    <string name="delete_downloads">Downloads löschen</string>
     <string name="quick_search">Schnellsuche</string>
     <string name="quick_search_tip">Tippe an +, um eine Sofortsuche hinzuzufügen</string>
     <string name="add_quick_search_dialog_title">Sofortsuche hinzufügen</string>
@@ -242,6 +241,20 @@
     <string name="continuation_jump_toast">Nächstes: %s</string>
     <string name="settings_read_continuation">Nächstes Archiv am Ende anzeigen</string>
     <string name="settings_read_continuation_swipe">Weiterblättern öffnet nächstes Archiv</string>
+
+    <!-- List multi-select batch operations -->
+    <string name="batch_selected_count">%d ausgewählt</string>
+    <string name="batch_select_all">Alle</string>
+    <string name="batch_download">Herunterladen</string>
+    <string name="batch_add_to_category">Kategorie</string>
+    <string name="batch_clear_new">NEU entfernen</string>
+    <string name="batch_delete">Löschen</string>
+    <string name="batch_remove_history">Entfernen</string>
+    <string name="batch_delete_confirm_message">%d Archive endgültig vom Server löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.</string>
+    <string name="batch_remove_history_confirm">%d Einträge aus dem Verlauf entfernen?</string>
+    <string name="batch_running">Verarbeite %1$d/%2$d…</string>
+    <string name="batch_result_summary">%1$d erfolgreich, %2$d fehlgeschlagen</string>
+    <string name="batch_result_failures_title">Fehlgeschlagene Einträge</string>
 
     <string name="settings_eh">Anzeige</string>
     <string name="settings_eh_list_mode">Liste-Ansicht</string>
@@ -572,12 +585,10 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_loading_categories">Kategorien werden geladen…</string>
     <string name="lrr_no_static_categories">Keine statischen Kategorien verfügbar</string>
     <string name="lrr_add_to_category">Zur Kategorie hinzufügen</string>
-    <string name="lrr_menu_categories">Kategorien</string>
     <string name="lrr_category_info_suffix"> usw.</string>
     <string name="lrr_category_count_suffix"> Kategorien</string>
     <string name="lrr_category_updated_toast">Kategorie aktualisiert</string>
     <string name="lrr_no_preview_tags">Keine Vorschau-Tags</string>
-    <string name="lrr_title_copied">Titel kopiert</string>
     <string name="lrr_download_failed_invalid">Download fehlgeschlagen: ungültige Datei, tippen zum Wiederholen</string>
     <string name="lrr_download_failed_not_image">Download fehlgeschlagen: kein Bildformat, tippen zum Wiederholen</string>
     <string name="lrr_download_orphan_profile">Download pausiert: Quellserver-Profil wurde gelöscht</string>

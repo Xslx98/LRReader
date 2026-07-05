@@ -118,7 +118,6 @@
     <string name="search_osc">カバーのみを検索する</string>
     <string name="search_se">削除済みのギャラリーを表示する</string>
     <string name="select_image_first">画像を選択してください</string>
-    <string name="delete_downloads">ダウンロードを削除</string>
     <string name="quick_search">クイック検索</string>
     <string name="quick_search_tip">「+」をタップしてクイック検索を追加します</string>
     <string name="add_quick_search_dialog_title">クイック検索を追加</string>
@@ -270,6 +269,20 @@
     <string name="continuation_jump_toast">次：%s</string>
     <string name="settings_read_continuation">読了時に次の作品を表示</string>
     <string name="settings_read_continuation_swipe">ページ送りで次の作品へ</string>
+
+    <!-- List multi-select batch operations -->
+    <string name="batch_selected_count">%d件選択中</string>
+    <string name="batch_select_all">すべて</string>
+    <string name="batch_download">ダウンロード</string>
+    <string name="batch_add_to_category">カテゴリ</string>
+    <string name="batch_clear_new">NEW解除</string>
+    <string name="batch_delete">削除</string>
+    <string name="batch_remove_history">削除</string>
+    <string name="batch_delete_confirm_message">サーバーから%d件のアーカイブを完全に削除しますか？\n\nこの操作は取り消せません。</string>
+    <string name="batch_remove_history_confirm">履歴から%d件を削除しますか？</string>
+    <string name="batch_running">処理中 %1$d/%2$d…</string>
+    <string name="batch_result_summary">成功 %1$d件、失敗 %2$d件</string>
+    <string name="batch_result_failures_title">失敗した項目</string>
 
     <string name="settings_eh">表示</string>
     <string name="settings_eh_theme">テーマ</string>
@@ -577,12 +590,10 @@
     <string name="lrr_loading_categories">カテゴリを読み込み中…</string>
     <string name="lrr_no_static_categories">利用可能な静的カテゴリがありません</string>
     <string name="lrr_add_to_category">カテゴリに追加</string>
-    <string name="lrr_menu_categories">カテゴリ</string>
     <string name="lrr_category_info_suffix"> など</string>
     <string name="lrr_category_count_suffix"> カテゴリ</string>
     <string name="lrr_category_updated_toast">カテゴリを更新しました</string>
     <string name="lrr_no_preview_tags">プレビュータグがありません</string>
-    <string name="lrr_title_copied">タイトルをコピーしました</string>
     <string name="lrr_download_failed_invalid">ダウンロード失敗：無効なファイルです。タップして再試行</string>
     <string name="lrr_download_failed_not_image">ダウンロード失敗：画像形式ではありません。タップして再試行</string>
     <string name="lrr_download_orphan_profile">ダウンロード一時停止：ソースサーバーのプロファイルが削除されました</string>
