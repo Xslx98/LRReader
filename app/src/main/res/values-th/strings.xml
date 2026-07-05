@@ -341,7 +341,7 @@
     <string name="tank_summary_hint">สรุป</string>
     <string name="tank_tags_hint">แท็กเพิ่มเติม (คั่นด้วยจุลภาค)</string>
     <string name="tank_delete">ลบทังโคบง</string>
-    <string name="tank_delete_confirm">ลบทังโคบงนี้? ไฟล์ข้างในจะไม่ถูกลบ</string>
+    <string name="tank_delete_confirm">ลบทังโคบงนี้? ไฟล์ข้างในจะไม่ถูกลบ แต่สรุป แท็กเพิ่มเติม และความคืบหน้าการอ่านของทังโคบงจะหายไป</string>
     <string name="tank_locked">ทังโคบงถูกล็อกอยู่ โปรดลองใหม่ภายหลัง</string>
     <string name="tank_op_done">เสร็จสิ้น</string>
     <string name="tank_progress_page">อ่านถึงหน้า %1$d</string>
