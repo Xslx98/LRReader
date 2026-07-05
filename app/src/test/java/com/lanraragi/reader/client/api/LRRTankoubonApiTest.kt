@@ -196,4 +196,124 @@ class LRRTankoubonApiTest {
             assertEquals(0, server.requestCount)
         }
     }
+
+    @Test
+    fun createTankoubon_postsFormName_returnsId() = runTest {
+        server.enqueue(MockResponse().setBody("""{"operation":"create_tankoubon","tankoubon_id":"$tankId","success":1}"""))
+
+        val id = LRRTankoubonApi.createTankoubon(client, baseUrl, "Series A")
+
+        assertEquals(tankId, id)
+        val req = server.takeRequest()
+        assertEquals("PUT", req.method)
+        assertEquals("/api/tankoubons", req.path)
+        assertTrue(req.body.readUtf8().contains("name=Series%20A"))
+    }
+
+    @Test
+    fun renameTankoubon_sendsIdAndName() = runTest {
+        server.enqueue(MockResponse().setBody("""{"operation":"create_tankoubon","tankoubon_id":"$tankId","success":1}"""))
+
+        LRRTankoubonApi.renameTankoubon(client, baseUrl, tankId, "New name")
+
+        val body = server.takeRequest().body.readUtf8()
+        assertTrue(body.contains("id=$tankId"))
+        assertTrue(body.contains("name=New%20name"))
+    }
+
+    @Test
+    fun updateTankoubon_jsonBody_ordersAndMetadata() = runTest {
+        server.enqueue(MockResponse().setBody("""{"operation":"update_tankoubon","success":1}"""))
+
+        LRRTankoubonApi.updateTankoubon(
+            client, baseUrl, tankId,
+            archives = listOf(arcid),
+            summary = "s2",
+        )
+
+        val req = server.takeRequest()
+        assertEquals("PUT", req.method)
+        assertEquals("/api/tankoubons/$tankId", req.path)
+        assertEquals("application/json; charset=utf-8", req.getHeader("Content-Type"))
+        val body = req.body.readUtf8()
+        assertTrue(body.contains(""""archives":["$arcid"]"""))
+        assertTrue(body.contains(""""summary":"s2""""))
+        // keys not passed must be absent (server: absent key = untouched)
+        assertTrue(!body.contains(""""name""""))
+        assertTrue(!body.contains(""""tags""""))
+    }
+
+    @Test
+    fun updateTankoubon_noArgs_throwsClientValidation() = runTest {
+        try {
+            LRRTankoubonApi.updateTankoubon(client, baseUrl, tankId)
+            fail("Should have thrown")
+        } catch (expected: LRRClientValidationException) {
+            assertEquals(0, server.requestCount)
+        }
+    }
+
+    @Test
+    fun addAndRemove_useArchivePathSegment() = runTest {
+        server.enqueue(MockResponse().setBody("""{"success":1}"""))
+        server.enqueue(MockResponse().setBody("""{"success":1}"""))
+
+        LRRTankoubonApi.addToTankoubon(client, baseUrl, tankId, arcid)
+        LRRTankoubonApi.removeFromTankoubon(client, baseUrl, tankId, arcid)
+
+        val put = server.takeRequest()
+        assertEquals("PUT", put.method)
+        assertEquals("/api/tankoubons/$tankId/$arcid", put.path)
+        val del = server.takeRequest()
+        assertEquals("DELETE", del.method)
+        assertEquals("/api/tankoubons/$tankId/$arcid", del.path)
+    }
+
+    @Test
+    fun locked423_surfacesServerError() = runTest {
+        server.enqueue(
+            MockResponse().setResponseCode(423)
+                .setHeader("Content-Type", "application/json")
+                .setBody("""{"operation":"delete_tankoubon","error":"Locked","success":0}""")
+        )
+        try {
+            LRRTankoubonApi.deleteTankoubon(client, baseUrl, tankId)
+            fail("Should have thrown")
+        } catch (e: LRRHttpException) {
+            assertEquals(423, e.code)
+            assertEquals("Locked", e.serverError)
+        }
+    }
+
+    @Test
+    fun updateTankThumbnail_sendsGlobalPage() = runTest {
+        server.enqueue(MockResponse().setBody("""{"operation":"update_tankoubon_thumbnail","success":1,"new_thumbnail":"x"}"""))
+
+        LRRTankoubonApi.updateTankThumbnail(client, baseUrl, tankId, globalPage1 = 21)
+
+        val req = server.takeRequest()
+        assertEquals("PUT", req.method)
+        assertEquals("/api/tankoubons/$tankId/thumbnail?page=21", req.path)
+    }
+
+    @Test
+    fun updateTankProgress_putsGlobalPagePath() = runTest {
+        ServerCapabilityCache.setTracksProgress(baseUrl, true)
+        server.enqueue(MockResponse().setBody("""{"operation":"update_tank_progress","page":26,"success":1}"""))
+
+        LRRTankoubonApi.updateTankProgress(client, baseUrl, tankId, globalPage1 = 26)
+
+        val req = server.takeRequest()
+        assertEquals("PUT", req.method)
+        assertEquals("/api/tankoubons/$tankId/progress/26", req.path)
+    }
+
+    @Test
+    fun updateTankProgress_skippedOnClientsideProgressServers() = runTest {
+        ServerCapabilityCache.setTracksProgress(baseUrl, false)
+
+        LRRTankoubonApi.updateTankProgress(client, baseUrl, tankId, globalPage1 = 5)
+
+        assertEquals(0, server.requestCount)
+    }
 }
