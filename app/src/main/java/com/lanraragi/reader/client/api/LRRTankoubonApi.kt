@@ -11,10 +11,10 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import okhttp3.FormBody
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.IOException
 
 /**
  * API class for LANraragi Tankoubon operations.
@@ -182,8 +182,6 @@ object LRRTankoubonApi {
         val error: String? = null,
     )
 
-    private const val JSON_MEDIA_TYPE = "application/json; charset=utf-8"
-
     /** PUT /api/tankoubons 🔑 — create a new tankoubon, returns its id. */
     @JvmStatic
     suspend fun createTankoubon(client: OkHttpClient, baseUrl: String, name: String): String =
@@ -210,7 +208,7 @@ object LRRTankoubonApi {
             ensureSuccess(response)
             val body = response.body?.string() ?: throw LRREmptyBodyException()
             val parsed = lrrJson.decodeFromString<CreateTankoubonResult>(body)
-            if (parsed.success != 1) throw java.io.IOException(parsed.error ?: "create_tankoubon failed")
+            if (parsed.success != 1) throw IOException(parsed.error ?: "create_tankoubon failed")
             parsed.tankoubonId ?: throw LRRMissingFieldException("tankoubon_id")
         }
     }
@@ -219,6 +217,9 @@ object LRRTankoubonApi {
      * PUT /api/tankoubons/{id} 🔑 — replace contents and/or metadata. JSON body
      * (the package's first): keys that are null are NOT sent — the server treats
      * an absent key as "leave untouched" (sending it empty would wipe data).
+     *
+     * @param archives `emptyList()` REPLACES the tank with zero members (wipes
+     *   contents); pass `null` to leave membership untouched.
      */
     @JvmStatic
     @Suppress("LongParameterList")
@@ -232,7 +233,7 @@ object LRRTankoubonApi {
         tags: String? = null,
     ) {
         withContext(Dispatchers.IO) {
-            if (archives == null && name == null && summary == null && tags == null) {
+            if (listOf(archives, name, summary, tags).all { it == null }) {
                 throw LRRClientValidationException("updateTankoubon called with nothing to update")
             }
             val payload = buildJsonObject {
@@ -251,7 +252,7 @@ object LRRTankoubonApi {
                 .addPathSegments("api/tankoubons")
                 .addPathSegment(requireValidTankId(tankId))
                 .build()
-            val body = payload.toString().toRequestBody(JSON_MEDIA_TYPE.toMediaType())
+            val body = payload.toString().toRequestBody(JSON_MEDIA_TYPE)
             val request = Request.Builder().url(url).put(body).build()
             client.newCall(request).execute().use { response -> ensureSuccess(response) }
         }
