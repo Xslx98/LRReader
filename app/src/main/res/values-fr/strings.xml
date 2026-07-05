@@ -307,6 +307,36 @@
     <string name="settings_read_stamps">Afficher les tampons de page</string>
     <string name="stamps_unsupported">Ce serveur ne prend pas en charge les tampons (LANraragi 0.9.8+ requis)</string>
 
+    <!-- Tankoubon (ordered archive collections, LANraragi 0.9.8+) -->
+    <string name="tankoubons_title">Tankoubons</string>
+    <string name="tankoubons_empty">Aucun tankoubon</string>
+    <string name="tankoubons_unsupported">La prise en charge des tankoubons nécessite LANraragi 0.9.8+</string>
+    <string name="tank_create">Nouveau tankoubon</string>
+    <string name="tank_name_hint">Nom du tankoubon</string>
+    <string name="tank_rename">Renommer</string>
+    <string name="tank_edit_meta">Modifier les métadonnées</string>
+    <string name="tank_summary_hint">Résumé</string>
+    <string name="tank_tags_hint">Tags supplémentaires (séparés par des virgules)</string>
+    <string name="tank_delete">Supprimer le tankoubon</string>
+    <string name="tank_delete_confirm">Supprimer ce tankoubon ? Les archives qu\'il contient ne seront pas supprimées.</string>
+    <string name="tank_locked">Tankoubon verrouillé, réessayez plus tard</string>
+    <string name="tank_op_done">Terminé</string>
+    <string name="tank_progress_page">Lu jusqu\'à la page %1$d</string>
+    <string name="tank_read_from_start">Lire depuis le début</string>
+    <string name="tank_continue_reading">Continuer la lecture (page %1$d)</string>
+    <string name="tank_member_remove">Retirer du tankoubon</string>
+    <string name="tank_set_cover">Définir comme couverture</string>
+    <string name="tank_cover_updated">Couverture mise à jour</string>
+    <string name="tank_reorder_failed">Échec du réordonnancement, ordre restauré</string>
+    <string name="tank_badge">Tankoubon</string>
+    <string name="settings_eh_group_tanks">Afficher les tankoubons en navigation</string>
+    <string name="settings_eh_group_tanks_summary">Regrouper les archives d\'un tankoubon en une seule entrée (LANraragi 0.9.8+)</string>
+    <string name="detail_tankoubons_label">Tankoubons</string>
+    <string name="detail_tankoubons_edit">Modifier</string>
+    <string name="tank_add_to">Ajouter au tankoubon</string>
+    <string name="batch_add_to_tankoubon">Tank</string>
+    <string name="tank_none">Aucun tankoubon sur ce serveur</string>
+
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">%d sélectionnés</string>
     <string name="batch_select_all">Tout</string>
