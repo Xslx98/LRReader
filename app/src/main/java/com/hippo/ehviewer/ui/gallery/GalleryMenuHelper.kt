@@ -60,6 +60,7 @@ class GalleryMenuHelper @SuppressLint("InflateParams") constructor(
     private val mKeepScreenOn: SwitchCompat
     private val mReaderContinuation: SwitchCompat
     private val mReaderContinuationSwipe: SwitchCompat
+    private val mReaderStamps: SwitchCompat
     private val mShowClock: SwitchCompat
     private val mShowProgress: SwitchCompat
     private val mShowBattery: SwitchCompat
@@ -85,6 +86,7 @@ class GalleryMenuHelper @SuppressLint("InflateParams") constructor(
         mKeepScreenOn = view.findViewById(R.id.keep_screen_on)
         mReaderContinuation = view.findViewById(R.id.reader_continuation)
         mReaderContinuationSwipe = view.findViewById(R.id.reader_continuation_swipe)
+        mReaderStamps = view.findViewById(R.id.reader_stamps)
         mShowClock = view.findViewById(R.id.show_clock)
         mShowProgress = view.findViewById(R.id.show_progress)
         mShowBattery = view.findViewById(R.id.show_battery)
@@ -104,6 +106,7 @@ class GalleryMenuHelper @SuppressLint("InflateParams") constructor(
         mKeepScreenOn.isChecked = ReadingSettings.getKeepScreenOn()
         mReaderContinuation.isChecked = ReadingSettings.getReaderContinuation()
         mReaderContinuationSwipe.isChecked = ReadingSettings.getReaderContinuationSwipe()
+        mReaderStamps.isChecked = ReadingSettings.getReaderStamps()
         mShowClock.isChecked = ReadingSettings.getShowClock()
         mShowProgress.isChecked = ReadingSettings.getShowProgress()
         mShowBattery.isChecked = ReadingSettings.getShowBattery()
@@ -154,6 +157,7 @@ class GalleryMenuHelper @SuppressLint("InflateParams") constructor(
         mKeepScreenOn.setOnCheckedChangeListener(switchListener)
         mReaderContinuation.setOnCheckedChangeListener(switchListener)
         mReaderContinuationSwipe.setOnCheckedChangeListener(switchListener)
+        mReaderStamps.setOnCheckedChangeListener(switchListener)
         mShowClock.setOnCheckedChangeListener(switchListener)
         mShowProgress.setOnCheckedChangeListener(switchListener)
         mShowBattery.setOnCheckedChangeListener(switchListener)
@@ -215,6 +219,7 @@ class GalleryMenuHelper @SuppressLint("InflateParams") constructor(
         ReadingSettings.putKeepScreenOn(keepScreenOn)
         ReadingSettings.putReaderContinuation(readerContinuation)
         ReadingSettings.putReaderContinuationSwipe(readerContinuationSwipe)
+        ReadingSettings.putReaderStamps(mReaderStamps.isChecked)
         ReadingSettings.putShowClock(showClock)
         ReadingSettings.putShowProgress(showProgress)
         ReadingSettings.putShowBattery(showBattery)
