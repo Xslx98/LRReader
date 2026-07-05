@@ -1,17 +1,24 @@
 package com.hippo.ehviewer.ui.scene
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Bundle
+import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
@@ -27,6 +34,7 @@ import com.hippo.scene.Announcer
 import com.hippo.widget.LoadImageViewNew
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.domain.Archive
+import java.util.Collections
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -58,12 +66,24 @@ class TankoubonDetailScene : BaseScene() {
 
     private val mMembers: MutableList<Archive> = mutableListOf()
     private var mAdapter: MemberAdapter? = null
+    private var mItemTouchHelper: ItemTouchHelper? = null
 
-    // Snapshot of the list last dispatched to the adapter. Read/written ONLY
-    // by the members observer (the single dispatch path).
+    // Snapshot of the list last dispatched to the adapter. Read/written by
+    // the members observer (the single dispatch path) and by the drag
+    // callback's clearView (which re-syncs it after an optimistic reorder).
     private var mLastSnapshot: List<Archive> = emptyList()
 
-    /** Cover URL last handed to the loader; guards duplicate load() calls. */
+    /**
+     * True while an ItemTouchHelper drag selection is active. Suppresses
+     * the row's OnLongClickListener: a TOUCH long-press always starts the
+     * drag selection a hair before the row's own long-press fires (both
+     * gesture detectors share the same timeout, ItemTouchHelper's sees the
+     * event first), so without this guard every drag would ALSO open the
+     * member-actions dialog on top of the lifted row.
+     */
+    private var mDragSelectionActive = false
+
+    /** Cover "key|url" last handed to the loader; guards duplicate loads. */
     private var mCoverBoundUrl: String? = null
 
     private lateinit var viewModel: TankoubonDetailViewModel
@@ -111,6 +131,24 @@ class TankoubonDetailScene : BaseScene() {
         mToolbar?.apply {
             setNavigationIcon(R.drawable.v_arrow_left_dark_x24)
             setNavigationOnClickListener { onBackPressed() }
+            inflateMenu(R.menu.scene_tankoubon_detail)
+            setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    R.id.action_tank_rename -> {
+                        showRenameDialog()
+                        true
+                    }
+                    R.id.action_tank_edit_meta -> {
+                        showEditMetaDialog()
+                        true
+                    }
+                    R.id.action_tank_delete -> {
+                        showDeleteDialog()
+                        true
+                    }
+                    else -> false
+                }
+            }
         }
 
         mBtnReadStart?.setOnClickListener {
@@ -124,6 +162,7 @@ class TankoubonDetailScene : BaseScene() {
             layoutManager = LinearLayoutManager(context)
             setHasFixedSize(true)
             adapter = mAdapter
+            attachReorder(this)
         }
 
         observeViewModel()
@@ -188,34 +227,50 @@ class TankoubonDetailScene : BaseScene() {
         }
 
         // One-shot UI events
-        collectFlow(viewLifecycleOwner, viewModel.uiEvent) { event ->
-            val ctx = ehContext ?: return@collectFlow
-            when (event) {
-                is TankDetailUiEvent.ShowError -> {
-                    // If the list is empty, show the error view; otherwise toast
-                    if (mMembers.isEmpty()) {
-                        showError(event.message)
-                    } else {
-                        Toast.makeText(ctx, event.message, Toast.LENGTH_SHORT).show()
-                    }
+        collectFlow(viewLifecycleOwner, viewModel.uiEvent) { handleUiEvent(it) }
+    }
+
+    private fun handleUiEvent(event: TankDetailUiEvent) {
+        val ctx = ehContext ?: return
+        when (event) {
+            is TankDetailUiEvent.ShowError -> {
+                // If the list is empty, show the error view; otherwise toast
+                if (mMembers.isEmpty()) {
+                    showError(event.message)
+                } else {
+                    Toast.makeText(ctx, event.message, Toast.LENGTH_SHORT).show()
                 }
-                TankDetailUiEvent.ShowUnsupported -> {
-                    // Same split as ShowError: never clobber a loaded list
-                    val message = getString(R.string.tankoubons_unsupported)
-                    if (mMembers.isEmpty()) {
-                        showError(message)
-                    } else {
-                        Toast.makeText(ctx, message, Toast.LENGTH_SHORT).show()
-                    }
+            }
+            TankDetailUiEvent.ShowUnsupported -> {
+                // Same split as ShowError: never clobber a loaded list
+                val message = getString(R.string.tankoubons_unsupported)
+                if (mMembers.isEmpty()) {
+                    showError(message)
+                } else {
+                    Toast.makeText(ctx, message, Toast.LENGTH_SHORT).show()
                 }
-                is TankDetailUiEvent.ShowSuccess -> Unit // Task 8
-                TankDetailUiEvent.Deleted -> Unit // Task 8
+            }
+            is TankDetailUiEvent.ShowSuccess -> {
+                Toast.makeText(ctx, event.messageResId, Toast.LENGTH_SHORT).show()
+                // Set-cover bumps the VM's coverBust, which changes the
+                // cover cache key + URL — this rebind picks them up. For
+                // every other op it is an idempotent no-op (same key|url).
+                bindCover()
+            }
+            TankDetailUiEvent.Deleted -> {
+                Toast.makeText(ctx, R.string.tank_op_done, Toast.LENGTH_SHORT).show()
+                onBackPressed()
             }
         }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        // Detach so the helper releases the (dead) RecyclerView; the scene
+        // object can outlive its view on the back stack.
+        mItemTouchHelper?.attachToRecyclerView(null)
+        mItemTouchHelper = null
+        mDragSelectionActive = false
         mRecyclerView = null
         mProgress = null
         mErrorView = null
@@ -299,21 +354,206 @@ class TankoubonDetailScene : BaseScene() {
         startScene(Announcer(GalleryDetailScene::class.java).setArgs(args))
     }
 
+    // ==================== Management ops ====================
+
+    private fun showRenameDialog() {
+        val ctx = ehContext ?: return
+        val nameInput = EditText(ctx).apply {
+            setHint(R.string.tank_name_hint)
+            setText(viewModel.tankName.value)
+            isSingleLine = true
+            inputType = InputType.TYPE_CLASS_TEXT
+        }
+        AlertDialog.Builder(ctx)
+            .setTitle(R.string.tank_rename)
+            .setView(wrapDialogContent(ctx, nameInput))
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val name = nameInput.text.toString().trim()
+                if (name.isEmpty()) {
+                    Toast.makeText(ctx, R.string.tank_name_empty, Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                viewModel.rename(name)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun showEditMetaDialog() {
+        val ctx = ehContext ?: return
+        val summaryInput = EditText(ctx).apply {
+            setHint(R.string.tank_summary_hint)
+            setText(viewModel.summary.orEmpty())
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        }
+        val tagsInput = EditText(ctx).apply {
+            setHint(R.string.tank_tags_hint)
+            setText(viewModel.tags.orEmpty())
+            isSingleLine = true
+            inputType = InputType.TYPE_CLASS_TEXT
+        }
+        val column = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(summaryInput)
+            addView(tagsInput)
+        }
+        AlertDialog.Builder(ctx)
+            .setTitle(R.string.tank_edit_meta)
+            .setView(wrapDialogContent(ctx, column))
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                viewModel.editMeta(
+                    summaryInput.text.toString(),
+                    tagsInput.text.toString()
+                )
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun showDeleteDialog() {
+        val ctx = ehContext ?: return
+        AlertDialog.Builder(ctx)
+            .setTitle(R.string.tank_delete)
+            .setMessage(R.string.tank_delete_confirm)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                viewModel.deleteTank()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    /**
+     * Member actions dialog: remove from tank / set as tank cover. The
+     * set-cover index is resolved from the VM's CURRENT member order at
+     * selection time — the row may have shifted while the dialog was open,
+     * and [TankoubonDetailViewModel.pageOffsets] is only consistent with
+     * the VM's own ordering.
+     */
+    private fun showMemberActions(archive: Archive) {
+        val ctx = ehContext ?: return
+        val items = arrayOf(
+            getString(R.string.tank_member_remove),
+            getString(R.string.tank_set_cover)
+        )
+        AlertDialog.Builder(ctx)
+            .setTitle(archive.title)
+            .setItems(items) { _, which ->
+                when (which) {
+                    0 -> viewModel.removeMember(archive.arcid)
+                    1 -> {
+                        val index = viewModel.members.value
+                            .indexOfFirst { it.arcid == archive.arcid }
+                        if (index >= 0) viewModel.setCover(index)
+                    }
+                }
+            }
+            .show()
+    }
+
+    /** Keyline-padded container for programmatically built dialog content. */
+    private fun wrapDialogContent(ctx: Context, content: View): View {
+        val pad = (DIALOG_PADDING_DP * ctx.resources.displayMetrics.density).toInt()
+        return FrameLayout(ctx).apply {
+            setPadding(pad, pad / 2, pad, 0)
+            addView(content)
+        }
+    }
+
+    /**
+     * Drag-to-reorder. A touch long-press picks the row up (ItemTouchHelper's
+     * built-in long-press drag): moving it reorders, releasing it in place
+     * opens the member-actions dialog instead. The dialog deliberately opens
+     * on RELEASE, not at the long-press itself — ItemTouchHelper's gesture
+     * detector fires a hair before any row OnLongClickListener could (see
+     * [mDragSelectionActive]), so an at-timeout dialog would pop over every
+     * drag start.
+     */
+    private fun attachReorder(recycler: RecyclerView) {
+        val callback = object : ItemTouchHelper.SimpleCallback(
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN,
+            0
+        ) {
+            /** Whether the current drag selection actually swapped rows. */
+            private var dragged = false
+
+            override fun onMove(
+                rv: RecyclerView,
+                vh: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                val from = vh.bindingAdapterPosition
+                val to = target.bindingAdapterPosition
+                if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) {
+                    return false
+                }
+                // Optimistic UI: swap the scene's copy only; the VM
+                // reconciles authoritative state in reorder() on release.
+                Collections.swap(mMembers, from, to)
+                mAdapter?.notifyItemMoved(from, to)
+                dragged = true
+                return true
+            }
+
+            override fun onSwiped(vh: RecyclerView.ViewHolder, direction: Int) = Unit
+
+            override fun onSelectedChanged(vh: RecyclerView.ViewHolder?, actionState: Int) {
+                super.onSelectedChanged(vh, actionState)
+                if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
+                    mDragSelectionActive = true
+                }
+            }
+
+            override fun clearView(rv: RecyclerView, vh: RecyclerView.ViewHolder) {
+                super.clearView(rv, vh)
+                mDragSelectionActive = false
+                if (dragged) {
+                    dragged = false
+                    // Keep the local snapshot in sync so the members
+                    // collector's next DiffUtil pass (the VM re-emission in
+                    // the SAME order) is a no-op instead of a bounce-back.
+                    mLastSnapshot = ArrayList(mMembers)
+                    viewModel.reorder(mMembers.map { it.arcid })
+                } else {
+                    // Picked up and released in place → member actions.
+                    val archive = mMembers.getOrNull(vh.bindingAdapterPosition) ?: return
+                    // clearView can run inside a draw/animation pass; don't
+                    // open a window from there.
+                    rv.post { showMemberActions(archive) }
+                }
+            }
+        }
+        mItemTouchHelper = ItemTouchHelper(callback).also { it.attachToRecyclerView(recycler) }
+    }
+
     // ==================== View helpers ====================
 
     /**
      * Loads the tank cover once the VM has resolved the source base URL
-     * (first load). Idempotent per URL so the multiple observer call sites
-     * do not restart the image load.
+     * (first load). Idempotent per key|url so the multiple observer call
+     * sites do not restart the image load.
+     *
+     * The image pipeline caches by KEY, not URL — after a successful
+     * set-cover ([TankoubonDetailViewModel.coverBust] > 0) BOTH the key and
+     * the URL carry the bust stamp, otherwise the stale cached image would
+     * be served forever. When coverBust == 0 the plain key/url keep normal
+     * loads hitting the cache. (The pre-bust image stays cached under the
+     * old key until evicted — accepted.)
      */
     private fun bindCover() {
         val baseUrl = viewModel.baseUrl ?: return
         val tankId = viewModel.tankId
         if (tankId.isEmpty()) return
-        val url = LRRTankoubonApi.getTankoubonThumbnailUrl(baseUrl, tankId)
-        if (url == mCoverBoundUrl) return
-        mCoverBoundUrl = url
-        mCover?.load(LRRCacheKeyFactory.getThumbKey(tankId), url)
+        val bust = viewModel.coverBust
+        val key = if (bust > 0L) {
+            LRRCacheKeyFactory.getThumbKey("$tankId#$bust")
+        } else {
+            LRRCacheKeyFactory.getThumbKey(tankId)
+        }
+        val url = LRRTankoubonApi.getTankoubonThumbnailUrl(baseUrl, tankId, cacheBust = bust)
+        val binding = "$key|$url"
+        if (binding == mCoverBoundUrl) return
+        mCoverBoundUrl = binding
+        mCover?.load(key, url)
     }
 
     private fun showProgress() {
@@ -365,7 +605,21 @@ class TankoubonDetailScene : BaseScene() {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MemberViewHolder {
             val view = LayoutInflater.from(parent.context)
                 .inflate(R.layout.item_tankoubon_member, parent, false)
-            return MemberViewHolder(view)
+            val holder = MemberViewHolder(view)
+            // NON-TOUCH entry to the member actions (accessibility services'
+            // long-click action, which never starts a drag selection). Touch
+            // long-presses are owned by ItemTouchHelper — the flag suppresses
+            // this listener so the dialog doesn't pop over every drag start;
+            // touch users get the dialog by releasing the row in place.
+            holder.itemView.setOnLongClickListener {
+                if (mDragSelectionActive) return@setOnLongClickListener false
+                val position = holder.bindingAdapterPosition
+                if (position == RecyclerView.NO_POSITION) return@setOnLongClickListener false
+                val archive = mMembers.getOrNull(position) ?: return@setOnLongClickListener false
+                showMemberActions(archive)
+                true
+            }
+            return holder
         }
 
         // SetTextI18n: the trailing "P" unit suffix mirrors the page badge in
@@ -425,5 +679,6 @@ class TankoubonDetailScene : BaseScene() {
         const val KEY_TANK_ID = "tank_id"
         const val KEY_TANK_NAME = "tank_name"
         const val KEY_PROFILE_ID = "tank_profile_id"
+        private const val DIALOG_PADDING_DP = 24
     }
 }

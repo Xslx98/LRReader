@@ -21,12 +21,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 
 /**
  * ViewModel for [TankoubonDetailScene]. Loads a single tankoubon's member
- * archives (with full metadata) from its SOURCE server and exposes the
+ * archives (with full metadata) from its SOURCE server, exposes the
  * global-page math inputs ([memberIds] / [pageOffsets]) the scene needs
- * for the read-from-start / continue-reading entries.
+ * for the read-from-start / continue-reading entries, and hosts the
+ * management ops (rename / metadata / delete / member remove / reorder /
+ * cover).
  *
  * The Scene observes [tankName] / [members] / [progress] / [isLoading]
  * for state and [uiEvent] for one-shot messages. View construction,
@@ -97,6 +100,16 @@ class TankoubonDetailViewModel : ViewModel() {
     var tags: String? = null
         private set
 
+    /**
+     * Cache-bust stamp bumped after a successful [setCover]. The image
+     * pipeline caches by KEY, not URL, so the scene must derive BOTH a
+     * busted cache key and a busted URL from this; 0 = cover never changed
+     * in this session, use the plain key/url so normal loads hit the cache.
+     */
+    @Volatile
+    var coverBust: Long = 0L
+        private set
+
     // -------------------------------------------------------------------------
     // One-shot UI events
     // -------------------------------------------------------------------------
@@ -116,10 +129,10 @@ class TankoubonDetailViewModel : ViewModel() {
         /** The source server lacks the 0.9.8 tankoubon detail routes. */
         data object ShowUnsupported : TankDetailUiEvent
 
-        /** Reserved for Task 8 (membership/metadata edit success toast). */
+        /** A management op succeeded; the scene toasts [messageResId]. */
         data class ShowSuccess(val messageResId: Int) : TankDetailUiEvent
 
-        /** Reserved for Task 8 (tank deleted server-side → scene closes). */
+        /** The tank was deleted server-side; the scene closes itself. */
         data object Deleted : TankDetailUiEvent
     }
 
@@ -188,8 +201,131 @@ class TankoubonDetailViewModel : ViewModel() {
     }
 
     // -------------------------------------------------------------------------
+    // Management ops
+    // -------------------------------------------------------------------------
+
+    /** Renames the tank, then reloads server truth. */
+    fun rename(name: String) = mutateAndReload { client, url ->
+        LRRTankoubonApi.renameTankoubon(client, url, tankId, name)
+    }
+
+    /** Updates summary/tags (never the member list), then reloads. */
+    fun editMeta(summary: String, tags: String) = mutateAndReload { client, url ->
+        // archives MUST stay null here — an empty list would WIPE the tank.
+        LRRTankoubonApi.updateTankoubon(client, url, tankId, summary = summary, tags = tags)
+    }
+
+    /** Removes [arcid] from the tank, then reloads. */
+    fun removeMember(arcid: String) = mutateAndReload { client, url ->
+        LRRTankoubonApi.removeFromTankoubon(client, url, tankId, arcid)
+    }
+
+    /**
+     * Deletes the tank server-side. Success surfaces
+     * [TankDetailUiEvent.Deleted] (no reload / no success toast — the
+     * Deleted event carries the outcome and closes the scene).
+     */
+    fun deleteTank() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val url = baseUrl ?: return@launch
+            try {
+                val client = ServiceRegistry.networkModule.okHttpClient
+                LRRTankoubonApi.deleteTankoubon(client, url, tankId)
+                _uiEvent.tryEmit(TankDetailUiEvent.Deleted)
+            } catch (e: Exception) {
+                emitError(e)
+            }
+        }
+    }
+
+    /**
+     * Sets the tank cover to the FIRST page of member [memberIndex]
+     * (1-indexed global page at the API boundary). The server may answer
+     * 200 with a queued Minion job before the thumbnail actually exists —
+     * cosmetic, still treated as success. Bumps [coverBust] so the scene's
+     * next cover bind bypasses the stale cached image.
+     */
+    fun setCover(memberIndex: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val url = baseUrl ?: return@launch
+            // offsets has size members+1; valid member indices are 0..size-2
+            val offsets = pageOffsets
+            if (memberIndex < 0 || memberIndex >= offsets.size - 1) return@launch
+            try {
+                val client = ServiceRegistry.networkModule.okHttpClient
+                val page1 = TankPageMath.globalPage1(offsets, memberIndex, 0)
+                LRRTankoubonApi.updateTankThumbnail(client, url, tankId, page1)
+                coverBust = System.currentTimeMillis()
+                _uiEvent.tryEmit(TankDetailUiEvent.ShowSuccess(R.string.tank_cover_updated))
+            } catch (e: Exception) {
+                emitError(e)
+            }
+        }
+    }
+
+    /**
+     * Persists a new member order (the scene has already applied it
+     * optimistically to its adapter). Authoritative VM state ([members] /
+     * [memberIds] / [pageOffsets]) is updated BEFORE the network call:
+     * [_members] is conflated on equality, so a failed call's [load]
+     * rollback only re-renders if the VM state genuinely holds the new
+     * order — and the continue-reading math needs [pageOffsets] recomputed
+     * from the reordered pagecounts either way. On failure the server
+     * truth is re-fetched (rollback) after a [R.string.tank_reorder_failed]
+     * (or 423 locked) message.
+     */
+    fun reorder(newOrder: List<String>) {
+        if (newOrder == memberIds) return
+        val byId = _members.value.associateBy { it.arcid }
+        val reordered = newOrder.mapNotNull { byId[it] }
+        val ids = reordered.map { it.arcid }
+        memberIds = ids
+        pageOffsets = TankPageMath.pageOffsets(reordered.map { it.pagecount })
+        _members.value = reordered
+        viewModelScope.launch(Dispatchers.IO) {
+            val url = baseUrl ?: return@launch
+            try {
+                val client = ServiceRegistry.networkModule.okHttpClient
+                LRRTankoubonApi.updateTankoubon(client, url, tankId, archives = ids)
+            } catch (e: Exception) {
+                val ctx = ServiceRegistry.appModule.getContext()
+                val message = if (e is LRRHttpException && e.code == HTTP_LOCKED) {
+                    errorMessage(ctx, e)
+                } else {
+                    ctx.getString(R.string.tank_reorder_failed)
+                }
+                _uiEvent.tryEmit(TankDetailUiEvent.ShowError(message))
+                load() // rollback to server truth
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Internal helpers
     // -------------------------------------------------------------------------
+
+    /**
+     * Shared scaffold for the simple mutate ops (rename / editMeta /
+     * removeMember): IO launch, [baseUrl] guard, success toast + [load]
+     * reload, [errorMessage]-mapped failure.
+     */
+    private fun mutateAndReload(op: suspend (client: OkHttpClient, url: String) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val url = baseUrl ?: return@launch
+            try {
+                op(ServiceRegistry.networkModule.okHttpClient, url)
+                _uiEvent.tryEmit(TankDetailUiEvent.ShowSuccess(R.string.tank_op_done))
+                load()
+            } catch (e: Exception) {
+                emitError(e)
+            }
+        }
+    }
+
+    private fun emitError(e: Exception) {
+        val ctx = ServiceRegistry.appModule.getContext()
+        _uiEvent.tryEmit(TankDetailUiEvent.ShowError(errorMessage(ctx, e)))
+    }
 
     /**
      * 423 (locked) gets a dedicated message — the server is busy regenerating
