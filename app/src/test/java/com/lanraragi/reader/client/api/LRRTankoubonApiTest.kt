@@ -122,4 +122,43 @@ class LRRTankoubonApiTest {
             assertEquals(0, server.requestCount)
         }
     }
+
+    @Test
+    fun getTankoubons_withPage_sendsPageQuery() = runTest {
+        server.enqueue(MockResponse().setBody("""{"result":[],"total":0,"filtered":0}"""))
+
+        LRRTankoubonApi.getTankoubons(client, baseUrl, page = 3)
+
+        assertEquals("/api/tankoubons?page=3", server.takeRequest().path)
+    }
+
+    @Test
+    fun getTankoubons_pageZero_omitsQuery() = runTest {
+        server.enqueue(MockResponse().setBody("""{"result":[],"total":0,"filtered":0}"""))
+
+        LRRTankoubonApi.getTankoubons(client, baseUrl, page = 0)
+
+        assertEquals("/api/tankoubons", server.takeRequest().path)
+    }
+
+    @Test
+    fun getTankoubons_emptyResult() = runTest {
+        server.enqueue(MockResponse().setBody("""{"result":[],"total":0,"filtered":0}"""))
+
+        val r = LRRTankoubonApi.getTankoubons(client, baseUrl)
+
+        assertTrue(r.result.isEmpty())
+        assertEquals(0, r.total)
+    }
+
+    @Test
+    fun getTankoubons_serverError_throwsHttpException() = runTest {
+        server.enqueue(MockResponse().setResponseCode(500))
+        try {
+            LRRTankoubonApi.getTankoubons(client, baseUrl)
+            fail("Should have thrown")
+        } catch (e: LRRHttpException) {
+            assertEquals(500, e.code)
+        }
+    }
 }
