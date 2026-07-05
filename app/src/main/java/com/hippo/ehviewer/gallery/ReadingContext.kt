@@ -30,6 +30,13 @@ sealed interface ReadingContext {
         override val anchorArcid: String,
         /** Absolute position in the result set at capture time (best effort). */
         val anchorIndex: Int,
+        /**
+         * Whether the captured list was fetched with groupby_tanks, i.e. the
+         * server folded Tankoubons in as TANK_ rows. Resolution must re-fetch
+         * with the same value or [anchorIndex] arithmetic (raw positions,
+         * tanks included) would drift against what the list showed.
+         */
+        val groupbyTanks: Boolean = false,
     ) : ReadingContext
 
     /**
