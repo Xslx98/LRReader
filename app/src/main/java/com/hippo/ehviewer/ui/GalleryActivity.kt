@@ -35,6 +35,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.hippo.android.resource.AttrResources
 import com.hippo.ehviewer.BuildConfig
@@ -57,11 +58,14 @@ import com.hippo.ehviewer.ui.gallery.GalleryImageOperations
 import com.hippo.ehviewer.ui.gallery.GalleryInputHandler
 import com.hippo.ehviewer.ui.gallery.GalleryMenuHelper
 import com.hippo.ehviewer.ui.gallery.GallerySliderController
+import com.hippo.ehviewer.ui.gallery.LRRStampsBackend
 import com.hippo.ehviewer.ui.gallery.ReaderContinuationController
+import com.hippo.ehviewer.ui.gallery.ReaderStampsController
 import com.hippo.ehviewer.ui.scene.download.DownloadsScene
 import com.hippo.ehviewer.widget.GalleryGuideView
 import com.hippo.ehviewer.widget.GalleryHeader
 import com.hippo.ehviewer.widget.ReversibleSeekBar
+import com.hippo.ehviewer.widget.StampOverlayView
 import com.hippo.lib.glgallery.GalleryProvider
 import com.hippo.lib.glgallery.GalleryView
 import com.hippo.lib.glgallery.SimpleAdapter
@@ -140,6 +144,9 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
     private var canFinish = false
 
     private var mContinuation: ReaderContinuationController? = null
+
+    private var mStamps: ReaderStampsController? = null
+    private var mStampOverlay: StampOverlayView? = null
 
     // --- Extracted helpers ---
     private val mInputHandler = GalleryInputHandler(this)
@@ -317,6 +324,22 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                 launchNext = { next -> launchNextArchive(next) },
             )
             mArchive?.let { mContinuation?.setCurrentArchive(it.arcid) }
+        }
+
+        // Stamp overlay read path. Requires mArchive (server-backed archive
+        // identity) — the legacy local-file DIR path without an archive gets
+        // no controller and the overlay stays gone. mArchive is final here
+        // (see the continuation-block comment above).
+        mStampOverlay = findViewById(R.id.stamp_overlay)
+        mArchive?.let { archive ->
+            val stamps = ReaderStampsController(
+                scope = lifecycleScope,
+                backend = LRRStampsBackend(archive.arcid, archive.serverProfileId),
+                onDataChanged = { onStampsDataChanged() },
+            )
+            mStamps = stamps
+            mStampOverlay?.stampsProvider = { page0 -> stamps.stampsForDisplayPage(page0) }
+            refreshStampsVisibility()
         }
     }
 
@@ -539,6 +562,8 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         mProgress = null
         mBattery = null
         mContinuation = null
+        mStamps = null
+        mStampOverlay = null
 
         super.onDestroy()
     }
@@ -760,6 +785,32 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         }
     }
 
+    // ======== Reader stamps ========
+
+    internal fun refreshStampsVisibility() {
+        val overlay = mStampOverlay ?: return
+        val stamps = mStamps
+        val visible = stamps != null &&
+            stamps.support != ReaderStampsController.Support.UNSUPPORTED &&
+            (ReadingSettings.getReaderStamps() || stamps.sessionVisible)
+        overlay.isVisible = visible
+        if (visible) {
+            pumpStampTransforms()
+        }
+    }
+
+    private fun onStampsDataChanged() {
+        refreshStampsVisibility()
+        mStampOverlay?.invalidate()
+    }
+
+    private fun pumpStampTransforms() {
+        val overlay = mStampOverlay ?: return
+        val transforms = mGalleryView?.getPageTransforms().orEmpty()
+        overlay.transforms = transforms
+        mStamps?.ensureVisiblePagesLoaded(transforms.map { it.index })
+    }
+
     // ======== GalleryMenuHelper.SettingsCallback ========
 
     override fun onSettingsApplied(
@@ -806,6 +857,8 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         if (oldReadingFullscreen != readingFullscreen) {
             recreate()
         }
+
+        refreshStampsVisibility()
     }
 
     // ======== Screen lightness ========
@@ -884,7 +937,9 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                 NOTIFY_KEY_TAP_SLIDER_AREA -> mSliderController.onTapSliderArea()
                 NOTIFY_KEY_TAP_ERROR_TEXT -> mGalleryProvider?.forceRequest(mValue)
                 NOTIFY_KEY_LONG_PRESS_PAGE -> mImageOps.showPageDialog(mValue)
-                NOTIFY_KEY_PAGE_TRANSFORMS -> Unit // stamp overlay consumes this once wired (read-path task)
+                NOTIFY_KEY_PAGE_TRANSFORMS -> {
+                    if (mStampOverlay?.isVisible == true) pumpStampTransforms()
+                }
             }
             mNotifyTaskPool.push(this)
         }
