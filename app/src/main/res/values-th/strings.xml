@@ -325,6 +325,7 @@
     <string name="stamps_edit">แก้ไข</string>
     <string name="stamps_delete">ลบ</string>
     <string name="settings_read_stamps">แสดงสแตมป์ของหน้า</string>
+    <string name="stamps_unsupported">เซิร์ฟเวอร์นี้ไม่รองรับสแตมป์ (ต้องใช้ LANraragi 0.9.8+)</string>
 
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">เลือกแล้ว %d รายการ</string>

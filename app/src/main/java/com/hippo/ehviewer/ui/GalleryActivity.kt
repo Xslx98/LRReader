@@ -58,6 +58,7 @@ import com.hippo.ehviewer.ui.gallery.GalleryImageOperations
 import com.hippo.ehviewer.ui.gallery.GalleryInputHandler
 import com.hippo.ehviewer.ui.gallery.GalleryMenuHelper
 import com.hippo.ehviewer.ui.gallery.GallerySliderController
+import com.hippo.ehviewer.ui.gallery.GalleryStampOps
 import com.hippo.ehviewer.ui.gallery.LRRStampsBackend
 import com.hippo.ehviewer.ui.gallery.ReaderContinuationController
 import com.hippo.ehviewer.ui.gallery.ReaderStampsController
@@ -147,6 +148,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
 
     private var mStamps: ReaderStampsController? = null
     private var mStampOverlay: StampOverlayView? = null
+    private var mStampOps: GalleryStampOps? = null
 
     // --- Extracted helpers ---
     private val mInputHandler = GalleryInputHandler(this)
@@ -339,6 +341,11 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
             )
             mStamps = stamps
             mStampOverlay?.stampsProvider = { page0 -> stamps.stampsForDisplayPage(page0) }
+            mStampOverlay?.let { overlay ->
+                val ops = GalleryStampOps(this, stamps, overlay)
+                overlay.callback = ops
+                mStampOps = ops
+            }
             refreshStampsVisibility()
         }
     }
@@ -564,12 +571,17 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         mContinuation = null
         mStamps = null
         mStampOverlay = null
+        mStampOps = null
 
         super.onDestroy()
     }
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
+        if (mStampOverlay?.placing == true) {
+            mStampOps?.exitPlacementMode()
+            return
+        }
         if (mContinuation?.isShowing == true) {
             mContinuation?.hide()
             return
@@ -800,6 +812,17 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
     }
 
     private fun onStampsDataChanged() {
+        // A support probe may resolve to UNSUPPORTED while the user is mid
+        // placement (e.g. the pre-0.9.8 404 lands after the menu tap). Kill
+        // the mode here — the overlay would otherwise keep eating touches
+        // while refreshStampsVisibility() hides it. Fires at most once:
+        // exitPlacementMode() clears `placing`.
+        if (mStamps?.support == ReaderStampsController.Support.UNSUPPORTED &&
+            mStampOverlay?.placing == true
+        ) {
+            mStampOps?.exitPlacementMode()
+            Toast.makeText(this, R.string.stamps_unsupported, Toast.LENGTH_LONG).show()
+        }
         refreshStampsVisibility()
         mStampOverlay?.invalidate()
     }
@@ -809,6 +832,12 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         val transforms = mGalleryView?.getPageTransforms().orEmpty()
         overlay.transforms = transforms
         mStamps?.ensureVisiblePagesLoaded(transforms.map { it.index })
+    }
+
+    internal fun areStampsAvailable(): Boolean = mStampOps?.isAvailable() == true
+
+    internal fun startStampPlacement() {
+        mStampOps?.startPlacementMode()
     }
 
     // ======== GalleryMenuHelper.SettingsCallback ========

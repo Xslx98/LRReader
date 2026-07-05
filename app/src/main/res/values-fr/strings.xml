@@ -303,6 +303,7 @@
     <string name="stamps_edit">Modifier</string>
     <string name="stamps_delete">Supprimer</string>
     <string name="settings_read_stamps">Afficher les tampons de page</string>
+    <string name="stamps_unsupported">Ce serveur ne prend pas en charge les tampons (LANraragi 0.9.8+ requis)</string>
 
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">%d sélectionnés</string>

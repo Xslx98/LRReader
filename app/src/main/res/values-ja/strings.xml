@@ -287,6 +287,7 @@
     <string name="stamps_edit">編集</string>
     <string name="stamps_delete">削除</string>
     <string name="settings_read_stamps">ページのスタンプを表示</string>
+    <string name="stamps_unsupported">このサーバーはスタンプに対応していません(LANraragi 0.9.8+ が必要です)</string>
 
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">%d件選択中</string>

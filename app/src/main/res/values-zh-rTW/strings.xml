@@ -328,6 +328,7 @@
     <string name="stamps_edit">編輯</string>
     <string name="stamps_delete">刪除</string>
     <string name="settings_read_stamps">顯示頁面標註</string>
+    <string name="stamps_unsupported">此伺服器不支援標註(需要 LANraragi 0.9.8+)</string>
 
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">已選 %d 項</string>

@@ -333,6 +333,7 @@
     <string name="stamps_edit">편집</string>
     <string name="stamps_delete">삭제</string>
     <string name="settings_read_stamps">페이지 스탬프 표시</string>
+    <string name="stamps_unsupported">이 서버는 스탬프를 지원하지 않습니다 (LANraragi 0.9.8+ 필요)</string>
 
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">%d개 선택됨</string>

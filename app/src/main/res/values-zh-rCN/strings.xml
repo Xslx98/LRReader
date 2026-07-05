@@ -325,6 +325,7 @@
     <string name="stamps_edit">编辑</string>
     <string name="stamps_delete">删除</string>
     <string name="settings_read_stamps">显示页面标注</string>
+    <string name="stamps_unsupported">此服务器不支持标注(需要 LANraragi 0.9.8+)</string>
 
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">已选 %d 项</string>
