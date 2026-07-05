@@ -164,6 +164,13 @@
             android:textColor="?android:attr/textColorPrimary" />
 
         <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/reader_stamps"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_read_stamps"
+            android:textColor="?android:attr/textColorPrimary" />
+
+        <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/show_clock"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
