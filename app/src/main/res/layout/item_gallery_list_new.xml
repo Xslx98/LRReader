@@ -54,10 +54,17 @@
             android:layout_alignStart="@id/title"
             android:layout_marginTop="2dp" />
 
+        <!-- Idle for archives; the adapter repurposes it as the Tankoubon
+             badge on folded TANK_ rows (visibility + text set in bind). -->
         <TextView
             android:id="@+id/category"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
+            style="@style/CardMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/uploader"
+            android:layout_alignStart="@id/title"
+            android:layout_marginTop="2dp"
+            android:textColor="?attr/textColorThemeAccent"
             android:visibility="gone" />
 
         <com.hippo.ehviewer.widget.SimpleRatingView
