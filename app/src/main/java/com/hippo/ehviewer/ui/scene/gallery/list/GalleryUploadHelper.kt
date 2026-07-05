@@ -12,8 +12,8 @@ import com.hippo.app.EditTextDialogBuilder
 import com.hippo.ehviewer.R
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.lanraragi.reader.client.api.LRRMiscApi
-import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.ehviewer.ui.scene.BaseScene
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -118,13 +118,11 @@ class GalleryUploadHelper(private val mCallback: Callback) {
                 ?: return@setPositiveButton
             owner.lifecycleScope.launch(Dispatchers.IO) {
                 try {
-                    val jobId = runSuspend {
-                        LRRMiscApi.downloadUrl(
-                            LRRClientProvider.getClient(),
-                            LRRClientProvider.getBaseUrl(),
-                            url, null
-                        )
-                    }
+                    val jobId = LRRMiscApi.downloadUrl(
+                        LRRClientProvider.getClient(),
+                        LRRClientProvider.getBaseUrl(),
+                        url, null
+                    )
 
                     val activity = mCallback.getHostActivity()
                     activity?.runOnUiThread {
@@ -133,6 +131,9 @@ class GalleryUploadHelper(private val mCallback: Callback) {
                             BaseScene.LENGTH_LONG
                         )
                     }
+                } catch (ce: CancellationException) {
+                    // Lifecycle teardown cancelled the request; not an error to tip.
+                    throw ce
                 } catch (e: Exception) {
                     Log.e(TAG, "URL download failed", e)
                     val activity = mCallback.getHostActivity()
