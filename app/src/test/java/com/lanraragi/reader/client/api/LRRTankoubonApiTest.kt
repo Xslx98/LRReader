@@ -215,17 +215,32 @@ class LRRTankoubonApiTest {
     }
 
     @Test
-    fun renameTankoubon_sendsIdAndName() = runTest {
-        server.enqueue(MockResponse().setBody("""{"operation":"create_tankoubon","tankoubon_id":"$tankId","success":1}"""))
+    fun renameTankoubon_putsJsonMetadataName() = runTest {
+        // Rename must ride PUT /api/tankoubons/{id} with a JSON metadata
+        // body. The create endpoint IGNORES a submitted `id` form field and
+        // silently creates a second tank — confirmed against a live 0.9.80
+        // server during the 2026-07-05 smoke.
+        server.enqueue(MockResponse().setBody("""{"operation":"update_tankoubon","success":1}"""))
 
         LRRTankoubonApi.renameTankoubon(client, baseUrl, tankId, "New name")
 
         val req = server.takeRequest()
         assertEquals("PUT", req.method)
-        assertEquals("/api/tankoubons", req.path)
+        assertEquals("/api/tankoubons/$tankId", req.path)
         val body = req.body.readUtf8()
-        assertTrue(body.contains("id=$tankId"))
-        assertTrue(body.contains("name=New%20name"))
+        assertTrue(body.contains(""""name":"New name""""))
+        // membership must stay untouched by a rename
+        assertFalse(body.contains(""""archives""""))
+    }
+
+    @Test
+    fun renameTankoubon_blankName_throwsClientValidation() = runTest {
+        try {
+            LRRTankoubonApi.renameTankoubon(client, baseUrl, tankId, "  ")
+            fail("Should have thrown")
+        } catch (expected: LRRClientValidationException) {
+            assertEquals(0, server.requestCount)
+        }
     }
 
     @Test
