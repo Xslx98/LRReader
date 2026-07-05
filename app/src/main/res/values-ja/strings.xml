@@ -297,6 +297,7 @@
     <string name="tankoubons_unsupported">単行本機能には LANraragi 0.9.8+ が必要です</string>
     <string name="tank_create">新しい単行本</string>
     <string name="tank_name_hint">単行本の名前</string>
+    <string name="tank_name_empty">単行本の名前を入力してください</string>
     <string name="tank_rename">名前を変更</string>
     <string name="tank_edit_meta">メタデータを編集</string>
     <string name="tank_summary_hint">概要</string>

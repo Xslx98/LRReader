@@ -313,6 +313,7 @@
     <string name="tankoubons_unsupported">La prise en charge des tankoubons nécessite LANraragi 0.9.8+</string>
     <string name="tank_create">Nouveau tankoubon</string>
     <string name="tank_name_hint">Nom du tankoubon</string>
+    <string name="tank_name_empty">Veuillez entrer un nom de tankoubon</string>
     <string name="tank_rename">Renommer</string>
     <string name="tank_edit_meta">Modifier les métadonnées</string>
     <string name="tank_summary_hint">Résumé</string>

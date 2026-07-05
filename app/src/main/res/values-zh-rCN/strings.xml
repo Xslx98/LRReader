@@ -335,6 +335,7 @@
     <string name="tankoubons_unsupported">Tankoubon 功能需要 LANraragi 0.9.8+</string>
     <string name="tank_create">新建 Tankoubon</string>
     <string name="tank_name_hint">Tankoubon 名称</string>
+    <string name="tank_name_empty">请输入 Tankoubon 名称</string>
     <string name="tank_rename">重命名</string>
     <string name="tank_edit_meta">编辑元数据</string>
     <string name="tank_summary_hint">简介</string>

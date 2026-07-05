@@ -192,9 +192,11 @@ class TankoubonsScene : BaseScene() {
             .setView(wrapDialogContent(ctx, nameInput))
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 val name = nameInput.text.toString().trim()
-                if (name.isNotEmpty()) {
-                    viewModel.create(name)
+                if (name.isEmpty()) {
+                    Toast.makeText(ctx, R.string.tank_name_empty, Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
                 }
+                viewModel.create(name)
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
@@ -213,9 +215,11 @@ class TankoubonsScene : BaseScene() {
             .setView(wrapDialogContent(ctx, nameInput))
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 val name = nameInput.text.toString().trim()
-                if (name.isNotEmpty()) {
-                    viewModel.rename(tank.id, name)
+                if (name.isEmpty()) {
+                    Toast.makeText(ctx, R.string.tank_name_empty, Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
                 }
+                viewModel.rename(tank.id, name)
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
@@ -421,8 +425,9 @@ class TankoubonsScene : BaseScene() {
     /**
      * DiffUtil callback for Tankoubon lists. Identity is the tank `id`
      * (LANraragi's TANK_-prefixed string id). Content compares everything
-     * the row and its dialogs read so the row repaints when name/member
-     * count/progress/summary change.
+     * the row and its dialogs read so the row (and the tank object captured
+     * by its listeners) refreshes when name/member count/progress/summary/
+     * tags change.
      */
     private class TankoubonDiffCallback(
         private val oldList: List<LRRTankoubonApi.Tankoubon>,
@@ -442,7 +447,8 @@ class TankoubonsScene : BaseScene() {
             return o.name == n.name &&
                 o.archives.size == n.archives.size &&
                 o.progress == n.progress &&
-                o.summary == n.summary
+                o.summary == n.summary &&
+                o.tags == n.tags
         }
     }
 

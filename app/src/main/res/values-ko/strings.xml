@@ -343,6 +343,7 @@
     <string name="tankoubons_unsupported">단행본 기능은 LANraragi 0.9.8+ 필요</string>
     <string name="tank_create">새 단행본</string>
     <string name="tank_name_hint">단행본 이름</string>
+    <string name="tank_name_empty">단행본 이름을 입력해 주세요</string>
     <string name="tank_rename">이름 바꾸기</string>
     <string name="tank_edit_meta">메타데이터 편집</string>
     <string name="tank_summary_hint">요약</string>
