@@ -23,7 +23,8 @@
 
     <Button
         android:id="@+id/batch_select_all"
-        style="?android:attr/borderlessButtonStyle"
+        style="?attr/borderlessButtonStyle"
+        android:letterSpacing="0"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:minWidth="48dp"
@@ -43,7 +44,8 @@
 
     <Button
         android:id="@+id/batch_download"
-        style="?android:attr/borderlessButtonStyle"
+        style="?attr/borderlessButtonStyle"
+        android:letterSpacing="0"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:minWidth="48dp"
@@ -53,7 +55,8 @@
 
     <Button
         android:id="@+id/batch_category"
-        style="?android:attr/borderlessButtonStyle"
+        style="?attr/borderlessButtonStyle"
+        android:letterSpacing="0"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:minWidth="48dp"
@@ -63,7 +66,8 @@
 
     <Button
         android:id="@+id/batch_clear_new"
-        style="?android:attr/borderlessButtonStyle"
+        style="?attr/borderlessButtonStyle"
+        android:letterSpacing="0"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:minWidth="48dp"
@@ -73,7 +77,8 @@
 
     <Button
         android:id="@+id/batch_delete"
-        style="?android:attr/borderlessButtonStyle"
+        style="?attr/borderlessButtonStyle"
+        android:letterSpacing="0"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:minWidth="48dp"
