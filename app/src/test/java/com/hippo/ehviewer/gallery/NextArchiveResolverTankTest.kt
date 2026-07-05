@@ -18,6 +18,7 @@ class NextArchiveResolverTankTest {
 
     private val a1 = "a".repeat(40)
     private val a2 = "b".repeat(40)
+    private val a3 = "c".repeat(40)
     private lateinit var server: MockWebServer
     private lateinit var baseUrl: String
     private lateinit var resolver: NextArchiveResolver
@@ -48,9 +49,84 @@ class NextArchiveResolverTankTest {
         anchorArcid = anchor,
     )
 
+    /** /full response with the given (arcid to pagecount) members in order. */
+    private fun fullJson(vararg members: Pair<String, Int>): String {
+        val ids = members.joinToString(",") { "\"${it.first}\"" }
+        val data = members.joinToString(",") {
+            """{"arcid":"${it.first}","title":"t","tags":"","isnew":"false",
+               "extension":"zip","filename":"f.zip","pagecount":${it.second},"progress":0,"lastreadtime":0}"""
+        }
+        return """{"result":{"id":"TANK_1688616437","name":"T","summary":"","tags":"",
+                  "progress":0,"archives":[$ids],"full_data":[$data]},"total":${members.size},"filtered":${members.size}}"""
+    }
+
     @Test
-    fun middleMember_resolvesNext_withSourceContext() = runTest {
+    fun middleMember_resolvesNext_withSourceContext_andFreshOffsets() = runTest {
         ReadingContextStore.publish(tankCtx(a1))
+        // Server-first membership refresh rides ahead of the metadata fetch.
+        server.enqueue(MockResponse().setBody(fullJson(a1 to 20, a2 to 30)))
+        server.enqueue(
+            MockResponse().setBody(
+                """{"arcid":"$a2","title":"Vol 2","tags":"","isnew":"false",
+                   "extension":"zip","filename":"v2.zip","pagecount":30,"progress":0,"lastreadtime":0}"""
+            )
+        )
+
+        val r = resolver.resolve(a1)
+
+        val next = r as NextArchiveResolver.NextResult.Next
+        assertEquals(a2, next.archive.arcid)
+        assertEquals(7L, next.archive.serverProfileId)          // explicit source, not active
+        val adv = next.advanced as ReadingContext.Tankoubon
+        assertEquals(a2, adv.anchorArcid)
+        // advanced context carries the SERVER's offsets, not the snapshot's
+        assertEquals(listOf(0, 20, 50), adv.pageOffsets)
+        assertEquals("/api/tankoubons/TANK_1688616437/full?page=-1", server.takeRequest().path)
+        assertEquals("/api/archives/$a2/metadata", server.takeRequest().path)
+    }
+
+    @Test
+    fun lastMember_isEndOfList() = runTest {
+        ReadingContextStore.publish(tankCtx(a2))
+        server.enqueue(MockResponse().setBody(fullJson(a1 to 20, a2 to 25)))
+        assertEquals(NextArchiveResolver.NextResult.EndOfList, resolver.resolve(a2))
+    }
+
+    @Test
+    fun anchorNotInTank_isNoContext() = runTest {
+        // a stale context CAN hold an anchor whose id later left the tank:
+        val stale = tankCtx(a1).copy(orderedMemberIds = listOf(a2))
+        ReadingContextStore.publish(stale)
+        server.enqueue(MockResponse().setBody(fullJson(a2 to 25)))
+        assertEquals(NextArchiveResolver.NextResult.NoContext, resolver.resolve(a1))
+    }
+
+    @Test
+    fun metadataFetchFailure_isError() = runTest {
+        ReadingContextStore.publish(tankCtx(a1))
+        server.enqueue(MockResponse().setBody(fullJson(a1 to 20, a2 to 25)))
+        server.enqueue(MockResponse().setResponseCode(500))
+        assertTrue(resolver.resolve(a1) is NextArchiveResolver.NextResult.Error)
+    }
+
+    @Test
+    fun staleSnapshot_memberRemovedOnServer_isEndOfList() = runTest {
+        // 2026-07-05 on-device smoke: the published snapshot still held a
+        // member that had been removed server-side (its post-removal reload
+        // failed), and the end-of-book panel offered the REMOVED member as
+        // "up next". Membership must be re-read from the server.
+        val stale = tankCtx(a2).copy(orderedMemberIds = listOf(a1, a2, a3))
+        ReadingContextStore.publish(stale)
+        server.enqueue(MockResponse().setBody(fullJson(a1 to 20, a2 to 25)))
+
+        assertEquals(NextArchiveResolver.NextResult.EndOfList, resolver.resolve(a2))
+    }
+
+    @Test
+    fun membershipRefreshFails_fallsBackToSnapshot() = runTest {
+        // Offline / flaky LAN: the snapshot is still better than nothing.
+        ReadingContextStore.publish(tankCtx(a1))
+        server.enqueue(MockResponse().setResponseCode(500))
         server.enqueue(
             MockResponse().setBody(
                 """{"arcid":"$a2","title":"Vol 2","tags":"","isnew":"false",
@@ -60,32 +136,7 @@ class NextArchiveResolverTankTest {
 
         val r = resolver.resolve(a1)
 
-        val next = r as NextArchiveResolver.NextResult.Next
-        assertEquals(a2, next.archive.arcid)
-        assertEquals(7L, next.archive.serverProfileId)          // explicit source, not active
-        assertEquals(a2, (next.advanced as ReadingContext.Tankoubon).anchorArcid)
-        assertEquals("/api/archives/$a2/metadata", server.takeRequest().path)
-    }
-
-    @Test
-    fun lastMember_isEndOfList() = runTest {
-        ReadingContextStore.publish(tankCtx(a2))
-        assertEquals(NextArchiveResolver.NextResult.EndOfList, resolver.resolve(a2))
-    }
-
-    @Test
-    fun anchorNotInTank_isNoContext() = runTest {
-        // a stale context CAN hold an anchor whose id later left the tank:
-        val stale = tankCtx(a1).copy(orderedMemberIds = listOf(a2))
-        ReadingContextStore.publish(stale)
-        assertEquals(NextArchiveResolver.NextResult.NoContext, resolver.resolve(a1))
-    }
-
-    @Test
-    fun metadataFetchFailure_isError() = runTest {
-        ReadingContextStore.publish(tankCtx(a1))
-        server.enqueue(MockResponse().setResponseCode(500))
-        assertTrue(resolver.resolve(a1) is NextArchiveResolver.NextResult.Error)
+        assertEquals(a2, (r as NextArchiveResolver.NextResult.Next).archive.arcid)
     }
 
     // ----- Online search with folded tanks (groupby_tanks=true) -----

@@ -2,6 +2,7 @@ package com.hippo.ehviewer.gallery
 
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRSearchApi
+import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.data.LRRArchive
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.domain.Archive
@@ -141,19 +142,51 @@ class NextArchiveResolver(private val client: OkHttpClient) {
 
     @Suppress("TooGenericExceptionCaught")
     private suspend fun resolveTank(ctx: ReadingContext.Tankoubon): NextResult {
-        val idx = ctx.orderedMemberIds.indexOf(ctx.anchorArcid)
+        // Server-first: the published snapshot can go stale (a member removed
+        // after its post-mutation reload failed, or the tank edited from the
+        // web UI) and a stale snapshot offers a REMOVED member as "next"
+        // (2026-07-05 on-device smoke). Offline falls back to the snapshot.
+        val effective = refreshTankMembership(ctx) ?: ctx
+        val idx = effective.orderedMemberIds.indexOf(ctx.anchorArcid)
         if (idx < 0) return NextResult.NoContext
-        val nextId = ctx.orderedMemberIds.getOrNull(idx + 1) ?: return NextResult.EndOfList
+        val nextId = effective.orderedMemberIds.getOrNull(idx + 1) ?: return NextResult.EndOfList
         return try {
             val lrr = LRRArchiveApi.getArchiveMetadata(client, ctx.sourceBaseUrl, nextId)
             // multi-profile red line: explicit source context on the mapper
             val archive = lrr.toArchive(ctx.sourceProfileId, ctx.sourceBaseUrl)
-            NextResult.Next(archive, ctx.copy(anchorArcid = archive.arcid))
+            NextResult.Next(archive, effective.copy(anchorArcid = archive.arcid))
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             NextResult.Error(e)
         }
+    }
+
+    /**
+     * Re-reads the tank's membership (order + pagecounts) from its source
+     * server so the advanced context also carries fresh page offsets for the
+     * global progress sync. Null when the server can't confirm (offline,
+     * 404, desynced response) — the caller keeps the snapshot.
+     */
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun refreshTankMembership(
+        ctx: ReadingContext.Tankoubon,
+    ): ReadingContext.Tankoubon? = try {
+        val full = LRRTankoubonApi.getTankoubonFull(client, ctx.sourceBaseUrl, ctx.tankId).result
+        val byId = full.fullData.associateBy { it.arcid }
+        val ids = full.archives.filter { byId.containsKey(it) }
+        if (ids.isEmpty()) {
+            null
+        } else {
+            ctx.copy(
+                orderedMemberIds = ids,
+                pageOffsets = TankPageMath.pageOffsets(ids.map { byId.getValue(it).pagecount }),
+            )
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        null
     }
 
     private companion object {
