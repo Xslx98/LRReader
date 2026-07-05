@@ -453,7 +453,6 @@ class TankoubonsScene : BaseScene() {
     }
 
     companion object {
-        private const val TAG = "TankoubonsScene"
         private const val DIALOG_PADDING_DP = 24
     }
 }
