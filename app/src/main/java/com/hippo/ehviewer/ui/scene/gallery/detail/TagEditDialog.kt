@@ -27,8 +27,8 @@ import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRTagCache
 import com.lanraragi.reader.client.api.friendlyError
-import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.widget.AutoWrapLayout
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -448,18 +448,19 @@ object TagEditDialog {
                     serverProfileId,
                     ServiceRegistry.dataModule.profileLookupCache,
                 )
-                runSuspend {
-                    LRRArchiveApi.updateMetadata(
-                        LRRClientProvider.getClient(),
-                        baseUrl,
-                        arcid,
-                        tags = tags
-                    )
-                }
+                LRRArchiveApi.updateMetadata(
+                    LRRClientProvider.getClient(),
+                    baseUrl,
+                    arcid,
+                    tags = tags
+                )
                 activity.runOnUiThread {
                     Toast.makeText(activity, R.string.lrr_tags_updated, Toast.LENGTH_SHORT).show()
                     callback?.onTagsUpdated()
                 }
+            } catch (ce: CancellationException) {
+                // Lifecycle teardown cancelled the update; not an error to toast.
+                throw ce
             } catch (e: Exception) {
                 activity.runOnUiThread {
                     Toast.makeText(

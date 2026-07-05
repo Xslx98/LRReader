@@ -10,7 +10,6 @@ import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.OrphanProfileException
 import com.lanraragi.reader.client.api.resolvePageUrl
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
-import com.lanraragi.reader.client.api.runSuspend
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.ehviewer.spider.SpiderQueen
@@ -159,13 +158,15 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         var pagePaths: Array<String>? = null
         while (pagePaths == null && !cancelled) {
             try {
-                pagePaths = runSuspend {
-                    LRRArchiveApi.getFileList(
-                        ServiceRegistry.networkModule.longReadClient,
-                        serverUrl,
-                        arcId
-                    )
-                }
+                pagePaths = LRRArchiveApi.getFileList(
+                    ServiceRegistry.networkModule.longReadClient,
+                    serverUrl,
+                    arcId
+                )
+            } catch (ce: CancellationException) {
+                // scope/job cancellation now aborts getFileList mid-flight;
+                // propagate instead of reporting it as an extract failure.
+                throw ce
             } catch (e: Exception) {
                 if (!cancelled && !networkMonitor.isAvailable) {
                     if (BuildConfig.DEBUG) Log.w(TAG, "Extract failed: network down, waiting", e)
