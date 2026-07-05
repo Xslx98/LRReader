@@ -169,6 +169,16 @@ object AppearanceSettings {
     @JvmStatic
     fun getShowGalleryPages(): Boolean = Settings.getBoolean(KEY_SHOW_GALLERY_PAGES, false)
 
+    // --- Tankoubon grouping in browse/search (LANraragi groupby_tanks) ---
+    const val KEY_GROUP_TANKS = "search_group_tanks"
+    private const val DEFAULT_GROUP_TANKS = true
+
+    @JvmStatic
+    fun getGroupTanks(): Boolean = Settings.getBoolean(KEY_GROUP_TANKS, DEFAULT_GROUP_TANKS)
+
+    @JvmStatic
+    fun putGroupTanks(value: Boolean) = Settings.putBoolean(KEY_GROUP_TANKS, value)
+
     // --- Show Tag Translations ---
     const val KEY_SHOW_TAG_TRANSLATIONS = "show_tag_translations"
 
