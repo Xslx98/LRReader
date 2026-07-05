@@ -426,6 +426,7 @@
     <string name="tankoubons_unsupported">Tankoubon support requires LANraragi 0.9.8+</string>
     <string name="tank_create">New tankoubon</string>
     <string name="tank_name_hint">Tankoubon name</string>
+    <string name="tank_name_empty">Please enter a tankoubon name</string>
     <string name="tank_rename">Rename</string>
     <string name="tank_edit_meta">Edit metadata</string>
     <string name="tank_summary_hint">Summary</string>

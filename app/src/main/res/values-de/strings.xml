@@ -269,6 +269,7 @@
     <string name="tankoubons_unsupported">Tankoubon-Unterstützung erfordert LANraragi 0.9.8+</string>
     <string name="tank_create">Neues Tankoubon</string>
     <string name="tank_name_hint">Tankoubon-Name</string>
+    <string name="tank_name_empty">Bitte Tankoubon-Namen eingeben</string>
     <string name="tank_rename">Umbenennen</string>
     <string name="tank_edit_meta">Metadaten bearbeiten</string>
     <string name="tank_summary_hint">Zusammenfassung</string>

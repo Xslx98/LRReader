@@ -312,6 +312,7 @@
     <string name="tankoubons_unsupported">La función Tankoubon requiere LANraragi 0.9.8+</string>
     <string name="tank_create">Nuevo tankoubon</string>
     <string name="tank_name_hint">Nombre del tankoubon</string>
+    <string name="tank_name_empty">Ingrese un nombre de tankoubon</string>
     <string name="tank_rename">Renombrar</string>
     <string name="tank_edit_meta">Editar metadatos</string>
     <string name="tank_summary_hint">Resumen</string>

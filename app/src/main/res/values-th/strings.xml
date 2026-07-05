@@ -335,6 +335,7 @@
     <string name="tankoubons_unsupported">ฟีเจอร์ทังโคบงต้องใช้ LANraragi 0.9.8+</string>
     <string name="tank_create">ทังโคบงใหม่</string>
     <string name="tank_name_hint">ชื่อทังโคบง</string>
+    <string name="tank_name_empty">กรุณาป้อนชื่อทังโคบง</string>
     <string name="tank_rename">เปลี่ยนชื่อ</string>
     <string name="tank_edit_meta">แก้ไขข้อมูลเมตา</string>
     <string name="tank_summary_hint">สรุป</string>
