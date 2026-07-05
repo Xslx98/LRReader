@@ -181,7 +181,12 @@ class TankoubonsViewModelTest {
 
     @Test
     fun loadTankoubons_multiPage_accumulatesUntilTotal() {
-        // Page 1 holds one of two tanks -> loop must fetch page 2
+        // First page holds one of two tanks -> loop must fetch the next page.
+        // LANraragi paginates /api/tankoubons 0-BASED: the first page is the
+        // parameterless request (server default page 0) and the SECOND page is
+        // ?page=1. A 1-based loop asks for page=1 first and gets an empty
+        // result:[] with a correct total — the real-server symptom was a
+        // permanently empty tank list (smoke 2026-07-05).
         server.enqueue(MockResponse().setBody(pageJson(
             2, tankJson("TANK_0000000001", "First")
         )))
@@ -196,6 +201,8 @@ class TankoubonsViewModelTest {
         assertEquals("First", vm.tanks.value[0].name)
         assertEquals("Second", vm.tanks.value[1].name)
         assertEquals("Should have requested exactly two pages", 2, server.requestCount)
+        assertEquals("/api/tankoubons", server.takeRequest().path)
+        assertEquals("/api/tankoubons?page=1", server.takeRequest().path)
     }
 
     @Test

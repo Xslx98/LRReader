@@ -94,8 +94,10 @@ object LRRTankoubonApi {
     /**
      * GET /api/tankoubons — list all tankoubons (paginated by server page size).
      *
-     * @param page pagination index; null or values <= 0 omit the query param
-     *   (server returns the first page).
+     * @param page the server's 0-BASED page index (unlike search's `start`
+     *   offset). null or values <= 0 omit the query param — the server
+     *   serves page 0; page=1 is the SECOND page, so a 1-based pagination
+     *   loop reads an empty first fetch (real-server smoke 2026-07-05).
      */
     @JvmStatic
     suspend fun getTankoubons(
