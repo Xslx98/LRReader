@@ -288,6 +288,25 @@
     <string name="settings_read_continuation">Afficher l\'archive suivante à la fin</string>
     <string name="settings_read_continuation_swipe">Tourner la page ouvre l\'archive suivante</string>
 
+    <!-- Stamps (page annotations, LANraragi 0.9.8+) -->
+    <string name="stamps_menu_add">Ajouter un tampon</string>
+    <string name="stamps_menu_list">Tampons de la page…</string>
+    <string name="stamps_placing_hint">Touchez la page pour placer le tampon</string>
+    <string name="stamps_add_title">Nouveau tampon</string>
+    <string name="stamps_edit_title">Modifier le tampon</string>
+    <string name="stamps_text_hint">Texte du tampon</string>
+    <string name="stamps_delete_confirm">Supprimer ce tampon ?</string>
+    <string name="stamps_locked">Tampon verrouillé, réessayez plus tard</string>
+    <string name="stamps_op_failed">Échec de l\'opération sur le tampon : %s</string>
+    <string name="stamps_list_title">Pages avec tampons</string>
+    <string name="stamps_list_empty">Aucun tampon dans cette archive</string>
+    <string name="stamps_list_error">Impossible de charger les tampons</string>
+    <string name="stamps_list_entry">Page %1$d — %2$s</string>
+    <string name="stamps_edit">Modifier</string>
+    <string name="stamps_delete">Supprimer</string>
+    <string name="settings_read_stamps">Afficher les tampons de page</string>
+    <string name="stamps_unsupported">Ce serveur ne prend pas en charge les tampons (LANraragi 0.9.8+ requis)</string>
+
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">%d sélectionnés</string>
     <string name="batch_select_all">Tout</string>

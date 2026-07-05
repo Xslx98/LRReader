@@ -704,6 +704,13 @@ class ScrollLayoutManager extends GalleryView.LayoutManager {
         return !mBottomStateHasNext && mBottomStateBottom <= mGalleryView.getHeight();
     }
 
+    @Override
+    public void collectPageTransforms(List<PageTransform> out) {
+        for (GalleryPageView page : mPages) {
+            collectPageTransform(out, page);
+        }
+    }
+
     // True for get top or bottom
     private boolean scrollInternal(float dx, float dy, boolean fling, float x, float y) {
         if (mPages.size() <= 0) {

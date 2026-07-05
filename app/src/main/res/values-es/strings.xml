@@ -287,6 +287,25 @@
     <string name="settings_read_continuation">Mostrar el siguiente archivo al terminar</string>
     <string name="settings_read_continuation_swipe">Pasar página abre el siguiente archivo</string>
 
+    <!-- Stamps (page annotations, LANraragi 0.9.8+) -->
+    <string name="stamps_menu_add">Añadir sello</string>
+    <string name="stamps_menu_list">Sellos de página…</string>
+    <string name="stamps_placing_hint">Toca la página para colocar el sello</string>
+    <string name="stamps_add_title">Nuevo sello</string>
+    <string name="stamps_edit_title">Editar sello</string>
+    <string name="stamps_text_hint">Texto del sello</string>
+    <string name="stamps_delete_confirm">¿Eliminar este sello?</string>
+    <string name="stamps_locked">El sello está bloqueado, inténtalo más tarde</string>
+    <string name="stamps_op_failed">Error en la operación del sello: %s</string>
+    <string name="stamps_list_title">Páginas con sellos</string>
+    <string name="stamps_list_empty">No hay sellos en este archivo</string>
+    <string name="stamps_list_error">No se pudieron cargar los sellos</string>
+    <string name="stamps_list_entry">Página %1$d — %2$s</string>
+    <string name="stamps_edit">Editar</string>
+    <string name="stamps_delete">Eliminar</string>
+    <string name="settings_read_stamps">Mostrar sellos de página</string>
+    <string name="stamps_unsupported">Este servidor no admite sellos (se requiere LANraragi 0.9.8+)</string>
+
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">%d seleccionados</string>
     <string name="batch_select_all">Todos</string>
