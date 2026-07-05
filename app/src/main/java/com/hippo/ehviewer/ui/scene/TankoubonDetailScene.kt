@@ -20,6 +20,8 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
+import com.hippo.ehviewer.gallery.ReadingContext
+import com.hippo.ehviewer.gallery.ReadingContextStore
 import com.hippo.ehviewer.gallery.TankPageMath
 import com.hippo.ehviewer.ui.GalleryOpenHelper
 import com.hippo.ehviewer.ui.scene.TankoubonDetailViewModel.TankDetailUiEvent
@@ -342,6 +344,7 @@ class TankoubonDetailScene : BaseScene() {
     private fun openMemberAtPage(memberIndex: Int, page0: Int) {
         val archive = viewModel.members.value.getOrNull(memberIndex) ?: return
         val ctx = ehContext ?: return
+        publishTankContext(archive)
         viewLifecycleOwner.lifecycleScope.launch(
             ServiceRegistry.coroutineModule.exceptionHandler
         ) {
@@ -353,11 +356,32 @@ class TankoubonDetailScene : BaseScene() {
     }
 
     private fun openMemberDetail(archive: Archive) {
+        publishTankContext(archive)
         val args = Bundle().apply {
             putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_ARCHIVE)
             putParcelable(GalleryDetailScene.KEY_ARCHIVE, archive)
         }
         startScene(Announcer(GalleryDetailScene::class.java).setArgs(args))
+    }
+
+    /**
+     * Publishes this tank as the current [ReadingContext] anchored on
+     * [anchor], so [com.hippo.ehviewer.gallery.NextArchiveResolver] can chain
+     * into the next member once the reader reaches the end of [anchor].
+     * A no-op until the VM has resolved its source base URL (first load).
+     */
+    private fun publishTankContext(anchor: Archive) {
+        val url = viewModel.baseUrl ?: return
+        ReadingContextStore.publish(
+            ReadingContext.Tankoubon(
+                sourceProfileId = viewModel.profileId,
+                sourceBaseUrl = url,
+                tankId = viewModel.tankId,
+                orderedMemberIds = viewModel.memberIds,
+                pageOffsets = viewModel.pageOffsets,
+                anchorArcid = anchor.arcid,
+            )
+        )
     }
 
     // ==================== Management ops ====================
