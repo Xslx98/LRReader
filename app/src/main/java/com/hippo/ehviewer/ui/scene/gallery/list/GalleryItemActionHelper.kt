@@ -3,9 +3,11 @@ package com.hippo.ehviewer.ui.scene.gallery.list
 import android.view.View
 import com.hippo.ehviewer.R
 import com.lanraragi.reader.domain.Archive
+import com.hippo.ehviewer.ui.scene.TankoubonDetailScene
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.scene.Announcer
 import com.hippo.scene.SceneFragment
+import com.lanraragi.reader.client.api.isTankoubonId
 
 /**
  * Handles item click navigation for GalleryListScene.
@@ -40,6 +42,18 @@ class GalleryItemActionHelper(private val callback: Callback) {
             return true
         }
         lastItemClickTime = now
+
+        // Every list open funnels through here (row click, thumb popup,
+        // random FAB) — tank pseudo-entries branch to their own detail scene;
+        // the archive detail path would 400 on a TANK_ id.
+        if (isTankoubonId(gi.arcid)) {
+            val tankArgs = android.os.Bundle()
+            tankArgs.putString(TankoubonDetailScene.KEY_TANK_ID, gi.arcid)
+            tankArgs.putString(TankoubonDetailScene.KEY_TANK_NAME, gi.title)
+            tankArgs.putLong(TankoubonDetailScene.KEY_PROFILE_ID, gi.serverProfileId)
+            callback.startScene(Announcer(TankoubonDetailScene::class.java).setArgs(tankArgs))
+            return true
+        }
 
         val args = android.os.Bundle()
         args.putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_ARCHIVE)
