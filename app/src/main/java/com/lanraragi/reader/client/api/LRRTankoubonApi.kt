@@ -206,9 +206,11 @@ object LRRTankoubonApi {
 
     /**
      * Rename via the JSON metadata update (PUT /api/tankoubons/{id}) 🔑.
-     * NOT the create endpoint: the server ignores a submitted `id` form
-     * field there and silently creates a second tank (confirmed against a
-     * live 0.9.80 during the 2026-07-05 smoke).
+     * NOT the create endpoint: its rename form field is spec-named `tankid`
+     * (openapi.yaml), and an unknown `id` field is silently ignored there so
+     * the call creates a second tank instead (confirmed against a live
+     * 0.9.80 during the 2026-07-05 smoke). The metadata route is equally
+     * spec-legal and keeps all rename/meta writes on one endpoint.
      */
     @JvmStatic
     suspend fun renameTankoubon(client: OkHttpClient, baseUrl: String, tankId: String, name: String) {
