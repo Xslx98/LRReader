@@ -1,5 +1,6 @@
 package com.hippo.ehviewer.ui.scene
 
+import androidx.core.util.size
 import com.hippo.easyrecyclerview.EasyRecyclerView
 
 /**
@@ -66,8 +67,8 @@ class ListMultiSelectHelper(
     fun checkedPositions(): List<Int> {
         val rv = recyclerView() ?: return emptyList()
         val stateArray = rv.checkedItemPositions ?: return emptyList()
-        val positions = ArrayList<Int>(stateArray.size())
-        for (i in 0 until stateArray.size()) {
+        val positions = ArrayList<Int>(stateArray.size)
+        for (i in 0 until stateArray.size) {
             if (stateArray.valueAt(i)) {
                 positions.add(stateArray.keyAt(i))
             }
