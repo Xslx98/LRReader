@@ -12,7 +12,6 @@ import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
-import com.lanraragi.reader.client.api.runSuspend
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -158,9 +157,7 @@ class TankoubonDetailViewModel : ViewModel() {
                 )
                 baseUrl = url
                 val client = ServiceRegistry.networkModule.okHttpClient
-                val full = runSuspend {
-                    LRRTankoubonApi.getTankoubonFull(client, url, tankId)
-                }.result
+                val full = LRRTankoubonApi.getTankoubonFull(client, url, tankId).result
                 TankoubonSupportGate.markSupported(url)
 
                 // Multi-profile red line: this tank may belong to a non-active
