@@ -841,6 +841,14 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         mStampOps?.startPlacementMode()
     }
 
+    internal fun jumpToPage(page0: Int) {
+        mGalleryView?.setCurrentPage(page0)
+    }
+
+    internal fun showStampedPagesDialog() {
+        mStampOps?.showStampedPagesDialog()
+    }
+
     // ======== GalleryMenuHelper.SettingsCallback ========
 
     override fun onSettingsApplied(

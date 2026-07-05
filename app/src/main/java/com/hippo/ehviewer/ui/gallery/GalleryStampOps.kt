@@ -6,6 +6,7 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.PopupWindow
@@ -55,6 +56,50 @@ class GalleryStampOps(
     fun exitPlacementMode() {
         overlay.placing = false
         placingBar.isVisible = false
+    }
+
+    fun showStampedPagesDialog() {
+        controller.sessionVisible = true
+        activity.refreshStampsVisibility()
+        val pages = controller.stampedPagesSorted()
+        if (pages == null) {
+            controller.refreshIndex { ok ->
+                if (ok) {
+                    showStampedPagesDialog()
+                } else if (controller.support == ReaderStampsController.Support.UNSUPPORTED) {
+                    Toast.makeText(activity, R.string.stamps_unsupported, Toast.LENGTH_LONG).show()
+                } else {
+                    Toast.makeText(activity, R.string.stamps_list_error, Toast.LENGTH_SHORT).show()
+                }
+            }
+            return
+        }
+        if (pages.isEmpty()) {
+            Toast.makeText(activity, R.string.stamps_list_empty, Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        fun label(page1: Int): String {
+            val preview = controller.previewForPage(page1)
+            return activity.getString(
+                R.string.stamps_list_entry, page1, if (preview.isNullOrEmpty()) "…" else preview
+            )
+        }
+
+        val adapter = ArrayAdapter(
+            activity, android.R.layout.simple_list_item_1, pages.map(::label).toMutableList()
+        )
+        AlertDialog.Builder(activity)
+            .setTitle(R.string.stamps_list_title)
+            .setAdapter(adapter) { _, which -> activity.jumpToPage(pages[which] - 1) }
+            .show()
+        // Lazily fetch missing previews; refresh rows as they land. ListView adapter
+        // in an AlertDialog — the RecyclerView notifyDataSetChanged red line doesn't apply.
+        controller.ensurePagesLoaded(pages) {
+            adapter.clear()
+            adapter.addAll(pages.map(::label))
+            adapter.notifyDataSetChanged()
+        }
     }
 
     override fun onPlaceRequested(page0: Int, normX: Float, normY: Float) {

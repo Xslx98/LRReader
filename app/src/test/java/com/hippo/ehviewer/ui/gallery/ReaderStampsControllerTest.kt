@@ -185,6 +185,29 @@ class ReaderStampsControllerTest {
     }
 
     @Test
+    fun refreshIndex_secondCallWhileLoading_stillGetsCallbackOnResolve() = runTest {
+        val gate = CompletableDeferred<List<Int>>()
+        val backend = FakeBackend().apply { indexGate = gate }
+        val c = ReaderStampsController(this, backend) {}
+        var firstResult: Boolean? = null
+        var secondResult: Boolean? = null
+        c.refreshIndex { firstResult = it }
+        runCurrent() // first fetch parks on the gate; loadingIndex is now true
+        c.refreshIndex { secondResult = it }
+        runCurrent()
+        // Second call must not have started a second backend fetch, and must
+        // not have dropped its callback just because a load was in flight.
+        assertEquals(1, backend.indexCalls)
+        assertNull(firstResult)
+        assertNull(secondResult)
+        gate.complete(listOf(2))
+        advanceUntilIdle()
+        assertEquals(true, firstResult)
+        assertEquals(true, secondResult)
+        assertEquals(listOf(2), c.stampedPagesSorted())
+    }
+
+    @Test
     fun writeFailure_propagatesAndKeepsCache() = runTest {
         val backend = FakeBackend().apply {
             pages = listOf(1)
