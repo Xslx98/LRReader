@@ -43,6 +43,7 @@ import com.hippo.ehviewer.widget.TileThumbNew
 import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.widget.LoadImageViewNew
 import com.hippo.widget.recyclerview.AutoStaggeredGridLayoutManager
+import com.lanraragi.reader.client.api.isTankoubonId
 
 @SuppressLint("InflateParams")
 abstract class GalleryAdapterNew(
@@ -199,9 +200,19 @@ abstract class GalleryAdapterNew(
                 } else {
                     holder.rating?.setRating(archive.rating)
                 }
-                holder.category?.visibility = View.GONE
+                // The category label is unused on archive rows — repurposed as
+                // the badge marking folded Tankoubon pseudo-entries.
+                val isTank = isTankoubonId(arcid)
+                if (isTank) {
+                    holder.category?.setText(R.string.tank_badge)
+                    holder.category?.visibility = View.VISIBLE
+                } else {
+                    holder.category?.visibility = View.GONE
+                }
                 holder.posted?.text = null
-                if (archive.pagecount == 0 || !AppearanceSettings.getShowGalleryPages()) {
+                // Tank rows hide the pages label: their progress is GLOBAL
+                // across members, so "p/NP" against one pagecount would lie.
+                if (isTank || archive.pagecount == 0 || !AppearanceSettings.getShowGalleryPages()) {
                     holder.pages?.text = null
                     holder.pages?.visibility = View.GONE
                 } else {
@@ -213,7 +224,7 @@ abstract class GalleryAdapterNew(
                 holder.simpleLanguage?.visibility = View.GONE
                 holder.favourite?.visibility = View.GONE
                 holder.downloaded?.visibility =
-                    if (mDownloadManager.containDownloadInfo(arcid)) View.VISIBLE else View.GONE
+                    if (!isTank && mDownloadManager.containDownloadInfo(arcid)) View.VISIBLE else View.GONE
             }
         }
         ViewCompat.setTransitionName(holder.thumb, TransitionNameFactory.getThumbTransitionName(arcid))
