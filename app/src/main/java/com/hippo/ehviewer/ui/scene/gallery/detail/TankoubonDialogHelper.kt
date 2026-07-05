@@ -116,8 +116,9 @@ object TankoubonDialogHelper {
                     emptySet()
                 }
                 val tanks = mutableListOf<LRRTankoubonApi.Tankoubon>()
-                var page = 1
-                while (page <= MAX_PAGES) {
+                // Server pages are 0-based (page 0 = parameterless request).
+                var page = 0
+                while (page < MAX_PAGES) {
                     val r = runSuspend { LRRTankoubonApi.getTankoubons(client, url, page) }
                     tanks.addAll(r.result)
                     if (r.result.isEmpty() || tanks.size >= r.total) break

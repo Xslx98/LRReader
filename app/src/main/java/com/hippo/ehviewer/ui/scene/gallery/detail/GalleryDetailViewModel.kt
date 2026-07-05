@@ -415,11 +415,11 @@ class GalleryDetailViewModel : ViewModel() {
                 }
                 TankoubonSupportGate.markSupported(serverUrl)
                 // id → name/count via the list endpoint (same data the
-                // membership dialog needs).
+                // membership dialog needs). Server pages are 0-based.
                 val idSet = ids.toSet()
                 val all = mutableListOf<LRRTankoubonApi.Tankoubon>()
-                var page = 1
-                while (page <= MAX_TANK_PAGES) {
+                var page = 0
+                while (page < MAX_TANK_PAGES) {
                     val r = runSuspend { LRRTankoubonApi.getTankoubons(client, serverUrl, page) }
                     all.addAll(r.result)
                     if (r.result.isEmpty() || all.size >= r.total) break

@@ -203,12 +203,16 @@ class TankoubonsViewModel : ViewModel() {
         }
     }
 
-    /** Pages through GET /api/tankoubons until all `total` entries are held. */
+    /**
+     * Pages through GET /api/tankoubons until all `total` entries are held.
+     * Server pages are 0-BASED (page 0 = parameterless request); a 1-based
+     * loop starts on the empty second page and shows a blank list.
+     */
     private suspend fun fetchAllTanks(serverUrl: String): List<LRRTankoubonApi.Tankoubon> {
         val client = ServiceRegistry.networkModule.okHttpClient
         val all = mutableListOf<LRRTankoubonApi.Tankoubon>()
-        var page = 1
-        while (page <= MAX_PAGES) {
+        var page = 0
+        while (page < MAX_PAGES) {
             val r = LRRTankoubonApi.getTankoubons(client, serverUrl, page)
             all.addAll(r.result)
             if (r.result.isEmpty() || all.size >= r.total) break
