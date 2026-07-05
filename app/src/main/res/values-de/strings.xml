@@ -285,7 +285,7 @@
     <string name="tank_cover_updated">Cover aktualisiert</string>
     <string name="tank_reorder_failed">Neuordnung fehlgeschlagen, Reihenfolge wiederhergestellt</string>
     <string name="tank_badge">Tankoubon</string>
-    <string name="settings_eh_group_tanks">Tankoubons beim Stöbern anzeigen</string>
+    <string name="settings_eh_group_tanks">Tankoubons beim Stöbern gruppieren</string>
     <string name="settings_eh_group_tanks_summary">Archive eines Tankoubons zu einem Eintrag zusammenfassen (LANraragi 0.9.8+)</string>
     <string name="detail_tankoubons_label">Tankoubons</string>
     <string name="detail_tankoubons_edit">Bearbeiten</string>

@@ -313,7 +313,7 @@
     <string name="tank_cover_updated">表紙を更新しました</string>
     <string name="tank_reorder_failed">並べ替えに失敗しました。元に戻します</string>
     <string name="tank_badge">単行本</string>
-    <string name="settings_eh_group_tanks">ブラウズで単行本を表示</string>
+    <string name="settings_eh_group_tanks">ブラウズで単行本をまとめる</string>
     <string name="settings_eh_group_tanks_summary">単行本のアーカイブを 1 つの項目にまとめる(LANraragi 0.9.8+)</string>
     <string name="detail_tankoubons_label">単行本</string>
     <string name="detail_tankoubons_edit">編集</string>
