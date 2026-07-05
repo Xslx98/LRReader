@@ -38,6 +38,7 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.settings.ReadingSettings
+import com.hippo.ehviewer.ui.GalleryActivity
 import com.hippo.unifile.UniFile
 import com.hippo.util.ExceptionUtils
 import com.hippo.lib.yorozuya.IOUtils
@@ -283,24 +284,25 @@ class GalleryImageOperations(private val mActivity: Activity) {
         val builder = AlertDialog.Builder(mActivity)
         builder.setTitle(mActivity.resources.getString(R.string.page_menu_title, page + 1))
 
-        val items = arrayOf<CharSequence>(
-            mActivity.getString(R.string.page_menu_refresh),
-            mActivity.getString(R.string.page_menu_share),
-            mActivity.getString(R.string.page_menu_save),
-            mActivity.getString(R.string.page_menu_save_to)
+        // Label→action pairs so positions can never drift when entries are
+        // conditionally appended. share/save/saveTo guard a null provider
+        // internally (each bails on `galleryProvider ?: return`), matching
+        // the old dialog-level `?: return@setItems` semantics.
+        val actions = mutableListOf<Pair<CharSequence, () -> Unit>>(
+            mActivity.getString(R.string.page_menu_refresh) to {
+                galleryProvider?.let { it.removeCache(page); it.forceRequest(page) }
+            },
+            mActivity.getString(R.string.page_menu_share) to { shareImage(page) },
+            mActivity.getString(R.string.page_menu_save) to { saveImage(page) },
+            mActivity.getString(R.string.page_menu_save_to) to { saveImageTo(page) },
         )
+        (mActivity as? GalleryActivity)?.takeIf { it.areStampsAvailable() }?.let { ga ->
+            actions.add(mActivity.getString(R.string.stamps_menu_add) to { ga.startStampPlacement() })
+            actions.add(mActivity.getString(R.string.stamps_menu_list) to { ga.showStampedPagesDialog() })
+        }
 
-        builder.setItems(items) { _, which ->
-            val provider = galleryProvider ?: return@setItems
-            when (which) {
-                0 -> { // Refresh
-                    provider.removeCache(page)
-                    provider.forceRequest(page)
-                }
-                1 -> shareImage(page) // Share
-                2 -> saveImage(page)  // Save
-                3 -> saveImageTo(page) // Save to
-            }
+        builder.setItems(actions.map { it.first }.toTypedArray()) { _, which ->
+            actions[which].second()
         }
 
         val dialog = builder.show()

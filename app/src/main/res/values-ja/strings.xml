@@ -272,6 +272,25 @@
     <string name="settings_read_continuation">読了時に次の作品を表示</string>
     <string name="settings_read_continuation_swipe">ページ送りで次の作品へ</string>
 
+    <!-- Stamps (page annotations, LANraragi 0.9.8+) -->
+    <string name="stamps_menu_add">スタンプを追加</string>
+    <string name="stamps_menu_list">ページのスタンプ…</string>
+    <string name="stamps_placing_hint">ページをタップしてスタンプを配置</string>
+    <string name="stamps_add_title">新しいスタンプ</string>
+    <string name="stamps_edit_title">スタンプを編集</string>
+    <string name="stamps_text_hint">スタンプの内容</string>
+    <string name="stamps_delete_confirm">このスタンプを削除しますか？</string>
+    <string name="stamps_locked">スタンプはロックされています。後でもう一度お試しください</string>
+    <string name="stamps_op_failed">スタンプ操作に失敗しました：%s</string>
+    <string name="stamps_list_title">スタンプのあるページ</string>
+    <string name="stamps_list_empty">このアーカイブにはスタンプがありません</string>
+    <string name="stamps_list_error">スタンプを読み込めませんでした</string>
+    <string name="stamps_list_entry">%1$d ページ — %2$s</string>
+    <string name="stamps_edit">編集</string>
+    <string name="stamps_delete">削除</string>
+    <string name="settings_read_stamps">ページのスタンプを表示</string>
+    <string name="stamps_unsupported">このサーバーはスタンプに対応していません(LANraragi 0.9.8+ が必要です)</string>
+
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">%d件選択中</string>
     <string name="batch_select_all">すべて</string>

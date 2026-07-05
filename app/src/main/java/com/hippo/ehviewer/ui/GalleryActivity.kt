@@ -35,6 +35,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.hippo.android.resource.AttrResources
 import com.hippo.ehviewer.BuildConfig
@@ -57,11 +58,15 @@ import com.hippo.ehviewer.ui.gallery.GalleryImageOperations
 import com.hippo.ehviewer.ui.gallery.GalleryInputHandler
 import com.hippo.ehviewer.ui.gallery.GalleryMenuHelper
 import com.hippo.ehviewer.ui.gallery.GallerySliderController
+import com.hippo.ehviewer.ui.gallery.GalleryStampOps
+import com.hippo.ehviewer.ui.gallery.LRRStampsBackend
 import com.hippo.ehviewer.ui.gallery.ReaderContinuationController
+import com.hippo.ehviewer.ui.gallery.ReaderStampsController
 import com.hippo.ehviewer.ui.scene.download.DownloadsScene
 import com.hippo.ehviewer.widget.GalleryGuideView
 import com.hippo.ehviewer.widget.GalleryHeader
 import com.hippo.ehviewer.widget.ReversibleSeekBar
+import com.hippo.ehviewer.widget.StampOverlayView
 import com.hippo.lib.glgallery.GalleryProvider
 import com.hippo.lib.glgallery.GalleryView
 import com.hippo.lib.glgallery.SimpleAdapter
@@ -106,6 +111,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         private const val NOTIFY_KEY_TAP_MENU_AREA = 4
         private const val NOTIFY_KEY_TAP_ERROR_TEXT = 5
         private const val NOTIFY_KEY_LONG_PRESS_PAGE = 6
+        private const val NOTIFY_KEY_PAGE_TRANSFORMS = 7
 
         @JvmStatic
         private fun resolveOrientation(screenRotation: Int): Int = when (screenRotation) {
@@ -139,6 +145,10 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
     private var canFinish = false
 
     private var mContinuation: ReaderContinuationController? = null
+
+    private var mStamps: ReaderStampsController? = null
+    private var mStampOverlay: StampOverlayView? = null
+    private var mStampOps: GalleryStampOps? = null
 
     // --- Extracted helpers ---
     private val mInputHandler = GalleryInputHandler(this)
@@ -316,6 +326,27 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                 launchNext = { next -> launchNextArchive(next) },
             )
             mArchive?.let { mContinuation?.setCurrentArchive(it.arcid) }
+        }
+
+        // Stamp overlay read path. Requires mArchive (server-backed archive
+        // identity) — the legacy local-file DIR path without an archive gets
+        // no controller and the overlay stays gone. mArchive is final here
+        // (see the continuation-block comment above).
+        mStampOverlay = findViewById(R.id.stamp_overlay)
+        mArchive?.let { archive ->
+            val stamps = ReaderStampsController(
+                scope = lifecycleScope,
+                backend = LRRStampsBackend(archive.arcid, archive.serverProfileId),
+                onDataChanged = { onStampsDataChanged() },
+            )
+            mStamps = stamps
+            mStampOverlay?.stampsProvider = { page0 -> stamps.stampsForDisplayPage(page0) }
+            mStampOverlay?.let { overlay ->
+                val ops = GalleryStampOps(this, stamps, overlay)
+                overlay.callback = ops
+                mStampOps = ops
+            }
+            refreshStampsVisibility()
         }
     }
 
@@ -538,12 +569,20 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         mProgress = null
         mBattery = null
         mContinuation = null
+        mStampOps?.dismissCard()
+        mStampOps = null
+        mStamps = null
+        mStampOverlay = null
 
         super.onDestroy()
     }
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
+        if (mStampOverlay?.placing == true) {
+            mStampOps?.exitPlacementMode()
+            return
+        }
         if (mContinuation?.isShowing == true) {
             mContinuation?.hide()
             return
@@ -705,6 +744,15 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         mainHandler.post(task)
     }
 
+    override fun onPageTransformsChanged() {
+        var task = mNotifyTaskPool.pop()
+        if (task == null) {
+            task = NotifyTask()
+        }
+        task.setData(NOTIFY_KEY_PAGE_TRANSFORMS, 0)
+        mainHandler.post(task)
+    }
+
     override fun onAutoTransferDone() {
         mInputHandler.onAutoTransferDone()
         // Fires on the GL render thread: on a forward page-turn attempt at
@@ -748,6 +796,57 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                     .show()
             }
         }
+    }
+
+    // ======== Reader stamps ========
+
+    internal fun refreshStampsVisibility() {
+        val overlay = mStampOverlay ?: return
+        val stamps = mStamps
+        val visible = stamps != null &&
+            stamps.support != ReaderStampsController.Support.UNSUPPORTED &&
+            (ReadingSettings.getReaderStamps() || stamps.sessionVisible)
+        overlay.isVisible = visible
+        if (visible) {
+            pumpStampTransforms()
+        }
+    }
+
+    private fun onStampsDataChanged() {
+        // A support probe may resolve to UNSUPPORTED while the user is mid
+        // placement (e.g. the pre-0.9.8 404 lands after the menu tap). Kill
+        // the mode here — the overlay would otherwise keep eating touches
+        // while refreshStampsVisibility() hides it. Fires at most once:
+        // exitPlacementMode() clears `placing`.
+        if (mStamps?.support == ReaderStampsController.Support.UNSUPPORTED &&
+            mStampOverlay?.placing == true
+        ) {
+            mStampOps?.exitPlacementMode()
+            Toast.makeText(this, R.string.stamps_unsupported, Toast.LENGTH_LONG).show()
+        }
+        refreshStampsVisibility()
+        mStampOverlay?.invalidate()
+    }
+
+    private fun pumpStampTransforms() {
+        val overlay = mStampOverlay ?: return
+        val transforms = mGalleryView?.getPageTransforms().orEmpty()
+        overlay.transforms = transforms
+        mStamps?.ensureVisiblePagesLoaded(transforms.map { it.index })
+    }
+
+    internal fun areStampsAvailable(): Boolean = mStampOps?.isAvailable() == true
+
+    internal fun startStampPlacement() {
+        mStampOps?.startPlacementMode()
+    }
+
+    internal fun jumpToPage(page0: Int) {
+        mGalleryView?.setCurrentPage(page0)
+    }
+
+    internal fun showStampedPagesDialog() {
+        mStampOps?.showStampedPagesDialog()
     }
 
     // ======== GalleryMenuHelper.SettingsCallback ========
@@ -796,6 +895,8 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         if (oldReadingFullscreen != readingFullscreen) {
             recreate()
         }
+
+        refreshStampsVisibility()
     }
 
     // ======== Screen lightness ========
@@ -864,6 +965,12 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                 NOTIFY_KEY_SIZE -> mSliderController.size = mValue
                 NOTIFY_KEY_CURRENT_INDEX -> {
                     mSliderController.currentIndex = mValue
+                    // A page turn invalidates the floating stamp card's anchor,
+                    // so drop it here (fires per index change, not per animation
+                    // frame). Accepted residual: zoom/pan on the SAME page keeps
+                    // the card without tracking the marker — it self-heals on
+                    // outside tap.
+                    mStampOps?.dismissCard()
                     // Reaching the last page silently warms the next-archive
                     // resolution so the continuation panel (or the
                     // swipe-through jump) is instant on the first forward
@@ -874,6 +981,9 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                 NOTIFY_KEY_TAP_SLIDER_AREA -> mSliderController.onTapSliderArea()
                 NOTIFY_KEY_TAP_ERROR_TEXT -> mGalleryProvider?.forceRequest(mValue)
                 NOTIFY_KEY_LONG_PRESS_PAGE -> mImageOps.showPageDialog(mValue)
+                NOTIFY_KEY_PAGE_TRANSFORMS -> {
+                    if (mStampOverlay?.isVisible == true) pumpStampTransforms()
+                }
             }
             mNotifyTaskPool.push(this)
         }

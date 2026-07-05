@@ -313,6 +313,25 @@
     <string name="settings_read_continuation">讀完顯示下一本</string>
     <string name="settings_read_continuation_swipe">翻頁直接進入下一本</string>
 
+    <!-- Stamps (page annotations, LANraragi 0.9.8+) -->
+    <string name="stamps_menu_add">新增標註</string>
+    <string name="stamps_menu_list">頁面標註…</string>
+    <string name="stamps_placing_hint">點擊頁面放置標註</string>
+    <string name="stamps_add_title">新標註</string>
+    <string name="stamps_edit_title">編輯標註</string>
+    <string name="stamps_text_hint">標註內容</string>
+    <string name="stamps_delete_confirm">刪除這條標註？</string>
+    <string name="stamps_locked">標註已被鎖定，請稍後再試</string>
+    <string name="stamps_op_failed">標註操作失敗：%s</string>
+    <string name="stamps_list_title">有標註的頁面</string>
+    <string name="stamps_list_empty">本檔案沒有標註</string>
+    <string name="stamps_list_error">無法載入標註</string>
+    <string name="stamps_list_entry">第 %1$d 頁 — %2$s</string>
+    <string name="stamps_edit">編輯</string>
+    <string name="stamps_delete">刪除</string>
+    <string name="settings_read_stamps">顯示頁面標註</string>
+    <string name="stamps_unsupported">此伺服器不支援標註(需要 LANraragi 0.9.8+)</string>
+
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">已選 %d 項</string>
     <string name="batch_select_all">全選</string>

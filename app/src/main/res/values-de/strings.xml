@@ -244,6 +244,25 @@
     <string name="settings_read_continuation">Nächstes Archiv am Ende anzeigen</string>
     <string name="settings_read_continuation_swipe">Weiterblättern öffnet nächstes Archiv</string>
 
+    <!-- Stamps (page annotations, LANraragi 0.9.8+) -->
+    <string name="stamps_menu_add">Stempel hinzufügen</string>
+    <string name="stamps_menu_list">Seiten-Stempel…</string>
+    <string name="stamps_placing_hint">Tippe auf die Seite, um den Stempel zu platzieren</string>
+    <string name="stamps_add_title">Neuer Stempel</string>
+    <string name="stamps_edit_title">Stempel bearbeiten</string>
+    <string name="stamps_text_hint">Stempeltext</string>
+    <string name="stamps_delete_confirm">Diesen Stempel löschen?</string>
+    <string name="stamps_locked">Stempel ist gesperrt, bitte später erneut versuchen</string>
+    <string name="stamps_op_failed">Stempel-Aktion fehlgeschlagen: %s</string>
+    <string name="stamps_list_title">Seiten mit Stempeln</string>
+    <string name="stamps_list_empty">Keine Stempel in diesem Archiv</string>
+    <string name="stamps_list_error">Stempel konnten nicht geladen werden</string>
+    <string name="stamps_list_entry">Seite %1$d — %2$s</string>
+    <string name="stamps_edit">Bearbeiten</string>
+    <string name="stamps_delete">Löschen</string>
+    <string name="settings_read_stamps">Seiten-Stempel anzeigen</string>
+    <string name="stamps_unsupported">Dieser Server unterstützt keine Stempel (LANraragi 0.9.8+ erforderlich)</string>
+
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">%d ausgewählt</string>
     <string name="batch_select_all">Alle</string>

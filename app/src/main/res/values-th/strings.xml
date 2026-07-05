@@ -310,6 +310,25 @@
     <string name="settings_read_continuation">แสดงเล่มถัดไปเมื่ออ่านจบ</string>
     <string name="settings_read_continuation_swipe">พลิกหน้าเพื่อเข้าเล่มถัดไป</string>
 
+    <!-- Stamps (page annotations, LANraragi 0.9.8+) -->
+    <string name="stamps_menu_add">เพิ่มสแตมป์</string>
+    <string name="stamps_menu_list">สแตมป์ของหน้า…</string>
+    <string name="stamps_placing_hint">แตะหน้าเพื่อวางสแตมป์</string>
+    <string name="stamps_add_title">สแตมป์ใหม่</string>
+    <string name="stamps_edit_title">แก้ไขสแตมป์</string>
+    <string name="stamps_text_hint">ข้อความสแตมป์</string>
+    <string name="stamps_delete_confirm">ลบสแตมป์นี้?</string>
+    <string name="stamps_locked">สแตมป์ถูกล็อกอยู่ โปรดลองใหม่ภายหลัง</string>
+    <string name="stamps_op_failed">การดำเนินการสแตมป์ล้มเหลว: %s</string>
+    <string name="stamps_list_title">หน้าที่มีสแตมป์</string>
+    <string name="stamps_list_empty">ไม่มีสแตมป์ในไฟล์นี้</string>
+    <string name="stamps_list_error">โหลดสแตมป์ไม่สำเร็จ</string>
+    <string name="stamps_list_entry">หน้า %1$d — %2$s</string>
+    <string name="stamps_edit">แก้ไข</string>
+    <string name="stamps_delete">ลบ</string>
+    <string name="settings_read_stamps">แสดงสแตมป์ของหน้า</string>
+    <string name="stamps_unsupported">เซิร์ฟเวอร์นี้ไม่รองรับสแตมป์ (ต้องใช้ LANraragi 0.9.8+)</string>
+
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">เลือกแล้ว %d รายการ</string>
     <string name="batch_select_all">ทั้งหมด</string>
