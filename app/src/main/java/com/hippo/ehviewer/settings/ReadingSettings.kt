@@ -134,6 +134,22 @@ object ReadingSettings {
         cachedReaderContinuationSwipe = value
     }
 
+    // --- Reader Stamps (LANraragi 0.9.8+ page annotations overlay) ---
+    const val KEY_READER_STAMPS = "reader_stamps"
+    private const val DEFAULT_READER_STAMPS = false
+
+    @Volatile
+    private var cachedReaderStamps: Boolean = DEFAULT_READER_STAMPS
+
+    @JvmStatic
+    fun getReaderStamps(): Boolean = cachedReaderStamps
+
+    @JvmStatic
+    fun putReaderStamps(value: Boolean) {
+        Settings.putBoolean(KEY_READER_STAMPS, value)
+        cachedReaderStamps = value
+    }
+
     // --- Show Clock (hot-path, cached) ---
     const val KEY_SHOW_CLOCK = "gallery_show_clock"
     private const val DEFAULT_SHOW_CLOCK = true
@@ -303,6 +319,8 @@ object ReadingSettings {
                     Settings.getBoolean(KEY_READER_CONTINUATION, DEFAULT_READER_CONTINUATION)
                 KEY_READER_CONTINUATION_SWIPE -> cachedReaderContinuationSwipe =
                     Settings.getBoolean(KEY_READER_CONTINUATION_SWIPE, DEFAULT_READER_CONTINUATION_SWIPE)
+                KEY_READER_STAMPS -> cachedReaderStamps =
+                    Settings.getBoolean(KEY_READER_STAMPS, DEFAULT_READER_STAMPS)
                 KEY_SHOW_CLOCK -> cachedShowClock =
                     Settings.getBoolean(KEY_SHOW_CLOCK, DEFAULT_SHOW_CLOCK)
                 KEY_SHOW_PROGRESS -> cachedShowProgress =
@@ -345,6 +363,9 @@ object ReadingSettings {
         )
         cachedReaderContinuationSwipe = Settings.getBoolean(
             KEY_READER_CONTINUATION_SWIPE, DEFAULT_READER_CONTINUATION_SWIPE
+        )
+        cachedReaderStamps = Settings.getBoolean(
+            KEY_READER_STAMPS, DEFAULT_READER_STAMPS
         )
         cachedShowClock = Settings.getBoolean(KEY_SHOW_CLOCK, DEFAULT_SHOW_CLOCK)
         cachedShowProgress = Settings.getBoolean(KEY_SHOW_PROGRESS, DEFAULT_SHOW_PROGRESS)
