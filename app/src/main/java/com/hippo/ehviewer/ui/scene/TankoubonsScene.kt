@@ -1,15 +1,10 @@
 package com.hippo.ehviewer.ui.scene
 
-import android.content.Context
 import android.os.Bundle
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
-import android.widget.FrameLayout
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -182,91 +177,32 @@ class TankoubonsScene : BaseScene() {
 
     private fun showCreateDialog() {
         val ctx = ehContext ?: return
-        val nameInput = EditText(ctx).apply {
-            setHint(R.string.tank_name_hint)
-            isSingleLine = true
-            inputType = InputType.TYPE_CLASS_TEXT
+        TankDialogs.showNameInputDialog(ctx, R.string.tank_create, "") {
+            viewModel.create(it)
         }
-        AlertDialog.Builder(ctx)
-            .setTitle(R.string.tank_create)
-            .setView(wrapDialogContent(ctx, nameInput))
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                val name = nameInput.text.toString().trim()
-                if (name.isEmpty()) {
-                    Toast.makeText(ctx, R.string.tank_name_empty, Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-                viewModel.create(name)
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
     }
 
     private fun showRenameDialog(tank: LRRTankoubonApi.Tankoubon) {
         val ctx = ehContext ?: return
-        val nameInput = EditText(ctx).apply {
-            setHint(R.string.tank_name_hint)
-            setText(tank.name)
-            isSingleLine = true
-            inputType = InputType.TYPE_CLASS_TEXT
+        TankDialogs.showNameInputDialog(ctx, R.string.tank_rename, tank.name) {
+            viewModel.rename(tank.id, it)
         }
-        AlertDialog.Builder(ctx)
-            .setTitle(R.string.tank_rename)
-            .setView(wrapDialogContent(ctx, nameInput))
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                val name = nameInput.text.toString().trim()
-                if (name.isEmpty()) {
-                    Toast.makeText(ctx, R.string.tank_name_empty, Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-                viewModel.rename(tank.id, name)
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
     }
 
     private fun showEditMetaDialog(tank: LRRTankoubonApi.Tankoubon) {
         val ctx = ehContext ?: return
-        val summaryInput = EditText(ctx).apply {
-            setHint(R.string.tank_summary_hint)
-            setText(tank.summary.orEmpty())
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        TankDialogs.showMetaDialog(
+            ctx,
+            tank.summary.orEmpty(),
+            tank.tags.orEmpty()
+        ) { summary, tags ->
+            viewModel.editMeta(tank.id, summary, tags)
         }
-        val tagsInput = EditText(ctx).apply {
-            setHint(R.string.tank_tags_hint)
-            setText(tank.tags.orEmpty())
-            isSingleLine = true
-            inputType = InputType.TYPE_CLASS_TEXT
-        }
-        val column = LinearLayout(ctx).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(summaryInput)
-            addView(tagsInput)
-        }
-        AlertDialog.Builder(ctx)
-            .setTitle(R.string.tank_edit_meta)
-            .setView(wrapDialogContent(ctx, column))
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                viewModel.editMeta(
-                    tank.id,
-                    summaryInput.text.toString(),
-                    tagsInput.text.toString()
-                )
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
     }
 
     private fun showDeleteDialog(tank: LRRTankoubonApi.Tankoubon) {
         val ctx = ehContext ?: return
-        AlertDialog.Builder(ctx)
-            .setTitle(R.string.tank_delete)
-            .setMessage(R.string.tank_delete_confirm)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                viewModel.delete(tank.id)
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        TankDialogs.showDeleteConfirm(ctx) { viewModel.delete(tank.id) }
     }
 
     /**
@@ -291,15 +227,6 @@ class TankoubonsScene : BaseScene() {
                 }
             }
             .show()
-    }
-
-    /** Keyline-padded container for programmatically built dialog content. */
-    private fun wrapDialogContent(ctx: Context, content: View): View {
-        val pad = (DIALOG_PADDING_DP * ctx.resources.displayMetrics.density).toInt()
-        return FrameLayout(ctx).apply {
-            setPadding(pad, pad / 2, pad, 0)
-            addView(content)
-        }
     }
 
     // ==================== View Helpers ====================
@@ -450,9 +377,5 @@ class TankoubonsScene : BaseScene() {
                 o.summary == n.summary &&
                 o.tags == n.tags
         }
-    }
-
-    companion object {
-        private const val DIALOG_PADDING_DP = 24
     }
 }

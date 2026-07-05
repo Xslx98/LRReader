@@ -1,17 +1,12 @@
 package com.hippo.ehviewer.ui.scene
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.os.Bundle
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.EditText
-import android.widget.FrameLayout
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -369,68 +364,25 @@ class TankoubonDetailScene : BaseScene() {
 
     private fun showRenameDialog() {
         val ctx = ehContext ?: return
-        val nameInput = EditText(ctx).apply {
-            setHint(R.string.tank_name_hint)
-            setText(viewModel.tankName.value)
-            isSingleLine = true
-            inputType = InputType.TYPE_CLASS_TEXT
+        TankDialogs.showNameInputDialog(ctx, R.string.tank_rename, viewModel.tankName.value) {
+            viewModel.rename(it)
         }
-        AlertDialog.Builder(ctx)
-            .setTitle(R.string.tank_rename)
-            .setView(wrapDialogContent(ctx, nameInput))
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                val name = nameInput.text.toString().trim()
-                if (name.isEmpty()) {
-                    Toast.makeText(ctx, R.string.tank_name_empty, Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-                viewModel.rename(name)
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
     }
 
     private fun showEditMetaDialog() {
         val ctx = ehContext ?: return
-        val summaryInput = EditText(ctx).apply {
-            setHint(R.string.tank_summary_hint)
-            setText(viewModel.summary.orEmpty())
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        TankDialogs.showMetaDialog(
+            ctx,
+            viewModel.summary.orEmpty(),
+            viewModel.tags.orEmpty()
+        ) { summary, tags ->
+            viewModel.editMeta(summary, tags)
         }
-        val tagsInput = EditText(ctx).apply {
-            setHint(R.string.tank_tags_hint)
-            setText(viewModel.tags.orEmpty())
-            isSingleLine = true
-            inputType = InputType.TYPE_CLASS_TEXT
-        }
-        val column = LinearLayout(ctx).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(summaryInput)
-            addView(tagsInput)
-        }
-        AlertDialog.Builder(ctx)
-            .setTitle(R.string.tank_edit_meta)
-            .setView(wrapDialogContent(ctx, column))
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                viewModel.editMeta(
-                    summaryInput.text.toString(),
-                    tagsInput.text.toString()
-                )
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
     }
 
     private fun showDeleteDialog() {
         val ctx = ehContext ?: return
-        AlertDialog.Builder(ctx)
-            .setTitle(R.string.tank_delete)
-            .setMessage(R.string.tank_delete_confirm)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                viewModel.deleteTank()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        TankDialogs.showDeleteConfirm(ctx) { viewModel.deleteTank() }
     }
 
     /**
@@ -459,15 +411,6 @@ class TankoubonDetailScene : BaseScene() {
                 }
             }
             .show()
-    }
-
-    /** Keyline-padded container for programmatically built dialog content. */
-    private fun wrapDialogContent(ctx: Context, content: View): View {
-        val pad = (DIALOG_PADDING_DP * ctx.resources.displayMetrics.density).toInt()
-        return FrameLayout(ctx).apply {
-            setPadding(pad, pad / 2, pad, 0)
-            addView(content)
-        }
     }
 
     /**
@@ -690,6 +633,5 @@ class TankoubonDetailScene : BaseScene() {
         const val KEY_TANK_ID = "tank_id"
         const val KEY_TANK_NAME = "tank_name"
         const val KEY_PROFILE_ID = "tank_profile_id"
-        private const val DIALOG_PADDING_DP = 24
     }
 }
