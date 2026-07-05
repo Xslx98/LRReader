@@ -298,6 +298,7 @@ class GalleryImageOperations(private val mActivity: Activity) {
         )
         (mActivity as? GalleryActivity)?.takeIf { it.areStampsAvailable() }?.let { ga ->
             actions.add(mActivity.getString(R.string.stamps_menu_add) to { ga.startStampPlacement() })
+            actions.add(mActivity.getString(R.string.stamps_menu_list) to { ga.showStampedPagesDialog() })
         }
 
         builder.setItems(actions.map { it.first }.toTypedArray()) { _, which ->

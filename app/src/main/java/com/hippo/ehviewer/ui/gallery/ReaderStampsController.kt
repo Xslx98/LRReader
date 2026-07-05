@@ -38,6 +38,7 @@ class ReaderStampsController(
     private val pageStamps = mutableMapOf<Int, List<LRRStampApi.StampData>>()
     private val loadingPages = mutableSetOf<Int>()
     private var loadingIndex = false
+    private val pendingIndexCallbacks = mutableListOf<(Boolean) -> Unit>()
 
     fun stampedPagesSorted(): List<Int>? = stampedPages?.sorted()
 
@@ -47,8 +48,22 @@ class ReaderStampsController(
     fun previewForPage(page1: Int): String? =
         pageStamps[page1]?.firstOrNull()?.content
 
+    /**
+     * Refreshes the stamped-page index. If a refresh is already in flight,
+     * [onResult] is queued and invoked (along with every other pending
+     * callback) once that in-flight refresh resolves — a caller must never
+     * see a silently-dropped callback just because a background load beat it
+     * to `loadingIndex`.
+     */
     fun refreshIndex(onResult: ((Boolean) -> Unit)? = null) {
-        if (support == Support.UNSUPPORTED || loadingIndex) return
+        if (support == Support.UNSUPPORTED) {
+            onResult?.invoke(false)
+            return
+        }
+        if (loadingIndex) {
+            onResult?.let { pendingIndexCallbacks += it }
+            return
+        }
         loadingIndex = true
         scope.launch {
             try {
@@ -65,6 +80,7 @@ class ReaderStampsController(
                 support = Support.SUPPORTED
                 onDataChanged()
                 onResult?.invoke(true)
+                notifyPendingIndexCallbacks(true)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: LRRHttpException) {
@@ -74,14 +90,23 @@ class ReaderStampsController(
                     onDataChanged()
                 }
                 onResult?.invoke(false)
+                notifyPendingIndexCallbacks(false)
             } catch (e: Exception) {
                 // Transient (offline etc.): stay retryable.
                 if (BuildConfig.DEBUG) Log.w(TAG, "Stamp index refresh failed", e)
                 onResult?.invoke(false)
+                notifyPendingIndexCallbacks(false)
             } finally {
                 loadingIndex = false
             }
         }
+    }
+
+    private fun notifyPendingIndexCallbacks(success: Boolean) {
+        if (pendingIndexCallbacks.isEmpty()) return
+        val callbacks = pendingIndexCallbacks.toList()
+        pendingIndexCallbacks.clear()
+        callbacks.forEach { it(success) }
     }
 
     /** [pages0] = currently visible 0-indexed pages; loads details for stamped ones. */
