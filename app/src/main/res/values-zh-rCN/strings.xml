@@ -351,7 +351,7 @@
     <string name="tank_cover_updated">封面已更新</string>
     <string name="tank_reorder_failed">排序失败，已恢复原顺序</string>
     <string name="tank_badge">Tankoubon</string>
-    <string name="settings_eh_group_tanks">浏览时显示 Tankoubon</string>
+    <string name="settings_eh_group_tanks">浏览时折叠 Tankoubon</string>
     <string name="settings_eh_group_tanks_summary">将属于 Tankoubon 的档案折叠为一个条目(LANraragi 0.9.8+)</string>
     <string name="detail_tankoubons_label">Tankoubon</string>
     <string name="detail_tankoubons_edit">编辑</string>

@@ -328,7 +328,7 @@
     <string name="tank_cover_updated">Portada actualizada</string>
     <string name="tank_reorder_failed">Error al reordenar, se restauró el orden</string>
     <string name="tank_badge">Tankoubon</string>
-    <string name="settings_eh_group_tanks">Mostrar tankoubons al explorar</string>
+    <string name="settings_eh_group_tanks">Agrupar tankoubons al explorar</string>
     <string name="settings_eh_group_tanks_summary">Agrupar los archivos de un tankoubon en una sola entrada (LANraragi 0.9.8+)</string>
     <string name="detail_tankoubons_label">Tankoubons</string>
     <string name="detail_tankoubons_edit">Editar</string>

@@ -359,7 +359,7 @@
     <string name="tank_cover_updated">표지가 업데이트되었습니다</string>
     <string name="tank_reorder_failed">순서 변경 실패, 원래 순서로 복원</string>
     <string name="tank_badge">단행본</string>
-    <string name="settings_eh_group_tanks">탐색에서 단행본 표시</string>
+    <string name="settings_eh_group_tanks">탐색에서 단행본 묶기</string>
     <string name="settings_eh_group_tanks_summary">단행본의 아카이브를 하나의 항목으로 묶기(LANraragi 0.9.8+)</string>
     <string name="detail_tankoubons_label">단행본</string>
     <string name="detail_tankoubons_edit">편집</string>

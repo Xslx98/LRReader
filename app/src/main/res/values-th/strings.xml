@@ -351,7 +351,7 @@
     <string name="tank_cover_updated">อัปเดตปกแล้ว</string>
     <string name="tank_reorder_failed">จัดลำดับไม่สำเร็จ คืนลำดับเดิมแล้ว</string>
     <string name="tank_badge">ทังโคบง</string>
-    <string name="settings_eh_group_tanks">แสดงทังโคบงขณะเรียกดู</string>
+    <string name="settings_eh_group_tanks">จัดกลุ่มทังโคบงขณะเรียกดู</string>
     <string name="settings_eh_group_tanks_summary">รวมไฟล์ของทังโคบงเป็นรายการเดียว (LANraragi 0.9.8+)</string>
     <string name="detail_tankoubons_label">ทังโคบง</string>
     <string name="detail_tankoubons_edit">แก้ไข</string>
