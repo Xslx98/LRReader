@@ -77,6 +77,7 @@ import com.hippo.widget.FabLayout
 import com.hippo.widget.SearchBarMover
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRClientProvider
+import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.friendlyError
 
 class GalleryListScene : BaseScene(),
@@ -888,6 +889,10 @@ class GalleryListScene : BaseScene(),
                 untaggedonly = params.untaggedonly,
                 anchorArcid = archive.arcid,
                 anchorIndex = position,
+                // Same fold decision the paging source made for this list, so
+                // resolver windows reproduce the raw indexing the user saw.
+                groupbyTanks = AppearanceSettings.getGroupTanks() &&
+                    !TankoubonSupportGate.isUnsupported(baseUrl),
             )
         )
     }
