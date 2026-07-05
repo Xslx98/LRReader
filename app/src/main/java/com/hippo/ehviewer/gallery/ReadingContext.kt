@@ -47,4 +47,21 @@ sealed interface ReadingContext {
     ) : ReadingContext {
         enum class Kind { DOWNLOADS, HISTORY }
     }
+
+    /**
+     * Reading inside a Tankoubon (ordered server-side collection, 0.9.8+).
+     * Members + page offsets are captured from /full at detail-scene time;
+     * [pageOffsets] feeds TankPageMath for global-progress sync. Source
+     * profile/baseUrl pinned at capture (multi-profile red line).
+     */
+    data class Tankoubon(
+        val sourceProfileId: Long,
+        val sourceBaseUrl: String,
+        val tankId: String,
+        /** Server-order member arcids. */
+        val orderedMemberIds: List<String>,
+        /** TankPageMath.pageOffsets of the members' pagecounts (size = members+1). */
+        val pageOffsets: List<Int>,
+        override val anchorArcid: String,
+    ) : ReadingContext
 }
