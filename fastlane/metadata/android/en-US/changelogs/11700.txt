@@ -1,0 +1,5 @@
+- New: Tankoubon support - browse, read, create and manage bound volumes (LANraragi 0.9.8+), with reading progress synced across volumes.
+- New: finishing an archive offers the next one in your list, with optional swipe-through.
+- New: long-press multi-select with batch download, category, tankoubon and delete actions.
+- New: page stamps in the reader - bookmark pages with notes and jump between them.
+- Improved: various stability fixes.
