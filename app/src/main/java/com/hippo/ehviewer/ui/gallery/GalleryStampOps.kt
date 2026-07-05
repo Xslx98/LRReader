@@ -155,8 +155,14 @@ class GalleryStampOps(
     }
 
     override fun onStampDropped(stamp: StampData, page0: Int, normX: Float, normY: Float) {
-        // Drag reposition lands in a later commit.
-        overlay.cancelDrag()
+        val position = StampGeometry.formatPosition(normX, normY)
+        controller.updateStamp(page0 + 1, stamp.id, position = position) { error ->
+            // Defensive: the view already resets its own drag state on ACTION_UP.
+            // This covers a future view change where the drag visual might persist
+            // until the update is confirmed.
+            overlay.cancelDrag()
+            if (error != null) showError(error)
+        }
     }
 
     fun showError(e: Throwable) {
