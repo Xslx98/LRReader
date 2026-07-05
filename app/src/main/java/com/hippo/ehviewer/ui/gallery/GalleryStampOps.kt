@@ -1,17 +1,25 @@
 package com.hippo.ehviewer.ui.gallery
 
+import android.graphics.Color
 import android.text.InputType
+import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.PopupWindow
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.isVisible
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ui.GalleryActivity
 import com.hippo.ehviewer.widget.StampOverlayView
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRStampApi.StampData
+import kotlin.math.roundToInt
 
 /**
  * UI glue for stamps: placement mode, dialogs, marker tap card, error toasts.
@@ -25,6 +33,8 @@ class GalleryStampOps(
 ) : StampOverlayView.Callback {
 
     private val placingBar: View = activity.findViewById(R.id.stamps_placing_bar)
+
+    private var card: PopupWindow? = null
 
     init {
         activity.findViewById<Button>(R.id.stamps_placing_cancel)
@@ -67,7 +77,81 @@ class GalleryStampOps(
     }
 
     override fun onStampTapped(stamp: StampData, page0: Int, screenX: Float, screenY: Float) {
-        // View card lands in the next commit.
+        card?.dismiss()
+        // Inflate with the activity root as parent (never null: InflateParams lint).
+        val root = activity.findViewById<ViewGroup>(R.id.main)
+        val view = LayoutInflater.from(activity).inflate(R.layout.stamp_view_card, root, false)
+        view.findViewById<TextView>(R.id.stamp_card_text).text = stamp.content
+
+        val popup = PopupWindow(
+            view,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            true,
+        )
+        // Background required so outside-touch dismiss works on all APIs.
+        popup.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+        view.findViewById<Button>(R.id.stamp_card_edit).setOnClickListener {
+            popup.dismiss()
+            showEditDialog(stamp, page0)
+        }
+        view.findViewById<Button>(R.id.stamp_card_delete).setOnClickListener {
+            popup.dismiss()
+            showDeleteConfirm(stamp, page0)
+        }
+
+        view.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+        val offsetPx = (CARD_OFFSET_DP * activity.resources.displayMetrics.density).roundToInt()
+        val x = screenX.roundToInt()
+            .coerceAtMost(overlay.width - view.measuredWidth)
+            .coerceAtLeast(0)
+        val y = (screenY.roundToInt() + offsetPx)
+            .coerceAtMost(overlay.height - view.measuredHeight)
+            .coerceAtLeast(0)
+        // Coordinate-space invariant: (x, y) are overlay-local while
+        // showAtLocation positions in window coordinates. The overlay fills
+        // the immersive fullscreen root with no inset consumption between
+        // the window origin and the overlay origin, so the two spaces
+        // coincide here. Revisit if this Activity ever gains
+        // fitsSystemWindows or a toolbar above stamp_overlay.
+        popup.showAtLocation(overlay, Gravity.NO_GRAVITY, x, y)
+        card = popup
+    }
+
+    private fun showEditDialog(stamp: StampData, page0: Int) {
+        val edit = EditText(activity).apply {
+            setText(stamp.content)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        }
+        AlertDialog.Builder(activity)
+            .setTitle(R.string.stamps_edit_title)
+            .setView(edit)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val text = edit.text?.toString()?.trim().orEmpty()
+                if (text.isEmpty()) return@setPositiveButton
+                controller.updateStamp(page0 + 1, stamp.id, content = text) { error ->
+                    if (error != null) showError(error)
+                }
+            }
+            .show()
+    }
+
+    private fun showDeleteConfirm(stamp: StampData, page0: Int) {
+        AlertDialog.Builder(activity)
+            .setMessage(R.string.stamps_delete_confirm)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.stamps_delete) { _, _ ->
+                controller.deleteStamp(page0 + 1, stamp.id) { error ->
+                    if (error != null) showError(error)
+                }
+            }
+            .show()
+    }
+
+    fun dismissCard() {
+        card?.dismiss()
+        card = null
     }
 
     override fun onStampDropped(stamp: StampData, page0: Int, normX: Float, normY: Float) {
@@ -87,5 +171,6 @@ class GalleryStampOps(
 
     companion object {
         private const val LOCKED_HTTP_CODE = 423
+        private const val CARD_OFFSET_DP = 24f
     }
 }

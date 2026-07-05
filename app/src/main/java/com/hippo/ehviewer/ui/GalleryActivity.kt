@@ -571,6 +571,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         mContinuation = null
         mStamps = null
         mStampOverlay = null
+        mStampOps?.dismissCard()
         mStampOps = null
 
         super.onDestroy()
@@ -956,6 +957,12 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                 NOTIFY_KEY_SIZE -> mSliderController.size = mValue
                 NOTIFY_KEY_CURRENT_INDEX -> {
                     mSliderController.currentIndex = mValue
+                    // A page turn invalidates the floating stamp card's anchor,
+                    // so drop it here (fires per index change, not per animation
+                    // frame). Accepted residual: zoom/pan on the SAME page keeps
+                    // the card without tracking the marker — it self-heals on
+                    // outside tap.
+                    mStampOps?.dismissCard()
                     // Reaching the last page silently warms the next-archive
                     // resolution so the continuation panel (or the
                     // swipe-through jump) is instant on the first forward
