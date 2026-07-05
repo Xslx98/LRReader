@@ -1,44 +1,19 @@
 package com.hippo.ehviewer.ui.scene.gallery.list
 
-import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.Context
-import android.content.Intent
-import android.view.Gravity
-import android.view.LayoutInflater
 import android.view.View
-import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
-import com.google.android.material.chip.ChipGroup
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.LRRCacheKeyFactory
-import com.hippo.ehviewer.client.LRRUtils
 import com.lanraragi.reader.domain.Archive
-import com.hippo.ehviewer.dao.DownloadInfo
-import com.hippo.ehviewer.download.DownloadManager
-import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.ui.CommonOperations
-import com.hippo.ehviewer.ui.GalleryOpenHelper
-import com.hippo.ehviewer.ui.MainActivity
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import com.hippo.ehviewer.ui.dialog.SelectItemWithIconAdapter
-import com.hippo.ehviewer.ui.scene.download.DownloadLabelHelper
-import com.hippo.ehviewer.ui.scene.gallery.detail.CategoryDialogHelper
-import com.hippo.ehviewer.ui.scene.gallery.detail.DeleteArchiveHelper
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.scene.Announcer
 import com.hippo.scene.SceneFragment
-import com.hippo.util.AppHelper
-import com.hippo.widget.LoadImageViewNew
-import com.hippo.ehviewer.download.DownloadState
 
 /**
- * Handles item click and long-click context menu for GalleryListScene.
+ * Handles item click navigation for GalleryListScene.
  * Extracted to reduce GalleryListScene's line count.
+ *
+ * The former long-press context menu (Read / Download / Categories / Delete)
+ * has been retired in favor of long-press multi-select + the batch action bar;
+ * all of its actions remain reachable from the gallery detail page.
  */
 class GalleryItemActionHelper(private val callback: Callback) {
 
@@ -48,24 +23,11 @@ class GalleryItemActionHelper(private val callback: Callback) {
     }
 
     interface Callback {
-        fun getHostContext(): Context?
-        fun getHostActivity(): Activity?
-        fun getLayoutInflater(): LayoutInflater
-        fun getDownloadManager(): DownloadManager
         fun getSceneFragment(): SceneFragment
         fun startScene(announcer: Announcer)
-        fun getString(resId: Int): String
-        fun getString(resId: Int, vararg formatArgs: Any): String
-        fun buildChipGroup(gi: Archive?, chipGroup: ChipGroup): ChipGroup
     }
-
-    var alertDialog: AlertDialog? = null
 
     private var lastItemClickTime = 0L
-
-    fun dismissDialog() {
-        alertDialog?.dismiss()
-    }
 
     fun onItemClick(view: View?, gi: Archive?): Boolean {
         if (gi == null) {
@@ -78,7 +40,6 @@ class GalleryItemActionHelper(private val callback: Callback) {
             return true
         }
         lastItemClickTime = now
-        alertDialog?.dismiss()
 
         val args = android.os.Bundle()
         args.putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_ARCHIVE)
@@ -92,97 +53,6 @@ class GalleryItemActionHelper(private val callback: Callback) {
             }
         }
         callback.startScene(announcer)
-        return true
-    }
-
-    fun onItemLongClick(gi: Archive?, view: View): Boolean {
-        val context = callback.getHostContext()
-        val activity = callback.getHostActivity()
-        if (context == null || activity == null) {
-            return false
-        }
-
-        if (gi == null) {
-            return true
-        }
-
-        val downloadManager = callback.getDownloadManager()
-        val downloaded = downloadManager.getDownloadState(gi.arcid) != DownloadState.INVALID
-
-        val items = arrayOf<CharSequence>(
-            context.getString(R.string.read),
-            context.getString(if (downloaded) R.string.delete_downloads else R.string.download),
-            context.getString(R.string.lrr_menu_categories),
-            context.getString(R.string.lrr_delete_confirm_title),
-        )
-
-        val icons = intArrayOf(
-            R.drawable.v_book_open_x24,
-            if (downloaded) R.drawable.v_delete_x24 else R.drawable.v_download_x24,
-            R.drawable.v_heart_x24,
-            R.drawable.v_delete_x24,
-        )
-
-        @SuppressLint("InflateParams")
-        val linearLayout = callback.getLayoutInflater()
-            .inflate(R.layout.gallery_item_dialog_coustom_title, null) as LinearLayout
-
-        linearLayout.setOnClickListener { onItemClick(view, gi) }
-
-        val imageViewNew: LoadImageViewNew = linearLayout.findViewById(R.id.dialog_thumb)
-        imageViewNew.load(LRRCacheKeyFactory.getThumbKey(gi.arcid), gi.thumbnailUrl)
-        imageViewNew.setOnClickListener { onItemClick(view, gi) }
-
-        callback.buildChipGroup(gi, linearLayout.findViewById(R.id.tab_tag_flow))
-
-        val textView: TextView = linearLayout.findViewById(R.id.title_text)
-        textView.text = gi.title
-        textView.setOnClickListener {
-            AppHelper.copyPlainText(gi.title, context)
-            val toast = Toast.makeText(context, R.string.lrr_title_copied, Toast.LENGTH_SHORT)
-            toast.setGravity(Gravity.CENTER, 0, 0)
-            toast.show()
-        }
-
-        alertDialog = AlertDialog.Builder(context)
-            .setCustomTitle(linearLayout)
-            .setAdapter(SelectItemWithIconAdapter(context, items, icons)) { _, which ->
-                when (which) {
-                    0 -> { // Read
-                        ServiceRegistry.coroutineModule.ioScope.launch {
-                            val intent = GalleryOpenHelper.buildReadIntent(activity, gi)
-                            withContext(Dispatchers.Main) {
-                                activity.startActivity(intent)
-                            }
-                        }
-                    }
-                    1 -> { // Download
-                        if (downloaded) {
-                            DownloadLabelHelper.showDeleteDialog(context, gi) { deleteFiles ->
-                                DownloadLabelHelper.performDelete(gi, deleteFiles)
-                            }
-                        } else {
-                            (activity as? MainActivity)?.let {
-                                CommonOperations.startDownload(it, gi, false)
-                            }
-                        }
-                    }
-                    2 -> { // Categories — open LANraragi category picker
-                        CategoryDialogHelper.showCategoryDialog(
-                            activity, gi.arcid, gi.serverProfileId, null
-                        )
-                    }
-                    3 -> { // Delete archive from the server (same flow as detail page)
-                        DeleteArchiveHelper.show(activity, gi, gi.serverProfileId) { title ->
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.lrr_delete_success, title),
-                                Toast.LENGTH_LONG,
-                            ).show()
-                        }
-                    }
-                }
-            }.show()
         return true
     }
 }

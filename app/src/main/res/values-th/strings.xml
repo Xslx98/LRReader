@@ -144,7 +144,6 @@
     <string name="select_image_first">โปรดเลือกรูปภาพก่อน</string>
 
 
-    <string name="delete_downloads">ลบการดาวน์โหลด</string>
 
     <string name="quick_search">ค้นหาด่วน</string>
     <string name="quick_search_tip">แตะ \"+\" เพื่อเพิ่มการค้นหาอย่างด่วน</string>
@@ -308,6 +307,20 @@
     <string name="continuation_jump_toast">ถัดไป: %s</string>
     <string name="settings_read_continuation">แสดงเล่มถัดไปเมื่ออ่านจบ</string>
     <string name="settings_read_continuation_swipe">พลิกหน้าเพื่อเข้าเล่มถัดไป</string>
+
+    <!-- List multi-select batch operations -->
+    <string name="batch_selected_count">เลือกแล้ว %d รายการ</string>
+    <string name="batch_select_all">ทั้งหมด</string>
+    <string name="batch_download">ดาวน์โหลด</string>
+    <string name="batch_add_to_category">หมวดหมู่</string>
+    <string name="batch_clear_new">ล้าง NEW</string>
+    <string name="batch_delete">ลบ</string>
+    <string name="batch_remove_history">นำออก</string>
+    <string name="batch_delete_confirm_message">ลบ %d ไฟล์ออกจากเซิร์ฟเวอร์อย่างถาวร?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้</string>
+    <string name="batch_remove_history_confirm">นำ %d รายการออกจากประวัติ?</string>
+    <string name="batch_running">กำลังดำเนินการ %1$d/%2$d…</string>
+    <string name="batch_result_summary">สำเร็จ %1$d ล้มเหลว %2$d</string>
+    <string name="batch_result_failures_title">รายการที่ล้มเหลว</string>
 
     <string name="settings_eh">การแสดงผล</string>
     <string name="settings_eh_theme">ธีม</string>
@@ -640,12 +653,10 @@
     <string name="lrr_loading_categories">กำลังโหลดหมวดหมู่…</string>
     <string name="lrr_no_static_categories">ไม่มีหมวดหมู่แบบคงที่</string>
     <string name="lrr_add_to_category">เพิ่มในหมวดหมู่</string>
-    <string name="lrr_menu_categories">หมวดหมู่</string>
     <string name="lrr_category_info_suffix"> ฯลฯ</string>
     <string name="lrr_category_count_suffix"> หมวดหมู่</string>
     <string name="lrr_category_updated_toast">อัปเดตหมวดหมู่แล้ว</string>
     <string name="lrr_no_preview_tags">ไม่มีแท็กตัวอย่าง</string>
-    <string name="lrr_title_copied">คัดลอกชื่อแล้ว</string>
     <string name="lrr_download_failed_invalid">ดาวน์โหลดล้มเหลว: ไฟล์ไม่ถูกต้อง แตะเพื่อลองอีกครั้ง</string>
     <string name="lrr_download_failed_not_image">ดาวน์โหลดล้มเหลว: ไม่ใช่รูปแบบรูปภาพ แตะเพื่อลองอีกครั้ง</string>
     <string name="lrr_download_orphan_profile">หยุดดาวน์โหลดชั่วคราว: โปรไฟล์เซิร์ฟเวอร์ต้นทางถูกลบ</string>

@@ -175,7 +175,6 @@
     <string name="select_image_first">請先選擇圖片</string>
 
 
-    <string name="delete_downloads">刪除下載</string>
 
     <string name="quick_search">快速搜尋</string>
     <string name="quick_search_tip">輕觸“+”以新增快速搜尋</string>
@@ -346,6 +345,20 @@
     <string name="continuation_jump_toast">下一本：%s</string>
     <string name="settings_read_continuation">讀完顯示下一本</string>
     <string name="settings_read_continuation_swipe">翻頁直接進入下一本</string>
+
+    <!-- List multi-select batch operations -->
+    <string name="batch_selected_count">已選 %d 項</string>
+    <string name="batch_select_all">全選</string>
+    <string name="batch_download">下載</string>
+    <string name="batch_add_to_category">分類</string>
+    <string name="batch_clear_new">清除NEW</string>
+    <string name="batch_delete">刪除</string>
+    <string name="batch_remove_history">移除</string>
+    <string name="batch_delete_confirm_message">從伺服器永久刪除 %d 個檔案？\n\n此操作無法復原。</string>
+    <string name="batch_remove_history_confirm">從歷史中移除 %d 筆記錄？</string>
+    <string name="batch_running">處理中 %1$d/%2$d…</string>
+    <string name="batch_result_summary">成功 %1$d，失敗 %2$d</string>
+    <string name="batch_result_failures_title">失敗項目</string>
 
     <!-- Settings -->
     <string name="settings_eh">顯示</string>
@@ -657,12 +670,10 @@
     <string name="lrr_loading_categories">載入分類中…</string>
     <string name="lrr_no_static_categories">沒有可用的靜態分類</string>
     <string name="lrr_add_to_category">加入分類</string>
-    <string name="lrr_menu_categories">分類</string>
     <string name="lrr_category_info_suffix"> 等</string>
     <string name="lrr_category_count_suffix"> 個分類</string>
     <string name="lrr_category_updated_toast">分類已更新</string>
     <string name="lrr_no_preview_tags">沒有預覽標籤</string>
-    <string name="lrr_title_copied">已複製標題</string>
     <string name="lrr_download_failed_invalid">下載失敗：無效的檔案，點擊重試</string>
     <string name="lrr_download_failed_not_image">下載失敗：非圖片格式，點擊重試</string>
     <string name="lrr_download_orphan_profile">下載暫停：來源站點的伺服器設定已被刪除</string>

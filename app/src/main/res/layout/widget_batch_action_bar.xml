@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Bottom batch action bar shown while the gallery list is in multi-select
+  mode. No extra window-inset handling needed: the scene container
+  (EhStageLayout) reports the navigation-bar inset to the custom DrawerLayout
+  as an additional bottom margin, so layout_gravity="bottom" already sits
+  above the gesture/nav bar.
+
+  12sp button text + 4dp button padding keep the five buttons + counter
+  inside a 360dp-wide screen with the English (widest) labels.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/batch_action_bar"
+    android:layout_width="match_parent"
+    android:layout_height="56dp"
+    android:layout_gravity="bottom"
+    android:background="?android:attr/colorBackground"
+    android:elevation="8dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingHorizontal="4dp"
+    android:visibility="gone">
+
+    <Button
+        android:id="@+id/batch_select_all"
+        style="?attr/borderlessButtonStyle"
+        android:letterSpacing="0"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:minWidth="48dp"
+        android:paddingHorizontal="4dp"
+        android:text="@string/batch_select_all"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/batch_count"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textSize="12sp" />
+
+    <Button
+        android:id="@+id/batch_download"
+        style="?attr/borderlessButtonStyle"
+        android:letterSpacing="0"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:minWidth="48dp"
+        android:paddingHorizontal="4dp"
+        android:text="@string/batch_download"
+        android:textSize="12sp" />
+
+    <Button
+        android:id="@+id/batch_category"
+        style="?attr/borderlessButtonStyle"
+        android:letterSpacing="0"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:minWidth="48dp"
+        android:paddingHorizontal="4dp"
+        android:text="@string/batch_add_to_category"
+        android:textSize="12sp" />
+
+    <Button
+        android:id="@+id/batch_clear_new"
+        style="?attr/borderlessButtonStyle"
+        android:letterSpacing="0"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:minWidth="48dp"
+        android:paddingHorizontal="4dp"
+        android:text="@string/batch_clear_new"
+        android:textSize="12sp" />
+
+    <Button
+        android:id="@+id/batch_delete"
+        style="?attr/borderlessButtonStyle"
+        android:letterSpacing="0"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:minWidth="48dp"
+        android:paddingHorizontal="4dp"
+        android:text="@string/batch_delete"
+        android:textSize="12sp" />
+</LinearLayout>

@@ -128,7 +128,6 @@
     <string name="search_osc">Buscar solo portadas</string>
     <string name="search_se">Mostrar borrados</string>
     <string name="select_image_first">Seleccione la imagen primero</string>
-    <string name="delete_downloads">Eliminar descargas</string>
     <string name="search_sp">Páginas:</string>
     <string name="search_sp_to">hasta</string>
     <!-- A placeholder for other languages -->
@@ -285,6 +284,20 @@
     <string name="continuation_jump_toast">Siguiente: %s</string>
     <string name="settings_read_continuation">Mostrar el siguiente archivo al terminar</string>
     <string name="settings_read_continuation_swipe">Pasar página abre el siguiente archivo</string>
+
+    <!-- List multi-select batch operations -->
+    <string name="batch_selected_count">%d seleccionados</string>
+    <string name="batch_select_all">Todos</string>
+    <string name="batch_download">Descargar</string>
+    <string name="batch_add_to_category">Categoría</string>
+    <string name="batch_clear_new">Quitar NEW</string>
+    <string name="batch_delete">Eliminar</string>
+    <string name="batch_remove_history">Quitar</string>
+    <string name="batch_delete_confirm_message">¿Eliminar permanentemente %d archivos del servidor?\n\nEsta acción no se puede deshacer.</string>
+    <string name="batch_remove_history_confirm">¿Quitar %d entradas del historial?</string>
+    <string name="batch_running">Procesando %1$d/%2$d…</string>
+    <string name="batch_result_summary">%1$d correctos, %2$d fallidos</string>
+    <string name="batch_result_failures_title">Elementos fallidos</string>
 
     <string name="settings_eh">Pantalla</string>
     <string name="settings_eh_list_mode">Modo lista</string>
@@ -639,12 +652,10 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_loading_categories">Cargando categorías…</string>
     <string name="lrr_no_static_categories">No hay categorías estáticas disponibles</string>
     <string name="lrr_add_to_category">Añadir a categoría</string>
-    <string name="lrr_menu_categories">Categorías</string>
     <string name="lrr_category_info_suffix"> etc.</string>
     <string name="lrr_category_count_suffix"> categorías</string>
     <string name="lrr_category_updated_toast">Categoría actualizada</string>
     <string name="lrr_no_preview_tags">Sin etiquetas de vista previa</string>
-    <string name="lrr_title_copied">Título copiado</string>
     <string name="lrr_download_failed_invalid">Descarga fallida: archivo inválido, toca para reintentar</string>
     <string name="lrr_download_failed_not_image">Descarga fallida: no es un formato de imagen, toca para reintentar</string>
     <string name="lrr_download_orphan_profile">Descarga pausada: el perfil del servidor de origen ha sido eliminado</string>

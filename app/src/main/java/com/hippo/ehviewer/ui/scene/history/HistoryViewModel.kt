@@ -9,6 +9,7 @@ import com.hippo.ehviewer.dao.HistoryInfo
 import com.hippo.ehviewer.dao.HistoryRepository
 import com.hippo.ehviewer.mapper.toArchive
 import com.lanraragi.reader.domain.Archive
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -162,6 +163,38 @@ class HistoryViewModel : ViewModel() {
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to delete history item", e)
             }
+        }
+    }
+
+    private val _batchRemoveDone = MutableSharedFlow<Pair<Int, Int>>(extraBufferCapacity = 1)
+
+    /** Emits `(succeeded, failed)` once a [removeHistories] run completes. */
+    val batchRemoveDone: SharedFlow<Pair<Int, Int>> = _batchRemoveDone.asSharedFlow()
+
+    /**
+     * Removes the given archives from history (multi-select batch), then
+     * reloads the list and reports the tally on [batchRemoveDone]. Each entry
+     * is removed independently so one failure does not abort the rest.
+     */
+    fun removeHistories(archives: List<Archive>) {
+        viewModelScope.launch {
+            var ok = 0
+            var bad = 0
+            withContext(Dispatchers.IO) {
+                archives.forEach {
+                    try {
+                        historyRepository.deleteHistory(it.arcid, it.serverProfileId)
+                        ok++
+                    } catch (ce: CancellationException) {
+                        throw ce
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to batch-remove history entry ${it.arcid}", e)
+                        bad++
+                    }
+                }
+            }
+            loadHistory()
+            _batchRemoveDone.tryEmit(ok to bad)
         }
     }
 
