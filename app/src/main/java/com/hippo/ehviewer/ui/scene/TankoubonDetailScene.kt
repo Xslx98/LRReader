@@ -126,6 +126,14 @@ class TankoubonDetailScene : BaseScene() {
             adapter = mAdapter
         }
 
+        observeViewModel()
+
+        viewModel.load()
+
+        return view
+    }
+
+    private fun observeViewModel() {
         // Toolbar title follows the tank name (nav-arg seed, then server value)
         collectFlow(viewLifecycleOwner, viewModel.tankName) { name ->
             mToolbar?.title = name
@@ -159,9 +167,14 @@ class TankoubonDetailScene : BaseScene() {
         // the members collector: an empty tank emits emptyList() which the
         // StateFlow dedupes against the initial value, so the members
         // collector never re-runs and the spinner would spin forever.
+        // The spinner only covers a bare scene — a reload over retained data
+        // (view recreation on a retained VM) keeps the list visible; DiffUtil
+        // refreshes it in place when the reload lands.
         collectFlow(viewLifecycleOwner, viewModel.isLoading) { loading ->
             if (loading) {
-                showProgress()
+                if (mMembers.isEmpty()) {
+                    showProgress()
+                }
             } else if (mMembers.isEmpty()) {
                 showEmpty(getString(R.string.error_empty))
             } else {
@@ -187,16 +200,18 @@ class TankoubonDetailScene : BaseScene() {
                     }
                 }
                 TankDetailUiEvent.ShowUnsupported -> {
-                    showError(getString(R.string.tankoubons_unsupported))
+                    // Same split as ShowError: never clobber a loaded list
+                    val message = getString(R.string.tankoubons_unsupported)
+                    if (mMembers.isEmpty()) {
+                        showError(message)
+                    } else {
+                        Toast.makeText(ctx, message, Toast.LENGTH_SHORT).show()
+                    }
                 }
                 is TankDetailUiEvent.ShowSuccess -> Unit // Task 8
                 TankDetailUiEvent.Deleted -> Unit // Task 8
             }
         }
-
-        viewModel.load()
-
-        return view
     }
 
     override fun onDestroyView() {
@@ -222,13 +237,21 @@ class TankoubonDetailScene : BaseScene() {
     // ==================== Read entries ====================
 
     /**
-     * Binds the progress text and continue-reading button from the VM's
-     * current global progress + page offsets. Called from both the progress
-     * and members collectors — whichever lands last sees complete data.
+     * Binds the read-entry header (cover + read-from-start button +
+     * progress text + continue-reading button) from the VM's current
+     * members, global progress and page offsets. Called from both the
+     * progress and members collectors — whichever lands last sees
+     * complete data.
      */
     private fun bindProgressUi() {
         val p = viewModel.progress.value
         val locate = TankPageMath.locate(viewModel.pageOffsets, p)
+
+        // Read-from-start (and the cover next to it) only make sense once
+        // members are loaded — hide the dead entry on unsupported/empty tanks.
+        val hasMembers = viewModel.members.value.isNotEmpty()
+        mBtnReadStart?.visibility = if (hasMembers) View.VISIBLE else View.GONE
+        mCover?.visibility = if (hasMembers) View.VISIBLE else View.GONE
 
         if (p > 1) {
             mProgressText?.apply {
