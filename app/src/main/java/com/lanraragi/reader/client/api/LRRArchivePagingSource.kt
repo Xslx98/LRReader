@@ -2,6 +2,7 @@ package com.lanraragi.reader.client.api
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import com.hippo.ehviewer.settings.AppearanceSettings
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.CancellationException
 import okhttp3.OkHttpClient
@@ -20,6 +21,13 @@ import okhttp3.OkHttpClient
  * @param order        sort order, e.g. "asc", "desc" (null = server default)
  * @param newonly      if true, only return archives flagged as new
  * @param untaggedonly if true, only return untagged archives
+ * @param includeTanksProvider whether to fold Tankoubons into the list
+ *   (groupby_tanks request param + TANK_ pseudo-entries in the page).
+ *   Evaluated once per load so a settings toggle applies on the next refresh.
+ *   Injectable because the production default reads SharedPreferences-backed
+ *   settings, which plain JVM unit tests cannot touch. Default: fold per user
+ *   setting, unless this server is known pre-0.9.8 (TankoubonSupportGate
+ *   flips after the first failed tank open).
  */
 class LRRArchivePagingSource(
     private val client: OkHttpClient,
@@ -29,13 +37,17 @@ class LRRArchivePagingSource(
     private val sortby: String?,
     private val order: String?,
     private val newonly: Boolean = false,
-    private val untaggedonly: Boolean = false
+    private val untaggedonly: Boolean = false,
+    private val includeTanksProvider: () -> Boolean = {
+        AppearanceSettings.getGroupTanks() && !TankoubonSupportGate.isUnsupported(baseUrl)
+    }
 ) : PagingSource<Int, Archive>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Archive> {
         val page = params.key ?: 0
         return try {
             val start = page * params.loadSize
+            val includeTanks = includeTanksProvider()
             val result = LRRSearchApi.searchArchives(
                 client, baseUrl,
                 filter = filter,
@@ -44,12 +56,17 @@ class LRRArchivePagingSource(
                 sortby = sortby,
                 order = order,
                 newonly = newonly,
-                untaggedonly = untaggedonly
+                untaggedonly = untaggedonly,
+                groupbyTanks = includeTanks
             )
-            // Drop Tankoubon entries the server may fold in (groupby_tanks): the
-            // archive pipeline can't render 15-char TANK_ ids. nextKey keys off the
-            // raw (pre-filter) count so dropping a tank doesn't prematurely end paging.
-            val items = result.data.filterNot { isTankoubonId(it.arcid) }.map { it.toArchive() }
+            // Tank entries become display-only pseudo-Archives when folding is on,
+            // and are dropped otherwise. nextKey keys off the raw (pre-mapping)
+            // count so a dropped entry doesn't prematurely end paging.
+            val items = result.toArchiveList(
+                includeTanks = includeTanks,
+                tankProfileId = LRRAuthManager.getActiveProfileId(),
+                tankBaseUrl = baseUrl,
+            )
             LoadResult.Page(
                 data = items,
                 prevKey = if (page > 0) page - 1 else null,

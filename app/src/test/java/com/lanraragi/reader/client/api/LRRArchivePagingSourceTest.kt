@@ -47,7 +47,10 @@ class LRRArchivePagingSourceTest {
         sortby: String? = "date_added",
         order: String? = "desc",
         newonly: Boolean = false,
-        untaggedonly: Boolean = false
+        untaggedonly: Boolean = false,
+        // Tests MUST inject the fold decision: the production default reads
+        // SharedPreferences-backed settings, unavailable in plain JVM tests.
+        includeTanks: () -> Boolean = { false },
     ) = LRRArchivePagingSource(
         client = client,
         baseUrl = baseUrl,
@@ -56,7 +59,8 @@ class LRRArchivePagingSourceTest {
         sortby = sortby,
         order = order,
         newonly = newonly,
-        untaggedonly = untaggedonly
+        untaggedonly = untaggedonly,
+        includeTanksProvider = includeTanks
     )
 
     // ---- JSON fixtures ----
@@ -106,7 +110,7 @@ class LRRArchivePagingSourceTest {
 
         val request = server.takeRequest()
         // Page 0 with loadSize 100 → start=0 (omitted from URL since start <= 0).
-        // groupby_tanks=false is always sent so the server doesn't fold in TANK_ ids.
+        // groupby_tanks is always sent (false here: the test helper pins folding off).
         assertEquals("/api/search?sortby=date_added&order=desc&groupby_tanks=false", request.path)
     }
 
@@ -148,7 +152,7 @@ class LRRArchivePagingSourceTest {
 
     @Test
     fun load_dropsTankoubonEntries() = runTest {
-        // With groupby_tanks enabled the server returns 15-char TANK_ ids mixed in.
+        // Folding OFF: the server may still return 15-char TANK_ ids mixed in.
         // toArchive()/getThumbnailUrl()/requireValidArcid() can't render a TANK_ id,
         // so the paging source must drop them instead of failing the whole page.
         val tank = """{"arcid":"TANK_1688616437","title":"A tank","tags":"","isnew":"false","extension":"zip","filename":"t.zip","pagecount":1,"progress":0,"lastreadtime":0}"""
@@ -166,6 +170,32 @@ class LRRArchivePagingSourceTest {
         val page = result as PagingSource.LoadResult.Page
         assertEquals(1, page.data.size)
         assertFalse(page.data.any { it.arcid.startsWith("TANK_") })
+    }
+
+    @Test
+    fun load_includeTanks_mapsTankPseudoEntries_andSendsGroupbyTanksTrue() = runTest {
+        // Folding ON: TANK_ rows stay in the page as display-only pseudo-Archives
+        // carrying the tank thumbnail route, and the request asks the server to fold.
+        val tank = """{"arcid":"TANK_1688616437","title":"A tank","tags":"","isnew":"false","extension":"","filename":"","pagecount":3,"progress":0,"lastreadtime":0}"""
+        val real = archiveJson("a1", "Real")
+        server.enqueue(
+            MockResponse().setBody("""{"data":[$tank,$real],"draw":1,"recordsFiltered":2,"recordsTotal":2}""")
+        )
+
+        val source = createPagingSource(includeTanks = { true })
+        val result = source.load(
+            PagingSource.LoadParams.Refresh(key = null, loadSize = 100, placeholdersEnabled = false)
+        )
+
+        assertTrue(result is PagingSource.LoadResult.Page)
+        val page = result as PagingSource.LoadResult.Page
+        assertEquals(2, page.data.size)
+        assertEquals("TANK_1688616437", page.data[0].arcid)
+        assertTrue(
+            "tank pseudo-entry must use the tank thumbnail route, was: ${page.data[0].thumbnailUrl}",
+            page.data[0].thumbnailUrl.contains("/api/tankoubons/TANK_1688616437/thumbnail"),
+        )
+        assertTrue(server.takeRequest().path!!.contains("groupby_tanks=true"))
     }
 
     @Test

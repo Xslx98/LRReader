@@ -95,7 +95,7 @@ internal object GalleryListHelperFactory {
             override fun onItemClick(view: View?, gi: Archive?): Boolean =
                 scene.itemActionHelper?.onItemClick(view, gi) ?: false
             override fun onItemLongClick(position: Int): Boolean =
-                scene.multiSelectHelper?.enterAndCheck(position) ?: false
+                scene.onListItemLongClick(position)
             override fun getBaseScene(): BaseScene = scene
         })
         tagChipHelper.setEhTags(EhTagDatabase.getInstance(context))

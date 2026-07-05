@@ -77,7 +77,9 @@ import com.hippo.widget.FabLayout
 import com.hippo.widget.SearchBarMover
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRClientProvider
+import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.friendlyError
+import com.lanraragi.reader.client.api.isTankoubonId
 
 class GalleryListScene : BaseScene(),
     EasyRecyclerView.OnItemClickListener, EasyRecyclerView.OnItemLongClickListener,
@@ -455,6 +457,12 @@ class GalleryListScene : BaseScene(),
                 // The thumb owns its own click listener (bypasses the
                 // EasyRecyclerView item-click path) — in multi-select mode it
                 // must toggle the row instead of opening the tag-chip popup.
+                // Tank rows stay untoggleable here too.
+                if (multiSelectHelper?.isActive == true &&
+                    archive != null && isTankoubonId(archive.arcid)
+                ) {
+                    return
+                }
                 if (multiSelectHelper?.toggleChecked(position) == true) return
                 tagChipHelper?.onThumbItemClick(position, view, archive)
             }
@@ -478,6 +486,9 @@ class GalleryListScene : BaseScene(),
                 multiSelectHelper?.checkedPositions()
                     ?.mapNotNull { mHelper?.getDataAtEx(it) }
                     .orEmpty()
+                    // select-all can still visually check tank rows; they must
+                    // never reach a batch op
+                    .filterNot { isTankoubonId(it.arcid) }
 
             override fun activeProfileId(): Long = LRRAuthManager.getActiveProfileId()
             override fun isSelectionActive(): Boolean = multiSelectHelper?.isActive == true
@@ -859,13 +870,22 @@ class GalleryListScene : BaseScene(),
     }
 
     override fun onItemClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean {
+        val archive = mHelper?.getDataAtEx(position)
         // In multi-select mode a click toggles the row instead of navigating —
         // the library does not toggle on click by itself (mirrors downloads).
-        multiSelectHelper?.let { if (it.isActive) return it.toggleChecked(position) }
-        val archive = mHelper?.getDataAtEx(position)
-        if (archive != null) {
+        // Tank pseudo-entries are NOT selectable (batch ops don't apply).
+        multiSelectHelper?.let {
+            if (it.isActive) {
+                if (archive != null && isTankoubonId(archive.arcid)) return true
+                return it.toggleChecked(position)
+            }
+        }
+        // No reading context for tank rows: they never anchor an OnlineSearch
+        // continuation (reading a member publishes ReadingContext.Tankoubon).
+        if (archive != null && !isTankoubonId(archive.arcid)) {
             publishReadingContext(archive, position)
         }
+        // Tank rows route to TankoubonDetailScene inside the helper funnel.
         return itemActionHelper?.onItemClick(view, archive) ?: false
     }
 
@@ -888,12 +908,23 @@ class GalleryListScene : BaseScene(),
                 untaggedonly = params.untaggedonly,
                 anchorArcid = archive.arcid,
                 anchorIndex = position,
+                // Same fold decision the paging source made for this list, so
+                // resolver windows reproduce the raw indexing the user saw.
+                groupbyTanks = AppearanceSettings.getGroupTanks() &&
+                    !TankoubonSupportGate.isUnsupported(baseUrl),
             )
         )
     }
 
     override fun onItemLongClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean =
-        multiSelectHelper?.enterAndCheck(position) ?: false
+        onListItemLongClick(position)
+
+    /** Long-press enters multi-select — except on tank pseudo-entries. */
+    internal fun onListItemLongClick(position: Int): Boolean {
+        val archive = mHelper?.getDataAtEx(position)
+        if (archive != null && isTankoubonId(archive.arcid)) return true // swallow: no menu, no selection
+        return multiSelectHelper?.enterAndCheck(position) ?: false
+    }
 
     override fun onClick(v: View) {
         listSearchHelper?.onSearchFabClick()

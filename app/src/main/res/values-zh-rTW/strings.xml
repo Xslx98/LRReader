@@ -36,7 +36,7 @@
 
 
 
-    <string name="default_display_name">Little Hippo</string>
+    <string name="default_display_name">Xslx98</string>
 
     <string name="waring">警告</string>
 
@@ -331,6 +331,37 @@
     <string name="stamps_delete">刪除</string>
     <string name="settings_read_stamps">顯示頁面標註</string>
     <string name="stamps_unsupported">此伺服器不支援標註(需要 LANraragi 0.9.8+)</string>
+
+    <!-- 合訂本 (ordered archive collections, LANraragi 0.9.8+) -->
+    <string name="tankoubons_title">合訂本</string>
+    <string name="tankoubons_empty">沒有合訂本</string>
+    <string name="tankoubons_unsupported">合訂本功能需要 LANraragi 0.9.8+</string>
+    <string name="tank_create">新增合訂本</string>
+    <string name="tank_name_hint">合訂本名稱</string>
+    <string name="tank_name_empty">請輸入合訂本名稱</string>
+    <string name="tank_rename">重新命名</string>
+    <string name="tank_edit_meta">編輯中繼資料</string>
+    <string name="tank_summary_hint">簡介</string>
+    <string name="tank_tags_hint">附加標籤(逗號分隔)</string>
+    <string name="tank_delete">刪除合訂本</string>
+    <string name="tank_delete_confirm">刪除這個合訂本？其中的檔案不會被刪除，但合訂本自身的簡介、附加標籤和閱讀進度將一併遺失。</string>
+    <string name="tank_locked">合訂本已被鎖定，請稍後再試</string>
+    <string name="tank_op_done">完成</string>
+    <string name="tank_progress_page">讀到第 %1$d 頁</string>
+    <string name="tank_read_from_start">從頭閱讀</string>
+    <string name="tank_continue_reading">繼續閱讀(第 %1$d 頁)</string>
+    <string name="tank_member_remove">從合訂本移出</string>
+    <string name="tank_set_cover">設為封面</string>
+    <string name="tank_cover_updated">封面已更新</string>
+    <string name="tank_reorder_failed">排序失敗，已還原原順序</string>
+    <string name="tank_badge">合訂本</string>
+    <string name="settings_eh_group_tanks">瀏覽時摺疊合訂本</string>
+    <string name="settings_eh_group_tanks_summary">將屬於合訂本的檔案摺疊為一個條目(LANraragi 0.9.8+)</string>
+    <string name="detail_tankoubons_label">合訂本</string>
+    <string name="detail_tankoubons_edit">編輯</string>
+    <string name="tank_add_to">加入合訂本</string>
+    <string name="batch_add_to_tankoubon">合訂本</string>
+    <string name="tank_none">伺服器上沒有合訂本</string>
 
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">已選 %d 項</string>

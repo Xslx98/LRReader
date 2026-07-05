@@ -3,6 +3,7 @@ package com.lanraragi.reader.client.api.data
 import android.os.Parcel
 import android.os.Parcelable
 import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.LRRTankoubonApi
 
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
@@ -72,6 +73,31 @@ class LRRArchive() : Parcelable {
             serverProfileId = sourceProfileId,
         )
     }
+
+    /**
+     * Map a folded Tankoubon search entry (15-char TANK_ arcid) to a
+     * pseudo-[Archive] for list display. NEVER persisted (no history/download/
+     * favorite path accepts it) — click sites branch on isTankoubonId().
+     * Mirrors [toArchive] except: the thumbnail rides the tank thumbnail route
+     * (an archive-route URL would throw in requireValidArcid), and
+     * extension/filename are blank (a tank is not a file).
+     * No default params on purpose: the caller owns the source context.
+     */
+    fun toTankArchive(sourceProfileId: Long, sourceBaseUrl: String): Archive = Archive(
+        arcid = arcid,
+        title = title,
+        tags = getParsedTags(),
+        pagecount = pagecount,
+        progress = progress,
+        extension = "",
+        filename = "",
+        thumbnailUrl = LRRTankoubonApi.getTankoubonThumbnailUrl(sourceBaseUrl, arcid),
+        rating = parseRatingFromTags(tags),
+        isnew = isNew(),
+        lastreadtime = lastreadtime,
+        summary = summary,
+        serverProfileId = sourceProfileId,
+    )
 
     /**
      * Convert this LRRArchive into an [ArchiveDetail] for the detail view.

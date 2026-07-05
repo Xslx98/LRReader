@@ -16,9 +16,22 @@ class LRRSearchResult {
     @JvmField @SerialName("recordsTotal") var recordsTotal: Int = 0
 
     /**
-     * Convert all result archives to domain models, dropping any Tankoubon
-     * entries (15-char TANK_ ids) the server may fold in when groupby_tanks is
-     * enabled — the archive pipeline can't render them.
+     * Convert result entries to domain models. Tankoubon entries (TANK_ ids the
+     * server folds in when groupby_tanks is on) are dropped unless [includeTanks]
+     * — then they become display-only pseudo-Archives carrying the tank
+     * thumbnail route (see [LRRArchive.toTankArchive]). A null [tankBaseUrl]
+     * drops tanks even when included: without a base URL there is no renderable
+     * thumbnail route (mirrors toArchive's null-URL tolerance).
      */
-    fun toArchiveList(): List<Archive> = data.filterNot { isTankoubonId(it.arcid) }.map { it.toArchive() }
+    fun toArchiveList(
+        includeTanks: Boolean = false,
+        tankProfileId: Long = -1L,
+        tankBaseUrl: String? = null,
+    ): List<Archive> = data.mapNotNull { entry ->
+        when {
+            !isTankoubonId(entry.arcid) -> entry.toArchive()
+            includeTanks && tankBaseUrl != null -> entry.toTankArchive(tankProfileId, tankBaseUrl)
+            else -> null
+        }
+    }
 }

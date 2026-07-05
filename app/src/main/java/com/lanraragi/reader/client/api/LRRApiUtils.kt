@@ -145,6 +145,16 @@ internal const val TANKOUBON_ID_PREFIX = "TANK_"
  */
 internal fun isTankoubonId(id: String): Boolean = id.startsWith(TANKOUBON_ID_PREFIX)
 
+/** Validates a Tankoubon id ("TANK_" + epoch digits) before it is put on a URL path. */
+internal fun requireValidTankId(id: String): String {
+    if (!isTankoubonId(id) || id.length != 15 || !id.drop(TANKOUBON_ID_PREFIX.length).all { it in '0'..'9' }) {
+        throw LRRClientValidationException(
+            "Invalid tankoubon id (expected TANK_ + 10 digits): '$id' (len=${id.length})"
+        )
+    }
+    return id
+}
+
 /**
  * Validate that [categoryId] is exactly 14 characters long, matching the
  * spec's `id` constraint on category endpoints (`minLength: 14, maxLength: 14`).
