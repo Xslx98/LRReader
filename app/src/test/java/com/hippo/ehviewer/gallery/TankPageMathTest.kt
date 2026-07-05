@@ -39,6 +39,23 @@ class TankPageMathTest {
     }
 
     @Test
+    fun locate_exactOffsetBoundary() {
+        // 20+25 pages → offsets [0, 20, 45]: page 20 is the FIRST member's
+        // last page, page 21 the second member's first — pins the `>=` walk.
+        val two = TankPageMath.pageOffsets(listOf(20, 25))
+        assertEquals(0 to 19, TankPageMath.locate(two, 20))
+        assertEquals(1 to 0, TankPageMath.locate(two, 21))
+    }
+
+    @Test
+    fun allZeroPageTank_locateNull() {
+        // Members exist but none has pages → offsets [0, 0, 0], nowhere to land.
+        val zeros = TankPageMath.pageOffsets(listOf(0, 0))
+        assertEquals(listOf(0, 0, 0), zeros)
+        assertNull(TankPageMath.locate(zeros, 5))
+    }
+
+    @Test
     fun locate_zeroOrNegative_returnsNull() {
         assertNull(TankPageMath.locate(offsets, 0))
         assertNull(TankPageMath.locate(offsets, -3))
