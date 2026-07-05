@@ -35,7 +35,7 @@
 
 
 
-    <string name="default_display_name">Little Hippo</string>
+    <string name="default_display_name">Xslx98</string>
 
     <string name="waring">Advertencia</string>
 
@@ -305,6 +305,37 @@
     <string name="stamps_delete">Eliminar</string>
     <string name="settings_read_stamps">Mostrar sellos de página</string>
     <string name="stamps_unsupported">Este servidor no admite sellos (se requiere LANraragi 0.9.8+)</string>
+
+    <!-- Tankoubon (ordered archive collections, LANraragi 0.9.8+) -->
+    <string name="tankoubons_title">Tankoubons</string>
+    <string name="tankoubons_empty">No hay tankoubons</string>
+    <string name="tankoubons_unsupported">La función Tankoubon requiere LANraragi 0.9.8+</string>
+    <string name="tank_create">Nuevo tankoubon</string>
+    <string name="tank_name_hint">Nombre del tankoubon</string>
+    <string name="tank_name_empty">Ingrese un nombre de tankoubon</string>
+    <string name="tank_rename">Renombrar</string>
+    <string name="tank_edit_meta">Editar metadatos</string>
+    <string name="tank_summary_hint">Resumen</string>
+    <string name="tank_tags_hint">Etiquetas adicionales (separadas por comas)</string>
+    <string name="tank_delete">Eliminar tankoubon</string>
+    <string name="tank_delete_confirm">¿Eliminar este tankoubon? Los archivos que contiene no se eliminarán, pero se perderán el resumen, las etiquetas adicionales y el progreso de lectura del propio tankoubon.</string>
+    <string name="tank_locked">El tankoubon está bloqueado, inténtalo más tarde</string>
+    <string name="tank_op_done">Hecho</string>
+    <string name="tank_progress_page">Leído hasta la página %1$d</string>
+    <string name="tank_read_from_start">Leer desde el principio</string>
+    <string name="tank_continue_reading">Continuar leyendo (página %1$d)</string>
+    <string name="tank_member_remove">Quitar del tankoubon</string>
+    <string name="tank_set_cover">Establecer como portada</string>
+    <string name="tank_cover_updated">Portada actualizada</string>
+    <string name="tank_reorder_failed">Error al reordenar, se restauró el orden</string>
+    <string name="tank_badge">Tankoubon</string>
+    <string name="settings_eh_group_tanks">Agrupar tankoubons al explorar</string>
+    <string name="settings_eh_group_tanks_summary">Agrupar los archivos de un tankoubon en una sola entrada (LANraragi 0.9.8+)</string>
+    <string name="detail_tankoubons_label">Tankoubons</string>
+    <string name="detail_tankoubons_edit">Editar</string>
+    <string name="tank_add_to">Añadir a tankoubon</string>
+    <string name="batch_add_to_tankoubon">Tank</string>
+    <string name="tank_none">No hay tankoubons en este servidor</string>
 
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">%d seleccionados</string>

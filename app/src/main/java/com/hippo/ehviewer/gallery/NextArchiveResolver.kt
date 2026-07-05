@@ -1,13 +1,19 @@
 package com.hippo.ehviewer.gallery
 
+import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRSearchApi
+import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.data.LRRArchive
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.domain.Archive
 import kotlin.coroutines.cancellation.CancellationException
 import okhttp3.OkHttpClient
 
-/** One fetched window of an online search: the (Tankoubon-filtered) page plus the server's total count. */
+/**
+ * One fetched window of an online search: the RAW page (Tankoubon entries kept
+ * in — indexes must line up with what the browse list showed) plus the
+ * server's total count.
+ */
 private data class Window(val entries: List<LRRArchive>, val recordsFiltered: Int)
 
 /**
@@ -32,6 +38,7 @@ class NextArchiveResolver(private val client: OkHttpClient) {
         return when (ctx) {
             is ReadingContext.OnlineSearch -> resolveOnline(ctx)
             is ReadingContext.LocalList -> resolveLocal(ctx)
+            is ReadingContext.Tankoubon -> resolveTank(ctx)
         }
     }
 
@@ -56,20 +63,27 @@ class NextArchiveResolver(private val client: OkHttpClient) {
                 }
             }
 
+            // "Next" = the first NON-TANK entry after the anchor. Tanks ride the
+            // raw window for index arithmetic but are never a reading target.
             val next: LRRArchive?
             val nextIndex: Int
             if (pos >= 0) {
-                nextIndex = base + pos + 1
-                next = window.entries.getOrNull(pos + 1) ?: run {
-                    // Successor didn't ride this window: only worth a follow-up
-                    // fetch if the server says there's more data past nextIndex.
-                    if (nextIndex < window.recordsFiltered) searchWindow(ctx, nextIndex).entries.firstOrNull() else null
+                val tail = window.entries.drop(pos + 1)
+                val rel = tail.indexOfFirst { !isTankoubonId(it.arcid) }
+                if (rel >= 0) {
+                    next = tail[rel]
+                    nextIndex = base + pos + 1 + rel
+                } else {
+                    // No non-tank successor rode this window: walk forward.
+                    val scan = scanForward(ctx, base + window.entries.size, window.recordsFiltered)
+                    next = scan?.first
+                    nextIndex = scan?.second ?: (base + pos + 1)
                 }
             } else {
-                // Anchor vanished from the result set entirely: treat whatever
-                // now occupies its old slot as "next" (drift fallback).
-                nextIndex = ctx.anchorIndex
-                next = window.entries.firstOrNull()
+                // Anchor vanished: whatever occupies its old slot (first non-tank) is "next".
+                val rel = window.entries.indexOfFirst { !isTankoubonId(it.arcid) }
+                next = if (rel >= 0) window.entries[rel] else null
+                nextIndex = if (rel >= 0) base + rel else ctx.anchorIndex
             }
             if (next == null) return NextResult.EndOfList
 
@@ -80,6 +94,24 @@ class NextArchiveResolver(private val client: OkHttpClient) {
         } catch (e: Exception) {
             NextResult.Error(e)
         }
+    }
+
+    /** Walk forward window-by-window for the first non-tank entry (≤[MAX_FORWARD_WINDOWS] fetches). */
+    private suspend fun scanForward(
+        ctx: ReadingContext.OnlineSearch,
+        firstStart: Int,
+        recordsFiltered: Int,
+    ): Pair<LRRArchive, Int>? {
+        var start = firstStart
+        repeat(MAX_FORWARD_WINDOWS) {
+            if (start >= recordsFiltered) return null
+            val w = searchWindow(ctx, start)
+            if (w.entries.isEmpty()) return null
+            val rel = w.entries.indexOfFirst { !isTankoubonId(it.arcid) }
+            if (rel >= 0) return w.entries[rel] to (start + rel)
+            start += w.entries.size
+        }
+        return null
     }
 
     private suspend fun searchWindow(ctx: ReadingContext.OnlineSearch, start: Int): Window {
@@ -93,8 +125,9 @@ class NextArchiveResolver(private val client: OkHttpClient) {
             order = ctx.order,
             newonly = ctx.newonly,
             untaggedonly = ctx.untaggedonly,
+            groupbyTanks = ctx.groupbyTanks,
         )
-        return Window(result.data.filterNot { isTankoubonId(it.arcid) }, result.recordsFiltered)
+        return Window(result.data, result.recordsFiltered) // RAW: tanks stay in for indexing
     }
 
     private fun resolveLocal(ctx: ReadingContext.LocalList): NextResult {
@@ -105,5 +138,59 @@ class NextArchiveResolver(private val client: OkHttpClient) {
             next,
             ctx.copy(anchorArcid = next.arcid, forwardArchives = ctx.forwardArchives.drop(idx + 1)),
         )
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun resolveTank(ctx: ReadingContext.Tankoubon): NextResult {
+        // Server-first: the published snapshot can go stale (a member removed
+        // after its post-mutation reload failed, or the tank edited from the
+        // web UI) and a stale snapshot offers a REMOVED member as "next"
+        // (2026-07-05 on-device smoke). Offline falls back to the snapshot.
+        val effective = refreshTankMembership(ctx) ?: ctx
+        val idx = effective.orderedMemberIds.indexOf(ctx.anchorArcid)
+        if (idx < 0) return NextResult.NoContext
+        val nextId = effective.orderedMemberIds.getOrNull(idx + 1) ?: return NextResult.EndOfList
+        return try {
+            val lrr = LRRArchiveApi.getArchiveMetadata(client, ctx.sourceBaseUrl, nextId)
+            // multi-profile red line: explicit source context on the mapper
+            val archive = lrr.toArchive(ctx.sourceProfileId, ctx.sourceBaseUrl)
+            NextResult.Next(archive, effective.copy(anchorArcid = archive.arcid))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            NextResult.Error(e)
+        }
+    }
+
+    /**
+     * Re-reads the tank's membership (order + pagecounts) from its source
+     * server so the advanced context also carries fresh page offsets for the
+     * global progress sync. Null when the server can't confirm (offline,
+     * 404, desynced response) — the caller keeps the snapshot.
+     */
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun refreshTankMembership(
+        ctx: ReadingContext.Tankoubon,
+    ): ReadingContext.Tankoubon? = try {
+        val full = LRRTankoubonApi.getTankoubonFull(client, ctx.sourceBaseUrl, ctx.tankId).result
+        val byId = full.fullData.associateBy { it.arcid }
+        val ids = full.archives.filter { byId.containsKey(it) }
+        if (ids.isEmpty()) {
+            null
+        } else {
+            ctx.copy(
+                orderedMemberIds = ids,
+                pageOffsets = TankPageMath.pageOffsets(ids.map { byId.getValue(it).pagecount }),
+            )
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        null
+    }
+
+    private companion object {
+        /** Upper bound on follow-up window fetches when scanning past a run of tanks. */
+        const val MAX_FORWARD_WINDOWS = 3
     }
 }

@@ -33,7 +33,7 @@
     <string name="history">閲覧履歴</string>
     <string name="downloads">ダウンロード</string>
     <string name="settings">設定</string>
-    <string name="default_display_name">Little Hippo</string>
+    <string name="default_display_name">Xslx98</string>
     <string name="waring">警告</string>
     <string name="invalid_download_location">ダウンロードパスは現在利用できません。ダウンロードパスを設定してください。</string>
     <string name="cellular_network_warning">モバイルネットワークに接続中です</string>
@@ -290,6 +290,37 @@
     <string name="stamps_delete">削除</string>
     <string name="settings_read_stamps">ページのスタンプを表示</string>
     <string name="stamps_unsupported">このサーバーはスタンプに対応していません(LANraragi 0.9.8+ が必要です)</string>
+
+    <!-- Tankoubon (ordered archive collections, LANraragi 0.9.8+) -->
+    <string name="tankoubons_title">単行本</string>
+    <string name="tankoubons_empty">単行本はありません</string>
+    <string name="tankoubons_unsupported">単行本機能には LANraragi 0.9.8+ が必要です</string>
+    <string name="tank_create">新しい単行本</string>
+    <string name="tank_name_hint">単行本の名前</string>
+    <string name="tank_name_empty">単行本の名前を入力してください</string>
+    <string name="tank_rename">名前を変更</string>
+    <string name="tank_edit_meta">メタデータを編集</string>
+    <string name="tank_summary_hint">概要</string>
+    <string name="tank_tags_hint">追加タグ(カンマ区切り)</string>
+    <string name="tank_delete">単行本を削除</string>
+    <string name="tank_delete_confirm">この単行本を削除しますか？中のアーカイブは削除されませんが、単行本自体の概要・追加タグ・読書進捗は失われます。</string>
+    <string name="tank_locked">単行本はロックされています。後でもう一度お試しください</string>
+    <string name="tank_op_done">完了</string>
+    <string name="tank_progress_page">%1$d ページまで読了</string>
+    <string name="tank_read_from_start">最初から読む</string>
+    <string name="tank_continue_reading">続きを読む(%1$d ページ)</string>
+    <string name="tank_member_remove">単行本から削除</string>
+    <string name="tank_set_cover">表紙に設定</string>
+    <string name="tank_cover_updated">表紙を更新しました</string>
+    <string name="tank_reorder_failed">並べ替えに失敗しました。元に戻します</string>
+    <string name="tank_badge">単行本</string>
+    <string name="settings_eh_group_tanks">ブラウズで単行本をまとめる</string>
+    <string name="settings_eh_group_tanks_summary">単行本のアーカイブを 1 つの項目にまとめる(LANraragi 0.9.8+)</string>
+    <string name="detail_tankoubons_label">単行本</string>
+    <string name="detail_tankoubons_edit">編集</string>
+    <string name="tank_add_to">単行本に追加</string>
+    <string name="batch_add_to_tankoubon">単行本</string>
+    <string name="tank_none">サーバーに単行本はありません</string>
 
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">%d件選択中</string>

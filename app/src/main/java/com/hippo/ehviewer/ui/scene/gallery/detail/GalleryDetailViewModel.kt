@@ -10,6 +10,8 @@ import com.hippo.ehviewer.mapper.toDegradedArchiveDetail
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.LRRHttpException
+import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.OrphanProfileException
 import com.lanraragi.reader.client.api.probeSourceHealthy
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
@@ -64,6 +66,7 @@ class GalleryDetailViewModel : ViewModel() {
         const val STATE_FAILED = 3
         private const val HTTP_BAD_REQUEST = 400
         private const val HTTP_NOT_FOUND = 404
+        private const val MAX_TANK_PAGES = 100
     }
 
     // -------------------------------------------------------------------------
@@ -120,6 +123,14 @@ class GalleryDetailViewModel : ViewModel() {
      * whether to fire a result Bundle.
      */
     val currentRating: StateFlow<Float?> = _currentRating.asStateFlow()
+
+    private val _archiveTankoubons = MutableStateFlow<List<LRRTankoubonApi.Tankoubon>>(emptyList())
+
+    /**
+     * Tankoubons on the source server that contain this archive. Stays empty
+     * (section hidden) on pre-0.9.8 servers and on any lookup failure.
+     */
+    val archiveTankoubons: StateFlow<List<LRRTankoubonApi.Tankoubon>> = _archiveTankoubons.asStateFlow()
 
     // -------------------------------------------------------------------------
     // Loading state
@@ -375,6 +386,47 @@ class GalleryDetailViewModel : ViewModel() {
     private suspend fun resolveSourceServerUrl(): String {
         val cache = ServiceRegistry.dataModule.profileLookupCache
         return resolveSourceBaseUrl(getSourceProfileId(), cache)
+    }
+
+    /**
+     * Reverse-lookup the tankoubons containing this archive, source-profile
+     * routed. Silent by design: UNSUPPORTED/404/any failure leaves the list
+     * empty so the detail row simply hides — pre-0.9.8 servers must not
+     * error-spam the detail page.
+     */
+    fun loadArchiveTankoubons() {
+        val arcid = getEffectiveArcid() ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val serverUrl = resolveSourceServerUrl()
+                if (TankoubonSupportGate.isUnsupported(serverUrl)) return@launch
+                val client = ServiceRegistry.networkModule.okHttpClient
+                val ids = LRRTankoubonApi.getArchiveTankoubons(client, serverUrl, arcid)
+                if (ids.isEmpty()) {
+                    _archiveTankoubons.value = emptyList()
+                    return@launch
+                }
+                TankoubonSupportGate.markSupported(serverUrl)
+                // id → name/count via the list endpoint (same data the
+                // membership dialog needs). Server pages are 0-based.
+                val idSet = ids.toSet()
+                val all = mutableListOf<LRRTankoubonApi.Tankoubon>()
+                var page = 0
+                while (page < MAX_TANK_PAGES) {
+                    val r = LRRTankoubonApi.getTankoubons(client, serverUrl, page)
+                    all.addAll(r.result)
+                    if (r.result.isEmpty() || all.size >= r.total) break
+                    page++
+                }
+                _archiveTankoubons.value = all.filter { it.id in idSet }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                runCatching { resolveSourceServerUrl() }.getOrNull()
+                    ?.let { TankoubonSupportGate.markFrom(it, e) }
+                _archiveTankoubons.value = emptyList()
+            }
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -743,6 +795,8 @@ class GalleryDetailViewModel : ViewModel() {
                 // REFRESH→NORMAL spinner transition can complete.
                 _detailLoaded.tryEmit(ad)
 
+                loadArchiveTankoubons()
+
                 // Preload reading pages in background
                 triggerReadingPreload(arcid, archive.progress)
             } catch (e: Exception) {
@@ -838,6 +892,9 @@ class GalleryDetailViewModel : ViewModel() {
             // visit; otherwise the binder briefly shows "not favorited"
             // until the next requestGalleryDetail finishes.
             favoriteStateCache[arcid]?.let { _favoriteState.value = it }
+            // Cache hits skip requestGalleryDetail, so the tank row needs
+            // its own kick here.
+            loadArchiveTankoubons()
             return true
         }
         return true

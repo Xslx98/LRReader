@@ -56,7 +56,10 @@ class LRRSearchPaginationTest {
         sortby = sortby,
         order = order,
         newonly = false,
-        untaggedonly = false
+        untaggedonly = false,
+        // Pin the fold decision: the production default reads
+        // SharedPreferences-backed settings, unavailable in plain JVM tests.
+        includeTanksProvider = { false }
     )
 
     private fun archiveJson(id: String, title: String): String {

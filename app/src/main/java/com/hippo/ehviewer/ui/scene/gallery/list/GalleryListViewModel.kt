@@ -14,6 +14,7 @@ import com.hippo.ehviewer.event.ArchiveDeletedEvent
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRArchivePagingSource
 import com.lanraragi.reader.client.api.LRRCategoryApi
+import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.api.LRRClientProvider
@@ -356,6 +357,7 @@ class GalleryListViewModel : ViewModel() {
     sealed interface BatchOp {
         data object Download : BatchOp
         data class AddToCategory(val categoryId: String) : BatchOp
+        data class AddToTankoubon(val tankId: String) : BatchOp
         data object ClearNew : BatchOp
         data object DeleteArchives : BatchOp
     }
@@ -409,6 +411,12 @@ class GalleryListViewModel : ViewModel() {
      */
     fun runBatch(op: BatchOp, archives: List<Archive>) {
         require(op != BatchOp.Download) { "use runBatchDownload" }
+        if (op is BatchOp.AddToTankoubon) {
+            // The server appends tank members in call order — Semaphore(4)
+            // would scramble it, so this op runs strictly sequentially.
+            runBatchSequential(op, archives)
+            return
+        }
         // API-level re-entrancy guard: the UI also disables batch actions while
         // a run is in flight, but reject overlapping runs here too.
         if (_batchProgress.value != null) return
@@ -460,12 +468,45 @@ class GalleryListViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Ordered variant of [runBatch] for ops where call order is meaningful
+     * (tank membership append order = server display order). Same
+     * re-entrancy guard, progress publication and result emission; append
+     * order is the LIST DISPLAY order of the selection, not tap order.
+     */
+    private fun runBatchSequential(op: BatchOp, archives: List<Archive>) {
+        if (_batchProgress.value != null) return
+        _batchProgress.value = 0 to archives.size
+        viewModelScope.launch {
+            val failed = mutableListOf<BatchFailure>()
+            val succeeded = mutableListOf<String>()
+            try {
+                archives.forEachIndexed { i, archive ->
+                    try {
+                        withContext(Dispatchers.IO) { executeOne(op, archive) }
+                        succeeded.add(archive.arcid)
+                    } catch (ce: CancellationException) {
+                        throw ce
+                    } catch (e: Exception) {
+                        failed.add(BatchFailure(archive.arcid, archive.title, e.message ?: "unknown"))
+                    }
+                    _batchProgress.value = (i + 1) to archives.size
+                }
+                _batchResultEvent.tryEmit(BatchResult(op = op, succeeded = succeeded, failed = failed))
+            } finally {
+                _batchProgress.value = null
+            }
+        }
+    }
+
     private suspend fun executeOne(op: BatchOp, archive: Archive) {
         val baseUrl = baseUrlResolver(archive.serverProfileId)
         val client = LRRClientProvider.getClient()
         when (op) {
             is BatchOp.AddToCategory ->
                 LRRCategoryApi.addToCategory(client, baseUrl, op.categoryId, archive.arcid)
+            is BatchOp.AddToTankoubon ->
+                LRRTankoubonApi.addToTankoubon(client, baseUrl, op.tankId, archive.arcid)
             BatchOp.ClearNew -> LRRArchiveApi.clearNewFlag(client, baseUrl, archive.arcid)
             BatchOp.DeleteArchives -> {
                 LRRArchiveApi.deleteArchive(client, baseUrl, archive.arcid)

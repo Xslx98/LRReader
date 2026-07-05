@@ -66,6 +66,12 @@
         android:summary="@string/settings_eh_show_tag_translations_summary"
         android:title="@string/settings_eh_show_tag_translations" />
 
+    <com.hippo.preference.SwitchPreference
+        android:defaultValue="true"
+        android:key="search_group_tanks"
+        android:summary="@string/settings_eh_group_tanks_summary"
+        android:title="@string/settings_eh_group_tanks" />
+
 
     <com.hippo.preference.SwitchPreference
         android:defaultValue="false"

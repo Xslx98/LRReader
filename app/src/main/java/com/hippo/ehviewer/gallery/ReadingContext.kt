@@ -30,6 +30,13 @@ sealed interface ReadingContext {
         override val anchorArcid: String,
         /** Absolute position in the result set at capture time (best effort). */
         val anchorIndex: Int,
+        /**
+         * Whether the captured list was fetched with groupby_tanks, i.e. the
+         * server folded Tankoubons in as TANK_ rows. Resolution must re-fetch
+         * with the same value or [anchorIndex] arithmetic (raw positions,
+         * tanks included) would drift against what the list showed.
+         */
+        val groupbyTanks: Boolean = false,
     ) : ReadingContext
 
     /**
@@ -47,4 +54,21 @@ sealed interface ReadingContext {
     ) : ReadingContext {
         enum class Kind { DOWNLOADS, HISTORY }
     }
+
+    /**
+     * Reading inside a Tankoubon (ordered server-side collection, 0.9.8+).
+     * Members + page offsets are captured from /full at detail-scene time;
+     * [pageOffsets] feeds TankPageMath for global-progress sync. Source
+     * profile/baseUrl pinned at capture (multi-profile red line).
+     */
+    data class Tankoubon(
+        val sourceProfileId: Long,
+        val sourceBaseUrl: String,
+        val tankId: String,
+        /** Server-order member arcids. */
+        val orderedMemberIds: List<String>,
+        /** TankPageMath.pageOffsets of the members' pagecounts (size = members+1). */
+        val pageOffsets: List<Int>,
+        override val anchorArcid: String,
+    ) : ReadingContext
 }

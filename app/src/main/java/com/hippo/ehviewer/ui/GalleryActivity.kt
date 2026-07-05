@@ -62,6 +62,7 @@ import com.hippo.ehviewer.ui.gallery.GalleryStampOps
 import com.hippo.ehviewer.ui.gallery.LRRStampsBackend
 import com.hippo.ehviewer.ui.gallery.ReaderContinuationController
 import com.hippo.ehviewer.ui.gallery.ReaderStampsController
+import com.hippo.ehviewer.ui.gallery.TankoubonProgressSync
 import com.hippo.ehviewer.ui.scene.download.DownloadsScene
 import com.hippo.ehviewer.widget.GalleryGuideView
 import com.hippo.ehviewer.widget.GalleryHeader
@@ -145,6 +146,8 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
     private var canFinish = false
 
     private var mContinuation: ReaderContinuationController? = null
+
+    private var mTankProgress: TankoubonProgressSync? = null
 
     private var mStamps: ReaderStampsController? = null
     private var mStampOverlay: StampOverlayView? = null
@@ -327,6 +330,11 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
             )
             mArchive?.let { mContinuation?.setCurrentArchive(it.arcid) }
         }
+
+        // Tank-level progress sync. Deliberately outside the scrim block: a
+        // GL-fallback layout without the continuation overlay must still sync
+        // tank progress.
+        mArchive?.let { mTankProgress = TankoubonProgressSync(it.arcid) }
 
         // Stamp overlay read path. Requires mArchive (server-backed archive
         // identity) — the legacy local-file DIR path without an archive gets
@@ -976,6 +984,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                     // swipe-through jump) is instant on the first forward
                     // attempt instead of showing a loading state.
                     mContinuation?.onPageShown(mValue, mGalleryProvider?.size() ?: 0)
+                    mTankProgress?.onPageShown(mValue)
                 }
                 NOTIFY_KEY_TAP_MENU_AREA -> doTapMenuArea()
                 NOTIFY_KEY_TAP_SLIDER_AREA -> mSliderController.onTapSliderArea()

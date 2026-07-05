@@ -65,6 +65,17 @@
         android:textSize="12sp" />
 
     <Button
+        android:id="@+id/batch_tankoubon"
+        style="?attr/borderlessButtonStyle"
+        android:letterSpacing="0"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:minWidth="48dp"
+        android:paddingHorizontal="4dp"
+        android:text="@string/batch_add_to_tankoubon"
+        android:textSize="12sp" />
+
+    <Button
         android:id="@+id/batch_clear_new"
         style="?attr/borderlessButtonStyle"
         android:letterSpacing="0"
