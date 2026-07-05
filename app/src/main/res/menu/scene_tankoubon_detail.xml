@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Toolbar menu for TankoubonDetailScene. All items live in the overflow
+     on purpose: management ops are secondary to the read entries. -->
+
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/action_tank_rename"
+        android:title="@string/tank_rename" />
+
+    <item
+        android:id="@+id/action_tank_edit_meta"
+        android:title="@string/tank_edit_meta" />
+
+    <item
+        android:id="@+id/action_tank_delete"
+        android:title="@string/tank_delete" />
+
+</menu>
