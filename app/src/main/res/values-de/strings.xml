@@ -585,7 +585,6 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_loading_categories">Kategorien werden geladen…</string>
     <string name="lrr_no_static_categories">Keine statischen Kategorien verfügbar</string>
     <string name="lrr_add_to_category">Zur Kategorie hinzufügen</string>
-    <string name="lrr_menu_categories">Kategorien</string>
     <string name="lrr_category_info_suffix"> usw.</string>
     <string name="lrr_category_count_suffix"> Kategorien</string>
     <string name="lrr_category_updated_toast">Kategorie aktualisiert</string>

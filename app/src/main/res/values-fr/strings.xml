@@ -657,7 +657,6 @@ Cette action est irréversible.</string>
     <string name="lrr_loading_categories">Chargement des catégories…</string>
     <string name="lrr_no_static_categories">Aucune catégorie statique disponible</string>
     <string name="lrr_add_to_category">Ajouter à une catégorie</string>
-    <string name="lrr_menu_categories">Catégories</string>
     <string name="lrr_category_info_suffix"> etc.</string>
     <string name="lrr_category_count_suffix"> catégories</string>
     <string name="lrr_category_updated_toast">Catégorie mise à jour</string>

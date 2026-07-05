@@ -590,7 +590,6 @@
     <string name="lrr_loading_categories">カテゴリを読み込み中…</string>
     <string name="lrr_no_static_categories">利用可能な静的カテゴリがありません</string>
     <string name="lrr_add_to_category">カテゴリに追加</string>
-    <string name="lrr_menu_categories">カテゴリ</string>
     <string name="lrr_category_info_suffix"> など</string>
     <string name="lrr_category_count_suffix"> カテゴリ</string>
     <string name="lrr_category_updated_toast">カテゴリを更新しました</string>

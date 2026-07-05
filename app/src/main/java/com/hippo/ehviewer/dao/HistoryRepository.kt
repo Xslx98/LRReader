@@ -66,8 +66,17 @@ class HistoryRepository(
     }
 
     suspend fun deleteHistoryInfo(info: HistoryInfo) {
-        dao.clearHistorySubsystemForProfile(info.arcid, info.serverProfileId)
-        dao.deleteIfNoSubsystemForProfile(info.arcid, info.serverProfileId)
+        deleteHistory(info.arcid, info.serverProfileId)
+    }
+
+    /**
+     * Deletes a single history entry by its `(arcid, serverProfileId)`
+     * composite key — the row identity of `ARCHIVE_LOCAL_STATE` (ADR-003).
+     * Idempotent: a missing row is a no-op.
+     */
+    suspend fun deleteHistory(arcid: String, profileId: Long) {
+        dao.clearHistorySubsystemForProfile(arcid, profileId)
+        dao.deleteIfNoSubsystemForProfile(arcid, profileId)
     }
 
     suspend fun clearHistory() {

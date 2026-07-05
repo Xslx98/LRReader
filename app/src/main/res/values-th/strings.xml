@@ -653,7 +653,6 @@
     <string name="lrr_loading_categories">กำลังโหลดหมวดหมู่…</string>
     <string name="lrr_no_static_categories">ไม่มีหมวดหมู่แบบคงที่</string>
     <string name="lrr_add_to_category">เพิ่มในหมวดหมู่</string>
-    <string name="lrr_menu_categories">หมวดหมู่</string>
     <string name="lrr_category_info_suffix"> ฯลฯ</string>
     <string name="lrr_category_count_suffix"> หมวดหมู่</string>
     <string name="lrr_category_updated_toast">อัปเดตหมวดหมู่แล้ว</string>
