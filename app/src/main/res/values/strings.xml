@@ -416,6 +416,7 @@
     <string name="stamps_edit">Edit</string>
     <string name="stamps_delete">Delete</string>
     <string name="settings_read_stamps">Show page stamps</string>
+    <string name="stamps_unsupported">This server doesn\'t support stamps (LANraragi 0.9.8+ required)</string>
 
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">%d selected</string>

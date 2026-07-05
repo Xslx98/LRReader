@@ -302,6 +302,7 @@
     <string name="stamps_edit">Editar</string>
     <string name="stamps_delete">Eliminar</string>
     <string name="settings_read_stamps">Mostrar sellos de página</string>
+    <string name="stamps_unsupported">Este servidor no admite sellos (se requiere LANraragi 0.9.8+)</string>
 
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">%d seleccionados</string>

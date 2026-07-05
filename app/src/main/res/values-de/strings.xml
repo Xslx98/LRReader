@@ -259,6 +259,7 @@
     <string name="stamps_edit">Bearbeiten</string>
     <string name="stamps_delete">Löschen</string>
     <string name="settings_read_stamps">Seiten-Stempel anzeigen</string>
+    <string name="stamps_unsupported">Dieser Server unterstützt keine Stempel (LANraragi 0.9.8+ erforderlich)</string>
 
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">%d ausgewählt</string>
