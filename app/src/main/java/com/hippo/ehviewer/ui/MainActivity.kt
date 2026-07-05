@@ -81,6 +81,8 @@ import com.hippo.ehviewer.ui.scene.history.HistoryScene
 import com.hippo.ehviewer.ui.scene.gallery.list.QuickSearchScene
 import com.hippo.ehviewer.ui.scene.SecurityScene
 import com.hippo.ehviewer.ui.scene.SolidScene
+import com.hippo.ehviewer.ui.scene.TankoubonDetailScene
+import com.hippo.ehviewer.ui.scene.TankoubonsScene
 import com.hippo.ehviewer.ui.splash.SplashActivity
 import com.hippo.ehviewer.client.LRRUrlOpener
 import com.hippo.ehviewer.widget.EhDrawerLayout
@@ -133,6 +135,8 @@ class MainActivity : StageActivity(),
             registerLaunchMode(DownloadsScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
             registerLaunchMode(DownloadLabelsScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
             registerLaunchMode(LRRCategoriesScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
+            registerLaunchMode(TankoubonsScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
+            registerLaunchMode(TankoubonDetailScene::class.java, SceneFragment.LAUNCH_MODE_STANDARD)
             registerLaunchMode(HistoryScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TOP)
 
             // Scene factory registrations (replaces reflection-based newInstance())
@@ -146,6 +150,8 @@ class MainActivity : StageActivity(),
             SceneFactory.register(DownloadsScene::class.java.name) { DownloadsScene() }
             SceneFactory.register(DownloadLabelsScene::class.java.name) { DownloadLabelsScene() }
             SceneFactory.register(LRRCategoriesScene::class.java.name) { LRRCategoriesScene() }
+            SceneFactory.register(TankoubonsScene::class.java.name) { TankoubonsScene() }
+            SceneFactory.register(TankoubonDetailScene::class.java.name) { TankoubonDetailScene() }
             SceneFactory.register(HistoryScene::class.java.name) { HistoryScene() }
         }
     }
@@ -1101,6 +1107,7 @@ class MainActivity : StageActivity(),
                 )
             }
             R.id.nav_favourite -> startScene(Announcer(LRRCategoriesScene::class.java))
+            R.id.nav_tankoubons -> startScene(Announcer(TankoubonsScene::class.java))
             R.id.nav_history -> startScene(Announcer(HistoryScene::class.java))
             R.id.nav_downloads -> startScene(Announcer(DownloadsScene::class.java))
             R.id.nav_settings -> {
