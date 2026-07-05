@@ -8,14 +8,12 @@ import android.content.res.Resources
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
-import com.google.android.material.chip.ChipGroup
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.hippo.drawable.AddDeleteDrawable
 import com.hippo.drawable.DrawerArrowDrawable
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.client.data.ListUrlBuilder
-import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.widget.SearchBar
 import com.hippo.ehviewer.widget.SearchLayout
@@ -74,17 +72,8 @@ internal object GalleryListHelperFactory {
         })
 
         val itemActionHelper = GalleryItemActionHelper(object : GalleryItemActionHelper.Callback {
-            override fun getHostContext(): Context? = scene.ehContext
-            override fun getHostActivity(): Activity? = scene.activity2
-            override fun getLayoutInflater(): LayoutInflater = scene.layoutInflater
-            override fun getDownloadManager(): DownloadManager = scene.downloadManager
             override fun getSceneFragment() = scene
             override fun startScene(announcer: Announcer) = scene.startScene(announcer)
-            override fun getString(resId: Int): String = scene.getString(resId)
-            override fun getString(resId: Int, vararg formatArgs: Any): String =
-                scene.getString(resId, *formatArgs)
-            override fun buildChipGroup(gi: Archive?, chipGroup: ChipGroup): ChipGroup =
-                scene.tagChipHelper?.buildChipGroup(gi, chipGroup) ?: chipGroup
         })
 
         val tagChipHelper = GalleryTagChipHelper(object : GalleryTagChipHelper.Callback {
@@ -105,9 +94,8 @@ internal object GalleryListHelperFactory {
             override fun setState(state: Int) { scene.stateHelper?.setState(state) }
             override fun onItemClick(view: View?, gi: Archive?): Boolean =
                 scene.itemActionHelper?.onItemClick(view, gi) ?: false
-            override fun onItemLongClick(gi: Archive?, view: View): Boolean =
-                scene.itemActionHelper?.onItemLongClick(gi, view) ?: false
-            override fun dismissItemDialog() { scene.itemActionHelper?.dismissDialog() }
+            override fun onItemLongClick(position: Int): Boolean =
+                scene.multiSelectHelper?.enterAndCheck(position) ?: false
             override fun getBaseScene(): BaseScene = scene
         })
         tagChipHelper.setEhTags(EhTagDatabase.getInstance(context))

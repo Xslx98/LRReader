@@ -41,8 +41,7 @@ class GalleryTagChipHelper(private val callback: Callback) {
         fun onUpdateUrlBuilder()
         fun setState(state: Int)
         fun onItemClick(view: View?, gi: Archive?): Boolean
-        fun onItemLongClick(gi: Archive?, view: View): Boolean
-        fun dismissItemDialog()
+        fun onItemLongClick(position: Int): Boolean
         fun getBaseScene(): BaseScene
     }
 
@@ -102,7 +101,7 @@ class GalleryTagChipHelper(private val callback: Callback) {
                 newPopup.dismiss()
                 callback.onItemClick(view, gi)
             }
-            tagFlowLayout.setOnLongClickListener { callback.onItemLongClick(gi, view) }
+            tagFlowLayout.setOnLongClickListener { callback.onItemLongClick(position) }
             val location = IntArray(2)
             thumb.getLocationOnScreen(location)
             newPopup.showAtLocation(thumb, Gravity.NO_GRAVITY, location[0] + thumb.width, location[1])
@@ -165,7 +164,6 @@ class GalleryTagChipHelper(private val callback: Callback) {
         }
         popupWindowPosition = -1
         popupWindow?.dismiss()
-        callback.dismissItemDialog()
 
         if (callback.isFilterOpen()) {
             urlBuilder.set(callback.buildFilterSearch(tagName), ListUrlBuilder.MODE_FILTER)
