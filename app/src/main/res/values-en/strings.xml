@@ -321,6 +321,24 @@
     <string name="settings_read_continuation">Show next archive when finished</string>
     <string name="settings_read_continuation_swipe">Page forward into the next archive</string>
 
+    <!-- Stamps (page annotations, LANraragi 0.9.8+) -->
+    <string name="stamps_menu_add">Add stamp</string>
+    <string name="stamps_menu_list">Page stamps…</string>
+    <string name="stamps_placing_hint">Tap the page to place the stamp</string>
+    <string name="stamps_add_title">New stamp</string>
+    <string name="stamps_edit_title">Edit stamp</string>
+    <string name="stamps_text_hint">Stamp text</string>
+    <string name="stamps_delete_confirm">Delete this stamp?</string>
+    <string name="stamps_locked">Stamp is locked, try again later</string>
+    <string name="stamps_op_failed">Stamp operation failed: %s</string>
+    <string name="stamps_list_title">Stamped pages</string>
+    <string name="stamps_list_empty">No stamps in this archive</string>
+    <string name="stamps_list_error">Couldn\'t load stamps</string>
+    <string name="stamps_list_entry">Page %1$d — %2$s</string>
+    <string name="stamps_edit">Edit</string>
+    <string name="stamps_delete">Delete</string>
+    <string name="settings_read_stamps">Show page stamps</string>
+
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">%d selected</string>
     <string name="batch_select_all">All</string>
