@@ -35,6 +35,7 @@ import com.hippo.lib.yorozuya.AssertUtils;
 import com.hippo.lib.yorozuya.MathUtils;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.List;
 
 class PagerLayoutManager extends GalleryView.LayoutManager {
 
@@ -833,6 +834,13 @@ class PagerLayoutManager extends GalleryView.LayoutManager {
         int size = adapter.size();
         // size <= 0 means empty or not-yet-known: no meaningful end.
         return size > 0 && mIndex >= size - 1;
+    }
+
+    @Override
+    public void collectPageTransforms(List<PageTransform> out) {
+        collectPageTransform(out, mPrevious);
+        collectPageTransform(out, mCurrent);
+        collectPageTransform(out, mNext);
     }
 
     @Override

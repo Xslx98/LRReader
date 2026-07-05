@@ -315,6 +315,22 @@ class ImageView extends GLView implements ImageTexture.Callback {
     }
 
     /**
+     * Copies the current destination rect of the rendered image (view-local
+     * coordinates, scale/offset applied) into {@code out}. Additive read-only
+     * accessor for page-transform snapshots; false when no image is loaded.
+     * "Loaded" here means texture-attached ({@code mImageTexture != null}),
+     * which can lead the page's visibility state by a frame — the rect tracks
+     * the texture's draw destination, not visual visibility.
+     */
+    boolean getImageRect(RectF out) {
+        if (!isLoaded()) {
+            return false;
+        }
+        out.set(mDst);
+        return true;
+    }
+
+    /**
      * If target is shorter then screen, make it in screen center. If target is
      * longer then parent, make sure target fill parent over
      */

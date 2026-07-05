@@ -19,6 +19,7 @@ package com.hippo.lib.glgallery;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -46,6 +47,7 @@ import com.hippo.lib.yorozuya.Pool;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -122,6 +124,9 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
     private ScrollLayoutManager mScrollLayoutManager;
     @Nullable
     private LayoutManager mLayoutManager;
+
+    private final List<PageTransform> mTransformScratch = new ArrayList<>();
+    private volatile List<PageTransform> mPageTransforms = Collections.emptyList();
 
     private final GLEdgeView mEdgeView;
     private final Pool<GalleryPageView> mGalleryPageViewPool = new Pool<>(5);
@@ -1103,6 +1108,34 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
         if (oldCurrentIndex != newCurrentIndex && mListener != null) {
             mListener.onUpdateCurrentIndex(newCurrentIndex);
         }
+
+        updatePageTransforms();
+    }
+
+    /**
+     * Main-thread-safe snapshot of the visible pages' image rects
+     * (GalleryView-local coordinates). Updated after each render pass;
+     * change notifications arrive via Listener.onPageTransformsChanged().
+     */
+    public List<PageTransform> getPageTransforms() {
+        return mPageTransforms;
+    }
+
+    @RenderThread
+    private void updatePageTransforms() {
+        LayoutManager layoutManager = mLayoutManager;
+        mTransformScratch.clear();
+        if (layoutManager != null) {
+            layoutManager.collectPageTransforms(mTransformScratch);
+        }
+        if (mTransformScratch.equals(mPageTransforms)) {
+            return;
+        }
+        mPageTransforms = Collections.unmodifiableList(new ArrayList<>(mTransformScratch));
+        Listener listener = mListener;
+        if (listener != null) {
+            listener.onPageTransformsChanged();
+        }
     }
 
     @RenderThread
@@ -1270,6 +1303,13 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
          */
         public abstract boolean isReachEnd();
 
+        /**
+         * Collects current visible pages' image screen rects. Called on the
+         * render thread after each render pass; implementations add one
+         * PageTransform per attached page whose image is loaded.
+         */
+        public abstract void collectPageTransforms(List<PageTransform> out);
+
         public abstract boolean isTapOrPressEnable();
 
         public abstract GalleryPageView findPageByIndex(int index);
@@ -1321,6 +1361,31 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
             int viewTop = mGalleryView.getHeight() / 2 - viewHeight / 2;
             view.layout(viewLeft, viewTop, viewLeft + viewWidth, viewTop + viewHeight);
         }
+
+        protected void collectPageTransform(List<PageTransform> out, GalleryPageView page) {
+            if (page == null) {
+                return;
+            }
+            ImageView image = page.getImageView();
+            if (image == null) {
+                return;
+            }
+            RectF dst = new RectF();
+            if (!image.getImageRect(dst)) {
+                return;
+            }
+            // Enforced here so a future bind-order refactor can't leak index=-1 into consumers.
+            int index = page.getIndex();
+            if (index == GalleryPageView.INVALID_INDEX) {
+                return;
+            }
+            Rect imageBounds = new Rect();
+            if (!mGalleryView.getBoundsOf(image, imageBounds)) {
+                return;
+            }
+            dst.offset(imageBounds.left, imageBounds.top);
+            out.add(new PageTransform(index, dst));
+        }
     }
 
     public interface Listener {
@@ -1339,6 +1404,14 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
 
         @RenderThread
         void onLongPressPage(int index);
+
+        /**
+         * During gesture/fling animation this fires per rendered frame (the
+         * dedup only suppresses static geometry) — consumers must stay cheap
+         * and read the latest snapshot rather than doing per-event work.
+         */
+        @RenderThread
+        void onPageTransformsChanged();
 
         void onAutoTransferDone();
     }
