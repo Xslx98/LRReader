@@ -569,10 +569,10 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         mProgress = null
         mBattery = null
         mContinuation = null
-        mStamps = null
-        mStampOverlay = null
         mStampOps?.dismissCard()
         mStampOps = null
+        mStamps = null
+        mStampOverlay = null
 
         super.onDestroy()
     }
