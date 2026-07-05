@@ -302,7 +302,7 @@
     <string name="tank_summary_hint">概要</string>
     <string name="tank_tags_hint">追加タグ(カンマ区切り)</string>
     <string name="tank_delete">単行本を削除</string>
-    <string name="tank_delete_confirm">この単行本を削除しますか?中のアーカイブは削除されません。</string>
+    <string name="tank_delete_confirm">この単行本を削除しますか？中のアーカイブは削除されません。</string>
     <string name="tank_locked">単行本はロックされています。後でもう一度お試しください</string>
     <string name="tank_op_done">完了</string>
     <string name="tank_progress_page">%1$d ページまで読了</string>
