@@ -53,7 +53,10 @@ import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.domain.buildRatingEmoji
 import com.hippo.ehviewer.ui.MainActivity
 import com.hippo.ehviewer.ui.scene.BaseScene
+import com.hippo.ehviewer.ui.scene.TankoubonDetailScene
 import com.hippo.ehviewer.util.collectFlow
+import com.hippo.scene.Announcer
+import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.hippo.ehviewer.widget.ArchiverDownloadProgress
 import com.hippo.lib.yorozuya.AssertUtils
 import com.hippo.lib.yorozuya.IntIdGenerator
@@ -119,6 +122,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
      Extracted helpers
      ---------------*/
     private var mHeaderBinder: DetailHeaderBinder? = null
+    private var mTankBinder: DetailTankoubonBinder? = null
     private var mActionHandler: DetailActionHandler? = null
 
     /** Shortcut delegating to [GalleryDetailViewModel.action]. */
@@ -375,6 +379,15 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mHeaderBinder = headerBinder
         headerBinder.ensureActionDrawable(nonNullContext)
 
+        val tankSection = ViewUtils.`$$`(belowHeader, R.id.detail_tankoubons_section)
+        mTankBinder = DetailTankoubonBinder(
+            section = tankSection,
+            container = ViewUtils.`$$`(tankSection, R.id.detail_tankoubons_container) as LinearLayout,
+            edit = ViewUtils.`$$`(tankSection, R.id.detail_tankoubons_edit) as TextView,
+            onTankClick = { tank -> openTankoubonDetail(tank) },
+            onEditClick = { showTankMembershipDialog() },
+        )
+
         val actionHandler = DetailActionHandler(this, viewModel, viewLifecycleOwner)
         mActionHandler = actionHandler
         actionHandler.otherActions = otherActions
@@ -606,6 +619,10 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         collectFlow(viewLifecycleOwner, viewModel.localReadingPage) { localPage0 ->
             applyLocalReadingProgress(localPage0)
         }
+        // "Belongs to Tankoubons" section — an empty list keeps it hidden.
+        collectFlow(viewLifecycleOwner, viewModel.archiveTankoubons) { tanks ->
+            mTankBinder?.bind(tanks)
+        }
 
         // ----- Page-thumbnail grid wiring -----
         // Kick off the page-list fetch as soon as we have an archive in
@@ -830,6 +847,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mViewTransition2 = null
 
         mHeaderBinder = null
+        mTankBinder = null
         mActionHandler?.destroy()
         mActionHandler = null
 
@@ -985,6 +1003,22 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         return mActionHandler?.onLongClick(v, mContext ?: return false, activity) ?: false
     }
 
+
+    private fun openTankoubonDetail(tank: LRRTankoubonApi.Tankoubon) {
+        val args = Bundle().apply {
+            putString(TankoubonDetailScene.KEY_TANK_ID, tank.id)
+            putString(TankoubonDetailScene.KEY_TANK_NAME, tank.name)
+            putLong(TankoubonDetailScene.KEY_PROFILE_ID, viewModel.getSourceProfileId())
+        }
+        startScene(Announcer(TankoubonDetailScene::class.java).setArgs(args))
+    }
+
+    private fun showTankMembershipDialog() {
+        val arcid = viewModel.getEffectiveArcid() ?: return
+        TankoubonDialogHelper.showMembershipDialog(
+            activity2, arcid, viewModel.getSourceProfileId()
+        ) { viewModel.loadArchiveTankoubons() }
+    }
 
     override fun onBackPressed() {
         val current = viewModel.currentRating.value
