@@ -329,36 +329,36 @@
     <string name="settings_read_stamps">显示页面标注</string>
     <string name="stamps_unsupported">此服务器不支持标注(需要 LANraragi 0.9.8+)</string>
 
-    <!-- Tankoubon (ordered archive collections, LANraragi 0.9.8+) -->
-    <string name="tankoubons_title">Tankoubon</string>
-    <string name="tankoubons_empty">没有 Tankoubon</string>
-    <string name="tankoubons_unsupported">Tankoubon 功能需要 LANraragi 0.9.8+</string>
-    <string name="tank_create">新建 Tankoubon</string>
-    <string name="tank_name_hint">Tankoubon 名称</string>
-    <string name="tank_name_empty">请输入 Tankoubon 名称</string>
+    <!-- 合订本 (ordered archive collections, LANraragi 0.9.8+) -->
+    <string name="tankoubons_title">合订本</string>
+    <string name="tankoubons_empty">没有合订本</string>
+    <string name="tankoubons_unsupported">合订本功能需要 LANraragi 0.9.8+</string>
+    <string name="tank_create">新建合订本</string>
+    <string name="tank_name_hint">合订本名称</string>
+    <string name="tank_name_empty">请输入合订本名称</string>
     <string name="tank_rename">重命名</string>
     <string name="tank_edit_meta">编辑元数据</string>
     <string name="tank_summary_hint">简介</string>
     <string name="tank_tags_hint">附加标签(逗号分隔)</string>
-    <string name="tank_delete">删除 Tankoubon</string>
-    <string name="tank_delete_confirm">删除这个 Tankoubon？其中的档案不会被删除。</string>
-    <string name="tank_locked">Tankoubon 已被锁定，请稍后再试</string>
+    <string name="tank_delete">删除合订本</string>
+    <string name="tank_delete_confirm">删除这个合订本？其中的档案不会被删除。</string>
+    <string name="tank_locked">合订本已被锁定，请稍后再试</string>
     <string name="tank_op_done">完成</string>
     <string name="tank_progress_page">读到第 %1$d 页</string>
     <string name="tank_read_from_start">从头阅读</string>
     <string name="tank_continue_reading">继续阅读(第 %1$d 页)</string>
-    <string name="tank_member_remove">从 Tankoubon 移出</string>
+    <string name="tank_member_remove">从合订本移出</string>
     <string name="tank_set_cover">设为封面</string>
     <string name="tank_cover_updated">封面已更新</string>
     <string name="tank_reorder_failed">排序失败，已恢复原顺序</string>
-    <string name="tank_badge">Tankoubon</string>
-    <string name="settings_eh_group_tanks">浏览时折叠 Tankoubon</string>
-    <string name="settings_eh_group_tanks_summary">将属于 Tankoubon 的档案折叠为一个条目(LANraragi 0.9.8+)</string>
-    <string name="detail_tankoubons_label">Tankoubon</string>
+    <string name="tank_badge">合订本</string>
+    <string name="settings_eh_group_tanks">浏览时折叠合订本</string>
+    <string name="settings_eh_group_tanks_summary">将属于合订本的档案折叠为一个条目(LANraragi 0.9.8+)</string>
+    <string name="detail_tankoubons_label">合订本</string>
     <string name="detail_tankoubons_edit">编辑</string>
-    <string name="tank_add_to">加入 Tankoubon</string>
-    <string name="batch_add_to_tankoubon">Tank</string>
-    <string name="tank_none">服务器上没有 Tankoubon</string>
+    <string name="tank_add_to">加入合订本</string>
+    <string name="batch_add_to_tankoubon">合订本</string>
+    <string name="tank_none">服务器上没有合订本</string>
 
     <!-- List multi-select batch operations -->
     <string name="batch_selected_count">已选 %d 项</string>
