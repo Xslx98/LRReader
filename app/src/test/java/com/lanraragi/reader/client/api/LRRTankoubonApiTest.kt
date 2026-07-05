@@ -7,6 +7,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
@@ -159,6 +160,40 @@ class LRRTankoubonApiTest {
             fail("Should have thrown")
         } catch (e: LRRHttpException) {
             assertEquals(500, e.code)
+        }
+    }
+
+    @Test
+    fun getTankoubonThumbnailUrl_cacheBust_appendsTsParam() {
+        val url = LRRTankoubonApi.getTankoubonThumbnailUrl("http://h:3000", tankId, cacheBust = 5L)
+        assertTrue(url.contains("?ts=5"))
+    }
+
+    @Test
+    fun getTankoubonThumbnailUrl_defaultCacheBust_omitsTsParam() {
+        val url = LRRTankoubonApi.getTankoubonThumbnailUrl("http://h:3000", tankId)
+        assertFalse(url.contains("ts="))
+    }
+
+    @Test
+    fun wrongLengthTankId_throwsClientValidation() = runTest {
+        try {
+            LRRTankoubonApi.getTankoubonFull(client, baseUrl, "TANK_123")
+            fail("Should have thrown")
+        } catch (expected: LRRClientValidationException) {
+            // no request must have been sent
+            assertEquals(0, server.requestCount)
+        }
+    }
+
+    @Test
+    fun nonDigitTankId_throwsClientValidation() = runTest {
+        try {
+            LRRTankoubonApi.getTankoubonFull(client, baseUrl, "TANK_16886164a7")
+            fail("Should have thrown")
+        } catch (expected: LRRClientValidationException) {
+            // no request must have been sent
+            assertEquals(0, server.requestCount)
         }
     }
 }

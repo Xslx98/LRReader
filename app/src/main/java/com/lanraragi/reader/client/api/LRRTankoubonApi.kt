@@ -12,9 +12,10 @@ import okhttp3.Request
  * API class for LANraragi Tankoubon operations.
  *
  * Tankoubons are ORDERED collections of archives with their own metadata,
- * cover and a global reading progress whose page numbering spans all member
- * archives in order (two members of 20+25 pages: global page 26 = member #2
- * page 6). All page params here are global 1-INDEXED.
+ * cover and a global reading progress. The tank's reading progress is a
+ * global 1-indexed page spanning members in order (two members of 20+25
+ * pages: global page 26 = member #2 page 6); the `page` params on the
+ * list/full endpoints below are pagination indices, not reading pages.
  *
  * Endpoints (read):
  * - GET /api/tankoubons — list (paginated)
@@ -68,7 +69,12 @@ object LRRTankoubonApi {
     @Serializable
     private data class ArchiveTankoubonsResult(val tankoubons: List<String> = emptyList())
 
-    /** GET /api/tankoubons — list all tankoubons (paginated by server page size). */
+    /**
+     * GET /api/tankoubons — list all tankoubons (paginated by server page size).
+     *
+     * @param page pagination index; null or values <= 0 omit the query param
+     *   (server returns the first page).
+     */
     @JvmStatic
     suspend fun getTankoubons(
         client: OkHttpClient,
