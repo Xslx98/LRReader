@@ -132,6 +132,11 @@ class TankoubonDetailScene : BaseScene() {
             setNavigationIcon(R.drawable.v_arrow_left_dark_x24)
             setNavigationOnClickListener { onBackPressed() }
             inflateMenu(R.menu.scene_tankoubon_detail)
+            // Edit-metadata needs server truth (summary/tags): submitting the
+            // dialog's empty defaults before a successful load would WIPE
+            // them. Disabled until the VM has loaded; the isLoading collector
+            // keeps this fresh per load outcome.
+            menu.findItem(R.id.action_tank_edit_meta)?.isEnabled = viewModel.metaLoaded
             setOnMenuItemClickListener { item ->
                 when (item.itemId) {
                     R.id.action_tank_rename -> {
@@ -210,6 +215,12 @@ class TankoubonDetailScene : BaseScene() {
         // (view recreation on a retained VM) keeps the list visible; DiffUtil
         // refreshes it in place when the reload lands.
         collectFlow(viewLifecycleOwner, viewModel.isLoading) { loading ->
+            // metaLoaded flips inside a successful load, right before
+            // isLoading goes false — refreshing here (not in the members
+            // collector) also covers the empty-tank success, whose members
+            // emission is deduped against the initial emptyList().
+            mToolbar?.menu?.findItem(R.id.action_tank_edit_meta)?.isEnabled =
+                viewModel.metaLoaded
             if (loading) {
                 if (mMembers.isEmpty()) {
                     showProgress()

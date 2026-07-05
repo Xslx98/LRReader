@@ -101,6 +101,16 @@ class TankoubonDetailViewModel : ViewModel() {
         private set
 
     /**
+     * True once a load has succeeded, i.e. [summary]/[tags] hold server
+     * truth. Gates the edit-metadata menu item in the scene: submitting
+     * the dialog's empty defaults before a successful load would WIPE the
+     * server-side summary/tags.
+     */
+    @Volatile
+    var metaLoaded: Boolean = false
+        private set
+
+    /**
      * Cache-bust stamp bumped after a successful [setCover]. The image
      * pipeline caches by KEY, not URL, so the scene must derive BOTH a
      * busted cache key and a busted URL from this; 0 = cover never changed
@@ -182,6 +192,7 @@ class TankoubonDetailViewModel : ViewModel() {
                 pageOffsets = TankPageMath.pageOffsets(mapped.map { it.pagecount })
                 summary = full.summary
                 tags = full.tags
+                metaLoaded = true
                 _tankName.value = full.name
                 _progress.value = full.progress
                 _members.value = mapped
@@ -227,7 +238,7 @@ class TankoubonDetailViewModel : ViewModel() {
      */
     fun deleteTank() {
         viewModelScope.launch(Dispatchers.IO) {
-            val url = baseUrl ?: return@launch
+            val url = requireBaseUrl() ?: return@launch
             try {
                 val client = ServiceRegistry.networkModule.okHttpClient
                 LRRTankoubonApi.deleteTankoubon(client, url, tankId)
@@ -247,7 +258,7 @@ class TankoubonDetailViewModel : ViewModel() {
      */
     fun setCover(memberIndex: Int) {
         viewModelScope.launch(Dispatchers.IO) {
-            val url = baseUrl ?: return@launch
+            val url = requireBaseUrl() ?: return@launch
             // offsets has size members+1; valid member indices are 0..size-2
             val offsets = pageOffsets
             if (memberIndex < 0 || memberIndex >= offsets.size - 1) return@launch
@@ -273,17 +284,27 @@ class TankoubonDetailViewModel : ViewModel() {
      * from the reordered pagecounts either way. On failure the server
      * truth is re-fetched (rollback) after a [R.string.tank_reorder_failed]
      * (or 423 locked) message.
+     *
+     * [newOrder] is reconciled against CURRENT membership first — a reload
+     * can land mid-drag, so ids that no longer exist are dropped and ids
+     * the drag snapshot didn't know about are appended (matching the
+     * server's append-at-end semantics).
      */
     fun reorder(newOrder: List<String>) {
-        if (newOrder == memberIds) return
+        val currentIds = _members.value.map { it.arcid }
+        val currentSet = currentIds.toSet()
+        val newOrderSet = newOrder.toSet()
+        val finalOrder =
+            newOrder.filter { it in currentSet } + currentIds.filter { it !in newOrderSet }
+        if (finalOrder == memberIds) return
         val byId = _members.value.associateBy { it.arcid }
-        val reordered = newOrder.mapNotNull { byId[it] }
+        val reordered = finalOrder.mapNotNull { byId[it] }
         val ids = reordered.map { it.arcid }
         memberIds = ids
         pageOffsets = TankPageMath.pageOffsets(reordered.map { it.pagecount })
         _members.value = reordered
         viewModelScope.launch(Dispatchers.IO) {
-            val url = baseUrl ?: return@launch
+            val url = requireBaseUrl() ?: return@launch
             try {
                 val client = ServiceRegistry.networkModule.okHttpClient
                 LRRTankoubonApi.updateTankoubon(client, url, tankId, archives = ids)
@@ -311,7 +332,7 @@ class TankoubonDetailViewModel : ViewModel() {
      */
     private fun mutateAndReload(op: suspend (client: OkHttpClient, url: String) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
-            val url = baseUrl ?: return@launch
+            val url = requireBaseUrl() ?: return@launch
             try {
                 op(ServiceRegistry.networkModule.okHttpClient, url)
                 _uiEvent.tryEmit(TankDetailUiEvent.ShowSuccess(R.string.tank_op_done))
@@ -320,6 +341,20 @@ class TankoubonDetailViewModel : ViewModel() {
                 emitError(e)
             }
         }
+    }
+
+    /**
+     * [baseUrl] is only null while no [load] ever resolved the source
+     * profile (resolution itself failed). Ops can't proceed then — surface
+     * a generic error instead of silently dropping the action.
+     */
+    private fun requireBaseUrl(): String? {
+        val url = baseUrl
+        if (url == null) {
+            val ctx = ServiceRegistry.appModule.getContext()
+            _uiEvent.tryEmit(TankDetailUiEvent.ShowError(ctx.getString(R.string.error_unknown)))
+        }
+        return url
     }
 
     private fun emitError(e: Exception) {
