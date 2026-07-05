@@ -106,6 +106,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         private const val NOTIFY_KEY_TAP_MENU_AREA = 4
         private const val NOTIFY_KEY_TAP_ERROR_TEXT = 5
         private const val NOTIFY_KEY_LONG_PRESS_PAGE = 6
+        private const val NOTIFY_KEY_PAGE_TRANSFORMS = 7
 
         @JvmStatic
         private fun resolveOrientation(screenRotation: Int): Int = when (screenRotation) {
@@ -705,6 +706,15 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         mainHandler.post(task)
     }
 
+    override fun onPageTransformsChanged() {
+        var task = mNotifyTaskPool.pop()
+        if (task == null) {
+            task = NotifyTask()
+        }
+        task.setData(NOTIFY_KEY_PAGE_TRANSFORMS, 0)
+        mainHandler.post(task)
+    }
+
     override fun onAutoTransferDone() {
         mInputHandler.onAutoTransferDone()
         // Fires on the GL render thread: on a forward page-turn attempt at
@@ -874,6 +884,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                 NOTIFY_KEY_TAP_SLIDER_AREA -> mSliderController.onTapSliderArea()
                 NOTIFY_KEY_TAP_ERROR_TEXT -> mGalleryProvider?.forceRequest(mValue)
                 NOTIFY_KEY_LONG_PRESS_PAGE -> mImageOps.showPageDialog(mValue)
+                NOTIFY_KEY_PAGE_TRANSFORMS -> Unit // stamp overlay consumes this once wired (read-path task)
             }
             mNotifyTaskPool.push(this)
         }
