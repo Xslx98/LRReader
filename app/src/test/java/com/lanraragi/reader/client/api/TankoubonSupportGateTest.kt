@@ -46,6 +46,15 @@ class TankoubonSupportGateTest {
     }
 
     @Test
+    fun unsupportedIsSticky_lateMarkSupportedDoesNotFlipBack() {
+        TankoubonSupportGate.markFrom(urlA, LRRHttpException(404))
+        // A 200 landing after the 404 (request already in flight) is a
+        // proxy/cache artifact, not a mid-session server upgrade.
+        TankoubonSupportGate.markSupported(urlA)
+        assertTrue(TankoubonSupportGate.isUnsupported(urlA))
+    }
+
+    @Test
     fun trailingSlashNormalised() {
         TankoubonSupportGate.markFrom("$urlA/", LRRHttpException(404))
         assertTrue(TankoubonSupportGate.isUnsupported(urlA))
