@@ -163,6 +163,7 @@ class HistoryScene : ToolbarScene(),
         batchCountView = bar.findViewById(R.id.batch_count)
         bar.findViewById<Button>(R.id.batch_download).visibility = View.GONE
         bar.findViewById<Button>(R.id.batch_category).visibility = View.GONE
+        bar.findViewById<Button>(R.id.batch_tankoubon).visibility = View.GONE
         bar.findViewById<Button>(R.id.batch_clear_new).visibility = View.GONE
         bar.findViewById<Button>(R.id.batch_select_all)
             .setOnClickListener { multiSelectHelper?.checkAll() }

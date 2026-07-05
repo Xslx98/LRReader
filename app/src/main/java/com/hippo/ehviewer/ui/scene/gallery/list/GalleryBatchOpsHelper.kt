@@ -11,6 +11,9 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.settings.PrivacySettings
 import com.hippo.ehviewer.ui.scene.gallery.detail.CategoryDialogHelper
+import com.hippo.ehviewer.ui.scene.gallery.detail.TankoubonDialogHelper
+import com.lanraragi.reader.client.api.LRRClientProvider
+import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.domain.Archive
 
 /**
@@ -46,6 +49,7 @@ internal class GalleryBatchOpsHelper(
     private val countView: TextView = bar.findViewById(R.id.batch_count)
     private val downloadButton: Button = bar.findViewById(R.id.batch_download)
     private val categoryButton: Button = bar.findViewById(R.id.batch_category)
+    private val tankoubonButton: Button = bar.findViewById(R.id.batch_tankoubon)
     private val clearNewButton: Button = bar.findViewById(R.id.batch_clear_new)
     private val deleteButton: Button = bar.findViewById(R.id.batch_delete)
 
@@ -57,8 +61,14 @@ internal class GalleryBatchOpsHelper(
             .setOnClickListener { callback.checkAllSelection() }
         downloadButton.setOnClickListener { onDownloadClick() }
         categoryButton.setOnClickListener { onCategoryClick() }
+        tankoubonButton.setOnClickListener { onTankoubonClick() }
         clearNewButton.setOnClickListener { onClearNewClick() }
         deleteButton.setOnClickListener { onDeleteClick() }
+        // Hidden entirely on servers already proven pre-0.9.8; UNKNOWN keeps
+        // it visible and the first failed call flips the gate + toasts.
+        tankoubonButton.visibility =
+            if (TankoubonSupportGate.isUnsupported(LRRClientProvider.getBaseUrl())) View.GONE
+            else View.VISIBLE
     }
 
     // ─── ListMultiSelectHelper callbacks ─────────────────────────────────
@@ -143,6 +153,20 @@ internal class GalleryBatchOpsHelper(
         ) { categoryId ->
             callback.viewModel.runBatch(
                 GalleryListViewModel.BatchOp.AddToCategory(categoryId), selected
+            )
+            callback.exitSelection()
+        }
+    }
+
+    private fun onTankoubonClick() {
+        // Same capture semantics as onCategoryClick: selection is taken now,
+        // exited only once a tank is actually picked.
+        val selected = takeSelection() ?: return
+        TankoubonDialogHelper.pickTankoubon(
+            callback.activity, callback.activeProfileId()
+        ) { tankId ->
+            callback.viewModel.runBatch(
+                GalleryListViewModel.BatchOp.AddToTankoubon(tankId), selected
             )
             callback.exitSelection()
         }
@@ -236,6 +260,7 @@ internal class GalleryBatchOpsHelper(
     private fun setOpButtonsEnabled(enabled: Boolean) {
         downloadButton.isEnabled = enabled
         categoryButton.isEnabled = enabled
+        tankoubonButton.isEnabled = enabled
         clearNewButton.isEnabled = enabled
         deleteButton.isEnabled = enabled
     }
