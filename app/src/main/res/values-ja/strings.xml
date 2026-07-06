@@ -173,7 +173,9 @@
     <string name="stat_download_done_line_failed">ダウンロード失敗: %s</string>
     <string name="download_remove_dialog_title">ダウンロードを削除</string>
     <string name="download_remove_dialog_message">ダウンロードリストから「%s」を削除しますか？</string>
-    <string name="download_remove_dialog_message_2">ダウンロードリストから %d 件のタスクを削除しますか？</string>
+    <plurals name="download_remove_dialog_message_2">
+        <item quantity="other">ダウンロードリストから %d 件のタスクを削除しますか？</item>
+    </plurals>
     <string name="download_remove_dialog_check_text">画像ファイルを削除</string>
     <string name="stat_download_action_stop_all">すべて停止</string>
     <string name="default_download_label_name">デフォルト</string>

@@ -177,7 +177,10 @@
     <string name="stat_download_done_line_failed">Gescheitert: %s</string>
     <string name="download_remove_dialog_title">Download entfernen</string>
     <string name="download_remove_dialog_message">%s aus der Downloadliste entfernen?</string>
-    <string name="download_remove_dialog_message_2">%d Downloads aus der Downloadliste entfernen?</string>
+    <plurals name="download_remove_dialog_message_2">
+        <item quantity="one">%d Download aus der Downloadliste entfernen?</item>
+        <item quantity="other">%d Downloads aus der Downloadliste entfernen?</item>
+    </plurals>
     <string name="download_remove_dialog_check_text">Bilddateien löschen</string>
     <string name="stat_download_action_stop_all">Alle stopppen</string>
     <string name="default_download_label_name">Standard</string>

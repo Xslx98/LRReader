@@ -210,7 +210,9 @@
     <string name="stat_download_done_line_failed">실패: %s</string>
     <string name="download_remove_dialog_title">다운로드 항목 제거</string>
     <string name="download_remove_dialog_message">%s 항목을 다운로드 목록에서 제거하시겠습니까?</string>
-    <string name="download_remove_dialog_message_2">%d개 항목을 다운로드 목록에서 제거하시겠습니까?</string>
+    <plurals name="download_remove_dialog_message_2">
+        <item quantity="other">%d개 항목을 다운로드 목록에서 제거하시겠습니까?</item>
+    </plurals>
     <string name="download_remove_dialog_check_text">이미지 파일 삭제</string>
     <string name="stat_download_action_stop_all">모두 중지</string>
     <string name="default_download_label_name">기본</string>

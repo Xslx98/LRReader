@@ -240,7 +240,9 @@
     <string name="stat_download_done_line_failed">下載失敗：%s</string>
     <string name="download_remove_dialog_title">移除下載項目</string>
     <string name="download_remove_dialog_message">從下載列表移除 %s ？</string>
-    <string name="download_remove_dialog_message_2">從下載列表移除 %d 項？</string>
+    <plurals name="download_remove_dialog_message_2">
+        <item quantity="other">從下載列表移除 %d 項？</item>
+    </plurals>
     <string name="download_remove_dialog_check_text">刪除圖檔</string>
     <string name="stat_download_action_stop_all">全部停止</string>
     <string name="default_download_label_name">預設</string>

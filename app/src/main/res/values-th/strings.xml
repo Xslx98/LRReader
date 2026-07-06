@@ -223,7 +223,9 @@
     <string name="stat_download_done_line_failed">ล้มเหลว: %s</string>
     <string name="download_remove_dialog_title">ลบรายการดาวน์โหลด</string>
     <string name="download_remove_dialog_message">ต้องการลบ %s ออกจากรายการดาวน์โหลดไหม?</string>
-    <string name="download_remove_dialog_message_2">ต้องการลบ %d รายการจากรายการดาวน์โหลดไหม?</string>
+    <plurals name="download_remove_dialog_message_2">
+        <item quantity="other">ต้องการลบ %d รายการจากรายการดาวน์โหลดไหม?</item>
+    </plurals>
     <string name="download_remove_dialog_check_text">ลบไฟล์ภาพด้วย</string>
     <string name="stat_download_action_stop_all">หยุดทั้งหมด</string>
     <string name="default_download_label_name">ค่าเริ่มต้น</string>
