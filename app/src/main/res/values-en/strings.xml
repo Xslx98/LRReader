@@ -219,19 +219,31 @@
     <string name="download_state_downloading">Downloading</string>
     <string name="download_state_downloaded">Downloaded</string>
     <string name="download_state_failed">Failed</string>
-    <string name="download_state_failed_2">%d incomplete</string>
+    <plurals name="download_state_failed_2">
+        <item quantity="one">%d incomplete</item>
+        <item quantity="other">%d incomplete</item>
+    </plurals>
     <string name="download_state_finish">Done</string>
     <string name="stat_509_alert_title">509 Alert</string>
     <string name="stat_509_alert_text">Image limit has been reached. Please stop download and have a relax.</string>
     <string name="stat_download_done_title">Download Finished</string>
-    <string name="stat_download_done_text_succeeded">%d succeeded</string>
-    <string name="stat_download_done_text_failed">%d failed</string>
+    <plurals name="stat_download_done_text_succeeded">
+        <item quantity="one">%d succeeded</item>
+        <item quantity="other">%d succeeded</item>
+    </plurals>
+    <plurals name="stat_download_done_text_failed">
+        <item quantity="one">%d failed</item>
+        <item quantity="other">%d failed</item>
+    </plurals>
     <string name="stat_download_done_text_mix">%1$d succeeded, %2$d failed</string>
     <string name="stat_download_done_line_succeeded">Succeeded: %s</string>
     <string name="stat_download_done_line_failed">Failed: %s</string>
     <string name="download_remove_dialog_title">Remove Download Item</string>
     <string name="download_remove_dialog_message">Remove %s from download list ?</string>
-    <string name="download_remove_dialog_message_2">Remove %d items from download list ?</string>
+    <plurals name="download_remove_dialog_message_2">
+        <item quantity="one">Remove %d item from download list ?</item>
+        <item quantity="other">Remove %d items from download list ?</item>
+    </plurals>
     <string name="download_remove_dialog_check_text">Delete image files</string>
     <string name="stat_download_action_stop_all">Stop all</string>
     <string name="default_download_label_name">Default</string>
@@ -248,7 +260,10 @@
     <string name="download_speed_text_2">%1$s, %2$s left</string>
     <string name="download_waiting_for_network">Waiting for network…</string>
     <string name="download_resume_paused_snackbar">Downloads paused — waiting for network</string>
-    <string name="download_resume_timed_out_snackbar">%d download(s) stopped: no network</string>
+    <plurals name="download_resume_timed_out_snackbar">
+        <item quantity="one">%d download stopped: no network</item>
+        <item quantity="other">%d downloads stopped: no network</item>
+    </plurals>
     <string name="download_resume_view_action">View</string>
     <string name="download_resume_retry_action">Retry</string>
     <string name="remember_download_label">Remember download label</string>
@@ -374,15 +389,24 @@
     <string name="tank_none">No tankoubons on this server</string>
 
     <!-- List multi-select batch operations -->
-    <string name="batch_selected_count">%d selected</string>
+    <plurals name="batch_selected_count">
+        <item quantity="one">%d selected</item>
+        <item quantity="other">%d selected</item>
+    </plurals>
     <string name="batch_select_all">All</string>
     <string name="batch_download">Download</string>
     <string name="batch_add_to_category">Category</string>
     <string name="batch_clear_new">Clear NEW</string>
     <string name="batch_delete">Delete</string>
     <string name="batch_remove_history">Remove</string>
-    <string name="batch_delete_confirm_message">Permanently delete %d archives from the server?\n\nThis action cannot be undone.</string>
-    <string name="batch_remove_history_confirm">Remove %d entries from history?</string>
+    <plurals name="batch_delete_confirm_message">
+        <item quantity="one">Permanently delete %d archive from the server?\n\nThis action cannot be undone.</item>
+        <item quantity="other">Permanently delete %d archives from the server?\n\nThis action cannot be undone.</item>
+    </plurals>
+    <plurals name="batch_remove_history_confirm">
+        <item quantity="one">Remove %d entry from history?</item>
+        <item quantity="other">Remove %d entries from history?</item>
+    </plurals>
     <string name="batch_running">Processing %1$d/%2$d…</string>
     <string name="batch_result_summary">%1$d succeeded, %2$d failed</string>
     <string name="batch_result_failures_title">Failed items</string>
@@ -530,7 +554,10 @@
         <item quantity="other">%d hours ago</item>
     </plurals>
     <string name="yesterday">Yesterday</string>
-    <string name="some_days_ago">%d days ago</string>
+    <plurals name="some_days_ago">
+        <item quantity="one">A day ago</item>
+        <item quantity="other">%d days ago</item>
+    </plurals>
     <plurals name="second">
         <item quantity="one">sec</item>
         <item quantity="other">secs</item>
@@ -601,7 +628,10 @@
     <string name="lrr_category_action_edit">Edit</string>
     <string name="lrr_category_action_pin">Pin</string>
     <string name="lrr_category_action_unpin">Unpin</string>
-    <string name="lrr_category_archives">%1$d archives</string>
+    <plurals name="lrr_category_archives">
+        <item quantity="one">%1$d archive</item>
+        <item quantity="other">%1$d archives</item>
+    </plurals>
     <string name="lrr_category_create">New Category</string>
     <string name="lrr_category_create_inline">+ New Category…</string>
     <string name="lrr_category_created">Category created</string>
@@ -665,7 +695,10 @@
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="settings_advanced_url_replace_summary">URL masking (requires restart, disables account features)</string>
     <string name="settings_advanced_url_replace_title">URL Masking (requires SNI off)</string>
-    <string name="settings_download_clean_invalid_done">Cleaned %d download items</string>
+    <plurals name="settings_download_clean_invalid_done">
+        <item quantity="one">Cleaned %d download item</item>
+        <item quantity="other">Cleaned %d download items</item>
+    </plurals>
     <string name="settings_download_clean_invalid_download">Clean invaild download</string>
     <string name="settings_download_clean_invalid_download_confirm">Clear all invalid download items?</string>
     <string name="settings_download_clean_invalid_download_summary">Remove download items which are invalid</string>
@@ -675,7 +708,10 @@
     <string name="settings_download_export_no_items">No items to export</string>
     <string name="settings_download_export_succeed">Successfully exported download items to %s</string>
     <string name="settings_download_import_failed">Failed to import download items</string>
-    <string name="settings_download_import_succeed">Successfully imported %d download items</string>
+    <plurals name="settings_download_import_succeed">
+        <item quantity="one">Successfully imported %d download item</item>
+        <item quantity="other">Successfully imported %d download items</item>
+    </plurals>
     <string name="settings_eh_theme_auto_switch">Follow system dark mode</string>
     <string name="settings_read_auto_transfer_time">Auto Transfer(s)</string>
     <string name="settings_read_picture_decoding_method">Picture decoding method</string>

@@ -196,19 +196,27 @@
     <string name="download_state_downloading">다운로드 중</string>
     <string name="download_state_downloaded">다운로드함</string>
     <string name="download_state_failed">실패함</string>
-    <string name="download_state_failed_2">%d 남아 있음</string>
+    <plurals name="download_state_failed_2">
+        <item quantity="other">%d 남아 있음</item>
+    </plurals>
     <string name="download_state_finish">완료</string>
     <string name="stat_509_alert_title">509 경고</string>
     <string name="stat_509_alert_text">이미지 제한에 도달하였습니다. 다운로드를 멈추고 잠시 쉬세요.</string>
     <string name="stat_download_done_title">다운로드 완료</string>
-    <string name="stat_download_done_text_succeeded">%d 성공</string>
-    <string name="stat_download_done_text_failed">%d 실패</string>
+    <plurals name="stat_download_done_text_succeeded">
+        <item quantity="other">%d 성공</item>
+    </plurals>
+    <plurals name="stat_download_done_text_failed">
+        <item quantity="other">%d 실패</item>
+    </plurals>
     <string name="stat_download_done_text_mix">%1$d 성공, %2$d 실패</string>
     <string name="stat_download_done_line_succeeded">성공: %s</string>
     <string name="stat_download_done_line_failed">실패: %s</string>
     <string name="download_remove_dialog_title">다운로드 항목 제거</string>
     <string name="download_remove_dialog_message">%s 항목을 다운로드 목록에서 제거하시겠습니까?</string>
-    <string name="download_remove_dialog_message_2">%d개 항목을 다운로드 목록에서 제거하시겠습니까?</string>
+    <plurals name="download_remove_dialog_message_2">
+        <item quantity="other">%d개 항목을 다운로드 목록에서 제거하시겠습니까?</item>
+    </plurals>
     <string name="download_remove_dialog_check_text">이미지 파일 삭제</string>
     <string name="stat_download_action_stop_all">모두 중지</string>
     <string name="default_download_label_name">기본</string>
@@ -242,7 +250,9 @@
     <string name="download_speed_text_2">%1$s, %2$s 남음</string>
     <string name="download_waiting_for_network">네트워크 대기 중…</string>
     <string name="download_resume_paused_snackbar">다운로드 일시 중지 — 네트워크 대기 중</string>
-    <string name="download_resume_timed_out_snackbar">%d개의 다운로드가 중지됨: 네트워크 없음</string>
+    <plurals name="download_resume_timed_out_snackbar">
+        <item quantity="other">%d개의 다운로드가 중지됨: 네트워크 없음</item>
+    </plurals>
     <string name="download_resume_view_action">보기</string>
     <string name="download_resume_retry_action">재시도</string>
     <string name="remember_download_label">다운로드 레이블 기억</string>
@@ -369,15 +379,21 @@
     <string name="tank_none">서버에 단행본이 없습니다</string>
 
     <!-- List multi-select batch operations -->
-    <string name="batch_selected_count">%d개 선택됨</string>
+    <plurals name="batch_selected_count">
+        <item quantity="other">%d개 선택됨</item>
+    </plurals>
     <string name="batch_select_all">전체</string>
     <string name="batch_download">다운로드</string>
     <string name="batch_add_to_category">카테고리</string>
     <string name="batch_clear_new">NEW 해제</string>
     <string name="batch_delete">삭제</string>
     <string name="batch_remove_history">제거</string>
-    <string name="batch_delete_confirm_message">서버에서 %d개의 아카이브를 영구 삭제할까요?\n\n이 작업은 되돌릴 수 없습니다.</string>
-    <string name="batch_remove_history_confirm">기록에서 %d개 항목을 제거할까요?</string>
+    <plurals name="batch_delete_confirm_message">
+        <item quantity="other">서버에서 %d개의 아카이브를 영구 삭제할까요?\n\n이 작업은 되돌릴 수 없습니다.</item>
+    </plurals>
+    <plurals name="batch_remove_history_confirm">
+        <item quantity="other">기록에서 %d개 항목을 제거할까요?</item>
+    </plurals>
     <string name="batch_running">처리 중 %1$d/%2$d…</string>
     <string name="batch_result_summary">성공 %1$d, 실패 %2$d</string>
     <string name="batch_result_failures_title">실패한 항목</string>
@@ -523,7 +539,9 @@
         <item quantity="other">%d시간 전</item>
     </plurals>
     <string name="yesterday">어제</string>
-    <string name="some_days_ago">%d일 전</string>
+    <plurals name="some_days_ago">
+        <item quantity="other">%d일 전</item>
+    </plurals>
 
     <plurals name="second">
         <item quantity="other">초</item>
@@ -592,11 +610,15 @@
     <string name="settings_download_export_failed">다운로드 항목 내보내기 실패</string>
     <string name="settings_download_import_failed">다운로드 항목 가져오기 실패</string>
     <string name="settings_download_export_succeed">다운로드 항목을 %s 에 내보냈습니다</string>
-    <string name="settings_download_import_succeed">%d 개의 다운로드 항목을 가져왔습니다</string>
+    <plurals name="settings_download_import_succeed">
+        <item quantity="other">%d 개의 다운로드 항목을 가져왔습니다</item>
+    </plurals>
     <string name="settings_download_export_no_items">내보낼 항목이 없습니다</string>
     <string name="settings_download_clean_invalid_download_confirm">유효하지 않은 다운로드 항목을 모두 삭제하시겠습니까?</string>
     <string name="settings_download_cleaning">다운로드 항목 정리 중</string>
-    <string name="settings_download_clean_invalid_done">%d 개의 다운로드 항목을 정리했습니다</string>
+    <plurals name="settings_download_clean_invalid_done">
+        <item quantity="other">%d 개의 다운로드 항목을 정리했습니다</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">정리할 다운로드 항목이 없습니다</string>
 
     <string name="nav_server_config">서버 전환</string>
@@ -637,7 +659,9 @@
     <string name="lrr_category_action_edit">편집</string>
     <string name="lrr_category_action_pin">고정</string>
     <string name="lrr_category_action_unpin">고정 해제</string>
-    <string name="lrr_category_archives">%d개 아카이브</string>
+    <plurals name="lrr_category_archives">
+        <item quantity="other">%d개 아카이브</item>
+    </plurals>
     <string name="lrr_category_create">카테고리 생성</string>
     <string name="lrr_category_create_inline">새 카테고리 만들기</string>
     <string name="lrr_category_created">카테고리가 생성되었습니다</string>

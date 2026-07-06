@@ -374,7 +374,9 @@ class SecurityScene : SolidScene(),
         if (state.isLockedOut) {
             mPatternView?.isEnabled = false
             mLockoutText?.visibility = View.VISIBLE
-            mLockoutText?.text = getString(R.string.pattern_lockout_message, state.remainingSeconds)
+            mLockoutText?.text = resources.getQuantityString(
+                R.plurals.pattern_lockout_message, state.remainingSeconds, state.remainingSeconds
+            )
         } else {
             mPatternView?.isEnabled = true
             mLockoutText?.visibility = View.GONE

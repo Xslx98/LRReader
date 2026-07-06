@@ -342,7 +342,9 @@ class DownloadAdapter(
                 val text = if (info.legacy <= 0) {
                     resources.getString(R.string.download_state_failed)
                 } else {
-                    resources.getString(R.string.download_state_failed_2, info.legacy)
+                    resources.getQuantityString(
+                        R.plurals.download_state_failed_2, info.legacy, info.legacy
+                    )
                 }
                 bindState(holder, info, text)
             }

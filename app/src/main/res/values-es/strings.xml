@@ -186,19 +186,35 @@
     <string name="download_state_downloaded">Descargado</string>
     <string name="download_state_none">Inactivo</string>
     <string name="download_state_failed">Fallido</string>
-    <string name="download_state_failed_2">%d incompleto</string>
+    <plurals name="download_state_failed_2">
+        <item quantity="one">%d incompleto</item>
+        <item quantity="other">%d incompletos</item>
+        <item quantity="many">%d incompletos</item>
+    </plurals>
     <string name="download_state_finish">Completado</string>
     <string name="stat_509_alert_title">Alerta 509</string>
     <string name="stat_509_alert_text">Se alcanzó el límite de imágenes. Detenga la descarga y espere un poco</string>
     <string name="stat_download_done_title">Descarga completada</string>
-    <string name="stat_download_done_text_succeeded">%d completada</string>
-    <string name="stat_download_done_text_failed">%d fallido</string>
+    <plurals name="stat_download_done_text_succeeded">
+        <item quantity="one">%d completada</item>
+        <item quantity="other">%d completadas</item>
+        <item quantity="many">%d completadas</item>
+    </plurals>
+    <plurals name="stat_download_done_text_failed">
+        <item quantity="one">%d fallido</item>
+        <item quantity="other">%d fallidos</item>
+        <item quantity="many">%d fallidos</item>
+    </plurals>
     <string name="stat_download_done_text_mix">%1$d completado, %2$d fallido</string>
     <string name="stat_download_done_line_succeeded">Completado: %s</string>
     <string name="stat_download_done_line_failed">Fallido: %s</string>
     <string name="download_remove_dialog_title">Borrar galería descargada</string>
     <string name="download_remove_dialog_message">¿Borrar %s de la lista de descargas?</string>
-    <string name="download_remove_dialog_message_2">¿Borrar %d galerías de la lista de descargas?</string>
+    <plurals name="download_remove_dialog_message_2">
+        <item quantity="one">¿Borrar %d galería de la lista de descargas?</item>
+        <item quantity="other">¿Borrar %d galerías de la lista de descargas?</item>
+        <item quantity="many">¿Borrar %d galerías de la lista de descargas?</item>
+    </plurals>
     <string name="download_remove_dialog_check_text">Borrar imágenes</string>
     <string name="download_reset_reading_progress">Reiniciar progreso de lectura</string>
     <string name="reset_reading_progress_message">¿Deseas reiniciar el progreso de lectura en todas las galerías?</string>
@@ -232,7 +248,11 @@
     <string name="download_speed_text_2">%1$s, %2$s restantes</string>
     <string name="download_waiting_for_network">Esperando red…</string>
     <string name="download_resume_paused_snackbar">Descargas en pausa: esperando red</string>
-    <string name="download_resume_timed_out_snackbar">%d descarga(s) detenida(s): sin red</string>
+    <plurals name="download_resume_timed_out_snackbar">
+        <item quantity="one">%d descarga detenida: sin red</item>
+        <item quantity="other">%d descargas detenidas: sin red</item>
+        <item quantity="many">%d descargas detenidas: sin red</item>
+    </plurals>
     <string name="download_resume_view_action">Ver</string>
     <string name="download_resume_retry_action">Reintentar</string>
     <string name="remember_download_label">Recordar etiqueta de descarga</string>
@@ -338,15 +358,27 @@
     <string name="tank_none">No hay tankoubons en este servidor</string>
 
     <!-- List multi-select batch operations -->
-    <string name="batch_selected_count">%d seleccionados</string>
+    <plurals name="batch_selected_count">
+        <item quantity="one">%d seleccionado</item>
+        <item quantity="other">%d seleccionados</item>
+        <item quantity="many">%d seleccionados</item>
+    </plurals>
     <string name="batch_select_all">Todos</string>
     <string name="batch_download">Descargar</string>
     <string name="batch_add_to_category">Categoría</string>
     <string name="batch_clear_new">Quitar NEW</string>
     <string name="batch_delete">Eliminar</string>
     <string name="batch_remove_history">Quitar</string>
-    <string name="batch_delete_confirm_message">¿Eliminar permanentemente %d archivos del servidor?\n\nEsta acción no se puede deshacer.</string>
-    <string name="batch_remove_history_confirm">¿Quitar %d entradas del historial?</string>
+    <plurals name="batch_delete_confirm_message">
+        <item quantity="one">¿Eliminar permanentemente %d archivo del servidor?\n\nEsta acción no se puede deshacer.</item>
+        <item quantity="other">¿Eliminar permanentemente %d archivos del servidor?\n\nEsta acción no se puede deshacer.</item>
+        <item quantity="many">¿Eliminar permanentemente %d archivos del servidor?\n\nEsta acción no se puede deshacer.</item>
+    </plurals>
+    <plurals name="batch_remove_history_confirm">
+        <item quantity="one">¿Quitar %d entrada del historial?</item>
+        <item quantity="other">¿Quitar %d entradas del historial?</item>
+        <item quantity="many">¿Quitar %d entradas del historial?</item>
+    </plurals>
     <string name="batch_running">Procesando %1$d/%2$d…</string>
     <string name="batch_result_summary">%1$d correctos, %2$d fallidos</string>
     <string name="batch_result_failures_title">Elementos fallidos</string>
@@ -492,7 +524,11 @@
         <item quantity="many">Hace %d horas</item>
     </plurals>
     <string name="yesterday">Ayer</string>
-    <string name="some_days_ago">Hace %d días atrás</string>
+    <plurals name="some_days_ago">
+        <item quantity="one">Hace un día</item>
+        <item quantity="other">Hace %d días atrás</item>
+        <item quantity="many">Hace %d días atrás</item>
+    </plurals>
     <plurals name="second">
         <item quantity="one">seg</item>
         <item quantity="other">segs</item>
@@ -584,11 +620,19 @@
     <string name="settings_download_export_failed">Error al exportar elementos de descarga</string>
     <string name="settings_download_import_failed">Error al importar elementos de descarga</string>
     <string name="settings_download_export_succeed">Elementos de descarga exportados exitosamente a %s</string>
-    <string name="settings_download_import_succeed">%d elementos de descarga importados exitosamente</string>
+    <plurals name="settings_download_import_succeed">
+        <item quantity="one">%d elemento de descarga importado exitosamente</item>
+        <item quantity="other">%d elementos de descarga importados exitosamente</item>
+        <item quantity="many">%d elementos de descarga importados exitosamente</item>
+    </plurals>
     <string name="settings_download_export_no_items">No hay elementos para exportar</string>
     <string name="settings_download_clean_invalid_download_confirm">¿Eliminar todos los elementos de descarga no válidos?</string>
     <string name="settings_download_cleaning">Limpiando elementos de descarga</string>
-    <string name="settings_download_clean_invalid_done">%d elementos de descarga limpiados</string>
+    <plurals name="settings_download_clean_invalid_done">
+        <item quantity="one">%d elemento de descarga limpiado</item>
+        <item quantity="other">%d elementos de descarga limpiados</item>
+        <item quantity="many">%d elementos de descarga limpiados</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">No hay elementos de descarga no válidos</string>
 
     <string name="nav_server_config">Cambiar servidor</string>
@@ -630,7 +674,11 @@
     <string name="lrr_category_action_edit">Editar</string>
     <string name="lrr_category_action_pin">Fijar</string>
     <string name="lrr_category_action_unpin">Desfijar</string>
-    <string name="lrr_category_archives">%d archivos</string>
+    <plurals name="lrr_category_archives">
+        <item quantity="one">%d archivo</item>
+        <item quantity="other">%d archivos</item>
+        <item quantity="many">%d archivos</item>
+    </plurals>
     <string name="lrr_category_create">Crear categoría</string>
     <string name="lrr_category_create_inline">Crear nueva categoría</string>
     <string name="lrr_category_created">Categoría creada</string>

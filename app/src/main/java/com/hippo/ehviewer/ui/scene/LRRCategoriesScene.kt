@@ -367,7 +367,9 @@ class LRRCategoriesScene : BaseScene() {
                 holder.count.text = getString(R.string.lrr_category_label_dynamic)
             } else {
                 val archiveCount = cat.archives.size
-                holder.count.text = getString(R.string.lrr_category_archives, archiveCount)
+                holder.count.text = resources.getQuantityString(
+                    R.plurals.lrr_category_archives, archiveCount, archiveCount
+                )
             }
             holder.search.visibility = View.GONE
 

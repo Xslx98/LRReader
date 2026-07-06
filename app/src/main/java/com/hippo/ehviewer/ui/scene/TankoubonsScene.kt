@@ -319,7 +319,9 @@ class TankoubonsScene : BaseScene() {
             }
 
             holder.name.text = tank.name
-            holder.count.text = getString(R.string.lrr_category_archives, tank.archives.size)
+            holder.count.text = resources.getQuantityString(
+                R.plurals.lrr_category_archives, tank.archives.size, tank.archives.size
+            )
 
             // Global reading progress (1 = unread)
             if (tank.progress > 1) {

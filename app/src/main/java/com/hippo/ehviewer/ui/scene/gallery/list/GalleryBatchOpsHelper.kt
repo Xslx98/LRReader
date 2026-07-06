@@ -86,7 +86,8 @@ internal class GalleryBatchOpsHelper(
     fun onCheckedChanged(count: Int) {
         selectedCount = count
         if (!isRunning()) {
-            countView.text = bar.context.getString(R.string.batch_selected_count, count)
+            countView.text =
+                bar.resources.getQuantityString(R.plurals.batch_selected_count, count, count)
         }
     }
 
@@ -99,7 +100,9 @@ internal class GalleryBatchOpsHelper(
             countView.text =
                 bar.context.getString(R.string.batch_running, progress.first, progress.second)
         } else if (callback.isSelectionActive()) {
-            countView.text = bar.context.getString(R.string.batch_selected_count, selectedCount)
+            countView.text = bar.resources.getQuantityString(
+                R.plurals.batch_selected_count, selectedCount, selectedCount
+            )
         } else {
             bar.visibility = View.GONE
         }
@@ -196,7 +199,11 @@ internal class GalleryBatchOpsHelper(
     private fun showDeleteConfirmDialog(activity: Activity, selected: List<Archive>) {
         val dialog = AlertDialog.Builder(activity)
             .setTitle(R.string.lrr_delete_confirm_title)
-            .setMessage(activity.getString(R.string.batch_delete_confirm_message, selected.size))
+            .setMessage(
+                activity.resources.getQuantityString(
+                    R.plurals.batch_delete_confirm_message, selected.size, selected.size
+                )
+            )
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.lrr_delete_confirm_button, null)
             .create()
