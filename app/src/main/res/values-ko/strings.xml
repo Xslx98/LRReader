@@ -196,7 +196,9 @@
     <string name="download_state_downloading">다운로드 중</string>
     <string name="download_state_downloaded">다운로드함</string>
     <string name="download_state_failed">실패함</string>
-    <string name="download_state_failed_2">%d 남아 있음</string>
+    <plurals name="download_state_failed_2">
+        <item quantity="other">%d 남아 있음</item>
+    </plurals>
     <string name="download_state_finish">완료</string>
     <string name="stat_509_alert_title">509 경고</string>
     <string name="stat_509_alert_text">이미지 제한에 도달하였습니다. 다운로드를 멈추고 잠시 쉬세요.</string>

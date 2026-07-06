@@ -159,7 +159,9 @@
     <string name="download_state_downloading">ダウンロード中</string>
     <string name="download_state_downloaded">ダウンロード済み</string>
     <string name="download_state_failed">ダウンロードエラー</string>
-    <string name="download_state_failed_2">%d 未完成</string>
+    <plurals name="download_state_failed_2">
+        <item quantity="other">%d 未完成</item>
+    </plurals>
     <string name="download_state_finish">ダウンロード完了</string>
     <string name="stat_509_alert_title">509 エラー</string>
     <string name="stat_509_alert_text">ダウンロード制限に達しました。しばらくしてからもう一度やり直してください。</string>

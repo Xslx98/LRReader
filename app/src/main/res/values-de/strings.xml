@@ -144,7 +144,10 @@
     <string name="download_state_downloading">Download läuft</string>
     <string name="download_state_downloaded">Abgeschlossen</string>
     <string name="download_state_failed">Gescheitert</string>
-    <string name="download_state_failed_2">%d wurde noch nicht abgeschlossen</string>
+    <plurals name="download_state_failed_2">
+        <item quantity="one">%d wurde noch nicht abgeschlossen</item>
+        <item quantity="other">%d wurden noch nicht abgeschlossen</item>
+    </plurals>
     <string name="download_state_finish">Abgeschlossen</string>
     <string name="download_sort_list">Sortieren</string>
     <string name="download_filter_by_status">Nach Status filtern</string>

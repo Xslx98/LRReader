@@ -186,7 +186,11 @@
     <string name="download_state_downloaded">Descargado</string>
     <string name="download_state_none">Inactivo</string>
     <string name="download_state_failed">Fallido</string>
-    <string name="download_state_failed_2">%d incompleto</string>
+    <plurals name="download_state_failed_2">
+        <item quantity="one">%d incompleto</item>
+        <item quantity="other">%d incompletos</item>
+        <item quantity="many">%d incompletos</item>
+    </plurals>
     <string name="download_state_finish">Completado</string>
     <string name="stat_509_alert_title">Alerta 509</string>
     <string name="stat_509_alert_text">Se alcanzó el límite de imágenes. Detenga la descarga y espere un poco</string>
