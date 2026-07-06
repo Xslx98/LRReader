@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.settings.PrivacySettings
+import com.hippo.ehviewer.ui.scene.BatchBarAnimator
 import com.hippo.ehviewer.ui.scene.gallery.detail.CategoryDialogHelper
 import com.hippo.ehviewer.ui.scene.gallery.detail.TankoubonDialogHelper
 import com.lanraragi.reader.client.api.LRRClientProvider
@@ -77,9 +78,9 @@ internal class GalleryBatchOpsHelper(
 
     fun onModeChanged(active: Boolean) {
         if (active) {
-            bar.visibility = View.VISIBLE
+            BatchBarAnimator.show(bar)
         } else if (!isRunning()) {
-            bar.visibility = View.GONE
+            BatchBarAnimator.hide(bar)
         }
         // else: a batch is in flight — keep the bar visible showing progress
         // until onBatchProgress(null) ends the run.
@@ -98,7 +99,7 @@ internal class GalleryBatchOpsHelper(
     fun onBatchProgress(progress: Pair<Int, Int>?) {
         setOpButtonsEnabled(progress == null)
         if (progress != null) {
-            bar.visibility = View.VISIBLE
+            BatchBarAnimator.show(bar)
             countView.text =
                 bar.context.getString(R.string.batch_running, progress.first, progress.second)
             selectAllView.visibility = View.INVISIBLE
@@ -115,7 +116,7 @@ internal class GalleryBatchOpsHelper(
                     R.plurals.batch_selected_count, selectedCount, selectedCount
                 )
             } else {
-                bar.visibility = View.GONE
+                BatchBarAnimator.hide(bar)
             }
         }
     }
