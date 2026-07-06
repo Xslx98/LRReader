@@ -87,8 +87,8 @@ class DownloadSchedulerTest {
 
         progressTracker = DownloadProgressTracker()
         speedTracker = DownloadSpeedTracker(object : DownloadSpeedTracker.Callback {
-            override fun getFirstActiveTask(): DownloadInfo? {
-                return if (scheduler.activeTasks.isEmpty()) null else scheduler.activeTasks[0]
+            override fun getActiveTasks(): List<DownloadInfo> {
+                return scheduler.activeTasks.toList()
             }
 
             override fun getInfoListForLabel(label: String?): List<DownloadInfo>? {
