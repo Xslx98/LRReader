@@ -26,7 +26,6 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
@@ -161,13 +160,13 @@ class HistoryScene : ToolbarScene(),
         val bar = ViewUtils.`$$`(view, R.id.batch_action_bar)
         batchBar = bar
         batchCountView = bar.findViewById(R.id.batch_count)
-        bar.findViewById<Button>(R.id.batch_download).visibility = View.GONE
-        bar.findViewById<Button>(R.id.batch_category).visibility = View.GONE
-        bar.findViewById<Button>(R.id.batch_tankoubon).visibility = View.GONE
-        bar.findViewById<Button>(R.id.batch_clear_new).visibility = View.GONE
-        bar.findViewById<Button>(R.id.batch_select_all)
+        bar.findViewById<View>(R.id.batch_download).visibility = View.GONE
+        bar.findViewById<View>(R.id.batch_category).visibility = View.GONE
+        bar.findViewById<View>(R.id.batch_tankoubon).visibility = View.GONE
+        bar.findViewById<View>(R.id.batch_clear_new).visibility = View.GONE
+        bar.findViewById<View>(R.id.batch_select_all)
             .setOnClickListener { multiSelectHelper?.checkAll() }
-        bar.findViewById<Button>(R.id.batch_delete).apply {
+        bar.findViewById<TextView>(R.id.batch_delete).apply {
             setText(R.string.batch_remove_history)
             setOnClickListener { onBatchRemoveClick() }
         }

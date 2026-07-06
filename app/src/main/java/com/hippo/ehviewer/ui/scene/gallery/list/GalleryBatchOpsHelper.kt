@@ -3,7 +3,7 @@ package com.hippo.ehviewer.ui.scene.gallery.list
 import android.app.Activity
 import android.os.CountDownTimer
 import android.view.View
-import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
@@ -47,18 +47,20 @@ internal class GalleryBatchOpsHelper(
     }
 
     private val countView: TextView = bar.findViewById(R.id.batch_count)
-    private val downloadButton: Button = bar.findViewById(R.id.batch_download)
-    private val categoryButton: Button = bar.findViewById(R.id.batch_category)
-    private val tankoubonButton: Button = bar.findViewById(R.id.batch_tankoubon)
-    private val clearNewButton: Button = bar.findViewById(R.id.batch_clear_new)
-    private val deleteButton: Button = bar.findViewById(R.id.batch_delete)
+    private val selectAllView: View = bar.findViewById(R.id.batch_select_all)
+    private val dividerView: View = bar.findViewById(R.id.batch_divider)
+    private val progressView: ProgressBar = bar.findViewById(R.id.batch_progress)
+    private val downloadButton: TextView = bar.findViewById(R.id.batch_download)
+    private val categoryButton: TextView = bar.findViewById(R.id.batch_category)
+    private val tankoubonButton: TextView = bar.findViewById(R.id.batch_tankoubon)
+    private val clearNewButton: TextView = bar.findViewById(R.id.batch_clear_new)
+    private val deleteButton: TextView = bar.findViewById(R.id.batch_delete)
 
     /** Last count reported by the selection helper; restored after a run ends. */
     private var selectedCount = 0
 
     init {
-        bar.findViewById<Button>(R.id.batch_select_all)
-            .setOnClickListener { callback.checkAllSelection() }
+        selectAllView.setOnClickListener { callback.checkAllSelection() }
         downloadButton.setOnClickListener { onDownloadClick() }
         categoryButton.setOnClickListener { onCategoryClick() }
         tankoubonButton.setOnClickListener { onTankoubonClick() }
@@ -99,12 +101,22 @@ internal class GalleryBatchOpsHelper(
             bar.visibility = View.VISIBLE
             countView.text =
                 bar.context.getString(R.string.batch_running, progress.first, progress.second)
-        } else if (callback.isSelectionActive()) {
-            countView.text = bar.resources.getQuantityString(
-                R.plurals.batch_selected_count, selectedCount, selectedCount
-            )
+            selectAllView.visibility = View.INVISIBLE
+            dividerView.visibility = View.GONE
+            progressView.visibility = View.VISIBLE
+            progressView.max = progress.second
+            progressView.progress = progress.first
         } else {
-            bar.visibility = View.GONE
+            selectAllView.visibility = View.VISIBLE
+            progressView.visibility = View.GONE
+            dividerView.visibility = View.VISIBLE
+            if (callback.isSelectionActive()) {
+                countView.text = bar.resources.getQuantityString(
+                    R.plurals.batch_selected_count, selectedCount, selectedCount
+                )
+            } else {
+                bar.visibility = View.GONE
+            }
         }
     }
 
@@ -265,15 +277,17 @@ internal class GalleryBatchOpsHelper(
     }
 
     private fun setOpButtonsEnabled(enabled: Boolean) {
-        downloadButton.isEnabled = enabled
-        categoryButton.isEnabled = enabled
-        tankoubonButton.isEnabled = enabled
-        clearNewButton.isEnabled = enabled
-        deleteButton.isEnabled = enabled
+        val alpha = if (enabled) 1f else DISABLED_ALPHA
+        listOf(downloadButton, categoryButton, tankoubonButton, clearNewButton, deleteButton)
+            .forEach {
+                it.isEnabled = enabled
+                it.alpha = alpha
+            }
     }
 
     private companion object {
         const val COUNTDOWN_MILLIS = 3000L
         const val COUNTDOWN_INTERVAL = 1000L
+        const val DISABLED_ALPHA = 0.35f
     }
 }
