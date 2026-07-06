@@ -451,67 +451,12 @@
 
     <issue
         id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;download&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;settings_download_clean_invalid_done&quot;>Cleaned %d download items&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="38"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;download&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;settings_download_import_succeed&quot;>Successfully imported %d download items&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="48"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;archives&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;lrr_category_archives&quot;>%1$d archives&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="64"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;incomplete&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;download_state_failed_2&quot;>%d incomplete&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="379"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
         message="Formatting %d followed by words (&quot;succeeded&quot;): This should probably be a plural rather than a string"
         errorLine1="    &lt;string name=&quot;stat_download_done_text_succeeded&quot;>%d succeeded&lt;/string>"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values-en/strings.xml"
             line="384"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;failed&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;stat_download_done_text_failed&quot;>%d failed&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="385"
             column="5"/>
     </issue>
 
@@ -539,34 +484,12 @@
 
     <issue
         id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;incomplete&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;download_state_failed_2&quot;>%d incomplete&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="459"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
         message="Formatting %d followed by words (&quot;succeeded&quot;): This should probably be a plural rather than a string"
         errorLine1="    &lt;string name=&quot;stat_download_done_text_succeeded&quot;>%d succeeded&lt;/string>"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
             line="464"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;failed&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;stat_download_done_text_failed&quot;>%d failed&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="465"
             column="5"/>
     </issue>
 
@@ -589,94 +512,6 @@
         <location
             file="src/main/res/values/strings.xml"
             line="471"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;items&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;settings_download_restore_successfully&quot;>Restore %d items successfully&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="578"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;items&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;settings_download_restore_successfully&quot;>Restore %d items successfully&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="690"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;days&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;some_days_ago&quot;>%d days ago&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="751"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;days&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;some_days_ago&quot;>%d days ago&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="874"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;archives&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;lrr_category_archives&quot;>%1$d archives&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="907"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;download&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;settings_download_clean_invalid_done&quot;>Cleaned %d download items&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="993"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;download&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;settings_download_import_succeed&quot;>Successfully imported %d download items&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="1008"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;seconds&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;pattern_lockout_message&quot;>Too many failed attempts. Try again in %d seconds.&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1182"
             column="5"/>
     </issue>
 
@@ -3864,116 +3699,6 @@
             file="../gradle/libs.versions.toml"
             line="11"
             column="10"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;archives&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;batch_delete_confirm_message&quot;&gt;Permanently delete %d archives from the server?\n\nThis action cannot be undone.&lt;/string&gt;"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="384"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;archives&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;lrr_category_archives&quot;&gt;%1$d archives&lt;/string&gt;"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="50"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;download&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;download_resume_timed_out_snackbar&quot;&gt;%d download(s) stopped: no network&lt;/string&gt;"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="251"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;download&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;settings_download_clean_invalid_done&quot;&gt;Cleaned %d download items&lt;/string&gt;"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="27"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;entries&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;batch_remove_history_confirm&quot;&gt;Remove %d entries from history?&lt;/string&gt;"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="385"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;entries&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;batch_remove_history_confirm&quot;&gt;Remove %d entries from history?&lt;/string&gt;"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="463"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;selected&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;batch_selected_count&quot;&gt;%d selected&lt;/string&gt;"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="377"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;selected&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;batch_selected_count&quot;&gt;%d selected&lt;/string&gt;"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="455"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;succeeded&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;stat_download_done_text_succeeded&quot;&gt;%d succeeded&lt;/string&gt;"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="227"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;succeeded&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;stat_download_done_text_succeeded&quot;&gt;%d succeeded&lt;/string&gt;"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="287"
-            column="5"/>
     </issue>
 
     <issue
