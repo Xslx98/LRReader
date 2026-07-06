@@ -63,7 +63,7 @@ class DownloadManager(
 
     init {
         mSpeedReminder = DownloadSpeedTracker(object : DownloadSpeedTracker.Callback {
-            override fun getFirstActiveTask(): DownloadInfo? = scheduler.activeTasks.firstOrNull()
+            override fun getActiveTasks(): List<DownloadInfo> = scheduler.activeTasks.toList()
             override fun getInfoListForLabel(label: String?): List<DownloadInfo>? = repo.getInfoListForLabel(label)
             override fun getDownloadListener(): DownloadListener? = eventBus.getDownloadListener()
             override fun getDownloadInfoListeners(): List<WeakReference<DownloadInfoListener>> = eventBus.getInfoListenerRefs()
