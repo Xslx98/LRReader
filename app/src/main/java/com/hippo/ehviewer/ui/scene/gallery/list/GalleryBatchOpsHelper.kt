@@ -3,6 +3,7 @@ package com.hippo.ehviewer.ui.scene.gallery.list
 import android.app.Activity
 import android.os.CountDownTimer
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -45,6 +46,7 @@ internal class GalleryBatchOpsHelper(
         fun exitSelection()
         fun checkAllSelection()
         fun refreshList()
+        fun showTip(message: String)
     }
 
     private val countView: TextView = bar.findViewById(R.id.batch_count)
@@ -123,31 +125,45 @@ internal class GalleryBatchOpsHelper(
 
     fun onBatchResult(result: GalleryListViewModel.BatchResult) {
         val activity = callback.activity ?: return
-        // AlertDialog shows either a message or a list, not both, so the
-        // failure lines are folded into the summary message.
-        val message = StringBuilder(
-            activity.getString(
-                R.string.batch_result_summary, result.succeeded.size, result.failed.size
+        val tip = BatchFeedbackPresenter.tipFor(result)
+        if (tip != null) {
+            callback.showTip(
+                activity.resources.getQuantityString(tip.textRes, tip.count, tip.count)
             )
-        )
-        if (result.failed.isNotEmpty()) {
-            message.append("\n\n")
-                .append(activity.getString(R.string.batch_result_failures_title))
-                .append(':')
-            result.failed.forEach {
-                message.append('\n').append(it.title).append(" — ").append(it.reason)
-            }
+        } else {
+            BatchFeedbackPresenter.dialogFor(result)?.let { showFailureDialog(activity, it) }
         }
-        AlertDialog.Builder(activity)
-            .setMessage(message)
-            .setPositiveButton(android.R.string.ok, null)
-            .show()
 
         if (result.op == GalleryListViewModel.BatchOp.ClearNew) {
             // NEW badges render from server data; reload so they disappear.
             callback.refreshList()
         }
         // DeleteArchives rows already fall out via AppEventBus.archiveDeletedEvent.
+    }
+
+    /**
+     * Failure-only detail dialog: quantified op-specific title, a summary line
+     * and one structured row per failed archive (title + reason).
+     */
+    private fun showFailureDialog(activity: Activity, spec: BatchFeedbackPresenter.FailureDialog) {
+        val inflater = activity.layoutInflater
+        val content = inflater.inflate(R.layout.dialog_batch_failures, null, false)
+        content.findViewById<TextView>(R.id.batch_fail_summary).text =
+            activity.getString(R.string.batch_fail_summary, spec.succeededCount, spec.failedCount)
+        val list = content.findViewById<LinearLayout>(R.id.batch_fail_list)
+        spec.failures.forEach { failure ->
+            val row = inflater.inflate(R.layout.item_batch_failure, list, false)
+            row.findViewById<TextView>(R.id.batch_fail_item_title).text = failure.title
+            row.findViewById<TextView>(R.id.batch_fail_item_reason).text = failure.reason
+            list.addView(row)
+        }
+        AlertDialog.Builder(activity)
+            .setTitle(
+                activity.resources.getQuantityString(spec.titleRes, spec.failedCount, spec.failedCount)
+            )
+            .setView(content)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
     }
 
     // ─── Operations ──────────────────────────────────────────────────────

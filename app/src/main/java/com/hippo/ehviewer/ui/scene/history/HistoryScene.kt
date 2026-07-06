@@ -228,7 +228,12 @@ class HistoryScene : ToolbarScene(),
         setNavigationIcon(R.drawable.v_arrow_left_dark_x24)
         // View-scoped so a re-created view does not stack duplicate collectors.
         collectFlow(viewLifecycleOwner, viewModel.batchRemoveDone) { (ok, bad) ->
-            showTip(getString(R.string.batch_result_summary, ok, bad), LENGTH_SHORT)
+            val message = if (bad == 0) {
+                resources.getQuantityString(R.plurals.batch_done_remove_history, ok, ok)
+            } else {
+                getString(R.string.batch_remove_history_partial, ok, bad)
+            }
+            showTip(message, LENGTH_SHORT)
         }
     }
 

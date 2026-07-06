@@ -426,8 +426,13 @@
         <item quantity="many">%d éléments n\'ont pas pu être supprimés</item>
         <item quantity="other">%d éléments n\'ont pas pu être supprimés</item>
     </plurals>
-    <string name="batch_result_summary">%1$d réussis, %2$d échoués</string>
-    <string name="batch_result_failures_title">Éléments en échec</string>
+    <plurals name="batch_done_remove_history">
+        <item quantity="one">%d entrée d\'historique supprimée</item>
+        <item quantity="many">%d entrées d\'historique supprimées</item>
+        <item quantity="other">%d entrées d\'historique supprimées</item>
+    </plurals>
+    <string name="batch_fail_summary">%1$d terminés, %2$d en échec :</string>
+    <string name="batch_remove_history_partial">%1$d supprimées, %2$d en échec</string>
 
     <string name="settings_eh">Affichage</string>
     <string name="settings_eh_list_mode">Mode de liste</string>

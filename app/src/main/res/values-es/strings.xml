@@ -425,8 +425,13 @@
         <item quantity="many">No se pudieron eliminar %d elementos</item>
         <item quantity="other">No se pudieron eliminar %d elementos</item>
     </plurals>
-    <string name="batch_result_summary">%1$d correctos, %2$d fallidos</string>
-    <string name="batch_result_failures_title">Elementos fallidos</string>
+    <plurals name="batch_done_remove_history">
+        <item quantity="one">%d entrada del historial eliminada</item>
+        <item quantity="many">%d entradas del historial eliminadas</item>
+        <item quantity="other">%d entradas del historial eliminadas</item>
+    </plurals>
+    <string name="batch_fail_summary">%1$d completados, %2$d fallidos:</string>
+    <string name="batch_remove_history_partial">%1$d eliminadas, %2$d fallidas</string>
 
     <string name="settings_eh">Pantalla</string>
     <string name="settings_eh_list_mode">Modo lista</string>

@@ -422,8 +422,11 @@
     <plurals name="batch_fail_title_delete">
         <item quantity="other">%d개를 삭제하지 못했습니다</item>
     </plurals>
-    <string name="batch_result_summary">성공 %1$d, 실패 %2$d</string>
-    <string name="batch_result_failures_title">실패한 항목</string>
+    <plurals name="batch_done_remove_history">
+        <item quantity="other">기록 %d개를 삭제했습니다</item>
+    </plurals>
+    <string name="batch_fail_summary">%1$d개 완료, %2$d개 실패:</string>
+    <string name="batch_remove_history_partial">%1$d개 삭제, %2$d개 실패</string>
 
     <!-- Settings -->
     <string name="settings_eh">화면</string>

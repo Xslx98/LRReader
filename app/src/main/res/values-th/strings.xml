@@ -414,8 +414,11 @@
     <plurals name="batch_fail_title_delete">
         <item quantity="other">ไม่สามารถลบ %d รายการ</item>
     </plurals>
-    <string name="batch_result_summary">สำเร็จ %1$d ล้มเหลว %2$d</string>
-    <string name="batch_result_failures_title">รายการที่ล้มเหลว</string>
+    <plurals name="batch_done_remove_history">
+        <item quantity="other">ลบประวัติ %d รายการแล้ว</item>
+    </plurals>
+    <string name="batch_fail_summary">เสร็จสิ้น %1$d รายการ ล้มเหลว %2$d รายการ:</string>
+    <string name="batch_remove_history_partial">ลบแล้ว %1$d รายการ ล้มเหลว %2$d รายการ</string>
 
     <string name="settings_eh">การแสดงผล</string>
     <string name="settings_eh_theme">ธีม</string>
