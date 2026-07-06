@@ -2,17 +2,6 @@
 <issues format="6" by="lint 8.13.2" type="baseline" client="gradle" dependencies="false" name="AGP (8.13.2)" variant="all" version="8.13.2">
 
     <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Bitmap.toDrawable` instead?"
-        errorLine1="                    val drawable = BitmapDrawable(avatar.resources, bitmap)"
-        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/MainActivity.kt"
-            line="838"
-            column="36"/>
-    </issue>
-
-    <issue
         id="SuspiciousImport"
         message="Don&apos;t include `android.R` here; use a fully qualified name for each usage instead"
         errorLine1="import android.R"
@@ -219,292 +208,6 @@
             file="src/main/java/com/hippo/scene/StageActivity.java"
             line="561"
             column="59"/>
-    </issue>
-
-    <issue
-        id="AndroidGradlePluginVersion"
-        message="A newer version of com.android.application than 8.13.2 is available: 9.1.0"
-        errorLine1="agp = &quot;8.13.2&quot;"
-        errorLine2="      ~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="6"
-            column="7"/>
-    </issue>
-
-    <issue
-        id="AndroidGradlePluginVersion"
-        message="A newer version of com.android.library than 8.13.2 is available: 9.1.0"
-        errorLine1="agp = &quot;8.13.2&quot;"
-        errorLine2="      ~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="6"
-            column="7"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.fragment:fragment than 1.8.6 is available: 1.8.9"
-        errorLine1="fragment = &quot;1.8.6&quot;"
-        errorLine2="           ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="18"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.lifecycle:lifecycle-runtime-ktx than 2.8.7 is available: 2.10.0"
-        errorLine1="lifecycle = &quot;2.8.7&quot;"
-        errorLine2="            ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="19"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.lifecycle:lifecycle-viewmodel-ktx than 2.8.7 is available: 2.10.0"
-        errorLine1="lifecycle = &quot;2.8.7&quot;"
-        errorLine2="            ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="19"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.paging:paging-runtime-ktx than 3.3.6 is available: 3.4.2"
-        errorLine1="paging = &quot;3.3.6&quot;"
-        errorLine2="         ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="20"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.paging:paging-testing than 3.3.6 is available: 3.4.2"
-        errorLine1="paging = &quot;3.3.6&quot;"
-        errorLine2="         ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="20"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.room:room-compiler than 2.6.1 is available: 2.8.4"
-        errorLine1="room = &quot;2.6.1&quot;"
-        errorLine2="       ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="23"
-            column="8"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.room:room-ktx than 2.6.1 is available: 2.8.4"
-        errorLine1="room = &quot;2.6.1&quot;"
-        errorLine2="       ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="23"
-            column="8"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.room:room-runtime than 2.6.1 is available: 2.8.4"
-        errorLine1="room = &quot;2.6.1&quot;"
-        errorLine2="       ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="23"
-            column="8"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.room:room-testing than 2.6.1 is available: 2.8.4"
-        errorLine1="room = &quot;2.6.1&quot;"
-        errorLine2="       ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="23"
-            column="8"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.test:core-ktx than 1.6.1 is available: 1.7.0"
-        errorLine1="test-core = &quot;1.6.1&quot;"
-        errorLine2="            ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="28"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.webkit:webkit than 1.13.0 is available: 1.15.0"
-        errorLine1="webkit = &quot;1.13.0&quot;"
-        errorLine2="         ~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="29"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of com.google.firebase.crashlytics than 3.0.2 is available: 3.0.7"
-        errorLine1="firebase-crashlytics-plugin = &quot;3.0.2&quot;"
-        errorLine2="                              ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="33"
-            column="31"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of com.google.gms.google-services than 4.4.2 is available: 4.4.4"
-        errorLine1="google-services = &quot;4.4.2&quot;"
-        errorLine2="                  ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="34"
-            column="19"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of org.jetbrains.kotlin.android than 2.1.0 is available: 2.3.20"
-        errorLine1="kotlin = &quot;2.1.0&quot;"
-        errorLine2="         ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="7"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of org.jetbrains.kotlin.plugin.parcelize than 2.1.0 is available: 2.3.20"
-        errorLine1="kotlin = &quot;2.1.0&quot;"
-        errorLine2="         ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="7"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of org.jetbrains.kotlin.plugin.serialization than 2.1.0 is available: 2.3.20"
-        errorLine1="kotlin = &quot;2.1.0&quot;"
-        errorLine2="         ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="7"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of org.jetbrains.kotlinx:kotlinx-serialization-json than 1.8.1 is available: 1.11.0"
-        errorLine1="serialization-json = &quot;1.8.1&quot;"
-        errorLine2="                     ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="38"
-            column="22"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of io.gitlab.arturbosch.detekt than 1.23.7 is available: 1.23.8"
-        errorLine1="detekt = &quot;1.23.7&quot;"
-        errorLine2="         ~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="41"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of org.jsoup:jsoup than 1.18.1 is available: 1.22.1"
-        errorLine1="jsoup = &quot;1.18.1&quot;"
-        errorLine2="        ~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="42"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of com.squareup.okhttp3:mockwebserver than 4.12.0 is available: 5.3.2"
-        errorLine1="okhttp = &quot;4.12.0&quot;"
-        errorLine2="         ~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="44"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of com.squareup.okhttp3:okhttp than 4.12.0 is available: 5.3.2"
-        errorLine1="okhttp = &quot;4.12.0&quot;"
-        errorLine2="         ~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="44"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of com.getkeepsafe.relinker:relinker than 1.4.4 is available: 1.4.5"
-        errorLine1="relinker = &quot;1.4.4&quot;"
-        errorLine2="           ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="45"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of org.robolectric:robolectric than 4.14.1 is available: 4.16.1"
-        errorLine1="robolectric = &quot;4.14.1&quot;"
-        errorLine2="              ~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="46"
-            column="15"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of org.jooq:joor than 0.9.6 is available: 0.9.15"
-        errorLine1="joor = &quot;0.9.6&quot;"
-        errorLine2="       ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="51"
-            column="8"/>
     </issue>
 
     <issue
@@ -781,28 +484,6 @@
 
     <issue
         id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;pages&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;go_to_hint&quot;>Page %1$d, total %2$d pages&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="257"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;pages&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;go_to_hint&quot;>Page %1$d, total %2$d pages&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="334"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
         message="Formatting %d followed by words (&quot;incomplete&quot;): This should probably be a plural rather than a string"
         errorLine1="    &lt;string name=&quot;download_state_failed_2&quot;>%d incomplete&lt;/string>"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
@@ -925,33 +606,11 @@
     <issue
         id="PluralsCandidate"
         message="Formatting %d followed by words (&quot;items&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;settings_download_clean_redundancy_done&quot;>Redundancy cleaning completed, clean-up %d items totally&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="582"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;items&quot;): This should probably be a plural rather than a string"
         errorLine1="    &lt;string name=&quot;settings_download_restore_successfully&quot;>Restore %d items successfully&lt;/string>"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
             line="690"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;items&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;settings_download_clean_redundancy_done&quot;>Redundancy cleaning completed, clean-up %d items totally&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="694"
             column="5"/>
     </issue>
 
@@ -1052,17 +711,6 @@
             file="src/main/java/com/hippo/widget/DirExplorer.java"
             line="118"
             column="13"/>
-    </issue>
-
-    <issue
-        id="NotifyDataSetChanged"
-        message="It will always be more efficient to use more specific change events if you can. Rely on `notifyDataSetChanged` as a last resort."
-        errorLine1="                searchAdapter.notifyDataSetChanged()"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/widget/SearchLayout.kt"
-            line="264"
-            column="17"/>
     </issue>
 
     <issue
@@ -2338,17 +1986,6 @@
         <location
             file="src/main/res/layout/activity_hosts.xml"
             line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="MergeRootFrame"
-        message="This `&lt;FrameLayout>` can be replaced with a `&lt;merge>` tag"
-        errorLine1="&lt;FrameLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/gallery_detail_header.xml"
-            line="17"
             column="1"/>
     </issue>
 
@@ -3950,17 +3587,6 @@
     <issue
         id="RtlHardcoded"
         message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
-        errorLine1="                scene.closeDrawer(Gravity.RIGHT)"
-        errorLine2="                                          ~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadLabelDraw.kt"
-            line="158"
-            column="43"/>
-    </issue>
-
-    <issue
-        id="RtlHardcoded"
-        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
         errorLine1="        setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)"
         errorLine2="                                                                        ~~~~~">
         <location
@@ -3977,50 +3603,6 @@
         <location
             file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadsScene.kt"
             line="656"
-            column="72"/>
-    </issue>
-
-    <issue
-        id="RtlHardcoded"
-        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
-        errorLine1="            setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)"
-        errorLine2="                                                                            ~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadsScene.kt"
-            line="910"
-            column="77"/>
-    </issue>
-
-    <issue
-        id="RtlHardcoded"
-        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
-        errorLine1="            setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)"
-        errorLine2="                                                                            ~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadsScene.kt"
-            line="911"
-            column="77"/>
-    </issue>
-
-    <issue
-        id="RtlHardcoded"
-        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
-        errorLine1="            setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.LEFT)"
-        errorLine2="                                                                       ~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadsScene.kt"
-            line="918"
-            column="72"/>
-    </issue>
-
-    <issue
-        id="RtlHardcoded"
-        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
-        errorLine1="            setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)"
-        errorLine2="                                                                       ~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadsScene.kt"
-            line="919"
             column="72"/>
     </issue>
 
@@ -4150,6 +3732,446 @@
         message="The project references RTL attributes, but does not explicitly enable or disable RTL support with `android:supportsRtl` in the manifest">
         <location
             file="src/main/AndroidManifest.xml"/>
+    </issue>
+
+    <issue
+        id="AndroidGradlePluginVersion"
+        message="A newer version of com.android.application than 8.13.2 is available: 9.2.1"
+        errorLine1="agp = &quot;8.13.2&quot;"
+        errorLine2="      ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="6"
+            column="7"/>
+    </issue>
+
+    <issue
+        id="AndroidGradlePluginVersion"
+        message="A newer version of com.android.library than 8.13.2 is available: 9.2.1"
+        errorLine1="agp = &quot;8.13.2&quot;"
+        errorLine2="      ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="6"
+            column="7"/>
+    </issue>
+
+    <issue
+        id="EmptySuperCall"
+        message="No need to call `super.onCleared`; the super method is defined to be empty"
+        errorLine1="        super.onCleared()"
+        errorLine2="              ~~~~~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadsViewModel.kt"
+            line="136"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="EmptySuperCall"
+        message="No need to call `super.onCleared`; the super method is defined to be empty"
+        errorLine1="        super.onCleared()"
+        errorLine2="              ~~~~~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryListViewModel.kt"
+            line="526"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.activity:activity than 1.10.1 is available: 1.13.0"
+        errorLine1="activity = &quot;1.10.1&quot;"
+        errorLine2="           ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="15"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.browser:browser than 1.8.0 is available: 1.10.0"
+        errorLine1="browser = &quot;1.8.0&quot;"
+        errorLine2="          ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="18"
+            column="11"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.core:core-ktx than 1.16.0 is available: 1.19.0"
+        errorLine1="core-ktx = &quot;1.16.0&quot;"
+        errorLine2="           ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="21"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of com.squareup.okhttp3:mockwebserver than 4.12.0 is available: 5.4.0"
+        errorLine1="okhttp = &quot;4.12.0&quot;"
+        errorLine2="         ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="49"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of com.squareup.okhttp3:okhttp than 4.12.0 is available: 5.4.0"
+        errorLine1="okhttp = &quot;4.12.0&quot;"
+        errorLine2="         ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="49"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jetbrains.kotlin.android than 2.3.21 is available: 2.4.0"
+        errorLine1="kotlin = &quot;2.3.21&quot;"
+        errorLine2="         ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="11"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jetbrains.kotlin.plugin.parcelize than 2.3.21 is available: 2.4.0"
+        errorLine1="kotlin = &quot;2.3.21&quot;"
+        errorLine2="         ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="11"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jetbrains.kotlin.plugin.serialization than 2.3.21 is available: 2.4.0"
+        errorLine1="kotlin = &quot;2.3.21&quot;"
+        errorLine2="         ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="11"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;archives&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;batch_delete_confirm_message&quot;&gt;Permanently delete %d archives from the server?\n\nThis action cannot be undone.&lt;/string&gt;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-en/strings.xml"
+            line="384"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;archives&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;lrr_category_archives&quot;&gt;%1$d archives&lt;/string&gt;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="50"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;download&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;download_resume_timed_out_snackbar&quot;&gt;%d download(s) stopped: no network&lt;/string&gt;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-en/strings.xml"
+            line="251"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;download&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;settings_download_clean_invalid_done&quot;&gt;Cleaned %d download items&lt;/string&gt;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="27"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;entries&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;batch_remove_history_confirm&quot;&gt;Remove %d entries from history?&lt;/string&gt;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-en/strings.xml"
+            line="385"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;entries&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;batch_remove_history_confirm&quot;&gt;Remove %d entries from history?&lt;/string&gt;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="463"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;selected&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;batch_selected_count&quot;&gt;%d selected&lt;/string&gt;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-en/strings.xml"
+            line="377"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;selected&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;batch_selected_count&quot;&gt;%d selected&lt;/string&gt;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="455"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;succeeded&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;stat_download_done_text_succeeded&quot;&gt;%d succeeded&lt;/string&gt;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-en/strings.xml"
+            line="227"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;succeeded&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;stat_download_done_text_succeeded&quot;&gt;%d succeeded&lt;/string&gt;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="287"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)"
+        errorLine2="                                                                                     ~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadSelectionHelper.kt"
+            line="46"
+            column="86"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)"
+        errorLine2="                                                                                     ~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadSelectionHelper.kt"
+            line="46"
+            column="86"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)"
+        errorLine2="                                                                                     ~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadSelectionHelper.kt"
+            line="46"
+            column="86"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)"
+        errorLine2="                                                                                     ~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadSelectionHelper.kt"
+            line="46"
+            column="86"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)"
+        errorLine2="                                                                                     ~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadSelectionHelper.kt"
+            line="45"
+            column="86"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)"
+        errorLine2="                                                                                     ~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadSelectionHelper.kt"
+            line="45"
+            column="86"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)"
+        errorLine2="                                                                                     ~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadSelectionHelper.kt"
+            line="45"
+            column="86"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)"
+        errorLine2="                                                                                     ~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadSelectionHelper.kt"
+            line="45"
+            column="86"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        errorLine1="                        percentView.text = &quot;$pct%&quot;"
+        errorLine2="                                           ~~~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/dialog/UpdateDialog.kt"
+            line="146"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        errorLine1="            row.text = &quot;${tank.name} ($count)&quot;"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/detail/DetailTankoubonBinder.kt"
+            line="44"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        errorLine1="                uploadProgressPercent?.text = &quot;${state.percent}%&quot;"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryListScene.kt"
+            line="626"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="SmallSp"
+        message="Avoid using sizes smaller than `11sp`: `10sp`"
+        errorLine1="        android:textSize=&quot;10sp&quot;"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/item_gallery_grid.xml"
+            line="46"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="StaticFieldLeak"
+        message="Do not place Android context classes in static fields (static reference to `AppConfig` which has field `sContext` pointing to `Context`); this is a memory leak"
+        errorLine1="object AppConfig {"
+        errorLine2="^">
+        <location
+            file="src/main/java/com/hippo/ehviewer/AppConfig.kt"
+            line="32"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="StaticFieldLeak"
+        message="Do not place Android context classes in static fields (static reference to `Settings` which has field `sContext` pointing to `Context`); this is a memory leak"
+        errorLine1="object Settings {"
+        errorLine2="^">
+        <location
+            file="src/main/java/com/hippo/ehviewer/Settings.kt"
+            line="29"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.dimen.text_medium` appears to be unused"
+        errorLine1="    &lt;dimen name=&quot;text_medium&quot;&gt;18sp&lt;/dimen&gt;"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/dimens.xml"
+            line="31"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.dimen.title_text_top_padding` appears to be unused"
+        errorLine1="    &lt;dimen name=&quot;title_text_top_padding&quot;&gt;6dp&lt;/dimen&gt;"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/dimens.xml"
+            line="26"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension property `View.isVisible` instead?"
+        errorLine1="    val isShowing: Boolean get() = root.visibility == View.VISIBLE"
+        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/hippo/ehviewer/ui/gallery/ReaderContinuationController.kt"
+            line="52"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="UselessParent"
+        message="This `FrameLayout` layout or its `LinearLayout` parent is unnecessary"
+        errorLine1="    &lt;FrameLayout"
+        errorLine2="     ~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/scene_download.xml"
+            line="23"
+            column="6"/>
     </issue>
 
 </issues>
