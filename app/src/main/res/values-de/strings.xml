@@ -305,7 +305,10 @@
     <string name="batch_clear_new">NEU entfernen</string>
     <string name="batch_delete">Löschen</string>
     <string name="batch_remove_history">Entfernen</string>
-    <string name="batch_delete_confirm_message">%d Archive endgültig vom Server löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.</string>
+    <plurals name="batch_delete_confirm_message">
+        <item quantity="one">%d Archiv endgültig vom Server löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.</item>
+        <item quantity="other">%d Archive endgültig vom Server löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.</item>
+    </plurals>
     <plurals name="batch_remove_history_confirm">
         <item quantity="one">%d Eintrag aus dem Verlauf entfernen?</item>
         <item quantity="other">%d Einträge aus dem Verlauf entfernen?</item>

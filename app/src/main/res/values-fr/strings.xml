@@ -350,7 +350,11 @@
     <string name="batch_clear_new">Retirer NEW</string>
     <string name="batch_delete">Supprimer</string>
     <string name="batch_remove_history">Retirer</string>
-    <string name="batch_delete_confirm_message">Supprimer définitivement %d archives du serveur ?\n\nCette action est irréversible.</string>
+    <plurals name="batch_delete_confirm_message">
+        <item quantity="one">Supprimer définitivement %d archive du serveur ?\n\nCette action est irréversible.</item>
+        <item quantity="other">Supprimer définitivement %d archives du serveur ?\n\nCette action est irréversible.</item>
+        <item quantity="many">Supprimer définitivement %d archives du serveur ?\n\nCette action est irréversible.</item>
+    </plurals>
     <plurals name="batch_remove_history_confirm">
         <item quantity="one">Retirer %d entrée de l\'historique ?</item>
         <item quantity="other">Retirer %d entrées de l\'historique ?</item>

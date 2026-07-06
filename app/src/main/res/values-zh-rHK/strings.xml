@@ -408,7 +408,9 @@
     <string name="batch_clear_new">清除NEW</string>
     <string name="batch_delete">刪除</string>
     <string name="batch_remove_history">移除</string>
-    <string name="batch_delete_confirm_message">從伺服器永久刪除 %d 個檔案？\n\n此操作無法復原。</string>
+    <plurals name="batch_delete_confirm_message">
+        <item quantity="other">從伺服器永久刪除 %d 個檔案？\n\n此操作無法復原。</item>
+    </plurals>
     <plurals name="batch_remove_history_confirm">
         <item quantity="other">從歷史中移除 %d 筆記錄？</item>
     </plurals>
