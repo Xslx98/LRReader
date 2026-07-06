@@ -655,7 +655,9 @@
     <string name="settings_download_export_failed">导出下载项失败</string>
     <string name="settings_download_import_failed">导入下载项失败</string>
     <string name="settings_download_export_succeed">成功导出下载项到 %s</string>
-    <string name="settings_download_import_succeed">成功导入 %d 个下载项</string>
+    <plurals name="settings_download_import_succeed">
+        <item quantity="other">成功导入 %d 个下载项</item>
+    </plurals>
     <string name="settings_download_export_no_items">没有导出项目</string>
     <string name="settings_download_clean_invalid_download_confirm">确定清空无效的下载项？</string>
     <string name="settings_download_cleaning">正在清理下载项</string>

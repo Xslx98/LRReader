@@ -604,7 +604,11 @@
     <string name="settings_download_export_failed">Échec de l\'exportation des éléments téléchargés</string>
     <string name="settings_download_import_failed">Échec de l\'importation des éléments téléchargés</string>
     <string name="settings_download_export_succeed">Éléments téléchargés exportés avec succès vers %s</string>
-    <string name="settings_download_import_succeed">%d éléments téléchargés importés avec succès</string>
+    <plurals name="settings_download_import_succeed">
+        <item quantity="one">%d élément téléchargé importé avec succès</item>
+        <item quantity="other">%d éléments téléchargés importés avec succès</item>
+        <item quantity="many">%d éléments téléchargés importés avec succès</item>
+    </plurals>
     <string name="settings_download_export_no_items">Aucun élément à exporter</string>
     <string name="settings_download_clean_invalid_download_confirm">Supprimer tous les éléments de téléchargement invalides ?</string>
     <string name="settings_download_cleaning">Nettoyage des éléments téléchargés</string>

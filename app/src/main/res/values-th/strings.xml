@@ -598,7 +598,9 @@
     <string name="settings_download_export_failed">ส่งออกรายการดาวน์โหลดล้มเหลว</string>
     <string name="settings_download_import_failed">นำเข้ารายการดาวน์โหลดล้มเหลว</string>
     <string name="settings_download_export_succeed">ส่งออกรายการดาวน์โหลดไปยัง %s สำเร็จ</string>
-    <string name="settings_download_import_succeed">นำเข้า %d รายการดาวน์โหลดสำเร็จ</string>
+    <plurals name="settings_download_import_succeed">
+        <item quantity="other">นำเข้า %d รายการดาวน์โหลดสำเร็จ</item>
+    </plurals>
     <string name="settings_download_export_no_items">ไม่มีรายการที่จะส่งออก</string>
     <string name="settings_download_clean_invalid_download_confirm">ลบรายการดาวน์โหลดที่ไม่ถูกต้องทั้งหมด?</string>
     <string name="settings_download_cleaning">กำลังล้างรายการดาวน์โหลด</string>
