@@ -39,7 +39,7 @@ coroutines = "1.10.2"
 serialization-json = "1.8.1"
 
 # --- Third-party ---
-detekt = "1.23.7"
+detekt = "1.23.8"
 jsoup = "1.18.1"
 license-plugin = "0.9.9"
 okhttp = "4.12.0"
