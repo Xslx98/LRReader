@@ -68,7 +68,9 @@ object DownloadLabelHelper {
     ) {
         val builder = CheckBoxDialogBuilder(
             context,
-            context.getString(R.string.download_remove_dialog_message_2, count),
+            context.resources.getQuantityString(
+                R.plurals.download_remove_dialog_message_2, count, count
+            ),
             context.getString(R.string.download_remove_dialog_check_text),
             DownloadSettings.getRemoveImageFiles()
         )

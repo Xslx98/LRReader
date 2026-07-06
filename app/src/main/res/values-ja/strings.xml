@@ -159,19 +159,27 @@
     <string name="download_state_downloading">ダウンロード中</string>
     <string name="download_state_downloaded">ダウンロード済み</string>
     <string name="download_state_failed">ダウンロードエラー</string>
-    <string name="download_state_failed_2">%d 未完成</string>
+    <plurals name="download_state_failed_2">
+        <item quantity="other">%d 未完成</item>
+    </plurals>
     <string name="download_state_finish">ダウンロード完了</string>
     <string name="stat_509_alert_title">509 エラー</string>
     <string name="stat_509_alert_text">ダウンロード制限に達しました。しばらくしてからもう一度やり直してください。</string>
     <string name="stat_download_done_title">ダウンロード完了</string>
-    <string name="stat_download_done_text_succeeded">%d 件のダウンロード完了済み</string>
-    <string name="stat_download_done_text_failed">%d 件のダウンロードにし失敗しました</string>
+    <plurals name="stat_download_done_text_succeeded">
+        <item quantity="other">%d 件のダウンロード完了済み</item>
+    </plurals>
+    <plurals name="stat_download_done_text_failed">
+        <item quantity="other">%d 件のダウンロードにし失敗しました</item>
+    </plurals>
     <string name="stat_download_done_text_mix">%1$d 件のダウンロード完了済み、%2$d 件が失敗</string>
     <string name="stat_download_done_line_succeeded">ダウンロード完了: %s</string>
     <string name="stat_download_done_line_failed">ダウンロード失敗: %s</string>
     <string name="download_remove_dialog_title">ダウンロードを削除</string>
     <string name="download_remove_dialog_message">ダウンロードリストから「%s」を削除しますか？</string>
-    <string name="download_remove_dialog_message_2">ダウンロードリストから %d 件のタスクを削除しますか？</string>
+    <plurals name="download_remove_dialog_message_2">
+        <item quantity="other">ダウンロードリストから %d 件のタスクを削除しますか？</item>
+    </plurals>
     <string name="download_remove_dialog_check_text">画像ファイルを削除</string>
     <string name="stat_download_action_stop_all">すべて停止</string>
     <string name="default_download_label_name">デフォルト</string>
@@ -205,7 +213,9 @@
     <string name="download_speed_text_2">%1$s、残り %2$s</string>
     <string name="download_waiting_for_network">ネットワークを待機中…</string>
     <string name="download_resume_paused_snackbar">ダウンロードを一時停止 — ネットワークを待機中</string>
-    <string name="download_resume_timed_out_snackbar">%d 件のダウンロードを停止: ネットワークなし</string>
+    <plurals name="download_resume_timed_out_snackbar">
+        <item quantity="other">%d 件のダウンロードを停止: ネットワークなし</item>
+    </plurals>
     <string name="download_resume_view_action">表示</string>
     <string name="download_resume_retry_action">再試行</string>
     <string name="remember_download_label">ダウンロードラベルを記憶する</string>
@@ -323,15 +333,21 @@
     <string name="tank_none">サーバーに単行本はありません</string>
 
     <!-- List multi-select batch operations -->
-    <string name="batch_selected_count">%d件選択中</string>
+    <plurals name="batch_selected_count">
+        <item quantity="other">%d件選択中</item>
+    </plurals>
     <string name="batch_select_all">すべて</string>
     <string name="batch_download">ダウンロード</string>
     <string name="batch_add_to_category">カテゴリ</string>
     <string name="batch_clear_new">NEW解除</string>
     <string name="batch_delete">削除</string>
     <string name="batch_remove_history">削除</string>
-    <string name="batch_delete_confirm_message">サーバーから%d件のアーカイブを完全に削除しますか？\n\nこの操作は取り消せません。</string>
-    <string name="batch_remove_history_confirm">履歴から%d件を削除しますか？</string>
+    <plurals name="batch_delete_confirm_message">
+        <item quantity="other">サーバーから%d件のアーカイブを完全に削除しますか？\n\nこの操作は取り消せません。</item>
+    </plurals>
+    <plurals name="batch_remove_history_confirm">
+        <item quantity="other">履歴から%d件を削除しますか？</item>
+    </plurals>
     <string name="batch_running">処理中 %1$d/%2$d…</string>
     <string name="batch_result_summary">成功 %1$d件、失敗 %2$d件</string>
     <string name="batch_result_failures_title">失敗した項目</string>
@@ -461,7 +477,9 @@
         <item quantity="other">%d 時前</item>
     </plurals>
     <string name="yesterday">昨日</string>
-    <string name="some_days_ago">%d 日前</string>
+    <plurals name="some_days_ago">
+        <item quantity="other">%d 日前</item>
+    </plurals>
     <plurals name="second">
         <item quantity="other">秒</item>
     </plurals>
@@ -523,11 +541,15 @@
     <string name="settings_download_export_failed">ダウンロード項目のエクスポートに失敗しました</string>
     <string name="settings_download_import_failed">ダウンロード項目のインポートに失敗しました</string>
     <string name="settings_download_export_succeed">ダウンロード項目を %s にエクスポートしました</string>
-    <string name="settings_download_import_succeed">%d 件のダウンロード項目をインポートしました</string>
+    <plurals name="settings_download_import_succeed">
+        <item quantity="other">%d 件のダウンロード項目をインポートしました</item>
+    </plurals>
     <string name="settings_download_export_no_items">エクスポートする項目がありません</string>
     <string name="settings_download_clean_invalid_download_confirm">無効なダウンロード項目をすべて削除しますか？</string>
     <string name="settings_download_cleaning">ダウンロード項目を整理中</string>
-    <string name="settings_download_clean_invalid_done">%d 件のダウンロード項目を整理しました</string>
+    <plurals name="settings_download_clean_invalid_done">
+        <item quantity="other">%d 件のダウンロード項目を整理しました</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">整理が必要なダウンロード項目はありません</string>
 
     <string name="nav_server_config">サーバー切替</string>
@@ -568,7 +590,9 @@
     <string name="lrr_category_action_edit">編集</string>
     <string name="lrr_category_action_pin">ピン留め</string>
     <string name="lrr_category_action_unpin">ピン留め解除</string>
-    <string name="lrr_category_archives">%d 件のアーカイブ</string>
+    <plurals name="lrr_category_archives">
+        <item quantity="other">%d 件のアーカイブ</item>
+    </plurals>
     <string name="lrr_category_create">カテゴリ作成</string>
     <string name="lrr_category_create_inline">新規カテゴリ作成</string>
     <string name="lrr_category_created">カテゴリを作成しました</string>

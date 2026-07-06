@@ -144,7 +144,10 @@
     <string name="download_state_downloading">Download läuft</string>
     <string name="download_state_downloaded">Abgeschlossen</string>
     <string name="download_state_failed">Gescheitert</string>
-    <string name="download_state_failed_2">%d wurde noch nicht abgeschlossen</string>
+    <plurals name="download_state_failed_2">
+        <item quantity="one">%d wurde noch nicht abgeschlossen</item>
+        <item quantity="other">%d wurden noch nicht abgeschlossen</item>
+    </plurals>
     <string name="download_state_finish">Abgeschlossen</string>
     <string name="download_sort_list">Sortieren</string>
     <string name="download_filter_by_status">Nach Status filtern</string>
@@ -167,14 +170,23 @@
     <string name="stat_509_alert_title">509 Fehler</string>
     <string name="stat_509_alert_text">Die Genze der Downloads wurde erreichet. Versuche noch einmals später,</string>
     <string name="stat_download_done_title">Download abgeschlossen</string>
-    <string name="stat_download_done_text_succeeded">%d Download(s) wurde(n) abgeschlossen</string>
-    <string name="stat_download_done_text_failed">%d Download(s) gescheitert</string>
+    <plurals name="stat_download_done_text_succeeded">
+        <item quantity="one">%d Download wurde abgeschlossen</item>
+        <item quantity="other">%d Downloads wurden abgeschlossen</item>
+    </plurals>
+    <plurals name="stat_download_done_text_failed">
+        <item quantity="one">%d Download gescheitert</item>
+        <item quantity="other">%d Downloads gescheitert</item>
+    </plurals>
     <string name="stat_download_done_text_mix">%1$d erfolgreich abgeschlossen, %2$d gescheitert</string>
     <string name="stat_download_done_line_succeeded">Abgeschlossen: %s</string>
     <string name="stat_download_done_line_failed">Gescheitert: %s</string>
     <string name="download_remove_dialog_title">Download entfernen</string>
     <string name="download_remove_dialog_message">%s aus der Downloadliste entfernen?</string>
-    <string name="download_remove_dialog_message_2">%d Downloads aus der Downloadliste entfernen?</string>
+    <plurals name="download_remove_dialog_message_2">
+        <item quantity="one">%d Download aus der Downloadliste entfernen?</item>
+        <item quantity="other">%d Downloads aus der Downloadliste entfernen?</item>
+    </plurals>
     <string name="download_remove_dialog_check_text">Bilddateien löschen</string>
     <string name="stat_download_action_stop_all">Alle stopppen</string>
     <string name="default_download_label_name">Standard</string>
@@ -189,7 +201,10 @@
     <string name="download_speed_text_2">%1$s, noch %2$s übrig</string>
     <string name="download_waiting_for_network">Warte auf Netzwerk…</string>
     <string name="download_resume_paused_snackbar">Downloads pausiert – warte auf Netzwerk</string>
-    <string name="download_resume_timed_out_snackbar">%d Download(s) gestoppt: kein Netzwerk</string>
+    <plurals name="download_resume_timed_out_snackbar">
+        <item quantity="one">%d Download gestoppt: kein Netzwerk</item>
+        <item quantity="other">%d Downloads gestoppt: kein Netzwerk</item>
+    </plurals>
     <string name="download_resume_view_action">Anzeigen</string>
     <string name="download_resume_retry_action">Wiederholen</string>
     <string name="remember_download_label">Download-Etikette merken</string>
@@ -295,15 +310,24 @@
     <string name="tank_none">Keine Tankoubons auf diesem Server</string>
 
     <!-- List multi-select batch operations -->
-    <string name="batch_selected_count">%d ausgewählt</string>
+    <plurals name="batch_selected_count">
+        <item quantity="one">%d ausgewählt</item>
+        <item quantity="other">%d ausgewählt</item>
+    </plurals>
     <string name="batch_select_all">Alle</string>
     <string name="batch_download">Herunterladen</string>
     <string name="batch_add_to_category">Kategorie</string>
     <string name="batch_clear_new">NEU entfernen</string>
     <string name="batch_delete">Löschen</string>
     <string name="batch_remove_history">Entfernen</string>
-    <string name="batch_delete_confirm_message">%d Archive endgültig vom Server löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.</string>
-    <string name="batch_remove_history_confirm">%d Einträge aus dem Verlauf entfernen?</string>
+    <plurals name="batch_delete_confirm_message">
+        <item quantity="one">%d Archiv endgültig vom Server löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.</item>
+        <item quantity="other">%d Archive endgültig vom Server löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.</item>
+    </plurals>
+    <plurals name="batch_remove_history_confirm">
+        <item quantity="one">%d Eintrag aus dem Verlauf entfernen?</item>
+        <item quantity="other">%d Einträge aus dem Verlauf entfernen?</item>
+    </plurals>
     <string name="batch_running">Verarbeite %1$d/%2$d…</string>
     <string name="batch_result_summary">%1$d erfolgreich, %2$d fehlgeschlagen</string>
     <string name="batch_result_failures_title">Fehlgeschlagene Einträge</string>
@@ -400,7 +424,10 @@
     <string name="from_the_future">Von der Zukunft</string>
     <string name="just_now">Gerade</string>
     <string name="yesterday">Gestern</string>
-    <string name="some_days_ago">Vor %d Tagen</string>
+    <plurals name="some_days_ago">
+        <item quantity="one">Vor einem Tag</item>
+        <item quantity="other">Vor %d Tagen</item>
+    </plurals>
     <plurals name="some_minutes_ago">
         <item quantity="one">Vor einer Minute</item>
         <item quantity="other">Vor %d Minuten</item>
@@ -514,11 +541,17 @@
     <string name="settings_download_export_failed">Export der Download-Elemente fehlgeschlagen</string>
     <string name="settings_download_import_failed">Import der Download-Elemente fehlgeschlagen</string>
     <string name="settings_download_export_succeed">Download-Elemente erfolgreich nach %s exportiert</string>
-    <string name="settings_download_import_succeed">%d Download-Elemente erfolgreich importiert</string>
+    <plurals name="settings_download_import_succeed">
+        <item quantity="one">%d Download-Element erfolgreich importiert</item>
+        <item quantity="other">%d Download-Elemente erfolgreich importiert</item>
+    </plurals>
     <string name="settings_download_export_no_items">Keine Elemente zum Exportieren</string>
     <string name="settings_download_clean_invalid_download_confirm">Alle ungültigen Download-Elemente löschen?</string>
     <string name="settings_download_cleaning">Download-Elemente werden bereinigt</string>
-    <string name="settings_download_clean_invalid_done">%d Download-Elemente bereinigt</string>
+    <plurals name="settings_download_clean_invalid_done">
+        <item quantity="one">%d Download-Element bereinigt</item>
+        <item quantity="other">%d Download-Elemente bereinigt</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">Keine ungültigen Download-Elemente vorhanden</string>
 
     <string name="nav_server_config">Server wechseln</string>
@@ -559,7 +592,10 @@
     <string name="lrr_category_action_edit">Bearbeiten</string>
     <string name="lrr_category_action_pin">Anheften</string>
     <string name="lrr_category_action_unpin">Lösen</string>
-    <string name="lrr_category_archives">%d Archive</string>
+    <plurals name="lrr_category_archives">
+        <item quantity="one">%d Archiv</item>
+        <item quantity="other">%d Archive</item>
+    </plurals>
     <string name="lrr_category_create">Kategorie erstellen</string>
     <string name="lrr_category_create_inline">Neue Kategorie erstellen</string>
     <string name="lrr_category_created">Kategorie erstellt</string>

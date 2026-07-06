@@ -179,7 +179,7 @@ class HistoryScene : ToolbarScene(),
             },
             onCheckedChanged = { count ->
                 batchCountView?.let {
-                    it.text = it.context.getString(R.string.batch_selected_count, count)
+                    it.text = it.resources.getQuantityString(R.plurals.batch_selected_count, count, count)
                 }
             },
         )
@@ -393,7 +393,11 @@ class HistoryScene : ToolbarScene(),
         val selected: List<Archive> = multiSelect.checkedPositions().mapNotNull { list.getOrNull(it) }
         if (selected.isEmpty()) return
         AlertDialog.Builder(context)
-            .setMessage(context.getString(R.string.batch_remove_history_confirm, selected.size))
+            .setMessage(
+                context.resources.getQuantityString(
+                    R.plurals.batch_remove_history_confirm, selected.size, selected.size
+                )
+            )
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.batch_remove_history) { _, _ ->
                 // Exit before the removal: rows fall out and positions shift.

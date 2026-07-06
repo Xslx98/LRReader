@@ -188,19 +188,27 @@
     <string name="download_state_downloading">下载中</string>
     <string name="download_state_downloaded">已下载</string>
     <string name="download_state_failed">失败</string>
-    <string name="download_state_failed_2">%d 未完成</string>
+    <plurals name="download_state_failed_2">
+        <item quantity="other">%d 未完成</item>
+    </plurals>
     <string name="download_state_finish">已完成</string>
     <string name="stat_509_alert_title">509 警告</string>
     <string name="stat_509_alert_text">图片配额已用尽。请停止下载，休息一下。</string>
     <string name="stat_download_done_title">下载结束</string>
-    <string name="stat_download_done_text_succeeded">%d 项下载成功</string>
-    <string name="stat_download_done_text_failed">%d 项下载失败</string>
+    <plurals name="stat_download_done_text_succeeded">
+        <item quantity="other">%d 项下载成功</item>
+    </plurals>
+    <plurals name="stat_download_done_text_failed">
+        <item quantity="other">%d 项下载失败</item>
+    </plurals>
     <string name="stat_download_done_text_mix">%1$d 项下载成功，%2$d 项下载失败</string>
     <string name="stat_download_done_line_succeeded">下载成功：%s</string>
     <string name="stat_download_done_line_failed">下载失败：%s</string>
     <string name="download_remove_dialog_title">移除下载项</string>
     <string name="download_remove_dialog_message">从下载列表移除 %s ？</string>
-    <string name="download_remove_dialog_message_2">从下载列表移除 %d 项？</string>
+    <plurals name="download_remove_dialog_message_2">
+        <item quantity="other">从下载列表移除 %d 项？</item>
+    </plurals>
     <string name="download_remove_dialog_check_text">删除图片文件</string>
     <string name="stat_download_action_stop_all">全部停止</string>
     <string name="default_download_label_name">默认</string>
@@ -234,7 +242,9 @@
     <string name="download_speed_text_2">%1$s，剩余 %2$s</string>
     <string name="download_waiting_for_network">等待网络…</string>
     <string name="download_resume_paused_snackbar">下载已暂停,正在等待网络</string>
-    <string name="download_resume_timed_out_snackbar">%d 个下载因无网络已停止</string>
+    <plurals name="download_resume_timed_out_snackbar">
+        <item quantity="other">%d 个下载因无网络已停止</item>
+    </plurals>
     <string name="download_resume_view_action">查看</string>
     <string name="download_resume_retry_action">重试</string>
     <string name="remember_download_label">记住下载标签</string>
@@ -361,15 +371,21 @@
     <string name="tank_none">服务器上没有合订本</string>
 
     <!-- List multi-select batch operations -->
-    <string name="batch_selected_count">已选 %d 项</string>
+    <plurals name="batch_selected_count">
+        <item quantity="other">已选 %d 项</item>
+    </plurals>
     <string name="batch_select_all">全选</string>
     <string name="batch_download">下载</string>
     <string name="batch_add_to_category">分类</string>
     <string name="batch_clear_new">清除NEW</string>
     <string name="batch_delete">删除</string>
     <string name="batch_remove_history">移除</string>
-    <string name="batch_delete_confirm_message">从服务器永久删除 %d 个档案？\n\n此操作不可撤销。</string>
-    <string name="batch_remove_history_confirm">从历史中移除 %d 条记录？</string>
+    <plurals name="batch_delete_confirm_message">
+        <item quantity="other">从服务器永久删除 %d 个档案？\n\n此操作不可撤销。</item>
+    </plurals>
+    <plurals name="batch_remove_history_confirm">
+        <item quantity="other">从历史中移除 %d 条记录？</item>
+    </plurals>
     <string name="batch_running">处理中 %1$d/%2$d…</string>
     <string name="batch_result_summary">成功 %1$d，失败 %2$d</string>
     <string name="batch_result_failures_title">失败项</string>
@@ -526,7 +542,9 @@
         <item quantity="other">%d 小时前</item>
     </plurals>
     <string name="yesterday">昨天</string>
-    <string name="some_days_ago">%d 天前</string>
+    <plurals name="some_days_ago">
+        <item quantity="other">%d 天前</item>
+    </plurals>
 
     <plurals name="second">
         <item quantity="other">秒</item>
@@ -606,7 +624,9 @@
     <string name="lrr_categories_title">分类</string>
     <string name="lrr_categories_empty">暂无分类</string>
     <string name="lrr_category_pinned">📌 %1$s</string>
-    <string name="lrr_category_archives">%1$d 个档案</string>
+    <plurals name="lrr_category_archives">
+        <item quantity="other">%1$d 个档案</item>
+    </plurals>
     <string name="lrr_server_config_subtitle">连接到LANraragi服务器</string>
     <string name="lrr_server_url_hint">服务器地址 (例如 192.168.1.100:3000)</string>
     <string name="lrr_api_key_hint">API密钥</string>
@@ -639,11 +659,15 @@
     <string name="settings_download_export_failed">导出下载项失败</string>
     <string name="settings_download_import_failed">导入下载项失败</string>
     <string name="settings_download_export_succeed">成功导出下载项到 %s</string>
-    <string name="settings_download_import_succeed">成功导入 %d 个下载项</string>
+    <plurals name="settings_download_import_succeed">
+        <item quantity="other">成功导入 %d 个下载项</item>
+    </plurals>
     <string name="settings_download_export_no_items">没有导出项目</string>
     <string name="settings_download_clean_invalid_download_confirm">确定清空无效的下载项？</string>
     <string name="settings_download_cleaning">正在清理下载项</string>
-    <string name="settings_download_clean_invalid_done">完成清理 %d 个下载项</string>
+    <plurals name="settings_download_clean_invalid_done">
+        <item quantity="other">完成清理 %d 个下载项</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">没有需要清空的下载项</string>
 
     <string name="nav_server_config">站点切换</string>

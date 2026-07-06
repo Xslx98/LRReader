@@ -191,19 +191,27 @@
     <string name="download_state_downloading">下載中</string>
     <string name="download_state_downloaded">已下載</string>
     <string name="download_state_failed">下載失敗</string>
-    <string name="download_state_failed_2">還有 %d 尚未完成</string>
+    <plurals name="download_state_failed_2">
+        <item quantity="other">還有 %d 尚未完成</item>
+    </plurals>
     <string name="download_state_finish">大功告成</string>
     <string name="stat_509_alert_title">509 警告</string>
     <string name="stat_509_alert_text">圖片流量已用盡。請停止下載，休息一下。</string>
     <string name="stat_download_done_title">下載結束</string>
-    <string name="stat_download_done_text_succeeded">有 %d 項已成功下載</string>
-    <string name="stat_download_done_text_failed">有 %d 項下載失敗</string>
+    <plurals name="stat_download_done_text_succeeded">
+        <item quantity="other">有 %d 項已成功下載</item>
+    </plurals>
+    <plurals name="stat_download_done_text_failed">
+        <item quantity="other">有 %d 項下載失敗</item>
+    </plurals>
     <string name="stat_download_done_text_mix">%1$d 項成功下載，%2$d 項下載失敗</string>
     <string name="stat_download_done_line_succeeded"> %s 下載成功</string>
     <string name="stat_download_done_line_failed"> %s 下載失敗</string>
     <string name="download_remove_dialog_title">移除下載佇列</string>
     <string name="download_remove_dialog_message">將 %s 從下載佇列中移除嗎?</string>
-    <string name="download_remove_dialog_message_2">從下載佇列中移除 %d 項任務嗎？</string>
+    <plurals name="download_remove_dialog_message_2">
+        <item quantity="other">從下載佇列中移除 %d 項任務嗎？</item>
+    </plurals>
     <string name="download_remove_dialog_check_text">刪除圖檔</string>
     <string name="stat_download_action_stop_all">全部停止</string>
     <string name="default_download_label_name">預設</string>
@@ -220,7 +228,9 @@
     <string name="download_speed_text_2">%1$s，剩餘 %2$s</string>
     <string name="download_waiting_for_network">等待網路…</string>
     <string name="download_resume_paused_snackbar">下載已暫停,正在等待網路</string>
-    <string name="download_resume_timed_out_snackbar">%d 個下載因無網路已停止</string>
+    <plurals name="download_resume_timed_out_snackbar">
+        <item quantity="other">%d 個下載因無網路已停止</item>
+    </plurals>
     <string name="download_resume_view_action">查看</string>
     <string name="download_resume_retry_action">重試</string>
     <string name="remember_download_label">記住下載標籤</string>
@@ -364,15 +374,21 @@
     <string name="tank_none">伺服器上沒有合訂本</string>
 
     <!-- List multi-select batch operations -->
-    <string name="batch_selected_count">已選 %d 項</string>
+    <plurals name="batch_selected_count">
+        <item quantity="other">已選 %d 項</item>
+    </plurals>
     <string name="batch_select_all">全選</string>
     <string name="batch_download">下載</string>
     <string name="batch_add_to_category">分類</string>
     <string name="batch_clear_new">清除NEW</string>
     <string name="batch_delete">刪除</string>
     <string name="batch_remove_history">移除</string>
-    <string name="batch_delete_confirm_message">從伺服器永久刪除 %d 個檔案？\n\n此操作無法復原。</string>
-    <string name="batch_remove_history_confirm">從歷史中移除 %d 筆記錄？</string>
+    <plurals name="batch_delete_confirm_message">
+        <item quantity="other">從伺服器永久刪除 %d 個檔案？\n\n此操作無法復原。</item>
+    </plurals>
+    <plurals name="batch_remove_history_confirm">
+        <item quantity="other">從歷史中移除 %d 筆記錄？</item>
+    </plurals>
     <string name="batch_running">處理中 %1$d/%2$d…</string>
     <string name="batch_result_summary">成功 %1$d，失敗 %2$d</string>
     <string name="batch_result_failures_title">失敗項目</string>
@@ -520,7 +536,9 @@
         <item quantity="other">%d 小時前</item>
     </plurals>
     <string name="yesterday">昨天</string>
-    <string name="some_days_ago">%d 天前</string>
+    <plurals name="some_days_ago">
+        <item quantity="other">%d 天前</item>
+    </plurals>
 
     <plurals name="second">
         <item quantity="other">秒</item>
@@ -599,11 +617,15 @@
     <string name="settings_download_export_failed">匯出下載項失敗</string>
     <string name="settings_download_import_failed">匯入下載項失敗</string>
     <string name="settings_download_export_succeed">成功匯出下載項到 %s</string>
-    <string name="settings_download_import_succeed">成功匯入 %d 個下載項</string>
+    <plurals name="settings_download_import_succeed">
+        <item quantity="other">成功匯入 %d 個下載項</item>
+    </plurals>
     <string name="settings_download_export_no_items">沒有匯出項目</string>
     <string name="settings_download_clean_invalid_download_confirm">確定清空無效的下載項？</string>
     <string name="settings_download_cleaning">正在清理下載項</string>
-    <string name="settings_download_clean_invalid_done">完成清理 %d 個下載項</string>
+    <plurals name="settings_download_clean_invalid_done">
+        <item quantity="other">完成清理 %d 個下載項</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">沒有需要清空的下載項</string>
 
     <string name="nav_server_config">站點切換</string>
@@ -643,7 +665,9 @@
     <string name="lrr_category_action_edit">編輯</string>
     <string name="lrr_category_action_pin">置頂</string>
     <string name="lrr_category_action_unpin">取消置頂</string>
-    <string name="lrr_category_archives">%d 個檔案</string>
+    <plurals name="lrr_category_archives">
+        <item quantity="other">%d 個檔案</item>
+    </plurals>
     <string name="lrr_category_create">新建分類</string>
     <string name="lrr_category_create_inline">建立新分類</string>
     <string name="lrr_category_created">分類已建立</string>

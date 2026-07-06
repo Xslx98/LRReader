@@ -623,7 +623,9 @@ class MainActivity : StageActivity(),
             is DownloadResumeBanner.Snapshot.TimedOut -> {
                 Snackbar.make(
                     host,
-                    getString(R.string.download_resume_timed_out_snackbar, snapshot.count),
+                    resources.getQuantityString(
+                        R.plurals.download_resume_timed_out_snackbar, snapshot.count, snapshot.count
+                    ),
                     Snackbar.LENGTH_LONG,
                 ).setAction(R.string.download_resume_retry_action) {
                     val intent = Intent(this, DownloadService::class.java)

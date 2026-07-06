@@ -194,7 +194,9 @@
     <string name="download_state_downloading">กำลังดาวน์โหลด</string>
     <string name="download_state_downloaded">ดาวน์โหลดแล้ว</string>
     <string name="download_state_failed">ล้มเหลว</string>
-    <string name="download_state_failed_2">%d ที่ไม่เสร็จ</string>
+    <plurals name="download_state_failed_2">
+        <item quantity="other">%d ที่ไม่เสร็จ</item>
+    </plurals>
     <string name="download_state_finish">เสร็จ</string>
     <string name="download_sort_list">เรียงลำดับ</string>
     <string name="download_filter_by_status">กรองตามสถานะ</string>
@@ -214,14 +216,20 @@
     <string name="stat_509_alert_title">คำเตือน 509</string>
     <string name="stat_509_alert_text">การลิมิตของรูปภาพต่อวันถึงลิมิตแล้ว กรุณาหยุดโหลดและพักผ่อนบ้างนะ</string>
     <string name="stat_download_done_title">ดาวน์โหลดเสร็จสิ้น</string>
-    <string name="stat_download_done_text_succeeded">%d ที่เสร็จ</string>
-    <string name="stat_download_done_text_failed">%d ที่ล้มเหลว</string>
+    <plurals name="stat_download_done_text_succeeded">
+        <item quantity="other">%d ที่เสร็จ</item>
+    </plurals>
+    <plurals name="stat_download_done_text_failed">
+        <item quantity="other">%d ที่ล้มเหลว</item>
+    </plurals>
     <string name="stat_download_done_text_mix">%1$d ที่เสร็จ, %2$d ที่ล้มเหลว</string>
     <string name="stat_download_done_line_succeeded">เสร็จแล้ว: %s</string>
     <string name="stat_download_done_line_failed">ล้มเหลว: %s</string>
     <string name="download_remove_dialog_title">ลบรายการดาวน์โหลด</string>
     <string name="download_remove_dialog_message">ต้องการลบ %s ออกจากรายการดาวน์โหลดไหม?</string>
-    <string name="download_remove_dialog_message_2">ต้องการลบ %d รายการจากรายการดาวน์โหลดไหม?</string>
+    <plurals name="download_remove_dialog_message_2">
+        <item quantity="other">ต้องการลบ %d รายการจากรายการดาวน์โหลดไหม?</item>
+    </plurals>
     <string name="download_remove_dialog_check_text">ลบไฟล์ภาพด้วย</string>
     <string name="stat_download_action_stop_all">หยุดทั้งหมด</string>
     <string name="default_download_label_name">ค่าเริ่มต้น</string>
@@ -238,7 +246,9 @@
     <string name="download_speed_text_2">%1$s, เหลือ %2$s</string>
     <string name="download_waiting_for_network">กำลังรอเครือข่าย…</string>
     <string name="download_resume_paused_snackbar">หยุดการดาวน์โหลดชั่วคราว — กำลังรอเครือข่าย</string>
-    <string name="download_resume_timed_out_snackbar">หยุดการดาวน์โหลด %d รายการ: ไม่มีเครือข่าย</string>
+    <plurals name="download_resume_timed_out_snackbar">
+        <item quantity="other">หยุดการดาวน์โหลด %d รายการ: ไม่มีเครือข่าย</item>
+    </plurals>
     <string name="download_resume_view_action">ดู</string>
     <string name="download_resume_retry_action">ลองใหม่</string>
     <string name="remember_download_label">จดจำป้ายชื่อดาวน์โหลด</string>
@@ -361,15 +371,21 @@
     <string name="tank_none">ไม่มีทังโคบงบนเซิร์ฟเวอร์นี้</string>
 
     <!-- List multi-select batch operations -->
-    <string name="batch_selected_count">เลือกแล้ว %d รายการ</string>
+    <plurals name="batch_selected_count">
+        <item quantity="other">เลือกแล้ว %d รายการ</item>
+    </plurals>
     <string name="batch_select_all">ทั้งหมด</string>
     <string name="batch_download">ดาวน์โหลด</string>
     <string name="batch_add_to_category">หมวดหมู่</string>
     <string name="batch_clear_new">ล้าง NEW</string>
     <string name="batch_delete">ลบ</string>
     <string name="batch_remove_history">นำออก</string>
-    <string name="batch_delete_confirm_message">ลบ %d ไฟล์ออกจากเซิร์ฟเวอร์อย่างถาวร?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้</string>
-    <string name="batch_remove_history_confirm">นำ %d รายการออกจากประวัติ?</string>
+    <plurals name="batch_delete_confirm_message">
+        <item quantity="other">ลบ %d ไฟล์ออกจากเซิร์ฟเวอร์อย่างถาวร?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้</item>
+    </plurals>
+    <plurals name="batch_remove_history_confirm">
+        <item quantity="other">นำ %d รายการออกจากประวัติ?</item>
+    </plurals>
     <string name="batch_running">กำลังดำเนินการ %1$d/%2$d…</string>
     <string name="batch_result_summary">สำเร็จ %1$d ล้มเหลว %2$d</string>
     <string name="batch_result_failures_title">รายการที่ล้มเหลว</string>
@@ -512,7 +528,9 @@
         <item quantity="other">%d ชั่วโมงที่ผ่านมา</item>
     </plurals>
     <string name="yesterday">เมื่อวาน</string>
-    <string name="some_days_ago">%d วันที่ผ่านมา</string>
+    <plurals name="some_days_ago">
+        <item quantity="other">%d วันที่ผ่านมา</item>
+    </plurals>
     <plurals name="second">
         <item quantity="other">วิ</item>
     </plurals>
@@ -582,11 +600,15 @@
     <string name="settings_download_export_failed">ส่งออกรายการดาวน์โหลดล้มเหลว</string>
     <string name="settings_download_import_failed">นำเข้ารายการดาวน์โหลดล้มเหลว</string>
     <string name="settings_download_export_succeed">ส่งออกรายการดาวน์โหลดไปยัง %s สำเร็จ</string>
-    <string name="settings_download_import_succeed">นำเข้า %d รายการดาวน์โหลดสำเร็จ</string>
+    <plurals name="settings_download_import_succeed">
+        <item quantity="other">นำเข้า %d รายการดาวน์โหลดสำเร็จ</item>
+    </plurals>
     <string name="settings_download_export_no_items">ไม่มีรายการที่จะส่งออก</string>
     <string name="settings_download_clean_invalid_download_confirm">ลบรายการดาวน์โหลดที่ไม่ถูกต้องทั้งหมด?</string>
     <string name="settings_download_cleaning">กำลังล้างรายการดาวน์โหลด</string>
-    <string name="settings_download_clean_invalid_done">ล้าง %d รายการดาวน์โหลดแล้ว</string>
+    <plurals name="settings_download_clean_invalid_done">
+        <item quantity="other">ล้าง %d รายการดาวน์โหลดแล้ว</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">ไม่มีรายการดาวน์โหลดที่ไม่ถูกต้อง</string>
 
     <string name="nav_server_config">เปลี่ยนเซิร์ฟเวอร์</string>
@@ -630,7 +652,9 @@
     <string name="lrr_category_action_edit">Edit</string>
     <string name="lrr_category_action_pin">Pin</string>
     <string name="lrr_category_action_unpin">Unpin</string>
-    <string name="lrr_category_archives">%1$d archives</string>
+    <plurals name="lrr_category_archives">
+        <item quantity="other">%1$d archives</item>
+    </plurals>
     <string name="lrr_category_create">New Category</string>
     <string name="lrr_category_create_inline">+ New Category…</string>
     <string name="lrr_category_created">Category created</string>
