@@ -115,7 +115,7 @@ public final class ReadableTime {
             return resources.getString(R.string.yesterday);
         } else if (diff < WEEK_MILLIS) {
             int days = (int) (diff / DAY_MILLIS);
-            return resources.getString(R.string.some_days_ago, days);
+            return resources.getQuantityString(R.plurals.some_days_ago, days, days);
         } else {
             synchronized (sCalendarLock) {
                 Date nowDate = new Date(now);

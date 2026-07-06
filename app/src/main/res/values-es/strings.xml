@@ -524,7 +524,11 @@
         <item quantity="many">Hace %d horas</item>
     </plurals>
     <string name="yesterday">Ayer</string>
-    <string name="some_days_ago">Hace %d días atrás</string>
+    <plurals name="some_days_ago">
+        <item quantity="one">Hace un día</item>
+        <item quantity="other">Hace %d días atrás</item>
+        <item quantity="many">Hace %d días atrás</item>
+    </plurals>
     <plurals name="second">
         <item quantity="one">seg</item>
         <item quantity="other">segs</item>

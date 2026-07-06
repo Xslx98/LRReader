@@ -477,7 +477,9 @@
         <item quantity="other">%d 時前</item>
     </plurals>
     <string name="yesterday">昨日</string>
-    <string name="some_days_ago">%d 日前</string>
+    <plurals name="some_days_ago">
+        <item quantity="other">%d 日前</item>
+    </plurals>
     <plurals name="second">
         <item quantity="other">秒</item>
     </plurals>

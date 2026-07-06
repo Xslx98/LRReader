@@ -539,7 +539,9 @@
         <item quantity="other">%d시간 전</item>
     </plurals>
     <string name="yesterday">어제</string>
-    <string name="some_days_ago">%d일 전</string>
+    <plurals name="some_days_ago">
+        <item quantity="other">%d일 전</item>
+    </plurals>
 
     <plurals name="second">
         <item quantity="other">초</item>
