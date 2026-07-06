@@ -54,6 +54,7 @@ import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.gallery.ReadingContext
 import com.hippo.ehviewer.gallery.ReadingContextStore
 import com.hippo.ehviewer.settings.AppearanceSettings
+import com.hippo.ehviewer.ui.scene.BatchBarAnimator
 import com.hippo.ehviewer.ui.scene.ListMultiSelectHelper
 import com.hippo.ehviewer.ui.scene.ToolbarScene
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
@@ -174,7 +175,7 @@ class HistoryScene : ToolbarScene(),
             recyclerView = { if (::mRecyclerView.isInitialized) mRecyclerView else null },
             longClickListener = { this },
             onModeChanged = { active ->
-                batchBar?.visibility = if (active) View.VISIBLE else View.GONE
+                batchBar?.let { if (active) BatchBarAnimator.show(it) else BatchBarAnimator.hide(it) }
             },
             onCheckedChanged = { count ->
                 batchCountView?.let {
