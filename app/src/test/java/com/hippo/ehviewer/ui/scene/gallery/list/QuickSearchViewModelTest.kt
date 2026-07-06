@@ -18,11 +18,13 @@ import com.hippo.ehviewer.dao.QuickSearchRepository
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.module.CoroutineModule
 import com.hippo.ehviewer.module.IDataModule
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -112,6 +114,28 @@ class QuickSearchViewModelTest {
         assertTrue("Condition not met within ${timeoutMs}ms", condition())
     }
 
+    /**
+     * Subscribe to [vm.uiEvent] on [eventScope] and **block until the
+     * subscription is actually live**. The ViewModel's SharedFlow has
+     * `replay = 0`, so an emission that fires before the collector is
+     * registered is silently dropped. Always go through this helper instead
+     * of `eventScope.launch { collect }` directly when the test needs to
+     * observe a single subsequent emission.
+     */
+    private fun collectEvents(
+        vm: QuickSearchViewModel
+    ): CopyOnWriteArrayList<QuickSearchViewModel.QuickSearchUiEvent> {
+        val events = CopyOnWriteArrayList<QuickSearchViewModel.QuickSearchUiEvent>()
+        val subscribed = CompletableDeferred<Unit>()
+        eventScope.launch {
+            vm.uiEvent
+                .onSubscription { subscribed.complete(Unit) }
+                .collect { events.add(it) }
+        }
+        runBlocking { subscribed.await() }
+        return events
+    }
+
     private fun insertQuickSearch(name: String, time: Long): QuickSearch {
         return runBlocking {
             val qs = QuickSearch().apply {
@@ -158,8 +182,7 @@ class QuickSearchViewModelTest {
         vm.loadQuickSearches()
         awaitCondition { vm.quickSearches.value.size == 2 }
 
-        val events = CopyOnWriteArrayList<QuickSearchViewModel.QuickSearchUiEvent>()
-        eventScope.launch { vm.uiEvent.collect { events.add(it) } }
+        val events = collectEvents(vm)
 
         vm.deleteQuickSearch(qs2)
         awaitCondition { vm.quickSearches.value.size == 1 }

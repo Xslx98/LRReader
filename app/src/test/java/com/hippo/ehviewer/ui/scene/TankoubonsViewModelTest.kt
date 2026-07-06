@@ -268,6 +268,10 @@ class TankoubonsViewModelTest {
         vm.create("NewTank")
 
         awaitCondition { vm.tanks.value.isNotEmpty() }
+        // The ShowSuccess event is delivered to the collector asynchronously
+        // (on eventScope), so the tanks reload completing does not imply the
+        // event has landed in [events] yet — poll the event itself too.
+        awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.ShowSuccess } }
         assertTrue("Should emit ShowSuccess",
             events.any { it is TankoubonsViewModel.TankUiEvent.ShowSuccess })
         assertEquals(1, vm.tanks.value.size)
