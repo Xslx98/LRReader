@@ -254,6 +254,10 @@ class LRRCategoriesViewModelTest {
         vm.createCategory("NewCat", null, false)
 
         awaitCondition { vm.categories.value.isNotEmpty() }
+        // The ShowSuccess event is delivered to the collector asynchronously
+        // (on eventScope), so the categories reload completing does not imply
+        // the event has landed in [events] yet — poll the event itself too.
+        awaitCondition { events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess } }
         assertTrue("Should emit ShowSuccess",
             events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess })
         assertEquals(1, vm.categories.value.size)
@@ -275,6 +279,8 @@ class LRRCategoriesViewModelTest {
         vm.editCategory("SET_aaaaaaaaaa", "Edited", null, true)
 
         awaitCondition { vm.categories.value.isNotEmpty() }
+        // Same async event delivery as in the createCategory test above.
+        awaitCondition { events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess } }
         assertTrue("Should emit ShowSuccess",
             events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess })
         assertEquals("Edited", vm.categories.value[0].name)
