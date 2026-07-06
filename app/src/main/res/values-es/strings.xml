@@ -616,7 +616,11 @@
     <string name="settings_download_export_failed">Error al exportar elementos de descarga</string>
     <string name="settings_download_import_failed">Error al importar elementos de descarga</string>
     <string name="settings_download_export_succeed">Elementos de descarga exportados exitosamente a %s</string>
-    <string name="settings_download_import_succeed">%d elementos de descarga importados exitosamente</string>
+    <plurals name="settings_download_import_succeed">
+        <item quantity="one">%d elemento de descarga importado exitosamente</item>
+        <item quantity="other">%d elementos de descarga importados exitosamente</item>
+        <item quantity="many">%d elementos de descarga importados exitosamente</item>
+    </plurals>
     <string name="settings_download_export_no_items">No hay elementos para exportar</string>
     <string name="settings_download_clean_invalid_download_confirm">¿Eliminar todos los elementos de descarga no válidos?</string>
     <string name="settings_download_cleaning">Limpiando elementos de descarga</string>

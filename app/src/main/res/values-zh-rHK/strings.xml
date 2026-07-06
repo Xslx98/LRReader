@@ -648,7 +648,9 @@
     <string name="settings_download_export_failed">匯出下載項失敗</string>
     <string name="settings_download_import_failed">匯入下載項失敗</string>
     <string name="settings_download_export_succeed">成功匯出下載項到 %s</string>
-    <string name="settings_download_import_succeed">成功匯入 %d 個下載項</string>
+    <plurals name="settings_download_import_succeed">
+        <item quantity="other">成功匯入 %d 個下載項</item>
+    </plurals>
     <string name="settings_download_export_no_items">沒有匯出項目</string>
     <string name="settings_download_clean_invalid_download_confirm">確定清空無效的下載項？</string>
     <string name="settings_download_cleaning">正在清理下載項</string>

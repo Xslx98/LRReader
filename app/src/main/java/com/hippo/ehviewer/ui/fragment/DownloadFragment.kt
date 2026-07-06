@@ -278,7 +278,9 @@ class DownloadFragment : PreferenceFragmentCompat(),
             if (result > 0) {
                 Toast.makeText(
                     activity,
-                    getString(R.string.settings_download_import_succeed, result),
+                    resources.getQuantityString(
+                        R.plurals.settings_download_import_succeed, result, result
+                    ),
                     Toast.LENGTH_LONG
                 ).show()
             } else {

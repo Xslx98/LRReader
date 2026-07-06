@@ -32,7 +32,10 @@
     <string name="settings_download_export_items">Export download items</string>
     <string name="settings_download_import_items">Import download items</string>
     <string name="settings_download_import_failed">Failed to import download items</string>
-    <string name="settings_download_import_succeed">Successfully imported %d download items</string>
+    <plurals name="settings_download_import_succeed">
+        <item quantity="one">Successfully imported %d download item</item>
+        <item quantity="other">Successfully imported %d download items</item>
+    </plurals>
 
 
     <string name="app_name">LR Reader</string>

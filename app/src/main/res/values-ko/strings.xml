@@ -608,7 +608,9 @@
     <string name="settings_download_export_failed">다운로드 항목 내보내기 실패</string>
     <string name="settings_download_import_failed">다운로드 항목 가져오기 실패</string>
     <string name="settings_download_export_succeed">다운로드 항목을 %s 에 내보냈습니다</string>
-    <string name="settings_download_import_succeed">%d 개의 다운로드 항목을 가져왔습니다</string>
+    <plurals name="settings_download_import_succeed">
+        <item quantity="other">%d 개의 다운로드 항목을 가져왔습니다</item>
+    </plurals>
     <string name="settings_download_export_no_items">내보낼 항목이 없습니다</string>
     <string name="settings_download_clean_invalid_download_confirm">유효하지 않은 다운로드 항목을 모두 삭제하시겠습니까?</string>
     <string name="settings_download_cleaning">다운로드 항목 정리 중</string>
