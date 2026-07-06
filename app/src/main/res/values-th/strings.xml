@@ -604,7 +604,9 @@
     <string name="settings_download_export_no_items">ไม่มีรายการที่จะส่งออก</string>
     <string name="settings_download_clean_invalid_download_confirm">ลบรายการดาวน์โหลดที่ไม่ถูกต้องทั้งหมด?</string>
     <string name="settings_download_cleaning">กำลังล้างรายการดาวน์โหลด</string>
-    <string name="settings_download_clean_invalid_done">ล้าง %d รายการดาวน์โหลดแล้ว</string>
+    <plurals name="settings_download_clean_invalid_done">
+        <item quantity="other">ล้าง %d รายการดาวน์โหลดแล้ว</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">ไม่มีรายการดาวน์โหลดที่ไม่ถูกต้อง</string>
 
     <string name="nav_server_config">เปลี่ยนเซิร์ฟเวอร์</string>

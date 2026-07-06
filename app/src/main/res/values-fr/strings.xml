@@ -612,7 +612,11 @@
     <string name="settings_download_export_no_items">Aucun élément à exporter</string>
     <string name="settings_download_clean_invalid_download_confirm">Supprimer tous les éléments de téléchargement invalides ?</string>
     <string name="settings_download_cleaning">Nettoyage des éléments téléchargés</string>
-    <string name="settings_download_clean_invalid_done">%d éléments de téléchargement nettoyés</string>
+    <plurals name="settings_download_clean_invalid_done">
+        <item quantity="one">%d élément de téléchargement nettoyé</item>
+        <item quantity="other">%d éléments de téléchargement nettoyés</item>
+        <item quantity="many">%d éléments de téléchargement nettoyés</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">Aucun élément de téléchargement invalide</string>
 
     <string name="nav_server_config">Changer de serveur</string>

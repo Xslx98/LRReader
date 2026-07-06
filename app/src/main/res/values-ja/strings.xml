@@ -545,7 +545,9 @@
     <string name="settings_download_export_no_items">エクスポートする項目がありません</string>
     <string name="settings_download_clean_invalid_download_confirm">無効なダウンロード項目をすべて削除しますか？</string>
     <string name="settings_download_cleaning">ダウンロード項目を整理中</string>
-    <string name="settings_download_clean_invalid_done">%d 件のダウンロード項目を整理しました</string>
+    <plurals name="settings_download_clean_invalid_done">
+        <item quantity="other">%d 件のダウンロード項目を整理しました</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">整理が必要なダウンロード項目はありません</string>
 
     <string name="nav_server_config">サーバー切替</string>
