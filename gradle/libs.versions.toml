@@ -30,7 +30,7 @@ test-core = "1.6.1"
 webkit = "1.13.0"
 
 # --- Google ---
-material = "1.13.0"
+material = "1.14.0"
 firebase-crashlytics-plugin = "3.0.2"
 google-services = "4.4.2"
 
