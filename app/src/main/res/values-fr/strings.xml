@@ -351,7 +351,11 @@
     <string name="batch_delete">Supprimer</string>
     <string name="batch_remove_history">Retirer</string>
     <string name="batch_delete_confirm_message">Supprimer définitivement %d archives du serveur ?\n\nCette action est irréversible.</string>
-    <string name="batch_remove_history_confirm">Retirer %d entrées de l\'historique ?</string>
+    <plurals name="batch_remove_history_confirm">
+        <item quantity="one">Retirer %d entrée de l\'historique ?</item>
+        <item quantity="other">Retirer %d entrées de l\'historique ?</item>
+        <item quantity="many">Retirer %d entrées de l\'historique ?</item>
+    </plurals>
     <string name="batch_running">Traitement %1$d/%2$d…</string>
     <string name="batch_result_summary">%1$d réussis, %2$d échoués</string>
     <string name="batch_result_failures_title">Éléments en échec</string>
