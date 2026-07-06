@@ -1,0 +1,2 @@
+- Improved: the multi-select batch action bar is now a cleaner, better-looking floating card.
+- Improved: after a batch download you now see "Queued" instead of an ambiguous success dialog; a details list appears only when some items fail.
