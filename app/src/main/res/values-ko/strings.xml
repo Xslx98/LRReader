@@ -206,7 +206,9 @@
     <plurals name="stat_download_done_text_succeeded">
         <item quantity="other">%d 성공</item>
     </plurals>
-    <string name="stat_download_done_text_failed">%d 실패</string>
+    <plurals name="stat_download_done_text_failed">
+        <item quantity="other">%d 실패</item>
+    </plurals>
     <string name="stat_download_done_text_mix">%1$d 성공, %2$d 실패</string>
     <string name="stat_download_done_line_succeeded">성공: %s</string>
     <string name="stat_download_done_line_failed">실패: %s</string>

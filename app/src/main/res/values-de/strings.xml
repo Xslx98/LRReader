@@ -174,7 +174,10 @@
         <item quantity="one">%d Download wurde abgeschlossen</item>
         <item quantity="other">%d Downloads wurden abgeschlossen</item>
     </plurals>
-    <string name="stat_download_done_text_failed">%d Download(s) gescheitert</string>
+    <plurals name="stat_download_done_text_failed">
+        <item quantity="one">%d Download gescheitert</item>
+        <item quantity="other">%d Downloads gescheitert</item>
+    </plurals>
     <string name="stat_download_done_text_mix">%1$d erfolgreich abgeschlossen, %2$d gescheitert</string>
     <string name="stat_download_done_line_succeeded">Abgeschlossen: %s</string>
     <string name="stat_download_done_line_failed">Gescheitert: %s</string>

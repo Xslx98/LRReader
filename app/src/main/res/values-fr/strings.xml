@@ -199,7 +199,11 @@
         <item quantity="other">%d avec succés</item>
         <item quantity="many">%d avec succés</item>
     </plurals>
-    <string name="stat_download_done_text_failed">%d échoué(s)</string>
+    <plurals name="stat_download_done_text_failed">
+        <item quantity="one">%d échoué</item>
+        <item quantity="other">%d échoués</item>
+        <item quantity="many">%d échoués</item>
+    </plurals>
     <string name="stat_download_done_text_mix">%1$d avec succés, %2$d échoué(s)</string>
     <string name="stat_download_done_line_succeeded">Complété(s) : %s</string>
     <string name="stat_download_done_line_failed">Échoué(s) : %s</string>

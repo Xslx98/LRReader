@@ -592,7 +592,9 @@ class DownloadService : Service(), DownloadListener {
                 }
                 needStyle = false
             } else {
-                text = getString(R.string.stat_download_done_text_failed, sFailedCount)
+                text = resources.getQuantityString(
+                    R.plurals.stat_download_done_text_failed, sFailedCount, sFailedCount
+                )
                 needStyle = true
             }
         } else {
