@@ -49,7 +49,7 @@ ucrop = "2.2.11"
 
 # --- Test ---
 junit = "4.13.2"
-joor = "0.9.6"
+joor = "0.9.15"
 
 # --- JitPack (commit-hash pinned, no auto-upgrade) ---
 # These use commit hashes or non-semver tags — Dependabot/Renovate cannot auto-bump.
