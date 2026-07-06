@@ -349,8 +349,38 @@
         <item quantity="other">履歴から%d件を削除しますか？</item>
     </plurals>
     <string name="batch_running">処理中 %1$d/%2$d…</string>
-    <string name="batch_result_summary">成功 %1$d件、失敗 %2$d件</string>
-    <string name="batch_result_failures_title">失敗した項目</string>
+    <plurals name="batch_download_queued">
+        <item quantity="other">%d 件をダウンロード待ちに追加しました</item>
+    </plurals>
+    <plurals name="batch_done_category">
+        <item quantity="other">%d 件をカテゴリに追加しました</item>
+    </plurals>
+    <plurals name="batch_done_tankoubon">
+        <item quantity="other">%d 件を単行本に追加しました</item>
+    </plurals>
+    <plurals name="batch_done_clear_new">
+        <item quantity="other">%d 件のNEWを解除しました</item>
+    </plurals>
+    <plurals name="batch_done_delete">
+        <item quantity="other">%d 件を削除しました</item>
+    </plurals>
+    <plurals name="batch_fail_title_category">
+        <item quantity="other">%d 件をカテゴリに追加できませんでした</item>
+    </plurals>
+    <plurals name="batch_fail_title_tankoubon">
+        <item quantity="other">%d 件を単行本に追加できませんでした</item>
+    </plurals>
+    <plurals name="batch_fail_title_clear_new">
+        <item quantity="other">%d 件のNEWを解除できませんでした</item>
+    </plurals>
+    <plurals name="batch_fail_title_delete">
+        <item quantity="other">%d 件を削除できませんでした</item>
+    </plurals>
+    <plurals name="batch_done_remove_history">
+        <item quantity="other">%d 件の履歴を削除しました</item>
+    </plurals>
+    <string name="batch_fail_summary">%1$d 件完了、%2$d 件失敗:</string>
+    <string name="batch_remove_history_partial">履歴 %1$d 件を削除、%2$d 件失敗</string>
 
     <string name="settings_eh">表示</string>
     <string name="settings_eh_theme">テーマ</string>

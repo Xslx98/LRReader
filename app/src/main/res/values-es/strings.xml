@@ -380,8 +380,58 @@
         <item quantity="many">¿Quitar %d entradas del historial?</item>
     </plurals>
     <string name="batch_running">Procesando %1$d/%2$d…</string>
-    <string name="batch_result_summary">%1$d correctos, %2$d fallidos</string>
-    <string name="batch_result_failures_title">Elementos fallidos</string>
+    <plurals name="batch_download_queued">
+        <item quantity="one">%d descarga añadida a la cola</item>
+        <item quantity="many">%d descargas añadidas a la cola</item>
+        <item quantity="other">%d descargas añadidas a la cola</item>
+    </plurals>
+    <plurals name="batch_done_category">
+        <item quantity="one">%d elemento añadido a la categoría</item>
+        <item quantity="many">%d elementos añadidos a la categoría</item>
+        <item quantity="other">%d elementos añadidos a la categoría</item>
+    </plurals>
+    <plurals name="batch_done_tankoubon">
+        <item quantity="one">%d elemento añadido al Tank</item>
+        <item quantity="many">%d elementos añadidos al Tank</item>
+        <item quantity="other">%d elementos añadidos al Tank</item>
+    </plurals>
+    <plurals name="batch_done_clear_new">
+        <item quantity="one">NEW quitado de %d elemento</item>
+        <item quantity="many">NEW quitado de %d elementos</item>
+        <item quantity="other">NEW quitado de %d elementos</item>
+    </plurals>
+    <plurals name="batch_done_delete">
+        <item quantity="one">%d elemento eliminado</item>
+        <item quantity="many">%d elementos eliminados</item>
+        <item quantity="other">%d elementos eliminados</item>
+    </plurals>
+    <plurals name="batch_fail_title_category">
+        <item quantity="one">No se pudo añadir %d elemento a la categoría</item>
+        <item quantity="many">No se pudieron añadir %d elementos a la categoría</item>
+        <item quantity="other">No se pudieron añadir %d elementos a la categoría</item>
+    </plurals>
+    <plurals name="batch_fail_title_tankoubon">
+        <item quantity="one">No se pudo añadir %d elemento al Tank</item>
+        <item quantity="many">No se pudieron añadir %d elementos al Tank</item>
+        <item quantity="other">No se pudieron añadir %d elementos al Tank</item>
+    </plurals>
+    <plurals name="batch_fail_title_clear_new">
+        <item quantity="one">No se pudo quitar NEW de %d elemento</item>
+        <item quantity="many">No se pudo quitar NEW de %d elementos</item>
+        <item quantity="other">No se pudo quitar NEW de %d elementos</item>
+    </plurals>
+    <plurals name="batch_fail_title_delete">
+        <item quantity="one">No se pudo eliminar %d elemento</item>
+        <item quantity="many">No se pudieron eliminar %d elementos</item>
+        <item quantity="other">No se pudieron eliminar %d elementos</item>
+    </plurals>
+    <plurals name="batch_done_remove_history">
+        <item quantity="one">%d entrada del historial eliminada</item>
+        <item quantity="many">%d entradas del historial eliminadas</item>
+        <item quantity="other">%d entradas del historial eliminadas</item>
+    </plurals>
+    <string name="batch_fail_summary">%1$d completados, %2$d fallidos:</string>
+    <string name="batch_remove_history_partial">%1$d eliminadas, %2$d fallidas</string>
 
     <string name="settings_eh">Pantalla</string>
     <string name="settings_eh_list_mode">Modo lista</string>

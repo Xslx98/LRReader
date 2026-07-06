@@ -495,6 +495,9 @@ class GalleryListScene : BaseScene(),
             override fun exitSelection() { multiSelectHelper?.exit() }
             override fun checkAllSelection() { multiSelectHelper?.checkAll() }
             override fun refreshList() { mHelper?.refresh() }
+            override fun showTip(message: String) {
+                this@GalleryListScene.showTip(message, LENGTH_SHORT)
+            }
         })
         val multiSelect = ListMultiSelectHelper(
             recyclerView = { if (::recyclerView.isInitialized) recyclerView else null },

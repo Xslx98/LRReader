@@ -14,7 +14,7 @@
   ~ limitations under the License.
   -->
 
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!--  black list  -->
     <string name="settings_advanced_url_replace_title">URL Masking (requires SNI off)</string>
     <string name="settings_advanced_url_replace_summary">URL masking (requires restart, disables account features)</string>
@@ -495,8 +495,48 @@
         <item quantity="other">Remove %d entries from history?</item>
     </plurals>
     <string name="batch_running">Processing %1$d/%2$d…</string>
-    <string name="batch_result_summary">%1$d succeeded, %2$d failed</string>
-    <string name="batch_result_failures_title">Failed items</string>
+    <plurals name="batch_download_queued">
+        <item quantity="one">Queued %d download</item>
+        <item quantity="other">Queued %d downloads</item>
+    </plurals>
+    <plurals name="batch_done_category">
+        <item quantity="one">Added %d item to the category</item>
+        <item quantity="other">Added %d items to the category</item>
+    </plurals>
+    <plurals name="batch_done_tankoubon">
+        <item quantity="one">Added %d item to the tank</item>
+        <item quantity="other">Added %d items to the tank</item>
+    </plurals>
+    <plurals name="batch_done_clear_new">
+        <item quantity="one">Cleared NEW on %d item</item>
+        <item quantity="other">Cleared NEW on %d items</item>
+    </plurals>
+    <plurals name="batch_done_delete">
+        <item quantity="one">Deleted %d item</item>
+        <item quantity="other">Deleted %d items</item>
+    </plurals>
+    <plurals name="batch_fail_title_category">
+        <item quantity="one">%d item couldn\'t be added to the category</item>
+        <item quantity="other">%d items couldn\'t be added to the category</item>
+    </plurals>
+    <plurals name="batch_fail_title_tankoubon">
+        <item quantity="one">%d item couldn\'t be added to the tank</item>
+        <item quantity="other">%d items couldn\'t be added to the tank</item>
+    </plurals>
+    <plurals name="batch_fail_title_clear_new">
+        <item quantity="one">NEW couldn\'t be cleared on %d item</item>
+        <item quantity="other">NEW couldn\'t be cleared on %d items</item>
+    </plurals>
+    <plurals name="batch_fail_title_delete">
+        <item quantity="one">%d item couldn\'t be deleted</item>
+        <item quantity="other">%d items couldn\'t be deleted</item>
+    </plurals>
+    <plurals name="batch_done_remove_history">
+        <item quantity="one">Removed %d history entry</item>
+        <item quantity="other">Removed %d history entries</item>
+    </plurals>
+    <string name="batch_fail_summary" tools:ignore="PluralsCandidate">%1$d completed, %2$d failed:</string>
+    <string name="batch_remove_history_partial" tools:ignore="PluralsCandidate">Removed %1$d, %2$d failed</string>
 
     <string name="settings_eh">Display</string>
 <!--    <string name="settings_eh_lock_cookies_igneous">Lock the Cookie igneous field</string>-->
