@@ -26,7 +26,7 @@ room = "2.6.1"
 # Note: library deprecated in 1.1.0-beta01 — future migration to DataStore+Tink planned.
 # Ref: https://developer.android.com/jetpack/androidx/releases/security
 security-crypto = "1.1.0"
-test-core = "1.6.1"
+test-core = "1.7.0"
 webkit = "1.16.0"
 
 # --- Google ---
