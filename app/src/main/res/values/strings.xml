@@ -279,7 +279,10 @@
     <string name="download_state_downloading">Downloading</string>
     <string name="download_state_downloaded">Downloaded</string>
     <string name="download_state_failed">Failed</string>
-    <string name="download_state_failed_2">%d incomplete</string>
+    <plurals name="download_state_failed_2">
+        <item quantity="one">%d incomplete</item>
+        <item quantity="other">%d incomplete</item>
+    </plurals>
     <string name="download_state_finish">Done</string>
     <string name="stat_509_alert_title">509 Alert</string>
     <string name="stat_509_alert_text">Image limit has been reached. Please stop download and have a relax.</string>

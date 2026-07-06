@@ -188,7 +188,9 @@
     <string name="download_state_downloading">下载中</string>
     <string name="download_state_downloaded">已下载</string>
     <string name="download_state_failed">失败</string>
-    <string name="download_state_failed_2">%d 未完成</string>
+    <plurals name="download_state_failed_2">
+        <item quantity="other">%d 未完成</item>
+    </plurals>
     <string name="download_state_finish">已完成</string>
     <string name="stat_509_alert_title">509 警告</string>
     <string name="stat_509_alert_text">图片配额已用尽。请停止下载，休息一下。</string>

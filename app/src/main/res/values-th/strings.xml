@@ -194,7 +194,9 @@
     <string name="download_state_downloading">กำลังดาวน์โหลด</string>
     <string name="download_state_downloaded">ดาวน์โหลดแล้ว</string>
     <string name="download_state_failed">ล้มเหลว</string>
-    <string name="download_state_failed_2">%d ที่ไม่เสร็จ</string>
+    <plurals name="download_state_failed_2">
+        <item quantity="other">%d ที่ไม่เสร็จ</item>
+    </plurals>
     <string name="download_state_finish">เสร็จ</string>
     <string name="download_sort_list">เรียงลำดับ</string>
     <string name="download_filter_by_status">กรองตามสถานะ</string>

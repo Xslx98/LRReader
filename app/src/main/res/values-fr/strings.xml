@@ -185,7 +185,11 @@
     <string name="download_state_downloading">Téléchargement en cours</string>
     <string name="download_state_downloaded">Téléchargement completé</string>
     <string name="download_state_failed">Échec</string>
-    <string name="download_state_failed_2">%d non complet</string>
+    <plurals name="download_state_failed_2">
+        <item quantity="one">%d non complet</item>
+        <item quantity="other">%d non complets</item>
+        <item quantity="many">%d non complets</item>
+    </plurals>
     <string name="download_state_finish">Complet</string>
     <string name="stat_509_alert_title">Erreur 509</string>
     <string name="stat_509_alert_text">Votre limite d\'obtention d\'images est atteinte. Arrêtez le téléchargement et réessayez plus tard.</string>
