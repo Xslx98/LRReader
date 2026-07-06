@@ -3,13 +3,12 @@ package com.lanraragi.reader.client.api
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.hippo.ehviewer.containedTestScope
 import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.dao.ProfileRepository
 import com.hippo.ehviewer.dao.ServerProfile
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -52,7 +51,11 @@ class ProfileLookupCacheTest {
             .allowMainThreadQueries()
             .build()
         repo = ProfileRepository(db.miscDao())
-        scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+        // Handler-bearing scope: see containedTestScope's KDoc. Same
+        // cancel-then-close teardown race as ArchiveSourceResolverTest —
+        // an in-flight Room-flow query at db.close() must not escape to
+        // the global handler and poison a later runTest.
+        scope = containedTestScope()
     }
 
     @After
