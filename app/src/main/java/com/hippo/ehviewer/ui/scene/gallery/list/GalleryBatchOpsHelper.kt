@@ -3,13 +3,15 @@ package com.hippo.ehviewer.ui.scene.gallery.list
 import android.app.Activity
 import android.os.CountDownTimer
 import android.view.View
-import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.settings.PrivacySettings
+import com.hippo.ehviewer.ui.scene.BatchBarAnimator
 import com.hippo.ehviewer.ui.scene.gallery.detail.CategoryDialogHelper
 import com.hippo.ehviewer.ui.scene.gallery.detail.TankoubonDialogHelper
 import com.lanraragi.reader.client.api.LRRClientProvider
@@ -44,21 +46,24 @@ internal class GalleryBatchOpsHelper(
         fun exitSelection()
         fun checkAllSelection()
         fun refreshList()
+        fun showTip(message: String)
     }
 
     private val countView: TextView = bar.findViewById(R.id.batch_count)
-    private val downloadButton: Button = bar.findViewById(R.id.batch_download)
-    private val categoryButton: Button = bar.findViewById(R.id.batch_category)
-    private val tankoubonButton: Button = bar.findViewById(R.id.batch_tankoubon)
-    private val clearNewButton: Button = bar.findViewById(R.id.batch_clear_new)
-    private val deleteButton: Button = bar.findViewById(R.id.batch_delete)
+    private val selectAllView: View = bar.findViewById(R.id.batch_select_all)
+    private val dividerView: View = bar.findViewById(R.id.batch_divider)
+    private val progressView: ProgressBar = bar.findViewById(R.id.batch_progress)
+    private val downloadButton: TextView = bar.findViewById(R.id.batch_download)
+    private val categoryButton: TextView = bar.findViewById(R.id.batch_category)
+    private val tankoubonButton: TextView = bar.findViewById(R.id.batch_tankoubon)
+    private val clearNewButton: TextView = bar.findViewById(R.id.batch_clear_new)
+    private val deleteButton: TextView = bar.findViewById(R.id.batch_delete)
 
     /** Last count reported by the selection helper; restored after a run ends. */
     private var selectedCount = 0
 
     init {
-        bar.findViewById<Button>(R.id.batch_select_all)
-            .setOnClickListener { callback.checkAllSelection() }
+        selectAllView.setOnClickListener { callback.checkAllSelection() }
         downloadButton.setOnClickListener { onDownloadClick() }
         categoryButton.setOnClickListener { onCategoryClick() }
         tankoubonButton.setOnClickListener { onTankoubonClick() }
@@ -75,9 +80,9 @@ internal class GalleryBatchOpsHelper(
 
     fun onModeChanged(active: Boolean) {
         if (active) {
-            bar.visibility = View.VISIBLE
+            BatchBarAnimator.show(bar)
         } else if (!isRunning()) {
-            bar.visibility = View.GONE
+            BatchBarAnimator.hide(bar)
         }
         // else: a batch is in flight — keep the bar visible showing progress
         // until onBatchProgress(null) ends the run.
@@ -96,45 +101,69 @@ internal class GalleryBatchOpsHelper(
     fun onBatchProgress(progress: Pair<Int, Int>?) {
         setOpButtonsEnabled(progress == null)
         if (progress != null) {
-            bar.visibility = View.VISIBLE
+            BatchBarAnimator.show(bar)
             countView.text =
                 bar.context.getString(R.string.batch_running, progress.first, progress.second)
-        } else if (callback.isSelectionActive()) {
-            countView.text = bar.resources.getQuantityString(
-                R.plurals.batch_selected_count, selectedCount, selectedCount
-            )
+            selectAllView.visibility = View.INVISIBLE
+            dividerView.visibility = View.GONE
+            progressView.visibility = View.VISIBLE
+            progressView.max = progress.second
+            progressView.progress = progress.first
         } else {
-            bar.visibility = View.GONE
+            selectAllView.visibility = View.VISIBLE
+            progressView.visibility = View.GONE
+            dividerView.visibility = View.VISIBLE
+            if (callback.isSelectionActive()) {
+                countView.text = bar.resources.getQuantityString(
+                    R.plurals.batch_selected_count, selectedCount, selectedCount
+                )
+            } else {
+                BatchBarAnimator.hide(bar)
+            }
         }
     }
 
     fun onBatchResult(result: GalleryListViewModel.BatchResult) {
         val activity = callback.activity ?: return
-        // AlertDialog shows either a message or a list, not both, so the
-        // failure lines are folded into the summary message.
-        val message = StringBuilder(
-            activity.getString(
-                R.string.batch_result_summary, result.succeeded.size, result.failed.size
+        val tip = BatchFeedbackPresenter.tipFor(result)
+        if (tip != null) {
+            callback.showTip(
+                activity.resources.getQuantityString(tip.textRes, tip.count, tip.count)
             )
-        )
-        if (result.failed.isNotEmpty()) {
-            message.append("\n\n")
-                .append(activity.getString(R.string.batch_result_failures_title))
-                .append(':')
-            result.failed.forEach {
-                message.append('\n').append(it.title).append(" — ").append(it.reason)
-            }
+        } else {
+            BatchFeedbackPresenter.dialogFor(result)?.let { showFailureDialog(activity, it) }
         }
-        AlertDialog.Builder(activity)
-            .setMessage(message)
-            .setPositiveButton(android.R.string.ok, null)
-            .show()
 
         if (result.op == GalleryListViewModel.BatchOp.ClearNew) {
             // NEW badges render from server data; reload so they disappear.
             callback.refreshList()
         }
         // DeleteArchives rows already fall out via AppEventBus.archiveDeletedEvent.
+    }
+
+    /**
+     * Failure-only detail dialog: quantified op-specific title, a summary line
+     * and one structured row per failed archive (title + reason).
+     */
+    private fun showFailureDialog(activity: Activity, spec: BatchFeedbackPresenter.FailureDialog) {
+        val inflater = activity.layoutInflater
+        val content = inflater.inflate(R.layout.dialog_batch_failures, null, false)
+        content.findViewById<TextView>(R.id.batch_fail_summary).text =
+            activity.getString(R.string.batch_fail_summary, spec.succeededCount, spec.failedCount)
+        val list = content.findViewById<LinearLayout>(R.id.batch_fail_list)
+        spec.failures.forEach { failure ->
+            val row = inflater.inflate(R.layout.item_batch_failure, list, false)
+            row.findViewById<TextView>(R.id.batch_fail_item_title).text = failure.title
+            row.findViewById<TextView>(R.id.batch_fail_item_reason).text = failure.reason
+            list.addView(row)
+        }
+        AlertDialog.Builder(activity)
+            .setTitle(
+                activity.resources.getQuantityString(spec.titleRes, spec.failedCount, spec.failedCount)
+            )
+            .setView(content)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
     }
 
     // ─── Operations ──────────────────────────────────────────────────────
@@ -265,15 +294,17 @@ internal class GalleryBatchOpsHelper(
     }
 
     private fun setOpButtonsEnabled(enabled: Boolean) {
-        downloadButton.isEnabled = enabled
-        categoryButton.isEnabled = enabled
-        tankoubonButton.isEnabled = enabled
-        clearNewButton.isEnabled = enabled
-        deleteButton.isEnabled = enabled
+        val alpha = if (enabled) 1f else DISABLED_ALPHA
+        listOf(downloadButton, categoryButton, tankoubonButton, clearNewButton, deleteButton)
+            .forEach {
+                it.isEnabled = enabled
+                it.alpha = alpha
+            }
     }
 
     private companion object {
         const val COUNTDOWN_MILLIS = 3000L
         const val COUNTDOWN_INTERVAL = 1000L
+        const val DISABLED_ALPHA = 0.35f
     }
 }

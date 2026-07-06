@@ -160,6 +160,23 @@
         <item name="cardBackgroundColor">?attr/contentColorReactive</item>
     </style>
 
+    <!-- Vertical icon+label action inside the batch action card
+         (widget_batch_action_bar.xml). -->
+    <style name="BatchActionButton">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="drawableTint">?attr/drawableColorPrimary</item>
+        <item name="android:drawablePadding">2dp</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:textColor">?android:attr/textColorSecondary</item>
+        <item name="android:textSize">11sp</item>
+    </style>
+
     <style name="ClipTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>

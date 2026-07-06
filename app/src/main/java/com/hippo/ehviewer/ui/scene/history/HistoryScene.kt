@@ -26,7 +26,6 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
@@ -55,6 +54,7 @@ import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.gallery.ReadingContext
 import com.hippo.ehviewer.gallery.ReadingContextStore
 import com.hippo.ehviewer.settings.AppearanceSettings
+import com.hippo.ehviewer.ui.scene.BatchBarAnimator
 import com.hippo.ehviewer.ui.scene.ListMultiSelectHelper
 import com.hippo.ehviewer.ui.scene.ToolbarScene
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
@@ -161,13 +161,13 @@ class HistoryScene : ToolbarScene(),
         val bar = ViewUtils.`$$`(view, R.id.batch_action_bar)
         batchBar = bar
         batchCountView = bar.findViewById(R.id.batch_count)
-        bar.findViewById<Button>(R.id.batch_download).visibility = View.GONE
-        bar.findViewById<Button>(R.id.batch_category).visibility = View.GONE
-        bar.findViewById<Button>(R.id.batch_tankoubon).visibility = View.GONE
-        bar.findViewById<Button>(R.id.batch_clear_new).visibility = View.GONE
-        bar.findViewById<Button>(R.id.batch_select_all)
+        bar.findViewById<View>(R.id.batch_download).visibility = View.GONE
+        bar.findViewById<View>(R.id.batch_category).visibility = View.GONE
+        bar.findViewById<View>(R.id.batch_tankoubon).visibility = View.GONE
+        bar.findViewById<View>(R.id.batch_clear_new).visibility = View.GONE
+        bar.findViewById<View>(R.id.batch_select_all)
             .setOnClickListener { multiSelectHelper?.checkAll() }
-        bar.findViewById<Button>(R.id.batch_delete).apply {
+        bar.findViewById<TextView>(R.id.batch_delete).apply {
             setText(R.string.batch_remove_history)
             setOnClickListener { onBatchRemoveClick() }
         }
@@ -175,7 +175,7 @@ class HistoryScene : ToolbarScene(),
             recyclerView = { if (::mRecyclerView.isInitialized) mRecyclerView else null },
             longClickListener = { this },
             onModeChanged = { active ->
-                batchBar?.visibility = if (active) View.VISIBLE else View.GONE
+                batchBar?.let { if (active) BatchBarAnimator.show(it) else BatchBarAnimator.hide(it) }
             },
             onCheckedChanged = { count ->
                 batchCountView?.let {
@@ -228,7 +228,12 @@ class HistoryScene : ToolbarScene(),
         setNavigationIcon(R.drawable.v_arrow_left_dark_x24)
         // View-scoped so a re-created view does not stack duplicate collectors.
         collectFlow(viewLifecycleOwner, viewModel.batchRemoveDone) { (ok, bad) ->
-            showTip(getString(R.string.batch_result_summary, ok, bad), LENGTH_SHORT)
+            val message = if (bad == 0) {
+                resources.getQuantityString(R.plurals.batch_done_remove_history, ok, ok)
+            } else {
+                getString(R.string.batch_remove_history_partial, ok, bad)
+            }
+            showTip(message, LENGTH_SHORT)
         }
     }
 
