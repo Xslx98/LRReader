@@ -329,6 +329,42 @@
         <item quantity="other">%d Einträge aus dem Verlauf entfernen?</item>
     </plurals>
     <string name="batch_running">Verarbeite %1$d/%2$d…</string>
+    <plurals name="batch_download_queued">
+        <item quantity="one">%d Download in die Warteschlange eingereiht</item>
+        <item quantity="other">%d Downloads in die Warteschlange eingereiht</item>
+    </plurals>
+    <plurals name="batch_done_category">
+        <item quantity="one">%d Element zur Kategorie hinzugefügt</item>
+        <item quantity="other">%d Elemente zur Kategorie hinzugefügt</item>
+    </plurals>
+    <plurals name="batch_done_tankoubon">
+        <item quantity="one">%d Element zum Tank hinzugefügt</item>
+        <item quantity="other">%d Elemente zum Tank hinzugefügt</item>
+    </plurals>
+    <plurals name="batch_done_clear_new">
+        <item quantity="one">NEU bei %d Element entfernt</item>
+        <item quantity="other">NEU bei %d Elementen entfernt</item>
+    </plurals>
+    <plurals name="batch_done_delete">
+        <item quantity="one">%d Element gelöscht</item>
+        <item quantity="other">%d Elemente gelöscht</item>
+    </plurals>
+    <plurals name="batch_fail_title_category">
+        <item quantity="one">%d Element konnte nicht zur Kategorie hinzugefügt werden</item>
+        <item quantity="other">%d Elemente konnten nicht zur Kategorie hinzugefügt werden</item>
+    </plurals>
+    <plurals name="batch_fail_title_tankoubon">
+        <item quantity="one">%d Element konnte nicht zum Tank hinzugefügt werden</item>
+        <item quantity="other">%d Elemente konnten nicht zum Tank hinzugefügt werden</item>
+    </plurals>
+    <plurals name="batch_fail_title_clear_new">
+        <item quantity="one">NEU konnte bei %d Element nicht entfernt werden</item>
+        <item quantity="other">NEU konnte bei %d Elementen nicht entfernt werden</item>
+    </plurals>
+    <plurals name="batch_fail_title_delete">
+        <item quantity="one">%d Element konnte nicht gelöscht werden</item>
+        <item quantity="other">%d Elemente konnten nicht gelöscht werden</item>
+    </plurals>
     <string name="batch_result_summary">%1$d erfolgreich, %2$d fehlgeschlagen</string>
     <string name="batch_result_failures_title">Fehlgeschlagene Einträge</string>
 

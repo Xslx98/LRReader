@@ -387,6 +387,33 @@
         <item quantity="other">从历史中移除 %d 条记录？</item>
     </plurals>
     <string name="batch_running">处理中 %1$d/%2$d…</string>
+    <plurals name="batch_download_queued">
+        <item quantity="other">已加入下载队列（%d 项）</item>
+    </plurals>
+    <plurals name="batch_done_category">
+        <item quantity="other">已加入分类（%d 项）</item>
+    </plurals>
+    <plurals name="batch_done_tankoubon">
+        <item quantity="other">已加入合订本（%d 项）</item>
+    </plurals>
+    <plurals name="batch_done_clear_new">
+        <item quantity="other">已清除 NEW 标记（%d 项）</item>
+    </plurals>
+    <plurals name="batch_done_delete">
+        <item quantity="other">已删除 %d 项</item>
+    </plurals>
+    <plurals name="batch_fail_title_category">
+        <item quantity="other">%d 项未能加入分类</item>
+    </plurals>
+    <plurals name="batch_fail_title_tankoubon">
+        <item quantity="other">%d 项未能加入合订本</item>
+    </plurals>
+    <plurals name="batch_fail_title_clear_new">
+        <item quantity="other">%d 项未能清除 NEW 标记</item>
+    </plurals>
+    <plurals name="batch_fail_title_delete">
+        <item quantity="other">%d 项未能删除</item>
+    </plurals>
     <string name="batch_result_summary">成功 %1$d，失败 %2$d</string>
     <string name="batch_result_failures_title">失败项</string>
 

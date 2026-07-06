@@ -381,6 +381,51 @@
         <item quantity="many">Retirer %d entrées de l\'historique ?</item>
     </plurals>
     <string name="batch_running">Traitement %1$d/%2$d…</string>
+    <plurals name="batch_download_queued">
+        <item quantity="one">%d téléchargement mis en file d\'attente</item>
+        <item quantity="many">%d téléchargements mis en file d\'attente</item>
+        <item quantity="other">%d téléchargements mis en file d\'attente</item>
+    </plurals>
+    <plurals name="batch_done_category">
+        <item quantity="one">%d élément ajouté à la catégorie</item>
+        <item quantity="many">%d éléments ajoutés à la catégorie</item>
+        <item quantity="other">%d éléments ajoutés à la catégorie</item>
+    </plurals>
+    <plurals name="batch_done_tankoubon">
+        <item quantity="one">%d élément ajouté au Tank</item>
+        <item quantity="many">%d éléments ajoutés au Tank</item>
+        <item quantity="other">%d éléments ajoutés au Tank</item>
+    </plurals>
+    <plurals name="batch_done_clear_new">
+        <item quantity="one">NEW retiré de %d élément</item>
+        <item quantity="many">NEW retiré de %d éléments</item>
+        <item quantity="other">NEW retiré de %d éléments</item>
+    </plurals>
+    <plurals name="batch_done_delete">
+        <item quantity="one">%d élément supprimé</item>
+        <item quantity="many">%d éléments supprimés</item>
+        <item quantity="other">%d éléments supprimés</item>
+    </plurals>
+    <plurals name="batch_fail_title_category">
+        <item quantity="one">%d élément n\'a pas pu être ajouté à la catégorie</item>
+        <item quantity="many">%d éléments n\'ont pas pu être ajoutés à la catégorie</item>
+        <item quantity="other">%d éléments n\'ont pas pu être ajoutés à la catégorie</item>
+    </plurals>
+    <plurals name="batch_fail_title_tankoubon">
+        <item quantity="one">%d élément n\'a pas pu être ajouté au Tank</item>
+        <item quantity="many">%d éléments n\'ont pas pu être ajoutés au Tank</item>
+        <item quantity="other">%d éléments n\'ont pas pu être ajoutés au Tank</item>
+    </plurals>
+    <plurals name="batch_fail_title_clear_new">
+        <item quantity="one">NEW n\'a pas pu être retiré de %d élément</item>
+        <item quantity="many">NEW n\'a pas pu être retiré de %d éléments</item>
+        <item quantity="other">NEW n\'a pas pu être retiré de %d éléments</item>
+    </plurals>
+    <plurals name="batch_fail_title_delete">
+        <item quantity="one">%d élément n\'a pas pu être supprimé</item>
+        <item quantity="many">%d éléments n\'ont pas pu être supprimés</item>
+        <item quantity="other">%d éléments n\'ont pas pu être supprimés</item>
+    </plurals>
     <string name="batch_result_summary">%1$d réussis, %2$d échoués</string>
     <string name="batch_result_failures_title">Éléments en échec</string>
 

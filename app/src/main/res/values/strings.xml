@@ -495,6 +495,42 @@
         <item quantity="other">Remove %d entries from history?</item>
     </plurals>
     <string name="batch_running">Processing %1$d/%2$d…</string>
+    <plurals name="batch_download_queued">
+        <item quantity="one">Queued %d download</item>
+        <item quantity="other">Queued %d downloads</item>
+    </plurals>
+    <plurals name="batch_done_category">
+        <item quantity="one">Added %d item to the category</item>
+        <item quantity="other">Added %d items to the category</item>
+    </plurals>
+    <plurals name="batch_done_tankoubon">
+        <item quantity="one">Added %d item to the tank</item>
+        <item quantity="other">Added %d items to the tank</item>
+    </plurals>
+    <plurals name="batch_done_clear_new">
+        <item quantity="one">Cleared NEW on %d item</item>
+        <item quantity="other">Cleared NEW on %d items</item>
+    </plurals>
+    <plurals name="batch_done_delete">
+        <item quantity="one">Deleted %d item</item>
+        <item quantity="other">Deleted %d items</item>
+    </plurals>
+    <plurals name="batch_fail_title_category">
+        <item quantity="one">%d item couldn\'t be added to the category</item>
+        <item quantity="other">%d items couldn\'t be added to the category</item>
+    </plurals>
+    <plurals name="batch_fail_title_tankoubon">
+        <item quantity="one">%d item couldn\'t be added to the tank</item>
+        <item quantity="other">%d items couldn\'t be added to the tank</item>
+    </plurals>
+    <plurals name="batch_fail_title_clear_new">
+        <item quantity="one">NEW couldn\'t be cleared on %d item</item>
+        <item quantity="other">NEW couldn\'t be cleared on %d items</item>
+    </plurals>
+    <plurals name="batch_fail_title_delete">
+        <item quantity="one">%d item couldn\'t be deleted</item>
+        <item quantity="other">%d items couldn\'t be deleted</item>
+    </plurals>
     <string name="batch_result_summary">%1$d succeeded, %2$d failed</string>
     <string name="batch_result_failures_title">Failed items</string>
 
