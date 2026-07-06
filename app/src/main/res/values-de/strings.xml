@@ -589,7 +589,10 @@
     <string name="lrr_category_action_edit">Bearbeiten</string>
     <string name="lrr_category_action_pin">Anheften</string>
     <string name="lrr_category_action_unpin">Lösen</string>
-    <string name="lrr_category_archives">%d Archive</string>
+    <plurals name="lrr_category_archives">
+        <item quantity="one">%d Archiv</item>
+        <item quantity="other">%d Archive</item>
+    </plurals>
     <string name="lrr_category_create">Kategorie erstellen</string>
     <string name="lrr_category_create_inline">Neue Kategorie erstellen</string>
     <string name="lrr_category_created">Kategorie erstellt</string>

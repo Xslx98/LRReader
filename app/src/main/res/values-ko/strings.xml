@@ -657,7 +657,9 @@
     <string name="lrr_category_action_edit">편집</string>
     <string name="lrr_category_action_pin">고정</string>
     <string name="lrr_category_action_unpin">고정 해제</string>
-    <string name="lrr_category_archives">%d개 아카이브</string>
+    <plurals name="lrr_category_archives">
+        <item quantity="other">%d개 아카이브</item>
+    </plurals>
     <string name="lrr_category_create">카테고리 생성</string>
     <string name="lrr_category_create_inline">새 카테고리 만들기</string>
     <string name="lrr_category_created">카테고리가 생성되었습니다</string>

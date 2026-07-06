@@ -661,7 +661,11 @@
     <string name="lrr_category_action_edit">Modifier</string>
     <string name="lrr_category_action_pin">Épingler</string>
     <string name="lrr_category_action_unpin">Désépingler</string>
-    <string name="lrr_category_archives">%d archives</string>
+    <plurals name="lrr_category_archives">
+        <item quantity="one">%d archive</item>
+        <item quantity="other">%d archives</item>
+        <item quantity="many">%d archives</item>
+    </plurals>
     <string name="lrr_category_create">Créer une catégorie</string>
     <string name="lrr_category_create_inline">Créer une nouvelle catégorie</string>
     <string name="lrr_category_created">Catégorie créée</string>
