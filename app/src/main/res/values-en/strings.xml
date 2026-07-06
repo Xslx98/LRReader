@@ -689,7 +689,10 @@
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="settings_advanced_url_replace_summary">URL masking (requires restart, disables account features)</string>
     <string name="settings_advanced_url_replace_title">URL Masking (requires SNI off)</string>
-    <string name="settings_download_clean_invalid_done">Cleaned %d download items</string>
+    <plurals name="settings_download_clean_invalid_done">
+        <item quantity="one">Cleaned %d download item</item>
+        <item quantity="other">Cleaned %d download items</item>
+    </plurals>
     <string name="settings_download_clean_invalid_download">Clean invaild download</string>
     <string name="settings_download_clean_invalid_download_confirm">Clear all invalid download items?</string>
     <string name="settings_download_clean_invalid_download_summary">Remove download items which are invalid</string>

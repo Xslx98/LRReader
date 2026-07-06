@@ -24,7 +24,10 @@
 
     <string name="settings_download_clean_invalid_download_confirm">Clear all invalid download items?</string>
     <string name="settings_download_cleaning">Cleaning download items</string>
-    <string name="settings_download_clean_invalid_done">Cleaned %d download items</string>
+    <plurals name="settings_download_clean_invalid_done">
+        <item quantity="one">Cleaned %d download item</item>
+        <item quantity="other">Cleaned %d download items</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">No invalid download items to clean</string>
     <string name="settings_download_export_no_items">No items to export</string>
     <string name="settings_download_export_failed">Failed to export download items</string>

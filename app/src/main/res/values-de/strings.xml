@@ -545,7 +545,10 @@
     <string name="settings_download_export_no_items">Keine Elemente zum Exportieren</string>
     <string name="settings_download_clean_invalid_download_confirm">Alle ungültigen Download-Elemente löschen?</string>
     <string name="settings_download_cleaning">Download-Elemente werden bereinigt</string>
-    <string name="settings_download_clean_invalid_done">%d Download-Elemente bereinigt</string>
+    <plurals name="settings_download_clean_invalid_done">
+        <item quantity="one">%d Download-Element bereinigt</item>
+        <item quantity="other">%d Download-Elemente bereinigt</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">Keine ungültigen Download-Elemente vorhanden</string>
 
     <string name="nav_server_config">Server wechseln</string>

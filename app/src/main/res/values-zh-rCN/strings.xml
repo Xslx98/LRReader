@@ -661,7 +661,9 @@
     <string name="settings_download_export_no_items">没有导出项目</string>
     <string name="settings_download_clean_invalid_download_confirm">确定清空无效的下载项？</string>
     <string name="settings_download_cleaning">正在清理下载项</string>
-    <string name="settings_download_clean_invalid_done">完成清理 %d 个下载项</string>
+    <plurals name="settings_download_clean_invalid_done">
+        <item quantity="other">完成清理 %d 个下载项</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">没有需要清空的下载项</string>
 
     <string name="nav_server_config">站点切换</string>
