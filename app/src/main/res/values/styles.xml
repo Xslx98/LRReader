@@ -167,6 +167,7 @@
         <item name="android:layout_height">match_parent</item>
         <item name="android:layout_weight">1</item>
         <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="drawableTint">?attr/drawableColorPrimary</item>
         <item name="android:drawablePadding">2dp</item>
         <item name="android:ellipsize">end</item>
         <item name="android:gravity">center_horizontal</item>
