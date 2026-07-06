@@ -528,7 +528,9 @@
         <item quantity="other">%d ชั่วโมงที่ผ่านมา</item>
     </plurals>
     <string name="yesterday">เมื่อวาน</string>
-    <string name="some_days_ago">%d วันที่ผ่านมา</string>
+    <plurals name="some_days_ago">
+        <item quantity="other">%d วันที่ผ่านมา</item>
+    </plurals>
     <plurals name="second">
         <item quantity="other">วิ</item>
     </plurals>

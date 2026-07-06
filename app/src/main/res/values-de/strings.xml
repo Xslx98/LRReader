@@ -424,7 +424,10 @@
     <string name="from_the_future">Von der Zukunft</string>
     <string name="just_now">Gerade</string>
     <string name="yesterday">Gestern</string>
-    <string name="some_days_ago">Vor %d Tagen</string>
+    <plurals name="some_days_ago">
+        <item quantity="one">Vor einem Tag</item>
+        <item quantity="other">Vor %d Tagen</item>
+    </plurals>
     <plurals name="some_minutes_ago">
         <item quantity="one">Vor einer Minute</item>
         <item quantity="other">Vor %d Minuten</item>

@@ -660,7 +660,10 @@
         <item quantity="other">%d hours ago</item>
     </plurals>
     <string name="yesterday">Yesterday</string>
-    <string name="some_days_ago">%d days ago</string>
+    <plurals name="some_days_ago">
+        <item quantity="one">A day ago</item>
+        <item quantity="other">%d days ago</item>
+    </plurals>
     <plurals name="second">
         <item quantity="one">sec</item>
         <item quantity="other">secs</item>
