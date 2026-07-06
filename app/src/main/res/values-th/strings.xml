@@ -238,7 +238,9 @@
     <string name="download_speed_text_2">%1$s, เหลือ %2$s</string>
     <string name="download_waiting_for_network">กำลังรอเครือข่าย…</string>
     <string name="download_resume_paused_snackbar">หยุดการดาวน์โหลดชั่วคราว — กำลังรอเครือข่าย</string>
-    <string name="download_resume_timed_out_snackbar">หยุดการดาวน์โหลด %d รายการ: ไม่มีเครือข่าย</string>
+    <plurals name="download_resume_timed_out_snackbar">
+        <item quantity="other">หยุดการดาวน์โหลด %d รายการ: ไม่มีเครือข่าย</item>
+    </plurals>
     <string name="download_resume_view_action">ดู</string>
     <string name="download_resume_retry_action">ลองใหม่</string>
     <string name="remember_download_label">จดจำป้ายชื่อดาวน์โหลด</string>
