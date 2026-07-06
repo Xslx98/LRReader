@@ -236,7 +236,9 @@
     <plurals name="stat_download_done_text_succeeded">
         <item quantity="other">%d 項下載成功</item>
     </plurals>
-    <string name="stat_download_done_text_failed">%d 項下載失敗</string>
+    <plurals name="stat_download_done_text_failed">
+        <item quantity="other">%d 項下載失敗</item>
+    </plurals>
     <string name="stat_download_done_text_mix">%1$d 項下載成功，%2$d 項下載失敗</string>
     <string name="stat_download_done_line_succeeded">下載成功：%s</string>
     <string name="stat_download_done_line_failed">下載失敗：%s</string>

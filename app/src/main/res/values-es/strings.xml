@@ -200,7 +200,11 @@
         <item quantity="other">%d completadas</item>
         <item quantity="many">%d completadas</item>
     </plurals>
-    <string name="stat_download_done_text_failed">%d fallido</string>
+    <plurals name="stat_download_done_text_failed">
+        <item quantity="one">%d fallido</item>
+        <item quantity="other">%d fallidos</item>
+        <item quantity="many">%d fallidos</item>
+    </plurals>
     <string name="stat_download_done_text_mix">%1$d completado, %2$d fallido</string>
     <string name="stat_download_done_line_succeeded">Completado: %s</string>
     <string name="stat_download_done_line_failed">Fallido: %s</string>

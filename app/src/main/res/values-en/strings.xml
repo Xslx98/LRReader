@@ -231,7 +231,10 @@
         <item quantity="one">%d succeeded</item>
         <item quantity="other">%d succeeded</item>
     </plurals>
-    <string name="stat_download_done_text_failed">%d failed</string>
+    <plurals name="stat_download_done_text_failed">
+        <item quantity="one">%d failed</item>
+        <item quantity="other">%d failed</item>
+    </plurals>
     <string name="stat_download_done_text_mix">%1$d succeeded, %2$d failed</string>
     <string name="stat_download_done_line_succeeded">Succeeded: %s</string>
     <string name="stat_download_done_line_failed">Failed: %s</string>
