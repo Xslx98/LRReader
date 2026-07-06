@@ -3,13 +3,12 @@ package com.lanraragi.reader.client.api
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.hippo.ehviewer.containedTestScope
 import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.dao.ProfileRepository
 import com.hippo.ehviewer.dao.ServerProfile
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -47,7 +46,13 @@ class ArchiveSourceResolverTest {
             .allowMainThreadQueries()
             .build()
         repo = ProfileRepository(db.miscDao())
-        scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+        // Handler-bearing scope: see containedTestScope's KDoc. The cache's
+        // Room-flow collector has no try/catch anywhere in its chain, and
+        // tearDown's cancel() does not wait for it before db.close() — a
+        // query still in flight at close throws a non-CancellationException
+        // that would otherwise escape to the global handler and fail the
+        // next runTest in this sandbox with UncaughtExceptionsBeforeTest.
+        scope = containedTestScope()
         // Wire LRRAuthManager onto a clean SharedPreferences so the legacy
         // (id == 0) fallback path is testable without touching KeyStore.
         val prefs = ctx.getSharedPreferences("lrr_test_prefs", Context.MODE_PRIVATE)
