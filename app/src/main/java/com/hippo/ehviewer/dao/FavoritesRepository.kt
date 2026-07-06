@@ -18,8 +18,7 @@ class FavoritesRepository(
 ) {
 
     suspend fun removeLocalFavorite(arcid: String, profileId: Long) {
-        dao.clearFavoriteSubsystemForProfile(arcid, profileId)
-        dao.deleteIfNoSubsystemForProfile(arcid, profileId)
+        dao.clearFavoriteAndPruneForProfile(arcid, profileId)
     }
 
     suspend fun containsLocalFavorite(arcid: String, profileId: Long): Boolean {

@@ -176,8 +176,7 @@ class DownloadDbRepository(
         // Resolve the download row's profile before clearing, so its
         // (arcid, profile) row can be collapsed if no subsystem remains.
         val pid = archiveLocalStateDao.loadDownloadRowByArcid(arcid)?.serverProfileId ?: return
-        archiveLocalStateDao.clearDownloadSubsystem(arcid)
-        archiveLocalStateDao.deleteIfNoSubsystemForProfile(arcid, pid)
+        archiveLocalStateDao.clearDownloadAndPruneForProfile(arcid, pid)
     }
 
     suspend fun putDownloadInfoBatch(list: List<DownloadInfo>) {
@@ -191,8 +190,7 @@ class DownloadDbRepository(
         if (arcids.isEmpty()) return
         for (arcid in arcids) {
             val pid = archiveLocalStateDao.loadDownloadRowByArcid(arcid)?.serverProfileId ?: continue
-            archiveLocalStateDao.clearDownloadSubsystem(arcid)
-            archiveLocalStateDao.deleteIfNoSubsystemForProfile(arcid, pid)
+            archiveLocalStateDao.clearDownloadAndPruneForProfile(arcid, pid)
         }
     }
 
@@ -225,18 +223,7 @@ class DownloadDbRepository(
         } else {
             downloadInfo.toArchive().toArchiveJson()
         }
-        archiveLocalStateDao.insertOrIgnoreDownload(
-            arcid = downloadInfo.arcid,
-            serverProfileId = downloadInfo.serverProfileId,
-            archiveJson = archiveJson,
-            downloadState = downloadInfo.state,
-            downloadLegacy = downloadInfo.legacy,
-            downloadTime = downloadInfo.time,
-            downloadLabel = downloadInfo.label,
-            downloadArchiveUri = downloadInfo.archiveUri,
-            downloadRootUri = downloadInfo.downloadRootUri,
-        )
-        archiveLocalStateDao.updateDownloadFields(
+        archiveLocalStateDao.upsertDownload(
             arcid = downloadInfo.arcid,
             serverProfileId = downloadInfo.serverProfileId,
             archiveJson = archiveJson,
