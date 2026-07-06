@@ -202,7 +202,11 @@
     <string name="stat_download_done_line_failed">Fallido: %s</string>
     <string name="download_remove_dialog_title">Borrar galería descargada</string>
     <string name="download_remove_dialog_message">¿Borrar %s de la lista de descargas?</string>
-    <string name="download_remove_dialog_message_2">¿Borrar %d galerías de la lista de descargas?</string>
+    <plurals name="download_remove_dialog_message_2">
+        <item quantity="one">¿Borrar %d galería de la lista de descargas?</item>
+        <item quantity="other">¿Borrar %d galerías de la lista de descargas?</item>
+        <item quantity="many">¿Borrar %d galerías de la lista de descargas?</item>
+    </plurals>
     <string name="download_remove_dialog_check_text">Borrar imágenes</string>
     <string name="download_reset_reading_progress">Reiniciar progreso de lectura</string>
     <string name="reset_reading_progress_message">¿Deseas reiniciar el progreso de lectura en todas las galerías?</string>

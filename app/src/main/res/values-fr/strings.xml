@@ -201,7 +201,11 @@
     <string name="stat_download_done_line_failed">Échoué(s) : %s</string>
     <string name="download_remove_dialog_title">Retire téléchargement</string>
     <string name="download_remove_dialog_message">Retirer %s de la liste de téléchargement ?</string>
-    <string name="download_remove_dialog_message_2">Retirer %d articles de la liste de téléchargement ?</string>
+    <plurals name="download_remove_dialog_message_2">
+        <item quantity="one">Retirer %d article de la liste de téléchargement ?</item>
+        <item quantity="other">Retirer %d articles de la liste de téléchargement ?</item>
+        <item quantity="many">Retirer %d articles de la liste de téléchargement ?</item>
+    </plurals>
     <string name="download_remove_dialog_check_text">Supprimer fichiers d\'image</string>
     <string name="stat_download_action_stop_all">Arrêter tout</string>
     <string name="default_download_label_name">Défaut</string>
