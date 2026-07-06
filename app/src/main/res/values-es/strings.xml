@@ -195,7 +195,11 @@
     <string name="stat_509_alert_title">Alerta 509</string>
     <string name="stat_509_alert_text">Se alcanzó el límite de imágenes. Detenga la descarga y espere un poco</string>
     <string name="stat_download_done_title">Descarga completada</string>
-    <string name="stat_download_done_text_succeeded">%d completada</string>
+    <plurals name="stat_download_done_text_succeeded">
+        <item quantity="one">%d completada</item>
+        <item quantity="other">%d completadas</item>
+        <item quantity="many">%d completadas</item>
+    </plurals>
     <string name="stat_download_done_text_failed">%d fallido</string>
     <string name="stat_download_done_text_mix">%1$d completado, %2$d fallido</string>
     <string name="stat_download_done_line_succeeded">Completado: %s</string>

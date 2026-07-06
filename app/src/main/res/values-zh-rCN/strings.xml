@@ -195,7 +195,9 @@
     <string name="stat_509_alert_title">509 警告</string>
     <string name="stat_509_alert_text">图片配额已用尽。请停止下载，休息一下。</string>
     <string name="stat_download_done_title">下载结束</string>
-    <string name="stat_download_done_text_succeeded">%d 项下载成功</string>
+    <plurals name="stat_download_done_text_succeeded">
+        <item quantity="other">%d 项下载成功</item>
+    </plurals>
     <string name="stat_download_done_text_failed">%d 项下载失败</string>
     <string name="stat_download_done_text_mix">%1$d 项下载成功，%2$d 项下载失败</string>
     <string name="stat_download_done_line_succeeded">下载成功：%s</string>
