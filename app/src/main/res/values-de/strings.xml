@@ -295,7 +295,10 @@
     <string name="tank_none">Keine Tankoubons auf diesem Server</string>
 
     <!-- List multi-select batch operations -->
-    <string name="batch_selected_count">%d ausgewählt</string>
+    <plurals name="batch_selected_count">
+        <item quantity="one">%d ausgewählt</item>
+        <item quantity="other">%d ausgewählt</item>
+    </plurals>
     <string name="batch_select_all">Alle</string>
     <string name="batch_download">Herunterladen</string>
     <string name="batch_add_to_category">Kategorie</string>

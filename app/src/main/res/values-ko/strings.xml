@@ -369,7 +369,9 @@
     <string name="tank_none">서버에 단행본이 없습니다</string>
 
     <!-- List multi-select batch operations -->
-    <string name="batch_selected_count">%d개 선택됨</string>
+    <plurals name="batch_selected_count">
+        <item quantity="other">%d개 선택됨</item>
+    </plurals>
     <string name="batch_select_all">전체</string>
     <string name="batch_download">다운로드</string>
     <string name="batch_add_to_category">카테고리</string>

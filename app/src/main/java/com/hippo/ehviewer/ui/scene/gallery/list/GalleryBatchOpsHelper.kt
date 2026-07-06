@@ -86,7 +86,8 @@ internal class GalleryBatchOpsHelper(
     fun onCheckedChanged(count: Int) {
         selectedCount = count
         if (!isRunning()) {
-            countView.text = bar.context.getString(R.string.batch_selected_count, count)
+            countView.text =
+                bar.resources.getQuantityString(R.plurals.batch_selected_count, count, count)
         }
     }
 
@@ -99,7 +100,9 @@ internal class GalleryBatchOpsHelper(
             countView.text =
                 bar.context.getString(R.string.batch_running, progress.first, progress.second)
         } else if (callback.isSelectionActive()) {
-            countView.text = bar.context.getString(R.string.batch_selected_count, selectedCount)
+            countView.text = bar.resources.getQuantityString(
+                R.plurals.batch_selected_count, selectedCount, selectedCount
+            )
         } else {
             bar.visibility = View.GONE
         }

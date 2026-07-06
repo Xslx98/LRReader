@@ -323,7 +323,9 @@
     <string name="tank_none">サーバーに単行本はありません</string>
 
     <!-- List multi-select batch operations -->
-    <string name="batch_selected_count">%d件選択中</string>
+    <plurals name="batch_selected_count">
+        <item quantity="other">%d件選択中</item>
+    </plurals>
     <string name="batch_select_all">すべて</string>
     <string name="batch_download">ダウンロード</string>
     <string name="batch_add_to_category">カテゴリ</string>

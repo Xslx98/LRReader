@@ -399,7 +399,9 @@
     <string name="tank_none">伺服器上沒有合訂本</string>
 
     <!-- List multi-select batch operations -->
-    <string name="batch_selected_count">已選 %d 項</string>
+    <plurals name="batch_selected_count">
+        <item quantity="other">已選 %d 項</item>
+    </plurals>
     <string name="batch_select_all">全選</string>
     <string name="batch_download">下載</string>
     <string name="batch_add_to_category">分類</string>
