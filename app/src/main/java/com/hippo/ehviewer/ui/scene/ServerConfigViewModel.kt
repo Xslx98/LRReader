@@ -31,6 +31,10 @@ class ServerConfigViewModel : ViewModel() {
 
     private val profileRepository = ServiceRegistry.dataModule.profileRepository
 
+    /** Global auth state captured before a test attempt (see [attemptConnection]). */
+    private var priorServerUrl: String? = null
+    private var priorApiKey: String? = null
+
     // -------------------------------------------------------------------------
     // Connection state
     // -------------------------------------------------------------------------
@@ -88,6 +92,17 @@ class ServerConfigViewModel : ViewModel() {
         if (_connecting.value) return
 
         _connecting.value = true
+
+        // UI-16: the attempt mutates the process-global interceptor state
+        // (server URL + default API key) before the outcome is known. Capture
+        // the pre-test values so a failed attempt restores them instead of
+        // leaving auth routed at the candidate server.
+        priorServerUrl = LRRAuthManager.getServerUrl()
+        priorApiKey = try {
+            LRRAuthManager.getApiKey()
+        } catch (e: LRRSecureStorageUnavailableException) {
+            null
+        }
 
         // Save API key
         try {
@@ -210,14 +225,30 @@ class ServerConfigViewModel : ViewModel() {
     }
 
     /**
-     * Called when all connection attempts fail. Emits the failure event.
+     * Called when all connection attempts fail. Restores the pre-test global
+     * auth state, then emits the failure event.
      */
     private fun onConnectFailure(e: Exception) {
+        restorePriorAuthState()
         _connecting.value = false
         if (e is LRRSecureStorageUnavailableException) {
             _secureStorageError.tryEmit(Unit)
         } else {
             _connectFailure.tryEmit(e)
+        }
+    }
+
+    /**
+     * Best-effort rollback of [LRRAuthManager] globals mutated by a test
+     * attempt. Only meaningful when a previous configuration existed; on
+     * first run both captures are null and this is a no-op for the URL.
+     */
+    private fun restorePriorAuthState() {
+        priorServerUrl?.let { LRRAuthManager.setServerUrl(it) }
+        try {
+            LRRAuthManager.setApiKey(priorApiKey)
+        } catch (e: LRRSecureStorageUnavailableException) {
+            Log.e(TAG, "Could not restore prior API key after failed test", e)
         }
     }
 

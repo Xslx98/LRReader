@@ -284,6 +284,22 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         outState.putInt(KEY_CURRENT_INDEX, mSliderController.currentIndex)
     }
 
+    /**
+     * singleTask (AndroidManifest): a launch that arrives while this
+     * instance is alive lands here instead of onCreate — previously it
+     * was silently dropped and the old archive/page just came to the
+     * foreground (RD-7). Re-initializing in place would require a full
+     * provider/GL teardown, so reuse the continuation pattern instead
+     * (see [launchNextArchive]): mark this instance finishing, then
+     * launch a fresh instance carrying the new intent through the
+     * proven cold-start path.
+     */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        finish()
+        startActivity(intent)
+    }
+
     @Suppress("WrongConstant")
     override fun onCreate(savedInstanceState: Bundle?) {
         if (ReadingSettings.getReadingFullscreen()) {

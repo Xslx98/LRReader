@@ -289,6 +289,7 @@ internal class DownloadScheduler(
         data class OnGetPages(val taskInfo: DownloadInfo, val pages: Int) : DownloadEvent
         data object OnGet509 : DownloadEvent
         data class OnPageDownload(
+            val taskInfo: DownloadInfo,
             val index: Int,
             val contentLength: Long,
             val receivedSize: Long,
@@ -340,10 +341,13 @@ internal class DownloadScheduler(
                 eventBus.getDownloadListener()?.onGet509()
             }
             is DownloadEvent.OnPageDownload -> {
-                speedTracker.onDownload(event.index, event.contentLength, event.receivedSize, event.bytesRead)
+                speedTracker.onDownload(
+                    event.taskInfo.arcid, event.index,
+                    event.contentLength, event.receivedSize, event.bytesRead
+                )
             }
             is DownloadEvent.OnPageSuccess -> {
-                speedTracker.onDone(event.index)
+                speedTracker.onDone(event.taskInfo.arcid, event.index)
                 val info = event.taskInfo
                 progressTracker.update(
                     info.arcid,
@@ -360,7 +364,7 @@ internal class DownloadScheduler(
                 }
             }
             is DownloadEvent.OnPageFailure -> {
-                speedTracker.onDone(event.index)
+                speedTracker.onDone(event.taskInfo.arcid, event.index)
                 val info = event.taskInfo
                 progressTracker.update(
                     info.arcid,
@@ -389,7 +393,7 @@ internal class DownloadScheduler(
                 // spurious "download failed" notification, or resurrect a
                 // just-deleted download via persistInfo.
                 if (info !in activeTasks) return
-                speedTracker.onFinish()
+                speedTracker.onFinish(info.arcid)
                 activeTasks.remove(info)
                 activeWorkers.remove(info)
                 if (activeTasks.isEmpty()) speedTracker.stop()
@@ -468,7 +472,7 @@ internal class DownloadScheduler(
         }
 
         override fun onPageDownload(index: Int, contentLength: Long, receivedSize: Long, bytesRead: Int) {
-            postEvent(DownloadEvent.OnPageDownload(index, contentLength, receivedSize, bytesRead))
+            postEvent(DownloadEvent.OnPageDownload(mInfo, index, contentLength, receivedSize, bytesRead))
         }
 
         override fun onPageSuccess(index: Int, finished: Int, downloaded: Int, total: Int) {

@@ -15,16 +15,14 @@ import com.lanraragi.reader.domain.Archive
  * keep talking in [HistoryInfo] and [Archive], the new storage shape
  * is a concealed implementation detail.
  *
- * **Atomicity note**: each public method composes one or more atomic
- * SQL statements but does NOT wrap them in `withTransaction`. The
- * pattern is INSERT-OR-IGNORE-then-UPDATE for upserts, and
- * clear-then-deleteIfEmpty for removals; concurrent same-arcid
- * operations are rare and the worst observable race is a transient
- * stale row that the next operation collapses. Avoiding
- * `withTransaction` is also necessary in unit tests where Room's
- * inline executors otherwise leak the transaction's coroutine context
- * into the invalidation-tracker observer that drives [observeAllDownloads]
- * and friends.
+ * **Atomicity note (DB-4)**: statement pairs (INSERT-OR-IGNORE-then-
+ * UPDATE upserts, clear-then-deleteIfEmpty removals) go through the
+ * DAO's `@Transaction` pair-wrappers so an interleaving writer cannot
+ * drop a subsystem row. Repository-level `withTransaction` remains
+ * forbidden: it would leak the transaction's coroutine context into
+ * the invalidation-tracker observer that drives [observeAllDownloads]
+ * and friends in unit tests — Room's generated `@Transaction` wrapper
+ * does not have that problem.
  *
  * Registered as a lazy val in [com.hippo.ehviewer.module.DataModule].
  */
@@ -75,13 +73,11 @@ class HistoryRepository(
      * Idempotent: a missing row is a no-op.
      */
     suspend fun deleteHistory(arcid: String, profileId: Long) {
-        dao.clearHistorySubsystemForProfile(arcid, profileId)
-        dao.deleteIfNoSubsystemForProfile(arcid, profileId)
+        dao.clearHistoryAndPruneForProfile(arcid, profileId)
     }
 
     suspend fun clearHistory() {
-        dao.clearAllHistorySubsystems()
-        dao.deleteAllEmptyRows()
+        dao.clearAllHistoryAndPruneEmptyRows()
     }
 
     /**
@@ -120,8 +116,7 @@ class HistoryRepository(
         historyTime: Long,
         historyMode: Int,
     ) {
-        dao.insertOrIgnoreHistory(arcid, serverProfileId, archiveJson, historyTime, historyMode)
-        dao.updateHistoryFields(arcid, serverProfileId, archiveJson, historyTime, historyMode)
+        dao.upsertHistory(arcid, serverProfileId, archiveJson, historyTime, historyMode)
     }
 
     private suspend fun trimHistory(profileIds: Collection<Long>) {
@@ -129,9 +124,8 @@ class HistoryRepository(
             if (it < 1) DEFAULT_HISTORY_MAX else it
         }
         for (pid in profileIds.distinct()) {
-            dao.clearHistorySubsystemBeyondForProfile(pid, maxCount)
+            dao.trimHistoryForProfile(pid, maxCount)
         }
-        dao.deleteAllEmptyRows()
     }
 
     private companion object {

@@ -279,6 +279,35 @@ class ServerConfigViewModelTest {
         job.cancel()
     }
 
+    @Test
+    fun attemptConnection_failure_restoresPriorGlobalAuthState() {
+        // Simulate an existing working configuration.
+        LRRAuthManager.setServerUrl("http://prior.example.com:3000")
+        LRRAuthManager.setApiKey("prior-key")
+
+        server.enqueue(MockResponse().setResponseCode(401).setBody("Unauthorized"))
+
+        val vm = ServerConfigViewModel()
+        val failures = mutableListOf<Exception>()
+        val collectScope = CoroutineScope(Dispatchers.Unconfined)
+        val job = collectScope.launch {
+            vm.connectFailure.collect { failures.add(it) }
+        }
+
+        val baseUrl = server.url("").toString().removeSuffix("/")
+        vm.attemptConnection(baseUrl, "candidate-key", false)
+
+        drainCoroutines()
+
+        assertTrue(failures.isNotEmpty())
+        // UI-16: a failed test attempt must not leave the global interceptor
+        // state routed/authenticated at the candidate server.
+        assertEquals("http://prior.example.com:3000", LRRAuthManager.getServerUrl())
+        assertEquals("prior-key", LRRAuthManager.getApiKey())
+
+        job.cancel()
+    }
+
     // ═══════════════════════════════════════════════════════════
     // Helpers
     // ═══════════════════════════════════════════════════════════
