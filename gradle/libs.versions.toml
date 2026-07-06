@@ -32,7 +32,7 @@ webkit = "1.16.0"
 # --- Google ---
 material = "1.14.0"
 firebase-crashlytics-plugin = "3.0.2"
-google-services = "4.4.2"
+google-services = "4.5.0"
 
 # --- Kotlin/JetBrains ---
 coroutines = "1.10.2"
