@@ -39,7 +39,7 @@ firebase-crashlytics-plugin = "3.0.7"
 google-services = "4.5.0"
 
 # --- Kotlin/JetBrains ---
-coroutines = "1.10.2"
+coroutines = "1.11.0"
 serialization-json = "1.11.0"
 
 # --- Third-party ---
