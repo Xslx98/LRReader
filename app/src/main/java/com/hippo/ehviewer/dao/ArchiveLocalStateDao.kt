@@ -13,6 +13,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.hippo.ehviewer.download.DownloadState
 import kotlinx.coroutines.flow.Flow
@@ -195,11 +196,14 @@ interface ArchiveLocalStateDao {
     // ── Cross-subsystem-safe upsert pairs ──────────────────────
     //
     // INSERT-OR-IGNORE-then-UPDATE preserves columns belonging to
-    // other subsystems on the same arcid. Each statement is a single
-    // SQL operation, so callers don't need a `withTransaction` wrapper
-    // (which would put the calling coroutine in Room's transaction
-    // dispatcher and trip the invalidation-tracker assertion when the
-    // table is being observed by a Flow on the same coroutine scope).
+    // other subsystems on the same arcid. Repositories must call these
+    // through the @Transaction pair-wrappers further below (DB-4) —
+    // never as two bare statements — and must NOT add their own
+    // `withTransaction` (which would put the calling coroutine in
+    // Room's transaction dispatcher and trip the invalidation-tracker
+    // assertion when the table is being observed by a Flow on the same
+    // coroutine scope; Room's generated @Transaction wrapper does not
+    // have that problem).
 
     @Suppress("LongParameterList")
     @Query(
@@ -377,4 +381,81 @@ interface ArchiveLocalStateDao {
 
     @Query("SELECT HISTORY_SCROLL_FRACTION FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :profileId")
     suspend fun getHistoryScrollFractionForProfile(arcid: String, profileId: Long): Float?
+
+    // ── Transactional statement pairs (DB-4) ───────────────────
+    //
+    // Each pair used to run as two independent statements; an
+    // interleaving writer could permanently drop a subsystem row.
+    // Worst interleave: B insertOrIgnore(X) is a no-op against the
+    // doomed row → A clear(X) → A deleteIfNoSubsystem(X) removes the
+    // whole row → B update(X) matches 0 rows — B's subsystem write is
+    // silently lost. Room's generated @Transaction wrapper serializes
+    // each pair without putting the *calling* coroutine on the
+    // transaction dispatcher, so the Flow-observer concern above does
+    // not apply.
+
+    @Transaction
+    suspend fun upsertHistory(
+        arcid: String,
+        serverProfileId: Long,
+        archiveJson: String,
+        historyTime: Long,
+        historyMode: Int,
+    ) {
+        insertOrIgnoreHistory(arcid, serverProfileId, archiveJson, historyTime, historyMode)
+        updateHistoryFields(arcid, serverProfileId, archiveJson, historyTime, historyMode)
+    }
+
+    @Suppress("LongParameterList")
+    @Transaction
+    suspend fun upsertDownload(
+        arcid: String,
+        serverProfileId: Long,
+        archiveJson: String,
+        downloadState: DownloadState,
+        downloadLegacy: Int,
+        downloadTime: Long,
+        downloadLabel: String?,
+        downloadArchiveUri: String?,
+        downloadRootUri: String?,
+    ) {
+        insertOrIgnoreDownload(
+            arcid, serverProfileId, archiveJson, downloadState,
+            downloadLegacy, downloadTime, downloadLabel, downloadArchiveUri, downloadRootUri
+        )
+        updateDownloadFields(
+            arcid, serverProfileId, archiveJson, downloadState,
+            downloadLegacy, downloadTime, downloadLabel, downloadArchiveUri, downloadRootUri
+        )
+    }
+
+    @Transaction
+    suspend fun clearHistoryAndPruneForProfile(arcid: String, profileId: Long) {
+        clearHistorySubsystemForProfile(arcid, profileId)
+        deleteIfNoSubsystemForProfile(arcid, profileId)
+    }
+
+    @Transaction
+    suspend fun clearFavoriteAndPruneForProfile(arcid: String, profileId: Long) {
+        clearFavoriteSubsystemForProfile(arcid, profileId)
+        deleteIfNoSubsystemForProfile(arcid, profileId)
+    }
+
+    @Transaction
+    suspend fun clearDownloadAndPruneForProfile(arcid: String, profileId: Long) {
+        clearDownloadSubsystem(arcid)
+        deleteIfNoSubsystemForProfile(arcid, profileId)
+    }
+
+    @Transaction
+    suspend fun clearAllHistoryAndPruneEmptyRows() {
+        clearAllHistorySubsystems()
+        deleteAllEmptyRows()
+    }
+
+    @Transaction
+    suspend fun trimHistoryForProfile(profileId: Long, maxCount: Int) {
+        clearHistorySubsystemBeyondForProfile(profileId, maxCount)
+        deleteAllEmptyRows()
+    }
 }
