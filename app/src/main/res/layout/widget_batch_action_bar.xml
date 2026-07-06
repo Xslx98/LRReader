@@ -1,99 +1,128 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Bottom batch action bar shown while the gallery list is in multi-select
-  mode. No extra window-inset handling needed: the scene container
-  (EhStageLayout) reports the navigation-bar inset to the custom DrawerLayout
-  as an additional bottom margin, so layout_gravity="bottom" already sits
-  above the gesture/nav bar.
+  Bottom batch action card shown while a list scene is in multi-select mode.
+  Floating CardView sharing the SearchBar's CardView.Normal language so the
+  top search card and this bottom card read as a matched pair.
 
-  12sp button text + 4dp button padding keep the five buttons + counter
-  inside a 360dp-wide screen with the English (widest) labels.
+  No extra window-inset handling needed: the scene container (EhStageLayout)
+  reports the navigation-bar inset to the custom DrawerLayout as an
+  additional bottom margin, so layout_gravity="bottom" already sits above
+  the gesture/nav bar.
+
+  Two rows: a count/select-all header (swapped for progress text + a 3dp
+  determinate bar while a batch runs) and five equal-weight icon+label
+  actions. HistoryScene reuses this widget with the gallery-only actions
+  hidden and the delete slot relabelled "Remove".
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/batch_action_bar"
+    style="@style/CardView.Normal"
     android:layout_width="match_parent"
-    android:layout_height="56dp"
+    android:layout_height="wrap_content"
     android:layout_gravity="bottom"
-    android:background="?android:attr/colorBackground"
-    android:elevation="8dp"
-    android:gravity="center_vertical"
-    android:orientation="horizontal"
-    android:paddingHorizontal="4dp"
+    android:layout_marginStart="@dimen/gallery_search_bar_margin_h"
+    android:layout_marginEnd="@dimen/gallery_search_bar_margin_h"
+    android:layout_marginBottom="8dp"
     android:visibility="gone">
 
-    <Button
-        android:id="@+id/batch_select_all"
-        style="?attr/borderlessButtonStyle"
-        android:letterSpacing="0"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:minWidth="48dp"
-        android:paddingHorizontal="4dp"
-        android:text="@string/batch_select_all"
-        android:textSize="12sp" />
-
-    <TextView
-        android:id="@+id/batch_count"
-        android:layout_width="0dp"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:ellipsize="end"
-        android:gravity="center"
-        android:maxLines="1"
-        android:textSize="12sp" />
+        android:orientation="vertical">
 
-    <Button
-        android:id="@+id/batch_download"
-        style="?attr/borderlessButtonStyle"
-        android:letterSpacing="0"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:minWidth="48dp"
-        android:paddingHorizontal="4dp"
-        android:text="@string/batch_download"
-        android:textSize="12sp" />
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="36dp">
 
-    <Button
-        android:id="@+id/batch_category"
-        style="?attr/borderlessButtonStyle"
-        android:letterSpacing="0"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:minWidth="48dp"
-        android:paddingHorizontal="4dp"
-        android:text="@string/batch_add_to_category"
-        android:textSize="12sp" />
+            <TextView
+                android:id="@+id/batch_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start|center_vertical"
+                android:layout_marginStart="12dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="?attr/textColorThemePrimary"
+                android:textSize="13sp"
+                android:textStyle="bold" />
 
-    <Button
-        android:id="@+id/batch_tankoubon"
-        style="?attr/borderlessButtonStyle"
-        android:letterSpacing="0"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:minWidth="48dp"
-        android:paddingHorizontal="4dp"
-        android:text="@string/batch_add_to_tankoubon"
-        android:textSize="12sp" />
+            <LinearLayout
+                android:id="@+id/batch_select_all"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="end"
+                android:background="?attr/selectableItemBackground"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingHorizontal="12dp">
 
-    <Button
-        android:id="@+id/batch_clear_new"
-        style="?attr/borderlessButtonStyle"
-        android:letterSpacing="0"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:minWidth="48dp"
-        android:paddingHorizontal="4dp"
-        android:text="@string/batch_clear_new"
-        android:textSize="12sp" />
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/v_check_all_x24" />
 
-    <Button
-        android:id="@+id/batch_delete"
-        style="?attr/borderlessButtonStyle"
-        android:letterSpacing="0"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:minWidth="48dp"
-        android:paddingHorizontal="4dp"
-        android:text="@string/batch_delete"
-        android:textSize="12sp" />
-</LinearLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="@string/batch_select_all"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <View
+            android:id="@+id/batch_divider"
+            android:layout_width="match_parent"
+            android:layout_height="1px"
+            android:background="?attr/dividerColor" />
+
+        <ProgressBar
+            android:id="@+id/batch_progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:progressTint="?attr/colorAccent"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/batch_download"
+                style="@style/BatchActionButton"
+                app:drawableTopCompat="@drawable/v_download_box_x24"
+                android:text="@string/batch_download" />
+
+            <TextView
+                android:id="@+id/batch_category"
+                style="@style/BatchActionButton"
+                app:drawableTopCompat="@drawable/v_folder_move_dark_x24"
+                android:text="@string/batch_add_to_category" />
+
+            <TextView
+                android:id="@+id/batch_tankoubon"
+                style="@style/BatchActionButton"
+                app:drawableTopCompat="@drawable/v_book_open_x24"
+                android:text="@string/batch_add_to_tankoubon" />
+
+            <TextView
+                android:id="@+id/batch_clear_new"
+                style="@style/BatchActionButton"
+                app:drawableTopCompat="@drawable/v_clear_all_x24"
+                android:text="@string/batch_clear_new" />
+
+            <TextView
+                android:id="@+id/batch_delete"
+                style="@style/BatchActionButton"
+                app:drawableTint="@color/destructive_action"
+                app:drawableTopCompat="@drawable/v_delete_dark_x24"
+                android:text="@string/batch_delete"
+                android:textColor="@color/destructive_action" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
