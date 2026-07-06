@@ -650,7 +650,9 @@
     <string name="lrr_category_action_edit">Edit</string>
     <string name="lrr_category_action_pin">Pin</string>
     <string name="lrr_category_action_unpin">Unpin</string>
-    <string name="lrr_category_archives">%1$d archives</string>
+    <plurals name="lrr_category_archives">
+        <item quantity="other">%1$d archives</item>
+    </plurals>
     <string name="lrr_category_create">New Category</string>
     <string name="lrr_category_create_inline">+ New Category…</string>
     <string name="lrr_category_created">Category created</string>

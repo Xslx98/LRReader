@@ -670,7 +670,11 @@
     <string name="lrr_category_action_edit">Editar</string>
     <string name="lrr_category_action_pin">Fijar</string>
     <string name="lrr_category_action_unpin">Desfijar</string>
-    <string name="lrr_category_archives">%d archivos</string>
+    <plurals name="lrr_category_archives">
+        <item quantity="one">%d archivo</item>
+        <item quantity="other">%d archivos</item>
+        <item quantity="many">%d archivos</item>
+    </plurals>
     <string name="lrr_category_create">Crear categoría</string>
     <string name="lrr_category_create_inline">Crear nueva categoría</string>
     <string name="lrr_category_created">Categoría creada</string>

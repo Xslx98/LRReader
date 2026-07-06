@@ -622,7 +622,9 @@
     <string name="lrr_categories_title">分类</string>
     <string name="lrr_categories_empty">暂无分类</string>
     <string name="lrr_category_pinned">📌 %1$s</string>
-    <string name="lrr_category_archives">%1$d 个档案</string>
+    <plurals name="lrr_category_archives">
+        <item quantity="other">%1$d 个档案</item>
+    </plurals>
     <string name="lrr_server_config_subtitle">连接到LANraragi服务器</string>
     <string name="lrr_server_url_hint">服务器地址 (例如 192.168.1.100:3000)</string>
     <string name="lrr_api_key_hint">API密钥</string>

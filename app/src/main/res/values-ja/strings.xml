@@ -588,7 +588,9 @@
     <string name="lrr_category_action_edit">編集</string>
     <string name="lrr_category_action_pin">ピン留め</string>
     <string name="lrr_category_action_unpin">ピン留め解除</string>
-    <string name="lrr_category_archives">%d 件のアーカイブ</string>
+    <plurals name="lrr_category_archives">
+        <item quantity="other">%d 件のアーカイブ</item>
+    </plurals>
     <string name="lrr_category_create">カテゴリ作成</string>
     <string name="lrr_category_create_inline">新規カテゴリ作成</string>
     <string name="lrr_category_created">カテゴリを作成しました</string>

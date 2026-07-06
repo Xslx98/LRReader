@@ -672,7 +672,9 @@
     <string name="lrr_category_action_edit">編輯</string>
     <string name="lrr_category_action_pin">置頂</string>
     <string name="lrr_category_action_unpin">取消置頂</string>
-    <string name="lrr_category_archives">%d 個檔案</string>
+    <plurals name="lrr_category_archives">
+        <item quantity="other">%d 個檔案</item>
+    </plurals>
     <string name="lrr_category_create">新建分類</string>
     <string name="lrr_category_create_inline">建立新分類</string>
     <string name="lrr_category_created">分類已建立</string>

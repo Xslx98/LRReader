@@ -40,7 +40,9 @@ internal class DetailTankoubonBinder(
         }
         for (tank in tanks) {
             val row = TextView(ctx)
-            val count = ctx.getString(R.string.lrr_category_archives, tank.archives.size)
+            val count = ctx.resources.getQuantityString(
+                R.plurals.lrr_category_archives, tank.archives.size, tank.archives.size
+            )
             row.text = "${tank.name} ($count)"
             row.setPadding(0, pad, 0, pad)
             row.setBackgroundResource(selectable.resourceId)

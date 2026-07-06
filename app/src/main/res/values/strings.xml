@@ -53,7 +53,10 @@
     <string name="lrr_error_title">出错了</string>
     <string name="lrr_retry">重试</string>
     <string name="lrr_category_pinned">📌 %1$s</string>
-    <string name="lrr_category_archives">%1$d archives</string>
+    <plurals name="lrr_category_archives">
+        <item quantity="one">%1$d archive</item>
+        <item quantity="other">%1$d archives</item>
+    </plurals>
     <string name="lrr_category_create">New Category</string>
     <string name="lrr_category_edit">Edit Category</string>
     <string name="lrr_category_name_hint">Category Name</string>
