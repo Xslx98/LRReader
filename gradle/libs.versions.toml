@@ -40,7 +40,7 @@ google-services = "4.5.0"
 
 # --- Kotlin/JetBrains ---
 coroutines = "1.10.2"
-serialization-json = "1.8.1"
+serialization-json = "1.11.0"
 
 # --- Third-party ---
 detekt = "1.23.8"
