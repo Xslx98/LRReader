@@ -229,7 +229,11 @@
     <string name="download_speed_text_2">%1$s, encore %2$s</string>
     <string name="download_waiting_for_network">En attente du réseau…</string>
     <string name="download_resume_paused_snackbar">Téléchargements en pause — en attente du réseau</string>
-    <string name="download_resume_timed_out_snackbar">%d téléchargement(s) arrêté(s) : pas de réseau</string>
+    <plurals name="download_resume_timed_out_snackbar">
+        <item quantity="one">%d téléchargement arrêté : pas de réseau</item>
+        <item quantity="other">%d téléchargements arrêtés : pas de réseau</item>
+        <item quantity="many">%d téléchargements arrêtés : pas de réseau</item>
+    </plurals>
     <string name="download_resume_view_action">Voir</string>
     <string name="download_resume_retry_action">Réessayer</string>
     <string name="remember_download_label">Enregistrer le label de téléchargement</string>

@@ -189,7 +189,10 @@
     <string name="download_speed_text_2">%1$s, noch %2$s übrig</string>
     <string name="download_waiting_for_network">Warte auf Netzwerk…</string>
     <string name="download_resume_paused_snackbar">Downloads pausiert – warte auf Netzwerk</string>
-    <string name="download_resume_timed_out_snackbar">%d Download(s) gestoppt: kein Netzwerk</string>
+    <plurals name="download_resume_timed_out_snackbar">
+        <item quantity="one">%d Download gestoppt: kein Netzwerk</item>
+        <item quantity="other">%d Downloads gestoppt: kein Netzwerk</item>
+    </plurals>
     <string name="download_resume_view_action">Anzeigen</string>
     <string name="download_resume_retry_action">Wiederholen</string>
     <string name="remember_download_label">Download-Etikette merken</string>
