@@ -170,7 +170,10 @@
     <string name="stat_509_alert_title">509 Fehler</string>
     <string name="stat_509_alert_text">Die Genze der Downloads wurde erreichet. Versuche noch einmals später,</string>
     <string name="stat_download_done_title">Download abgeschlossen</string>
-    <string name="stat_download_done_text_succeeded">%d Download(s) wurde(n) abgeschlossen</string>
+    <plurals name="stat_download_done_text_succeeded">
+        <item quantity="one">%d Download wurde abgeschlossen</item>
+        <item quantity="other">%d Downloads wurden abgeschlossen</item>
+    </plurals>
     <string name="stat_download_done_text_failed">%d Download(s) gescheitert</string>
     <string name="stat_download_done_text_mix">%1$d erfolgreich abgeschlossen, %2$d gescheitert</string>
     <string name="stat_download_done_line_succeeded">Abgeschlossen: %s</string>

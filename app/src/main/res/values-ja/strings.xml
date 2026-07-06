@@ -166,7 +166,9 @@
     <string name="stat_509_alert_title">509 エラー</string>
     <string name="stat_509_alert_text">ダウンロード制限に達しました。しばらくしてからもう一度やり直してください。</string>
     <string name="stat_download_done_title">ダウンロード完了</string>
-    <string name="stat_download_done_text_succeeded">%d 件のダウンロード完了済み</string>
+    <plurals name="stat_download_done_text_succeeded">
+        <item quantity="other">%d 件のダウンロード完了済み</item>
+    </plurals>
     <string name="stat_download_done_text_failed">%d 件のダウンロードにし失敗しました</string>
     <string name="stat_download_done_text_mix">%1$d 件のダウンロード完了済み、%2$d 件が失敗</string>
     <string name="stat_download_done_line_succeeded">ダウンロード完了: %s</string>

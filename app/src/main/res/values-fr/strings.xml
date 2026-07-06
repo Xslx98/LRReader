@@ -194,7 +194,11 @@
     <string name="stat_509_alert_title">Erreur 509</string>
     <string name="stat_509_alert_text">Votre limite d\'obtention d\'images est atteinte. Arrêtez le téléchargement et réessayez plus tard.</string>
     <string name="stat_download_done_title">Téléchargement completé</string>
-    <string name="stat_download_done_text_succeeded">%d avec succés</string>
+    <plurals name="stat_download_done_text_succeeded">
+        <item quantity="one">%d avec succés</item>
+        <item quantity="other">%d avec succés</item>
+        <item quantity="many">%d avec succés</item>
+    </plurals>
     <string name="stat_download_done_text_failed">%d échoué(s)</string>
     <string name="stat_download_done_text_mix">%1$d avec succés, %2$d échoué(s)</string>
     <string name="stat_download_done_line_succeeded">Complété(s) : %s</string>

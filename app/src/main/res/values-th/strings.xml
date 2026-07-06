@@ -216,7 +216,9 @@
     <string name="stat_509_alert_title">คำเตือน 509</string>
     <string name="stat_509_alert_text">การลิมิตของรูปภาพต่อวันถึงลิมิตแล้ว กรุณาหยุดโหลดและพักผ่อนบ้างนะ</string>
     <string name="stat_download_done_title">ดาวน์โหลดเสร็จสิ้น</string>
-    <string name="stat_download_done_text_succeeded">%d ที่เสร็จ</string>
+    <plurals name="stat_download_done_text_succeeded">
+        <item quantity="other">%d ที่เสร็จ</item>
+    </plurals>
     <string name="stat_download_done_text_failed">%d ที่ล้มเหลว</string>
     <string name="stat_download_done_text_mix">%1$d ที่เสร็จ, %2$d ที่ล้มเหลว</string>
     <string name="stat_download_done_line_succeeded">เสร็จแล้ว: %s</string>
