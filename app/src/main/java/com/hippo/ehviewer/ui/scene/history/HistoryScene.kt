@@ -179,7 +179,7 @@ class HistoryScene : ToolbarScene(),
             },
             onCheckedChanged = { count ->
                 batchCountView?.let {
-                    it.text = it.context.getString(R.string.batch_selected_count, count)
+                    it.text = it.resources.getQuantityString(R.plurals.batch_selected_count, count, count)
                 }
             },
         )

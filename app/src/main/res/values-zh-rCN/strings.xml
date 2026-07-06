@@ -361,7 +361,9 @@
     <string name="tank_none">服务器上没有合订本</string>
 
     <!-- List multi-select batch operations -->
-    <string name="batch_selected_count">已选 %d 项</string>
+    <plurals name="batch_selected_count">
+        <item quantity="other">已选 %d 项</item>
+    </plurals>
     <string name="batch_select_all">全选</string>
     <string name="batch_download">下载</string>
     <string name="batch_add_to_category">分类</string>

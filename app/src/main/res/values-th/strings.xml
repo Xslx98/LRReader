@@ -361,7 +361,9 @@
     <string name="tank_none">ไม่มีทังโคบงบนเซิร์ฟเวอร์นี้</string>
 
     <!-- List multi-select batch operations -->
-    <string name="batch_selected_count">เลือกแล้ว %d รายการ</string>
+    <plurals name="batch_selected_count">
+        <item quantity="other">เลือกแล้ว %d รายการ</item>
+    </plurals>
     <string name="batch_select_all">ทั้งหมด</string>
     <string name="batch_download">ดาวน์โหลด</string>
     <string name="batch_add_to_category">หมวดหมู่</string>
