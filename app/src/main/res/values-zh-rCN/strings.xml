@@ -370,7 +370,9 @@
     <string name="batch_clear_new">清除NEW</string>
     <string name="batch_delete">删除</string>
     <string name="batch_remove_history">移除</string>
-    <string name="batch_delete_confirm_message">从服务器永久删除 %d 个档案？\n\n此操作不可撤销。</string>
+    <plurals name="batch_delete_confirm_message">
+        <item quantity="other">从服务器永久删除 %d 个档案？\n\n此操作不可撤销。</item>
+    </plurals>
     <plurals name="batch_remove_history_confirm">
         <item quantity="other">从历史中移除 %d 条记录？</item>
     </plurals>

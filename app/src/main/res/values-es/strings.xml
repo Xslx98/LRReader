@@ -349,7 +349,11 @@
     <string name="batch_clear_new">Quitar NEW</string>
     <string name="batch_delete">Eliminar</string>
     <string name="batch_remove_history">Quitar</string>
-    <string name="batch_delete_confirm_message">¿Eliminar permanentemente %d archivos del servidor?\n\nEsta acción no se puede deshacer.</string>
+    <plurals name="batch_delete_confirm_message">
+        <item quantity="one">¿Eliminar permanentemente %d archivo del servidor?\n\nEsta acción no se puede deshacer.</item>
+        <item quantity="other">¿Eliminar permanentemente %d archivos del servidor?\n\nEsta acción no se puede deshacer.</item>
+        <item quantity="many">¿Eliminar permanentemente %d archivos del servidor?\n\nEsta acción no se puede deshacer.</item>
+    </plurals>
     <plurals name="batch_remove_history_confirm">
         <item quantity="one">¿Quitar %d entrada del historial?</item>
         <item quantity="other">¿Quitar %d entradas del historial?</item>

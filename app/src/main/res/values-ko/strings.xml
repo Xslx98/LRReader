@@ -378,7 +378,9 @@
     <string name="batch_clear_new">NEW 해제</string>
     <string name="batch_delete">삭제</string>
     <string name="batch_remove_history">제거</string>
-    <string name="batch_delete_confirm_message">서버에서 %d개의 아카이브를 영구 삭제할까요?\n\n이 작업은 되돌릴 수 없습니다.</string>
+    <plurals name="batch_delete_confirm_message">
+        <item quantity="other">서버에서 %d개의 아카이브를 영구 삭제할까요?\n\n이 작업은 되돌릴 수 없습니다.</item>
+    </plurals>
     <plurals name="batch_remove_history_confirm">
         <item quantity="other">기록에서 %d개 항목을 제거할까요?</item>
     </plurals>

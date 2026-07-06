@@ -332,7 +332,9 @@
     <string name="batch_clear_new">NEW解除</string>
     <string name="batch_delete">削除</string>
     <string name="batch_remove_history">削除</string>
-    <string name="batch_delete_confirm_message">サーバーから%d件のアーカイブを完全に削除しますか？\n\nこの操作は取り消せません。</string>
+    <plurals name="batch_delete_confirm_message">
+        <item quantity="other">サーバーから%d件のアーカイブを完全に削除しますか？\n\nこの操作は取り消せません。</item>
+    </plurals>
     <plurals name="batch_remove_history_confirm">
         <item quantity="other">履歴から%d件を削除しますか？</item>
     </plurals>

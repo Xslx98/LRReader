@@ -370,7 +370,9 @@
     <string name="batch_clear_new">ล้าง NEW</string>
     <string name="batch_delete">ลบ</string>
     <string name="batch_remove_history">นำออก</string>
-    <string name="batch_delete_confirm_message">ลบ %d ไฟล์ออกจากเซิร์ฟเวอร์อย่างถาวร?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้</string>
+    <plurals name="batch_delete_confirm_message">
+        <item quantity="other">ลบ %d ไฟล์ออกจากเซิร์ฟเวอร์อย่างถาวร?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้</item>
+    </plurals>
     <plurals name="batch_remove_history_confirm">
         <item quantity="other">นำ %d รายการออกจากประวัติ?</item>
     </plurals>

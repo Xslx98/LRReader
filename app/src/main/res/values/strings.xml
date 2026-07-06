@@ -462,7 +462,10 @@
     <string name="batch_clear_new">Clear NEW</string>
     <string name="batch_delete">Delete</string>
     <string name="batch_remove_history">Remove</string>
-    <string name="batch_delete_confirm_message">Permanently delete %d archives from the server?\n\nThis action cannot be undone.</string>
+    <plurals name="batch_delete_confirm_message">
+        <item quantity="one">Permanently delete %d archive from the server?\n\nThis action cannot be undone.</item>
+        <item quantity="other">Permanently delete %d archives from the server?\n\nThis action cannot be undone.</item>
+    </plurals>
     <plurals name="batch_remove_history_confirm">
         <item quantity="one">Remove %d entry from history?</item>
         <item quantity="other">Remove %d entries from history?</item>
