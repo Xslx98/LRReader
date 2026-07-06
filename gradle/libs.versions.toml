@@ -4,8 +4,12 @@
 [versions]
 # --- Build tools ---
 agp = "8.13.2"
-kotlin = "2.1.0"
-ksp = "2.1.0-1.0.29"
+# Kotlin capped at 2.3.21: KSP latest (2.3.9, decoupled versioning since KSP 2.3.0)
+# aligns with the Kotlin 2.3 line; Kotlin 2.4.0 support unconfirmed as of 2026-07.
+# kotlin/ksp/room upgrade in lockstep: KSP 2.3.x is KSP2-only, Room needs >=2.7 for
+# KSP2, and Room >=2.7 breaks under KSP1 (compiler-embedded serialization leak).
+kotlin = "2.3.21"
+ksp = "2.3.9"
 
 # --- AndroidX ---
 activity = "1.10.1"
@@ -21,7 +25,7 @@ lifecycle = "2.11.0"
 paging = "3.5.0"
 preference = "1.2.1"
 recyclerview = "1.4.0"
-room = "2.6.1"
+room = "2.8.4"
 # Upgraded from 1.1.0-alpha06 to stable 1.1.0 (released 2025-07-30).
 # Note: library deprecated in 1.1.0-beta01 — future migration to DataStore+Tink planned.
 # Ref: https://developer.android.com/jetpack/androidx/releases/security
