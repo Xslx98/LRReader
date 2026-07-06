@@ -417,8 +417,11 @@
     <plurals name="batch_fail_title_delete">
         <item quantity="other">%d 項未能刪除</item>
     </plurals>
-    <string name="batch_result_summary">成功 %1$d，失敗 %2$d</string>
-    <string name="batch_result_failures_title">失敗項目</string>
+    <plurals name="batch_done_remove_history">
+        <item quantity="other">已移除 %d 條歷史記錄</item>
+    </plurals>
+    <string name="batch_fail_summary">已完成 %1$d 項，%2$d 項失敗：</string>
+    <string name="batch_remove_history_partial">已移除 %1$d 條，%2$d 條失敗</string>
 
     <!-- Settings -->
     <string name="settings_eh">顯示</string>

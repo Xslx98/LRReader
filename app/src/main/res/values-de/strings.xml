@@ -365,8 +365,12 @@
         <item quantity="one">%d Element konnte nicht gelöscht werden</item>
         <item quantity="other">%d Elemente konnten nicht gelöscht werden</item>
     </plurals>
-    <string name="batch_result_summary">%1$d erfolgreich, %2$d fehlgeschlagen</string>
-    <string name="batch_result_failures_title">Fehlgeschlagene Einträge</string>
+    <plurals name="batch_done_remove_history">
+        <item quantity="one">%d Verlaufseintrag entfernt</item>
+        <item quantity="other">%d Verlaufseinträge entfernt</item>
+    </plurals>
+    <string name="batch_fail_summary">%1$d abgeschlossen, %2$d fehlgeschlagen:</string>
+    <string name="batch_remove_history_partial">%1$d entfernt, %2$d fehlgeschlagen</string>
 
     <string name="settings_eh">Anzeige</string>
     <string name="settings_eh_list_mode">Liste-Ansicht</string>
