@@ -9,6 +9,7 @@
  */
 package com.hippo.ehviewer.gallery
 
+import android.content.Context
 import kotlin.math.max
 
 /**
@@ -56,4 +57,29 @@ internal object ReadingProgressReconciler {
             else -> max(serverPage0, localPage0)
         }
     }
+
+    /**
+     * Offline best-guess start page: reconcile the locally-saved SP progress
+     * against the Room archive snapshot's server progress
+     * ([com.lanraragi.reader.domain.Archive.progress] /
+     * [com.lanraragi.reader.domain.Archive.lastreadtime]) with the same math
+     * as the online restore. Single source of truth for every reader warm-up
+     * trigger AND [DirGalleryProvider]'s start-page seed — warm target, seed
+     * and slot-consume index must agree for the decoded-page hand-off to hit.
+     *
+     * @param snapshotProgress1 1-indexed progress from the archive snapshot (<=0 = none)
+     * @param snapshotTs epoch seconds `lastreadtime` from the archive snapshot
+     * @return 0-indexed page
+     */
+    fun resolveOffline(
+        context: Context,
+        arcid: String,
+        snapshotProgress1: Int,
+        snapshotTs: Long,
+    ): Int = resolve(
+        GalleryProvider2.loadReadingProgress(context, arcid),
+        GalleryProvider2.loadReadingTimestamp(context, arcid),
+        snapshotProgress1,
+        snapshotTs,
+    )
 }
