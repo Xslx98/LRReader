@@ -52,6 +52,38 @@ object GalleryOpenHelper {
         archive: Archive,
         startPage: Int = -1,
         knownComplete: Boolean? = null,
+    ): Intent = buildReadIntentInternal(
+        context, enrichProgressSnapshot(archive), startPage, knownComplete
+    )
+
+    /**
+     * The downloads/history scenes reach [buildReadIntent] through lossy
+     * view mappers (`DownloadInfo`/`HistoryInfo.toArchive()`) that
+     * deliberately zero `progress`/`lastreadtime` — those fields
+     * round-trip via detail fetches. The warm target and the dir
+     * provider's start-page seed both need the Room snapshot, so when the
+     * caller's Archive carries no progress, overlay the pair from the
+     * persisted `archive_json` row. Progress and lastreadtime move
+     * together: the reconciler needs them from the same source.
+     */
+    private suspend fun enrichProgressSnapshot(archive: Archive): Archive {
+        if (archive.progress > 0) return archive
+        val snapshot = runCatching {
+            ServiceRegistry.dataModule.historyRepository
+                .getArchiveSnapshot(archive.arcid, archive.serverProfileId)
+        }.getOrNull() ?: return archive
+        if (snapshot.progress <= 0) return archive
+        return archive.copy(
+            progress = snapshot.progress,
+            lastreadtime = snapshot.lastreadtime,
+        )
+    }
+
+    private suspend fun buildReadIntentInternal(
+        context: Context,
+        archive: Archive,
+        startPage: Int,
+        knownComplete: Boolean?,
     ): Intent {
         val intent = Intent(context, GalleryActivity::class.java)
 
