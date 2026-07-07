@@ -162,6 +162,14 @@ class PageThumbnailsViewModel : ViewModel() {
      * repeated calls for the same [page] are coalesced by the
      * Repository's in-flight registry. Returns immediately; observers
      * see the result via [pageStates] + [PageThumbnailCache].
+     *
+     * **Must not be called from RecyclerView layout / bind / scroll
+     * callbacks.** The synchronous `Loading` write below emits
+     * [pageStates] on the caller's thread; on main, that inline-resumes
+     * the Scene's `Main.immediate` collector straight into an adapter
+     * `notifyItemChanged`, which RecyclerView forbids during layout.
+     * Callers inside such frames must post first (see
+     * [PrefetchScrollListener]).
      */
     fun requestPage(page: Int) {
         val arcid = currentArcid ?: return
