@@ -86,6 +86,18 @@ class EntityMapperTest {
     }
 
     @Test
+    fun `HistoryInfo toArchive converts millisecond view time to epoch-second lastreadtime`() {
+        // HISTORY_TIME column semantics are device milliseconds; the Archive
+        // field (and thus any persisted archive_json built from this mapper,
+        // e.g. HistoryRepository.putHistoryInfoList) is epoch SECONDS —
+        // LANraragi `lastreadtime` semantics.
+        val hi = archive().toHistoryInfoView()
+        hi.time = 1_700_000_001_234L
+
+        assertEquals(1_700_000_001L, hi.toArchive().lastreadtime)
+    }
+
+    @Test
     fun `DownloadInfo toArchive groups simple tags by namespace`() {
         val di = archive().toDownloadInfoView()
         // Mimic a tag-namespaced flat array as written by the legacy

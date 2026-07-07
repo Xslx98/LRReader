@@ -60,10 +60,10 @@ internal object ReadingProgressReconciler {
 
     /**
      * Any epoch value above this is clearly milliseconds, not seconds
-     * (100_000_000_000 s ≈ year 5138). Stored `archive_json` snapshots are a
-     * historical mixed bag: server fetches persist epoch-seconds, while the
-     * history write path stamps `System.currentTimeMillis()` — see
-     * [normalizeEpochSeconds].
+     * (100_000_000_000 s ≈ year 5138). Every write path stores epoch-seconds
+     * since the 2026-07 unit unification, but rows persisted by older app
+     * versions (whose history writes stamped `System.currentTimeMillis()`)
+     * survive in installed databases — see [normalizeEpochSeconds].
      */
     private const val MS_EPOCH_THRESHOLD = 100_000_000_000L
 
@@ -72,6 +72,10 @@ internal object ReadingProgressReconciler {
      * milliseconds value into [resolve]'s ±[CLOCK_SKEW_GRACE_SECONDS] math
      * makes the snapshot side win unconditionally — a stale snapshot would
      * beat a genuinely-newer local save.
+     *
+     * Pure defense: write paths are unit-unified, but pre-unification
+     * millisecond rows are never rewritten in place, so this stays at every
+     * snapshot-fed math entry for as long as such databases exist.
      */
     fun normalizeEpochSeconds(ts: Long): Long =
         if (ts > MS_EPOCH_THRESHOLD) ts / 1000L else ts

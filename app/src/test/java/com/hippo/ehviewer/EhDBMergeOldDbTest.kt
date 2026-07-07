@@ -1,9 +1,12 @@
 package com.hippo.ehviewer
 
 import android.content.Context
+import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.hippo.ehviewer.dao.AppDatabase
+import com.hippo.ehviewer.dao.ArchiveLocalStateJson
+import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -108,6 +111,44 @@ class EhDBMergeOldDbTest {
         assertTrue(db.archiveLocalStateDao().getAllHistory().isEmpty())
         assertTrue(db.archiveLocalStateDao().getAllFavorites().isEmpty())
         assertTrue(db.browsingDao().getAllQuickSearch().isEmpty())
+    }
+
+    @Test
+    fun mergeOldDB_liftsLegacyHistoryTime_asEpochSecondLastreadtime() = runTest {
+        // Seed a legacy `data` SQLite DB the way the pre-Room app left it:
+        // `gallery` columns read by the merge are GID(0)/ARCID(1)/TITLE(2)/
+        // THUMB(5)/RATING(7); `history` is GID(0)/MODE(1)/TIME(2) with TIME
+        // in device milliseconds. The lifted archive_json `lastreadtime`
+        // must be epoch SECONDS while HISTORY_TIME keeps the milliseconds.
+        val dbFile = context.getDatabasePath("data")
+        dbFile.parentFile?.mkdirs()
+        SQLiteDatabase.openOrCreateDatabase(dbFile, null).use { legacy ->
+            legacy.version = 6
+            legacy.execSQL(
+                "CREATE TABLE gallery (GID INTEGER PRIMARY KEY, ARCID TEXT, TITLE TEXT, " +
+                    "POSTED TEXT, CATEGORY INTEGER, THUMB TEXT, UPLOADER TEXT, RATING REAL)"
+            )
+            legacy.execSQL(
+                "CREATE TABLE history (GID INTEGER PRIMARY KEY, MODE INTEGER, TIME INTEGER)"
+            )
+            legacy.execSQL(
+                "INSERT INTO gallery VALUES " +
+                    "(1, 'arc-legacy', 'Legacy Title', NULL, 0, 'http://t/l.jpg', NULL, 4.0)"
+            )
+            legacy.execSQL("INSERT INTO history VALUES (1, 2, 1700000001234)")
+        }
+
+        EhDB.mergeOldDB(context)
+
+        val rows = db.archiveLocalStateDao().getAllHistory()
+        assertEquals(1, rows.size)
+        val row = rows.single()
+        assertEquals(1700000001234L, row.historyTime)
+        val stored = ArchiveLocalStateJson.decodeFromString(Archive.serializer(), row.archiveJson)
+        assertEquals(
+            "legacy history TIME is milliseconds; lifted archive_json must be epoch seconds",
+            1700000001L, stored.lastreadtime
+        )
     }
 
     @Test
