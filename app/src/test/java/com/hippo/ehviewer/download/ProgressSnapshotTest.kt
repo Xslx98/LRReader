@@ -48,4 +48,39 @@ class ProgressSnapshotTest {
         assertEquals(a.finished, b.finished)
         assertEquals(a.total, b.total)
     }
+
+    @Test
+    fun `partialPages defaults to zero`() {
+        assertEquals(0f, ProgressSnapshot.initial("abc").partialPages, 0.0001f)
+    }
+
+    @Test
+    fun `copyWith preserves and overrides partialPages`() {
+        val a = ProgressSnapshot("x", 10L, 1, 1, 10, 5000L, partialPages = 0.5f)
+        assertEquals(0.5f, a.copyWith(speed = 20L).partialPages, 0.0001f)
+        assertEquals(0.75f, a.copyWith(partialPages = 0.75f).partialPages, 0.0001f)
+    }
+
+    @Test
+    fun `barProgress combines finished pages and partial fraction`() {
+        // 3 finished of 10 + 0.5 in flight → 3500 of 10000
+        val s = ProgressSnapshot("x", finished = 3, total = 10, partialPages = 0.5f)
+        assertEquals(10_000, s.barMax())
+        assertEquals(3_500, s.barProgress())
+    }
+
+    @Test
+    fun `barProgress clamps overshoot to barMax`() {
+        // A stale partial can briefly double-count a just-finished page.
+        val s = ProgressSnapshot("x", finished = 10, total = 10, partialPages = 0.9f)
+        assertEquals(10_000, s.barProgress())
+    }
+
+    @Test
+    fun `barProgress guards non-positive total and negative partial`() {
+        assertEquals(0, ProgressSnapshot("x", total = -1, partialPages = 0.5f).barProgress())
+        assertEquals(1, ProgressSnapshot("x", total = -1).barMax())
+        val s = ProgressSnapshot("x", finished = 2, total = 10, partialPages = -1f)
+        assertEquals(2_000, s.barProgress())
+    }
 }
