@@ -107,6 +107,24 @@ internal class DownloadSpeedTracker(
         receivedSizeMaps.remove(arcid)
     }
 
+    /**
+     * Byte-level fraction of this archive's in-flight pages:
+     * Σ min(received/len, 1) over pages currently in the maps. Pages with
+     * unknown content length (<=0) contribute 0. O(in-flight pages) — cheap
+     * enough for page-event dispatch as well as the tick.
+     */
+    fun partialFor(arcid: String): Float {
+        val contentLengths = contentLengthMaps[arcid] ?: return 0f
+        val receivedSizes = receivedSizeMaps[arcid]
+        var partial = 0f
+        for ((index, contentLength) in contentLengths) {
+            if (contentLength <= 0L) continue
+            val received = receivedSizes?.get(index) ?: 0L
+            partial += received.coerceIn(0L, contentLength).toFloat() / contentLength
+        }
+        return partial
+    }
+
     override fun run() {
         for (info in callback.getActiveTasks()) {
             tick(info)
@@ -130,15 +148,13 @@ internal class DownloadSpeedTracker(
         }
         oldSpeedMap[arcid] = newSpeed
         bytesReadMap[arcid] = 0L
-        progressTracker.update(arcid, speed = newSpeed)
 
-        // Calculate remaining time. If total<=0, newSpeed==0, or the pair
-        // of maps yields downloadingCount==0, the prior remaining value
-        // is kept (legacy behaviour preserved post-W35-3c).
-        if (total <= 0) {
-            progressTracker.update(arcid, remaining = -1L)
+        // Remaining time; null keeps the prior value (legacy behaviour when
+        // the maps yield downloadingCount==0, preserved post-W35-3c).
+        val remaining: Long? = if (total <= 0) {
+            -1L
         } else if (newSpeed == 0L) {
-            progressTracker.update(arcid, remaining = 300L * 24L * 60L * 60L * 1000L)
+            300L * 24L * 60L * 60L * 1000L
         } else {
             val contentLengths = contentLengthMaps[arcid].orEmpty()
             val receivedSizes = receivedSizeMaps[arcid].orEmpty()
@@ -153,10 +169,21 @@ internal class DownloadSpeedTracker(
             if (downloadingCount != 0) {
                 totalSize += downloadingContentLengthSum *
                     (total - downloaded - downloadingCount) / downloadingCount
-                val remaining = totalSize / newSpeed * 1000
-                progressTracker.update(arcid, remaining = remaining)
+                totalSize / newSpeed * 1000
+            } else {
+                null
             }
         }
+
+        // One consolidated write per tick (was two): speed + remaining +
+        // byte-level page fraction share a single StateFlow emission, so the
+        // UI budget stays at one PAYLOAD_PROGRESS rebind per row per tick.
+        progressTracker.update(
+            arcid,
+            speed = newSpeed,
+            remaining = remaining,
+            partialPages = partialFor(arcid)
+        )
 
         callback.getDownloadListener()?.onDownload(info)
         val list = callback.getInfoListForLabel(info.label)

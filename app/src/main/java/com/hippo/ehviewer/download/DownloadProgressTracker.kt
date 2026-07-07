@@ -48,12 +48,13 @@ class DownloadProgressTracker {
         finished: Int? = null,
         downloaded: Int? = null,
         total: Int? = null,
-        remaining: Long? = null
+        remaining: Long? = null,
+        partialPages: Float? = null
     ) {
         assertMainThread()
         _progressFlow.value = _progressFlow.value.toMutableMap().apply {
             val current = this[arcid] ?: ProgressSnapshot.initial(arcid)
-            put(arcid, current.copyWith(speed, finished, downloaded, total, remaining))
+            put(arcid, current.copyWith(speed, finished, downloaded, total, remaining, partialPages))
         }
     }
 

@@ -15,6 +15,7 @@
  */
 package com.hippo.ehviewer.ui.scene.download.part
 
+import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
@@ -27,6 +28,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.LinearInterpolator
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.RelativeLayout
@@ -184,7 +186,9 @@ class DownloadAdapter(
             if (info.state == DownloadState.DOWNLOAD ||
                 info.state == DownloadState.WAIT
             ) {
-                bindProgress(holder, info)
+                // Same row ticking: animate the sub-page advance (80 ms
+                // system ease between the tracker's 2 s ticks).
+                bindProgress(holder, info, animate = true)
             }
             return
         }
@@ -337,7 +341,10 @@ class DownloadAdapter(
             DownloadState.INVALID,
             DownloadState.NONE -> bindState(holder, info, resources.getString(R.string.download_state_none))
             DownloadState.WAIT -> bindState(holder, info, resources.getString(R.string.download_state_wait))
-            DownloadState.DOWNLOAD -> bindProgress(holder, info)
+            // Full (re)bind snaps without animation: a recycled holder may
+            // still carry another row's progress value and would sweep from
+            // a wrong origin.
+            DownloadState.DOWNLOAD -> bindProgress(holder, info, animate = false)
             DownloadState.FAILED -> {
                 val text = if (info.legacy <= 0) {
                     resources.getString(R.string.download_state_failed)
@@ -357,6 +364,7 @@ class DownloadAdapter(
     }
 
     private fun bindState(holder: DownloadHolder, info: DownloadInfo, state: String) {
+        cancelProgressGlide(holder)
         setVisibility(holder.uploader, View.VISIBLE)
         setVisibility(holder.rating, View.VISIBLE)
         setVisibility(holder.readProgress, View.VISIBLE)
@@ -375,7 +383,7 @@ class DownloadAdapter(
     }
 
     @SuppressLint("SetTextI18n")
-    private fun bindProgress(holder: DownloadHolder, info: DownloadInfo) {
+    private fun bindProgress(holder: DownloadHolder, info: DownloadInfo, animate: Boolean) {
         setVisibility(holder.uploader, View.GONE)
         setVisibility(holder.rating, View.GONE)
         setVisibility(holder.readProgress, View.GONE)
@@ -396,20 +404,50 @@ class DownloadAdapter(
         // copies from the scheduler's own instance and never reach this
         // Room-emitted instance). See ADR-001 Option D.
         val snap = mCallback.downloadManager?.progressFor(info.arcid)
-        val total = snap?.total ?: -1
-        val finished = snap?.finished ?: 0
         val speed = (snap?.speed ?: -1L).coerceAtLeast(0L)
 
-        if (total <= 0 || finished < 0) {
+        if (snap == null || snap.total <= 0 || snap.finished < 0) {
+            cancelProgressGlide(holder)
             holder.percent.text = null
             holder.progressBar.isIndeterminate = true
         } else {
-            holder.percent.text = "$finished/$total"
+            // Page counter keeps the user-readable unit; the BAR advances
+            // fractionally by bytes within pages (barMax/barProgress are
+            // page-count × BAR_UNITS_PER_PAGE with in-flight fractions).
+            holder.percent.text = "${snap.finished}/${snap.total}"
             holder.progressBar.isIndeterminate = false
-            holder.progressBar.max = total
-            holder.progressBar.progress = finished
+            val max = snap.barMax()
+            if (holder.progressBar.max != max) holder.progressBar.max = max
+            val target = snap.barProgress()
+            val current = holder.progressBar.progress
+            cancelProgressGlide(holder)
+            if (animate && target > current) {
+                // The tracker publishes ~every 2 s (tick) — a glide spanning
+                // that interval renders the discrete emissions as continuous
+                // motion. Always toward the latest TRUE value, never past it
+                // (no extrapolation); regressions (page retry reset) snap.
+                holder.progressGlide = ObjectAnimator
+                    .ofInt(holder.progressBar, "progress", target)
+                    .apply {
+                        duration = BAR_GLIDE_DURATION_MS
+                        interpolator = LinearInterpolator()
+                        start()
+                    }
+            } else {
+                holder.progressBar.progress = target
+            }
         }
         holder.speed.text = com.hippo.lib.yorozuya.FileUtils.humanReadableByteCount(speed, false) + "/S"
+    }
+
+    private fun cancelProgressGlide(holder: DownloadHolder) {
+        holder.progressGlide?.cancel()
+        holder.progressGlide = null
+    }
+
+    override fun onViewRecycled(holder: DownloadHolder) {
+        cancelProgressGlide(holder)
+        super.onViewRecycled(holder)
     }
 
     // 拖拽排序相关方法实现
@@ -691,6 +729,9 @@ class DownloadAdapter(
         @JvmField val percent: TextView = itemView.findViewById(R.id.percent)
         @JvmField val speed: TextView = itemView.findViewById(R.id.speed)
 
+        /** Active glide toward the latest true bar value; cancelled on rebind/recycle. */
+        var progressGlide: ObjectAnimator? = null
+
         init {
             // KNOWN-ISSUE (P2): click listeners remain active during multi-select mode
             thumb.setOnClickListener(this)
@@ -767,5 +808,11 @@ class DownloadAdapter(
 
         /** Lifted bottom margin for the imported-archive branch where category is visible. */
         private const val BADGE_MARGIN_BOTTOM_WHEN_CATEGORY_VISIBLE_DP = 30
+
+        /**
+         * Glide duration just under the progress tracker's 2 s tick so the
+         * bar is still moving when the next true value lands and retargets it.
+         */
+        private const val BAR_GLIDE_DURATION_MS = 1700L
     }
 }
