@@ -59,6 +59,17 @@ class DirGalleryProvider : GalleryProvider2 {
     private var startPageValue: Int = 0
 
     /**
+     * Local SP progress (page, epoch-seconds ts) captured at construction,
+     * BEFORE [startPageValue] is seeded from the archive snapshot and before
+     * the first layout echo re-saves SP with a fresh timestamp. The restore
+     * flow MUST reconcile fresh server metadata against these pristine values:
+     * reconciling against the echo-polluted SP timestamp would let a stale
+     * seed beat genuinely-newer cross-device progress.
+     */
+    private var pristineLocalPage0 = 0
+    private var pristineLocalTs = 0L
+
+    /**
      * Source-profile base URL, resolved once in [start] via
      * [resolveSourceBaseUrl] so the metadata fetch and the progress sync
      * hit the server this archive was downloaded from — not whatever
@@ -197,14 +208,37 @@ class DirGalleryProvider : GalleryProvider2 {
         serverUrlDeferred.complete(null)
     }
 
-    /** Constructor with Context and arcid for reading progress persistence. */
-    constructor(dir: UniFile, context: Context, arcid: String, serverProfileId: Long = 0L) {
+    /**
+     * Constructor with Context and arcid for reading progress persistence.
+     *
+     * @param progressSnapshot 1-indexed server progress from the Room archive
+     *   snapshot ([com.lanraragi.reader.domain.Archive.progress]); <=0 = none.
+     * @param lastreadSnapshot epoch seconds
+     *   [com.lanraragi.reader.domain.Archive.lastreadtime] of that snapshot.
+     *   Seeds [startPageValue] via the offline reconcile so the reader opens
+     *   directly on the best-known page even when the SP save is missing
+     *   (snapshot rollback / reinstall) — and so the seed agrees with the
+     *   warm target chosen by GalleryOpenHelper (same math, same inputs).
+     */
+    constructor(
+        dir: UniFile,
+        context: Context,
+        arcid: String,
+        serverProfileId: Long = 0L,
+        progressSnapshot: Int = 0,
+        lastreadSnapshot: Long = 0L,
+    ) {
         this.dir = dir
         this.context = context.applicationContext
         this.arcId = arcid
         this.serverProfileId = serverProfileId
         val ctx = this.context ?: return
-        this.startPageValue = loadReadingProgress(ctx, arcid)
+        // Order matters: capture pristine SP BEFORE seeding startPageValue.
+        pristineLocalPage0 = loadReadingProgress(ctx, arcid)
+        pristineLocalTs = loadReadingTimestamp(ctx, arcid)
+        this.startPageValue = ReadingProgressReconciler.resolve(
+            pristineLocalPage0, pristineLocalTs, progressSnapshot, lastreadSnapshot,
+        )
     }
 
     override fun getStartPage(): Int = startPageValue
@@ -375,14 +409,25 @@ class DirGalleryProvider : GalleryProvider2 {
                     Log.i(TAG, "[PROGRESS] Server metadata: progress=$serverProgress" +
                             " lastreadtime=$serverTs savedFraction=$savedFraction")
                     if (serverProgress > 0 || savedFraction > 0f) {
-                        val localTs = if (arcId != null) loadReadingTimestamp(context, arcId!!) else 0L
-                        val resolvedPage = ReadingProgressReconciler.resolve(
-                            startPageValue, localTs, serverProgress, serverTs
-                        )
+                        // Reconcile fresh server metadata against the PRISTINE
+                        // local (page, ts) captured at construction — see the
+                        // pristineLocalPage0 KDoc. When the server offers no
+                        // progress (metadata failed or progress==0), keep the
+                        // snapshot-seeded startPageValue: falling back to the
+                        // pristine page would undo the seed and yank the reader
+                        // back to page 0 in the lost-SP case.
+                        val resolvedPage = if (serverProgress > 0) {
+                            ReadingProgressReconciler.resolve(
+                                pristineLocalPage0, pristineLocalTs, serverProgress, serverTs
+                            )
+                        } else {
+                            startPageValue
+                        }
                         Log.i(
                             TAG,
                             "[PROGRESS] resolved page=$resolvedPage" +
-                                " (localPage0=$startPageValue/$localTs serverProgress1=$serverProgress/$serverTs)"
+                                " (pristine=$pristineLocalPage0/$pristineLocalTs seed=$startPageValue" +
+                                " serverProgress1=$serverProgress/$serverTs)"
                         )
                         if (resolvedPage != startPageValue) {
                             startPageValue = resolvedPage
