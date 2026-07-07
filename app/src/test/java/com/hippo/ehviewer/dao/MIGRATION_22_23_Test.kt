@@ -231,7 +231,10 @@ class MIGRATION_22_23_Test {
         assertEquals("H Title", archive.title)
         assertEquals("http://t/h.jpg", archive.thumbnailUrl)
         assertEquals(3.5f, archive.rating, 0.001f)
-        assertEquals(1700000001000L, archive.lastreadtime)
+        // Legacy HISTORY.TIME is milliseconds; the lifted archive_json
+        // `lastreadtime` is epoch SECONDS (LANraragi semantics). The
+        // HISTORY_TIME column (asserted above) stays milliseconds.
+        assertEquals(1700000001L, archive.lastreadtime)
     }
 
     // ──────────────────────────────────────────────────────────

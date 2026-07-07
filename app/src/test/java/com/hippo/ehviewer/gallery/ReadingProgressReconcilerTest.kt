@@ -75,4 +75,41 @@ class ReadingProgressReconcilerTest {
             )
         )
     }
+
+    // ── normalizeEpochSeconds ──────────────────────────────────────
+    // Pure defense for archive_json rows persisted by app versions that
+    // stamped System.currentTimeMillis() into `lastreadtime` (pre-unit-
+    // unification). Write paths now store epoch seconds; these tests
+    // guard the defense against removal while such rows can still exist
+    // in installed databases.
+
+    @Test
+    fun `normalizeEpochSeconds converts a legacy milliseconds timestamp to seconds`() {
+        assertEquals(
+            1_700_000_001L,
+            ReadingProgressReconciler.normalizeEpochSeconds(1_700_000_001_234L)
+        )
+    }
+
+    @Test
+    fun `normalizeEpochSeconds passes an epoch-seconds timestamp through`() {
+        assertEquals(
+            1_700_000_000L,
+            ReadingProgressReconciler.normalizeEpochSeconds(1_700_000_000L)
+        )
+    }
+
+    @Test
+    fun `normalizeEpochSeconds passes zero through`() {
+        assertEquals(0L, ReadingProgressReconciler.normalizeEpochSeconds(0L))
+    }
+
+    @Test
+    fun `normalizeEpochSeconds threshold is strict greater-than`() {
+        // exactly at the ms-detection threshold -> treated as seconds
+        assertEquals(
+            100_000_000_000L,
+            ReadingProgressReconciler.normalizeEpochSeconds(100_000_000_000L)
+        )
+    }
 }

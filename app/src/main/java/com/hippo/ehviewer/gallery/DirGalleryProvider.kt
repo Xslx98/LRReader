@@ -240,7 +240,7 @@ class DirGalleryProvider : GalleryProvider2 {
             pristineLocalPage0,
             pristineLocalTs,
             progressSnapshot,
-            // History-path snapshots stamp milliseconds — see normalizeEpochSeconds.
+            // Pre-unification rows may carry milliseconds — see normalizeEpochSeconds.
             ReadingProgressReconciler.normalizeEpochSeconds(lastreadSnapshot),
         )
     }

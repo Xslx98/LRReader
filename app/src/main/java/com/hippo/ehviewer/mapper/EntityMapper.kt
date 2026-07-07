@@ -107,7 +107,9 @@ fun DownloadInfo.toArchive(): Archive {
 /**
  * Recover an [Archive] from a [HistoryInfo] view. Same lossy shape as
  * the DownloadInfo variant — pages / progress are server-driven and
- * not carried by the view.
+ * not carried by the view. `lastreadtime` converts the view's
+ * millisecond `time` (HISTORY_TIME column) to the epoch-seconds unit
+ * the Archive field carries everywhere else (LANraragi semantics).
  */
 fun HistoryInfo.toArchive(): Archive {
     return Archive(
@@ -121,7 +123,7 @@ fun HistoryInfo.toArchive(): Archive {
         thumbnailUrl = thumb ?: "",
         rating = rating,
         isnew = false,
-        lastreadtime = time,
+        lastreadtime = time / 1000L,
         summary = null,
         serverProfileId = serverProfileId,
     )

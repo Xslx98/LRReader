@@ -559,7 +559,10 @@ abstract class AppDatabase : RoomDatabase() {
                             thumbnailUrl = thumb,
                             rating = rating,
                             serverProfileId = serverProfileId,
-                            lastreadtime = time,
+                            // HISTORY.TIME is device milliseconds; the JSON
+                            // field is epoch SECONDS. The HISTORY_TIME column
+                            // (bound below) keeps the milliseconds.
+                            lastreadtime = time / 1000L,
                         )
 
                         insertIgnoreStmt.clearBindings()
