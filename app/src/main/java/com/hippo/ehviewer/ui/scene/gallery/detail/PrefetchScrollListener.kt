@@ -19,10 +19,23 @@ import androidx.recyclerview.widget.RecyclerView
  * grid to keep `PageThumbnailRepository` requests one viewport ahead
  * of the user.
  *
- * The callback is invoked on each scroll tick — the repository's
- * in-flight registry deduplicates identical positions, so the load on
- * the VM and the server is bounded by what's genuinely new since
- * last tick.
+ * The callback fires once per frame with a scroll tick — the
+ * repository's in-flight registry deduplicates identical positions,
+ * so the load on the VM and the server is bounded by what's genuinely
+ * new since last tick.
+ *
+ * **The callback is posted, never invoked from the scroll tick
+ * itself.** RecyclerView dispatches `onScrolled` from inside its
+ * layout pass (`dispatchLayout` → `dispatchOnScrolled`), where data
+ * mutation is forbidden. [onPrefetch] reaches
+ * [PageThumbnailsViewModel.requestPage], whose synchronous
+ * `pageStates` emission inline-resumes the Scene's `Main.immediate`
+ * collector straight into `PageThumbnailAdapter.submitStates` →
+ * `notifyItemChanged` — RecyclerView then logs a W-level
+ * IllegalStateException ("Cannot call this method in a scroll
+ * callback"). Posting also means the visible range is read from the
+ * settled layout, and a pending flag coalesces the per-frame ticks of
+ * a fling into one dispatch.
  *
  * **Why not RecyclerView's own prefetching:** RecyclerView's built-in
  * prefetch creates *view holders* ahead of time but does not fetch
@@ -35,7 +48,18 @@ internal class PrefetchScrollListener(
     private val onPrefetch: (page: Int) -> Unit,
 ) : RecyclerView.OnScrollListener() {
 
+    private var dispatchPending = false
+
     override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+        if (dispatchPending) return
+        dispatchPending = true
+        recyclerView.post {
+            dispatchPending = false
+            dispatchPrefetch(recyclerView)
+        }
+    }
+
+    private fun dispatchPrefetch(recyclerView: RecyclerView) {
         val lm = recyclerView.layoutManager as? GridLayoutManager ?: return
         val firstVisible = lm.findFirstVisibleItemPosition()
         val lastVisible = lm.findLastVisibleItemPosition()
