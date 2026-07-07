@@ -35,12 +35,12 @@ import okhttp3.Request
 import okio.buffer
 import okio.source
 import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
-import java.util.concurrent.locks.ReentrantLock
 
 class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
 
@@ -205,7 +205,11 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
         private var instance: EhTagDatabase? = null
 
         // EH-LEGACY: multi-language lock not implemented, Chinese-only is sufficient
-        private val lock = ReentrantLock()
+        // Single-flight guard. Deliberately NOT a ReentrantLock: save() now
+        // suspends in Call.await() (NET-3) and may resume on a different IO
+        // thread, where a thread-confined unlock() throws
+        // IllegalMonitorStateException.
+        private val updateInFlight = AtomicBoolean(false)
 
         @JvmStatic
         fun getInstance(context: Context): EhTagDatabase? {
@@ -322,7 +326,7 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
             }
 
             ServiceRegistry.coroutineModule.ioScope.launch {
-                if (!lock.tryLock()) return@launch
+                if (!updateInFlight.compareAndSet(false, true)) return@launch
 
                 try {
                     val dir = AppConfig.getFilesDir("tag-translations") ?: return@launch
@@ -396,7 +400,7 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
                         Log.w(TAG, "Failed to read updated tag database", e)
                     }
                 } finally {
-                    lock.unlock()
+                    updateInFlight.set(false)
                 }
             }
         }

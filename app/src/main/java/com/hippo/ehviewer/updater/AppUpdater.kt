@@ -13,7 +13,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.util.concurrent.locks.ReentrantLock
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * GitHub Releases API adapter. Pure data layer — returns a sealed [UpdateResult]
@@ -43,7 +43,10 @@ object AppUpdater {
         "https://api.github.com/repos/Xslx98/LRReader/releases/latest"
 
     private val updateJson = Json { ignoreUnknownKeys = true }
-    private val lock = ReentrantLock()
+    // Single-flight guard. Deliberately NOT a ReentrantLock: the check body now
+    // suspends in Call.await() (NET-3) and may resume on a different IO thread,
+    // where a thread-confined unlock() throws IllegalMonitorStateException.
+    private val updateInFlight = AtomicBoolean(false)
 
     /**
      * Sealed result. Callers `when`-branch this to drive UI:
@@ -70,7 +73,7 @@ object AppUpdater {
             return@withContext UpdateResult.Skipped
         }
 
-        if (!lock.tryLock()) {
+        if (!updateInFlight.compareAndSet(false, true)) {
             return@withContext UpdateResult.Skipped
         }
         try {
@@ -105,7 +108,7 @@ object AppUpdater {
 
             UpdateResult.NewerAvailable(release)
         } finally {
-            lock.unlock()
+            updateInFlight.set(false)
         }
     }
 
