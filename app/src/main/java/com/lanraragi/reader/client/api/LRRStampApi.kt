@@ -60,7 +60,7 @@ object LRRStampApi {
             .url(url)
             .get()
             .build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             ensureSuccess(response)
             val body = response.body?.string()
                 ?: throw LRREmptyBodyException()
@@ -91,7 +91,7 @@ object LRRStampApi {
             .url(url)
             .get()
             .build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             ensureSuccess(response)
             val body = response.body?.string()
                 ?: throw LRREmptyBodyException()
@@ -145,7 +145,7 @@ object LRRStampApi {
             .url(url)
             .put(EMPTY_REQUEST_BODY)
             .build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             ensureSuccess(response)
             val body = response.body?.string()
                 ?: throw LRREmptyBodyException()
@@ -186,7 +186,7 @@ object LRRStampApi {
                 .url(urlBuilder.build())
                 .put(EMPTY_REQUEST_BODY)
                 .build()
-            client.newCall(request).execute().use { response -> ensureSuccess(response) }
+            client.newCall(request).await().use { response -> ensureSuccess(response) }
         }
     }
 
@@ -204,7 +204,7 @@ object LRRStampApi {
                 .url(url)
                 .delete()
                 .build()
-            client.newCall(request).execute().use { response -> ensureSuccess(response) }
+            client.newCall(request).await().use { response -> ensureSuccess(response) }
         }
     }
 }
