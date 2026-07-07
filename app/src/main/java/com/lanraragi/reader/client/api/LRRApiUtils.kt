@@ -4,7 +4,9 @@ import android.content.Context
 import android.util.Log
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
@@ -258,6 +260,11 @@ internal suspend fun <T> retryOnFailure(
         try {
             return block()
         } catch (e: IOException) {
+            // A cancelled call surfaces as IOException("Canceled"). Never spend a
+            // retry on a dead coroutine — and on the final attempt (no backoff
+            // delay() left to convert it) never report the cancellation as a
+            // network failure.
+            currentCoroutineContext().ensureActive()
             // Permanent failures (4xx, cleartext/plaintext policy refusals, TLS errors)
             // cannot be fixed by retrying — fail fast instead of burning the backoff.
             if (isPermanentFailure(e)) throw e

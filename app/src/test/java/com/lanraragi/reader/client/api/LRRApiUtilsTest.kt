@@ -5,7 +5,10 @@ import com.lanraragi.reader.client.api.data.*
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.hippo.ehviewer.R
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.MockResponse
@@ -436,6 +439,33 @@ class LRRApiUtilsTest {
         }
         advanceUntilIdle()
         assertEquals("Should retry on 503", 3, callCount) // 1 initial + 2 retries
+    }
+
+    @Test
+    fun retryOnFailure_postCancellationIOException_surfacesAsCancellationNotIOException() = runTest {
+        // After call.cancel(), OkHttp throws IOException("Canceled"). On the FINAL
+        // attempt there is no backoff delay() left to convert it, so without the
+        // ensureActive() guard the dead coroutine reports IOException — callers
+        // would show a phantom network error for a deliberate cancellation.
+        var attempts = 0
+        var outcome: String? = null
+        val job = launch {
+            outcome = try {
+                retryOnFailure(maxRetries = 0) {
+                    attempts++
+                    coroutineContext.job.cancel() // simulate: cancellation arrives mid-request
+                    throw IOException("Canceled")
+                }
+                "success"
+            } catch (e: CancellationException) {
+                "cancelled"
+            } catch (e: IOException) {
+                "ioexception"
+            }
+        }
+        job.join()
+        assertEquals("cancelled", outcome)
+        assertEquals(1, attempts)
     }
 
 }
