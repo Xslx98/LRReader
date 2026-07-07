@@ -15,6 +15,7 @@
  */
 package com.hippo.ehviewer.ui.scene.download.part
 
+import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
@@ -27,6 +28,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.LinearInterpolator
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.RelativeLayout
@@ -362,6 +364,7 @@ class DownloadAdapter(
     }
 
     private fun bindState(holder: DownloadHolder, info: DownloadInfo, state: String) {
+        cancelProgressGlide(holder)
         setVisibility(holder.uploader, View.VISIBLE)
         setVisibility(holder.rating, View.VISIBLE)
         setVisibility(holder.readProgress, View.VISIBLE)
@@ -404,6 +407,7 @@ class DownloadAdapter(
         val speed = (snap?.speed ?: -1L).coerceAtLeast(0L)
 
         if (snap == null || snap.total <= 0 || snap.finished < 0) {
+            cancelProgressGlide(holder)
             holder.percent.text = null
             holder.progressBar.isIndeterminate = true
         } else {
@@ -414,9 +418,36 @@ class DownloadAdapter(
             holder.progressBar.isIndeterminate = false
             val max = snap.barMax()
             if (holder.progressBar.max != max) holder.progressBar.max = max
-            holder.progressBar.setProgress(snap.barProgress(), animate)
+            val target = snap.barProgress()
+            val current = holder.progressBar.progress
+            cancelProgressGlide(holder)
+            if (animate && target > current) {
+                // The tracker publishes ~every 2 s (tick) — a glide spanning
+                // that interval renders the discrete emissions as continuous
+                // motion. Always toward the latest TRUE value, never past it
+                // (no extrapolation); regressions (page retry reset) snap.
+                holder.progressGlide = ObjectAnimator
+                    .ofInt(holder.progressBar, "progress", target)
+                    .apply {
+                        duration = BAR_GLIDE_DURATION_MS
+                        interpolator = LinearInterpolator()
+                        start()
+                    }
+            } else {
+                holder.progressBar.progress = target
+            }
         }
         holder.speed.text = com.hippo.lib.yorozuya.FileUtils.humanReadableByteCount(speed, false) + "/S"
+    }
+
+    private fun cancelProgressGlide(holder: DownloadHolder) {
+        holder.progressGlide?.cancel()
+        holder.progressGlide = null
+    }
+
+    override fun onViewRecycled(holder: DownloadHolder) {
+        cancelProgressGlide(holder)
+        super.onViewRecycled(holder)
     }
 
     // 拖拽排序相关方法实现
@@ -698,6 +729,9 @@ class DownloadAdapter(
         @JvmField val percent: TextView = itemView.findViewById(R.id.percent)
         @JvmField val speed: TextView = itemView.findViewById(R.id.speed)
 
+        /** Active glide toward the latest true bar value; cancelled on rebind/recycle. */
+        var progressGlide: ObjectAnimator? = null
+
         init {
             // KNOWN-ISSUE (P2): click listeners remain active during multi-select mode
             thumb.setOnClickListener(this)
@@ -774,5 +808,11 @@ class DownloadAdapter(
 
         /** Lifted bottom margin for the imported-archive branch where category is visible. */
         private const val BADGE_MARGIN_BOTTOM_WHEN_CATEGORY_VISIBLE_DP = 30
+
+        /**
+         * Glide duration just under the progress tracker's 2 s tick so the
+         * bar is still moving when the next true value lands and retargets it.
+         */
+        private const val BAR_GLIDE_DURATION_MS = 1700L
     }
 }
