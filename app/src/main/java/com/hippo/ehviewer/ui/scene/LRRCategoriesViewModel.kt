@@ -8,6 +8,7 @@ import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.data.LRRCategory
 import com.lanraragi.reader.client.api.friendlyError
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -102,6 +103,7 @@ class LRRCategoriesViewModel : ViewModel() {
                 _categories.value = ArrayList(pinned)
                 _isLoading.value = false
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to load categories", e)
                 _isLoading.value = false
                 val context = ServiceRegistry.appModule.getContext()
@@ -126,6 +128,7 @@ class LRRCategoriesViewModel : ViewModel() {
                 )
                 loadCategoriesInternal()
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to create category", e)
                 val context = ServiceRegistry.appModule.getContext()
                 _uiEvent.tryEmit(CategoriesUiEvent.ShowError(friendlyError(context, e)))
@@ -149,6 +152,7 @@ class LRRCategoriesViewModel : ViewModel() {
                 )
                 loadCategoriesInternal()
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to update category", e)
                 val context = ServiceRegistry.appModule.getContext()
                 _uiEvent.tryEmit(CategoriesUiEvent.ShowError(friendlyError(context, e)))
@@ -172,6 +176,7 @@ class LRRCategoriesViewModel : ViewModel() {
                 )
                 loadCategoriesInternal()
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to delete category", e)
                 val context = ServiceRegistry.appModule.getContext()
                 _uiEvent.tryEmit(CategoriesUiEvent.ShowError(friendlyError(context, e)))
@@ -208,6 +213,7 @@ class LRRCategoriesViewModel : ViewModel() {
 
             _categories.value = ArrayList(pinned)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "Failed to reload categories after CRUD", e)
             val context = ServiceRegistry.appModule.getContext()
             _uiEvent.tryEmit(CategoriesUiEvent.ShowError(friendlyError(context, e)))

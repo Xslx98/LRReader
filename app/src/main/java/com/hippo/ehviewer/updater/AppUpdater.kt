@@ -6,12 +6,14 @@ import com.hippo.ehviewer.BuildConfig
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.UpdateSettings
 import com.hippo.util.ExceptionUtils
+import com.lanraragi.reader.client.api.await
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.util.concurrent.locks.ReentrantLock
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * GitHub Releases API adapter. Pure data layer — returns a sealed [UpdateResult]
@@ -41,7 +43,10 @@ object AppUpdater {
         "https://api.github.com/repos/Xslx98/LRReader/releases/latest"
 
     private val updateJson = Json { ignoreUnknownKeys = true }
-    private val lock = ReentrantLock()
+    // Single-flight guard. Deliberately NOT a ReentrantLock: the check body now
+    // suspends in Call.await() (NET-3) and may resume on a different IO thread,
+    // where a thread-confined unlock() throws IllegalMonitorStateException.
+    private val updateInFlight = AtomicBoolean(false)
 
     /**
      * Sealed result. Callers `when`-branch this to drive UI:
@@ -68,13 +73,16 @@ object AppUpdater {
             return@withContext UpdateResult.Skipped
         }
 
-        if (!lock.tryLock()) {
+        if (!updateInFlight.compareAndSet(false, true)) {
             return@withContext UpdateResult.Skipped
         }
         try {
             val release = try {
                 fetchLatestRelease(ServiceRegistry.networkModule.okHttpClient)
             } catch (t: Throwable) {
+                // A cancelled caller (scene destroyed mid-check) is not a network
+                // error — don't record it or return a bogus result (NET-3).
+                if (t is CancellationException) throw t
                 ExceptionUtils.throwIfFatal(t)
                 Analytics.recordException(t)
                 return@withContext UpdateResult.NetworkError
@@ -100,16 +108,16 @@ object AppUpdater {
 
             UpdateResult.NewerAvailable(release)
         } finally {
-            lock.unlock()
+            updateInFlight.set(false)
         }
     }
 
-    private fun fetchLatestRelease(client: OkHttpClient): GhRelease? {
+    private suspend fun fetchLatestRelease(client: OkHttpClient): GhRelease? {
         val request = Request.Builder()
             .url(LATEST_RELEASE_URL)
             .header("Accept", "application/vnd.github+json")
             .build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             if (!response.isSuccessful) {
                 if (BuildConfig.DEBUG) Log.w(TAG, "GitHub Releases API non-2xx: ${response.code}")
                 return null

@@ -27,18 +27,20 @@ import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.util.ExceptionUtils
 import android.util.Log
 import com.hippo.util.TextUrl
+import com.lanraragi.reader.client.api.await
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okio.buffer
 import okio.source
 import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
-import java.util.concurrent.locks.ReentrantLock
 
 class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
 
@@ -203,7 +205,11 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
         private var instance: EhTagDatabase? = null
 
         // EH-LEGACY: multi-language lock not implemented, Chinese-only is sufficient
-        private val lock = ReentrantLock()
+        // Single-flight guard. Deliberately NOT a ReentrantLock: save() now
+        // suspends in Call.await() (NET-3) and may resume on a different IO
+        // thread, where a thread-confined unlock() throws
+        // IllegalMonitorStateException.
+        private val updateInFlight = AtomicBoolean(false)
 
         @JvmStatic
         fun getInstance(context: Context): EhTagDatabase? {
@@ -277,11 +283,11 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
             return s1.contentEquals(s2)
         }
 
-        private fun save(client: OkHttpClient, url: String, file: File): Boolean {
+        private suspend fun save(client: OkHttpClient, url: String, file: File): Boolean {
             val request = Request.Builder().url(url).build()
             val call = client.newCall(request)
             return try {
-                call.execute().use { response ->
+                call.await().use { response ->
                     if (!response.isSuccessful) return false
                     val body = response.body ?: return false
                     body.byteStream().use { inputStream ->
@@ -292,6 +298,7 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
                     true
                 }
             } catch (t: Throwable) {
+                if (t is CancellationException) throw t
                 ExceptionUtils.throwIfFatal(t)
                 Analytics.recordException(t)
                 false
@@ -319,7 +326,7 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
             }
 
             ServiceRegistry.coroutineModule.ioScope.launch {
-                if (!lock.tryLock()) return@launch
+                if (!updateInFlight.compareAndSet(false, true)) return@launch
 
                 try {
                     val dir = AppConfig.getFilesDir("tag-translations") ?: return@launch
@@ -393,7 +400,7 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
                         Log.w(TAG, "Failed to read updated tag database", e)
                     }
                 } finally {
-                    lock.unlock()
+                    updateInFlight.set(false)
                 }
             }
         }

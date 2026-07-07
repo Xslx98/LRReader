@@ -39,7 +39,7 @@ object LRRCategoryApi {
                 .url(url)
                 .get()
                 .build()
-            client.newCall(request).execute().use { response ->
+            client.newCall(request).await().use { response ->
                 ensureSuccess(response)
                 val body = response.body?.string()
                     ?: throw LRREmptyBodyException()
@@ -77,7 +77,7 @@ object LRRCategoryApi {
             .url(url)
             .put(formBuilder.build())
             .build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             ensureSuccess(response)
             val body = response.body?.string()
                 ?: throw LRREmptyBodyException()
@@ -117,7 +117,7 @@ object LRRCategoryApi {
             .url(url)
             .put(formBuilder.build())
             .build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             ensureSuccess(response)
         }
     }
@@ -140,7 +140,7 @@ object LRRCategoryApi {
             .url(url)
             .delete()
             .build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             ensureSuccess(response)
         }
     }
@@ -165,7 +165,7 @@ object LRRCategoryApi {
             .url(url)
             .put(EMPTY_REQUEST_BODY)
             .build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             ensureSuccess(response)
         }
     }
@@ -190,7 +190,7 @@ object LRRCategoryApi {
             .url(url)
             .delete()
             .build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             ensureSuccess(response)
         }
     }

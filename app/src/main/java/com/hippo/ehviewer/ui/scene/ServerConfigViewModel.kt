@@ -152,6 +152,10 @@ class ServerConfigViewModel : ViewModel() {
                 onConnectSuccess(primaryUrl, info, navigateOnSuccess)
                 return@launch
             } catch (e1: Exception) {
+                // Deliberately NO CancellationException rethrow (NET-3 sweep):
+                // onConnectFailure carries the UI-16 auth-state rollback, which
+                // must run even when the test coroutine is cancelled mid-flight.
+                // The failure event just falls on a dead scene and is dropped.
                 Log.d(TAG, "Primary URL failed: ${e1.message}")
 
                 if (fallbackUrl == null) {
@@ -173,6 +177,7 @@ class ServerConfigViewModel : ViewModel() {
                 Log.e(TAG, "Secure storage unavailable during fallback", e)
                 onConnectFailure(e)
             } catch (e2: Exception) {
+                // No CE rethrow — same UI-16 rollback rationale as above.
                 Log.d(TAG, "Fallback URL also failed: ${e2.message}")
                 onConnectFailure(e2)
             }

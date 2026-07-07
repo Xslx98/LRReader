@@ -103,7 +103,7 @@ object LRRPluginApi {
             .url(url)
             .get()
             .build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             ensureSuccess(response)
             val body = response.body?.string()
                 ?: throw LRREmptyBodyException()
@@ -148,7 +148,7 @@ object LRRPluginApi {
             .url(urlBuilder.build())
             .post(EMPTY_REQUEST_BODY)
             .build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             ensureSuccess(response)
             val body = response.body?.string()
                 ?: throw LRREmptyBodyException()

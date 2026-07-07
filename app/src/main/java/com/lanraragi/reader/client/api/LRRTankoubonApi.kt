@@ -109,7 +109,7 @@ object LRRTankoubonApi {
             .addPathSegments("api/tankoubons")
         if (page != null && page > 0) urlBuilder.addQueryParameter("page", page.toString())
         val request = Request.Builder().url(urlBuilder.build()).get().build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             ensureSuccess(response)
             val body = response.body?.string() ?: throw LRREmptyBodyException()
             lrrJson.decodeFromString<TankoubonListResult>(body)
@@ -134,7 +134,7 @@ object LRRTankoubonApi {
             .addQueryParameter("page", page.toString())
             .build()
         val request = Request.Builder().url(url).get().build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             ensureSuccess(response)
             val body = response.body?.string() ?: throw LRREmptyBodyException()
             lrrJson.decodeFromString<TankoubonFullResult>(body)
@@ -154,7 +154,7 @@ object LRRTankoubonApi {
             .addPathSegment("tankoubons")
             .build()
         val request = Request.Builder().url(url).get().build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             ensureSuccess(response)
             val body = response.body?.string() ?: throw LRREmptyBodyException()
             lrrJson.decodeFromString<ArchiveTankoubonsResult>(body).tankoubons
@@ -195,7 +195,7 @@ object LRRTankoubonApi {
         val url = parseBaseUrl(baseUrl).newBuilder().addPathSegments("api/tankoubons").build()
         val form = FormBody.Builder().add("name", name)
         val request = Request.Builder().url(url).put(form.build()).build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             ensureSuccess(response)
             val body = response.body?.string() ?: throw LRREmptyBodyException()
             val parsed = lrrJson.decodeFromString<CreateTankoubonResult>(body)
@@ -259,7 +259,7 @@ object LRRTankoubonApi {
                 .build()
             val body = payload.toString().toRequestBody(JSON_MEDIA_TYPE)
             val request = Request.Builder().url(url).put(body).build()
-            client.newCall(request).execute().use { response -> ensureSuccess(response) }
+            client.newCall(request).await().use { response -> ensureSuccess(response) }
         }
     }
 
@@ -272,7 +272,7 @@ object LRRTankoubonApi {
                 .addPathSegment(requireValidTankId(tankId))
                 .build()
             val request = Request.Builder().url(url).delete().build()
-            client.newCall(request).execute().use { response -> ensureSuccess(response) }
+            client.newCall(request).await().use { response -> ensureSuccess(response) }
         }
     }
 
@@ -282,7 +282,7 @@ object LRRTankoubonApi {
         withContext(Dispatchers.IO) {
             val url = memberUrl(baseUrl, tankId, arcid)
             val request = Request.Builder().url(url).put(EMPTY_REQUEST_BODY).build()
-            client.newCall(request).execute().use { response -> ensureSuccess(response) }
+            client.newCall(request).await().use { response -> ensureSuccess(response) }
         }
     }
 
@@ -292,7 +292,7 @@ object LRRTankoubonApi {
         withContext(Dispatchers.IO) {
             val url = memberUrl(baseUrl, tankId, arcid)
             val request = Request.Builder().url(url).delete().build()
-            client.newCall(request).execute().use { response -> ensureSuccess(response) }
+            client.newCall(request).await().use { response -> ensureSuccess(response) }
         }
     }
 
@@ -315,7 +315,7 @@ object LRRTankoubonApi {
                 .addQueryParameter("page", globalPage1.toString())
                 .build()
             val request = Request.Builder().url(url).put(EMPTY_REQUEST_BODY).build()
-            client.newCall(request).execute().use { response -> ensureSuccess(response) }
+            client.newCall(request).await().use { response -> ensureSuccess(response) }
         }
     }
 
@@ -336,7 +336,7 @@ object LRRTankoubonApi {
                 .addPathSegment(globalPage1.toString())
                 .build()
             val request = Request.Builder().url(url).put(EMPTY_REQUEST_BODY).build()
-            client.newCall(request).execute().use { response -> ensureSuccess(response) }
+            client.newCall(request).await().use { response -> ensureSuccess(response) }
         }
     }
 }
