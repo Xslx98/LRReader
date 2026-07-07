@@ -41,7 +41,7 @@ object LRRDatabaseApi {
             .url(url)
             .get()
             .build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             ensureSuccess(response)
             response.body?.string()
                 ?: throw LRREmptyBodyException()
@@ -67,7 +67,7 @@ object LRRDatabaseApi {
             .url(url)
             .get()
             .build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             ensureSuccess(response)
             val body = response.body?.string()
                 ?: throw LRREmptyBodyException()
@@ -105,7 +105,7 @@ object LRRShinobuApi {
             .url(url)
             .get()
             .build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             ensureSuccess(response)
             response.body?.string()
                 ?: throw LRREmptyBodyException()
@@ -127,7 +127,7 @@ object LRRShinobuApi {
             .url(url)
             .post(EMPTY_REQUEST_BODY)
             .build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             ensureSuccess(response)
         }
     }
