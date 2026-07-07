@@ -184,7 +184,9 @@ class DownloadAdapter(
             if (info.state == DownloadState.DOWNLOAD ||
                 info.state == DownloadState.WAIT
             ) {
-                bindProgress(holder, info)
+                // Same row ticking: animate the sub-page advance (80 ms
+                // system ease between the tracker's 2 s ticks).
+                bindProgress(holder, info, animate = true)
             }
             return
         }
@@ -337,7 +339,10 @@ class DownloadAdapter(
             DownloadState.INVALID,
             DownloadState.NONE -> bindState(holder, info, resources.getString(R.string.download_state_none))
             DownloadState.WAIT -> bindState(holder, info, resources.getString(R.string.download_state_wait))
-            DownloadState.DOWNLOAD -> bindProgress(holder, info)
+            // Full (re)bind snaps without animation: a recycled holder may
+            // still carry another row's progress value and would sweep from
+            // a wrong origin.
+            DownloadState.DOWNLOAD -> bindProgress(holder, info, animate = false)
             DownloadState.FAILED -> {
                 val text = if (info.legacy <= 0) {
                     resources.getString(R.string.download_state_failed)
@@ -375,7 +380,7 @@ class DownloadAdapter(
     }
 
     @SuppressLint("SetTextI18n")
-    private fun bindProgress(holder: DownloadHolder, info: DownloadInfo) {
+    private fun bindProgress(holder: DownloadHolder, info: DownloadInfo, animate: Boolean) {
         setVisibility(holder.uploader, View.GONE)
         setVisibility(holder.rating, View.GONE)
         setVisibility(holder.readProgress, View.GONE)
@@ -396,18 +401,20 @@ class DownloadAdapter(
         // copies from the scheduler's own instance and never reach this
         // Room-emitted instance). See ADR-001 Option D.
         val snap = mCallback.downloadManager?.progressFor(info.arcid)
-        val total = snap?.total ?: -1
-        val finished = snap?.finished ?: 0
         val speed = (snap?.speed ?: -1L).coerceAtLeast(0L)
 
-        if (total <= 0 || finished < 0) {
+        if (snap == null || snap.total <= 0 || snap.finished < 0) {
             holder.percent.text = null
             holder.progressBar.isIndeterminate = true
         } else {
-            holder.percent.text = "$finished/$total"
+            // Page counter keeps the user-readable unit; the BAR advances
+            // fractionally by bytes within pages (barMax/barProgress are
+            // page-count × BAR_UNITS_PER_PAGE with in-flight fractions).
+            holder.percent.text = "${snap.finished}/${snap.total}"
             holder.progressBar.isIndeterminate = false
-            holder.progressBar.max = total
-            holder.progressBar.progress = finished
+            val max = snap.barMax()
+            if (holder.progressBar.max != max) holder.progressBar.max = max
+            holder.progressBar.setProgress(snap.barProgress(), animate)
         }
         holder.speed.text = com.hippo.lib.yorozuya.FileUtils.humanReadableByteCount(speed, false) + "/S"
     }
