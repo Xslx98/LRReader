@@ -59,6 +59,24 @@ internal object ReadingProgressReconciler {
     }
 
     /**
+     * Any epoch value above this is clearly milliseconds, not seconds
+     * (100_000_000_000 s ≈ year 5138). Stored `archive_json` snapshots are a
+     * historical mixed bag: server fetches persist epoch-seconds, while the
+     * history write path stamps `System.currentTimeMillis()` — see
+     * [normalizeEpochSeconds].
+     */
+    private const val MS_EPOCH_THRESHOLD = 100_000_000_000L
+
+    /**
+     * Normalize a snapshot `lastreadtime` to epoch seconds. Feeding a
+     * milliseconds value into [resolve]'s ±[CLOCK_SKEW_GRACE_SECONDS] math
+     * makes the snapshot side win unconditionally — a stale snapshot would
+     * beat a genuinely-newer local save.
+     */
+    fun normalizeEpochSeconds(ts: Long): Long =
+        if (ts > MS_EPOCH_THRESHOLD) ts / 1000L else ts
+
+    /**
      * Offline best-guess start page: reconcile the locally-saved SP progress
      * against the Room archive snapshot's server progress
      * ([com.lanraragi.reader.domain.Archive.progress] /
@@ -69,6 +87,7 @@ internal object ReadingProgressReconciler {
      *
      * @param snapshotProgress1 1-indexed progress from the archive snapshot (<=0 = none)
      * @param snapshotTs epoch seconds `lastreadtime` from the archive snapshot
+     *   (milliseconds tolerated — normalized via [normalizeEpochSeconds])
      * @return 0-indexed page
      */
     fun resolveOffline(
@@ -80,6 +99,6 @@ internal object ReadingProgressReconciler {
         GalleryProvider2.loadReadingProgress(context, arcid),
         GalleryProvider2.loadReadingTimestamp(context, arcid),
         snapshotProgress1,
-        snapshotTs,
+        normalizeEpochSeconds(snapshotTs),
     )
 }

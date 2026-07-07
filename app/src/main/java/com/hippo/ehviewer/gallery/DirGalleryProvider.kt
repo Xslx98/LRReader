@@ -237,7 +237,11 @@ class DirGalleryProvider : GalleryProvider2 {
         pristineLocalPage0 = loadReadingProgress(ctx, arcid)
         pristineLocalTs = loadReadingTimestamp(ctx, arcid)
         this.startPageValue = ReadingProgressReconciler.resolve(
-            pristineLocalPage0, pristineLocalTs, progressSnapshot, lastreadSnapshot,
+            pristineLocalPage0,
+            pristineLocalTs,
+            progressSnapshot,
+            // History-path snapshots stamp milliseconds — see normalizeEpochSeconds.
+            ReadingProgressReconciler.normalizeEpochSeconds(lastreadSnapshot),
         )
     }
 

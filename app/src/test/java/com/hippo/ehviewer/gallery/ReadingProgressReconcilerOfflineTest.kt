@@ -42,4 +42,18 @@ class ReadingProgressReconcilerOfflineTest {
         // Snapshot ts near epoch -> delta << -grace, local page > 0 -> local wins.
         assertEquals(9, ReadingProgressReconciler.resolveOffline(context, "arc-c", 5, 1_000L))
     }
+
+    @Test
+    fun `milliseconds snapshot timestamp is normalized - fresher local still wins`() {
+        GalleryProvider2.saveReadingProgress(context, "arc-d", 30) // ts = wall-clock now (seconds)
+        // History-path snapshots stamp System.currentTimeMillis(). Raw, the
+        // ms value dwarfs the seconds SP ts (delta >> grace) and the stale
+        // snapshot page 8 would beat the newer local page 30. Normalized to
+        // seconds, an OLD ms snapshot loses as it should.
+        val staleMsSnapshotTs = 1_000_000L * 1000L // epoch 1_000_000s, in ms
+        assertEquals(
+            30,
+            ReadingProgressReconciler.resolveOffline(context, "arc-d", 8, staleMsSnapshotTs)
+        )
+    }
 }
