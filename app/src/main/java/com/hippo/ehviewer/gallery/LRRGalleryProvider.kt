@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import okhttp3.Call
 import okhttp3.OkHttpClient
 import java.io.File
 import java.io.FileInputStream
@@ -422,6 +423,13 @@ class LRRGalleryProvider(
         // downloads, preloads, putStartPage progress sync).
         providerScope?.cancel()
         providerScope = null
+
+        // Coroutine cancellation can't interrupt blocking execute()/body reads —
+        // sever the sockets so in-flight page streams end now. A request that
+        // slips past the stopped check before registration runs to completion
+        // harmlessly (its failure path is silenced by the stopped flag).
+        inflightCalls.values.forEach { runCatching { it.cancel() } }
+        inflightCalls.clear()
     }
 
     override fun getStartPage(): Int = startPageValue
@@ -531,6 +539,10 @@ class LRRGalleryProvider(
 
                 // Preload adjacent pages after successful load
                 preloadPages(index)
+            } catch (ignored: PageCancelledException) {
+                // stop()/onCancelRequest severed the call deliberately — not a
+                // failure. Stay quiet so a recycled tile doesn't show an error
+                // placeholder; a re-request just downloads again.
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load page $index: ${e.message}", e)
                 notifyPageFailed(index, e.message)
@@ -551,7 +563,9 @@ class LRRGalleryProvider(
     }
 
     override fun onCancelRequest(index: Int) {
-        // No-op for now (OkHttp doesn't support per-request cancellation easily here)
+        // Sever the in-flight HTTP call; the blocked read throws IOException,
+        // which downloadPageToCache converts to PageCancelledException (quiet).
+        inflightCalls[index]?.cancel()
     }
 
     override fun getError(): String = errorMessage ?: "Unknown error"
@@ -566,6 +580,12 @@ class LRRGalleryProvider(
 
     // Track in-flight page requests to avoid submitting duplicate tasks to the thread pool
     private val inflightRequests = ConcurrentHashMap<Int, Boolean>()
+
+    // In-flight page HTTP calls, keyed by page index. Coroutine cancellation
+    // cannot interrupt the blocking execute()/body read inside
+    // ReaderPageCache.downloadToFile, so stop()/onCancelRequest sever these
+    // sockets explicitly (NET-3).
+    private val inflightCalls = ConcurrentHashMap<Int, Call>()
 
     private fun getPageLock(index: Int): Any = pageLocks[index.and(STRIPE_COUNT - 1)]
 
@@ -600,9 +620,23 @@ class LRRGalleryProvider(
             val currentPageClient = pageClient
                 ?: ServiceRegistry.networkModule.okHttpClient
 
-            ReaderPageCache.downloadToFile(
-                currentPageClient, pageUrl, cacheFile, index, progressCallback
-            )
+            var call: Call? = null
+            try {
+                ReaderPageCache.downloadToFile(
+                    currentPageClient, pageUrl, cacheFile, index, progressCallback,
+                    onCallCreated = { c ->
+                        call = c
+                        inflightCalls[index] = c
+                    }
+                )
+            } catch (e: IOException) {
+                if (call?.isCanceled() == true || stateRef.get().stopped) {
+                    throw PageCancelledException(e)
+                }
+                throw e
+            } finally {
+                inflightCalls.remove(index)
+            }
         }
     }
 
@@ -713,3 +747,10 @@ class LRRGalleryProvider(
         private const val METADATA_TIMEOUT_MS = 3_000L
     }
 }
+
+/**
+ * Wraps an IOException caused by deliberate call cancellation
+ * (stop()/onCancelRequest) so the request path can go quiet instead of
+ * surfacing a page-error placeholder (NET-3).
+ */
+private class PageCancelledException(cause: IOException) : IOException(cause)
