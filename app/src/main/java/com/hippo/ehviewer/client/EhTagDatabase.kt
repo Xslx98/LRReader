@@ -27,6 +27,8 @@ import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.util.ExceptionUtils
 import android.util.Log
 import com.hippo.util.TextUrl
+import com.lanraragi.reader.client.api.await
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -277,11 +279,11 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
             return s1.contentEquals(s2)
         }
 
-        private fun save(client: OkHttpClient, url: String, file: File): Boolean {
+        private suspend fun save(client: OkHttpClient, url: String, file: File): Boolean {
             val request = Request.Builder().url(url).build()
             val call = client.newCall(request)
             return try {
-                call.execute().use { response ->
+                call.await().use { response ->
                     if (!response.isSuccessful) return false
                     val body = response.body ?: return false
                     body.byteStream().use { inputStream ->
@@ -292,6 +294,7 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
                     true
                 }
             } catch (t: Throwable) {
+                if (t is CancellationException) throw t
                 ExceptionUtils.throwIfFatal(t)
                 Analytics.recordException(t)
                 false
