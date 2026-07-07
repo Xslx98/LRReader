@@ -13,6 +13,7 @@ import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -198,6 +199,7 @@ class TankoubonDetailViewModel : ViewModel() {
                 _members.value = mapped
                 _isLoading.value = false
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _isLoading.value = false
                 val ctx = ServiceRegistry.appModule.getContext()
                 val url = baseUrl
@@ -244,6 +246,7 @@ class TankoubonDetailViewModel : ViewModel() {
                 LRRTankoubonApi.deleteTankoubon(client, url, tankId)
                 _uiEvent.tryEmit(TankDetailUiEvent.Deleted)
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 emitError(e)
             }
         }
@@ -269,6 +272,7 @@ class TankoubonDetailViewModel : ViewModel() {
                 coverBust = System.currentTimeMillis()
                 _uiEvent.tryEmit(TankDetailUiEvent.ShowSuccess(R.string.tank_cover_updated))
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 emitError(e)
             }
         }
@@ -309,6 +313,7 @@ class TankoubonDetailViewModel : ViewModel() {
                 val client = ServiceRegistry.networkModule.okHttpClient
                 LRRTankoubonApi.updateTankoubon(client, url, tankId, archives = ids)
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 val ctx = ServiceRegistry.appModule.getContext()
                 val message = if (e is LRRHttpException && e.code == HTTP_LOCKED) {
                     errorMessage(ctx, e)
@@ -338,6 +343,7 @@ class TankoubonDetailViewModel : ViewModel() {
                 _uiEvent.tryEmit(TankDetailUiEvent.ShowSuccess(R.string.tank_op_done))
                 load()
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 emitError(e)
             }
         }

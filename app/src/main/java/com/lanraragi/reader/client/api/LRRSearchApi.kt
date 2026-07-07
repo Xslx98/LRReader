@@ -51,7 +51,7 @@ object LRRSearchApi {
                 .url(urlBuilder.build())
                 .get()
                 .build()
-            client.newCall(request).execute().use { response ->
+            client.newCall(request).await().use { response ->
                 if (response.code == HTTP_NO_CONTENT) {
                     // 204: the search engine is still initializing — return an empty
                     // result rather than parsing the empty body (which throws and
@@ -95,7 +95,7 @@ object LRRSearchApi {
             .url(urlBuilder.build())
             .get()
             .build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).await().use { response ->
             ensureSuccess(response)
             val body = response.body?.string()
                 ?: throw LRREmptyBodyException()

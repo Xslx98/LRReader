@@ -26,6 +26,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okio.EOFException
@@ -35,6 +36,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -92,6 +94,12 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
 
     private var job: Job? = null
 
+    // In-flight page HTTP calls. Coroutine cancellation can't interrupt the
+    // blocking execute()/body streaming inside downloadPage(); cancel() severs
+    // these sockets so a stopped download stops transferring immediately
+    // instead of finishing multi-MB pages it will throw away (NET-3).
+    private val activeCalls: MutableSet<Call> = ConcurrentHashMap.newKeySet()
+
     @Volatile
     private var cancelled = false
 
@@ -123,6 +131,11 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         // Workers are single-use (the scheduler creates a fresh one per promotion),
         // so cancel() is terminal — do not call start() again after cancel().
         scope.cancel()
+        // Sever in-flight page sockets AFTER the scope is dead: the IOException
+        // each blocked downloadPage throws then hits `if (cancelled) break` in
+        // the page retry loop and never enters the network-wait branch (NET-3).
+        activeCalls.forEach { runCatching { it.cancel() } }
+        activeCalls.clear()
     }
 
     private suspend fun doDownload() {
@@ -351,11 +364,13 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
 
         val tmpFile = File(outFile.parent, "${outFile.name}.${UUID.randomUUID()}.tmp")
 
+        val call = client.newCall(request)
+        activeCalls.add(call)
         try {
             var contentLength = -1L
             var totalRead = 0L
 
-            client.newCall(request).execute().use { response ->
+            call.execute().use { response ->
                 if (!response.isSuccessful) {
                     throw IOException("HTTP ${response.code}")
                 }
@@ -452,6 +467,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                 }
             }
         } finally {
+            activeCalls.remove(call)
             // Clean up tmp file on any failure
             if (tmpFile.exists()) {
                 tmpFile.delete()

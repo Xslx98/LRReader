@@ -442,6 +442,7 @@ class ServerListViewModel : ViewModel() {
                     LRRServerApi.getServerInfo(testClient, url)
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Verification failed for $url", e)
                 _uiEvent.emit(ServerListUiEvent.ShowToast(e.message ?: "Unknown error"))
             }

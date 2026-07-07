@@ -25,6 +25,7 @@ import com.hippo.ehviewer.ui.scene.download.DownloadLabelHelper
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
 import com.hippo.ehviewer.util.ClipboardUtil
 import com.hippo.lib.yorozuya.AssertUtils
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -131,6 +132,7 @@ internal class DetailActionHandler(
                             }
                             scene.startActivity(intent)
                         } catch (e: Exception) {
+                            if (e is CancellationException) throw e
                             Log.e(TAG, "Failed to build read intent", e)
                         }
                     }

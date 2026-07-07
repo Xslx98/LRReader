@@ -53,6 +53,6 @@ suspend fun probeSourceHealthy(
         // read / write timeouts. Bounds the whole probe at the budget
         // above regardless of where it gets stuck.
         call.timeout().timeout(totalTimeoutMs, TimeUnit.MILLISECONDS)
-        call.execute().use { it.isSuccessful }
+        call.await().use { it.isSuccessful }
     }.getOrElse { false }
 }
