@@ -59,6 +59,17 @@ class DirGalleryProvider : GalleryProvider2 {
     private var startPageValue: Int = 0
 
     /**
+     * Local SP progress (page, epoch-seconds ts) captured at construction,
+     * BEFORE [startPageValue] is seeded from the archive snapshot and before
+     * the first layout echo re-saves SP with a fresh timestamp. The restore
+     * flow MUST reconcile fresh server metadata against these pristine values:
+     * reconciling against the echo-polluted SP timestamp would let a stale
+     * seed beat genuinely-newer cross-device progress.
+     */
+    private var pristineLocalPage0 = 0
+    private var pristineLocalTs = 0L
+
+    /**
      * Source-profile base URL, resolved once in [start] via
      * [resolveSourceBaseUrl] so the metadata fetch and the progress sync
      * hit the server this archive was downloaded from — not whatever
@@ -197,14 +208,41 @@ class DirGalleryProvider : GalleryProvider2 {
         serverUrlDeferred.complete(null)
     }
 
-    /** Constructor with Context and arcid for reading progress persistence. */
-    constructor(dir: UniFile, context: Context, arcid: String, serverProfileId: Long = 0L) {
+    /**
+     * Constructor with Context and arcid for reading progress persistence.
+     *
+     * @param progressSnapshot 1-indexed server progress from the Room archive
+     *   snapshot ([com.lanraragi.reader.domain.Archive.progress]); <=0 = none.
+     * @param lastreadSnapshot epoch seconds
+     *   [com.lanraragi.reader.domain.Archive.lastreadtime] of that snapshot.
+     *   Seeds [startPageValue] via the offline reconcile so the reader opens
+     *   directly on the best-known page even when the SP save is missing
+     *   (snapshot rollback / reinstall) — and so the seed agrees with the
+     *   warm target chosen by GalleryOpenHelper (same math, same inputs).
+     */
+    constructor(
+        dir: UniFile,
+        context: Context,
+        arcid: String,
+        serverProfileId: Long = 0L,
+        progressSnapshot: Int = 0,
+        lastreadSnapshot: Long = 0L,
+    ) {
         this.dir = dir
         this.context = context.applicationContext
         this.arcId = arcid
         this.serverProfileId = serverProfileId
         val ctx = this.context ?: return
-        this.startPageValue = loadReadingProgress(ctx, arcid)
+        // Order matters: capture pristine SP BEFORE seeding startPageValue.
+        pristineLocalPage0 = loadReadingProgress(ctx, arcid)
+        pristineLocalTs = loadReadingTimestamp(ctx, arcid)
+        this.startPageValue = ReadingProgressReconciler.resolve(
+            pristineLocalPage0,
+            pristineLocalTs,
+            progressSnapshot,
+            // History-path snapshots stamp milliseconds — see normalizeEpochSeconds.
+            ReadingProgressReconciler.normalizeEpochSeconds(lastreadSnapshot),
+        )
     }
 
     override fun getStartPage(): Int = startPageValue
@@ -375,19 +413,45 @@ class DirGalleryProvider : GalleryProvider2 {
                     Log.i(TAG, "[PROGRESS] Server metadata: progress=$serverProgress" +
                             " lastreadtime=$serverTs savedFraction=$savedFraction")
                     if (serverProgress > 0 || savedFraction > 0f) {
-                        val localTs = if (arcId != null) loadReadingTimestamp(context, arcId!!) else 0L
-                        val resolvedPage = ReadingProgressReconciler.resolve(
-                            startPageValue, localTs, serverProgress, serverTs
-                        )
+                        // Reconcile fresh server metadata against the PRISTINE
+                        // local (page, ts) captured at construction — see the
+                        // pristineLocalPage0 KDoc. When the server offers no
+                        // progress (metadata failed or progress==0), keep the
+                        // snapshot-seeded startPageValue: falling back to the
+                        // pristine page would undo the seed and yank the reader
+                        // back to page 0 in the lost-SP case.
+                        val resolvedPage = if (serverProgress > 0) {
+                            ReadingProgressReconciler.resolve(
+                                pristineLocalPage0, pristineLocalTs, serverProgress, serverTs
+                            )
+                        } else {
+                            startPageValue
+                        }
                         Log.i(
                             TAG,
                             "[PROGRESS] resolved page=$resolvedPage" +
-                                " (localPage0=$startPageValue/$localTs serverProgress1=$serverProgress/$serverTs)"
+                                " (pristine=$pristineLocalPage0/$pristineLocalTs seed=$startPageValue" +
+                                " serverProgress1=$serverProgress/$serverTs)"
                         )
                         if (resolvedPage != startPageValue) {
                             startPageValue = resolvedPage
                             readAnchor = startPageValue
                             if (arcId != null) saveReadingProgress(context, arcId!!, resolvedPage)
+                        }
+                        // Second consume at the reconciled page (mirrors
+                        // LRRGalleryProvider's post-reconcile consume): when the
+                        // warm targeted a different page than the pre-notify
+                        // consume asked for, the slot is still parked — publish
+                        // it so the jump below lands on an already-decoded page
+                        // instead of a loading placeholder. Index-matched: a
+                        // non-matching slot is left intact, at most one of the
+                        // two consumes hits.
+                        val warmed = ReaderPageCache.consumeDecodedPage(
+                            arcId!!, resolvedPage, awaitInflightWarmMs = WARM_AWAIT_MS
+                        )
+                        if (warmed != null) {
+                            Log.i(TAG, "[PROGRESS] decoded slot HIT (post-resolve) for page=$resolvedPage")
+                            notifyPageSucceed(resolvedPage, warmed)
                         }
                         // Jump GalleryView if needed. Order matters:
                         //   1. wait for the file enum coroutine to finish
@@ -523,14 +587,18 @@ class DirGalleryProvider : GalleryProvider2 {
                 // 300ms fade-in — the visible flicker when opening a
                 // downloaded archive.
                 val targetArcid = arcId
-                // files.isNotEmpty() guard: coerceIn(0, files.size - 1) throws
-                // for an empty dir (coerceIn(0, -1) is an empty range), and the
-                // exception would skip notifyDataChanged() below, leaving the
-                // reader stuck on a permanent spinner.
+                // files.isNotEmpty() guard: an empty dir has sizeValue == 0 so
+                // coerceIn(0, -1) throws (empty range), and the exception would
+                // skip notifyDataChanged() below, leaving the reader stuck on a
+                // permanent spinner.
                 if (targetArcid != null && files.isNotEmpty()) {
+                    // Clamp in PAGE space (sizeValue), not file count: with
+                    // numeric naming a partial download has fewer files than
+                    // pages, and a file-count clamp would shift the consume
+                    // index off the page the warm published (RD-2 consume side).
                     val warmIndex = (
                         if (initialPageOverride >= 0) initialPageOverride else startPageValue
-                        ).coerceIn(0, files.size - 1)
+                        ).coerceIn(0, sizeValue - 1)
                     val warmed = ReaderPageCache.consumeDecodedPage(
                         targetArcid, warmIndex, awaitInflightWarmMs = WARM_AWAIT_MS
                     )

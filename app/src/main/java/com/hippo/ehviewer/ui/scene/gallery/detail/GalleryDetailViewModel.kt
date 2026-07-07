@@ -22,8 +22,8 @@ import kotlin.math.roundToInt
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadInfoListener
 import com.hippo.ehviewer.download.DownloadManager
-import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.gallery.ReaderPageCache
+import com.hippo.ehviewer.gallery.ReadingProgressReconciler
 import com.hippo.ehviewer.gallery.ReadingProgressTracker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -472,19 +472,20 @@ class GalleryDetailViewModel : ViewModel() {
      * Either way, [DirGalleryProvider]/[com.hippo.ehviewer.gallery.LRRGalleryProvider]
      * gets a chance to skip the first-page decode on next reader open.
      */
-    private fun triggerReadingPreload(arcId: String, serverProgress: Int) {
+    private fun triggerReadingPreload(arcId: String) {
         detailPreloadJob?.cancel()
         val context = ServiceRegistry.appModule.getContext()
         val archive = _detailLoaded.replayCache.firstOrNull()?.archive ?: return
 
-        val localProgress = GalleryProvider2.loadReadingProgress(context, arcId)
-        val startPage = when {
-            serverProgress > 0 && localProgress > 0 ->
-                maxOf(serverProgress - 1, localProgress) // server is 1-indexed
-            serverProgress > 0 -> serverProgress - 1
-            localProgress > 0 -> localProgress
-            else -> 0
-        }
+        // Same offline-reconcile math as GalleryOpenHelper and the Dir seed
+        // (the old timestamp-blind maxOf heuristic could warm a page the
+        // reader's reconciler would never resolve to). `archive` here is the
+        // freshly-fetched detail metadata, so this also matches the restore
+        // flow's own fresh reconcile — the provider's post-resolve consume
+        // picks the slot up even when SP and snapshot disagree.
+        val startPage = ReadingProgressReconciler.resolveOffline(
+            context, arcId, archive.progress, archive.lastreadtime
+        )
 
         detailPreloadJob = viewModelScope.launch {
             // Resolve the local download directory (DB lookup) off the
@@ -798,7 +799,7 @@ class GalleryDetailViewModel : ViewModel() {
                 loadArchiveTankoubons()
 
                 // Preload reading pages in background
-                triggerReadingPreload(arcid, archive.progress)
+                triggerReadingPreload(arcid)
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 android.util.Log.e(TAG, "LRR metadata fetch failed", e)

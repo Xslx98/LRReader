@@ -105,6 +105,26 @@ internal object DirImageFiles {
     }
 
     /**
+     * Resolve a warm-decode target for [pageIndex] (0-indexed page space).
+     *
+     * @return (page index to publish, file position to decode), or null when
+     *   the dir uses numeric naming and the page is absent (a download gap) —
+     *   the warm must be SKIPPED, never shifted onto a neighbouring file
+     *   (decoding `files[pageIndex]` positionally is the RD-2 wrong-page bug).
+     *   Legacy positional dirs clamp into range, where page == position.
+     */
+    fun warmTarget(names: List<String>, pageIndex: Int): Pair<Int, Int>? {
+        if (names.isEmpty()) return null
+        val map = numericPageIndices(names)
+        if (map == null) {
+            val pos = pageIndex.coerceIn(0, names.size - 1)
+            return pos to pos
+        }
+        val pos = map[pageIndex] ?: return null
+        return pageIndex to pos
+    }
+
+    /**
      * Decode a single image file. Hops through a temp file when the
      * source isn't a [FileInputStream] (e.g. SAF `content://` URIs)
      * so the native decoder can mmap it. Caller should run on the

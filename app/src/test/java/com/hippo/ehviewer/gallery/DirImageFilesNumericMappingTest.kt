@@ -94,4 +94,36 @@ class DirImageFilesNumericMappingTest {
         val map = (0..49).associateWith { it }
         assertEquals(50, DirImageFiles.pageSpaceSize(map, 50, 0))
     }
+
+    // ── warmTarget ───────────────────────────────────────────────────
+
+    @Test
+    fun `warmTarget numeric dir maps page to its own file - the RD-2 case`() {
+        // Pages {1,2,3,7,8,9,10} at positions 0-6. Resume page 7 (0-indexed 6)
+        // must decode position 3 (its own file), NOT files[6] (= page 10).
+        val names = listOf(
+            "0001.jpg", "0002.jpg", "0003.jpg", "0007.jpg", "0008.jpg", "0009.jpg", "0010.jpg"
+        )
+        assertEquals(6 to 3, DirImageFiles.warmTarget(names, 6))
+    }
+
+    @Test
+    fun `warmTarget numeric dir missing page returns null`() {
+        assertNull(DirImageFiles.warmTarget(listOf("0001.jpg", "0003.jpg"), 1))
+    }
+
+    @Test
+    fun `warmTarget beyond numeric page space returns null`() {
+        assertNull(DirImageFiles.warmTarget(listOf("0001.jpg"), 99))
+    }
+
+    @Test
+    fun `warmTarget positional dir clamps and page equals position`() {
+        assertEquals(1 to 1, DirImageFiles.warmTarget(listOf("cover.jpg", "b.jpg"), 5))
+    }
+
+    @Test
+    fun `warmTarget empty dir returns null`() {
+        assertNull(DirImageFiles.warmTarget(emptyList(), 0))
+    }
 }

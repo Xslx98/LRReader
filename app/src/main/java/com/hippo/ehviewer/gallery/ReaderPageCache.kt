@@ -475,7 +475,9 @@ object ReaderPageCache : Cacheable {
      * eventually settles on after the metadata fetch, modulo a
      * server-progress override that may bump it. If the override
      * picks a different page the slot simply won't match on consume
-     * and the regular decode path runs.
+     * and the regular decode path runs. Numeric-named dirs resolve the
+     * page through [DirImageFiles.warmTarget]; a page missing from a
+     * partial download skips the warm.
      */
     fun warmDir(
         context: Context,
@@ -502,27 +504,36 @@ object ReaderPageCache : Cacheable {
                     Log.i(TAG, "[WARM] warmDir abort empty-dir arcid=$arcId")
                     return@launch
                 }
-                val pageIndex = (
-                    if (startPageOverride >= 0) {
-                        startPageOverride
-                    } else {
-                        GalleryProvider2.loadReadingProgress(context.applicationContext, arcId)
-                    }
-                    ).coerceIn(0, files.size - 1)
+                val requestedPage = if (startPageOverride >= 0) {
+                    startPageOverride
+                } else {
+                    GalleryProvider2.loadReadingProgress(context.applicationContext, arcId)
+                }
+                // Page-space -> file-position mapping (numeric worker naming).
+                // A missing page (partial-download gap) skips the warm outright:
+                // decoding files[page] positionally would hand the NEXT page's
+                // image to the slot under this page's index, and the provider
+                // cache would pin the wrong picture (RD-2).
+                val target = DirImageFiles.warmTarget(files.map { it.name ?: "" }, requestedPage)
+                if (target == null) {
+                    Log.i(TAG, "[WARM] warmDir skip missing page arcid=$arcId page=$requestedPage")
+                    return@launch
+                }
+                val (publishPage, filePos) = target
                 val image = withContext(
                     ServiceRegistry.coroutineModule.decoderDispatcher
                 ) {
-                    DirImageFiles.decode(context.applicationContext, files[pageIndex])
+                    DirImageFiles.decode(context.applicationContext, files[filePos])
                 }
                 if (image != null) {
-                    storeDecodedSlot(arcId, pageIndex, image)
+                    storeDecodedSlot(arcId, publishPage, image)
                     Log.i(
                         TAG,
-                        "[WARM] warmDir done arcid=$arcId page=$pageIndex " +
+                        "[WARM] warmDir done arcid=$arcId page=$publishPage " +
                             "elapsedMs=${System.currentTimeMillis() - startMs}"
                     )
                 } else {
-                    Log.i(TAG, "[WARM] warmDir decode null arcid=$arcId page=$pageIndex")
+                    Log.i(TAG, "[WARM] warmDir decode null arcid=$arcId page=$publishPage")
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "[WARM] warmDir failed for $arcId: ${e.message}")
