@@ -59,7 +59,8 @@ object GalleryOpenHelper {
     /**
      * The downloads/history scenes reach [buildReadIntent] through lossy
      * view mappers (`DownloadInfo`/`HistoryInfo.toArchive()`) that
-     * deliberately zero `progress`/`lastreadtime` — those fields
+     * deliberately zero `progress` (the history variant carries only its
+     * own read-open time, not the server progress pair) — those fields
      * round-trip via detail fetches. The warm target and the dir
      * provider's start-page seed both need the Room snapshot, so when the
      * caller's Archive carries no progress, overlay the pair from the

@@ -293,8 +293,11 @@ object EhDB {
                         }
                         val mode = it.getInt(1)
                         val time = it.getLong(2)
+                        // Legacy history TIME is device milliseconds; the
+                        // archive_json field is epoch SECONDS. The HISTORY_TIME
+                        // column below keeps the milliseconds.
                         val archive = shellArchive(gi.arcid, gi.title, gi.thumb, gi.rating)
-                            .copy(lastreadtime = time)
+                            .copy(lastreadtime = time / 1000L)
                         val archiveJson = archive.toArchiveJson()
                         archiveLocalStateDao.insertOrIgnoreHistory(gi.arcid, 0L, archiveJson, time, mode)
                         archiveLocalStateDao.updateHistoryFields(gi.arcid, 0L, archiveJson, time, mode)

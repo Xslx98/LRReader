@@ -42,7 +42,10 @@ class HistoryRepository(
         upsertHistorySubsystem(
             arcid = archive.arcid,
             serverProfileId = archive.serverProfileId,
-            archiveJson = archive.copy(lastreadtime = now).toArchiveJson(),
+            // archive_json `lastreadtime` is epoch SECONDS (LANraragi
+            // semantics — the reconciler compares it against SP saves);
+            // only the HISTORY_TIME column keeps device milliseconds.
+            archiveJson = archive.copy(lastreadtime = now / 1000L).toArchiveJson(),
             historyTime = now,
             historyMode = 0,
         )
@@ -96,7 +99,8 @@ class HistoryRepository(
      * payload fails to decode. The reader's warm-up/seed path overlays its
      * `progress`/`lastreadtime` when the caller's Archive went through a
      * lossy view mapper (DownloadInfo/HistoryInfo.toArchive() deliberately
-     * zero those fields — they round-trip via detail fetches).
+     * zero `progress` and carry no server progress pair — those round-trip
+     * via detail fetches).
      */
     suspend fun getArchiveSnapshot(arcid: String, profileId: Long): Archive? {
         val row = dao.loadByArcidAndProfile(arcid, profileId) ?: return null
