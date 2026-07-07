@@ -10,6 +10,7 @@ import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.friendlyError
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -89,6 +90,7 @@ class TankoubonsViewModel : ViewModel() {
                 _tanks.value = fetchAllTanks(serverUrl)
                 _isLoading.value = false
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to load tankoubons", e)
                 _isLoading.value = false
                 val context = ServiceRegistry.appModule.getContext()
@@ -111,6 +113,7 @@ class TankoubonsViewModel : ViewModel() {
                 _uiEvent.tryEmit(TankUiEvent.ShowSuccess(R.string.tank_op_done))
                 loadTankoubonsInternal()
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to create tankoubon", e)
                 val context = ServiceRegistry.appModule.getContext()
                 _uiEvent.tryEmit(TankUiEvent.ShowError(errorMessage(context, e)))
@@ -132,6 +135,7 @@ class TankoubonsViewModel : ViewModel() {
                 _uiEvent.tryEmit(TankUiEvent.ShowSuccess(R.string.tank_op_done))
                 loadTankoubonsInternal()
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to rename tankoubon", e)
                 val context = ServiceRegistry.appModule.getContext()
                 _uiEvent.tryEmit(TankUiEvent.ShowError(errorMessage(context, e)))
@@ -154,6 +158,7 @@ class TankoubonsViewModel : ViewModel() {
                 _uiEvent.tryEmit(TankUiEvent.ShowSuccess(R.string.tank_op_done))
                 loadTankoubonsInternal()
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to update tankoubon metadata", e)
                 val context = ServiceRegistry.appModule.getContext()
                 _uiEvent.tryEmit(TankUiEvent.ShowError(errorMessage(context, e)))
@@ -176,6 +181,7 @@ class TankoubonsViewModel : ViewModel() {
                 _uiEvent.tryEmit(TankUiEvent.ShowSuccess(R.string.tank_op_done))
                 loadTankoubonsInternal()
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to delete tankoubon", e)
                 val context = ServiceRegistry.appModule.getContext()
                 _uiEvent.tryEmit(TankUiEvent.ShowError(errorMessage(context, e)))
@@ -197,6 +203,7 @@ class TankoubonsViewModel : ViewModel() {
 
             _tanks.value = fetchAllTanks(serverUrl)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "Failed to reload tankoubons after CRUD", e)
             val context = ServiceRegistry.appModule.getContext()
             _uiEvent.tryEmit(TankUiEvent.ShowError(errorMessage(context, e)))

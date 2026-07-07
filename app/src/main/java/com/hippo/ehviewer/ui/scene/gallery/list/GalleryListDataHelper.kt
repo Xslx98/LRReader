@@ -13,6 +13,7 @@ import com.lanraragi.reader.client.api.LRRArchivePagingSource
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.hippo.ehviewer.widget.GalleryInfoContentHelper
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -116,6 +117,7 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
                     }
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "LRR paging search failed", e)
                 withContext(Dispatchers.Main) {
                     onGetFailure(e, taskId)
