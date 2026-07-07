@@ -385,6 +385,29 @@ class DownloadSchedulerTest {
     }
 
     @Test
+    fun dispatchEvent_onPageSuccess_republishesPartialExcludingDonePage() {
+        val info = makeInfo(8L)
+        scheduler.activeTasks.add(info)
+        info.state = DownloadState.DOWNLOAD
+
+        // Two pages in flight; page 0 completes.
+        speedTracker.onDownload(info.arcid, 0, 1000L, 1000L, 1000)
+        speedTracker.onDownload(info.arcid, 1, 2000L, 500L, 500)
+
+        scheduler.dispatchEvent(
+            DownloadScheduler.DownloadEvent.OnPageSuccess(
+                taskInfo = info, index = 0, finished = 1, downloaded = 1, total = 10
+            )
+        )
+        ShadowLooper.idleMainLooper()
+
+        val snap = progressTracker.snapshot(info.arcid)!!
+        assertEquals(1, snap.finished)
+        // onDone dropped page 0 before the update → only page 1's 500/2000 remains.
+        assertEquals(0.25f, snap.partialPages, 0.0001f)
+    }
+
+    @Test
     fun stopDownload_clearsProgressTrackerEntry() {
         val info = makeInfo(4L)
         scheduler.waitList.add(info)
