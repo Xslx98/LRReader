@@ -452,6 +452,11 @@ class DirGalleryProvider : GalleryProvider2 {
                         // the gate immediately.
                         initialRestoreCompleted.set(true)
                     }
+                } catch (e: CancellationException) {
+                    // Reader closed mid-restore (NET-3): release the save gate
+                    // without logging a spurious restore-failure warning.
+                    initialRestoreCompleted.set(true)
+                    throw e
                 } catch (e: Exception) {
                     Log.w(TAG, "[PROGRESS] Restore flow failed: ${e.message}")
                     initialRestoreCompleted.set(true)
