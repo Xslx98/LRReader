@@ -19,6 +19,7 @@ import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.util.concurrent.ConcurrentHashMap
+import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -194,6 +195,9 @@ object ReaderPageCache : Cacheable {
      * Thread-safe for *different* files; caller must handle same-file concurrency
      * (e.g. striped locks in [LRRGalleryProvider]).
      *
+     * @param onCallCreated invoked with the underlying [Call] before execution so
+     *   callers can sever the request (including an in-flight body stream) from
+     *   lifecycle hooks — see LRRGalleryProvider.stop()/onCancelRequest (NET-3).
      * @throws IOException on network error, incomplete download, or invalid image
      */
     @Throws(IOException::class)
@@ -202,7 +206,8 @@ object ReaderPageCache : Cacheable {
         url: String,
         cacheFile: File,
         pageIndex: Int = 0,
-        progressCallback: ProgressCallback? = null
+        progressCallback: ProgressCallback? = null,
+        onCallCreated: ((Call) -> Unit)? = null
     ) {
         if (cacheFile.exists() && cacheFile.length() > MIN_IMAGE_SIZE) return
 
@@ -216,7 +221,9 @@ object ReaderPageCache : Cacheable {
             var contentLength: Long = -1
             var totalRead: Long = 0
 
-            client.newCall(request).execute().use { response ->
+            val call = client.newCall(request)
+            onCallCreated?.invoke(call)
+            call.execute().use { response ->
                 if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
                 val body = response.body ?: throw IOException("Empty response body")
                 contentLength = body.contentLength()
