@@ -389,6 +389,21 @@ class DirGalleryProvider : GalleryProvider2 {
                             readAnchor = startPageValue
                             if (arcId != null) saveReadingProgress(context, arcId!!, resolvedPage)
                         }
+                        // Second consume at the reconciled page (mirrors
+                        // LRRGalleryProvider's post-reconcile consume): when the
+                        // warm targeted a different page than the pre-notify
+                        // consume asked for, the slot is still parked — publish
+                        // it so the jump below lands on an already-decoded page
+                        // instead of a loading placeholder. Index-matched: a
+                        // non-matching slot is left intact, at most one of the
+                        // two consumes hits.
+                        val warmed = ReaderPageCache.consumeDecodedPage(
+                            arcId!!, resolvedPage, awaitInflightWarmMs = WARM_AWAIT_MS
+                        )
+                        if (warmed != null) {
+                            Log.i(TAG, "[PROGRESS] decoded slot HIT (post-resolve) for page=$resolvedPage")
+                            notifyPageSucceed(resolvedPage, warmed)
+                        }
                         // Jump GalleryView if needed. Order matters:
                         //   1. wait for the file enum coroutine to finish
                         //      enqueuing notifyDataChanged (deferred signal),
@@ -523,14 +538,18 @@ class DirGalleryProvider : GalleryProvider2 {
                 // 300ms fade-in — the visible flicker when opening a
                 // downloaded archive.
                 val targetArcid = arcId
-                // files.isNotEmpty() guard: coerceIn(0, files.size - 1) throws
-                // for an empty dir (coerceIn(0, -1) is an empty range), and the
-                // exception would skip notifyDataChanged() below, leaving the
-                // reader stuck on a permanent spinner.
+                // files.isNotEmpty() guard: an empty dir has sizeValue == 0 so
+                // coerceIn(0, -1) throws (empty range), and the exception would
+                // skip notifyDataChanged() below, leaving the reader stuck on a
+                // permanent spinner.
                 if (targetArcid != null && files.isNotEmpty()) {
+                    // Clamp in PAGE space (sizeValue), not file count: with
+                    // numeric naming a partial download has fewer files than
+                    // pages, and a file-count clamp would shift the consume
+                    // index off the page the warm published (RD-2 consume side).
                     val warmIndex = (
                         if (initialPageOverride >= 0) initialPageOverride else startPageValue
-                        ).coerceIn(0, files.size - 1)
+                        ).coerceIn(0, sizeValue - 1)
                     val warmed = ReaderPageCache.consumeDecodedPage(
                         targetArcid, warmIndex, awaitInflightWarmMs = WARM_AWAIT_MS
                     )
