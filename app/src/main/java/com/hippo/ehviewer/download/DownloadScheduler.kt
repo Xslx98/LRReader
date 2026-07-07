@@ -349,11 +349,16 @@ internal class DownloadScheduler(
             is DownloadEvent.OnPageSuccess -> {
                 speedTracker.onDone(event.taskInfo.arcid, event.index)
                 val info = event.taskInfo
+                // onDone above already dropped the completed page from the
+                // byte maps, so this recomputed fraction excludes it exactly
+                // as `finished` starts counting it — no double count, no
+                // backward blip while waiting for the next tick.
                 progressTracker.update(
                     info.arcid,
                     finished = event.finished,
                     downloaded = event.downloaded,
-                    total = event.total
+                    total = event.total,
+                    partialPages = speedTracker.partialFor(info.arcid)
                 )
                 eventBus.getDownloadListener()?.onGetPage(info)
                 val list = repo.getInfoListForLabel(info.label)
@@ -366,11 +371,15 @@ internal class DownloadScheduler(
             is DownloadEvent.OnPageFailure -> {
                 speedTracker.onDone(event.taskInfo.arcid, event.index)
                 val info = event.taskInfo
+                // Same ordering contract as OnPageSuccess: the failed page is
+                // already out of the byte maps, so its stale fraction cannot
+                // linger on the bar until the next tick.
                 progressTracker.update(
                     info.arcid,
                     finished = event.finished,
                     downloaded = event.downloaded,
-                    total = event.total
+                    total = event.total,
+                    partialPages = speedTracker.partialFor(info.arcid)
                 )
                 val list = repo.getInfoListForLabel(info.label)
                 if (list != null) {

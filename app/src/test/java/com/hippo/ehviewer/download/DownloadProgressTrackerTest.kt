@@ -43,6 +43,16 @@ class DownloadProgressTrackerTest {
     }
 
     @Test
+    fun `update merges partialPages`() {
+        val tracker = DownloadProgressTracker()
+        tracker.update("abc", total = 10)
+        tracker.update("abc", partialPages = 1.5f)
+        val snap = tracker.snapshot("abc")!!
+        assertEquals(10, snap.total)
+        assertEquals(1.5f, snap.partialPages, 0.0001f)
+    }
+
+    @Test
     fun `clear removes the entry`() {
         val tracker = DownloadProgressTracker()
         tracker.update("abc", speed = 100L)

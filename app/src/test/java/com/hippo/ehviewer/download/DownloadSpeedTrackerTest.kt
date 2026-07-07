@@ -1,6 +1,10 @@
 package com.hippo.ehviewer.download
 
 import com.hippo.ehviewer.dao.DownloadInfo
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -177,5 +181,52 @@ class DownloadSpeedTrackerTest {
         tracker.run()
         tracker.run() // second run, oldSpeed=0, newSpeed=0
         assertEquals(300L * 24 * 60 * 60 * 1000L, snap().remaining)
+    }
+
+    // ─── Byte-level fractional progress (status §3.8 #1) ───
+
+    @Test
+    fun partialFor_sumsInFlightPageFractions() {
+        tracker.onDownload(arcid, 0, 1000L, 250L, 250)   // 0.25
+        tracker.onDownload(arcid, 1, 2000L, 1000L, 1000) // 0.50
+        assertEquals(0.75f, tracker.partialFor(arcid), 0.0001f)
+    }
+
+    @Test
+    fun partialFor_clampsOverReceivedAndSkipsUnknownLength() {
+        tracker.onDownload(arcid, 0, 1000L, 1500L, 100) // over-received → clamp 1.0
+        tracker.onDownload(arcid, 1, -1L, 500L, 100)    // unknown length → 0
+        tracker.onDownload(arcid, 2, 0L, 500L, 100)     // zero length → 0
+        assertEquals(1.0f, tracker.partialFor(arcid), 0.0001f)
+    }
+
+    @Test
+    fun partialFor_excludesDonePagesAndFinishedArchives() {
+        tracker.onDownload(arcid, 0, 1000L, 500L, 500)
+        tracker.onDownload(arcid, 1, 1000L, 1000L, 1000)
+        tracker.onDone(arcid, 1)
+        assertEquals(0.5f, tracker.partialFor(arcid), 0.0001f)
+        tracker.onFinish(arcid)
+        assertEquals(0f, tracker.partialFor(arcid), 0.0001f)
+        assertEquals(0f, tracker.partialFor("never-seen"), 0.0001f)
+    }
+
+    @Test
+    fun run_publishesPartialPagesIntoSnapshot() {
+        tracker.onDownload(arcid, 0, 1000L, 250L, 250)
+        tracker.run()
+        assertEquals(0.25f, snap().partialPages, 0.0001f)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun run_emitsExactlyOncePerArchivePerTick() = runTest(UnconfinedTestDispatcher()) {
+        val emissions = mutableListOf<Map<String, ProgressSnapshot>>()
+        val job = launch { progressTracker.progressFlow.collect { emissions.add(it) } }
+        tracker.onDownload(arcid, 0, 1000L, 500L, 500)
+        val before = emissions.size
+        tracker.run() // one consolidated update → exactly one StateFlow emission
+        job.cancel()
+        assertEquals(1, emissions.size - before)
     }
 }
