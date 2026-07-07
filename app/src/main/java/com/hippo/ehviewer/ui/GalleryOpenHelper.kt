@@ -7,6 +7,7 @@ import com.hippo.ehviewer.BuildConfig
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.gallery.ReaderPageCache
+import com.hippo.ehviewer.gallery.ReadingProgressReconciler
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.lib.yorozuya.StringUtils
@@ -79,9 +80,18 @@ object GalleryOpenHelper {
             // user sees the loading placeholder.
             UniFile.fromFile(downloadDir)?.let { uniFile ->
                 if (BuildConfig.DEBUG) Log.i(TAG, "[WARM] openHelper DIR trigger arcid=${archive.arcid}")
-                // Pass the explicit start page (thumbnail tap) so the warm
-                // decodes the page the reader will actually open on.
-                ReaderPageCache.warmDir(context, archive.arcid, uniFile, startPage)
+                // Explicit start page (thumbnail tap) wins; otherwise the
+                // offline reconcile — the SAME math and inputs that seed
+                // DirGalleryProvider's start page, so the warm target and the
+                // provider's slot-consume index agree and the hand-off hits.
+                val warmPage = if (startPage >= 0) {
+                    startPage
+                } else {
+                    ReadingProgressReconciler.resolveOffline(
+                        context, archive.arcid, archive.progress, archive.lastreadtime
+                    )
+                }
+                ReaderPageCache.warmDir(context, archive.arcid, uniFile, warmPage)
             }
         } else {
             // No local files, or an incomplete local copy with network up —
@@ -112,10 +122,15 @@ object GalleryOpenHelper {
                 // Warmup the slot the user will actually land on: an
                 // explicit startPage overrides the saved progress so
                 // tapping a thumbnail decodes that exact page next.
+                // Otherwise reconcile SP vs the Room snapshot — the raw
+                // `progress - 1` ignored a further-along local save and
+                // warmed a page the reader would never open on.
                 val warmupPage = if (startPage >= 0) {
                     startPage
                 } else {
-                    (archive.progress - 1).coerceAtLeast(0)
+                    ReadingProgressReconciler.resolveOffline(
+                        context, archive.arcid, archive.progress, archive.lastreadtime
+                    )
                 }
                 if (BuildConfig.DEBUG) Log.i(TAG, "[WARM] openHelper LRR trigger arcid=${archive.arcid} page=$warmupPage")
                 ReaderPageCache.preloadForDetail(context, archive.arcid, serverUrl, warmupPage)
