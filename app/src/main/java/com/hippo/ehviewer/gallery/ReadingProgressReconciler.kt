@@ -9,6 +9,7 @@
  */
 package com.hippo.ehviewer.gallery
 
+import android.content.Context
 import kotlin.math.max
 
 /**
@@ -56,4 +57,48 @@ internal object ReadingProgressReconciler {
             else -> max(serverPage0, localPage0)
         }
     }
+
+    /**
+     * Any epoch value above this is clearly milliseconds, not seconds
+     * (100_000_000_000 s ≈ year 5138). Stored `archive_json` snapshots are a
+     * historical mixed bag: server fetches persist epoch-seconds, while the
+     * history write path stamps `System.currentTimeMillis()` — see
+     * [normalizeEpochSeconds].
+     */
+    private const val MS_EPOCH_THRESHOLD = 100_000_000_000L
+
+    /**
+     * Normalize a snapshot `lastreadtime` to epoch seconds. Feeding a
+     * milliseconds value into [resolve]'s ±[CLOCK_SKEW_GRACE_SECONDS] math
+     * makes the snapshot side win unconditionally — a stale snapshot would
+     * beat a genuinely-newer local save.
+     */
+    fun normalizeEpochSeconds(ts: Long): Long =
+        if (ts > MS_EPOCH_THRESHOLD) ts / 1000L else ts
+
+    /**
+     * Offline best-guess start page: reconcile the locally-saved SP progress
+     * against the Room archive snapshot's server progress
+     * ([com.lanraragi.reader.domain.Archive.progress] /
+     * [com.lanraragi.reader.domain.Archive.lastreadtime]) with the same math
+     * as the online restore. Single source of truth for every reader warm-up
+     * trigger AND [DirGalleryProvider]'s start-page seed — warm target, seed
+     * and slot-consume index must agree for the decoded-page hand-off to hit.
+     *
+     * @param snapshotProgress1 1-indexed progress from the archive snapshot (<=0 = none)
+     * @param snapshotTs epoch seconds `lastreadtime` from the archive snapshot
+     *   (milliseconds tolerated — normalized via [normalizeEpochSeconds])
+     * @return 0-indexed page
+     */
+    fun resolveOffline(
+        context: Context,
+        arcid: String,
+        snapshotProgress1: Int,
+        snapshotTs: Long,
+    ): Int = resolve(
+        GalleryProvider2.loadReadingProgress(context, arcid),
+        GalleryProvider2.loadReadingTimestamp(context, arcid),
+        snapshotProgress1,
+        normalizeEpochSeconds(snapshotTs),
+    )
 }

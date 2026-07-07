@@ -91,6 +91,21 @@ class HistoryRepository(
     }
 
     /**
+     * Read the persisted archive snapshot (the row's `archive_json`) for
+     * [arcid] on [profileId], or null when there is no local row or the
+     * payload fails to decode. The reader's warm-up/seed path overlays its
+     * `progress`/`lastreadtime` when the caller's Archive went through a
+     * lossy view mapper (DownloadInfo/HistoryInfo.toArchive() deliberately
+     * zero those fields — they round-trip via detail fetches).
+     */
+    suspend fun getArchiveSnapshot(arcid: String, profileId: Long): Archive? {
+        val row = dao.loadByArcidAndProfile(arcid, profileId) ?: return null
+        return runCatching {
+            ArchiveLocalStateJson.decodeFromString(Archive.serializer(), row.archiveJson)
+        }.getOrNull()
+    }
+
+    /**
      * Persist the intra-page scroll fraction (0.0 ~ 1.0) for [arcid].
      * Local-only — never goes to the LANraragi server. The DAO update
      * is a no-op if the archive doesn't yet have a history row, which

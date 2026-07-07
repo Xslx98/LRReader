@@ -181,7 +181,8 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                     val archive = mArchive
                     mGalleryProvider = if (archive != null) {
                         DirGalleryProvider(
-                            uniFile, this, archive.arcid, archive.serverProfileId
+                            uniFile, this, archive.arcid, archive.serverProfileId,
+                            archive.progress, archive.lastreadtime,
                         ).also {
                             it.expectedPageCount = archive.pagecount
                         }
