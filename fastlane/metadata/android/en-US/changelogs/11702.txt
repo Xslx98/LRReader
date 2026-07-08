@@ -1,0 +1,4 @@
+- New: the download progress bar now advances smoothly, byte by byte.
+- Accessibility: the auto page-turn button now works with TalkBack, and small buttons in downloads, the reader and details meet the 48dp touch target.
+- Fixed: an occasional details-page crash, a crash on failed list loads, wrong pages when resuming some archives, and stale text after a language change.
+- Fixed: leaving the reader or stopping a download now cancels ongoing network requests right away.
