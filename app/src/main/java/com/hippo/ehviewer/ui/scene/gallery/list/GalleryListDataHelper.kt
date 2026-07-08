@@ -179,9 +179,14 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
     }
 
     private fun onGetFailure(e: Exception, taskId: Int) {
-        if (isCurrentTask(taskId)) {
-            onGetException(taskId, e)
-        }
+        if (!isCurrentTask(taskId)) return
+        // The load runs on the process-level ioScope and outlives this Scene, so a
+        // slow failure (up to the OkHttp timeout) can arrive after the Scene has
+        // been popped. By then getContext() is null, and the framework
+        // onGetException would deref it (friendlyError / Toast.makeText) and crash
+        // on the main thread. Drop the stale failure when there is no live host.
+        if (getContext() == null) return
+        onGetException(taskId, e)
     }
 
     companion object {
