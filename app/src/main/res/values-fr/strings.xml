@@ -898,6 +898,8 @@ Cette action est irréversible.</string>
     <string name="cd_drag_handle">Glisser pour réorganiser</string>
     <string name="cd_start_download">Démarrer le téléchargement</string>
     <string name="cd_stop_download">Arrêter le téléchargement</string>
+    <string name="cd_start_auto_read">Démarrer le défilement automatique</string>
+    <string name="cd_stop_auto_read">Arrêter le défilement automatique</string>
     <string name="cd_downloaded">Téléchargé</string>
     <string name="cd_random">Aléatoire</string>
     <string name="cd_tag_filter">Filtre de tags</string>

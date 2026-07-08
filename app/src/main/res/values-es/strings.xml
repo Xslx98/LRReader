@@ -893,6 +893,8 @@ Esta acción no se puede deshacer.</string>
     <string name="cd_drag_handle">Arrastrar para reordenar</string>
     <string name="cd_start_download">Iniciar descarga</string>
     <string name="cd_stop_download">Detener descarga</string>
+    <string name="cd_start_auto_read">Iniciar transferencia automática</string>
+    <string name="cd_stop_auto_read">Detener transferencia automática</string>
     <string name="cd_downloaded">Descargado</string>
     <string name="cd_random">Aleatorio</string>
     <string name="cd_tag_filter">Filtro de etiquetas</string>
