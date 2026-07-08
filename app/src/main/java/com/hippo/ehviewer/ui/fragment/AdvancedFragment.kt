@@ -22,6 +22,7 @@ import androidx.preference.Preference
 import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.util.LogCat
 import com.hippo.util.ReadableTime
 import java.io.File
@@ -83,8 +84,16 @@ class AdvancedFragment : BasePreferenceFragmentCompat(),
     override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
         val key = preference.key
         if (KEY_APP_LANGUAGE == key) {
-            (requireActivity().application as EhApplication).recreate()
-            return true
+            val language = newValue as? String ?: return false
+            // A language change must refresh the application-context strings behind
+            // GetText / notifications / services, which only re-resolve their locale
+            // when attachBaseContext runs on a fresh process. An activity recreate()
+            // cannot do that, so restart the whole process. Persist the new value
+            // first (synchronously — see putAppLanguage) so the fresh process reads
+            // it in attachBaseContext.
+            AppearanceSettings.putAppLanguage(language)
+            (requireActivity().application as EhApplication).restart()
+            return false
         }
         return false
     }

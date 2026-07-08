@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.content.res.Resources
 import androidx.annotation.DimenRes
+import androidx.core.content.edit
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.LRRUtils
@@ -225,7 +226,14 @@ object AppearanceSettings {
     fun getAppLanguage(): String = Settings.getString(KEY_APP_LANGUAGE, DEFAULT_APP_LANGUAGE) ?: DEFAULT_APP_LANGUAGE
 
     @JvmStatic
-    fun putAppLanguage(value: String?) = Settings.putString(KEY_APP_LANGUAGE, value)
+    fun putAppLanguage(value: String?) {
+        // Persist synchronously (commit, not apply): a language change immediately
+        // restarts the process via Process.killProcess, and a hard kill does not
+        // flush QueuedWork — an async apply() could lose the write, leaving the
+        // fresh process to read the old locale in attachBaseContext. Writes to the
+        // default SharedPreferences, the exact store attachBaseContext reads.
+        Settings.getPreferences().edit(commit = true) { putString(KEY_APP_LANGUAGE, value) }
+    }
 
     /**
      * Resolve a persisted [KEY_APP_LANGUAGE] value into a [Locale].
