@@ -18,6 +18,8 @@ package com.hippo.ehviewer
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.ComponentCallbacks2
 import android.content.ComponentName
 import android.content.Context
@@ -26,6 +28,7 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.os.Debug
+import android.os.Process
 import android.os.Trace
 import android.util.Log
 import com.hippo.Native
@@ -407,6 +410,41 @@ class EhApplication : RecordingApplication() {
     fun clearMemoryCache() {
         ServiceRegistry.clientModule.clearMemoryCache()
         ServiceRegistry.dataModule.clearArchiveDetailCache()
+    }
+
+    /**
+     * Restart the whole app process ("rebirth"). Schedules a one-shot inexact
+     * alarm to relaunch the launcher activity ~100 ms after this process is
+     * killed; standard ProcessPhoenix-style pattern, no extra permission needed
+     * (`AlarmManager.set` with `RTC` is inexact and exempt from
+     * SCHEDULE_EXACT_ALARM on API 31+). Uses `getLaunchIntentForPackage` so the
+     * relaunched task starts at whichever Activity is the registered launcher.
+     *
+     * Unlike [recreate] (which only re-creates the live activities), this rebuilds
+     * everything bound to the application context at process start — the wrapped
+     * locale, GetText's cached resources, notification/service strings — because
+     * the fresh process re-runs [attachBaseContext]. Use it for changes an
+     * activity recreate cannot pick up, e.g. an in-app language switch.
+     *
+     * Callers finishing their own task first (e.g. `finishAffinity()`) should do
+     * so before calling this; this method itself only schedules the relaunch and
+     * kills the process.
+     */
+    fun restart() {
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.also {
+            it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        }
+        if (launchIntent != null) {
+            val pendingIntent = PendingIntent.getActivity(
+                this,
+                0,
+                launchIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+            val alarm = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            alarm.set(AlarmManager.RTC, System.currentTimeMillis() + 100, pendingIntent)
+        }
+        Process.killProcess(Process.myPid())
     }
 
     // --- GlobalStuff delegation ---
