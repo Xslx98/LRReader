@@ -17,8 +17,6 @@
 package com.hippo.ehviewer.ui
 
 import android.annotation.SuppressLint
-import android.app.AlarmManager
-import android.app.PendingIntent
 import android.content.ClipboardManager
 import android.util.Log
 import com.hippo.ehviewer.BuildConfig
@@ -32,7 +30,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
-import android.os.Process
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -569,30 +566,13 @@ class MainActivity : StageActivity(),
     }
 
     /**
-     * Restart the whole app process. Schedules a one-shot inexact alarm to
-     * relaunch the launcher activity ~100 ms after the current process is
-     * killed; standard ProcessPhoenix-style pattern, no extra permission
-     * needed (`AlarmManager.set` with `RTC` is inexact and exempt from
-     * SCHEDULE_EXACT_ALARM on API 31+). Uses `getLaunchIntentForPackage` so
-     * the relaunched task starts at whichever Activity is the registered
-     * launcher in the current build.
+     * Restart the whole app process, finishing this task's activities first so the
+     * relaunch starts from a clean stack. The process-rebirth mechanics live in
+     * [EhApplication.restart].
      */
     private fun triggerRebirth() {
-        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.also {
-            it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        }
-        if (launchIntent != null) {
-            val pendingIntent = PendingIntent.getActivity(
-                this,
-                0,
-                launchIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-            )
-            val alarm = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            alarm.set(AlarmManager.RTC, System.currentTimeMillis() + 100, pendingIntent)
-        }
         finishAffinity()
-        Process.killProcess(Process.myPid())
+        (application as EhApplication).restart()
     }
 
     override fun onStart() {
