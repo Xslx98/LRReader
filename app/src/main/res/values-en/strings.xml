@@ -845,6 +845,8 @@
     <string name="cd_drag_handle">Drag to reorder</string>
     <string name="cd_start_download">Start download</string>
     <string name="cd_stop_download">Stop download</string>
+    <string name="cd_start_auto_read">Start auto page-turn</string>
+    <string name="cd_stop_auto_read">Stop auto page-turn</string>
     <string name="cd_downloaded">Downloaded</string>
     <string name="cd_random">Random</string>
     <string name="cd_tag_filter">Tag filter</string>

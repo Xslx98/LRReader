@@ -874,6 +874,8 @@
     <string name="cd_drag_handle">拖动排序</string>
     <string name="cd_start_download">开始下载</string>
     <string name="cd_stop_download">停止下载</string>
+    <string name="cd_start_auto_read">开始自动翻页</string>
+    <string name="cd_stop_auto_read">停止自动翻页</string>
     <string name="cd_downloaded">已下载</string>
     <string name="cd_random">随机</string>
     <string name="cd_tag_filter">标签筛选</string>
