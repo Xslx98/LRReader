@@ -180,9 +180,11 @@ class GalleryInputHandler(private val mCallback: Callback) {
 
         if (!isAutoTransferring) {
             panel.setImageResource(R.drawable.ic_start_play_24)
+            panel.contentDescription = panel.context.getString(R.string.cd_start_auto_read)
             stopAutoReadTimer()
         } else {
             panel.setImageResource(R.drawable.ic_pause_circle)
+            panel.contentDescription = panel.context.getString(R.string.cd_stop_auto_read)
             startAutoReadTimer()
         }
     }

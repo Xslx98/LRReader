@@ -787,6 +787,8 @@
     <string name="cd_drag_handle">ドラッグして並べ替え</string>
     <string name="cd_start_download">ダウンロード開始</string>
     <string name="cd_stop_download">ダウンロード停止</string>
+    <string name="cd_start_auto_read">自動送りを開始</string>
+    <string name="cd_stop_auto_read">自動送りを停止</string>
     <string name="cd_downloaded">ダウンロード済み</string>
     <string name="cd_random">ランダム</string>
     <string name="cd_tag_filter">タグフィルター</string>

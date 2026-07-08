@@ -850,6 +850,8 @@
     <string name="cd_drag_handle">ลากเพื่อจัดลำดับ</string>
     <string name="cd_start_download">เริ่มดาวน์โหลด</string>
     <string name="cd_stop_download">หยุดดาวน์โหลด</string>
+    <string name="cd_start_auto_read">Start auto page-turn</string>
+    <string name="cd_stop_auto_read">Stop auto page-turn</string>
     <string name="cd_downloaded">ดาวน์โหลดแล้ว</string>
     <string name="cd_random">สุ่ม</string>
     <string name="cd_tag_filter">ตัวกรองแท็ก</string>

@@ -804,6 +804,8 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="cd_drag_handle">Zum Sortieren ziehen</string>
     <string name="cd_start_download">Download starten</string>
     <string name="cd_stop_download">Download stoppen</string>
+    <string name="cd_start_auto_read">Automatische Übertragung starten</string>
+    <string name="cd_stop_auto_read">Automatische Übertragung stoppen</string>
     <string name="cd_downloaded">Heruntergeladen</string>
     <string name="cd_random">Zufällig</string>
     <string name="cd_tag_filter">Tag-Filter</string>
