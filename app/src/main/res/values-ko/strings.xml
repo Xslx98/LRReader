@@ -858,6 +858,8 @@
     <string name="cd_drag_handle">드래그하여 순서 변경</string>
     <string name="cd_start_download">다운로드 시작</string>
     <string name="cd_stop_download">다운로드 중지</string>
+    <string name="cd_start_auto_read">자동 전환 시작</string>
+    <string name="cd_stop_auto_read">자동 전환 중지</string>
     <string name="cd_downloaded">다운로드됨</string>
     <string name="cd_random">무작위</string>
     <string name="cd_tag_filter">태그 필터</string>

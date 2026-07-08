@@ -148,20 +148,22 @@
                 android:paddingEnd="8dp"
                 tools:ignore="RtlSymmetry">
 
+                <!-- 48dp min touch target (RES-2); 12dp padding keeps the icon
+                     at 24dp so the card's visual density is unchanged. -->
                 <ImageView
                     android:id="@+id/start"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:padding="8dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:padding="12dp"
                     android:layout_marginEnd="8dp"
                     android:contentDescription="@string/cd_start_download"
                     app:srcCompat="@drawable/v_play_x24"/>
 
                 <ImageView
                     android:id="@+id/stop"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:padding="8dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:padding="12dp"
                     android:contentDescription="@string/cd_stop_download"
                     app:srcCompat="@drawable/v_pause_x24"/>
 
