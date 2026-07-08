@@ -81,8 +81,8 @@
 
         <ImageView
             android:id="@+id/auto_transfer"
-            android:layout_width="45dp"
-            android:layout_height="45dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_marginEnd="16dp"
             android:layout_marginBottom="12dp"
             android:contentDescription="@string/cd_start_auto_read"
