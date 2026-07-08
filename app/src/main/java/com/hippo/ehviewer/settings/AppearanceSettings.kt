@@ -2,6 +2,7 @@ package com.hippo.ehviewer.settings
 
 import android.content.Context
 import android.content.res.Configuration
+import android.content.res.Resources
 import androidx.annotation.DimenRes
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.Settings
@@ -225,6 +226,33 @@ object AppearanceSettings {
 
     @JvmStatic
     fun putAppLanguage(value: String?) = Settings.putString(KEY_APP_LANGUAGE, value)
+
+    /**
+     * Resolve a persisted [KEY_APP_LANGUAGE] value into a [Locale].
+     *
+     * [DEFAULT_APP_LANGUAGE] ("system"), `null`, or an unparseable value all mean
+     * "follow the device locale" and return the system configuration locale.
+     * Otherwise the value is a hyphen-separated tag: `ja`, `zh-CN`, `de-DE-POSIX`.
+     *
+     * Pure function — it takes the already-read preference string, so it is safe
+     * to call from `attachBaseContext` before [Settings] is initialized. Shared by
+     * `EhApplication` and `EhActivity` so process-context and per-activity locale
+     * resolution can never drift.
+     */
+    @JvmStatic
+    fun resolveAppLocale(language: String?): Locale {
+        if (language != null && language != DEFAULT_APP_LANGUAGE) {
+            val split = language.split("-")
+            val parsed = when (split.size) {
+                1 -> Locale(split[0])
+                2 -> Locale(split[0], split[1])
+                3 -> Locale(split[0], split[1], split[2])
+                else -> null
+            }
+            if (parsed != null) return parsed
+        }
+        return Resources.getSystem().configuration.locale
+    }
 
     // --- History Info Size ---
     const val KEY_HISTORY_INFO_SIZE = "history_info_size"

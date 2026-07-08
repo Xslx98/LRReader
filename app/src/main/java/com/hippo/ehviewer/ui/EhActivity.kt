@@ -19,7 +19,6 @@ package com.hippo.ehviewer.ui
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
-import android.content.res.Resources
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
@@ -31,7 +30,6 @@ import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.settings.AppLockGate
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.settings.SecuritySettings
-import java.util.Locale
 
 abstract class EhActivity : AppCompatActivity() {
 
@@ -117,23 +115,8 @@ abstract class EhActivity : AppCompatActivity() {
     }
 
     override fun attachBaseContext(newBase: Context) {
-        var locale: Locale? = null
-        val language = AppearanceSettings.getAppLanguage()
-        if (language != null && language != "system") {
-            val split = language.split("-")
-            locale = when (split.size) {
-                1 -> Locale(split[0])
-                2 -> Locale(split[0], split[1])
-                3 -> Locale(split[0], split[1], split[2])
-                else -> null
-            }
-        }
-
-        if (locale == null) {
-            locale = Resources.getSystem().configuration.locale
-        }
-        val wrappedContext = ContextLocalWrapper.wrap(newBase, locale)
-        super.attachBaseContext(wrappedContext)
+        val locale = AppearanceSettings.resolveAppLocale(AppearanceSettings.getAppLanguage())
+        super.attachBaseContext(ContextLocalWrapper.wrap(newBase, locale))
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

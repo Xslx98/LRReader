@@ -37,6 +37,7 @@ import com.hippo.ehviewer.module.AppModule
 import kotlinx.coroutines.launch
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.hippo.ehviewer.settings.AppLockGate
+import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.settings.PrivacySettings
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -64,21 +65,15 @@ class EhApplication : RecordingApplication() {
 
     override fun attachBaseContext(base: Context) {
         // Apply locale before super.attachBaseContext() so the Application context
-        // uses the correct language. Settings is not yet initialized here, so we
-        // read the preference directly from SharedPreferences.
+        // uses the correct language. Settings is not yet initialized here, so read
+        // the preference directly from SharedPreferences and resolve it via the
+        // shared AppearanceSettings.resolveAppLocale (same logic EhActivity uses).
         var locale: Locale? = null
         try {
             val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(base)
-            val language = prefs.getString("app_language", "system")
-            if (language != null && language != "system") {
-                val split = language.split("-")
-                locale = when (split.size) {
-                    1 -> Locale(split[0])
-                    2 -> Locale(split[0], split[1])
-                    3 -> Locale(split[0], split[1], split[2])
-                    else -> null
-                }
-            }
+            locale = AppearanceSettings.resolveAppLocale(
+                prefs.getString(AppearanceSettings.KEY_APP_LANGUAGE, "system")
+            )
         } catch (e: Exception) {
             Log.w(TAG, "Failed to read language preference, using system locale", e)
         }
