@@ -780,6 +780,7 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_add_tag">Tag hinzufügen</string>
     <string name="lrr_add_namespace">Kategorie hinzufügen</string>
     <string name="lrr_edit_tag">Tag bearbeiten</string>
+    <string name="lrr_delete_tag">Tag %1$s löschen</string>
     <string name="lrr_namespace_hint">z.B. artist, parody</string>
     <string name="lrr_tag_hint">Tag-Name</string>
     <string name="lrr_save">Speichern</string>

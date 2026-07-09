@@ -763,6 +763,7 @@
     <string name="lrr_add_tag">タグを追加</string>
     <string name="lrr_add_namespace">名前空間を追加</string>
     <string name="lrr_edit_tag">タグを編集</string>
+    <string name="lrr_delete_tag">タグ「%1$s」を削除</string>
     <string name="lrr_namespace_hint">例: artist, parody</string>
     <string name="lrr_tag_hint">タグ名</string>
     <string name="lrr_save">保存</string>
