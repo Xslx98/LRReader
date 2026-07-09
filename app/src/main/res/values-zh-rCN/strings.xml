@@ -850,6 +850,7 @@
     <string name="lrr_add_tag">添加标签</string>
     <string name="lrr_add_namespace">添加分类</string>
     <string name="lrr_edit_tag">编辑标签</string>
+    <string name="lrr_delete_tag">删除标签 %1$s</string>
     <string name="lrr_namespace_hint">如 artist, parody</string>
     <string name="lrr_tag_hint">标签名称</string>
     <string name="lrr_save">保存</string>

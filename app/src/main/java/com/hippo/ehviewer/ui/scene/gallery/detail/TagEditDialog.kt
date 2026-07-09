@@ -1,10 +1,12 @@
 package com.hippo.ehviewer.ui.scene.gallery.detail
 
 import android.app.Activity
+import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
 import android.text.InputType
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
@@ -167,24 +169,22 @@ object TagEditDialog {
                 }
 
                 for ((tagIndex, tagText) in group.tags.withIndex()) {
-                    val tagView = createTagTextView(activity, density).apply {
-                        text = "$tagText \u2715"
-                        background = RoundSideRectDrawable(colorTag)
-                        setOnClickListener {
+                    val chip = buildTagChip(
+                        activity, density, colorTag, tagText,
+                        onEdit = {
                             showEditTagDialog(activity, tagText) { newTag ->
                                 if (newTag.isNotBlank()) {
                                     group.tags[tagIndex] = newTag
                                     rebuildViews()
                                 }
                             }
-                        }
-                        setOnLongClickListener {
+                        },
+                        onDelete = {
                             group.tags.removeAt(tagIndex)
                             rebuildViews()
-                            true
-                        }
-                    }
-                    tagFlow.addView(tagView)
+                        },
+                    )
+                    tagFlow.addView(chip)
                 }
 
                 // [+] add tag button
@@ -246,6 +246,67 @@ object TagEditDialog {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    /**
+     * Build one editable tag chip: the tag text (tap to edit) sitting next to a
+     * dedicated ✕ delete button (tap to delete) with a 48dp touch target.
+     *
+     * The inline "tag ✕" glyph the dialog used to render only *looked* like a
+     * delete button — the whole chip's onClick opened the edit dialog and deleting
+     * a tag was a hidden long-press. Splitting the ✕ into its own view makes
+     * tapping it actually delete (what the glyph always promised), while a tap on
+     * the text still edits.
+     */
+    internal fun buildTagChip(
+        context: Context,
+        density: Float,
+        colorTag: Int,
+        tagText: String,
+        onEdit: () -> Unit,
+        onDelete: () -> Unit,
+    ): View {
+        val hPad = (12 * density).toInt()
+        val vPad = (4 * density).toInt()
+        val gap = (2 * density).toInt()
+        val margin = (4 * density).toInt()
+        val touchTarget = (48 * density).toInt()
+
+        val label = TextView(context).apply {
+            text = tagText
+            setPadding(hPad, vPad, gap, vPad)
+            setTextColor(Color.WHITE)
+            textSize = 14f
+            maxLines = 1
+            isSingleLine = true
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = touchTarget
+            setOnClickListener { onEdit() }
+        }
+
+        val deleteButton = TextView(context).apply {
+            text = "✕"
+            setPadding(gap, vPad, hPad, vPad)
+            setTextColor(Color.WHITE)
+            textSize = 14f
+            gravity = Gravity.CENTER
+            minimumWidth = touchTarget
+            minimumHeight = touchTarget
+            contentDescription = context.getString(R.string.lrr_delete_tag, tagText)
+            setOnClickListener { onDelete() }
+        }
+
+        return LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            background = RoundSideRectDrawable(colorTag)
+            layoutParams = ViewGroup.MarginLayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply { setMargins(margin, margin, margin, margin) }
+            addView(label)
+            addView(deleteButton)
+        }
     }
 
     /**
