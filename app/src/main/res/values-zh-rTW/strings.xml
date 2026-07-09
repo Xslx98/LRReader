@@ -835,6 +835,7 @@
     <string name="lrr_add_namespace">新增分類</string>
     <string name="lrr_edit_tag">編輯標籤</string>
     <string name="lrr_delete_tag">刪除標籤 %1$s</string>
+    <string name="lrr_delete_namespace">刪除分類 %1$s</string>
     <string name="lrr_namespace_hint">如 artist, parody</string>
     <string name="lrr_tag_hint">標籤名稱</string>
     <string name="lrr_save">儲存</string>

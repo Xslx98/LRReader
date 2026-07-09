@@ -875,6 +875,7 @@ Cette action est irréversible.</string>
     <string name="lrr_add_namespace">Ajouter une catégorie</string>
     <string name="lrr_edit_tag">Modifier le tag</string>
     <string name="lrr_delete_tag">Supprimer le tag %1$s</string>
+    <string name="lrr_delete_namespace">Supprimer la catégorie %1$s</string>
     <string name="lrr_namespace_hint">ex. artist, parody</string>
     <string name="lrr_tag_hint">Nom du tag</string>
     <string name="lrr_save">Enregistrer</string>
