@@ -827,6 +827,7 @@
     <string name="lrr_add_namespace">เพิ่มหมวดหมู่</string>
     <string name="lrr_edit_tag">แก้ไขแท็ก</string>
     <string name="lrr_delete_tag">ลบแท็ก %1$s</string>
+    <string name="lrr_delete_namespace">ลบหมวดหมู่ %1$s</string>
     <string name="lrr_namespace_hint">เช่น artist, parody</string>
     <string name="lrr_tag_hint">ชื่อแท็ก</string>
     <string name="lrr_save">บันทึก</string>

@@ -870,6 +870,7 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_add_namespace">Añadir categoría</string>
     <string name="lrr_edit_tag">Editar etiqueta</string>
     <string name="lrr_delete_tag">Eliminar etiqueta %1$s</string>
+    <string name="lrr_delete_namespace">Eliminar categoría %1$s</string>
     <string name="lrr_namespace_hint">ej. artist, parody</string>
     <string name="lrr_tag_hint">Nombre de etiqueta</string>
     <string name="lrr_save">Guardar</string>

@@ -37,8 +37,8 @@ import kotlinx.coroutines.launch
 /**
  * Dialog for editing archive tags. Shows tags grouped by namespace using the
  * same visual style as the gallery detail page (RoundSideRectDrawable chips
- * in AutoWrapLayout). Click to edit, long-press to delete, [+] to add per
- * namespace, and a bottom button to add new namespaces.
+ * in AutoWrapLayout). Click a label to edit, tap its ✕ to delete, [+] to add
+ * per namespace, and a bottom button to add new namespaces.
  *
  * Syncs changes to the LANraragi server via [LRRArchiveApi.updateMetadata].
  */
@@ -141,23 +141,22 @@ object TagEditDialog {
                     setPadding(0, vPad, 0, vPad)
                 }
 
-                // Namespace label
-                val nsLabel = createTagTextView(activity, density).apply {
-                    text = group.namespace
-                    background = RoundSideRectDrawable(colorNamespace)
-                    setTypeface(null, Typeface.BOLD)
-                    setOnClickListener {
+                // Namespace label with a dedicated ✕ delete button (mirrors tag
+                // chips): tap the label to edit the namespace, tap ✕ to remove the
+                // whole group and all its tags.
+                val nsChip = buildNamespaceChip(
+                    activity, density, colorNamespace, group.namespace,
+                    onEdit = {
                         showEditNamespaceDialog(activity, group) {
                             rebuildViews()
                         }
-                    }
-                    setOnLongClickListener {
+                    },
+                    onDelete = {
                         groups.removeAt(groupIndex)
                         rebuildViews()
-                        true
-                    }
-                }
-                rowLayout.addView(nsLabel)
+                    },
+                )
+                rowLayout.addView(nsChip)
 
                 // Tag flow layout
                 val tagFlow = AutoWrapLayout(activity).apply {
@@ -265,6 +264,62 @@ object TagEditDialog {
         tagText: String,
         onEdit: () -> Unit,
         onDelete: () -> Unit,
+    ): View = buildEditableChip(
+        context = context,
+        density = density,
+        color = colorTag,
+        labelText = tagText,
+        bold = false,
+        deleteDescription = context.getString(R.string.lrr_delete_tag, tagText),
+        onEdit = onEdit,
+        onDelete = onDelete,
+    )
+
+    /**
+     * Build one editable namespace chip: the bold namespace label (tap to edit)
+     * sitting next to a dedicated ✕ delete button (tap to remove the whole namespace
+     * group — and all its tags) with a 48dp touch target.
+     *
+     * Mirrors [buildTagChip] so namespace labels get the same discoverable delete
+     * affordance tags gained; previously a namespace could only be removed via an
+     * undiscoverable long-press. Deleting a namespace here is instant and unconfirmed,
+     * matching tag deletion — nothing is persisted until the dialog's Save button, so
+     * a mistaken removal just costs a Cancel.
+     */
+    internal fun buildNamespaceChip(
+        context: Context,
+        density: Float,
+        colorNamespace: Int,
+        namespace: String,
+        onEdit: () -> Unit,
+        onDelete: () -> Unit,
+    ): View = buildEditableChip(
+        context = context,
+        density = density,
+        color = colorNamespace,
+        labelText = namespace,
+        bold = true,
+        deleteDescription = context.getString(R.string.lrr_delete_namespace, namespace),
+        onEdit = onEdit,
+        onDelete = onDelete,
+    )
+
+    /**
+     * Shared builder for an editable chip: a [labelText] label (tap = [onEdit]) next
+     * to a dedicated ✕ delete button (tap = [onDelete]) with a 48dp touch target and
+     * a TalkBack [deleteDescription], all wrapped in a rounded [color] pill. [bold]
+     * renders the label in bold (namespace chips) vs. regular weight (tag chips).
+     */
+    @Suppress("LongParameterList")
+    private fun buildEditableChip(
+        context: Context,
+        density: Float,
+        color: Int,
+        labelText: String,
+        bold: Boolean,
+        deleteDescription: String,
+        onEdit: () -> Unit,
+        onDelete: () -> Unit,
     ): View {
         val hPad = (12 * density).toInt()
         val vPad = (4 * density).toInt()
@@ -273,7 +328,7 @@ object TagEditDialog {
         val touchTarget = (48 * density).toInt()
 
         val label = TextView(context).apply {
-            text = tagText
+            text = labelText
             setPadding(hPad, vPad, gap, vPad)
             setTextColor(Color.WHITE)
             textSize = 14f
@@ -281,6 +336,7 @@ object TagEditDialog {
             isSingleLine = true
             gravity = Gravity.CENTER_VERTICAL
             minimumHeight = touchTarget
+            if (bold) setTypeface(null, Typeface.BOLD)
             setOnClickListener { onEdit() }
         }
 
@@ -292,14 +348,14 @@ object TagEditDialog {
             gravity = Gravity.CENTER
             minimumWidth = touchTarget
             minimumHeight = touchTarget
-            contentDescription = context.getString(R.string.lrr_delete_tag, tagText)
+            contentDescription = deleteDescription
             setOnClickListener { onDelete() }
         }
 
         return LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            background = RoundSideRectDrawable(colorTag)
+            background = RoundSideRectDrawable(color)
             layoutParams = ViewGroup.MarginLayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
