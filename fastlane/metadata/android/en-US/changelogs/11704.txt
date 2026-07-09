@@ -1,0 +1,1 @@
+- Fixed: on the download list, a long gallery title no longer overlaps the page-progress counter (x/y) while it is downloading.
