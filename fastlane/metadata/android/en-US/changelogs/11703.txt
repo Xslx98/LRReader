@@ -1,0 +1,1 @@
+- Fixed: the tag editor now shows a delete (✕) button on every tag and category, so a single tap removes it — deleting no longer needs a hard-to-find long-press.
