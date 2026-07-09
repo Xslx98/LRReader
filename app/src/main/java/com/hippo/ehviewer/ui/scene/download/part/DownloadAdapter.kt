@@ -363,8 +363,19 @@ class DownloadAdapter(
         if (view.visibility != visibility) view.visibility = visibility
     }
 
+    /**
+     * Apply the title line budget for the current row state. Guarded like
+     * [setVisibility] so the ~0.5 Hz progress re-binds don't request a layout
+     * when the value is unchanged.
+     */
+    private fun applyTitleLines(holder: DownloadHolder, showingProgress: Boolean) {
+        val lines = downloadTitleMaxLines(showingProgress)
+        if (holder.title.maxLines != lines) holder.title.maxLines = lines
+    }
+
     private fun bindState(holder: DownloadHolder, info: DownloadInfo, state: String) {
         cancelProgressGlide(holder)
+        applyTitleLines(holder, showingProgress = false)
         setVisibility(holder.uploader, View.VISIBLE)
         setVisibility(holder.rating, View.VISIBLE)
         setVisibility(holder.readProgress, View.VISIBLE)
@@ -384,6 +395,7 @@ class DownloadAdapter(
 
     @SuppressLint("SetTextI18n")
     private fun bindProgress(holder: DownloadHolder, info: DownloadInfo, animate: Boolean) {
+        applyTitleLines(holder, showingProgress = true)
         setVisibility(holder.uploader, View.GONE)
         setVisibility(holder.rating, View.GONE)
         setVisibility(holder.readProgress, View.GONE)
@@ -802,6 +814,29 @@ class DownloadAdapter(
 
         @JvmField
         var DRAG_ENABLE = false
+
+        /** Title line budget when the row shows its download-progress line. */
+        private const val TITLE_MAX_LINES_PROGRESS = 1
+
+        /** Title line budget for every other state (the default from CardTitle). */
+        private const val TITLE_MAX_LINES_DEFAULT = 2
+
+        /**
+         * Line budget for a download row's title.
+         *
+         * The row is a fixed height (driven by the 120dp thumb). While
+         * progress is shown, the byte-progress line (`finished/total` on the
+         * start edge, speed on the end edge) and the bar are pinned above the
+         * bottom actions. A 2-line title, anchored to the top, drops its
+         * second line into that band and collides with the `finished/total`
+         * counter — they share the title's start edge (see the screenshot in
+         * the bug report). Capping the title to one line while progress is
+         * shown keeps it clear; the full two lines return for every other
+         * state, where the info row flows *below* the title and cannot
+         * collide.
+         */
+        internal fun downloadTitleMaxLines(showingProgress: Boolean): Int =
+            if (showingProgress) TITLE_MAX_LINES_PROGRESS else TITLE_MAX_LINES_DEFAULT
 
         /** Bottom margin for source_server when the row's category is hidden (LRR default). */
         private const val BADGE_MARGIN_BOTTOM_DEFAULT_DP = 8
