@@ -219,22 +219,7 @@ class ServerConfigViewModelTest {
 
     @Test
     fun attemptConnection_success_emitsConnectSuccessAndPersistsProfile() {
-        val serverInfoJson = """
-            {
-                "name": "Test Server",
-                "motd": "Welcome",
-                "version": "0.9.0",
-                "version_name": "Test",
-                "has_password": false,
-                "debug_mode": false,
-                "nofun_mode": false,
-                "archives_per_page": 100,
-                "server_resizes_images": false,
-                "server_tracks_progress": false
-            }
-        """.trimIndent()
-
-        server.enqueue(MockResponse().setBody(serverInfoJson).setResponseCode(200))
+        server.enqueue(MockResponse().setBody(SERVER_INFO_JSON).setResponseCode(200))
 
         val vm = ServerConfigViewModel()
         val successes = mutableListOf<ServerConfigViewModel.ConnectSuccess>()
@@ -280,7 +265,7 @@ class ServerConfigViewModelTest {
     }
 
     @Test
-    fun attemptConnection_failure_restoresPriorGlobalAuthState() {
+    fun attemptConnection_failure_neverTouchesGlobalAuthState() {
         // Simulate an existing working configuration.
         LRRAuthManager.setServerUrl("http://prior.example.com:3000")
         LRRAuthManager.setApiKey("prior-key")
@@ -300,12 +285,44 @@ class ServerConfigViewModelTest {
         drainCoroutines()
 
         assertTrue(failures.isNotEmpty())
-        // UI-16: a failed test attempt must not leave the global interceptor
-        // state routed/authenticated at the candidate server.
+        // NET-7: a test attempt must never write the global config at all —
+        // there is nothing to roll back, even after a process kill mid-test.
         assertEquals("http://prior.example.com:3000", LRRAuthManager.getServerUrl())
         assertEquals("prior-key", LRRAuthManager.getApiKey())
 
         job.cancel()
+    }
+
+    @Test
+    fun attemptConnection_success_sendsBearerHeader() {
+        server.enqueue(MockResponse().setResponseCode(200).setBody(SERVER_INFO_JSON))
+
+        val vm = ServerConfigViewModel()
+        val baseUrl = server.url("").toString().removeSuffix("/")
+        vm.attemptConnection(baseUrl, "candidate-key", false)
+
+        drainCoroutines()
+
+        val recorded = server.takeRequest()
+        val expected = "Bearer " + android.util.Base64.encodeToString(
+            "candidate-key".toByteArray(Charsets.UTF_8), android.util.Base64.NO_WRAP
+        )
+        assertEquals(expected, recorded.getHeader("Authorization"))
+    }
+
+    @Test
+    fun attemptConnection_success_commitsCandidateKeyAndUrl() {
+        server.enqueue(MockResponse().setResponseCode(200).setBody(SERVER_INFO_JSON))
+
+        val vm = ServerConfigViewModel()
+        val baseUrl = server.url("").toString().removeSuffix("/")
+        vm.attemptConnection(baseUrl, "candidate-key", false)
+
+        drainCoroutines()
+
+        // NET-7: success is the single commit point for global auth state.
+        assertEquals(baseUrl, LRRAuthManager.getServerUrl())
+        assertEquals("candidate-key", LRRAuthManager.getApiKey())
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -341,5 +358,22 @@ class ServerConfigViewModelTest {
             override val uploadClient: OkHttpClient = client
             override val networkMonitor: NetworkMonitor = NetworkMonitor(context)
         }
+    }
+
+    private companion object {
+        val SERVER_INFO_JSON = """
+            {
+                "name": "Test Server",
+                "motd": "Welcome",
+                "version": "0.9.0",
+                "version_name": "Test",
+                "has_password": false,
+                "debug_mode": false,
+                "nofun_mode": false,
+                "archives_per_page": 100,
+                "server_resizes_images": false,
+                "server_tracks_progress": false
+            }
+        """.trimIndent()
     }
 }
