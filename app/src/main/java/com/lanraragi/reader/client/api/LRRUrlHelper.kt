@@ -93,6 +93,13 @@ object LRRUrlHelper {
 
     /**
      * Build a short-timeout client suitable for connection testing.
+     *
+     * NET-7: strips [LRRAuthInterceptor] and [LRRCleartextRejectionInterceptor]
+     * — both consult process-global / profile state that a *candidate* server
+     * must not depend on. Auth rides the probe request itself
+     * ([LRRServerApi.getServerInfo]'s apiKey variant); cleartext policy for
+     * candidates is [connectWithFallback]'s isLanAddress gate (WAN HTTP is
+     * refused before any request is issued).
      */
     @JvmStatic
     fun buildTestClient(baseClient: OkHttpClient): OkHttpClient {
@@ -100,6 +107,11 @@ object LRRUrlHelper {
             .connectTimeout(5, TimeUnit.SECONDS)
             .readTimeout(5, TimeUnit.SECONDS)
             .writeTimeout(5, TimeUnit.SECONDS)
+            .apply {
+                networkInterceptors().removeAll {
+                    it is LRRAuthInterceptor || it is LRRCleartextRejectionInterceptor
+                }
+            }
             .build()
     }
 
