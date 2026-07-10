@@ -109,19 +109,22 @@ object LRRUrlHelper {
      *
      * @param testClient   OkHttpClient with short timeouts
      * @param rawInput     user input, already normalised (no trailing slash)
+     * @param apiKey       candidate server's API key, attached per-request
+     *   (null/empty for open servers)
      * @param callback     result callback (invoked in the calling coroutine
      *   before this function returns)
      */
     suspend fun connectWithFallback(
         testClient: OkHttpClient,
         rawInput: String,
+        apiKey: String?,
         callback: ConnectCallback
     ) {
         try {
             if (hasExplicitScheme(rawInput)) {
                 LRRAuthManager.setServerUrl(rawInput)
                 try {
-                    val info = LRRServerApi.getServerInfo(testClient, rawInput)
+                    val info = LRRServerApi.getServerInfo(testClient, rawInput, apiKey)
                     callback.onSuccess(rawInput, info, false)
                     return
                 } catch (ce: CancellationException) {
@@ -142,7 +145,7 @@ object LRRUrlHelper {
                     LRRAuthManager.setServerUrl(httpUrl)
                     try {
                         Log.d(TAG, "Trying HTTP fallback for explicit HTTPS: $httpUrl")
-                        val info = LRRServerApi.getServerInfo(testClient, httpUrl)
+                        val info = LRRServerApi.getServerInfo(testClient, httpUrl, apiKey)
                         callback.onSuccess(httpUrl, info, true)
                     } catch (ce: CancellationException) {
                         throw ce
@@ -161,7 +164,7 @@ object LRRUrlHelper {
             LRRAuthManager.setServerUrl(httpsUrl)
             try {
                 Log.d(TAG, "Trying HTTPS: $httpsUrl")
-                val info = LRRServerApi.getServerInfo(testClient, httpsUrl)
+                val info = LRRServerApi.getServerInfo(testClient, httpsUrl, apiKey)
                 callback.onSuccess(httpsUrl, info, false)
                 return
             } catch (ce: CancellationException) {
@@ -185,7 +188,7 @@ object LRRUrlHelper {
             LRRAuthManager.setServerUrl(httpUrl)
             try {
                 Log.d(TAG, "Trying HTTP fallback: $httpUrl")
-                val info = LRRServerApi.getServerInfo(testClient, httpUrl)
+                val info = LRRServerApi.getServerInfo(testClient, httpUrl, apiKey)
                 callback.onSuccess(httpUrl, info, true)
             } catch (ce: CancellationException) {
                 throw ce

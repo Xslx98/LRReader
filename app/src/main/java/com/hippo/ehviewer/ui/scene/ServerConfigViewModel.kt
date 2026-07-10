@@ -116,17 +116,18 @@ class ServerConfigViewModel : ViewModel() {
         val client = ServiceRegistry.networkModule.okHttpClient
         val testClient = LRRUrlHelper.buildTestClient(client)
 
+        val candidateKey = apiKey?.ifEmpty { null }
         try {
             if (LRRUrlHelper.hasExplicitScheme(rawInput)) {
                 // User specified protocol explicitly -- use as-is
                 LRRAuthManager.setServerUrl(rawInput)
-                tryConnect(testClient, rawInput, null, navigateOnSuccess)
+                tryConnect(testClient, rawInput, null, candidateKey, navigateOnSuccess)
             } else {
                 // No explicit scheme: try HTTPS first, then fall back to HTTP
                 val httpsUrl = "https://$rawInput"
                 val httpUrl = "http://$rawInput"
                 LRRAuthManager.setServerUrl(httpsUrl) // temp set for interceptor
-                tryConnect(testClient, httpsUrl, httpUrl, navigateOnSuccess)
+                tryConnect(testClient, httpsUrl, httpUrl, candidateKey, navigateOnSuccess)
             }
         } catch (e: LRRSecureStorageUnavailableException) {
             _connecting.value = false
@@ -141,13 +142,14 @@ class ServerConfigViewModel : ViewModel() {
         client: okhttp3.OkHttpClient,
         primaryUrl: String,
         fallbackUrl: String?,
+        apiKey: String?,
         navigateOnSuccess: Boolean
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             // --- Attempt 1: primary URL ---
             try {
                 Log.d(TAG, "Trying primary URL: $primaryUrl")
-                val info = LRRServerApi.getServerInfo(client, primaryUrl)
+                val info = LRRServerApi.getServerInfo(client, primaryUrl, apiKey)
                 // Success on primary
                 onConnectSuccess(primaryUrl, info, navigateOnSuccess)
                 return@launch
@@ -170,7 +172,7 @@ class ServerConfigViewModel : ViewModel() {
                 Log.d(TAG, "Trying fallback URL: $fallbackUrl")
                 // Update interceptor URL for fallback attempt
                 LRRAuthManager.setServerUrl(fallbackUrl)
-                val info = LRRServerApi.getServerInfo(client, fallbackUrl)
+                val info = LRRServerApi.getServerInfo(client, fallbackUrl, apiKey)
                 // Success on fallback
                 onConnectSuccess(fallbackUrl, info, navigateOnSuccess)
             } catch (e: LRRSecureStorageUnavailableException) {

@@ -187,6 +187,7 @@ class ServerListViewModel : ViewModel() {
                 LRRUrlHelper.connectWithFallback(
                     testClient,
                     newUrl,
+                    newKey.ifEmpty { null },
                     object : LRRUrlHelper.ConnectCallback {
                         override fun onSuccess(
                             resolvedUrl: String,
@@ -325,6 +326,7 @@ class ServerListViewModel : ViewModel() {
                 LRRUrlHelper.connectWithFallback(
                     testClient,
                     normalizedUrl,
+                    finalKey,
                     object : LRRUrlHelper.ConnectCallback {
                         override fun onSuccess(
                             resolvedUrl: String,
@@ -439,7 +441,9 @@ class ServerListViewModel : ViewModel() {
                     LRRUrlHelper.buildTestClient(ServiceRegistry.networkModule.okHttpClient)
                 }
                 withContext(Dispatchers.IO) {
-                    LRRServerApi.getServerInfo(testClient, url)
+                    // Always targets the active profile; the test client strips
+                    // LRRAuthInterceptor (NET-7), so attach the active key here.
+                    LRRServerApi.getServerInfo(testClient, url, LRRAuthManager.getApiKey())
                 }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
