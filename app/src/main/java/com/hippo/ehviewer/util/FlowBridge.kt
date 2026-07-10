@@ -1,20 +1,26 @@
 @file:JvmName("FlowBridge")
 package com.hippo.ehviewer.util
 
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.hippo.ehviewer.ServiceRegistry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import java.util.function.Consumer
 
 /**
- * Bridge for [LifecycleOwner] classes (Fragments, Activities) to collect
- * a Kotlin [Flow] with lifecycle-aware cancellation.
+ * Default, safe collector: only collects while [owner] is STARTED.
  *
- * Collection is scoped to [owner]'s lifecycle — automatically cancelled when
- * the lifecycle reaches DESTROYED. The [consumer] receives each emission on
- * the main thread (default dispatcher for [lifecycleScope]).
+ * Collection stops at STOPPED and restarts at STARTED
+ * ([androidx.lifecycle.repeatOnLifecycle]); everything is cancelled at
+ * DESTROYED. The [consumer] receives each emission on the main thread.
+ *
+ * StateFlow replays its current value on every restart, so renders self-heal
+ * on foreground return. SharedFlow(replay=0) emissions during a STOPPED
+ * window are LOST to this collector — if losing an event corrupts a state
+ * machine or data consistency, use [collectFlowWhileCreated] instead.
  *
  * Convention: Scene collectors pass `viewLifecycleOwner` — the scene
  * framework detaches covered scenes (view destroyed, fragment alive), so a
@@ -32,7 +38,9 @@ fun <T> collectFlow(owner: LifecycleOwner, flow: Flow<T>, consumer: Consumer<T>)
     owner.lifecycleScope.launch(
         ServiceRegistry.coroutineModule.exceptionHandler
     ) {
-        flow.collect { consumer.accept(it) }
+        owner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            flow.collect { consumer.accept(it) }
+        }
     }
 }
 
