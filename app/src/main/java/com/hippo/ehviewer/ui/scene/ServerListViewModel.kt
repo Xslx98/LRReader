@@ -164,74 +164,33 @@ class ServerListViewModel : ViewModel() {
         newUrl: String,
         newKey: String
     ) {
-        // Snapshot the active credentials. connectWithFallback writes the URL
-        // under test into the global active config, and we set the active key
-        // below, both purely to drive the authenticated test request. If the
-        // edited profile is NOT the active one (or the test fails), restore the
-        // active config so editing profile B can't repoint active profile A at
-        // B's server/key.
-        val oldUrl: String? = LRRAuthManager.getServerUrl()
-        val oldKey: String? = LRRAuthManager.getApiKey()
-        try {
-            LRRAuthManager.setApiKey(newKey.ifEmpty { null })
-        } catch (e: LRRSecureStorageUnavailableException) {
-            _uiEvent.tryEmit(ServerListUiEvent.SecureStorageError)
-            return
-        }
-
         viewModelScope.launch(Dispatchers.IO) {
             val testClient = LRRUrlHelper.buildTestClient(
                 ServiceRegistry.networkModule.okHttpClient
             )
-            try {
-                LRRUrlHelper.connectWithFallback(
-                    testClient,
-                    newUrl,
-                    newKey.ifEmpty { null },
-                    object : LRRUrlHelper.ConnectCallback {
-                        override fun onSuccess(
-                            resolvedUrl: String,
-                            info: LRRServerInfo,
-                            usedHttpFallback: Boolean
-                        ) {
-                            // saveEditedProfile re-applies the active config only when
-                            // the edited profile is active; for a non-active edit,
-                            // restore what the test clobbered.
-                            if (!profile.isActive) {
-                                restoreActiveAuth(oldUrl, oldKey)
-                            }
-                            saveEditedProfile(profile, position, newName, resolvedUrl, newKey, usedHttpFallback)
-                        }
-
-                        override fun onFailure(error: Exception) {
-                            restoreActiveAuth(oldUrl, oldKey)
-                            _uiEvent.tryEmit(
-                                ServerListUiEvent.EditConnectionFailed(error)
-                            )
-                        }
+            // NET-7: the probe is self-contained (explicit Bearer header on a
+            // stripped test client) — no global auth state is touched, so
+            // there is nothing to snapshot, restore, or guard against cancel.
+            LRRUrlHelper.connectWithFallback(
+                testClient,
+                newUrl,
+                newKey.ifEmpty { null },
+                object : LRRUrlHelper.ConnectCallback {
+                    override fun onSuccess(
+                        resolvedUrl: String,
+                        info: LRRServerInfo,
+                        usedHttpFallback: Boolean
+                    ) {
+                        saveEditedProfile(profile, position, newName, resolvedUrl, newKey, usedHttpFallback)
                     }
-                )
-            } catch (ce: CancellationException) {
-                // ViewModel cleared mid-test: neither callback ran, so the
-                // active config still holds the URL/key under test.
-                restoreActiveAuth(oldUrl, oldKey)
-                throw ce
-            }
-        }
-    }
 
-    /**
-     * Restore the global active server URL + API key after a connection test
-     * that mutated them as a side effect. Secure-storage failures are logged
-     * and swallowed — losing the restore is non-fatal (the next profile switch
-     * rewrites the active config).
-     */
-    private fun restoreActiveAuth(url: String?, key: String?) {
-        try {
-            if (url != null) LRRAuthManager.setServerUrl(url)
-            LRRAuthManager.setApiKey(key)
-        } catch (e: LRRSecureStorageUnavailableException) {
-            Log.w(TAG, "Failed to restore active auth after connection test", e)
+                    override fun onFailure(error: Exception) {
+                        _uiEvent.tryEmit(
+                            ServerListUiEvent.EditConnectionFailed(error)
+                        )
+                    }
+                }
+            )
         }
     }
 
@@ -308,52 +267,36 @@ class ServerListViewModel : ViewModel() {
     ) {
         val finalKey: String? = apiKey?.ifEmpty { null }
 
-        // Save old auth so we can restore on failure
-        val oldUrl: String? = LRRAuthManager.getServerUrl()
-        val oldKey: String? = LRRAuthManager.getApiKey()
-        try {
-            LRRAuthManager.setApiKey(finalKey)
-        } catch (e: LRRSecureStorageUnavailableException) {
-            _uiEvent.tryEmit(ServerListUiEvent.SecureStorageError)
-            return
-        }
-
         val baseClient = ServiceRegistry.networkModule.okHttpClient
         val testClient = LRRUrlHelper.buildTestClient(baseClient)
 
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                LRRUrlHelper.connectWithFallback(
-                    testClient,
-                    normalizedUrl,
-                    finalKey,
-                    object : LRRUrlHelper.ConnectCallback {
-                        override fun onSuccess(
-                            resolvedUrl: String,
-                            info: LRRServerInfo,
-                            usedHttpFallback: Boolean
-                        ) {
-                            performAddProfile(
-                                name, resolvedUrl, finalKey, allowCleartext,
-                                info, usedHttpFallback
-                            )
-                        }
-
-                        override fun onFailure(error: Exception) {
-                            // Restore old auth on failure
-                            restoreActiveAuth(oldUrl, oldKey)
-                            _uiEvent.tryEmit(
-                                ServerListUiEvent.AddConnectionFailed(error)
-                            )
-                        }
+            // NET-7: the probe is self-contained (explicit Bearer header on a
+            // stripped test client) — no global auth state is touched, so
+            // there is nothing to snapshot, restore, or guard against cancel.
+            LRRUrlHelper.connectWithFallback(
+                testClient,
+                normalizedUrl,
+                finalKey,
+                object : LRRUrlHelper.ConnectCallback {
+                    override fun onSuccess(
+                        resolvedUrl: String,
+                        info: LRRServerInfo,
+                        usedHttpFallback: Boolean
+                    ) {
+                        performAddProfile(
+                            name, resolvedUrl, finalKey, allowCleartext,
+                            info, usedHttpFallback
+                        )
                     }
-                )
-            } catch (ce: CancellationException) {
-                // ViewModel cleared mid-test: neither callback ran, so the
-                // active config still holds the URL/key under test.
-                restoreActiveAuth(oldUrl, oldKey)
-                throw ce
-            }
+
+                    override fun onFailure(error: Exception) {
+                        _uiEvent.tryEmit(
+                            ServerListUiEvent.AddConnectionFailed(error)
+                        )
+                    }
+                }
+            )
         }
     }
 
