@@ -71,6 +71,7 @@ import com.hippo.refreshlayout.RefreshLayout
 import com.hippo.ripple.Ripple
 import com.hippo.scene.Announcer
 import com.hippo.ehviewer.util.collectFlow
+import com.hippo.ehviewer.util.collectFlowWhileCreated
 import com.hippo.view.ViewTransition
 import com.hippo.widget.ContentLayout
 import com.hippo.widget.FabLayout
@@ -270,11 +271,15 @@ class GalleryListScene : BaseScene(),
         viewModel.startObservingDownloads()
         viewModel.startObservingFavourites()
 
-        // Observe download events to refresh adapter items
-        collectFlow(this, viewModel.downloadEvent) { event ->
+        // Observe download events to refresh adapter items.
+        // collectFlowWhileCreated(fragment): deliberate whole-lifetime collection —
+        // handlers null-guard `adapter` (no-op while detached) and a re-attach
+        // rebinds every row anyway; STARTED gating would drop rebinds for events
+        // landing while backgrounded.
+        collectFlowWhileCreated(this, viewModel.downloadEvent) { event ->
             when (event) {
                 is GalleryListViewModel.DownloadEvent.ItemUpdated -> {
-                    val adapter = adapter ?: return@collectFlow
+                    val adapter = adapter ?: return@collectFlowWhileCreated
                     val count = adapter.itemCount
                     for (i in 0 until count) {
                         val archive = adapter.getDataAt(i)
@@ -290,21 +295,21 @@ class GalleryListScene : BaseScene(),
             }
         }
 
-        // Observe favourite status changes to refresh all visible items
-        collectFlow(this, viewModel.favouriteStatusChanged) {
+        // Observe favourite status changes to refresh all visible items.
+        // collectFlowWhileCreated(fragment): same rationale as downloadEvent above.
+        collectFlowWhileCreated(this, viewModel.favouriteStatusChanged) {
             adapter?.notifyItemRangeChanged(0, adapter?.itemCount ?: 0)
-        }
-
-        // Observe archive upload progress/result to drive the progress dialog + tips.
-        collectFlow(this, viewModel.uploadState) { state ->
-            renderUploadState(state)
         }
 
         // Server-side archive deletion: drop the row from this list. If the scene is
         // currently visible, remove inline so the user sees the fade + reflow animation.
         // If hidden (covered by the detail page), defer to onResume so the animation
         // plays after the back-stack pop instead of being burned off-screen.
-        collectFlow(this, AppEventBus.archiveDeletedEvent) { event ->
+        // collectFlowWhileCreated(fragment): deletions typically arrive while this
+        // list is detached under the detail scene that performed the delete — a
+        // view-scoped collector would lose them. The pendingDeletedArcIds buffer +
+        // onResume replay depend on whole-lifetime collection.
+        collectFlowWhileCreated(this, AppEventBus.archiveDeletedEvent) { event ->
             if (isResumed) {
                 removeArchiveLocally(event.arcid)
             } else {
@@ -582,6 +587,16 @@ class GalleryListScene : BaseScene(),
         }
         collectFlow(viewLifecycleOwner, viewModel.batchResultEvent) {
             batchOpsHelper?.onBatchResult(it)
+        }
+        // Upload progress/result rendering is view-scoped: the ViewModel is
+        // activity-scoped and several GalleryListScene instances can sit in the
+        // back stack — fragment-scoped collection rendered one progress dialog
+        // per live instance (stacked dialogs, double success tip) and poked
+        // mHelper on detached scenes. StateFlow replay restores the dialog on
+        // re-attach mid-upload and defers a Success that landed while this
+        // scene was covered to return time.
+        collectFlow(viewLifecycleOwner, viewModel.uploadState) { state ->
+            renderUploadState(state)
         }
     }
 
