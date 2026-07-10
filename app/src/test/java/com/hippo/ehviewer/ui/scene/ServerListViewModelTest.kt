@@ -184,6 +184,27 @@ class ServerListViewModelTest {
         return runBlocking { db.miscDao().insertServerProfile(ServerProfile(name = name, url = url, isActive = isActive)) }
     }
 
+    // ── NET-7: connection tests must not touch global active auth ──
+
+    @Test
+    fun testAndAddProfile_failure_leavesGlobalAuthUntouched() {
+        LRRAuthManager.setServerUrl("http://prior.example.com:3000")
+        LRRAuthManager.setApiKey("prior-key")
+        // 401 = permanent failure, no retry.
+        server.enqueue(MockResponse().setResponseCode(401).setBody("Unauthorized"))
+
+        val vm = ServerListViewModel()
+        val events = collectEvents(vm)
+        // Explicit http:// scheme → single probe, no https ladder.
+        vm.testAndAddProfile("X", server.url("").toString().removeSuffix("/"), "candidate-key", true)
+
+        awaitCondition {
+            events.any { it is ServerListViewModel.ServerListUiEvent.AddConnectionFailed }
+        }
+        assertEquals("http://prior.example.com:3000", LRRAuthManager.getServerUrl())
+        assertEquals("prior-key", LRRAuthManager.getApiKey())
+    }
+
     // ── loadProfiles ───────────────────────────────────────────────
 
     @Test
