@@ -134,7 +134,6 @@ object LRRUrlHelper {
     ) {
         try {
             if (hasExplicitScheme(rawInput)) {
-                LRRAuthManager.setServerUrl(rawInput)
                 try {
                     val info = LRRServerApi.getServerInfo(testClient, rawInput, apiKey)
                     callback.onSuccess(rawInput, info, false)
@@ -154,7 +153,6 @@ object LRRUrlHelper {
                         callback.onFailure(e)
                         return
                     }
-                    LRRAuthManager.setServerUrl(httpUrl)
                     try {
                         Log.d(TAG, "Trying HTTP fallback for explicit HTTPS: $httpUrl")
                         val info = LRRServerApi.getServerInfo(testClient, httpUrl, apiKey)
@@ -173,7 +171,6 @@ object LRRUrlHelper {
             val httpsUrl = "https://$rawInput"
             val httpUrl = "http://$rawInput"
 
-            LRRAuthManager.setServerUrl(httpsUrl)
             try {
                 Log.d(TAG, "Trying HTTPS: $httpsUrl")
                 val info = LRRServerApi.getServerInfo(testClient, httpsUrl, apiKey)
@@ -187,7 +184,6 @@ object LRRUrlHelper {
 
             // Fallback to HTTP -- only permitted for private / LAN addresses.
             if (!isLanAddress(httpUrl)) {
-                LRRAuthManager.setServerUrl(httpsUrl) // restore HTTPS URL
                 callback.onFailure(
                     SecurityException(
                         "HTTPS connection failed and HTTP is not allowed for non-LAN servers. " +
@@ -197,7 +193,6 @@ object LRRUrlHelper {
                 return
             }
 
-            LRRAuthManager.setServerUrl(httpUrl)
             try {
                 Log.d(TAG, "Trying HTTP fallback: $httpUrl")
                 val info = LRRServerApi.getServerInfo(testClient, httpUrl, apiKey)
