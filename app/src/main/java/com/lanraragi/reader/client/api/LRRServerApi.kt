@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import android.util.Base64
 import com.lanraragi.reader.client.api.data.LRRServerInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -15,11 +16,29 @@ import okhttp3.Request
 object LRRServerApi {
 
     /**
-     * GET /api/info — Test connection and get server info.
-     * This endpoint does NOT require authentication.
+     * GET /api/info — Test connection and get server info. Auth (when the
+     * server protects /api/info) comes from LRRAuthInterceptor on the caller's
+     * client.
      */
     @JvmStatic
     suspend fun getServerInfo(client: OkHttpClient, baseUrl: String): LRRServerInfo =
+        getServerInfo(client, baseUrl, null)
+
+    /**
+     * GET /api/info — connection-testing variant with explicit auth.
+     *
+     * LANraragi protects /api/info when "Enable Password/API protection for
+     * all API access" is on. Test clients strip LRRAuthInterceptor (see
+     * [LRRUrlHelper.buildTestClient]), so candidate-server probes never depend
+     * on process-global auth state (NET-7); the candidate key rides the
+     * request itself, in the interceptor's token format.
+     */
+    @JvmStatic
+    suspend fun getServerInfo(
+        client: OkHttpClient,
+        baseUrl: String,
+        apiKey: String?
+    ): LRRServerInfo =
         retryOnFailure {
             withContext(Dispatchers.IO) {
                 val url = parseBaseUrl(baseUrl).newBuilder()
@@ -28,6 +47,14 @@ object LRRServerApi {
                 val request = Request.Builder()
                     .url(url)
                     .get()
+                    .apply {
+                        if (!apiKey.isNullOrEmpty()) {
+                            val token = Base64.encodeToString(
+                                apiKey.toByteArray(Charsets.UTF_8), Base64.NO_WRAP
+                            )
+                            header("Authorization", "Bearer $token")
+                        }
+                    }
                     .build()
                 client.newCall(request).await().use { response ->
                     ensureSuccess(response)
