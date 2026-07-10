@@ -83,9 +83,8 @@ class LRRAuthInterceptor : Interceptor {
             return chain.proceed(original)
         }
 
-        val token = Base64.encodeToString(apiKey.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
         val authed = original.newBuilder()
-            .header("Authorization", "Bearer $token")
+            .header("Authorization", bearerAuthHeaderValue(apiKey))
             .build()
         return chain.proceed(authed)
     }
@@ -115,9 +114,8 @@ class LRRAuthInterceptor : Interceptor {
 
         when (matchesConfiguredServer(original.url, serverUrl)) {
             ServerMatchResult.MATCH -> {
-                val token = Base64.encodeToString(apiKey.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
                 val authed = original.newBuilder()
-                    .header("Authorization", "Bearer $token")
+                    .header("Authorization", bearerAuthHeaderValue(apiKey))
                     .build()
                 return chain.proceed(authed)
             }
@@ -132,6 +130,17 @@ class LRRAuthInterceptor : Interceptor {
             }
         }
     }
+}
+
+/**
+ * The single LANraragi authorization header value: `Bearer Base64(apiKey)`
+ * with [Base64.NO_WRAP] so the token stays on one line. Shared by
+ * [LRRAuthInterceptor] and the connection-test probe
+ * ([LRRServerApi.getServerInfo]) so the wire format can never drift.
+ */
+internal fun bearerAuthHeaderValue(apiKey: String): String {
+    val token = Base64.encodeToString(apiKey.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+    return "Bearer $token"
 }
 
 /**
