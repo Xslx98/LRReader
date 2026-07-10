@@ -93,6 +93,13 @@ object LRRUrlHelper {
 
     /**
      * Build a short-timeout client suitable for connection testing.
+     *
+     * NET-7: strips [LRRAuthInterceptor] and [LRRCleartextRejectionInterceptor]
+     * — both consult process-global / profile state that a *candidate* server
+     * must not depend on. Auth rides the probe request itself
+     * ([LRRServerApi.getServerInfo]'s apiKey variant); cleartext policy for
+     * candidates is [connectWithFallback]'s isLanAddress gate (WAN HTTP is
+     * refused before any request is issued).
      */
     @JvmStatic
     fun buildTestClient(baseClient: OkHttpClient): OkHttpClient {
@@ -100,6 +107,11 @@ object LRRUrlHelper {
             .connectTimeout(5, TimeUnit.SECONDS)
             .readTimeout(5, TimeUnit.SECONDS)
             .writeTimeout(5, TimeUnit.SECONDS)
+            .apply {
+                networkInterceptors().removeAll {
+                    it is LRRAuthInterceptor || it is LRRCleartextRejectionInterceptor
+                }
+            }
             .build()
     }
 
@@ -109,19 +121,21 @@ object LRRUrlHelper {
      *
      * @param testClient   OkHttpClient with short timeouts
      * @param rawInput     user input, already normalised (no trailing slash)
+     * @param apiKey       candidate server's API key, attached per-request
+     *   (null/empty for open servers)
      * @param callback     result callback (invoked in the calling coroutine
      *   before this function returns)
      */
     suspend fun connectWithFallback(
         testClient: OkHttpClient,
         rawInput: String,
+        apiKey: String?,
         callback: ConnectCallback
     ) {
         try {
             if (hasExplicitScheme(rawInput)) {
-                LRRAuthManager.setServerUrl(rawInput)
                 try {
-                    val info = LRRServerApi.getServerInfo(testClient, rawInput)
+                    val info = LRRServerApi.getServerInfo(testClient, rawInput, apiKey)
                     callback.onSuccess(rawInput, info, false)
                     return
                 } catch (ce: CancellationException) {
@@ -139,10 +153,9 @@ object LRRUrlHelper {
                         callback.onFailure(e)
                         return
                     }
-                    LRRAuthManager.setServerUrl(httpUrl)
                     try {
                         Log.d(TAG, "Trying HTTP fallback for explicit HTTPS: $httpUrl")
-                        val info = LRRServerApi.getServerInfo(testClient, httpUrl)
+                        val info = LRRServerApi.getServerInfo(testClient, httpUrl, apiKey)
                         callback.onSuccess(httpUrl, info, true)
                     } catch (ce: CancellationException) {
                         throw ce
@@ -158,10 +171,9 @@ object LRRUrlHelper {
             val httpsUrl = "https://$rawInput"
             val httpUrl = "http://$rawInput"
 
-            LRRAuthManager.setServerUrl(httpsUrl)
             try {
                 Log.d(TAG, "Trying HTTPS: $httpsUrl")
-                val info = LRRServerApi.getServerInfo(testClient, httpsUrl)
+                val info = LRRServerApi.getServerInfo(testClient, httpsUrl, apiKey)
                 callback.onSuccess(httpsUrl, info, false)
                 return
             } catch (ce: CancellationException) {
@@ -172,7 +184,6 @@ object LRRUrlHelper {
 
             // Fallback to HTTP -- only permitted for private / LAN addresses.
             if (!isLanAddress(httpUrl)) {
-                LRRAuthManager.setServerUrl(httpsUrl) // restore HTTPS URL
                 callback.onFailure(
                     SecurityException(
                         "HTTPS connection failed and HTTP is not allowed for non-LAN servers. " +
@@ -182,10 +193,9 @@ object LRRUrlHelper {
                 return
             }
 
-            LRRAuthManager.setServerUrl(httpUrl)
             try {
                 Log.d(TAG, "Trying HTTP fallback: $httpUrl")
-                val info = LRRServerApi.getServerInfo(testClient, httpUrl)
+                val info = LRRServerApi.getServerInfo(testClient, httpUrl, apiKey)
                 callback.onSuccess(httpUrl, info, true)
             } catch (ce: CancellationException) {
                 throw ce
