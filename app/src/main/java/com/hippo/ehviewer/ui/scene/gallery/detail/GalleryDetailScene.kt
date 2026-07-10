@@ -55,6 +55,7 @@ import com.hippo.ehviewer.ui.MainActivity
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.ui.scene.TankoubonDetailScene
 import com.hippo.ehviewer.util.collectFlow
+import com.hippo.ehviewer.util.collectFlowWhileCreated
 import com.hippo.scene.Announcer
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.hippo.ehviewer.widget.ArchiverDownloadProgress
@@ -543,15 +544,18 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // UI-4: every collector below is view-scoped. The scene framework
+        // detaches covered scenes (view destroyed, fragment alive); the previous
+        // fragment-scoped launches stacked one collector set per re-attach.
+
         // Capture the server-side rating exactly once per detail-page
         // entry. The cache-hit / process-death-restore paths take
         // STATE_NORMAL straight from `prepareData` and never reach
         // `onGetArchiveDetailSuccessInternal`, so the capture lives here.
-        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
-            viewModel.archiveDetail.collect { ad ->
-                if (ad != null && mInitialRating.isNaN()) {
-                    mInitialRating = ad.archive.rating
-                }
+        // (StateFlow replay + the isNaN guard make re-subscription a no-op.)
+        collectFlow(viewLifecycleOwner, viewModel.archiveDetail) { ad ->
+            if (ad != null && mInitialRating.isNaN()) {
+                mInitialRating = ad.archive.rating
             }
         }
         // Drive REFRESH→NORMAL transitions off the dedicated load-event
@@ -560,57 +564,53 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         // the spinner up forever (StateFlow distinct-emit eats the value
         // and `collect` never fires). detailLoaded fires unconditionally
         // on every successful API response.
-        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
-            viewModel.detailLoaded.collect { ad ->
-                if (mState != STATE_NORMAL) {
-                    onGetArchiveDetailSuccess(ad)
-                }
+        // collectFlowWhileCreated: a refresh completing while the app is
+        // backgrounded must still flip mState — STARTED gating would drop
+        // the event and leave a permanent spinner on return.
+        collectFlowWhileCreated(viewLifecycleOwner, viewModel.detailLoaded) { ad ->
+            if (mState != STATE_NORMAL) {
+                onGetArchiveDetailSuccess(ad)
             }
         }
-        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
-            viewModel.detailError.collect { e ->
-                onGetGalleryDetailFailure(e)
-            }
+        // collectFlowWhileCreated: error arm of the same state machine.
+        collectFlowWhileCreated(viewLifecycleOwner, viewModel.detailError) { e ->
+            onGetGalleryDetailFailure(e)
         }
         // Cache-first failure: page is already painted from local data
         // (LRU cache or a degraded ArchiveDetail seeded from the nav-arg
         // Archive). Show a non-blocking banner so the user can read the
         // archive offline and retry the source server when it returns.
-        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
-            viewModel.detailErrorBanner.collect { e ->
-                showSourceErrorBanner(e)
-            }
+        // collectFlowWhileCreated: banner state must not be lost to a
+        // backgrounded window.
+        collectFlowWhileCreated(viewLifecycleOwner, viewModel.detailErrorBanner) { e ->
+            showSourceErrorBanner(e)
         }
         // A successful refresh after a banner-flagged failure dismisses
         // the banner — the live data is now displayed and the warning
-        // is no longer applicable.
-        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
-            viewModel.detailLoaded.collect {
-                mSourceErrorBanner?.visibility = View.GONE
-            }
+        // is no longer applicable. (Pairs with the banner collector above.)
+        collectFlowWhileCreated(viewLifecycleOwner, viewModel.detailLoaded) {
+            mSourceErrorBanner?.visibility = View.GONE
         }
         // After a rollback the optimistic write to currentRating /
         // archiveDetail has been reverted on the IO thread; reflect the
         // restored value on the rating bar and toast the error so the
         // user knows their change did not stick.
-        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
-            viewModel.ratingError.collect { e ->
-                rebindRatingFromViewModel()
-                val ctx = getEHContext()
-                if (ctx != null) {
-                    android.widget.Toast.makeText(
-                        ctx,
-                        com.lanraragi.reader.client.api.friendlyError(ctx, e),
-                        android.widget.Toast.LENGTH_LONG,
-                    ).show()
-                }
+        // collectFlowWhileCreated: losing the event would leave the rating
+        // bar showing the rolled-back optimistic value.
+        collectFlowWhileCreated(viewLifecycleOwner, viewModel.ratingError) { e ->
+            rebindRatingFromViewModel()
+            val ctx = getEHContext()
+            if (ctx != null) {
+                android.widget.Toast.makeText(
+                    ctx,
+                    com.lanraragi.reader.client.api.friendlyError(ctx, e),
+                    android.widget.Toast.LENGTH_LONG,
+                ).show()
             }
         }
         // Observe download state changes from ViewModel (replaces DownloadHelper listener)
-        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
-            viewModel.downloadState.collect {
-                mActionHandler?.updateDownloadText()
-            }
+        collectFlow(viewLifecycleOwner, viewModel.downloadState) {
+            mActionHandler?.updateDownloadText()
         }
         // Observe local reading progress so the header refreshes whenever the
         // reader writes a new page (StateFlow replays its current value to new
@@ -629,7 +629,12 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         // the nav-arg. Independent of detail metadata so it runs in
         // parallel with `requestGalleryDetail` and we don't gate the
         // thumbnail grid behind a slow metadata response.
-        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
+        // Raw view-scoped launch: a per-attach one-shot (`first()`), must NOT
+        // sit inside repeatOnLifecycle or it would re-run on every foreground
+        // return.
+        viewLifecycleOwner.lifecycleScope.launch(
+            ServiceRegistry.coroutineModule.exceptionHandler
+        ) {
             val arc = viewModel.archive.filterNotNull().first()
             mPageThumbAdapter?.submitArcid(arc.arcid)
             pageThumbsViewModel.start(arc.arcid, arc.serverProfileId)
