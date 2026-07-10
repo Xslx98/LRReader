@@ -1,6 +1,5 @@
 package com.lanraragi.reader.client.api
 
-import android.util.Base64
 import com.lanraragi.reader.client.api.data.LRRServerInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -49,10 +48,7 @@ object LRRServerApi {
                     .get()
                     .apply {
                         if (!apiKey.isNullOrEmpty()) {
-                            val token = Base64.encodeToString(
-                                apiKey.toByteArray(Charsets.UTF_8), Base64.NO_WRAP
-                            )
-                            header("Authorization", "Bearer $token")
+                            header("Authorization", bearerAuthHeaderValue(apiKey))
                         }
                     }
                     .build()
