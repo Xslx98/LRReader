@@ -142,4 +142,29 @@ class LRRUrlHelperConnectTest {
         assertTrue(cb.usedHttpFallback)
         assertEquals("http://prior.example.com:3000", LRRAuthManager.getServerUrl())
     }
+
+    @Test
+    fun explicitHttp_toNonLanHost_refusesBeforeSendingKey() = runBlocking {
+        // An explicit http:// URL to a WAN host must be refused before any
+        // request goes out — otherwise the Bearer key travels in cleartext.
+        // isLanAddress is false for 198.51.100.x (TEST-NET-2), so the gate
+        // fires and no socket is opened.
+        val cb = RecordingCallback()
+        LRRUrlHelper.connectWithFallback(client, "http://198.51.100.7:3000", "secret", cb)
+
+        assertTrue("explicit WAN http must be refused", cb.error is SecurityException)
+        assertNull(cb.resolvedUrl)
+        assertNull(cb.info)
+    }
+
+    @Test
+    fun explicitHttp_toLanHost_stillAllowed() = runBlocking {
+        // The gate must not block legitimate LAN cleartext testing.
+        server.enqueue(MockResponse().setResponseCode(200).setBody(infoJson))
+        val cb = RecordingCallback()
+        LRRUrlHelper.connectWithFallback(client, baseUrl(), "k", cb)
+
+        assertEquals(baseUrl(), cb.resolvedUrl)
+        assertNull(cb.error)
+    }
 }

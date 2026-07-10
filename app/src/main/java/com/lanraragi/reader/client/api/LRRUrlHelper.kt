@@ -134,6 +134,19 @@ object LRRUrlHelper {
     ) {
         try {
             if (hasExplicitScheme(rawInput)) {
+                // Explicit http:// to a non-LAN host would transmit the Bearer
+                // key in cleartext over the WAN. Refuse before any request is
+                // issued — the same policy the schemeless and https->http
+                // fallback paths already enforce below.
+                if (rawInput.lowercase().startsWith("http://") && !isLanAddress(rawInput)) {
+                    callback.onFailure(
+                        SecurityException(
+                            "HTTP is not allowed for non-LAN servers; the API key " +
+                                "would be sent in cleartext. Use HTTPS."
+                        )
+                    )
+                    return
+                }
                 try {
                     val info = LRRServerApi.getServerInfo(testClient, rawInput, apiKey)
                     callback.onSuccess(rawInput, info, false)
