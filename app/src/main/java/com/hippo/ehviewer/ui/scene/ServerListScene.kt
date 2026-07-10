@@ -10,7 +10,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -18,6 +17,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.util.collectFlow
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.client.api.LRRUrlHelper
@@ -26,7 +26,6 @@ import com.hippo.ehviewer.dao.ServerProfile
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
 import com.hippo.scene.Announcer
 import com.hippo.scene.StageActivity
-import kotlinx.coroutines.launch
 
 /**
  * Server list management scene. Shows all saved server profiles in a list.
@@ -87,13 +86,13 @@ class ServerListScene : BaseScene() {
 
         fab.setOnClickListener { dialogHelper.showAddDialog() }
 
-        observeViewModel()
         viewModel.loadProfiles()
         return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        observeViewModel()
     }
 
     override fun onResume() {
@@ -110,30 +109,29 @@ class ServerListScene : BaseScene() {
     // ===== ViewModel observation =====
 
     private fun observeViewModel() {
-        // Observe profile list changes
-        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
-            viewModel.profiles.collect { profiles ->
-                val adapter = mAdapter
-                if (adapter != null) {
-                    val diff = DiffUtil.calculateDiff(
-                        ServerProfileDiffCallback(mLastSnapshot, profiles)
-                    )
-                    mProfiles = profiles
-                    mLastSnapshot = ArrayList(profiles)
-                    diff.dispatchUpdatesTo(adapter)
-                } else {
-                    mProfiles = profiles
-                    mLastSnapshot = ArrayList(profiles)
-                }
-                mEmptyText?.visibility = if (mProfiles.isEmpty()) View.VISIBLE else View.GONE
+        // UI-4: view-scoped + STARTED-gated. The previous fragment-scoped
+        // collectors stacked one set per re-attach — applyProfileSwitch
+        // (cache clear + reload + navigation) ran once per accumulated
+        // collector for a single ProfileActivated event.
+        collectFlow(viewLifecycleOwner, viewModel.profiles) { profiles ->
+            val adapter = mAdapter
+            if (adapter != null) {
+                val diff = DiffUtil.calculateDiff(
+                    ServerProfileDiffCallback(mLastSnapshot, profiles)
+                )
+                mProfiles = profiles
+                mLastSnapshot = ArrayList(profiles)
+                diff.dispatchUpdatesTo(adapter)
+            } else {
+                mProfiles = profiles
+                mLastSnapshot = ArrayList(profiles)
             }
+            mEmptyText?.visibility = if (mProfiles.isEmpty()) View.VISIBLE else View.GONE
         }
 
         // Observe one-shot UI events
-        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
-            viewModel.uiEvent.collect { event ->
-                handleUiEvent(event)
-            }
+        collectFlow(viewLifecycleOwner, viewModel.uiEvent) { event ->
+            handleUiEvent(event)
         }
     }
 
