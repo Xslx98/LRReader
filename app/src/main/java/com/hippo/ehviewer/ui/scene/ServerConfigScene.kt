@@ -10,16 +10,14 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
 import com.google.android.material.textfield.TextInputLayout
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.util.collectFlow
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
 import com.hippo.lib.yorozuya.ViewUtils
-import kotlinx.coroutines.launch
 
 /**
  * Server configuration scene for LANraragi Reader.
@@ -82,32 +80,29 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
             mApiKey?.setText(savedKey)
         }
 
-        // Observe ViewModel events
-        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
-            viewModel.connectSuccess.collect { result ->
-                handleConnectSuccess(result)
-            }
-        }
-        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
-            viewModel.connectFailure.collect { e ->
-                handleConnectFailure(e)
-            }
-        }
-        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
-            viewModel.secureStorageError.collect {
-                hideProgress()
-                showSecureStorageErrorDialog()
-            }
-        }
-        lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
-            viewModel.connecting.collect { isConnecting ->
-                if (!isConnecting) {
-                    hideProgress()
-                }
-            }
-        }
-
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        // UI-4: view-scoped + STARTED-gated. The previous fragment-scoped
+        // collectors stacked one set per re-attach — double failure toast,
+        // double redirectToArchiveList() on success.
+        collectFlow(viewLifecycleOwner, viewModel.connectSuccess) { result ->
+            handleConnectSuccess(result)
+        }
+        collectFlow(viewLifecycleOwner, viewModel.connectFailure) { e ->
+            handleConnectFailure(e)
+        }
+        collectFlow(viewLifecycleOwner, viewModel.secureStorageError) {
+            hideProgress()
+            showSecureStorageErrorDialog()
+        }
+        collectFlow(viewLifecycleOwner, viewModel.connecting) { isConnecting ->
+            if (!isConnecting) {
+                hideProgress()
+            }
+        }
     }
 
     override fun onDestroyView() {
