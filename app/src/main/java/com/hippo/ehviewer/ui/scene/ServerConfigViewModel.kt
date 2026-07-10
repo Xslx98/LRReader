@@ -10,6 +10,7 @@ import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.client.api.LRRServerApi
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.client.api.data.LRRServerInfo
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,10 +31,6 @@ import kotlinx.coroutines.launch
 class ServerConfigViewModel : ViewModel() {
 
     private val profileRepository = ServiceRegistry.dataModule.profileRepository
-
-    /** Global auth state captured before a test attempt (see [attemptConnection]). */
-    private var priorServerUrl: String? = null
-    private var priorApiKey: String? = null
 
     // -------------------------------------------------------------------------
     // Connection state
@@ -93,45 +90,22 @@ class ServerConfigViewModel : ViewModel() {
 
         _connecting.value = true
 
-        // UI-16: the attempt mutates the process-global interceptor state
-        // (server URL + default API key) before the outcome is known. Capture
-        // the pre-test values so a failed attempt restores them instead of
-        // leaving auth routed at the candidate server.
-        priorServerUrl = LRRAuthManager.getServerUrl()
-        priorApiKey = try {
-            LRRAuthManager.getApiKey()
-        } catch (e: LRRSecureStorageUnavailableException) {
-            null
-        }
-
-        // Save API key
-        try {
-            LRRAuthManager.setApiKey(if (!apiKey.isNullOrEmpty()) apiKey else null)
-        } catch (e: LRRSecureStorageUnavailableException) {
-            _connecting.value = false
-            _secureStorageError.tryEmit(Unit)
-            return
-        }
+        // NET-7: the candidate key rides the test request itself (explicit
+        // Bearer header on a stripped test client). No global auth state is
+        // written until onConnectSuccess — the single commit point.
+        val candidateKey = apiKey?.ifEmpty { null }
 
         val client = ServiceRegistry.networkModule.okHttpClient
         val testClient = LRRUrlHelper.buildTestClient(client)
 
-        val candidateKey = apiKey?.ifEmpty { null }
-        try {
-            if (LRRUrlHelper.hasExplicitScheme(rawInput)) {
-                // User specified protocol explicitly -- use as-is
-                LRRAuthManager.setServerUrl(rawInput)
-                tryConnect(testClient, rawInput, null, candidateKey, navigateOnSuccess)
-            } else {
-                // No explicit scheme: try HTTPS first, then fall back to HTTP
-                val httpsUrl = "https://$rawInput"
-                val httpUrl = "http://$rawInput"
-                LRRAuthManager.setServerUrl(httpsUrl) // temp set for interceptor
-                tryConnect(testClient, httpsUrl, httpUrl, candidateKey, navigateOnSuccess)
-            }
-        } catch (e: LRRSecureStorageUnavailableException) {
-            _connecting.value = false
-            _secureStorageError.tryEmit(Unit)
+        if (LRRUrlHelper.hasExplicitScheme(rawInput)) {
+            // User specified protocol explicitly -- use as-is
+            tryConnect(testClient, rawInput, null, candidateKey, navigateOnSuccess)
+        } else {
+            // No explicit scheme: try HTTPS first, then fall back to HTTP
+            val httpsUrl = "https://$rawInput"
+            val httpUrl = "http://$rawInput"
+            tryConnect(testClient, httpsUrl, httpUrl, candidateKey, navigateOnSuccess)
         }
     }
 
@@ -151,13 +125,13 @@ class ServerConfigViewModel : ViewModel() {
                 Log.d(TAG, "Trying primary URL: $primaryUrl")
                 val info = LRRServerApi.getServerInfo(client, primaryUrl, apiKey)
                 // Success on primary
-                onConnectSuccess(primaryUrl, info, navigateOnSuccess)
+                onConnectSuccess(primaryUrl, info, apiKey, navigateOnSuccess)
                 return@launch
             } catch (e1: Exception) {
-                // Deliberately NO CancellationException rethrow (NET-3 sweep):
-                // onConnectFailure carries the UI-16 auth-state rollback, which
-                // must run even when the test coroutine is cancelled mid-flight.
-                // The failure event just falls on a dead scene and is dropped.
+                // NET-7: nothing global is mutated during a test, so normal
+                // structured cancellation applies again (the NET-3-era rollback
+                // exemption is retired).
+                if (e1 is CancellationException) throw e1
                 Log.d(TAG, "Primary URL failed: ${e1.message}")
 
                 if (fallbackUrl == null) {
@@ -170,16 +144,14 @@ class ServerConfigViewModel : ViewModel() {
             // --- Attempt 2: fallback URL ---
             try {
                 Log.d(TAG, "Trying fallback URL: $fallbackUrl")
-                // Update interceptor URL for fallback attempt
-                LRRAuthManager.setServerUrl(fallbackUrl)
                 val info = LRRServerApi.getServerInfo(client, fallbackUrl, apiKey)
                 // Success on fallback
-                onConnectSuccess(fallbackUrl, info, navigateOnSuccess)
+                onConnectSuccess(fallbackUrl, info, apiKey, navigateOnSuccess)
             } catch (e: LRRSecureStorageUnavailableException) {
                 Log.e(TAG, "Secure storage unavailable during fallback", e)
                 onConnectFailure(e)
             } catch (e2: Exception) {
-                // No CE rethrow — same UI-16 rollback rationale as above.
+                if (e2 is CancellationException) throw e2
                 Log.d(TAG, "Fallback URL also failed: ${e2.message}")
                 onConnectFailure(e2)
             }
@@ -193,10 +165,14 @@ class ServerConfigViewModel : ViewModel() {
     private suspend fun onConnectSuccess(
         resolvedUrl: String,
         info: LRRServerInfo,
+        apiKey: String?,
         navigateOnSuccess: Boolean
     ) {
         try {
+            // NET-7 commit point: global auth state is written only after the
+            // candidate server actually responded.
             LRRAuthManager.setServerUrl(resolvedUrl)
+            LRRAuthManager.setApiKey(apiKey)
             LRRAuthManager.setServerName(info.name)
 
             // Create or update ServerProfile
@@ -211,14 +187,14 @@ class ServerConfigViewModel : ViewModel() {
                     true
                 )
                 profileRepository.update(updated)
-                LRRAuthManager.setApiKeyForProfile(existing.id, LRRAuthManager.getApiKey())
+                LRRAuthManager.setApiKeyForProfile(existing.id, apiKey)
                 LRRAuthManager.setActiveProfileId(existing.id)
             } else {
                 val profileName = info.name ?: "LANraragi"
                 // API key is stored in EncryptedSharedPreferences, not in Room
                 val newProfile = ServerProfile(0, profileName, resolvedUrl, true)
                 val newId = profileRepository.insert(newProfile)
-                LRRAuthManager.setApiKeyForProfile(newId, LRRAuthManager.getApiKey())
+                LRRAuthManager.setApiKeyForProfile(newId, apiKey)
                 LRRAuthManager.setActiveProfileId(newId)
             }
         } catch (e: LRRSecureStorageUnavailableException) {
@@ -232,30 +208,15 @@ class ServerConfigViewModel : ViewModel() {
     }
 
     /**
-     * Called when all connection attempts fail. Restores the pre-test global
-     * auth state, then emits the failure event.
+     * Called when all connection attempts fail. Nothing to roll back — a test
+     * attempt never writes global auth state (NET-7); just emit the failure.
      */
     private fun onConnectFailure(e: Exception) {
-        restorePriorAuthState()
         _connecting.value = false
         if (e is LRRSecureStorageUnavailableException) {
             _secureStorageError.tryEmit(Unit)
         } else {
             _connectFailure.tryEmit(e)
-        }
-    }
-
-    /**
-     * Best-effort rollback of [LRRAuthManager] globals mutated by a test
-     * attempt. Only meaningful when a previous configuration existed; on
-     * first run both captures are null and this is a no-op for the URL.
-     */
-    private fun restorePriorAuthState() {
-        priorServerUrl?.let { LRRAuthManager.setServerUrl(it) }
-        try {
-            LRRAuthManager.setApiKey(priorApiKey)
-        } catch (e: LRRSecureStorageUnavailableException) {
-            Log.e(TAG, "Could not restore prior API key after failed test", e)
         }
     }
 
