@@ -15,6 +15,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import com.hippo.ehviewer.ServiceRegistry
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -91,6 +92,53 @@ class FlowBridgeLifecycleTest {
         owner.moveTo(Lifecycle.State.CREATED) // = STOPPED
         emit(flow, 7)
         assertEquals(listOf(7), received)
+    }
+
+    @Test
+    fun collectFlow_doesNotDeliverBeforeFirstStart() {
+        val owner = TestOwner()
+        val flow = MutableSharedFlow<Int>(extraBufferCapacity = 4)
+        val received = mutableListOf<Int>()
+        owner.moveTo(Lifecycle.State.CREATED)
+        collectFlow(owner, flow) { received.add(it) }
+        shadowOf(Looper.getMainLooper()).idle()
+        emit(flow, 1)
+        assertEquals(emptyList<Int>(), received)
+        owner.moveTo(Lifecycle.State.STARTED)
+        emit(flow, 2)
+        assertEquals(listOf(2), received)
+    }
+
+    @Test
+    fun collectFlow_dropsSharedFlowEmissionsWhileStopped() {
+        val owner = TestOwner()
+        val flow = MutableSharedFlow<Int>(extraBufferCapacity = 4)
+        val received = mutableListOf<Int>()
+        collectFlow(owner, flow) { received.add(it) }
+        owner.moveTo(Lifecycle.State.STARTED)
+        emit(flow, 1)
+        owner.moveTo(Lifecycle.State.CREATED) // = STOPPED
+        emit(flow, 2)
+        owner.moveTo(Lifecycle.State.STARTED)
+        emit(flow, 3)
+        // 2 landed in a stopped window: dropped, not replayed.
+        assertEquals(listOf(1, 3), received)
+    }
+
+    @Test
+    fun collectFlow_replaysLatestStateFlowValueOnRestart() {
+        val owner = TestOwner()
+        val state = MutableStateFlow(0)
+        val received = mutableListOf<Int>()
+        collectFlow(owner, state) { received.add(it) }
+        owner.moveTo(Lifecycle.State.STARTED)
+        assertEquals(listOf(0), received)
+        owner.moveTo(Lifecycle.State.CREATED) // = STOPPED
+        state.value = 5
+        shadowOf(Looper.getMainLooper()).idle()
+        owner.moveTo(Lifecycle.State.STARTED)
+        // Value changed while stopped is re-delivered by replay on restart.
+        assertEquals(listOf(0, 5), received)
     }
 
     @Test
