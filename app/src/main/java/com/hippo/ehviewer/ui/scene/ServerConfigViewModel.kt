@@ -113,58 +113,56 @@ class ServerConfigViewModel : ViewModel() {
      * Called on IO thread when connection succeeds. Persists/updates the
      * [ServerProfile] then emits the success event.
      */
-    private fun onConnectSuccess(
+    private suspend fun onConnectSuccess(
         resolvedUrl: String,
         info: LRRServerInfo,
         apiKey: String?,
         navigateOnSuccess: Boolean
     ) {
-        viewModelScope.launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    // NET-7 commit point: global auth state is written only after
-                    // the candidate server actually responded.
-                    LRRAuthManager.setServerUrl(resolvedUrl)
-                    LRRAuthManager.setApiKey(apiKey)
-                    LRRAuthManager.setServerName(info.name)
-
-                    // Create or update ServerProfile
-                    val existing = profileRepository.findByUrl(resolvedUrl)
-                    profileRepository.deactivateAll()
-                    if (existing != null) {
-                        // API key is stored in EncryptedSharedPreferences, not in Room
-                        val updated = ServerProfile(
-                            existing.id,
-                            info.name ?: existing.name,
-                            resolvedUrl,
-                            true
-                        )
-                        profileRepository.update(updated)
-                        LRRAuthManager.setApiKeyForProfile(existing.id, apiKey)
-                        LRRAuthManager.setActiveProfileId(existing.id)
-                    } else {
-                        val profileName = info.name ?: "LANraragi"
-                        // API key is stored in EncryptedSharedPreferences, not in Room
-                        val newProfile = ServerProfile(0, profileName, resolvedUrl, true)
-                        val newId = profileRepository.insert(newProfile)
-                        LRRAuthManager.setApiKeyForProfile(newId, apiKey)
-                        LRRAuthManager.setActiveProfileId(newId)
-                    }
+        try {
+            withContext(Dispatchers.IO) {
+                // Room first: create or update the active profile row. A failure
+                // here is reported below with the live global auth still on the
+                // previous server, so a persistence error never silently switches
+                // traffic to an unpersisted candidate.
+                val existing = profileRepository.findByUrl(resolvedUrl)
+                profileRepository.deactivateAll()
+                val profileId = if (existing != null) {
+                    val updated = ServerProfile(
+                        existing.id,
+                        info.name ?: existing.name,
+                        resolvedUrl,
+                        true
+                    )
+                    profileRepository.update(updated)
+                    existing.id
+                } else {
+                    val profileName = info.name ?: "LANraragi"
+                    profileRepository.insert(ServerProfile(0, profileName, resolvedUrl, true))
                 }
-            } catch (e: LRRSecureStorageUnavailableException) {
-                Log.e(TAG, "Secure storage unavailable on connect success", e)
-                onConnectFailure(e)
-                return@launch
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                Log.e(TAG, "Failed to persist profile on connect success", e)
-                onConnectFailure(e)
-                return@launch
-            }
 
-            _connecting.value = false
-            _connectSuccess.tryEmit(ConnectSuccess(resolvedUrl, info, navigateOnSuccess))
+                // Keystore per-profile key + live global auth LAST, only once the
+                // profile row is committed. (API key rides EncryptedSharedPreferences,
+                // not Room.)
+                LRRAuthManager.setApiKeyForProfile(profileId, apiKey)
+                LRRAuthManager.setActiveProfileId(profileId)
+                LRRAuthManager.setServerUrl(resolvedUrl)
+                LRRAuthManager.setApiKey(apiKey)
+                LRRAuthManager.setServerName(info.name)
+            }
+        } catch (e: LRRSecureStorageUnavailableException) {
+            Log.e(TAG, "Secure storage unavailable on connect success", e)
+            onConnectFailure(e)
+            return
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Log.e(TAG, "Failed to persist profile on connect success", e)
+            onConnectFailure(e)
+            return
         }
+
+        _connecting.value = false
+        _connectSuccess.tryEmit(ConnectSuccess(resolvedUrl, info, navigateOnSuccess))
     }
 
     /**
