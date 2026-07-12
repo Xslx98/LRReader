@@ -571,6 +571,10 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             if (mState != STATE_NORMAL) {
                 onGetArchiveDetailSuccess(ad)
             }
+            // A successful refresh after a banner-flagged failure also dismisses
+            // the source-error banner — the live data is now displayed and the
+            // warning no longer applies.
+            mSourceErrorBanner?.visibility = View.GONE
         }
         // collectFlowWhileCreated: error arm of the same state machine.
         collectFlowWhileCreated(viewLifecycleOwner, viewModel.detailError) { e ->
@@ -584,12 +588,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         // backgrounded window.
         collectFlowWhileCreated(viewLifecycleOwner, viewModel.detailErrorBanner) { e ->
             showSourceErrorBanner(e)
-        }
-        // A successful refresh after a banner-flagged failure dismisses
-        // the banner — the live data is now displayed and the warning
-        // is no longer applicable. (Pairs with the banner collector above.)
-        collectFlowWhileCreated(viewLifecycleOwner, viewModel.detailLoaded) {
-            mSourceErrorBanner?.visibility = View.GONE
         }
         // After a rollback the optimistic write to currentRating /
         // archiveDetail has been reverted on the IO thread; reflect the
