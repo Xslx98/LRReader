@@ -18,6 +18,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.util.collectFlow
+import com.hippo.ehviewer.util.collectFlowWhileCreated
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.client.api.LRRUrlHelper
@@ -129,8 +130,14 @@ class ServerListScene : BaseScene() {
             mEmptyText?.visibility = if (mProfiles.isEmpty()) View.VISIBLE else View.GONE
         }
 
-        // Observe one-shot UI events
-        collectFlow(viewLifecycleOwner, viewModel.uiEvent) { event ->
+        // Observe one-shot UI events. These are replay=0 events that drive
+        // state-machine transitions (ProfileActivated → applyProfileSwitch,
+        // ProfileAdded/EditSaved → navigation/dialog dismissal); losing one in a
+        // STOPPED window would split Room's active flag from LRRAuthManager or
+        // soft-lock the add/edit dialog, so collect for the whole view lifetime.
+        // viewLifecycleOwner scoping still cancels on view destroy, so no
+        // duplicate collector stacks across re-attach.
+        collectFlowWhileCreated(viewLifecycleOwner, viewModel.uiEvent) { event ->
             handleUiEvent(event)
         }
     }
