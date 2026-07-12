@@ -299,8 +299,7 @@ class ServerListViewModel : ViewModel() {
                         usedHttpFallback: Boolean
                     ) {
                         performAddProfile(
-                            name, resolvedUrl, finalKey, allowCleartext,
-                            info, usedHttpFallback
+                            name, resolvedUrl, finalKey, info, usedHttpFallback
                         )
                     }
 
@@ -319,12 +318,16 @@ class ServerListViewModel : ViewModel() {
         name: String,
         resolvedUrl: String,
         finalKey: String?,
-        allowCleartext: Boolean,
         info: LRRServerInfo,
         usedHttpFallback: Boolean
     ) {
-        val resolvedIsHttp = resolvedUrl.lowercase().startsWith("http://")
-        val savedAllowCleartext = if (resolvedIsHttp) allowCleartext else true
+        // The persisted cleartext flag tracks the resolved scheme, not the
+        // gate opt-in: a profile that resolved to HTTP must be allowed
+        // cleartext or LRRCleartextRejectionInterceptor refuses all its
+        // traffic; an HTTPS profile needs no cleartext grant. The gate
+        // (connectWithFallback's allowCleartext) already refused any
+        // unconsented WAN-cleartext resolution before reaching here.
+        val savedAllowCleartext = resolvedUrl.lowercase().startsWith("http://")
 
         viewModelScope.launch {
             try {
