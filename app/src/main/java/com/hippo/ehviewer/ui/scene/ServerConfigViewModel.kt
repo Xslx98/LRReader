@@ -197,8 +197,7 @@ class ServerConfigViewModel : ViewModel() {
      * Checks whether the resolved URL uses HTTP on a non-LAN address.
      */
     fun isInsecureWanConnection(resolvedUrl: String): Boolean {
-        return resolvedUrl.lowercase().startsWith("http://") &&
-            !LRRUrlHelper.isLanAddress(resolvedUrl)
+        return LRRUrlHelper.isInsecureWanUrl(resolvedUrl)
     }
 
     companion object {

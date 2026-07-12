@@ -123,6 +123,18 @@ object LRRUrlHelper {
         }
     }
 
+    /**
+     * True when [url] is a plain-HTTP address to a host that is not a
+     * private/LAN IP — i.e. sending the API key to it would put the key on the
+     * cleartext WAN. The per-profile `allowCleartext` opt-in (or HTTPS) is the
+     * intended escape hatch. Single source of truth for the cleartext-WAN
+     * predicate shared by [connectWithFallback]'s gate, ServerConfig's
+     * post-success warning, and ServerListScene's switch/add warnings.
+     */
+    @JvmStatic
+    fun isInsecureWanUrl(url: String): Boolean =
+        url.lowercase().startsWith("http://") && !isLanAddress(url)
+
     // ─────────────────────────────────────────────
     //  HTTPS->HTTP fallback connection
     // ─────────────────────────────────────────────
@@ -184,7 +196,7 @@ object LRRUrlHelper {
                 // key in cleartext over the WAN. Refuse before any request is
                 // issued — the same policy the schemeless and https->http
                 // fallback paths already enforce below.
-                if (rawInput.lowercase().startsWith("http://") && !isLanAddress(rawInput)) {
+                if (isInsecureWanUrl(rawInput)) {
                     callback.onFailure(
                         SecurityException(
                             "HTTP is not allowed for non-LAN servers; the API key " +
