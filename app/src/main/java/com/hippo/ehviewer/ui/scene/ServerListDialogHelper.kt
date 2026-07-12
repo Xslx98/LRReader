@@ -161,6 +161,9 @@ internal class ServerListDialogHelper(
                 return@setOnClickListener
             }
 
+            // Consent = the checkbox only (shown/required for explicit http://).
+            val profileAllowCleartext = cleartextCheckbox.isChecked
+
             // Disable button during connection test
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
             Toast.makeText(ctx, R.string.lrr_test_connection, Toast.LENGTH_SHORT).show()
@@ -170,7 +173,8 @@ internal class ServerListDialogHelper(
                 position = position,
                 newName = newName,
                 newUrl = normalizedInput,
-                newKey = newKey
+                newKey = newKey,
+                allowCleartext = profileAllowCleartext
             )
         }
 
