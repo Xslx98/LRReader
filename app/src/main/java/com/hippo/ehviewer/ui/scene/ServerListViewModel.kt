@@ -214,11 +214,20 @@ class ServerListViewModel : ViewModel() {
             try {
                 val committed = withContext(Dispatchers.IO) {
                     try {
-                        // Write the fragile secure-storage state first: if the
-                        // keystore is unavailable the first call throws before Room
-                        // is touched, so the edit aborts cleanly instead of leaving
-                        // Room updated while live auth still points at the old URL.
+                        // Fragile keystore per-profile key first: if the keystore
+                        // is unavailable this throws before any durable write, so
+                        // the edit aborts with Room and live auth untouched.
                         LRRAuthManager.setApiKeyForProfile(profile.id, newKey.ifEmpty { null })
+                    } catch (e: LRRSecureStorageUnavailableException) {
+                        _uiEvent.emit(ServerListUiEvent.SecureStorageError)
+                        return@withContext false
+                    }
+                    // Durable Room write next. A failure propagates to the outer
+                    // catch (EditConnectionFailed) with the live global auth still
+                    // pointing at the old server — no silent switch.
+                    profileRepository.update(updated)
+                    // Live global-auth switch LAST, only once Room has committed.
+                    try {
                         if (isActive) {
                             LRRAuthManager.setServerUrl(updated.url)
                             LRRAuthManager.setApiKey(newKey.ifEmpty { null })
@@ -226,14 +235,13 @@ class ServerListViewModel : ViewModel() {
                             LRRAuthManager.setAllowCleartext(updated.allowCleartext)
                             LRRAuthManager.bumpServerConfigVersion()
                         }
+                        LRRAuthManager.markReauthIfProfilesUnprotected(
+                            profileRepository.getAllProfiles().map { it.id }
+                        )
                     } catch (e: LRRSecureStorageUnavailableException) {
                         _uiEvent.emit(ServerListUiEvent.SecureStorageError)
                         return@withContext false
                     }
-                    profileRepository.update(updated)
-                    LRRAuthManager.markReauthIfProfilesUnprotected(
-                        profileRepository.getAllProfiles().map { it.id }
-                    )
                     true
                 }
                 if (!committed) return@launch

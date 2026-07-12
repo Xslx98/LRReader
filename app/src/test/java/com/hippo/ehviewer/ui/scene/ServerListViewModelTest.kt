@@ -185,6 +185,24 @@ class ServerListViewModelTest {
         return runBlocking { db.miscDao().insertServerProfile(ServerProfile(name = name, url = url, isActive = isActive)) }
     }
 
+    /**
+     * An [IDataModule] exposing [repo] as its profileRepository and throwing
+     * for every other member, for tests that force a persistence failure.
+     */
+    private fun throwingDataModule(repo: ProfileRepository): IDataModule = object : IDataModule {
+        override val profileRepository get() = repo
+        override val profileLookupCache get() = throw NotImplementedError("not needed")
+        override val historyRepository get() = throw NotImplementedError("not needed")
+        override val quickSearchRepository get() = throw NotImplementedError("not needed")
+        override val favoritesRepository get() = throw NotImplementedError("not needed")
+        override val downloadDbRepository get() = throw NotImplementedError("not needed")
+        override val downloadManager get() = throw NotImplementedError("not needed")
+        override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
+        override val archiveDetailCache get() = throw NotImplementedError("not needed")
+        override val spiderInfoCache get() = throw NotImplementedError("not needed")
+        override fun clearArchiveDetailCache() {}
+    }
+
     // ── NET-7: connection tests must not touch global active auth ──
 
     @Test
@@ -282,21 +300,8 @@ class ServerListViewModelTest {
                 throw IllegalStateException("simulated Room write failure")
             }
         }
-        val throwingRepo = ProfileRepository(throwingDao)
         ServiceRegistry.initializeForTest(
-            data = object : IDataModule {
-                override val profileRepository get() = throwingRepo
-                override val profileLookupCache get() = throw NotImplementedError("not needed")
-                override val historyRepository get() = throw NotImplementedError("not needed")
-                override val quickSearchRepository get() = throw NotImplementedError("not needed")
-                override val favoritesRepository get() = throw NotImplementedError("not needed")
-                override val downloadDbRepository get() = throw NotImplementedError("not needed")
-                override val downloadManager get() = throw NotImplementedError("not needed")
-                override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
-                override val archiveDetailCache get() = throw NotImplementedError("not needed")
-                override val spiderInfoCache get() = throw NotImplementedError("not needed")
-                override fun clearArchiveDetailCache() {}
-            }
+            data = throwingDataModule(ProfileRepository(throwingDao))
         )
 
         val vm = ServerListViewModel()
@@ -307,6 +312,40 @@ class ServerListViewModelTest {
         awaitCondition {
             events.any { it is ServerListViewModel.ServerListUiEvent.EditConnectionFailed }
         }
+    }
+
+    @Test
+    fun testAndSaveEditedProfile_roomWriteFails_leavesGlobalAuthUntouched() {
+        // The live global auth must switch only AFTER the durable Room write
+        // commits. If the Room update fails, the active server URL/key must
+        // still point at the old server — otherwise traffic silently follows
+        // the edited URL while the profile list shows the old one.
+        LRRAuthManager.setServerUrl("https://old.example.com")
+        LRRAuthManager.setApiKey("old-key")
+        val id = insertProfile("Old Name", "https://old.example.com", isActive = true)
+        val profile = ServerProfile(id = id, name = "Old Name", url = "https://old.example.com", isActive = true)
+        server.enqueue(MockResponse().setResponseCode(200)
+            .setBody("""{"name":"New Server","version":"0.9.8","archives_per_page":100}"""))
+
+        val throwingDao = object : MiscRoomDao by db.miscDao() {
+            override suspend fun updateServerProfile(profile: ServerProfile) {
+                throw IllegalStateException("simulated Room write failure")
+            }
+        }
+        ServiceRegistry.initializeForTest(
+            data = throwingDataModule(ProfileRepository(throwingDao))
+        )
+
+        val vm = ServerListViewModel()
+        val events = collectEvents(vm)
+        val newUrl = server.url("").toString().removeSuffix("/")
+        vm.testAndSaveEditedProfile(profile, 0, "New Name", newUrl, "new-key", allowCleartext = true)
+
+        awaitCondition {
+            events.any { it is ServerListViewModel.ServerListUiEvent.EditConnectionFailed }
+        }
+        assertEquals("global URL must stay on the old server", "https://old.example.com", LRRAuthManager.getServerUrl())
+        assertEquals("old-key", LRRAuthManager.getApiKey())
     }
 
     @Test
