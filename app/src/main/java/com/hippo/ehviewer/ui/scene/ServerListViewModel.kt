@@ -172,30 +172,21 @@ class ServerListViewModel : ViewModel() {
             // NET-7: the probe is self-contained (explicit Bearer header on a
             // stripped test client) — no global auth state is touched, so
             // there is nothing to snapshot, restore, or guard against cancel.
-            LRRUrlHelper.connectWithFallback(
-                testClient,
-                newUrl,
-                newKey.ifEmpty { null },
-                object : LRRUrlHelper.ConnectCallback {
-                    override fun onSuccess(
-                        resolvedUrl: String,
-                        info: LRRServerInfo,
-                        usedHttpFallback: Boolean
-                    ) {
-                        saveEditedProfile(profile, position, newName, resolvedUrl, newKey, usedHttpFallback)
-                    }
-
-                    override fun onFailure(error: Exception) {
-                        _uiEvent.tryEmit(
-                            ServerListUiEvent.EditConnectionFailed(error)
-                        )
-                    }
-                },
-                // Gate on the edit dialog's current consent, not the stale
-                // stored flag, so a just-granted plain-HTTP opt-in is honoured
-                // and a revoked one is enforced.
-                allowCleartext = allowCleartext
-            )
+            // Gate on the edit dialog's current consent, not the stale stored
+            // flag, so a just-granted plain-HTTP opt-in is honoured and a
+            // revoked one is enforced.
+            when (
+                val r = LRRUrlHelper.connectWithFallback(
+                    testClient, newUrl, newKey.ifEmpty { null }, allowCleartext
+                )
+            ) {
+                is LRRUrlHelper.ConnectResult.Success ->
+                    saveEditedProfile(
+                        profile, position, newName, r.resolvedUrl, newKey, r.usedHttpFallback
+                    )
+                is LRRUrlHelper.ConnectResult.Failure ->
+                    _uiEvent.tryEmit(ServerListUiEvent.EditConnectionFailed(r.error))
+            }
         }
     }
 
@@ -294,29 +285,16 @@ class ServerListViewModel : ViewModel() {
             // NET-7: the probe is self-contained (explicit Bearer header on a
             // stripped test client) — no global auth state is touched, so
             // there is nothing to snapshot, restore, or guard against cancel.
-            LRRUrlHelper.connectWithFallback(
-                testClient,
-                normalizedUrl,
-                finalKey,
-                object : LRRUrlHelper.ConnectCallback {
-                    override fun onSuccess(
-                        resolvedUrl: String,
-                        info: LRRServerInfo,
-                        usedHttpFallback: Boolean
-                    ) {
-                        performAddProfile(
-                            name, resolvedUrl, finalKey, info, usedHttpFallback
-                        )
-                    }
-
-                    override fun onFailure(error: Exception) {
-                        _uiEvent.tryEmit(
-                            ServerListUiEvent.AddConnectionFailed(error)
-                        )
-                    }
-                },
-                allowCleartext = allowCleartext
-            )
+            when (
+                val r = LRRUrlHelper.connectWithFallback(
+                    testClient, normalizedUrl, finalKey, allowCleartext
+                )
+            ) {
+                is LRRUrlHelper.ConnectResult.Success ->
+                    performAddProfile(name, r.resolvedUrl, finalKey, r.info, r.usedHttpFallback)
+                is LRRUrlHelper.ConnectResult.Failure ->
+                    _uiEvent.tryEmit(ServerListUiEvent.AddConnectionFailed(r.error))
+            }
         }
     }
 
