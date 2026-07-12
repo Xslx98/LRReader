@@ -252,6 +252,37 @@ class ServerListViewModelTest {
     }
 
     @Test
+    fun testAndAddProfile_roomInsertFails_emitsFailureAndLeavesGlobalAuthUntouched() {
+        // A Room insert failure after a successful probe must surface
+        // AddConnectionFailed (not silently soft-lock the dialog) and must not
+        // have switched the live global auth to the new server.
+        LRRAuthManager.setServerUrl("https://old.example.com")
+        LRRAuthManager.setApiKey("old-key")
+        server.enqueue(MockResponse().setResponseCode(200)
+            .setBody("""{"name":"New","version":"0.9.8","archives_per_page":100}"""))
+
+        val throwingDao = object : MiscRoomDao by db.miscDao() {
+            override suspend fun insertServerProfile(profile: ServerProfile): Long {
+                throw IllegalStateException("simulated Room insert failure")
+            }
+        }
+        ServiceRegistry.initializeForTest(
+            data = throwingDataModule(ProfileRepository(throwingDao))
+        )
+
+        val vm = ServerListViewModel()
+        val events = collectEvents(vm)
+        val newUrl = server.url("").toString().removeSuffix("/")
+        vm.testAndAddProfile("New", newUrl, "new-key", allowCleartext = true)
+
+        awaitCondition {
+            events.any { it is ServerListViewModel.ServerListUiEvent.AddConnectionFailed }
+        }
+        assertEquals("global URL must stay on the old server", "https://old.example.com", LRRAuthManager.getServerUrl())
+        assertEquals("old-key", LRRAuthManager.getApiKey())
+    }
+
+    @Test
     fun testAndSaveEditedProfile_keystoreUnavailable_leavesRoomUnchanged() {
         // The connection test succeeds (the probe carries the key explicitly and
         // never touches the keystore), but committing the edit must not mutate

@@ -323,19 +323,10 @@ class ServerListViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                // Set auth immediately
-                try {
-                    LRRAuthManager.setServerUrl(resolvedUrl)
-                    LRRAuthManager.setApiKey(finalKey)
-                    LRRAuthManager.setServerName(name)
-                    LRRAuthManager.setAllowCleartext(savedAllowCleartext)
-                    LRRAuthManager.bumpServerConfigVersion()
-                } catch (e: LRRSecureStorageUnavailableException) {
-                    _uiEvent.emit(ServerListUiEvent.SecureStorageError)
-                    return@launch
-                }
-
                 val newId = withContext(Dispatchers.IO) {
+                    // Durable Room write first: a failure falls to the outer
+                    // catch (AddConnectionFailed) with the live global auth
+                    // untouched — no silent switch to an unpersisted server.
                     profileRepository.deactivateAll()
                     val newProfile = ServerProfile(
                         id = 0,
@@ -345,9 +336,16 @@ class ServerListViewModel : ViewModel() {
                         allowCleartext = savedAllowCleartext
                     )
                     val id = profileRepository.insert(newProfile)
+                    // Keystore per-profile key + live global auth LAST, only
+                    // once the profile row exists.
                     try {
                         LRRAuthManager.setApiKeyForProfile(id, finalKey)
                         LRRAuthManager.setActiveProfileId(id)
+                        LRRAuthManager.setServerUrl(resolvedUrl)
+                        LRRAuthManager.setApiKey(finalKey)
+                        LRRAuthManager.setServerName(name)
+                        LRRAuthManager.setAllowCleartext(savedAllowCleartext)
+                        LRRAuthManager.bumpServerConfigVersion()
                     } catch (e: LRRSecureStorageUnavailableException) {
                         _uiEvent.emit(ServerListUiEvent.SecureStorageError)
                         return@withContext -1L
@@ -373,8 +371,15 @@ class ServerListViewModel : ViewModel() {
                     )
                 )
                 loadProfiles()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
+                // Persistence failed after a successful probe. Surface it so the
+                // add dialog re-enables instead of soft-locking with no feedback;
+                // the live global auth was not switched (it runs only after the
+                // Room insert succeeds).
                 Log.e(TAG, "Failed to add profile", e)
+                _uiEvent.emit(ServerListUiEvent.AddConnectionFailed(e))
             }
         }
     }
