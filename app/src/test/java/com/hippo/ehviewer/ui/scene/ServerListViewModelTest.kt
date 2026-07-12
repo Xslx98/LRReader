@@ -247,7 +247,7 @@ class ServerListViewModelTest {
         val vm = ServerListViewModel()
         val events = collectEvents(vm)
         val newUrl = server.url("").toString().removeSuffix("/")
-        vm.testAndSaveEditedProfile(profile, 0, "New Name", newUrl, "new-key")
+        vm.testAndSaveEditedProfile(profile, 0, "New Name", newUrl, "new-key", allowCleartext = true)
 
         awaitCondition {
             events.any { it is ServerListViewModel.ServerListUiEvent.SecureStorageError }
@@ -302,11 +302,42 @@ class ServerListViewModelTest {
         val vm = ServerListViewModel()
         val events = collectEvents(vm)
         val newUrl = server.url("").toString().removeSuffix("/")
-        vm.testAndSaveEditedProfile(profile, 0, "New Name", newUrl, "new-key")
+        vm.testAndSaveEditedProfile(profile, 0, "New Name", newUrl, "new-key", allowCleartext = true)
 
         awaitCondition {
             events.any { it is ServerListViewModel.ServerListUiEvent.EditConnectionFailed }
         }
+    }
+
+    @Test
+    fun testAndSaveEditedProfile_resolvesHttp_persistsCleartextAllowedFromResolvedScheme() {
+        // Editing to a plain-HTTP URL (with the user's cleartext consent) must
+        // persist allowCleartext = true so LRRCleartextRejectionInterceptor
+        // keeps the profile usable — the saved flag tracks the resolved scheme,
+        // not the stale stored flag. The stored profile starts allowCleartext =
+        // false to prove the edit does not simply carry it over.
+        val id = insertProfile("Old", "https://old.example.com", isActive = true)
+        val profile = ServerProfile(
+            id = id, name = "Old", url = "https://old.example.com",
+            isActive = true, allowCleartext = false
+        )
+        server.enqueue(
+            MockResponse().setResponseCode(200)
+                .setBody("""{"name":"Mock","version":"0.9.8","archives_per_page":100}""")
+        )
+
+        val vm = ServerListViewModel()
+        val events = collectEvents(vm)
+        val newUrl = server.url("").toString().removeSuffix("/") // explicit http LAN, no fallback
+        vm.testAndSaveEditedProfile(profile, 0, "New", newUrl, "k", allowCleartext = true)
+
+        awaitCondition {
+            events.any { it is ServerListViewModel.ServerListUiEvent.EditSaved }
+        }
+
+        val saved = runBlocking { db.miscDao().getAllServerProfiles() }.first { it.id == id }
+        assertTrue("HTTP-resolved edit must persist allowCleartext=true", saved.allowCleartext)
+        assertEquals(newUrl, saved.url)
     }
 
     // ── loadProfiles ───────────────────────────────────────────────

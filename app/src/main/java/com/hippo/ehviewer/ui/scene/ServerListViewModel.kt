@@ -162,7 +162,8 @@ class ServerListViewModel : ViewModel() {
         position: Int,
         newName: String,
         newUrl: String,
-        newKey: String
+        newKey: String,
+        allowCleartext: Boolean
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             val testClient = LRRUrlHelper.buildTestClient(
@@ -190,7 +191,10 @@ class ServerListViewModel : ViewModel() {
                         )
                     }
                 },
-                allowCleartext = profile.allowCleartext
+                // Gate on the edit dialog's current consent, not the stale
+                // stored flag, so a just-granted plain-HTTP opt-in is honoured
+                // and a revoked one is enforced.
+                allowCleartext = allowCleartext
             )
         }
     }
@@ -203,14 +207,16 @@ class ServerListViewModel : ViewModel() {
         newKey: String,
         usedHttpFallback: Boolean
     ) {
-        // Preserve the user's existing cleartext choice; only force it on when this edit
-        // actually went through an HTTP fallback (which implies the user confirmed it).
+        // The persisted cleartext flag tracks the resolved scheme: an HTTP
+        // resolution must be allowed cleartext or LRRCleartextRejectionInterceptor
+        // refuses the profile's traffic; an HTTPS resolution needs no grant. The
+        // gate already enforced the user's consent for a WAN downgrade.
         val updated = ServerProfile(
             id = profile.id,
             name = newName,
             url = resolvedUrl,
             isActive = profile.isActive,
-            allowCleartext = if (usedHttpFallback) true else profile.allowCleartext
+            allowCleartext = resolvedUrl.lowercase().startsWith("http://")
         )
         val isActive = profile.isActive
         viewModelScope.launch {
