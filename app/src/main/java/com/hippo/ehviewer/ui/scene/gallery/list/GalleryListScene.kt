@@ -585,7 +585,12 @@ class GalleryListScene : BaseScene(),
         collectFlow(viewLifecycleOwner, viewModel.batchProgress) {
             batchOpsHelper?.onBatchProgress(it)
         }
-        collectFlow(viewLifecycleOwner, viewModel.batchResultEvent) {
+        // batchResultEvent is a replay=0 one-shot result of a batch that keeps
+        // running in viewModelScope; losing it in a STOPPED window drops the
+        // per-item failure dialog after a partially-failed destructive delete and
+        // skips ClearNew's refreshList (stale NEW badges). Collect for the whole
+        // view lifetime so a batch finishing while backgrounded still reports.
+        collectFlowWhileCreated(viewLifecycleOwner, viewModel.batchResultEvent) {
             batchOpsHelper?.onBatchResult(it)
         }
         // Upload progress/result rendering is view-scoped: the ViewModel is
