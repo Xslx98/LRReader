@@ -170,4 +170,38 @@ class LRRUrlHelperConnectTest {
         assertEquals(baseUrl(), cb.resolvedUrl)
         assertNull(cb.error)
     }
+
+    @Test
+    fun explicitHttp_toWanHost_withAllowCleartextOptIn_bypassesGate() = runBlocking {
+        // A server the user explicitly opted into plain HTTP for
+        // (allowCleartext=true, the add/edit dialog toggle) must NOT be
+        // gate-refused — the probe proceeds, matching what production traffic
+        // does for the saved profile. Against a TEST-NET address with no
+        // server it then fails with a real network error, not a cleartext
+        // refusal.
+        val cb = RecordingCallback()
+        LRRUrlHelper.connectWithFallback(
+            client, "http://198.51.100.7:3000", "secret", cb, allowCleartext = true
+        )
+
+        assertNull(cb.resolvedUrl)
+        assertTrue(
+            "opted-in cleartext must bypass the gate",
+            cb.error != null && cb.error !is LRRCleartextRefusedException
+        )
+    }
+
+    @Test
+    fun explicitHttp_toWanHost_withoutKey_stillRefusedWhenNotOptedIn() = runBlocking {
+        // Deliberately NOT exempting the empty-key case: production
+        // (LRRCleartextRejectionInterceptor) refuses cleartext for
+        // allowCleartext=false profiles regardless of key, so admitting a
+        // keyless WAN probe would only produce a profile whose traffic is
+        // then blocked. Refuse unless opted in.
+        val cb = RecordingCallback()
+        LRRUrlHelper.connectWithFallback(client, "http://198.51.100.7:3000", null, cb)
+
+        assertTrue(cb.error is LRRCleartextRefusedException)
+        assertNull(cb.resolvedUrl)
+    }
 }
