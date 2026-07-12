@@ -226,8 +226,7 @@ class ServerListScene : BaseScene() {
         ).show()
 
         // Warn if switching to HTTP on a public address
-        val url = profile.url
-        if (url.lowercase().startsWith("http://") && !LRRUrlHelper.isLanAddress(url)) {
+        if (LRRUrlHelper.isInsecureWanUrl(profile.url)) {
             Toast.makeText(ctx, R.string.lrr_security_warning, Toast.LENGTH_LONG).show()
         }
 
@@ -250,9 +249,7 @@ class ServerListScene : BaseScene() {
 
         if (event.usedHttpFallback) {
             Toast.makeText(ctx, R.string.lrr_https_fallback_warning, Toast.LENGTH_LONG).show()
-        } else if (event.resolvedUrl.lowercase().startsWith("http://")
-            && !LRRUrlHelper.isLanAddress(event.resolvedUrl)
-        ) {
+        } else if (LRRUrlHelper.isInsecureWanUrl(event.resolvedUrl)) {
             Toast.makeText(ctx, R.string.lrr_security_warning, Toast.LENGTH_LONG).show()
         }
 
