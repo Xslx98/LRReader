@@ -133,6 +133,14 @@ class GalleryListScene : BaseScene(),
     // onResume once the view and batchOpsHelper exist again.
     private val pendingBatchResults = mutableListOf<GalleryListViewModel.BatchResult>()
 
+    // Stable per-instance token stamped on batches this scene starts. The
+    // ViewModel is activity-scoped and shared, so its result is broadcast to
+    // every stacked list instance's collector; matching on this token keeps
+    // handling/buffering to the one scene that ran the batch. Scene-level (not
+    // in the per-view Callback object) so it survives view recreation, matching
+    // the fragment-scoped collector.
+    private val batchOwnerToken = Any()
+
     private var mShowcaseView: ShowcaseView? = null
     internal lateinit var downloadManager: DownloadManager
         private set
@@ -329,7 +337,14 @@ class GalleryListScene : BaseScene(),
         // per-item failure dialog after a partial delete and skipping ClearNew's
         // badge refresh. Buffer while detached and replay in onResume, same as
         // archiveDeletedEvent above.
+        //
+        // The ViewModel is activity-scoped (shared by every stacked list
+        // instance), so this replay=0 result is broadcast to all of them. Only
+        // the scene that started the batch (owner token match) may handle or
+        // buffer it; the rest ignore it, or a covered instance would replay a
+        // duplicate dialog / spurious refresh on pop-back.
         collectFlowWhileCreated(this, viewModel.batchResultEvent) { result ->
+            if (result.owner !== batchOwnerToken) return@collectFlowWhileCreated
             if (isResumed && batchOpsHelper != null) {
                 batchOpsHelper?.onBatchResult(result)
             } else {
@@ -523,6 +538,7 @@ class GalleryListScene : BaseScene(),
             override fun showTip(message: String) {
                 this@GalleryListScene.showTip(message, LENGTH_SHORT)
             }
+            override fun batchOwnerToken(): Any = this@GalleryListScene.batchOwnerToken
         })
         val multiSelect = ListMultiSelectHelper(
             recyclerView = { if (::recyclerView.isInitialized) recyclerView else null },

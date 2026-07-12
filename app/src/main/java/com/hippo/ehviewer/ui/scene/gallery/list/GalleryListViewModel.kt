@@ -370,6 +370,14 @@ class GalleryListViewModel : ViewModel() {
         val op: BatchOp,
         val succeeded: List<String>,
         val failed: List<BatchFailure>,
+        /**
+         * Identity token of the scene that started the batch. The ViewModel is
+         * activity-scoped and shared across stacked list instances, so the
+         * result is broadcast to every instance's collector; each instance
+         * handles/buffers only the results whose owner is its own token,
+         * preventing a duplicate dialog/refresh on scenes that never ran it.
+         */
+        val owner: Any? = null,
     )
 
     private val _batchProgress = MutableStateFlow<Pair<Int, Int>?>(null)
@@ -399,9 +407,11 @@ class GalleryListViewModel : ViewModel() {
      * asserts the main thread and is itself asynchronous, so no IO hop or
      * fault isolation is needed here.
      */
-    fun runBatchDownload(archives: List<Archive>, downloadManager: DownloadManager) {
+    fun runBatchDownload(archives: List<Archive>, downloadManager: DownloadManager, owner: Any? = null) {
         archives.forEach { downloadManager.startDownload(it, null) }
-        _batchResultEvent.tryEmit(BatchResult(BatchOp.Download, archives.map { it.arcid }, emptyList()))
+        _batchResultEvent.tryEmit(
+            BatchResult(BatchOp.Download, archives.map { it.arcid }, emptyList(), owner)
+        )
     }
 
     /**
@@ -409,12 +419,12 @@ class GalleryListViewModel : ViewModel() {
      * ([BATCH_CONCURRENCY]) and per-item fault isolation: one failing item is
      * reported in [BatchResult.failed] without aborting the rest.
      */
-    fun runBatch(op: BatchOp, archives: List<Archive>) {
+    fun runBatch(op: BatchOp, archives: List<Archive>, owner: Any? = null) {
         require(op != BatchOp.Download) { "use runBatchDownload" }
         if (op is BatchOp.AddToTankoubon) {
             // The server appends tank members in call order — Semaphore(4)
             // would scramble it, so this op runs strictly sequentially.
-            runBatchSequential(op, archives)
+            runBatchSequential(op, archives, owner)
             return
         }
         // API-level re-entrancy guard: the UI also disables batch actions while
@@ -457,6 +467,7 @@ class GalleryListViewModel : ViewModel() {
                         op = op,
                         succeeded = outcomes.filter { it.second == null }.map { it.first },
                         failed = outcomes.mapNotNull { it.second },
+                        owner = owner,
                     )
                 )
             } finally {
@@ -474,7 +485,7 @@ class GalleryListViewModel : ViewModel() {
      * re-entrancy guard, progress publication and result emission; append
      * order is the LIST DISPLAY order of the selection, not tap order.
      */
-    private fun runBatchSequential(op: BatchOp, archives: List<Archive>) {
+    private fun runBatchSequential(op: BatchOp, archives: List<Archive>, owner: Any? = null) {
         if (_batchProgress.value != null) return
         _batchProgress.value = 0 to archives.size
         viewModelScope.launch {
@@ -492,7 +503,9 @@ class GalleryListViewModel : ViewModel() {
                     }
                     _batchProgress.value = (i + 1) to archives.size
                 }
-                _batchResultEvent.tryEmit(BatchResult(op = op, succeeded = succeeded, failed = failed))
+                _batchResultEvent.tryEmit(
+                    BatchResult(op = op, succeeded = succeeded, failed = failed, owner = owner)
+                )
             } finally {
                 _batchProgress.value = null
             }
