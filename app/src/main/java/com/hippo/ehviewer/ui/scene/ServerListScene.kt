@@ -2,7 +2,6 @@ package com.hippo.ehviewer.ui.scene
 
 import android.graphics.Color
 import android.os.Bundle
-import androidx.core.content.ContextCompat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,6 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.hippo.android.resource.AttrResources
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.util.collectFlow
@@ -286,24 +286,25 @@ class ServerListScene : BaseScene() {
             holder.name.text = profile.name
             holder.url.text = profile.url
 
-            // Highlight the currently active/connected server. All four colors come
-            // from resources so values-night/colors.xml can override them for dark
-            // mode (the previous Color.parseColor("#…") literals stayed light-mode
-            // even when the rest of the UI flipped).
+            // Highlight the currently active/connected server. Colors resolve from
+            // the ACTIVITY THEME (manual in-app setting), never from -night
+            // resources — the manual switcher uses Activity.setTheme, so -night
+            // would follow the system dark mode instead (RES-4). Inactive rows are
+            // normal list items: name = theme textColorPrimary; the URL keeps the
+            // layout's textColorSecondary (no code override) for both branches.
             val ctx = holder.itemView.context
             if (profile.isActive) {
                 holder.activeIcon.visibility = View.VISIBLE
-                holder.name.setTextColor(ContextCompat.getColor(ctx, R.color.colorPrimary))
+                holder.name.setTextColor(
+                    AttrResources.getAttrColor(ctx, R.attr.serverActiveNameColor)
+                )
                 holder.itemView.setBackgroundColor(
-                    ContextCompat.getColor(ctx, R.color.server_active_row_bg)
+                    AttrResources.getAttrColor(ctx, R.attr.serverActiveRowBg)
                 )
             } else {
                 holder.activeIcon.visibility = View.INVISIBLE
                 holder.name.setTextColor(
-                    ContextCompat.getColor(ctx, R.color.server_inactive_name)
-                )
-                holder.url.setTextColor(
-                    ContextCompat.getColor(ctx, R.color.server_inactive_url)
+                    AttrResources.getAttrColor(ctx, android.R.attr.textColorPrimary)
                 )
                 holder.itemView.setBackgroundColor(Color.TRANSPARENT)
             }
