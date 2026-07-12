@@ -2,6 +2,7 @@ package com.lanraragi.reader.client.api
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Trace
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -10,7 +11,11 @@ import androidx.core.content.edit
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import java.io.IOException
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicLong
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import java.security.GeneralSecurityException
 import java.security.KeyStore
 import java.security.MessageDigest
@@ -101,8 +106,87 @@ object LRRAuthManager {
     /** Overridable clock source for testing lockout logic. */
     internal var clockMillis: () -> Long = { System.currentTimeMillis() }
 
+    // ── Async-init readiness gate (INF-9) ───────────────────────────────
+
+    /** Set synchronously by [scheduleInitialize] BEFORE the init coroutine is
+     *  launched, so no reader can take the never-scheduled fallback while the
+     *  coroutine merely hasn't started running yet. */
+    @Volatile
+    private var sInitScheduled = false
+
+    /** True once [initialize] (or a test seam) finished, whatever the outcome. */
+    @Volatile
+    private var sInitDone = false
+
+    /** Opened by [openInitGate]. Replaced only by [resetInitGateForTesting]. */
+    @Volatile
+    private var sInitLatch = CountDownLatch(1)
+
+    /**
+     * Gate every read/write of [sPrefs]/[sPlainPrefs]/[sActiveProfileId]/
+     * [sNeedsReauthentication] behind async initialization (INF-9):
+     *
+     * - gate open: a single volatile read (steady state, zero cost);
+     * - never scheduled: return immediately — legacy semantics for unit tests
+     *   that exercise the "no initialize ⇒ null-prefs defaults" paths;
+     * - scheduled but pending: block until [initialize] completes. Worst case
+     *   this charges the FIRST reader the remaining init time instead of
+     *   unconditionally charging the main thread in Application.onCreate.
+     */
+    private fun awaitInit() {
+        if (sInitDone) return
+        if (!sInitScheduled) return
+        sInitLatch.await()
+    }
+
+    /**
+     * Launch [initialize] on [scope] instead of blocking the caller (INF-9).
+     * Readers are held by [awaitInit] until the gate opens, so no call site
+     * needs to change. Callers that must order work after init completes
+     * (EhApplication's profile loader) should `join()` the returned [Job].
+     */
+    @JvmStatic
+    fun scheduleInitialize(context: Context, scope: CoroutineScope): Job {
+        sInitScheduled = true
+        return scope.launch {
+            Trace.beginSection("EhApp.LRRAuthManager.init")
+            try {
+                initialize(context)
+            } finally {
+                Trace.endSection()
+            }
+        }
+    }
+
+    private fun openInitGate() {
+        sInitDone = true
+        sInitLatch.countDown()
+    }
+
+    /** Restore the never-scheduled gate state. Tests only. */
+    @JvmStatic
+    internal fun resetInitGateForTesting() {
+        sInitScheduled = false
+        sInitDone = false
+        sInitLatch = CountDownLatch(1)
+    }
+
     @JvmStatic
     fun initialize(context: Context) {
+        // NOTE (INF-9): this method must not call any gated public accessor of
+        // this object — awaitInit() would block on the not-yet-open gate from
+        // the very thread that is supposed to open it. Touch fields directly.
+        try {
+            initializeInner(context)
+        } finally {
+            // Always open the gate — including on the KeyStore-failure catch
+            // branches inside initializeInner and on unexpected throws (which
+            // then surface via the caller's CoroutineExceptionHandler).
+            openInitGate()
+        }
+    }
+
+    private fun initializeInner(context: Context) {
         val plainPrefs = context.applicationContext
             .getSharedPreferences(PLAIN_PREF_NAME, Context.MODE_PRIVATE)
         sPlainPrefs = plainPrefs
@@ -159,6 +243,7 @@ object LRRAuthManager {
      * are surfaced to callers instead of being silently dropped.
      */
     private fun requireSecurePrefs(op: String): SharedPreferences {
+        awaitInit()
         return sPrefs ?: throw LRRSecureStorageUnavailableException(
             "Secure credential store unavailable; cannot perform $op"
         )
@@ -176,6 +261,7 @@ object LRRAuthManager {
         sNeedsReauthentication = false
         sActiveProfileId = prefs.getLong(KEY_ACTIVE_PROFILE_ID, 0L)
         clockMillis = { System.currentTimeMillis() }
+        openInitGate()
     }
 
     /**
@@ -195,6 +281,7 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun getServerUrl(): String? {
+        awaitInit()
         return sPrefs?.getString(KEY_SERVER_URL, null)
     }
 
@@ -215,6 +302,7 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun getApiKey(): String? {
+        awaitInit()
         return sPrefs?.getString(KEY_API_KEY, null)
     }
 
@@ -230,6 +318,7 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun getServerName(): String? {
+        awaitInit()
         return sPrefs?.getString(KEY_SERVER_NAME, null)
     }
 
@@ -254,6 +343,7 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun getActiveProfileId(): Long {
+        awaitInit()
         return sActiveProfileId
     }
 
@@ -275,6 +365,7 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun getAllowCleartext(): Boolean {
+        awaitInit()
         return sPrefs?.getBoolean(KEY_ALLOW_CLEARTEXT, true) ?: false
     }
 
@@ -297,6 +388,7 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun isNeedsReauthentication(): Boolean {
+        awaitInit()
         return sNeedsReauthentication
     }
 
@@ -318,6 +410,7 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun markReauthIfProfilesUnprotected(profileIds: List<Long>) {
+        awaitInit()
         if (profileIds.isEmpty()) return
         val prefs = sPrefs
         if (prefs == null) {
@@ -355,6 +448,7 @@ object LRRAuthManager {
     /** @return the API key for the given profile, or null if none stored / empty. */
     @JvmStatic
     fun getApiKeyForProfile(profileId: Long): String? {
+        awaitInit()
         return sPrefs?.getString("api_key_$profileId", null)?.ifEmpty { null }
     }
 
@@ -373,6 +467,7 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun isLockedOut(): Boolean {
+        awaitInit()
         val plain = sPlainPrefs ?: return false
         val lockoutUntil = plain.getLong(KEY_PATTERN_LOCKOUT_UNTIL, 0L)
         if (lockoutUntil == 0L) return false
@@ -384,6 +479,7 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun getLockoutRemainingMs(): Long {
+        awaitInit()
         val plain = sPlainPrefs ?: return 0L
         val lockoutUntil = plain.getLong(KEY_PATTERN_LOCKOUT_UNTIL, 0L)
         if (lockoutUntil == 0L) return 0L
@@ -397,6 +493,7 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun recordFailure() {
+        awaitInit()
         val plain = sPlainPrefs ?: return
         val count = plain.getInt(KEY_PATTERN_FAIL_COUNT, 0) + 1
         plain.edit {
@@ -423,6 +520,7 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun resetFailures() {
+        awaitInit()
         val plain = sPlainPrefs ?: return
         plain.edit {
             remove(KEY_PATTERN_FAIL_COUNT)
@@ -435,6 +533,7 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun getFailureCount(): Int {
+        awaitInit()
         return sPlainPrefs?.getInt(KEY_PATTERN_FAIL_COUNT, 0) ?: 0
     }
 
@@ -446,6 +545,7 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun isPatternKeystoreBound(): Boolean {
+        awaitInit()
         return sPlainPrefs?.getBoolean(KEY_PATTERN_KEYSTORE_BOUND, false) == true
     }
 
@@ -524,6 +624,7 @@ object LRRAuthManager {
     @JvmStatic
     @Throws(GeneralSecurityException::class)
     fun getDecryptCipher(): Cipher {
+        awaitInit()
         val prefs = sPrefs ?: throw GeneralSecurityException("Secure storage unavailable")
         val ivStr = prefs.getString(KEY_PATTERN_IV, null)
             ?: throw GeneralSecurityException("Pattern IV not found")
@@ -542,6 +643,7 @@ object LRRAuthManager {
     /** @return true if an app-lock pattern has been stored. */
     @JvmStatic
     fun hasPattern(): Boolean {
+        awaitInit()
         val prefs = sPrefs ?: return false
         return prefs.contains(KEY_PATTERN_HASH_V2) || prefs.contains(KEY_PATTERN_ENCRYPTED)
     }
@@ -644,6 +746,7 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun verifyPattern(input: String?): Boolean {
+        awaitInit()
         if (isLockedOut()) return false
         val prefs = sPrefs ?: return false
         val saltStr = prefs.getString(KEY_PATTERN_SALT, null) ?: return false
@@ -716,6 +819,7 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun verifyPatternWithCipher(input: String?, authenticatedCipher: Cipher): Boolean {
+        awaitInit()
         if (isLockedOut()) return false
         val prefs = sPrefs ?: return false
         val saltStr = prefs.getString(KEY_PATTERN_SALT, null) ?: return false
@@ -814,6 +918,7 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun clear() {
+        awaitInit()
         sPrefs?.edit { clear() }
         sPlainPrefs?.edit {
             remove(KEY_PATTERN_KEYSTORE_BOUND)
