@@ -27,6 +27,7 @@ import com.hippo.ehviewer.ui.GalleryOpenHelper
 import com.hippo.ehviewer.ui.scene.TankoubonDetailViewModel.TankDetailUiEvent
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.ehviewer.util.collectFlow
+import com.hippo.ehviewer.util.collectFlowWhileCreated
 import com.hippo.scene.Announcer
 import com.hippo.widget.LoadImageViewNew
 import com.lanraragi.reader.client.api.LRRTankoubonApi
@@ -234,8 +235,11 @@ class TankoubonDetailScene : BaseScene() {
             bindProgressUi()
         }
 
-        // One-shot UI events
-        collectFlow(viewLifecycleOwner, viewModel.uiEvent) { handleUiEvent(it) }
+        // One-shot UI events. Deleted navigates back (onBackPressed); losing it
+        // in a STOPPED window while a delete completes strands the user on a
+        // detail scene for a tankoubon that no longer exists. Collect for the
+        // whole view lifetime (viewLifecycleOwner still cancels on view destroy).
+        collectFlowWhileCreated(viewLifecycleOwner, viewModel.uiEvent) { handleUiEvent(it) }
     }
 
     private fun handleUiEvent(event: TankDetailUiEvent) {
