@@ -15,6 +15,7 @@ import com.hippo.ehviewer.module.NetworkMonitor
 import com.hippo.ehviewer.EhProxySelector
 import com.hippo.ehviewer.Hosts
 import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.LRRCleartextRefusedException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -298,8 +299,9 @@ class ServerConfigViewModelTest {
         // Delegating to connectWithFallback makes onboarding inherit the LAN
         // gate: an explicit http:// WAN probe is refused synchronously (no
         // request is issued, the API key never leaves the device) with a
-        // SecurityException. Before delegation tryConnect had no gate and would
-        // instead attempt a real cleartext connection. Global auth stays intact.
+        // LRRCleartextRefusedException. Before delegation tryConnect had no gate
+        // and would instead attempt a real cleartext connection. Global auth
+        // stays intact.
         LRRAuthManager.setServerUrl("http://prior.example.com:3000")
         LRRAuthManager.setApiKey("prior-key")
 
@@ -319,8 +321,8 @@ class ServerConfigViewModelTest {
         }
 
         assertTrue(
-            "explicit WAN http must be refused with SecurityException",
-            failures.any { it is SecurityException }
+            "explicit WAN http must be refused with a cleartext-refusal error",
+            failures.any { it is LRRCleartextRefusedException }
         )
         assertEquals("http://prior.example.com:3000", LRRAuthManager.getServerUrl())
         assertEquals("prior-key", LRRAuthManager.getApiKey())

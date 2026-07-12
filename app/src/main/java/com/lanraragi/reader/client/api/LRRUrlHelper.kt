@@ -197,10 +197,15 @@ object LRRUrlHelper {
                 // issued — the same policy the schemeless and https->http
                 // fallback paths already enforce below.
                 if (isInsecureWanUrl(rawInput)) {
+                    // Localizable: friendlyError maps the type to
+                    // lrr_cleartext_refused_error, whose advice ("enable plain
+                    // HTTP for this server, or use HTTPS") is the real escape
+                    // hatch. A raw SecurityException would surface this English
+                    // message verbatim in all locales.
                     callback.onFailure(
-                        SecurityException(
-                            "HTTP is not allowed for non-LAN servers; the API key " +
-                                "would be sent in cleartext. Use HTTPS."
+                        LRRCleartextRefusedException(
+                            "Cleartext HTTP to a non-LAN host refused: the API " +
+                                "key would be sent unencrypted."
                         )
                     )
                     return
