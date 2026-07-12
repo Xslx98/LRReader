@@ -248,8 +248,15 @@ class ServerListViewModel : ViewModel() {
                 }
                 // Reload profiles to reflect the change
                 loadProfiles()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
+                // The keystore writes already committed but persistence failed
+                // (e.g. a Room write error). Surface it so the edit dialog
+                // re-enables instead of soft-locking with the Save button stuck
+                // disabled and no feedback.
                 Log.e(TAG, "Failed to save edited profile", e)
+                _uiEvent.emit(ServerListUiEvent.EditConnectionFailed(e))
             }
         }
     }

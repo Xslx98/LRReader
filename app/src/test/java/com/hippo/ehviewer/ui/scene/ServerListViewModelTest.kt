@@ -8,6 +8,7 @@ import com.hippo.ehviewer.EhProxySelector
 import com.hippo.ehviewer.Hosts
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.AppDatabase
+import com.hippo.ehviewer.dao.MiscRoomDao
 import com.hippo.ehviewer.dao.ProfileRepository
 import com.hippo.ehviewer.dao.ServerProfile
 import com.hippo.ehviewer.module.IAppModule
@@ -233,6 +234,52 @@ class ServerListViewModelTest {
         LRRAuthManager.initializeForTesting(
             ctx.getSharedPreferences("server_vm_test_restore2", Context.MODE_PRIVATE)
         )
+    }
+
+    @Test
+    fun testAndSaveEditedProfile_roomWriteFails_emitsErrorInsteadOfSilentSoftLock() {
+        // Keystore writes and the connection test succeed, but the Room update
+        // then fails. The outer catch must surface an error event so the edit
+        // dialog re-enables instead of soft-locking silently with the Save
+        // button stuck disabled.
+        val id = insertProfile("Old Name", "https://old.example.com", isActive = true)
+        val profile = ServerProfile(id = id, name = "Old Name", url = "https://old.example.com", isActive = true)
+        server.enqueue(MockResponse().setResponseCode(200)
+            .setBody("""{"name":"New Server","version":"0.9.8","archives_per_page":100}"""))
+
+        // A profile repository whose update throws, to force the post-keystore
+        // persistence failure. Delegation forwards every other DAO call to the
+        // real in-memory database.
+        val throwingDao = object : MiscRoomDao by db.miscDao() {
+            override suspend fun updateServerProfile(profile: ServerProfile) {
+                throw IllegalStateException("simulated Room write failure")
+            }
+        }
+        val throwingRepo = ProfileRepository(throwingDao)
+        ServiceRegistry.initializeForTest(
+            data = object : IDataModule {
+                override val profileRepository get() = throwingRepo
+                override val profileLookupCache get() = throw NotImplementedError("not needed")
+                override val historyRepository get() = throw NotImplementedError("not needed")
+                override val quickSearchRepository get() = throw NotImplementedError("not needed")
+                override val favoritesRepository get() = throw NotImplementedError("not needed")
+                override val downloadDbRepository get() = throw NotImplementedError("not needed")
+                override val downloadManager get() = throw NotImplementedError("not needed")
+                override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
+                override val archiveDetailCache get() = throw NotImplementedError("not needed")
+                override val spiderInfoCache get() = throw NotImplementedError("not needed")
+                override fun clearArchiveDetailCache() {}
+            }
+        )
+
+        val vm = ServerListViewModel()
+        val events = collectEvents(vm)
+        val newUrl = server.url("").toString().removeSuffix("/")
+        vm.testAndSaveEditedProfile(profile, 0, "New Name", newUrl, "new-key")
+
+        awaitCondition {
+            events.any { it is ServerListViewModel.ServerListUiEvent.EditConnectionFailed }
+        }
     }
 
     // ── loadProfiles ───────────────────────────────────────────────
