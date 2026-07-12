@@ -7,7 +7,6 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.ServerProfile
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
-import com.lanraragi.reader.client.api.LRRServerApi
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.client.api.data.LRRServerInfo
 import kotlinx.coroutines.CancellationException
@@ -19,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * ViewModel for [ServerConfigScene]. Manages connection state, protocol
@@ -94,67 +94,31 @@ class ServerConfigViewModel : ViewModel() {
         // Bearer header on a stripped test client). No global auth state is
         // written until onConnectSuccess — the single commit point.
         val candidateKey = apiKey?.ifEmpty { null }
+        val testClient = LRRUrlHelper.buildTestClient(ServiceRegistry.networkModule.okHttpClient)
 
-        val client = ServiceRegistry.networkModule.okHttpClient
-        val testClient = LRRUrlHelper.buildTestClient(client)
-
-        if (LRRUrlHelper.hasExplicitScheme(rawInput)) {
-            // User specified protocol explicitly -- use as-is
-            tryConnect(testClient, rawInput, null, candidateKey, navigateOnSuccess)
-        } else {
-            // No explicit scheme: try HTTPS first, then fall back to HTTP
-            val httpsUrl = "https://$rawInput"
-            val httpUrl = "http://$rawInput"
-            tryConnect(testClient, httpsUrl, httpUrl, candidateKey, navigateOnSuccess)
-        }
-    }
-
-    /**
-     * Try connecting to primaryUrl. On failure, if fallbackUrl is non-null, try that too.
-     */
-    private fun tryConnect(
-        client: okhttp3.OkHttpClient,
-        primaryUrl: String,
-        fallbackUrl: String?,
-        apiKey: String?,
-        navigateOnSuccess: Boolean
-    ) {
         viewModelScope.launch(Dispatchers.IO) {
-            // --- Attempt 1: primary URL ---
-            try {
-                Log.d(TAG, "Trying primary URL: $primaryUrl")
-                val info = LRRServerApi.getServerInfo(client, primaryUrl, apiKey)
-                // Success on primary
-                onConnectSuccess(primaryUrl, info, apiKey, navigateOnSuccess)
-                return@launch
-            } catch (e1: Exception) {
-                // NET-7: nothing global is mutated during a test, so normal
-                // structured cancellation applies again (the NET-3-era rollback
-                // exemption is retired).
-                if (e1 is CancellationException) throw e1
-                Log.d(TAG, "Primary URL failed: ${e1.message}")
+            // Delegate protocol detection, HTTPS->HTTP fallback, and the
+            // cleartext LAN gate to the shared helper (the same one
+            // ServerListViewModel uses) so onboarding can never probe a WAN
+            // host over cleartext with the API key attached.
+            LRRUrlHelper.connectWithFallback(
+                testClient,
+                rawInput,
+                candidateKey,
+                object : LRRUrlHelper.ConnectCallback {
+                    override fun onSuccess(
+                        resolvedUrl: String,
+                        info: LRRServerInfo,
+                        usedHttpFallback: Boolean
+                    ) {
+                        onConnectSuccess(resolvedUrl, info, candidateKey, navigateOnSuccess)
+                    }
 
-                if (fallbackUrl == null) {
-                    // No fallback -- report failure
-                    onConnectFailure(e1)
-                    return@launch
+                    override fun onFailure(error: Exception) {
+                        onConnectFailure(error)
+                    }
                 }
-            }
-
-            // --- Attempt 2: fallback URL ---
-            try {
-                Log.d(TAG, "Trying fallback URL: $fallbackUrl")
-                val info = LRRServerApi.getServerInfo(client, fallbackUrl, apiKey)
-                // Success on fallback
-                onConnectSuccess(fallbackUrl, info, apiKey, navigateOnSuccess)
-            } catch (e: LRRSecureStorageUnavailableException) {
-                Log.e(TAG, "Secure storage unavailable during fallback", e)
-                onConnectFailure(e)
-            } catch (e2: Exception) {
-                if (e2 is CancellationException) throw e2
-                Log.d(TAG, "Fallback URL also failed: ${e2.message}")
-                onConnectFailure(e2)
-            }
+            )
         }
     }
 
@@ -162,49 +126,58 @@ class ServerConfigViewModel : ViewModel() {
      * Called on IO thread when connection succeeds. Persists/updates the
      * [ServerProfile] then emits the success event.
      */
-    private suspend fun onConnectSuccess(
+    private fun onConnectSuccess(
         resolvedUrl: String,
         info: LRRServerInfo,
         apiKey: String?,
         navigateOnSuccess: Boolean
     ) {
-        try {
-            // NET-7 commit point: global auth state is written only after the
-            // candidate server actually responded.
-            LRRAuthManager.setServerUrl(resolvedUrl)
-            LRRAuthManager.setApiKey(apiKey)
-            LRRAuthManager.setServerName(info.name)
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    // NET-7 commit point: global auth state is written only after
+                    // the candidate server actually responded.
+                    LRRAuthManager.setServerUrl(resolvedUrl)
+                    LRRAuthManager.setApiKey(apiKey)
+                    LRRAuthManager.setServerName(info.name)
 
-            // Create or update ServerProfile
-            val existing = profileRepository.findByUrl(resolvedUrl)
-            profileRepository.deactivateAll()
-            if (existing != null) {
-                // API key is stored in EncryptedSharedPreferences, not in Room
-                val updated = ServerProfile(
-                    existing.id,
-                    info.name ?: existing.name,
-                    resolvedUrl,
-                    true
-                )
-                profileRepository.update(updated)
-                LRRAuthManager.setApiKeyForProfile(existing.id, apiKey)
-                LRRAuthManager.setActiveProfileId(existing.id)
-            } else {
-                val profileName = info.name ?: "LANraragi"
-                // API key is stored in EncryptedSharedPreferences, not in Room
-                val newProfile = ServerProfile(0, profileName, resolvedUrl, true)
-                val newId = profileRepository.insert(newProfile)
-                LRRAuthManager.setApiKeyForProfile(newId, apiKey)
-                LRRAuthManager.setActiveProfileId(newId)
+                    // Create or update ServerProfile
+                    val existing = profileRepository.findByUrl(resolvedUrl)
+                    profileRepository.deactivateAll()
+                    if (existing != null) {
+                        // API key is stored in EncryptedSharedPreferences, not in Room
+                        val updated = ServerProfile(
+                            existing.id,
+                            info.name ?: existing.name,
+                            resolvedUrl,
+                            true
+                        )
+                        profileRepository.update(updated)
+                        LRRAuthManager.setApiKeyForProfile(existing.id, apiKey)
+                        LRRAuthManager.setActiveProfileId(existing.id)
+                    } else {
+                        val profileName = info.name ?: "LANraragi"
+                        // API key is stored in EncryptedSharedPreferences, not in Room
+                        val newProfile = ServerProfile(0, profileName, resolvedUrl, true)
+                        val newId = profileRepository.insert(newProfile)
+                        LRRAuthManager.setApiKeyForProfile(newId, apiKey)
+                        LRRAuthManager.setActiveProfileId(newId)
+                    }
+                }
+            } catch (e: LRRSecureStorageUnavailableException) {
+                Log.e(TAG, "Secure storage unavailable on connect success", e)
+                onConnectFailure(e)
+                return@launch
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Log.e(TAG, "Failed to persist profile on connect success", e)
+                onConnectFailure(e)
+                return@launch
             }
-        } catch (e: LRRSecureStorageUnavailableException) {
-            Log.e(TAG, "Secure storage unavailable on connect success", e)
-            onConnectFailure(e)
-            return
-        }
 
-        _connecting.value = false
-        _connectSuccess.tryEmit(ConnectSuccess(resolvedUrl, info, navigateOnSuccess))
+            _connecting.value = false
+            _connectSuccess.tryEmit(ConnectSuccess(resolvedUrl, info, navigateOnSuccess))
+        }
     }
 
     /**
