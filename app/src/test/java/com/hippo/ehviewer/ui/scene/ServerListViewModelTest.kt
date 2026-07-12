@@ -207,6 +207,33 @@ class ServerListViewModelTest {
     }
 
     @Test
+    fun testAndAddProfile_resolvesHttp_persistsCleartextAllowedSoProfileStaysUsable() {
+        // A profile that resolves to plain HTTP must be persisted with
+        // allowCleartext = true regardless of the gate flag, or the production
+        // LRRCleartextRejectionInterceptor refuses every request to it. The
+        // gate flag governs only the WAN-leak refusal (covered in
+        // LRRUrlHelperConnectTest); the persisted flag must track the resolved
+        // scheme. Passing allowCleartext = false here (LAN, gate-exempt) proves
+        // the saved flag is not simply the passed-in value.
+        server.enqueue(
+            MockResponse().setResponseCode(200)
+                .setBody("""{"name":"Mock","version":"0.9.8","archives_per_page":100}""")
+        )
+
+        val vm = ServerListViewModel()
+        val events = collectEvents(vm)
+        val url = server.url("").toString().removeSuffix("/") // http://127.0.0.1:port (LAN)
+        vm.testAndAddProfile("Mock", url, "k", allowCleartext = false)
+
+        awaitCondition {
+            events.any { it is ServerListViewModel.ServerListUiEvent.ProfileAdded }
+        }
+
+        val saved = runBlocking { db.miscDao().getAllServerProfiles() }.first { it.url == url }
+        assertTrue("HTTP-resolved profile must persist allowCleartext=true", saved.allowCleartext)
+    }
+
+    @Test
     fun testAndSaveEditedProfile_keystoreUnavailable_leavesRoomUnchanged() {
         // The connection test succeeds (the probe carries the key explicitly and
         // never touches the keystore), but committing the edit must not mutate

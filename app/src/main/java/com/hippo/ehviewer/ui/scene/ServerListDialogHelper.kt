@@ -234,7 +234,11 @@ internal class ServerListDialogHelper(
                 Toast.makeText(ctx, R.string.lrr_allow_cleartext_required, Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
-            val profileAllowCleartext = if (isHttpUrl) cleartextCheckbox.isChecked else true
+            // Consent = the checkbox only. Scheme-less/https input leaves it
+            // unchecked, so cleartext is NOT opted in — the fallback gate then
+            // refuses a WAN HTTP downgrade instead of leaking the key. (A LAN
+            // HTTP resolution is still admitted; the gate exempts LAN.)
+            val profileAllowCleartext = cleartextCheckbox.isChecked
 
             // Disable button during connection test
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
