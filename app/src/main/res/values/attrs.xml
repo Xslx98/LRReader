@@ -92,6 +92,13 @@
         <attr name="serverBadge6Fg" format="color" />
         <attr name="serverBadge7Fg" format="color" />
 
+        <!-- RES-4: server-list row colors. Same attr-indirection rationale as
+             the serverBadge palette above — the manual theme switcher uses
+             Activity.setTheme, so -night resources would follow the SYSTEM
+             dark mode instead of the app theme. -->
+        <attr name="serverActiveRowBg" format="color" />
+        <attr name="serverActiveNameColor" format="color" />
+
         <attr name="galleryDetailHeaderTitleColor" format="color" />
         <attr name="galleryDetailHeaderBackgroundColor" format="color" />
         <attr name="galleryDetailButtonBackgroundColor" format="color" />
