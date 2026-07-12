@@ -1,7 +1,9 @@
 package com.hippo.ehviewer.ui.scene
 
 import android.os.Bundle
+import android.text.Editable
 import android.text.TextUtils
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,6 +12,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
+import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.textfield.TextInputLayout
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.util.collectFlow
@@ -41,6 +44,8 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
     private var mApiKey: EditText? = null
     private var mServerInfoPanel: LinearLayout? = null
     private var mServerInfoText: TextView? = null
+    private var mCleartextRow: View? = null
+    private var mCleartextCheckbox: MaterialCheckBox? = null
 
     override fun needShowLeftDrawer(): Boolean {
         // Show drawer when server is already configured (allows back navigation)
@@ -64,12 +69,27 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
         mApiKey = ViewUtils.`$$`(configForm, R.id.api_key) as? EditText
         mServerInfoPanel = ViewUtils.`$$`(configForm, R.id.server_info_panel) as? LinearLayout
         mServerInfoText = ViewUtils.`$$`(configForm, R.id.server_info_text) as? TextView
+        mCleartextRow = ViewUtils.`$$`(configForm, R.id.cleartext_row)
+        mCleartextCheckbox =
+            ViewUtils.`$$`(configForm, R.id.checkbox_allow_cleartext) as? MaterialCheckBox
 
         val testButton = ViewUtils.`$$`(configForm, R.id.test_connection)
         val connectButton = ViewUtils.`$$`(configForm, R.id.connect)
 
         testButton.setOnClickListener(this)
         connectButton.setOnClickListener(this)
+
+        // Cleartext consent is only relevant for an explicit http:// URL — the
+        // fallback gate exempts LAN and refuses WAN cleartext otherwise. Reveal
+        // the checkbox exactly when the input is explicit http://, mirroring the
+        // add/edit dialog.
+        mServerUrl?.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                updateCleartextRowVisibility(s?.toString().orEmpty())
+            }
+        })
 
         // Pre-fill existing settings
         val savedUrl = LRRAuthManager.getServerUrl()
@@ -80,6 +100,7 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
         if (savedKey != null) {
             mApiKey?.setText(savedKey)
         }
+        updateCleartextRowVisibility(savedUrl.orEmpty())
 
         return view
     }
@@ -121,6 +142,13 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
         mApiKey = null
         mServerInfoPanel = null
         mServerInfoText = null
+        mCleartextRow = null
+        mCleartextCheckbox = null
+    }
+
+    private fun updateCleartextRowVisibility(text: String) {
+        val isHttp = text.trim().lowercase().startsWith("http://")
+        mCleartextRow?.visibility = if (isHttp) View.VISIBLE else View.GONE
     }
 
     override fun onClick(v: View) {
@@ -157,11 +185,24 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
         }
         mServerUrlLayout?.error = null
 
+        // Explicit http:// requires the user to opt into plain HTTP, matching
+        // the add/edit dialog; otherwise the gate would refuse a non-LAN host
+        // with no way to consent from this screen.
+        val isHttp = rawInput!!.lowercase().startsWith("http://")
+        if (isHttp && mCleartextCheckbox?.isChecked != true) {
+            val ctx = ehContext
+            if (ctx != null) {
+                Toast.makeText(ctx, R.string.lrr_allow_cleartext_required, Toast.LENGTH_LONG).show()
+            }
+            return
+        }
+        val allowCleartext = mCleartextCheckbox?.isChecked == true
+
         hideSoftInput()
         showProgress(true)
 
         val apiKey = getApiKeyInput()
-        viewModel.attemptConnection(rawInput!!, apiKey, navigateOnSuccess)
+        viewModel.attemptConnection(rawInput, apiKey, navigateOnSuccess, allowCleartext)
     }
 
     /**

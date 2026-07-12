@@ -85,7 +85,12 @@ class ServerConfigViewModel : ViewModel() {
      * @param navigateOnSuccess if true, emit navigate signal on success (Connect button);
      *                          if false, just report server info (Test button)
      */
-    fun attemptConnection(rawInput: String, apiKey: String?, navigateOnSuccess: Boolean) {
+    fun attemptConnection(
+        rawInput: String,
+        apiKey: String?,
+        navigateOnSuccess: Boolean,
+        allowCleartext: Boolean = false
+    ) {
         if (_connecting.value) return
 
         _connecting.value = true
@@ -101,7 +106,11 @@ class ServerConfigViewModel : ViewModel() {
             // cleartext LAN gate to the shared helper (the same one
             // ServerListViewModel uses) so onboarding can never probe a WAN
             // host over cleartext with the API key attached.
-            when (val r = LRRUrlHelper.connectWithFallback(testClient, rawInput, candidateKey)) {
+            when (
+                val r = LRRUrlHelper.connectWithFallback(
+                    testClient, rawInput, candidateKey, allowCleartext
+                )
+            ) {
                 is LRRUrlHelper.ConnectResult.Success ->
                     onConnectSuccess(r.resolvedUrl, r.info, candidateKey, navigateOnSuccess)
                 is LRRUrlHelper.ConnectResult.Failure -> onConnectFailure(r.error)
@@ -121,6 +130,13 @@ class ServerConfigViewModel : ViewModel() {
     ) {
         try {
             withContext(Dispatchers.IO) {
+                // The persisted cleartext flag tracks the resolved scheme (as on
+                // the add/edit paths): an HTTP resolution must be allowed
+                // cleartext or the interceptor refuses its traffic; an HTTPS
+                // resolution needs no grant. The gate already refused any
+                // unconsented WAN-cleartext resolution before reaching here.
+                val savedAllowCleartext = resolvedUrl.lowercase().startsWith("http://")
+
                 // Room first: create or update the active profile row. A failure
                 // here is reported below with the live global auth still on the
                 // previous server, so a persistence error never silently switches
@@ -132,23 +148,29 @@ class ServerConfigViewModel : ViewModel() {
                         existing.id,
                         info.name ?: existing.name,
                         resolvedUrl,
-                        true
+                        true,
+                        savedAllowCleartext
                     )
                     profileRepository.update(updated)
                     existing.id
                 } else {
                     val profileName = info.name ?: "LANraragi"
-                    profileRepository.insert(ServerProfile(0, profileName, resolvedUrl, true))
+                    profileRepository.insert(
+                        ServerProfile(0, profileName, resolvedUrl, true, savedAllowCleartext)
+                    )
                 }
 
                 // Keystore per-profile key + live global auth LAST, only once the
                 // profile row is committed. (API key rides EncryptedSharedPreferences,
-                // not Room.)
+                // not Room.) bumpServerConfigVersion drives GalleryListScene's
+                // auto-refresh, so re-onboarding refreshes the list like add/edit.
                 LRRAuthManager.setApiKeyForProfile(profileId, apiKey)
                 LRRAuthManager.setActiveProfileId(profileId)
                 LRRAuthManager.setServerUrl(resolvedUrl)
                 LRRAuthManager.setApiKey(apiKey)
                 LRRAuthManager.setServerName(info.name)
+                LRRAuthManager.setAllowCleartext(savedAllowCleartext)
+                LRRAuthManager.bumpServerConfigVersion()
             }
         } catch (e: LRRSecureStorageUnavailableException) {
             Log.e(TAG, "Secure storage unavailable on connect success", e)

@@ -316,6 +316,23 @@ class ServerConfigViewModelTest {
     }
 
     @Test
+    fun attemptConnection_success_bumpsServerConfigVersionForListAutoRefresh() {
+        // Re-onboarding to a server must bump serverConfigVersion so
+        // GalleryListScene.onResume auto-refreshes, matching the add/edit paths.
+        val before = LRRAuthManager.serverConfigVersion
+        server.enqueue(MockResponse().setResponseCode(200).setBody(SERVER_INFO_JSON))
+
+        val vm = ServerConfigViewModel()
+        vm.attemptConnection(server.url("").toString().removeSuffix("/"), "k", false)
+        drainCoroutines()
+
+        assertTrue(
+            "onboarding success must bump serverConfigVersion",
+            LRRAuthManager.serverConfigVersion > before
+        )
+    }
+
+    @Test
     fun attemptConnection_roomWriteFails_reportsFailureAndLeavesGlobalAuthUntouched() {
         // The live global auth must switch only after the profile row persists.
         // If the Room insert fails, the active server URL/key must still point
