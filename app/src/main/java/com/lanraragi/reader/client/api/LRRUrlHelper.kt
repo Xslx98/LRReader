@@ -49,31 +49,77 @@ object LRRUrlHelper {
 
     /**
      * Check if the URL points to a private / LAN address.
+     *
+     * A host counts as LAN only when it is `localhost`, an mDNS `*.local`
+     * name (resolvable on the local link only), or a **numeric IP literal**
+     * inside a private range. A hostname that merely *starts with* a private
+     * prefix (e.g. `192.168.evil.com`) is a public DNS name and is NOT LAN —
+     * treating it as LAN would let the cleartext gate leak the API key to an
+     * attacker-controlled host.
      */
     @JvmStatic
     fun isLanAddress(url: String): Boolean {
         return try {
-            val uri = URI.create(url)
-            val host = uri.host ?: return false
+            val host = URI.create(url).host?.lowercase() ?: return false
 
-            if (host.startsWith("192.168.") || host.startsWith("10.")
-                || host == "localhost" || host == "127.0.0.1"
-                || host.endsWith(".local")
-            ) {
+            // mDNS names resolve on the local link only.
+            if (host == "localhost" || host.endsWith(".local")) {
                 return true
             }
-            // 172.16.0.0 - 172.31.255.255
-            if (host.startsWith("172.")) {
-                try {
-                    val second = host.split(".")[1].toInt()
-                    return second in 16..31
-                } catch (_: Exception) {
-                    // ignore
-                }
+            // URI.getHost() wraps IPv6 literals in brackets.
+            if (host.startsWith("[") && host.endsWith("]")) {
+                return isPrivateIpv6(host.substring(1, host.length - 1))
             }
-            false
+            val octets = parseIpv4Literal(host) ?: return false
+            isPrivateIpv4(octets)
         } catch (_: Exception) {
             false
+        }
+    }
+
+    /**
+     * Parse [host] as a strict dotted-quad IPv4 literal (four ASCII-digit
+     * octets in 0..255). Returns null for anything else — including hostnames
+     * that happen to start with digits.
+     */
+    private fun parseIpv4Literal(host: String): IntArray? {
+        val parts = host.split(".")
+        if (parts.size != 4) return null
+        val octets = IntArray(4)
+        for (i in 0..3) {
+            val part = parts[i]
+            if (part.isEmpty() || part.length > 3 || part.any { it !in '0'..'9' }) {
+                return null
+            }
+            val value = part.toInt()
+            if (value !in 0..255) return null
+            octets[i] = value
+        }
+        return octets
+    }
+
+    private fun isPrivateIpv4(o: IntArray): Boolean = when {
+        o[0] == 10 -> true                          // 10.0.0.0/8
+        o[0] == 127 -> true                         // loopback 127.0.0.0/8
+        o[0] == 192 && o[1] == 168 -> true          // 192.168.0.0/16
+        o[0] == 172 && o[1] in 16..31 -> true       // 172.16.0.0/12
+        o[0] == 169 && o[1] == 254 -> true          // link-local 169.254.0.0/16
+        o[0] == 100 && o[1] in 64..127 -> true      // CGNAT / Tailscale 100.64.0.0/10
+        else -> false
+    }
+
+    /**
+     * Classify a bracket-stripped IPv6 literal. Covers loopback, unique-local
+     * (fc00::/7) and link-local (fe80::/10); a zone id (`%eth0`) is ignored.
+     */
+    private fun isPrivateIpv6(addr: String): Boolean {
+        val a = addr.substringBefore('%')
+        return when {
+            a == "::1" -> true                                  // loopback
+            a.startsWith("fc") || a.startsWith("fd") -> true     // unique-local fc00::/7
+            a.startsWith("fe8") || a.startsWith("fe9") ||
+                a.startsWith("fea") || a.startsWith("feb") -> true // link-local fe80::/10
+            else -> false
         }
     }
 
