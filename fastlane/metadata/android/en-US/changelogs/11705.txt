@@ -1,0 +1,7 @@
+Fixed:
+- Hardened plain-HTTP protection: adding, editing and first-run server setup now ask for explicit consent before using cleartext HTTP, and API keys can no longer be sent to non-LAN hosts over HTTP
+- Connection tests no longer disturb the active server configuration
+- Server list colors now follow the in-app theme with readable contrast in every mode
+- Duplicate prompts after switching apps and batch-result dialog glitches
+Improved:
+- Faster app startup
