@@ -13,6 +13,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.textfield.TextInputLayout
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.util.collectFlow
+import com.hippo.ehviewer.util.collectFlowWhileCreated
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.LRRUrlHelper
@@ -85,19 +86,25 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        // UI-4: view-scoped + STARTED-gated. The previous fragment-scoped
-        // collectors stacked one set per re-attach — double failure toast,
-        // double redirectToArchiveList() on success.
-        collectFlow(viewLifecycleOwner, viewModel.connectSuccess) { result ->
+        // View-scoped so the previous fragment-scoped collectors no longer stack
+        // one set per re-attach. These three are replay=0 one-shot results of a
+        // multi-second connection test that keeps running in the background, and
+        // by the time they fire onConnectSuccess has already committed the global
+        // config; losing them in a STOPPED window would leave the switched server
+        // active with no navigation, error, or feedback. Collect for the whole
+        // view lifetime (viewLifecycleOwner still cancels on view destroy).
+        collectFlowWhileCreated(viewLifecycleOwner, viewModel.connectSuccess) { result ->
             handleConnectSuccess(result)
         }
-        collectFlow(viewLifecycleOwner, viewModel.connectFailure) { e ->
+        collectFlowWhileCreated(viewLifecycleOwner, viewModel.connectFailure) { e ->
             handleConnectFailure(e)
         }
-        collectFlow(viewLifecycleOwner, viewModel.secureStorageError) {
+        collectFlowWhileCreated(viewLifecycleOwner, viewModel.secureStorageError) {
             hideProgress()
             showSecureStorageErrorDialog()
         }
+        // connecting is a StateFlow whose current value replays on restart, so
+        // the STARTED-gated default is fine here.
         collectFlow(viewLifecycleOwner, viewModel.connecting) { isConnecting ->
             if (!isConnecting) {
                 hideProgress()
