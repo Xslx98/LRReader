@@ -201,7 +201,7 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
         }
 
         // LANraragi: Warn if using HTTP on non-LAN address
-        if (viewModel.isInsecureWanConnection(resolvedUrl)) {
+        if (LRRUrlHelper.isInsecureWanUrl(resolvedUrl)) {
             Toast.makeText(
                 ctx ?: ehContext,
                 R.string.lrr_security_warning,
