@@ -141,57 +141,8 @@ class ServerConfigViewModelTest {
         assertFalse(vm.connecting.value)
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // B. isInsecureWanConnection (pure function)
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
-    fun isInsecureWanConnection_httpOnPublicIp_returnsTrue() {
-        val vm = ServerConfigViewModel()
-        assertTrue(vm.isInsecureWanConnection("http://203.0.113.5:3000"))
-    }
-
-    @Test
-    fun isInsecureWanConnection_httpsOnPublicIp_returnsFalse() {
-        val vm = ServerConfigViewModel()
-        assertFalse(vm.isInsecureWanConnection("https://203.0.113.5:3000"))
-    }
-
-    @Test
-    fun isInsecureWanConnection_httpOnLanIp_returnsFalse() {
-        val vm = ServerConfigViewModel()
-        assertFalse(vm.isInsecureWanConnection("http://192.168.1.100:3000"))
-    }
-
-    @Test
-    fun isInsecureWanConnection_httpOnLocalhost_returnsFalse() {
-        val vm = ServerConfigViewModel()
-        assertFalse(vm.isInsecureWanConnection("http://localhost:3000"))
-    }
-
-    @Test
-    fun isInsecureWanConnection_httpOn10Network_returnsFalse() {
-        val vm = ServerConfigViewModel()
-        assertFalse(vm.isInsecureWanConnection("http://10.0.0.1:3000"))
-    }
-
-    @Test
-    fun isInsecureWanConnection_httpOn172_16Network_returnsFalse() {
-        val vm = ServerConfigViewModel()
-        assertFalse(vm.isInsecureWanConnection("http://172.16.0.1:3000"))
-    }
-
-    @Test
-    fun isInsecureWanConnection_httpOnDotLocal_returnsFalse() {
-        val vm = ServerConfigViewModel()
-        assertFalse(vm.isInsecureWanConnection("http://myserver.local:3000"))
-    }
-
-    @Test
-    fun isInsecureWanConnection_httpOnPublicDomain_returnsTrue() {
-        val vm = ServerConfigViewModel()
-        assertTrue(vm.isInsecureWanConnection("http://example.com:3000"))
-    }
+    // isInsecureWanUrl coverage lives in LRRUrlHelperLanAddressTest — the
+    // ViewModel no longer wraps the shared predicate.
 
     // ═══════════════════════════════════════════════════════════
     // C. attemptConnection — duplicate guard

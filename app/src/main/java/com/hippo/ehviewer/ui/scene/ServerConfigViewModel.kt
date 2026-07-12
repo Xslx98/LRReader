@@ -193,13 +193,6 @@ class ServerConfigViewModel : ViewModel() {
         }
     }
 
-    /**
-     * Checks whether the resolved URL uses HTTP on a non-LAN address.
-     */
-    fun isInsecureWanConnection(resolvedUrl: String): Boolean {
-        return LRRUrlHelper.isInsecureWanUrl(resolvedUrl)
-    }
-
     companion object {
         private const val TAG = "ServerConfigVM"
     }

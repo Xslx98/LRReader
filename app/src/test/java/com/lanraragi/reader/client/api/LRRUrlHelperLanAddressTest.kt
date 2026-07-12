@@ -100,4 +100,23 @@ class LRRUrlHelperLanAddressTest {
 
     @Test fun invalidUrl_notLan() = assertFalse(LRRUrlHelper.isLanAddress("not-a-url"))
     @Test fun emptyString_notLan() = assertFalse(LRRUrlHelper.isLanAddress(""))
+
+    // ── isInsecureWanUrl (plain HTTP to a non-LAN host) ───────────────
+
+    @Test fun insecureWan_httpPublicIp() =
+        assertTrue(LRRUrlHelper.isInsecureWanUrl("http://203.0.113.5:3000"))
+    @Test fun insecureWan_httpsPublicIp_secure() =
+        assertFalse(LRRUrlHelper.isInsecureWanUrl("https://203.0.113.5:3000"))
+    @Test fun insecureWan_httpPublicDomain() =
+        assertTrue(LRRUrlHelper.isInsecureWanUrl("http://example.com:3000"))
+    @Test fun insecureWan_httpLanIp_secure() =
+        assertFalse(LRRUrlHelper.isInsecureWanUrl("http://192.168.1.100:3000"))
+    @Test fun insecureWan_http10Network_secure() =
+        assertFalse(LRRUrlHelper.isInsecureWanUrl("http://10.0.0.1:3000"))
+    @Test fun insecureWan_http172Network_secure() =
+        assertFalse(LRRUrlHelper.isInsecureWanUrl("http://172.16.0.1:3000"))
+    @Test fun insecureWan_httpLocalhost_secure() =
+        assertFalse(LRRUrlHelper.isInsecureWanUrl("http://localhost:3000"))
+    @Test fun insecureWan_httpDotLocal_secure() =
+        assertFalse(LRRUrlHelper.isInsecureWanUrl("http://myserver.local:3000"))
 }
