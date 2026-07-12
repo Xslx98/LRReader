@@ -7,7 +7,9 @@ import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.dao.AppDatabase
+import com.hippo.ehviewer.dao.MiscRoomDao
 import com.hippo.ehviewer.dao.ProfileRepository
+import com.hippo.ehviewer.dao.ServerProfile
 import com.hippo.ehviewer.module.CoroutineModule
 import com.hippo.ehviewer.module.IDataModule
 import com.hippo.ehviewer.module.INetworkModule
@@ -313,9 +315,58 @@ class ServerConfigViewModelTest {
         assertEquals("candidate-key", LRRAuthManager.getApiKey())
     }
 
+    @Test
+    fun attemptConnection_roomWriteFails_reportsFailureAndLeavesGlobalAuthUntouched() {
+        // The live global auth must switch only after the profile row persists.
+        // If the Room insert fails, the active server URL/key must still point
+        // at the old server, and the failure must surface (not silently switch).
+        LRRAuthManager.setServerUrl("https://old.example.com")
+        LRRAuthManager.setApiKey("old-key")
+        server.enqueue(MockResponse().setResponseCode(200).setBody(SERVER_INFO_JSON))
+
+        val throwingDao = object : MiscRoomDao by db.miscDao() {
+            override suspend fun insertServerProfile(profile: ServerProfile): Long {
+                throw IllegalStateException("simulated Room insert failure")
+            }
+        }
+        ServiceRegistry.initializeForTest(
+            coroutine = CoroutineModule(),
+            network = ServiceRegistry.networkModule,
+            data = throwingDataModule(ProfileRepository(throwingDao))
+        )
+
+        val vm = ServerConfigViewModel()
+        val failures = mutableListOf<Exception>()
+        val scope = CoroutineScope(Dispatchers.Unconfined)
+        val job = scope.launch { vm.connectFailure.collect { failures.add(it) } }
+
+        val baseUrl = server.url("").toString().removeSuffix("/")
+        vm.attemptConnection(baseUrl, "candidate-key", false)
+        drainCoroutines()
+
+        assertTrue("Room failure must surface as connectFailure", failures.isNotEmpty())
+        assertEquals("global URL must stay on the old server", "https://old.example.com", LRRAuthManager.getServerUrl())
+        assertEquals("old-key", LRRAuthManager.getApiKey())
+        job.cancel()
+    }
+
     // ═══════════════════════════════════════════════════════════
     // Helpers
     // ═══════════════════════════════════════════════════════════
+
+    private fun throwingDataModule(repo: ProfileRepository): IDataModule = object : IDataModule {
+        override val profileRepository get() = repo
+        override val profileLookupCache get() = throw NotImplementedError("not needed")
+        override val historyRepository get() = throw NotImplementedError("not needed")
+        override val quickSearchRepository get() = throw NotImplementedError("not needed")
+        override val favoritesRepository get() = throw NotImplementedError("not needed")
+        override val downloadDbRepository get() = throw NotImplementedError("not needed")
+        override val downloadManager get() = throw NotImplementedError("not needed")
+        override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
+        override val archiveDetailCache get() = throw NotImplementedError("not needed")
+        override val spiderInfoCache get() = throw NotImplementedError("not needed")
+        override fun clearArchiveDetailCache() {}
+    }
 
     /**
      * Drain IO coroutines and looper callbacks. The ViewModel uses
