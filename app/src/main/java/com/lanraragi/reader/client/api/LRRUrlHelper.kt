@@ -216,13 +216,20 @@ object LRRUrlHelper {
     // ─────────────────────────────────────────────
 
     /**
-     * Callback for asynchronous connect-with-fallback results.
+     * Outcome of [connectWithFallback]. Returned (not delivered through a
+     * callback) so each caller handles it inline in the coroutine it already
+     * owns, keeping natural suspend sequencing and cancellation.
      */
-    interface ConnectCallback {
+    sealed interface ConnectResult {
         /** Connection succeeded on [resolvedUrl]. */
-        fun onSuccess(resolvedUrl: String, info: LRRServerInfo, usedHttpFallback: Boolean)
-        /** All attempts failed. */
-        fun onFailure(error: Exception)
+        data class Success(
+            val resolvedUrl: String,
+            val info: LRRServerInfo,
+            val usedHttpFallback: Boolean,
+        ) : ConnectResult
+
+        /** All attempts failed (network error or a cleartext refusal). */
+        data class Failure(val error: Exception) : ConnectResult
     }
 
     /**
@@ -257,22 +264,27 @@ object LRRUrlHelper {
      * @param rawInput     user input, already normalised (no trailing slash)
      * @param apiKey       candidate server's API key, attached per-request
      *   (null/empty for open servers)
-     * @param callback     result callback (invoked in the calling coroutine
-     *   before this function returns)
      * @param allowCleartext whether the caller has opted into plain HTTP for
-     *   this server (the add/edit dialog toggle, or an existing profile's
-     *   flag). When true, cleartext HTTP to a non-LAN host is permitted — the
-     *   same policy the production [LRRCleartextRejectionInterceptor] applies
-     *   to saved profiles. Defaults to false (secure default) so the onboarding
-     *   path, which has no opt-in, still refuses WAN cleartext with a key.
+     *   this server (the add/edit/onboarding cleartext toggle, or an existing
+     *   profile's flag). When true, cleartext HTTP to a non-LAN host is
+     *   permitted. Defaults to false (secure default) so a caller with no
+     *   opt-in still refuses WAN cleartext with a key.
+     *
+     * Note this gate is deliberately NOT identical to the production
+     * [LRRCleartextRejectionInterceptor]: this gate exempts LAN unconditionally
+     * (a LAN probe is admitted regardless of [allowCleartext]) so LAN retest
+     * always works, whereas the interceptor has no LAN concept and refuses any
+     * saved profile whose `allowCleartext == false`. Callers persist the
+     * profile's flag from the resolved scheme so an HTTP resolution is stored
+     * cleartext-allowed and stays usable.
      */
+    @Suppress("ReturnCount", "ThrowsCount")
     suspend fun connectWithFallback(
         testClient: OkHttpClient,
         rawInput: String,
         apiKey: String?,
-        callback: ConnectCallback,
         allowCleartext: Boolean = false
-    ) {
+    ): ConnectResult {
         try {
             if (hasExplicitScheme(rawInput)) {
                 // Explicit http:// to a non-LAN host would transmit the Bearer
@@ -280,51 +292,30 @@ object LRRUrlHelper {
                 // issued — unless the user has opted into plain HTTP for this
                 // server. Same policy the fallback paths below enforce.
                 if (isInsecureWanUrl(rawInput) && !allowCleartext) {
-                    // Localizable: friendlyError maps the type to
-                    // lrr_cleartext_refused_error, whose advice ("enable plain
-                    // HTTP for this server, or use HTTPS") is the real escape
-                    // hatch. A raw SecurityException would surface this English
-                    // message verbatim in all locales.
-                    callback.onFailure(
-                        LRRCleartextRefusedException(
-                            "Cleartext HTTP to a non-LAN host refused: the API " +
-                                "key would be sent unencrypted."
-                        )
+                    return cleartextRefused(
+                        "Cleartext HTTP to a non-LAN host refused: the API " +
+                            "key would be sent unencrypted."
                     )
-                    return
                 }
                 try {
                     val info = LRRServerApi.getServerInfo(testClient, rawInput, apiKey)
-                    callback.onSuccess(rawInput, info, false)
-                    return
+                    return ConnectResult.Success(rawInput, info, usedHttpFallback = false)
                 } catch (ce: CancellationException) {
                     throw ce
                 } catch (e: Exception) {
                     Log.d(TAG, "Explicit URL failed: ${e.message}")
-                    // Explicit http:// — no fallback, report failure directly
+                    // Explicit http:// — no fallback, report failure directly.
                     if (!rawInput.lowercase().startsWith("https://")) {
-                        callback.onFailure(e)
-                        return
+                        return ConnectResult.Failure(e)
                     }
                     // Explicit https:// failed — try HTTP fallback (LAN or
                     // opted-in only; otherwise report the original HTTPS error).
                     val httpUrl = "http://" + rawInput.substring("https://".length)
                     if (isInsecureWanUrl(httpUrl) && !allowCleartext) {
-                        callback.onFailure(e)
-                        return
+                        return ConnectResult.Failure(e)
                     }
-                    try {
-                        Log.d(TAG, "Trying HTTP fallback for explicit HTTPS: $httpUrl")
-                        val info = LRRServerApi.getServerInfo(testClient, httpUrl, apiKey)
-                        callback.onSuccess(httpUrl, info, true)
-                    } catch (ce: CancellationException) {
-                        throw ce
-                    } catch (e2: Exception) {
-                        Log.d(TAG, "HTTP fallback also failed: ${e2.message}")
-                        callback.onFailure(e2)
-                    }
+                    return httpFallback(testClient, httpUrl, apiKey)
                 }
-                return
             }
 
             // No explicit scheme -> try HTTPS first
@@ -334,8 +325,7 @@ object LRRUrlHelper {
             try {
                 Log.d(TAG, "Trying HTTPS: $httpsUrl")
                 val info = LRRServerApi.getServerInfo(testClient, httpsUrl, apiKey)
-                callback.onSuccess(httpsUrl, info, false)
-                return
+                return ConnectResult.Success(httpsUrl, info, usedHttpFallback = false)
             } catch (ce: CancellationException) {
                 throw ce
             } catch (e1: Exception) {
@@ -345,28 +335,43 @@ object LRRUrlHelper {
             // Fallback to HTTP -- only for private / LAN addresses, or when the
             // user has opted into plain HTTP for this server.
             if (isInsecureWanUrl(httpUrl) && !allowCleartext) {
-                callback.onFailure(
-                    LRRCleartextRefusedException(
-                        "HTTPS failed and cleartext HTTP to a non-LAN host is refused: " +
-                            "the API key would be sent unencrypted."
-                    )
+                return cleartextRefused(
+                    "HTTPS failed and cleartext HTTP to a non-LAN host is refused: " +
+                        "the API key would be sent unencrypted."
                 )
-                return
             }
-
-            try {
-                Log.d(TAG, "Trying HTTP fallback: $httpUrl")
-                val info = LRRServerApi.getServerInfo(testClient, httpUrl, apiKey)
-                callback.onSuccess(httpUrl, info, true)
-            } catch (ce: CancellationException) {
-                throw ce
-            } catch (e2: Exception) {
-                Log.d(TAG, "HTTP fallback also failed: ${e2.message}")
-                callback.onFailure(e2)
-            }
+            return httpFallback(testClient, httpUrl, apiKey)
         } catch (e: LRRSecureStorageUnavailableException) {
             Log.e(TAG, "Secure storage unavailable during connect", e)
-            callback.onFailure(e)
+            return ConnectResult.Failure(e)
+        }
+    }
+
+    /**
+     * Localizable cleartext refusal: friendlyError maps
+     * [LRRCleartextRefusedException] to lrr_cleartext_refused_error, whose
+     * advice ("enable plain HTTP for this server, or use HTTPS") is the real
+     * escape hatch. A raw SecurityException would surface the English message
+     * verbatim in every locale.
+     */
+    private fun cleartextRefused(message: String): ConnectResult =
+        ConnectResult.Failure(LRRCleartextRefusedException(message))
+
+    /** Probe [httpUrl] as the plain-HTTP fallback and wrap the outcome. */
+    private suspend fun httpFallback(
+        testClient: OkHttpClient,
+        httpUrl: String,
+        apiKey: String?,
+    ): ConnectResult {
+        return try {
+            Log.d(TAG, "Trying HTTP fallback: $httpUrl")
+            val info = LRRServerApi.getServerInfo(testClient, httpUrl, apiKey)
+            ConnectResult.Success(httpUrl, info, usedHttpFallback = true)
+        } catch (ce: CancellationException) {
+            throw ce
+        } catch (e: Exception) {
+            Log.d(TAG, "HTTP fallback also failed: ${e.message}")
+            ConnectResult.Failure(e)
         }
     }
 }

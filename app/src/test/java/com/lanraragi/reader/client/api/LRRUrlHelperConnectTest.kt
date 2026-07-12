@@ -17,7 +17,6 @@ import com.hippo.ehviewer.Hosts
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.module.INetworkModule
 import com.hippo.ehviewer.module.NetworkMonitor
-import com.lanraragi.reader.client.api.data.LRRServerInfo
 import kotlinx.coroutines.runBlocking
 import okhttp3.Cache
 import okhttp3.OkHttpClient
@@ -85,30 +84,19 @@ class LRRUrlHelperConnectTest {
 
     private fun baseUrl() = server.url("").toString().removeSuffix("/")
 
-    private class RecordingCallback : LRRUrlHelper.ConnectCallback {
-        var resolvedUrl: String? = null
-        var info: LRRServerInfo? = null
-        var usedHttpFallback = false
-        var error: Exception? = null
-        override fun onSuccess(resolvedUrl: String, info: LRRServerInfo, usedHttpFallback: Boolean) {
-            this.resolvedUrl = resolvedUrl
-            this.info = info
-            this.usedHttpFallback = usedHttpFallback
-        }
-        override fun onFailure(error: Exception) {
-            this.error = error
-        }
-    }
+    private fun LRRUrlHelper.ConnectResult.asSuccess() =
+        this as LRRUrlHelper.ConnectResult.Success
+    private fun LRRUrlHelper.ConnectResult.errorOrNull() =
+        (this as? LRRUrlHelper.ConnectResult.Failure)?.error
 
     @Test
     fun explicitUrl_withKey_sendsBearerAndLeavesGlobalUrlUntouched() = runBlocking {
         LRRAuthManager.setServerUrl("http://prior.example.com:3000")
         server.enqueue(MockResponse().setResponseCode(200).setBody(infoJson))
 
-        val cb = RecordingCallback()
-        LRRUrlHelper.connectWithFallback(client, baseUrl(), "candidate-key", cb)
+        val result = LRRUrlHelper.connectWithFallback(client, baseUrl(), "candidate-key")
 
-        assertEquals(baseUrl(), cb.resolvedUrl)
+        assertEquals(baseUrl(), result.asSuccess().resolvedUrl)
         val expected = "Bearer " + Base64.encodeToString(
             "candidate-key".toByteArray(Charsets.UTF_8), Base64.NO_WRAP
         )
@@ -120,9 +108,8 @@ class LRRUrlHelperConnectTest {
     @Test
     fun explicitUrl_withoutKey_sendsNoAuthHeader() = runBlocking {
         server.enqueue(MockResponse().setResponseCode(200).setBody(infoJson))
-        val cb = RecordingCallback()
-        LRRUrlHelper.connectWithFallback(client, baseUrl(), null, cb)
-        assertEquals(baseUrl(), cb.resolvedUrl)
+        val result = LRRUrlHelper.connectWithFallback(client, baseUrl(), null)
+        assertEquals(baseUrl(), result.asSuccess().resolvedUrl)
         assertNull(server.takeRequest().getHeader("Authorization"))
     }
 
@@ -134,12 +121,11 @@ class LRRUrlHelperConnectTest {
         // the HTTP fallback which succeeds.
         server.enqueue(MockResponse().setResponseCode(200).setBody(infoJson))
 
-        val cb = RecordingCallback()
         val hostPort = baseUrl().removePrefix("http://")
-        LRRUrlHelper.connectWithFallback(client, hostPort, "k", cb)
+        val result = LRRUrlHelper.connectWithFallback(client, hostPort, "k").asSuccess()
 
-        assertEquals("http://$hostPort", cb.resolvedUrl)
-        assertTrue(cb.usedHttpFallback)
+        assertEquals("http://$hostPort", result.resolvedUrl)
+        assertTrue(result.usedHttpFallback)
         assertEquals("http://prior.example.com:3000", LRRAuthManager.getServerUrl())
     }
 
@@ -149,26 +135,21 @@ class LRRUrlHelperConnectTest {
         // request goes out — otherwise the Bearer key travels in cleartext.
         // isLanAddress is false for 198.51.100.x (TEST-NET-2), so the gate
         // fires and no socket is opened.
-        val cb = RecordingCallback()
-        LRRUrlHelper.connectWithFallback(client, "http://198.51.100.7:3000", "secret", cb)
+        val result = LRRUrlHelper.connectWithFallback(client, "http://198.51.100.7:3000", "secret")
 
         assertTrue(
             "explicit WAN http must be refused",
-            cb.error is LRRCleartextRefusedException
+            result.errorOrNull() is LRRCleartextRefusedException
         )
-        assertNull(cb.resolvedUrl)
-        assertNull(cb.info)
     }
 
     @Test
     fun explicitHttp_toLanHost_stillAllowed() = runBlocking {
         // The gate must not block legitimate LAN cleartext testing.
         server.enqueue(MockResponse().setResponseCode(200).setBody(infoJson))
-        val cb = RecordingCallback()
-        LRRUrlHelper.connectWithFallback(client, baseUrl(), "k", cb)
+        val result = LRRUrlHelper.connectWithFallback(client, baseUrl(), "k")
 
-        assertEquals(baseUrl(), cb.resolvedUrl)
-        assertNull(cb.error)
+        assertEquals(baseUrl(), result.asSuccess().resolvedUrl)
     }
 
     @Test
@@ -179,15 +160,14 @@ class LRRUrlHelperConnectTest {
         // does for the saved profile. Against a TEST-NET address with no
         // server it then fails with a real network error, not a cleartext
         // refusal.
-        val cb = RecordingCallback()
-        LRRUrlHelper.connectWithFallback(
-            client, "http://198.51.100.7:3000", "secret", cb, allowCleartext = true
+        val result = LRRUrlHelper.connectWithFallback(
+            client, "http://198.51.100.7:3000", "secret", allowCleartext = true
         )
 
-        assertNull(cb.resolvedUrl)
+        val error = result.errorOrNull()
         assertTrue(
             "opted-in cleartext must bypass the gate",
-            cb.error != null && cb.error !is LRRCleartextRefusedException
+            error != null && error !is LRRCleartextRefusedException
         )
     }
 
@@ -198,10 +178,8 @@ class LRRUrlHelperConnectTest {
         // allowCleartext=false profiles regardless of key, so admitting a
         // keyless WAN probe would only produce a profile whose traffic is
         // then blocked. Refuse unless opted in.
-        val cb = RecordingCallback()
-        LRRUrlHelper.connectWithFallback(client, "http://198.51.100.7:3000", null, cb)
+        val result = LRRUrlHelper.connectWithFallback(client, "http://198.51.100.7:3000", null)
 
-        assertTrue(cb.error is LRRCleartextRefusedException)
-        assertNull(cb.resolvedUrl)
+        assertTrue(result.errorOrNull() is LRRCleartextRefusedException)
     }
 }

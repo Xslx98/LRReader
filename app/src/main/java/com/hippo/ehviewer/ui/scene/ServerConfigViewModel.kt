@@ -101,24 +101,11 @@ class ServerConfigViewModel : ViewModel() {
             // cleartext LAN gate to the shared helper (the same one
             // ServerListViewModel uses) so onboarding can never probe a WAN
             // host over cleartext with the API key attached.
-            LRRUrlHelper.connectWithFallback(
-                testClient,
-                rawInput,
-                candidateKey,
-                object : LRRUrlHelper.ConnectCallback {
-                    override fun onSuccess(
-                        resolvedUrl: String,
-                        info: LRRServerInfo,
-                        usedHttpFallback: Boolean
-                    ) {
-                        onConnectSuccess(resolvedUrl, info, candidateKey, navigateOnSuccess)
-                    }
-
-                    override fun onFailure(error: Exception) {
-                        onConnectFailure(error)
-                    }
-                }
-            )
+            when (val r = LRRUrlHelper.connectWithFallback(testClient, rawInput, candidateKey)) {
+                is LRRUrlHelper.ConnectResult.Success ->
+                    onConnectSuccess(r.resolvedUrl, r.info, candidateKey, navigateOnSuccess)
+                is LRRUrlHelper.ConnectResult.Failure -> onConnectFailure(r.error)
+            }
         }
     }
 
