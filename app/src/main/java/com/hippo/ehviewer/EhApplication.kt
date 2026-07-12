@@ -113,6 +113,12 @@ class EhApplication : RecordingApplication() {
 
         super.onCreate()
 
+        // INF-9: LRRAuthManager.initialize() spends 50-200ms on KeyStore binder
+        // calls + encrypted-pref decryption. Run it on bootScope so it overlaps
+        // the remaining main-thread initializers and the Activity launch window;
+        // LRRAuthManager's readiness gate holds any reader that arrives early.
+        val authInitJob = LRRAuthManager.scheduleInitialize(this, AppModule.bootScope)
+
         // Wrap each main-thread initialiser in a Trace section so cold-start
         // profiles in Android Studio Profiler / perfetto show exactly which
         // step dominates EhApplication.onCreate. Tracing is built into the OS
@@ -123,7 +129,6 @@ class EhApplication : RecordingApplication() {
             com.hippo.network.StatusCodeException.initialize(this)
         }
         trace("EhApp.Settings.init") { Settings.initialize(this) }
-        trace("EhApp.LRRAuthManager.init") { LRRAuthManager.initialize(this) }
         trace("EhApp.ReadableTime.init") { ReadableTime.initialize(this) }
         trace("EhApp.AppConfig.init") { AppConfig.initialize(this) }
         // Skip SpiderDen disk cache in LRR mode — it's EH-specific and wastes 40-640MB
@@ -139,6 +144,10 @@ class EhApplication : RecordingApplication() {
         AppModule.bootScope.launch {
             var resolvedId: Long? = null
             try {
+                // INF-9: the calls below read+write encrypted prefs - wait for the
+                // async initialize. Inside the try so the finally still completes
+                // activeProfileIdDeferred if join() ever throws.
+                authInitJob.join()
                 val allProfiles = com.hippo.ehviewer.dao.AppDatabase.getInstance(this@EhApplication)
                     .miscDao().getAllServerProfiles()
                 LRRAuthManager.markReauthIfProfilesUnprotected(allProfiles.map { it.id })
