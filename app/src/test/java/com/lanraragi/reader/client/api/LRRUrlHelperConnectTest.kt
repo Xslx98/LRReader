@@ -152,7 +152,10 @@ class LRRUrlHelperConnectTest {
         val cb = RecordingCallback()
         LRRUrlHelper.connectWithFallback(client, "http://198.51.100.7:3000", "secret", cb)
 
-        assertTrue("explicit WAN http must be refused", cb.error is SecurityException)
+        assertTrue(
+            "explicit WAN http must be refused",
+            cb.error is LRRCleartextRefusedException
+        )
         assertNull(cb.resolvedUrl)
         assertNull(cb.info)
     }
