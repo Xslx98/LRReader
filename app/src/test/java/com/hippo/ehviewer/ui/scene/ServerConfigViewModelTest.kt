@@ -294,6 +294,41 @@ class ServerConfigViewModelTest {
     }
 
     @Test
+    fun attemptConnection_explicitHttpWan_refusedFastWithoutTouchingGlobalAuth() {
+        // Delegating to connectWithFallback makes onboarding inherit the LAN
+        // gate: an explicit http:// WAN probe is refused synchronously (no
+        // request is issued, the API key never leaves the device) with a
+        // SecurityException. Before delegation tryConnect had no gate and would
+        // instead attempt a real cleartext connection. Global auth stays intact.
+        LRRAuthManager.setServerUrl("http://prior.example.com:3000")
+        LRRAuthManager.setApiKey("prior-key")
+
+        val vm = ServerConfigViewModel()
+        val failures = mutableListOf<Exception>()
+        val collectScope = CoroutineScope(Dispatchers.Unconfined)
+        val job = collectScope.launch { vm.connectFailure.collect { failures.add(it) } }
+
+        vm.attemptConnection("http://198.51.100.7:3000", "candidate-key", true)
+
+        // The gate fires synchronously (no network), so a short poll suffices;
+        // before delegation this window would elapse with no SecurityException.
+        val deadline = System.currentTimeMillis() + 3000
+        while (failures.isEmpty() && System.currentTimeMillis() < deadline) {
+            ShadowLooper.idleMainLooper()
+            Thread.sleep(20)
+        }
+
+        assertTrue(
+            "explicit WAN http must be refused with SecurityException",
+            failures.any { it is SecurityException }
+        )
+        assertEquals("http://prior.example.com:3000", LRRAuthManager.getServerUrl())
+        assertEquals("prior-key", LRRAuthManager.getApiKey())
+
+        job.cancel()
+    }
+
+    @Test
     fun attemptConnection_success_sendsBearerHeader() {
         server.enqueue(MockResponse().setResponseCode(200).setBody(SERVER_INFO_JSON))
 
