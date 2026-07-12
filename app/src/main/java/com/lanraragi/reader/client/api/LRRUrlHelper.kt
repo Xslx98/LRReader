@@ -91,6 +91,11 @@ object LRRUrlHelper {
             if (part.isEmpty() || part.length > 3 || part.any { it !in '0'..'9' }) {
                 return null
             }
+            // Reject leading-zero octets: a BSD-lineage resolver (inet_aton)
+            // reads them as OCTAL, so a decimal parse here would classify a
+            // different host than the socket connects to — e.g. "010.0.0.1"
+            // parses to 10.x (private) while the resolver dials 8.0.0.1 (WAN).
+            if (part.length > 1 && part[0] == '0') return null
             val value = part.toInt()
             if (value !in 0..255) return null
             octets[i] = value
@@ -109,18 +114,89 @@ object LRRUrlHelper {
     }
 
     /**
-     * Classify a bracket-stripped IPv6 literal. Covers loopback, unique-local
-     * (fc00::/7) and link-local (fe80::/10); a zone id (`%eth0`) is ignored.
+     * Classify a bracket-stripped IPv6 literal as private/LAN by parsing it to
+     * its 16 bytes and checking byte ranges, so compression and casing cannot
+     * fool a string-prefix match. Covers loopback (`::1`), unique-local
+     * (fc00::/7), link-local (fe80::/10), and an IPv4-mapped tail
+     * (`::ffff:a.b.c.d`) whose embedded IPv4 is private. A zone id (`%eth0`)
+     * is ignored; anything unparseable returns false.
      */
+    @Suppress("ReturnCount")
     private fun isPrivateIpv6(addr: String): Boolean {
-        val a = addr.substringBefore('%')
-        return when {
-            a == "::1" -> true                                  // loopback
-            a.startsWith("fc") || a.startsWith("fd") -> true     // unique-local fc00::/7
-            a.startsWith("fe8") || a.startsWith("fe9") ||
-                a.startsWith("fea") || a.startsWith("feb") -> true // link-local fe80::/10
-            else -> false
+        val bytes = parseIpv6Literal(addr.substringBefore('%')) ?: return false
+        // IPv4-mapped ::ffff:a.b.c.d — classify the embedded IPv4.
+        if ((0..9).all { bytes[it].toInt() == 0 } &&
+            (bytes[10].toInt() and 0xFF) == 0xFF && (bytes[11].toInt() and 0xFF) == 0xFF
+        ) {
+            return isPrivateIpv4(
+                intArrayOf(
+                    bytes[12].toInt() and 0xFF, bytes[13].toInt() and 0xFF,
+                    bytes[14].toInt() and 0xFF, bytes[15].toInt() and 0xFF
+                )
+            )
         }
+        // loopback ::1
+        if ((0..14).all { bytes[it].toInt() == 0 } && bytes[15].toInt() == 1) return true
+        val first = bytes[0].toInt() and 0xFF
+        // unique-local fc00::/7 (first byte 0xfc or 0xfd)
+        if (first and 0xFE == 0xFC) return true
+        // link-local fe80::/10 (first byte 0xfe, next two bits = 10)
+        if (first == 0xFE && (bytes[1].toInt() and 0xC0) == 0x80) return true
+        return false
+    }
+
+    /**
+     * Parse a bracket- and zone-stripped IPv6 literal into its 16 bytes, or
+     * null if it is not a well-formed literal. Handles a single `::`
+     * compression run and an optional trailing IPv4-mapped group.
+     */
+    @Suppress("ReturnCount")
+    private fun parseIpv6Literal(addr: String): ByteArray? {
+        if (addr.isEmpty()) return null
+        // At most one "::" compression run.
+        if (addr.indexOf("::") != addr.lastIndexOf("::")) return null
+        val compressAt = addr.indexOf("::")
+        val head = if (compressAt < 0) addr else addr.substring(0, compressAt)
+        val tail = if (compressAt < 0) "" else addr.substring(compressAt + 2)
+
+        val headBytes = groupsToBytes(if (head.isEmpty()) emptyList() else head.split(":"))
+            ?: return null
+        val tailBytes = groupsToBytes(if (tail.isEmpty()) emptyList() else tail.split(":"))
+            ?: return null
+
+        if (compressAt < 0) {
+            return if (headBytes.size == 16) headBytes else null
+        }
+        val zeros = 16 - headBytes.size - tailBytes.size
+        if (zeros < 0) return null
+        return ByteArray(16).also { out ->
+            var p = 0
+            headBytes.forEach { out[p++] = it }
+            p += zeros
+            tailBytes.forEach { out[p++] = it }
+        }
+    }
+
+    /** Expand IPv6 hextet groups (optional trailing IPv4 group) to bytes. */
+    @Suppress("ReturnCount")
+    private fun groupsToBytes(groups: List<String>): ByteArray? {
+        val out = ArrayList<Byte>(16)
+        for ((idx, g) in groups.withIndex()) {
+            if (g.contains(".")) {
+                // An IPv4-mapped group is only valid as the final group.
+                if (idx != groups.size - 1) return null
+                val v4 = parseIpv4Literal(g) ?: return null
+                v4.forEach { out.add(it.toByte()) }
+            } else {
+                if (g.isEmpty() || g.length > 4 || g.any { Character.digit(it, 16) < 0 }) {
+                    return null
+                }
+                val v = g.toInt(16)
+                out.add((v ushr 8).toByte())
+                out.add((v and 0xFF).toByte())
+            }
+        }
+        return out.toByteArray()
     }
 
     /**
