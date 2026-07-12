@@ -183,20 +183,27 @@ object LRRUrlHelper {
      *   (null/empty for open servers)
      * @param callback     result callback (invoked in the calling coroutine
      *   before this function returns)
+     * @param allowCleartext whether the caller has opted into plain HTTP for
+     *   this server (the add/edit dialog toggle, or an existing profile's
+     *   flag). When true, cleartext HTTP to a non-LAN host is permitted — the
+     *   same policy the production [LRRCleartextRejectionInterceptor] applies
+     *   to saved profiles. Defaults to false (secure default) so the onboarding
+     *   path, which has no opt-in, still refuses WAN cleartext with a key.
      */
     suspend fun connectWithFallback(
         testClient: OkHttpClient,
         rawInput: String,
         apiKey: String?,
-        callback: ConnectCallback
+        callback: ConnectCallback,
+        allowCleartext: Boolean = false
     ) {
         try {
             if (hasExplicitScheme(rawInput)) {
                 // Explicit http:// to a non-LAN host would transmit the Bearer
                 // key in cleartext over the WAN. Refuse before any request is
-                // issued — the same policy the schemeless and https->http
-                // fallback paths already enforce below.
-                if (isInsecureWanUrl(rawInput)) {
+                // issued — unless the user has opted into plain HTTP for this
+                // server. Same policy the fallback paths below enforce.
+                if (isInsecureWanUrl(rawInput) && !allowCleartext) {
                     // Localizable: friendlyError maps the type to
                     // lrr_cleartext_refused_error, whose advice ("enable plain
                     // HTTP for this server, or use HTTPS") is the real escape
@@ -223,9 +230,10 @@ object LRRUrlHelper {
                         callback.onFailure(e)
                         return
                     }
-                    // Explicit https:// failed — try HTTP fallback (LAN only)
+                    // Explicit https:// failed — try HTTP fallback (LAN or
+                    // opted-in only; otherwise report the original HTTPS error).
                     val httpUrl = "http://" + rawInput.substring("https://".length)
-                    if (!isLanAddress(httpUrl)) {
+                    if (isInsecureWanUrl(httpUrl) && !allowCleartext) {
                         callback.onFailure(e)
                         return
                     }
@@ -258,12 +266,13 @@ object LRRUrlHelper {
                 Log.d(TAG, "HTTPS failed: ${e1.message}")
             }
 
-            // Fallback to HTTP -- only permitted for private / LAN addresses.
-            if (!isLanAddress(httpUrl)) {
+            // Fallback to HTTP -- only for private / LAN addresses, or when the
+            // user has opted into plain HTTP for this server.
+            if (isInsecureWanUrl(httpUrl) && !allowCleartext) {
                 callback.onFailure(
-                    SecurityException(
-                        "HTTPS connection failed and HTTP is not allowed for non-LAN servers. " +
-                            "Verify the server address and SSL certificate."
+                    LRRCleartextRefusedException(
+                        "HTTPS failed and cleartext HTTP to a non-LAN host is refused: " +
+                            "the API key would be sent unencrypted."
                     )
                 )
                 return

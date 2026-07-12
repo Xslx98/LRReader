@@ -189,7 +189,8 @@ class ServerListViewModel : ViewModel() {
                             ServerListUiEvent.EditConnectionFailed(error)
                         )
                     }
-                }
+                },
+                allowCleartext = profile.allowCleartext
             )
         }
     }
@@ -301,7 +302,8 @@ class ServerListViewModel : ViewModel() {
                             ServerListUiEvent.AddConnectionFailed(error)
                         )
                     }
-                }
+                },
+                allowCleartext = allowCleartext
             )
         }
     }
