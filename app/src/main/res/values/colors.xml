@@ -172,10 +172,12 @@
     <!-- Destructive action accent (e.g. archive delete confirm button text). -->
     <color name="destructive_action">#F44336</color>
 
-    <!-- Server list — active row tint, inactive labels. Overridden in values-night. -->
-    <color name="server_active_row_bg">#1A4CAF50</color>
-    <color name="server_inactive_name">#999999</color>
-    <color name="server_inactive_url">#BBBBBB</color>
+    <!-- Server list — active-row selection wash (Material selected state layer,
+         8-16% of the primary hue). Resolved via ?attr/serverActiveRowBg per
+         theme; inactive rows use the theme's own text colors (RES-4). -->
+    <color name="lrr_server_active_row_bg_light">#1F009688</color>
+    <color name="lrr_server_active_row_bg_dark">#2600BFA5</color>
+
 
     <!--
       Source-server badge palette for the download list row. 8 indexed
