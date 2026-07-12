@@ -128,6 +128,11 @@ class GalleryListScene : BaseScene(),
      */
     private val pendingDeletedArcIds = mutableSetOf<String>()
 
+    // Batch results (per-item failure dialog + ClearNew badge refresh) that
+    // arrived while this list was detached under a pushed scene; replayed in
+    // onResume once the view and batchOpsHelper exist again.
+    private val pendingBatchResults = mutableListOf<GalleryListViewModel.BatchResult>()
+
     private var mShowcaseView: ShowcaseView? = null
     internal lateinit var downloadManager: DownloadManager
         private set
@@ -314,6 +319,21 @@ class GalleryListScene : BaseScene(),
                 removeArchiveLocally(event.arcid)
             } else {
                 pendingDeletedArcIds.add(event.arcid)
+            }
+        }
+
+        // collectFlowWhileCreated(fragment): a batch runs in viewModelScope and
+        // can finish while this list is detached under a detail scene the user
+        // pushed mid-run. A view-scoped collector (onViewCreated +
+        // viewLifecycleOwner) would lose the replay=0 result, dropping the
+        // per-item failure dialog after a partial delete and skipping ClearNew's
+        // badge refresh. Buffer while detached and replay in onResume, same as
+        // archiveDeletedEvent above.
+        collectFlowWhileCreated(this, viewModel.batchResultEvent) { result ->
+            if (isResumed && batchOpsHelper != null) {
+                batchOpsHelper?.onBatchResult(result)
+            } else {
+                pendingBatchResults.add(result)
             }
         }
 
@@ -579,19 +599,15 @@ class GalleryListScene : BaseScene(),
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        // Batch progress/result drive the bottom action bar. View-scoped (not
+        // Batch progress drives the bottom action bar. View-scoped (not
         // fragment-scoped like the onCreate collectors) so a re-created view
         // does not stack duplicate collectors targeting a dead helper.
+        // batchProgress is a replayed StateFlow, so a fresh view re-renders the
+        // current progress on re-attach. batchResultEvent (replay=0) is instead
+        // collected fragment-scoped in onCreate + buffered, so a batch finishing
+        // while this list is detached under a pushed scene is not lost.
         collectFlow(viewLifecycleOwner, viewModel.batchProgress) {
             batchOpsHelper?.onBatchProgress(it)
-        }
-        // batchResultEvent is a replay=0 one-shot result of a batch that keeps
-        // running in viewModelScope; losing it in a STOPPED window drops the
-        // per-item failure dialog after a partially-failed destructive delete and
-        // skips ClearNew's refreshList (stale NEW badges). Collect for the whole
-        // view lifetime so a batch finishing while backgrounded still reports.
-        collectFlowWhileCreated(viewLifecycleOwner, viewModel.batchResultEvent) {
-            batchOpsHelper?.onBatchResult(it)
         }
         // Upload progress/result rendering is view-scoped: the ViewModel is
         // activity-scoped and several GalleryListScene instances can sit in the
@@ -840,6 +856,14 @@ class GalleryListScene : BaseScene(),
             recyclerView.post {
                 drained.forEach { removeArchiveLocally(it) }
             }
+        }
+
+        // Replay batch results that completed while this list was detached
+        // (batchOpsHelper is live again by the time onResume runs).
+        if (pendingBatchResults.isNotEmpty()) {
+            val drained = pendingBatchResults.toList()
+            pendingBatchResults.clear()
+            drained.forEach { batchOpsHelper?.onBatchResult(it) }
         }
 
         // Auto-refresh when active server config changed (edit/switch/add)
