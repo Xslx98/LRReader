@@ -205,6 +205,36 @@ class ServerListViewModelTest {
         assertEquals("prior-key", LRRAuthManager.getApiKey())
     }
 
+    @Test
+    fun testAndSaveEditedProfile_keystoreUnavailable_leavesRoomUnchanged() {
+        // The connection test succeeds (the probe carries the key explicitly and
+        // never touches the keystore), but committing the edit must not mutate
+        // Room before the fragile secure-storage write is known to succeed.
+        val id = insertProfile("Old Name", "https://old.example.com", isActive = true)
+        val profile = ServerProfile(id = id, name = "Old Name", url = "https://old.example.com", isActive = true)
+        server.enqueue(MockResponse().setResponseCode(200)
+            .setBody("""{"name":"New Server","version":"0.9.8","archives_per_page":100}"""))
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+
+        val vm = ServerListViewModel()
+        val events = collectEvents(vm)
+        val newUrl = server.url("").toString().removeSuffix("/")
+        vm.testAndSaveEditedProfile(profile, 0, "New Name", newUrl, "new-key")
+
+        awaitCondition {
+            events.any { it is ServerListViewModel.ServerListUiEvent.SecureStorageError }
+        }
+
+        val fromDb = runBlocking { db.miscDao().getAllServerProfiles() }.first { it.id == id }
+        assertEquals("edit must abort before the Room write", "https://old.example.com", fromDb.url)
+        assertEquals("Old Name", fromDb.name)
+
+        // Restore secure storage for tearDown / suite order.
+        LRRAuthManager.initializeForTesting(
+            ctx.getSharedPreferences("server_vm_test_restore2", Context.MODE_PRIVATE)
+        )
+    }
+
     // ── loadProfiles ───────────────────────────────────────────────
 
     @Test

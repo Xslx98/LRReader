@@ -214,9 +214,12 @@ class ServerListViewModel : ViewModel() {
         val isActive = profile.isActive
         viewModelScope.launch {
             try {
-                withContext(Dispatchers.IO) {
-                    profileRepository.update(updated)
+                val committed = withContext(Dispatchers.IO) {
                     try {
+                        // Write the fragile secure-storage state first: if the
+                        // keystore is unavailable the first call throws before Room
+                        // is touched, so the edit aborts cleanly instead of leaving
+                        // Room updated while live auth still points at the old URL.
                         LRRAuthManager.setApiKeyForProfile(profile.id, newKey.ifEmpty { null })
                         if (isActive) {
                             LRRAuthManager.setServerUrl(updated.url)
@@ -225,14 +228,17 @@ class ServerListViewModel : ViewModel() {
                             LRRAuthManager.setAllowCleartext(updated.allowCleartext)
                             LRRAuthManager.bumpServerConfigVersion()
                         }
-                        LRRAuthManager.markReauthIfProfilesUnprotected(
-                            profileRepository.getAllProfiles().map { it.id }
-                        )
                     } catch (e: LRRSecureStorageUnavailableException) {
                         _uiEvent.emit(ServerListUiEvent.SecureStorageError)
-                        return@withContext
+                        return@withContext false
                     }
+                    profileRepository.update(updated)
+                    LRRAuthManager.markReauthIfProfilesUnprotected(
+                        profileRepository.getAllProfiles().map { it.id }
+                    )
+                    true
                 }
+                if (!committed) return@launch
                 _uiEvent.emit(ServerListUiEvent.EditSaved(position, updated))
                 if (usedHttpFallback) {
                     _uiEvent.emit(ServerListUiEvent.ShowToastRes(
