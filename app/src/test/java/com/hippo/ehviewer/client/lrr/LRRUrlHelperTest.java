@@ -127,4 +127,75 @@ public class LRRUrlHelperTest {
     public void isLanAddress_emptyString() {
         assertFalse(LRRUrlHelper.isLanAddress(""));
     }
+
+    // ── isLanAddress: prefix-match bypass must be closed ──────────────
+    // A public DNS name that merely starts with a private IPv4 prefix is
+    // NOT a private address — only true dotted-quad IP literals count.
+
+    @Test
+    public void isLanAddress_192_168_prefixHostname_notLan() {
+        assertFalse(LRRUrlHelper.isLanAddress("http://192.168.evil.com:3000"));
+    }
+
+    @Test
+    public void isLanAddress_10_prefixHostname_notLan() {
+        assertFalse(LRRUrlHelper.isLanAddress("http://10.attacker.example"));
+    }
+
+    @Test
+    public void isLanAddress_172_prefixHostname_notLan() {
+        assertFalse(LRRUrlHelper.isLanAddress("http://172.20.foo.com"));
+    }
+
+    @Test
+    public void isLanAddress_bareHostname_notLan() {
+        // A single-label hostname is not classifiable as a private IP; the
+        // cleartext gate handles these via the per-profile allowCleartext opt-in.
+        assertFalse(LRRUrlHelper.isLanAddress("http://nas:3000"));
+    }
+
+    // ── isLanAddress: link-local, CGNAT/Tailscale, IPv6 ──────────────
+
+    @Test
+    public void isLanAddress_linkLocalV4() {
+        assertTrue(LRRUrlHelper.isLanAddress("http://169.254.1.1"));
+    }
+
+    @Test
+    public void isLanAddress_cgnatTailscale() {
+        assertTrue(LRRUrlHelper.isLanAddress("http://100.64.0.1:3000"));
+        assertTrue(LRRUrlHelper.isLanAddress("http://100.127.255.255"));
+    }
+
+    @Test
+    public void isLanAddress_cgnatOutOfRange() {
+        assertFalse(LRRUrlHelper.isLanAddress("http://100.63.0.1"));
+        assertFalse(LRRUrlHelper.isLanAddress("http://100.128.0.1"));
+    }
+
+    @Test
+    public void isLanAddress_ipv6Loopback() {
+        assertTrue(LRRUrlHelper.isLanAddress("http://[::1]:3000"));
+    }
+
+    @Test
+    public void isLanAddress_ipv6UniqueLocal() {
+        assertTrue(LRRUrlHelper.isLanAddress("http://[fd00::2]:3000"));
+    }
+
+    @Test
+    public void isLanAddress_ipv6LinkLocal() {
+        assertTrue(LRRUrlHelper.isLanAddress("http://[fe80::1]:3000"));
+    }
+
+    @Test
+    public void isLanAddress_ipv6Public_notLan() {
+        assertFalse(LRRUrlHelper.isLanAddress("http://[2001:db8::1]:3000"));
+    }
+
+    @Test
+    public void isLanAddress_octetOutOfRange_notLan() {
+        // "192.168.1.999" is not a valid IPv4 literal.
+        assertFalse(LRRUrlHelper.isLanAddress("http://192.168.1.999"));
+    }
 }
