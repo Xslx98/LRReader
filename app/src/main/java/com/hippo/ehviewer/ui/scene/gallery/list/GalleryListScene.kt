@@ -70,6 +70,7 @@ import com.hippo.lib.yorozuya.ViewUtils
 import com.hippo.refreshlayout.RefreshLayout
 import com.hippo.ripple.Ripple
 import com.hippo.scene.Announcer
+import com.hippo.ehviewer.util.DetachBuffer
 import com.hippo.ehviewer.util.collectFlow
 import com.hippo.ehviewer.util.collectFlowWhileCreated
 import com.hippo.view.ViewTransition
@@ -126,12 +127,12 @@ class GalleryListScene : BaseScene(),
      * Drained in [onResume] so the RecyclerView remove + reflow animation plays
      * after the user is actually looking at the list, not while it's hidden.
      */
-    private val pendingDeletedArcIds = mutableSetOf<String>()
+    private val deletionBuffer = DetachBuffer<String>()
 
     // Batch results (per-item failure dialog + ClearNew badge refresh) that
     // arrived while this list was detached under a pushed scene; replayed in
     // onResume once the view and batchOpsHelper exist again.
-    private val pendingBatchResults = mutableListOf<GalleryListViewModel.BatchResult>()
+    private val batchResultBuffer = DetachBuffer<GalleryListViewModel.BatchResult>()
 
     // Stable per-instance token stamped on batches this scene starts. The
     // ViewModel is activity-scoped and shared, so its result is broadcast to
@@ -320,13 +321,11 @@ class GalleryListScene : BaseScene(),
         // plays after the back-stack pop instead of being burned off-screen.
         // collectFlowWhileCreated(fragment): deletions typically arrive while this
         // list is detached under the detail scene that performed the delete — a
-        // view-scoped collector would lose them. The pendingDeletedArcIds buffer +
-        // onResume replay depend on whole-lifetime collection.
+        // view-scoped collector would lose them. The deletionBuffer + onResume
+        // replay depend on whole-lifetime collection.
         collectFlowWhileCreated(this, AppEventBus.archiveDeletedEvent) { event ->
-            if (isResumed) {
-                removeArchiveLocally(event.arcid)
-            } else {
-                pendingDeletedArcIds.add(event.arcid)
+            deletionBuffer.deliverOrBuffer(event.arcid, ready = isResumed) {
+                removeArchiveLocally(it)
             }
         }
 
@@ -345,10 +344,8 @@ class GalleryListScene : BaseScene(),
         // duplicate dialog / spurious refresh on pop-back.
         collectFlowWhileCreated(this, viewModel.batchResultEvent) { result ->
             if (result.owner !== batchOwnerToken) return@collectFlowWhileCreated
-            if (isResumed && batchOpsHelper != null) {
-                batchOpsHelper?.onBatchResult(result)
-            } else {
-                pendingBatchResults.add(result)
+            batchResultBuffer.deliverOrBuffer(result, ready = isResumed && batchOpsHelper != null) {
+                batchOpsHelper?.onBatchResult(it)
             }
         }
 
@@ -866,20 +863,20 @@ class GalleryListScene : BaseScene(),
 
         // Drain deletions that arrived while we were hidden, deferred one frame so
         // the RecyclerView has laid out before the remove animation kicks off.
-        if (pendingDeletedArcIds.isNotEmpty() && ::recyclerView.isInitialized) {
-            val drained = pendingDeletedArcIds.toList()
-            pendingDeletedArcIds.clear()
-            recyclerView.post {
-                drained.forEach { removeArchiveLocally(it) }
+        // Only once the RecyclerView exists, else keep them buffered.
+        if (::recyclerView.isInitialized) {
+            val drained = mutableListOf<String>()
+            deletionBuffer.drain { drained.add(it) }
+            if (drained.isNotEmpty()) {
+                recyclerView.post { drained.forEach { removeArchiveLocally(it) } }
             }
         }
 
-        // Replay batch results that completed while this list was detached
-        // (batchOpsHelper is live again by the time onResume runs).
-        if (pendingBatchResults.isNotEmpty()) {
-            val drained = pendingBatchResults.toList()
-            pendingBatchResults.clear()
-            drained.forEach { batchOpsHelper?.onBatchResult(it) }
+        // Replay batch results that completed while this list was detached. Only
+        // once batchOpsHelper is live, else keep them buffered (never drain into
+        // a null helper).
+        if (batchOpsHelper != null) {
+            batchResultBuffer.drain { batchOpsHelper?.onBatchResult(it) }
         }
 
         // Auto-refresh when active server config changed (edit/switch/add)
