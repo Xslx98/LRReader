@@ -82,6 +82,19 @@ class ContinueReadingShortcutTest {
     }
 
     @Test
+    fun removeIfProfile_removesOnlyWhenShortcutPointsAtThatProfile() = runBlocking {
+        val arcid = "e".repeat(40)
+        historyRepository.putHistoryInfo(archive(arcid, 7L, "Book"))
+        ContinueReadingShortcut.publish(context, historyRepository, arcid, 7L)
+
+        ContinueReadingShortcut.removeIfProfile(context, profileId = 99L)
+        assertEquals(1, ShortcutManagerCompat.getDynamicShortcuts(context).size)
+
+        ContinueReadingShortcut.removeIfProfile(context, profileId = 7L)
+        assertTrue(ShortcutManagerCompat.getDynamicShortcuts(context).isEmpty())
+    }
+
+    @Test
     fun publish_again_replacesInsteadOfAccumulating() = runBlocking {
         val first = "c".repeat(40)
         val second = "d".repeat(40)

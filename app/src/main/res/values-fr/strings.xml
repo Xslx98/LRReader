@@ -359,6 +359,7 @@
     <string name="clear_search_history_confirm">Effacer tout l\'historique de recherche du serveur actuel ?</string>
     <string name="clear_search_history_done">Historique de recherche effacé</string>
     <string name="shortcut_continue_reading">Reprendre la lecture</string>
+    <string name="continue_reading_unavailable">La cible de reprise de lecture n\'existe plus</string>
     <string name="detail_tankoubons_label">Tankoubons</string>
     <string name="detail_tankoubons_edit">Modifier</string>
     <string name="tank_add_to">Ajouter au tankoubon</string>

@@ -409,6 +409,7 @@
     <string name="clear_search_history_confirm">清除目前伺服器的全部搜尋歷史?</string>
     <string name="clear_search_history_done">已清除搜尋歷史</string>
     <string name="shortcut_continue_reading">繼續閱讀</string>
+    <string name="continue_reading_unavailable">繼續閱讀目標已不存在</string>
     <string name="detail_tankoubons_label">合訂本</string>
     <string name="detail_tankoubons_edit">編輯</string>
     <string name="tank_add_to">加入合訂本</string>

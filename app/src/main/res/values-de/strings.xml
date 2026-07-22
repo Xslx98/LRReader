@@ -310,6 +310,7 @@
     <string name="clear_search_history_confirm">Gesamten Suchverlauf für den aktuellen Server löschen?</string>
     <string name="clear_search_history_done">Suchverlauf gelöscht</string>
     <string name="shortcut_continue_reading">Weiterlesen</string>
+    <string name="continue_reading_unavailable">Weiterlesen-Ziel existiert nicht mehr</string>
     <string name="detail_tankoubons_label">Tankoubons</string>
     <string name="detail_tankoubons_edit">Bearbeiten</string>
     <string name="tank_add_to">Zu Tankoubon hinzufügen</string>

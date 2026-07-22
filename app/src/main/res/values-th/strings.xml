@@ -371,6 +371,7 @@
     <string name="clear_search_history_confirm">ล้างประวัติการค้นหาทั้งหมดของเซิร์ฟเวอร์ปัจจุบันหรือไม่</string>
     <string name="clear_search_history_done">ล้างประวัติการค้นหาแล้ว</string>
     <string name="shortcut_continue_reading">อ่านต่อ</string>
+    <string name="continue_reading_unavailable">เป้าหมายอ่านต่อไม่มีอยู่แล้ว</string>
     <string name="detail_tankoubons_label">ทังโคบง</string>
     <string name="detail_tankoubons_edit">แก้ไข</string>
     <string name="tank_add_to">เพิ่มลงทังโคบง</string>
