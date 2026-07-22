@@ -389,6 +389,11 @@
     <string name="stats_empty">아직 읽기 기록이 없습니다</string>
     <string name="stats_server_line">%1$d권 · 완독 %2$d · %3$d쪽</string>
     <string name="stats_deleted_server">삭제된 서버 #%1$d</string>
+    <string name="stats_tag_preference">태그 취향</string>
+    <string name="stats_tag_artists">자주 읽는 작가</string>
+    <string name="stats_tag_series">자주 읽는 시리즈</string>
+    <string name="stats_tag_misc">자주 보는 태그</string>
+    <string name="stats_tag_chip">%1$s · %2$d</string>
     <string name="detail_tankoubons_label">단행본</string>
     <string name="detail_tankoubons_edit">편집</string>
     <string name="tank_add_to">단행본에 추가</string>

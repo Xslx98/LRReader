@@ -343,6 +343,11 @@
     <string name="stats_empty">まだ閲覧履歴がありません</string>
     <string name="stats_server_line">%1$d 冊 · 読了 %2$d · %3$d ページ</string>
     <string name="stats_deleted_server">削除済みサーバー #%1$d</string>
+    <string name="stats_tag_preference">タグの傾向</string>
+    <string name="stats_tag_artists">よく読む作者</string>
+    <string name="stats_tag_series">よく読むシリーズ</string>
+    <string name="stats_tag_misc">よく見るタグ</string>
+    <string name="stats_tag_chip">%1$s · %2$d</string>
     <string name="detail_tankoubons_label">単行本</string>
     <string name="detail_tankoubons_edit">編集</string>
     <string name="tank_add_to">単行本に追加</string>
