@@ -469,6 +469,8 @@
     <string name="tank_badge">Tankoubon</string>
     <string name="settings_eh_group_tanks">Group Tankoubons in browse</string>
     <string name="settings_eh_group_tanks_summary">Fold archives of a Tankoubon into a single entry (LANraragi 0.9.8+)</string>
+    <string name="settings_eh_hide_completed">Hide completed archives in browse</string>
+    <string name="settings_eh_hide_completed_summary">Filter out archives you have finished reading (LANraragi 0.9.8+)</string>
     <string name="detail_tankoubons_label">Tankoubons</string>
     <string name="detail_tankoubons_edit">Edit</string>
     <string name="tank_add_to">Add to Tankoubon</string>

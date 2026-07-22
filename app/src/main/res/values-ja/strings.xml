@@ -326,6 +326,8 @@
     <string name="tank_badge">単行本</string>
     <string name="settings_eh_group_tanks">ブラウズで単行本をまとめる</string>
     <string name="settings_eh_group_tanks_summary">単行本のアーカイブを 1 つの項目にまとめる(LANraragi 0.9.8+)</string>
+    <string name="settings_eh_hide_completed">読了済みアーカイブを非表示</string>
+    <string name="settings_eh_hide_completed_summary">読み終えたアーカイブを一覧から除外する(LANraragi 0.9.8+)</string>
     <string name="detail_tankoubons_label">単行本</string>
     <string name="detail_tankoubons_edit">編集</string>
     <string name="tank_add_to">単行本に追加</string>
