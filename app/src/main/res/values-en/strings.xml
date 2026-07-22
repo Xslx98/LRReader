@@ -397,7 +397,7 @@
     <string name="stats_per_server">By server</string>
     <string name="stats_recently_completed">Recently completed</string>
     <string name="stats_empty">No reading history yet</string>
-    <string name="stats_server_line">%1$d archives · %2$d completed · %3$d pages</string>
+    <string name="stats_server_line" tools:ignore="PluralsCandidate">%1$d archives · %2$d completed · %3$d pages</string>
     <string name="stats_deleted_server">Deleted server #%1$d</string>
     <string name="stats_tag_preference">Tag preferences</string>
     <string name="stats_tag_artists">Top artists</string>
