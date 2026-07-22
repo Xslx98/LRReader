@@ -18,6 +18,7 @@ import com.hippo.ehviewer.stats.TagPreferenceCalculator
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.util.collectFlow
 import com.hippo.widget.AutoWrapLayout
+import java.util.Locale
 
 /**
  * Reading-statistics page (issue #18): snapshot number tiles, per-server
@@ -108,9 +109,10 @@ class ReadingStatsScene : BaseScene() {
     }
 
     private fun bind(stats: ReadingStatsCalculator.ReadingStats) {
-        mTotalValue?.text = stats.totalArchives.toString()
-        mCompletedValue?.text = stats.completedCount.toString()
-        mPagesValue?.text = stats.totalPagesRead.toString()
+        val locale = Locale.getDefault()
+        mTotalValue?.text = String.format(locale, "%d", stats.totalArchives)
+        mCompletedValue?.text = String.format(locale, "%d", stats.completedCount)
+        mPagesValue?.text = String.format(locale, "%d", stats.totalPagesRead)
 
         mPerServerContainer?.let { container ->
             container.removeAllViews()
