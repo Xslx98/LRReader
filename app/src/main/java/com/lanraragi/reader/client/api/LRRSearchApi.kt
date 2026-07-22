@@ -31,7 +31,8 @@ object LRRSearchApi {
         order: String?,
         newonly: Boolean,
         untaggedonly: Boolean = false,
-        groupbyTanks: Boolean = false
+        groupbyTanks: Boolean = false,
+        hideCompleted: Boolean = false
     ): LRRSearchResult = retryOnFailure {
         withContext(Dispatchers.IO) {
             val urlBuilder = parseBaseUrl(baseUrl).newBuilder()
@@ -46,6 +47,8 @@ object LRRSearchApi {
             // Always send groupby_tanks: the server defaults it to true, which folds
             // Tankoubons into results as 15-char TANK_ ids the archive pipeline can't render.
             urlBuilder.addQueryParameter("groupby_tanks", groupbyTanks.toString())
+            // Omitted entirely when off: pre-0.9.8 servers must see today's exact request.
+            if (hideCompleted) urlBuilder.addQueryParameter("hidecompleted", "true")
 
             val request = Request.Builder()
                 .url(urlBuilder.build())
@@ -79,7 +82,8 @@ object LRRSearchApi {
         category: String? = null,
         newonly: Boolean = false,
         untaggedonly: Boolean = false,
-        groupbyTanks: Boolean = false
+        groupbyTanks: Boolean = false,
+        hideCompleted: Boolean = false
     ): LRRSearchResult = withContext(Dispatchers.IO) {
         val urlBuilder = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/search/random")
@@ -90,6 +94,8 @@ object LRRSearchApi {
         if (untaggedonly) urlBuilder.addQueryParameter("untaggedonly", "true")
         // Always send groupby_tanks (see searchArchives): server defaults it to true.
         urlBuilder.addQueryParameter("groupby_tanks", groupbyTanks.toString())
+        // Omitted entirely when off (see searchArchives).
+        if (hideCompleted) urlBuilder.addQueryParameter("hidecompleted", "true")
 
         val request = Request.Builder()
             .url(urlBuilder.build())
