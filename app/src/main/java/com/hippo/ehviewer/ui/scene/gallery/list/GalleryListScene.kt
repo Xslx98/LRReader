@@ -161,7 +161,7 @@ class GalleryListScene : BaseScene(),
     private var batchOpsHelper: GalleryBatchOpsHelper? = null
     internal var uploadHelper: GalleryUploadHelper? = null
     private var mSearchHelper: GallerySearchHelper? = null
-    private var mHistoryStore: ProfileSearchHistoryStore? = null
+    internal var mHistoryStore: ProfileSearchHistoryStore? = null
     internal var listSearchHelper: GalleryListSearchHelper? = null
     private var mDrawerHelper: GalleryDrawerHelper? = null
     private var mFabHelper: GalleryFabHelper? = null
