@@ -57,9 +57,12 @@ class LRRSearchPaginationTest {
         order = order,
         newonly = false,
         untaggedonly = false,
-        // Pin the fold decision: the production default reads
-        // SharedPreferences-backed settings, unavailable in plain JVM tests.
-        includeTanksProvider = { false }
+        // Pin the fold and hide-completed decisions: the production defaults read
+        // SharedPreferences-backed settings, unavailable in plain JVM tests (an
+        // unpinned provider throws inside load(), which swallows the request and
+        // hangs any takeRequest() that follows).
+        includeTanksProvider = { false },
+        hideCompletedProvider = { false }
     )
 
     private fun archiveJson(id: String, title: String): String {
@@ -123,6 +126,40 @@ class LRRSearchPaginationTest {
         assertEquals(1, p2.data.size)
         assertEquals("Five", p2.data[0].title)
         assertNull("Last page should have null nextKey", p2.nextKey)
+    }
+
+    @Test
+    fun hideCompletedProviderTrue_requestCarriesParam() = runTest {
+        val source = LRRArchivePagingSource(
+            client = client, baseUrl = baseUrl,
+            filter = null, category = null, sortby = null, order = null,
+            includeTanksProvider = { false },
+            hideCompletedProvider = { true },
+        )
+        server.enqueue(MockResponse().setBody(searchResultJson(
+            listOf(archiveJson("a1", "One")), total = 1
+        )))
+
+        source.load(PagingSource.LoadParams.Refresh(null, 2, false))
+
+        assertTrue(server.takeRequest().path!!.contains("hidecompleted=true"))
+    }
+
+    @Test
+    fun hideCompletedProviderFalse_requestOmitsParam() = runTest {
+        val source = LRRArchivePagingSource(
+            client = client, baseUrl = baseUrl,
+            filter = null, category = null, sortby = null, order = null,
+            includeTanksProvider = { false },
+            hideCompletedProvider = { false },
+        )
+        server.enqueue(MockResponse().setBody(searchResultJson(
+            listOf(archiveJson("a1", "One")), total = 1
+        )))
+
+        source.load(PagingSource.LoadParams.Refresh(null, 2, false))
+
+        assertFalse(server.takeRequest().path!!.contains("hidecompleted"))
     }
 
     // ═══════════════════════════════════════════════════════════
