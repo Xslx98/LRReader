@@ -78,6 +78,9 @@ class SearchBar : CardView,
         const val STATE_NORMAL = 0
         const val STATE_SEARCH = 1
         const val STATE_SEARCH_LIST = 2
+
+        /** Max history rows shown in the suggestion list (triage decision, issue #12). */
+        private const val HISTORY_SUGGESTION_LIMIT = 10
     }
 
     private var mState = STATE_NORMAL
@@ -98,13 +101,13 @@ class SearchBar : CardView,
 
     private var mViewTransition: ViewTransition
 
-    private var mSearchDatabase: SearchDatabase
     private var mSuggestionList: MutableList<Suggestion>
     private var mSuggestionAdapter: SuggestionAdapter
 
     private var mHelper: Helper? = null
     private var mOnStateChangeListener: OnStateChangeListener? = null
     private var mSuggestionProvider: SuggestionProvider? = null
+    private var mHistoryStore: HistoryStore? = null
 
     private var mAllowEmptySearch = true
 
@@ -116,7 +119,6 @@ class SearchBar : CardView,
 
     init {
         showTranslation = AppearanceSettings.getShowTagTranslations()
-        mSearchDatabase = SearchDatabase.getInstance(getContext())
 
         val inflater = LayoutInflater.from(context)
         inflater.inflate(R.layout.widget_search_bar, this)
@@ -176,9 +178,17 @@ class SearchBar : CardView,
             }
         }
 
-        val keywords = mSearchDatabase.getSuggestions(text, 128)
-        for (keyword in keywords) {
-            mSuggestionList.add(HistorySuggestion(keyword))
+        // Per-profile search history via the injected store (scenes that don't
+        // set one — e.g. the downloads filter — simply show no history rows).
+        mHistoryStore?.let { store ->
+            val keywords = if (text.isEmpty()) {
+                store.recent(HISTORY_SUGGESTION_LIMIT)
+            } else {
+                store.matching(text, HISTORY_SUGGESTION_LIMIT)
+            }
+            for (keyword in keywords) {
+                mSuggestionList.add(HistorySuggestion(keyword))
+            }
         }
 
         // Track keywords already added to avoid duplicates between local and server tags
@@ -270,6 +280,10 @@ class SearchBar : CardView,
         mSuggestionProvider = suggestionProvider
     }
 
+    fun setHistoryStore(historyStore: HistoryStore?) {
+        mHistoryStore = historyStore
+    }
+
     fun setText(text: String?) {
         mEditText.setText(text)
     }
@@ -356,8 +370,8 @@ class SearchBar : CardView,
             return
         }
 
-        // Put it into db
-        mSearchDatabase.addQuery(query)
+        // Record at dispatch time (non-empty only — the store trims and drops blanks)
+        mHistoryStore?.record(query)
         // Callback
         mHelper?.onApplySearch(query)
     }
@@ -591,6 +605,18 @@ class SearchBar : CardView,
         fun providerSuggestions(text: String): List<Suggestion>?
     }
 
+    /**
+     * Synchronous view onto the per-profile search history. Reads must serve
+     * from an in-memory snapshot (this runs on every keystroke); mutations
+     * must reflect in subsequent reads immediately and persist asynchronously.
+     */
+    interface HistoryStore {
+        fun recent(limit: Int): List<String>
+        fun matching(prefix: String, limit: Int): List<String>
+        fun record(query: String)
+        fun delete(query: String)
+    }
+
     abstract class Suggestion {
         abstract fun getText(textSize: Float): CharSequence?
         abstract fun getText(textView: TextView): CharSequence?
@@ -717,8 +743,9 @@ class SearchBar : CardView,
         }
 
         override fun onLongClick() {
-            mSearchDatabase.deleteQuery(mKeyword)
-            updateSuggestions(false)
+            // Tag suggestions are not history entries — nothing to delete.
+            // (The legacy SearchDatabase path deleted a same-text history row
+            // here, an accident of the shared store.)
         }
     }
 
@@ -742,7 +769,7 @@ class SearchBar : CardView,
         }
 
         override fun onLongClick() {
-            mSearchDatabase.deleteQuery(mQuery)
+            mHistoryStore?.delete(mQuery)
             updateSuggestions(false)
         }
     }

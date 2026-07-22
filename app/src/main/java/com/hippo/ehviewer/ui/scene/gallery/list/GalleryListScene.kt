@@ -38,6 +38,8 @@ import android.widget.ListView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import com.hippo.ehviewer.ServiceRegistry
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.github.amlcurran.showcaseview.ShowcaseView
@@ -159,6 +161,7 @@ class GalleryListScene : BaseScene(),
     private var batchOpsHelper: GalleryBatchOpsHelper? = null
     internal var uploadHelper: GalleryUploadHelper? = null
     private var mSearchHelper: GallerySearchHelper? = null
+    private var mHistoryStore: ProfileSearchHistoryStore? = null
     internal var listSearchHelper: GalleryListSearchHelper? = null
     private var mDrawerHelper: GalleryDrawerHelper? = null
     private var mFabHelper: GalleryFabHelper? = null
@@ -565,6 +568,13 @@ class GalleryListScene : BaseScene(),
         searchBar.setOnStateChangeListener(searchBarHelper)
         GallerySearchHelper.setSearchBarHint(context, searchBar)
         mSearchHelper?.let { searchBar.setSuggestionProvider(it.createSuggestionProvider()) }
+        val historyStore = ProfileSearchHistoryStore(
+            viewLifecycleOwner.lifecycleScope,
+            ServiceRegistry.dataModule.searchHistoryRepository,
+        )
+        mHistoryStore = historyStore
+        searchBar.setHistoryStore(historyStore)
+        historyStore.refresh()
 
         searchLayout.setHelper(searchBarHelper)
         searchLayout.setPadding(
@@ -855,6 +865,9 @@ class GalleryListScene : BaseScene(),
 
     override fun onResume() {
         super.onResume()
+        // Re-sync the history snapshot: the active profile may have changed
+        // while this scene was backgrounded.
+        mHistoryStore?.refresh()
         adapter?.let {
             it.setType(AppearanceSettings.getListMode())
             it.refreshColumnSize()
