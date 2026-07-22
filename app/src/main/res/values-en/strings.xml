@@ -438,7 +438,7 @@
         <item quantity="one">%d item is already downloaded</item>
         <item quantity="other">%d items are already downloaded</item>
     </plurals>
-    <string name="batch_download_queued_some_local">Queued %1$d for download, %2$d already downloaded</string>
+    <string name="batch_download_queued_some_local" tools:ignore="PluralsCandidate">Queued %1$d for download, %2$d already downloaded</string>
     <string name="download_already_local">Already downloaded</string>
     <plurals name="batch_done_category">
         <item quantity="one">Added %d item to the category</item>
