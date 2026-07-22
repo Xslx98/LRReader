@@ -367,6 +367,8 @@
     <string name="tank_badge">合訂本</string>
     <string name="settings_eh_group_tanks">瀏覽時摺疊合訂本</string>
     <string name="settings_eh_group_tanks_summary">將屬於合訂本的檔案摺疊為一個條目(LANraragi 0.9.8+)</string>
+    <string name="settings_eh_hide_completed">瀏覽時隱藏已讀完的檔案</string>
+    <string name="settings_eh_hide_completed_summary">從列表中過濾掉已讀完的檔案(LANraragi 0.9.8+)</string>
     <string name="detail_tankoubons_label">合訂本</string>
     <string name="detail_tankoubons_edit">編輯</string>
     <string name="tank_add_to">加入合訂本</string>

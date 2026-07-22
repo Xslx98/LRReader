@@ -72,6 +72,12 @@
         android:summary="@string/settings_eh_group_tanks_summary"
         android:title="@string/settings_eh_group_tanks" />
 
+    <com.hippo.preference.SwitchPreference
+        android:defaultValue="false"
+        android:key="search_hide_completed"
+        android:summary="@string/settings_eh_hide_completed_summary"
+        android:title="@string/settings_eh_hide_completed" />
+
 
     <com.hippo.preference.SwitchPreference
         android:defaultValue="false"

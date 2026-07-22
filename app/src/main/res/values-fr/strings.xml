@@ -352,6 +352,8 @@
     <string name="tank_badge">Tankoubon</string>
     <string name="settings_eh_group_tanks">Regrouper les tankoubons en navigation</string>
     <string name="settings_eh_group_tanks_summary">Regrouper les archives d\'un tankoubon en une seule entrée (LANraragi 0.9.8+)</string>
+    <string name="settings_eh_hide_completed">Masquer les archives terminées en navigation</string>
+    <string name="settings_eh_hide_completed_summary">Exclure les archives que vous avez terminé de lire (LANraragi 0.9.8+)</string>
     <string name="detail_tankoubons_label">Tankoubons</string>
     <string name="detail_tankoubons_edit">Modifier</string>
     <string name="tank_add_to">Ajouter au tankoubon</string>

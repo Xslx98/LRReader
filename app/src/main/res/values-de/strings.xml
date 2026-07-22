@@ -303,6 +303,8 @@
     <string name="tank_badge">Tankoubon</string>
     <string name="settings_eh_group_tanks">Tankoubons beim Stöbern gruppieren</string>
     <string name="settings_eh_group_tanks_summary">Archive eines Tankoubons zu einem Eintrag zusammenfassen (LANraragi 0.9.8+)</string>
+    <string name="settings_eh_hide_completed">Gelesene Archive beim Stöbern ausblenden</string>
+    <string name="settings_eh_hide_completed_summary">Bereits zu Ende gelesene Archive herausfiltern (LANraragi 0.9.8+)</string>
     <string name="detail_tankoubons_label">Tankoubons</string>
     <string name="detail_tankoubons_edit">Bearbeiten</string>
     <string name="tank_add_to">Zu Tankoubon hinzufügen</string>
