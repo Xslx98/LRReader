@@ -14,7 +14,17 @@ import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListViewModel.BatchResult
 object BatchFeedbackPresenter {
 
     /** Snackbar wording for a batch with no failures (incl. download queueing). */
-    data class Tip(@param:PluralsRes val textRes: Int, val count: Int)
+    sealed interface Tip {
+        /** Simple quantified tip rendered via getQuantityString. */
+        data class Plural(@param:PluralsRes val textRes: Int, val count: Int) : Tip
+
+        /**
+         * Download batch that queued some items while skipping already-local
+         * ones (R.string.batch_download_queued_some_local: %1$d queued,
+         * %2$d already downloaded).
+         */
+        data class QueuedWithLocal(val queued: Int, val alreadyLocal: Int) : Tip
+    }
 
     /** Failure dialog spec: quantified title plus per-item failure lines. */
     data class FailureDialog(
@@ -24,8 +34,16 @@ object BatchFeedbackPresenter {
         val failures: List<GalleryListViewModel.BatchFailure>,
     )
 
-    fun tipFor(result: BatchResult): Tip? =
-        if (result.failed.isEmpty()) Tip(successTextRes(result.op), result.succeeded.size) else null
+    fun tipFor(result: BatchResult): Tip? {
+        if (result.failed.isNotEmpty()) return null
+        val local = result.alreadyLocal.size
+        return when {
+            // Only download batches populate alreadyLocal (DownloadEntryGate).
+            local == 0 -> Tip.Plural(successTextRes(result.op), result.succeeded.size)
+            result.succeeded.isEmpty() -> Tip.Plural(R.plurals.batch_download_all_local, local)
+            else -> Tip.QueuedWithLocal(queued = result.succeeded.size, alreadyLocal = local)
+        }
+    }
 
     fun dialogFor(result: BatchResult): FailureDialog? =
         if (result.failed.isEmpty()) {

@@ -135,7 +135,13 @@ internal class GalleryBatchOpsHelper(
         val tip = BatchFeedbackPresenter.tipFor(result)
         if (tip != null) {
             callback.showTip(
-                activity.resources.getQuantityString(tip.textRes, tip.count, tip.count)
+                when (tip) {
+                    is BatchFeedbackPresenter.Tip.Plural ->
+                        activity.resources.getQuantityString(tip.textRes, tip.count, tip.count)
+                    is BatchFeedbackPresenter.Tip.QueuedWithLocal -> activity.getString(
+                        R.string.batch_download_queued_some_local, tip.queued, tip.alreadyLocal
+                    )
+                }
             )
         } else {
             BatchFeedbackPresenter.dialogFor(result)?.let { showFailureDialog(activity, it) }

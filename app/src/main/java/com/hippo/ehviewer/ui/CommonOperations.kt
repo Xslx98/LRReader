@@ -21,6 +21,7 @@ import android.util.Log
 import com.hippo.app.ListCheckBoxDialogBuilder
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.download.DownloadEntryGate
 import com.hippo.ehviewer.download.DownloadService
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.ui.scene.BaseScene
@@ -45,11 +46,15 @@ object CommonOperations {
 
         val toStart = ArrayList<String>()
         val toAdd = mutableListOf<Archive>()
+        var alreadyLocal = 0
         for (a in archives) {
-            if (dm.containDownloadInfo(a.arcid)) {
-                toStart.add(a.arcid)
-            } else {
-                toAdd.add(a)
+            when (DownloadEntryGate.disposition(dm.getDownloadState(a.arcid))) {
+                DownloadEntryGate.Disposition.NEW -> toAdd.add(a)
+                DownloadEntryGate.Disposition.RESTART -> toStart.add(a.arcid)
+                // FINISH rows stay untouched: re-queuing runs the worker
+                // against the source profile's URL and an unreachable source
+                // would flip a completed download to FAILED.
+                DownloadEntryGate.Disposition.ALREADY_LOCAL -> alreadyLocal++
             }
         }
 
@@ -61,7 +66,11 @@ object CommonOperations {
         }
 
         if (toAdd.isEmpty()) {
-            activity.showTip(R.string.added_to_download_list, BaseScene.LENGTH_SHORT)
+            if (toStart.isEmpty() && alreadyLocal > 0) {
+                activity.showTip(R.string.download_already_local, BaseScene.LENGTH_SHORT)
+            } else {
+                activity.showTip(R.string.added_to_download_list, BaseScene.LENGTH_SHORT)
+            }
             return
         }
 

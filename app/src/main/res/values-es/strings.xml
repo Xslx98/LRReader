@@ -407,6 +407,13 @@
         <item quantity="many">%d descargas añadidas a la cola</item>
         <item quantity="other">%d descargas añadidas a la cola</item>
     </plurals>
+    <plurals name="batch_download_all_local">
+        <item quantity="one">%d elemento ya está descargado</item>
+        <item quantity="many">%d elementos ya están descargados</item>
+        <item quantity="other">%d elementos ya están descargados</item>
+    </plurals>
+    <string name="batch_download_queued_some_local">%1$d en cola de descarga, %2$d ya descargados</string>
+    <string name="download_already_local">Ya descargado</string>
     <plurals name="batch_done_category">
         <item quantity="one">%d elemento añadido a la categoría</item>
         <item quantity="many">%d elementos añadidos a la categoría</item>
