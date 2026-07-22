@@ -20,8 +20,11 @@ import android.animation.Animator
 import android.animation.ObjectAnimator
 import android.content.Context
 import android.graphics.Canvas
+import android.content.res.ColorStateList
 import androidx.core.graphics.withSave
 import androidx.core.view.isVisible
+import androidx.core.widget.TextViewCompat
+import com.hippo.android.resource.AttrResources
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -78,6 +81,9 @@ class SearchBar : CardView,
         const val STATE_NORMAL = 0
         const val STATE_SEARCH = 1
         const val STATE_SEARCH_LIST = 2
+
+        /** Max history rows shown in the suggestion list (triage decision, issue #12). */
+        private const val HISTORY_SUGGESTION_LIMIT = 10
     }
 
     private var mState = STATE_NORMAL
@@ -98,13 +104,13 @@ class SearchBar : CardView,
 
     private var mViewTransition: ViewTransition
 
-    private var mSearchDatabase: SearchDatabase
     private var mSuggestionList: MutableList<Suggestion>
     private var mSuggestionAdapter: SuggestionAdapter
 
     private var mHelper: Helper? = null
     private var mOnStateChangeListener: OnStateChangeListener? = null
     private var mSuggestionProvider: SuggestionProvider? = null
+    private var mHistoryStore: HistoryStore? = null
 
     private var mAllowEmptySearch = true
 
@@ -116,7 +122,6 @@ class SearchBar : CardView,
 
     init {
         showTranslation = AppearanceSettings.getShowTagTranslations()
-        mSearchDatabase = SearchDatabase.getInstance(getContext())
 
         val inflater = LayoutInflater.from(context)
         inflater.inflate(R.layout.widget_search_bar, this)
@@ -176,9 +181,17 @@ class SearchBar : CardView,
             }
         }
 
-        val keywords = mSearchDatabase.getSuggestions(text, 128)
-        for (keyword in keywords) {
-            mSuggestionList.add(HistorySuggestion(keyword))
+        // Per-profile search history via the injected store (scenes that don't
+        // set one — e.g. the downloads filter — simply show no history rows).
+        mHistoryStore?.let { store ->
+            val keywords = if (text.isEmpty()) {
+                store.recent(HISTORY_SUGGESTION_LIMIT)
+            } else {
+                store.matching(text, HISTORY_SUGGESTION_LIMIT)
+            }
+            for (keyword in keywords) {
+                mSuggestionList.add(HistorySuggestion(keyword))
+            }
         }
 
         // Track keywords already added to avoid duplicates between local and server tags
@@ -270,6 +283,10 @@ class SearchBar : CardView,
         mSuggestionProvider = suggestionProvider
     }
 
+    fun setHistoryStore(historyStore: HistoryStore?) {
+        mHistoryStore = historyStore
+    }
+
     fun setText(text: String?) {
         mEditText.setText(text)
     }
@@ -356,8 +373,8 @@ class SearchBar : CardView,
             return
         }
 
-        // Put it into db
-        mSearchDatabase.addQuery(query)
+        // Record at dispatch time (non-empty only — the store trims and drops blanks)
+        mHistoryStore?.record(query)
         // Callback
         mHelper?.onApplySearch(query)
     }
@@ -591,11 +608,29 @@ class SearchBar : CardView,
         fun providerSuggestions(text: String): List<Suggestion>?
     }
 
+    /**
+     * Synchronous view onto the per-profile search history. Reads must serve
+     * from an in-memory snapshot (this runs on every keystroke); mutations
+     * must reflect in subsequent reads immediately and persist asynchronously.
+     */
+    interface HistoryStore {
+        fun recent(limit: Int): List<String>
+        fun matching(prefix: String, limit: Int): List<String>
+        fun record(query: String)
+        fun delete(query: String)
+    }
+
     abstract class Suggestion {
         abstract fun getText(textSize: Float): CharSequence?
         abstract fun getText(textView: TextView): CharSequence?
         abstract fun onClick()
         abstract fun onLongClick()
+
+        /** History rows render with a clock icon to distinguish them from tag suggestions. */
+        open val isHistory: Boolean get() = false
+
+        /** Invoked by the history row's dedicated delete button. No-op otherwise. */
+        open fun onDeleteClick() {}
     }
 
     private inner class SuggestionAdapter(
@@ -623,6 +658,38 @@ class SearchBar : CardView,
             val text = suggestion.getText(textView) as? String
 
             hintView.text = hint
+            // Clock icon distinguishes history rows from tag suggestions
+            // (triage decision, issue #13). Cleared on recycled rows.
+            if (suggestion.isHistory) {
+                hintView.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                    R.drawable.v_history_black_x24, 0, 0, 0
+                )
+                hintView.compoundDrawablePadding =
+                    resources.getDimensionPixelOffset(R.dimen.search_history_icon_padding)
+                TextViewCompat.setCompoundDrawableTintList(
+                    hintView,
+                    ColorStateList.valueOf(
+                        AttrResources.getAttrColor(context, R.attr.drawableColorPrimary)
+                    )
+                )
+            } else {
+                hintView.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0)
+            }
+
+            // Dedicated per-row delete for history entries (triage decision,
+            // issue #14): row tap searches, ✕ deletes — long-press stays as a
+            // secondary affordance. 48dp target + TalkBack description.
+            val deleteButton = linearLayout.findViewById<TextView>(R.id.deleteButton)
+            if (suggestion.isHistory) {
+                deleteButton.isVisible = true
+                deleteButton.text = "✕"
+                deleteButton.contentDescription =
+                    context.getString(R.string.cd_delete_search_history)
+                deleteButton.setOnClickListener { suggestion.onDeleteClick() }
+            } else {
+                deleteButton.isVisible = false
+                deleteButton.setOnClickListener(null)
+            }
 
             if (text.isNullOrEmpty()) {
                 textView.visibility = GONE
@@ -717,14 +784,17 @@ class SearchBar : CardView,
         }
 
         override fun onLongClick() {
-            mSearchDatabase.deleteQuery(mKeyword)
-            updateSuggestions(false)
+            // Tag suggestions are not history entries — nothing to delete.
+            // (The legacy SearchDatabase path deleted a same-text history row
+            // here, an accident of the shared store.)
         }
     }
 
     private inner class HistorySuggestion(
         private val mQuery: String
     ) : Suggestion() {
+
+        override val isHistory: Boolean get() = true
 
         override fun getText(textSize: Float): CharSequence? = null
 
@@ -742,7 +812,12 @@ class SearchBar : CardView,
         }
 
         override fun onLongClick() {
-            mSearchDatabase.deleteQuery(mQuery)
+            mHistoryStore?.delete(mQuery)
+            updateSuggestions(false)
+        }
+
+        override fun onDeleteClick() {
+            mHistoryStore?.delete(mQuery)
             updateSuggestions(false)
         }
     }

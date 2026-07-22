@@ -181,6 +181,16 @@ object AppearanceSettings {
     @JvmStatic
     fun putGroupTanks(value: Boolean) = Settings.putBoolean(KEY_GROUP_TANKS, value)
 
+    // --- Hide completed archives in browse/search (LANraragi hidecompleted, 0.9.8+) ---
+    const val KEY_HIDE_COMPLETED = "search_hide_completed"
+    private const val DEFAULT_HIDE_COMPLETED = false
+
+    @JvmStatic
+    fun getHideCompleted(): Boolean = Settings.getBoolean(KEY_HIDE_COMPLETED, DEFAULT_HIDE_COMPLETED)
+
+    @JvmStatic
+    fun putHideCompleted(value: Boolean) = Settings.putBoolean(KEY_HIDE_COMPLETED, value)
+
     // --- Show Tag Translations ---
     const val KEY_SHOW_TAG_TRANSLATIONS = "show_tag_translations"
 

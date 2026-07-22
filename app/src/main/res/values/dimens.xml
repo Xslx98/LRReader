@@ -30,6 +30,7 @@
     <dimen name="text_little_large">20sp</dimen>
     <dimen name="text_medium">18sp</dimen>
     <dimen name="text_little_small">16sp</dimen>
+    <dimen name="search_history_icon_padding">8dp</dimen>
     <dimen name="text_small">14sp</dimen>
     <dimen name="text_super_small">12sp</dimen>
     <dimen name="text_more_super_small">6sp</dimen>

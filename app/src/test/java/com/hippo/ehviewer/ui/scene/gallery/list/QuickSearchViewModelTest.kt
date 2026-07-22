@@ -75,6 +75,7 @@ class QuickSearchViewModelTest {
         ServiceRegistry.initializeForTest(
             coroutine = CoroutineModule(),
             data = object : IDataModule {
+                override val searchHistoryRepository get() = throw NotImplementedError("Not needed for these tests")
                 override val quickSearchRepository get() =
                     QuickSearchRepository(db.browsingDao())
                 override val favoritesRepository get() =

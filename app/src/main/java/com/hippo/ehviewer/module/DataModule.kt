@@ -13,6 +13,7 @@ import com.hippo.ehviewer.dao.FavoritesRepository
 import com.hippo.ehviewer.dao.HistoryRepository
 import com.hippo.ehviewer.dao.ProfileRepository
 import com.hippo.ehviewer.dao.QuickSearchRepository
+import com.hippo.ehviewer.dao.SearchHistoryRepository
 import com.hippo.ehviewer.download.DownloadManager
 import com.lanraragi.reader.client.api.ProfileLookupCache
 import java.io.File
@@ -50,6 +51,11 @@ class DataModule(private val context: Context) : IDataModule, Cacheable {
 
     override val quickSearchRepository: QuickSearchRepository by lazy {
         QuickSearchRepository(AppDatabase.getInstance(context).browsingDao())
+    }
+
+    override val searchHistoryRepository: SearchHistoryRepository by lazy {
+        val db = AppDatabase.getInstance(context)
+        SearchHistoryRepository(db.browsingDao(), db)
     }
 
     override val favoritesRepository: FavoritesRepository by lazy {

@@ -10,6 +10,7 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.dao.MiscRoomDao
 import com.hippo.ehviewer.dao.ProfileRepository
+import com.hippo.ehviewer.dao.SearchHistoryRepository
 import com.hippo.ehviewer.dao.ServerProfile
 import com.hippo.ehviewer.module.IAppModule
 import com.hippo.ehviewer.module.IDataModule
@@ -113,6 +114,7 @@ class ServerListViewModelTest {
         }
 
         val testDataModule = object : IDataModule {
+            override val searchHistoryRepository get() = SearchHistoryRepository(db.browsingDao(), db)
             override val profileRepository get() = ProfileRepository(db.miscDao())
             override val profileLookupCache get() = throw NotImplementedError("not needed")
             override val historyRepository get() = throw NotImplementedError("not needed")
@@ -190,6 +192,7 @@ class ServerListViewModelTest {
      * for every other member, for tests that force a persistence failure.
      */
     private fun throwingDataModule(repo: ProfileRepository): IDataModule = object : IDataModule {
+        override val searchHistoryRepository get() = SearchHistoryRepository(db.browsingDao(), db)
         override val profileRepository get() = repo
         override val profileLookupCache get() = throw NotImplementedError("not needed")
         override val historyRepository get() = throw NotImplementedError("not needed")
@@ -489,6 +492,23 @@ class ServerListViewModelTest {
 
         awaitCondition { vm.profiles.value.isEmpty() }
         assertTrue("Profile should be deleted", vm.profiles.value.isEmpty())
+    }
+
+    @Test
+    fun deleteProfile_cascadesSearchHistory() {
+        val id = insertProfile("Doomed", "https://doomed.com")
+        val profile = ServerProfile(id = id, name = "Doomed", url = "https://doomed.com")
+        LRRAuthManager.setApiKeyForProfile(id, "test-key")
+        val historyRepo = SearchHistoryRepository(db.browsingDao(), db)
+        runBlocking { historyRepo.recordSearch(id, "doomed query") }
+
+        val vm = ServerListViewModel()
+        vm.loadProfiles()
+        awaitCondition { vm.profiles.value.size == 1 }
+
+        vm.deleteProfile(profile)
+
+        awaitCondition { runBlocking { historyRepo.recentSearches(id) }.isEmpty() }
     }
 
     @Test

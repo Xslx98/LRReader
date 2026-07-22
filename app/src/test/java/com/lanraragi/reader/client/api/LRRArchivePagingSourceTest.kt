@@ -48,9 +48,12 @@ class LRRArchivePagingSourceTest {
         order: String? = "desc",
         newonly: Boolean = false,
         untaggedonly: Boolean = false,
-        // Tests MUST inject the fold decision: the production default reads
-        // SharedPreferences-backed settings, unavailable in plain JVM tests.
+        // Tests MUST inject the fold and hide-completed decisions: the production
+        // defaults read SharedPreferences-backed settings, unavailable in plain
+        // JVM tests (an unpinned provider throws inside load(), which swallows
+        // the request and hangs any takeRequest() that follows).
         includeTanks: () -> Boolean = { false },
+        hideCompleted: () -> Boolean = { false },
     ) = LRRArchivePagingSource(
         client = client,
         baseUrl = baseUrl,
@@ -60,7 +63,8 @@ class LRRArchivePagingSourceTest {
         order = order,
         newonly = newonly,
         untaggedonly = untaggedonly,
-        includeTanksProvider = includeTanks
+        includeTanksProvider = includeTanks,
+        hideCompletedProvider = hideCompleted
     )
 
     // ---- JSON fixtures ----
