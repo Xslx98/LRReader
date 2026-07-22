@@ -104,6 +104,11 @@ class BookmarksDraw(
 
                     urlBuilder.set(list[position])
                     urlBuilder.setPageIndex(0)
+                    // Quick-search launches are real searches: record the
+                    // keyword (triage decision, issue #12 — recording is
+                    // source-agnostic).
+                    list[position].keyword?.takeIf { it.isNotBlank() }
+                        ?.let { scene.mHistoryStore?.record(it) }
                     scene.onUpdateUrlBuilder()
                     helper.refresh()
                     scene.setState(GalleryListScene.STATE_NORMAL)

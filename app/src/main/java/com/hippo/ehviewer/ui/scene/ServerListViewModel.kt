@@ -134,6 +134,10 @@ class ServerListViewModel : ViewModel() {
             try {
                 withContext(Dispatchers.IO) {
                     profileRepository.delete(profile)
+                    // Cascade (triage decision, issue #12): a deleted profile's
+                    // search history must not linger.
+                    ServiceRegistry.dataModule.searchHistoryRepository
+                        .deleteAllForProfile(profile.id)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to delete profile", e)
