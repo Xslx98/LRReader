@@ -205,6 +205,17 @@ class EhApplication : RecordingApplication() {
         // seam (issue #15). Registration is cheap; work happens per session end.
         com.hippo.ehviewer.ui.ContinueReadingShortcut.install()
 
+        // Baseline launcher shortcuts, dynamically registered so they exist on
+        // the .debug application id too (INF-10, issue #17). Binder calls —
+        // keep off the cold-start main thread.
+        AppModule.bootScope.launch {
+            try {
+                com.hippo.ehviewer.shortcuts.AppShortcuts.registerBaseline(this@EhApplication)
+            } catch (e: Exception) {
+                Log.w(TAG, "baseline shortcut registration failed")
+            }
+        }
+
         // Initialize ServiceRegistry (must be after Settings/EhDB)
         trace("EhApp.ServiceRegistry.init") { ServiceRegistry.initialize(this) }
         // Eagerly start network monitoring so isAvailable() is ready before first API call
