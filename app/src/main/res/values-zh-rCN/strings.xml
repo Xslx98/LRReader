@@ -381,6 +381,11 @@
     <string name="stats_empty">还没有阅读记录</string>
     <string name="stats_server_line">%1$d 本 · 读完 %2$d · %3$d 页</string>
     <string name="stats_deleted_server">已删除的服务器 #%1$d</string>
+    <string name="stats_tag_preference">偏好标签</string>
+    <string name="stats_tag_artists">偏好作者</string>
+    <string name="stats_tag_series">偏好系列</string>
+    <string name="stats_tag_misc">常见标签</string>
+    <string name="stats_tag_chip">%1$s · %2$d</string>
     <string name="detail_tankoubons_label">合订本</string>
     <string name="detail_tankoubons_edit">编辑</string>
     <string name="tank_add_to">加入合订本</string>

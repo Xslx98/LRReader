@@ -10,10 +10,14 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.appbar.MaterialToolbar
+import com.hippo.android.resource.AttrResources
+import com.hippo.drawable.RoundSideRectDrawable
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.stats.ReadingStatsCalculator
+import com.hippo.ehviewer.stats.TagPreferenceCalculator
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.util.collectFlow
+import com.hippo.widget.AutoWrapLayout
 
 /**
  * Reading-statistics page (issue #18): snapshot number tiles, per-server
@@ -33,6 +37,7 @@ class ReadingStatsScene : BaseScene() {
     private var mPerServerContainer: LinearLayout? = null
     private var mRecentContainer: LinearLayout? = null
     private var mSectionRecent: TextView? = null
+    private var mTagPreferenceContainer: LinearLayout? = null
 
     private lateinit var viewModel: ReadingStatsViewModel
 
@@ -57,6 +62,7 @@ class ReadingStatsScene : BaseScene() {
         mPerServerContainer = view.findViewById(R.id.per_server_container)
         mRecentContainer = view.findViewById(R.id.recent_container)
         mSectionRecent = view.findViewById(R.id.section_recent)
+        mTagPreferenceContainer = view.findViewById(R.id.tag_preference_container)
 
         mToolbar?.apply {
             setTitle(R.string.nav_stats)
@@ -66,6 +72,9 @@ class ReadingStatsScene : BaseScene() {
 
         collectFlow(viewLifecycleOwner, viewModel.stats) { stats ->
             if (stats != null) bind(stats)
+        }
+        collectFlow(viewLifecycleOwner, viewModel.tagPreference) { preference ->
+            if (preference != null) bindTagPreference(preference)
         }
         collectFlow(viewLifecycleOwner, viewModel.isLoading) { loading ->
             mProgress?.visibility = if (loading) View.VISIBLE else View.GONE
@@ -88,6 +97,7 @@ class ReadingStatsScene : BaseScene() {
         mPerServerContainer = null
         mRecentContainer = null
         mSectionRecent = null
+        mTagPreferenceContainer = null
     }
 
     private fun applyContentVisibility() {
@@ -127,6 +137,56 @@ class ReadingStatsScene : BaseScene() {
         }
 
         applyContentVisibility()
+    }
+
+    private fun bindTagPreference(preference: TagPreferenceCalculator.TagPreference) {
+        val container = mTagPreferenceContainer ?: return
+        container.removeAllViews()
+        if (preference.isEmpty) return
+
+        container.addView(sectionHeader(getString(R.string.stats_tag_preference)))
+        addTagGroup(container, R.string.stats_tag_artists, preference.artists)
+        addTagGroup(container, R.string.stats_tag_series, preference.series)
+        addTagGroup(container, R.string.stats_tag_misc, preference.misc)
+    }
+
+    private fun addTagGroup(
+        container: LinearLayout,
+        titleRes: Int,
+        entries: List<TagPreferenceCalculator.TagCount>,
+    ) {
+        if (entries.isEmpty()) return
+        val context = requireContext()
+        val inflater = LayoutInflater.from(context)
+        val chipColor = AttrResources.getAttrColor(context, R.attr.tagBackgroundColor)
+
+        container.addView(TextView(context).apply {
+            text = getString(titleRes)
+            textSize = 12f
+            setTextColor(themeTextColor(android.R.attr.textColorSecondary))
+            val pad = (8 * context.resources.displayMetrics.density).toInt()
+            setPadding(0, pad, 0, 0)
+        })
+
+        val flow = AutoWrapLayout(context)
+        container.addView(flow)
+        for (entry in entries) {
+            val chip = inflater.inflate(R.layout.item_gallery_tag, flow, false) as TextView
+            chip.text = getString(R.string.stats_tag_chip, entry.tag, entry.count)
+            chip.background = RoundSideRectDrawable(chipColor)
+            flow.addView(chip)
+        }
+    }
+
+    private fun sectionHeader(text: String): TextView {
+        val context = requireContext()
+        return TextView(context).apply {
+            this.text = text
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(themeTextColor(android.R.attr.textColorPrimary))
+            val pad = (24 * context.resources.displayMetrics.density).toInt()
+            setPadding(0, pad, 0, 0)
+        }
     }
 
     private fun twoLineRow(primary: String, secondary: String): View {

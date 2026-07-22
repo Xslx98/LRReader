@@ -381,6 +381,11 @@
     <string name="stats_empty">ยังไม่มีประวัติการอ่าน</string>
     <string name="stats_server_line">%1$d รายการ · อ่านจบ %2$d · %3$d หน้า</string>
     <string name="stats_deleted_server">เซิร์ฟเวอร์ที่ถูกลบ #%1$d</string>
+    <string name="stats_tag_preference">แท็กที่ชอบ</string>
+    <string name="stats_tag_artists">ศิลปินยอดนิยม</string>
+    <string name="stats_tag_series">ซีรีส์ยอดนิยม</string>
+    <string name="stats_tag_misc">แท็กยอดนิยม</string>
+    <string name="stats_tag_chip">%1$s · %2$d</string>
     <string name="detail_tankoubons_label">ทังโคบง</string>
     <string name="detail_tankoubons_edit">แก้ไข</string>
     <string name="tank_add_to">เพิ่มลงทังโคบง</string>

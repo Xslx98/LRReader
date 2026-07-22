@@ -369,6 +369,11 @@
     <string name="stats_empty">Aucun historique de lecture pour le moment</string>
     <string name="stats_server_line">%1$d archives · %2$d terminées · %3$d pages</string>
     <string name="stats_deleted_server">Serveur supprimé #%1$d</string>
+    <string name="stats_tag_preference">Préférences d\'étiquettes</string>
+    <string name="stats_tag_artists">Artistes favoris</string>
+    <string name="stats_tag_series">Séries favorites</string>
+    <string name="stats_tag_misc">Étiquettes favorites</string>
+    <string name="stats_tag_chip">%1$s · %2$d</string>
     <string name="detail_tankoubons_label">Tankoubons</string>
     <string name="detail_tankoubons_edit">Modifier</string>
     <string name="tank_add_to">Ajouter au tankoubon</string>

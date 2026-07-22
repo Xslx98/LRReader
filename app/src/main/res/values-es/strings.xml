@@ -368,6 +368,11 @@
     <string name="stats_empty">Aún no hay historial de lectura</string>
     <string name="stats_server_line">%1$d archivos · %2$d completados · %3$d páginas</string>
     <string name="stats_deleted_server">Servidor eliminado #%1$d</string>
+    <string name="stats_tag_preference">Preferencias de etiquetas</string>
+    <string name="stats_tag_artists">Artistas principales</string>
+    <string name="stats_tag_series">Series principales</string>
+    <string name="stats_tag_misc">Etiquetas principales</string>
+    <string name="stats_tag_chip">%1$s · %2$d</string>
     <string name="detail_tankoubons_label">Tankoubons</string>
     <string name="detail_tankoubons_edit">Editar</string>
     <string name="tank_add_to">Añadir a tankoubon</string>
