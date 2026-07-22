@@ -506,7 +506,9 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
     companion object {
         private const val TAG = "LRRDownloadWorker"
         private const val BUFFER_SIZE = 262144         // 256KB — reduces syscall overhead on LAN
-        private const val MIN_IMAGE_SIZE = 1024L       // 1KB minimum valid image
+        // 1KB minimum valid image; internal so LocalArchiveVerifier applies
+        // the same threshold as the resume skip.
+        internal const val MIN_IMAGE_SIZE = 1024L
         private const val MAX_RETRY = 2                // Try up to 2 times per page
         private const val MAX_PAGE_SIZE = 200L * 1024 * 1024 // 200MB per page
         /** Settle delay after the network returns before re-attempting, so a
