@@ -43,9 +43,10 @@ import kotlinx.serialization.json.Json
         QuickSearch::class,
         ServerProfile::class,
         ArchiveLocalState::class,
-        SearchHistoryEntry::class
+        SearchHistoryEntry::class,
+        DailyReadingAggregate::class
     ],
-    version = 28,
+    version = 29,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class, DownloadStateConverter::class)
@@ -55,6 +56,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun browsingDao(): BrowsingRoomDao
     abstract fun miscDao(): MiscRoomDao
     abstract fun archiveLocalStateDao(): ArchiveLocalStateDao
+    abstract fun statsDao(): StatsRoomDao
 
     companion object {
         /**
@@ -76,7 +78,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DB_NAME
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29)
                     .build()
                     .also { INSTANCE = it }
             }
@@ -389,6 +391,29 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL(
                     "CREATE INDEX IF NOT EXISTS `index_SEARCH_HISTORY_SERVER_PROFILE_ID_LAST_USED` " +
                         "ON `SEARCH_HISTORY` (`SERVER_PROFILE_ID`, `LAST_USED`)"
+                )
+            }
+        }
+
+        /**
+         * v28 → v29: Introduce the `DAILY_READING_AGGREGATE` table (issue
+         * #20) — one row per (day × profile) of pages-read delta + completed
+         * count, written at reading-session end. Purely additive; no UI
+         * consumer yet (accumulates history for future trend features).
+         */
+        @VisibleForTesting
+        internal val MIGRATION_28_29 = object : Migration(28, 29) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `DAILY_READING_AGGREGATE` (" +
+                        "`EPOCH_DAY` INTEGER NOT NULL, `SERVER_PROFILE_ID` INTEGER NOT NULL, " +
+                        "`PAGES_READ` INTEGER NOT NULL, `COMPLETED` INTEGER NOT NULL, " +
+                        "PRIMARY KEY(`EPOCH_DAY`, `SERVER_PROFILE_ID`))"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS " +
+                        "`index_DAILY_READING_AGGREGATE_SERVER_PROFILE_ID_EPOCH_DAY` " +
+                        "ON `DAILY_READING_AGGREGATE` (`SERVER_PROFILE_ID`, `EPOCH_DAY`)"
                 )
             }
         }
