@@ -353,6 +353,10 @@
     <string name="settings_eh_group_tanks_summary">Agrupar los archivos de un tankoubon en una sola entrada (LANraragi 0.9.8+)</string>
     <string name="settings_eh_hide_completed">Ocultar archivos completados al explorar</string>
     <string name="settings_eh_hide_completed_summary">Filtrar los archivos que ya has terminado de leer (LANraragi 0.9.8+)</string>
+    <string name="cd_delete_search_history">Eliminar entrada del historial de búsqueda</string>
+    <string name="settings_privacy_clear_search_history">Borrar historial de búsqueda</string>
+    <string name="clear_search_history_confirm">¿Borrar todo el historial de búsqueda del servidor actual?</string>
+    <string name="clear_search_history_done">Historial de búsqueda borrado</string>
     <string name="detail_tankoubons_label">Tankoubons</string>
     <string name="detail_tankoubons_edit">Editar</string>
     <string name="tank_add_to">Añadir a tankoubon</string>

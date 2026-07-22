@@ -305,6 +305,10 @@
     <string name="settings_eh_group_tanks_summary">Archive eines Tankoubons zu einem Eintrag zusammenfassen (LANraragi 0.9.8+)</string>
     <string name="settings_eh_hide_completed">Gelesene Archive beim Stöbern ausblenden</string>
     <string name="settings_eh_hide_completed_summary">Bereits zu Ende gelesene Archive herausfiltern (LANraragi 0.9.8+)</string>
+    <string name="cd_delete_search_history">Suchverlaufseintrag löschen</string>
+    <string name="settings_privacy_clear_search_history">Suchverlauf löschen</string>
+    <string name="clear_search_history_confirm">Gesamten Suchverlauf für den aktuellen Server löschen?</string>
+    <string name="clear_search_history_done">Suchverlauf gelöscht</string>
     <string name="detail_tankoubons_label">Tankoubons</string>
     <string name="detail_tankoubons_edit">Bearbeiten</string>
     <string name="tank_add_to">Zu Tankoubon hinzufügen</string>
