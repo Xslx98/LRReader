@@ -1,0 +1,7 @@
+Added:
+- Hide finished archives while browsing (Settings, LANraragi 0.9.8+)
+- Per-server search history with delete and clear
+- "Continue reading" launcher shortcut back to your last page
+- Reading statistics page with tag preferences
+Fixed:
+- Download launcher shortcuts missing on some installs
