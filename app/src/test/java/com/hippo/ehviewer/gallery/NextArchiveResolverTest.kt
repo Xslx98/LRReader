@@ -7,6 +7,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -68,6 +69,20 @@ class NextArchiveResolverTest {
     fun `context anchored on another arcid resolves NoContext`() = runTest {
         ReadingContextStore.publish(onlineCtx(id('a'), 0))
         assertEquals(NextArchiveResolver.NextResult.NoContext, resolver.resolve(id('z')))
+    }
+
+    @Test
+    fun `online window fetch never sends hidecompleted`() = runTest {
+        // Contract lock (decided at triage of the hide-completed filter): the
+        // resolver re-runs the original search to re-locate the just-read anchor.
+        // If hidecompleted rode along, a just-completed anchor would vanish from
+        // the window and the chain would break. Never plumb the toggle in here.
+        server.enqueue(MockResponse().setBody(searchBody(id('a'), id('b'), filtered = 10)))
+        ReadingContextStore.publish(onlineCtx(id('a'), 0))
+
+        resolver.resolve(id('a'))
+
+        assertFalse(server.takeRequest().path!!.contains("hidecompleted"))
     }
 
     @Test

@@ -40,6 +40,9 @@ class LRRArchivePagingSource(
     private val untaggedonly: Boolean = false,
     private val includeTanksProvider: () -> Boolean = {
         AppearanceSettings.getGroupTanks() && !TankoubonSupportGate.isUnsupported(baseUrl)
+    },
+    private val hideCompletedProvider: () -> Boolean = {
+        AppearanceSettings.getHideCompleted()
     }
 ) : PagingSource<Int, Archive>() {
 
@@ -57,7 +60,8 @@ class LRRArchivePagingSource(
                 order = order,
                 newonly = newonly,
                 untaggedonly = untaggedonly,
-                groupbyTanks = includeTanks
+                groupbyTanks = includeTanks,
+                hideCompleted = hideCompletedProvider()
             )
             // Tank entries become display-only pseudo-Archives when folding is on,
             // and are dropped otherwise. nextKey keys off the raw (pre-mapping)
