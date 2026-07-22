@@ -86,4 +86,29 @@ object ContinueReadingShortcut : ReadingSessionEvents.Listener {
     fun remove(context: Context) {
         ShortcutManagerCompat.removeDynamicShortcuts(context, listOf(SHORTCUT_ID))
     }
+
+    /** Remove the shortcut only when it points at [profileId] (profile deleted). */
+    fun removeIfProfile(context: Context, profileId: Long) {
+        val current = ShortcutManagerCompat.getDynamicShortcuts(context)
+            .firstOrNull { it.id == SHORTCUT_ID } ?: return
+        if (current.intent?.getLongExtra(KEY_PROFILE_ID, -1L) == profileId) {
+            remove(context)
+        }
+    }
+
+    /**
+     * No-op variants for callers that live in JVM-tested ViewModels: they
+     * resolve the application lazily and skip silently when it isn't up
+     * (plain-Application Robolectric tests).
+     */
+    fun removeSafely() {
+        appOrNull()?.let { remove(it) }
+    }
+
+    fun removeIfProfileSafely(profileId: Long) {
+        appOrNull()?.let { removeIfProfile(it, profileId) }
+    }
+
+    private fun appOrNull(): Context? =
+        runCatching { com.hippo.ehviewer.EhApplication.instance }.getOrNull()
 }

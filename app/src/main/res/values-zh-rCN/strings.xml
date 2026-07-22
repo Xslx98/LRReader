@@ -371,6 +371,7 @@
     <string name="clear_search_history_confirm">清除当前服务器的全部搜索历史?</string>
     <string name="clear_search_history_done">已清除搜索历史</string>
     <string name="shortcut_continue_reading">继续阅读</string>
+    <string name="continue_reading_unavailable">继续阅读目标已不存在</string>
     <string name="detail_tankoubons_label">合订本</string>
     <string name="detail_tankoubons_edit">编辑</string>
     <string name="tank_add_to">加入合订本</string>

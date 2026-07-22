@@ -333,6 +333,7 @@
     <string name="clear_search_history_confirm">現在のサーバーの検索履歴をすべて消去しますか?</string>
     <string name="clear_search_history_done">検索履歴を消去しました</string>
     <string name="shortcut_continue_reading">続きを読む</string>
+    <string name="continue_reading_unavailable">続きを読む対象が存在しません</string>
     <string name="detail_tankoubons_label">単行本</string>
     <string name="detail_tankoubons_edit">編集</string>
     <string name="tank_add_to">単行本に追加</string>

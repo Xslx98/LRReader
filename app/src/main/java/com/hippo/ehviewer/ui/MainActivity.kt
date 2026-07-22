@@ -353,12 +353,27 @@ class MainActivity : StageActivity(),
         lifecycleScope.launch {
             val archive = try {
                 withContext(Dispatchers.IO) {
-                    ServiceRegistry.dataModule.historyRepository.getArchiveSnapshot(arcid, profileId)
+                    // Profile gone (deleted since publish) or history row gone:
+                    // both mean the shortcut is stale — self-heal by removing
+                    // it and stay on the main list with a toast (issue #16).
+                    if (ServiceRegistry.dataModule.profileRepository.findById(profileId) == null) {
+                        null
+                    } else {
+                        ServiceRegistry.dataModule.historyRepository
+                            .getArchiveSnapshot(arcid, profileId)
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "continue-reading snapshot load failed", e)
                 null
-            } ?: return@launch
+            }
+            if (archive == null) {
+                ContinueReadingShortcut.remove(this@MainActivity)
+                Toast.makeText(
+                    this@MainActivity, R.string.continue_reading_unavailable, Toast.LENGTH_SHORT
+                ).show()
+                return@launch
+            }
             startActivity(GalleryOpenHelper.buildReadIntent(this@MainActivity, archive))
         }
     }
