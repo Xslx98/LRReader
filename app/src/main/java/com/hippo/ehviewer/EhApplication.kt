@@ -184,6 +184,21 @@ class EhApplication : RecordingApplication() {
             }
         }
 
+        // Legacy search-history import — one-time lift of the retired
+        // SearchDatabase file into the per-profile Room store (issue #12).
+        // Waits for the resolved active profile; without one (fresh install
+        // mid-onboarding) the file stays put and the import retries next boot.
+        AppModule.bootScope.launch {
+            val profileId = AppModule.activeProfileIdDeferred.await()
+            if (profileId != null) {
+                com.hippo.ehviewer.dao.LegacySearchHistoryImporter.importIfPresent(
+                    this@EhApplication,
+                    com.hippo.ehviewer.dao.AppDatabase.getInstance(this@EhApplication),
+                    profileId,
+                )
+            }
+        }
+
         trace("EhApp.LRRClientProvider.init") { LRRClientProvider.init(this) }
 
         // Initialize ServiceRegistry (must be after Settings/EhDB)
