@@ -184,7 +184,45 @@ class EhApplication : RecordingApplication() {
             }
         }
 
+        // Legacy search-history import — one-time lift of the retired
+        // SearchDatabase file into the per-profile Room store (issue #12).
+        // Waits for the resolved active profile; without one (fresh install
+        // mid-onboarding) the file stays put and the import retries next boot.
+        AppModule.bootScope.launch {
+            try {
+                val profileId = AppModule.activeProfileIdDeferred.await()
+                if (profileId != null) {
+                    com.hippo.ehviewer.dao.LegacySearchHistoryImporter.importIfPresent(
+                        this@EhApplication,
+                        com.hippo.ehviewer.dao.AppDatabase.getInstance(this@EhApplication),
+                        profileId,
+                    )
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "legacy search-history import launch failed")
+            }
+        }
+
         trace("EhApp.LRRClientProvider.init") { LRRClientProvider.init(this) }
+
+        // Continue-reading shortcut publisher rides the reading-session-end
+        // seam (issue #15). Registration is cheap; work happens per session end.
+        com.hippo.ehviewer.ui.ContinueReadingShortcut.install()
+
+        // Daily reading aggregate rides the same seam (issue #20): one row per
+        // (day x profile), accumulating history for future trend features.
+        com.hippo.ehviewer.stats.DailyReadingAggregateRecorder.install()
+
+        // Baseline launcher shortcuts, dynamically registered so they exist on
+        // the .debug application id too (INF-10, issue #17). Binder calls —
+        // keep off the cold-start main thread.
+        AppModule.bootScope.launch {
+            try {
+                com.hippo.ehviewer.shortcuts.AppShortcuts.registerBaseline(this@EhApplication)
+            } catch (e: Exception) {
+                Log.w(TAG, "baseline shortcut registration failed")
+            }
+        }
 
         // Initialize ServiceRegistry (must be after Settings/EhDB)
         trace("EhApp.ServiceRegistry.init") { ServiceRegistry.initialize(this) }

@@ -62,11 +62,13 @@ class RoomMigrationTest {
         // LOCAL_FAVORITES) are gone — their subsystems live on
         // ARCHIVE_LOCAL_STATE. DOWNLOAD_LABELS / DOWNLOAD_DIRNAME /
         // QUICK_SEARCH / SERVER_PROFILES carry distinct concerns and
-        // remain on their own tables.
+        // remain on their own tables. v28 added SEARCH_HISTORY (issue #12),
+        // v29 added DAILY_READING_AGGREGATE (issue #20).
         val expectedTables = setOf(
             "DOWNLOAD_LABELS", "DOWNLOAD_DIRNAME",
             "QUICK_SEARCH", "SERVER_PROFILES",
-            "ARCHIVE_LOCAL_STATE"
+            "ARCHIVE_LOCAL_STATE",
+            "SEARCH_HISTORY", "DAILY_READING_AGGREGATE"
         )
         assertEquals(expectedTables, tables)
     }

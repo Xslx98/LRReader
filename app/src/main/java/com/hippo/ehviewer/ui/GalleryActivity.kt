@@ -54,6 +54,7 @@ import com.hippo.ehviewer.gallery.DirGalleryProvider
 import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.gallery.LRRGalleryProvider
 import com.hippo.ehviewer.gallery.NextArchiveResolver
+import com.hippo.ehviewer.gallery.ReadingSessionTracker
 import com.hippo.ehviewer.ui.gallery.GalleryImageOperations
 import com.hippo.ehviewer.ui.gallery.GalleryInputHandler
 import com.hippo.ehviewer.ui.gallery.GalleryMenuHelper
@@ -130,6 +131,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
     private var mUri: android.net.Uri? = null
     private var mArchive: Archive? = null
     private var mPage = 0
+    private val mReadingSession = ReadingSessionTracker()
 
     private var mGLRootView: GLRootView? = null
     private var mGalleryView: GalleryView? = null
@@ -507,6 +509,13 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         mSliderController.layoutMode = galleryView.layoutMode
         mInputHandler.layoutMode = galleryView.layoutMode
 
+        // Reading-session seam: consumed by the continue-reading shortcut and
+        // the daily reading aggregate. DIR-mode reading (no Archive) stays
+        // untracked — without start(), stop() in onStop is a no-op.
+        mArchive?.let {
+            mReadingSession.start(it.arcid, it.serverProfileId, startPage, it.pagecount)
+        }
+
         // Keep screen on
         if (ReadingSettings.getKeepScreenOn()) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -616,6 +625,12 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         intent.putExtra(EXTRA_RESULT_ARCHIVE, mArchive)
         setResult(DownloadsScene.LOCAL_GALLERY_INFO_CHANGE, intent)
         super.onBackPressed()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        val currentPage = mSliderController.currentIndex.takeIf { it >= 0 } ?: mPage
+        mReadingSession.stop(currentPage)
     }
 
     override fun onPause() {

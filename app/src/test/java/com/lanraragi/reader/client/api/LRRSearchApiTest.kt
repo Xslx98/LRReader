@@ -114,4 +114,56 @@ class LRRSearchApiTest {
         assertTrue(path.contains("count=5"))
         assertTrue(path.contains("groupby_tanks=false"))
     }
+
+    @Test
+    fun searchArchives_hideCompleted_sendsParam() = runTest {
+        server.enqueue(MockResponse().setBody(searchResponseJson))
+
+        LRRSearchApi.searchArchives(
+            client, baseUrl,
+            filter = null, category = null, start = 0,
+            sortby = null, order = null, newonly = false,
+            hideCompleted = true
+        )
+
+        val path = server.takeRequest().path!!
+        assertTrue(path.contains("hidecompleted=true"))
+    }
+
+    @Test
+    fun searchArchives_default_omitsHideCompleted() = runTest {
+        // Off is the wire-silent state: pre-0.9.8 servers must see requests
+        // identical to today's, so the param is omitted entirely rather than
+        // sent as "false".
+        server.enqueue(MockResponse().setBody(searchResponseJson))
+
+        LRRSearchApi.searchArchives(
+            client, baseUrl,
+            filter = null, category = null, start = 0,
+            sortby = null, order = null, newonly = false
+        )
+
+        assertFalse(server.takeRequest().path!!.contains("hidecompleted"))
+    }
+
+    @Test
+    fun getRandomArchives_hideCompleted_sendsParam() = runTest {
+        server.enqueue(MockResponse().setBody(searchResponseJson))
+
+        LRRSearchApi.getRandomArchives(
+            client, baseUrl, filter = null, count = 5, hideCompleted = true
+        )
+
+        val path = server.takeRequest().path!!
+        assertTrue(path.contains("hidecompleted=true"))
+    }
+
+    @Test
+    fun getRandomArchives_default_omitsHideCompleted() = runTest {
+        server.enqueue(MockResponse().setBody(searchResponseJson))
+
+        LRRSearchApi.getRandomArchives(client, baseUrl, filter = null, count = 5)
+
+        assertFalse(server.takeRequest().path!!.contains("hidecompleted"))
+    }
 }

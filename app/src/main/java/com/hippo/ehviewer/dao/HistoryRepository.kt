@@ -110,6 +110,23 @@ class HistoryRepository(
     }
 
     /**
+     * Cross-profile history rows with their decoded snapshots, for the
+     * reading-statistics page (issue #18). A row whose `archive_json` fails
+     * to decode still counts (null archive) so totals stay honest.
+     */
+    suspend fun getAllHistoryStatsRows(): List<HistoryStatsRow> =
+        dao.getAllHistory().map { row ->
+            HistoryStatsRow(
+                arcid = row.arcid,
+                serverProfileId = row.serverProfileId,
+                historyTime = row.historyTime,
+                archive = runCatching {
+                    ArchiveLocalStateJson.decodeFromString(Archive.serializer(), row.archiveJson)
+                }.getOrNull(),
+            )
+        }
+
+    /**
      * Persist the intra-page scroll fraction (0.0 ~ 1.0) for [arcid].
      * Local-only — never goes to the LANraragi server. The DAO update
      * is a no-op if the archive doesn't yet have a history row, which

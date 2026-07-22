@@ -92,9 +92,8 @@
                 <!--                <category android:name="android.intent.category.LAUNCHER"/>-->
             </intent-filter>
 
-            <meta-data
-                android:name="android.app.shortcuts"
-                android:resource="@xml/shortcuts" />
+            <!-- Launcher shortcuts are registered dynamically (AppShortcuts) so
+                 they exist on the .debug application id too (INF-10). -->
 
             <!-- LANraragi: Removed E-Hentai deep links and image search intent filters -->
         </activity>
