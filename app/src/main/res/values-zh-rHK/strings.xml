@@ -410,6 +410,15 @@
     <string name="clear_search_history_done">已清除搜尋歷史</string>
     <string name="shortcut_continue_reading">繼續閱讀</string>
     <string name="continue_reading_unavailable">繼續閱讀目標已不存在</string>
+    <string name="nav_stats">閱讀統計</string>
+    <string name="stats_total_archives">讀過的檔案</string>
+    <string name="stats_completed">已讀完</string>
+    <string name="stats_pages_read">累計頁數</string>
+    <string name="stats_per_server">按伺服器</string>
+    <string name="stats_recently_completed">最近讀完</string>
+    <string name="stats_empty">還沒有閱讀記錄</string>
+    <string name="stats_server_line">%1$d 本 · 讀完 %2$d · %3$d 頁</string>
+    <string name="stats_deleted_server">已刪除的伺服器 #%1$d</string>
     <string name="detail_tankoubons_label">合訂本</string>
     <string name="detail_tankoubons_edit">編輯</string>
     <string name="tank_add_to">加入合訂本</string>

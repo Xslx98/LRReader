@@ -311,6 +311,15 @@
     <string name="clear_search_history_done">Suchverlauf gelöscht</string>
     <string name="shortcut_continue_reading">Weiterlesen</string>
     <string name="continue_reading_unavailable">Weiterlesen-Ziel existiert nicht mehr</string>
+    <string name="nav_stats">Lesestatistik</string>
+    <string name="stats_total_archives">Gelesene Archive</string>
+    <string name="stats_completed">Abgeschlossen</string>
+    <string name="stats_pages_read">Gelesene Seiten</string>
+    <string name="stats_per_server">Nach Server</string>
+    <string name="stats_recently_completed">Zuletzt abgeschlossen</string>
+    <string name="stats_empty">Noch kein Leseverlauf</string>
+    <string name="stats_server_line">%1$d Archive · %2$d abgeschlossen · %3$d Seiten</string>
+    <string name="stats_deleted_server">Gelöschter Server #%1$d</string>
     <string name="detail_tankoubons_label">Tankoubons</string>
     <string name="detail_tankoubons_edit">Bearbeiten</string>
     <string name="tank_add_to">Zu Tankoubon hinzufügen</string>

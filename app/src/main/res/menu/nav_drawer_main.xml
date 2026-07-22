@@ -44,6 +44,11 @@
             android:icon="@drawable/v_download_black_x24"/>
 
         <item
+            android:id="@+id/nav_stats"
+            android:title="@string/nav_stats"
+            android:icon="@drawable/v_chart_black_x24"/>
+
+        <item
             android:id="@+id/nav_server_config"
             android:title="@string/nav_server_config"
             android:icon="@drawable/v_swap_horiz_black_x24"/>

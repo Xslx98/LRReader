@@ -477,6 +477,15 @@
     <string name="clear_search_history_done">Search history cleared</string>
     <string name="shortcut_continue_reading">Continue reading</string>
     <string name="continue_reading_unavailable">Continue-reading target no longer exists</string>
+    <string name="nav_stats">Reading statistics</string>
+    <string name="stats_total_archives">Archives read</string>
+    <string name="stats_completed">Completed</string>
+    <string name="stats_pages_read">Pages read</string>
+    <string name="stats_per_server">By server</string>
+    <string name="stats_recently_completed">Recently completed</string>
+    <string name="stats_empty">No reading history yet</string>
+    <string name="stats_server_line">%1$d archives · %2$d completed · %3$d pages</string>
+    <string name="stats_deleted_server">Deleted server #%1$d</string>
     <string name="detail_tankoubons_label">Tankoubons</string>
     <string name="detail_tankoubons_edit">Edit</string>
     <string name="tank_add_to">Add to Tankoubon</string>

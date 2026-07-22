@@ -360,6 +360,15 @@
     <string name="clear_search_history_done">Historique de recherche effacé</string>
     <string name="shortcut_continue_reading">Reprendre la lecture</string>
     <string name="continue_reading_unavailable">La cible de reprise de lecture n\'existe plus</string>
+    <string name="nav_stats">Statistiques de lecture</string>
+    <string name="stats_total_archives">Archives lues</string>
+    <string name="stats_completed">Terminées</string>
+    <string name="stats_pages_read">Pages lues</string>
+    <string name="stats_per_server">Par serveur</string>
+    <string name="stats_recently_completed">Terminées récemment</string>
+    <string name="stats_empty">Aucun historique de lecture pour le moment</string>
+    <string name="stats_server_line">%1$d archives · %2$d terminées · %3$d pages</string>
+    <string name="stats_deleted_server">Serveur supprimé #%1$d</string>
     <string name="detail_tankoubons_label">Tankoubons</string>
     <string name="detail_tankoubons_edit">Modifier</string>
     <string name="tank_add_to">Ajouter au tankoubon</string>
