@@ -45,8 +45,12 @@ object DailyReadingAggregateRecorder : ReadingSessionEvents.Listener {
         if (end.serverProfileId <= 0) return
         val pages = (end.endPage - end.startPage).coerceAtLeast(0).toLong()
         val lastPage = end.pageCount - 1
-        val crossedIntoCompletion =
-            end.pageCount > 0 && end.startPage < lastPage && end.endPage >= lastPage
+        // pageCount == 1 has no crossing (startPage can never be below page 0):
+        // every session on a single-page archive counts as a completion —
+        // re-open inflation limited to single-pagers is accepted (approximate
+        // statistic by design; review finding on issue #20).
+        val crossedIntoCompletion = end.pageCount > 0 &&
+            (end.pageCount == 1 || end.startPage < lastPage) && end.endPage >= lastPage
         val completed = if (crossedIntoCompletion) 1 else 0
 
         val dao = db.statsDao()
