@@ -20,8 +20,11 @@ import android.animation.Animator
 import android.animation.ObjectAnimator
 import android.content.Context
 import android.graphics.Canvas
+import android.content.res.ColorStateList
 import androidx.core.graphics.withSave
 import androidx.core.view.isVisible
+import androidx.core.widget.TextViewCompat
+import com.hippo.android.resource.AttrResources
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -622,6 +625,9 @@ class SearchBar : CardView,
         abstract fun getText(textView: TextView): CharSequence?
         abstract fun onClick()
         abstract fun onLongClick()
+
+        /** History rows render with a clock icon to distinguish them from tag suggestions. */
+        open val isHistory: Boolean get() = false
     }
 
     private inner class SuggestionAdapter(
@@ -649,6 +655,23 @@ class SearchBar : CardView,
             val text = suggestion.getText(textView) as? String
 
             hintView.text = hint
+            // Clock icon distinguishes history rows from tag suggestions
+            // (triage decision, issue #13). Cleared on recycled rows.
+            if (suggestion.isHistory) {
+                hintView.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                    R.drawable.v_history_black_x24, 0, 0, 0
+                )
+                hintView.compoundDrawablePadding =
+                    resources.getDimensionPixelOffset(R.dimen.search_history_icon_padding)
+                TextViewCompat.setCompoundDrawableTintList(
+                    hintView,
+                    ColorStateList.valueOf(
+                        AttrResources.getAttrColor(context, R.attr.drawableColorPrimary)
+                    )
+                )
+            } else {
+                hintView.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0)
+            }
 
             if (text.isNullOrEmpty()) {
                 textView.visibility = GONE
@@ -752,6 +775,8 @@ class SearchBar : CardView,
     private inner class HistorySuggestion(
         private val mQuery: String
     ) : Suggestion() {
+
+        override val isHistory: Boolean get() = true
 
         override fun getText(textSize: Float): CharSequence? = null
 
