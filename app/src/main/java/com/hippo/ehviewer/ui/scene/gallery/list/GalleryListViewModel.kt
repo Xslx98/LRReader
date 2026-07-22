@@ -19,6 +19,7 @@ import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.hippo.ehviewer.dao.DownloadInfo
+import com.hippo.ehviewer.download.DownloadEntryGate
 import com.hippo.ehviewer.download.DownloadInfoListener
 import com.hippo.ehviewer.download.DownloadManager
 import kotlinx.coroutines.CancellationException
@@ -378,6 +379,12 @@ class GalleryListViewModel : ViewModel() {
          * preventing a duplicate dialog/refresh on scenes that never ran it.
          */
         val owner: Any? = null,
+        /**
+         * Download batches only: arcids skipped because their download row is
+         * already FINISH ([com.hippo.ehviewer.download.DownloadEntryGate]).
+         * Not queued, not failed — surfaced as "already downloaded" feedback.
+         */
+        val alreadyLocal: List<String> = emptyList(),
     )
 
     private val _batchProgress = MutableStateFlow<Pair<Int, Int>?>(null)
@@ -405,12 +412,26 @@ class GalleryListViewModel : ViewModel() {
     /**
      * Batch download is main-thread queueing: [DownloadManager.startDownload]
      * asserts the main thread and is itself asynchronous, so no IO hop or
-     * fault isolation is needed here.
+     * fault isolation is needed here. Rows already FINISH are gated out
+     * ([DownloadEntryGate]) instead of re-queued — arcid is a content hash,
+     * so the selection may contain archives downloaded through another
+     * profile of the same server, and a re-queue against an unreachable
+     * source URL would flip them to FAILED.
      */
     fun runBatchDownload(archives: List<Archive>, downloadManager: DownloadManager, owner: Any? = null) {
-        archives.forEach { downloadManager.startDownload(it, null) }
+        val (alreadyLocal, toQueue) = archives.partition {
+            DownloadEntryGate.disposition(downloadManager.getDownloadState(it.arcid)) ==
+                DownloadEntryGate.Disposition.ALREADY_LOCAL
+        }
+        toQueue.forEach { downloadManager.startDownload(it, null) }
         _batchResultEvent.tryEmit(
-            BatchResult(BatchOp.Download, archives.map { it.arcid }, emptyList(), owner)
+            BatchResult(
+                BatchOp.Download,
+                toQueue.map { it.arcid },
+                emptyList(),
+                owner,
+                alreadyLocal = alreadyLocal.map { it.arcid },
+            )
         )
     }
 

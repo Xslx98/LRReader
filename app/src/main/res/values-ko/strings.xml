@@ -420,6 +420,11 @@
     <plurals name="batch_download_queued">
         <item quantity="other">%d개를 다운로드 대기열에 추가했습니다</item>
     </plurals>
+    <plurals name="batch_download_all_local">
+        <item quantity="other">%d개는 이미 다운로드되어 있습니다</item>
+    </plurals>
+    <string name="batch_download_queued_some_local">%1$d개를 다운로드 대기열에 추가했습니다. %2$d개는 이미 다운로드되어 있습니다</string>
+    <string name="download_already_local">이미 다운로드되어 있습니다</string>
     <plurals name="batch_done_category">
         <item quantity="other">%d개를 카테고리에 추가했습니다</item>
     </plurals>

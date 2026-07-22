@@ -355,6 +355,12 @@
         <item quantity="one">%d Download in die Warteschlange eingereiht</item>
         <item quantity="other">%d Downloads in die Warteschlange eingereiht</item>
     </plurals>
+    <plurals name="batch_download_all_local">
+        <item quantity="one">%d Element ist bereits heruntergeladen</item>
+        <item quantity="other">%d Elemente sind bereits heruntergeladen</item>
+    </plurals>
+    <string name="batch_download_queued_some_local">%1$d in die Warteschlange eingereiht, %2$d bereits heruntergeladen</string>
+    <string name="download_already_local">Bereits heruntergeladen</string>
     <plurals name="batch_done_category">
         <item quantity="one">%d Element zur Kategorie hinzugefügt</item>
         <item quantity="other">%d Elemente zur Kategorie hinzugefügt</item>

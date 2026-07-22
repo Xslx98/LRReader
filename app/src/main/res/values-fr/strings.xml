@@ -408,6 +408,13 @@
         <item quantity="many">%d téléchargements mis en file d\'attente</item>
         <item quantity="other">%d téléchargements mis en file d\'attente</item>
     </plurals>
+    <plurals name="batch_download_all_local">
+        <item quantity="one">%d élément déjà téléchargé</item>
+        <item quantity="many">%d éléments déjà téléchargés</item>
+        <item quantity="other">%d éléments déjà téléchargés</item>
+    </plurals>
+    <string name="batch_download_queued_some_local">%1$d mis en file d\'attente, %2$d déjà téléchargés</string>
+    <string name="download_already_local">Déjà téléchargé</string>
     <plurals name="batch_done_category">
         <item quantity="one">%d élément ajouté à la catégorie</item>
         <item quantity="many">%d éléments ajoutés à la catégorie</item>

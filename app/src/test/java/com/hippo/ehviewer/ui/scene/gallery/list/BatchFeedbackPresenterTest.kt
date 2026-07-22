@@ -10,17 +10,41 @@ import org.junit.Test
 
 class BatchFeedbackPresenterTest {
 
-    private fun result(op: BatchOp, succeeded: Int, failed: Int) = BatchResult(
+    private fun result(op: BatchOp, succeeded: Int, failed: Int, alreadyLocal: Int = 0) = BatchResult(
         op = op,
         succeeded = List(succeeded) { "ok-$it" },
         failed = List(failed) { BatchFailure("bad-$it", "title-$it", "reason-$it") },
+        alreadyLocal = List(alreadyLocal) { "local-$it" },
     )
+
+    private fun pluralTipFor(r: BatchResult) =
+        BatchFeedbackPresenter.tipFor(r) as BatchFeedbackPresenter.Tip.Plural
 
     @Test
     fun downloadQueueing_mapsToQueuedTip_andNeverADialog() {
         val r = result(BatchOp.Download, succeeded = 3, failed = 0)
         assertEquals(
-            BatchFeedbackPresenter.Tip(R.plurals.batch_download_queued, 3),
+            BatchFeedbackPresenter.Tip.Plural(R.plurals.batch_download_queued, 3),
+            BatchFeedbackPresenter.tipFor(r),
+        )
+        assertNull(BatchFeedbackPresenter.dialogFor(r))
+    }
+
+    @Test
+    fun downloadAllAlreadyLocal_mapsToAllLocalTip() {
+        val r = result(BatchOp.Download, succeeded = 0, failed = 0, alreadyLocal = 2)
+        assertEquals(
+            BatchFeedbackPresenter.Tip.Plural(R.plurals.batch_download_all_local, 2),
+            BatchFeedbackPresenter.tipFor(r),
+        )
+        assertNull(BatchFeedbackPresenter.dialogFor(r))
+    }
+
+    @Test
+    fun downloadMixedQueuedAndLocal_mapsToTwoCountTip() {
+        val r = result(BatchOp.Download, succeeded = 3, failed = 0, alreadyLocal = 2)
+        assertEquals(
+            BatchFeedbackPresenter.Tip.QueuedWithLocal(queued = 3, alreadyLocal = 2),
             BatchFeedbackPresenter.tipFor(r),
         )
         assertNull(BatchFeedbackPresenter.dialogFor(r))
@@ -30,19 +54,19 @@ class BatchFeedbackPresenterTest {
     fun allSuccess_mapsToOpSpecificTips() {
         assertEquals(
             R.plurals.batch_done_category,
-            BatchFeedbackPresenter.tipFor(result(BatchOp.AddToCategory("c1"), 2, 0))!!.textRes,
+            pluralTipFor(result(BatchOp.AddToCategory("c1"), 2, 0)).textRes,
         )
         assertEquals(
             R.plurals.batch_done_tankoubon,
-            BatchFeedbackPresenter.tipFor(result(BatchOp.AddToTankoubon("t1"), 2, 0))!!.textRes,
+            pluralTipFor(result(BatchOp.AddToTankoubon("t1"), 2, 0)).textRes,
         )
         assertEquals(
             R.plurals.batch_done_clear_new,
-            BatchFeedbackPresenter.tipFor(result(BatchOp.ClearNew, 2, 0))!!.textRes,
+            pluralTipFor(result(BatchOp.ClearNew, 2, 0)).textRes,
         )
         assertEquals(
             R.plurals.batch_done_delete,
-            BatchFeedbackPresenter.tipFor(result(BatchOp.DeleteArchives, 2, 0))!!.textRes,
+            pluralTipFor(result(BatchOp.DeleteArchives, 2, 0)).textRes,
         )
     }
 
