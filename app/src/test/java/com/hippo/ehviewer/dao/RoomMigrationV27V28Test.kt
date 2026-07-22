@@ -125,9 +125,11 @@ class RoomMigrationV27V28Test {
         v27Helper.writableDatabase
         v27Helper.close()
 
-        // 2) Open via Room at v28 -> runs MIGRATION_27_28 + validateMigration.
+        // 2) Open via Room with the migration chain -> runs MIGRATION_27_28 +
+        //    validateMigration. Room opens at the CURRENT schema version, so
+        //    every migration from v27 onward must be present.
         val room = Room.databaseBuilder(ctx, AppDatabase::class.java, name)
-            .addMigrations(AppDatabase.MIGRATION_27_28)
+            .addMigrations(AppDatabase.MIGRATION_27_28, AppDatabase.MIGRATION_28_29)
             .build()
         try {
             room.openHelper.writableDatabase
