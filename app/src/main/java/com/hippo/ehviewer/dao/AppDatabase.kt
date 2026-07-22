@@ -42,9 +42,10 @@ import kotlinx.serialization.json.Json
         DownloadDirname::class,
         QuickSearch::class,
         ServerProfile::class,
-        ArchiveLocalState::class
+        ArchiveLocalState::class,
+        SearchHistoryEntry::class
     ],
-    version = 27,
+    version = 28,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class, DownloadStateConverter::class)
@@ -75,7 +76,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DB_NAME
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28)
                     .build()
                     .also { INSTANCE = it }
             }
@@ -366,6 +367,29 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_HISTORY_TIME` ON `ARCHIVE_LOCAL_STATE` (`HISTORY_TIME`)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_FAVORITE_TIME` ON `ARCHIVE_LOCAL_STATE` (`FAVORITE_TIME`)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_DOWNLOAD_LABEL` ON `ARCHIVE_LOCAL_STATE` (`DOWNLOAD_LABEL`)")
+            }
+        }
+
+        /**
+         * v27 → v28: Introduce the `SEARCH_HISTORY` table — per-profile
+         * automatic search history (issue #12). Composite PK
+         * (QUERY, SERVER_PROFILE_ID) makes REPLACE-based dedupe-promote
+         * structural; the (SERVER_PROFILE_ID, LAST_USED) index serves the
+         * recency-ordered per-profile queries. Purely additive.
+         */
+        @VisibleForTesting
+        internal val MIGRATION_27_28 = object : Migration(27, 28) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `SEARCH_HISTORY` (" +
+                        "`QUERY` TEXT NOT NULL, `SERVER_PROFILE_ID` INTEGER NOT NULL, " +
+                        "`LAST_USED` INTEGER NOT NULL, " +
+                        "PRIMARY KEY(`QUERY`, `SERVER_PROFILE_ID`))"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_SEARCH_HISTORY_SERVER_PROFILE_ID_LAST_USED` " +
+                        "ON `SEARCH_HISTORY` (`SERVER_PROFILE_ID`, `LAST_USED`)"
+                )
             }
         }
 
