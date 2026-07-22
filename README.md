@@ -22,11 +22,15 @@ An Android client for [LANraragi](https://github.com/Difegue/LANraragi), built u
 | 功能 / Feature | 说明 / Description |
 |---|---|
 | 🔍 **全功能搜索 / Full Search** | 关键词、分类筛选、排序、随机推荐 / Keywords, categories, sorting, random |
+| 🕘 **搜索历史 / Search History** | 按服务器记录最近搜索，可逐条删除或一键清空 / Per-server recent searches with per-entry delete and clear-all |
+| 🙈 **隐藏已读完 / Hide Finished** | 浏览时可过滤掉已读完的档案 / Optionally filter finished archives out of browsing (LANraragi 0.9.8+) |
 | 📖 **高性能阅读 / High-Performance Reader** | C 层图像解码引擎 + 智能预加载 / Native C image decoder + smart preloading |
 | ⏭️ **跨档案续读 / Reader Continuation** | 读到末页自动衔接下一本，无需回列表 / End-of-book panel jumps straight to the next archive |
+| ▶️ **继续阅读 / Continue Reading** | 桌面快捷方式一键回到上次阅读的档案与页码 / Launcher shortcut back to your last archive and page |
 | 📚 **合订本 / Tankoubon** | 浏览与管理合订本：成员排序、全局阅读进度、成员间链式续读 / Browse & manage tankoubons: member ordering, global progress, chained reading (LANraragi 0.9.8+) |
 | 🔖 **页面标注 / Page Stamps** | 阅读器内查看、放置、编辑页面标注 / View, place and edit per-page stamps in the reader (LANraragi 0.9.8+) |
 | 🔄 **进度同步 / Progress Sync** | 阅读进度与服务器双向同步，跨设备续读 / Two-way reading-progress sync with the server |
+| 📊 **阅读统计 / Reading Stats** | 阅读量、分服务器统计与标签偏好分析 / Reading totals, per-server breakdown and tag-preference analysis |
 | 🖼️ **页面预览 / Page Previews** | 详情页全页面缩略图网格，支持跳页与密度调节 / Per-page thumbnail grid on detail page with jump-to-page and configurable density |
 | ⬇️ **离线下载 / Offline Download** | 后台下载整本档案，断点续传 + 断网自动等网恢复 / Background archive download with resume and automatic recovery after network loss |
 | ☑️ **多选批量 / Batch Operations** | 列表长按多选：批量下载、加分类、清 NEW、删除 / Long-press multi-select for batch download, categorize, clear-new, delete |
@@ -41,9 +45,9 @@ An Android client for [LANraragi](https://github.com/Difegue/LANraragi), built u
 | 🌐 **10 种语言 / 10 Languages** | 中文简繁/粤语、日/韩/英/法/德/西/泰 / CJK + EN/FR/DE/ES/TH |
 | 🌙 **深色模式 / Dark Mode** | 跟随系统主题，支持纯黑模式 / System theme + AMOLED black |
 
-> 兼容所有较新的 LANraragi 版本；页面标注与合订本等 0.9.8 新能力在旧版服务器上自动降级隐藏。
+> 兼容所有较新的 LANraragi 版本；页面标注、合订本、隐藏已读完等 0.9.8 新能力在旧版服务器上自动降级。
 >
-> Works with any reasonably recent LANraragi; 0.9.8-only capabilities (stamps, tankoubons) degrade gracefully on older servers.
+> Works with any reasonably recent LANraragi; 0.9.8-only capabilities (stamps, tankoubons, hide-finished) degrade gracefully on older servers.
 
 ## 📥 下载 | Download
 
@@ -104,7 +108,7 @@ RELEASE_KEY_PASSWORD=<your-key-password>
 | **网络 / Network** | OkHttp 4.12 + Kotlin Coroutines |
 | **API 序列化 / Serialization** | kotlinx-serialization (all JSON) |
 | **列表分页 / Paging** | Jetpack Paging 3 |
-| **数据库 / Database** | Room 2.8 + KSP (schema v27, 多服务器复合主键 / composite key for multi-server state) |
+| **数据库 / Database** | Room 2.8 + KSP (schema v29, 多服务器复合主键 / composite key for multi-server state) |
 | **图像解码 / Image Decoding** | Custom C/JNI engine (libjpeg-turbo, libpng, libwebp) |
 | **安全 / Security** | EncryptedSharedPreferences (API Key, 模式锁 / pattern lock) |
 | **构建 / Build** | Gradle + R8/ProGuard |
@@ -117,9 +121,10 @@ LRReader/
 ├── app/src/main/
 │   ├── java/
 │   │   ├── com/hippo/ehviewer/         # Business code (Kotlin)
-│   │   │   ├── dao/                    # Room Database (AppDatabase.kt, schema v27)
+│   │   │   ├── dao/                    # Room Database (AppDatabase.kt, schema v29)
 │   │   │   ├── download/               # Download subsystem (DownloadManager facade)
 │   │   │   ├── settings/               # Modular settings (Privacy, Network, Reading, …)
+│   │   │   ├── stats/                  # Reading statistics + daily aggregate
 │   │   │   ├── ui/                     # Activities, Scenes, Fragments, ViewModels
 │   │   │   └── Settings.kt             # Shared preferences entry
 │   │   ├── com/lanraragi/reader/       # LANraragi-specific code
