@@ -201,6 +201,10 @@ class EhApplication : RecordingApplication() {
 
         trace("EhApp.LRRClientProvider.init") { LRRClientProvider.init(this) }
 
+        // Continue-reading shortcut publisher rides the reading-session-end
+        // seam (issue #15). Registration is cheap; work happens per session end.
+        com.hippo.ehviewer.ui.ContinueReadingShortcut.install()
+
         // Initialize ServiceRegistry (must be after Settings/EhDB)
         trace("EhApp.ServiceRegistry.init") { ServiceRegistry.initialize(this) }
         // Eagerly start network monitoring so isAvailable() is ready before first API call

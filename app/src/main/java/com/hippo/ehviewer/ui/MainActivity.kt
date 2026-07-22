@@ -293,6 +293,17 @@ class MainActivity : StageActivity(),
         }
 
         val action = intent.action
+        if (ContinueReadingShortcut.ACTION_CONTINUE_READING == action) {
+            val arcid = intent.getStringExtra(ContinueReadingShortcut.KEY_ARCID)
+            val profileId = intent.getLongExtra(ContinueReadingShortcut.KEY_PROFILE_ID, -1L)
+            if (!arcid.isNullOrEmpty() && profileId > 0) {
+                openContinueReading(arcid, profileId)
+            }
+            // Deliberately fall through as "unhandled": the default scene
+            // stack builds underneath and the reader lands on top, so BACK
+            // from the reader returns to the main list.
+            return false
+        }
         if (Intent.ACTION_VIEW == action) {
             val uri = intent.data ?: return false
             val announcer = LRRUrlOpener.parseUrl(uri.toString())
@@ -330,6 +341,26 @@ class MainActivity : StageActivity(),
         }
 
         return false
+    }
+
+    /**
+     * Continue-reading deep link (issue #15): rebuild the Archive from its
+     * history snapshot and route through the canonical read-intent path
+     * (position restore + offline handling ride along for free). No snapshot
+     * means the row is gone — stay on the main list.
+     */
+    private fun openContinueReading(arcid: String, profileId: Long) {
+        lifecycleScope.launch {
+            val archive = try {
+                withContext(Dispatchers.IO) {
+                    ServiceRegistry.dataModule.historyRepository.getArchiveSnapshot(arcid, profileId)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "continue-reading snapshot load failed", e)
+                null
+            } ?: return@launch
+            startActivity(GalleryOpenHelper.buildReadIntent(this@MainActivity, archive))
+        }
     }
 
     override fun onUnrecognizedIntent(intent: Intent?) {
