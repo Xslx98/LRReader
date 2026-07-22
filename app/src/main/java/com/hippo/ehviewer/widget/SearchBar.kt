@@ -628,6 +628,9 @@ class SearchBar : CardView,
 
         /** History rows render with a clock icon to distinguish them from tag suggestions. */
         open val isHistory: Boolean get() = false
+
+        /** Invoked by the history row's dedicated delete button. No-op otherwise. */
+        open fun onDeleteClick() {}
     }
 
     private inner class SuggestionAdapter(
@@ -671,6 +674,21 @@ class SearchBar : CardView,
                 )
             } else {
                 hintView.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0)
+            }
+
+            // Dedicated per-row delete for history entries (triage decision,
+            // issue #14): row tap searches, ✕ deletes — long-press stays as a
+            // secondary affordance. 48dp target + TalkBack description.
+            val deleteButton = linearLayout.findViewById<TextView>(R.id.deleteButton)
+            if (suggestion.isHistory) {
+                deleteButton.isVisible = true
+                deleteButton.text = "✕"
+                deleteButton.contentDescription =
+                    context.getString(R.string.cd_delete_search_history)
+                deleteButton.setOnClickListener { suggestion.onDeleteClick() }
+            } else {
+                deleteButton.isVisible = false
+                deleteButton.setOnClickListener(null)
             }
 
             if (text.isNullOrEmpty()) {
@@ -794,6 +812,11 @@ class SearchBar : CardView,
         }
 
         override fun onLongClick() {
+            mHistoryStore?.delete(mQuery)
+            updateSuggestions(false)
+        }
+
+        override fun onDeleteClick() {
             mHistoryStore?.delete(mQuery)
             updateSuggestions(false)
         }

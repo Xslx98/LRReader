@@ -22,6 +22,10 @@
         app:summaryOff="@string/settings_privacy_delete_confirm_countdown_summary_off"
         app:summaryOn="@string/settings_privacy_delete_confirm_countdown_summary_on" />
 
+    <Preference
+        android:key="clear_search_history"
+        android:title="@string/settings_privacy_clear_search_history" />
+
     <!-- LANraragi: Analytics settings removed (Firebase not used) -->
 
 </PreferenceScreen>
