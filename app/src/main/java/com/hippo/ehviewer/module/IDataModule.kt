@@ -9,6 +9,7 @@ import com.hippo.ehviewer.dao.FavoritesRepository
 import com.hippo.ehviewer.dao.HistoryRepository
 import com.hippo.ehviewer.dao.ProfileRepository
 import com.hippo.ehviewer.dao.QuickSearchRepository
+import com.hippo.ehviewer.dao.SearchHistoryRepository
 import com.hippo.ehviewer.download.DownloadManager
 import com.lanraragi.reader.client.api.ProfileLookupCache
 
@@ -40,6 +41,9 @@ interface IDataModule {
 
     /** Quick search domain repository backed by BrowsingRoomDao. */
     val quickSearchRepository: QuickSearchRepository
+
+    /** Per-profile automatic search history repository backed by BrowsingRoomDao. */
+    val searchHistoryRepository: SearchHistoryRepository
 
     /** Local favorites domain repository backed by BrowsingRoomDao. */
     val favoritesRepository: FavoritesRepository

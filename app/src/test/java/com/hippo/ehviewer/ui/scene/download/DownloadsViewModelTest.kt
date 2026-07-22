@@ -101,6 +101,7 @@ class DownloadsViewModelTest {
         lateinit var manager: DownloadManager
         ServiceRegistry.initializeForTest(
             data = object : IDataModule {
+                override val searchHistoryRepository get() = throw NotImplementedError("Not needed for these tests")
                 override val downloadManager: DownloadManager get() = manager
                 override val favouriteStatusRouter get() = FavouriteStatusRouter()
                 override val historyRepository get() =

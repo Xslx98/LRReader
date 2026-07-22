@@ -113,6 +113,7 @@ class ServerListViewModelTest {
         }
 
         val testDataModule = object : IDataModule {
+            override val searchHistoryRepository get() = throw NotImplementedError("Not needed for these tests")
             override val profileRepository get() = ProfileRepository(db.miscDao())
             override val profileLookupCache get() = throw NotImplementedError("not needed")
             override val historyRepository get() = throw NotImplementedError("not needed")
@@ -190,6 +191,7 @@ class ServerListViewModelTest {
      * for every other member, for tests that force a persistence failure.
      */
     private fun throwingDataModule(repo: ProfileRepository): IDataModule = object : IDataModule {
+        override val searchHistoryRepository get() = throw NotImplementedError("Not needed for these tests")
         override val profileRepository get() = repo
         override val profileLookupCache get() = throw NotImplementedError("not needed")
         override val historyRepository get() = throw NotImplementedError("not needed")

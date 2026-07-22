@@ -103,6 +103,7 @@ class GalleryListViewModelUploadTest {
             override fun removeTempCache(key: String): Any? = null
         }
         val testDataModule = object : IDataModule {
+            override val searchHistoryRepository get() = throw NotImplementedError("Not needed for these tests")
             override val profileRepository get() = throw NotImplementedError("not needed")
             override val profileLookupCache get() = throw NotImplementedError("not needed")
             override val historyRepository get() = throw NotImplementedError("not needed")

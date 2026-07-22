@@ -70,6 +70,7 @@ class HistoryViewModelTest {
         // Provide a DataModule with HistoryRepository so the ViewModel can resolve it
         ServiceRegistry.initializeForTest(
             data = object : IDataModule {
+                override val searchHistoryRepository get() = throw NotImplementedError("Not needed for these tests")
                 override val historyRepository get() = HistoryRepository(db.archiveLocalStateDao(), db)
                 override val profileRepository get() = ProfileRepository(db.miscDao())
                 override val profileLookupCache get() = throw NotImplementedError("not needed")
