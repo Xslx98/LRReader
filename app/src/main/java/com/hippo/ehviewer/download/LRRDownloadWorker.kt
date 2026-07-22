@@ -181,6 +181,13 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                 // propagate instead of reporting it as an extract failure.
                 throw ce
             } catch (e: Exception) {
+                // Same-server mirror guard: a re-queued FINISH row may already
+                // be fully on disk while its source profile URL is unreachable
+                // from the current network (LAN/WAN endpoints of one server).
+                // Verify locally BEFORE the failure/network-wait paths so a
+                // completed download is never flipped to FAILED — and a fully
+                // local archive finishes instantly even while offline.
+                if (!cancelled && reportIfLocallyComplete()) return
                 if (!cancelled && !networkMonitor.isAvailable) {
                     if (BuildConfig.DEBUG) Log.w(TAG, "Extract failed: network down, waiting", e)
                     if (!waitForNetworkIfDown()) {
@@ -315,6 +322,33 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
 
         // Step 4: Report finish
         listener?.onFinish(finished.get(), downloaded.get(), total)
+    }
+
+    /**
+     * Offline fallback for a failed page-list fetch: report FINISH when the
+     * row's last-known pagecount is fully present and valid on disk
+     * ([LocalArchiveVerifier]). Returns false when the pagecount is unknown
+     * (a snapshot whose lossy insert zeroed it — e.g. a download that was
+     * never opened) so genuine failures keep failing; the explicit restart
+     * path from the Downloads scene then still repairs such rows once the
+     * source is reachable again.
+     */
+    private suspend fun reportIfLocallyComplete(): Boolean {
+        val pagecount = runCatching {
+            ServiceRegistry.dataModule.historyRepository
+                .getArchiveSnapshot(arcId, info.serverProfileId)?.pagecount
+        }.getOrNull() ?: return false
+        if (pagecount <= 0) return false
+        val dir = runCatching { getDownloadDir() }.getOrNull() ?: return false
+        if (!LocalArchiveVerifier.isComplete(dir, pagecount)) return false
+        if (BuildConfig.DEBUG) {
+            Log.d(TAG, "Page-list fetch failed but archive is complete on disk; reporting finish")
+        }
+        listener?.run {
+            onGetPages(pagecount)
+            onFinish(pagecount, 0, pagecount)
+        }
+        return true
     }
 
     /**
