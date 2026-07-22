@@ -38,6 +38,10 @@ interface BrowsingRoomDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertSearchHistory(entry: SearchHistoryEntry)
 
+    /** Legacy-import variant: an existing (fresher) entry wins. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertSearchHistoryIfAbsent(entry: SearchHistoryEntry)
+
     @Query(
         "SELECT * FROM SEARCH_HISTORY WHERE SERVER_PROFILE_ID = :profileId " +
             "ORDER BY LAST_USED DESC LIMIT :limit"
