@@ -380,6 +380,15 @@
     <string name="clear_search_history_done">검색 기록을 지웠습니다</string>
     <string name="shortcut_continue_reading">이어서 읽기</string>
     <string name="continue_reading_unavailable">이어서 읽을 대상이 더 이상 없습니다</string>
+    <string name="nav_stats">독서 통계</string>
+    <string name="stats_total_archives">읽은 아카이브</string>
+    <string name="stats_completed">완독</string>
+    <string name="stats_pages_read">읽은 페이지</string>
+    <string name="stats_per_server">서버별</string>
+    <string name="stats_recently_completed">최근 완독</string>
+    <string name="stats_empty">아직 읽기 기록이 없습니다</string>
+    <string name="stats_server_line">%1$d권 · 완독 %2$d · %3$d쪽</string>
+    <string name="stats_deleted_server">삭제된 서버 #%1$d</string>
     <string name="detail_tankoubons_label">단행본</string>
     <string name="detail_tankoubons_edit">편집</string>
     <string name="tank_add_to">단행본에 추가</string>

@@ -334,6 +334,15 @@
     <string name="clear_search_history_done">検索履歴を消去しました</string>
     <string name="shortcut_continue_reading">続きを読む</string>
     <string name="continue_reading_unavailable">続きを読む対象が存在しません</string>
+    <string name="nav_stats">読書統計</string>
+    <string name="stats_total_archives">読んだアーカイブ</string>
+    <string name="stats_completed">読了</string>
+    <string name="stats_pages_read">読んだページ数</string>
+    <string name="stats_per_server">サーバー別</string>
+    <string name="stats_recently_completed">最近読了</string>
+    <string name="stats_empty">まだ閲覧履歴がありません</string>
+    <string name="stats_server_line">%1$d 冊 · 読了 %2$d · %3$d ページ</string>
+    <string name="stats_deleted_server">削除済みサーバー #%1$d</string>
     <string name="detail_tankoubons_label">単行本</string>
     <string name="detail_tankoubons_edit">編集</string>
     <string name="tank_add_to">単行本に追加</string>

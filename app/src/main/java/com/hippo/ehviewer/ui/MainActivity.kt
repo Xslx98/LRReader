@@ -1138,6 +1138,9 @@ class MainActivity : StageActivity(),
             R.id.nav_tankoubons -> startScene(Announcer(TankoubonsScene::class.java))
             R.id.nav_history -> startScene(Announcer(HistoryScene::class.java))
             R.id.nav_downloads -> startScene(Announcer(DownloadsScene::class.java))
+            R.id.nav_stats -> startScene(
+                Announcer(com.hippo.ehviewer.ui.scene.stats.ReadingStatsScene::class.java)
+            )
             R.id.nav_settings -> {
                 settingsLauncher.launch(Intent(this, SettingsActivity::class.java))
             }
