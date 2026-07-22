@@ -135,6 +135,10 @@ class MainActivity : StageActivity(),
             registerLaunchMode(TankoubonsScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
             registerLaunchMode(TankoubonDetailScene::class.java, SceneFragment.LAUNCH_MODE_STANDARD)
             registerLaunchMode(HistoryScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TOP)
+            registerLaunchMode(
+                com.hippo.ehviewer.ui.scene.stats.ReadingStatsScene::class.java,
+                SceneFragment.LAUNCH_MODE_SINGLE_TASK
+            )
 
             // Scene factory registrations (replaces reflection-based newInstance())
             SceneFactory.register(SecurityScene::class.java.name) { SecurityScene() }
@@ -150,6 +154,9 @@ class MainActivity : StageActivity(),
             SceneFactory.register(TankoubonsScene::class.java.name) { TankoubonsScene() }
             SceneFactory.register(TankoubonDetailScene::class.java.name) { TankoubonDetailScene() }
             SceneFactory.register(HistoryScene::class.java.name) { HistoryScene() }
+            SceneFactory.register(
+                com.hippo.ehviewer.ui.scene.stats.ReadingStatsScene::class.java.name
+            ) { com.hippo.ehviewer.ui.scene.stats.ReadingStatsScene() }
         }
     }
 
