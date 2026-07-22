@@ -218,10 +218,6 @@ class ReadingStatsScene : BaseScene() {
         }
     }
 
-    private fun themeTextColor(attr: Int): Int {
-        val ta = requireContext().obtainStyledAttributes(intArrayOf(attr))
-        val color = ta.getColor(0, 0)
-        ta.recycle()
-        return color
-    }
+    private fun themeTextColor(attr: Int): Int =
+        AttrResources.getAttrColor(requireContext(), attr)
 }

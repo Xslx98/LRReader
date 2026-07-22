@@ -189,13 +189,17 @@ class EhApplication : RecordingApplication() {
         // Waits for the resolved active profile; without one (fresh install
         // mid-onboarding) the file stays put and the import retries next boot.
         AppModule.bootScope.launch {
-            val profileId = AppModule.activeProfileIdDeferred.await()
-            if (profileId != null) {
-                com.hippo.ehviewer.dao.LegacySearchHistoryImporter.importIfPresent(
-                    this@EhApplication,
-                    com.hippo.ehviewer.dao.AppDatabase.getInstance(this@EhApplication),
-                    profileId,
-                )
+            try {
+                val profileId = AppModule.activeProfileIdDeferred.await()
+                if (profileId != null) {
+                    com.hippo.ehviewer.dao.LegacySearchHistoryImporter.importIfPresent(
+                        this@EhApplication,
+                        com.hippo.ehviewer.dao.AppDatabase.getInstance(this@EhApplication),
+                        profileId,
+                    )
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "legacy search-history import launch failed")
             }
         }
 

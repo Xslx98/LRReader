@@ -51,8 +51,8 @@ class SearchHistoryRepository(
 
     suspend fun clearAll(profileId: Long) = dao.clearSearchHistory(profileId)
 
-    /** Profile-deletion cascade hook. */
-    suspend fun deleteAllForProfile(profileId: Long) = dao.clearSearchHistory(profileId)
+    /** Profile-deletion cascade hook — same operation, kept for call-site intent. */
+    suspend fun deleteAllForProfile(profileId: Long) = clearAll(profileId)
 
     private fun escapeLike(s: String): String =
         s.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")

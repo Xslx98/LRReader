@@ -87,6 +87,17 @@ class DailyReadingAggregateRecorderTest {
     }
 
     @Test
+    fun singlePageArchive_countsCompletedOnItsSession() = runBlocking {
+        // pageCount == 1 has no "crossing" (lastPage == 0, startPage can never
+        // be below it) — a session on a single-page archive IS a completion.
+        DailyReadingAggregateRecorder.record(
+            db, end(startPage = 0, endPage = 0, pageCount = 1), epochDay = 100L
+        )
+
+        assertEquals(1, db.statsDao().getAllDailyAggregates().single().completed)
+    }
+
+    @Test
     fun differentDayOrProfile_getSeparateRows() = runBlocking {
         DailyReadingAggregateRecorder.record(db, end(startPage = 0, endPage = 1), epochDay = 100L)
         DailyReadingAggregateRecorder.record(db, end(startPage = 0, endPage = 1), epochDay = 101L)
