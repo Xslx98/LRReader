@@ -357,6 +357,7 @@
     <string name="settings_privacy_clear_search_history">Borrar historial de búsqueda</string>
     <string name="clear_search_history_confirm">¿Borrar todo el historial de búsqueda del servidor actual?</string>
     <string name="clear_search_history_done">Historial de búsqueda borrado</string>
+    <string name="shortcut_continue_reading">Seguir leyendo</string>
     <string name="detail_tankoubons_label">Tankoubons</string>
     <string name="detail_tankoubons_edit">Editar</string>
     <string name="tank_add_to">Añadir a tankoubon</string>

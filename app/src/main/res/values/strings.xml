@@ -475,6 +475,7 @@
     <string name="settings_privacy_clear_search_history">Clear search history</string>
     <string name="clear_search_history_confirm">Clear all search history for the current server?</string>
     <string name="clear_search_history_done">Search history cleared</string>
+    <string name="shortcut_continue_reading">Continue reading</string>
     <string name="detail_tankoubons_label">Tankoubons</string>
     <string name="detail_tankoubons_edit">Edit</string>
     <string name="tank_add_to">Add to Tankoubon</string>
