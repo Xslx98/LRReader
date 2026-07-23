@@ -179,7 +179,6 @@ dependencies {
     implementation libs.appcompat
     implementation libs.security.crypto
     implementation libs.biometric
-    implementation libs.browser
     implementation libs.cardview
     implementation libs.fragment
     implementation libs.preference.ktx
@@ -227,8 +226,6 @@ dependencies {
     ksp libs.room.compiler
     // UCrop — image cropping with circular overlay for avatar
     implementation libs.ucrop
-    implementation libs.exifinterface
-    implementation libs.jsoup
 
     testImplementation libs.junit
     testImplementation libs.robolectric
@@ -239,8 +236,6 @@ dependencies {
     testImplementation libs.paging.testing
     testImplementation libs.room.testing
     testImplementation libs.test.core.ktx
-
-    runtimeOnly libs.webkit
 }
 
 configurations.configureEach {
