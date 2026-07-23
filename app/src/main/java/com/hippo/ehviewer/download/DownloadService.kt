@@ -23,7 +23,6 @@ import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -38,6 +37,7 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.dao.DownloadInfo
+import com.hippo.ehviewer.util.LauncherIcon
 import com.hippo.util.ReadableTime
 import com.hippo.lib.yorozuya.FileUtils
 import com.hippo.lib.yorozuya.collect.SparseJBArray
@@ -100,7 +100,7 @@ class DownloadService : Service(), DownloadListener {
     )
 
     private val cachedLargeIcon: Bitmap? by lazy {
-        BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)
+        LauncherIcon.largeIconBitmap(this)
     }
 
     private var CHANNEL_ID: String? = null
