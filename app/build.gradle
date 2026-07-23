@@ -179,8 +179,6 @@ dependencies {
     // kotlinx-serialization (LRR data classes)
     implementation libs.serialization.json
 
-    implementation libs.libpng
-    implementation libs.relinker
     implementation libs.showcaseview
     implementation libs.spinkit
 
