@@ -1,0 +1,8 @@
+Fixed:
+- Already-downloaded archives are no longer re-downloaded or wrongly marked as failed when the same server is set up with multiple connection profiles
+- Locale-aware number formatting on the reading statistics page
+
+Changed:
+- App size reduced by about 14% (1.1 MB)
+- First-run tutorial overlays removed
+- Drawer header now uses a flat theme color
