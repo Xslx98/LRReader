@@ -77,15 +77,6 @@
         <item name="android:maxLines">1</item>
     </style>
 
-    <!-- CategoryText -->
-    <style name="CategoryText">
-        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Subhead</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:gravity">center</item>
-        <item name="android:minHeight">@dimen/category_table_item_height</item>
-        <item name="maskColor">@color/check_text_view_mask</item>
-    </style>
-
     <style name="TextAppearance.CategoryTitle" parent="TextAppearance.AppCompat.Small">
         <item name="android:textColor">?attr/textColorThemeAccent</item>
         <item name="android:textStyle">bold</item>
@@ -134,16 +125,6 @@
 
     <style name="Guide.Title" parent="TextAppearance.AppCompat.Title">
         <item name="android:textColor">?attr/guideTitleColor</item>
-    </style>
-
-    <style name="Guide.Text" parent="TextAppearance.AppCompat.Subhead">
-        <item name="android:textColor">?attr/guideTextColor</item>
-    </style>
-
-    <style name="Guide">
-        <item name="sv_backgroundColor">?attr/guideBackgroundColor</item>
-        <item name="sv_titleTextAppearance">@style/Guide.Title</item>
-        <item name="sv_detailTextAppearance">@style/Guide.Text</item>
     </style>
 
     <style name="CardView.Normal">

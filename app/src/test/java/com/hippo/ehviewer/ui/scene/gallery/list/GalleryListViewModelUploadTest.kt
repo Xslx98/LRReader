@@ -5,7 +5,6 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.EhProxySelector
-import com.hippo.ehviewer.Hosts
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.module.IAppModule
@@ -79,7 +78,6 @@ class GalleryListViewModelUploadTest {
 
         val testNetworkModule = object : INetworkModule {
             override val cache: Cache get() = Cache(File(ctx.cacheDir, "upload-test-cache"), 1024)
-            override val hosts: Hosts get() = throw UnsupportedOperationException()
             override val proxySelector: EhProxySelector get() = throw UnsupportedOperationException()
             override val okHttpClient: OkHttpClient = client
             override val imageOkHttpClient: OkHttpClient = client

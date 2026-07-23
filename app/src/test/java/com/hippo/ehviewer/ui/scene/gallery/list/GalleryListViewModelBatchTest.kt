@@ -3,7 +3,6 @@ package com.hippo.ehviewer.ui.scene.gallery.list
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.hippo.ehviewer.EhProxySelector
-import com.hippo.ehviewer.Hosts
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.event.AppEventBus
 import com.hippo.ehviewer.module.INetworkModule
@@ -87,7 +86,6 @@ class GalleryListViewModelBatchTest {
             .build()
         val testNetworkModule = object : INetworkModule {
             override val cache: Cache get() = Cache(File(ctx.cacheDir, "batch-test-cache"), 1024)
-            override val hosts: Hosts get() = throw UnsupportedOperationException()
             override val proxySelector: EhProxySelector get() = throw UnsupportedOperationException()
             override val okHttpClient: OkHttpClient = client
             override val imageOkHttpClient: OkHttpClient = client

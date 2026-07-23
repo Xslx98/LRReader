@@ -55,7 +55,6 @@
 
         <attr name="guideBackgroundColor" format="color" />
         <attr name="guideTitleColor" format="color" />
-        <attr name="guideTextColor" format="color" />
 
         <attr name="progressColor" format="color" />
 

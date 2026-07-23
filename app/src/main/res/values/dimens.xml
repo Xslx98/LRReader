@@ -89,9 +89,6 @@
     <dimen name="add_size">20dp</dimen>
     <dimen name="add_thickness">2dp</dimen>
 
-    <!-- CategoryTable -->
-    <dimen name="category_table_item_height">40dp</dimen>
-    <dimen name="category_table_item_margin">4dp</dimen>
 
     <!-- AdvanceSearchTable -->
     <dimen name="advance_search_table_item_margin">4dp</dimen>

@@ -295,10 +295,6 @@
     <string name="invalid_host">無效的 host</string>
     <string name="invalid_ip">無效的 IP</string>
 
-    <!-- DirPickerActivity -->
-    <string name="preset">預設</string>
-    <string name="default_directory">預設目錄</string>
-    <string name="application_file_directory">應用檔案目錄 %d （應用解除安裝後會被刪除）</string>
 
     <!-- Gallery Activity -->
     <string name="page_menu_title">第 %d 頁</string>
@@ -571,12 +567,6 @@
     <!-- Progress Scene -->
 
     <!-- Guide -->
-    <string name="guide_quick_search_title">快速搜尋</string>
-    <string name="guide_quick_search_text">從右側滑動以開啟快速搜尋面板</string>
-    <string name="guide_download_labels_title">下載標籤</string>
-    <string name="guide_download_labels_text">從右側滑動以開啟下載標籤面板</string>
-    <string name="guide_download_thumb_title">圖庫詳細資訊</string>
-    <string name="guide_download_thumb_text">點擊縮圖檢視圖庫詳細資訊</string>
     <string name="guide_gallery_left">翻頁</string>
     <string name="guide_gallery_right">翻頁</string>
     <string name="guide_gallery_menu">選單</string>
