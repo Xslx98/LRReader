@@ -19,8 +19,6 @@ add_library( # Sets the name of the library.
         "ehviewer"
         # Sets the library as a shared library.
         SHARED
-        gifutils.c
-        fdutils.c
         image.c
         gif/native-lib.cpp
         gif/dgif_lib.c
