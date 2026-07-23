@@ -120,11 +120,6 @@ class GalleryDrawerHelper(private val callback: Callback) {
             return
         }
 
-        if (ListUrlBuilder.MODE_IMAGE_SEARCH == urlBuilder.mode) {
-            callback.showTip(R.string.image_search_not_quick_search, BaseScene.LENGTH_LONG)
-            return
-        }
-
         for (q in list) {
             if (urlBuilder.equalsQuickSearch(q)) {
                 callback.showTip(

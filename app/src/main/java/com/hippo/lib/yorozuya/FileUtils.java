@@ -235,35 +235,6 @@ public final class FileUtils {
     }
 
     /**
-     * Create a temp file, you need to delete it by you self.
-     *
-     * @param parent    The temp file's parent
-     * @param extension The extension of temp file
-     * @return The temp file or null
-     */
-    @Nullable
-    public static File createTempFile(@Nullable File parent, @Nullable String extension) {
-        if (parent == null) {
-            return null;
-        }
-
-        long now = System.currentTimeMillis();
-        for (int i = 0; i < 100; i++) {
-            String filename = Long.toString(now + i);
-            if (extension != null) {
-                filename = filename + '.' + extension;
-            }
-            File tempFile = new File(parent, filename);
-            if (!tempFile.exists()) {
-                return tempFile;
-            }
-        }
-
-        // Unbelievable
-        return null;
-    }
-
-    /**
      * Create a temp dir, you need to delete it by you self.
      *
      * @param parent The temp file's parent
