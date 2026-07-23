@@ -24,10 +24,21 @@ add_library( # Sets the name of the library.
         gif/dgif_lib.c
         gif/gifalloc.c)
 
+# Size-optimize: JNI entry points keep default visibility via JNIEXPORT,
+# everything else is hidden; unreferenced sections are GC'd at link time.
+target_compile_options(
+        ehviewer
+        PRIVATE
+        -Oz
+        -ffunction-sections
+        -fdata-sections
+        -fvisibility=hidden)
+
 # Ensure generated binary aligns segments for 16KB page size devices.
 target_link_options(
         ehviewer
         PRIVATE
+        -Wl,--gc-sections
         -Wl,-z,max-page-size=16384)
 
 # Searches for a specified prebuilt library and stores the path as a
