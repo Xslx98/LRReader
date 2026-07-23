@@ -107,12 +107,8 @@
 
     <string name="search">搜尋</string>
 
-    <string name="keyword_search">關鍵字搜尋</string>
-    <string name="image_search">圖片搜尋</string>
 
     <string name="search_normal">一般搜尋</string>
-    <string name="search_advance">進階選項</string>
-    <string name="search_image">圖片搜尋</string>
 
 
     <string name="search_sname">搜尋圖庫</string>
@@ -133,11 +129,9 @@
     <string name="search_sfu">上傳者</string>
     <string name="search_sft">標籤</string>
 
-    <string name="select_image">選擇圖片</string>
     <string name="search_uss">使用相似性搜尋</string>
     <string name="search_osc">只搜尋封面</string>
     <string name="search_se">顯示被刪除的圖庫</string>
-    <string name="select_image_first">請先選擇圖片</string>
 
 
 
@@ -150,7 +144,6 @@
     <string name="no_quick_search">快速搜尋會顯示在這裡</string>
     <string name="add_quick_search_tip">圖庫列表的狀態將被儲存為快速搜尋。如果你想儲存搜尋面板的狀態，請先進行搜尋。</string>
     <string name="readme">讀我檔</string>
-    <string name="image_search_not_quick_search">無法將圖片搜尋加入快速搜尋</string>
     <string name="duplicate_quick_search">已存在相同的快速搜尋，名稱為“%s”。</string>
     <string name="duplicate_name">已經有重複的名稱了</string>
 

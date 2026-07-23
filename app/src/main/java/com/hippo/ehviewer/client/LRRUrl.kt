@@ -55,9 +55,6 @@ object LRRUrl {
     const val URL_TOP_LIST_E = "${HOST_E}toplist.php"
     const val URL_TOP_LIST_EX = "${HOST_EX}toplist.php"
 
-    const val URL_IMAGE_SEARCH_E = "https://upld.e-hentai.org/image_lookup.php"
-    const val URL_IMAGE_SEARCH_EX = "https://upld.exhentai.org/upld/image_lookup.php"
-
     const val URL_SIGN_IN = "https://forums.e-hentai.org/index.php?act=Login"
     const val URL_REGISTER = "https://forums.e-hentai.org/index.php?act=Reg&CODE=00"
     const val URL_FAVORITES_E = "${HOST_E}favorites.php"
@@ -213,14 +210,6 @@ object LRRUrl {
      */
     @JvmStatic
     fun getEhNewsUrl(): String = URL_NEWS_E
-
-    @JvmStatic
-    fun getImageSearchUrl(): String {
-        return when (AppearanceSettings.getGallerySite()) {
-            SITE_EX -> URL_IMAGE_SEARCH_EX
-            else -> URL_IMAGE_SEARCH_E
-        }
-    }
 
     @JvmStatic
     fun getWatchedUrl(): String {

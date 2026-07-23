@@ -98,7 +98,6 @@
     <dimen name="search_category_padding_v">@dimen/keyline_margin</dimen>
     <dimen name="search_category_title_height">48dp</dimen>
 
-    <dimen name="image_search_max_size">240dp</dimen>
 
     <!-- Switch padding -->
 

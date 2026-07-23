@@ -85,11 +85,7 @@
     <string name="gallery_list_empty_hit">Die Welt ist so groß und der Panda sitzt ganz allein</string>
     <string name="gallery_tag_copy">Etikett kopiert</string>
     <string name="search">Suchen</string>
-    <string name="keyword_search">"Suche nach dem Schlüsselwort "</string>
-    <string name="image_search">Suche nach einem Bild</string>
     <string name="search_normal">Normale Suche</string>
-    <string name="search_advance">Erweiterte Optionen</string>
-    <string name="search_image">Suche nach einem Bild</string>
     <string name="search_sname">Nach Galerie suchen</string>
     <string name="search_stags">Nach Galerie-Etikett suchen</string>
     <string name="search_sdesc">Nach Galeriebeschreibungen suchen</string>
@@ -105,11 +101,9 @@
     <string name="search_sfl">Sprache</string>
     <string name="search_sfu">Uploader</string>
     <string name="search_sft">Etikett</string>
-    <string name="select_image">Bild wählen</string>
     <string name="search_uss">Ähnlichkeitscan aktivieren</string>
     <string name="search_osc">Nur nach Umschläge suchen</string>
     <string name="search_se">Die gelöschten Galerien anzeigen</string>
-    <string name="select_image_first">Wähle ein Bild</string>
     <string name="quick_search">Schnellsuche</string>
     <string name="quick_search_tip">Tippe an +, um eine Sofortsuche hinzuzufügen</string>
     <string name="add_quick_search_dialog_title">Sofortsuche hinzufügen</string>
@@ -119,7 +113,6 @@
     <string name="no_quick_search">Deine Sofortsuchen werden hier angezeigt</string>
     <string name="add_quick_search_tip">Das Suchergebnis wird als eine Sofortsuche gespeichert. Suche etwas zuerst, um das Ergebnis zu speichern.</string>
     <string name="readme">README</string>
-    <string name="image_search_not_quick_search">Die Bildsuchen können als Sofortsuchen gespeichert nicht werden.</string>
     <string name="duplicate_quick_search">Eine Sofortsuche, deren Name ist %s, bereits besteht.</string>
     <string name="duplicate_name">Dieser Name ist bereits besetzt.</string>
     <string name="star_2">2 Sterne</string>

@@ -46,7 +46,6 @@ import androidx.appcompat.app.AlertDialog
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.hippo.drawerlayout.DrawerLayout
-import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
@@ -83,14 +82,11 @@ import com.hippo.ehviewer.ui.scene.TankoubonsScene
 import com.hippo.ehviewer.ui.splash.SplashActivity
 import com.hippo.ehviewer.client.LRRUrlOpener
 import com.hippo.ehviewer.widget.EhDrawerLayout
-import com.hippo.io.UniFileInputStreamPipe
 import com.hippo.network.Network
 import com.hippo.scene.Announcer
 import com.hippo.scene.SceneFactory
 import com.hippo.scene.SceneFragment
 import com.hippo.scene.StageActivity
-import com.hippo.unifile.UniFile
-import com.hippo.util.BitmapUtils
 import com.hippo.util.GifHandler
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.CancellationException
@@ -99,12 +95,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.hippo.widget.AvatarImageView
-import com.hippo.lib.yorozuya.IOUtils
 import com.hippo.lib.yorozuya.ResourcesUtils
 import com.hippo.lib.yorozuya.ViewUtils
 import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
 import com.hippo.ehviewer.settings.UpdateSettings
 import com.hippo.ehviewer.updater.AppUpdater
 import com.hippo.ehviewer.updater.GhRelease
@@ -266,34 +259,6 @@ class MainActivity : StageActivity(),
         return announcer
     }
 
-    private fun saveImageToTempFile(file: UniFile?): File? {
-        if (file == null) {
-            return null
-        }
-
-        val bitmap = try {
-            BitmapUtils.decodeStream(
-                UniFileInputStreamPipe(file),
-                -1, -1, 500 * 500, false, false, null
-            )
-        } catch (e: OutOfMemoryError) {
-            null
-        } ?: return null
-
-        val temp = AppConfig.createTempFile() ?: return null
-
-        var os: java.io.OutputStream? = null
-        return try {
-            os = FileOutputStream(temp)
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, os)
-            temp
-        } catch (e: IOException) {
-            null
-        } finally {
-            IOUtils.closeQuietly(os)
-        }
-    }
-
     private fun handleIntent(intent: Intent?): Boolean {
         if (intent == null) {
             return false
@@ -319,31 +284,13 @@ class MainActivity : StageActivity(),
                 return true
             }
         } else if (Intent.ACTION_SEND == action) {
-            val type = intent.type
-            if ("text/plain" == type) {
+            // Shared images used to launch the EhViewer image search; LANraragi
+            // has no image-search API, so only shared text becomes a keyword search.
+            if ("text/plain" == intent.type) {
                 val builder = ListUrlBuilder()
                 builder.keyword = intent.getStringExtra(Intent.EXTRA_TEXT)
                 startScene(processAnnouncer(GalleryListScene.getStartAnnouncer(builder)))
                 return true
-            } else {
-                if (type != null && type.startsWith("image/")) {
-                    val uri = intent.getParcelableExtra<android.net.Uri>(Intent.EXTRA_STREAM)
-                    if (uri != null) {
-                        val file = UniFile.fromUri(this, uri)
-                        val temp = saveImageToTempFile(file)
-                        if (temp != null) {
-                            val builder = ListUrlBuilder()
-                            builder.mode = ListUrlBuilder.MODE_IMAGE_SEARCH
-                            builder.imagePath = temp.path
-                            builder.useSimilarityScan = true
-                            builder.showExpunged = true
-                            startScene(
-                                processAnnouncer(GalleryListScene.getStartAnnouncer(builder))
-                            )
-                            return true
-                        }
-                    }
-                }
             }
         }
 
