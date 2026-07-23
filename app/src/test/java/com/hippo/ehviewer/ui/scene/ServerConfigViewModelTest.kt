@@ -15,7 +15,6 @@ import com.hippo.ehviewer.module.IDataModule
 import com.hippo.ehviewer.module.INetworkModule
 import com.hippo.ehviewer.module.NetworkMonitor
 import com.hippo.ehviewer.EhProxySelector
-import com.hippo.ehviewer.Hosts
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRCleartextRefusedException
 import kotlinx.coroutines.CoroutineScope
@@ -408,7 +407,6 @@ class ServerConfigViewModelTest {
         tempDir.mkdirs()
         return object : INetworkModule {
             override val cache: Cache = Cache(tempDir, 1024L * 1024)
-            override val hosts: Hosts = Hosts(context, "hosts_test.db")
             override val proxySelector: EhProxySelector = EhProxySelector()
             override val okHttpClient: OkHttpClient = client
             override val imageOkHttpClient: OkHttpClient = client
