@@ -90,22 +90,6 @@ abstract class GalleryProvider2 : GalleryProvider() {
 
         /**
          * Save reading progress locally (0-indexed page number) with timestamp.
-         * @param gid Gallery identifier (used as SP key)
-         * @param page 0-indexed current page
-         */
-        @JvmStatic
-        @Deprecated("Use arcid-based overload", ReplaceWith("saveReadingProgress(ctx, arcid, page)"))
-        fun saveReadingProgress(ctx: Context, gid: Long, page: Int) {
-            ctx.applicationContext
-                .getSharedPreferences(SP_READING_PROGRESS, Context.MODE_PRIVATE)
-                .edit {
-                    putInt(gid.toString(), page)
-                    putLong("${gid}_ts", System.currentTimeMillis() / 1000L)
-                }
-        }
-
-        /**
-         * Save reading progress locally (0-indexed page number) with timestamp.
          * @param arcid Archive identifier (used as SP key)
          * @param page 0-indexed current page
          */
@@ -122,18 +106,6 @@ abstract class GalleryProvider2 : GalleryProvider() {
 
         /**
          * Load reading progress from local storage.
-         * @return 0-indexed page number, or 0 if not found
-         */
-        @JvmStatic
-        @Deprecated("Use arcid-based overload", ReplaceWith("loadReadingProgress(ctx, arcid)"))
-        fun loadReadingProgress(ctx: Context, gid: Long): Int {
-            return ctx.applicationContext
-                .getSharedPreferences(SP_READING_PROGRESS, Context.MODE_PRIVATE)
-                .getInt(gid.toString(), 0)
-        }
-
-        /**
-         * Load reading progress from local storage.
          * @param arcid Archive identifier (used as SP key)
          * @return 0-indexed page number, or 0 if not found
          */
@@ -142,18 +114,6 @@ abstract class GalleryProvider2 : GalleryProvider() {
             return ctx.applicationContext
                 .getSharedPreferences(SP_READING_PROGRESS, Context.MODE_PRIVATE)
                 .getInt(arcid, 0)
-        }
-
-        /**
-         * Load the timestamp (epoch seconds) of the last local progress save.
-         * @return epoch seconds, or 0 if not found
-         */
-        @JvmStatic
-        @Deprecated("Use arcid-based overload", ReplaceWith("loadReadingTimestamp(ctx, arcid)"))
-        fun loadReadingTimestamp(ctx: Context, gid: Long): Long {
-            return ctx.applicationContext
-                .getSharedPreferences(SP_READING_PROGRESS, Context.MODE_PRIVATE)
-                .getLong("${gid}_ts", 0L)
         }
 
         /**
