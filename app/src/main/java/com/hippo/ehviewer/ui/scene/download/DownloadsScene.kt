@@ -139,7 +139,6 @@ class DownloadsScene : ToolbarScene(),
 
     // Helpers
     private var mDragDropHelper: DownloadDragDropHelper? = null
-    private var mGuideHelper: DownloadGuideHelper? = null
     private var mPaginationHelper: DownloadPaginationHelper? = null
     private var mSearchHelper: DownloadSearchHelper? = null
     private var mBatchOpsHelper: DownloadBatchOpsHelper? = null
@@ -323,7 +322,6 @@ class DownloadsScene : ToolbarScene(),
         mFabLayout = ViewUtils.`$$`(view, R.id.fab_layout) as FabLayout
         val tip = ViewUtils.`$$`(view, R.id.tip) as TextView
         // Initialize helpers
-        mGuideHelper = DownloadGuideHelper(this)
         mPaginationHelper = DownloadPaginationHelper(viewModel)
         mDragDropHelper = DownloadDragDropHelper()
 
@@ -425,7 +423,6 @@ class DownloadsScene : ToolbarScene(),
 
         updateView()
 
-        mGuideHelper?.guide(mRecyclerView, mLayoutManager)
         updatePaginationIndicator()
         return view
     }
@@ -534,8 +531,6 @@ class DownloadsScene : ToolbarScene(),
     override fun onDestroyView() {
         super.onDestroyView()
 
-        mGuideHelper?.cleanup()
-        mGuideHelper = null
         mDragDropHelper?.cleanup()
         mDragDropHelper = null
         mPaginationHelper = null
@@ -645,10 +640,6 @@ class DownloadsScene : ToolbarScene(),
     }
 
     override fun onBackPressed() {
-        if (mGuideHelper?.showcaseView != null) {
-            return
-        }
-
         if (::mRecyclerView.isInitialized && mRecyclerView.isInCustomChoice) {
             mRecyclerView.outOfCustomChoiceMode()
         } else {

@@ -146,62 +146,6 @@ bool copyPixels(const void *src, int src_w, int src_h, int src_x, int src_y,
 }
 
 JNIEXPORT void JNICALL
-Java_com_hippo_lib_image_ImageKt_nativeTexImage(JNIEnv *env, jclass clazz, jobject bitmap, jboolean init,
-                                          jint offset_x, jint offset_y, jint width, jint height) {
-    if (width * height > IMAGE_TILE_MAX_SIZE)
-        return;
-    AndroidBitmapInfo info;
-    void *pixels = NULL;
-    AndroidBitmap_lockPixels(env, bitmap, &pixels);
-    AndroidBitmap_getInfo(env, bitmap, &info);
-    // Zero tile buffer to prevent stale data in border/uncovered regions
-    memset(tile_buffer, 0, (size_t)(width * height * 4));
-    copyPixels(pixels, info.width, info.height, offset_x, offset_y, tile_buffer, width, height, 0, 0, width, height);
-    AndroidBitmap_unlockPixels(env, bitmap);
-    // Compute actual content rect inside tile_buffer and clamp edge pixels
-    // outwards so GL_LINEAR border sampling stays opaque (no seam line).
-    int cx0 = offset_x < 0 ? -offset_x : 0;
-    int cy0 = offset_y < 0 ? -offset_y : 0;
-    int cx1 = (int) info.width - offset_x;
-    int cy1 = (int) info.height - offset_y;
-    if (cx1 > width) cx1 = width;
-    if (cy1 > height) cy1 = height;
-    if (cx0 > width) cx0 = width;
-    if (cy0 > height) cy0 = height;
-    clampEdgesIntoBorder(tile_buffer, width, height, cx0, cy0, cx1, cy1);
-    if (init) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                     tile_buffer);
-    } else {
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE,
-                        tile_buffer);
-    }
-}
-
-JNIEXPORT void JNICALL
-Java_com_hippo_lib_image_Image_nativeRender(JNIEnv *env, jclass clazz, jobject srcBitmap, jint src_x,
-                                            jint src_y, jobject dst, jint dst_x, jint dst_y, jint width,
-                                            jint height) {
-    AndroidBitmapInfo dstInfo;
-    AndroidBitmapInfo srcInfo;
-    void *srcPixels = NULL;
-    void *dstPixels = NULL;
-
-    AndroidBitmap_lockPixels(env, srcBitmap, &srcPixels);
-    AndroidBitmap_lockPixels(env, dst, &dstPixels);
-    AndroidBitmap_getInfo(env, srcBitmap, &srcInfo);
-    AndroidBitmap_getInfo(env, dst, &dstInfo);
-
-    copyPixels(srcPixels, srcInfo.width, srcInfo.height, src_x, src_y, dstPixels, dstInfo.width,
-                dstInfo.height, dst_x, dst_y,
-                width,
-                height);
-
-    AndroidBitmap_unlockPixels(env, dst);
-    AndroidBitmap_unlockPixels(env, srcBitmap);
-}
-
-JNIEXPORT void JNICALL
 Java_com_hippo_lib_image_Image_nativeTexImage(JNIEnv *env, jclass clazz, jobject bitmap, jboolean init,
                                               jint offset_x, jint offset_y, jint width, jint height) {
     if (width * height > IMAGE_TILE_MAX_SIZE)

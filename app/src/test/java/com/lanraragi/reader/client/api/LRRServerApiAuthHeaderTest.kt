@@ -11,7 +11,6 @@ package com.lanraragi.reader.client.api
 
 import android.util.Base64
 import com.hippo.ehviewer.EhProxySelector
-import com.hippo.ehviewer.Hosts
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.module.INetworkModule
 import com.hippo.ehviewer.module.NetworkMonitor
@@ -61,7 +60,6 @@ class LRRServerApiAuthHeaderTest {
         ServiceRegistry.initializeForTest(
             network = object : INetworkModule {
                 override val cache: Cache get() = throw UnsupportedOperationException()
-                override val hosts: Hosts get() = throw UnsupportedOperationException()
                 override val proxySelector: EhProxySelector get() = throw UnsupportedOperationException()
                 override val okHttpClient: OkHttpClient get() = throw UnsupportedOperationException()
                 override val imageOkHttpClient: OkHttpClient get() = throw UnsupportedOperationException()

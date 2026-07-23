@@ -3,7 +3,6 @@ package com.hippo.ehviewer.module
 import android.content.Context
 import android.util.Log
 import com.hippo.ehviewer.EhProxySelector
-import com.hippo.ehviewer.Hosts
 import okhttp3.Cache
 import okhttp3.ConnectionPool
 import okhttp3.CookieJar
@@ -18,7 +17,7 @@ import java.util.concurrent.TimeUnit
  * Extracted from EhApplication to reduce its responsibility scope.
  *
  * Internal dependency order:
- *   Cache → Hosts → ProxySelector → OkHttpClient → ImageOkHttpClient
+ *   Cache → ProxySelector → OkHttpClient → ImageOkHttpClient
  *
  * DNS uses OkHttp's default [okhttp3.Dns.SYSTEM]; LANraragi servers are
  * resolved through the platform DNS like any other host.
@@ -35,8 +34,6 @@ class NetworkModule(private val context: Context) : INetworkModule, Cacheable {
     override val cache: Cache by lazy {
         Cache(File(context.cacheDir, "http_cache"), 200L * 1024L * 1024L)
     }
-
-    override val hosts: Hosts by lazy { Hosts(context, "hosts.db") }
 
     override val proxySelector: EhProxySelector by lazy { EhProxySelector() }
 

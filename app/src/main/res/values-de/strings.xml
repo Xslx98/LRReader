@@ -478,12 +478,6 @@
     <string name="license">Open Source-Lizenzen</string>
     <string name="directory_not_writable">Das Verzeichnis ist nicht beschreibbar</string>
     <string name="let_me_select">Manuell auswählen</string>
-    <string name="guide_quick_search_title">Sofortsuche</string>
-    <string name="guide_quick_search_text">Nach rechts wischen, um Sofortsuche-Panel zu öffnen.</string>
-    <string name="guide_download_labels_title">Download-Etiketten</string>
-    <string name="guide_download_labels_text">Nach rechts wischen, um Download-Etiketten-Panel zu öffnen</string>
-    <string name="guide_download_thumb_title">Galerie-Details</string>
-    <string name="guide_download_thumb_text">Auf das Miniaturbild antippen, um Galerie-Details zu sehen</string>
     <string name="guide_gallery_left">Seiten umblättern</string>
     <string name="guide_gallery_right">Seiten umblättern</string>
     <string name="guide_gallery_menu">Menü</string>
@@ -557,10 +551,6 @@
 
     <!-- ExcludedLanguagesScene -->
 
-    <!-- DirPickerActivity -->
-    <string name="preset">Voreinstellung</string>
-    <string name="default_directory">Standardverzeichnis</string>
-    <string name="application_file_directory">App-Dateiverzeichnis %d (wird nach Deinstallation entfernt)</string>
 
     <string name="download_service">Download-Dienst</string>
     <string name="yes">Ja</string>

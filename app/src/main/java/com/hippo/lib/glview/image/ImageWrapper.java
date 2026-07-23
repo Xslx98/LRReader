@@ -23,10 +23,9 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import com.hippo.lib.image.Image;
-import com.hippo.lib.image.Image1;
 
 /**
- * A wrapper for {@link Image1}. It is useful for multi-usage.
+ * A wrapper for {@link Image}. It is useful for multi-usage.
  * It handles image recycle automatically.
  */
 //public class ImageWrapper {

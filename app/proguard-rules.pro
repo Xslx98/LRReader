@@ -1,6 +1,10 @@
 # R8 code shrinking with obfuscation enabled
 # Tree-shaking + optimization + name mangling for security
 
+# Flatten obfuscated classes into the root package (smaller string table);
+# classes pinned by -keep rules below keep their full names.
+-repackageclasses ''
+
 # === Strip debug/verbose logs in release (security: prevent accidental data leak) ===
 -assumenosideeffects class android.util.Log {
     public static int v(...);
@@ -39,19 +43,11 @@
 
 # === LANraragi data models (used by kotlinx-serialization) ===
 -keep class com.lanraragi.reader.client.api.data.** { *; }
--keep class com.hippo.ehviewer.client.data.** { *; }
 
 # === A7Zip JNI (external library: a7zip_XJ:extract-lite) ===
 -keep class com.hippo.a7zip.** { *; }
 -keep class com.hippo.ehviewer.gallery.A7ZipArchive { *; }
 -keep class com.hippo.ehviewer.gallery.A7ZipArchive$* { *; }
-
-# === Image native decoder (libimage.so via ReLinker) ===
--keep class com.hippo.lib.image.Image1 { *; }
--keep class com.hippo.lib.image.Image1$* { *; }
-
-# === ReLinker native library loader ===
--keep class com.getkeepsafe.relinker.** { *; }
 
 # === Native JNI entry points (libehviewer.so) ===
 -keep class com.hippo.Native { *; }
