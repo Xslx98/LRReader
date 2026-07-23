@@ -563,12 +563,6 @@
     <!-- Progress Scene -->
 
     <!-- Guide -->
-    <string name="guide_quick_search_title">ค้นหาอย่างด่วน</string>
-    <string name="guide_quick_search_text">ปัดซ้ายเพื่อเปิดแผงควบคุมการค้นหาอย่างด่วน</string>
-    <string name="guide_download_labels_title">ป้ายชื่อดาวน์โหลด</string>
-    <string name="guide_download_labels_text">ปัดซ้ายเพื่อเปิดแผงควบคุมป้ายชื่อดาวน์โหลด</string>
-    <string name="guide_download_thumb_title">รายละเอียดแกลเลอรี่</string>
-    <string name="guide_download_thumb_text">แตะที่ภาพตัวอย่างเพื่อดูรายละเอียดของแกลเลอรี่</string>
     <string name="guide_gallery_left">เปลี่ยนหน้า</string>
     <string name="guide_gallery_right">เปลี่ยนหน้า</string>
     <string name="guide_gallery_menu">เมนู</string>

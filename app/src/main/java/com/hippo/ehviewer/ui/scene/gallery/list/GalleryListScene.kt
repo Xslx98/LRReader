@@ -42,9 +42,6 @@ import androidx.lifecycle.lifecycleScope
 import com.hippo.ehviewer.ServiceRegistry
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.progressindicator.LinearProgressIndicator
-import com.github.amlcurran.showcaseview.ShowcaseView
-import com.github.amlcurran.showcaseview.SimpleShowcaseEventListener
-import com.github.amlcurran.showcaseview.targets.PointTarget
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.hippo.android.resource.AttrResources
 import com.hippo.drawable.AddDeleteDrawable
@@ -144,7 +141,6 @@ class GalleryListScene : BaseScene(),
     // the fragment-scoped collector.
     private val batchOwnerToken = Any()
 
-    private var mShowcaseView: ShowcaseView? = null
     internal lateinit var downloadManager: DownloadManager
         private set
 
@@ -615,8 +611,6 @@ class GalleryListScene : BaseScene(),
             mHelper?.firstRefresh()
         }
 
-        guideQuickSearch()
-
         return view
     }
 
@@ -751,43 +745,9 @@ class GalleryListScene : BaseScene(),
         uploadProgressPercent = null
     }
 
-    private fun guideQuickSearch() {
-        val activity = activity2
-        if (activity == null || !GuideSettings.getGuideQuickSearch()) {
-            return
-        }
-
-        @Suppress("DEPRECATION")
-        val display = activity.windowManager.defaultDisplay
-        val point = Point()
-        display.getSize(point)
-
-        mShowcaseView = ShowcaseView.Builder(activity)
-            .withMaterialShowcase()
-            .setStyle(R.style.Guide)
-            .setTarget(PointTarget(point.x, point.y / 3))
-            .blockAllTouches()
-            .setContentTitle(R.string.guide_quick_search_title)
-            .setContentText(R.string.guide_quick_search_text)
-            .replaceEndButton(R.layout.button_guide)
-            .setShowcaseEventListener(object : SimpleShowcaseEventListener() {
-                @SuppressLint("RtlHardcoded")
-                override fun onShowcaseViewDidHide(showcaseView: ShowcaseView) {
-                    mShowcaseView = null
-                    ViewUtils.removeFromParent(showcaseView)
-                    GuideSettings.putGuideQuickSearch(false)
-                    openDrawer(Gravity.RIGHT)
-                }
-            }).build()
-    }
-
     override fun onDestroyView() {
         super.onDestroyView()
 
-        if (mShowcaseView != null) {
-            ViewUtils.removeFromParent(mShowcaseView)
-            mShowcaseView = null
-        }
         searchBarMover?.cancelAnimation()
         searchBarMover = null
         val helper = mHelper
@@ -905,10 +865,6 @@ class GalleryListScene : BaseScene(),
 
     override fun onBackPressed() {
         tagChipHelper?.dismissPopup()
-        if (mShowcaseView != null) {
-            return
-        }
-
         val multiSelect = multiSelectHelper
         if (multiSelect != null && multiSelect.isActive) {
             multiSelect.exit()

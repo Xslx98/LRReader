@@ -199,7 +199,6 @@ dependencies {
     // kotlinx-serialization (LRR data classes)
     implementation libs.serialization.json
 
-    implementation libs.showcaseview
     implementation libs.spinkit
 
     // Native archive extraction

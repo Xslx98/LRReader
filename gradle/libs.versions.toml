@@ -54,7 +54,6 @@ joor = "0.9.15"
 # These use commit hashes or non-semver tags — Dependabot/Renovate cannot auto-bump.
 # Track manually; see ROADMAP for fork plan.
 advrecyclerview = "1.0.0"
-showcaseview = "5.4.3"
 spinkit = "1.4.0"
 
 [libraries]
@@ -90,7 +89,6 @@ okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "okhttp" }
 ucrop = { module = "com.github.yalantis:ucrop", version.ref = "ucrop" }
 advrecyclerview = { module = "com.h6ah4i.android.widget.advrecyclerview:advrecyclerview", version.ref = "advrecyclerview" }
-showcaseview = { module = "com.github.amlcurran.showcaseview:library", version.ref = "showcaseview" }
 spinkit = { module = "com.github.ybq:Android-SpinKit", version.ref = "spinkit" }
 
 # --- Test ---
