@@ -112,12 +112,8 @@
 
     <string name="search">ค้นหา</string>
 
-    <string name="keyword_search">คีย์เวิร์ดในการค้นหา</string>
-    <string name="image_search">ค้นหาด้วยรูป</string>
 
     <string name="search_normal">ค้นหาแบบธรรมดา</string>
-    <string name="search_advance">ตัวเลือกขั้นสูง</string>
-    <string name="search_image">ค้นหาด้วยรูปภาพ</string>
 
 
     <string name="search_sname">ค้นหาแกลเลอรี่</string>
@@ -137,11 +133,9 @@
     <string name="search_sfu">ผู้อัพโหลด</string>
     <string name="search_sft">แท็ก</string>
 
-    <string name="select_image">เลือกรูปภาพ</string>
     <string name="search_uss">ใช้สแกนหาความเหมือน</string>
     <string name="search_osc">ค้นหาเฉพาะหน้าปก</string>
     <string name="search_se">แสดงเรื่องที่โดนลบ</string>
-    <string name="select_image_first">โปรดเลือกรูปภาพก่อน</string>
 
 
 
@@ -154,7 +148,6 @@
     <string name="no_quick_search">การค้นหาอย่างด่วนจะแสดงอยู่ตรงนี้</string>
     <string name="add_quick_search_tip">รายการของแกลเลอรี่ต่างๆจะถูกบันทึกเป็นการค้นหาอย่างด่วน ต้องทำการค้นหาก่อนเพื่อบันทึกลงในรายการของแผงการค้นหา</string>
     <string name="readme">อ่านก่อนสักนิด</string>
-    <string name="image_search_not_quick_search">ไม่สามารถเพิ่มรูปในการค้นหาให้เป็นการค้นหาอย่างด่วนได้</string>
     <string name="duplicate_quick_search">มีตัวค้นหาอย่างด่วนอยู่แล้วในชื่อ \"%s\".</string>
     <string name="duplicate_name">ชื่อนี้มีการใช้งานอยู่แล้ว</string>
 

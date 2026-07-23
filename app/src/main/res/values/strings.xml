@@ -203,12 +203,8 @@
 
     <string name="search">Search</string>
 
-    <string name="keyword_search">Keyword search</string>
-    <string name="image_search">Image search</string>
 
     <string name="search_normal">Sort</string>
-    <string name="search_advance">Advance Options</string>
-    <string name="search_image">Image Search</string>
 
 
     <string name="search_sname">Search Gallery</string>
@@ -229,11 +225,9 @@
     <string name="search_sfu">Uploader</string>
     <string name="search_sft">Tags</string>
 
-    <string name="select_image">Select image</string>
     <string name="search_uss">Use similarity scan</string>
     <string name="search_osc">Only search covers</string>
     <string name="search_se">Show expunged</string>
-    <string name="select_image_first">Please select image first</string>
 
 
 
@@ -246,7 +240,6 @@
     <string name="no_quick_search">Quick search will be shown here</string>
     <string name="add_quick_search_tip">The state of gallery list will be saved as quick search. Perform a search first to save the state of search panel.</string>
     <string name="readme">README</string>
-    <string name="image_search_not_quick_search">Can\'t add image search as quick search</string>
     <string name="duplicate_quick_search">A duplicate quick search exists. The name is \"%s\".</string>
     <string name="duplicate_name">This name is already in use.</string>
 

@@ -118,9 +118,6 @@ object AppConfig {
     }
 
     @JvmStatic
-    fun createTempFile(): File? = FileUtils.createTempFile(getTempDir(), null)
-
-    @JvmStatic
     fun saveParseErrorBody(e: ParseException) {
         val dir = getExternalParseErrorDir() ?: return
 

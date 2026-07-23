@@ -161,12 +161,7 @@ internal object GalleryListHelperFactory {
             searchBarMover = { scene.searchBarMover },
             contentHelper = { scene.mHelper },
             setDrawerLockMode = scene::setDrawerLockMode,
-            doBackPress = scene::onBackPressed,
-            doPickImage = scene::launchPickImage,
-            setImageUri = { uri ->
-                if (uri != null) scene.searchLayout.setImageUri(uri)
-            },
-            doGetString = scene::getString
+            doBackPress = scene::onBackPressed
         )
 
         val fabHelper = GalleryFabHelper(

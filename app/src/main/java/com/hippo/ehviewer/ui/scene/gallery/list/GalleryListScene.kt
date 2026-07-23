@@ -169,30 +169,13 @@ class GalleryListScene : BaseScene(),
     private var uploadProgressTitle: TextView? = null
     private var uploadProgressPercent: TextView? = null
 
-    /**
-     * Stored Uri-callback for the in-flight pick. Cleared on result. Two
-     * separate slots (one per launcher) avoid cross-talk if a future flow
-     * pre-arms one before the other returns.
-     */
-    private var pendingSelectImageCallback: ((Uri?) -> Unit)? = null
+    /** Stored Uri-callback for the in-flight archive pick. Cleared on result. */
     private var pendingUploadArchiveCallback: ((Uri?) -> Unit)? = null
 
     /**
-     * Image-picker launcher used by [GallerySearchBarHelper.onSelectImage].
+     * Archive-picker launcher used by [GalleryUploadHelper.showUploadFilePicker].
      * Registered as a property so registration completes before the Fragment
      * reaches STARTED — required by the AndroidX activity-result API.
-     */
-    private val selectImageLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val cb = pendingSelectImageCallback
-        pendingSelectImageCallback = null
-        val uri = if (result.resultCode == Activity.RESULT_OK) result.data?.data else null
-        cb?.invoke(uri)
-    }
-
-    /**
-     * Archive-picker launcher used by [GalleryUploadHelper.showUploadFilePicker].
      */
     private val uploadArchiveLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -201,12 +184,6 @@ class GalleryListScene : BaseScene(),
         pendingUploadArchiveCallback = null
         val uri = if (result.resultCode == Activity.RESULT_OK) result.data?.data else null
         cb?.invoke(uri)
-    }
-
-    /** Bridge for [GallerySearchBarHelper] — see its `doPickImage` parameter. */
-    internal fun launchPickImage(intent: Intent, onPicked: (Uri?) -> Unit) {
-        pendingSelectImageCallback = onPicked
-        selectImageLauncher.launch(intent)
     }
 
     /** Bridge for [GalleryUploadHelper.Callback.pickArchive]. */

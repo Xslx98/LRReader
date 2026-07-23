@@ -44,7 +44,7 @@ class ListUrlBuilder : Cloneable, Parcelable {
 
     @IntDef(
         MODE_NORMAL, MODE_UPLOADER, MODE_TAG, MODE_FILTER,
-        MODE_WHATS_HOT, MODE_IMAGE_SEARCH, MODE_SUBSCRIPTION, MODE_TOP_LIST
+        MODE_WHATS_HOT, MODE_SUBSCRIPTION, MODE_TOP_LIST
     )
     @Retention(AnnotationRetention.SOURCE)
     private annotation class Mode
@@ -77,18 +77,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
     @JvmField
     var pageTo: Int = -1
 
-    @JvmField
-    var imagePath: String? = null
-
-    @JvmField
-    var useSimilarityScan: Boolean = false
-
-    @JvmField
-    var onlySearchCovers: Boolean = false
-
-    @JvmField
-    var showExpunged: Boolean = false
-
     constructor()
 
     @Suppress("WrongConstant")
@@ -101,10 +89,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
         minRating = parcel.readInt()
         pageFrom = parcel.readInt()
         pageTo = parcel.readInt()
-        imagePath = parcel.readString()
-        useSimilarityScan = parcel.readByte() != 0.toByte()
-        onlySearchCovers = parcel.readByte() != 0.toByte()
-        showExpunged = parcel.readByte() != 0.toByte()
     }
 
     /**
@@ -119,10 +103,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
         minRating = -1
         pageFrom = -1
         pageTo = -1
-        imagePath = null
-        useSimilarityScan = false
-        onlySearchCovers = false
-        showExpunged = false
     }
 
     public override fun clone(): ListUrlBuilder {
@@ -151,14 +131,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
     fun setPageFrom(value: Int) { pageFrom = value }
     fun getPageTo(): Int = pageTo
     fun setPageTo(value: Int) { pageTo = value }
-    fun getImagePath(): String? = imagePath
-    fun setImagePath(value: String?) { imagePath = value }
-    fun isUseSimilarityScan(): Boolean = useSimilarityScan
-    fun setUseSimilarityScan(value: Boolean) { useSimilarityScan = value }
-    fun isOnlySearchCovers(): Boolean = onlySearchCovers
-    fun setOnlySearchCovers(value: Boolean) { onlySearchCovers = value }
-    fun isShowExpunged(): Boolean = showExpunged
-    fun setShowExpunged(value: Boolean) { showExpunged = value }
 
     /**
      * Make them the same
@@ -174,10 +146,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
         minRating = lub.minRating
         pageFrom = lub.pageFrom
         pageTo = lub.pageTo
-        imagePath = lub.imagePath
-        useSimilarityScan = lub.useSimilarityScan
-        onlySearchCovers = lub.onlySearchCovers
-        showExpunged = lub.showExpunged
     }
 
     fun set(q: QuickSearch) {
@@ -188,10 +156,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
         minRating = q.minRating
         pageFrom = q.pageFrom
         pageTo = q.pageTo
-        imagePath = null
-        useSimilarityScan = false
-        onlySearchCovers = false
-        showExpunged = false
     }
 
     fun set(q: String?, newMode: Int) {
@@ -202,10 +166,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
         minRating = -1
         pageFrom = -1
         pageTo = -1
-        imagePath = null
-        useSimilarityScan = false
-        onlySearchCovers = false
-        showExpunged = false
     }
 
     fun set(q: String?) {
@@ -216,10 +176,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
         minRating = -1
         pageFrom = -1
         pageTo = -1
-        imagePath = null
-        useSimilarityScan = false
-        onlySearchCovers = false
-        showExpunged = false
     }
 
     fun toQuickSearch(): QuickSearch {
@@ -400,8 +356,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
 
             MODE_WHATS_HOT -> LRRUrl.getPopularUrl()
 
-            MODE_IMAGE_SEARCH -> LRRUrl.getImageSearchUrl()
-
             MODE_TOP_LIST -> buildString {
                 append(LRRUrl.getTopListUrl())
                 append("?")
@@ -479,10 +433,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
         dest.writeInt(minRating)
         dest.writeInt(pageFrom)
         dest.writeInt(pageTo)
-        dest.writeString(imagePath)
-        dest.writeByte(if (useSimilarityScan) 1 else 0)
-        dest.writeByte(if (onlySearchCovers) 1 else 0)
-        dest.writeByte(if (showExpunged) 1 else 0)
     }
 
     companion object {
@@ -495,7 +445,8 @@ class ListUrlBuilder : Cloneable, Parcelable {
         const val MODE_UPLOADER = 0x1
         const val MODE_TAG = 0x2
         const val MODE_WHATS_HOT = 0x3
-        const val MODE_IMAGE_SEARCH = 0x4
+        // 0x4 was MODE_IMAGE_SEARCH (EhViewer legacy); values are persisted
+        // in QuickSearch rows, so the remaining constants keep their values.
         const val MODE_SUBSCRIPTION = 0x5
         const val MODE_FILTER = 0x6
         const val MODE_TOP_LIST = 0x7
