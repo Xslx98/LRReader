@@ -22,7 +22,11 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
-    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    <!-- androidx.biometric merges USE_FINGERPRINT for its pre-28 fallback;
+         minSdk 28 always uses BiometricPrompt, so strip the legacy permission. -->
+    <uses-permission
+        android:name="android.permission.USE_FINGERPRINT"
+        tools:node="remove" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <!-- No CAMERA permission: the app only delegates to an external camera app via
