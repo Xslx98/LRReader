@@ -46,13 +46,6 @@
 -keep class com.hippo.ehviewer.gallery.A7ZipArchive { *; }
 -keep class com.hippo.ehviewer.gallery.A7ZipArchive$* { *; }
 
-# === Image native decoder (libimage.so via ReLinker) ===
--keep class com.hippo.lib.image.Image1 { *; }
--keep class com.hippo.lib.image.Image1$* { *; }
-
-# === ReLinker native library loader ===
--keep class com.getkeepsafe.relinker.** { *; }
-
 # === Native JNI entry points (libehviewer.so) ===
 -keep class com.hippo.Native { *; }
 -keep class com.hippo.util.GifHandler { *; }
