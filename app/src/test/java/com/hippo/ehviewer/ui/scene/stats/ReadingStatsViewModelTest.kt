@@ -94,8 +94,12 @@ class ReadingStatsViewModelTest {
         val vm = ReadingStatsViewModel()
         vm.load()
         // load() hops to Dispatchers.IO; poll until the Unconfined resume lands.
+        // Poll the exact asserted condition (isLoading reset happens AFTER the
+        // stats emission) — polling stats alone races the final assert.
         val deadline = System.currentTimeMillis() + 5_000
-        while (vm.stats.value == null && System.currentTimeMillis() < deadline) {
+        while ((vm.stats.value == null || vm.isLoading.value) &&
+            System.currentTimeMillis() < deadline
+        ) {
             Thread.sleep(10)
         }
 
