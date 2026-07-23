@@ -1,13 +1,10 @@
 package com.hippo.ehviewer.ui.scene.gallery.list
 
 import android.annotation.SuppressLint
-import android.content.Intent
-import android.net.Uri
 import android.view.Gravity
 import androidx.recyclerview.widget.RecyclerView
 import com.hippo.drawerlayout.DrawerLayout
 import com.hippo.easyrecyclerview.FastScroller
-import com.hippo.ehviewer.R
 import com.hippo.ehviewer.widget.SearchBar
 import com.hippo.ehviewer.widget.SearchLayout
 import com.hippo.widget.SearchBarMover
@@ -30,16 +27,7 @@ internal class GallerySearchBarHelper(
     private val searchBarMover: () -> SearchBarMover?,
     private val contentHelper: () -> GalleryListDataHelper?,
     private val setDrawerLockMode: (Int, Int) -> Unit,
-    private val doBackPress: () -> Unit,
-    /**
-     * Launches an image picker on behalf of the helper. The Scene-side
-     * implementation registers an `ActivityResultLauncher` once and forwards
-     * [Intent] / result through this lambda; the picked [Uri] (or `null` on
-     * cancel) flows into [setImageUri].
-     */
-    private val doPickImage: (Intent, (Uri?) -> Unit) -> Unit,
-    private val setImageUri: (Uri?) -> Unit,
-    private val doGetString: (Int) -> String
+    private val doBackPress: () -> Unit
 ) : SearchBar.Helper, SearchBar.OnStateChangeListener,
     FastScroller.OnDragHandlerListener, SearchLayout.Helper,
     SearchBarMover.Helper {
@@ -92,20 +80,6 @@ internal class GallerySearchBarHelper(
     }
 
     // -- SearchLayout.Helper --
-
-    override fun onChangeSearchMode() {
-        searchBarMover()?.showSearchBar() ?: Unit
-    }
-
-    override fun onSelectImage() {
-        val intent = Intent()
-        intent.type = "image/*"
-        intent.action = Intent.ACTION_GET_CONTENT
-        doPickImage(
-            Intent.createChooser(intent, doGetString(R.string.select_image)),
-            setImageUri,
-        )
-    }
 
     override fun onSortChanged() {
         contentHelper()?.refresh()
