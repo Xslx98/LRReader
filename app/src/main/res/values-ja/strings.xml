@@ -513,12 +513,6 @@
     <string name="let_me_select">手動で選択</string>
     <!-- Progress Scene -->
     <!-- Guide -->
-    <string name="guide_quick_search_title">クイック検索</string>
-    <string name="guide_quick_search_text">右からスワイプすると、クイック検索パネルが開きます</string>
-    <string name="guide_download_labels_title">ダウンロードラベル</string>
-    <string name="guide_download_labels_text">右からスワイプすると、ダウンロードラベルパネルが開きます</string>
-    <string name="guide_download_thumb_title">ギャラリーの詳細</string>
-    <string name="guide_download_thumb_text">サムネイルをタップすると、ギャラリー詳細を表示します</string>
     <string name="guide_gallery_left">ページをめくる</string>
     <string name="guide_gallery_right">ページをめくる</string>
     <string name="guide_gallery_menu">メニュー</string>

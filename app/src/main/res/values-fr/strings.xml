@@ -578,12 +578,6 @@
     <!-- Progress Scene -->
 
     <!-- Guide -->
-    <string name="guide_quick_search_title">Recherche rapide</string>
-    <string name="guide_quick_search_text">Faites glisser à droite pour ouvrir le panneau de recherche rapide</string>
-    <string name="guide_download_labels_title">Labels de téléchargements</string>
-    <string name="guide_download_labels_text">Faites glisser à droite pour ouvrir le panneau de labels de téléchargements</string>
-    <string name="guide_download_thumb_title">Détails de la galerie</string>
-    <string name="guide_download_thumb_text">Appuyez sur la miniature pour voir les détails de la galerie</string>
     <string name="guide_gallery_left">Tourner la page</string>
     <string name="guide_gallery_right">Tourner la page</string>
     <string name="guide_gallery_menu">Menu</string>
