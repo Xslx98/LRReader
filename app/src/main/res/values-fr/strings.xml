@@ -104,12 +104,8 @@
 
     <string name="search">Chercher</string>
 
-    <string name="keyword_search">Recherche du mot-clé</string>
-    <string name="image_search">Recherche d\'une image</string>
 
     <string name="search_normal">Recherche normale</string>
-    <string name="search_advance">Options avancées</string>
-    <string name="search_image">Recherche d\'une image</string>
 
 
     <string name="search_sname">Chercher une galerie</string>
@@ -128,11 +124,9 @@
     <string name="search_sfu">Uploader</string>
     <string name="search_sft">Tag</string>
 
-    <string name="select_image">Sélectionner une image</string>
     <string name="search_uss">Activer le scannage de similarité</string>
     <string name="search_osc">Chercher seulement les couverture</string>
     <string name="search_se">Montrer les galeries supprimées</string>
-    <string name="select_image_first">Sélectionnez une image</string>
 
 
 
@@ -145,7 +139,6 @@
     <string name="no_quick_search">Recherches rapides s\'afficheront ici.</string>
     <string name="add_quick_search_tip">Le resultat de la liste de galerie sera sauvegardé comme une Recherche rapide. Cherchez d\'abord pour sauvegarder l\'état du panneau recherche.</string>
     <string name="readme">README</string>
-    <string name="image_search_not_quick_search">Impossible d\'ajouter recherche d\'une image comme une Recherche rapide.</string>
     <string name="duplicate_quick_search">Une Recherche rapide avec le nom \"%s\" déjà existe.</string>
     <string name="duplicate_name">Ce nom déjà existe</string>
 
