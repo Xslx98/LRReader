@@ -99,6 +99,27 @@ android {
         viewBinding true
     }
 
+    packaging {
+        resources {
+            // Metadata only consumed by kotlin-reflect / IDE tooling; none of it
+            // is read at runtime (no kotlin-reflect dependency in this app).
+            excludes += [
+                    'DebugProbesKt.bin',
+                    'kotlin-tooling-metadata.json',
+                    'kotlin/**',
+                    'META-INF/*.version',
+                    'META-INF/org/jetbrains/**',
+            ]
+        }
+    }
+
+    dependenciesInfo {
+        // Play-store dependency inventory blob; app is distributed via GitHub
+        // Releases only, so ship neither in APK nor bundle.
+        includeInApk false
+        includeInBundle false
+    }
+
 }
 
 ksp {
