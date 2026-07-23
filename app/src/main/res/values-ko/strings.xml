@@ -112,12 +112,8 @@
 
     <string name="gallery_tag_copy">태그 복사됨</string>
 
-    <string name="keyword_search">키워드 검색</string>
-    <string name="image_search">이미지 검색</string>
 
     <string name="search_normal">일반 검색</string>
-    <string name="search_advance">고급 옵션</string>
-    <string name="search_image">이미지 검색</string>
 
 
     <string name="search_sname">갤러리 검색</string>
@@ -138,11 +134,9 @@
     <string name="search_sfu">업로더</string>
     <string name="search_sft">태그</string>
     
-    <string name="select_image">이미지 선택</string>
     <string name="search_uss">유사한 검색 사용</string>
     <string name="search_osc">표지만 검색</string>
     <string name="search_se">삭제된 갤러리 보기</string>
-    <string name="select_image_first">이미지를 먼저 선택해 주세요.</string>
 
 
 
@@ -155,7 +149,6 @@
     <string name="no_quick_search">빠른 검색 목록이 여기에 표시됩니다.</string>
     <string name="add_quick_search_tip">갤러리 목록의 상태가 빠른 검색으로 저장됩니다. 검색 패널의 상태를 저장하려면 먼저 검색을 해야 합니다.</string>
     <string name="readme">README</string>
-    <string name="image_search_not_quick_search">이미지 검색은 빠른 검색에 추가할 수 없습니다.</string>
     <string name="duplicate_quick_search">이미 같은 내용의 빠른 검색 항목이 있습니다. 이름은 \"%s\"입니다.</string>
     <string name="duplicate_name">같은 이름의 항목이 이미 있습니다.</string>
 
