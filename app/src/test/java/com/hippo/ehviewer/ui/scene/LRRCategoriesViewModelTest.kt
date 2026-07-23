@@ -3,7 +3,6 @@ package com.hippo.ehviewer.ui.scene
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.hippo.ehviewer.EhProxySelector
-import com.hippo.ehviewer.Hosts
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.module.IAppModule
 import com.hippo.ehviewer.module.INetworkModule
@@ -77,7 +76,6 @@ class LRRCategoriesViewModelTest {
 
         val testNetworkModule = object : INetworkModule {
             override val cache: Cache get() = Cache(File(ctx.cacheDir, "test-cache"), 1024)
-            override val hosts: Hosts get() = throw UnsupportedOperationException()
             override val proxySelector: EhProxySelector get() = throw UnsupportedOperationException()
             override val okHttpClient: OkHttpClient = client
             override val imageOkHttpClient: OkHttpClient = client

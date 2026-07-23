@@ -13,7 +13,6 @@ import android.content.Context
 import android.util.Base64
 import androidx.test.core.app.ApplicationProvider
 import com.hippo.ehviewer.EhProxySelector
-import com.hippo.ehviewer.Hosts
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.module.INetworkModule
 import com.hippo.ehviewer.module.NetworkMonitor
@@ -63,7 +62,6 @@ class LRRUrlHelperConnectTest {
         ServiceRegistry.initializeForTest(
             network = object : INetworkModule {
                 override val cache: Cache get() = throw UnsupportedOperationException()
-                override val hosts: Hosts get() = throw UnsupportedOperationException()
                 override val proxySelector: EhProxySelector get() = throw UnsupportedOperationException()
                 override val okHttpClient: OkHttpClient get() = throw UnsupportedOperationException()
                 override val imageOkHttpClient: OkHttpClient get() = throw UnsupportedOperationException()

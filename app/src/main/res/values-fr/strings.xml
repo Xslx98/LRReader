@@ -564,10 +564,6 @@
     <!-- License -->
     <string name="license">Licence</string>
 
-    <!-- DirPickerActivity -->
-    <string name="preset">Préréglage</string>
-    <string name="default_directory">Répertoire par défaut</string>
-    <string name="application_file_directory">Répertoire de fichiers %d (supprimé après désinstallation)</string>
 
     <!-- Dir Picker-->
     <string name="directory_not_writable">Impossible d\'écrire dans le répertoire</string>

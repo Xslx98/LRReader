@@ -1,7 +1,6 @@
 package com.hippo.ehviewer.module
 
 import com.hippo.ehviewer.EhProxySelector
-import com.hippo.ehviewer.Hosts
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
@@ -15,9 +14,6 @@ interface INetworkModule {
 
     /** Disk HTTP cache backing [okHttpClient] and derived clients. */
     val cache: Cache
-
-    /** User-managed host alias table (HostsActivity edits this). */
-    val hosts: Hosts
 
     /** Proxy selector respecting Settings-driven proxy configuration. */
     val proxySelector: EhProxySelector

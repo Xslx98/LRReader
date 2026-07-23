@@ -551,10 +551,6 @@
 
     <!-- ExcludedLanguagesScene -->
 
-    <!-- DirPickerActivity -->
-    <string name="preset">Voreinstellung</string>
-    <string name="default_directory">Standardverzeichnis</string>
-    <string name="application_file_directory">App-Dateiverzeichnis %d (wird nach Deinstallation entfernt)</string>
 
     <string name="download_service">Download-Dienst</string>
     <string name="yes">Ja</string>

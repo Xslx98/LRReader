@@ -300,10 +300,6 @@
     <string name="invalid_host">잘못된 호스트</string>
     <string name="invalid_ip">잘못된 IP</string>
 
-    <!-- DirPickerActivity -->
-    <string name="preset">프리셋</string>
-    <string name="default_directory">기본 디렉토리</string>
-    <string name="application_file_directory">앱 파일 디렉토리 %d (앱 제거 시 삭제됩니다)</string>
 
     <!-- Gallery Activity -->
     <string name="page_menu_title">페이지 %d</string>

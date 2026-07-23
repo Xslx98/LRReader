@@ -666,9 +666,7 @@
 
 
     <!-- Auto-generated missing translations -->
-    <string name="application_file_directory">App file directory %d (it will be remove after uninstalling the app)</string>
     <string name="cancel">ยกเลิก</string>
-    <string name="default_directory">ไดเรกทอรีเริ่มต้น</string>
     <string name="error_status_code_400">คำขอไม่ถูกต้อง (400)</string>
     <string name="error_status_code_401">การยืนยันตัวตนล้มเหลว (401)</string>
     <string name="error_status_code_402">ต้องชำระเงิน (402)</string>
@@ -761,7 +759,6 @@
     <string name="lrr_url_download_hint">Enter download URL</string>
     <string name="lrr_url_download_success">Download queued (Job #%d)</string>
     <string name="lrr_url_download_title">ดาวน์โหลด URL</string>
-    <string name="preset">Preset</string>
     <string name="reset_to_default">รีเซ็ตเป็นค่าเริ่มต้น</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="settings_download_clean_invalid_download">ล้างการดาวน์โหลดที่ไม่ถูกต้อง</string>

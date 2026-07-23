@@ -255,10 +255,6 @@
     <string name="edit_host_delete">削除</string>
     <string name="invalid_host">無効なホストです</string>
     <string name="invalid_ip">無効な IP です</string>
-    <!-- DirPickerActivity -->
-    <string name="preset">プリセット</string>
-    <string name="default_directory">デフォルトディレクトリ</string>
-    <string name="application_file_directory">アプリファイルディレクトリ %d (アンインストール後に削除されます)</string>
     <!-- Gallery Activity -->
     <string name="page_menu_title">ページ%d</string>
     <string name="page_menu_refresh">@string/refresh</string>
