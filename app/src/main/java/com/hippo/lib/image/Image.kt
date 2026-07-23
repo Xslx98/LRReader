@@ -312,13 +312,6 @@ class Image private constructor(
         }
 
         @JvmStatic
-        private external fun nativeRender(
-            bitmap: Bitmap,
-            srcX: Int, srcY: Int, dst: Bitmap, dstX: Int, dstY: Int,
-            width: Int, height: Int,
-        )
-
-        @JvmStatic
         private external fun nativeTexImage(
             bitmap: Bitmap,
             init: Boolean,
