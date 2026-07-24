@@ -159,10 +159,10 @@ class GalleryDrawerHelper(private val callback: Callback) {
 
             if (translation) {
                 val ehTags = callback.getEhTags()
-                val parts = text.split("  ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+                val parts = text.split("  ").dropLastWhile { it.isEmpty() }.toTypedArray()
                 val newText = StringBuilder()
                 for (part in parts) {
-                    val tags = part.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+                    val tags = part.split(":").dropLastWhile { it.isEmpty() }.toTypedArray()
                     for (j in tags.indices) {
                         tags[j] = tags[j].replace("\"", "").replace("$", "")
                     }

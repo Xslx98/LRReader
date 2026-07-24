@@ -199,7 +199,7 @@ class SearchBar : CardView,
 
         val ehTagDatabase = EhTagDatabase.getInstance(getContext())
         if (!TextUtils.isEmpty(text) && ehTagDatabase != null) {
-            val s = text.split(" ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+            val s = text.split(" ").dropLastWhile { it.isEmpty() }.toTypedArray()
             if (s.isNotEmpty()) {
                 var keyword = ""
                 for (i in s.indices.reversed()) {
@@ -766,7 +766,7 @@ class SearchBar : CardView,
         }
 
         private fun rebuildKeyword(key: String): String {
-            val strings = key.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+            val strings = key.split(":").dropLastWhile { it.isEmpty() }.toTypedArray()
             if (strings.size != 2) {
                 return key
             }
