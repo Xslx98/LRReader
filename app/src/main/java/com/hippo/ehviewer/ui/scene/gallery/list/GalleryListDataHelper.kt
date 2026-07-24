@@ -25,6 +25,14 @@ import kotlinx.coroutines.withContext
  */
 class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContentHelper() {
 
+    /**
+     * Dense-page-index → raw-offset mapping. The server decides how many rows
+     * a request returns (archives_per_page), so the next page's start offset
+     * must be chained from the previous load instead of computed as
+     * page * LRR_PAGE_SIZE (audit NET-2). Main-thread only.
+     */
+    private val pageOffsets = PageOffsetTracker(LRR_PAGE_SIZE)
+
     interface Callback {
         fun getHostContext(): Context?
         fun getUrlBuilder(): ListUrlBuilder?
@@ -76,6 +84,13 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
         val sortBy = callback.getSortBy()
         val sortOrder = callback.getSortOrder()
 
+        // Every refresh restarts at page 0; a stale chain from the previous
+        // result set must not leak into the new one.
+        if (page == 0) {
+            pageOffsets.reset()
+        }
+        val startOffset = pageOffsets.offsetFor(page)
+
         val pagingSource = LRRArchivePagingSource(
             client = LRRClientProvider.getClient(),
             baseUrl = LRRClientProvider.getBaseUrl(),
@@ -91,16 +106,17 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
                     PagingSource.LoadParams.Refresh(
                         // ContentLayout counts dense page indexes (0,1,2,…) but
                         // the source keys are raw item offsets (NET-2).
-                        key = page * LRR_PAGE_SIZE,
+                        key = startOffset,
                         loadSize = LRR_PAGE_SIZE,
                         placeholdersEnabled = false
                     )
                 )
                 when (loadResult) {
                     is PagingSource.LoadResult.Page -> {
-                        val hasMore = loadResult.nextKey != null
                         withContext(Dispatchers.Main) {
-                            onGetPagingSourceSuccess(loadResult.data, taskId, page, hasMore)
+                            onGetPagingSourceSuccess(
+                                loadResult.data, taskId, page, loadResult.nextKey
+                            )
                         }
                     }
                     is PagingSource.LoadResult.Error -> {
@@ -170,10 +186,12 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
     }
 
     private fun onGetPagingSourceSuccess(
-        data: List<Archive>, taskId: Int, page: Int, hasMore: Boolean
+        data: List<Archive>, taskId: Int, page: Int, nextOffset: Int?
     ) {
         if (isCurrentTask(taskId)) {
+            pageOffsets.recordLoaded(page, nextOffset)
             setEmptyString(callback.getString(R.string.gallery_list_empty_hit))
+            val hasMore = nextOffset != null
             val totalPages = if (hasMore) page + 2 else page + 1
             val nextPage = if (hasMore) page + 1 else 0
             onGetPageData(taskId, totalPages, nextPage, data)
