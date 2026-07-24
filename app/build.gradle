@@ -223,8 +223,6 @@ dependencies {
     implementation libs.room.runtime
     implementation libs.room.ktx
     ksp libs.room.compiler
-    // UCrop — image cropping with circular overlay for avatar
-    implementation libs.ucrop
 
     testImplementation libs.junit
     testImplementation libs.robolectric

@@ -152,11 +152,6 @@
 
 
 
-        <!-- UCrop image cropper activity -->
-        <activity
-            android:name="com.yalantis.ucrop.UCropActivity"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
-
         <service
             android:name="com.hippo.ehviewer.download.DownloadService"
             android:label="@string/download_service_label"

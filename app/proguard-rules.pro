@@ -69,10 +69,6 @@
     volatile <fields>;
 }
 
-# === UCrop image cropper ===
--keep class com.yalantis.ucrop.** { *; }
--dontwarn com.yalantis.ucrop.**
-
 # === Suppress warnings for optional dependencies ===
 -dontwarn com.google.firebase.**
 -dontwarn javax.annotation.**
