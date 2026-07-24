@@ -60,13 +60,6 @@ abstract class BaseScene : SceneFragment() {
     private var drawerView: View? = null
     private var drawerViewState: SparseArray<Parcelable>? = null
 
-    open fun updateAvatar() {
-        val activity = activity
-        if (activity is MainActivity) {
-            activity.updateProfile()
-        }
-    }
-
     open fun addAboveSnackView(view: View) {
         val activity = activity
         if (activity is MainActivity) {

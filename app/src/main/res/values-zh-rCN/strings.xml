@@ -34,7 +34,6 @@
 
 
 
-    <string name="default_display_name">Xslx98</string>
 
     <string name="waring">警告</string>
 
@@ -62,7 +61,6 @@
     <string name="error_invalid_url">无效链接</string>
     <string name="error_cant_create_temp_file">无法创建临时文件</string>
     <string name="error_cant_save_image">无法保存图片</string>
-    <string name="error_cant_get_image">无法获取图片</string>
     <string name="lrr_error_load_pages_failed">无法加载页面</string>
     <string name="gallery_gl_fallback_title">OpenGL 渲染器不可用</string>
     <string name="gallery_gl_fallback_message">当前设备暂时无法初始化 EGL。请返回后稍后重试。</string>
@@ -616,9 +614,6 @@
 
 
     <!--  侧滑栏头像和背景修改  -->
-    <string name="take_a_photograph">拍照</string>
-    <string name="choose_from_the_album">从相册中选择</string>
-    <string name="request_storage_permission">LR Reader 将申请设备相册访问权限以便获取图片。您愿意授权吗？</string>
 
     <!--  订阅服务  -->
 
@@ -793,7 +788,6 @@
     <string name="lrr_category_type_dynamic">动态（搜索）</string>
     <string name="lrr_category_type_static">静态（手动）</string>
     <string name="lrr_category_updated">分类已更新</string>
-    <string name="reset_to_default">恢复默认</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="search_sp_suffix" />
     <string name="lrr_category_label_dynamic">动态</string>
@@ -854,7 +848,6 @@
         <item>asc</item>
         <item>desc</item>
     </string-array>
-    <string name="error_save_image">保存图片失败</string>
     <string name="lrr_edit_tags">编辑标签</string>
     <string name="lrr_tags_updated">标签已更新</string>
     <string name="lrr_add_tag">添加标签</string>

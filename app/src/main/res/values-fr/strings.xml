@@ -36,7 +36,6 @@
 
 
 
-    <string name="default_display_name">Xslx98</string>
 
     <string name="waring">Attention</string>
 
@@ -61,7 +60,6 @@
     <string name="error_invalid_url">URL invalide</string>
     <string name="error_cant_create_temp_file">Impossible de créer un fichier temporaire</string>
     <string name="error_cant_save_image">Impossible d\'enregistrer l\'image</string>
-    <string name="error_cant_get_image">Impossible d\'obtenir l\'image</string>
     <string name="lrr_error_load_pages_failed">Impossible de charger les pages</string>
     <string name="gallery_gl_fallback_title">Le moteur OpenGL est indisponible</string>
     <string name="gallery_gl_fallback_message">Cet appareil ne peut pas initialiser EGL pour le moment. Revenez en arrière et réessayez plus tard.</string>
@@ -690,7 +688,6 @@
 
     <!-- Auto-generated missing translations -->
     <string name="cancel">Annuler</string>
-    <string name="choose_from_the_album">Choisir dans l\'album</string>
     <string name="copy_tag">Copier le tag</string>
     <string name="download_service">Download Service</string>
     <string name="error_status_code_400">Requête incorrecte (400)</string>
@@ -793,8 +790,6 @@ Cette action est irréversible.</string>
     <string name="lrr_url_download_title">Téléchargement URL</string>
     <string name="pagination_count">count</string>
     <string name="pagination_page_and_item">r/p</string>
-    <string name="request_storage_permission">LR Reader will request access to the device\'s photo album in order to obtain pictures. Would you like to authorize?</string>
-    <string name="reset_to_default">Réinitialiser par défaut</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="search_sp_suffix" />
     <string name="settings_download_clean_invalid_download">Nettoyer les téléchargements invalides</string>
@@ -807,7 +802,6 @@ Cette action est irréversible.</string>
     <string name="settings_read_picture_decoding_method_origin">Décodage système</string>
     <string name="settings_read_reverse_volume_page">Reverse volume key translation direction</string>
     <string name="settings_read_screen_rotation_sensor">Auto rotate</string>
-    <string name="take_a_photograph">Take a photograph</string>
     <string name="theme_black">Thème noir</string>
     <string name="theme_dark">Thème sombre</string>
     <string name="theme_light">Thème clair</string>
@@ -880,7 +874,6 @@ Cette action est irréversible.</string>
         <item>asc</item>
         <item>desc</item>
     </string-array>
-    <string name="error_save_image">Impossible d\'enregistrer l\'image</string>
     <string name="lrr_edit_tags">Modifier les tags</string>
     <string name="lrr_tags_updated">Tags mis à jour</string>
     <string name="lrr_add_tag">Ajouter un tag</string>

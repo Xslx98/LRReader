@@ -104,7 +104,6 @@
 
 
 
-    <string name="default_display_name">Xslx98</string>
 
     <string name="waring">Warning</string>
 
@@ -158,7 +157,6 @@
     <string name="error_invalid_url">Invalid url</string>
     <string name="error_cant_create_temp_file">Couldn\'t create temp file</string>
     <string name="error_cant_save_image">Can\'t save image</string>
-    <string name="error_cant_get_image">Can\'t get image</string>
     <string name="lrr_error_load_pages_failed">Can\'t load pages</string>
     <string name="gallery_gl_fallback_title">OpenGL renderer unavailable</string>
     <string name="gallery_gl_fallback_message">This device cannot initialize EGL right now. Please return and try again later.</string>
@@ -748,10 +746,6 @@
 
 
     <!--  侧滑栏头像和背景修改  -->
-    <string name="take_a_photograph">Take a photograph</string>
-    <string name="choose_from_the_album">Choose from the album</string>
-    <string name="reset_to_default">Reset to default</string>
-    <string name="request_storage_permission">LR Reader will request access to the device\'s photo album in order to obtain pictures. Would you like to authorize?</string>
 
     <!-- 下载通知   -->
 
@@ -942,7 +936,6 @@
         <item quantity="other">Too many failed attempts. Try again in %d seconds.</item>
     </plurals>
     <string name="lrr_save_and_connect">Save &amp; Connect</string>
-    <string name="error_save_image">Failed to save image</string>
     <string name="reauth_required_title">Re-authentication Required</string>
     <string name="reauth_required_message">The secure keystore became unavailable. Please re-enter your API key for each server.</string>
 

@@ -40,7 +40,6 @@
 
 
 
-    <string name="default_display_name">Xslx98</string>
 
     <string name="waring">경고</string>
 
@@ -68,7 +67,6 @@
     <string name="error_invalid_url">잘못된 URL</string>
     <string name="error_cant_create_temp_file">임시 파일을 만들 수 없음</string>
     <string name="error_cant_save_image">이미지를 저장할 수 없음</string>
-    <string name="error_cant_get_image">이미지를 가져올 수 없음</string>
     <string name="lrr_error_load_pages_failed">페이지를 불러올 수 없습니다</string>
     <string name="gallery_gl_fallback_title">OpenGL 렌더러를 사용할 수 없습니다</string>
     <string name="gallery_gl_fallback_message">이 기기에서는 현재 EGL을 초기화할 수 없습니다. 뒤로 돌아간 뒤 잠시 후 다시 시도하세요.</string>
@@ -612,9 +610,6 @@
 
 
     <!--  ?滑??像和背景修改  -->
-    <string name="take_a_photograph">사진 찍기</string>
-    <string name="choose_from_the_album">앨범에서 선택</string>
-    <string name="request_storage_permission">LR Reader 이미지를 선택할 수 있도록 갤러리 접근 권한을 부여하시겠습니까?</string>
 
     <!--  ??服?  -->
 
@@ -763,7 +758,6 @@
     <string name="lrr_url_download_title">URL 다운로드</string>
     <string name="pagination_count">count</string>
     <string name="pagination_page_and_item">r/p</string>
-    <string name="reset_to_default">기본값으로 재설정</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="settings_download_clean_invalid_download">잘못된 다운로드 정리</string>
     <string name="settings_download_clean_invalid_download_summary">잘못된 다운로드 항목 삭제</string>
@@ -838,7 +832,6 @@
         <item>asc</item>
         <item>desc</item>
     </string-array>
-    <string name="error_save_image">이미지를 저장할 수 없습니다</string>
     <string name="lrr_edit_tags">태그 편집</string>
     <string name="lrr_tags_updated">태그가 업데이트되었습니다</string>
     <string name="lrr_add_tag">태그 추가</string>
