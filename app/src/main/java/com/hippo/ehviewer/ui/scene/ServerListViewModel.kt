@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.ServerProfile
+import com.hippo.ehviewer.appwidget.ContinueReadingWidget
 import com.hippo.ehviewer.ui.ContinueReadingShortcut
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
@@ -144,8 +145,10 @@ class ServerListViewModel : ViewModel() {
                 Log.e(TAG, "Failed to delete profile", e)
             }
             // A continue-reading shortcut pointing at the deleted profile is
-            // now a dead end — drop it (issue #16).
+            // now a dead end — drop it (issue #16). The widget re-renders from
+            // the most recent surviving profile's history instead (issue #9).
             ContinueReadingShortcut.removeIfProfileSafely(profile.id)
+            ContinueReadingWidget.refreshSafely()
             // Reload to reflect deletion
             loadProfiles()
         }

@@ -12,6 +12,7 @@ import androidx.annotation.VisibleForTesting
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.HistoryRepository
+import com.hippo.ehviewer.dao.ProfileRepository
 import com.hippo.ehviewer.gallery.ReadingSessionEnd
 import com.hippo.ehviewer.gallery.ReadingSessionEvents
 import com.hippo.ehviewer.ui.ContinueReadingShortcut
@@ -75,7 +76,7 @@ object ContinueReadingWidget : ReadingSessionEvents.Listener {
         if (archive != null) {
             push(context, buildViews(context, archive))
         } else {
-            refresh(context, historyRepository)
+            refresh(context, historyRepository, ServiceRegistry.dataModule.profileRepository)
         }
     }
 
@@ -83,18 +84,32 @@ object ContinueReadingWidget : ReadingSessionEvents.Listener {
      * Self-heal + launcher path: render the most recent history row across
      * all profiles, or the empty state when none survives.
      */
-    suspend fun refresh(context: Context, historyRepository: HistoryRepository) {
+    suspend fun refresh(
+        context: Context,
+        historyRepository: HistoryRepository,
+        profileRepository: ProfileRepository,
+    ) {
         if (!hasWidgets(context)) return
-        push(context, buildViews(context, latestArchive(historyRepository)))
+        push(context, buildViews(context, latestArchive(historyRepository, profileRepository)))
     }
 
-    /** Most recent decodable history row across all profiles, or null. */
+    /**
+     * Most recent decodable history row whose source profile still exists,
+     * or null. Profile deletion does not cascade ARCHIVE_LOCAL_STATE rows
+     * (known ADR-003 leftover), so the filter keeps the widget from
+     * resurrecting a dead-end row the deep link would only toast about.
+     */
     @VisibleForTesting
-    suspend fun latestArchive(historyRepository: HistoryRepository): Archive? =
-        historyRepository.getAllHistoryStatsRows()
-            .filter { it.archive != null }
+    suspend fun latestArchive(
+        historyRepository: HistoryRepository,
+        profileRepository: ProfileRepository,
+    ): Archive? {
+        val liveProfiles = profileRepository.getAllProfiles().mapTo(HashSet()) { it.id }
+        return historyRepository.getAllHistoryStatsRows()
+            .filter { it.archive != null && it.serverProfileId in liveProfiles }
             .maxByOrNull { it.historyTime ?: Long.MIN_VALUE }
             ?.archive
+    }
 
     /**
      * Fire-and-forget [refresh] for JVM-tested ViewModels: resolves the
@@ -106,7 +121,11 @@ object ContinueReadingWidget : ReadingSessionEvents.Listener {
         val app = runCatching { com.hippo.ehviewer.EhApplication.instance }.getOrNull() ?: return
         ServiceRegistry.coroutineModule.ioScope.launch {
             try {
-                refresh(app, ServiceRegistry.dataModule.historyRepository)
+                refresh(
+                    app,
+                    ServiceRegistry.dataModule.historyRepository,
+                    ServiceRegistry.dataModule.profileRepository,
+                )
             } catch (e: Exception) {
                 Log.w(TAG, "continue-reading widget refresh failed")
             }
