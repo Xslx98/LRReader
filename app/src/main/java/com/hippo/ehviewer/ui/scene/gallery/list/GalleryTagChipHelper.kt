@@ -121,10 +121,10 @@ class GalleryTagChipHelper(private val callback: Callback) {
             if (AppearanceSettings.getShowTagTranslations()) {
                 ensureEhTags()
                 chip.text = TagTranslationUtil.getTagCNBody(
-                    tagName.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray(), ehTags
+                    tagName.split(":").dropLastWhile { it.isEmpty() }.toTypedArray(), ehTags
                 )
             } else {
-                val tagSplit = tagName.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+                val tagSplit = tagName.split(":").dropLastWhile { it.isEmpty() }.toTypedArray()
                 chip.text = if (tagSplit.size > 1) tagSplit[1] else tagSplit[0]
             }
             tagFlowLayout.addView(chip, 0)
@@ -139,10 +139,10 @@ class GalleryTagChipHelper(private val callback: Callback) {
             if (AppearanceSettings.getShowTagTranslations()) {
                 ensureEhTags()
                 chip.text = TagTranslationUtil.getTagCNBody(
-                    tagName.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray(), ehTags
+                    tagName.split(":").dropLastWhile { it.isEmpty() }.toTypedArray(), ehTags
                 )
             } else {
-                val tagSplit = tagName.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+                val tagSplit = tagName.split(":").dropLastWhile { it.isEmpty() }.toTypedArray()
                 chip.text = if (tagSplit.size > 1) tagSplit[1] else tagSplit[0]
             }
             chip.setOnClickListener { onTagClick(tagName) }

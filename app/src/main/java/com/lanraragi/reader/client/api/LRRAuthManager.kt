@@ -11,6 +11,7 @@ import androidx.core.content.edit
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CoroutineScope
@@ -85,6 +86,20 @@ object LRRAuthManager {
     /** True when KeyStore became unavailable and the user must re-enter credentials. */
     @Volatile
     private var sNeedsReauthentication: Boolean = false
+
+    /**
+     * In-memory per-profile API-key cache. [getApiKeyForProfile] is resolved
+     * by [LRRAuthInterceptor] on EVERY authenticated request (each page and
+     * thumbnail fetch), and EncryptedSharedPreferences pays an AES-GCM
+     * decrypt per `getString` — a 200-page bulk download would otherwise run
+     * ~200 decrypts on OkHttp dispatcher threads. `""` caches the
+     * absent/empty-key state. Every credential mutation path invalidates
+     * ([setApiKeyForProfile], [clearApiKeyForProfile], [clear],
+     * [initializeForTesting], [simulateStorageUnavailableForTesting]).
+     * The plaintext-in-heap exposure is not new: the key already transits
+     * the heap as a header string on every request.
+     */
+    private val sProfileKeyCache = ConcurrentHashMap<Long, String>()
 
     /**
      * Monotonically increasing counter bumped whenever the active server profile
@@ -258,6 +273,7 @@ object LRRAuthManager {
     internal fun initializeForTesting(prefs: SharedPreferences) {
         sPrefs = prefs
         sPlainPrefs = prefs
+        sProfileKeyCache.clear()
         sNeedsReauthentication = false
         sActiveProfileId = prefs.getLong(KEY_ACTIVE_PROFILE_ID, 0L)
         clockMillis = { System.currentTimeMillis() }
@@ -272,6 +288,7 @@ object LRRAuthManager {
     @JvmStatic
     internal fun simulateStorageUnavailableForTesting() {
         sPrefs = null
+        sProfileKeyCache.clear()
         sActiveProfileId = 0L
         // Keep sPlainPrefs alive — lockout state must survive KeyStore failures.
     }
@@ -443,13 +460,21 @@ object LRRAuthManager {
         // Store empty string (not remove) so markReauthIfProfilesUnprotected can
         // distinguish "intentionally no key" from "key lost due to KeyStore failure".
         prefs.edit { putString(prefKey, apiKey ?: "") }
+        sProfileKeyCache[profileId] = apiKey.orEmpty()
     }
 
     /** @return the API key for the given profile, or null if none stored / empty. */
     @JvmStatic
     fun getApiKeyForProfile(profileId: Long): String? {
+        // Cache hit: no init gate, no crypto — see sProfileKeyCache KDoc.
+        sProfileKeyCache[profileId]?.let { return it.ifEmpty { null } }
         awaitInit()
-        return sPrefs?.getString("api_key_$profileId", null)?.ifEmpty { null }
+        // Keystore unavailable: return null WITHOUT caching, so a later
+        // recovered store serves real keys instead of a poisoned miss.
+        val prefs = sPrefs ?: return null
+        val key = prefs.getString("api_key_$profileId", null)
+        sProfileKeyCache[profileId] = key.orEmpty()
+        return key?.ifEmpty { null }
     }
 
     /** Remove the stored API key for a profile (e.g., when the profile is deleted). */
@@ -458,6 +483,7 @@ object LRRAuthManager {
     fun clearApiKeyForProfile(profileId: Long) {
         val prefs = requireSecurePrefs("clearApiKeyForProfile")
         prefs.edit { remove("api_key_$profileId") }
+        sProfileKeyCache.remove(profileId)
     }
 
     // ── Persistent failure lockout ──────────────────────────────────────
@@ -919,6 +945,7 @@ object LRRAuthManager {
     @JvmStatic
     fun clear() {
         awaitInit()
+        sProfileKeyCache.clear()
         sPrefs?.edit { clear() }
         sPlainPrefs?.edit {
             remove(KEY_PATTERN_KEYSTORE_BOUND)

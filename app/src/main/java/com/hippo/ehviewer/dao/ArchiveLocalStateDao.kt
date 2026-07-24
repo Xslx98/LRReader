@@ -19,6 +19,33 @@ import com.hippo.ehviewer.download.DownloadState
 import kotlinx.coroutines.flow.Flow
 
 /**
+ * Value carrier for [ArchiveLocalStateDao.upsertDownloadBatch]. The
+ * repository precomputes the merged `archive_json` (a read-modify-write
+ * against the existing row) OUTSIDE the batch transaction, then all rows
+ * commit as one — N per-row transactions collapse into a single fsync.
+ */
+data class DownloadUpsertRow(
+    val arcid: String,
+    val serverProfileId: Long,
+    val archiveJson: String,
+    val downloadState: DownloadState,
+    val downloadLegacy: Int,
+    val downloadTime: Long,
+    val downloadLabel: String?,
+    val downloadArchiveUri: String?,
+    val downloadRootUri: String?,
+)
+
+/** Value carrier for [ArchiveLocalStateDao.upsertHistoryBatch]. */
+data class HistoryUpsertRow(
+    val arcid: String,
+    val serverProfileId: Long,
+    val archiveJson: String,
+    val historyTime: Long,
+    val historyMode: Int,
+)
+
+/**
  * Room DAO over [ArchiveLocalState]. The single source of truth for the
  * download / history / local-favorite subsystems after L1.
  *
@@ -110,6 +137,12 @@ interface ArchiveLocalStateDao {
             "ORDER BY HISTORY_TIME DESC"
     )
     suspend fun getHistoryByServer(profileId: Long): List<ArchiveLocalState>
+
+    @Query(
+        "SELECT COUNT(*) FROM ARCHIVE_LOCAL_STATE " +
+            "WHERE HISTORY_TIME IS NOT NULL AND SERVER_PROFILE_ID = :profileId"
+    )
+    suspend fun countHistoryForProfile(profileId: Long): Int
 
     // ── Favorite subsystem ─────────────────────────────────────
 
@@ -351,6 +384,17 @@ interface ArchiveLocalStateDao {
     @Query("SELECT * FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid AND DOWNLOAD_STATE IS NOT NULL LIMIT 1")
     suspend fun loadDownloadRowByArcid(arcid: String): ArchiveLocalState?
 
+    /**
+     * Narrow projection of [loadDownloadRowByArcid] for callers that only
+     * need the owning profile id (the removal paths): skips marshalling the
+     * potentially large ARCHIVE_JSON blob per row.
+     */
+    @Query(
+        "SELECT SERVER_PROFILE_ID FROM ARCHIVE_LOCAL_STATE " +
+            "WHERE ARCID = :arcid AND DOWNLOAD_STATE IS NOT NULL LIMIT 1"
+    )
+    suspend fun getDownloadProfileIdByArcid(arcid: String): Long?
+
     @Query("UPDATE ARCHIVE_LOCAL_STATE SET ARCHIVE_JSON = :archiveJson WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :profileId")
     suspend fun updateArchiveJsonForProfile(arcid: String, profileId: Long, archiveJson: String)
 
@@ -453,8 +497,52 @@ interface ArchiveLocalStateDao {
         deleteAllEmptyRows()
     }
 
+    // ── Batch wrappers ─────────────────────────────────────────
+    //
+    // Bulk operations (batch download add, batch remove, legacy history
+    // import) used to loop over the per-row @Transaction wrappers — N
+    // commits/fsyncs for an N-row batch. These wrap the whole loop in ONE
+    // generated transaction. Room's @Transaction nesting is re-entrant, so
+    // the inner per-row wrappers join the outer transaction. Same
+    // Flow-observer rationale as the pair-wrappers above: this must stay a
+    // DAO @Transaction method, never repository-level withTransaction.
+
+    @Transaction
+    suspend fun upsertDownloadBatch(rows: List<DownloadUpsertRow>) {
+        for (r in rows) {
+            upsertDownload(
+                r.arcid, r.serverProfileId, r.archiveJson, r.downloadState,
+                r.downloadLegacy, r.downloadTime, r.downloadLabel,
+                r.downloadArchiveUri, r.downloadRootUri
+            )
+        }
+    }
+
+    @Transaction
+    suspend fun upsertHistoryBatch(rows: List<HistoryUpsertRow>) {
+        for (r in rows) {
+            upsertHistory(r.arcid, r.serverProfileId, r.archiveJson, r.historyTime, r.historyMode)
+        }
+    }
+
+    @Transaction
+    suspend fun clearDownloadAndPruneBatch(arcids: List<String>) {
+        for (arcid in arcids) {
+            val pid = getDownloadProfileIdByArcid(arcid) ?: continue
+            clearDownloadSubsystem(arcid)
+            deleteIfNoSubsystemForProfile(arcid, pid)
+        }
+    }
+
     @Transaction
     suspend fun trimHistoryForProfile(profileId: Long, maxCount: Int) {
+        // Runs on every archive open (putHistoryInfo), and the common case
+        // is an already-bounded history. Only pay for the correlated NOT-IN
+        // subquery + the un-indexed empty-row scan when a trim can actually
+        // remove something. deleteAllEmptyRows has nothing to collapse when
+        // no history column was cleared — every other clear path prunes its
+        // own rows.
+        if (countHistoryForProfile(profileId) <= maxCount) return
         clearHistorySubsystemBeyondForProfile(profileId, maxCount)
         deleteAllEmptyRows()
     }

@@ -67,6 +67,12 @@ class GalleryDetailViewModel : ViewModel() {
         private const val HTTP_BAD_REQUEST = 400
         private const val HTTP_NOT_FOUND = 404
         private const val MAX_TANK_PAGES = 100
+
+        // Compiled once — mergeRatingIntoTags used to compile all three per
+        // rating change.
+        private val RATING_TAG_WITH_LEADING_COMMA = Regex(",\\s*rating:[^,]*")
+        private val RATING_TAG_WITH_TRAILING_COMMA = Regex("rating:[^,]*\\s*,?\\s*")
+        private val EDGE_COMMAS = Regex("^,\\s*|,\\s*$")
     }
 
     // -------------------------------------------------------------------------
@@ -270,10 +276,10 @@ class GalleryDetailViewModel : ViewModel() {
      */
     private fun mergeRatingIntoTags(originalTags: String?, rating: Float): String {
         val cleaned = (originalTags ?: "")
-            .replace(Regex(",\\s*rating:[^,]*"), "")
-            .replace(Regex("rating:[^,]*\\s*,?\\s*"), "")
+            .replace(RATING_TAG_WITH_LEADING_COMMA, "")
+            .replace(RATING_TAG_WITH_TRAILING_COMMA, "")
             .trim()
-            .replace(Regex("^,\\s*|,\\s*$"), "")
+            .replace(EDGE_COMMAS, "")
             .trim()
         if (rating <= 0f) return cleaned
         val ratingTag = "rating:" + buildRatingEmoji(rating.roundToInt())

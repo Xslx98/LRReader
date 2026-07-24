@@ -54,15 +54,19 @@ class HistoryRepository(
 
     suspend fun putHistoryInfoList(historyInfoList: List<HistoryInfo>) {
         if (historyInfoList.isEmpty()) return
-        for (info in historyInfoList) {
-            upsertHistorySubsystem(
-                arcid = info.arcid,
-                serverProfileId = info.serverProfileId,
-                archiveJson = info.toArchive().toArchiveJson(),
-                historyTime = info.time,
-                historyMode = info.mode,
-            )
-        }
+        // Single DAO transaction: a legacy import of N rows is one commit,
+        // not N (the per-row loop paid N fsyncs).
+        dao.upsertHistoryBatch(
+            historyInfoList.map { info ->
+                HistoryUpsertRow(
+                    arcid = info.arcid,
+                    serverProfileId = info.serverProfileId,
+                    archiveJson = info.toArchive().toArchiveJson(),
+                    historyTime = info.time,
+                    historyMode = info.mode,
+                )
+            }
+        )
         trimHistory(historyInfoList.map { it.serverProfileId })
     }
 

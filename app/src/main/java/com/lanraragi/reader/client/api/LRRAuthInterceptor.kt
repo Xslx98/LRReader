@@ -3,7 +3,6 @@ package com.lanraragi.reader.client.api
 import android.util.Base64
 import android.util.Log
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.dao.ServerProfile
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Interceptor
@@ -43,7 +42,7 @@ class LRRAuthInterceptor : Interceptor {
         val original = chain.request()
         val cache = runCatching { ServiceRegistry.dataModule.profileLookupCache }
             .getOrNull()
-        val candidates = cache?.findCandidatesByHostPort(
+        val candidates = cache?.findParsedCandidatesByHostPort(
             original.url.host, original.url.port,
         ).orEmpty()
 
@@ -65,17 +64,16 @@ class LRRAuthInterceptor : Interceptor {
         if (hasSuspiciousComponents(original.url)) {
             throw LRRPlaintextRefusedException("Request URL contains userInfo or fragment")
         }
-        val cfgUrl = match.url.toHttpUrlOrNull()
-            ?: throw LRRPlaintextRefusedException(
-                "Configured profile URL is not a valid HTTP(S) URL"
-            )
-        if (hasSuspiciousComponents(cfgUrl)) {
+        // match.url is the profile URL pre-parsed by ProfileLookupCache; an
+        // unparseable profile URL never becomes a candidate (same as the
+        // old per-lookup `?: continue`), so no null-parse branch remains.
+        if (hasSuspiciousComponents(match.url)) {
             throw LRRPlaintextRefusedException(
                 "Configured profile URL contains userInfo or fragment"
             )
         }
 
-        val apiKey = LRRAuthManager.getApiKeyForProfile(match.id)
+        val apiKey = LRRAuthManager.getApiKeyForProfile(match.profile.id)
         if (apiKey.isNullOrEmpty()) {
             // Profile is configured but has no per-profile key (legacy or
             // intentionally open server). Pass through without injecting;
@@ -144,17 +142,17 @@ internal fun bearerAuthHeaderValue(apiKey: String): String {
 }
 
 /**
- * Pick the profile in [candidates] whose configured scheme matches
- * [requestUrl]. Returns null when every candidate has the wrong scheme
- * (a credential-downgrade attempt — caller should reject).
+ * Pick the candidate whose configured scheme matches [requestUrl].
+ * Returns null when every candidate has the wrong scheme (a
+ * credential-downgrade attempt — caller should reject). Candidates carry
+ * their pre-parsed URL, so this is pure string comparison.
  */
 internal fun pickSchemeMatch(
-    candidates: List<ServerProfile>,
+    candidates: List<ProfileUrlCandidate>,
     requestUrl: HttpUrl,
-): ServerProfile? {
-    for (profile in candidates) {
-        val cfg = profile.url.toHttpUrlOrNull() ?: continue
-        if (cfg.scheme == requestUrl.scheme) return profile
+): ProfileUrlCandidate? {
+    for (candidate in candidates) {
+        if (candidate.url.scheme == requestUrl.scheme) return candidate
     }
     return null
 }

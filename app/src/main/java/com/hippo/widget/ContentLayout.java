@@ -393,6 +393,21 @@ public class ContentLayout extends FrameLayout {
 
         protected abstract void notifyItemRangeInserted(int positionStart, int itemCount);
 
+        /**
+         * Granular change notification used by the diff dispatch. Default
+         * falls back to a full refresh so existing subclasses keep their
+         * behaviour; adapters that support it should override and forward
+         * to RecyclerView's notifyItemRangeChanged.
+         */
+        protected void notifyItemRangeChanged(int positionStart, int itemCount) {
+            notifyDataSetChanged();
+        }
+
+        /** See {@link #notifyItemRangeChanged(int, int)}. */
+        protected void notifyItemMoved(int fromPosition, int toPosition) {
+            notifyDataSetChanged();
+        }
+
         protected void onScrollToPosition(int postion) {
         }
 
@@ -532,12 +547,15 @@ public class ContentLayout extends FrameLayout {
 
                 @Override
                 public void onMoved(int fromPosition, int toPosition) {
-                    notifyDataSetChanged();
+                    // Granular move — a full notifyDataSetChanged here used
+                    // to defeat the diff that was just computed (every
+                    // refresh with any content delta rebound all rows).
+                    notifyItemMoved(fromPosition, toPosition);
                 }
 
                 @Override
                 public void onChanged(int position, int count, @Nullable Object payload) {
-                    notifyDataSetChanged();
+                    notifyItemRangeChanged(position, count);
                 }
             });
         }
