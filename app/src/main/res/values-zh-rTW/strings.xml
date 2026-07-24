@@ -882,4 +882,6 @@
     <string name="cd_fingerprint_unlock">指紋解鎖</string>
     <string name="cd_back">返回</string>
     <string name="cd_clear_search">清除搜尋</string>
+    <string name="appwidget_continue_reading_description">一鍵繼續閱讀上次看的檔案</string>
+    <string name="appwidget_continue_reading_empty">暫無最近閱讀</string>
 </resources>
