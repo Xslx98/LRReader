@@ -127,6 +127,9 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
 
     private final List<PageTransform> mTransformScratch = new ArrayList<>();
     private volatile List<PageTransform> mPageTransforms = Collections.emptyList();
+    // Off by default: matches the stamps overlay's hidden default; see
+    // setPageTransformCollectionEnabled(boolean).
+    private volatile boolean mPageTransformCollectionEnabled = false;
 
     private final GLEdgeView mEdgeView;
     private final Pool<GalleryPageView> mGalleryPageViewPool = new Pool<>(5);
@@ -1121,8 +1124,29 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
         return mPageTransforms;
     }
 
+    /**
+     * Enable/disable the per-frame page-transform collection. Its only
+     * consumer is the reader-stamps overlay (hidden by default); while the
+     * overlay is invisible the per-visible-page allocations and the
+     * main-thread notify per geometry change are pure waste on the render
+     * hot path. Enabling requests a render so a fresh snapshot lands
+     * without waiting for the next user scroll. Callable from any thread.
+     */
+    public void setPageTransformCollectionEnabled(boolean enabled) {
+        if (mPageTransformCollectionEnabled == enabled) {
+            return;
+        }
+        mPageTransformCollectionEnabled = enabled;
+        if (enabled) {
+            invalidate();
+        }
+    }
+
     @RenderThread
     private void updatePageTransforms() {
+        if (!mPageTransformCollectionEnabled) {
+            return;
+        }
         LayoutManager layoutManager = mLayoutManager;
         mTransformScratch.clear();
         if (layoutManager != null) {
