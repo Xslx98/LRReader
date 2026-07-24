@@ -76,6 +76,15 @@ public abstract class BeerBelly<V> {
 
     protected abstract V read(@NonNull InputStreamPipe isPipe,boolean hardware);
 
+    /**
+     * Read with a target-size hint (pixels). Default ignores the hint so
+     * existing subclasses keep compiling; override to decode sampled.
+     */
+    protected V read(@NonNull InputStreamPipe isPipe, boolean hardware,
+            int targetWidth, int targetHeight) {
+        return read(isPipe, hardware);
+    }
+
     protected abstract boolean write(OutputStream os, V value);
 
     @Nullable
@@ -193,6 +202,18 @@ public abstract class BeerBelly<V> {
     public V getFromDisk(@NonNull String key,boolean hardware) {
         if (mHasDiskCache && mDiskCache != null) {
             return mDiskCache.get(key,hardware);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Get value from disk cache, decoding with a target-size hint (pixels).
+     */
+    public V getFromDisk(@NonNull String key, boolean hardware,
+            int targetWidth, int targetHeight) {
+        if (mHasDiskCache && mDiskCache != null) {
+            return mDiskCache.get(key, hardware, targetWidth, targetHeight);
         } else {
             return null;
         }
@@ -435,6 +456,15 @@ public abstract class BeerBelly<V> {
                 return null;
             } else {
                 return mParent.read(isPipe,hardware);
+            }
+        }
+
+        public E get(String key, boolean hardware, int targetWidth, int targetHeight) {
+            InputStreamPipe isPipe = mDiskCache.getInputStreamPipe(key);
+            if (isPipe == null) {
+                return null;
+            } else {
+                return mParent.read(isPipe, hardware, targetWidth, targetHeight);
             }
         }
 

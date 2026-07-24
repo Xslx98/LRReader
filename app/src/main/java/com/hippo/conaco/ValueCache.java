@@ -55,6 +55,12 @@ class ValueCache<V> extends BeerBelly<V> {
     }
 
     @Override
+    protected V read(@NonNull InputStreamPipe isPipe, boolean hardware,
+            int targetWidth, int targetHeight) {
+        return mHelper.decode(isPipe, hardware, targetWidth, targetHeight);
+    }
+
+    @Override
     protected boolean write(OutputStream os, V value) {
         throw new UnsupportedOperationException("Not support write object");
     }
