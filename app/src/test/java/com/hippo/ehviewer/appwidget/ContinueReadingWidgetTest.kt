@@ -10,6 +10,8 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.dao.HistoryInfo
 import com.hippo.ehviewer.dao.HistoryRepository
+import com.hippo.ehviewer.dao.ProfileRepository
+import com.hippo.ehviewer.dao.ServerProfile
 import com.hippo.ehviewer.ui.ContinueReadingShortcut
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.runBlocking
@@ -35,6 +37,7 @@ class ContinueReadingWidgetTest {
     private lateinit var context: Context
     private lateinit var db: AppDatabase
     private lateinit var historyRepository: HistoryRepository
+    private lateinit var profileRepository: ProfileRepository
 
     @Before
     fun setUp() {
@@ -47,6 +50,13 @@ class ContinueReadingWidgetTest {
             .setTransactionExecutor { it.run() }
             .build()
         historyRepository = HistoryRepository(db.archiveLocalStateDao(), db)
+        profileRepository = ProfileRepository(db.miscDao())
+    }
+
+    private suspend fun insertProfile(id: Long) {
+        profileRepository.insert(
+            ServerProfile(id = id, name = "p$id", url = "http://host$id")
+        )
     }
 
     @After
@@ -164,6 +174,7 @@ class ContinueReadingWidgetTest {
 
     @Test
     fun latestArchive_picksMostRecentHistoryRow() = runBlocking {
+        insertProfile(7L)
         historyRepository.putHistoryInfoList(
             listOf(
                 historyInfo("e".repeat(40), 7L, "Older", time = 1_000L),
@@ -171,11 +182,16 @@ class ContinueReadingWidgetTest {
             )
         )
 
-        assertEquals("Newer", ContinueReadingWidget.latestArchive(historyRepository)?.title)
+        assertEquals(
+            "Newer",
+            ContinueReadingWidget.latestArchive(historyRepository, profileRepository)?.title
+        )
     }
 
     @Test
     fun latestArchive_spansProfiles() = runBlocking {
+        insertProfile(7L)
+        insertProfile(9L)
         historyRepository.putHistoryInfoList(
             listOf(
                 historyInfo("g".repeat(40), 7L, "Profile7", time = 1_000L),
@@ -183,12 +199,35 @@ class ContinueReadingWidgetTest {
             )
         )
 
-        assertEquals("Profile9", ContinueReadingWidget.latestArchive(historyRepository)?.title)
+        assertEquals(
+            "Profile9",
+            ContinueReadingWidget.latestArchive(historyRepository, profileRepository)?.title
+        )
+    }
+
+    @Test
+    fun latestArchive_skipsRowsOfDeletedProfiles() = runBlocking {
+        // Profile deletion does not cascade ARCHIVE_LOCAL_STATE rows (ADR-003
+        // leftover): the newest row belongs to a profile that no longer
+        // exists and must be skipped, not resurrected as a dead-end target.
+        insertProfile(7L)
+        historyRepository.putHistoryInfoList(
+            listOf(
+                historyInfo("j".repeat(40), 7L, "Live", time = 1_000L),
+                historyInfo("k".repeat(40), 99L, "Orphan", time = 9_000L),
+            )
+        )
+
+        assertEquals(
+            "Live",
+            ContinueReadingWidget.latestArchive(historyRepository, profileRepository)?.title
+        )
     }
 
     @Test
     fun latestArchive_emptyHistory_returnsNull() = runBlocking {
-        assertNull(ContinueReadingWidget.latestArchive(historyRepository))
+        insertProfile(7L)
+        assertNull(ContinueReadingWidget.latestArchive(historyRepository, profileRepository))
     }
 
     // ---- no-widget guard ----
@@ -199,6 +238,6 @@ class ContinueReadingWidgetTest {
         // touching AppWidgetManager or throwing.
         historyRepository.putHistoryInfo(archive("i".repeat(40), 7L, "Book"))
         ContinueReadingWidget.update(context, historyRepository, "i".repeat(40), 7L)
-        ContinueReadingWidget.refresh(context, historyRepository)
+        ContinueReadingWidget.refresh(context, historyRepository, profileRepository)
     }
 }

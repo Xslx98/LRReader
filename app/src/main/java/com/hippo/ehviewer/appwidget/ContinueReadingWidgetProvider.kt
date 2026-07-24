@@ -29,6 +29,7 @@ class ContinueReadingWidgetProvider : AppWidgetProvider() {
                 ContinueReadingWidget.refresh(
                     context.applicationContext,
                     ServiceRegistry.dataModule.historyRepository,
+                    ServiceRegistry.dataModule.profileRepository,
                 )
             } catch (e: Exception) {
                 Log.w(TAG, "continue-reading widget onUpdate failed")
