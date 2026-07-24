@@ -145,7 +145,12 @@ class DownloadDbRepository(
     }
 
     suspend fun putDownloadInfo(downloadInfo: DownloadInfo) {
-        upsertDownloadSubsystem(downloadInfo)
+        val r = buildDownloadUpsertRow(downloadInfo)
+        archiveLocalStateDao.upsertDownload(
+            r.arcid, r.serverProfileId, r.archiveJson, r.downloadState,
+            r.downloadLegacy, r.downloadTime, r.downloadLabel,
+            r.downloadArchiveUri, r.downloadRootUri,
+        )
     }
 
     /**
@@ -190,26 +195,25 @@ class DownloadDbRepository(
 
     suspend fun putDownloadInfoBatch(list: List<DownloadInfo>) {
         if (list.isEmpty()) return
-        for (info in list) {
-            upsertDownloadSubsystem(info)
-        }
+        // The merge reads run outside the batch transaction — the same
+        // read-then-write window the old per-row loop had; the transaction
+        // only collapses N commits/fsyncs into one.
+        val rows = list.map { buildDownloadUpsertRow(it) }
+        archiveLocalStateDao.upsertDownloadBatch(rows)
     }
 
     suspend fun removeDownloadInfoBatchByArcids(arcids: List<String>) {
         if (arcids.isEmpty()) return
-        for (arcid in arcids) {
-            val pid = archiveLocalStateDao.getDownloadProfileIdByArcid(arcid) ?: continue
-            archiveLocalStateDao.clearDownloadAndPruneForProfile(arcid, pid)
-        }
+        archiveLocalStateDao.clearDownloadAndPruneBatch(arcids)
     }
 
     /**
-     * Idempotent INSERT-OR-IGNORE-then-UPDATE for the download
-     * subsystem. INSERT seeds a new row only if absent; UPDATE writes
-     * the download columns regardless. Cross-subsystem columns
-     * (history / favorite) on a pre-existing row stay untouched.
+     * Compute the row values for the idempotent INSERT-OR-IGNORE-then-
+     * UPDATE download upsert. INSERT seeds a new row only if absent;
+     * UPDATE writes the download columns regardless. Cross-subsystem
+     * columns (history / favorite) on a pre-existing row stay untouched.
      */
-    private suspend fun upsertDownloadSubsystem(downloadInfo: DownloadInfo) {
+    private suspend fun buildDownloadUpsertRow(downloadInfo: DownloadInfo): DownloadUpsertRow {
         // Merge into any existing archive_json instead of overwriting it with the lossy
         // DownloadInfo.toArchive() (which zeroes pagecount/progress/summary and drops tag
         // namespaces). The row is shared with history/favorites and pagecount<=0 makes
@@ -232,7 +236,7 @@ class DownloadDbRepository(
         } else {
             downloadInfo.toArchive().toArchiveJson()
         }
-        archiveLocalStateDao.upsertDownload(
+        return DownloadUpsertRow(
             arcid = downloadInfo.arcid,
             serverProfileId = downloadInfo.serverProfileId,
             archiveJson = archiveJson,
