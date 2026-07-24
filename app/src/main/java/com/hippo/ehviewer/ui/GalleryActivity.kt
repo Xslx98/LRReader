@@ -23,7 +23,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.StrictMode
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
@@ -317,9 +316,10 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
             )
         }
         super.onCreate(savedInstanceState)
-        val builder = StrictMode.VmPolicy.Builder()
-        StrictMode.setVmPolicy(builder.build())
-        builder.detectFileUriExposure()
+        // StrictMode policies are installed app-wide (debug only) in
+        // EhApplication. The block that used to sit here installed an EMPTY
+        // VmPolicy (detectFileUriExposure() was called after build()) — a
+        // no-op that also cleared any inherited policy, in release too.
 
         // Register "Save To" ActivityResultLauncher (must be done before onStart)
         mImageOps.saveToLauncher = registerForActivityResult(
