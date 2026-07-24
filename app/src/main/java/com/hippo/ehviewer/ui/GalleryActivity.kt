@@ -846,6 +846,10 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         val visible = stamps != null &&
             stamps.support != ReaderStampsController.Support.UNSUPPORTED &&
             (ReadingSettings.getReaderStamps() || stamps.sessionVisible)
+        // The per-frame transform collection feeds only this overlay — keep
+        // it off while hidden. Enabling requests a render, so a fresh
+        // snapshot follows the (possibly stale) synchronous pump below.
+        mGalleryView?.setPageTransformCollectionEnabled(visible)
         overlay.isVisible = visible
         if (visible) {
             pumpStampTransforms()
