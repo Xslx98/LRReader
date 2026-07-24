@@ -83,7 +83,11 @@ class EhApplication : RecordingApplication() {
         if (locale == null) {
             locale = Resources.getSystem().configuration.locale
         }
-        super.attachBaseContext(ContextLocalWrapper.wrap(base, locale))
+        // MUST stay a raw ContextImpl (no ContextWrapper shell):
+        // ActivityThread.handleReceiver casts getBaseContext() to ContextImpl,
+        // so a wrapped Application base crashes every manifest receiver —
+        // caught live by the continue-reading AppWidgetProvider smoke test.
+        super.attachBaseContext(ContextLocalWrapper.localeApplicationBase(base, locale))
     }
 
     @SuppressLint("StaticFieldLeak") // Safe: Application instance is process-scoped
