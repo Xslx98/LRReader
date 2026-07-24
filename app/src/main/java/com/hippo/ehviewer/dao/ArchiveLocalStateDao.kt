@@ -357,6 +357,17 @@ interface ArchiveLocalStateDao {
     @Query("SELECT * FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid AND DOWNLOAD_STATE IS NOT NULL LIMIT 1")
     suspend fun loadDownloadRowByArcid(arcid: String): ArchiveLocalState?
 
+    /**
+     * Narrow projection of [loadDownloadRowByArcid] for callers that only
+     * need the owning profile id (the removal paths): skips marshalling the
+     * potentially large ARCHIVE_JSON blob per row.
+     */
+    @Query(
+        "SELECT SERVER_PROFILE_ID FROM ARCHIVE_LOCAL_STATE " +
+            "WHERE ARCID = :arcid AND DOWNLOAD_STATE IS NOT NULL LIMIT 1"
+    )
+    suspend fun getDownloadProfileIdByArcid(arcid: String): Long?
+
     @Query("UPDATE ARCHIVE_LOCAL_STATE SET ARCHIVE_JSON = :archiveJson WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :profileId")
     suspend fun updateArchiveJsonForProfile(arcid: String, profileId: Long, archiveJson: String)
 
