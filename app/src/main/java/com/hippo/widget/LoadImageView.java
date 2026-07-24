@@ -229,12 +229,29 @@ public class LoadImageView extends FixedAspectImageView implements Unikery<Image
                 .setKey(key)
                 .setUrl(url)
                 .setUseNetwork(useNetwork)
-                .setHardware(hardware);
+                .setHardware(hardware)
+                .setTargetSize(decodeTargetWidth(), decodeTargetHeight());
         if (dataContainer!=null){
             builder.setDataContainer(dataContainer);
         }
 
         mConaco.load(builder);
+    }
+
+    /**
+     * Decode target: the laid-out view size when available, floored at the
+     * detail-header thumb size — list cells, grid tiles and the detail
+     * header share one memory-cache key, so the cached decode must stay
+     * sharp for the largest fixed consumer.
+     */
+    private int decodeTargetWidth() {
+        return Math.max(getWidth(),
+                getResources().getDimensionPixelSize(R.dimen.gallery_detail_thumb_width));
+    }
+
+    private int decodeTargetHeight() {
+        return Math.max(getHeight(),
+                getResources().getDimensionPixelSize(R.dimen.gallery_detail_thumb_height));
     }
 
     public void load(Drawable drawable) {
