@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Continue-reading widget metadata (issue #9). Event-driven updates only
+     (updatePeriodMillis=0): renders on session end, self-heal sites, and
+     launcher-triggered onUpdate. API-31 attrs (targetCell*, previewLayout,
+     description) are ignored by older launchers. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:description="@string/appwidget_continue_reading_description"
+    android:initialLayout="@layout/appwidget_continue_reading"
+    android:minWidth="250dp"
+    android:minHeight="40dp"
+    android:minResizeWidth="180dp"
+    android:minResizeHeight="40dp"
+    android:previewLayout="@layout/appwidget_continue_reading"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellWidth="4"
+    android:targetCellHeight="1"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen"
+    tools:targetApi="s" />

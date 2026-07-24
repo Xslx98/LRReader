@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home-screen widget palette ONLY. The widget renders in the launcher
+     process and follows the SYSTEM theme, so -night is the correct signal
+     here — unlike in-app views, which follow the app's MANUAL theme via
+     theme attrs (RES-4 removed this directory for exactly that reason).
+     Do not add in-app colors to this file. -->
+<resources>
+    <color name="appwidget_bg_color">#FF2A2A2A</color>
+    <color name="appwidget_text_primary">#FFFFFFFF</color>
+    <color name="appwidget_text_secondary">#B3FFFFFF</color>
+    <color name="appwidget_accent">#FF00BFA5</color><!-- teal_a700 -->
+</resources>

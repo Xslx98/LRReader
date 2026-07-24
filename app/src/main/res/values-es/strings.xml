@@ -920,4 +920,6 @@ Esta acción no se puede deshacer.</string>
     <string name="cd_fingerprint_unlock">Desbloqueo con huella</string>
     <string name="cd_back">Atrás</string>
     <string name="cd_clear_search">Borrar búsqueda</string>
+    <string name="appwidget_continue_reading_description">Reanuda con un toque el último archivo leído</string>
+    <string name="appwidget_continue_reading_empty">No hay lectura reciente</string>
 </resources>

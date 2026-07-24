@@ -174,5 +174,18 @@
 
         </provider>
 
+        <!-- Continue-reading home-screen widget (issue #9) -->
+        <receiver
+            android:name="com.hippo.ehviewer.appwidget.ContinueReadingWidgetProvider"
+            android:exported="false"
+            android:label="@string/shortcut_continue_reading">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/appwidget_continue_reading_info" />
+        </receiver>
+
     </application>
 </manifest>

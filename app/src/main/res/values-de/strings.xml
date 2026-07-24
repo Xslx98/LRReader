@@ -829,4 +829,6 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="cd_fingerprint_unlock">Entsperren per Fingerabdruck</string>
     <string name="cd_back">Zurück</string>
     <string name="cd_clear_search">Suche löschen</string>
+    <string name="appwidget_continue_reading_description">Zuletzt gelesenes Archiv mit einem Tipp fortsetzen</string>
+    <string name="appwidget_continue_reading_empty">Keine letzte Lektüre</string>
 </resources>

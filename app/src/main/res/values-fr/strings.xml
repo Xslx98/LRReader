@@ -924,4 +924,6 @@ Cette action est irréversible.</string>
     <string name="cd_fingerprint_unlock">Déverrouillage par empreinte</string>
     <string name="cd_back">Retour</string>
     <string name="cd_clear_search">Effacer la recherche</string>
+    <string name="appwidget_continue_reading_description">Reprendre en un geste la dernière archive lue</string>
+    <string name="appwidget_continue_reading_empty">Aucune lecture récente</string>
 </resources>

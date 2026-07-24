@@ -875,4 +875,6 @@
     <string name="cd_fingerprint_unlock">ปลดล็อกด้วยลายนิ้วมือ</string>
     <string name="cd_back">ย้อนกลับ</string>
     <string name="cd_clear_search">ล้างการค้นหา</string>
+    <string name="appwidget_continue_reading_description">แตะครั้งเดียวเพื่ออ่านไฟล์ล่าสุดต่อ</string>
+    <string name="appwidget_continue_reading_empty">ไม่มีการอ่านล่าสุด</string>
 </resources>
