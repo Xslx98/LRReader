@@ -27,7 +27,11 @@ import java.io.IOException
 class ImageBitmapHelper : ValueHelper<Image> {
 
     companion object {
-        private const val MAX_CACHE_SIZE = 512 * 512
+        // Thumbnails are portrait (~2:3); a ~1000px server thumb decoded under
+        // the 128x192dp detail-header floor lands at ~500x750, which the old
+        // square 512*512 cap rejected — so scrolled thumbs never entered the
+        // memory cache and every re-bind decoded from disk.
+        private const val MAX_CACHE_SIZE = 512 * 768
     }
 
     override fun decode(isPipe: InputStreamPipe): Image? {
@@ -35,11 +39,20 @@ class ImageBitmapHelper : ValueHelper<Image> {
     }
 
     override fun decode(isPipe: InputStreamPipe, hardware: Boolean): Image? {
+        return decode(isPipe, hardware, 0, 0)
+    }
+
+    override fun decode(
+        isPipe: InputStreamPipe,
+        hardware: Boolean,
+        targetWidth: Int,
+        targetHeight: Int
+    ): Image? {
         return try {
             isPipe.obtain()
             val inputStream = isPipe.open()
             if (inputStream is FileInputStream) {
-                Image.decode(inputStream, hardware)
+                Image.decode(inputStream, hardware, targetWidth, targetHeight)
             } else {
                 // Non-FileInputStream (e.g., SAF content:// URI) — copy to temp file
                 val tmpFile = File.createTempFile("ibh_", ".tmp")
@@ -50,7 +63,7 @@ class ImageBitmapHelper : ValueHelper<Image> {
                         }
                     }
                     FileInputStream(tmpFile).use { fis ->
-                        Image.decode(fis, hardware)
+                        Image.decode(fis, hardware, targetWidth, targetHeight)
                     }
                 } finally {
                     tmpFile.delete()

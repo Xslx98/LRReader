@@ -31,6 +31,8 @@ class Image private constructor(
     source: FileInputStream?,
     drawable: Drawable? = null,
     val hardware: Boolean = false,
+    targetWidth: Int = 0,
+    targetHeight: Int = 0,
     val release: () -> Unit? = {},
 ) {
     private val mDrawableRef = AtomicReference<Drawable?>(null)
@@ -63,13 +65,29 @@ class Image private constructor(
                                 if (hardware) ALLOCATOR_DEFAULT else ALLOCATOR_SOFTWARE
                             // Sadly we must use software memory since we need copy it to tile buffer, fuck glgallery
                             // Idk it will cause how much performance regression
-                            val screenSize = min(
-                                info.size.width / screenWidth,
-                                info.size.height / screenHeight
-                            ).coerceAtLeast(1)
-                            decoder.setTargetSampleSize(
-                                max(screenSize, simpleSize ?: 1)
-                            )
+                            // Thumbnail loads pass an explicit target; the reader
+                            // passes none and keeps the screen-based sampling.
+                            val fitSize = if (targetWidth > 0 && targetHeight > 0) {
+                                computeSampleSize(
+                                    info.size.width, info.size.height,
+                                    targetWidth, targetHeight
+                                )
+                            } else {
+                                computeSampleSize(
+                                    info.size.width, info.size.height,
+                                    screenWidth, screenHeight
+                                )
+                            }
+                            val sampleSize = max(fitSize, simpleSize ?: 1)
+                            if (Log.isLoggable(TAG, Log.DEBUG)) {
+                                Log.d(
+                                    TAG,
+                                    "decode ${info.size.width}x${info.size.height}" +
+                                        " sample=$sampleSize" +
+                                        " target=${targetWidth}x$targetHeight"
+                                )
+                            }
+                            decoder.setTargetSampleSize(sampleSize)
                             // Don't
                         }
                     )
@@ -285,10 +303,53 @@ class Image private constructor(
             screenHeight = context.resources.displayMetrics.heightPixels
         }
 
+        /**
+         * Largest integer sample size that keeps both decoded dimensions at or
+         * above the target (quality floor). Non-positive targets disable
+         * sampling. Pure math — unit tested on the JVM.
+         */
+        @JvmStatic
+        fun computeSampleSize(
+            srcWidth: Int,
+            srcHeight: Int,
+            targetWidth: Int,
+            targetHeight: Int,
+        ): Int {
+            if (targetWidth <= 0 || targetHeight <= 0) return 1
+            return min(srcWidth / targetWidth, srcHeight / targetHeight)
+                .coerceAtLeast(1)
+        }
+
         @JvmStatic
         fun decode(stream: FileInputStream, hardware: Boolean = true): Image? {
             try {
                 return Image(stream, hardware = hardware)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Analytics.recordException(e)
+                return null
+            }
+        }
+
+        /**
+         * Decode with a target-size hint: the result is sampled so both
+         * dimensions stay >= the target. Used by thumbnail loads (Conaco);
+         * the reader path uses the no-hint overload above.
+         */
+        @JvmStatic
+        fun decode(
+            stream: FileInputStream,
+            hardware: Boolean,
+            targetWidth: Int,
+            targetHeight: Int,
+        ): Image? {
+            try {
+                return Image(
+                    stream,
+                    hardware = hardware,
+                    targetWidth = targetWidth,
+                    targetHeight = targetHeight,
+                )
             } catch (e: Exception) {
                 e.printStackTrace()
                 Analytics.recordException(e)

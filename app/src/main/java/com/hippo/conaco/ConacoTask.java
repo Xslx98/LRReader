@@ -66,6 +66,8 @@ public class ConacoTask<V> {
     private Call mCall;
     private boolean mStart;
     private boolean hardware = true;
+    private final int mTargetWidth;
+    private final int mTargetHeight;
     private volatile boolean mStop;
 
     private ConacoTask(Builder<V> builder) {
@@ -84,6 +86,8 @@ public class ConacoTask<V> {
         mNetworkExecutor = builder.mNetworkExecutor;
         mConaco = builder.mConaco;
         hardware = builder.hardware;
+        mTargetWidth = builder.mTargetWidth;
+        mTargetHeight = builder.mTargetHeight;
     }
 
     int getId() {
@@ -241,14 +245,14 @@ public class ConacoTask<V> {
             if (mDataContainer != null && mDataContainer.isEnabled()) {
                 InputStreamPipe isp = mDataContainer.get();
                 if (isp != null) {
-                    value = mHelper.decode(isp, hardware);
+                    value = mHelper.decode(isp, hardware, mTargetWidth, mTargetHeight);
                 }
             }
 
             // Then check disk cache
             if (mKey != null) {
                 if (value == null && mUseDiskCache) {
-                    value = mCache.getFromDisk(mKey, hardware);
+                    value = mCache.getFromDisk(mKey, hardware, mTargetWidth, mTargetHeight);
                     // Put back to data container
                     if (value != null && mDataContainer != null && mDataContainer.isEnabled()) {
                         putFromDiskCacheToDataContainer(mKey, mCache, mDataContainer);
@@ -379,7 +383,7 @@ public class ConacoTask<V> {
                 if ((mDataContainer == null || !mDataContainer.isEnabled()) && mKey != null) {
                     if (putToDiskCache(is, body.contentLength())) {
                         // Get object from disk cache
-                        value = mCache.getFromDisk(mKey, hardware);
+                        value = mCache.getFromDisk(mKey, hardware, mTargetWidth, mTargetHeight);
                         if (value == null) {
                             // Maybe bad download, remove it from disk cache
                             mCache.removeFromDisk(mKey);
@@ -411,7 +415,7 @@ public class ConacoTask<V> {
                     if (isp == null) {
                         return null;
                     }
-                    value = mHelper.decode(isp, hardware);
+                    value = mHelper.decode(isp, hardware, mTargetWidth, mTargetHeight);
                     if (value == null) {
                         mDataContainer.remove();
                     } else if (mKey != null) {
@@ -475,6 +479,8 @@ public class ConacoTask<V> {
         private Executor mNetworkExecutor;
         private Conaco<T> mConaco;
         private boolean hardware = true;
+        private int mTargetWidth;
+        private int mTargetHeight;
 
         public Builder<T> setId(int id) {
             mId = id;
@@ -589,6 +595,16 @@ public class ConacoTask<V> {
 
         public boolean isHardware() {
             return hardware;
+        }
+
+        /**
+         * Target decode size hint in pixels; decoded dimensions stay at or
+         * above it. Zero (the default) keeps the legacy full-size decode.
+         */
+        public Builder<T> setTargetSize(int targetWidth, int targetHeight) {
+            mTargetWidth = targetWidth;
+            mTargetHeight = targetHeight;
+            return this;
         }
 
         public Builder<T> setHardware(boolean hardware) {
