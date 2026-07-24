@@ -84,6 +84,11 @@ class LRRArchivePagingSourceTest {
 
     // ---- Tests ----
 
+    // Keys are raw item offsets, not dense page indexes: /api/search has no
+    // page-size parameter, the server returns archives_per_page rows per
+    // request, so the only safe advance is by the count actually returned
+    // and the only safe termination signal is recordsFiltered (NET-2).
+
     @Test
     fun load_firstPage_returnsPageWithNullPrevKey() = runTest {
         val archives = (1..10).map { "a$it" to "Archive $it" }
@@ -99,7 +104,60 @@ class LRRArchivePagingSourceTest {
         assertEquals(10, page.data.size)
         assertEquals("Archive 1", page.data[0].title)
         assertNull(page.prevKey)
-        assertEquals(1, page.nextKey)
+        assertEquals(10, page.nextKey)
+    }
+
+    @Test
+    fun load_serverPageSmallerThanLoadSize_continuesPaging() = runTest {
+        // archives_per_page=20 on the server: 20 rows come back although the
+        // client asked with loadSize 50. 100 records exist in total, so paging
+        // must continue from offset 20 — the pre-NET-2 heuristic
+        // (data.size >= loadSize) silently ended the list here.
+        val archives = (1..20).map { "a$it" to "Archive $it" }
+        server.enqueue(MockResponse().setBody(searchResultJson(archives, 100)))
+
+        val source = createPagingSource()
+        val result = source.load(
+            PagingSource.LoadParams.Refresh(key = null, loadSize = 50, placeholdersEnabled = false)
+        )
+
+        val page = result as PagingSource.LoadResult.Page
+        assertEquals(20, page.data.size)
+        assertEquals(20, page.nextKey)
+    }
+
+    @Test
+    fun load_serverPageLargerThanLoadSize_advancesByActualCount() = runTest {
+        // archives_per_page=100: the next offset must be 100, not loadSize=50 —
+        // advancing by 50 re-requests rows 50-99 and shows duplicates once the
+        // overlap exceeds the list dedup window.
+        val archives = (1..100).map { "a$it" to "Archive $it" }
+        server.enqueue(MockResponse().setBody(searchResultJson(archives, 300)))
+
+        val source = createPagingSource()
+        val result = source.load(
+            PagingSource.LoadParams.Refresh(key = null, loadSize = 50, placeholdersEnabled = false)
+        )
+
+        val page = result as PagingSource.LoadResult.Page
+        assertEquals(100, page.data.size)
+        assertEquals(100, page.nextKey)
+    }
+
+    @Test
+    fun load_emptyPageClaimingMoreRecords_endsPaging() = runTest {
+        // Malformed/edge server response: zero rows but recordsFiltered > 0.
+        // Advancing by zero would re-request the same offset forever.
+        server.enqueue(MockResponse().setBody(searchResultJson(emptyList(), 100)))
+
+        val source = createPagingSource()
+        val result = source.load(
+            PagingSource.LoadParams.Refresh(key = null, loadSize = 50, placeholdersEnabled = false)
+        )
+
+        val page = result as PagingSource.LoadResult.Page
+        assertTrue(page.data.isEmpty())
+        assertNull(page.nextKey)
     }
 
     @Test
@@ -125,13 +183,13 @@ class LRRArchivePagingSourceTest {
 
         val source = createPagingSource()
         val result = source.load(
-            PagingSource.LoadParams.Append(key = 1, loadSize = 100, placeholdersEnabled = false)
+            PagingSource.LoadParams.Append(key = 100, loadSize = 100, placeholdersEnabled = false)
         )
 
         assertTrue(result is PagingSource.LoadResult.Page)
         val page = result as PagingSource.LoadResult.Page
         assertEquals(0, page.prevKey)
-        assertEquals(2, page.nextKey)
+        assertEquals(200, page.nextKey)
 
         val request = server.takeRequest()
         assertTrue("Path should contain start=100", request.path!!.contains("start=100"))
@@ -174,6 +232,27 @@ class LRRArchivePagingSourceTest {
         val page = result as PagingSource.LoadResult.Page
         assertEquals(1, page.data.size)
         assertFalse(page.data.any { it.arcid.startsWith("TANK_") })
+    }
+
+    @Test
+    fun load_droppedTankStillAdvancesOffsetByRawCount() = runTest {
+        // A dropped TANK_ row still occupies a server-side offset slot: the
+        // next request must skip it (advance by the raw pre-mapping count),
+        // otherwise the row after the tank would be fetched twice.
+        val tank = """{"arcid":"TANK_1688616437","title":"A tank","tags":"","isnew":"false","extension":"zip","filename":"t.zip","pagecount":1,"progress":0,"lastreadtime":0}"""
+        val real = archiveJson("a1", "Real")
+        server.enqueue(
+            MockResponse().setBody("""{"data":[$tank,$real],"draw":1,"recordsFiltered":4,"recordsTotal":4}""")
+        )
+
+        val source = createPagingSource()
+        val result = source.load(
+            PagingSource.LoadParams.Refresh(key = null, loadSize = 50, placeholdersEnabled = false)
+        )
+
+        val page = result as PagingSource.LoadResult.Page
+        assertEquals(1, page.data.size)
+        assertEquals(2, page.nextKey)
     }
 
     @Test
@@ -284,13 +363,13 @@ class LRRArchivePagingSourceTest {
 
         val source = createPagingSource()
         val result = source.load(
-            PagingSource.LoadParams.Append(key = 2, loadSize = 100, placeholdersEnabled = false)
+            PagingSource.LoadParams.Append(key = 200, loadSize = 100, placeholdersEnabled = false)
         )
 
         assertTrue(result is PagingSource.LoadResult.Page)
         val page = result as PagingSource.LoadResult.Page
-        assertEquals(1, page.prevKey)
-        assertEquals(3, page.nextKey)
+        assertEquals(100, page.prevKey)
+        assertEquals(300, page.nextKey)
     }
 
     @Test
@@ -306,7 +385,9 @@ class LRRArchivePagingSourceTest {
     }
 
     @Test
-    fun getRefreshKey_returnsKeyFromClosestPage() {
+    fun getRefreshKey_returnsAnchorOffset() {
+        // With offset keys and placeholders disabled, every loaded list is
+        // contiguous from offset 0, so the anchor position IS the offset.
         val source = createPagingSource()
         val archive = Archive(
             arcid = "test", title = "Test", tags = emptyMap(),
@@ -316,17 +397,16 @@ class LRRArchivePagingSourceTest {
         )
         val page = PagingSource.LoadResult.Page(
             data = listOf(archive),
-            prevKey = 1,
-            nextKey = 3
+            prevKey = null,
+            nextKey = 1
         )
         val state = PagingState(
             pages = listOf(page),
-            anchorPosition = 0,
+            anchorPosition = 7,
             config = PagingConfig(pageSize = 50),
             leadingPlaceholderCount = 0
         )
-        // closestPageToPosition(0) -> page with prevKey=1 -> 1+1 = 2
-        assertEquals(2, source.getRefreshKey(state))
+        assertEquals(7, source.getRefreshKey(state))
     }
 
     // ---- newonly / untaggedonly filter edge cases ----

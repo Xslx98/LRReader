@@ -89,7 +89,9 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
             try {
                 val loadResult = pagingSource.load(
                     PagingSource.LoadParams.Refresh(
-                        key = page,
+                        // ContentLayout counts dense page indexes (0,1,2,…) but
+                        // the source keys are raw item offsets (NET-2).
+                        key = page * LRR_PAGE_SIZE,
                         loadSize = LRR_PAGE_SIZE,
                         placeholdersEnabled = false
                     )
