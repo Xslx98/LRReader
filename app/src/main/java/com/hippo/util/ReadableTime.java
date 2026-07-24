@@ -55,20 +55,35 @@ public final class ReadableTime {
             R.plurals.second
     };
 
-    private static final Calendar sCalendar = Calendar.getInstance();
     private static final Object sCalendarLock = new Object();
-
-    private static final SimpleDateFormat DATE_FORMAT_WITHOUT_YEAR = new SimpleDateFormat("MMM d");
-    private static final SimpleDateFormat DATE_FORMAT_WITH_YEAR = new SimpleDateFormat("MMM d, yyyy");
-
-    private static final SimpleDateFormat DATE_FORMAT_WITHOUT_YEAR_ZH = new SimpleDateFormat("M月d日");
-    private static final SimpleDateFormat DATE_FORMAT_WITH_YEAR_ZH = new SimpleDateFormat("yyyy年M月d日");
-
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yy-MM-dd HH:mm");
     private static final Object sDateFormatLock1 = new Object();
-
-    private static final SimpleDateFormat FILENAMABLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS");
     private static final Object sDateFormatLock2 = new Object();
+
+    /**
+     * Formats live in a nested holder so that loading ReadableTime (which
+     * EhApplication.onCreate does via initialize()) does NOT construct six
+     * SimpleDateFormats + a Calendar on the main thread — SimpleDateFormat
+     * construction loads ICU locale data, a well-known one-time hit that
+     * nothing needs until the first timestamp is actually rendered. JVM
+     * class-initialization locking makes the first-use init thread-safe;
+     * the per-format locks above still guard the (mutable) instances.
+     */
+    private static final class Formats {
+        static final Calendar CALENDAR = Calendar.getInstance();
+
+        static final SimpleDateFormat DATE_FORMAT_WITHOUT_YEAR = new SimpleDateFormat("MMM d");
+        static final SimpleDateFormat DATE_FORMAT_WITH_YEAR = new SimpleDateFormat("MMM d, yyyy");
+
+        static final SimpleDateFormat DATE_FORMAT_WITHOUT_YEAR_ZH = new SimpleDateFormat("M月d日");
+        static final SimpleDateFormat DATE_FORMAT_WITH_YEAR_ZH = new SimpleDateFormat("yyyy年M月d日");
+
+        static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yy-MM-dd HH:mm");
+
+        static final SimpleDateFormat FILENAMABLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS");
+
+        private Formats() {
+        }
+    }
 
     public static void initialize(Context context) {
         sResources = context.getApplicationContext().getResources();
@@ -86,7 +101,7 @@ public final class ReadableTime {
 
     public static String getPlainTime(long time) {
         synchronized (sDateFormatLock1) {
-            return DATE_FORMAT.format(new Date(time));
+            return Formats.DATE_FORMAT.format(new Date(time));
         }
     }
 
@@ -120,16 +135,16 @@ public final class ReadableTime {
             synchronized (sCalendarLock) {
                 Date nowDate = new Date(now);
                 Date timeDate = new Date(time);
-                sCalendar.setTime(nowDate);
-                int nowYear = sCalendar.get(Calendar.YEAR);
-                sCalendar.setTime(timeDate);
-                int timeYear = sCalendar.get(Calendar.YEAR);
+                Formats.CALENDAR.setTime(nowDate);
+                int nowYear = Formats.CALENDAR.get(Calendar.YEAR);
+                Formats.CALENDAR.setTime(timeDate);
+                int timeYear = Formats.CALENDAR.get(Calendar.YEAR);
                 boolean isZh = Locale.getDefault().getLanguage().equals("zh");
 
                 if (nowYear == timeYear) {
-                    return (isZh ? DATE_FORMAT_WITHOUT_YEAR_ZH : DATE_FORMAT_WITHOUT_YEAR).format(timeDate);
+                    return (isZh ? Formats.DATE_FORMAT_WITHOUT_YEAR_ZH : Formats.DATE_FORMAT_WITHOUT_YEAR).format(timeDate);
                 } else {
-                    return (isZh ? DATE_FORMAT_WITH_YEAR_ZH : DATE_FORMAT_WITH_YEAR).format(timeDate);
+                    return (isZh ? Formats.DATE_FORMAT_WITH_YEAR_ZH : Formats.DATE_FORMAT_WITH_YEAR).format(timeDate);
                 }
             }
         }
@@ -181,7 +196,7 @@ public final class ReadableTime {
 
     public static String getFilenamableTime(long time) {
         synchronized (sDateFormatLock2) {
-            return FILENAMABLE_DATE_FORMAT.format(new Date(time));
+            return Formats.FILENAMABLE_DATE_FORMAT.format(new Date(time));
         }
     }
 }
