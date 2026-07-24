@@ -208,6 +208,10 @@ class EhApplication : RecordingApplication() {
         // seam (issue #15). Registration is cheap; work happens per session end.
         com.hippo.ehviewer.ui.ContinueReadingShortcut.install()
 
+        // Continue-reading home-screen widget rides the same seam (issue #9);
+        // per-event work no-ops unless a widget instance is actually placed.
+        com.hippo.ehviewer.appwidget.ContinueReadingWidget.install()
+
         // Daily reading aggregate rides the same seam (issue #20): one row per
         // (day x profile), accumulating history for future trend features.
         com.hippo.ehviewer.stats.DailyReadingAggregateRecorder.install()
