@@ -94,11 +94,12 @@ class GalleryListViewModel : ViewModel() {
         Pager<Int, Archive>(
             config = PagingConfig(
                 pageSize = PAGE_SIZE,
-                // Keep initialLoadSize == pageSize. The PagingSource computes its
-                // request offset as `page * params.loadSize`, so a refresh that
-                // used the default initialLoadSize (3 * pageSize) while appends
-                // use pageSize would mis-align the offset and re-request rows the
-                // refresh already returned — duplicate archives in the list.
+                // Keep initialLoadSize == pageSize. The PagingSource keys are raw
+                // item offsets and advance by the count the server actually
+                // returned (NET-2), so loadSize no longer shifts offsets — but a
+                // larger initial load would still be pointless: /api/search has
+                // no page-size parameter and returns archives_per_page rows
+                // regardless of what we ask for.
                 initialLoadSize = PAGE_SIZE,
                 enablePlaceholders = false,
                 prefetchDistance = PREFETCH_DISTANCE
