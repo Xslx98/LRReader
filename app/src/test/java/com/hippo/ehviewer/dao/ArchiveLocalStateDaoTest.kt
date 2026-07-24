@@ -292,6 +292,16 @@ class ArchiveLocalStateDaoTest {
     }
 
     @Test
+    fun getDownloadProfileIdByArcid_matchesDownloadRow_ignoresOthers() = runTest {
+        dao.upsert(row("pid", serverProfileId = 5L, downloadState = DownloadState.FINISH, downloadTime = 1L))
+        dao.insertOrIgnoreHistory("pid", 6L, "{}", 2L, 0)
+        dao.updateHistoryFields("pid", 6L, "{}", 2L, 0)
+
+        assertEquals(5L, dao.getDownloadProfileIdByArcid("pid"))
+        assertNull(dao.getDownloadProfileIdByArcid("absent"))
+    }
+
+    @Test
     fun updateArchiveJson_profileVsDownload_targetTheRightRow() = runTest {
         dao.upsert(row("j", serverProfileId = 5L, downloadState = DownloadState.FINISH, downloadTime = 1L))
         dao.insertOrIgnoreHistory("j", 6L, """{"arcid":"j","v":0}""", 2L, 0)

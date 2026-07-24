@@ -184,7 +184,7 @@ class DownloadDbRepository(
     suspend fun removeDownloadInfoByArcid(arcid: String) {
         // Resolve the download row's profile before clearing, so its
         // (arcid, profile) row can be collapsed if no subsystem remains.
-        val pid = archiveLocalStateDao.loadDownloadRowByArcid(arcid)?.serverProfileId ?: return
+        val pid = archiveLocalStateDao.getDownloadProfileIdByArcid(arcid) ?: return
         archiveLocalStateDao.clearDownloadAndPruneForProfile(arcid, pid)
     }
 
@@ -198,7 +198,7 @@ class DownloadDbRepository(
     suspend fun removeDownloadInfoBatchByArcids(arcids: List<String>) {
         if (arcids.isEmpty()) return
         for (arcid in arcids) {
-            val pid = archiveLocalStateDao.loadDownloadRowByArcid(arcid)?.serverProfileId ?: continue
+            val pid = archiveLocalStateDao.getDownloadProfileIdByArcid(arcid) ?: continue
             archiveLocalStateDao.clearDownloadAndPruneForProfile(arcid, pid)
         }
     }
