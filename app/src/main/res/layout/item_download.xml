@@ -24,13 +24,12 @@
     android:layout_margin="2dp"
     style="@style/CardView.Reactive">
 
-    <LinearLayout
+    <!-- RelativeLayout is the CardView's direct child: the horizontal
+         LinearLayout that used to wrap it had a single match_parent child
+         and only added a measure/layout pass per row. -->
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+        android:layout_height="wrap_content">
 
             <com.hippo.ehviewer.widget.FixedThumb
                 android:id="@+id/thumb"
@@ -207,7 +206,5 @@
                 android:layout_marginEnd="8dp"
                 android:textSize="@dimen/text_super_small"/>
 
-        </RelativeLayout>
-
-    </LinearLayout>
+    </RelativeLayout>
 </androidx.cardview.widget.CardView>
