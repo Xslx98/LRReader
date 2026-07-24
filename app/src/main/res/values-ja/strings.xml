@@ -33,7 +33,6 @@
     <string name="history">閲覧履歴</string>
     <string name="downloads">ダウンロード</string>
     <string name="settings">設定</string>
-    <string name="default_display_name">Xslx98</string>
     <string name="waring">警告</string>
     <string name="invalid_download_location">ダウンロードパスは現在利用できません。ダウンロードパスを設定してください。</string>
     <string name="cellular_network_warning">モバイルネットワークに接続中です</string>
@@ -55,7 +54,6 @@
     <string name="error_invalid_url">無効なリンクです。</string>
     <string name="error_cant_create_temp_file">一時ファイルを作成できませんでした</string>
     <string name="error_cant_save_image">画像を保存できませんでした</string>
-    <string name="error_cant_get_image">画像を取得できませんでした</string>
     <string name="lrr_error_load_pages_failed">ページを読み込めません</string>
     <string name="gallery_gl_fallback_title">OpenGLレンダラーを利用できません</string>
     <string name="gallery_gl_fallback_message">このデバイスでは現在EGLを初期化できません。戻ってしばらくしてから再試行してください。</string>
@@ -544,9 +542,6 @@
     <string name="download_service">ダウンロードサービス</string>
     <!--  排行榜  -->
     <!--  侧滑栏头像和背景修改  -->
-    <string name="take_a_photograph">写真を撮る</string>
-    <string name="choose_from_the_album">アルバムから選択</string>
-    <string name="request_storage_permission">LR Reader は写真を取得するためにデバイスのフォトアルバムへのアクセスを要求します。許可しますか？</string>
     <!-- 下载通知   -->
     <!--  订阅服务  -->
     <string name="yes">はい</string>
@@ -692,7 +687,6 @@
     <string name="lrr_url_download_hint">ダウンロードするURLを入力</string>
     <string name="lrr_url_download_success">ダウンロードジョブを送信しました (Job #%d)</string>
     <string name="lrr_url_download_title">URLダウンロード</string>
-    <string name="reset_to_default">デフォルトに戻す</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="settings_download_clean_invalid_download">無効なダウンロードを削除</string>
     <string name="settings_download_clean_invalid_download_summary">無効なダウンロード項目を削除します</string>
@@ -767,7 +761,6 @@
         <item>asc</item>
         <item>desc</item>
     </string-array>
-    <string name="error_save_image">画像を保存できませんでした</string>
     <string name="lrr_edit_tags">タグを編集</string>
     <string name="lrr_tags_updated">タグが更新されました</string>
     <string name="lrr_add_tag">タグを追加</string>

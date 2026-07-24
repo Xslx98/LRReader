@@ -32,7 +32,6 @@
     <string name="downloads">Downloads</string>
     <string name="settings">Einstellungen</string>
 
-    <string name="default_display_name">Xslx98</string>
     <string name="waring">Achtung</string>
     <string name="invalid_download_location">Der Downloadpfad ist nicht verfügbar. Geh zu die Einstellungen und stelle einen neue Pfad fest.</string>
     <string name="cellular_network_warning">Zu den mobilen Daten verbunden.</string>
@@ -53,7 +52,6 @@
     <string name="error_invalid_url">URL ungültig</string>
     <string name="error_cant_create_temp_file">Die Temporäre Datei konnte erstellt nicht werden</string>
     <string name="error_cant_save_image">Das Bild konnte nicht gespeichert werden</string>
-    <string name="error_cant_get_image">Bild konnte nicht abgerufen werden</string>
     <string name="lrr_error_load_pages_failed">Seiten können nicht geladen werden</string>
     <string name="gallery_gl_fallback_title">OpenGL-Renderer nicht verfügbar</string>
     <string name="gallery_gl_fallback_message">Dieses Gerät kann EGL derzeit nicht initialisieren. Bitte gehen Sie zurück und versuchen Sie es später erneut.</string>
@@ -550,9 +548,6 @@
     <string name="cancel">Abbrechen</string>
 
     <!--  侧滑栏头像和背景修改  -->
-    <string name="take_a_photograph">Foto aufnehmen</string>
-    <string name="choose_from_the_album">Aus Album wählen</string>
-    <string name="request_storage_permission">LR Reader wird Zugriff auf das Fotoalbum des Geräts anfordern, um Bilder zu erhalten. Möchtest du autorisieren?</string>
 
     <!-- 下载通知   -->
 
@@ -706,7 +701,6 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_url_download_hint">URL zum Herunterladen eingeben</string>
     <string name="lrr_url_download_success">Download-Auftrag gesendet (Job #%d)</string>
     <string name="lrr_url_download_title">URL-Download</string>
-    <string name="reset_to_default">Auf Standard zurücksetzen</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="search_sp_suffix" />
     <string name="settings_download_clean_invalid_download">Ungültige Downloads bereinigen</string>
@@ -785,7 +779,6 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
         <item>asc</item>
         <item>desc</item>
     </string-array>
-    <string name="error_save_image">Bild konnte nicht gespeichert werden</string>
     <string name="lrr_edit_tags">Tags bearbeiten</string>
     <string name="lrr_tags_updated">Tags aktualisiert</string>
     <string name="lrr_add_tag">Tag hinzufügen</string>

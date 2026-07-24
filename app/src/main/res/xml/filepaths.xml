@@ -27,12 +27,6 @@
 -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Camera capture images passed to ACTION_IMAGE_CAPTURE via
-         FileProvider.getUriForFile() in UserImageChange.kt -->
-    <external-cache-path
-        name="camera"
-        path="camera" />
-
     <!-- APK downloads from in-app update flow (UpdateDialog → ApkDownloader),
          exposed via FileProvider so PackageInstaller can read content:// URIs. -->
     <cache-path

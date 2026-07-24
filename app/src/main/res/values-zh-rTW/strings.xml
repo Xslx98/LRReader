@@ -36,7 +36,6 @@
 
 
 
-    <string name="default_display_name">Xslx98</string>
 
     <string name="waring">警告</string>
 
@@ -62,7 +61,6 @@
     <string name="error_invalid_url">不正確的連結</string>
     <string name="error_cant_create_temp_file">無法建立暫存檔案</string>
     <string name="error_cant_save_image">無法儲存圖片</string>
-    <string name="error_cant_get_image">無法獲取圖片</string>
     <string name="lrr_error_load_pages_failed">無法載入頁面</string>
     <string name="gallery_gl_fallback_title">OpenGL 渲染器無法使用</string>
     <string name="gallery_gl_fallback_message">目前裝置暫時無法初始化 EGL，請返回後稍後再試。</string>
@@ -619,9 +617,6 @@
     <string name="cancel">取消</string>
 
     <!--  側滑欄頭像和背景修改  -->
-    <string name="take_a_photograph">拍照</string>
-    <string name="choose_from_the_album">從相簿選擇</string>
-    <string name="request_storage_permission">為了獲取相片，LR Reader 將請求裝置的圖片相簿之權限。您願意授權嗎？</string>
 
     <!--  wifi server -->
     <!--  wifi server  -->
@@ -763,7 +758,6 @@
     <string name="lrr_url_download_hint">輸入要下載的URL</string>
     <string name="lrr_url_download_success">下載任務已提交 (Job #%d)</string>
     <string name="lrr_url_download_title">URL下載</string>
-    <string name="reset_to_default">恢復預設</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="settings_download_clean_invalid_download">清理無效下載</string>
     <string name="settings_download_clean_invalid_download_summary">移除無效的下載項</string>
@@ -838,7 +832,6 @@
         <item>asc</item>
         <item>desc</item>
     </string-array>
-    <string name="error_save_image">儲存圖片失敗</string>
     <string name="lrr_edit_tags">編輯標籤</string>
     <string name="lrr_tags_updated">標籤已更新</string>
     <string name="lrr_add_tag">新增標籤</string>

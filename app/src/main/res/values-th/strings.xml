@@ -39,7 +39,6 @@
 
 
 
-    <string name="default_display_name">Xslx98</string>
 
     <string name="waring">คำเตือน</string>
 
@@ -67,7 +66,6 @@
     <string name="error_invalid_url">URL ไม่ถูกต้อง</string>
     <string name="error_cant_create_temp_file">ไม่สามารถสร้างไฟล์ชั่วคราวได้</string>
     <string name="error_cant_save_image">ไม่สามารถบันทึกรูปภาพได้</string>
-    <string name="error_cant_get_image">ไม่สามารถรับรูปภาพได้</string>
     <string name="lrr_error_load_pages_failed">โหลดหน้าไม่ได้</string>
     <string name="gallery_gl_fallback_title">ไม่สามารถใช้ตัวเรนเดอร์ OpenGL ได้</string>
     <string name="gallery_gl_fallback_message">อุปกรณ์นี้ไม่สามารถเริ่มต้น EGL ได้ในขณะนี้ โปรดย้อนกลับและลองใหม่อีกครั้งภายหลัง</string>
@@ -619,9 +617,6 @@
     <!--  排行榜  -->
 
     <!--  侧滑栏头像和背景修改  -->
-    <string name="take_a_photograph">ถ่ายภาพ</string>
-    <string name="choose_from_the_album">เลือกจากอัลบั้ม</string>
-    <string name="request_storage_permission">LR Reader จะขอสิทธิ์เข้าถึงอัลบั้มภาพของอุปกรณ์เพื่อรับภาพ คุณต้องการอนุญาตหรือไม่?</string>
 
     <!-- 下载通知   -->
 
@@ -752,7 +747,6 @@
     <string name="lrr_url_download_hint">Enter download URL</string>
     <string name="lrr_url_download_success">Download queued (Job #%d)</string>
     <string name="lrr_url_download_title">ดาวน์โหลด URL</string>
-    <string name="reset_to_default">รีเซ็ตเป็นค่าเริ่มต้น</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="settings_download_clean_invalid_download">ล้างการดาวน์โหลดที่ไม่ถูกต้อง</string>
     <string name="settings_download_clean_invalid_download_summary">ลบรายการดาวน์โหลดที่ไม่ถูกต้อง</string>
@@ -831,7 +825,6 @@
         <item>asc</item>
         <item>desc</item>
     </string-array>
-    <string name="error_save_image">ไม่สามารถบันทึกรูปภาพได้</string>
     <string name="lrr_edit_tags">แก้ไขแท็ก</string>
     <string name="lrr_tags_updated">อัปเดตแท็กแล้ว</string>
     <string name="lrr_add_tag">เพิ่มแท็ก</string>

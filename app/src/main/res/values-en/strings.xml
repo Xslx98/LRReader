@@ -42,7 +42,6 @@
 
 
 
-    <string name="default_display_name">Xslx98</string>
 
     <string name="waring">Warning</string>
 
@@ -94,7 +93,6 @@
     <string name="error_invalid_url">Invalid url</string>
     <string name="error_cant_create_temp_file">Couldn\'t create temp file</string>
     <string name="error_cant_save_image">Can\'t save image</string>
-    <string name="error_cant_get_image">Can\'t get image</string>
     <string name="lrr_error_load_pages_failed">Can\'t load pages</string>
     <string name="gallery_gl_fallback_title">OpenGL renderer unavailable</string>
     <string name="gallery_gl_fallback_message">This device cannot initialize EGL right now. Please return and try again later.</string>
@@ -658,7 +656,6 @@
 
     <!-- Auto-generated missing translations -->
     <string name="cancel">Cancel</string>
-    <string name="choose_from_the_album">Choose from the album</string>
     <string name="copy_tag">Copy</string>
     <string name="default_sort">Default</string>
     <string name="download_filter_by_status">Filter by status</string>
@@ -741,8 +738,6 @@
     <string name="network_remind">It has been detected that the vpn is enabled, please pay attention to network security</string>
     <string name="pagination_count">count</string>
     <string name="pagination_page_and_item">r/p</string>
-    <string name="request_storage_permission">LR Reader will request access to the device\'s photo album in order to obtain pictures. Would you like to authorize?</string>
-    <string name="reset_to_default">Reset to default</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="settings_advanced_url_replace_summary">URL masking (requires restart, disables account features)</string>
     <string name="settings_advanced_url_replace_title">URL Masking (requires SNI off)</string>
@@ -782,7 +777,6 @@
     <string name="sort_download_list">Sort List</string>
     <string name="spen_next_page">Next page</string>
     <string name="spen_previous_page">Previous page</string>
-    <string name="take_a_photograph">Take a photograph</string>
     <string name="yes">Yes</string>
     <string name="lrr_category_label_dynamic">Dynamic</string>
     <string name="lrr_save_and_connect">Save &amp; Connect</string>
@@ -826,7 +820,6 @@
     <string name="lrr_allow_cleartext_label">Trust this server over plain HTTP (LAN only)</string>
     <string name="lrr_allow_cleartext_helper">Required when the server URL uses http://. Only enable for trusted LAN networks.</string>
     <string name="lrr_allow_cleartext_required">Plain HTTP requires explicit consent. Tick the box or use HTTPS.</string>
-    <string name="error_save_image">Failed to save image</string>
     <string name="lrr_edit_tags">Edit Tags</string>
     <string name="lrr_tags_updated">Tags updated</string>
     <string name="lrr_add_tag">Add tag</string>

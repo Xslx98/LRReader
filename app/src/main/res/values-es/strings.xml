@@ -35,7 +35,6 @@
 
 
 
-    <string name="default_display_name">Xslx98</string>
 
     <string name="waring">Advertencia</string>
 
@@ -62,7 +61,6 @@
     <string name="error_invalid_url">Url invalida</string>
     <string name="error_cant_create_temp_file">Imposible crear archivo temporal</string>
     <string name="error_cant_save_image">Imposible guardar la imagen</string>
-    <string name="error_cant_get_image">No se puede obtener la imagen</string>
     <string name="lrr_error_load_pages_failed">No se pueden cargar las páginas</string>
     <string name="gallery_gl_fallback_title">El renderizador OpenGL no está disponible</string>
     <string name="gallery_gl_fallback_message">Este dispositivo no puede inicializar EGL por ahora. Vuelve atrás e inténtalo de nuevo más tarde.</string>
@@ -645,9 +643,6 @@
 
     <!--  排行榜  -->
     <!--  侧滑栏头像和背景修改  -->
-    <string name="take_a_photograph">Tomar una fotografía</string>
-    <string name="choose_from_the_album">Elegir del álbum</string>
-    <string name="request_storage_permission">LR Reader solicitará acceso al álbum de fotos del dispositivo para obtener imágenes. ¿Le gustaría autorizar?</string>
     <!-- 下载通知   -->
     <string name="have_new_version">Haga clic para ver la nueva versión de la galería</string>
     <string name="archiver_downloading">Descargando archivo %s</string>
@@ -801,7 +796,6 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_url_download_hint">Ingrese URL para descargar</string>
     <string name="lrr_url_download_success">Tarea de descarga enviada (Job #%d)</string>
     <string name="lrr_url_download_title">Descarga por URL</string>
-    <string name="reset_to_default">Restablecer valores predeterminados</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="settings_download_clean_invalid_download">Limpiar descargas inválidas</string>
     <string name="settings_download_clean_invalid_download_summary">Eliminar descargas inválidas</string>
@@ -876,7 +870,6 @@ Esta acción no se puede deshacer.</string>
         <item>asc</item>
         <item>desc</item>
     </string-array>
-    <string name="error_save_image">No se pudo guardar la imagen</string>
     <string name="lrr_edit_tags">Editar etiquetas</string>
     <string name="lrr_tags_updated">Etiquetas actualizadas</string>
     <string name="lrr_add_tag">Añadir etiqueta</string>

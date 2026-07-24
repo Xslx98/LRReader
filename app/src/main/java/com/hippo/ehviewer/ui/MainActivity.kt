@@ -19,25 +19,17 @@ package com.hippo.ehviewer.ui
 import android.annotation.SuppressLint
 import android.content.ClipboardManager
 import android.util.Log
-import com.hippo.ehviewer.BuildConfig
 import com.hippo.ehviewer.appwidget.ContinueReadingWidget
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import androidx.core.graphics.createBitmap
-import androidx.core.graphics.drawable.toDrawable
 import android.net.ConnectivityManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.Message
-import android.text.TextUtils
 import android.view.Gravity
-import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.widget.FrameLayout
-import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -55,16 +47,13 @@ import com.hippo.ehviewer.settings.SecuritySettings
 import com.hippo.ehviewer.settings.NetworkSettings
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.settings.AppearanceSettings
-import com.hippo.ehviewer.callBack.ImageChangeCallBack
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.download.DownloadResumeBanner
 import com.hippo.ehviewer.download.DownloadService
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.dao.AppDatabase
 import com.hippo.ehviewer.module.AppModule
-import com.hippo.ehviewer.util.ImageDecodeUtils
 import com.lanraragi.reader.client.api.LRRAuthManager
-import com.hippo.ehviewer.ui.main.UserImageChange
 import com.hippo.ehviewer.ui.scene.AnalyticsScene
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.ui.scene.ServerConfigScene
@@ -88,30 +77,23 @@ import com.hippo.scene.Announcer
 import com.hippo.scene.SceneFactory
 import com.hippo.scene.SceneFragment
 import com.hippo.scene.StageActivity
-import com.hippo.util.GifHandler
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.hippo.widget.AvatarImageView
 import com.hippo.lib.yorozuya.ResourcesUtils
 import com.hippo.lib.yorozuya.ViewUtils
-import java.io.File
 import com.hippo.ehviewer.settings.UpdateSettings
 import com.hippo.ehviewer.updater.AppUpdater
 import com.hippo.ehviewer.updater.GhRelease
 import com.hippo.ehviewer.ui.dialog.UpdateDialog
 
 class MainActivity : StageActivity(),
-    NavigationView.OnNavigationItemSelectedListener, ImageChangeCallBack, DrawerLayout.DrawerListener {
+    NavigationView.OnNavigationItemSelectedListener, DrawerLayout.DrawerListener {
 
     companion object {
         private const val TAG = "MainActivity"
         private const val KEY_NAV_CHECKED_ITEM = "nav_checked_item"
-        /** Max dimension for user avatar/background decode to prevent OOM. */
-        private const val MAX_IMAGE_DIMENSION = 1024
 
         init {
             registerLaunchMode(SecurityScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
@@ -162,10 +144,6 @@ class MainActivity : StageActivity(),
     private var mDrawerLayout: EhDrawerLayout? = null
     private var mNavView: NavigationView? = null
     private var mRightDrawer: FrameLayout? = null
-    private var mAvatar: AvatarImageView? = null
-    private var mHeaderBackground: ImageView? = null
-    private var mDisplayName: TextView? = null
-    private var userImageChange: UserImageChange? = null
 
     private val settingsLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -175,51 +153,11 @@ class MainActivity : StageActivity(),
         }
     }
 
-    private val cameraLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        userImageChange?.handleCameraResult(result.resultCode, mAvatar)
-    }
-
-    private val albumLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        userImageChange?.handleAlbumResult(result.resultCode, result.data, mAvatar)
-    }
-
-    private val cropLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        userImageChange?.handleCropResult(result.resultCode, result.data, mAvatar)
-    }
-
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { /* result ignored: if denied, download notifications simply stay hidden */ }
 
     private var mNavCheckedItem = 0
-
-    @JvmField
-    var gifHandler: GifHandler? = null
-
-    @JvmField
-    var backgroundBit: Bitmap? = null
-
-    /** In-flight background-image decode; cancelled before starting another. */
-    private var backgroundLoadJob: Job? = null
-
-    private val handlerB: Handler = object : Handler(Looper.getMainLooper()) {
-        override fun handleMessage(msg: Message) {
-            val gif = gifHandler ?: return
-            val bg = backgroundBit ?: return
-            if (bg.isRecycled) return
-            val mNextFrame = gif.updateFrame(bg)
-            if (mNextFrame > 0) {
-                sendEmptyMessageDelayed(1, mNextFrame.toLong())
-            }
-            mHeaderBackground?.setImageBitmap(bg)
-        }
-    }
 
     override fun getThemeResId(theme: Int): Int = when (theme) {
         AppearanceSettings.THEME_DARK -> R.style.AppTheme_Main_Dark
@@ -432,18 +370,6 @@ class MainActivity : StageActivity(),
         val navView = ViewUtils.`$$`(this, R.id.nav_view) as NavigationView
         mNavView = navView
         mRightDrawer = ViewUtils.`$$`(this, R.id.right_drawer) as FrameLayout
-        val headerLayout = navView.getHeaderView(0)
-        val avatar = ViewUtils.`$$`(headerLayout, R.id.avatar) as AvatarImageView
-        mAvatar = avatar
-        avatar.setOnClickListener { onAvatarChange() }
-        val headerBackground = ViewUtils.`$$`(headerLayout, R.id.header_background) as ImageView
-        mHeaderBackground = headerBackground
-        headerBackground.setOnClickListener { onBackgroundChange() }
-        initUserImage()
-        // Bind mDisplayName before updateProfile() so its display-name block actually runs
-        // on cold start (it was previously assigned after the call and stayed null).
-        mDisplayName = ViewUtils.`$$`(headerLayout, R.id.display_name) as TextView
-        updateProfile()
         val mChangeTheme = ViewUtils.`$$`(this, R.id.change_theme) as TextView
 
         drawerLayout.setStatusBarColor(
@@ -625,114 +551,6 @@ class MainActivity : StageActivity(),
         }
     }
 
-    private fun initUserImage() {
-        val headerBackgroundFile = AppearanceSettings.getUserImageFile(AppearanceSettings.USER_BACKGROUND_IMAGE)
-        initBackgroundImageData(headerBackgroundFile)
-    }
-
-    private fun cleanupBackgroundResources() {
-        handlerB.removeCallbacksAndMessages(null)
-        gifHandler?.close()
-        gifHandler = null
-        // Don't recycle backgroundBit: now that decoding is async, this can run
-        // (on a new load) while the bitmap is still set on mHeaderBackground,
-        // and recycling a displayed bitmap crashes on the next draw. Drop the
-        // reference and let ART's GC reclaim the native allocation.
-        backgroundBit = null
-    }
-
-    private fun initBackgroundImageData(file: File?) {
-        // Clean up previous resources + cancel any in-flight decode so a stale
-        // load can't stomp the new one.
-        backgroundLoadJob?.cancel()
-        cleanupBackgroundResources()
-
-        if (file == null) return
-
-        // Decode off the main thread: this runs during cold-start onCreate and
-        // the background can be a full-screen image (or a GIF first frame).
-        // lifecycleScope cancels the job if the Activity is destroyed mid-decode.
-        backgroundLoadJob = lifecycleScope.launch {
-            try {
-                // substringAfterLast (not split[1]) so a dotless filename — older
-                // builds persisted the MediaStore display name verbatim — yields
-                // "" instead of throwing IndexOutOfBounds. A crash here would loop
-                // on every cold start because the bad path lives in SharedPreferences.
-                val ext = file.name.substringAfterLast('.', "").lowercase()
-                if (ext == "gif") {
-                    // GifHandler holds a raw native pointer with no finalizer —
-                    // only close() frees it, and cleanupBackgroundResources()
-                    // only knows about the published field. Keep the handle in
-                    // a var assigned INSIDE the IO block (so it survives even
-                    // when a cancelled withContext discards its return value)
-                    // and close it on any exit where it wasn't published.
-                    var gif: GifHandler? = null
-                    var published = false
-                    try {
-                        withContext(Dispatchers.IO) { gif = GifHandler(file.absolutePath) }
-                        val g = checkNotNull(gif)
-                        val bmp = createBitmap(g.width, g.height)
-                        val nextFrame = withContext(Dispatchers.IO) { g.updateFrame(bmp) }
-                        gifHandler = g
-                        published = true
-                        backgroundBit = bmp
-                        handlerB.sendEmptyMessageDelayed(1, nextFrame.toLong())
-                    } finally {
-                        if (!published) gif?.close()
-                    }
-                } else {
-                    val bmp = withContext(Dispatchers.IO) { decodeSampledBitmap(file.path) }
-                    backgroundBit = bmp
-                    mHeaderBackground?.setImageBitmap(bmp)
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                // Corrupt / unreadable image: drop the saved path so the next
-                // launch starts clean instead of crash-looping, and fall back
-                // to the default background.
-                if (BuildConfig.DEBUG) {
-                    Log.w(TAG, "Background image load failed for ${file.name}: ${e.message}")
-                }
-                cleanupBackgroundResources()
-                AppearanceSettings.saveFilePath(AppearanceSettings.USER_BACKGROUND_IMAGE, null)
-                mHeaderBackground?.setImageResource(R.drawable.sadpanda_low_poly)
-            }
-        }
-    }
-
-    override fun backgroundSourceChange(file: File?) {
-        if (file == null) {
-            cleanupBackgroundResources()
-            mHeaderBackground?.setImageResource(R.drawable.sadpanda_low_poly)
-        } else {
-            initBackgroundImageData(file)
-        }
-    }
-
-    /**
-     * Reload avatar from settings (or reset to default).
-     * Called by UserImageChange.resetToDefault().
-     */
-    fun loadAvatar() {
-        val avatar = mAvatar ?: return
-        val userAvatarFile = AppearanceSettings.getUserImageFile(AppearanceSettings.USER_AVATAR_IMAGE)
-        if (userAvatarFile == null) {
-            avatar.load(R.drawable.default_avatar)
-            return
-        }
-        // Decode off the main thread; lifecycleScope skips the set if the
-        // Activity is gone by the time the decode finishes.
-        lifecycleScope.launch {
-            val bitmap = withContext(Dispatchers.IO) { decodeSampledBitmap(userAvatarFile.path) }
-            if (bitmap != null) {
-                avatar.load(bitmap.toDrawable(avatar.resources))
-            } else {
-                avatar.load(R.drawable.default_avatar)
-            }
-        }
-    }
-
     private fun getThemeText(): String {
         val resId = when (AppearanceSettings.getTheme()) {
             AppearanceSettings.THEME_DARK -> R.string.theme_dark
@@ -820,15 +638,11 @@ class MainActivity : StageActivity(),
     }
 
     override fun onDestroy() {
-        cleanupBackgroundResources()
-
         super.onDestroy()
 
         mDrawerLayout = null
         mNavView = null
         mRightDrawer = null
-        mAvatar = null
-        mDisplayName = null
     }
 
     override fun onResume() {
@@ -931,74 +745,12 @@ class MainActivity : StageActivity(),
         }
     }
 
-    private fun decodeSampledBitmap(path: String, maxDim: Int = MAX_IMAGE_DIMENSION): Bitmap? =
-        ImageDecodeUtils.decodeSampledBitmap(path, maxDim)
-
-    fun updateProfile() {
-        mAvatar?.let { avatar ->
-            val avatarUrl = AppearanceSettings.getAvatar()
-            if (TextUtils.isEmpty(avatarUrl)) {
-                // Same decode-user-avatar path as elsewhere — loadAvatar owns
-                // the off-main decode and the default_avatar fallback (which
-                // the previous inline copy here lacked, showing an empty
-                // drawable for a corrupt file).
-                loadAvatar()
-            } else {
-                avatar.load(avatarUrl, avatarUrl)
-            }
-        }
-
-        mDisplayName?.let { displayNameView ->
-            var displayName = AppearanceSettings.getDisplayName()
-            if (TextUtils.isEmpty(displayName)) {
-                displayName = getString(R.string.default_display_name)
-            }
-            displayNameView.text = displayName
-        }
-    }
-
     fun addAboveSnackView(view: View) {
         mDrawerLayout?.addAboveSnackView(view)
     }
 
     fun removeAboveSnackView(view: View) {
         mDrawerLayout?.removeAboveSnackView(view)
-    }
-
-    /**
-     * 更换壁纸
-     */
-    fun onBackgroundChange() {
-        val change = UserImageChange(
-            this@MainActivity,
-            UserImageChange.CHANGE_BACKGROUND,
-            layoutInflater,
-            LayoutInflater.from(this@MainActivity),
-            this,
-            cameraLauncher,
-            albumLauncher,
-            cropLauncher,
-        )
-        userImageChange = change
-        change.showImageChangeDialog()
-    }
-
-    /**
-     * 更换头像
-     */
-    fun onAvatarChange() {
-        val change = UserImageChange(
-            this@MainActivity,
-            UserImageChange.CHANGE_AVATAR,
-            layoutInflater,
-            LayoutInflater.from(this@MainActivity),
-            this,
-            cameraLauncher,
-            albumLauncher,
-            cropLauncher,
-        )
-        userImageChange = change
-        change.showImageChangeDialog()
     }
 
     fun setDrawerLockMode(lockMode: Int, edgeGravity: Int) {
