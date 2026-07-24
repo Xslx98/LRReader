@@ -34,6 +34,31 @@ public class ContextLocalWrapper extends ContextWrapper {
     super(base);
   }
 
+  /**
+   * Locale-adjusted context WITHOUT the wrapper shell, for use as the
+   * Application base context. ActivityThread.handleReceiver casts
+   * {@code app.getBaseContext()} straight to ContextImpl, so the Application
+   * base must never be a ContextWrapper — every manifest-declared receiver
+   * (e.g. an AppWidgetProvider) would otherwise crash the process with a
+   * ClassCastException before onReceive. {@code createConfigurationContext}
+   * returns a real ContextImpl carrying the locale override, which is all
+   * the wrapper shell ever added on API &gt;= N (minSdk is 28). Activities
+   * keep using {@link #wrap} — the framework does not cast their base.
+   *
+   * @param newLocale null = follow the system, base is returned untouched.
+   */
+  public static Context localeApplicationBase(Context base, Locale newLocale) {
+    if (newLocale == null) {
+      return base;
+    }
+    Configuration configuration = base.getResources().getConfiguration();
+    configuration.setLocale(newLocale);
+    LocaleList localeList = new LocaleList(newLocale);
+    LocaleList.setDefault(localeList);
+    configuration.setLocales(localeList);
+    return base.createConfigurationContext(configuration);
+  }
+
   public static ContextLocalWrapper wrap(Context context, Locale newLocale) {
     Resources res = context.getResources();
     Configuration configuration = res.getConfiguration();
