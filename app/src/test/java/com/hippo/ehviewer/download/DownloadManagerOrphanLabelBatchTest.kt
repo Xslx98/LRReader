@@ -73,7 +73,11 @@ class DownloadManagerOrphanLabelBatchTest {
         ServiceRegistry.initializeForTest(
             data = object : com.hippo.ehviewer.module.IDataModule {
                 override val searchHistoryRepository get() = throw NotImplementedError("not needed")
-                override val downloadDbRepository get() = DownloadDbRepository(db.archiveLocalStateDao(), db.downloadDao(), db)
+                override val downloadDbRepository get() =
+                    DownloadDbRepository(
+                        db.archiveLocalStateDao(), db.downloadDao(), db,
+                        kotlinx.coroutines.Dispatchers.Unconfined
+                    )
                 override val downloadManager get() = throw NotImplementedError("set after init")
                 override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
                 override val historyRepository get() = com.hippo.ehviewer.dao.HistoryRepository(db.archiveLocalStateDao(), db)

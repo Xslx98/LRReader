@@ -112,8 +112,14 @@ class DownloadsViewModelTest {
                     com.hippo.ehviewer.dao.QuickSearchRepository(db.browsingDao())
                 override val favoritesRepository get() =
                     com.hippo.ehviewer.dao.FavoritesRepository(db.archiveLocalStateDao(), db)
+                // Unconfined decode dispatcher: these tests drive Room with
+                // inline executors and assert list state synchronously after
+                // ShadowLooper idling — the production Default hop would race.
                 override val downloadDbRepository get() =
-                    DownloadDbRepository(db.archiveLocalStateDao(), db.downloadDao(), db)
+                    DownloadDbRepository(
+                        db.archiveLocalStateDao(), db.downloadDao(), db,
+                        Dispatchers.Unconfined
+                    )
                 override val archiveDetailCache get() = LruCache<String, ArchiveDetail>(10)
                 override val spiderInfoCache: SimpleDiskCache get() =
                     SimpleDiskCache(
