@@ -31,7 +31,6 @@ import android.os.Debug
 import android.os.Process
 import android.os.Trace
 import android.util.Log
-import com.hippo.Native
 import com.hippo.a7zip.A7Zip
 import com.hippo.content.ContextLocalWrapper
 import com.hippo.content.RecordingApplication
@@ -253,10 +252,11 @@ class EhApplication : RecordingApplication() {
 
         // Defer heavy JNI/native initialization to background thread.
         // These are not needed until the user actually opens a gallery or downloads.
+        // libehviewer.so needs no eager load: its only consumer (GifHandler)
+        // loads it in its own static initializer on first use.
         ServiceRegistry.coroutineModule.ioScope.launch {
             BitmapUtils.initialize(this@EhApplication)
             Image.initialize(this@EhApplication)
-            Native.initialize()
             A7Zip.initialize(this@EhApplication)
         }
 

@@ -50,7 +50,6 @@
 -keep class com.hippo.ehviewer.gallery.A7ZipArchive$* { *; }
 
 # === Native JNI entry points (libehviewer.so) ===
--keep class com.hippo.Native { *; }
 -keep class com.hippo.util.GifHandler { *; }
 
 # === Custom views referenced in XML (need constructors for inflation) ===
