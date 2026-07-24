@@ -265,6 +265,20 @@ class Image private constructor(
         var screenWidth: Int = 0
         var screenHeight: Int = 0
 
+        init {
+            // Self-load like GifHandler: nativeTexImage is an external fun and
+            // JNI binds lazily on first call — without this, the GL reader
+            // crashes with UnsatisfiedLinkError on the GLThread (caught by AVD
+            // smoke after the eager Native.initialize() loader was removed).
+            try {
+                System.loadLibrary("ehviewer")
+            } catch (e: UnsatisfiedLinkError) {
+                // JVM unit tests have no native libs; on device a real load
+                // failure resurfaces at the first nativeTexImage call.
+                Log.w(TAG, "libehviewer load failed")
+            }
+        }
+
         @JvmStatic
         fun initialize(context: android.content.Context) {
             screenWidth = context.resources.displayMetrics.widthPixels
