@@ -242,7 +242,11 @@ object ReaderPageCache : Cacheable {
                                 )
                             }
                         }
-                        fos.fd.sync()
+                        // No fsync: this cache is disposable. A torn file
+                        // after an OS crash fails the magic-byte/size checks
+                        // on the read path and is simply re-downloaded;
+                        // paying a physical flush per page (current page +
+                        // every preload) buys durability nothing needs.
                     }
                 }
             }
