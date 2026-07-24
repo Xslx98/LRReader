@@ -62,7 +62,7 @@ fun DownloadInfo.toCSV(): String {
  * legacy columns are read past but discarded.
  */
 fun archiveFromCsvLine(csv: String): Archive? {
-    val values = csv.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+    val values = csv.split(",").dropLastWhile { it.isEmpty() }.toTypedArray()
     if (values.size < 20) {
         return null
     }
@@ -79,7 +79,7 @@ fun archiveFromCsvLine(csv: String): Archive? {
         // up as a `namespace:value` (or bare) token.
         val flatTags = if (tagsCell.length >= 2 && tagsCell.startsWith("[") && tagsCell.endsWith("]")) {
             tagsCell.substring(1, tagsCell.length - 1)
-                .split(", ".toRegex())
+                .split(", ")
                 .filter { it.isNotEmpty() }
         } else {
             emptyList()

@@ -55,7 +55,7 @@ class GalleryFilterHelper(private val callback: Callback) {
      * Strips namespace prefix before adding.
      */
     fun searchTagBuild(tagName: String): String {
-        val list = tagName.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+        val list = tagName.split(":").dropLastWhile { it.isEmpty() }.toTypedArray()
         val key = if (list.size == 2) list[1] else list[0]
 
         if (!filterTagList.contains(key)) {
