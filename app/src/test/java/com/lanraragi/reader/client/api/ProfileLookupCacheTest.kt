@@ -138,6 +138,34 @@ class ProfileLookupCacheTest {
     }
 
     @Test
+    fun findParsedCandidatesByHostPort_carriesPreParsedUrl() = runBlocking {
+        repo.insert(ServerProfile(name = "plain", url = "http://lrr.local:3000"))
+        val cache = newCache()
+        awaitSnapshotSize(cache, 1)
+
+        val candidates = cache.findParsedCandidatesByHostPort("lrr.local", 3000)
+        assertEquals(1, candidates.size)
+        val candidate = candidates[0]
+        assertEquals("plain", candidate.profile.name)
+        // The interceptors' scheme checks read the pre-parsed fields.
+        assertEquals("http", candidate.url.scheme)
+        assertEquals("lrr.local", candidate.url.host)
+        assertEquals(3000, candidate.url.port)
+    }
+
+    @Test
+    fun findParsedCandidatesByHostPort_dropsUnparseableProfileUrls() = runBlocking {
+        repo.insert(ServerProfile(name = "broken", url = "not a url"))
+        val cache = newCache()
+        awaitSnapshotSize(cache, 1)
+
+        // The raw snapshot still carries the row (UI badges), but lookups
+        // never see it — identical to the old per-lookup `?: continue`.
+        assertEquals(1, cache.snapshot.value.size)
+        assertTrue(cache.findParsedCandidatesByHostPort("not a url", 80).isEmpty())
+    }
+
+    @Test
     fun snapshot_reflectsLiveInsertsAndDeletes() = runBlocking {
         val cache = newCache()
         cache.awaitInitialized()

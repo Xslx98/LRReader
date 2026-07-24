@@ -47,7 +47,7 @@ class LRRCleartextRejectionInterceptor : Interceptor {
         // 2. Find configured profiles owning this host:port (any scheme).
         val cache = runCatching { ServiceRegistry.dataModule.profileLookupCache }
             .getOrNull()
-        val candidates = cache?.findCandidatesByHostPort(url.host, url.port).orEmpty()
+        val candidates = cache?.findParsedCandidatesByHostPort(url.host, url.port).orEmpty()
 
         if (candidates.isNotEmpty()) {
             return enforceProfileBased(chain, request, url, candidates)
@@ -63,11 +63,12 @@ class LRRCleartextRejectionInterceptor : Interceptor {
         chain: Interceptor.Chain,
         request: okhttp3.Request,
         url: HttpUrl,
-        candidates: List<com.hippo.ehviewer.dao.ServerProfile>,
+        candidates: List<ProfileUrlCandidate>,
     ): Response {
-        // Scheme equality: pick the candidate whose configured URL is also HTTP.
+        // Scheme equality: pick the candidate whose configured URL is also
+        // HTTP. Candidates carry their pre-parsed URL — no re-parse here.
         val match = candidates.firstOrNull {
-            it.url.toHttpUrlOrNull()?.scheme.equals("http", ignoreCase = true)
+            it.url.scheme.equals("http", ignoreCase = true)
         }
         if (match == null) {
             // Host:port matches a profile but every candidate is HTTPS —
@@ -76,7 +77,7 @@ class LRRCleartextRejectionInterceptor : Interceptor {
                 "Cleartext request refused: configured profile is HTTPS, request is HTTP."
             )
         }
-        if (!match.allowCleartext) {
+        if (!match.profile.allowCleartext) {
             throw LRRCleartextRefusedException(
                 "Cleartext request refused: profile does not allow plain HTTP."
             )
