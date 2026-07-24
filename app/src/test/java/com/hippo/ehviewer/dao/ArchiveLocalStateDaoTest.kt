@@ -303,4 +303,65 @@ class ArchiveLocalStateDaoTest {
         assertEquals("""{"arcid":"j","v":"dl"}""", dao.loadByArcidAndProfile("j", 5L)!!.archiveJson)
         assertEquals("""{"arcid":"j","v":"hist"}""", dao.loadByArcidAndProfile("j", 6L)!!.archiveJson)
     }
+
+    // ── History trim (count-gated fast path) ──
+    //
+    // trimHistoryForProfile runs on EVERY archive open (putHistoryInfo),
+    // so the common already-bounded case must not pay for the NOT-IN
+    // subquery + empty-row scan. These characterization tests lock the
+    // gate's boundary semantics: strictly-over trims, at-limit is a no-op.
+
+    @Test
+    fun trimHistoryForProfile_overLimit_clearsOldestAndCollapsesEmptyRows() = runTest {
+        dao.upsert(row("t-old", serverProfileId = 1L, historyTime = 1000L))
+        dao.upsert(row("t-mid", serverProfileId = 1L, historyTime = 2000L))
+        dao.upsert(row("t-new", serverProfileId = 1L, historyTime = 3000L))
+        // Oldest row also has a download subsystem — trim must clear its
+        // history columns but keep the row alive.
+        dao.upsert(row(
+            "t-dl",
+            serverProfileId = 1L,
+            historyTime = 500L,
+            downloadState = DownloadState.FINISH,
+            downloadTime = 1L,
+        ))
+
+        dao.trimHistoryForProfile(1L, 2)
+
+        assertEquals(
+            listOf("t-new", "t-mid"),
+            dao.getHistoryByServer(1L).map { it.arcid }
+        )
+        // History-only trimmed row collapsed entirely…
+        assertNull(dao.loadByArcidAndProfile("t-old", 1L))
+        // …download-bearing trimmed row survives without history columns.
+        val dlRow = dao.loadByArcidAndProfile("t-dl", 1L)!!
+        assertNull(dlRow.historyTime)
+        assertEquals(DownloadState.FINISH, dlRow.downloadState)
+    }
+
+    @Test
+    fun trimHistoryForProfile_atLimit_keepsEverything() = runTest {
+        dao.upsert(row("a1", serverProfileId = 1L, historyTime = 1000L))
+        dao.upsert(row("a2", serverProfileId = 1L, historyTime = 2000L))
+
+        dao.trimHistoryForProfile(1L, 2)
+
+        assertEquals(2, dao.getHistoryByServer(1L).size)
+    }
+
+    @Test
+    fun trimHistoryForProfile_onlyCountsTargetProfile() = runTest {
+        // Profile 1 is under its limit; profile 2's rows must neither be
+        // counted against profile 1 nor trimmed by profile 1's pass.
+        dao.upsert(row("p1-a", serverProfileId = 1L, historyTime = 1000L))
+        dao.upsert(row("p2-a", serverProfileId = 2L, historyTime = 100L))
+        dao.upsert(row("p2-b", serverProfileId = 2L, historyTime = 200L))
+        dao.upsert(row("p2-c", serverProfileId = 2L, historyTime = 300L))
+
+        dao.trimHistoryForProfile(1L, 2)
+
+        assertEquals(1, dao.getHistoryByServer(1L).size)
+        assertEquals(3, dao.getHistoryByServer(2L).size)
+    }
 }

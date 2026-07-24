@@ -111,6 +111,12 @@ interface ArchiveLocalStateDao {
     )
     suspend fun getHistoryByServer(profileId: Long): List<ArchiveLocalState>
 
+    @Query(
+        "SELECT COUNT(*) FROM ARCHIVE_LOCAL_STATE " +
+            "WHERE HISTORY_TIME IS NOT NULL AND SERVER_PROFILE_ID = :profileId"
+    )
+    suspend fun countHistoryForProfile(profileId: Long): Int
+
     // ── Favorite subsystem ─────────────────────────────────────
 
     @Query(
@@ -455,6 +461,13 @@ interface ArchiveLocalStateDao {
 
     @Transaction
     suspend fun trimHistoryForProfile(profileId: Long, maxCount: Int) {
+        // Runs on every archive open (putHistoryInfo), and the common case
+        // is an already-bounded history. Only pay for the correlated NOT-IN
+        // subquery + the un-indexed empty-row scan when a trim can actually
+        // remove something. deleteAllEmptyRows has nothing to collapse when
+        // no history column was cleared — every other clear path prunes its
+        // own rows.
+        if (countHistoryForProfile(profileId) <= maxCount) return
         clearHistorySubsystemBeyondForProfile(profileId, maxCount)
         deleteAllEmptyRows()
     }
