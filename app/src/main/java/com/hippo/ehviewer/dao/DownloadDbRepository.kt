@@ -6,8 +6,11 @@ import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.mapper.toArchiveJson
 import com.hippo.ehviewer.mapper.toDownloadInfoView
 import com.lanraragi.reader.domain.Archive
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 
 /**
@@ -43,6 +46,7 @@ class DownloadDbRepository(
     private val archiveLocalStateDao: ArchiveLocalStateDao,
     private val downloadDao: DownloadRoomDao,
     private val database: AppDatabase,
+    private val decodeDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
 
     // ═══════════════════════════════════════════════════════════
@@ -93,9 +97,14 @@ class DownloadDbRepository(
         // emissions before the per-row archive_json decode (O(N) JSON parse):
         // ArchiveLocalState is a data class, so distinctUntilChanged compares
         // the projected download rows by value.
+        //
+        // flowOn keeps the surviving O(N) decode off the collector's
+        // dispatcher — DownloadsViewModel collects on viewModelScope (main).
+        // CPU-bound parse, hence Default rather than IO.
         return archiveLocalStateDao.observeAllDownloads()
             .distinctUntilChanged()
             .map { rows -> rows.map { it.toDownloadInfoView() } }
+            .flowOn(decodeDispatcher)
     }
 
     /**
