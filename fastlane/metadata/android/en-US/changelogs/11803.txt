@@ -1,0 +1,4 @@
+Cleanup release:
+- Removed avatar / drawer background / display name customization — the drawer header is now a simple solid-color block. This also removes the crash when trying to change the avatar or background image.
+- Dropped the image-cropper dependency; smaller APK
+- Leftover customization data from older versions is cleaned up automatically
