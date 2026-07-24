@@ -78,6 +78,12 @@ class LRRGalleryProvider(
     // Atomic provider state -- replaces individual @Volatile fields for pagePaths/pageCount/stopped
     private val stateRef = AtomicReference(ProviderState())
 
+    // Provider-scoped so PRELOAD_PARALLELISM is a true global cap: several
+    // pages bind near-simultaneously in scroll mode, and a per-invocation
+    // semaphore would let each preloadPages batch independently admit
+    // PRELOAD_PARALLELISM downloads (effective concurrency ≈ 2 × batches).
+    private val preloadSemaphore = Semaphore(PRELOAD_PARALLELISM)
+
     /** Serialized + conflated server progress sync (app-scoped, survives stop()). */
     private val progressSyncer = ReadingProgressSyncer(
         ServiceRegistry.coroutineModule.ioScope
@@ -701,7 +707,6 @@ class LRRGalleryProvider(
     private fun preloadPages(currentIndex: Int) {
         val paths = stateRef.get().paths ?: return
         providerScope?.launch {
-            val semaphore = Semaphore(PRELOAD_PARALLELISM)
             for (i in 1..PRELOAD_COUNT) {
                 if (stateRef.get().stopped) break
                 val preloadIndex = currentIndex + i
@@ -710,7 +715,7 @@ class LRRGalleryProvider(
                 if (cached.exists() && cached.length() > ReaderPageCache.MIN_IMAGE_SIZE) continue
 
                 launch {
-                    semaphore.acquire()
+                    preloadSemaphore.acquire()
                     try {
                         if (!stateRef.get().stopped) {
                             downloadPageToCache(preloadIndex)
@@ -719,7 +724,7 @@ class LRRGalleryProvider(
                     } catch (e: Exception) {
                         Log.d(TAG, "Preload failed for page $preloadIndex: ${e.message}")
                     } finally {
-                        semaphore.release()
+                        preloadSemaphore.release()
                     }
                 }
             }
