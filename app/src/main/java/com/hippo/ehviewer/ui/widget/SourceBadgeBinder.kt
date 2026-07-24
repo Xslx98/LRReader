@@ -1,11 +1,11 @@
 package com.hippo.ehviewer.ui.widget
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.Color
+import android.util.SparseArray
 import android.view.View
 import android.widget.TextView
-import androidx.appcompat.content.res.AppCompatResources
-import androidx.core.graphics.drawable.DrawableCompat
 import com.hippo.android.resource.AttrResources
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
@@ -66,19 +66,31 @@ fun bindSourceServerBadge(badge: TextView, serverProfileId: Long): String? {
         resolvedName = profile.name
     }
 
-    // Square badge drawable shared across rows; mutate() so each
-    // ViewHolder's tint state is independent — without it,
-    // RecyclerView recycling would let one ViewHolder's tint bleed
-    // into another binding the same drawable instance.
-    val bg = AppCompatResources.getDrawable(context, R.drawable.lrr_server_badge_bg)
-        ?.mutate()
-    if (bg != null) {
-        DrawableCompat.setTint(bg, bgColor)
-        badge.background = bg
+    // Set the shape once per view; recycled holders keep their instance.
+    // Colour goes through view-level backgroundTintList — the View
+    // mutates its own background before applying a tint, so per-holder
+    // tint isolation holds without inflating + mutate()-copying a fresh
+    // drawable on every bind (the old full-bind allocation churn).
+    if (badge.background == null) {
+        badge.setBackgroundResource(R.drawable.lrr_server_badge_bg)
     }
+    badge.backgroundTintList = badgeTintFor(bgColor)
     badge.setTextColor(fgColor)
     badge.visibility = View.VISIBLE
     return resolvedName
+}
+
+/**
+ * ColorStateList instances are immutable — cache one per colour int
+ * (8 palette slots + error, more only across theme changes) instead of
+ * allocating ColorStateList.valueOf per bind. Main-thread only, like
+ * every caller of [bindSourceServerBadge].
+ */
+private val badgeTintCache = SparseArray<ColorStateList>()
+
+private fun badgeTintFor(color: Int): ColorStateList {
+    badgeTintCache.get(color)?.let { return it }
+    return ColorStateList.valueOf(color).also { badgeTintCache.put(color, it) }
 }
 
 /**

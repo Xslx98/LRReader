@@ -29,6 +29,7 @@ import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.os.Debug
 import android.os.Process
+import android.os.StrictMode
 import android.os.Trace
 import android.util.Log
 import com.hippo.a7zip.A7Zip
@@ -115,6 +116,32 @@ class EhApplication : RecordingApplication() {
         }
 
         super.onCreate()
+
+        // Debug-only StrictMode: penaltyLog surfaces main-thread disk/network
+        // work and leaked closables during development (this class of bug —
+        // e.g. a Room-flow JSON decode landing on main — is otherwise
+        // invisible until it janks). Never enabled in release; log-only so
+        // the known deliberate boot reads (locale prefs in attachBaseContext,
+        // Settings warm-up below) show up without killing anything.
+        if (BuildConfig.DEBUG) {
+            StrictMode.setThreadPolicy(
+                StrictMode.ThreadPolicy.Builder()
+                    .detectDiskReads()
+                    .detectDiskWrites()
+                    .detectNetwork()
+                    .penaltyLog()
+                    .build()
+            )
+            StrictMode.setVmPolicy(
+                StrictMode.VmPolicy.Builder()
+                    .detectLeakedClosableObjects()
+                    // The detector GalleryActivity's dead block always meant
+                    // to install (it called this after build()).
+                    .detectFileUriExposure()
+                    .penaltyLog()
+                    .build()
+            )
+        }
 
         // INF-9: LRRAuthManager.initialize() spends 50-200ms on KeyStore binder
         // calls + encrypted-pref decryption. Run it on bootScope so it overlaps

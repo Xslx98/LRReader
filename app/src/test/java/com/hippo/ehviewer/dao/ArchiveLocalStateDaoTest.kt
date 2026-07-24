@@ -292,6 +292,16 @@ class ArchiveLocalStateDaoTest {
     }
 
     @Test
+    fun getDownloadProfileIdByArcid_matchesDownloadRow_ignoresOthers() = runTest {
+        dao.upsert(row("pid", serverProfileId = 5L, downloadState = DownloadState.FINISH, downloadTime = 1L))
+        dao.insertOrIgnoreHistory("pid", 6L, "{}", 2L, 0)
+        dao.updateHistoryFields("pid", 6L, "{}", 2L, 0)
+
+        assertEquals(5L, dao.getDownloadProfileIdByArcid("pid"))
+        assertNull(dao.getDownloadProfileIdByArcid("absent"))
+    }
+
+    @Test
     fun updateArchiveJson_profileVsDownload_targetTheRightRow() = runTest {
         dao.upsert(row("j", serverProfileId = 5L, downloadState = DownloadState.FINISH, downloadTime = 1L))
         dao.insertOrIgnoreHistory("j", 6L, """{"arcid":"j","v":0}""", 2L, 0)
@@ -302,5 +312,134 @@ class ArchiveLocalStateDaoTest {
 
         assertEquals("""{"arcid":"j","v":"dl"}""", dao.loadByArcidAndProfile("j", 5L)!!.archiveJson)
         assertEquals("""{"arcid":"j","v":"hist"}""", dao.loadByArcidAndProfile("j", 6L)!!.archiveJson)
+    }
+
+    // ── Batch wrappers (single-transaction bulk writes) ──
+
+    @Test
+    fun upsertDownloadBatch_writesAllRows_preservesSiblingColumns() = runTest {
+        // Pre-existing history-bearing row: the batch download upsert must
+        // keep its history columns (same contract as the per-row upsert).
+        dao.upsert(row("b-hist", serverProfileId = 1L, historyTime = 777L))
+
+        dao.upsertDownloadBatch(
+            listOf("b-hist", "b-new1", "b-new2").mapIndexed { i, arcid ->
+                DownloadUpsertRow(
+                    arcid = arcid,
+                    serverProfileId = 1L,
+                    archiveJson = """{"arcid":"$arcid"}""",
+                    downloadState = DownloadState.WAIT,
+                    downloadLegacy = 0,
+                    downloadTime = 1000L + i,
+                    downloadLabel = null,
+                    downloadArchiveUri = null,
+                    downloadRootUri = null,
+                )
+            }
+        )
+
+        assertEquals(3, dao.getAllDownloads().size)
+        val histRow = dao.loadByArcidAndProfile("b-hist", 1L)!!
+        assertEquals(777L, histRow.historyTime)
+        assertEquals(DownloadState.WAIT, histRow.downloadState)
+    }
+
+    @Test
+    fun upsertHistoryBatch_writesAllRows() = runTest {
+        dao.upsertHistoryBatch(
+            (1..3).map { i ->
+                HistoryUpsertRow(
+                    arcid = "hb-$i",
+                    serverProfileId = 1L,
+                    archiveJson = """{"arcid":"hb-$i"}""",
+                    historyTime = 1000L * i,
+                    historyMode = 0,
+                )
+            }
+        )
+
+        assertEquals(listOf("hb-3", "hb-2", "hb-1"), dao.getHistoryByServer(1L).map { it.arcid })
+    }
+
+    @Test
+    fun clearDownloadAndPruneBatch_clearsPresent_skipsAbsent_preservesHistoryRows() = runTest {
+        dao.upsert(row("c-dl", serverProfileId = 1L, downloadState = DownloadState.FINISH, downloadTime = 1L))
+        dao.upsert(row(
+            "c-mixed",
+            serverProfileId = 1L,
+            downloadState = DownloadState.FINISH,
+            downloadTime = 2L,
+            historyTime = 999L,
+        ))
+
+        dao.clearDownloadAndPruneBatch(listOf("c-dl", "c-mixed", "c-absent"))
+
+        // Download-only row collapsed; mixed row keeps its history subsystem.
+        assertNull(dao.loadByArcidAndProfile("c-dl", 1L))
+        val mixed = dao.loadByArcidAndProfile("c-mixed", 1L)!!
+        assertNull(mixed.downloadState)
+        assertEquals(999L, mixed.historyTime)
+        assertEquals(0, dao.getAllDownloads().size)
+    }
+
+    // ── History trim (count-gated fast path) ──
+    //
+    // trimHistoryForProfile runs on EVERY archive open (putHistoryInfo),
+    // so the common already-bounded case must not pay for the NOT-IN
+    // subquery + empty-row scan. These characterization tests lock the
+    // gate's boundary semantics: strictly-over trims, at-limit is a no-op.
+
+    @Test
+    fun trimHistoryForProfile_overLimit_clearsOldestAndCollapsesEmptyRows() = runTest {
+        dao.upsert(row("t-old", serverProfileId = 1L, historyTime = 1000L))
+        dao.upsert(row("t-mid", serverProfileId = 1L, historyTime = 2000L))
+        dao.upsert(row("t-new", serverProfileId = 1L, historyTime = 3000L))
+        // Oldest row also has a download subsystem — trim must clear its
+        // history columns but keep the row alive.
+        dao.upsert(row(
+            "t-dl",
+            serverProfileId = 1L,
+            historyTime = 500L,
+            downloadState = DownloadState.FINISH,
+            downloadTime = 1L,
+        ))
+
+        dao.trimHistoryForProfile(1L, 2)
+
+        assertEquals(
+            listOf("t-new", "t-mid"),
+            dao.getHistoryByServer(1L).map { it.arcid }
+        )
+        // History-only trimmed row collapsed entirely…
+        assertNull(dao.loadByArcidAndProfile("t-old", 1L))
+        // …download-bearing trimmed row survives without history columns.
+        val dlRow = dao.loadByArcidAndProfile("t-dl", 1L)!!
+        assertNull(dlRow.historyTime)
+        assertEquals(DownloadState.FINISH, dlRow.downloadState)
+    }
+
+    @Test
+    fun trimHistoryForProfile_atLimit_keepsEverything() = runTest {
+        dao.upsert(row("a1", serverProfileId = 1L, historyTime = 1000L))
+        dao.upsert(row("a2", serverProfileId = 1L, historyTime = 2000L))
+
+        dao.trimHistoryForProfile(1L, 2)
+
+        assertEquals(2, dao.getHistoryByServer(1L).size)
+    }
+
+    @Test
+    fun trimHistoryForProfile_onlyCountsTargetProfile() = runTest {
+        // Profile 1 is under its limit; profile 2's rows must neither be
+        // counted against profile 1 nor trimmed by profile 1's pass.
+        dao.upsert(row("p1-a", serverProfileId = 1L, historyTime = 1000L))
+        dao.upsert(row("p2-a", serverProfileId = 2L, historyTime = 100L))
+        dao.upsert(row("p2-b", serverProfileId = 2L, historyTime = 200L))
+        dao.upsert(row("p2-c", serverProfileId = 2L, historyTime = 300L))
+
+        dao.trimHistoryForProfile(1L, 2)
+
+        assertEquals(1, dao.getHistoryByServer(1L).size)
+        assertEquals(3, dao.getHistoryByServer(2L).size)
     }
 }

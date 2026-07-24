@@ -42,6 +42,8 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
         fun notifyAdapterDataSetChanged()
         fun notifyAdapterItemRangeRemoved(positionStart: Int, itemCount: Int)
         fun notifyAdapterItemRangeInserted(positionStart: Int, itemCount: Int)
+        fun notifyAdapterItemRangeChanged(positionStart: Int, itemCount: Int)
+        fun notifyAdapterItemMoved(fromPosition: Int, toPosition: Int)
         fun showSearchBar()
         fun showActionFab()
         fun getString(resId: Int): String
@@ -167,6 +169,14 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
 
     override fun notifyItemRangeInserted(positionStart: Int, itemCount: Int) {
         callback.notifyAdapterItemRangeInserted(positionStart, itemCount)
+    }
+
+    override fun notifyItemRangeChanged(positionStart: Int, itemCount: Int) {
+        callback.notifyAdapterItemRangeChanged(positionStart, itemCount)
+    }
+
+    override fun notifyItemMoved(fromPosition: Int, toPosition: Int) {
+        callback.notifyAdapterItemMoved(fromPosition, toPosition)
     }
 
     override fun onShowView(hiddenView: View, shownView: View) {
