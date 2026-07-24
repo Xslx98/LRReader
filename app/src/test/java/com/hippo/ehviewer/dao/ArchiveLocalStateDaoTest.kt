@@ -314,6 +314,74 @@ class ArchiveLocalStateDaoTest {
         assertEquals("""{"arcid":"j","v":"hist"}""", dao.loadByArcidAndProfile("j", 6L)!!.archiveJson)
     }
 
+    // ── Batch wrappers (single-transaction bulk writes) ──
+
+    @Test
+    fun upsertDownloadBatch_writesAllRows_preservesSiblingColumns() = runTest {
+        // Pre-existing history-bearing row: the batch download upsert must
+        // keep its history columns (same contract as the per-row upsert).
+        dao.upsert(row("b-hist", serverProfileId = 1L, historyTime = 777L))
+
+        dao.upsertDownloadBatch(
+            listOf("b-hist", "b-new1", "b-new2").mapIndexed { i, arcid ->
+                DownloadUpsertRow(
+                    arcid = arcid,
+                    serverProfileId = 1L,
+                    archiveJson = """{"arcid":"$arcid"}""",
+                    downloadState = DownloadState.WAIT,
+                    downloadLegacy = 0,
+                    downloadTime = 1000L + i,
+                    downloadLabel = null,
+                    downloadArchiveUri = null,
+                    downloadRootUri = null,
+                )
+            }
+        )
+
+        assertEquals(3, dao.getAllDownloads().size)
+        val histRow = dao.loadByArcidAndProfile("b-hist", 1L)!!
+        assertEquals(777L, histRow.historyTime)
+        assertEquals(DownloadState.WAIT, histRow.downloadState)
+    }
+
+    @Test
+    fun upsertHistoryBatch_writesAllRows() = runTest {
+        dao.upsertHistoryBatch(
+            (1..3).map { i ->
+                HistoryUpsertRow(
+                    arcid = "hb-$i",
+                    serverProfileId = 1L,
+                    archiveJson = """{"arcid":"hb-$i"}""",
+                    historyTime = 1000L * i,
+                    historyMode = 0,
+                )
+            }
+        )
+
+        assertEquals(listOf("hb-3", "hb-2", "hb-1"), dao.getHistoryByServer(1L).map { it.arcid })
+    }
+
+    @Test
+    fun clearDownloadAndPruneBatch_clearsPresent_skipsAbsent_preservesHistoryRows() = runTest {
+        dao.upsert(row("c-dl", serverProfileId = 1L, downloadState = DownloadState.FINISH, downloadTime = 1L))
+        dao.upsert(row(
+            "c-mixed",
+            serverProfileId = 1L,
+            downloadState = DownloadState.FINISH,
+            downloadTime = 2L,
+            historyTime = 999L,
+        ))
+
+        dao.clearDownloadAndPruneBatch(listOf("c-dl", "c-mixed", "c-absent"))
+
+        // Download-only row collapsed; mixed row keeps its history subsystem.
+        assertNull(dao.loadByArcidAndProfile("c-dl", 1L))
+        val mixed = dao.loadByArcidAndProfile("c-mixed", 1L)!!
+        assertNull(mixed.downloadState)
+        assertEquals(999L, mixed.historyTime)
+        assertEquals(0, dao.getAllDownloads().size)
+    }
+
     // ── History trim (count-gated fast path) ──
     //
     // trimHistoryForProfile runs on EVERY archive open (putHistoryInfo),
