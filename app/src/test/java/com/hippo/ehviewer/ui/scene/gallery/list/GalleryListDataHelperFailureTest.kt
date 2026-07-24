@@ -38,6 +38,8 @@ class GalleryListDataHelperFailureTest {
         override fun notifyAdapterDataSetChanged() {}
         override fun notifyAdapterItemRangeRemoved(positionStart: Int, itemCount: Int) {}
         override fun notifyAdapterItemRangeInserted(positionStart: Int, itemCount: Int) {}
+        override fun notifyAdapterItemRangeChanged(positionStart: Int, itemCount: Int) {}
+        override fun notifyAdapterItemMoved(fromPosition: Int, toPosition: Int) {}
         override fun showSearchBar() {}
         override fun showActionFab() {}
         override fun getString(resId: Int): String = "no servers"

@@ -114,6 +114,12 @@ internal object GalleryListHelperFactory {
             override fun notifyAdapterItemRangeInserted(positionStart: Int, itemCount: Int) {
                 scene.adapter?.notifyItemRangeInserted(positionStart, itemCount)
             }
+            override fun notifyAdapterItemRangeChanged(positionStart: Int, itemCount: Int) {
+                scene.adapter?.notifyItemRangeChanged(positionStart, itemCount)
+            }
+            override fun notifyAdapterItemMoved(fromPosition: Int, toPosition: Int) {
+                scene.adapter?.notifyItemMoved(fromPosition, toPosition)
+            }
             override fun showSearchBar() { scene.searchBarMover?.showSearchBar() }
             override fun showActionFab() { scene.stateHelper?.showActionFab() }
             override fun getString(resId: Int): String = scene.getString(resId)
