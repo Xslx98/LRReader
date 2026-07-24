@@ -41,6 +41,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.hippo.drawerlayout.DrawerLayout
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.AppLockGate
 import com.hippo.ehviewer.settings.SecuritySettings
@@ -83,6 +84,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.hippo.lib.yorozuya.ResourcesUtils
 import com.hippo.lib.yorozuya.ViewUtils
+import java.io.File
 import com.hippo.ehviewer.settings.UpdateSettings
 import com.hippo.ehviewer.updater.AppUpdater
 import com.hippo.ehviewer.updater.GhRelease
@@ -428,6 +430,36 @@ class MainActivity : StageActivity(),
         // 1-day throttle hasn't expired, or the latest release is the skipped
         // version. Surfaces newer release via Snackbar with "View" action.
         maybeAutoCheckUpdates()
+
+        purgeLegacyHeaderCustomization()
+    }
+
+    /**
+     * One-time purge of data persisted by the retired avatar/background/
+     * display-name customization (removed 2026-07-24). Older installs may
+     * still carry the image files in filesDir plus their SharedPreferences
+     * keys; the pref-read guard keeps this a no-op after the first run.
+     */
+    private fun purgeLegacyHeaderCustomization() {
+        val legacyPathKeys = listOf("background_image_path", "avatar_image_path")
+        val legacyValueKeys = legacyPathKeys + listOf("display_name", "avatar")
+        val stalePaths = legacyPathKeys.mapNotNull { Settings.getString(it, null) }
+        val hasStaleValues = stalePaths.isNotEmpty() ||
+            legacyValueKeys.any { Settings.getString(it, null) != null }
+        if (!hasStaleValues) return
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                // Persistent copies used fixed names in filesDir; camera/album
+                // flows stored the pref path directly (externalCacheDir).
+                (
+                    stalePaths.map { File(it) } +
+                        listOf(File(filesDir, "avatar_image.jpg"), File(filesDir, "background_image.jpg"))
+                    ).forEach { it.delete() }
+            } catch (e: SecurityException) {
+                Log.w(TAG, "legacy header image cleanup failed", e)
+            }
+            legacyValueKeys.forEach { Settings.putString(it, null) }
+        }
     }
 
     /**
