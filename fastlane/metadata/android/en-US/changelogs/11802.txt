@@ -1,0 +1,6 @@
+Performance release:
+- Thumbnails now decode at view size and cache properly - much less memory and disk churn while scrolling
+- Smoother download list: JSON parsing moved off the main thread, list refreshes rebind only changed rows
+- Faster page loads in the reader and lower battery use (removed per-page disk flush)
+- Faster bulk download/remove operations (single database transaction)
+- Less per-request crypto and URL parsing overhead on all server calls
