@@ -10,8 +10,14 @@ import okhttp3.OkHttpClient
 /**
  * Paging 3 source that loads gallery archives from the LANraragi search API.
  *
- * Each page corresponds to one call to GET /api/search with an offset
- * calculated as `page * pageSize`. The page key is a 0-based page index.
+ * Each page corresponds to one call to GET /api/search. The page key is a
+ * **raw item offset** into the server-side result set, not a dense page
+ * index: /api/search has no page-size parameter — the server returns
+ * `archives_per_page` rows per request regardless of the client's
+ * `params.loadSize` — so the only safe advance is by the count actually
+ * returned, and the only safe termination signal is `recordsFiltered`
+ * (audit NET-2; index-based math silently truncated the list when the
+ * server page was smaller than 50 and duplicated rows when larger).
  *
  * @param client       OkHttpClient configured with auth interceptor
  * @param baseUrl      LANraragi server base URL
@@ -47,9 +53,8 @@ class LRRArchivePagingSource(
 ) : PagingSource<Int, Archive>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Archive> {
-        val page = params.key ?: 0
+        val start = params.key ?: 0
         return try {
-            val start = page * params.loadSize
             val includeTanks = includeTanksProvider()
             val result = LRRSearchApi.searchArchives(
                 client, baseUrl,
@@ -64,17 +69,25 @@ class LRRArchivePagingSource(
                 hideCompleted = hideCompletedProvider()
             )
             // Tank entries become display-only pseudo-Archives when folding is on,
-            // and are dropped otherwise. nextKey keys off the raw (pre-mapping)
-            // count so a dropped entry doesn't prematurely end paging.
+            // and are dropped otherwise. nextKey advances by the raw (pre-mapping)
+            // count so a dropped entry still consumes its server-side offset slot.
             val items = result.toArchiveList(
                 includeTanks = includeTanks,
                 tankProfileId = LRRAuthManager.getActiveProfileId(),
                 tankBaseUrl = baseUrl,
             )
+            val rawCount = result.data.size
             LoadResult.Page(
                 data = items,
-                prevKey = if (page > 0) page - 1 else null,
-                nextKey = if (result.data.size >= params.loadSize) page + 1 else null
+                prevKey = if (start > 0) (start - params.loadSize).coerceAtLeast(0) else null,
+                // rawCount > 0 guards against a malformed empty page that still
+                // claims more records — advancing by zero would re-request the
+                // same offset forever.
+                nextKey = if (rawCount > 0 && start + rawCount < result.recordsFiltered) {
+                    start + rawCount
+                } else {
+                    null
+                }
             )
         } catch (e: CancellationException) {
             // A superseded search (flatMapLatest) or a torn-down Scene cancels
@@ -87,9 +100,9 @@ class LRRArchivePagingSource(
     }
 
     override fun getRefreshKey(state: PagingState<Int, Archive>): Int? {
-        return state.anchorPosition?.let { anchorPosition ->
-            state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
-                ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)
-        }
+        // With offset keys and placeholders disabled, every loaded list is
+        // contiguous from offset 0, so the anchor position is itself the
+        // offset to refresh from.
+        return state.anchorPosition
     }
 }
