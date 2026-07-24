@@ -8,6 +8,7 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.HistoryInfo
 import com.hippo.ehviewer.dao.HistoryRepository
 import com.hippo.ehviewer.mapper.toArchive
+import com.hippo.ehviewer.appwidget.ContinueReadingWidget
 import com.hippo.ehviewer.ui.ContinueReadingShortcut
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.CancellationException
@@ -215,8 +216,10 @@ class HistoryViewModel : ViewModel() {
             try {
                 withContext(Dispatchers.IO) { historyRepository.clearHistory() }
                 // No history left to continue from — drop the launcher entry
-                // (issue #16).
+                // (issue #16) and let the widget fall back to its empty state
+                // (issue #9).
                 ContinueReadingShortcut.removeSafely()
+                ContinueReadingWidget.refreshSafely()
                 loadHistory()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to clear history", e)

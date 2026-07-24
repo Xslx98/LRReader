@@ -258,4 +258,14 @@
     <color name="lrr_server_badge_6_fg_dark">#FF8FCF</color>
     <color name="lrr_server_badge_7_fg_dark">#C49077</color>
 
+    <!-- Home-screen widget palette. The widget renders in the LAUNCHER
+         process and must follow the SYSTEM light/dark theme, so these four
+         colors are the one sanctioned values-night override left after RES-4
+         removed the directory (in-app views follow the manual app theme via
+         theme attrs instead — do not add in-app colors here). -->
+    <color name="appwidget_bg_color">#FFFFFFFF</color>
+    <color name="appwidget_text_primary">#DE000000</color>
+    <color name="appwidget_text_secondary">#8A000000</color>
+    <color name="appwidget_accent">#FF00796B</color><!-- teal_700: 4.67:1 AA on white -->
+
 </resources>

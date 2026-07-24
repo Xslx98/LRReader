@@ -811,4 +811,6 @@
     <string name="cd_fingerprint_unlock">指紋ロック解除</string>
     <string name="cd_back">戻る</string>
     <string name="cd_clear_search">検索をクリア</string>
+    <string name="appwidget_continue_reading_description">最後に読んだアーカイブをワンタップで再開</string>
+    <string name="appwidget_continue_reading_empty">最近読んだものはありません</string>
 </resources>

@@ -965,4 +965,6 @@
     <string name="cd_fingerprint_unlock">Fingerprint unlock</string>
     <string name="cd_back">Back</string>
     <string name="cd_clear_search">Clear search</string>
+    <string name="appwidget_continue_reading_description">One-tap resume of your last-read archive</string>
+    <string name="appwidget_continue_reading_empty">No recent reading</string>
 </resources>

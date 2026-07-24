@@ -20,6 +20,7 @@ import android.annotation.SuppressLint
 import android.content.ClipboardManager
 import android.util.Log
 import com.hippo.ehviewer.BuildConfig
+import com.hippo.ehviewer.appwidget.ContinueReadingWidget
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -323,6 +324,9 @@ class MainActivity : StageActivity(),
             }
             if (archive == null) {
                 ContinueReadingShortcut.remove(this@MainActivity)
+                // The widget may point at the same stale target (it shares the
+                // deep-link contract) — re-render it from surviving history.
+                ContinueReadingWidget.refreshSafely()
                 Toast.makeText(
                     this@MainActivity, R.string.continue_reading_unavailable, Toast.LENGTH_SHORT
                 ).show()

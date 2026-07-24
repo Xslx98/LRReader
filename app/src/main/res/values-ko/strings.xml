@@ -882,4 +882,6 @@
     <string name="cd_fingerprint_unlock">지문 잠금 해제</string>
     <string name="cd_back">뒤로</string>
     <string name="cd_clear_search">검색 지우기</string>
+    <string name="appwidget_continue_reading_description">마지막으로 읽은 아카이브를 한 번에 이어 읽기</string>
+    <string name="appwidget_continue_reading_empty">최근 읽은 항목 없음</string>
 </resources>
