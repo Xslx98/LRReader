@@ -25,6 +25,9 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 /**
  * 缩略图数据容器
@@ -36,28 +39,51 @@ import java.util.concurrent.CompletableFuture
  * per archive through
  * [com.hippo.ehviewer.ui.scene.download.DownloadDirCache], so rebinding
  * the same row never restarts it; the result is delivered via
- * [downloadDirFuture]. The DataContainer callbacks are always invoked
- * from Conaco's background I/O threads, so blocking on the future is
- * safe and does not use `runBlocking`.
+ * [downloadDirFuture].
+ *
+ * The callbacks run on Conaco's **single app-wide serial disk thread**
+ * (audit FW-2), so this class must never stall it:
+ * - the future is awaited **once** per container instance with a short
+ *   bound; an unresolved/failed/hung resolution just disables the
+ *   container, and Conaco degrades gracefully to its own URL-keyed disk
+ *   cache + network. The shared future keeps resolving in the background,
+ *   so the next bind (a fresh container over the same future) retries.
+ * - pure read callbacks ([isEnabled]/[get]) never create files; only
+ *   [save] creates `.thumb`. The old create-on-read behavior littered
+ *   zero-byte `.thumb` files into archive directories.
  */
 class ThumbDataContainer(
     private val downloadDirFuture: CompletableFuture<UniFile?>,
+    private val dirWaitMillis: Long = DIR_WAIT_MILLIS,
 ) : DataContainer {
-    private var mFile: UniFile? = null
 
-    private fun ensureFile() {
-        if (mFile == null) {
-            // Called from Conaco's background I/O threads, blocking is safe
-            val dir = downloadDirFuture.get()
-            if (dir != null && dir.isDirectory()) {
-                mFile = dir.createFile(".thumb")
-            }
+    private var dirResolved = false
+    private var dir: UniFile? = null
+
+    /** Bounded, once-per-instance resolution of the download directory. */
+    private fun resolveDir(): UniFile? {
+        if (!dirResolved) {
+            dirResolved = true
+            dir = try {
+                downloadDirFuture.get(dirWaitMillis, TimeUnit.MILLISECONDS)
+            } catch (e: TimeoutException) {
+                null
+            } catch (e: ExecutionException) {
+                null
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+                null
+            }?.takeIf { it.isDirectory }
         }
+        return dir
     }
 
+    /** Existing `.thumb` file or null — read paths must not create files. */
+    private fun existingFile(): UniFile? =
+        resolveDir()?.subFile(THUMB_FILE_NAME)?.takeIf { it.isFile }
+
     override fun isEnabled(): Boolean {
-        ensureFile()
-        return mFile != null
+        return resolveDir() != null
     }
 
     override fun onUrlMoved(requestUrl: String?, responseUrl: String?) {
@@ -69,14 +95,11 @@ class ThumbDataContainer(
         mediaType: String?,
         notify: ProgressNotifier?
     ): Boolean {
-        ensureFile()
-        if (mFile == null) {
-            return false
-        }
+        val file = resolveDir()?.createFile(THUMB_FILE_NAME) ?: return false
 
         var os: OutputStream? = null
         try {
-            os = mFile!!.openOutputStream()
+            os = file.openOutputStream()
             IOUtils.copy(`is`, os)
             return true
         } catch (e: IOException) {
@@ -88,17 +111,22 @@ class ThumbDataContainer(
     }
 
     override fun get(): InputStreamPipe? {
-        ensureFile()
-        if (mFile != null) {
-            return UniFileInputStreamPipe(mFile)
-        } else {
-            return null
-        }
+        return existingFile()?.let { UniFileInputStreamPipe(it) }
     }
 
     override fun remove() {
-        if (mFile != null) {
-            mFile!!.delete()
-        }
+        existingFile()?.delete()
+    }
+
+    companion object {
+        private const val THUMB_FILE_NAME = ".thumb"
+
+        /**
+         * Typical resolution is a Room lookup plus a SAF directory probe
+         * (tens of ms). 250 ms covers the slow tail while capping the
+         * worst-case stall a single bind can inflict on the shared serial
+         * disk thread; past the bound the container silently degrades.
+         */
+        private const val DIR_WAIT_MILLIS = 250L
     }
 }
