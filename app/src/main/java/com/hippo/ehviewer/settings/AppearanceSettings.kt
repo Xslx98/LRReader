@@ -247,14 +247,16 @@ object AppearanceSettings {
     private const val KEY_APP_LANGUAGE_RESTART_ROUTE = "app_language_restart_route"
 
     /**
-     * Mark that the imminent language-switch process restart should route the
-     * user back to the Advanced settings screen. Synchronous commit for the
-     * same reason as [putAppLanguage]: Process.killProcess follows immediately
-     * and an async apply() could lose the write.
+     * Persist a language switch together with the restart-route mark in one
+     * synchronous commit (single fsync — Process.killProcess follows
+     * immediately, so both writes must be on disk and batching them keeps the
+     * pre-kill latency down). The route mark sends the fresh process back to
+     * the Advanced settings screen, see [consumeLanguageRestartRoute].
      */
     @JvmStatic
-    fun markLanguageRestartRoute() {
+    fun putAppLanguageForRestart(value: String?) {
         Settings.getPreferences().edit(commit = true) {
+            putString(KEY_APP_LANGUAGE, value)
             putBoolean(KEY_APP_LANGUAGE_RESTART_ROUTE, true)
         }
     }

@@ -438,9 +438,13 @@ class MainActivity : StageActivity(),
         // screen the switch was made on (Advanced settings) instead of
         // stranding them on the home scene. One-shot flag written just before
         // the restart, so ordinary launches never enter this branch.
+        // NO_ANIMATION: the user is mid-"seamless" language switch — the home
+        // scene is only a technical stopover, so the settings screen should
+        // snap into place rather than slide in over it.
         if (AppearanceSettings.consumeLanguageRestartRoute()) {
             settingsLauncher.launch(
                 Intent(this, SettingsActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
                     .putExtra(
                         SettingsActivity.KEY_INITIAL_SCREEN,
                         SettingsActivity.SCREEN_ADVANCED
