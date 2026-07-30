@@ -2898,21 +2898,6 @@
 
     <issue
         id="IconDipSize"
-        message="The image `ic_fp_40px.png` varies significantly in its density-independent (dip) size across the various density versions: drawable-hdpi/ic_fp_40px.png: 40x40 dp (60x60 px), drawable-mdpi/ic_fp_40px.png: 40x40 dp (40x40 px), drawable-xhdpi/ic_fp_40px.png: 40x40 dp (80x80 px), drawable-xxhdpi/ic_fp_40px.png: 40x40 dp (120x120 px), drawable-xxxhdpi/ic_fp_40px.png: 30x30 dp (120x120 px)">
-        <location
-            file="src/main/res/drawable-xxxhdpi/ic_fp_40px.png"/>
-        <location
-            file="src/main/res/drawable-xxhdpi/ic_fp_40px.png"/>
-        <location
-            file="src/main/res/drawable-xhdpi/ic_fp_40px.png"/>
-        <location
-            file="src/main/res/drawable-mdpi/ic_fp_40px.png"/>
-        <location
-            file="src/main/res/drawable-hdpi/ic_fp_40px.png"/>
-    </issue>
-
-    <issue
-        id="IconDipSize"
         message="The image `ic_pause_x24.png` varies significantly in its density-independent (dip) size across the various density versions: drawable-hdpi/ic_pause_x24.png: 24x24 dp (36x36 px), drawable-mdpi/ic_pause_x24.png: 24x24 dp (24x24 px), drawable-xhdpi/ic_pause_x24.png: 24x24 dp (48x48 px), drawable-xxhdpi/ic_pause_x24.png: 24x24 dp (72x72 px), drawable-xxxhdpi/ic_pause_x24.png: 18x18 dp (72x72 px)">
         <location
             file="src/main/res/drawable-xxxhdpi/ic_pause_x24.png"/>
@@ -2955,15 +2940,6 @@
     </issue>
 
 
-
-    <issue
-        id="IconDuplicatesConfig"
-        message="The `ic_fp_40px.png` icon has identical contents in the following configuration folders: drawable-xxhdpi, drawable-xxxhdpi">
-        <location
-            file="src/main/res/drawable-xxxhdpi/ic_fp_40px.png"/>
-        <location
-            file="src/main/res/drawable-xxhdpi/ic_fp_40px.png"/>
-    </issue>
 
     <issue
         id="IconDuplicatesConfig"
