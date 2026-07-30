@@ -23,6 +23,12 @@
     <!-- TextAppearance -->
     <style name="TextAppearance" parent="TextAppearance.AppCompat"></style>
 
+    <!-- Clips a ShapeableImageView to a circle (drawer header app icon). -->
+    <style name="ShapeAppearanceOverlay.LRR.Circle" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
     <!-- Progress View -->
     <style name="ProgressView">
         <item name="color">?attr/progressColor</item>
