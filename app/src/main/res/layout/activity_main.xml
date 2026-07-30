@@ -84,6 +84,7 @@
                     app:drawableTint="?android:attr/textColorSecondary"
                     android:focusable="true"
                     android:gravity="center_vertical"
+                    android:includeFontPadding="false"
                     android:minHeight="44dp"
                     android:paddingStart="22dp"
                     android:paddingEnd="22dp"
