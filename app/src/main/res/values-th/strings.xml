@@ -725,6 +725,7 @@
     <string name="lrr_edit_server_name">ชื่อเซิร์ฟเวอร์</string>
     <string name="lrr_edit_server_save">บันทึก</string>
     <string name="lrr_no_servers">ยังไม่ได้ตั้งค่าเซิร์ฟเวอร์</string>
+    <string name="nav_header_version_format" translatable="false">v%1$s</string>
     <string name="lrr_server_active">ใช้งานอยู่</string>
     <string name="lrr_server_config_subtitle">เชื่อมต่อกับเซิร์ฟเวอร์ LANraragi</string>
     <string name="lrr_server_info">Server: %1$s\nVersion: %2$s %3$s\nPer page: %4$s</string>

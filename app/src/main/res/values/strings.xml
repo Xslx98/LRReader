@@ -828,6 +828,7 @@
 
     <!-- Multi-server management -->
     <string name="lrr_no_servers">No servers configured</string>
+    <string name="nav_header_version_format" translatable="false">v%1$s</string>
     <string name="lrr_add_server">Add Server</string>
     <string name="lrr_server_active">Active</string>
     <string name="lrr_delete_server">Delete server</string>
