@@ -4,8 +4,17 @@
     android:viewportWidth="24"
     android:viewportHeight="24">
     <!-- Material "autorenew"-style theme cycle glyph. White fill is tinted
-         at the use site via android:drawableTint so it follows the theme. -->
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M12,4V1L8,5l4,4V6c3.31,0 6,2.69 6,6 0,1.01 -0.25,1.97 -0.7,2.8l1.46,1.46C19.54,15.03 20,13.57 20,12c0,-4.42 -3.58,-8 -8,-8zm0,14c-3.31,0 -6,-2.69 -6,-6 0,-1.01 0.25,-1.97 0.7,-2.8L5.24,7.74C4.46,8.97 4,10.43 4,12c0,4.42 3.58,8 8,8v3l4,-4 -4,-4v3z" />
+         at the use site via app:drawableTint so it follows the theme.
+         The 0.75 group scale renders the glyph at 18dp optical size inside
+         the 24dp canvas: the footer-style toggle row wants a quieter icon
+         than the 24dp menu glyphs while keeping the same icon-column box. -->
+    <group
+        android:pivotX="12"
+        android:pivotY="12"
+        android:scaleX="0.75"
+        android:scaleY="0.75">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M12,4V1L8,5l4,4V6c3.31,0 6,2.69 6,6 0,1.01 -0.25,1.97 -0.7,2.8l1.46,1.46C19.54,15.03 20,13.57 20,12c0,-4.42 -3.58,-8 -8,-8zm0,14c-3.31,0 -6,-2.69 -6,-6 0,-1.01 0.25,-1.97 0.7,-2.8L5.24,7.74C4.46,8.97 4,10.43 4,12c0,4.42 3.58,8 8,8v3l4,-4 -4,-4v3z" />
+    </group>
 </vector>
