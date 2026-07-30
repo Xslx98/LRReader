@@ -107,9 +107,6 @@
     <string name="search_sfl">言語</string>
     <string name="search_sfu">アップローダー</string>
     <string name="search_sft">タグ</string>
-    <string name="search_uss">類似検索を有効化する</string>
-    <string name="search_osc">カバーのみを検索する</string>
-    <string name="search_se">削除済みのギャラリーを表示する</string>
     <string name="quick_search">クイック検索</string>
     <string name="quick_search_tip">「+」をタップしてクイック検索を追加します</string>
     <string name="add_quick_search_dialog_title">クイック検索を追加</string>
@@ -471,8 +468,6 @@
     <string name="settings_privacy_pattern_protection_title">パターン保護</string>
     <string name="settings_privacy_pattern_protection_not_set">パターン保護は設定されていません</string>
     <string name="settings_privacy_pattern_protection_set">パターン保護は設定されています</string>
-    <string name="settings_advanced_export_data_to">データを「%s」にエクスポート</string>
-    <string name="settings_advanced_export_data_failed">データをエクスポートできませんでした</string>
     <string name="settings_about">このアプリについて</string>
     <string name="settings_about_declaration_summary">LR Reader は LANraragi と一切の関係がございません。</string>
     <string name="settings_about_author">開発者</string>
@@ -485,7 +480,6 @@
     <!-- License -->
     <string name="license">オープンソースライセンス</string>
     <!-- Dir Picker-->
-    <string name="directory_not_writable">このフォルダは書き込めません</string>
     <!-- Categories -->
     <string name="let_me_select">手動で選択</string>
     <!-- Progress Scene -->

@@ -132,9 +132,6 @@
     <string name="search_sfu">업로더</string>
     <string name="search_sft">태그</string>
     
-    <string name="search_uss">유사한 검색 사용</string>
-    <string name="search_osc">표지만 검색</string>
-    <string name="search_se">삭제된 갤러리 보기</string>
 
 
 
@@ -521,8 +518,6 @@
     <string name="settings_privacy_pattern_protection_title">패턴 보호</string>
     <string name="settings_privacy_pattern_protection_not_set">패턴 보호가 설정되어 있지 않음</string>
     <string name="settings_privacy_pattern_protection_set">패턴 보호가 설정됨</string>
-    <string name="settings_advanced_export_data_to">%s 경로에 데이터를 내보냈습니다.</string>
-    <string name="settings_advanced_export_data_failed">데이터를 내보내지 못했습니다.</string>
 
     <string name="settings_about">앱 정보</string>
     <string name="settings_about_declaration_summary">LR Reader는 LANraragi 사이트와 아무런 관계가 없습니다.</string>
@@ -543,7 +538,6 @@
     <string name="license">라이선스</string>
 
     <!-- Dir Picker-->
-    <string name="directory_not_writable">쓸 수 있는 디렉터리가 아닙니다.</string>
 
     <!-- Categories -->
     <string name="let_me_select">직접 선택</string>

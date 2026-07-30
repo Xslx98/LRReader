@@ -26,7 +26,6 @@
     <dimen name="title_text_top_padding">6dp</dimen>
 
     <!-- Text size -->
-    <dimen name="text_super_large">24sp</dimen>
     <dimen name="text_little_large">20sp</dimen>
     <dimen name="text_medium">18sp</dimen>
     <dimen name="text_little_small">16sp</dimen>

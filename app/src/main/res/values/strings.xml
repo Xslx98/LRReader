@@ -211,9 +211,6 @@
     <string name="search_sfu">Uploader</string>
     <string name="search_sft">Tags</string>
 
-    <string name="search_uss">Use similarity scan</string>
-    <string name="search_osc">Only search covers</string>
-    <string name="search_se">Show expunged</string>
 
 
 
@@ -626,8 +623,6 @@
     <string name="settings_privacy_pattern_protection_title">Pattern protection</string>
     <string name="settings_privacy_pattern_protection_not_set">Pattern protection has not been set</string>
     <string name="settings_privacy_pattern_protection_set">Pattern protection has been set</string>
-    <string name="settings_advanced_export_data_to">Exported data to %s</string>
-    <string name="settings_advanced_export_data_failed">Failed to export data</string>
 
     <string name="settings_about">About</string>
     <string name="settings_about_declaration" translatable="false">LR Reader</string>
@@ -660,7 +655,6 @@
     <string name="license">License</string>
 
     <!-- Dir Picker-->
-    <string name="directory_not_writable">The directory is not writable</string>
 
     <!-- Favorites -->
     <string name="local_favorites">Local categories</string>
