@@ -1,0 +1,3 @@
+Drawer refresh: brand header with app version and the active server (name · host:port), plus a theme-aware footer row for the theme toggle that renders correctly in Light/Dark/Black and no longer overflows small screens.
+Language switching fixed: no more second restart interrupting you — the app returns straight to the settings screen with the new language applied.
+Cleanup: ~40 unused legacy resources removed; fingerprint icon redrawn as a vector.
