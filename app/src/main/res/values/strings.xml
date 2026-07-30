@@ -80,18 +80,6 @@
     <string name="theme_dark">Dark Theme</string>
     <string name="theme_black">Black Theme</string>
 
-    <!-- Category -->
-    <string name="doujinshi" translatable="false">DOUJINSHI</string>
-    <string name="manga" translatable="false">MANGA</string>
-    <string name="artist_cg" translatable="false">ARTIST CG</string>
-    <string name="game_cg" translatable="false">GAME CG</string>
-    <string name="western" translatable="false">WESTERN</string>
-    <string name="non_h" translatable="false">NON-H</string>
-    <string name="image_set" translatable="false">IMAGE SET</string>
-    <string name="cosplay" translatable="false">COSPLAY</string>
-    <string name="asian_porn" translatable="false">ASIAN PORN</string>
-    <string name="misc" translatable="false">MISC</string>
-
     <string name="homepage">Homepage</string>
     <string name="subscription">Subscription</string>
     <string name="whats_hot">What\'s hot</string>
