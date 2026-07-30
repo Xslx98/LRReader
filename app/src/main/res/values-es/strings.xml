@@ -623,16 +623,6 @@
     <string name="settings_privacy_delete_confirm_countdown_summary_on">El botón Eliminar permanece deshabilitado durante 3 segundos antes de poder pulsarse.</string>
     <string name="settings_privacy_delete_confirm_countdown_summary_off">El botón Eliminar se puede pulsar de inmediato. Más rápido, pero es más fácil eliminar por error.</string>
     <string name="download_service">Servicio de descarga</string>
-    <string name="hosts_tip">hosts.txt</string>
-    <string name="hosts_host">Anfitrión</string>
-    <string name="hosts_ip">IP</string>
-    <string name="add_host">Añadir una anfitrión</string>
-    <string name="add_host_add">Añadir</string>
-    <string name="edit_host">Anfitrión</string>
-    <string name="edit_host_confirm">Aplicar</string>
-    <string name="edit_host_delete">Borrar</string>
-    <string name="invalid_host">Anfitrión inválida</string>
-    <string name="invalid_ip">IP inválida</string>
     <string name="theme_light">Tema claro</string>
     <string name="theme_dark">Tema oscuro</string>
     <string name="theme_black">Tema negro</string>

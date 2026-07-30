@@ -280,16 +280,6 @@
     <!-- My Tags Activity -->
 
     <!-- Hosts Activity -->
-    <string name="hosts_tip">hosts.txt</string>
-    <string name="hosts_host">호스트</string>
-    <string name="hosts_ip">IP</string>
-    <string name="add_host">호스트 추가</string>
-    <string name="add_host_add">추가</string>
-    <string name="edit_host">호스트 편집</string>
-    <string name="edit_host_confirm">확인</string>
-    <string name="edit_host_delete">삭제</string>
-    <string name="invalid_host">잘못된 호스트</string>
-    <string name="invalid_ip">잘못된 IP</string>
 
 
     <!-- Gallery Activity -->
