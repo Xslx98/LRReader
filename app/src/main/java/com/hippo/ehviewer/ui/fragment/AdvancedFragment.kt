@@ -89,9 +89,10 @@ class AdvancedFragment : BasePreferenceFragmentCompat(),
             // GetText / notifications / services, which only re-resolve their locale
             // when attachBaseContext runs on a fresh process. An activity recreate()
             // cannot do that, so restart the whole process. Persist the new value
-            // first (synchronously — see putAppLanguage) so the fresh process reads
-            // it in attachBaseContext.
-            AppearanceSettings.putAppLanguage(language)
+            // first (synchronously, batched with the route mark that brings the
+            // fresh process back to this screen) so the fresh process reads it
+            // in attachBaseContext.
+            AppearanceSettings.putAppLanguageForRestart(language)
             (requireActivity().application as EhApplication).restart()
             return false
         }

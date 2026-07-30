@@ -39,6 +39,7 @@ import androidx.appcompat.app.AlertDialog
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.hippo.drawerlayout.DrawerLayout
+import com.hippo.ehviewer.BuildConfig
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.Settings
@@ -385,18 +386,11 @@ class MainActivity : StageActivity(),
         )
 
         navView.setNavigationItemSelectedListener(this)
-        bindNavHeaderServerLine(navView)
-        if (AppearanceSettings.getTheme() == 0) {
-            mChangeTheme.setTextColor(getColor(R.color.theme_change_light))
-            mChangeTheme.setBackgroundColor(getColor(R.color.white))
-        } else if (AppearanceSettings.getTheme() == 1) {
-            mChangeTheme.setTextColor(getColor(R.color.theme_change_other))
-            mChangeTheme.setBackgroundColor(getColor(R.color.grey_850))
-        } else {
-            mChangeTheme.setTextColor(getColor(R.color.theme_change_other))
-            mChangeTheme.setBackgroundColor(getColor(R.color.black))
-        }
+        bindNavHeader(navView)
 
+        // Theme-toggle row styling lives entirely in the layout (theme-aware
+        // attrs: serverActiveNameColor / textColorSecondary / dividerColor),
+        // so Light/Dark/Black need no per-theme color branching here.
         mChangeTheme.text = getThemeText()
         mChangeTheme.setOnClickListener {
             AppearanceSettings.putTheme(getNextTheme())
@@ -439,17 +433,37 @@ class MainActivity : StageActivity(),
         maybeAutoCheckUpdates()
 
         purgeLegacyHeaderCustomization()
+
+        // After a language-switch process restart, take the user back to the
+        // screen the switch was made on (Advanced settings) instead of
+        // stranding them on the home scene. One-shot flag written just before
+        // the restart, so ordinary launches never enter this branch.
+        // NO_ANIMATION: the user is mid-"seamless" language switch — the home
+        // scene is only a technical stopover, so the settings screen should
+        // snap into place rather than slide in over it.
+        if (AppearanceSettings.consumeLanguageRestartRoute()) {
+            settingsLauncher.launch(
+                Intent(this, SettingsActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
+                    .putExtra(
+                        SettingsActivity.KEY_INITIAL_SCREEN,
+                        SettingsActivity.SCREEN_ADVANCED
+                    )
+            )
+        }
     }
 
     /**
-     * Keeps the drawer header's server line in sync with the active
-     * [ServerProfile]. Room re-emits on any profile-table change (rename,
-     * URL edit, switch, delete), so the header self-updates without an
-     * explicit event channel.
+     * Binds the drawer header: static app version line plus the active-server
+     * pill. The pill tracks the active [ServerProfile] via Room — it re-emits
+     * on any profile-table change (rename, URL edit, switch, delete), so the
+     * header self-updates without an explicit event channel.
      */
-    private fun bindNavHeaderServerLine(navView: NavigationView) {
-        val serverLine = navView.getHeaderView(0)
-            .findViewById<TextView>(R.id.nav_header_server) ?: return
+    private fun bindNavHeader(navView: NavigationView) {
+        val header = navView.getHeaderView(0)
+        header.findViewById<TextView>(R.id.nav_header_version)?.text =
+            getString(R.string.nav_header_version_format, BuildConfig.VERSION_NAME)
+        val serverLine = header.findViewById<TextView>(R.id.nav_header_server) ?: return
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 ServiceRegistry.dataModule.profileRepository.observeAll()
@@ -464,11 +478,14 @@ class MainActivity : StageActivity(),
     }
 
     private fun formatServerLine(profile: ServerProfile): String {
-        val host = runCatching { parseBaseUrl(profile.url).host }.getOrNull()
-        return if (host.isNullOrEmpty() || profile.name.contains(host)) {
+        val parsed = runCatching { parseBaseUrl(profile.url) }.getOrNull()
+        val host = parsed?.host.orEmpty()
+        val port = parsed?.port?.takeIf { it != 80 && it != 443 }
+        val hostPort = if (port != null) "$host:$port" else host
+        return if (hostPort.isEmpty() || profile.name.contains(hostPort)) {
             profile.name
         } else {
-            "${profile.name} · $host"
+            "${profile.name} · $hostPort"
         }
     }
 
