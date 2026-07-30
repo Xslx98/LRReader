@@ -19,10 +19,17 @@ import android.os.Bundle
 import android.view.MenuItem
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.settings.AppearanceSettings
+import com.hippo.ehviewer.ui.fragment.AdvancedFragment
 import com.hippo.ehviewer.ui.fragment.SettingsHeaders
 import com.hippo.util.DrawableManager
 
 class SettingsActivity : EhActivity() {
+
+    companion object {
+        /** Optional extra naming a settings screen to open directly on launch. */
+        const val KEY_INITIAL_SCREEN = "initial_screen"
+        const val SCREEN_ADVANCED = "advanced"
+    }
 
     override fun getThemeResId(theme: Int): Int = when (theme) {
         AppearanceSettings.THEME_DARK -> R.style.AppTheme_Settings_Dark
@@ -52,6 +59,16 @@ class SettingsActivity : EhActivity() {
                 .beginTransaction()
                 .replace(R.id.settings, SettingsHeaders())
                 .commit()
+            // Deep-open a sub-screen on top of the headers so back still
+            // returns to the headers list, mirroring normal navigation.
+            if (intent.getStringExtra(KEY_INITIAL_SCREEN) == SCREEN_ADVANCED) {
+                supportFragmentManager
+                    .beginTransaction()
+                    .replace(R.id.settings, AdvancedFragment())
+                    .addToBackStack(null)
+                    .commit()
+                setSettingsTitle(R.string.settings_advanced)
+            }
         }
     }
 
