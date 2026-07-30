@@ -22,6 +22,7 @@
      must stay non-interactive. The server pill is bound by MainActivity from
      the active ServerProfile. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -77,7 +78,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="13dp"
         android:background="@drawable/nav_header_chip_bg"
-        android:drawableStart="@drawable/nav_header_server_dot"
+        app:drawableStartCompat="@drawable/nav_header_server_dot"
         android:drawablePadding="7dp"
         android:ellipsize="middle"
         android:gravity="center_vertical"
