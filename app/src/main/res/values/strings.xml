@@ -365,16 +365,6 @@
     <!-- My Tags Activity -->
 
     <!-- Hosts Activity -->
-    <string name="hosts_tip">hosts.txt</string>
-    <string name="hosts_host">Host</string>
-    <string name="hosts_ip">IP</string>
-    <string name="add_host">Add a host</string>
-    <string name="add_host_add">Add</string>
-    <string name="edit_host">Edit the host</string>
-    <string name="edit_host_confirm">Confirm</string>
-    <string name="edit_host_delete">Delete</string>
-    <string name="invalid_host">Invalid host</string>
-    <string name="invalid_ip">Invalid IP</string>
 
 
     <!-- Gallery Activity -->

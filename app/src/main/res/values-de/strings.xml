@@ -218,16 +218,6 @@
     <string name="set_pattern_protection_tip">Zeichne ein Muster, um es als Sperrmuster festzulegen.\nLasse frei, um das Sperrmuster zu entfernen.</string>
     <string name="set">Festlegen</string>
     <string name="enable_fingerprint">Mit Fingerabdrücke entsperren</string>
-    <string name="hosts_tip">hosts.txt</string>
-    <string name="hosts_host">Host</string>
-    <string name="hosts_ip">IP</string>
-    <string name="add_host">Host hinzufügen</string>
-    <string name="add_host_add">Hinzufügen</string>
-    <string name="edit_host">Host bearbeiten</string>
-    <string name="edit_host_confirm">Übernehmen</string>
-    <string name="edit_host_delete">Entfernen</string>
-    <string name="invalid_host">Ungültiger Host</string>
-    <string name="invalid_ip">Ungültige IP</string>
     <string name="page_menu_title">Seite %d</string>
     <string name="page_menu_refresh">@string/refresh</string>
     <string name="page_menu_share">@string/share</string>

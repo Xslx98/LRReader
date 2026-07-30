@@ -236,16 +236,6 @@
     <!-- UConfig Activity -->
     <!-- My Tags Activity -->
     <!-- Hosts Activity -->
-    <string name="hosts_tip">hosts.txt</string>
-    <string name="hosts_host">ホスト</string>
-    <string name="hosts_ip">IP</string>
-    <string name="add_host">ホストを追加</string>
-    <string name="add_host_add">追加</string>
-    <string name="edit_host">ホストを編集</string>
-    <string name="edit_host_confirm">適用</string>
-    <string name="edit_host_delete">削除</string>
-    <string name="invalid_host">無効なホストです</string>
-    <string name="invalid_ip">無効な IP です</string>
     <!-- Gallery Activity -->
     <string name="page_menu_title">ページ%d</string>
     <string name="page_menu_refresh">@string/refresh</string>

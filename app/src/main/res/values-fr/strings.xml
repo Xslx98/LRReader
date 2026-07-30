@@ -621,16 +621,6 @@
     <string name="settings_privacy_delete_confirm_countdown">Compte à rebours de confirmation de suppression</string>
     <string name="settings_privacy_delete_confirm_countdown_summary_on">Le bouton Supprimer reste désactivé pendant 3 secondes avant de pouvoir être touché.</string>
     <string name="settings_privacy_delete_confirm_countdown_summary_off">Le bouton Supprimer est immédiatement utilisable. Plus rapide, mais plus facile à supprimer par erreur.</string>
-    <string name="hosts_tip">hosts.txt</string>
-    <string name="hosts_host">Hôte</string>
-    <string name="hosts_ip">IP</string>
-    <string name="add_host">Ajouter hôte</string>
-    <string name="add_host_add">Ajouter</string>
-    <string name="edit_host">Modifier hôte</string>
-    <string name="edit_host_confirm">Appliquer</string>
-    <string name="edit_host_delete">Supprimer</string>
-    <string name="invalid_host">Hôte invalide</string>
-    <string name="invalid_ip">IP invalide</string>
     <string name="page_menu_save_to">Enregistrer sous…</string>
     <string name="settings_advanced_app_language_title">Langue de l\'app (Language)</string>
     <string name="app_language_system">Langue du système (défaut)</string>

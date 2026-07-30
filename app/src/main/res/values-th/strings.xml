@@ -277,16 +277,6 @@
     <!-- UConfig Activity -->
 
     <!-- Hosts Activity -->
-    <string name="hosts_tip">hosts.txt</string>
-    <string name="hosts_host">โฮสต์</string>
-    <string name="hosts_ip">ไอพี</string>
-    <string name="add_host">เพิ่มโฮสต์</string>
-    <string name="add_host_add">เพิ่ม</string>
-    <string name="edit_host">แก้ไขโฮสต์</string>
-    <string name="edit_host_confirm">ยืนยัน</string>
-    <string name="edit_host_delete">ลบ</string>
-    <string name="invalid_host">โฮสต์ไม่ถูกต้อง</string>
-    <string name="invalid_ip">ไอพีไม่ถูกต้อง</string>
 
     <!-- Gallery Activity -->
     <string name="page_menu_title">หน้า %d</string>

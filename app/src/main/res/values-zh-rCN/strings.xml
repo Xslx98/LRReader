@@ -272,16 +272,6 @@
     <!-- My Tags Activity -->
 
     <!-- Hosts Activity -->
-    <string name="hosts_tip">hosts.txt</string>
-    <string name="hosts_host">Host</string>
-    <string name="hosts_ip">IP</string>
-    <string name="add_host">添加 host</string>
-    <string name="add_host_add">添加</string>
-    <string name="edit_host">编辑 host</string>
-    <string name="edit_host_confirm">确认</string>
-    <string name="edit_host_delete">删除</string>
-    <string name="invalid_host">无效的 host</string>
-    <string name="invalid_ip">无效的 IP</string>
 
 
     <!-- Gallery Activity -->
