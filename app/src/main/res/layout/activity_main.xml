@@ -82,7 +82,7 @@
                     android:minHeight="56dp"
                     android:paddingStart="28dp"
                     android:paddingEnd="28dp"
-                    android:textColor="?attr/textColorThemePrimary"
+                    android:textColor="?attr/serverActiveNameColor"
                     android:textSize="15sp" />
             </LinearLayout>
         </com.hippo.ehviewer.widget.EhNavigationView>
