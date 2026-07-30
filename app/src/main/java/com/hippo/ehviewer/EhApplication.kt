@@ -117,6 +117,8 @@ class EhApplication : RecordingApplication() {
 
         super.onCreate()
 
+        cancelStaleRestartAlarm()
+
         // Debug-only StrictMode: penaltyLog surfaces main-thread disk/network
         // work and leaked closables during development (this class of bug —
         // e.g. a Room-flow JSON decode landing on main — is otherwise
@@ -513,20 +515,40 @@ class EhApplication : RecordingApplication() {
      * kills the process.
      */
     fun restart() {
+        restartPendingIntent(PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            ?.let { pendingIntent ->
+                val alarm = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                alarm.set(AlarmManager.RTC, System.currentTimeMillis() + 100, pendingIntent)
+            }
+        Process.killProcess(Process.myPid())
+    }
+
+    /**
+     * The relaunch PendingIntent used by [restart]. Reconstructed with the same
+     * request code (and filter-equal Intent) by [cancelStaleRestartAlarm] so a
+     * pending copy can be found and cancelled on the next process start.
+     */
+    private fun restartPendingIntent(flags: Int): PendingIntent? {
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.also {
             it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        }
-        if (launchIntent != null) {
-            val pendingIntent = PendingIntent.getActivity(
-                this,
-                0,
-                launchIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-            )
-            val alarm = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            alarm.set(AlarmManager.RTC, System.currentTimeMillis() + 100, pendingIntent)
-        }
-        Process.killProcess(Process.myPid())
+        } ?: return null
+        return PendingIntent.getActivity(this, 0, launchIntent, flags)
+    }
+
+    /**
+     * The rebirth alarm scheduled by [restart] races the OS's own relaunch of a
+     * killed foreground task: the system restarts the top activity almost
+     * immediately, while the inexact alarm can land seconds later and replace
+     * the activity the user is already interacting with (open drawer snapping
+     * shut, list state lost — observed ~5s late on API 35). Whichever path
+     * booted this process, a still-pending alarm is stale by definition.
+     */
+    private fun cancelStaleRestartAlarm() {
+        restartPendingIntent(PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE)
+            ?.let { pendingIntent ->
+                (getSystemService(Context.ALARM_SERVICE) as AlarmManager).cancel(pendingIntent)
+                pendingIntent.cancel()
+            }
     }
 
     // --- GlobalStuff delegation ---

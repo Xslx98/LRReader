@@ -39,52 +39,58 @@
             android:orientation="vertical"
             app:insetForeground="@android:color/transparent">
 
-            <FrameLayout
+            <!-- Menu and theme-toggle row are stacked siblings (EhNavigationView
+                 is a vertical LinearLayout), NOT an overlay: the drawer panel
+                 spans screen-minus-56dp — far wider than the 280dp menu — and a
+                 match_parent overlay child inflates a wrap_content ancestor to
+                 that full panel width. As a LinearLayout sibling the row is
+                 remeasured to the widest sibling (the menu), and stacking means
+                 no menu item is ever occluded behind the row. -->
+            <com.google.android.material.navigation.NavigationView
+                android:id="@+id/nav_view"
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:background="?android:navigationBarColor"
+                android:scrollbars="vertical"
+                app:headerLayout="@layout/nav_header_main"
+                app:insetForeground="@android:color/transparent"
+                app:menu="@menu/nav_drawer_main" />
+
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="wrap_content"
+                android:background="?android:navigationBarColor"
+                android:orientation="vertical">
 
-                <FrameLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent">
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="?attr/dividerColor" />
 
-                    <com.google.android.material.navigation.NavigationView
-                        android:id="@+id/nav_view"
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1"
-                        android:background="?android:navigationBarColor"
-                        android:paddingBottom="48dip"
-                        android:scrollbars="vertical"
-                        app:headerLayout="@layout/nav_header_main"
-                        app:insetForeground="@android:color/transparent"
-                        app:menu="@menu/nav_drawer_main" />
-                </FrameLayout>
-
-                <FrameLayout
+                <!-- Footer-style row: typography comes from the same
+                     textAppearanceSubtitle2 the NavigationView items use
+                     (14sp / medium / letter-spacing), demoted to secondary
+                     color and a 44dp row — full drawer width keeps the
+                     touch target comfortable despite the shorter height. -->
+                <TextView
+                    android:id="@+id/change_theme"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="bottom|center">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical">
-
-
-                        <TextView
-                            android:id="@+id/change_theme"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:gravity="center_vertical|center_horizontal"
-                            android:minWidth="88dip"
-                            android:minHeight="48dip"
-                            app:insetForeground="@android:color/transparent" />
-                    </LinearLayout>
-                </FrameLayout>
-            </FrameLayout>
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true"
+                    app:drawableStartCompat="@drawable/v_theme_toggle_x24"
+                    android:drawablePadding="14dp"
+                    app:drawableTint="?android:attr/textColorSecondary"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:includeFontPadding="false"
+                    android:minHeight="44dp"
+                    android:paddingStart="22dp"
+                    android:paddingEnd="22dp"
+                    android:textAppearance="?attr/textAppearanceSubtitle2"
+                    android:textColor="?android:attr/textColorSecondary" />
+            </LinearLayout>
         </com.hippo.ehviewer.widget.EhNavigationView>
 
         <com.hippo.ehviewer.widget.EhDrawerView

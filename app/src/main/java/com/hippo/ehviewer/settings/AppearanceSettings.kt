@@ -244,6 +244,36 @@ object AppearanceSettings {
         Settings.getPreferences().edit(commit = true) { putString(KEY_APP_LANGUAGE, value) }
     }
 
+    private const val KEY_APP_LANGUAGE_RESTART_ROUTE = "app_language_restart_route"
+
+    /**
+     * Persist a language switch together with the restart-route mark in one
+     * synchronous commit (single fsync — Process.killProcess follows
+     * immediately, so both writes must be on disk and batching them keeps the
+     * pre-kill latency down). The route mark sends the fresh process back to
+     * the Advanced settings screen, see [consumeLanguageRestartRoute].
+     */
+    @JvmStatic
+    fun putAppLanguageForRestart(value: String?) {
+        Settings.getPreferences().edit(commit = true) {
+            putString(KEY_APP_LANGUAGE, value)
+            putBoolean(KEY_APP_LANGUAGE_RESTART_ROUTE, true)
+        }
+    }
+
+    /**
+     * One-shot consume of [markLanguageRestartRoute]: true exactly once after a
+     * language-switch restart, false on every other boot.
+     */
+    @JvmStatic
+    fun consumeLanguageRestartRoute(): Boolean {
+        val marked = Settings.getBoolean(KEY_APP_LANGUAGE_RESTART_ROUTE, false)
+        if (marked) {
+            Settings.putBoolean(KEY_APP_LANGUAGE_RESTART_ROUTE, false)
+        }
+        return marked
+    }
+
     /**
      * Resolve a persisted [KEY_APP_LANGUAGE] value into a [Locale].
      *
