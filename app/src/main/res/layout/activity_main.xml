@@ -68,6 +68,11 @@
                     android:layout_height="1dp"
                     android:background="?attr/dividerColor" />
 
+                <!-- Footer-style row: typography comes from the same
+                     textAppearanceSubtitle2 the NavigationView items use
+                     (14sp / medium / letter-spacing), demoted to secondary
+                     color and a 44dp row — full drawer width keeps the
+                     touch target comfortable despite the shorter height. -->
                 <TextView
                     android:id="@+id/change_theme"
                     android:layout_width="match_parent"
@@ -75,15 +80,15 @@
                     android:background="?android:attr/selectableItemBackground"
                     android:clickable="true"
                     app:drawableStartCompat="@drawable/v_theme_toggle_x24"
-                    android:drawablePadding="16dp"
+                    android:drawablePadding="14dp"
                     app:drawableTint="?android:attr/textColorSecondary"
                     android:focusable="true"
                     android:gravity="center_vertical"
-                    android:minHeight="56dp"
-                    android:paddingStart="28dp"
-                    android:paddingEnd="28dp"
-                    android:textColor="?attr/serverActiveNameColor"
-                    android:textSize="15sp" />
+                    android:minHeight="44dp"
+                    android:paddingStart="22dp"
+                    android:paddingEnd="22dp"
+                    android:textAppearance="?attr/textAppearanceSubtitle2"
+                    android:textColor="?android:attr/textColorSecondary" />
             </LinearLayout>
         </com.hippo.ehviewer.widget.EhNavigationView>
 
