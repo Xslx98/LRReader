@@ -29,9 +29,6 @@
     <color name="primary_drawable_black">#ccffffff</color>
     <color name="secondary_drawable_black">#99ffffff</color>
 
-    <color name="theme_change_light">@color/colorAccent</color>
-    <color name="theme_change_other">@color/colorPrimary</color>
-
     <color name="popupWindow_background_light">#ffF2F2F2</color>
     <color name="popupWindow_background_dark">#ff2E2E2E</color>
     <color name="popupWindow_background_black">#ff151515</color>
