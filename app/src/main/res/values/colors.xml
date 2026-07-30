@@ -268,4 +268,9 @@
     <color name="appwidget_text_secondary">#8A000000</color>
     <color name="appwidget_accent">#FF00796B</color><!-- teal_700: 4.67:1 AA on white -->
 
+    <!-- Drawer header. Branded teal surface fixed across themes, so the
+         text colors are fixed white rather than theme attrs on purpose. -->
+    <color name="nav_header_title">#FFFFFFFF</color>
+    <color name="nav_header_subtitle">#CCFFFFFF</color><!-- 80% white on teal gradient -->
+
 </resources>

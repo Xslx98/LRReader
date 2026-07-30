@@ -78,8 +78,14 @@ import com.hippo.scene.Announcer
 import com.hippo.scene.SceneFactory
 import com.hippo.scene.SceneFragment
 import com.hippo.scene.StageActivity
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.hippo.ehviewer.dao.ServerProfile
+import com.lanraragi.reader.client.api.parseBaseUrl
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.hippo.lib.yorozuya.ResourcesUtils
@@ -379,6 +385,7 @@ class MainActivity : StageActivity(),
         )
 
         navView.setNavigationItemSelectedListener(this)
+        bindNavHeaderServerLine(navView)
         if (AppearanceSettings.getTheme() == 0) {
             mChangeTheme.setTextColor(getColor(R.color.theme_change_light))
             mChangeTheme.setBackgroundColor(getColor(R.color.white))
@@ -432,6 +439,37 @@ class MainActivity : StageActivity(),
         maybeAutoCheckUpdates()
 
         purgeLegacyHeaderCustomization()
+    }
+
+    /**
+     * Keeps the drawer header's server line in sync with the active
+     * [ServerProfile]. Room re-emits on any profile-table change (rename,
+     * URL edit, switch, delete), so the header self-updates without an
+     * explicit event channel.
+     */
+    private fun bindNavHeaderServerLine(navView: NavigationView) {
+        val serverLine = navView.getHeaderView(0)
+            .findViewById<TextView>(R.id.nav_header_server) ?: return
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                ServiceRegistry.dataModule.profileRepository.observeAll()
+                    .map { profiles -> profiles.firstOrNull { it.isActive } }
+                    .distinctUntilChanged()
+                    .collect { active ->
+                        serverLine.text = active?.let(::formatServerLine)
+                            ?: getString(R.string.lrr_no_servers)
+                    }
+            }
+        }
+    }
+
+    private fun formatServerLine(profile: ServerProfile): String {
+        val host = runCatching { parseBaseUrl(profile.url).host }.getOrNull()
+        return if (host.isNullOrEmpty() || profile.name.contains(host)) {
+            profile.name
+        } else {
+            "${profile.name} · $host"
+        }
     }
 
     /**
