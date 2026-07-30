@@ -745,6 +745,7 @@
     <string name="lrr_edit_server_name">伺服器名稱</string>
     <string name="lrr_edit_server_save">儲存</string>
     <string name="lrr_no_servers">未配置伺服器</string>
+    <string name="nav_header_version_format" translatable="false">v%1$s</string>
     <string name="lrr_server_active">已啟用</string>
     <string name="lrr_server_config_subtitle">連接到LANraragi伺服器</string>
     <string name="lrr_server_info">伺服器: %1$s\n版本: %2$s %3$s\n每頁: %4$s</string>

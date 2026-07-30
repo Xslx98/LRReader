@@ -774,6 +774,7 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_edit_server_name">Nombre del servidor</string>
     <string name="lrr_edit_server_save">Guardar</string>
     <string name="lrr_no_servers">No hay servidores configurados</string>
+    <string name="nav_header_version_format" translatable="false">v%1$s</string>
     <string name="lrr_server_active">Activo</string>
     <string name="lrr_server_config_subtitle">Conectar al servidor LANraragi</string>
     <string name="lrr_server_info">Servidor: %1$s\nVersión: %2$s %3$s\nPor página: %4$s</string>

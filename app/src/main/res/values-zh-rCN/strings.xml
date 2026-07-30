@@ -709,6 +709,7 @@
 
     <!-- Multi-server management -->
     <string name="lrr_no_servers">未配置服务器</string>
+    <string name="nav_header_version_format" translatable="false">v%1$s</string>
     <string name="lrr_add_server">添加服务器</string>
     <string name="lrr_server_active">已启用</string>
     <string name="lrr_delete_server">删除服务器</string>

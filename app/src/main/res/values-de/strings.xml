@@ -679,6 +679,7 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_edit_server_name">Servername</string>
     <string name="lrr_edit_server_save">Speichern</string>
     <string name="lrr_no_servers">Keine Server konfiguriert</string>
+    <string name="nav_header_version_format" translatable="false">v%1$s</string>
     <string name="lrr_server_active">Aktiv</string>
     <string name="lrr_server_config_subtitle">Mit LANraragi-Server verbinden</string>
     <string name="lrr_server_info">Server: %1$s\nVersion: %2$s %3$s\nPro Seite: %4$s</string>

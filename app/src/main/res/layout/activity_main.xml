@@ -70,17 +70,27 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical">
 
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="?attr/dividerColor" />
 
                         <TextView
                             android:id="@+id/change_theme"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_gravity="center"
+                            android:background="?android:attr/selectableItemBackground"
                             android:clickable="true"
+                            android:drawableStart="@drawable/v_theme_toggle_x24"
+                            android:drawablePadding="16dp"
+                            android:drawableTint="?android:attr/textColorSecondary"
                             android:focusable="true"
-                            android:gravity="center_vertical|center_horizontal"
-                            android:minWidth="88dip"
-                            android:minHeight="48dip"
+                            android:gravity="center_vertical"
+                            android:minHeight="56dp"
+                            android:paddingStart="28dp"
+                            android:paddingEnd="28dp"
+                            android:textColor="?attr/textColorThemePrimary"
+                            android:textSize="15sp"
                             app:insetForeground="@android:color/transparent" />
                     </LinearLayout>
                 </FrameLayout>

@@ -665,6 +665,7 @@
     <string name="lrr_edit_server_name">サーバー名</string>
     <string name="lrr_edit_server_save">保存</string>
     <string name="lrr_no_servers">サーバーが設定されていません</string>
+    <string name="nav_header_version_format" translatable="false">v%1$s</string>
     <string name="lrr_server_active">有効</string>
     <string name="lrr_server_config_subtitle">LANraragiサーバーに接続</string>
     <string name="lrr_server_info">サーバー: %1$s\nバージョン: %2$s %3$s\n1ページあたり: %4$s</string>
