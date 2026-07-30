@@ -433,6 +433,20 @@ class MainActivity : StageActivity(),
         maybeAutoCheckUpdates()
 
         purgeLegacyHeaderCustomization()
+
+        // After a language-switch process restart, take the user back to the
+        // screen the switch was made on (Advanced settings) instead of
+        // stranding them on the home scene. One-shot flag written just before
+        // the restart, so ordinary launches never enter this branch.
+        if (AppearanceSettings.consumeLanguageRestartRoute()) {
+            settingsLauncher.launch(
+                Intent(this, SettingsActivity::class.java)
+                    .putExtra(
+                        SettingsActivity.KEY_INITIAL_SCREEN,
+                        SettingsActivity.SCREEN_ADVANCED
+                    )
+            )
+        }
     }
 
     /**
