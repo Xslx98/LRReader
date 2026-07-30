@@ -389,7 +389,7 @@ class MainActivity : StageActivity(),
         bindNavHeader(navView)
 
         // Theme-toggle row styling lives entirely in the layout (theme-aware
-        // attrs: textColorThemePrimary / textColorSecondary / dividerColor),
+        // attrs: serverActiveNameColor / textColorSecondary / dividerColor),
         // so Light/Dark/Black need no per-theme color branching here.
         mChangeTheme.text = getThemeText()
         mChangeTheme.setOnClickListener {
