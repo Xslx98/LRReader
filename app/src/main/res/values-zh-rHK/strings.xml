@@ -162,9 +162,6 @@
     <string name="search_sfu">上傳者</string>
     <string name="search_sft">標籤</string>
 
-    <string name="search_uss">使用相似搜尋</string>
-    <string name="search_osc">只搜尋封面</string>
-    <string name="search_se">顯示被刪除的畫廊</string>
 
 
 
@@ -551,8 +548,6 @@
     <string name="settings_privacy_pattern_protection_title">圖形解鎖</string>
     <string name="settings_privacy_pattern_protection_not_set">未設定圖形解鎖</string>
     <string name="settings_privacy_pattern_protection_set">已設定圖案保護</string>
-    <string name="settings_advanced_export_data_to">已匯出數據至 %s</string>
-    <string name="settings_advanced_export_data_failed">匯出數據失敗</string>
 
     <string name="settings_about">關於</string>
     <string name="settings_about_declaration_summary">LR Reader 與 LANraragi 無任何聯繫</string>
@@ -573,7 +568,6 @@
     <string name="license">授權</string>
 
     <!-- Dir Picker-->
-    <string name="directory_not_writable">該資料夾無法寫入</string>
 
     <!-- Favorites -->
     <string name="local_favorites">本地分類</string>

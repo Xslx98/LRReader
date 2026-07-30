@@ -131,9 +131,6 @@
     <string name="search_sfu">ผู้อัพโหลด</string>
     <string name="search_sft">แท็ก</string>
 
-    <string name="search_uss">ใช้สแกนหาความเหมือน</string>
-    <string name="search_osc">ค้นหาเฉพาะหน้าปก</string>
-    <string name="search_se">แสดงเรื่องที่โดนลบ</string>
 
 
 
@@ -514,8 +511,6 @@
     <string name="settings_privacy_pattern_protection_title">การป้องกันแบบรูปแบบ</string>
     <string name="settings_privacy_pattern_protection_not_set">ยังไม่ได้ตั้งค่าการป้องกันแบบรูปแบบ</string>
     <string name="settings_privacy_pattern_protection_set">การป้องกันแบบรูปแบบถูกตั้งค่าเรียบร้อยแล้ว</string>
-    <string name="settings_advanced_export_data_to">ได้สำเนาข้อมูลแล้วจัดเก็บที่ %s</string>
-    <string name="settings_advanced_export_data_failed">การสำเนาข้อมูลล้มเหลว</string>
 
     <string name="settings_about">เกี่ยวกับ</string>
     <string name="settings_about_declaration_summary">LR Reader ไม่มีความแตกต่างจากตัวเว็บ LANraragi แต่อย่างใด</string>
@@ -536,7 +531,6 @@
     <string name="license">ใบอนุญาต</string>
 
     <!-- Dir Picker-->
-    <string name="directory_not_writable">โฟลเดอร์นี้เขียนไฟล์ไม่ได้</string>
 
     <!-- Categories -->
     <string name="let_me_select">ขอให้ฉันเลือกนะ</string>

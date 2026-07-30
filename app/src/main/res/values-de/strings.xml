@@ -99,9 +99,6 @@
     <string name="search_sfl">Sprache</string>
     <string name="search_sfu">Uploader</string>
     <string name="search_sft">Etikett</string>
-    <string name="search_uss">Ähnlichkeitscan aktivieren</string>
-    <string name="search_osc">Nur nach Umschläge suchen</string>
-    <string name="search_se">Die gelöschten Galerien anzeigen</string>
     <string name="quick_search">Schnellsuche</string>
     <string name="quick_search_tip">Tippe an +, um eine Sofortsuche hinzuzufügen</string>
     <string name="add_quick_search_dialog_title">Sofortsuche hinzufügen</string>
@@ -457,7 +454,6 @@
     <string name="settings_advanced_clear_download_path_cache_summary">Der Galerie-Downloadpfad könnte falsch sein und muss möglicherweise erneut heruntergeladen werden. Das Löschen des Downloadpfad-Zwischenspeichers könnte das Problem lösen.</string>
     <string name="settings_advanced_clear_download_path_cache_message">Downloadpfadzwischenspeicher löschen?</string>
     <string name="license">Open Source-Lizenzen</string>
-    <string name="directory_not_writable">Das Verzeichnis ist nicht beschreibbar</string>
     <string name="let_me_select">Manuell auswählen</string>
     <string name="guide_gallery_left">Seiten umblättern</string>
     <string name="guide_gallery_right">Seiten umblättern</string>
@@ -518,8 +514,6 @@
     <string name="settings_privacy_pattern_protection_title">Sperrmuster</string>
     <string name="settings_privacy_pattern_protection_not_set">Kein Sperrmuster festgelegt</string>
     <string name="settings_privacy_pattern_protection_set">Sperrmuster festgelegt</string>
-    <string name="settings_advanced_export_data_to">Daten wurden zu %s exportiert</string>
-    <string name="settings_advanced_export_data_failed">Datenexport gescheitert</string>
     <string name="settings_about">Über die App</string>
     <string name="settings_about_author">Entwickler</string>
     <string name="download_reset_reading_progress">Lesefortschritte zurücksetzen</string>

@@ -122,9 +122,6 @@
     <string name="search_sfu">Uploader</string>
     <string name="search_sft">Tag</string>
 
-    <string name="search_uss">Activer le scannage de similarité</string>
-    <string name="search_osc">Chercher seulement les couverture</string>
-    <string name="search_se">Montrer les galeries supprimées</string>
 
 
 
@@ -536,8 +533,6 @@
     <string name="settings_privacy_pattern_protection_title">Modèle de déverrouillage</string>
     <string name="settings_privacy_pattern_protection_not_set">Aucun modèle de déverrouillage</string>
     <string name="settings_privacy_pattern_protection_set">Modèle de déverrouillage défini</string>
-    <string name="settings_advanced_export_data_to">Données exportées à %s</string>
-    <string name="settings_advanced_export_data_failed">Échec d\'exportation de données</string>
 
     <string name="settings_about">À propos de l\'application</string>
     <string name="settings_about_declaration_summary">LR Reader ne s\'affilie à LANraragi de aucune manière.</string>
@@ -557,7 +552,6 @@
 
 
     <!-- Dir Picker-->
-    <string name="directory_not_writable">Impossible d\'écrire dans le répertoire</string>
 
     <!-- Categories -->
     <string name="let_me_select">Sélectionner manuellement</string>

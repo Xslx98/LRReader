@@ -117,9 +117,6 @@
     <string name="search_sdt2">Buscar etiquetas pobres</string>
     <string name="search_sh">Mostrar galerías borradas</string>
     <string name="search_sr">Valoración mínima:</string>
-    <string name="search_uss">Usar búsqueda similar</string>
-    <string name="search_osc">Buscar solo portadas</string>
-    <string name="search_se">Mostrar borrados</string>
     <string name="search_sp">Páginas:</string>
     <string name="search_sp_to">hasta</string>
     <!-- A placeholder for other languages -->
@@ -537,8 +534,6 @@
     <string name="settings_privacy_pattern_protection_title">Protección por patrón</string>
     <string name="settings_privacy_pattern_protection_not_set">No se ha configurado la protección por patrón</string>
     <string name="settings_privacy_pattern_protection_set">La protección por patrón ha sido configurado</string>
-    <string name="settings_advanced_export_data_to">Datos exportados en %s</string>
-    <string name="settings_advanced_export_data_failed">Exportación de datos fallido</string>
 
     <string name="settings_about">Acerca de</string>
     <string name="settings_about_declaration_summary">LR Reader no está afiliado con LANraragi de ninguna manera</string>
@@ -687,7 +682,6 @@
 
 
     <!-- Auto-generated missing translations -->
-    <string name="directory_not_writable">The directory is not writable</string>
     <string name="error_status_code_400">Solicitud incorrecta (400)</string>
     <string name="error_status_code_401">Autenticación fallida (401)</string>
     <string name="error_status_code_402">Pago requerido (402)</string>
