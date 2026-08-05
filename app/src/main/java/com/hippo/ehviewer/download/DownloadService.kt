@@ -150,6 +150,27 @@ class DownloadService : Service(), DownloadListener {
         mKeepAlive = DownloadKeepAlive(this).also { it.acquire() }
     }
 
+    /**
+     * Android 15 (targetSdk 35) caps dataSync foreground services at ~6h
+     * cumulative per 24h. When the budget runs out the system calls this and
+     * expects the service to stop within a few seconds — otherwise the process
+     * is killed with ForegroundServiceDidNotStopInTimeException. Long batches
+     * and indefinite "waiting for network" sessions (resume timeout = never)
+     * can genuinely hit this. Pause everything resumably (stopped, not
+     * FAILED), flag the resume banner, and stop.
+     */
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        Log.w(TAG, "dataSync FGS time budget exhausted (type=$fgsType); pausing downloads")
+        try {
+            mDownloadManager?.pauseAllForSystemBudget()
+        } catch (e: Exception) {
+            Log.e(TAG, "pauseAllForSystemBudget failed during FGS timeout", e)
+        }
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        isForeground = false
+        stopSelf()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
 

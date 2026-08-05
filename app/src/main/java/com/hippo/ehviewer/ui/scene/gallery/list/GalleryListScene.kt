@@ -256,10 +256,11 @@ class GalleryListScene : BaseScene(),
         viewModel = ViewModelProvider(requireActivity())[GalleryListViewModel::class.java]
         downloadManager = viewModel.downloadManager
 
-        // Start observing download + favourite changes in the ViewModel.
-        // The ViewModel owns the listeners and unregisters them in onCleared().
+        // Start observing download changes in the ViewModel. The ViewModel owns
+        // the listener and unregisters it in onCleared(). (Favourite changes are
+        // deliberately NOT observed: list rows render no favourite state, so the
+        // old full-range rebind on every favourite toggle updated nothing.)
         viewModel.startObservingDownloads()
-        viewModel.startObservingFavourites()
 
         // Observe download events to refresh adapter items.
         // collectFlowWhileCreated(fragment): deliberate whole-lifetime collection —
@@ -268,27 +269,16 @@ class GalleryListScene : BaseScene(),
         // landing while backgrounded.
         collectFlowWhileCreated(this, viewModel.downloadEvent) { event ->
             when (event) {
-                is GalleryListViewModel.DownloadEvent.ItemUpdated -> {
-                    val adapter = adapter ?: return@collectFlowWhileCreated
-                    val count = adapter.itemCount
-                    for (i in 0 until count) {
-                        val archive = adapter.getDataAt(i)
-                        if (archive != null && archive.arcid == event.arcid) {
-                            adapter.notifyItemChanged(i)
-                            break
-                        }
-                    }
-                }
                 is GalleryListViewModel.DownloadEvent.BulkChanged -> {
-                    adapter?.notifyItemRangeChanged(0, adapter?.itemCount ?: 0)
+                    // Payload bind: flips only the downloaded badge, so cached
+                    // holders keep their thumbnail requests running.
+                    adapter?.notifyItemRangeChanged(
+                        0,
+                        adapter?.itemCount ?: 0,
+                        GalleryAdapterNew.PAYLOAD_DOWNLOAD_BADGE,
+                    )
                 }
             }
-        }
-
-        // Observe favourite status changes to refresh all visible items.
-        // collectFlowWhileCreated(fragment): same rationale as downloadEvent above.
-        collectFlowWhileCreated(this, viewModel.favouriteStatusChanged) {
-            adapter?.notifyItemRangeChanged(0, adapter?.itemCount ?: 0)
         }
 
         // Server-side archive deletion: drop the row from this list. If the scene is
@@ -360,8 +350,8 @@ class GalleryListScene : BaseScene(),
     override fun onDestroy() {
         super.onDestroy()
         mUrlBuilder = null
-        // DownloadInfoListener and FavouriteStatusRouter.Listener are managed by the
-        // ViewModel and unregistered in its onCleared() — no cleanup needed here.
+        // The DownloadInfoListener is managed by the ViewModel and unregistered
+        // in its onCleared() — no cleanup needed here.
     }
 
     override fun onSceneResult(requestCode: Int, resultCode: Int, data: android.os.Bundle?) {

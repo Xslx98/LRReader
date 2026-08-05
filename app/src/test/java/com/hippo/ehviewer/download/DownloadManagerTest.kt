@@ -937,6 +937,54 @@ class DownloadManagerTest {
         assertEquals(listOf(900L, 700L, 500L, 300L, 100L), list.map { it.time })
     }
 
+    // ═══════════════════════════════════════════════════════════
+    // FGS budget pause (Android 15 dataSync 6h cap)
+    // ═══════════════════════════════════════════════════════════
+
+    @Test
+    fun pauseAllForSystemBudget_flagsActiveDownloadsForResumeBanner_andStopsThem() {
+        DownloadResumeBanner.clear()
+
+        // One active and one idle row. Seed deterministically: startDownload
+        // would spawn a real worker whose immediate failure (unreachable test
+        // URL + Unconfined scope) can flip the state before the pause runs.
+        val active = DownloadInfo().apply { arcid = "tok_fgs_active"; title = "Active" }
+        manager.addDownload(active.toArchive(), null, DownloadState.NONE)
+        val idle = DownloadInfo().apply { arcid = "tok_fgs_idle"; title = "Idle" }
+        manager.addDownload(idle.toArchive(), null, DownloadState.NONE)
+        manager.allDownloadInfoList.first { it.arcid == "tok_fgs_active" }.state =
+            DownloadState.DOWNLOAD
+
+        var updateAllSeen = false
+        manager.addDownloadInfoListener(object : FakeDownloadInfoListener() {
+            override fun onUpdateAll() { updateAllSeen = true }
+        })
+
+        manager.pauseAllForSystemBudget()
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        // The active download is flagged for the "timed out — retry" banner...
+        val snapshot = DownloadResumeBanner.consume()
+        assertTrue("Expected TimedOut, got $snapshot", snapshot is DownloadResumeBanner.Snapshot.TimedOut)
+        val arcids = (snapshot as DownloadResumeBanner.Snapshot.TimedOut).arcids
+        assertTrue("tok_fgs_active" in arcids)
+        // ...the idle row is not...
+        assertTrue("tok_fgs_idle" !in arcids)
+        // ...and the stop-everything broadcast fired (scheduler-tracked rows
+        // are flipped by stopAllDownload; the hand-seeded state above is not
+        // scheduler-tracked, so assert the observable stop signal instead).
+        assertTrue(updateAllSeen)
+    }
+
+    @Test
+    fun pauseAllForSystemBudget_withNothingActive_leavesBannerEmpty() {
+        DownloadResumeBanner.clear()
+
+        manager.pauseAllForSystemBudget()
+
+        assertEquals(DownloadResumeBanner.Snapshot.None, DownloadResumeBanner.consume())
+    }
+
     private open class FakeDownloadInfoListener : DownloadInfoListener {
         override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {}
         override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {}

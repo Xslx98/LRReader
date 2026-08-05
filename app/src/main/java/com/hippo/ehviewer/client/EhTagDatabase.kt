@@ -211,6 +211,19 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
         // IllegalMonitorStateException.
         private val updateInFlight = AtomicBoolean(false)
 
+        // Network-check throttle (24h persisted success TTL + 15min in-memory
+        // attempt TTL). Lazily bound to the application context's prefs.
+        @Volatile
+        private var updateThrottle: TagDbUpdateThrottle? = null
+
+        private fun getUpdateThrottle(context: Context): TagDbUpdateThrottle {
+            return updateThrottle ?: TagDbUpdateThrottle(
+                context.applicationContext.getSharedPreferences(
+                    TagDbUpdateThrottle.PREFS_NAME, Context.MODE_PRIVATE,
+                ),
+            ).also { updateThrottle = it }
+        }
+
         @JvmStatic
         fun getInstance(context: Context): EhTagDatabase? {
             return if (isPossible(context)) {
@@ -325,6 +338,8 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
                 instance = null
             }
 
+            val throttle = getUpdateThrottle(context)
+
             ServiceRegistry.coroutineModule.ioScope.launch {
                 if (!updateInFlight.compareAndSet(false, true)) return@launch
 
@@ -352,6 +367,12 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
                         }
                     }
 
+                    // Network check is throttled: local load above always runs
+                    // (memory state must be rebuilt after process death), but
+                    // GitHub is consulted at most once per TTL window.
+                    if (!throttle.shouldAttempt()) return@launch
+                    throttle.recordAttempt()
+
                     // The translation DB files are multi-MB; the shared
                     // large-file client has no call cap so a slow link can't
                     // abort the download mid-stream (see INetworkModule).
@@ -368,6 +389,7 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
                     if (checkData(tempSha1File, dataFile)) {
                         // The data is the same
                         FileUtils.delete(tempSha1File)
+                        throttle.recordSuccess()
                         return@launch
                     }
 
@@ -396,6 +418,7 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
                         dataFile.source().buffer().use { source ->
                             instance = EhTagDatabase(dataName, source)
                         }
+                        throttle.recordSuccess()
                     } catch (e: java.io.IOException) {
                         Log.w(TAG, "Failed to read updated tag database", e)
                     }
