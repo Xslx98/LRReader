@@ -180,6 +180,32 @@ abstract class GalleryAdapterNew(
 
     open fun getDataAt(position: Int): Archive? = null
 
+    override fun onBindViewHolder(holder: GalleryHolder, position: Int, payloads: MutableList<Any>) {
+        if (isBadgeOnlyRebind(payloads)) {
+            bindDownloadBadge(holder, position)
+        } else {
+            super.onBindViewHolder(holder, position, payloads)
+        }
+    }
+
+    /**
+     * Partial bind for [PAYLOAD_DOWNLOAD_BADGE]: flips only the "downloaded"
+     * membership badge. Deliberately does NOT touch thumb.load() — a full
+     * rebind cancels and restarts the row's in-flight thumbnail request,
+     * which is the whole reason bulk download events use a payload.
+     */
+    private fun bindDownloadBadge(holder: GalleryHolder, position: Int) {
+        if (mType == TYPE_GRID) return // grid rows carry no badge
+        val archive = getDataAt(position) ?: return
+        val arcid = archive.arcid
+        holder.downloaded?.visibility =
+            if (!isTankoubonId(arcid) && mDownloadManager.containDownloadInfo(arcid)) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
+    }
+
     override fun onBindViewHolder(holder: GalleryHolder, position: Int) {
         val archive = getDataAt(position) ?: return
         val arcid = archive.arcid
@@ -275,5 +301,17 @@ abstract class GalleryAdapterNew(
         const val TYPE_INVALID = -1
         const val TYPE_LIST = 0
         const val TYPE_GRID = 1
+
+        /** Change payload: refresh only the "downloaded" membership badge. */
+        @JvmField
+        val PAYLOAD_DOWNLOAD_BADGE = Any()
+
+        /**
+         * True when a payload bind may take the badge-only partial path.
+         * RecyclerView merges payload lists across pending updates, so any
+         * unknown payload forces a full bind.
+         */
+        fun isBadgeOnlyRebind(payloads: List<Any>): Boolean =
+            payloads.isNotEmpty() && payloads.all { it === PAYLOAD_DOWNLOAD_BADGE }
     }
 }
