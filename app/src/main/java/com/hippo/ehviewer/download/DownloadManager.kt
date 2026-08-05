@@ -23,8 +23,12 @@ import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.DownloadLabel
+import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.mapper.toDownloadInfoView
+import com.lanraragi.reader.client.api.LRRArchiveApi
+import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.parseRatingFromTags
+import kotlinx.coroutines.CancellationException
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.ehviewer.spider.SpiderInfo
@@ -395,7 +399,41 @@ class DownloadManager(
         val list = ArrayList(repo.allInfoList)
         scope.launch {
             try {
+                val ctx = ServiceRegistry.appModule.getContext()
+                val historyRepo = ServiceRegistry.dataModule.historyRepository
+                val lookupCache = ServiceRegistry.dataModule.profileLookupCache
+                val client = ServiceRegistry.networkModule.okHttpClient
                 for (di in list) {
+                    // The reader's actual resume position is reconciled from
+                    // the reading_progress SP and the Room archive_json
+                    // snapshot (ReadingProgressReconciler), with the server's
+                    // own progress/lastreadtime pair feeding both. All three
+                    // layers must be reset or the old position resurrects.
+
+                    // 1. Local SP save + in-memory tracker.
+                    GalleryProvider2.clearReadingProgress(ctx, di.arcid)
+
+                    // 2. Room snapshot for this download's source profile.
+                    try {
+                        historyRepo.resetReadingProgress(di.arcid, di.serverProfileId)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Can't reset snapshot progress for ${di.arcid}", e)
+                    }
+
+                    // 3. Server-side progress (fire-and-forget, per source
+                    // profile — the auth interceptor picks the matching key
+                    // by host). progress=1 with a fresh server lastreadtime
+                    // outranks any stale pair on other devices too.
+                    try {
+                        val baseUrl = resolveSourceBaseUrl(di.serverProfileId, lookupCache)
+                        LRRArchiveApi.updateProgress(client, baseUrl, di.arcid, 1)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Server progress reset failed for ${di.arcid} (offline?)", e)
+                    }
+
+                    // 4. Legacy EhViewer-era SpiderInfo file, when present.
                     val dir = SpiderDen.getGalleryDownloadDir(di.arcid, di.title) ?: continue
                     val file = dir.findFile(".ehviewer") ?: continue
                     val si = SpiderInfo.read(file) ?: continue
