@@ -17,6 +17,7 @@
 package com.hippo.ehviewer.gallery
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.hippo.lib.glgallery.GalleryProvider
 import com.hippo.lib.glgallery.GalleryView
@@ -88,6 +89,9 @@ abstract class GalleryProvider2 : GalleryProvider() {
         /** SharedPreferences name for local reading progress storage. */
         private const val SP_READING_PROGRESS = "reading_progress"
 
+        /** Key suffix for the per-arcid save timestamp (epoch seconds). */
+        private const val TS_SUFFIX = "_ts"
+
         /**
          * Save reading progress locally (0-indexed page number) with timestamp.
          * @param arcid Archive identifier (used as SP key)
@@ -95,13 +99,46 @@ abstract class GalleryProvider2 : GalleryProvider() {
          */
         @JvmStatic
         fun saveReadingProgress(ctx: Context, arcid: String, page: Int) {
-            ctx.applicationContext
+            val prefs = ctx.applicationContext
                 .getSharedPreferences(SP_READING_PROGRESS, Context.MODE_PRIVATE)
-                .edit {
-                    putInt(arcid, page)
-                    putLong("${arcid}_ts", System.currentTimeMillis() / 1000L)
-                }
+            prefs.edit {
+                putInt(arcid, page)
+                putLong("${arcid}_ts", System.currentTimeMillis() / 1000L)
+            }
             ReadingProgressTracker.setProgress(arcid, page)
+            maybeTrimReadingProgress(prefs, arcid)
+        }
+
+        /** Archive-count cap for the reading_progress store (2 keys each). */
+        internal const val MAX_PROGRESS_ENTRIES = 500
+
+        /** Entries kept after a trim (hysteresis so trims stay rare). */
+        internal const val TRIM_TARGET = 400
+
+        /**
+         * Bound the reading_progress store: it used to grow by two keys per
+         * archive ever opened, forever — and SharedPreferences rewrites the
+         * WHOLE XML file on every page turn, so the per-save cost grew with
+         * lifetime library usage. Above [MAX_PROGRESS_ENTRIES] archives the
+         * oldest entries (by `_ts`; legacy entries without one count as
+         * oldest) are pruned down to [TRIM_TARGET]. [activeArcid] — the
+         * archive being read right now — is never pruned.
+         */
+        @JvmStatic
+        internal fun maybeTrimReadingProgress(prefs: SharedPreferences, activeArcid: String) {
+            val all = prefs.all
+            val arcids = all.keys.filter { !it.endsWith(TS_SUFFIX) }
+            if (arcids.size <= MAX_PROGRESS_ENTRIES) return
+            val toRemove = arcids
+                .sortedBy { (all[it + TS_SUFFIX] as? Long) ?: 0L }
+                .take(arcids.size - TRIM_TARGET)
+                .filter { it != activeArcid }
+            prefs.edit {
+                for (key in toRemove) {
+                    remove(key)
+                    remove(key + TS_SUFFIX)
+                }
+            }
         }
 
         /**
