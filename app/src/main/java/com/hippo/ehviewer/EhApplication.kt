@@ -23,6 +23,7 @@ import android.app.PendingIntent
 import android.content.ComponentCallbacks2
 import android.content.ComponentName
 import android.content.Context
+import androidx.core.content.edit
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
@@ -312,7 +313,7 @@ class EhApplication : RecordingApplication() {
                 val prefs = getSharedPreferences("boot_cleanup", MODE_PRIVATE)
                 if (!prefs.getBoolean("http_cache_thumb_purge_done", false)) {
                     ServiceRegistry.networkModule.cache.evictAll()
-                    prefs.edit().putBoolean("http_cache_thumb_purge_done", true).apply()
+                    prefs.edit { putBoolean("http_cache_thumb_purge_done", true) }
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "http_cache one-time purge failed")
