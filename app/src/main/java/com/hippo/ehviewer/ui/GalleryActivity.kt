@@ -587,6 +587,21 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         // runnable) so none run against a destroyed Activity/window.
         mainHandler.removeCallbacksAndMessages(null)
 
+        // Detach the content pane before dropping references: this is the ONLY
+        // path that runs GalleryView.onDetachFromRoot → removeAllPages →
+        // page unbind → ImageTexture.recycle(). Without it no reader session
+        // ever tears down its pages, and a session ending on an animated page
+        // (GIF/AWebP) leaks the texture's AnimateRunnable worker thread — a GC
+        // root pinning the decoded page — for the process lifetime. Lock the
+        // render thread so the detach cannot race an in-flight frame.
+        mGLRootView?.let { root ->
+            root.lockRenderThread()
+            try {
+                root.setContentPane(null)
+            } finally {
+                root.unlockRenderThread()
+            }
+        }
         mGLRootView = null
         mGalleryView = null
         mGalleryAdapter?.clearUploader()
