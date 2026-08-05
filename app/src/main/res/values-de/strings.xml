@@ -47,7 +47,6 @@
     <string name="error_decoding_failed">Dekodierung fehlgeschlagen</string>
     <string name="error_empty">Leer</string>
     <string name="error_reading_failed">Lesefehler</string>
-    <string name="error_invalid_archive">Ungültige Archivdatei</string>
     <string name="error_out_of_range">Außer Reichweite</string>
     <string name="error_invalid_url">URL ungültig</string>
     <string name="error_cant_create_temp_file">Die Temporäre Datei konnte erstellt nicht werden</string>
@@ -552,18 +551,6 @@
     <string name="archiver_downloading">Archiv wird heruntergeladen %s</string>
 
     <!--  订阅服务  -->
-    <string name="import_local_archive">Lokales Archiv importieren</string>
-    <string name="import_archive_title">Archivdatei auswählen</string>
-    <string name="import_archive_failed">Archivimport fehlgeschlagen</string>
-    <string name="archive_permission_lost">Berechtigung zum Zugriff auf das Archiv wurde verloren. Bitte die Archivdatei erneut importieren.</string>
-    <string name="import_archive_processing">Archiv wird verarbeitet…</string>
-    <string name="import_archive_invalid_format">Nicht unterstütztes Archivformat</string>
-    <string name="import_archive_already_imported">Archiv wurde bereits importiert</string>
-    <string name="import_archive_success">Archiv erfolgreich importiert</string>
-    <string name="archive_not_accessible">Archivdatei ist nicht zugänglich</string>
-    <string name="imported_archive_info_title">Lokaler Import-Info</string>
-    <string name="imported_archive_info_message">Dies ist ein Element, das aus dem lokalen Speicher importiert wurde</string>
-    <string name="imported_archive_category">Lokaler Import</string>
 
     <!-- Missing download settings translations -->
     <string name="settings_download_export_items">Download-Elemente exportieren</string>

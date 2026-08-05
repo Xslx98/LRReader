@@ -144,8 +144,6 @@
 
     <!-- Custom preference -->
     <dimen name="preference_widget_width">48dp</dimen>
-    <dimen name="preference_item_padding_side">8dip</dimen>
-    <dimen name="preference_item_padding_inner">8dip</dimen>
 
     <!-- Gallery -->
     <dimen name="gallery_pager_interval">48dp</dimen>

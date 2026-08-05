@@ -389,27 +389,6 @@ class DownloadsViewModelTest {
     }
 
     // ═══════════════════════════════════════════════════════════
-    // G. Archive format validation (via reflection)
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
-    fun isValidArchiveFormat_acceptsZipCbzRarCbr() {
-        val method = DownloadsViewModel::class.java.getDeclaredMethod(
-            "isValidArchiveFormat", String::class.java
-        )
-        method.isAccessible = true
-
-        assertTrue(method.invoke(vm, "test.zip") as Boolean)
-        assertTrue(method.invoke(vm, "test.ZIP") as Boolean)
-        assertTrue(method.invoke(vm, "test.cbz") as Boolean)
-        assertTrue(method.invoke(vm, "test.rar") as Boolean)
-        assertTrue(method.invoke(vm, "test.cbr") as Boolean)
-        assertFalse(method.invoke(vm, "test.pdf") as Boolean)
-        assertFalse(method.invoke(vm, "test.txt") as Boolean)
-        assertFalse(method.invoke(vm, null) as Boolean)
-    }
-
-    // ═══════════════════════════════════════════════════════════
     // H. Pagination / page size state
     // ═══════════════════════════════════════════════════════════
 

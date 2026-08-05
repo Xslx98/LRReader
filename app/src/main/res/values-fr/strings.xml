@@ -55,7 +55,6 @@
     <string name="error_decoding_failed">Échec de décodage</string>
     <string name="error_empty">Vide</string>
     <string name="error_reading_failed">Échec de lecture</string>
-    <string name="error_invalid_archive">Fichier d\'archives invalide</string>
     <string name="error_out_of_range">Hors de portée</string>
     <string name="error_invalid_url">URL invalide</string>
     <string name="error_cant_create_temp_file">Impossible de créer un fichier temporaire</string>
@@ -628,18 +627,6 @@
     <string name="have_new_version">Cliquez pour voir la nouvelle version de la galerie</string>
     <string name="archiver_downloading">Téléchargement d\'archive %s</string>
     <!--  订阅服务  -->
-    <string name="import_local_archive">Importer une archive locale</string>
-    <string name="import_archive_title">Sélectionner le fichier d\'archive</string>
-    <string name="import_archive_failed">Échec de l\'importation de l\'archive</string>
-    <string name="archive_permission_lost">L\'autorisation d\'accès à l\'archive a été perdue. Veuillez réimporter le fichier d\'archive.</string>
-    <string name="import_archive_processing">Traitement de l\'archive…</string>
-    <string name="import_archive_invalid_format">Format d\'archive non pris en charge</string>
-    <string name="import_archive_already_imported">Archive déjà importée</string>
-    <string name="import_archive_success">Archive importée avec succès</string>
-    <string name="archive_not_accessible">Le fichier d\'archive n\'est pas accessible</string>
-    <string name="imported_archive_info_title">Informations d\'importation locale</string>
-    <string name="imported_archive_info_message">Il s\'agit d\'un élément importé depuis le stockage local</string>
-    <string name="imported_archive_category">Importation locale</string>
 
     <!-- S-Pen Actions(Samsung only) -->
     <string name="spen_previous_page">Page précédente</string>

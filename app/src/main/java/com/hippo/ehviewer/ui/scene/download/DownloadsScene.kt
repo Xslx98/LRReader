@@ -27,7 +27,6 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.res.ResourcesCompat
 import android.util.Log
@@ -165,7 +164,6 @@ class DownloadsScene : ToolbarScene(),
         ActivityResultContracts.StartActivityForResult()
     ) { result -> mGalleryOpenHelper?.updateReadProcess(result) }
 
-    private var mImportHelper: DownloadImportHelper? = null
 
     override fun getNavCheckedItem(): Int = R.id.nav_downloads
 
@@ -224,17 +222,6 @@ class DownloadsScene : ToolbarScene(),
 
         val context = ehContext
         AssertUtils.assertNotNull(context)
-
-        // Initialize import helper (must happen before onStart per ActivityResultLauncher contract)
-        mImportHelper = DownloadImportHelper(
-            requireActivity().activityResultRegistry,
-            this,
-            contextProvider = { ehContext },
-            onFileSelected = { uri ->
-                val ctx = ehContext ?: return@DownloadImportHelper
-                viewModel.processArchiveImport(ctx, uri)
-            }
-        )
 
         if (savedInstanceState == null) {
             onInit()
@@ -470,17 +457,6 @@ class DownloadsScene : ToolbarScene(),
             updateAdapter()
         }
 
-        // Observe import toast events
-        collectFlow(viewLifecycleOwner, viewModel.importToast) { resId ->
-            Toast.makeText(ehContext ?: return@collectFlow, resId, Toast.LENGTH_SHORT).show()
-        }
-
-        // Observe import success events
-        collectFlow(viewLifecycleOwner, viewModel.importSuccess) {
-            updateForLabel()
-            updateView()
-        }
-
         // ── Observe DownloadInfoListener events from ViewModel (sealed dispatch) ──
 
         collectFlow(viewLifecycleOwner, viewModel.downloadEvent) { event ->
@@ -569,7 +545,6 @@ class DownloadsScene : ToolbarScene(),
         R.id.action_stop_all -> { mBatchOpsHelper?.stopAll(); true }
         R.id.action_reset_reading_progress -> { mBatchOpsHelper?.resetReadingProgress(searching); true }
         R.id.search_download_gallery -> { ehContext?.let { mSearchHelper?.gotoSearch(it) } != null }
-        R.id.import_local_archive -> { mImportHelper?.importLocalArchive(); true }
         R.id.all, R.id.sort_by_default, R.id.download_done, R.id.not_started,
         R.id.waiting, R.id.downloading, R.id.failed,
         R.id.sort_by_gallery_id_asc, R.id.sort_by_gallery_id_desc,

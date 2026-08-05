@@ -46,11 +46,6 @@
 # generated at compile time and referenced statically (no reflective
 # serializer() lookups in this codebase); the library ships consumer rules.
 
-# === A7Zip JNI (external library: a7zip_XJ:extract-lite) ===
--keep class com.hippo.a7zip.** { *; }
--keep class com.hippo.ehviewer.gallery.A7ZipArchive { *; }
--keep class com.hippo.ehviewer.gallery.A7ZipArchive$* { *; }
-
 # === Native JNI entry points (libehviewer.so) ===
 -keep class com.hippo.util.GifHandler { *; }
 
