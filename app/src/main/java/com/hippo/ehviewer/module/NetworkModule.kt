@@ -110,6 +110,9 @@ class NetworkModule(private val context: Context) : INetworkModule, Cacheable {
     /** Cached instance of the interface-default page-streaming client. */
     override val pageStreamClient: OkHttpClient by lazy { super.pageStreamClient }
 
+    /** Cached instance of the interface-default thumbnail-fetch client. */
+    override val thumbFetchClient: OkHttpClient by lazy { super.thumbFetchClient }
+
     /** Cached instance of the interface-default large-file client. */
     override val largeFileClient: OkHttpClient by lazy { super.largeFileClient }
 
