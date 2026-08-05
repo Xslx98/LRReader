@@ -127,5 +127,23 @@ abstract class GalleryProvider2 : GalleryProvider() {
                 .getSharedPreferences(SP_READING_PROGRESS, Context.MODE_PRIVATE)
                 .getLong("${arcid}_ts", 0L)
         }
+
+        /**
+         * Remove the local progress save for [arcid] — both the page key and
+         * the timestamp key (a surviving `_ts` would make page 0 look like a
+         * real save) — and push the no-progress sentinel into
+         * [ReadingProgressTracker] so detail-page observers refresh.
+         * Part of the "reset reading progress" flow.
+         */
+        @JvmStatic
+        fun clearReadingProgress(ctx: Context, arcid: String) {
+            ctx.applicationContext
+                .getSharedPreferences(SP_READING_PROGRESS, Context.MODE_PRIVATE)
+                .edit {
+                    remove(arcid)
+                    remove("${arcid}_ts")
+                }
+            ReadingProgressTracker.setProgress(arcid, ReadingProgressTracker.NO_LOCAL_PROGRESS)
+        }
     }
 }

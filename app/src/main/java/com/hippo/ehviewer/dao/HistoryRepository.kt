@@ -98,6 +98,26 @@ class HistoryRepository(
     }
 
     /**
+     * Zero the archive snapshot's progress pair (`progress`/`lastreadtime`)
+     * for [arcid] on [profileId]. Part of the "reset reading progress" flow:
+     * the offline reconciler ([com.hippo.ehviewer.gallery.ReadingProgressReconciler])
+     * reads this snapshot, so leaving the old pair in place would resurrect
+     * the pre-reset resume position. Rows that are missing or fail to decode
+     * are skipped.
+     */
+    suspend fun resetReadingProgress(arcid: String, profileId: Long) {
+        val row = dao.loadByArcidAndProfile(arcid, profileId) ?: return
+        val archive = runCatching {
+            ArchiveLocalStateJson.decodeFromString(Archive.serializer(), row.archiveJson)
+        }.getOrNull() ?: return
+        dao.updateArchiveJsonForProfile(
+            arcid,
+            profileId,
+            archive.copy(progress = 0, lastreadtime = 0L).toArchiveJson(),
+        )
+    }
+
+    /**
      * Read the persisted archive snapshot (the row's `archive_json`) for
      * [arcid] on [profileId], or null when there is no local row or the
      * payload fails to decode. The reader's warm-up/seed path overlays its
