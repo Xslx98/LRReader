@@ -21,9 +21,6 @@ interface INetworkModule {
     /** Main HTTP client used for API calls and short-read operations. */
     val okHttpClient: OkHttpClient
 
-    /** HTTP client tuned for image downloads (longer read/call timeouts). */
-    val imageOkHttpClient: OkHttpClient
-
     /** HTTP client tuned for archive extraction (long read, 10-min call timeout). */
     val longReadClient: OkHttpClient
 

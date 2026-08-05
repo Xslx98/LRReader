@@ -80,16 +80,6 @@ class NetworkModule(private val context: Context) : INetworkModule, Cacheable {
             .build()
     }
 
-    override val imageOkHttpClient: OkHttpClient by lazy {
-        // Derive from main client to share connection pool, thread pool, and SSL config
-        okHttpClient.newBuilder()
-            .connectTimeout(20, TimeUnit.SECONDS)
-            .readTimeout(20, TimeUnit.SECONDS)
-            .writeTimeout(20, TimeUnit.SECONDS)
-            .callTimeout(60, TimeUnit.SECONDS)
-            .build()
-    }
-
     /** Long-read client for archive extraction (large archives can be slow to extract). */
     override val longReadClient: OkHttpClient by lazy {
         okHttpClient.newBuilder()

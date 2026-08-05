@@ -17,7 +17,6 @@
 package com.hippo.ehviewer.ui
 
 import android.annotation.SuppressLint
-import android.content.ClipboardManager
 import android.util.Log
 import com.hippo.ehviewer.appwidget.ContinueReadingWidget
 import android.content.Context
@@ -789,8 +788,6 @@ class MainActivity : StageActivity(),
         super.onResume()
 
         setNavCheckedItem(mNavCheckedItem)
-
-        checkClipboardUrl()
     }
 
     /**
@@ -819,45 +816,11 @@ class MainActivity : StageActivity(),
     override fun onTransactScene() {
         super.onTransactScene()
 
-        checkClipboardUrl()
-
         // Posted, not inline: StageActivity.finishScene fires onTransactScene
         // BEFORE removing the popped scene's tag, so during the gate's own
         // dismissal topSceneClass still reads as the gate. One handler hop
         // later the stack is settled.
         mainHandler.post { maybeReplayPendingGateRequest() }
-    }
-
-    private fun checkClipboardUrl() {
-        mainHandler.postDelayed({
-            if (!isSolid()) {
-                checkClipboardUrlInternal()
-            }
-        }, 300)
-    }
-
-    private fun isSolid(): Boolean {
-        val topClass = topSceneClass
-        return topClass == null || SolidScene::class.java.isAssignableFrom(topClass)
-    }
-
-    private fun getTextFromClipboard(): String? {
-        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-        return try {
-            if (clipboard != null) {
-                val clip = clipboard.primaryClip
-                if (clip != null && clip.itemCount > 0 && clip.getItemAt(0).text != null) {
-                    return clip.getItemAt(0).text.toString()
-                }
-            }
-            null
-        } catch (ignore: RuntimeException) {
-            null
-        }
-    }
-
-    private fun checkClipboardUrlInternal() {
-        // LANraragi: clipboard URL monitoring disabled (was E-Hentai specific)
     }
 
     @SuppressLint("RtlHardcoded")

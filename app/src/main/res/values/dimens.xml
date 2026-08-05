@@ -23,11 +23,9 @@
 
     <!--  Padding  -->
     <dimen name="dialog_padding_top_material">18dp</dimen>
-    <dimen name="title_text_top_padding">6dp</dimen>
 
     <!-- Text size -->
     <dimen name="text_little_large">20sp</dimen>
-    <dimen name="text_medium">18sp</dimen>
     <dimen name="text_little_small">16sp</dimen>
     <dimen name="search_history_icon_padding">8dp</dimen>
     <dimen name="text_small">14sp</dimen>

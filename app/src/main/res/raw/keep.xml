@@ -1,3 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- strict: safe-mode heuristics keep any resource whose NAME appears in a
+     string constant near getIdentifier() in ANY dependency (appcompat and
+     material both contain such calls), retaining resources nothing uses.
+     This app has no Resources.getIdentifier() calls; the one reflective-ish
+     lookup (tag_translation_metadata) is listed explicitly below. Add new
+     runtime-only-referenced resources here if any ever appear. -->
 <resources xmlns:tools="http://schemas.android.com/tools"
+    tools:shrinkMode="strict"
     tools:keep="@array/tag_translation_metadata" />

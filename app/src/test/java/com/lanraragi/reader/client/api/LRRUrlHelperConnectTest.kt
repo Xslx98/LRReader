@@ -64,7 +64,6 @@ class LRRUrlHelperConnectTest {
                 override val cache: Cache get() = throw UnsupportedOperationException()
                 override val proxySelector: EhProxySelector get() = throw UnsupportedOperationException()
                 override val okHttpClient: OkHttpClient get() = throw UnsupportedOperationException()
-                override val imageOkHttpClient: OkHttpClient get() = throw UnsupportedOperationException()
                 override val longReadClient: OkHttpClient get() = throw UnsupportedOperationException()
                 override val uploadClient: OkHttpClient get() = throw UnsupportedOperationException()
                 override val networkMonitor: NetworkMonitor get() = throw UnsupportedOperationException()

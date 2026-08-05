@@ -109,6 +109,18 @@ android {
                     'kotlin/**',
                     'META-INF/*.version',
                     'META-INF/org/jetbrains/**',
+                    // Apache-2.0 texts shipped per-artifact by androidx (7x
+                    // identical 10KB files). In-app attribution is generated
+                    // by the jaredsburrows.license plugin, not these files.
+                    'META-INF/**/LICENSE.txt',
+                    // OkHttp public-suffix DB (41KB, incompressible). Only
+                    // consumer is cookie domain-matching / topPrivateDomain;
+                    // this app sets CookieJar.NO_COOKIES and never calls
+                    // topPrivateDomain, so the code path is unreachable.
+                    // ⚠ If a cookie jar is ever introduced, REMOVE this
+                    // exclude — PublicSuffixDatabase throws at runtime
+                    // without it.
+                    'okhttp3/internal/publicsuffix/*',
             ]
         }
     }
@@ -174,7 +186,6 @@ afterEvaluate {
 dependencies {
     implementation libs.material
 
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation libs.activity
     implementation libs.appcompat
     implementation libs.security.crypto
@@ -205,7 +216,6 @@ dependencies {
     implementation libs.a7zip
     // seven332 UI components
     implementation libs.seven332.android.resource
-    implementation libs.seven332.animator
     implementation libs.seven332.drawerlayout
     implementation libs.seven332.easyrecyclerview
     implementation libs.pagination.sxj
