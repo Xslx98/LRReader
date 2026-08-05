@@ -62,8 +62,14 @@
 # === Settings fragments (instantiated via PreferenceActivity headers reflection) ===
 -keep class com.hippo.ehviewer.ui.fragment.** { <init>(); }
 
-# === Scene classes (instantiated via SceneFactory registry) ===
--keep class com.hippo.ehviewer.ui.scene.** { <init>(); }
+# === Scene classes ===
+# Scene NAMES and no-arg constructors must survive: intents/saved state carry
+# class-name strings resolved via Class.forName (StageActivity, SolidScene),
+# and FragmentManager re-instantiates fragments reflectively by name on state
+# restore. Only actual SceneFragment subclasses need this — the old package
+# keep pinned all ~550 scene-package classes (ViewModels, adapters, helpers)
+# with original names into the release DEX.
+-keep class * extends com.hippo.scene.SceneFragment { <init>(); }
 
 # === LRRDownloadWorker: preserve volatile semantics for cancellation flag ===
 -keepclassmembers class com.hippo.ehviewer.download.LRRDownloadWorker {
