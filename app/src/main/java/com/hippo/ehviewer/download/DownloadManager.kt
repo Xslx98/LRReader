@@ -392,6 +392,23 @@ class DownloadManager(
         scheduler.ensureDownload()
     }
 
+    /**
+     * One-shot boot cleanup for rows created by the removed
+     * import-local-archive feature (audit #69, removed 2026-08-05). Legacy
+     * imported rows carry a content:// [DownloadInfo.archiveUri]; with the
+     * feature gone they can neither be opened nor re-downloaded, so drop
+     * them. Returns the number of purged rows. Idempotent.
+     */
+    fun purgeImportedArchiveRows(): Int {
+        repo.assertMainThread()
+        val legacy = repo.allInfoList
+            .filter { it.archiveUri?.startsWith("content://") == true }
+            .map { it.arcid }
+        if (legacy.isEmpty()) return 0
+        deleteRangeDownload(legacy)
+        return legacy.size
+    }
+
     fun deleteRangeDownload(arcidList: List<String>) {
         repo.assertMainThread()
         scheduler.stopRangeDownload(arcidList)
