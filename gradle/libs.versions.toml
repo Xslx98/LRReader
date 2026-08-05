@@ -95,7 +95,6 @@ robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectr
 joor = { module = "org.jooq:joor", version.ref = "joor" }
 
 # --- JitPack (pinned by commit hash — no version.ref) ---
-a7zip = { module = "com.github.xiaojieonly.a7zip_XJ:extract-lite", version = "1.0.3" }
 seven332-android-resource = { module = "com.github.seven332:android-resource", version = "0.1.0" }
 seven332-drawerlayout = { module = "com.github.seven332:drawerlayout", version = "ea2bb388f0" }
 seven332-easyrecyclerview = { module = "com.github.seven332:easyrecyclerview", version = "0.1.1" }

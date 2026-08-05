@@ -207,10 +207,10 @@ class DownloadManager(
         // profile shares the same single local download row + on-disk dir.
         val existing = repo.getDownloadInfo(archive.arcid)
         if (existing != null) {
-            // Imported archives (content:// URIs) cannot be re-downloaded; the
-            // pre-W36-4 short-circuit on `galleryInfo is DownloadInfo` is now
-            // anchored on the persisted state, which is the only place
-            // archiveUri actually lives.
+            // Legacy imported-archive rows (content:// URIs, feature removed
+            // 2026-08-05 — audit #69) cannot be re-downloaded. The boot-time
+            // cleanup removes such rows, but guard the narrow window where an
+            // old row still exists in this session.
             val uri = existing.archiveUri
             if (uri != null && uri.startsWith("content://")) return
             if (existing.state != DownloadState.WAIT) {
@@ -390,6 +390,23 @@ class DownloadManager(
         val (info, list, index) = result
         if (index >= 0) eventBus.forEachListener { it.onRemove(info, list, index) }
         scheduler.ensureDownload()
+    }
+
+    /**
+     * One-shot boot cleanup for rows created by the removed
+     * import-local-archive feature (audit #69, removed 2026-08-05). Legacy
+     * imported rows carry a content:// [DownloadInfo.archiveUri]; with the
+     * feature gone they can neither be opened nor re-downloaded, so drop
+     * them. Returns the number of purged rows. Idempotent.
+     */
+    fun purgeImportedArchiveRows(): Int {
+        repo.assertMainThread()
+        val legacy = repo.allInfoList
+            .filter { it.archiveUri?.startsWith("content://") == true }
+            .map { it.arcid }
+        if (legacy.isEmpty()) return 0
+        deleteRangeDownload(legacy)
+        return legacy.size
     }
 
     fun deleteRangeDownload(arcidList: List<String>) {

@@ -48,7 +48,6 @@
     <string name="error_not_folder_path">フォルダが見つかりません</string>
     <string name="error_decoding_failed">デコードに失敗しました</string>
     <string name="error_empty">空</string>
-    <string name="error_invalid_archive">無効なアーカイブファイルです</string>
     <string name="error_reading_failed">読み込めませんでした</string>
     <string name="error_out_of_range">範囲外です</string>
     <string name="error_invalid_url">無効なリンクです。</string>
@@ -541,18 +540,6 @@
     <!-- S-Pen Actions(Samsung only) -->
     <string name="spen_previous_page">前のページ</string>
     <string name="spen_next_page">次のページ</string>
-    <string name="import_local_archive">ローカルアーカイブをインポート</string>
-    <string name="import_archive_title">アーカイブファイルを選択</string>
-    <string name="import_archive_failed">アーカイブのインポートに失敗しました</string>
-    <string name="archive_permission_lost">アーカイブへのアクセス権限が失われました。アーカイブファイルを再インポートしてください。</string>
-    <string name="import_archive_processing">アーカイブを処理中…</string>
-    <string name="import_archive_invalid_format">サポートされていないアーカイブ形式</string>
-    <string name="import_archive_already_imported">アーカイブは既にインポートされています</string>
-    <string name="import_archive_success">アーカイブのインポートが成功しました</string>
-    <string name="archive_not_accessible">アーカイブファイルにアクセスできません</string>
-    <string name="imported_archive_info_title">ローカルインポート情報</string>
-    <string name="imported_archive_info_message">これはローカルストレージからインポートされたアイテムです</string>
-    <string name="imported_archive_category">ローカルインポート</string>
 
     <!-- Missing download settings translations -->
     <string name="settings_download_export_items">ダウンロード項目をエクスポート</string>

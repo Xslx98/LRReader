@@ -60,7 +60,6 @@
     <string name="error_not_folder_path">ไม่พบโฟลเดอร์ปลายทาง</string>
     <string name="error_decoding_failed">การถอดรหัสล้มเหลว</string>
     <string name="error_empty">ว่างเปล่า</string>
-    <string name="error_invalid_archive">การจัดเก็บไม่ถูกต้อง</string>
     <string name="error_reading_failed">การอ่านล้มเหลว</string>
     <string name="error_out_of_range">ไม่อยู่ในขอบเขต</string>
     <string name="error_invalid_url">URL ไม่ถูกต้อง</string>
@@ -585,18 +584,6 @@
     <string name="have_new_version">คลิกเพื่อดูเวอร์ชั่นแกลเลอรี่ใหม่</string>
     <string name="archiver_downloading">กำลังดาวน์โหลด Arc %s</string>
     <!--  订阅服务  -->
-    <string name="import_local_archive">นำเข้าไฟล์บีบอัดท้องถิ่น</string>
-    <string name="import_archive_title">เลือกไฟล์บีบอัด</string>
-    <string name="import_archive_failed">การนำเข้าไฟล์บีบอัดล้มเหลว</string>
-    <string name="archive_permission_lost">สิทธิ์ในการเข้าถึงไฟล์บีบอัดสูญหายแล้ว กรุณานำเข้าไฟล์บีบอัดอีกครั้ง</string>
-    <string name="import_archive_processing">กำลังประมวลผลไฟล์บีบอัด…</string>
-    <string name="import_archive_invalid_format">รูปแบบไฟล์บีบอัดไม่รองรับ</string>
-    <string name="import_archive_already_imported">ไฟล์บีบอัดถูกนำเข้าแล้ว</string>
-    <string name="import_archive_success">นำเข้าไฟล์บีบอัดสำเร็จแล้ว</string>
-    <string name="archive_not_accessible">ไม่สามารถเข้าถึงไฟล์บีบอัดได้</string>
-    <string name="imported_archive_info_title">ข้อมูลการนำเข้าท้องถิ่น</string>
-    <string name="imported_archive_info_message">นี่คือรายการที่นำเข้าจากที่เก็บข้อมูลท้องถิ่น</string>
-    <string name="imported_archive_category">การนำเข้าท้องถิ่น</string>
 
     <!--  排行榜  -->
 

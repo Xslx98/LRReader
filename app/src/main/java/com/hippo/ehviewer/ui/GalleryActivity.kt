@@ -47,7 +47,6 @@ import com.hippo.ehviewer.settings.ReadingSettings
 import com.hippo.ehviewer.settings.SecuritySettings
 import com.hippo.ehviewer.event.AppEventBus
 import com.hippo.ehviewer.event.GalleryActivityEvent
-import com.hippo.ehviewer.gallery.ArchiveGalleryProvider
 import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.gallery.DirGalleryProvider
 import com.hippo.ehviewer.gallery.GalleryProvider2
@@ -95,7 +94,6 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
 
         const val KEY_ACTION = "action"
         const val KEY_FILENAME = "filename"
-        const val KEY_URI = "uri"
         const val KEY_ARCHIVE = "archive"
 
         /** onBackPressed result-extra carrying the (possibly mutated) archive back to the launching scene. */
@@ -127,7 +125,6 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
 
     private var mAction: String? = null
     private var mFilename: String? = null
-    private var mUri: android.net.Uri? = null
     private var mArchive: Archive? = null
     private var mPage = 0
     private val mReadingSession = ReadingSessionTracker()
@@ -200,12 +197,6 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                     )
                 }
             }
-            Intent.ACTION_VIEW -> {
-                val uri = mUri
-                if (uri != null) {
-                    mGalleryProvider = ArchiveGalleryProvider(this, uri)
-                }
-            }
         }
         // KEY_PAGE override (e.g. a detail-page thumbnail tap) so the
         // provider warms / consumes the decoded slot for the page the
@@ -239,7 +230,6 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
 
         mAction = intent.action
         mFilename = intent.getStringExtra(KEY_FILENAME)
-        mUri = intent.data
         mArchive = intent.getParcelableExtra(KEY_ARCHIVE)
         val onEvent = intent.getBooleanExtra(DATA_IN_EVENT, false)
         if (!onEvent) {
@@ -269,7 +259,6 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
     private fun onRestore(savedInstanceState: Bundle) {
         mAction = savedInstanceState.getString(KEY_ACTION)
         mFilename = savedInstanceState.getString(KEY_FILENAME)
-        mUri = savedInstanceState.getParcelable(KEY_URI)
         mArchive = savedInstanceState.getParcelable(KEY_ARCHIVE)
         mPage = savedInstanceState.getInt(KEY_PAGE, -1)
         mSliderController.currentIndex = savedInstanceState.getInt(KEY_CURRENT_INDEX)
@@ -280,7 +269,6 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         super.onSaveInstanceState(outState)
         outState.putString(KEY_ACTION, mAction)
         outState.putString(KEY_FILENAME, mFilename)
-        outState.putParcelable(KEY_URI, mUri)
         mArchive?.let { outState.putParcelable(KEY_ARCHIVE, it) }
         outState.putInt(KEY_PAGE, mPage)
         outState.putInt(KEY_CURRENT_INDEX, mSliderController.currentIndex)

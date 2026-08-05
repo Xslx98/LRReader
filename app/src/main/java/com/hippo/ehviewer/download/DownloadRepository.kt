@@ -17,8 +17,6 @@
 package com.hippo.ehviewer.download
 
 import android.content.Context
-import android.content.Intent
-import androidx.core.net.toUri
 import android.os.Looper
 import android.util.Log
 import com.hippo.ehviewer.ServiceRegistry
@@ -178,19 +176,6 @@ class DownloadRepository(
         val orphanLabelStrings: MutableList<String> = ArrayList()
 
         for (info in loadedInfos) {
-            val archiveUri = info.archiveUri
-            if (archiveUri != null && archiveUri.startsWith("content://")) {
-                try {
-                    val uri = archiveUri.toUri()
-                    context.contentResolver.takePersistableUriPermission(
-                        uri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    )
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to restore URI permission for $archiveUri", e)
-                }
-            }
-
             var list = mapDraft[info.label]
             if (list == null) {
                 list = ArrayList()

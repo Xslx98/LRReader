@@ -985,6 +985,51 @@ class DownloadManagerTest {
         assertEquals(DownloadResumeBanner.Snapshot.None, DownloadResumeBanner.consume())
     }
 
+    // ═══════════════════════════════════════════════════════════
+    // Legacy imported-archive row purge (audit #69 feature removal)
+    // ═══════════════════════════════════════════════════════════
+
+    @Test
+    fun purgeImportedArchiveRows_removesOnlyLegacyImportedRows() {
+        val imported = DownloadInfo().apply {
+            arcid = "tok_imported"
+            title = "Legacy Imported"
+            state = DownloadState.FINISH
+            time = 100L
+            archiveUri = "content://com.android.externalstorage.documents/document/primary%3Atest.cbz"
+        }
+        val normal = DownloadInfo().apply {
+            arcid = "tok_normal"
+            title = "Regular Download"
+            state = DownloadState.FINISH
+            time = 200L
+        }
+        manager.addDownload(listOf(imported, normal))
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        val purged = manager.purgeImportedArchiveRows()
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        assertEquals(1, purged)
+        assertFalse(manager.containDownloadInfo("tok_imported"))
+        assertTrue(manager.containDownloadInfo("tok_normal"))
+    }
+
+    @Test
+    fun purgeImportedArchiveRows_isIdempotentAndNoOpWithoutLegacyRows() {
+        val normal = DownloadInfo().apply {
+            arcid = "tok_only_normal"
+            title = "Regular"
+            state = DownloadState.FINISH
+            time = 100L
+        }
+        manager.addDownload(listOf(normal))
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        assertEquals(0, manager.purgeImportedArchiveRows())
+        assertTrue(manager.containDownloadInfo("tok_only_normal"))
+    }
+
     private open class FakeDownloadInfoListener : DownloadInfoListener {
         override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {}
         override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {}

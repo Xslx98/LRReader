@@ -212,8 +212,6 @@ dependencies {
 
     implementation libs.spinkit
 
-    // Native archive extraction
-    implementation libs.a7zip
     // seven332 UI components
     implementation libs.seven332.android.resource
     implementation libs.seven332.drawerlayout

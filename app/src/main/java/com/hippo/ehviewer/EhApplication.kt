@@ -33,12 +33,13 @@ import android.os.Process
 import android.os.StrictMode
 import android.os.Trace
 import android.util.Log
-import com.hippo.a7zip.A7Zip
 import com.hippo.content.ContextLocalWrapper
 import com.hippo.content.RecordingApplication
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.module.AppModule
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.hippo.ehviewer.settings.AppLockGate
 import com.hippo.ehviewer.settings.AppearanceSettings
@@ -296,7 +297,6 @@ class EhApplication : RecordingApplication() {
         ServiceRegistry.coroutineModule.ioScope.launch {
             BitmapUtils.initialize(this@EhApplication)
             Image.initialize(this@EhApplication)
-            A7Zip.initialize(this@EhApplication)
         }
 
         // One-time http_cache purge (audit #29): thumbnails used to be
@@ -317,6 +317,26 @@ class EhApplication : RecordingApplication() {
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "http_cache one-time purge failed")
+            }
+        }
+
+        // One-time purge of legacy imported-archive rows (audit #69): the
+        // import-local-archive feature was removed 2026-08-05; its rows
+        // (content:// archiveUri) can neither be opened nor re-downloaded.
+        // Pref guard makes later boots zero-cost. Runs off-main until the
+        // manager is initialized, then purges on the main thread (the
+        // manager's collections are main-thread-only).
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            try {
+                val prefs = getSharedPreferences("boot_cleanup", MODE_PRIVATE)
+                if (!prefs.getBoolean("imported_archive_rows_purged", false)) {
+                    val manager = ServiceRegistry.dataModule.downloadManager
+                    manager.awaitInitAsync()
+                    withContext(Dispatchers.Main) { manager.purgeImportedArchiveRows() }
+                    prefs.edit { putBoolean("imported_archive_rows_purged", true) }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "imported-archive row purge failed")
             }
         }
 
