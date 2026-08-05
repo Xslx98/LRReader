@@ -1,4 +1,5 @@
 Tankoubon fixes:
-- Overflow menu on the tankoubon detail page rendered as a blank white box; the rename/edit/delete entries are readable again
-- Tankoubons built inside the app now get a cover automatically (first member's cover) instead of staying on the placeholder
-- Covers changed on the server (e.g. reordering members in the web client) now show up in the app after reopening or refreshing the tankoubon screens
+- Overflow menu on the tankoubon detail page rendered as a blank white box; the entries are readable again
+- Tankoubons built inside the app now get a cover automatically (first member's cover)
+- Tankoubons whose cover was never generated server-side now show the first member's cover instead of the placeholder, and the app nudges the server to generate the real one
+- Server-side cover changes now show up after reopening the tankoubon screens
