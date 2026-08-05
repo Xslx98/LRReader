@@ -5,6 +5,7 @@ import com.hippo.ehviewer.BuildConfig
 import com.hippo.ehviewer.dao.ArchiveLocalState
 import com.hippo.ehviewer.dao.ArchiveLocalStateJson
 import com.hippo.ehviewer.dao.DownloadInfo
+import com.hippo.ehviewer.dao.DownloadObservedRow
 import com.hippo.ehviewer.dao.HistoryInfo
 import com.hippo.ehviewer.dao.LocalFavoriteInfo
 import com.hippo.ehviewer.download.DownloadState
@@ -179,6 +180,29 @@ fun ArchiveLocalState.toDownloadInfoView(): DownloadInfo {
     info.rating = archive.rating
     // LRR API never populates simpleLanguage; column has no producer post-L1.
     // See DownloadInfo.updateInfo for the canonical explanation.
+    info.simpleLanguage = null
+    info.simpleTags = archive.flatTags.toTypedArray()
+    info.serverProfileId = serverProfileId
+    info.state = downloadState ?: DownloadState.NONE
+    info.legacy = downloadLegacy
+    info.time = downloadTime ?: 0L
+    info.label = downloadLabel
+    info.archiveUri = downloadArchiveUri
+    info.downloadRootUri = downloadRootUri
+    return info
+}
+
+/**
+ * Build a [DownloadInfo] view from the downloads-observer projection
+ * (audit #39) — same field mapping as the [ArchiveLocalState] overload.
+ */
+fun DownloadObservedRow.toDownloadInfoView(): DownloadInfo {
+    val archive = decodeArchive(arcid, archiveJson)
+    val info = DownloadInfo()
+    info.arcid = arcid
+    info.title = archive.title
+    info.thumb = archive.thumbnailUrl
+    info.rating = archive.rating
     info.simpleLanguage = null
     info.simpleTags = archive.flatTags.toTypedArray()
     info.serverProfileId = serverProfileId

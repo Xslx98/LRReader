@@ -63,7 +63,10 @@ public class ConacoTask<V> {
 
     private DiskLoadTask mDiskLoadTask;
     private NetworkLoadTask mNetworkLoadTask;
-    private Call mCall;
+    // Written on the network executor (doWork), cancelled from the UI thread
+    // (stop) — without volatile the UI thread could miss the freshly published
+    // Call and the cancel would be lost.
+    private volatile Call mCall;
     private boolean mStart;
     private boolean hardware = true;
     private final int mTargetWidth;
@@ -162,8 +165,9 @@ public class ConacoTask<V> {
             mDiskLoadTask.cancel();
         } else if (mNetworkLoadTask != null) { // Getting from network
             mNetworkLoadTask.cancel();
-            if (mCall != null) {
-                mCall.cancel();
+            Call call = mCall;
+            if (call != null) {
+                call.cancel();
                 mCall = null;
             }
         }
@@ -302,14 +306,12 @@ public class ConacoTask<V> {
 
         @Override
         public void notifyProgress(long singleReceivedSize, long receivedSize, long totalSize) {
-            if (!isNotNecessary(this)) {
-                mMainHandler.post(() -> {
-                    Unikery unikery = mUnikeryWeakReference.get();
-                    if (!mStop && !mCancelled && unikery != null && unikery.getTaskId() == mId) {
-                        unikery.onProgress(singleReceivedSize, receivedSize, totalSize);
-                    }
-                });
-            }
+            // Deliberately a no-op. This used to post a main-thread Runnable
+            // per 4KB chunk (per download, several downloads in parallel while
+            // scrolling) into Unikery.onProgress — and every Unikery
+            // implementation's onProgress is empty. If a real progress
+            // consumer ever appears, reinstate posting HERE with throttling,
+            // never per-chunk.
         }
 
         private boolean putToDiskCache(InputStream is, long length) {
@@ -328,6 +330,11 @@ public class ConacoTask<V> {
                 int bytesRead;
 
                 while ((bytesRead = is.read(buffer)) != -1) {
+                    // A cancelled task must not run the download to
+                    // completion; false discards the partial cache entry.
+                    if (isNotNecessary(this)) {
+                        return false;
+                    }
                     os.write(buffer, 0, bytesRead);
                     receivedSize += bytesRead;
                     notifyProgress((long) bytesRead, receivedSize, length);
@@ -373,6 +380,15 @@ public class ConacoTask<V> {
                 mCall = mOkHttpClient.newCall(request);
 
                 Response response = mCall.execute();
+                // Error bodies (404 page, reverse-proxy 502 HTML) must never be
+                // cached or decoded as the image for this key.
+                if (!response.isSuccessful()) {
+                    if (com.hippo.ehviewer.BuildConfig.DEBUG) {
+                        Log.w(TAG, "Fetch failed: HTTP " + response.code() + " for " + mUrl);
+                    }
+                    response.close();
+                    return null;
+                }
                 ResponseBody body = response.body();
                 is = body.byteStream();
 
@@ -432,6 +448,12 @@ public class ConacoTask<V> {
                     return null;
                 }
             } catch (Exception e) {
+                // Expected on cancellation (Call.cancel -> IOException); any
+                // other failure used to vanish without a trace, making broken
+                // thumbnails undiagnosable.
+                if (com.hippo.ehviewer.BuildConfig.DEBUG && !mStop && !mCancelled) {
+                    Log.w(TAG, "Network load failed for " + mUrl, e);
+                }
                 return null;
             } finally {
                 mCall = null;

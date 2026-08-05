@@ -63,6 +63,23 @@ interface INetworkModule {
             .callTimeout(0, TimeUnit.MILLISECONDS)
             .build()
 
+    /**
+     * HTTP client for Conaco thumbnail fetches. The HTTP cache is disabled:
+     * Conaco's own BeerBelly disk cache (80–320 MB) stores every fetched
+     * thumbnail already, so the shared 200 MB http_cache held a byte-for-byte
+     * DUPLICATE of the thumbnail set that was only ever consulted after a
+     * BeerBelly eviction (audit #29) — up to ~200 MB of redundant disk. The
+     * freshness headers injected by ThumbnailCacheControlInterceptor remain
+     * correct for any cache-bearing consumer of thumbnail URLs.
+     *
+     * Default getter derives per access so INetworkModule test fakes need no
+     * override; [NetworkModule] overrides with a cached instance.
+     */
+    val thumbFetchClient: OkHttpClient
+        get() = okHttpClient.newBuilder()
+            .cache(null)
+            .build()
+
     /** Live connectivity monitor backed by NetworkCallback. */
     val networkMonitor: NetworkMonitor
 }

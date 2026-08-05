@@ -3,6 +3,7 @@ package com.hippo.ehviewer.module
 import android.content.Context
 import com.hippo.conaco.Conaco
 import com.hippo.ehviewer.ImageBitmapHelper
+import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.gallery.ReaderPageCache
 import com.lanraragi.reader.client.api.LRRTagCache
@@ -30,7 +31,19 @@ class ClientModule(
         ServiceRegistry.registerCacheable(PageThumbnailCache)
     }
 
-    override val imageBitmapHelper: ImageBitmapHelper by lazy { ImageBitmapHelper() }
+    override val imageBitmapHelper: ImageBitmapHelper by lazy {
+        // Density-aware admission cap: the decode floor (128x192dp) in px
+        // varies with density, and a fixed pixel cap sat BELOW the floor on
+        // high-density devices — floor-bounded decodes silently bypassed the
+        // memory cache and every rebind re-decoded from disk (audit #12).
+        val res = context.resources
+        ImageBitmapHelper(
+            ImageBitmapHelper.cacheCapForFloor(
+                res.getDimensionPixelSize(R.dimen.gallery_detail_thumb_width),
+                res.getDimensionPixelSize(R.dimen.gallery_detail_thumb_height),
+            )
+        )
+    }
 
     override val conaco: Conaco<Image> by lazy {
         Conaco.Builder<Image>().apply {
@@ -39,7 +52,7 @@ class ClientModule(
             hasDiskCache = true
             diskCacheDir = File(context.cacheDir, "thumb")
             diskCacheMaxSize = diskCacheMaxSize()
-            okHttpClient = networkModule.okHttpClient
+            okHttpClient = networkModule.thumbFetchClient
             objectHelper = imageBitmapHelper
             debug = false
         }.build()
