@@ -56,6 +56,10 @@ class DirGalleryProvider : GalleryProvider2 {
     private val context: Context?
     private val arcId: String?
     private var serverProfileId: Long = 0L
+    // Written from the seed/reconcile path and putStartPage (GL/main
+    // threads), read by getStartPage on the GL thread — volatile, matching
+    // LRRGalleryProvider.
+    @Volatile
     private var startPageValue: Int = 0
 
     /**

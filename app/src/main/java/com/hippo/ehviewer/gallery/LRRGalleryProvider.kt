@@ -110,7 +110,10 @@ class LRRGalleryProvider(
     @Volatile
     private var providerScope: CoroutineScope? = null
 
-    // Track start page for reading progress
+    // Track start page for reading progress. Written from the IO-scope
+    // metadata reconcile and putStartPage (GL/main threads), read by
+    // getStartPage on the GL thread — volatile for cross-thread visibility.
+    @Volatile
     private var startPageValue: Int = loadReadingProgress(this.context, arcId)
 
     // Local-only intra-page scroll fraction (0.0 ~ 1.0) restored on
