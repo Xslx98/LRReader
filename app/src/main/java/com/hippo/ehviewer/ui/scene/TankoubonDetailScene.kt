@@ -525,9 +525,19 @@ class TankoubonDetailScene : BaseScene() {
         val baseUrl = viewModel.baseUrl ?: return
         val tankId = viewModel.tankId
         if (tankId.isEmpty()) return
-        val bust = TankCoverCacheStamp.value
-        val key = LRRCacheKeyFactory.getThumbKey("$tankId#$bust")
-        val url = LRRTankoubonApi.getTankoubonThumbnailUrl(baseUrl, tankId, cacheBust = bust)
+        val key: String
+        val url: String
+        val fallback = viewModel.coverFallbackMember
+        if (fallback != null) {
+            // No generated cover server-side (probe 202, generation queued):
+            // stand in with the first member's cover.
+            key = LRRCacheKeyFactory.getThumbKey(fallback.arcid)
+            url = fallback.thumbnailUrl
+        } else {
+            val bust = TankCoverCacheStamp.value
+            key = LRRCacheKeyFactory.getThumbKey("$tankId#$bust")
+            url = LRRTankoubonApi.getTankoubonThumbnailUrl(baseUrl, tankId, cacheBust = bust)
+        }
         val binding = "$key|$url"
         if (binding == mCoverBoundUrl) return
         mCoverBoundUrl = binding

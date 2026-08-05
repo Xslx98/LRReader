@@ -10,9 +10,13 @@ import com.hippo.ehviewer.client.TankCoverCacheStamp
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.client.api.archiveThumbnailUrl
 import com.lanraragi.reader.client.api.friendlyError
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -39,6 +43,19 @@ class TankoubonsViewModel : ViewModel() {
 
     /** Tankoubon list in server order. */
     val tanks: StateFlow<List<LRRTankoubonApi.Tankoubon>> = _tanks.asStateFlow()
+
+    /** Stand-in cover for a tank whose generated cover is missing server-side. */
+    data class CoverFallback(val arcid: String, val thumbnailUrl: String)
+
+    private val _coverFallbacks = MutableStateFlow<Map<String, CoverFallback>>(emptyMap())
+
+    /**
+     * tankId → first member's cover, for tanks the cover probe reported
+     * WITHOUT a generated cover (probe 202; the probe itself queues
+     * server-side generation). Published before [tanks] on each load so
+     * cover binds already see it.
+     */
+    val coverFallbacks: StateFlow<Map<String, CoverFallback>> = _coverFallbacks.asStateFlow()
 
     // -------------------------------------------------------------------------
     // Loading state
@@ -229,7 +246,47 @@ class TankoubonsViewModel : ViewModel() {
         // Fresh server truth in hand — revalidate covers. Must precede the
         // callers' _tanks publication so cover binds already see the new stamp.
         TankCoverCacheStamp.bump()
+        _coverFallbacks.value = probeCoverFallbacks(serverUrl, all)
         return ArrayList(all)
+    }
+
+    /**
+     * Probes each member-having tank for a generated cover; the missing ones
+     * ([LRRTankoubonApi.hasTankThumbnail] 202, which also queues server-side
+     * generation) map to their FIRST member's cover as a visual stand-in —
+     * matching what the tank's own cover would show once generated. A probe
+     * failure degrades to "has cover" (plain URL → server placeholder), the
+     * pre-probe behavior. Empty tanks are skipped: nothing to stand in AND
+     * the server-side generation job would just fail.
+     */
+    private suspend fun probeCoverFallbacks(
+        serverUrl: String,
+        tanks: List<LRRTankoubonApi.Tankoubon>,
+    ): Map<String, CoverFallback> = coroutineScope {
+        val client = ServiceRegistry.networkModule.okHttpClient
+        tanks.filter { it.archives.isNotEmpty() }
+            .map { tank ->
+                async {
+                    val missing = try {
+                        !LRRTankoubonApi.hasTankThumbnail(client, serverUrl, tank.id)
+                    } catch (ce: CancellationException) {
+                        throw ce
+                    } catch (ignored: Exception) {
+                        false
+                    }
+                    if (!missing) return@async null
+                    val arcid = tank.archives.first()
+                    val fallback = try {
+                        CoverFallback(arcid, archiveThumbnailUrl(serverUrl, arcid))
+                    } catch (ignored: Exception) {
+                        null // malformed arcid — keep the plain tank URL
+                    }
+                    fallback?.let { tank.id to it }
+                }
+            }
+            .awaitAll()
+            .filterNotNull()
+            .toMap()
     }
 
     /**

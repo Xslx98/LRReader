@@ -135,6 +135,19 @@ internal fun requireValidArcid(arcid: String): String {
     return arcid
 }
 
+/**
+ * Cover thumbnail URL for an archive (`/api/archives/{id}/thumbnail`).
+ * Shared by [com.lanraragi.reader.client.api.data.LRRArchive.getThumbnailUrl]
+ * and the tank-cover fallback path, which only holds a bare arcid.
+ */
+internal fun archiveThumbnailUrl(baseUrl: String, arcid: String): String =
+    parseBaseUrl(baseUrl).newBuilder()
+        .addPathSegments("api/archives")
+        .addPathSegment(requireValidArcid(arcid))
+        .addPathSegment("thumbnail")
+        .build()
+        .toString()
+
 /** Prefix of LANraragi Tankoubon IDs (e.g. "TANK_1688616437"). */
 internal const val TANKOUBON_ID_PREFIX = "TANK_"
 

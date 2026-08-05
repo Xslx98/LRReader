@@ -310,18 +310,28 @@ class TankoubonsScene : BaseScene() {
         override fun onBindViewHolder(holder: TankoubonViewHolder, position: Int) {
             val tank = mTanks[position]
 
-            // Cover thumbnail (server renders a placeholder until generated).
-            // Key and URL fold in TankCoverCacheStamp: covers regenerate
-            // server-side without the URL ever changing, so each fresh tank
-            // fetch revalidates them instead of pinning the cached image
-            // (placeholder included) forever.
+            // Cover thumbnail. A tank the probe reported coverless renders
+            // its first member's cover instead (the probe already queued
+            // server-side generation). Otherwise key and URL fold in
+            // TankCoverCacheStamp: covers regenerate server-side without the
+            // URL ever changing, so each fresh tank fetch revalidates them
+            // instead of pinning the cached image (placeholder included)
+            // forever.
             val serverUrl = mServerUrl
             if (serverUrl != null) {
-                val stamp = TankCoverCacheStamp.value
-                holder.thumb.load(
-                    LRRCacheKeyFactory.getThumbKey("${tank.id}#$stamp"),
-                    LRRTankoubonApi.getTankoubonThumbnailUrl(serverUrl, tank.id, cacheBust = stamp)
-                )
+                val fallback = viewModel.coverFallbacks.value[tank.id]
+                if (fallback != null) {
+                    holder.thumb.load(
+                        LRRCacheKeyFactory.getThumbKey(fallback.arcid),
+                        fallback.thumbnailUrl
+                    )
+                } else {
+                    val stamp = TankCoverCacheStamp.value
+                    holder.thumb.load(
+                        LRRCacheKeyFactory.getThumbKey("${tank.id}#$stamp"),
+                        LRRTankoubonApi.getTankoubonThumbnailUrl(serverUrl, tank.id, cacheBust = stamp)
+                    )
+                }
             }
 
             holder.name.text = tank.name

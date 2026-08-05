@@ -177,6 +177,41 @@ object LRRTankoubonApi {
         return b.build().toString()
     }
 
+    /**
+     * GET /api/tankoubons/{id}/thumbnail?no_fallback=true — probe whether a
+     * GENERATED tank cover exists. 200 = yes. 202 = no — and the server has
+     * queued a Minion job to generate one, a self-healing side effect
+     * callers deliberately rely on. The plain thumbnail route can't answer
+     * this: it serves its placeholder image as a normal 200.
+     *
+     * Never call this for an EMPTY tank — the queued generation job has no
+     * page 1 to extract and just fails server-side.
+     */
+    @JvmStatic
+    suspend fun hasTankThumbnail(
+        client: OkHttpClient,
+        baseUrl: String,
+        tankId: String,
+    ): Boolean = withContext(Dispatchers.IO) {
+        val url = parseBaseUrl(baseUrl).newBuilder()
+            .addPathSegments("api/tankoubons")
+            .addPathSegment(requireValidTankId(tankId))
+            .addPathSegment("thumbnail")
+            .addQueryParameter("no_fallback", "true")
+            .build()
+        val request = Request.Builder().url(url).get().build()
+        client.newCall(request).await().use { response ->
+            if (response.code == HTTP_ACCEPTED) {
+                false
+            } else {
+                ensureSuccess(response)
+                true
+            }
+        }
+    }
+
+    private const val HTTP_ACCEPTED = 202
+
     @Serializable
     private data class CreateTankoubonResult(
         @SerialName("tankoubon_id") val tankoubonId: String? = null,
