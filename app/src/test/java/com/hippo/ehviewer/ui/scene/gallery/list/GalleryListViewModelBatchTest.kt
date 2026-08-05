@@ -88,7 +88,6 @@ class GalleryListViewModelBatchTest {
             override val cache: Cache get() = Cache(File(ctx.cacheDir, "batch-test-cache"), 1024)
             override val proxySelector: EhProxySelector get() = throw UnsupportedOperationException()
             override val okHttpClient: OkHttpClient = client
-            override val imageOkHttpClient: OkHttpClient = client
             override val longReadClient: OkHttpClient = client
             override val uploadClient: OkHttpClient = client
             override val networkMonitor: NetworkMonitor get() = throw UnsupportedOperationException()

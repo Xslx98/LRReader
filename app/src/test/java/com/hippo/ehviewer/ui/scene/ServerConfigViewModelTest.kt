@@ -409,7 +409,6 @@ class ServerConfigViewModelTest {
             override val cache: Cache = Cache(tempDir, 1024L * 1024)
             override val proxySelector: EhProxySelector = EhProxySelector()
             override val okHttpClient: OkHttpClient = client
-            override val imageOkHttpClient: OkHttpClient = client
             override val longReadClient: OkHttpClient = client
             override val uploadClient: OkHttpClient = client
             override val networkMonitor: NetworkMonitor = NetworkMonitor(context)
