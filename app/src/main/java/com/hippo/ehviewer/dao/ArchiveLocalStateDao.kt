@@ -19,9 +19,10 @@ import com.hippo.ehviewer.download.DownloadState
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Value carrier for [ArchiveLocalStateDao.upsertDownloadBatch]. The
- * repository precomputes the merged `archive_json` (a read-modify-write
- * against the existing row) OUTSIDE the batch transaction, then all rows
+ * Value carrier for the merged download upserts
+ * ([ArchiveLocalStateDao.upsertDownloadMerged] / [upsertDownloadBatchMerged]):
+ * the repository's row-builder computes the merged `archive_json` from the
+ * existing row it receives INSIDE the wrapping transaction, and batches
  * commit as one — N per-row transactions collapse into a single fsync.
  */
 data class DownloadUpsertRow(
