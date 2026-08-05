@@ -9,6 +9,7 @@
  */
 package com.hippo.ehviewer.dao
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -35,6 +36,30 @@ data class DownloadUpsertRow(
     val downloadLabel: String?,
     val downloadArchiveUri: String?,
     val downloadRootUri: String?,
+)
+
+/**
+ * Narrow projection for the downloads-list observer (audit #39).
+ *
+ * ARCHIVE_LOCAL_STATE is shared with history/favorites and Room invalidation
+ * is table-granular: the downloads Flow requeries on EVERY table write. The
+ * downstream `distinctUntilChanged` is what stands between those requeries
+ * and an O(N) archive_json decode — and it only helps when rows compare
+ * equal. `SELECT *` made every history-only write (per-page scroll-fraction
+ * saves, history timestamps, favourite toggles) change the row value and
+ * re-run the decode. This projection carries exactly the columns
+ * `toDownloadInfoView` consumes.
+ */
+data class DownloadObservedRow(
+    @ColumnInfo(name = "ARCID") val arcid: String,
+    @ColumnInfo(name = "SERVER_PROFILE_ID") val serverProfileId: Long,
+    @ColumnInfo(name = "ARCHIVE_JSON") val archiveJson: String,
+    @ColumnInfo(name = "DOWNLOAD_STATE") val downloadState: DownloadState?,
+    @ColumnInfo(name = "DOWNLOAD_LEGACY") val downloadLegacy: Int,
+    @ColumnInfo(name = "DOWNLOAD_TIME") val downloadTime: Long?,
+    @ColumnInfo(name = "DOWNLOAD_LABEL") val downloadLabel: String?,
+    @ColumnInfo(name = "DOWNLOAD_ARCHIVE_URI") val downloadArchiveUri: String?,
+    @ColumnInfo(name = "DOWNLOAD_ROOT_URI") val downloadRootUri: String?,
 )
 
 /** Value carrier for [ArchiveLocalStateDao.upsertHistoryBatch]. */
@@ -85,11 +110,14 @@ interface ArchiveLocalStateDao {
     // ── Download subsystem ─────────────────────────────────────
 
     @Query(
-        "SELECT * FROM ARCHIVE_LOCAL_STATE " +
+        "SELECT ARCID, SERVER_PROFILE_ID, ARCHIVE_JSON, DOWNLOAD_STATE, " +
+            "DOWNLOAD_LEGACY, DOWNLOAD_TIME, DOWNLOAD_LABEL, " +
+            "DOWNLOAD_ARCHIVE_URI, DOWNLOAD_ROOT_URI " +
+            "FROM ARCHIVE_LOCAL_STATE " +
             "WHERE DOWNLOAD_STATE IS NOT NULL " +
             "ORDER BY DOWNLOAD_TIME DESC"
     )
-    fun observeAllDownloads(): Flow<List<ArchiveLocalState>>
+    fun observeAllDownloads(): Flow<List<DownloadObservedRow>>
 
     @Query(
         "SELECT * FROM ARCHIVE_LOCAL_STATE " +
