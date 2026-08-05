@@ -23,6 +23,7 @@ import android.app.PendingIntent
 import android.content.ComponentCallbacks2
 import android.content.ComponentName
 import android.content.Context
+import androidx.core.content.edit
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
@@ -216,6 +217,7 @@ class EhApplication : RecordingApplication() {
             }
         }
 
+
         // Legacy search-history import — one-time lift of the retired
         // SearchDatabase file into the per-profile Room store (issue #12).
         // Waits for the resolved active profile; without one (fresh install
@@ -295,6 +297,27 @@ class EhApplication : RecordingApplication() {
             BitmapUtils.initialize(this@EhApplication)
             Image.initialize(this@EhApplication)
             A7Zip.initialize(this@EhApplication)
+        }
+
+        // One-time http_cache purge (audit #29): thumbnails used to be
+        // disk-cached twice — Conaco's BeerBelly cache AND the shared OkHttp
+        // http_cache. Conaco now fetches through a cache-less client, but
+        // installs upgraded from older versions still carry up to 200 MB of
+        // duplicate thumbnail bodies that nothing would ever evict (the cache
+        // only trims on writes, and thumbnails were its only writer). A pref
+        // guard makes later boots zero-cost. Runs after ServiceRegistry init
+        // so the module's own Cache instance does the eviction (never open a
+        // second Cache over the same directory).
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            try {
+                val prefs = getSharedPreferences("boot_cleanup", MODE_PRIVATE)
+                if (!prefs.getBoolean("http_cache_thumb_purge_done", false)) {
+                    ServiceRegistry.networkModule.cache.evictAll()
+                    prefs.edit { putBoolean("http_cache_thumb_purge_done", true) }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "http_cache one-time purge failed")
+            }
         }
 
         if (PrivacySettings.getEnableAnalytics()) {

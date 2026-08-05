@@ -14,6 +14,7 @@ import com.hippo.lib.glgallery.GalleryProvider
 import com.hippo.lib.image.Image
 import com.hippo.unifile.UniFile
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +22,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.Call
@@ -33,7 +36,6 @@ import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.locks.LockSupport
 
 /**
  * GalleryProvider that fetches page images from a LANraragi server.
@@ -110,7 +112,10 @@ class LRRGalleryProvider(
     @Volatile
     private var providerScope: CoroutineScope? = null
 
-    // Track start page for reading progress
+    // Track start page for reading progress. Written from the IO-scope
+    // metadata reconcile and putStartPage (GL/main threads), read by
+    // getStartPage on the GL thread — volatile for cross-thread visibility.
+    @Volatile
     private var startPageValue: Int = loadReadingProgress(this.context, arcId)
 
     // Local-only intra-page scroll fraction (0.0 ~ 1.0) restored on
@@ -524,8 +529,13 @@ class LRRGalleryProvider(
             return
         }
 
-        // Skip if this page is already being downloaded
+        // Skip if this page is already being downloaded. Remember the rebind:
+        // if the in-flight job turns out to be a CANCELLED one (scroll-away
+        // then scroll-back races onCancelRequest against the job's finally),
+        // its quiet PageCancelledException path would otherwise leave this
+        // rebound page on an infinite spinner with nothing re-requesting it.
         if (inflightRequests.putIfAbsent(index, true) != null) {
+            rebindWanted.add(index)
             return
         }
 
@@ -540,6 +550,7 @@ class LRRGalleryProvider(
             return
         }
         scope.launch {
+            var cancelled = false
             try {
                 downloadAndDecodePage(index)
 
@@ -549,11 +560,20 @@ class LRRGalleryProvider(
                 // stop()/onCancelRequest severed the call deliberately — not a
                 // failure. Stay quiet so a recycled tile doesn't show an error
                 // placeholder; a re-request just downloads again.
+                cancelled = true
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load page $index: ${e.message}", e)
                 notifyPageFailed(index, e.message)
             } finally {
                 inflightRequests.remove(index)
+                // A rebind landed while this job was in flight. Success and
+                // failure paths already notified the rebound page (notify* is
+                // keyed by index, not requester); only the quiet cancelled
+                // path needs an explicit re-request, or the page spins
+                // forever.
+                if (rebindWanted.remove(index) && cancelled && !stateRef.get().stopped) {
+                    onRequest(index)
+                }
             }
         }
     }
@@ -580,12 +600,22 @@ class LRRGalleryProvider(
 
     private fun getCacheFile(index: Int): File = File(cacheDir, "page_$index")
 
-    // Striped locks to prevent concurrent downloads of the same page (PERF-6).
-    // Fixed-size array replaces unbounded ConcurrentHashMap<Int, Any>.
-    private val pageLocks = Array(STRIPE_COUNT) { Any() }
+    // Per-page download mutexes (same-page exclusion across the user-request
+    // and preload paths). Replaces mod-32 striped Java monitors: a stripe
+    // collision serialized UNRELATED pages — a user-visible page could park,
+    // uncancellably and pinning an IO thread, behind a preload's full network
+    // download. Mutex.withLock keeps the wait suspending and cancellable.
+    // Bounded by the archive's page count, entries live for the provider.
+    private val pageMutexes = ConcurrentHashMap<Int, Mutex>()
+
+    private fun pageMutex(index: Int): Mutex = pageMutexes.computeIfAbsent(index) { Mutex() }
 
     // Track in-flight page requests to avoid submitting duplicate tasks to the thread pool
     private val inflightRequests = ConcurrentHashMap<Int, Boolean>()
+
+    // Pages that were re-requested while an in-flight job existed; consumed in
+    // the job's finally to re-dispatch after a cancelled (quiet) run.
+    private val rebindWanted = ConcurrentHashMap.newKeySet<Int>()
 
     // In-flight page HTTP calls, keyed by page index. Coroutine cancellation
     // cannot interrupt the blocking execute()/body read inside
@@ -593,15 +623,13 @@ class LRRGalleryProvider(
     // sockets explicitly (NET-3).
     private val inflightCalls = ConcurrentHashMap<Int, Call>()
 
-    private fun getPageLock(index: Int): Any = pageLocks[index.and(STRIPE_COUNT - 1)]
-
     /**
      * Download a page to cache if not already cached.
-     * Thread-safe: per-page striped locking prevents concurrent downloads of the same page.
+     * Thread-safe: a per-page [Mutex] prevents concurrent downloads of the same page.
      * Delegates the actual download + validation to [ReaderPageCache.downloadToFile].
      */
     @Throws(IOException::class)
-    private fun downloadPageToCache(
+    private suspend fun downloadPageToCache(
         index: Int,
         progressCallback: ReaderPageCache.ProgressCallback? = null
     ) {
@@ -610,7 +638,7 @@ class LRRGalleryProvider(
             return // Already cached and sufficiently large
         }
 
-        synchronized(getPageLock(index)) {
+        pageMutex(index).withLock {
             if (stateRef.get().stopped) return
             if (cacheFile.exists() && cacheFile.length() > ReaderPageCache.MIN_IMAGE_SIZE) {
                 return
@@ -652,11 +680,16 @@ class LRRGalleryProvider(
         for (attempt in 0 until 2) {
             var cacheFile = getCacheFile(index)
 
-            // On retry, wait 1s for network recovery, then force re-download
+            // On retry, wait 1s for network recovery, then force re-download.
+            // Suspending delay: parkNanos here blocked an IO-pool thread for
+            // the full second AND ignored coroutine cancellation — leaving the
+            // reader (provider scope cancel on exit) waiting on a parked
+            // thread. delay() frees the thread and aborts on cancellation.
             if (attempt > 0) {
-                Log.w(TAG, "Retry page $index (attempt ${attempt + 1}), waiting 1s...")
-                LockSupport.parkNanos(RETRY_DELAY_NANOS)
-                if (Thread.interrupted()) return // Respect interruption during park
+                if (BuildConfig.DEBUG) {
+                    Log.w(TAG, "Retry page $index (attempt ${attempt + 1}), waiting 1s...")
+                }
+                delay(RETRY_DELAY_MS)
                 if (cacheFile.exists()) {
                     cacheFile.delete()
                 }
@@ -736,8 +769,7 @@ class LRRGalleryProvider(
         private const val BUFFER_SIZE = 65536 // 64KB buffer for save()
         private const val PRELOAD_COUNT = 5 // Preload next 5 pages (LAN is fast)
         private const val PRELOAD_PARALLELISM = 2 // Concurrent preload downloads
-        private const val STRIPE_COUNT = 32 // Number of striped locks for page downloads (PERF-6)
-        private const val RETRY_DELAY_NANOS = 1_000_000_000L // 1 second in nanos for retry delay
+        private const val RETRY_DELAY_MS = 1_000L // 1 second retry delay (suspending)
 
         /**
          * Bound on how long the consumer waits for an in-flight warm

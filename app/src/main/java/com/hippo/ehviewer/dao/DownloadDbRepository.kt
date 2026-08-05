@@ -145,12 +145,7 @@ class DownloadDbRepository(
     }
 
     suspend fun putDownloadInfo(downloadInfo: DownloadInfo) {
-        val r = buildDownloadUpsertRow(downloadInfo)
-        archiveLocalStateDao.upsertDownload(
-            r.arcid, r.serverProfileId, r.archiveJson, r.downloadState,
-            r.downloadLegacy, r.downloadTime, r.downloadLabel,
-            r.downloadArchiveUri, r.downloadRootUri,
-        )
+        archiveLocalStateDao.upsertDownloadMerged(downloadInfo, ::buildDownloadUpsertRow)
     }
 
     /**
@@ -195,11 +190,10 @@ class DownloadDbRepository(
 
     suspend fun putDownloadInfoBatch(list: List<DownloadInfo>) {
         if (list.isEmpty()) return
-        // The merge reads run outside the batch transaction — the same
-        // read-then-write window the old per-row loop had; the transaction
-        // only collapses N commits/fsyncs into one.
-        val rows = list.map { buildDownloadUpsertRow(it) }
-        archiveLocalStateDao.upsertDownloadBatch(rows)
+        // Merge reads join the batch transaction (upsertDownloadBatchMerged),
+        // closing the read-then-write lost-update window the old
+        // outside-the-transaction map had.
+        archiveLocalStateDao.upsertDownloadBatchMerged(list, ::buildDownloadUpsertRow)
     }
 
     suspend fun removeDownloadInfoBatchByArcids(arcids: List<String>) {
@@ -213,14 +207,18 @@ class DownloadDbRepository(
      * UPDATE writes the download columns regardless. Cross-subsystem
      * columns (history / favorite) on a pre-existing row stay untouched.
      */
-    private suspend fun buildDownloadUpsertRow(downloadInfo: DownloadInfo): DownloadUpsertRow {
+    private suspend fun buildDownloadUpsertRow(
+        downloadInfo: DownloadInfo,
+        existing: ArchiveLocalState?,
+    ): DownloadUpsertRow {
         // Merge into any existing archive_json instead of overwriting it with the lossy
         // DownloadInfo.toArchive() (which zeroes pagecount/progress/summary and drops tag
         // namespaces). The row is shared with history/favorites and pagecount<=0 makes
         // GalleryOpenHelper treat a partial download as "complete" — wholesale rewriting
         // it on every state transition is what regressed truncated local reads. Overlay
-        // only the display fields the DownloadInfo actually owns.
-        val existing = archiveLocalStateDao.loadByArcidAndProfile(downloadInfo.arcid, downloadInfo.serverProfileId)
+        // only the display fields the DownloadInfo actually owns. [existing] is
+        // supplied by the DAO's merged-upsert wrapper so the read shares the
+        // write's transaction (lost-update fix).
         val archiveJson = if (existing != null) {
             // Keep the stored value when the in-memory DownloadInfo has no
             // better one: a corrupt-json boot fallback or a legacy import

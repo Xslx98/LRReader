@@ -94,4 +94,35 @@ class ImageBitmapHelperTest {
         assertFalse(helper.useMemoryCache("key", image))
         image.recycle()
     }
+
+    @Test
+    fun `cap follows the injected decode floor on high-density devices`() {
+        // 560 dpi: the 128x192dp decode floor is 448x672 px. A 700x990 server
+        // thumb decodes at sample=1 (693k px) — above the legacy fixed
+        // 512*768 cap, so such devices silently re-decoded every rebind from
+        // disk. With a floor-derived cap it must be admitted.
+        val dense = ImageBitmapHelper(ImageBitmapHelper.cacheCapForFloor(448, 672))
+        val image = imageOf(700, 990)
+        assertTrue(dense.useMemoryCache("key", image))
+        image.recycle()
+    }
+
+    @Test
+    fun `floor-derived cap covers integer sample-size headroom`() {
+        // Integer sampling can leave a decode just under 2x the floor per
+        // dimension; the cap must admit that worst case.
+        val cap = ImageBitmapHelper.cacheCapForFloor(448, 672)
+        val dense = ImageBitmapHelper(cap)
+        val worstCase = imageOf(448 * 2 - 1, 672 * 2 - 1)
+        assertTrue(dense.useMemoryCache("key", worstCase))
+        worstCase.recycle()
+    }
+
+    @Test
+    fun `floor-derived cap still rejects unbounded decodes`() {
+        val dense = ImageBitmapHelper(ImageBitmapHelper.cacheCapForFloor(448, 672))
+        val huge = imageOf(2000, 2800)
+        assertFalse(dense.useMemoryCache("key", huge))
+        huge.recycle()
+    }
 }

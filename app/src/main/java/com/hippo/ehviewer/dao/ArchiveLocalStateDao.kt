@@ -9,6 +9,7 @@
  */
 package com.hippo.ehviewer.dao
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -19,9 +20,10 @@ import com.hippo.ehviewer.download.DownloadState
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Value carrier for [ArchiveLocalStateDao.upsertDownloadBatch]. The
- * repository precomputes the merged `archive_json` (a read-modify-write
- * against the existing row) OUTSIDE the batch transaction, then all rows
+ * Value carrier for the merged download upserts
+ * ([ArchiveLocalStateDao.upsertDownloadMerged] / [upsertDownloadBatchMerged]):
+ * the repository's row-builder computes the merged `archive_json` from the
+ * existing row it receives INSIDE the wrapping transaction, and batches
  * commit as one — N per-row transactions collapse into a single fsync.
  */
 data class DownloadUpsertRow(
@@ -34,6 +36,30 @@ data class DownloadUpsertRow(
     val downloadLabel: String?,
     val downloadArchiveUri: String?,
     val downloadRootUri: String?,
+)
+
+/**
+ * Narrow projection for the downloads-list observer (audit #39).
+ *
+ * ARCHIVE_LOCAL_STATE is shared with history/favorites and Room invalidation
+ * is table-granular: the downloads Flow requeries on EVERY table write. The
+ * downstream `distinctUntilChanged` is what stands between those requeries
+ * and an O(N) archive_json decode — and it only helps when rows compare
+ * equal. `SELECT *` made every history-only write (per-page scroll-fraction
+ * saves, history timestamps, favourite toggles) change the row value and
+ * re-run the decode. This projection carries exactly the columns
+ * `toDownloadInfoView` consumes.
+ */
+data class DownloadObservedRow(
+    @ColumnInfo(name = "ARCID") val arcid: String,
+    @ColumnInfo(name = "SERVER_PROFILE_ID") val serverProfileId: Long,
+    @ColumnInfo(name = "ARCHIVE_JSON") val archiveJson: String,
+    @ColumnInfo(name = "DOWNLOAD_STATE") val downloadState: DownloadState?,
+    @ColumnInfo(name = "DOWNLOAD_LEGACY") val downloadLegacy: Int,
+    @ColumnInfo(name = "DOWNLOAD_TIME") val downloadTime: Long?,
+    @ColumnInfo(name = "DOWNLOAD_LABEL") val downloadLabel: String?,
+    @ColumnInfo(name = "DOWNLOAD_ARCHIVE_URI") val downloadArchiveUri: String?,
+    @ColumnInfo(name = "DOWNLOAD_ROOT_URI") val downloadRootUri: String?,
 )
 
 /** Value carrier for [ArchiveLocalStateDao.upsertHistoryBatch]. */
@@ -84,11 +110,14 @@ interface ArchiveLocalStateDao {
     // ── Download subsystem ─────────────────────────────────────
 
     @Query(
-        "SELECT * FROM ARCHIVE_LOCAL_STATE " +
+        "SELECT ARCID, SERVER_PROFILE_ID, ARCHIVE_JSON, DOWNLOAD_STATE, " +
+            "DOWNLOAD_LEGACY, DOWNLOAD_TIME, DOWNLOAD_LABEL, " +
+            "DOWNLOAD_ARCHIVE_URI, DOWNLOAD_ROOT_URI " +
+            "FROM ARCHIVE_LOCAL_STATE " +
             "WHERE DOWNLOAD_STATE IS NOT NULL " +
             "ORDER BY DOWNLOAD_TIME DESC"
     )
-    fun observeAllDownloads(): Flow<List<ArchiveLocalState>>
+    fun observeAllDownloads(): Flow<List<DownloadObservedRow>>
 
     @Query(
         "SELECT * FROM ARCHIVE_LOCAL_STATE " +
@@ -495,6 +524,40 @@ interface ArchiveLocalStateDao {
     suspend fun clearAllHistoryAndPruneEmptyRows() {
         clearAllHistorySubsystems()
         deleteAllEmptyRows()
+    }
+
+    // ── Merged download upserts ────────────────────────────────
+    //
+    // The download upsert's archive_json merge used to READ the existing row
+    // outside any transaction, compute the merged json, then write it via
+    // upsertDownload — a lost-update window: a history/detail write landing
+    // between the read and the UPDATE was silently overwritten with the
+    // stale merge result. These wrappers pull the read into the same
+    // generated transaction as the write. The row-builder lambda runs inside
+    // the transaction; keep it pure (no dispatcher hops).
+
+    @Transaction
+    suspend fun upsertDownloadMerged(
+        info: DownloadInfo,
+        build: suspend (DownloadInfo, ArchiveLocalState?) -> DownloadUpsertRow,
+    ) {
+        val existing = loadByArcidAndProfile(info.arcid, info.serverProfileId)
+        val r = build(info, existing)
+        upsertDownload(
+            r.arcid, r.serverProfileId, r.archiveJson, r.downloadState,
+            r.downloadLegacy, r.downloadTime, r.downloadLabel,
+            r.downloadArchiveUri, r.downloadRootUri
+        )
+    }
+
+    @Transaction
+    suspend fun upsertDownloadBatchMerged(
+        infos: List<DownloadInfo>,
+        build: suspend (DownloadInfo, ArchiveLocalState?) -> DownloadUpsertRow,
+    ) {
+        for (info in infos) {
+            upsertDownloadMerged(info, build)
+        }
     }
 
     // ── Batch wrappers ─────────────────────────────────────────
