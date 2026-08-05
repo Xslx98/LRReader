@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.client.TankCoverCacheStamp
 import com.hippo.ehviewer.gallery.TankPageMath
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
@@ -111,16 +112,6 @@ class TankoubonDetailViewModel : ViewModel() {
     var metaLoaded: Boolean = false
         private set
 
-    /**
-     * Cache-bust stamp bumped after a successful [setCover]. The image
-     * pipeline caches by KEY, not URL, so the scene must derive BOTH a
-     * busted cache key and a busted URL from this; 0 = cover never changed
-     * in this session, use the plain key/url so normal loads hit the cache.
-     */
-    @Volatile
-    var coverBust: Long = 0L
-        private set
-
     // -------------------------------------------------------------------------
     // One-shot UI events
     // -------------------------------------------------------------------------
@@ -194,6 +185,10 @@ class TankoubonDetailViewModel : ViewModel() {
                 summary = full.summary
                 tags = full.tags
                 metaLoaded = true
+                // Fresh server truth — revalidate the cover. Must precede the
+                // publications below: their collectors re-bind the cover and
+                // must already see the new stamp.
+                TankCoverCacheStamp.bump()
                 _tankName.value = full.name
                 _progress.value = full.progress
                 _members.value = mapped
@@ -256,8 +251,9 @@ class TankoubonDetailViewModel : ViewModel() {
      * Sets the tank cover to the FIRST page of member [memberIndex]
      * (1-indexed global page at the API boundary). The server may answer
      * 200 with a queued Minion job before the thumbnail actually exists —
-     * cosmetic, still treated as success. Bumps [coverBust] so the scene's
-     * next cover bind bypasses the stale cached image.
+     * cosmetic, still treated as success. Bumps [TankCoverCacheStamp] so
+     * every cover bind (this scene AND the tank list) bypasses the stale
+     * cached image.
      */
     fun setCover(memberIndex: Int) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -269,7 +265,7 @@ class TankoubonDetailViewModel : ViewModel() {
                 val client = ServiceRegistry.networkModule.okHttpClient
                 val page1 = TankPageMath.globalPage1(offsets, memberIndex, 0)
                 LRRTankoubonApi.updateTankThumbnail(client, url, tankId, page1)
-                coverBust = System.currentTimeMillis()
+                TankCoverCacheStamp.bump()
                 _uiEvent.tryEmit(TankDetailUiEvent.ShowSuccess(R.string.tank_cover_updated))
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
