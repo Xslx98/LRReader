@@ -66,7 +66,6 @@
     <string name="gallery_gl_fallback_message">Este dispositivo no puede inicializar EGL por ahora. Vuelve atrás e inténtalo de nuevo más tarde.</string>
     <string name="gallery_gl_fallback_action_close">Volver</string>
     <string name="gallery_gl_fallback_toast">OpenGL no disponible, no se puede mostrar la galería</string>
-    <string name="error_invalid_archive">Archivo inválido</string>
 
 
     <string name="press_twice_exit">Presione una vez más para salir</string>
@@ -636,18 +635,6 @@
     <string name="spen_previous_page">Página anterior</string>
     <string name="spen_next_page">Página siguiente</string>
     <!--  订阅服务  -->
-    <string name="import_local_archive">Importar archivo local</string>
-    <string name="import_archive_title">Seleccionar archivo</string>
-    <string name="import_archive_failed">Error al importar archivo</string>
-    <string name="archive_permission_lost">Se ha perdido el permiso para acceder al archivo. Por favor, vuelva a importar el archivo.</string>
-    <string name="import_archive_processing">Procesando archivo…</string>
-    <string name="import_archive_invalid_format">Formato de archivo no compatible</string>
-    <string name="import_archive_already_imported">Archivo ya importado</string>
-    <string name="import_archive_success">Archivo importado exitosamente</string>
-    <string name="archive_not_accessible">El archivo no es accesible</string>
-    <string name="imported_archive_info_title">Información de importación local</string>
-    <string name="imported_archive_info_message">Este es un elemento importado desde almacenamiento local</string>
-    <string name="imported_archive_category">Importación local</string>
     <string name="pagination_count">contar</string>
     <string name="pagination_page_and_item">r/p</string>
     <!--  wifi server -->

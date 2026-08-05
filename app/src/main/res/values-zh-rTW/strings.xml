@@ -55,7 +55,6 @@
     <string name="error_not_folder_path">非資料夾路徑</string>
     <string name="error_decoding_failed">解碼失敗</string>
     <string name="error_empty">空</string>
-    <string name="error_invalid_archive">無效的壓縮包</string>
     <string name="error_reading_failed">讀取失敗</string>
     <string name="error_out_of_range">超出範圍</string>
     <string name="error_invalid_url">不正確的連結</string>
@@ -611,18 +610,6 @@
     <string name="pagination_page_and_item">r/p</string>
     <string name="have_new_version">點擊查看新圖庫版本</string>
     <string name="archiver_downloading">歸檔下載中 %s</string>
-    <string name="import_local_archive">匯入本機歸檔</string>
-    <string name="import_archive_title">選擇歸檔檔案</string>
-    <string name="import_archive_failed">匯入歸檔失敗</string>
-    <string name="archive_permission_lost">歸檔檔案的存取權限已遺失。請重新匯入歸檔檔案。</string>
-    <string name="import_archive_processing">處理歸檔中…</string>
-    <string name="import_archive_invalid_format">不支援的歸檔格式</string>
-    <string name="import_archive_already_imported">歸檔已匯入</string>
-    <string name="import_archive_success">歸檔匯入成功</string>
-    <string name="archive_not_accessible">無法存取歸檔檔案</string>
-    <string name="imported_archive_info_title">本機匯入資訊</string>
-    <string name="imported_archive_info_message">這是從本機儲存空間匯入的項目</string>
-    <string name="imported_archive_category">本機匯入</string>
 
     <!-- S-Pen Actions(Samsung only) -->
     <string name="spen_previous_page">上一頁</string>
