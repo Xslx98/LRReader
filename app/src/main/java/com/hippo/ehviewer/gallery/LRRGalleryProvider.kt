@@ -529,8 +529,13 @@ class LRRGalleryProvider(
             return
         }
 
-        // Skip if this page is already being downloaded
+        // Skip if this page is already being downloaded. Remember the rebind:
+        // if the in-flight job turns out to be a CANCELLED one (scroll-away
+        // then scroll-back races onCancelRequest against the job's finally),
+        // its quiet PageCancelledException path would otherwise leave this
+        // rebound page on an infinite spinner with nothing re-requesting it.
         if (inflightRequests.putIfAbsent(index, true) != null) {
+            rebindWanted.add(index)
             return
         }
 
@@ -545,6 +550,7 @@ class LRRGalleryProvider(
             return
         }
         scope.launch {
+            var cancelled = false
             try {
                 downloadAndDecodePage(index)
 
@@ -554,11 +560,20 @@ class LRRGalleryProvider(
                 // stop()/onCancelRequest severed the call deliberately — not a
                 // failure. Stay quiet so a recycled tile doesn't show an error
                 // placeholder; a re-request just downloads again.
+                cancelled = true
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load page $index: ${e.message}", e)
                 notifyPageFailed(index, e.message)
             } finally {
                 inflightRequests.remove(index)
+                // A rebind landed while this job was in flight. Success and
+                // failure paths already notified the rebound page (notify* is
+                // keyed by index, not requester); only the quiet cancelled
+                // path needs an explicit re-request, or the page spins
+                // forever.
+                if (rebindWanted.remove(index) && cancelled && !stateRef.get().stopped) {
+                    onRequest(index)
+                }
             }
         }
     }
@@ -597,6 +612,10 @@ class LRRGalleryProvider(
 
     // Track in-flight page requests to avoid submitting duplicate tasks to the thread pool
     private val inflightRequests = ConcurrentHashMap<Int, Boolean>()
+
+    // Pages that were re-requested while an in-flight job existed; consumed in
+    // the job's finally to re-dispatch after a cancelled (quiet) run.
+    private val rebindWanted = ConcurrentHashMap.newKeySet<Int>()
 
     // In-flight page HTTP calls, keyed by page index. Coroutine cancellation
     // cannot interrupt the blocking execute()/body read inside
