@@ -109,6 +109,10 @@ android {
                     'kotlin/**',
                     'META-INF/*.version',
                     'META-INF/org/jetbrains/**',
+                    // Apache-2.0 texts shipped per-artifact by androidx (7x
+                    // identical 10KB files). In-app attribution is generated
+                    // by the jaredsburrows.license plugin, not these files.
+                    'META-INF/**/LICENSE.txt',
             ]
         }
     }
