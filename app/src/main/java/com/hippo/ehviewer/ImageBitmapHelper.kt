@@ -24,14 +24,30 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 
-class ImageBitmapHelper : ValueHelper<Image> {
+class ImageBitmapHelper(
+    private val maxCachePixels: Int = DEFAULT_MAX_CACHE_PIXELS,
+) : ValueHelper<Image> {
 
     companion object {
         // Thumbnails are portrait (~2:3); a ~1000px server thumb decoded under
         // the 128x192dp detail-header floor lands at ~500x750, which the old
         // square 512*512 cap rejected — so scrolled thumbs never entered the
-        // memory cache and every re-bind decoded from disk.
-        private const val MAX_CACHE_SIZE = 512 * 768
+        // memory cache and every re-bind decoded from disk. This fixed value
+        // is only the fallback: it equals the decode floor at 640 dpi, so on
+        // high-density devices decodes bounded by the floor could EXCEED it
+        // and silently bypass the cache again. Production injects
+        // [cacheCapForFloor] with the real floor pixels instead.
+        const val DEFAULT_MAX_CACHE_PIXELS = 512 * 768
+
+        /**
+         * Density-aware admission cap derived from the decode floor
+         * (the 128x192dp detail-header thumb size in px). Integer
+         * sample-size granularity means a floor-bounded decode can land
+         * anywhere up to just-under 2x the floor per dimension — admit
+         * that whole envelope.
+         */
+        fun cacheCapForFloor(floorWidthPx: Int, floorHeightPx: Int): Int =
+            (floorWidthPx * 2) * (floorHeightPx * 2)
     }
 
     override fun decode(isPipe: InputStreamPipe): Image? {
@@ -94,8 +110,7 @@ class ImageBitmapHelper : ValueHelper<Image> {
 
     override fun useMemoryCache(key: String, value: Image?): Boolean {
         return if (value != null) {
-            value.width * value.height <= MAX_CACHE_SIZE
-            /* value.getByteCount() <= MAX_CACHE_BYTE_COUNT TODO Update Image */
+            value.width * value.height <= maxCachePixels
         } else {
             true
         }
