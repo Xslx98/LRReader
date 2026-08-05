@@ -289,9 +289,13 @@ class MainActivity : StageActivity(),
     }
 
     override fun onUnrecognizedIntent(intent: Intent?) {
-        val clazz = topSceneClass
-        if (clazz != null && SolidScene::class.java.isAssignableFrom(clazz)) {
-            // KNOWN-ISSUE (P1): intent is silently dropped when a SolidScene (security/config gate) is showing
+        if (isGateSceneShowing()) {
+            // Defer while the security/config gate is showing; replayed by
+            // maybeReplayPendingGateRequest once the gate clears (#57).
+            if (intent != null && intent.action != null) {
+                pendingGateIntent = intent
+                pendingGateAnnouncer = null
+            }
             return
         }
 
@@ -326,13 +330,46 @@ class MainActivity : StageActivity(),
         // LAUNCH_MODE_SINGLE_TASK, so StageActivity.startScene pops everything
         // above an existing instance, lock prompt included. That let a
         // notification tap bypass the pattern lock straight from the shade.
-        // Drop the request instead, mirroring onUnrecognizedIntent's guard
-        // (returning null routes there, which no-ops on the same check).
-        val top = topSceneClass
-        if (top != null && SolidScene::class.java.isAssignableFrom(top)) {
+        // Defer instead of dropping: the request replays once the gate clears
+        // (successful unlock / completed config).
+        if (isGateSceneShowing()) {
+            pendingGateAnnouncer = Announcer(clazz).setArgs(args)
+            pendingGateIntent = null
             return null
         }
         return processAnnouncer(Announcer(clazz).setArgs(args))
+    }
+
+    // ── Deferred deep links while a gate scene shows (audit #57) ──
+
+    /** Scene-start request deferred while a SolidScene gate was showing. */
+    private var pendingGateAnnouncer: Announcer? = null
+
+    /** Recognized intent deferred while a SolidScene gate was showing. */
+    private var pendingGateIntent: Intent? = null
+
+    private fun isGateSceneShowing(): Boolean {
+        val top = topSceneClass
+        return top != null && SolidScene::class.java.isAssignableFrom(top)
+    }
+
+    /**
+     * Replay a request that arrived while the security/config gate was
+     * showing. Called (posted) after every scene transaction: once the gate
+     * is no longer on top — the only ways off the stack are a successful
+     * unlock or a completed server config — the buffered request runs
+     * through the normal (re-gated) dispatch paths.
+     */
+    private fun maybeReplayPendingGateRequest() {
+        if (isGateSceneShowing()) return
+        val announcer = pendingGateAnnouncer
+        val intent = pendingGateIntent
+        pendingGateAnnouncer = null
+        pendingGateIntent = null
+        when {
+            announcer != null -> startScene(processAnnouncer(announcer))
+            intent != null -> handleIntent(intent)
+        }
     }
 
     /**
@@ -783,6 +820,12 @@ class MainActivity : StageActivity(),
         super.onTransactScene()
 
         checkClipboardUrl()
+
+        // Posted, not inline: StageActivity.finishScene fires onTransactScene
+        // BEFORE removing the popped scene's tag, so during the gate's own
+        // dismissal topSceneClass still reads as the gate. One handler hop
+        // later the stack is settled.
+        mainHandler.post { maybeReplayPendingGateRequest() }
     }
 
     private fun checkClipboardUrl() {
