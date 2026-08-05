@@ -373,6 +373,15 @@ public class ConacoTask<V> {
                 mCall = mOkHttpClient.newCall(request);
 
                 Response response = mCall.execute();
+                // Error bodies (404 page, reverse-proxy 502 HTML) must never be
+                // cached or decoded as the image for this key.
+                if (!response.isSuccessful()) {
+                    if (com.hippo.ehviewer.BuildConfig.DEBUG) {
+                        Log.w(TAG, "Fetch failed: HTTP " + response.code() + " for " + mUrl);
+                    }
+                    response.close();
+                    return null;
+                }
                 ResponseBody body = response.body();
                 is = body.byteStream();
 
@@ -432,6 +441,12 @@ public class ConacoTask<V> {
                     return null;
                 }
             } catch (Exception e) {
+                // Expected on cancellation (Call.cancel -> IOException); any
+                // other failure used to vanish without a trace, making broken
+                // thumbnails undiagnosable.
+                if (com.hippo.ehviewer.BuildConfig.DEBUG && !mStop && !mCancelled) {
+                    Log.w(TAG, "Network load failed for " + mUrl, e);
+                }
                 return null;
             } finally {
                 mCall = null;
