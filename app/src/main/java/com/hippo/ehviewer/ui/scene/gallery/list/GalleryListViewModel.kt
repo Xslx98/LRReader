@@ -7,7 +7,6 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.event.AppEventBus
 import com.hippo.ehviewer.event.ArchiveDeletedEvent
@@ -51,10 +50,10 @@ import java.util.concurrent.atomic.AtomicInteger
  * ViewModel for the gallery list screen. Exposes a [Flow] of [PagingData]
  * that automatically invalidates when search parameters change.
  *
- * Also manages [DownloadInfoListener] and [FavouriteStatusRouter.Listener]
- * registrations so the Scene does not need to hold those listeners directly.
- * The Scene observes [downloadEvent] and [favouriteStatusChanged] to update
- * specific adapter items.
+ * Also manages the [DownloadInfoListener] registration so the Scene does not
+ * need to hold the listener directly. The Scene observes [downloadEvent] to
+ * update adapter items. (Favourite changes are deliberately not observed:
+ * list rows render no favourite state.)
  */
 class GalleryListViewModel : ViewModel() {
 
@@ -66,10 +65,6 @@ class GalleryListViewModel : ViewModel() {
     /** The app's [DownloadManager] singleton. */
     val downloadManager: DownloadManager
         get() = ServiceRegistry.dataModule.downloadManager
-
-    /** The global favourite status router. */
-    val favouriteStatusRouter: FavouriteStatusRouter
-        get() = ServiceRegistry.dataModule.favouriteStatusRouter
 
     /**
      * Encapsulates all search parameters needed to create a [LRRArchivePagingSource].
@@ -159,33 +154,6 @@ class GalleryListViewModel : ViewModel() {
         val listener = galleryListDownloadEventListener { _downloadEvent.tryEmit(it) }
         downloadInfoListener = listener
         downloadManager.addDownloadInfoListener(listener)
-    }
-
-    // -------------------------------------------------------------------------
-    // Favourite status observation
-    // -------------------------------------------------------------------------
-
-    private val _favouriteStatusChanged = MutableSharedFlow<Unit>(extraBufferCapacity = 4)
-
-    /** Emitted when any gallery's favourite status changes. Refresh all visible items. */
-    val favouriteStatusChanged: SharedFlow<Unit> = _favouriteStatusChanged.asSharedFlow()
-
-    private var favouriteStatusRouterListener: FavouriteStatusRouter.Listener? = null
-    private var observingFavourites = false
-
-    /**
-     * Register a [FavouriteStatusRouter.Listener]. Safe to call multiple times;
-     * only the first call takes effect.
-     */
-    fun startObservingFavourites() {
-        if (observingFavourites) return
-        observingFavourites = true
-
-        val listener = FavouriteStatusRouter.Listener { _, _ ->
-            _favouriteStatusChanged.tryEmit(Unit)
-        }
-        favouriteStatusRouterListener = listener
-        favouriteStatusRouter.addListener(listener)
     }
 
     // -------------------------------------------------------------------------
@@ -514,7 +482,6 @@ class GalleryListViewModel : ViewModel() {
 
     override fun onCleared() {
         downloadInfoListener?.let { downloadManager.removeDownloadInfoListener(it) }
-        favouriteStatusRouterListener?.let { favouriteStatusRouter.removeListener(it) }
         super.onCleared()
     }
 
