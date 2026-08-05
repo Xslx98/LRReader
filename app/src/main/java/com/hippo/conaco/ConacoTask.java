@@ -306,14 +306,12 @@ public class ConacoTask<V> {
 
         @Override
         public void notifyProgress(long singleReceivedSize, long receivedSize, long totalSize) {
-            if (!isNotNecessary(this)) {
-                mMainHandler.post(() -> {
-                    Unikery unikery = mUnikeryWeakReference.get();
-                    if (!mStop && !mCancelled && unikery != null && unikery.getTaskId() == mId) {
-                        unikery.onProgress(singleReceivedSize, receivedSize, totalSize);
-                    }
-                });
-            }
+            // Deliberately a no-op. This used to post a main-thread Runnable
+            // per 4KB chunk (per download, several downloads in parallel while
+            // scrolling) into Unikery.onProgress — and every Unikery
+            // implementation's onProgress is empty. If a real progress
+            // consumer ever appears, reinstate posting HERE with throttling,
+            // never per-chunk.
         }
 
         private boolean putToDiskCache(InputStream is, long length) {
