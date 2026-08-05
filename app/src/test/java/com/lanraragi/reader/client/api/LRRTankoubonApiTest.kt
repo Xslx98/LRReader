@@ -168,6 +168,41 @@ class LRRTankoubonApiTest {
     }
 
     @Test
+    fun hasTankThumbnail_200_returnsTrue_andSendsNoFallback() = runTest {
+        server.enqueue(MockResponse().setBody("fake-image-bytes"))
+
+        assertTrue(LRRTankoubonApi.hasTankThumbnail(client, baseUrl, tankId))
+        assertEquals(
+            "/api/tankoubons/$tankId/thumbnail?no_fallback=true",
+            server.takeRequest().path
+        )
+    }
+
+    @Test
+    fun hasTankThumbnail_202_returnsFalse() = runTest {
+        // 202 = no generated cover; the server has queued a Minion job to
+        // build one (the self-healing side effect callers rely on).
+        server.enqueue(
+            MockResponse().setResponseCode(202)
+                .setBody("""{"operation":"serve_tankoubon_thumbnail","success":1,"job":5}""")
+        )
+
+        assertFalse(LRRTankoubonApi.hasTankThumbnail(client, baseUrl, tankId))
+    }
+
+    @Test
+    fun hasTankThumbnail_500_throwsHttpException() = runTest {
+        server.enqueue(MockResponse().setResponseCode(500).setBody("boom"))
+
+        try {
+            LRRTankoubonApi.hasTankThumbnail(client, baseUrl, tankId)
+            fail("expected LRRHttpException")
+        } catch (e: LRRHttpException) {
+            assertEquals(500, e.code)
+        }
+    }
+
+    @Test
     fun getTankoubonThumbnailUrl_cacheBust_appendsTsParam() {
         val url = LRRTankoubonApi.getTankoubonThumbnailUrl("http://h:3000", tankId, cacheBust = 5L)
         assertTrue(url.contains("?ts=5"))

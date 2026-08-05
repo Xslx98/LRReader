@@ -112,6 +112,18 @@ class TankoubonDetailViewModel : ViewModel() {
     var metaLoaded: Boolean = false
         private set
 
+    /**
+     * FIRST member to render as the cover stand-in when the cover probe
+     * reported no generated cover server-side (the probe also queues
+     * generation); null = a real cover exists (or the tank is empty /
+     * the probe failed) — bind the tank thumbnail route as usual.
+     * Cleared by a successful [setCover], which creates the cover
+     * synchronously server-side.
+     */
+    @Volatile
+    var coverFallbackMember: Archive? = null
+        private set
+
     // -------------------------------------------------------------------------
     // One-shot UI events
     // -------------------------------------------------------------------------
@@ -185,6 +197,7 @@ class TankoubonDetailViewModel : ViewModel() {
                 summary = full.summary
                 tags = full.tags
                 metaLoaded = true
+                coverFallbackMember = resolveCoverFallback(client, url, mapped)
                 // Fresh server truth — revalidate the cover. Must precede the
                 // publications below: their collectors re-bind the cover and
                 // must already see the new stamp.
@@ -265,6 +278,8 @@ class TankoubonDetailViewModel : ViewModel() {
                 val client = ServiceRegistry.networkModule.okHttpClient
                 val page1 = TankPageMath.globalPage1(offsets, memberIndex, 0)
                 LRRTankoubonApi.updateTankThumbnail(client, url, tankId, page1)
+                // The cover now exists server-side — drop the stand-in.
+                coverFallbackMember = null
                 TankCoverCacheStamp.bump()
                 _uiEvent.tryEmit(TankDetailUiEvent.ShowSuccess(R.string.tank_cover_updated))
             } catch (e: Exception) {
@@ -343,6 +358,27 @@ class TankoubonDetailViewModel : ViewModel() {
                 emitError(e)
             }
         }
+    }
+
+    /**
+     * Probe for a generated cover; a missing one (202 — the probe also
+     * queues server-side generation) elects [members]' first entry as the
+     * stand-in. Probe failure or an empty tank keep the normal tank route.
+     */
+    private suspend fun resolveCoverFallback(
+        client: OkHttpClient,
+        url: String,
+        members: List<Archive>,
+    ): Archive? {
+        val first = members.firstOrNull() ?: return null
+        val hasCover = try {
+            LRRTankoubonApi.hasTankThumbnail(client, url, tankId)
+        } catch (ce: CancellationException) {
+            throw ce
+        } catch (ignored: Exception) {
+            true
+        }
+        return if (hasCover) null else first
     }
 
     /**

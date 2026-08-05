@@ -147,8 +147,11 @@ class TankoubonsViewModelTest {
         return events
     }
 
+    /** Valid 40-char hex arcid for member [i] (cover fallbacks re-validate ids). */
+    private fun arcId(i: Int) = i.toString(16).padStart(40, '0')
+
     private fun tankJson(id: String, name: String, archiveCount: Int = 0, progress: Int = 0): String {
-        val archives = (1..archiveCount).joinToString(",") { "\"a$it\"" }
+        val archives = (1..archiveCount).joinToString(",") { "\"${arcId(it)}\"" }
         return """{"id":"$id","name":"$name","archives":[$archives],""" +
             """"summary":null,"tags":null,"progress":$progress}"""
     }
@@ -191,6 +194,81 @@ class TankoubonsViewModelTest {
         assertEquals(before, TankCoverCacheStamp.value)
     }
 
+    // ── cover fallback probe ───────────────────────────────────────
+    //
+    // The plain thumbnail route serves a placeholder image when no cover
+    // was ever generated — indistinguishable from a real cover client-side.
+    // Each load therefore probes ?no_fallback=true per member-having tank:
+    // 202 = cover missing (and the server queues generation) → the scene
+    // renders the FIRST member's archive thumbnail instead.
+
+    /** Dispatcher: list endpoint serves [listBody]; probes answer [probeCode]. */
+    private fun probeDispatcher(listBody: String, probeCode: Int) = object : okhttp3.mockwebserver.Dispatcher() {
+        val probePaths = CopyOnWriteArrayList<String>()
+        override fun dispatch(request: okhttp3.mockwebserver.RecordedRequest): MockResponse {
+            val path = request.path.orEmpty()
+            return if ("thumbnail" in path) {
+                probePaths += path
+                MockResponse().setResponseCode(probeCode)
+                    .setBody(if (probeCode == 202) """{"success":1,"job":1}""" else "img")
+            } else {
+                MockResponse().setBody(listBody)
+            }
+        }
+    }
+
+    @Test
+    fun loadTankoubons_probe202_mapsTankToFirstMemberFallback() {
+        val dispatcher = probeDispatcher(
+            pageJson(1, tankJson("TANK_0000000001", "Alpha", archiveCount = 2)),
+            probeCode = 202
+        )
+        server.dispatcher = dispatcher
+
+        val vm = TankoubonsViewModel()
+        vm.loadTankoubons()
+
+        awaitCondition { vm.tanks.value.size == 1 }
+        assertEquals(
+            mapOf("TANK_0000000001" to arcId(1)),
+            vm.coverFallbacks.value.mapValues { it.value.arcid }
+        )
+        assertEquals(
+            listOf("/api/tankoubons/TANK_0000000001/thumbnail?no_fallback=true"),
+            dispatcher.probePaths.toList()
+        )
+    }
+
+    @Test
+    fun loadTankoubons_probe200_noFallback() {
+        server.dispatcher = probeDispatcher(
+            pageJson(1, tankJson("TANK_0000000001", "Alpha", archiveCount = 1)),
+            probeCode = 200
+        )
+
+        val vm = TankoubonsViewModel()
+        vm.loadTankoubons()
+
+        awaitCondition { vm.tanks.value.size == 1 }
+        assertTrue(vm.coverFallbacks.value.isEmpty())
+    }
+
+    @Test
+    fun loadTankoubons_emptyTank_isNotProbed() {
+        val dispatcher = probeDispatcher(
+            pageJson(1, tankJson("TANK_0000000001", "Empty", archiveCount = 0)),
+            probeCode = 202
+        )
+        server.dispatcher = dispatcher
+
+        val vm = TankoubonsViewModel()
+        vm.loadTankoubons()
+
+        awaitCondition { vm.tanks.value.size == 1 }
+        assertTrue("empty tank must not be probed", dispatcher.probePaths.isEmpty())
+        assertTrue(vm.coverFallbacks.value.isEmpty())
+    }
+
     // ── loadTankoubons ─────────────────────────────────────────────
 
     @Test
@@ -200,6 +278,8 @@ class TankoubonsViewModelTest {
             tankJson("TANK_0000000001", "Alpha", archiveCount = 2, progress = 5),
             tankJson("TANK_0000000002", "Beta")
         )))
+        // Alpha has members → the load also fires one cover probe.
+        server.enqueue(MockResponse().setBody("img"))
 
         val vm = TankoubonsViewModel()
         vm.loadTankoubons()

@@ -128,12 +128,7 @@ class LRRArchive() : Parcelable {
 
     /** Constructs the thumbnail URL for this archive. */
     fun getThumbnailUrl(baseUrl: String): String =
-        com.lanraragi.reader.client.api.parseBaseUrl(baseUrl).newBuilder()
-            .addPathSegments("api/archives")
-            .addPathSegment(com.lanraragi.reader.client.api.requireValidArcid(arcid))
-            .addPathSegment("thumbnail")
-            .build()
-            .toString()
+        com.lanraragi.reader.client.api.archiveThumbnailUrl(baseUrl, arcid)
 
     /**
      * Parses the comma-separated tag string into a map of namespace → tag list.
