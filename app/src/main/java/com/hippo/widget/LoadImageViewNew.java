@@ -219,6 +219,14 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
             return;
         }
 
+        // Same-key short-circuit: rebinding a row whose thumbnail is already
+        // in flight must not cancel-and-restart the fetch (cancelled fetches
+        // discard their partial bytes).
+        if (LoadImageSameKeyPolicy.shouldSkipLoad(
+                mKey, key, mFailed, mUseNetwork == useNetwork, mConaco.isLoading(this))) {
+            return;
+        }
+
         mLoadFromDrawable = false;
         mFailed = false;
         clearRetry();
@@ -297,7 +305,17 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
     public boolean onGetValue(@NonNull Image value, int source) {
         Drawable drawable;
         try {
-            drawable = value.getDrawable();
+            // Clone via ConstantState: the memory cache hands the SAME cached
+            // Drawable instance to every consumer of this key (list cell, grid
+            // tile, tank member row, detail cover). Sharing one instance
+            // across attached views corrupts bounds/callback state. Ported
+            // from LoadImageView; fork had drifted.
+            Drawable.ConstantState state = value.getDrawable().getConstantState();
+            if (state != null) {
+                drawable = state.newDrawable();
+            } else {
+                drawable = value.getDrawable();
+            }
         } catch (Exception e) {
             // The image might be recycled because it is removed from memory cache.
             Log.d(TAG, "The image is recycled", e);
@@ -336,7 +354,7 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
         if (mRetryType == RETRY_TYPE_CLICK && mFailed) {
             setOnClickListener(this);
         } else if (mRetryType == RETRY_TYPE_LONG_CLICK) {
-//            setOnLongClickListener(this);
+            setOnLongClickListener(this);
         } else {
             // Can't retry, so release
             mKey = null;

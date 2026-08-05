@@ -297,6 +297,9 @@ public class SimpleDiskCache {
             os = editor.newOutputStream(0);
             if (os != null) {
                 Util.copy(is, os);
+                // Close before commit — commit never closes (fd leak), and a
+                // failed close flags hasErrors so commit() aborts the edit.
+                Util.closeQuietly(os);
                 completeEdit = true;
                 editor.commit();
                 return true;
@@ -403,6 +406,7 @@ public class SimpleDiskCache {
         private final String mKey;
         private CounterLock mLock;
         private DiskLruCache.Editor mCurrentEditor;
+        private OutputStream mCurrentStream;
 
         private CacheOutputStreamPipe(String key) {
             mKey = key;
@@ -451,6 +455,7 @@ public class SimpleDiskCache {
             try {
                 os = editor.newOutputStream(0);
                 mCurrentEditor = editor;
+                mCurrentStream = os;
                 return os;
             } catch (IOException e) {
                 // Get trouble
@@ -466,6 +471,13 @@ public class SimpleDiskCache {
         @Override
         public void close() {
             if (mCurrentEditor != null) {
+                // Close the stream BEFORE commit: commit only renames
+                // dirty→clean and never closes, which leaked one fd per
+                // successful write. A failed close routes into
+                // FaultHidingOutputStream.hasErrors, so commit() then
+                // aborts the edit instead of publishing a truncated value.
+                Util.closeQuietly(mCurrentStream);
+                mCurrentStream = null;
                 try {
                     mCurrentEditor.commit();
                 } catch (IOException e) {

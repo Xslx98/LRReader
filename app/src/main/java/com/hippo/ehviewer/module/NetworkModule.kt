@@ -64,29 +64,9 @@ class NetworkModule(private val context: Context) : INetworkModule, Cacheable {
             .callTimeout(30, TimeUnit.SECONDS)
             .cookieJar(CookieJar.NO_COOKIES)
             .cache(cache)
-            .addNetworkInterceptor { chain ->
-                val resp = chain.proceed(chain.request())
-                // LANraragi does not send Cache-Control headers on thumbnail
-                // responses, so inject them here.
-                // URL pattern: {baseUrl}/api/archives/{arcid}/thumbnail (no query params)
-                // max-age=3600 → fresh for 1 h; stale-while-revalidate=82800 → serve
-                // stale while revalidating for the remaining 23 h (24 h total).
-                // Match on the parsed path segments, not substring containment: a page
-                // request like .../api/archives/{id}/page?path=Vol1/thumbnail.jpg also
-                // contains "/thumbnail" and would wrongly cache a multi-MB page body.
-                val segments = chain.request().url.pathSegments
-                val isThumbnail = segments.size >= 2 &&
-                    segments[segments.size - 1] == "thumbnail" &&
-                    segments.contains("archives")
-                if (isThumbnail) {
-                    resp.newBuilder()
-                        .header("Cache-Control", "public, max-age=3600, stale-while-revalidate=82800")
-                        .removeHeader("Pragma")
-                        .build()
-                } else {
-                    resp
-                }
-            }
+            // Thumbnail freshness headers (successful responses only — see
+            // ThumbnailCacheControlInterceptor for the error-pinning rationale).
+            .addNetworkInterceptor(com.lanraragi.reader.client.api.ThumbnailCacheControlInterceptor())
             .proxySelector(proxySelector)
             // Cleartext gate must be a NETWORK interceptor, not an application
             // one: with followRedirects(true) an HTTPS→HTTP redirect is a new

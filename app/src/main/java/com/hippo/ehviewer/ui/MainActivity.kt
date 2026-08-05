@@ -71,7 +71,6 @@ import com.hippo.ehviewer.ui.scene.SecurityScene
 import com.hippo.ehviewer.ui.scene.SolidScene
 import com.hippo.ehviewer.ui.scene.TankoubonDetailScene
 import com.hippo.ehviewer.ui.scene.TankoubonsScene
-import com.hippo.ehviewer.ui.splash.SplashActivity
 import com.hippo.ehviewer.client.LRRUrlOpener
 import com.hippo.ehviewer.widget.EhDrawerLayout
 import com.hippo.network.Network
@@ -103,6 +102,12 @@ class MainActivity : StageActivity(),
     companion object {
         private const val TAG = "MainActivity"
         private const val KEY_NAV_CHECKED_ITEM = "nav_checked_item"
+
+        /**
+         * Set on the relaunch intent after [EhApplication.restart] so the new
+         * process discards the saved scene stack of the killed one.
+         */
+        const val KEY_RESTART: String = "restart"
 
         init {
             registerLaunchMode(SecurityScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
@@ -314,7 +319,19 @@ class MainActivity : StageActivity(),
         }
     }
 
-    override fun onStartSceneFromIntent(clazz: Class<*>, args: Bundle?): Announcer {
+    override fun onStartSceneFromIntent(clazz: Class<*>, args: Bundle?): Announcer? {
+        // App-lock guard: while a SolidScene gate (SecurityScene lock prompt /
+        // ServerConfigScene) is showing, starting the requested scene would
+        // remove or bury the gate WITHOUT an unlock — most target scenes are
+        // LAUNCH_MODE_SINGLE_TASK, so StageActivity.startScene pops everything
+        // above an existing instance, lock prompt included. That let a
+        // notification tap bypass the pattern lock straight from the shade.
+        // Drop the request instead, mirroring onUnrecognizedIntent's guard
+        // (returning null routes there, which no-ops on the same check).
+        val top = topSceneClass
+        if (top != null && SolidScene::class.java.isAssignableFrom(top)) {
+            return null
+        }
         return processAnnouncer(Announcer(clazz).setArgs(args))
     }
 
@@ -335,13 +352,12 @@ class MainActivity : StageActivity(),
     }
 
     override fun onCreate2(savedInstanceState: Bundle?) {
-        var savedState = savedInstanceState
-        val intent = intent
-        if (intent != null) {
-            val res = intent.getBooleanExtra(SplashActivity.KEY_RESTART, false)
-            if (res) {
-                savedState = null
-            }
+        // A relaunch after EhApplication.restart() must not restore the dead
+        // process's scene stack.
+        val savedState = if (intent?.getBooleanExtra(KEY_RESTART, false) == true) {
+            null
+        } else {
+            savedInstanceState
         }
         setContentView(R.layout.activity_main)
 
