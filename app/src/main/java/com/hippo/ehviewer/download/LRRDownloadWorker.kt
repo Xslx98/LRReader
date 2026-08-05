@@ -272,7 +272,14 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                                 throw IOException("Downloaded file too small or missing")
                             }
                             success = true
-                        } catch (e: IOException) {
+                        } catch (e: Exception) {
+                            // Not just IOException: a runtime failure (URL
+                            // building, malformed path, provider quirk) used
+                            // to escape this loop and abort the WHOLE archive
+                            // via the generic handler instead of costing this
+                            // page a retry. Coroutine cancellation still
+                            // propagates.
+                            if (e is CancellationException) throw e
                             if (cancelled) break
                             if (!networkMonitor.isAvailable) {
                                 // Network-induced failure: pause and wait for the

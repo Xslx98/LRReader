@@ -153,40 +153,18 @@ class GalleryImageOperations(private val mActivity: Activity) {
                 mimeType = "image/jpeg"
             }
 
-            // MediaStore insert + the full-file copy are I/O — run them off the main thread.
+            // MediaStore insert + the full-file copy are I/O — run them off the
+            // main thread. The whole block is guarded: resolver.insert throws
+            // (not returns null) on quota/volume/provider errors, and
+            // openOutputStream can throw SecurityException — in a CEH-less
+            // lifecycleScope coroutine any of those crashed the app.
             val saved = withContext(Dispatchers.IO) {
-                val values = ContentValues().apply {
-                    put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
-                    put(MediaStore.Images.Media.MIME_TYPE, mimeType)
-                    put(
-                        MediaStore.Images.Media.RELATIVE_PATH,
-                        Environment.DIRECTORY_PICTURES + "/LRReader"
-                    )
-                }
-                val resolver = mActivity.contentResolver
-                val mediaUri = resolver.insert(
-                    MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values
-                ) ?: run {
-                    File(cacheDir, filename ?: "").delete()
-                    return@withContext false
-                }
-                var copied = false
                 try {
-                    tempFile.openInputStream()?.use { input ->
-                        resolver.openOutputStream(mediaUri)?.use { output ->
-                            IOUtils.copy(input, output)
-                            copied = true
-                        }
-                    }
-                } catch (e: IOException) {
-                    Log.e(TAG, "Failed to copy image to MediaStore", e)
+                    saveToMediaStore(cacheDir, filename, displayName, mimeType, tempFile)
+                } catch (e: Exception) {
+                    Log.e(TAG, "MediaStore save failed", e)
+                    false
                 }
-                if (!copied) {
-                    resolver.delete(mediaUri, null, null)
-                    return@withContext false
-                }
-                tempFile.delete()
-                true
             }
 
             if (saved) {
@@ -199,6 +177,48 @@ class GalleryImageOperations(private val mActivity: Activity) {
                 Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    /** MediaStore insert + copy. Throws on provider errors; caller guards. */
+    private fun saveToMediaStore(
+        cacheDir: File,
+        filename: String?,
+        displayName: String,
+        mimeType: String?,
+        tempFile: UniFile,
+    ): Boolean {
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
+            put(MediaStore.Images.Media.MIME_TYPE, mimeType)
+            put(
+                MediaStore.Images.Media.RELATIVE_PATH,
+                Environment.DIRECTORY_PICTURES + "/LRReader"
+            )
+        }
+        val resolver = mActivity.contentResolver
+        val mediaUri = resolver.insert(
+            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values
+        ) ?: run {
+            File(cacheDir, filename ?: "").delete()
+            return false
+        }
+        var copied = false
+        try {
+            tempFile.openInputStream()?.use { input ->
+                resolver.openOutputStream(mediaUri)?.use { output ->
+                    IOUtils.copy(input, output)
+                    copied = true
+                }
+            }
+        } catch (e: IOException) {
+            Log.e(TAG, "Failed to copy image to MediaStore", e)
+        }
+        if (!copied) {
+            resolver.delete(mediaUri, null, null)
+            return false
+        }
+        tempFile.delete()
+        return true
     }
 
     // --- Save to user-chosen location (using ActivityResultLauncher) ---
@@ -252,7 +272,10 @@ class GalleryImageOperations(private val mActivity: Activity) {
                             ok = true
                         }
                     }
-                } catch (e: IOException) {
+                } catch (e: Exception) {
+                    // IOException, but also SecurityException / provider
+                    // errors from openOutputStream — an uncaught one crashed
+                    // the CEH-less lifecycleScope coroutine.
                     Log.e(TAG, "Failed to copy image to chosen location", e)
                 }
                 if (!cacheFile.delete()) {
