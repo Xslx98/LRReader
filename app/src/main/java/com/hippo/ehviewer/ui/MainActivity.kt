@@ -314,7 +314,19 @@ class MainActivity : StageActivity(),
         }
     }
 
-    override fun onStartSceneFromIntent(clazz: Class<*>, args: Bundle?): Announcer {
+    override fun onStartSceneFromIntent(clazz: Class<*>, args: Bundle?): Announcer? {
+        // App-lock guard: while a SolidScene gate (SecurityScene lock prompt /
+        // ServerConfigScene) is showing, starting the requested scene would
+        // remove or bury the gate WITHOUT an unlock — most target scenes are
+        // LAUNCH_MODE_SINGLE_TASK, so StageActivity.startScene pops everything
+        // above an existing instance, lock prompt included. That let a
+        // notification tap bypass the pattern lock straight from the shade.
+        // Drop the request instead, mirroring onUnrecognizedIntent's guard
+        // (returning null routes there, which no-ops on the same check).
+        val top = topSceneClass
+        if (top != null && SolidScene::class.java.isAssignableFrom(top)) {
+            return null
+        }
         return processAnnouncer(Announcer(clazz).setArgs(args))
     }
 
