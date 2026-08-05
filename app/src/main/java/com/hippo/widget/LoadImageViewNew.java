@@ -354,7 +354,7 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
         if (mRetryType == RETRY_TYPE_CLICK && mFailed) {
             setOnClickListener(this);
         } else if (mRetryType == RETRY_TYPE_LONG_CLICK) {
-//            setOnLongClickListener(this);
+            setOnLongClickListener(this);
         } else {
             // Can't retry, so release
             mKey = null;
