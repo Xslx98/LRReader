@@ -219,6 +219,14 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
             return;
         }
 
+        // Same-key short-circuit: rebinding a row whose thumbnail is already
+        // in flight must not cancel-and-restart the fetch (cancelled fetches
+        // discard their partial bytes).
+        if (LoadImageSameKeyPolicy.shouldSkipLoad(
+                mKey, key, mFailed, mUseNetwork == useNetwork, mConaco.isLoading(this))) {
+            return;
+        }
+
         mLoadFromDrawable = false;
         mFailed = false;
         clearRetry();
