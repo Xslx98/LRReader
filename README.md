@@ -24,7 +24,7 @@ An Android client for [LANraragi](https://github.com/Difegue/LANraragi), built u
 | 🔍 **全功能搜索 / Full Search** | 关键词、分类筛选、排序、随机推荐 / Keywords, categories, sorting, random |
 | 🕘 **搜索历史 / Search History** | 按服务器记录最近搜索，可逐条删除或一键清空 / Per-server recent searches with per-entry delete and clear-all |
 | 🙈 **隐藏已读完 / Hide Finished** | 浏览时可过滤掉已读完的档案 / Optionally filter finished archives out of browsing (LANraragi 0.9.8+) |
-| 📖 **高性能阅读 / High-Performance Reader** | C 层图像解码引擎 + 智能预加载 / Native C image decoder + smart preloading |
+| 📖 **高性能阅读 / High-Performance Reader** | GL 渲染管线 + 按需解码 + 智能预加载 / GL rendering pipeline, on-demand decoding and smart preloading |
 | ⏭️ **跨档案续读 / Reader Continuation** | 读到末页自动衔接下一本，无需回列表 / End-of-book panel jumps straight to the next archive |
 | ▶️ **继续阅读 / Continue Reading** | 桌面快捷方式一键回到上次阅读的档案与页码 / Launcher shortcut back to your last archive and page |
 | 📚 **合订本 / Tankoubon** | 浏览与管理合订本：成员排序、全局阅读进度、成员间链式续读 / Browse & manage tankoubons: member ordering, global progress, chained reading (LANraragi 0.9.8+) |
@@ -109,7 +109,7 @@ RELEASE_KEY_PASSWORD=<your-key-password>
 | **API 序列化 / Serialization** | kotlinx-serialization (all JSON) |
 | **列表分页 / Paging** | Jetpack Paging 3 |
 | **数据库 / Database** | Room 2.8 + KSP (schema v29, 多服务器复合主键 / composite key for multi-server state) |
-| **图像解码 / Image Decoding** | Custom C/JNI engine (libjpeg-turbo, libpng, libwebp) |
+| **图像解码 / Image Decoding** | Android ImageDecoder（按目标尺寸采样）+ 轻量 JNI 辅助 / Platform ImageDecoder with target-size sampling + minimal JNI helpers |
 | **安全 / Security** | EncryptedSharedPreferences (API Key, 模式锁 / pattern lock) |
 | **构建 / Build** | Gradle + R8/ProGuard |
 | **ABI** | Release: arm64-v8a · Debug: arm64-v8a + x86_64 |
@@ -131,7 +131,7 @@ LRReader/
 │   │   │   ├── client/api/             # REST API client (LRRArchiveApi, LRRClientProvider, …)
 │   │   │   └── domain/                 # Domain models (Archive, …)
 │   │   └── com/hippo/{glview,widget,…} # Legacy GLView / Conaco / widget framework (Java)
-│   ├── cpp/                            # C/JNI native image decoder
+│   ├── cpp/                            # Minimal JNI helpers (GIF background decode, GL texImage)
 │   ├── res/                            # Resources (10 languages)
 │   └── assets/                         # Open-source license page
 ├── fastlane/metadata/android/          # Play Store metadata + per-release changelogs
@@ -159,10 +159,6 @@ This project is built upon the following open-source projects:
 - [OkHttp](https://github.com/square/okhttp) - HTTP client
 - [kotlinx-serialization](https://github.com/Kotlin/kotlinx.serialization) - JSON serialization
 - [kotlinx-coroutines](https://github.com/Kotlin/kotlinx.coroutines) - Async programming
-- [UCrop](https://github.com/Yalantis/uCrop) - Image cropping
-- [ReLinker](https://github.com/KeepSafe/ReLinker) - Native library loading
-- [jsoup](https://github.com/jhy/jsoup) - HTML parsing
-- [libjpeg-turbo](https://libjpeg-turbo.org/) / [libpng](http://www.libpng.org/) - Native image decoding
 
 完整开源许可信息请查看应用内 **设置 - 关于 - 许可证**。
 
