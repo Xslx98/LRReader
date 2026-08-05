@@ -497,6 +497,40 @@ interface ArchiveLocalStateDao {
         deleteAllEmptyRows()
     }
 
+    // ── Merged download upserts ────────────────────────────────
+    //
+    // The download upsert's archive_json merge used to READ the existing row
+    // outside any transaction, compute the merged json, then write it via
+    // upsertDownload — a lost-update window: a history/detail write landing
+    // between the read and the UPDATE was silently overwritten with the
+    // stale merge result. These wrappers pull the read into the same
+    // generated transaction as the write. The row-builder lambda runs inside
+    // the transaction; keep it pure (no dispatcher hops).
+
+    @Transaction
+    suspend fun upsertDownloadMerged(
+        info: DownloadInfo,
+        build: suspend (DownloadInfo, ArchiveLocalState?) -> DownloadUpsertRow,
+    ) {
+        val existing = loadByArcidAndProfile(info.arcid, info.serverProfileId)
+        val r = build(info, existing)
+        upsertDownload(
+            r.arcid, r.serverProfileId, r.archiveJson, r.downloadState,
+            r.downloadLegacy, r.downloadTime, r.downloadLabel,
+            r.downloadArchiveUri, r.downloadRootUri
+        )
+    }
+
+    @Transaction
+    suspend fun upsertDownloadBatchMerged(
+        infos: List<DownloadInfo>,
+        build: suspend (DownloadInfo, ArchiveLocalState?) -> DownloadUpsertRow,
+    ) {
+        for (info in infos) {
+            upsertDownloadMerged(info, build)
+        }
+    }
+
     // ── Batch wrappers ─────────────────────────────────────────
     //
     // Bulk operations (batch download add, batch remove, legacy history
