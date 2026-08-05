@@ -20,6 +20,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
+import com.hippo.ehviewer.client.TankCoverCacheStamp
 import com.hippo.ehviewer.gallery.ReadingContext
 import com.hippo.ehviewer.gallery.ReadingContextStore
 import com.hippo.ehviewer.gallery.TankPageMath
@@ -264,7 +265,7 @@ class TankoubonDetailScene : BaseScene() {
             }
             is TankDetailUiEvent.ShowSuccess -> {
                 Toast.makeText(ctx, event.messageResId, Toast.LENGTH_SHORT).show()
-                // Set-cover bumps the VM's coverBust, which changes the
+                // Set-cover bumps TankCoverCacheStamp, which changes the
                 // cover cache key + URL — this rebind picks them up. For
                 // every other op it is an idempotent no-op (same key|url).
                 bindCover()
@@ -514,23 +515,18 @@ class TankoubonDetailScene : BaseScene() {
      * (first load). Idempotent per key|url so the multiple observer call
      * sites do not restart the image load.
      *
-     * The image pipeline caches by KEY, not URL — after a successful
-     * set-cover ([TankoubonDetailViewModel.coverBust] > 0) BOTH the key and
-     * the URL carry the bust stamp, otherwise the stale cached image would
-     * be served forever. When coverBust == 0 the plain key/url keep normal
-     * loads hitting the cache. (The pre-bust image stays cached under the
-     * old key until evicted — accepted.)
+     * The image pipeline caches by KEY, not URL — BOTH carry the
+     * process-wide [TankCoverCacheStamp] (bumped by every successful tank
+     * fetch and by set-cover), otherwise a cover regenerated server-side
+     * would be shadowed by the stale cached image forever. (The pre-bump
+     * image stays cached under the old key until evicted — accepted.)
      */
     private fun bindCover() {
         val baseUrl = viewModel.baseUrl ?: return
         val tankId = viewModel.tankId
         if (tankId.isEmpty()) return
-        val bust = viewModel.coverBust
-        val key = if (bust > 0L) {
-            LRRCacheKeyFactory.getThumbKey("$tankId#$bust")
-        } else {
-            LRRCacheKeyFactory.getThumbKey(tankId)
-        }
+        val bust = TankCoverCacheStamp.value
+        val key = LRRCacheKeyFactory.getThumbKey("$tankId#$bust")
         val url = LRRTankoubonApi.getTankoubonThumbnailUrl(baseUrl, tankId, cacheBust = bust)
         val binding = "$key|$url"
         if (binding == mCoverBoundUrl) return

@@ -7,6 +7,7 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.module.IAppModule
 import com.hippo.ehviewer.module.INetworkModule
+import com.hippo.ehviewer.client.TankCoverCacheStamp
 import com.hippo.ehviewer.module.NetworkMonitor
 import com.lanraragi.reader.client.api.LRRAuthManager
 import kotlinx.coroutines.CoroutineScope
@@ -154,6 +155,41 @@ class TankoubonsViewModelTest {
 
     private fun pageJson(total: Int, vararg tanks: String): String =
         """{"result":[${tanks.joinToString(",")}],"total":$total,"filtered":$total}"""
+
+    // ── cover cache stamp ──────────────────────────────────────────
+    //
+    // Tank covers are cached by KEY with an immutable URL, so external
+    // cover regenerations (web-client reorder/set-cover) stay invisible
+    // unless every successful tank fetch bumps the process-wide stamp the
+    // cover binds fold into key+URL. Failed loads must NOT bump: retained
+    // views should keep serving cached covers offline.
+
+    @Test
+    fun loadTankoubons_success_bumpsCoverCacheStamp() {
+        server.enqueue(MockResponse().setBody(pageJson(
+            1, tankJson("TANK_0000000001", "Alpha")
+        )))
+
+        val before = TankCoverCacheStamp.value
+        val vm = TankoubonsViewModel()
+        vm.loadTankoubons()
+
+        awaitCondition { vm.tanks.value.size == 1 }
+        awaitCondition { TankCoverCacheStamp.value > before }
+    }
+
+    @Test
+    fun loadTankoubons_failure_leavesCoverCacheStampUntouched() {
+        server.enqueue(MockResponse().setResponseCode(500).setBody("boom"))
+
+        val vm = TankoubonsViewModel()
+        val events = collectEvents(vm)
+        val before = TankCoverCacheStamp.value
+        vm.loadTankoubons()
+
+        awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.ShowError } }
+        assertEquals(before, TankCoverCacheStamp.value)
+    }
 
     // ── loadTankoubons ─────────────────────────────────────────────
 

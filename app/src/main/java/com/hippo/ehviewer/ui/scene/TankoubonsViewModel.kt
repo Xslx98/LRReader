@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.client.TankCoverCacheStamp
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
@@ -225,6 +226,9 @@ class TankoubonsViewModel : ViewModel() {
             if (r.result.isEmpty() || all.size >= r.total) break
             page++
         }
+        // Fresh server truth in hand — revalidate covers. Must precede the
+        // callers' _tanks publication so cover binds already see the new stamp.
+        TankCoverCacheStamp.bump()
         return ArrayList(all)
     }
 

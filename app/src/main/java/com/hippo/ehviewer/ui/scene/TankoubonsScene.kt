@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
+import com.hippo.ehviewer.client.TankCoverCacheStamp
 import com.hippo.ehviewer.ui.scene.TankoubonsViewModel.TankUiEvent
 import com.hippo.ehviewer.util.collectFlow
 import com.hippo.scene.Announcer
@@ -309,12 +310,17 @@ class TankoubonsScene : BaseScene() {
         override fun onBindViewHolder(holder: TankoubonViewHolder, position: Int) {
             val tank = mTanks[position]
 
-            // Cover thumbnail (server renders a placeholder until generated)
+            // Cover thumbnail (server renders a placeholder until generated).
+            // Key and URL fold in TankCoverCacheStamp: covers regenerate
+            // server-side without the URL ever changing, so each fresh tank
+            // fetch revalidates them instead of pinning the cached image
+            // (placeholder included) forever.
             val serverUrl = mServerUrl
             if (serverUrl != null) {
+                val stamp = TankCoverCacheStamp.value
                 holder.thumb.load(
-                    LRRCacheKeyFactory.getThumbKey(tank.id),
-                    LRRTankoubonApi.getTankoubonThumbnailUrl(serverUrl, tank.id)
+                    LRRCacheKeyFactory.getThumbKey("${tank.id}#$stamp"),
+                    LRRTankoubonApi.getTankoubonThumbnailUrl(serverUrl, tank.id, cacheBust = stamp)
                 )
             }
 
