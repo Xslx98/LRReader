@@ -32,6 +32,7 @@
 <!--        android:layout_height="?attr/actionBarSize"-->
 <!--        android:layout_width="match_parent"-->
 <!--        android:background="?attr/toolbarColor"-->
+<!--        android:elevation="8dp"-->
 <!--        android:saveEnabled="false"-->
 <!--        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"-->
 <!--        app:popupTheme="?attr/toolbarPopupTheme"/>-->
@@ -40,11 +41,6 @@
 <!--        android:layout_width="match_parent"-->
 <!--        android:layout_height="0dp"-->
 <!--        android:layout_weight="1">-->
-
-<!--        <View-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="8dp"-->
-<!--            android:background="@drawable/shadow_bottom"/>-->
 
 <!--        <TextView-->
 <!--            android:id="@+id/tip"-->

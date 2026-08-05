@@ -33,16 +33,18 @@
     java.lang.Object readResolve();
 }
 
-# === Room DAO entities ===
--keep class com.hippo.ehviewer.dao.** { *; }
-
+# Room needs no manual keeps: entities/DAOs are accessed through
+# KSP-generated code (no reflection), and room-runtime's consumer rules
+# cover the AppDatabase_Impl lookup. Parcelize CREATORs are kept by the
+# default Android rules.
 
 # === OkHttp ===
 -dontwarn okhttp3.**
 -dontwarn okio.**
 
-# === LANraragi data models (used by kotlinx-serialization) ===
--keep class com.lanraragi.reader.client.api.data.** { *; }
+# kotlinx-serialization needs no manual keeps either: serializers are
+# generated at compile time and referenced statically (no reflective
+# serializer() lookups in this codebase); the library ships consumer rules.
 
 # === A7Zip JNI (external library: a7zip_XJ:extract-lite) ===
 -keep class com.hippo.a7zip.** { *; }
@@ -52,17 +54,24 @@
 # === Native JNI entry points (libehviewer.so) ===
 -keep class com.hippo.util.GifHandler { *; }
 
-# === Custom views referenced in XML (need constructors for inflation) ===
--keep class com.hippo.ehviewer.widget.** { <init>(...); }
--keep class com.hippo.ehviewer.preference.** { <init>(...); }
--keep class com.hippo.widget.** { <init>(...); }
--keep class com.hippo.preference.** { <init>(...); }
+# Custom views/preferences referenced in XML need no manual keeps: AGP feeds
+# R8 the AAPT2-generated rules (build/intermediates/aapt_proguard_file/...),
+# which keep the constructors of every class named in layout/ and xml/
+# resources. The old package-wide { <init>(...); } keeps additionally pinned
+# provably dead classes into the release DEX. A class instantiated ONLY via
+# Class.forName from code (no XML reference) would need an explicit keep here.
 
 # === Settings fragments (instantiated via PreferenceActivity headers reflection) ===
 -keep class com.hippo.ehviewer.ui.fragment.** { <init>(); }
 
-# === Scene classes (instantiated via SceneFactory registry) ===
--keep class com.hippo.ehviewer.ui.scene.** { <init>(); }
+# === Scene classes ===
+# Scene NAMES and no-arg constructors must survive: intents/saved state carry
+# class-name strings resolved via Class.forName (StageActivity, SolidScene),
+# and FragmentManager re-instantiates fragments reflectively by name on state
+# restore. Only actual SceneFragment subclasses need this — the old package
+# keep pinned all ~550 scene-package classes (ViewModels, adapters, helpers)
+# with original names into the release DEX.
+-keep class * extends com.hippo.scene.SceneFragment { <init>(); }
 
 # === LRRDownloadWorker: preserve volatile semantics for cancellation flag ===
 -keepclassmembers class com.hippo.ehviewer.download.LRRDownloadWorker {
