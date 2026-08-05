@@ -268,17 +268,6 @@ class GalleryListScene : BaseScene(),
         // landing while backgrounded.
         collectFlowWhileCreated(this, viewModel.downloadEvent) { event ->
             when (event) {
-                is GalleryListViewModel.DownloadEvent.ItemUpdated -> {
-                    val adapter = adapter ?: return@collectFlowWhileCreated
-                    val count = adapter.itemCount
-                    for (i in 0 until count) {
-                        val archive = adapter.getDataAt(i)
-                        if (archive != null && archive.arcid == event.arcid) {
-                            adapter.notifyItemChanged(i)
-                            break
-                        }
-                    }
-                }
                 is GalleryListViewModel.DownloadEvent.BulkChanged -> {
                     adapter?.notifyItemRangeChanged(0, adapter?.itemCount ?: 0)
                 }

@@ -135,9 +135,6 @@ class GalleryListViewModel : ViewModel() {
      * The Scene observes these to refresh specific adapter items.
      */
     sealed interface DownloadEvent {
-        /** A single download was updated; refresh the item with this [arcid]. */
-        data class ItemUpdated(val arcid: String) : DownloadEvent
-
         /** Broad change (add/remove/reload/change); refresh all visible items. */
         data object BulkChanged : DownloadEvent
     }
@@ -159,47 +156,7 @@ class GalleryListViewModel : ViewModel() {
         if (observingDownloads) return
         observingDownloads = true
 
-        val listener = object : DownloadInfoListener {
-            override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-                _downloadEvent.tryEmit(DownloadEvent.BulkChanged)
-            }
-
-            override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {
-                // No-op: replace does not affect gallery list display
-            }
-
-            override fun onUpdate(
-                info: DownloadInfo,
-                list: List<DownloadInfo>,
-                mWaitList: List<DownloadInfo>
-            ) {
-                _downloadEvent.tryEmit(DownloadEvent.ItemUpdated(info.arcid))
-            }
-
-            override fun onUpdateAll() {
-                // No-op: bulk state change without visual impact on gallery list
-            }
-
-            override fun onReload() {
-                _downloadEvent.tryEmit(DownloadEvent.BulkChanged)
-            }
-
-            override fun onChange() {
-                _downloadEvent.tryEmit(DownloadEvent.BulkChanged)
-            }
-
-            override fun onRenameLabel(from: String, to: String) {
-                // No-op: label changes don't affect gallery list display
-            }
-
-            override fun onRemove(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-                _downloadEvent.tryEmit(DownloadEvent.BulkChanged)
-            }
-
-            override fun onUpdateLabels() {
-                // No-op: label changes don't affect gallery list display
-            }
-        }
+        val listener = galleryListDownloadEventListener { _downloadEvent.tryEmit(it) }
         downloadInfoListener = listener
         downloadManager.addDownloadInfoListener(listener)
     }
@@ -575,5 +532,61 @@ class GalleryListViewModel : ViewModel() {
 
         /** Max archives processed in parallel by [runBatch]. */
         private const val BATCH_CONCURRENCY = 4
+    }
+}
+
+/**
+ * Translates [DownloadInfoListener] callbacks into gallery-list
+ * [GalleryListViewModel.DownloadEvent]s.
+ *
+ * The gallery list's only download-dependent pixel is the "downloaded" badge,
+ * which reads membership (`containDownloadInfo`) — never per-page progress.
+ * Per-page [DownloadInfoListener.onUpdate] callbacks (several per second on
+ * LAN plus the 2 s speed tick) are therefore deliberately silent here: they
+ * used to trigger an O(N) scan and a full row rebind that cancelled and
+ * restarted the row's thumbnail request for zero visual change. Only
+ * membership-changing callbacks emit.
+ */
+internal fun galleryListDownloadEventListener(
+    emit: (GalleryListViewModel.DownloadEvent) -> Unit,
+): DownloadInfoListener = object : DownloadInfoListener {
+    override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
+        emit(GalleryListViewModel.DownloadEvent.BulkChanged)
+    }
+
+    override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {
+        // No-op: replace does not affect gallery list display
+    }
+
+    override fun onUpdate(
+        info: DownloadInfo,
+        list: List<DownloadInfo>,
+        mWaitList: List<DownloadInfo>
+    ) {
+        // No-op: per-page progress never changes the membership badge
+    }
+
+    override fun onUpdateAll() {
+        // No-op: bulk state change without visual impact on gallery list
+    }
+
+    override fun onReload() {
+        emit(GalleryListViewModel.DownloadEvent.BulkChanged)
+    }
+
+    override fun onChange() {
+        emit(GalleryListViewModel.DownloadEvent.BulkChanged)
+    }
+
+    override fun onRenameLabel(from: String, to: String) {
+        // No-op: label changes don't affect gallery list display
+    }
+
+    override fun onRemove(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
+        emit(GalleryListViewModel.DownloadEvent.BulkChanged)
+    }
+
+    override fun onUpdateLabels() {
+        // No-op: label changes don't affect gallery list display
     }
 }
