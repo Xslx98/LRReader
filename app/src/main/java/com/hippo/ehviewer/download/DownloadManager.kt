@@ -363,6 +363,23 @@ class DownloadManager(
         eventBus.forEachListener { it.onUpdateAll() }
     }
 
+    /**
+     * Android 15 dataSync FGS time budget exhausted (Service.onTimeout):
+     * stop everything in flight or queued — stopping (not failing) keeps the
+     * rows restartable — and flag each for [DownloadResumeBanner] so the next
+     * foreground shows the "downloads timed out — retry" snackbar with a
+     * one-tap re-queue.
+     */
+    fun pauseAllForSystemBudget() {
+        repo.assertMainThread()
+        for (di in repo.allInfoList) {
+            if (di.state == DownloadState.WAIT || di.state == DownloadState.DOWNLOAD) {
+                DownloadResumeBanner.markTimedOut(di.arcid, di.title)
+            }
+        }
+        stopAllDownload()
+    }
+
     fun deleteDownload(arcid: String) {
         repo.assertMainThread()
         scheduler.stopDownload(arcid)
