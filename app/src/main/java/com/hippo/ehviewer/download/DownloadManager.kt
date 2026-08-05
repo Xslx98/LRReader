@@ -207,10 +207,10 @@ class DownloadManager(
         // profile shares the same single local download row + on-disk dir.
         val existing = repo.getDownloadInfo(archive.arcid)
         if (existing != null) {
-            // Imported archives (content:// URIs) cannot be re-downloaded; the
-            // pre-W36-4 short-circuit on `galleryInfo is DownloadInfo` is now
-            // anchored on the persisted state, which is the only place
-            // archiveUri actually lives.
+            // Legacy imported-archive rows (content:// URIs, feature removed
+            // 2026-08-05 — audit #69) cannot be re-downloaded. The boot-time
+            // cleanup removes such rows, but guard the narrow window where an
+            // old row still exists in this session.
             val uri = existing.archiveUri
             if (uri != null && uri.startsWith("content://")) return
             if (existing.state != DownloadState.WAIT) {
