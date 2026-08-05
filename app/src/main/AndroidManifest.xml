@@ -66,25 +66,8 @@
             android:value="2.1" />
 
         <activity
-            android:name="com.hippo.ehviewer.ui.splash.SplashActivity"
-            android:alwaysRetainTaskState="true"
-            android:configChanges="orientation|keyboardHidden|screenSize|uiMode"
-            android:exported="true"
-            android:launchMode="singleTask"
-            android:screenOrientation="fullSensor"
-            android:theme="@style/SplashTheme"
-            android:windowSoftInputMode="stateHidden|adjustPan">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-                <!-- LAUNCHER -->
-                <!--                <category android:name="android.intent.category.HOME" />-->
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
-
-        <activity
             android:name="com.hippo.ehviewer.ui.MainActivity"
+            android:alwaysRetainTaskState="true"
             android:configChanges="screenSize|uiMode"
             android:exported="true"
             android:launchMode="singleTask"
@@ -93,7 +76,6 @@
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-                <!--                <category android:name="android.intent.category.LAUNCHER"/>-->
             </intent-filter>
 
             <!-- Launcher shortcuts are registered dynamically (AppShortcuts) so
@@ -101,6 +83,23 @@
 
             <!-- LANraragi: Removed E-Hentai deep links and image search intent filters -->
         </activity>
+
+        <!-- The launcher entry keeps the old SplashActivity component name: home
+             screens and launchers persist the component of a pinned icon, so
+             renaming it would orphan existing icons. The trampoline Activity
+             itself is gone (it inflated an empty layout on a transparent theme
+             and immediately started MainActivity, costing a full extra Activity
+             launch on every cold start). -->
+        <activity-alias
+            android:name="com.hippo.ehviewer.ui.splash.SplashActivity"
+            android:exported="true"
+            android:targetActivity="com.hippo.ehviewer.ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
 
         <activity
             android:name="com.hippo.ehviewer.ui.GalleryActivity"
