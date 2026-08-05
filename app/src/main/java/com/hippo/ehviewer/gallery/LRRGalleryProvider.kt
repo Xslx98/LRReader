@@ -14,6 +14,7 @@ import com.hippo.lib.glgallery.GalleryProvider
 import com.hippo.lib.image.Image
 import com.hippo.unifile.UniFile
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +34,6 @@ import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.locks.LockSupport
 
 /**
  * GalleryProvider that fetches page images from a LANraragi server.
@@ -652,11 +652,16 @@ class LRRGalleryProvider(
         for (attempt in 0 until 2) {
             var cacheFile = getCacheFile(index)
 
-            // On retry, wait 1s for network recovery, then force re-download
+            // On retry, wait 1s for network recovery, then force re-download.
+            // Suspending delay: parkNanos here blocked an IO-pool thread for
+            // the full second AND ignored coroutine cancellation — leaving the
+            // reader (provider scope cancel on exit) waiting on a parked
+            // thread. delay() frees the thread and aborts on cancellation.
             if (attempt > 0) {
-                Log.w(TAG, "Retry page $index (attempt ${attempt + 1}), waiting 1s...")
-                LockSupport.parkNanos(RETRY_DELAY_NANOS)
-                if (Thread.interrupted()) return // Respect interruption during park
+                if (BuildConfig.DEBUG) {
+                    Log.w(TAG, "Retry page $index (attempt ${attempt + 1}), waiting 1s...")
+                }
+                delay(RETRY_DELAY_MS)
                 if (cacheFile.exists()) {
                     cacheFile.delete()
                 }
@@ -737,7 +742,7 @@ class LRRGalleryProvider(
         private const val PRELOAD_COUNT = 5 // Preload next 5 pages (LAN is fast)
         private const val PRELOAD_PARALLELISM = 2 // Concurrent preload downloads
         private const val STRIPE_COUNT = 32 // Number of striped locks for page downloads (PERF-6)
-        private const val RETRY_DELAY_NANOS = 1_000_000_000L // 1 second in nanos for retry delay
+        private const val RETRY_DELAY_MS = 1_000L // 1 second retry delay (suspending)
 
         /**
          * Bound on how long the consumer waits for an in-flight warm
