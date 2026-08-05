@@ -1,0 +1,8 @@
+Big performance & reliability release, ~29% smaller APK.
+• Faster cold start; tag updates now check at most daily
+• Smoother lists: no more rebind storms or thumbnail restarts
+• Reader: fixed stuck spinners, leaks and resume races
+• Fixed: "Reset reading progress" now actually works
+• Fixed: app-lock could be bypassed from notifications
+• Android 15: downloads pause gracefully at the 6h limit
+• Removed: local archive import (entries are cleaned up)
