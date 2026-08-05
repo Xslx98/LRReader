@@ -52,7 +52,7 @@ class ClientModule(
             hasDiskCache = true
             diskCacheDir = File(context.cacheDir, "thumb")
             diskCacheMaxSize = diskCacheMaxSize()
-            okHttpClient = networkModule.okHttpClient
+            okHttpClient = networkModule.thumbFetchClient
             objectHelper = imageBitmapHelper
             debug = false
         }.build()
