@@ -52,11 +52,12 @@
 # === Native JNI entry points (libehviewer.so) ===
 -keep class com.hippo.util.GifHandler { *; }
 
-# === Custom views referenced in XML (need constructors for inflation) ===
--keep class com.hippo.ehviewer.widget.** { <init>(...); }
--keep class com.hippo.ehviewer.preference.** { <init>(...); }
--keep class com.hippo.widget.** { <init>(...); }
--keep class com.hippo.preference.** { <init>(...); }
+# Custom views/preferences referenced in XML need no manual keeps: AGP feeds
+# R8 the AAPT2-generated rules (build/intermediates/aapt_proguard_file/...),
+# which keep the constructors of every class named in layout/ and xml/
+# resources. The old package-wide { <init>(...); } keeps additionally pinned
+# provably dead classes into the release DEX. A class instantiated ONLY via
+# Class.forName from code (no XML reference) would need an explicit keep here.
 
 # === Settings fragments (instantiated via PreferenceActivity headers reflection) ===
 -keep class com.hippo.ehviewer.ui.fragment.** { <init>(); }
