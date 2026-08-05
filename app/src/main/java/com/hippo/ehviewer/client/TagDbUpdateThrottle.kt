@@ -1,6 +1,7 @@
 package com.hippo.ehviewer.client
 
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import java.util.concurrent.TimeUnit
 
 /**
@@ -46,7 +47,7 @@ class TagDbUpdateThrottle(
     }
 
     fun recordSuccess() {
-        prefs.edit().putLong(KEY_LAST_SUCCESS, clock()).apply()
+        prefs.edit { putLong(KEY_LAST_SUCCESS, clock()) }
     }
 
     companion object {
