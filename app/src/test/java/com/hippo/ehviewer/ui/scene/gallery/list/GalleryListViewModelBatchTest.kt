@@ -276,10 +276,110 @@ class GalleryListViewModelBatchTest {
         )
     }
 
+    // ─── tank cover seeding (AddToTankoubon) ─────────────────────────────
+    //
+    // The server's append endpoint (PUT /api/tankoubons/{id}/{archive}) never
+    // queues thumbnail generation — only the whole-list JSON PUT does. So a
+    // tank populated purely through appends serves the placeholder forever
+    // unless the client explicitly sets a cover. Mirroring the web client,
+    // the batch seeds the cover from global page 1 after the first successful
+    // add into a previously-empty tank.
+
+    /** Records "METHOD path" for every request; 200/success for all. */
+    private fun recordingDispatcher(
+        paths: CopyOnWriteArrayList<String>,
+        respond: (RecordedRequest) -> MockResponse = { jsonResponse(200, """{"success":1}""") },
+    ) = object : Dispatcher() {
+        override fun dispatch(request: RecordedRequest): MockResponse {
+            paths += "${request.method} ${request.path}"
+            return respond(request)
+        }
+    }
+
+    @Test
+    fun `addToTankoubon batch on a previously-empty tank seeds the cover once, after the adds`() = runTest {
+        val paths = CopyOnWriteArrayList<String>()
+        server.dispatcher = recordingDispatcher(paths)
+
+        val vm = newVm()
+        val result = awaitBatchResult(vm) {
+            vm.runBatch(
+                GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID, wasEmpty = true),
+                listOf(archiveOf(ARC_A), archiveOf(ARC_B)),
+            )
+        }
+
+        assertEquals(listOf(ARC_A, ARC_B), result.succeeded)
+        val thumbPut = "PUT /api/tankoubons/$TANK_ID/thumbnail?page=1"
+        assertEquals(
+            "exactly one cover-seed request, got: $paths",
+            1,
+            paths.count { it == thumbPut },
+        )
+        assertEquals("cover seed must come after both adds", paths.size - 1, paths.indexOf(thumbPut))
+    }
+
+    @Test
+    fun `addToTankoubon batch on a non-empty tank never touches the cover`() = runTest {
+        val paths = CopyOnWriteArrayList<String>()
+        server.dispatcher = recordingDispatcher(paths)
+
+        val vm = newVm()
+        awaitBatchResult(vm) {
+            vm.runBatch(
+                GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID, wasEmpty = false),
+                listOf(archiveOf(ARC_A)),
+            )
+        }
+
+        assertTrue("no thumbnail request expected, got: $paths", paths.none { "thumbnail" in it })
+    }
+
+    @Test
+    fun `cover is not seeded when every add failed`() = runTest {
+        val paths = CopyOnWriteArrayList<String>()
+        server.dispatcher = recordingDispatcher(paths) { jsonResponse(500, """{"success":0}""") }
+
+        val vm = newVm()
+        val result = awaitBatchResult(vm) {
+            vm.runBatch(
+                GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID, wasEmpty = true),
+                listOf(archiveOf(ARC_A)),
+            )
+        }
+
+        assertTrue(result.succeeded.isEmpty())
+        assertTrue("no thumbnail request expected, got: $paths", paths.none { "thumbnail" in it })
+    }
+
+    @Test
+    fun `a failed cover seed is cosmetic and does not taint the batch result`() = runTest {
+        val paths = CopyOnWriteArrayList<String>()
+        server.dispatcher = recordingDispatcher(paths) { request ->
+            if ("thumbnail" in request.path.orEmpty()) {
+                jsonResponse(500, """{"success":0,"error":"boom"}""")
+            } else {
+                jsonResponse(200, """{"success":1}""")
+            }
+        }
+
+        val vm = newVm()
+        val result = awaitBatchResult(vm) {
+            vm.runBatch(
+                GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID, wasEmpty = true),
+                listOf(archiveOf(ARC_A)),
+            )
+        }
+
+        assertEquals(listOf(ARC_A), result.succeeded)
+        assertTrue("seed failure must not surface as a batch failure", result.failed.isEmpty())
+    }
+
     private companion object {
         val ARC_A = "a".repeat(40)
         val ARC_B = "b".repeat(40)
         val ARC_C = "c".repeat(40)
+        const val TANK_ID = "TANK_1688616437"
         const val RESULT_TIMEOUT_MS = 10_000L
     }
 }
