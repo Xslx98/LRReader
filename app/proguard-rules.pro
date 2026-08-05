@@ -33,16 +33,18 @@
     java.lang.Object readResolve();
 }
 
-# === Room DAO entities ===
--keep class com.hippo.ehviewer.dao.** { *; }
-
+# Room needs no manual keeps: entities/DAOs are accessed through
+# KSP-generated code (no reflection), and room-runtime's consumer rules
+# cover the AppDatabase_Impl lookup. Parcelize CREATORs are kept by the
+# default Android rules.
 
 # === OkHttp ===
 -dontwarn okhttp3.**
 -dontwarn okio.**
 
-# === LANraragi data models (used by kotlinx-serialization) ===
--keep class com.lanraragi.reader.client.api.data.** { *; }
+# kotlinx-serialization needs no manual keeps either: serializers are
+# generated at compile time and referenced statically (no reflective
+# serializer() lookups in this codebase); the library ships consumer rules.
 
 # === A7Zip JNI (external library: a7zip_XJ:extract-lite) ===
 -keep class com.hippo.a7zip.** { *; }
