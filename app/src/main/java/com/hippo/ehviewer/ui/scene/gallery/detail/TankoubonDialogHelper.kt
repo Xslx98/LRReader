@@ -22,6 +22,7 @@ import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 
 /**
  * Tankoubon membership dialogs (structural clone of [CategoryDialogHelper]
@@ -60,10 +61,16 @@ object TankoubonDialogHelper {
     /**
      * Simple picker for batch ops: single-choice list of the server's tanks
      * with a leading "create" row (inline create then pick). Empty list →
-     * [R.string.tank_none] toast.
+     * [R.string.tank_none] toast. [onPicked]'s `wasEmpty` reports whether the
+     * tank had zero members at pick time (a just-created tank always does) so
+     * the batch can seed the tank cover after its first successful add.
      */
     @JvmStatic
-    fun pickTankoubon(activity: Activity?, serverProfileId: Long, onPicked: (tankId: String) -> Unit) {
+    fun pickTankoubon(
+        activity: Activity?,
+        serverProfileId: Long,
+        onPicked: (tankId: String, wasEmpty: Boolean) -> Unit,
+    ) {
         if (activity == null) return
 
         loadTanksAndMembership(activity, serverProfileId, arcid = null) { tanks, _, serverUrl ->
@@ -77,9 +84,10 @@ object TankoubonDialogHelper {
                 .setTitle(R.string.tank_add_to)
                 .setItems(items) { _, which ->
                     if (which == 0) {
-                        promptCreate(activity, serverUrl, onPicked)
+                        promptCreate(activity, serverUrl) { newId -> onPicked(newId, true) }
                     } else {
-                        onPicked(tanks[which - 1].id)
+                        val tank = tanks[which - 1]
+                        onPicked(tank.id, tank.archives.isEmpty())
                     }
                 }
                 .setNegativeButton(android.R.string.cancel, null)
@@ -210,6 +218,9 @@ object TankoubonDialogHelper {
                     val tankId = tanks[i].id
                     if (checked[i]) {
                         LRRTankoubonApi.addToTankoubon(client, serverUrl, tankId, arcid)
+                        if (tanks[i].archives.isEmpty()) {
+                            seedTankCoverBestEffort(client, serverUrl, tankId)
+                        }
                     } else {
                         LRRTankoubonApi.removeFromTankoubon(client, serverUrl, tankId, arcid)
                     }
@@ -224,6 +235,28 @@ object TankoubonDialogHelper {
             } catch (e: Exception) {
                 postErrorToast(activity, serverUrl, e)
             }
+        }
+    }
+
+    /**
+     * Best-effort cover seed for a tank that was EMPTY before the add above:
+     * the server's append endpoint never queues thumbnail generation (only
+     * the whole-list JSON PUT does), so without this the tank would serve
+     * the placeholder cover forever. Mirrors the web client's behavior of
+     * ending up with the first member's cover. Failures are swallowed — the
+     * membership write already succeeded and the cover is cosmetic.
+     */
+    private suspend fun seedTankCoverBestEffort(
+        client: OkHttpClient,
+        serverUrl: String,
+        tankId: String,
+    ) {
+        try {
+            LRRTankoubonApi.updateTankThumbnail(client, serverUrl, tankId, globalPage1 = 1)
+        } catch (ce: CancellationException) {
+            throw ce
+        } catch (ignored: Exception) {
+            // Cosmetic — see KDoc.
         }
     }
 

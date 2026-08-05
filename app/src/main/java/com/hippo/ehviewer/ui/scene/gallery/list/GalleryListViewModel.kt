@@ -284,7 +284,13 @@ class GalleryListViewModel : ViewModel() {
     sealed interface BatchOp {
         data object Download : BatchOp
         data class AddToCategory(val categoryId: String) : BatchOp
-        data class AddToTankoubon(val tankId: String) : BatchOp
+        /**
+         * @param wasEmpty true when the tank had no members before this batch
+         *   (as observed by the picker) — the batch then seeds the tank cover
+         *   from global page 1 after the first successful add, because the
+         *   server's append endpoint never generates one on its own.
+         */
+        data class AddToTankoubon(val tankId: String, val wasEmpty: Boolean = false) : BatchOp
         data object ClearNew : BatchOp
         data object DeleteArchives : BatchOp
     }
@@ -450,12 +456,49 @@ class GalleryListViewModel : ViewModel() {
                     }
                     _batchProgress.value = (i + 1) to archives.size
                 }
+                if (op is BatchOp.AddToTankoubon) {
+                    seedTankCoverIfNeeded(op, succeeded, archives)
+                }
                 _batchResultEvent.tryEmit(
                     BatchResult(op = op, succeeded = succeeded, failed = failed, owner = owner)
                 )
             } finally {
                 _batchProgress.value = null
             }
+        }
+    }
+
+    /**
+     * Best-effort cover seed after the first successful append(s) into a
+     * previously-empty tank. The server's append endpoint never queues
+     * thumbnail generation (only the whole-archives-list JSON PUT and a
+     * first-member removal do), so an append-populated tank would serve the
+     * placeholder cover forever. Mirrors the web client, where a tank built
+     * from a selection ends up with its first member's cover. Failures are
+     * swallowed: the membership writes already succeeded and the cover is
+     * cosmetic.
+     */
+    private suspend fun seedTankCoverIfNeeded(
+        op: BatchOp.AddToTankoubon,
+        succeeded: List<String>,
+        archives: List<Archive>,
+    ) {
+        if (!op.wasEmpty) return
+        val firstAdded = succeeded.firstOrNull() ?: return
+        val profileId = archives.firstOrNull { it.arcid == firstAdded }?.serverProfileId ?: return
+        try {
+            withContext(Dispatchers.IO) {
+                LRRTankoubonApi.updateTankThumbnail(
+                    LRRClientProvider.getClient(),
+                    baseUrlResolver(profileId),
+                    op.tankId,
+                    globalPage1 = 1,
+                )
+            }
+        } catch (ce: CancellationException) {
+            throw ce
+        } catch (ignored: Exception) {
+            // Cosmetic — see KDoc.
         }
     }
 
