@@ -33,7 +33,6 @@ import android.os.Process
 import android.os.StrictMode
 import android.os.Trace
 import android.util.Log
-import com.hippo.a7zip.A7Zip
 import com.hippo.content.ContextLocalWrapper
 import com.hippo.content.RecordingApplication
 import com.lanraragi.reader.client.api.LRRAuthManager
@@ -296,7 +295,6 @@ class EhApplication : RecordingApplication() {
         ServiceRegistry.coroutineModule.ioScope.launch {
             BitmapUtils.initialize(this@EhApplication)
             Image.initialize(this@EhApplication)
-            A7Zip.initialize(this@EhApplication)
         }
 
         // One-time http_cache purge (audit #29): thumbnails used to be
