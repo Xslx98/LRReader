@@ -22,7 +22,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.Call
@@ -583,9 +585,15 @@ class LRRGalleryProvider(
 
     private fun getCacheFile(index: Int): File = File(cacheDir, "page_$index")
 
-    // Striped locks to prevent concurrent downloads of the same page (PERF-6).
-    // Fixed-size array replaces unbounded ConcurrentHashMap<Int, Any>.
-    private val pageLocks = Array(STRIPE_COUNT) { Any() }
+    // Per-page download mutexes (same-page exclusion across the user-request
+    // and preload paths). Replaces mod-32 striped Java monitors: a stripe
+    // collision serialized UNRELATED pages — a user-visible page could park,
+    // uncancellably and pinning an IO thread, behind a preload's full network
+    // download. Mutex.withLock keeps the wait suspending and cancellable.
+    // Bounded by the archive's page count, entries live for the provider.
+    private val pageMutexes = ConcurrentHashMap<Int, Mutex>()
+
+    private fun pageMutex(index: Int): Mutex = pageMutexes.computeIfAbsent(index) { Mutex() }
 
     // Track in-flight page requests to avoid submitting duplicate tasks to the thread pool
     private val inflightRequests = ConcurrentHashMap<Int, Boolean>()
@@ -596,15 +604,13 @@ class LRRGalleryProvider(
     // sockets explicitly (NET-3).
     private val inflightCalls = ConcurrentHashMap<Int, Call>()
 
-    private fun getPageLock(index: Int): Any = pageLocks[index.and(STRIPE_COUNT - 1)]
-
     /**
      * Download a page to cache if not already cached.
-     * Thread-safe: per-page striped locking prevents concurrent downloads of the same page.
+     * Thread-safe: a per-page [Mutex] prevents concurrent downloads of the same page.
      * Delegates the actual download + validation to [ReaderPageCache.downloadToFile].
      */
     @Throws(IOException::class)
-    private fun downloadPageToCache(
+    private suspend fun downloadPageToCache(
         index: Int,
         progressCallback: ReaderPageCache.ProgressCallback? = null
     ) {
@@ -613,7 +619,7 @@ class LRRGalleryProvider(
             return // Already cached and sufficiently large
         }
 
-        synchronized(getPageLock(index)) {
+        pageMutex(index).withLock {
             if (stateRef.get().stopped) return
             if (cacheFile.exists() && cacheFile.length() > ReaderPageCache.MIN_IMAGE_SIZE) {
                 return
@@ -744,7 +750,6 @@ class LRRGalleryProvider(
         private const val BUFFER_SIZE = 65536 // 64KB buffer for save()
         private const val PRELOAD_COUNT = 5 // Preload next 5 pages (LAN is fast)
         private const val PRELOAD_PARALLELISM = 2 // Concurrent preload downloads
-        private const val STRIPE_COUNT = 32 // Number of striped locks for page downloads (PERF-6)
         private const val RETRY_DELAY_MS = 1_000L // 1 second retry delay (suspending)
 
         /**
