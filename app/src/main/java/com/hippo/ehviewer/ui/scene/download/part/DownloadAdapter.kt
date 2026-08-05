@@ -19,10 +19,7 @@ import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
-import androidx.core.net.toUri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -49,7 +46,6 @@ import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.download.DownloadService
-import com.hippo.ehviewer.gallery.A7ZipArchive
 import com.hippo.ehviewer.gallery.Pipe
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.spider.SpiderInfo
@@ -64,8 +60,6 @@ import com.hippo.scene.Announcer
 import com.hippo.unifile.UniFile
 import com.hippo.util.NaturalComparator
 import com.hippo.widget.LoadImageView
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.hippo.ehviewer.download.DownloadState
 import java.util.concurrent.CompletableFuture
@@ -87,14 +81,6 @@ class DownloadAdapter(
 
     private var movedItem: View? = null
 
-    private val thumbnailCache = object : android.util.LruCache<String, Bitmap>(5 * 1024 * 1024) { // 5MB
-        override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
-        // Intentionally no entryRemoved/recycle: eviction means "over the size
-        // budget", not "no longer on screen". A RecyclerView holder may still be
-        // displaying the evicted bitmap, and recycling it would crash with
-        // "trying to use a recycled bitmap". ART (API 26+) reclaims the native
-        // allocation via GC once nothing references it.
-    }
 
     interface DownloadAdapterCallback {
         val indexPage: Int
@@ -202,28 +188,16 @@ class DownloadAdapter(
             val pos = mCallback.positionInList(position)
             val info = list[pos]
             val archive = info.toArchive()
-            val archiveUri = info.archiveUri
-            val isImportedArchive = archiveUri != null && archiveUri.startsWith("content://")
 
-            var title = archive.title
-            if (isImportedArchive) {
-                title = "📦 $title"
-            }
-            if (isImportedArchive && archiveUri != null) {
-                loadArchiveThumbnail(holder.thumb, archiveUri.toUri())
-            } else {
-                holder.thumb.load(
-                    LRRCacheKeyFactory.getThumbKey(info.arcid), archive.thumbnailUrl,
-                    ThumbDataContainer(mCallback.downloadDirFutureFor(info)), true, false
-                )
-            }
+            holder.thumb.load(
+                LRRCacheKeyFactory.getThumbKey(info.arcid), archive.thumbnailUrl,
+                ThumbDataContainer(mCallback.downloadDirFutureFor(info)), true, false
+            )
 
-            holder.title.text = title
+            holder.title.text = archive.title
             holder.uploader.visibility = View.GONE
 
-            if (isImportedArchive) {
-                holder.rating.setRating(5.0f)
-            } else if (archive.rating <= 0) {
+            if (archive.rating <= 0) {
                 holder.rating.visibility = View.GONE
             } else {
                 holder.rating.setRating(archive.rating)
@@ -236,15 +210,7 @@ class DownloadAdapter(
                 holder.readProgress.text = readText
             }
 
-            val category = holder.category
-            if (isImportedArchive) {
-                val categoryText = mScene.getString(R.string.imported_archive_category)
-                category.text = categoryText
-                category.setBackgroundColor(0xFF4CAF50.toInt())
-                category.visibility = View.VISIBLE
-            } else {
-                category.visibility = View.GONE
-            }
+            holder.category.visibility = View.GONE
 
             bindSourceBadge(holder, info)
             bindForState(holder, info)
@@ -328,14 +294,6 @@ class DownloadAdapter(
 
     private fun bindForState(holder: DownloadHolder, info: DownloadInfo) {
         val resources = mScene.resources2 ?: return
-
-        // Check if this is an imported archive - skip state judging
-        val archiveUri = info.archiveUri
-        val isImportedArchive = archiveUri != null && archiveUri.startsWith("content://")
-        if (isImportedArchive) {
-            bindState(holder, info, resources.getString(R.string.download_state_finish))
-            return
-        }
 
         when (info.state) {
             DownloadState.INVALID,
@@ -539,191 +497,6 @@ class DownloadAdapter(
         }
     }
 
-    private fun loadArchiveThumbnail(thumb: LoadImageView, archiveUri: Uri) {
-        val uriString = archiveUri.toString()
-
-        // Check cache first
-        val cachedThumbnail = thumbnailCache.get(uriString)
-        if (cachedThumbnail != null) {
-            if (!cachedThumbnail.isRecycled) {
-                thumb.setImageBitmap(cachedThumbnail)
-                return
-            } else {
-                thumbnailCache.remove(uriString)
-            }
-        }
-
-        // Set default icon immediately as fallback
-        thumb.setImageResource(R.drawable.v_archive_hh_primary_x48)
-
-        // Load thumbnail in background
-        mScene.lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val thumbnail = extractFirstImageFromArchive(archiveUri)
-                mScene.runOnUiThread {
-                    if (thumbnail != null && !thumbnail.isRecycled) {
-                        thumbnailCache.put(uriString, thumbnail)
-                        thumb.setImageBitmap(thumbnail)
-                    } else {
-                        val fallbackThumbnail = thumbnailCache.get(uriString)
-                        if (fallbackThumbnail != null && !fallbackThumbnail.isRecycled) {
-                            thumb.setImageBitmap(fallbackThumbnail)
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to load archive thumbnail for $uriString", e)
-            }
-        }
-    }
-
-    @Suppress("NestedBlockDepth", "CyclomaticComplexMethod", "LongMethod")
-    private fun extractFirstImageFromArchive(archiveUri: Uri): Bitmap? {
-        val context = mScene.ehContext ?: return null
-
-        var uraf: com.hippo.unifile.UniRandomAccessFile? = null
-        var archive: A7ZipArchive? = null
-
-        try {
-            // Verify URI accessibility first
-            try {
-                context.contentResolver.openInputStream(archiveUri)?.use { testStream ->
-                    // Stream accessible
-                } ?: run {
-                    Log.w(TAG, "Cannot access archive URI: $archiveUri")
-                    return null
-                }
-            } catch (e: SecurityException) {
-                Log.w(TAG, "URI permission lost, attempting to restore: $archiveUri", e)
-                try {
-                    context.contentResolver.takePersistableUriPermission(
-                        archiveUri, Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    )
-                    Log.d(TAG, "Successfully restored URI permission for: $archiveUri")
-                    context.contentResolver.openInputStream(archiveUri)?.use { retryStream ->
-                        // Stream accessible after restore
-                    } ?: run {
-                        Log.w(TAG, "Still cannot access URI after permission restore: $archiveUri")
-                        return null
-                    }
-                } catch (restoreEx: Exception) {
-                    Log.e(TAG, "Failed to restore URI permission for: $archiveUri", restoreEx)
-                    return null
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "URI not accessible: $archiveUri", e)
-                return null
-            }
-
-            // Open the archive file
-            val file = UniFile.fromUri(context, archiveUri)
-            if (file == null || !file.exists()) {
-                Log.w(TAG, "Archive file not found: $archiveUri")
-                return null
-            }
-
-            uraf = file.createRandomAccessFile("r")
-            if (uraf == null) {
-                Log.w(TAG, "Cannot create random access file for: $archiveUri")
-                return null
-            }
-
-            archive = A7ZipArchive.create(uraf)
-            if (archive == null) {
-                Log.w(TAG, "Cannot create archive reader for: $archiveUri")
-                return null
-            }
-
-            val entries = archive.archiveEntries
-            if (entries.isEmpty()) {
-                Log.w(TAG, "Archive is empty: $archiveUri")
-                return null
-            }
-
-            // Sort entries by name (natural order)
-            val comparator = NaturalComparator()
-            entries.sortWith { o1, o2 -> comparator.compare(o1.path, o2.path) }
-
-            // Find the first image file
-            for (entry in entries) {
-                val fileName = entry.path.lowercase()
-                if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") ||
-                    fileName.endsWith(".png") || fileName.endsWith(".bmp") ||
-                    fileName.endsWith(".gif") || fileName.endsWith(".webp")
-                ) {
-                    try {
-                        // Extract image bytes once into memory
-                        val baos = java.io.ByteArrayOutputStream(64 * 1024)
-                        val pipe = Pipe(8 * 1024)
-                        val extractThread = Thread {
-                            try {
-                                entry.extract(pipe.outputStream)
-                            } catch (e: Exception) {
-                                Log.w(TAG, "Failed to extract image: $fileName", e)
-                            } finally {
-                                try { pipe.outputStream.close() } catch (e: Exception) { Log.d(TAG, "Close pipe output stream", e) }
-                            }
-                        }
-                        extractThread.start()
-                        try {
-                            pipe.inputStream.copyTo(baos)
-                        } finally {
-                            try { pipe.inputStream.close() } catch (e: Exception) { Log.d(TAG, "Close pipe input stream", e) }
-                        }
-                        extractThread.join(3000)
-                        val imageBytes = baos.toByteArray()
-                        if (imageBytes.isEmpty()) {
-                            Log.w(TAG, "Empty extraction result for $fileName")
-                            continue
-                        }
-
-                        // Decode bounds from cached bytes
-                        val options = BitmapFactory.Options()
-                        options.inJustDecodeBounds = true
-                        BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, options)
-
-                        // Calculate sample size for thumbnail
-                        val thumbnailSize = 150
-                        var sampleSize = 1
-                        if (options.outHeight > thumbnailSize || options.outWidth > thumbnailSize) {
-                            val halfHeight = options.outHeight / 2
-                            val halfWidth = options.outWidth / 2
-                            while (halfHeight / sampleSize >= thumbnailSize && halfWidth / sampleSize >= thumbnailSize) {
-                                sampleSize *= 2
-                            }
-                        }
-
-                        // Decode actual bitmap from cached bytes
-                        options.inJustDecodeBounds = false
-                        options.inSampleSize = sampleSize
-                        options.inPreferredConfig = Bitmap.Config.RGB_565
-                        val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, options)
-
-                        if (bitmap != null && !bitmap.isRecycled) {
-                            Log.d(TAG, "Successfully extracted thumbnail from $fileName")
-                            return bitmap
-                        }
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Failed to extract thumbnail from $fileName", e)
-                    }
-                }
-            }
-
-            Log.w(TAG, "No extractable images found in archive: $archiveUri")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to process archive for thumbnail: $archiveUri", e)
-        } finally {
-            try { archive?.close() } catch (e: Exception) {
-                Log.w(TAG, "Failed to close archive", e)
-            }
-            try { uraf?.close() } catch (e: Exception) {
-                Log.w(TAG, "Failed to close file", e)
-            }
-        }
-
-        return null
-    }
-
     inner class DownloadHolder(itemView: View) :
         AbstractDraggableItemViewHolder(itemView), View.OnClickListener {
 
@@ -772,17 +545,7 @@ class DownloadAdapter(
 
             when (v) {
                 thumb -> {
-                    val currentInfo = list[mScene.positionInList(index)]
-                    val currentArchiveUri = currentInfo.archiveUri
-                    if (currentArchiveUri != null && currentArchiveUri.startsWith("content://")) {
-                        val message = mScene.getString(R.string.imported_archive_info_message) +
-                                "\n\n" + currentArchiveUri
-                        AlertDialog.Builder(context)
-                            .setTitle(R.string.imported_archive_info_title)
-                            .setMessage(message)
-                            .setPositiveButton(android.R.string.ok, null)
-                            .show()
-                    } else {
+                    run {
                         val args = Bundle()
                         args.putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_ARCHIVE)
                         args.putParcelable(

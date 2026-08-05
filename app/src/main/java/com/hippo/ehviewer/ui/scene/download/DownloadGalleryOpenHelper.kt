@@ -17,15 +17,10 @@ package com.hippo.ehviewer.ui.scene.download
 
 import android.content.Context
 import android.content.Intent
-import androidx.core.net.toUri
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
-import com.hippo.ehviewer.Analytics
-import com.hippo.ehviewer.R
-import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadState
 import com.hippo.ehviewer.gallery.ReadingContext
@@ -78,10 +73,6 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
         }
 
         val downloadInfo = list[callback.positionInList(position)]
-        // Check if this is an imported archive
-        if (downloadInfo.archiveUri != null && downloadInfo.archiveUri!!.startsWith("content://")) {
-            return openImportedArchive(activity, context, downloadInfo)
-        }
 
         // Use GalleryOpenHelper to prefer local files over server
         // buildReadIntent is suspend (resolves download dir from DB).
@@ -124,45 +115,6 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
         )
     }
 
-    private fun openImportedArchive(
-        activity: android.app.Activity,
-        context: Context,
-        downloadInfo: DownloadInfo
-    ): Boolean {
-        val archiveUri = (downloadInfo.archiveUri ?: return false).toUri()
-        try {
-            // Test if we can access the URI
-            context.contentResolver.openInputStream(archiveUri)?.use { testStream ->
-                @Suppress("SENSELESS_COMPARISON")
-                if (testStream == null) {
-                    Toast.makeText(context, R.string.archive_not_accessible, Toast.LENGTH_SHORT).show()
-                    return true
-                }
-            }
-        } catch (e: SecurityException) {
-            // Try to restore permission
-            try {
-                context.contentResolver.takePersistableUriPermission(
-                    archiveUri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            } catch (ex: Exception) {
-                Toast.makeText(context, R.string.archive_permission_lost, Toast.LENGTH_LONG).show()
-                Analytics.recordException(ex)
-                return true
-            }
-        } catch (e: Exception) {
-            Toast.makeText(context, R.string.archive_not_accessible, Toast.LENGTH_SHORT).show()
-            return true
-        }
-
-        val intent = Intent(activity, GalleryActivity::class.java)
-        intent.action = Intent.ACTION_VIEW
-        intent.data = archiveUri
-        callback.launchGallery(intent)
-        return true
-    }
-
     /**
      * Processes the result from [GalleryActivity]. Updates spider info cache
      * and notifies the adapter of the changed item.
@@ -175,25 +127,17 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
         val archive = data.getParcelableExtra<Archive>(GalleryActivity.EXTRA_RESULT_ARCHIVE) ?: return
         val arcid = archive.arcid
 
-        // Imported archives (content:// URIs) live in the DB as DownloadInfo
-        // with a non-null archiveUri; skip SpiderInfo refresh for those.
-        val downloadInfo = ServiceRegistry.dataModule.downloadManager.getDownloadInfo(arcid)
-        val isImportedArchive = downloadInfo?.archiveUri?.startsWith("content://") == true
-
-        if (!isImportedArchive) {
-            // Only process SpiderInfo for regular downloads, not imported archives
-            callback.viewModel.removeSpiderInfo(arcid)
-            callback.viewLifecycleOwner.lifecycleScope.launch {
-                try {
-                    val spiderInfo = withContext(Dispatchers.IO) {
-                        SpiderInfo.getSpiderInfo(arcid)
-                    }
-                    if (spiderInfo != null) {
-                        callback.viewModel.putSpiderInfo(arcid, spiderInfo)
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to load spider info", e)
+        callback.viewModel.removeSpiderInfo(arcid)
+        callback.viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val spiderInfo = withContext(Dispatchers.IO) {
+                    SpiderInfo.getSpiderInfo(arcid)
                 }
+                if (spiderInfo != null) {
+                    callback.viewModel.putSpiderInfo(arcid, spiderInfo)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to load spider info", e)
             }
         }
 
