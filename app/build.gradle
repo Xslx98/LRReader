@@ -113,6 +113,14 @@ android {
                     // identical 10KB files). In-app attribution is generated
                     // by the jaredsburrows.license plugin, not these files.
                     'META-INF/**/LICENSE.txt',
+                    // OkHttp public-suffix DB (41KB, incompressible). Only
+                    // consumer is cookie domain-matching / topPrivateDomain;
+                    // this app sets CookieJar.NO_COOKIES and never calls
+                    // topPrivateDomain, so the code path is unreachable.
+                    // ⚠ If a cookie jar is ever introduced, REMOVE this
+                    // exclude — PublicSuffixDatabase throws at runtime
+                    // without it.
+                    'okhttp3/internal/publicsuffix/*',
             ]
         }
     }
