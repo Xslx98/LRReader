@@ -89,6 +89,15 @@ class DownloadInfo() : Parcelable {
     @JvmField
     var downloadRootUri: String? = null
 
+    /**
+     * Tank download grouping tag, mirrored from
+     * `ARCHIVE_LOCAL_STATE.DOWNLOAD_TANK_ID`. Non-null rows are hidden
+     * from the downloads list and rendered inside their tank's
+     * aggregated card instead. NULL = standalone download.
+     */
+    @JvmField
+    var tankId: String? = null
+
     // ── Transient, non-persisted helpers ──
 
     /**
@@ -129,6 +138,7 @@ class DownloadInfo() : Parcelable {
         label = `in`.readString()
         archiveUri = `in`.readString()
         downloadRootUri = `in`.readString()
+        tankId = `in`.readString()
         simpleTags = `in`.createStringArray()
         @Suppress("UNCHECKED_CAST")
         tgList = `in`.readArrayList(String::class.java.classLoader) as? ArrayList<String>
@@ -150,6 +160,7 @@ class DownloadInfo() : Parcelable {
         dest.writeString(label)
         dest.writeString(archiveUri)
         dest.writeString(downloadRootUri)
+        dest.writeString(tankId)
         dest.writeStringArray(simpleTags)
         dest.writeList(tgList)
         dest.writeLong(fileSize)
