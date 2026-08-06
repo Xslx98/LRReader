@@ -53,6 +53,8 @@ import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.gallery.LRRGalleryProvider
 import com.hippo.ehviewer.gallery.NextArchiveResolver
 import com.hippo.ehviewer.gallery.ReadingSessionTracker
+import com.hippo.ehviewer.gallery.TankGalleryProvider
+import com.hippo.ehviewer.gallery.TankSessionSeed
 import com.hippo.ehviewer.ui.gallery.GalleryImageOperations
 import com.hippo.ehviewer.ui.gallery.GalleryInputHandler
 import com.hippo.ehviewer.ui.gallery.GalleryMenuHelper
@@ -132,6 +134,16 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
     private var mAction: String? = null
     private var mFilename: String? = null
     private var mArchive: Archive? = null
+
+    /**
+     * Whole-tank composite session seed ([ACTION_TANK]). Mutually exclusive
+     * with [mArchive]: a tank session deliberately has NO per-archive
+     * identity, which self-disables every per-archive side channel wired
+     * through `mArchive?.let` (continuation panel, per-archive tank
+     * progress sync, stamps, history write, reading-session tracking) —
+     * their tank-level replacements live in the provider / later commits.
+     */
+    private var mTankSeed: TankSessionSeed? = null
     private var mPage = 0
     private val mReadingSession = ReadingSessionTracker()
 
@@ -203,6 +215,12 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                     )
                 }
             }
+            ACTION_TANK -> {
+                val seed = mTankSeed
+                if (seed != null) {
+                    mGalleryProvider = TankGalleryProvider(this, seed)
+                }
+            }
         }
         // KEY_PAGE override (e.g. a detail-page thumbnail tap) so the
         // provider warms / consumes the decoded slot for the page the
@@ -237,6 +255,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         mAction = intent.action
         mFilename = intent.getStringExtra(KEY_FILENAME)
         mArchive = intent.getParcelableExtra(KEY_ARCHIVE)
+        mTankSeed = intent.getParcelableExtra(KEY_TANK_SEED)
         val onEvent = intent.getBooleanExtra(DATA_IN_EVENT, false)
         if (!onEvent) {
             canFinish = true
@@ -266,6 +285,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         mAction = savedInstanceState.getString(KEY_ACTION)
         mFilename = savedInstanceState.getString(KEY_FILENAME)
         mArchive = savedInstanceState.getParcelable(KEY_ARCHIVE)
+        mTankSeed = savedInstanceState.getParcelable(KEY_TANK_SEED)
         mPage = savedInstanceState.getInt(KEY_PAGE, -1)
         mSliderController.currentIndex = savedInstanceState.getInt(KEY_CURRENT_INDEX)
         buildProvider()
@@ -276,6 +296,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         outState.putString(KEY_ACTION, mAction)
         outState.putString(KEY_FILENAME, mFilename)
         mArchive?.let { outState.putParcelable(KEY_ARCHIVE, it) }
+        mTankSeed?.let { outState.putParcelable(KEY_TANK_SEED, it) }
         outState.putInt(KEY_PAGE, mPage)
         outState.putInt(KEY_CURRENT_INDEX, mSliderController.currentIndex)
     }
