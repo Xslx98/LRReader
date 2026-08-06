@@ -97,18 +97,39 @@ class TankDownloadGroupRepositoryTest {
     }
 
     @Test
-    fun setDownloadTankId_null_untagsSingleMember() = runTest {
+    fun removeTankGroupMember_untagsRow_andShrinksTheGroupList() = runTest {
         repo.putDownloadInfo(downloadInfo(ARC_A, "A"))
         repo.putDownloadInfo(downloadInfo(ARC_B, "B"))
         repo.putTankGroup(TANK, 1L, "MyTank", listOf(ARC_A, ARC_B))
 
-        repo.setDownloadTankId(ARC_A, null)
+        repo.removeTankGroupMember(TANK, ARC_A)
 
         val byArcid = repo.observeDownloads().first().associateBy { it.arcid }
         assertNull(byArcid.getValue(ARC_A).tankId)
         assertEquals(TANK, byArcid.getValue(ARC_B).tankId)
-        // The removed member also drops out of the ordered snapshot.
+        // Membership truth is the group list — the removed member drops out.
+        assertEquals(listOf(ARC_B), repo.getTankGroupMemberIds(TANK))
         assertEquals(listOf(ARC_B), repo.getTankMemberArchives(TANK).map { it.arcid })
+    }
+
+    @Test
+    fun removeTankGroupMember_lastMember_dropsTheGroup() = runTest {
+        repo.putDownloadInfo(downloadInfo(ARC_A, "A"))
+        repo.putTankGroup(TANK, 1L, "MyTank", listOf(ARC_A))
+
+        repo.removeTankGroupMember(TANK, ARC_A)
+
+        assertNull(repo.getTankGroup(TANK))
+    }
+
+    @Test
+    fun getTankMemberArchives_findsMembersEnqueuedAfterTheGroupRow() = runTest {
+        // Group persisted BEFORE the member row exists (the enqueue race the
+        // group-list membership design eliminates).
+        repo.putTankGroup(TANK, 1L, "MyTank", listOf(ARC_A))
+        repo.putDownloadInfo(downloadInfo(ARC_A, "A"))
+
+        assertEquals(listOf(ARC_A), repo.getTankMemberArchives(TANK).map { it.arcid })
     }
 
     @Test

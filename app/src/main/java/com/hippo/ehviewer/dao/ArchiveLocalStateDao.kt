@@ -141,6 +141,12 @@ interface ArchiveLocalStateDao {
 
     @Query(
         "SELECT * FROM ARCHIVE_LOCAL_STATE " +
+            "WHERE ARCID IN (:arcids) AND DOWNLOAD_STATE IS NOT NULL"
+    )
+    suspend fun getDownloadsByArcids(arcids: List<String>): List<ArchiveLocalState>
+
+    @Query(
+        "SELECT * FROM ARCHIVE_LOCAL_STATE " +
             "WHERE DOWNLOAD_STATE IS NOT NULL AND SERVER_PROFILE_ID = :profileId " +
             "ORDER BY DOWNLOAD_TIME DESC"
     )

@@ -300,12 +300,14 @@ class DownloadDbRepository(
     /**
      * Member archive snapshots for a tank group in STORED TANK ORDER
      * (pagecounts ride archive_json — the offline whole-tank session
-     * seed is built from these).
+     * seed is built from these). Membership truth is the GROUP ROW's id
+     * list, not the per-row tag: a member enqueued after the group was
+     * persisted is still found the moment its download row exists.
      */
     suspend fun getTankMemberArchives(tankId: String): List<Archive> {
         val order = getTankGroupMemberIds(tankId)
         if (order.isEmpty()) return emptyList()
-        val byId = archiveLocalStateDao.getDownloadsByTank(tankId)
+        val byId = archiveLocalStateDao.getDownloadsByArcids(order)
             .associate { it.arcid to it.toArchive() }
         return order.mapNotNull { byId[it] }
     }
@@ -313,6 +315,28 @@ class DownloadDbRepository(
     /** Tag one member row into (or out of, with null) a tank group. */
     suspend fun setDownloadTankId(arcid: String, tankId: String?) {
         archiveLocalStateDao.setDownloadTankId(arcid, tankId)
+    }
+
+    /**
+     * Remove ONE member from a tank group (member removed from the tank
+     * app-side): rewrite the group's id list and clear the row tag; the
+     * member reappears as a standalone download.
+     */
+    suspend fun removeTankGroupMember(tankId: String, arcid: String) {
+        archiveLocalStateDao.setDownloadTankId(arcid, null)
+        val group = tankGroupDao.getById(tankId) ?: return
+        val remaining = getTankGroupMemberIds(tankId).filterNot { it == arcid }
+        if (remaining.isEmpty()) {
+            tankGroupDao.delete(tankId)
+        } else {
+            tankGroupDao.upsert(
+                group.copy(
+                    memberIdsJson = ArchiveLocalStateJson.encodeToString(
+                        ListSerializer(String.serializer()), remaining
+                    )
+                )
+            )
+        }
     }
 
     /**

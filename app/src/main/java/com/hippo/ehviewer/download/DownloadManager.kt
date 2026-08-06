@@ -335,46 +335,30 @@ class DownloadManager(
     // ── Tank download grouping (Track 2) ──────────────────────
 
     /**
-     * Download a whole tankoubon. Every member rides the ORDINARY
-     * download pipeline (worker / resume / verify untouched):
-     * already-FINISHED members are tagged into the group only (zero
-     * re-download — the self-healing dedupe for pre-existing member
-     * downloads), everything else is queued via [startDownload]. The
-     * group row + member tags persist asynchronously; the downloads
-     * list re-groups on the next Room emission.
-     *
-     * @param members full member [Archive]s in TANK ORDER (metadata
-     *   pagecounts ride into archive_json for the offline session seed).
-     * @return (newly queued count, already-local count).
+     * Persist a downloaded-tank group (Track 2): group row + tags on every
+     * member's download row, asynchronously — the downloads list re-groups
+     * on the next Room emission. The member ENQUEUEING itself stays on the
+     * regular DownloadService intent path (the caller drives it, mirroring
+     * CommonOperations.startDownload), so worker / notification / resume
+     * behavior is byte-identical to ordinary downloads. Tagging a member
+     * whose row doesn't exist yet is a no-op UPDATE; the caller re-tags
+     * after enqueueing so late rows pick the tag up.
      */
-    fun downloadTankoubon(
+    fun tagTankDownloadGroup(
         tankId: String,
         tankName: String,
         serverProfileId: Long,
-        members: List<Archive>,
-    ): Pair<Int, Int> {
-        repo.assertMainThread()
-        var queued = 0
-        var alreadyLocal = 0
-        for (member in members) {
-            val existing = repo.getDownloadInfo(member.arcid)
-            if (existing != null && existing.state == DownloadState.FINISH) {
-                alreadyLocal++
-            } else {
-                startDownload(member, null)
-                queued++
-            }
-        }
+        memberIdsInOrder: List<String>,
+    ) {
         scope.launch {
             try {
                 ServiceRegistry.dataModule.downloadDbRepository.putTankGroup(
-                    tankId, serverProfileId, tankName, members.map { it.arcid }
+                    tankId, serverProfileId, tankName, memberIdsInOrder
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to persist tank group $tankId", e)
             }
         }
-        return queued to alreadyLocal
     }
 
     /**
@@ -399,11 +383,11 @@ class DownloadManager(
         }
     }
 
-    /** Untag one member (removed from the tank app-side); its row reappears standalone. */
-    fun untagTankMemberAsync(arcid: String) {
+    /** Remove one member from its downloaded-tank group (member removed app-side). */
+    fun untagTankMemberAsync(tankId: String, arcid: String) {
         scope.launch {
             try {
-                ServiceRegistry.dataModule.downloadDbRepository.setDownloadTankId(arcid, null)
+                ServiceRegistry.dataModule.downloadDbRepository.removeTankGroupMember(tankId, arcid)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to untag tank member $arcid", e)
             }
