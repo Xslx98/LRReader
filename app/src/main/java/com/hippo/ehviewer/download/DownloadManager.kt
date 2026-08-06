@@ -332,6 +332,84 @@ class DownloadManager(
         repo.addInfoOnly(archive, label)
     }
 
+    // ── Tank download grouping (Track 2) ──────────────────────
+
+    /**
+     * Download a whole tankoubon. Every member rides the ORDINARY
+     * download pipeline (worker / resume / verify untouched):
+     * already-FINISHED members are tagged into the group only (zero
+     * re-download — the self-healing dedupe for pre-existing member
+     * downloads), everything else is queued via [startDownload]. The
+     * group row + member tags persist asynchronously; the downloads
+     * list re-groups on the next Room emission.
+     *
+     * @param members full member [Archive]s in TANK ORDER (metadata
+     *   pagecounts ride into archive_json for the offline session seed).
+     * @return (newly queued count, already-local count).
+     */
+    fun downloadTankoubon(
+        tankId: String,
+        tankName: String,
+        serverProfileId: Long,
+        members: List<Archive>,
+    ): Pair<Int, Int> {
+        repo.assertMainThread()
+        var queued = 0
+        var alreadyLocal = 0
+        for (member in members) {
+            val existing = repo.getDownloadInfo(member.arcid)
+            if (existing != null && existing.state == DownloadState.FINISH) {
+                alreadyLocal++
+            } else {
+                startDownload(member, null)
+                queued++
+            }
+        }
+        scope.launch {
+            try {
+                ServiceRegistry.dataModule.downloadDbRepository.putTankGroup(
+                    tankId, serverProfileId, tankName, members.map { it.arcid }
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to persist tank group $tankId", e)
+            }
+        }
+        return queued to alreadyLocal
+    }
+
+    /**
+     * Delete a downloaded tank card: stop + remove every member download
+     * row (the caller deletes the on-disk files, mirroring the single-row
+     * delete flow) and drop the group row.
+     */
+    fun deleteTankDownload(tankId: String, memberArcids: List<String>) {
+        repo.assertMainThread()
+        if (memberArcids.isNotEmpty()) deleteRangeDownload(memberArcids)
+        dissolveTankGroupAsync(tankId)
+    }
+
+    /** Untag every member and drop the group row (files/rows untouched). */
+    fun dissolveTankGroupAsync(tankId: String) {
+        scope.launch {
+            try {
+                ServiceRegistry.dataModule.downloadDbRepository.dissolveTankGroup(tankId)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to dissolve tank group $tankId", e)
+            }
+        }
+    }
+
+    /** Untag one member (removed from the tank app-side); its row reappears standalone. */
+    fun untagTankMemberAsync(arcid: String) {
+        scope.launch {
+            try {
+                ServiceRegistry.dataModule.downloadDbRepository.setDownloadTankId(arcid, null)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to untag tank member $arcid", e)
+            }
+        }
+    }
+
     // ── Stop / Delete ─────────────────────────────────────────
 
     fun stopDownload(arcid: String) {
