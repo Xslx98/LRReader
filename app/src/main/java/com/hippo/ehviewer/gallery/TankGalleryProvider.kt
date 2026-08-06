@@ -427,6 +427,32 @@ class TankGalleryProvider(
         else -> GetText.getString(R.string.error_decoding_failed)
     }
 
+    // ==================== Member mapping queries ====================
+    // Read-only views over the LIVE map for per-member consumers (stamps
+    // routing, bookkeeping). Results reflect corrections/removals at call
+    // time — callers must treat them as snapshots.
+
+    /** (arcid, member-local page0) of a global page, or null out of range. */
+    fun locateMember(global0: Int): Pair<String, Int>? {
+        val (member, local) = pageMap.locate(global0) ?: return null
+        val arcid = slotAt(member)?.seed?.arcid ?: return null
+        return arcid to local
+    }
+
+    /** Global 0-indexed page of ([arcid], local [page0]), or null when unmapped. */
+    fun globalPageOf(arcid: String, page0: Int): Int? {
+        synchronized(slotsLock) {
+            val index = slots.indexOfFirst { it.seed.arcid == arcid }
+            if (index < 0) return null
+            if (page0 < 0 || page0 >= pageMap.pageCountOf(index)) return null
+            return pageMap.globalOf(index, page0)
+        }
+    }
+
+    /** Current member arcids in tank order. */
+    fun memberArcids(): List<String> =
+        synchronized(slotsLock) { slots.map { it.seed.arcid } }
+
     // ==================== Save/share ====================
 
     override fun getImageFilename(index: Int): String {
