@@ -1,6 +1,7 @@
 package com.hippo.ehviewer.ui.scene
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -19,6 +20,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
+import com.hippo.ehviewer.download.DownloadEntryGate
+import com.hippo.ehviewer.download.DownloadService
 import com.hippo.ehviewer.client.LRRCacheKeyFactory
 import com.hippo.ehviewer.client.TankCoverCacheStamp
 import com.hippo.ehviewer.gallery.ReadingContext
@@ -147,6 +150,10 @@ class TankoubonDetailScene : BaseScene() {
                     }
                     R.id.action_tank_edit_meta -> {
                         showEditMetaDialog()
+                        true
+                    }
+                    R.id.action_tank_download -> {
+                        downloadTank()
                         true
                     }
                     R.id.action_tank_delete -> {
@@ -418,6 +425,60 @@ class TankoubonDetailScene : BaseScene() {
         ) { summary, tags ->
             viewModel.editMeta(summary, tags)
         }
+    }
+
+    /**
+     * Download the whole tank (Track 2): members ride the ordinary
+     * download pipeline; already-downloaded ones are only tagged into the
+     * group. Feedback mirrors the batch-download wording.
+     */
+    private fun downloadTank() {
+        val ctx = ehContext ?: return
+        val members = viewModel.members.value
+        if (members.isEmpty()) {
+            Toast.makeText(ctx, R.string.error_empty, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val dm = ServiceRegistry.dataModule.downloadManager
+        // Same disposition split as the batch-download gate: FINISH rows are
+        // grouped only (zero re-download), partial/failed rows restart,
+        // missing rows enqueue — all through the regular DownloadService
+        // intents so worker/notification behavior matches ordinary downloads.
+        val toRestart = ArrayList<String>()
+        val toAdd = mutableListOf<Archive>()
+        var alreadyLocal = 0
+        for (member in members) {
+            when (DownloadEntryGate.disposition(dm.getDownloadState(member.arcid))) {
+                DownloadEntryGate.Disposition.NEW -> toAdd.add(member)
+                DownloadEntryGate.Disposition.RESTART -> toRestart.add(member.arcid)
+                DownloadEntryGate.Disposition.ALREADY_LOCAL -> alreadyLocal++
+            }
+        }
+        if (toRestart.isNotEmpty()) {
+            val intent = Intent(ctx, DownloadService::class.java)
+            intent.action = DownloadService.ACTION_START_RANGE
+            intent.putStringArrayListExtra(DownloadService.KEY_ARCID_LIST, toRestart)
+            ctx.startService(intent)
+        }
+        for (member in toAdd) {
+            val intent = Intent(ctx, DownloadService::class.java)
+            intent.action = DownloadService.ACTION_START
+            intent.putExtra(DownloadService.KEY_ARCHIVE, member)
+            ctx.startService(intent)
+        }
+        dm.tagTankDownloadGroup(
+            viewModel.tankId, viewModel.tankName.value, viewModel.profileId,
+            members.map { it.arcid },
+        )
+        val queued = toAdd.size + toRestart.size
+        val message = when {
+            queued == 0 && alreadyLocal > 0 ->
+                resources.getQuantityString(R.plurals.batch_download_all_local, alreadyLocal, alreadyLocal)
+            alreadyLocal == 0 ->
+                resources.getQuantityString(R.plurals.batch_download_queued, queued, queued)
+            else -> getString(R.string.batch_download_queued_some_local, queued, alreadyLocal)
+        }
+        Toast.makeText(ctx, message, Toast.LENGTH_SHORT).show()
     }
 
     private fun showDeleteDialog() {

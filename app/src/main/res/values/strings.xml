@@ -416,6 +416,7 @@
     <string name="tank_edit_meta">Edit metadata</string>
     <string name="tank_summary_hint">Summary</string>
     <string name="tank_tags_hint">Additional tags (comma-separated)</string>
+    <string name="tank_download">Download tankoubon</string>
     <string name="tank_delete">Delete tankoubon</string>
     <string name="tank_delete_confirm">Delete this tankoubon? Archives inside are not deleted, but the tankoubon\'s own summary, additional tags and reading progress will be lost.</string>
     <string name="tank_locked">Tankoubon is locked, try again later</string>
