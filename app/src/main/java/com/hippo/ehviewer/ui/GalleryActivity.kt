@@ -47,12 +47,16 @@ import com.hippo.ehviewer.settings.ReadingSettings
 import com.hippo.ehviewer.settings.SecuritySettings
 import com.hippo.ehviewer.event.AppEventBus
 import com.hippo.ehviewer.event.GalleryActivityEvent
+import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.gallery.DirGalleryProvider
 import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.gallery.LRRGalleryProvider
 import com.hippo.ehviewer.gallery.NextArchiveResolver
 import com.hippo.ehviewer.gallery.ReadingSessionTracker
+import com.hippo.ehviewer.gallery.TankGalleryProvider
+import com.hippo.ehviewer.gallery.TankSessionSeed
 import com.hippo.ehviewer.ui.gallery.GalleryImageOperations
 import com.hippo.ehviewer.ui.gallery.GalleryInputHandler
 import com.hippo.ehviewer.ui.gallery.GalleryMenuHelper
@@ -61,6 +65,8 @@ import com.hippo.ehviewer.ui.gallery.GalleryStampOps
 import com.hippo.ehviewer.ui.gallery.LRRStampsBackend
 import com.hippo.ehviewer.ui.gallery.ReaderContinuationController
 import com.hippo.ehviewer.ui.gallery.ReaderStampsController
+import com.hippo.ehviewer.ui.gallery.StampsBackend
+import com.hippo.ehviewer.ui.gallery.TankStampsBackend
 import com.hippo.ehviewer.ui.gallery.TankoubonProgressSync
 import com.hippo.ehviewer.ui.scene.download.DownloadsScene
 import com.hippo.ehviewer.widget.GalleryGuideView
@@ -92,7 +98,13 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         const val ACTION_DIR = "dir"
         const val ACTION_LRR = "lrr"
 
+        /** Whole-tankoubon composite session (see TankGalleryProvider). */
+        const val ACTION_TANK = "tank"
+
         const val KEY_ACTION = "action"
+
+        /** Parcelable [com.hippo.ehviewer.gallery.TankSessionSeed] for [ACTION_TANK]. */
+        const val KEY_TANK_SEED = "tank_seed"
         const val KEY_FILENAME = "filename"
         const val KEY_ARCHIVE = "archive"
 
@@ -126,6 +138,16 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
     private var mAction: String? = null
     private var mFilename: String? = null
     private var mArchive: Archive? = null
+
+    /**
+     * Whole-tank composite session seed ([ACTION_TANK]). Mutually exclusive
+     * with [mArchive]: a tank session deliberately has NO per-archive
+     * identity, which self-disables every per-archive side channel wired
+     * through `mArchive?.let` (continuation panel, per-archive tank
+     * progress sync, stamps, history write, reading-session tracking) —
+     * their tank-level replacements live in the provider / later commits.
+     */
+    private var mTankSeed: TankSessionSeed? = null
     private var mPage = 0
     private val mReadingSession = ReadingSessionTracker()
 
@@ -197,6 +219,12 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                     )
                 }
             }
+            ACTION_TANK -> {
+                val seed = mTankSeed
+                if (seed != null) {
+                    mGalleryProvider = TankGalleryProvider(this, seed)
+                }
+            }
         }
         // KEY_PAGE override (e.g. a detail-page thumbnail tap) so the
         // provider warms / consumes the decoded slot for the page the
@@ -231,6 +259,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         mAction = intent.action
         mFilename = intent.getStringExtra(KEY_FILENAME)
         mArchive = intent.getParcelableExtra(KEY_ARCHIVE)
+        mTankSeed = intent.getParcelableExtra(KEY_TANK_SEED)
         val onEvent = intent.getBooleanExtra(DATA_IN_EVENT, false)
         if (!onEvent) {
             canFinish = true
@@ -254,12 +283,44 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                 }
             }
         }
+        // Tank sessions get ONE history row for the whole tank (tank-only
+        // bookkeeping): a pseudo-archive keyed by the TANK_ id whose
+        // thumbnail rides the tank cover route. HistoryScene branches its
+        // click on isTankoubonId and resumes the composite session.
+        mTankSeed?.let { seed ->
+            ServiceRegistry.coroutineModule.ioScope.launch {
+                try {
+                    val url = resolveSourceBaseUrl(
+                        seed.profileId, ServiceRegistry.dataModule.profileLookupCache
+                    )
+                    val pseudo = Archive(
+                        arcid = seed.tankId,
+                        title = seed.tankName,
+                        tags = emptyMap(),
+                        pagecount = seed.members.sumOf { it.pagecount.coerceAtLeast(0) },
+                        progress = 0,
+                        extension = "",
+                        filename = "",
+                        thumbnailUrl = LRRTankoubonApi.getTankoubonThumbnailUrl(url, seed.tankId),
+                        rating = 0f,
+                        isnew = false,
+                        lastreadtime = 0L,
+                        summary = null,
+                        serverProfileId = seed.profileId,
+                    )
+                    ServiceRegistry.dataModule.historyRepository.putHistoryInfo(pseudo)
+                } catch (e: Exception) {
+                    Log.w("GalleryActivity", "Failed to record tank history: ${e.message}")
+                }
+            }
+        }
     }
 
     private fun onRestore(savedInstanceState: Bundle) {
         mAction = savedInstanceState.getString(KEY_ACTION)
         mFilename = savedInstanceState.getString(KEY_FILENAME)
         mArchive = savedInstanceState.getParcelable(KEY_ARCHIVE)
+        mTankSeed = savedInstanceState.getParcelable(KEY_TANK_SEED)
         mPage = savedInstanceState.getInt(KEY_PAGE, -1)
         mSliderController.currentIndex = savedInstanceState.getInt(KEY_CURRENT_INDEX)
         buildProvider()
@@ -270,6 +331,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         outState.putString(KEY_ACTION, mAction)
         outState.putString(KEY_FILENAME, mFilename)
         mArchive?.let { outState.putParcelable(KEY_ARCHIVE, it) }
+        mTankSeed?.let { outState.putParcelable(KEY_TANK_SEED, it) }
         outState.putInt(KEY_PAGE, mPage)
         outState.putInt(KEY_CURRENT_INDEX, mSliderController.currentIndex)
     }
@@ -343,15 +405,24 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         // tank progress.
         mArchive?.let { mTankProgress = TankoubonProgressSync(it.arcid) }
 
-        // Stamp overlay read path. Requires mArchive (server-backed archive
-        // identity) — the legacy local-file DIR path without an archive gets
-        // no controller and the overlay stays gone. mArchive is final here
-        // (see the continuation-block comment above).
+        // Stamp overlay read path. Requires a server-backed identity — a
+        // per-archive session's mArchive, or a tank session's provider
+        // (global pages routed per member by TankStampsBackend). The legacy
+        // local-file DIR path without an archive gets no controller and the
+        // overlay stays gone. mArchive is final here (see the
+        // continuation-block comment above).
         mStampOverlay = findViewById(R.id.stamp_overlay)
-        mArchive?.let { archive ->
+        val stampsBackend: StampsBackend? = mArchive?.let { archive ->
+            LRRStampsBackend(archive.arcid, archive.serverProfileId)
+        } ?: mTankSeed?.let { seed ->
+            (mGalleryProvider as? TankGalleryProvider)?.let { provider ->
+                TankStampsBackend(provider, seed.profileId)
+            }
+        }
+        stampsBackend?.let { backend ->
             val stamps = ReaderStampsController(
                 scope = lifecycleScope,
-                backend = LRRStampsBackend(archive.arcid, archive.serverProfileId),
+                backend = backend,
                 onDataChanged = { onStampsDataChanged() },
             )
             mStamps = stamps
@@ -499,9 +570,18 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
 
         // Reading-session seam: consumed by the continue-reading shortcut and
         // the daily reading aggregate. DIR-mode reading (no Archive) stays
-        // untracked — without start(), stop() in onStop is a no-op.
+        // untracked — without start(), stop() in onStop is a no-op. A tank
+        // session tracks as ONE logical archive keyed by the tank id (global
+        // pages; completion = crossing the tank's end) — tank-only
+        // bookkeeping, and the shortcut/widget deep link resumes the
+        // composite session via MainActivity's isTankoubonId branch.
         mArchive?.let {
             mReadingSession.start(it.arcid, it.serverProfileId, startPage, it.pagecount)
+        } ?: mTankSeed?.let { seed ->
+            mReadingSession.start(
+                seed.tankId, seed.profileId, startPage,
+                (mGalleryProvider?.size() ?: 0).coerceAtLeast(0),
+            )
         }
 
         // Keep screen on

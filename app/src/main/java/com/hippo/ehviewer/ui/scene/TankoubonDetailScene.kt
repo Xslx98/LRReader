@@ -23,7 +23,10 @@ import com.hippo.ehviewer.client.LRRCacheKeyFactory
 import com.hippo.ehviewer.client.TankCoverCacheStamp
 import com.hippo.ehviewer.gallery.ReadingContext
 import com.hippo.ehviewer.gallery.ReadingContextStore
+import com.hippo.ehviewer.gallery.TankMemberSeed
 import com.hippo.ehviewer.gallery.TankPageMath
+import com.hippo.ehviewer.gallery.TankSeedStore
+import com.hippo.ehviewer.gallery.TankSessionSeed
 import com.hippo.ehviewer.ui.GalleryOpenHelper
 import com.hippo.ehviewer.ui.scene.TankoubonDetailViewModel.TankDetailUiEvent
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
@@ -157,7 +160,7 @@ class TankoubonDetailScene : BaseScene() {
 
         mBtnReadStart?.setOnClickListener {
             if (viewModel.members.value.isNotEmpty()) {
-                openMemberAtPage(memberIndex = 0, page0 = 0)
+                openTankSession(startGlobalPage = 0)
             }
         }
 
@@ -332,36 +335,44 @@ class TankoubonDetailScene : BaseScene() {
 
         val btn = mBtnReadContinue ?: return
         if (p > 1 && locate != null) {
-            val (memberIndex, page0) = locate
             btn.visibility = View.VISIBLE
             btn.text = getString(R.string.tank_continue_reading, p)
-            btn.setOnClickListener { openMemberAtPage(memberIndex, page0) }
+            // Whole-tank session at the server's GLOBAL progress (0-indexed).
+            btn.setOnClickListener { openTankSession(startGlobalPage = p - 1) }
         } else {
             btn.visibility = View.GONE
         }
     }
 
     /**
-     * Open the reader on member [memberIndex] at local 0-indexed [page0].
-     * Reuses [GalleryOpenHelper] so local/stream routing and warmup stay
-     * identical to the regular detail-page "Read" button.
+     * Launch the WHOLE-TANK composite reader session (spec
+     * 2026-08-05-tank-seamless-reading): every member rides one continuous
+     * page space, so both read entries land in the same session kind.
+     * [startGlobalPage] -1 = provider-restored progress.
      */
-    private fun openMemberAtPage(memberIndex: Int, page0: Int) {
-        val archive = viewModel.members.value.getOrNull(memberIndex) ?: return
+    private fun openTankSession(startGlobalPage: Int) {
         val ctx = ehContext ?: return
-        publishTankContext(archive)
-        viewLifecycleOwner.lifecycleScope.launch(
-            ServiceRegistry.coroutineModule.exceptionHandler
-        ) {
-            val intent = withContext(Dispatchers.IO) {
-                GalleryOpenHelper.buildReadIntent(ctx, archive, startPage = page0)
-            }
-            startActivity(intent)
-        }
+        val seed = buildSessionSeed() ?: return
+        TankSeedStore.publish(seed)
+        startActivity(GalleryOpenHelper.buildTankReadIntent(ctx, seed, startGlobalPage))
+    }
+
+    private fun buildSessionSeed(): TankSessionSeed? {
+        val members = viewModel.members.value
+        if (members.isEmpty()) return null
+        return TankSessionSeed(
+            tankId = viewModel.tankId,
+            tankName = viewModel.tankName.value,
+            profileId = viewModel.profileId,
+            members = members.map { TankMemberSeed(it.arcid, it.title, it.pagecount) },
+        )
     }
 
     private fun openMemberDetail(archive: Archive) {
         publishTankContext(archive)
+        // Deposit the full seed so the member detail's READ entries can
+        // rebuild the whole-tank session (TankSessionRouter).
+        buildSessionSeed()?.let { TankSeedStore.publish(it) }
         val args = Bundle().apply {
             putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_ARCHIVE)
             putParcelable(GalleryDetailScene.KEY_ARCHIVE, archive)

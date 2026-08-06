@@ -16,6 +16,7 @@ import com.hippo.ehviewer.client.LRRUrl
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.dao.DownloadInfo
+import com.hippo.ehviewer.gallery.TankSessionRouter
 import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.ui.CommonOperations
 import com.hippo.ehviewer.ui.GalleryOpenHelper
@@ -125,6 +126,14 @@ internal class DetailActionHandler(
             v.id == R.id.read -> {
                 val archive = viewModel.getEffectiveArchive()
                 if (archive != null) {
+                    // A member reached through a tank detail flow reads in
+                    // the whole-tank composite session; everything else
+                    // stays a standalone per-archive session.
+                    val tankIntent = TankSessionRouter.tankIntentFor(activity, archive.arcid)
+                    if (tankIntent != null) {
+                        scene.startActivity(tankIntent)
+                        return
+                    }
                     lifecycleOwner.lifecycleScope.launch {
                         try {
                             val intent = withContext(Dispatchers.IO) {
