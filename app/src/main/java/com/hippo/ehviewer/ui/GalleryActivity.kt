@@ -92,7 +92,13 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         const val ACTION_DIR = "dir"
         const val ACTION_LRR = "lrr"
 
+        /** Whole-tankoubon composite session (see TankGalleryProvider). */
+        const val ACTION_TANK = "tank"
+
         const val KEY_ACTION = "action"
+
+        /** Parcelable [com.hippo.ehviewer.gallery.TankSessionSeed] for [ACTION_TANK]. */
+        const val KEY_TANK_SEED = "tank_seed"
         const val KEY_FILENAME = "filename"
         const val KEY_ARCHIVE = "archive"
 
