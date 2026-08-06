@@ -2,7 +2,11 @@ package com.hippo.ehviewer.gallery
 
 import android.content.Context
 import android.content.Intent
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.ui.GalleryOpenHelper
+import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import java.io.IOException
 
 /**
  * Latest full [TankSessionSeed] per published tank context. The
@@ -61,5 +65,28 @@ object TankSessionRouter {
             if (savedMember == memberIndex) -1 else memberStart
         }
         return GalleryOpenHelper.buildTankReadIntent(context, seed, startGlobalPage)
+    }
+
+    /**
+     * Rebuild a composite session from scratch for a persisted tank row
+     * (history resume): fetch the tank's current membership from its source
+     * server, deposit the fresh seed, and return the session intent (the
+     * provider restores the saved global progress). Throws on fetch failure
+     * — resuming a tank without server truth would read a stale member set.
+     */
+    @Throws(IOException::class)
+    suspend fun buildResumeIntent(context: Context, tankId: String, profileId: Long): Intent {
+        val url = resolveSourceBaseUrl(profileId, ServiceRegistry.dataModule.profileLookupCache)
+        val full = LRRTankoubonApi.getTankoubonFull(
+            ServiceRegistry.networkModule.okHttpClient, url, tankId
+        ).result
+        val byId = full.fullData.associateBy { it.arcid }
+        val members = full.archives.mapNotNull { id ->
+            byId[id]?.let { TankMemberSeed(it.arcid, it.title, it.pagecount) }
+        }
+        if (members.isEmpty()) throw IOException("tank $tankId has no members")
+        val seed = TankSessionSeed(tankId, full.name, profileId, members)
+        TankSeedStore.publish(seed)
+        return GalleryOpenHelper.buildTankReadIntent(context, seed, startGlobalPage = -1)
     }
 }

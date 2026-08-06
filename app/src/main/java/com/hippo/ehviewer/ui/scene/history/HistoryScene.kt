@@ -53,6 +53,7 @@ import com.hippo.ehviewer.client.LRRCacheKeyFactory
 import com.hippo.ehviewer.client.LRRUtils
 import com.hippo.ehviewer.gallery.ReadingContext
 import com.hippo.ehviewer.gallery.ReadingContextStore
+import com.hippo.ehviewer.gallery.TankSessionRouter
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.ui.scene.BatchBarAnimator
 import com.hippo.ehviewer.ui.scene.ListMultiSelectHelper
@@ -70,8 +71,13 @@ import com.hippo.widget.LoadImageView
 import com.hippo.widget.recyclerview.AutoStaggeredGridLayoutManager
 import com.hippo.lib.yorozuya.AssertUtils
 import com.hippo.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.client.api.friendlyError
+import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.domain.Archive
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class HistoryScene : ToolbarScene(),
     EasyRecyclerView.OnItemClickListener,
@@ -340,10 +346,22 @@ class HistoryScene : ToolbarScene(),
         if (position >= list.size) return false
         val archive = list[position]
 
+        // A tank history row (composite-session bookkeeping) resumes the
+        // whole-tank session directly — it has no per-archive detail page.
+        if (isTankoubonId(archive.arcid)) {
+            resumeTankSession(archive)
+            return true
+        }
+
         ReadingContextStore.publish(
             ReadingContext.LocalList(
                 kind = ReadingContext.LocalList.Kind.HISTORY,
-                forwardArchives = list.subList(position, minOf(list.size, position + ReadingContextStore.LOCAL_WINDOW)).toList(),
+                forwardArchives = list
+                    .subList(position, minOf(list.size, position + ReadingContextStore.LOCAL_WINDOW))
+                    // Tank rows are never a standalone reading target — a
+                    // "next archive" offer with a TANK_ id would break the
+                    // per-archive reader it launches.
+                    .filterNot { isTankoubonId(it.arcid) },
                 anchorArcid = archive.arcid,
             )
         )
@@ -359,6 +377,27 @@ class HistoryScene : ToolbarScene(),
         }
         startScene(announcer)
         return true
+    }
+
+    /**
+     * Rebuild and launch the whole-tank composite session for a tank
+     * history row: membership is re-fetched from the row's source server
+     * (a stale snapshot could resume into removed members), the provider
+     * restores the saved global progress. Failure surfaces a tip.
+     */
+    private fun resumeTankSession(archive: Archive) {
+        val ctx = ehContext ?: return
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val intent = withContext(Dispatchers.IO) {
+                    TankSessionRouter.buildResumeIntent(ctx, archive.arcid, archive.serverProfileId)
+                }
+                startActivity(intent)
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                showTip(friendlyError(ctx, e), LENGTH_SHORT)
+            }
+        }
     }
 
     override fun onSceneResult(requestCode: Int, resultCode: Int, data: Bundle?) {
