@@ -94,6 +94,18 @@ data class ArchiveLocalState(
     @ColumnInfo(name = "DOWNLOAD_ROOT_URI")
     val downloadRootUri: String? = null,
 
+    /**
+     * Grouping tag for tank downloads (Track 2): non-null when this
+     * download row belongs to a downloaded tankoubon — the downloads list
+     * hides tagged rows and renders ONE aggregated card per
+     * [TankDownloadGroup]. Pure metadata: the row itself stays an
+     * ordinary download (worker / resume / verify untouched). NULL =
+     * standalone download. Cleared when the tank is dissolved app-side or
+     * the member is removed from the tank.
+     */
+    @ColumnInfo(name = "DOWNLOAD_TANK_ID")
+    val downloadTankId: String? = null,
+
     // ── History subsystem ──────────────────────────────────────
     /** Non-null iff the archive has reading history. */
     @ColumnInfo(name = "HISTORY_TIME")
