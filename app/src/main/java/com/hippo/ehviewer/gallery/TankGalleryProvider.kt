@@ -8,7 +8,9 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.lib.glgallery.GalleryProvider
 import com.hippo.unifile.UniFile
+import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.client.api.probeSourceHealthy
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import java.io.IOException
 import java.util.Locale
@@ -213,6 +215,10 @@ class TankGalleryProvider(
                 serveGlobalPage(index)
             } catch (ignored: TankPageCancelledException) {
                 cancelled = true
+            } catch (ignored: MemberDeletedException) {
+                // The remap's notifyDataChanged re-drives layout; whatever
+                // page now occupies this slot is re-requested by the view.
+                cancelled = true
             } catch (ce: CancellationException) {
                 throw ce
             } catch (e: Exception) {
@@ -332,7 +338,15 @@ class TankGalleryProvider(
                 ).also { slot.source = it }
             }
             if (!slot.counted) {
-                val realCount = source.ensurePageCount()
+                val realCount = try {
+                    source.ensurePageCount()
+                } catch (e: LRRHttpException) {
+                    if (isConfirmedDeleted(e)) {
+                        dropMember(slot)
+                        throw MemberDeletedException(slot.seed.arcid)
+                    }
+                    throw e
+                }
                 val index = indexOfSlot(slot)
                 if (index >= 0) {
                     val oldTotal = pageMap.total
@@ -348,6 +362,45 @@ class TankGalleryProvider(
             return source
         }
     }
+
+    /**
+     * A member fetch answering 400/404 is only "deleted" when the server
+     * itself is demonstrably alive — a reverse proxy fronting a dead
+     * backend answers 400/502 too (same disambiguation as the detail
+     * page's [probeSourceHealthy] flow). Unconfirmed → treated as a plain
+     * failure (inline error page + retry), never a silent skip.
+     */
+    private suspend fun isConfirmedDeleted(e: LRRHttpException): Boolean {
+        if (e.code != HTTP_BAD_REQUEST && e.code != HTTP_NOT_FOUND) return false
+        val url = serverUrlDeferred.await() ?: return false
+        return probeSourceHealthy(ServiceRegistry.networkModule.okHttpClient, url)
+    }
+
+    /**
+     * Remove a confirmed-deleted member: its pages leave the global space,
+     * later members shift down, the GL layer relays out. Requests in
+     * flight against old indices resolve against the fresh map (their
+     * serve loop re-locates) or fall out of range harmlessly.
+     */
+    private fun dropMember(slot: MemberSlot) {
+        val oldTotal: Int
+        synchronized(slotsLock) {
+            val index = slots.indexOf(slot)
+            if (index < 0) return
+            oldTotal = pageMap.total
+            pageMap.removeMember(index)
+            slots.removeAt(index)
+        }
+        slot.source?.cancelAll()
+        if (BuildConfig.DEBUG) {
+            Log.w(TAG, "member ${slot.seed.arcid} confirmed deleted; remapped tank ${seed.tankId}")
+        }
+        onMapRemapped(oldTotal)
+    }
+
+    /** Quiet-skip marker: the requested page's member vanished; the remap re-drives layout. */
+    private class MemberDeletedException(arcid: String) :
+        IOException("tank member deleted: $arcid")
 
     /**
      * After any page-map remap: drop every cached image at or beyond the
@@ -416,5 +469,8 @@ class TankGalleryProvider(
         private const val PREFETCH_BACKWARD = 2
 
         private const val PREFETCH_PARALLELISM = 2
+
+        private const val HTTP_BAD_REQUEST = 400
+        private const val HTTP_NOT_FOUND = 404
     }
 }
