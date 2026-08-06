@@ -25,6 +25,7 @@ import com.hippo.ehviewer.gallery.ReadingContext
 import com.hippo.ehviewer.gallery.ReadingContextStore
 import com.hippo.ehviewer.gallery.TankMemberSeed
 import com.hippo.ehviewer.gallery.TankPageMath
+import com.hippo.ehviewer.gallery.TankSeedStore
 import com.hippo.ehviewer.gallery.TankSessionSeed
 import com.hippo.ehviewer.ui.GalleryOpenHelper
 import com.hippo.ehviewer.ui.scene.TankoubonDetailViewModel.TankDetailUiEvent
@@ -351,19 +352,27 @@ class TankoubonDetailScene : BaseScene() {
      */
     private fun openTankSession(startGlobalPage: Int) {
         val ctx = ehContext ?: return
+        val seed = buildSessionSeed() ?: return
+        TankSeedStore.publish(seed)
+        startActivity(GalleryOpenHelper.buildTankReadIntent(ctx, seed, startGlobalPage))
+    }
+
+    private fun buildSessionSeed(): TankSessionSeed? {
         val members = viewModel.members.value
-        if (members.isEmpty()) return
-        val seed = TankSessionSeed(
+        if (members.isEmpty()) return null
+        return TankSessionSeed(
             tankId = viewModel.tankId,
             tankName = viewModel.tankName.value,
             profileId = viewModel.profileId,
             members = members.map { TankMemberSeed(it.arcid, it.title, it.pagecount) },
         )
-        startActivity(GalleryOpenHelper.buildTankReadIntent(ctx, seed, startGlobalPage))
     }
 
     private fun openMemberDetail(archive: Archive) {
         publishTankContext(archive)
+        // Deposit the full seed so the member detail's READ entries can
+        // rebuild the whole-tank session (TankSessionRouter).
+        buildSessionSeed()?.let { TankSeedStore.publish(it) }
         val args = Bundle().apply {
             putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_ARCHIVE)
             putParcelable(GalleryDetailScene.KEY_ARCHIVE, archive)
