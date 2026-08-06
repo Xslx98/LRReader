@@ -27,7 +27,9 @@ An Android client for [LANraragi](https://github.com/Difegue/LANraragi), built u
 | 📖 **高性能阅读 / High-Performance Reader** | GL 渲染管线 + 按需解码 + 智能预加载 / GL rendering pipeline, on-demand decoding and smart preloading |
 | ⏭️ **跨档案续读 / Reader Continuation** | 读到末页自动衔接下一本，无需回列表 / End-of-book panel jumps straight to the next archive |
 | ▶️ **继续阅读 / Continue Reading** | 桌面快捷方式一键回到上次阅读的档案与页码 / Launcher shortcut back to your last archive and page |
-| 📚 **合订本 / Tankoubon** | 浏览与管理合订本：成员排序、全局阅读进度、成员间链式续读 / Browse & manage tankoubons: member ordering, global progress, chained reading (LANraragi 0.9.8+) |
+| 📚 **合订本 / Tankoubon** | 浏览与管理合订本：成员排序、全局阅读进度、封面管理 / Browse & manage tankoubons: member ordering, global progress, cover management (LANraragi 0.9.8+) |
+| 📕 **整本无缝阅读 / Seamless Tank Reading** | 合订本作为一本书阅读：全局页码、双向无缝跨成员翻页、阅读位置续读 / Read a whole tankoubon as one book: global page numbering, seamless page turns across members in both directions, resumable position (LANraragi 0.9.8+) |
+| 📦 **合订本下载 / Tank Download** | 一键下载整个合订本，下载列表聚合为单卡片，点击即离线整本阅读；已下载成员自动并入零重复下载 / One-tap whole-tank download aggregated into a single card that opens the offline whole-tank session; already-downloaded members merge in with zero re-download (LANraragi 0.9.8+) |
 | 🔖 **页面标注 / Page Stamps** | 阅读器内查看、放置、编辑页面标注 / View, place and edit per-page stamps in the reader (LANraragi 0.9.8+) |
 | 🔄 **进度同步 / Progress Sync** | 阅读进度与服务器双向同步，跨设备续读 / Two-way reading-progress sync with the server |
 | 📊 **阅读统计 / Reading Stats** | 阅读量、分服务器统计与标签偏好分析 / Reading totals, per-server breakdown and tag-preference analysis |
@@ -108,7 +110,7 @@ RELEASE_KEY_PASSWORD=<your-key-password>
 | **网络 / Network** | OkHttp 4.12 + Kotlin Coroutines |
 | **API 序列化 / Serialization** | kotlinx-serialization (all JSON) |
 | **列表分页 / Paging** | Jetpack Paging 3 |
-| **数据库 / Database** | Room 2.8 + KSP (schema v29, 多服务器复合主键 / composite key for multi-server state) |
+| **数据库 / Database** | Room 2.8 + KSP (schema v30, 多服务器复合主键 / composite key for multi-server state) |
 | **图像解码 / Image Decoding** | Android ImageDecoder（按目标尺寸采样）+ 轻量 JNI 辅助 / Platform ImageDecoder with target-size sampling + minimal JNI helpers |
 | **安全 / Security** | EncryptedSharedPreferences (API Key, 模式锁 / pattern lock) |
 | **构建 / Build** | Gradle + R8/ProGuard |
@@ -121,7 +123,7 @@ LRReader/
 ├── app/src/main/
 │   ├── java/
 │   │   ├── com/hippo/ehviewer/         # Business code (Kotlin)
-│   │   │   ├── dao/                    # Room Database (AppDatabase.kt, schema v29)
+│   │   │   ├── dao/                    # Room Database (AppDatabase.kt, schema v30)
 │   │   │   ├── download/               # Download subsystem (DownloadManager facade)
 │   │   │   ├── settings/               # Modular settings (Privacy, Network, Reading, …)
 │   │   │   ├── stats/                  # Reading statistics + daily aggregate
