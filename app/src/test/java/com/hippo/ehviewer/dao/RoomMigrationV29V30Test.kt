@@ -6,9 +6,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -16,14 +18,15 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Migration path test for v28 -> v29 (MIGRATION_28_29): introduce the
- * DAILY_READING_AGGREGATE table (composite PK (EPOCH_DAY, SERVER_PROFILE_ID)
- * + per-profile index), following the established two-check harness
- * (isolated SQL + file-backed real upgrade with Room validateMigration).
+ * Migration path test for v29 -> v30 (MIGRATION_29_30): the
+ * `DOWNLOAD_TANK_ID` grouping tag on ARCHIVE_LOCAL_STATE plus the
+ * `TANK_DOWNLOAD_GROUP` table, following the established two-check
+ * harness (isolated SQL + file-backed real upgrade with Room
+ * validateMigration).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(application = android.app.Application::class)
-class RoomMigrationV28V29Test {
+class RoomMigrationV29V30Test {
 
     private lateinit var db: SupportSQLiteDatabase
 
@@ -32,63 +35,70 @@ class RoomMigrationV28V29Test {
         if (::db.isInitialized && db.isOpen) db.close()
     }
 
-    private fun primaryKeyColumns(table: String): List<String> {
-        val cols = sortedMapOf<Int, String>()
-        db.query("PRAGMA table_info(`$table`)").use { c ->
-            val nameIdx = c.getColumnIndexOrThrow("name")
-            val pkIdx = c.getColumnIndexOrThrow("pk")
-            while (c.moveToNext()) {
-                val pkPos = c.getInt(pkIdx)
-                if (pkPos > 0) cols[pkPos] = c.getString(nameIdx)
-            }
-        }
-        return cols.values.toList()
-    }
-
     @Test
-    fun migration_createsDailyAggregate_withCompositePkAndIndex() {
+    fun migration_addsTankColumn_andGroupTable() {
         val config = SupportSQLiteOpenHelper.Configuration.builder(
             ApplicationProvider.getApplicationContext()
         )
             .name(null)
-            .callback(object : SupportSQLiteOpenHelper.Callback(28) {
-                override fun onCreate(db: SupportSQLiteDatabase) = Unit
+            .callback(object : SupportSQLiteOpenHelper.Callback(29) {
+                override fun onCreate(db: SupportSQLiteDatabase) {
+                    // Only the mutated table matters for the isolated check.
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `ARCHIVE_LOCAL_STATE` (" +
+                            "`ARCID` TEXT NOT NULL, `SERVER_PROFILE_ID` INTEGER NOT NULL DEFAULT 0, " +
+                            "`ARCHIVE_JSON` TEXT NOT NULL, `DOWNLOAD_STATE` INTEGER, " +
+                            "`DOWNLOAD_LEGACY` INTEGER NOT NULL DEFAULT 0, `DOWNLOAD_TIME` INTEGER, " +
+                            "`DOWNLOAD_LABEL` TEXT, `DOWNLOAD_ARCHIVE_URI` TEXT, `DOWNLOAD_ROOT_URI` TEXT, " +
+                            "`HISTORY_TIME` INTEGER, `HISTORY_MODE` INTEGER NOT NULL DEFAULT 0, " +
+                            "`HISTORY_SCROLL_FRACTION` REAL, `FAVORITE_TIME` INTEGER, " +
+                            "PRIMARY KEY(`ARCID`, `SERVER_PROFILE_ID`))"
+                    )
+                    db.execSQL(
+                        "INSERT INTO ARCHIVE_LOCAL_STATE (ARCID, SERVER_PROFILE_ID, ARCHIVE_JSON, DOWNLOAD_STATE) " +
+                            "VALUES ('a', 1, '{}', 2)"
+                    )
+                }
+
                 override fun onUpgrade(db: SupportSQLiteDatabase, old: Int, new: Int) = Unit
             })
             .build()
         db = FrameworkSQLiteOpenHelperFactory().create(config).writableDatabase
 
-        AppDatabase.MIGRATION_28_29.migrate(db)
+        AppDatabase.MIGRATION_29_30.migrate(db)
 
-        assertEquals(listOf("EPOCH_DAY", "SERVER_PROFILE_ID"), primaryKeyColumns("DAILY_READING_AGGREGATE"))
-
-        db.execSQL("INSERT INTO DAILY_READING_AGGREGATE (EPOCH_DAY, SERVER_PROFILE_ID, PAGES_READ, COMPLETED) VALUES (100, 1, 5, 0)")
-        db.execSQL("INSERT INTO DAILY_READING_AGGREGATE (EPOCH_DAY, SERVER_PROFILE_ID, PAGES_READ, COMPLETED) VALUES (100, 2, 3, 1)")
-        db.query("SELECT COUNT(*) FROM DAILY_READING_AGGREGATE WHERE EPOCH_DAY=100").use {
+        // Existing rows survive with a NULL tag.
+        db.query("SELECT DOWNLOAD_TANK_ID FROM ARCHIVE_LOCAL_STATE WHERE ARCID='a'").use {
             assertTrue(it.moveToFirst())
-            assertEquals(2, it.getInt(0))
+            assertNull(it.getString(0).takeIf { _ -> !it.isNull(0) })
         }
-
-        val idx = mutableSetOf<String>()
-        db.query("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='DAILY_READING_AGGREGATE'").use {
-            while (it.moveToNext()) idx.add(it.getString(0))
+        // Tag is writable.
+        db.execSQL("UPDATE ARCHIVE_LOCAL_STATE SET DOWNLOAD_TANK_ID='TANK_1688000000' WHERE ARCID='a'")
+        db.query("SELECT DOWNLOAD_TANK_ID FROM ARCHIVE_LOCAL_STATE WHERE ARCID='a'").use {
+            assertTrue(it.moveToFirst())
+            assertEquals("TANK_1688000000", it.getString(0))
         }
-        assertTrue(
-            "missing per-profile index",
-            "index_DAILY_READING_AGGREGATE_SERVER_PROFILE_ID_EPOCH_DAY" in idx
+        // Group table exists with TANK_ID PK.
+        db.execSQL(
+            "INSERT INTO TANK_DOWNLOAD_GROUP (TANK_ID, SERVER_PROFILE_ID, NAME, MEMBER_IDS_JSON, CREATED_TIME) " +
+                "VALUES ('TANK_1688000000', 1, 'Tank', '[\"a\"]', 5)"
         )
+        db.query("SELECT NAME FROM TANK_DOWNLOAD_GROUP WHERE TANK_ID='TANK_1688000000'").use {
+            assertTrue(it.moveToFirst())
+            assertEquals("Tank", it.getString(0))
+        }
     }
 
     @Test
-    fun room_opensCleanly_afterRealUpgrade_v28_to_v29() {
+    fun room_opensCleanly_afterRealUpgrade_v29_to_v30() {
         val ctx = ApplicationProvider.getApplicationContext<Context>()
-        val name = "db_spike_v28.db"
+        val name = "db_spike_v29.db"
         ctx.getDatabasePath(name).also { it.parentFile?.mkdirs(); it.delete() }
 
-        // Raw v28 DB FILE with ALL SIX v28 tables (Room validates every table).
-        val v28Helper = FrameworkSQLiteOpenHelperFactory().create(
+        // Raw v29 DB FILE with ALL SEVEN v29 tables (Room validates every table).
+        val v29Helper = FrameworkSQLiteOpenHelperFactory().create(
             SupportSQLiteOpenHelper.Configuration.builder(ctx).name(name)
-                .callback(object : SupportSQLiteOpenHelper.Callback(28) {
+                .callback(object : SupportSQLiteOpenHelper.Callback(29) {
                     override fun onCreate(db: SupportSQLiteDatabase) {
                         db.execSQL("CREATE TABLE IF NOT EXISTS `DOWNLOAD_LABELS` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT, `LABEL` TEXT, `TIME` INTEGER NOT NULL)")
                         db.execSQL("CREATE INDEX IF NOT EXISTS `index_DOWNLOAD_LABELS_TIME` ON `DOWNLOAD_LABELS` (`TIME`)")
@@ -118,26 +128,47 @@ class RoomMigrationV28V29Test {
                                 "PRIMARY KEY(`QUERY`, `SERVER_PROFILE_ID`))"
                         )
                         db.execSQL("CREATE INDEX IF NOT EXISTS `index_SEARCH_HISTORY_SERVER_PROFILE_ID_LAST_USED` ON `SEARCH_HISTORY` (`SERVER_PROFILE_ID`, `LAST_USED`)")
+                        db.execSQL(
+                            "CREATE TABLE IF NOT EXISTS `DAILY_READING_AGGREGATE` (" +
+                                "`EPOCH_DAY` INTEGER NOT NULL, `SERVER_PROFILE_ID` INTEGER NOT NULL, " +
+                                "`PAGES_READ` INTEGER NOT NULL, `COMPLETED` INTEGER NOT NULL, " +
+                                "PRIMARY KEY(`EPOCH_DAY`, `SERVER_PROFILE_ID`))"
+                        )
+                        db.execSQL(
+                            "CREATE INDEX IF NOT EXISTS " +
+                                "`index_DAILY_READING_AGGREGATE_SERVER_PROFILE_ID_EPOCH_DAY` " +
+                                "ON `DAILY_READING_AGGREGATE` (`SERVER_PROFILE_ID`, `EPOCH_DAY`)"
+                        )
                     }
 
                     override fun onUpgrade(db: SupportSQLiteDatabase, old: Int, new: Int) = Unit
                 }).build()
         )
-        v28Helper.writableDatabase
-        v28Helper.close()
+        v29Helper.writableDatabase
+        v29Helper.close()
 
         val room = Room.databaseBuilder(ctx, AppDatabase::class.java, name)
-            .addMigrations(AppDatabase.MIGRATION_28_29, AppDatabase.MIGRATION_29_30)
+            .addMigrations(AppDatabase.MIGRATION_29_30)
             .build()
         try {
             room.openHelper.writableDatabase
 
             runBlocking {
-                room.statsDao().insertDailyAggregateIfAbsent(DailyReadingAggregate(100L, 5L, 0, 0))
-                room.statsDao().accumulateDailyAggregate(100L, 5L, pages = 7, completed = 1)
-                val rows = room.statsDao().getDailyAggregatesForProfile(5L)
-                assertEquals(7L, rows.single().pagesRead)
-                assertEquals(1, rows.single().completed)
+                val dao = room.tankDownloadGroupDao()
+                dao.upsert(
+                    TankDownloadGroup(
+                        tankId = "TANK_1688000000",
+                        serverProfileId = 7L,
+                        name = "Tank",
+                        memberIdsJson = """["a","b"]""",
+                        createdTime = 42L,
+                    )
+                )
+                val groups = dao.observeAll().first()
+                assertEquals(1, groups.size)
+                assertEquals("Tank", groups.single().name)
+                dao.delete("TANK_1688000000")
+                assertNull(dao.getById("TANK_1688000000"))
             }
         } finally {
             room.close()
