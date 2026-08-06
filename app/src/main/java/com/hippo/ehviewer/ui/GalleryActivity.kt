@@ -63,6 +63,8 @@ import com.hippo.ehviewer.ui.gallery.GalleryStampOps
 import com.hippo.ehviewer.ui.gallery.LRRStampsBackend
 import com.hippo.ehviewer.ui.gallery.ReaderContinuationController
 import com.hippo.ehviewer.ui.gallery.ReaderStampsController
+import com.hippo.ehviewer.ui.gallery.StampsBackend
+import com.hippo.ehviewer.ui.gallery.TankStampsBackend
 import com.hippo.ehviewer.ui.gallery.TankoubonProgressSync
 import com.hippo.ehviewer.ui.scene.download.DownloadsScene
 import com.hippo.ehviewer.widget.GalleryGuideView
@@ -370,15 +372,24 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         // tank progress.
         mArchive?.let { mTankProgress = TankoubonProgressSync(it.arcid) }
 
-        // Stamp overlay read path. Requires mArchive (server-backed archive
-        // identity) — the legacy local-file DIR path without an archive gets
-        // no controller and the overlay stays gone. mArchive is final here
-        // (see the continuation-block comment above).
+        // Stamp overlay read path. Requires a server-backed identity — a
+        // per-archive session's mArchive, or a tank session's provider
+        // (global pages routed per member by TankStampsBackend). The legacy
+        // local-file DIR path without an archive gets no controller and the
+        // overlay stays gone. mArchive is final here (see the
+        // continuation-block comment above).
         mStampOverlay = findViewById(R.id.stamp_overlay)
-        mArchive?.let { archive ->
+        val stampsBackend: StampsBackend? = mArchive?.let { archive ->
+            LRRStampsBackend(archive.arcid, archive.serverProfileId)
+        } ?: mTankSeed?.let { seed ->
+            (mGalleryProvider as? TankGalleryProvider)?.let { provider ->
+                TankStampsBackend(provider, seed.profileId)
+            }
+        }
+        stampsBackend?.let { backend ->
             val stamps = ReaderStampsController(
                 scope = lifecycleScope,
-                backend = LRRStampsBackend(archive.arcid, archive.serverProfileId),
+                backend = backend,
                 onDataChanged = { onStampsDataChanged() },
             )
             mStamps = stamps
