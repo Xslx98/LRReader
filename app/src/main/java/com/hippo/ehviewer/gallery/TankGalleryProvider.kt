@@ -121,7 +121,7 @@ class TankGalleryProvider(
         userNavigated = false
         startPageBaseline = startPageValue
 
-        if (seed.tankId.isEmpty() || seed.members.isEmpty() || pageMap.total <= 0) {
+        if (seed.tankId.isEmpty() || seed.members.isEmpty()) {
             errorState = true
             errorMessage = GetText.getString(R.string.error_empty)
             notifyDataChanged()
@@ -156,10 +156,25 @@ class TankGalleryProvider(
         // in the background and corrects the map if needed.
         notifyDataChanged()
         scope.launch {
-            val entry = (if (initialPageOverride >= 0) initialPageOverride else startPageValue)
-                .coerceIn(0, pageMap.total - 1)
-            pageMap.locate(entry)?.let { (member, _) ->
-                runCatching { countedSourceFor(member) }
+            if (pageMap.total <= 0) {
+                // Unknown metadata pagecounts: seeds built from download
+                // rows carry a LOSSY archive_json whose pagecount is 0
+                // (EntityMapper's DownloadInfo.toArchive contract). Count
+                // every member's real page list up front — local dirs
+                // resolve instantly, each correction remaps and re-notifies,
+                // and the reader grows out of its empty state.
+                var index = 0
+                while (!stopped) {
+                    val slot = slotAt(index) ?: break
+                    runCatching { countedSourceFor(indexOfSlot(slot).coerceAtLeast(0)) }
+                    index++
+                }
+            } else {
+                val entry = (if (initialPageOverride >= 0) initialPageOverride else startPageValue)
+                    .coerceIn(0, pageMap.total - 1)
+                pageMap.locate(entry)?.let { (member, _) ->
+                    runCatching { countedSourceFor(member) }
+                }
             }
         }
     }
