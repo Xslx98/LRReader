@@ -1,0 +1,3 @@
+Tankoubon overhaul:
+- Seamless whole-tank reading: a tankoubon opens as ONE book — global page numbers, page turns cross members in both directions with zero interruption, position resumes from history, shortcut and widget
+- Whole-tank download: one tap downloads every member, shown as a single card in the downloads list; tap the card to read the whole tank offline. Already-downloaded members merge in without re-downloading
