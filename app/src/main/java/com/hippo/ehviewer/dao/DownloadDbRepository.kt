@@ -8,6 +8,8 @@ import com.hippo.ehviewer.mapper.toDownloadInfoView
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
@@ -245,6 +247,81 @@ class DownloadDbRepository(
             downloadArchiveUri = downloadInfo.archiveUri,
             downloadRootUri = downloadInfo.downloadRootUri,
         )
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // TANK DOWNLOAD GROUPS (Track 2)
+    // ═══════════════════════════════════════════════════════════
+
+    private val tankGroupDao: TankDownloadGroupDao get() = database.tankDownloadGroupDao()
+
+    /** Downloads-list card source: every downloaded-tank group, newest first. */
+    fun observeTankGroups(): Flow<List<TankDownloadGroup>> = tankGroupDao.observeAll()
+
+    suspend fun getTankGroup(tankId: String): TankDownloadGroup? = tankGroupDao.getById(tankId)
+
+    /**
+     * Create/refresh the group row for a downloaded tank and tag every
+     * member's download row. [memberIdsInOrder] is the tank order at
+     * download time (drives the offline session rebuild).
+     */
+    suspend fun putTankGroup(
+        tankId: String,
+        serverProfileId: Long,
+        name: String,
+        memberIdsInOrder: List<String>,
+    ) {
+        tankGroupDao.upsert(
+            TankDownloadGroup(
+                tankId = tankId,
+                serverProfileId = serverProfileId,
+                name = name,
+                memberIdsJson = ArchiveLocalStateJson.encodeToString(
+                    ListSerializer(String.serializer()), memberIdsInOrder
+                ),
+                createdTime = System.currentTimeMillis(),
+            )
+        )
+        for (arcid in memberIdsInOrder) {
+            archiveLocalStateDao.setDownloadTankId(arcid, tankId)
+        }
+    }
+
+    /** Ordered member ids stored on the group row (empty when the row is gone). */
+    suspend fun getTankGroupMemberIds(tankId: String): List<String> {
+        val group = tankGroupDao.getById(tankId) ?: return emptyList()
+        return runCatching {
+            ArchiveLocalStateJson.decodeFromString(
+                ListSerializer(String.serializer()), group.memberIdsJson
+            )
+        }.getOrDefault(emptyList())
+    }
+
+    /**
+     * Member archive snapshots for a tank group in STORED TANK ORDER
+     * (pagecounts ride archive_json — the offline whole-tank session
+     * seed is built from these).
+     */
+    suspend fun getTankMemberArchives(tankId: String): List<Archive> {
+        val order = getTankGroupMemberIds(tankId)
+        if (order.isEmpty()) return emptyList()
+        val byId = archiveLocalStateDao.getDownloadsByTank(tankId)
+            .associate { it.arcid to it.toArchive() }
+        return order.mapNotNull { byId[it] }
+    }
+
+    /** Tag one member row into (or out of, with null) a tank group. */
+    suspend fun setDownloadTankId(arcid: String, tankId: String?) {
+        archiveLocalStateDao.setDownloadTankId(arcid, tankId)
+    }
+
+    /**
+     * Dissolve a tank group: drop the group row and untag every member —
+     * the members reappear as standalone downloads (files untouched).
+     */
+    suspend fun dissolveTankGroup(tankId: String) {
+        archiveLocalStateDao.clearDownloadTankId(tankId)
+        tankGroupDao.delete(tankId)
     }
 
     // ═══════════════════════════════════════════════════════════

@@ -189,6 +189,7 @@ fun ArchiveLocalState.toDownloadInfoView(): DownloadInfo {
     info.label = downloadLabel
     info.archiveUri = downloadArchiveUri
     info.downloadRootUri = downloadRootUri
+    info.tankId = downloadTankId
     return info
 }
 
@@ -212,6 +213,7 @@ fun DownloadObservedRow.toDownloadInfoView(): DownloadInfo {
     info.label = downloadLabel
     info.archiveUri = downloadArchiveUri
     info.downloadRootUri = downloadRootUri
+    info.tankId = downloadTankId
     return info
 }
 
