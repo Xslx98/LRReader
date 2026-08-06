@@ -25,8 +25,13 @@ class TankDownloadGroupingTest {
         it.title = arcid.take(4)
     }
 
-    private fun group(tankId: String = TANK, name: String = "Tank", created: Long = 0L) =
-        TankDownloadGroup(tankId, 1L, name, "[]", created)
+    private fun group(
+        tankId: String = TANK,
+        name: String = "Tank",
+        created: Long = 0L,
+        memberIdsJson: String = """["m1","m2"]""",
+    ) =
+        TankDownloadGroup(tankId, 1L, name, memberIdsJson, created)
 
     @Test
     fun `tagged members fold into one card with aggregate fields`() {
@@ -73,13 +78,27 @@ class TankDownloadGroupingTest {
     }
 
     @Test
-    fun `tag without a live group row stays standalone`() {
+    fun `row outside every group id list stays standalone even when tagged`() {
+        // Membership truth is the GROUP LIST — a stale row tag alone never folds.
         val result = TankDownloadGrouping.group(
-            listOf(info("m1", "TANK_0000000404")),
+            listOf(info("x1", "TANK_0000000404")),
             listOf(group()),
         )
-        assertEquals("m1", result.display.single().arcid)
+        assertEquals("x1", result.display.single().arcid)
         assertTrue(result.tankMembers.isEmpty())
+    }
+
+    @Test
+    fun `arcid claimed by two groups folds into the first`() {
+        val result = TankDownloadGrouping.group(
+            listOf(info("m1")),
+            listOf(
+                group(tankId = TANK, memberIdsJson = """["m1"]"""),
+                group(tankId = "TANK_0000000002", memberIdsJson = """["m1"]"""),
+            ),
+        )
+        assertEquals(listOf(TANK), result.display.map { it.arcid })
+        assertEquals(listOf("m1"), result.tankMembers.getValue(TANK).map { it.arcid })
     }
 
     @Test
