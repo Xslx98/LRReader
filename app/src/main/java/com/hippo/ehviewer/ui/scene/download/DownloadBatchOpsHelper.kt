@@ -40,6 +40,7 @@ import kotlinx.coroutines.withContext
 import com.hippo.ehviewer.ui.scene.download.part.DownloadAdapter.Companion.DRAG_ENABLE
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.widget.FabLayout
+import com.lanraragi.reader.client.api.isTankoubonId
 
 /**
  * Manages batch/bulk operations (start, stop, delete, move, random, drag toggle)
@@ -110,6 +111,9 @@ internal class DownloadBatchOpsHelper(private val callback: Callback) {
         for (i in 0 until stateArray.size) {
             if (stateArray.valueAt(i)) {
                 val info = list[callback.positionInList(stateArray.keyAt(i))]
+                // Tank cards can't be selected, but check-all may still have
+                // visually ticked one — a TANK_ id must never reach batch ops.
+                if (isTankoubonId(info.arcid)) continue
                 downloadInfoList?.add(info)
                 arcidList?.add(info.arcid)
             }

@@ -62,6 +62,7 @@ import com.hippo.util.NaturalComparator
 import com.hippo.widget.LoadImageView
 import kotlinx.coroutines.launch
 import com.hippo.ehviewer.download.DownloadState
+import com.lanraragi.reader.client.api.isTankoubonId
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -100,6 +101,9 @@ class DownloadAdapter(
          * [com.hippo.ehviewer.ui.scene.download.DownloadsViewModel.downloadDirFutureFor].
          */
         fun downloadDirFutureFor(info: DownloadInfo): CompletableFuture<UniFile?>
+
+        /** Aggregate (finished, total) member pages behind a tank card (Track 2). */
+        fun tankProgressFor(tankId: String): Pair<Int, Int>
     }
 
     init {
@@ -295,6 +299,14 @@ class DownloadAdapter(
     private fun bindForState(holder: DownloadHolder, info: DownloadInfo) {
         val resources = mScene.resources2 ?: return
 
+        // Tank cards (synthetic TANK_ rows, Track 2) render as a single
+        // aggregate: state text + member-page tally, no per-row
+        // start/stop (the card is not one schedulable download).
+        if (isTankoubonId(info.arcid)) {
+            bindTankCard(holder, info, resources)
+            return
+        }
+
         when (info.state) {
             DownloadState.INVALID,
             DownloadState.NONE -> bindState(holder, info, resources.getString(R.string.download_state_none))
@@ -329,6 +341,35 @@ class DownloadAdapter(
     private fun applyTitleLines(holder: DownloadHolder, showingProgress: Boolean) {
         val lines = downloadTitleMaxLines(showingProgress)
         if (holder.title.maxLines != lines) holder.title.maxLines = lines
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun bindTankCard(
+        holder: DownloadHolder,
+        info: DownloadInfo,
+        resources: android.content.res.Resources,
+    ) {
+        cancelProgressGlide(holder)
+        applyTitleLines(holder, showingProgress = false)
+        // No spider info exists for a TANK_ id — clear whatever a recycled
+        // holder carried instead of showing another row's read progress.
+        holder.readProgress.text = null
+        setVisibility(holder.uploader, View.GONE)
+        setVisibility(holder.state, View.VISIBLE)
+        setVisibility(holder.progressBar, View.GONE)
+        setVisibility(holder.percent, View.GONE)
+        setVisibility(holder.speed, View.GONE)
+        setVisibility(holder.start, View.GONE)
+        setVisibility(holder.stop, View.GONE)
+        val base = when (info.state) {
+            DownloadState.WAIT,
+            DownloadState.DOWNLOAD -> resources.getString(R.string.download_state_downloading)
+            DownloadState.FAILED -> resources.getString(R.string.download_state_failed)
+            DownloadState.FINISH -> resources.getString(R.string.download_state_finish)
+            else -> resources.getString(R.string.download_state_none)
+        }
+        val (finished, total) = mCallback.tankProgressFor(info.arcid)
+        holder.state.text = if (total > 0) "$base $finished/$total" else base
     }
 
     private fun bindState(holder: DownloadHolder, info: DownloadInfo, state: String) {
@@ -425,6 +466,14 @@ class DownloadAdapter(
         if (!DRAG_ENABLE) {
             return false
         }
+        // Tank cards are synthetic rows without a DOWNLOAD_TIME of their
+        // own — reordering them through moveDownloadInfo would corrupt
+        // member times. Not draggable.
+        val list = mCallback.list
+        val pos = mCallback.positionInList(position)
+        if (list != null && pos in list.indices && isTankoubonId(list[pos].arcid)) {
+            return false
+        }
         return ViewUtils.isViewUnder(holder.thumb, x, y, 0)
     }
 
@@ -442,6 +491,11 @@ class DownloadAdapter(
         val toPosInList = mCallback.positionInList(toPosition)
 
         if (fromPosInList in 0 until list.size && toPosInList in 0 until list.size) {
+            // A drop slot adjacent to a tank card still lands here — never
+            // rotate DOWNLOAD_TIME across a synthetic row.
+            if (isTankoubonId(list[fromPosInList].arcid) || isTankoubonId(list[toPosInList].arcid)) {
+                return
+            }
             // 先更新数据库中的顺序（通过 time 字段）
             ServiceRegistry.coroutineModule.ioScope.launch {
                 ServiceRegistry.dataModule.downloadDbRepository.moveDownloadInfo(list, fromPosInList, toPosInList)
@@ -540,6 +594,17 @@ class DownloadAdapter(
             val size = list.size
             val index = recyclerView.getChildAdapterPosition(itemView)
             if (index < 0 || index >= size) {
+                return
+            }
+
+            // Tank cards: the thumb behaves like the row (open the
+            // whole-tank session via the scene); start/stop are hidden but
+            // guard anyway — a TANK_ id must never reach the download
+            // service or scheduler.
+            if (isTankoubonId(list[mCallback.positionInList(index)].arcid)) {
+                if (v === thumb) {
+                    mScene.openTankCard(list[mCallback.positionInList(index)])
+                }
                 return
             }
 
