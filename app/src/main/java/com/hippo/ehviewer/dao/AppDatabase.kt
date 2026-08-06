@@ -44,9 +44,10 @@ import kotlinx.serialization.json.Json
         ServerProfile::class,
         ArchiveLocalState::class,
         SearchHistoryEntry::class,
-        DailyReadingAggregate::class
+        DailyReadingAggregate::class,
+        TankDownloadGroup::class
     ],
-    version = 29,
+    version = 30,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class, DownloadStateConverter::class)
@@ -57,6 +58,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun miscDao(): MiscRoomDao
     abstract fun archiveLocalStateDao(): ArchiveLocalStateDao
     abstract fun statsDao(): StatsRoomDao
+    abstract fun tankDownloadGroupDao(): TankDownloadGroupDao
 
     companion object {
         /**
@@ -78,7 +80,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DB_NAME
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30)
                     .build()
                     .also { INSTANCE = it }
             }
@@ -401,6 +403,29 @@ abstract class AppDatabase : RoomDatabase() {
          * count, written at reading-session end. Purely additive; no UI
          * consumer yet (accumulates history for future trend features).
          */
+        /**
+         * v29 → v30: tank downloads (Track 2). Adds the grouping tag
+         * `DOWNLOAD_TANK_ID` to `ARCHIVE_LOCAL_STATE` (null = standalone
+         * download) and the `TANK_DOWNLOAD_GROUP` table backing the
+         * downloads list's aggregated tank card (name + ordered member
+         * snapshot for offline whole-tank sessions). Purely additive.
+         */
+        @VisibleForTesting
+        internal val MIGRATION_29_30 = object : Migration(29, 30) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `ARCHIVE_LOCAL_STATE` ADD COLUMN `DOWNLOAD_TANK_ID` TEXT")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `TANK_DOWNLOAD_GROUP` (" +
+                        "`TANK_ID` TEXT NOT NULL, " +
+                        "`SERVER_PROFILE_ID` INTEGER NOT NULL DEFAULT 0, " +
+                        "`NAME` TEXT NOT NULL, " +
+                        "`MEMBER_IDS_JSON` TEXT NOT NULL, " +
+                        "`CREATED_TIME` INTEGER NOT NULL DEFAULT 0, " +
+                        "PRIMARY KEY(`TANK_ID`))"
+                )
+            }
+        }
+
         @VisibleForTesting
         internal val MIGRATION_28_29 = object : Migration(28, 29) {
             override fun migrate(db: SupportSQLiteDatabase) {

@@ -29,6 +29,7 @@ import com.hippo.ehviewer.mapper.toArchive
 import com.hippo.ehviewer.spider.SpiderInfo
 import com.hippo.ehviewer.ui.GalleryActivity
 import com.hippo.ehviewer.ui.GalleryOpenHelper
+import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.domain.Archive
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import kotlinx.coroutines.Dispatchers
@@ -52,6 +53,12 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
         fun positionInList(position: Int): Int
         fun listIndexInPage(position: Int): Int
         fun launchGallery(intent: Intent)
+
+        /** True when the row is a synthetic tank card (Track 2). */
+        fun isTankCardAt(position: Int): Boolean
+
+        /** Open the whole-tank composite session for a tank card row. */
+        fun openTankCard(info: DownloadInfo)
     }
 
     /**
@@ -63,6 +70,8 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
         val context = callback.ehContext ?: return false
 
         if (recyclerView.isInCustomChoice) {
+            // Tank cards are not selectable — swallow instead of toggling.
+            if (callback.isTankCardAt(position)) return true
             recyclerView.toggleItemChecked(position)
             return true
         }
@@ -73,6 +82,12 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
         }
 
         val downloadInfo = list[callback.positionInList(position)]
+
+        // Tank cards open the whole-tank composite session (offline-capable).
+        if (isTankoubonId(downloadInfo.arcid)) {
+            callback.openTankCard(downloadInfo)
+            return true
+        }
 
         // Use GalleryOpenHelper to prefer local files over server
         // buildReadIntent is suspend (resolves download dir from DB).
@@ -105,6 +120,8 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
     private fun publishDownloadsContext(list: List<DownloadInfo>, index: Int, anchor: Archive) {
         if (index !in list.indices || list[index].arcid != anchor.arcid) return
         val forward = list.subList(index, minOf(list.size, index + ReadingContextStore.LOCAL_WINDOW))
+            // Tank cards are never a standalone "next archive" target.
+            .filterNot { isTankoubonId(it.arcid) }
             .map { it.toArchive() }
         ReadingContextStore.publish(
             ReadingContext.LocalList(

@@ -325,6 +325,7 @@
     <string name="tank_edit_meta">Modifier les métadonnées</string>
     <string name="tank_summary_hint">Résumé</string>
     <string name="tank_tags_hint">Tags supplémentaires (séparés par des virgules)</string>
+    <string name="tank_download">Télécharger le tankoubon</string>
     <string name="tank_delete">Supprimer le tankoubon</string>
     <string name="tank_delete_confirm">Supprimer ce tankoubon ? Les archives qu\'il contient ne seront pas supprimées, mais le résumé, les tags supplémentaires et la progression de lecture du tankoubon seront perdus.</string>
     <string name="tank_locked">Tankoubon verrouillé, réessayez plus tard</string>

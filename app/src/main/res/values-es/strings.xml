@@ -324,6 +324,7 @@
     <string name="tank_edit_meta">Editar metadatos</string>
     <string name="tank_summary_hint">Resumen</string>
     <string name="tank_tags_hint">Etiquetas adicionales (separadas por comas)</string>
+    <string name="tank_download">Descargar tankoubon</string>
     <string name="tank_delete">Eliminar tankoubon</string>
     <string name="tank_delete_confirm">¿Eliminar este tankoubon? Los archivos que contiene no se eliminarán, pero se perderán el resumen, las etiquetas adicionales y el progreso de lectura del propio tankoubon.</string>
     <string name="tank_locked">El tankoubon está bloqueado, inténtalo más tarde</string>

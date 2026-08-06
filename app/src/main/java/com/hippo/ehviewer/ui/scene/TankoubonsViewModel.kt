@@ -195,6 +195,9 @@ class TankoubonsViewModel : ViewModel() {
                 val client = ServiceRegistry.networkModule.okHttpClient
 
                 LRRTankoubonApi.deleteTankoubon(client, serverUrl, tankId)
+                // Dissolve any downloaded-tank grouping; member downloads
+                // reappear standalone (files untouched).
+                ServiceRegistry.dataModule.downloadManager.dissolveTankGroupAsync(tankId)
 
                 _uiEvent.tryEmit(TankUiEvent.ShowSuccess(R.string.tank_op_done))
                 loadTankoubonsInternal()

@@ -13,6 +13,10 @@
         android:title="@string/tank_edit_meta" />
 
     <item
+        android:id="@+id/action_tank_download"
+        android:title="@string/tank_download" />
+
+    <item
         android:id="@+id/action_tank_delete"
         android:title="@string/tank_delete" />
 

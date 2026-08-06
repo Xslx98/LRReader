@@ -332,6 +332,68 @@ class DownloadManager(
         repo.addInfoOnly(archive, label)
     }
 
+    // ── Tank download grouping (Track 2) ──────────────────────
+
+    /**
+     * Persist a downloaded-tank group (Track 2): group row + tags on every
+     * member's download row, asynchronously — the downloads list re-groups
+     * on the next Room emission. The member ENQUEUEING itself stays on the
+     * regular DownloadService intent path (the caller drives it, mirroring
+     * CommonOperations.startDownload), so worker / notification / resume
+     * behavior is byte-identical to ordinary downloads. Tagging a member
+     * whose row doesn't exist yet is a no-op UPDATE; the caller re-tags
+     * after enqueueing so late rows pick the tag up.
+     */
+    fun tagTankDownloadGroup(
+        tankId: String,
+        tankName: String,
+        serverProfileId: Long,
+        memberIdsInOrder: List<String>,
+    ) {
+        scope.launch {
+            try {
+                ServiceRegistry.dataModule.downloadDbRepository.putTankGroup(
+                    tankId, serverProfileId, tankName, memberIdsInOrder
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to persist tank group $tankId", e)
+            }
+        }
+    }
+
+    /**
+     * Delete a downloaded tank card: stop + remove every member download
+     * row (the caller deletes the on-disk files, mirroring the single-row
+     * delete flow) and drop the group row.
+     */
+    fun deleteTankDownload(tankId: String, memberArcids: List<String>) {
+        repo.assertMainThread()
+        if (memberArcids.isNotEmpty()) deleteRangeDownload(memberArcids)
+        dissolveTankGroupAsync(tankId)
+    }
+
+    /** Untag every member and drop the group row (files/rows untouched). */
+    fun dissolveTankGroupAsync(tankId: String) {
+        scope.launch {
+            try {
+                ServiceRegistry.dataModule.downloadDbRepository.dissolveTankGroup(tankId)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to dissolve tank group $tankId", e)
+            }
+        }
+    }
+
+    /** Remove one member from its downloaded-tank group (member removed app-side). */
+    fun untagTankMemberAsync(tankId: String, arcid: String) {
+        scope.launch {
+            try {
+                ServiceRegistry.dataModule.downloadDbRepository.removeTankGroupMember(tankId, arcid)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to untag tank member $arcid", e)
+            }
+        }
+    }
+
     // ── Stop / Delete ─────────────────────────────────────────
 
     fun stopDownload(arcid: String) {
