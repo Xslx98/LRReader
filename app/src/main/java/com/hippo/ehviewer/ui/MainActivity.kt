@@ -81,7 +81,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.hippo.ehviewer.dao.ServerProfile
+import com.lanraragi.reader.client.api.friendlyError
+import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.client.api.parseBaseUrl
+import com.hippo.ehviewer.gallery.TankSessionRouter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -281,6 +284,27 @@ class MainActivity : StageActivity(),
                 Toast.makeText(
                     this@MainActivity, R.string.continue_reading_unavailable, Toast.LENGTH_SHORT
                 ).show()
+                return@launch
+            }
+            // Tank history rows resume the whole-tank composite session (the
+            // membership re-fetch needs the server; a transient failure keeps
+            // the shortcut and just toasts).
+            if (isTankoubonId(archive.arcid)) {
+                try {
+                    val tankIntent = withContext(Dispatchers.IO) {
+                        TankSessionRouter.buildResumeIntent(
+                            this@MainActivity, archive.arcid, archive.serverProfileId
+                        )
+                    }
+                    startActivity(tankIntent)
+                } catch (e: Exception) {
+                    if (e is kotlinx.coroutines.CancellationException) throw e
+                    Toast.makeText(
+                        this@MainActivity,
+                        friendlyError(this@MainActivity, e),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
                 return@launch
             }
             startActivity(GalleryOpenHelper.buildReadIntent(this@MainActivity, archive))

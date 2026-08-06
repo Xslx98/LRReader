@@ -570,9 +570,18 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
 
         // Reading-session seam: consumed by the continue-reading shortcut and
         // the daily reading aggregate. DIR-mode reading (no Archive) stays
-        // untracked — without start(), stop() in onStop is a no-op.
+        // untracked — without start(), stop() in onStop is a no-op. A tank
+        // session tracks as ONE logical archive keyed by the tank id (global
+        // pages; completion = crossing the tank's end) — tank-only
+        // bookkeeping, and the shortcut/widget deep link resumes the
+        // composite session via MainActivity's isTankoubonId branch.
         mArchive?.let {
             mReadingSession.start(it.arcid, it.serverProfileId, startPage, it.pagecount)
+        } ?: mTankSeed?.let { seed ->
+            mReadingSession.start(
+                seed.tankId, seed.profileId, startPage,
+                (mGalleryProvider?.size() ?: 0).coerceAtLeast(0),
+            )
         }
 
         // Keep screen on
