@@ -21,7 +21,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
 
 /**
  * Composite reader provider: one session spans EVERY member of a
@@ -84,6 +86,9 @@ class TankGalleryProvider(
 
     private val inflightRequests = ConcurrentHashMap<Int, Boolean>()
     private val rebindWanted = ConcurrentHashMap.newKeySet<Int>()
+
+    /** Global cap on concurrent prefetch downloads (mirrors LRRGalleryProvider). */
+    private val prefetchSemaphore = Semaphore(PREFETCH_PARALLELISM)
 
     /** Global 0-indexed start page: SP save for this tank, else the seed's server progress. */
     @Volatile
@@ -265,8 +270,43 @@ class TankGalleryProvider(
         }
         if (image != null) {
             notifyPageSucceed(global0, image)
+            prefetchAround(global0)
         } else {
             notifyPageFailed(global0, GetText.getString(R.string.error_decoding_failed))
+        }
+    }
+
+    /**
+     * Warm the neighbourhood of [global0] in BOTH directions across member
+     * boundaries: resolving a neighbour's counted source is exactly the
+     * boundary file-list prefetch (spec decision 5), and page-byte warms
+     * ride the same walk. Downloads are bounded by [prefetchSemaphore];
+     * every step is best-effort.
+     */
+    private fun prefetchAround(global0: Int) {
+        val scope = providerScope ?: return
+        scope.launch {
+            val targets =
+                (global0 + 1..global0 + PREFETCH_FORWARD) + (global0 - PREFETCH_BACKWARD until global0)
+            for (target in targets) {
+                if (stopped) break
+                val (member, local) = pageMap.locate(target) ?: continue
+                if (hasCache(target)) continue
+                launch {
+                    prefetchSemaphore.withPermit {
+                        if (stopped) return@withPermit
+                        try {
+                            countedSourceFor(member).prefetchPage(local)
+                        } catch (ce: CancellationException) {
+                            throw ce
+                        } catch (e: Exception) {
+                            if (BuildConfig.DEBUG) {
+                                Log.d(TAG, "prefetch failed for global=$target: ${e.message}")
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -364,5 +404,17 @@ class TankGalleryProvider(
         private const val TAG = "TankGalleryProvider"
         private const val TANK_ID_SUFFIX_LEN = 6
         private const val ARCID_PREFIX_LEN = 8
+
+        /**
+         * Forward warm distance (pages). Matches LRRGalleryProvider's
+         * PRELOAD_COUNT; near a member's tail it necessarily reaches into
+         * the next member, which is what makes the crossing seamless.
+         */
+        private const val PREFETCH_FORWARD = 5
+
+        /** Backward warm distance so a back-swipe across a boundary is instant. */
+        private const val PREFETCH_BACKWARD = 2
+
+        private const val PREFETCH_PARALLELISM = 2
     }
 }
