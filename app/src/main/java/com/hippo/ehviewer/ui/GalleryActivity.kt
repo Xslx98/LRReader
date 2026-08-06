@@ -47,6 +47,8 @@ import com.hippo.ehviewer.settings.ReadingSettings
 import com.hippo.ehviewer.settings.SecuritySettings
 import com.hippo.ehviewer.event.AppEventBus
 import com.hippo.ehviewer.event.GalleryActivityEvent
+import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.gallery.DirGalleryProvider
 import com.hippo.ehviewer.gallery.GalleryProvider2
@@ -278,6 +280,37 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
                     ServiceRegistry.dataModule.historyRepository.putHistoryInfo(archive)
                 } catch (e: Exception) {
                     Log.w("GalleryActivity", "Failed to record history: ${e.message}")
+                }
+            }
+        }
+        // Tank sessions get ONE history row for the whole tank (tank-only
+        // bookkeeping): a pseudo-archive keyed by the TANK_ id whose
+        // thumbnail rides the tank cover route. HistoryScene branches its
+        // click on isTankoubonId and resumes the composite session.
+        mTankSeed?.let { seed ->
+            ServiceRegistry.coroutineModule.ioScope.launch {
+                try {
+                    val url = resolveSourceBaseUrl(
+                        seed.profileId, ServiceRegistry.dataModule.profileLookupCache
+                    )
+                    val pseudo = Archive(
+                        arcid = seed.tankId,
+                        title = seed.tankName,
+                        tags = emptyMap(),
+                        pagecount = seed.members.sumOf { it.pagecount.coerceAtLeast(0) },
+                        progress = 0,
+                        extension = "",
+                        filename = "",
+                        thumbnailUrl = LRRTankoubonApi.getTankoubonThumbnailUrl(url, seed.tankId),
+                        rating = 0f,
+                        isnew = false,
+                        lastreadtime = 0L,
+                        summary = null,
+                        serverProfileId = seed.profileId,
+                    )
+                    ServiceRegistry.dataModule.historyRepository.putHistoryInfo(pseudo)
+                } catch (e: Exception) {
+                    Log.w("GalleryActivity", "Failed to record tank history: ${e.message}")
                 }
             }
         }
