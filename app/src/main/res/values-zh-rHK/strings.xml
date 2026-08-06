@@ -361,6 +361,7 @@
     <string name="tank_edit_meta">編輯中繼資料</string>
     <string name="tank_summary_hint">簡介</string>
     <string name="tank_tags_hint">附加標籤(逗號分隔)</string>
+    <string name="tank_download">下載合訂本</string>
     <string name="tank_delete">刪除合訂本</string>
     <string name="tank_delete_confirm">刪除這個合訂本？其中的檔案不會被刪除，但合訂本自身的簡介、附加標籤和閱讀進度將一併遺失。</string>
     <string name="tank_locked">合訂本已被鎖定，請稍後再試</string>

@@ -331,6 +331,7 @@
     <string name="tank_edit_meta">메타데이터 편집</string>
     <string name="tank_summary_hint">요약</string>
     <string name="tank_tags_hint">추가 태그(쉼표로 구분)</string>
+    <string name="tank_download">단행본 다운로드</string>
     <string name="tank_delete">단행본 삭제</string>
     <string name="tank_delete_confirm">이 단행본을 삭제할까요? 안의 아카이브는 삭제되지 않지만, 단행본 자체의 요약·추가 태그·읽기 진행도는 사라집니다.</string>
     <string name="tank_locked">단행본이 잠겨 있습니다. 나중에 다시 시도하세요</string>

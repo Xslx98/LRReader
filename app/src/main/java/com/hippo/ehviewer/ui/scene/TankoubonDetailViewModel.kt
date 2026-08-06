@@ -239,6 +239,9 @@ class TankoubonDetailViewModel : ViewModel() {
     /** Removes [arcid] from the tank, then reloads. */
     fun removeMember(arcid: String) = mutateAndReload { client, url ->
         LRRTankoubonApi.removeFromTankoubon(client, url, tankId, arcid)
+        // Downloaded-tank grouping follows: the member's download row (if
+        // any) reappears as a standalone download.
+        ServiceRegistry.dataModule.downloadManager.untagTankMemberAsync(tankId, arcid)
     }
 
     /**
@@ -252,6 +255,10 @@ class TankoubonDetailViewModel : ViewModel() {
             try {
                 val client = ServiceRegistry.networkModule.okHttpClient
                 LRRTankoubonApi.deleteTankoubon(client, url, tankId)
+                // Dissolve the downloaded-tank grouping (files/rows stay:
+                // deleting a tank never deletes its archives — the member
+                // downloads reappear standalone).
+                ServiceRegistry.dataModule.downloadManager.dissolveTankGroupAsync(tankId)
                 _uiEvent.tryEmit(TankDetailUiEvent.Deleted)
             } catch (e: Exception) {
                 if (e is CancellationException) throw e

@@ -323,6 +323,7 @@
     <string name="tank_edit_meta">编辑元数据</string>
     <string name="tank_summary_hint">简介</string>
     <string name="tank_tags_hint">附加标签(逗号分隔)</string>
+    <string name="tank_download">下载合订本</string>
     <string name="tank_delete">删除合订本</string>
     <string name="tank_delete_confirm">删除这个合订本？其中的档案不会被删除，但合订本自身的简介、附加标签和阅读进度将一并丢失。</string>
     <string name="tank_locked">合订本已被锁定，请稍后再试</string>

@@ -266,6 +266,7 @@
     <string name="tank_edit_meta">Metadaten bearbeiten</string>
     <string name="tank_summary_hint">Zusammenfassung</string>
     <string name="tank_tags_hint">Zusätzliche Tags (kommagetrennt)</string>
+    <string name="tank_download">Tankoubon herunterladen</string>
     <string name="tank_delete">Tankoubon löschen</string>
     <string name="tank_delete_confirm">Dieses Tankoubon löschen? Die enthaltenen Archive werden nicht gelöscht, aber Zusammenfassung, zusätzliche Tags und Lesefortschritt des Tankoubons gehen verloren.</string>
     <string name="tank_locked">Tankoubon ist gesperrt, bitte später erneut versuchen</string>
