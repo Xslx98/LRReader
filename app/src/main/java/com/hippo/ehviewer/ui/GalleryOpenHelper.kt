@@ -80,6 +80,24 @@ object GalleryOpenHelper {
         )
     }
 
+    /**
+     * Intent for a WHOLE-TANK composite session ([GalleryActivity.ACTION_TANK]).
+     * [startGlobalPage] is the tank-global 0-indexed page to open on; -1 lets
+     * [com.hippo.ehviewer.gallery.TankGalleryProvider] restore its own saved
+     * progress (local tank save, else the seed's server progress captured by
+     * the caller into [startGlobalPage]).
+     */
+    @JvmStatic
+    fun buildTankReadIntent(
+        context: Context,
+        seed: com.hippo.ehviewer.gallery.TankSessionSeed,
+        startGlobalPage: Int = -1,
+    ): Intent = Intent(context, GalleryActivity::class.java).apply {
+        action = GalleryActivity.ACTION_TANK
+        putExtra(GalleryActivity.KEY_TANK_SEED, seed)
+        if (startGlobalPage >= 0) putExtra(GalleryActivity.KEY_PAGE, startGlobalPage)
+    }
+
     private suspend fun buildReadIntentInternal(
         context: Context,
         archive: Archive,

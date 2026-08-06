@@ -766,6 +766,14 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     private fun openReaderAtPage(page0: Int) {
         val archive = viewModel.getEffectiveArchive() ?: return
         val ctx = getEHContext() ?: return
+        // Tank-flow members read in the whole-tank session; the tapped
+        // member-local page maps to its global page inside it.
+        com.hippo.ehviewer.gallery.TankSessionRouter
+            .tankIntentFor(ctx, archive.arcid, memberPage0 = page0)
+            ?.let { tankIntent ->
+                startActivity(tankIntent)
+                return
+            }
         viewLifecycleOwner.lifecycleScope.launch(
             ServiceRegistry.coroutineModule.exceptionHandler
         ) {

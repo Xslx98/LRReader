@@ -76,8 +76,12 @@ class LRRArchive() : Parcelable {
 
     /**
      * Map a folded Tankoubon search entry (15-char TANK_ arcid) to a
-     * pseudo-[Archive] for list display. NEVER persisted (no history/download/
-     * favorite path accepts it) — click sites branch on isTankoubonId().
+     * pseudo-[Archive] for list display. Never persisted by the browse
+     * pipeline itself; the ONLY persisted TANK_ rows are the composite
+     * reader's history bookkeeping (GalleryActivity writes its own
+     * pseudo-archive, HistoryScene resumes the session from it). Download/
+     * favorite paths still accept no tank ids — click sites branch on
+     * isTankoubonId().
      * Mirrors [toArchive] except: the thumbnail rides the tank thumbnail route
      * (an archive-route URL would throw in requireValidArcid), and
      * extension/filename are blank (a tank is not a file).
