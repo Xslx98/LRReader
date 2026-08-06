@@ -48,7 +48,13 @@ import com.hippo.easyrecyclerview.HandlerDrawable
 import com.hippo.easyrecyclerview.MarginItemDecoration
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.dao.DownloadInfo
+import com.hippo.ehviewer.gallery.TankMemberSeed
+import com.hippo.ehviewer.gallery.TankSeedStore
+import com.hippo.ehviewer.gallery.TankSessionSeed
+import com.hippo.ehviewer.ui.GalleryOpenHelper
+import com.lanraragi.reader.client.api.isTankoubonId
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.download.DownloadService
 import com.hippo.ehviewer.download.ProgressSnapshot
@@ -687,6 +693,68 @@ class DownloadsScene : ToolbarScene(),
     override fun downloadDirFutureFor(info: DownloadInfo): CompletableFuture<UniFile?> =
         viewModel.downloadDirFutureFor(info)
 
+    override fun tankProgressFor(tankId: String): Pair<Int, Int> =
+        viewModel.tankProgressOf(tankId)
+
+    // ── Tank download cards (Track 2) ─────────────────────────
+
+    /** True when the row at adapter [position] is a synthetic tank card. */
+    internal fun isTankCardAt(position: Int): Boolean {
+        val list = mList ?: return false
+        val pos = positionInList(position)
+        return pos in list.indices && isTankoubonId(list[pos].arcid)
+    }
+
+    /**
+     * Open a tank card: rebuild the whole-tank composite session from the
+     * PERSISTED group snapshot (works fully offline for downloaded
+     * members; pagecounts ride the member rows' archive_json).
+     */
+    internal fun openTankCard(info: DownloadInfo) {
+        val activity = activity2 ?: return
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val members = withContext(Dispatchers.IO) {
+                    ServiceRegistry.dataModule.downloadDbRepository
+                        .getTankMemberArchives(info.arcid)
+                }
+                if (members.isEmpty()) return@launch
+                val seed = TankSessionSeed(
+                    tankId = info.arcid,
+                    tankName = info.title.orEmpty(),
+                    profileId = info.serverProfileId,
+                    members = members.map { TankMemberSeed(it.arcid, it.title, it.pagecount) },
+                )
+                TankSeedStore.publish(seed)
+                galleryActivityLauncher.launch(GalleryOpenHelper.buildTankReadIntent(activity, seed))
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                Log.e(TAG, "Failed to open tank card ${info.arcid}", e)
+            }
+        }
+    }
+
+    /**
+     * Long-press action for a tank card: the SAME delete confirm as a
+     * download row (user decision: card behaves like a single item), then
+     * every member row (+files when checked) and the group row go.
+     */
+    internal fun onTankCardLongPress(position: Int) {
+        val context = ehContext ?: return
+        val list = mList ?: return
+        val pos = positionInList(position)
+        val card = list.getOrNull(pos) ?: return
+        if (!isTankoubonId(card.arcid)) return
+        val members = viewModel.tankMembersOf(card.arcid)
+        if (members.isEmpty()) return
+        DownloadLabelHelper.showDeleteRangeDialog(context, 1) { deleteFiles ->
+            viewModel.deleteRangeDownloads(
+                members, members.map { it.arcid }, deleteFiles
+            )
+            viewModel.downloadManager.dissolveTankGroupAsync(card.arcid)
+        }
+    }
+
     override fun onClickTitle() {
         mSearchHelper?.enterSearchMode(true)
     }
@@ -758,6 +826,8 @@ class DownloadsScene : ToolbarScene(),
         override fun positionInList(position: Int): Int = this@DownloadsScene.positionInList(position)
         override fun listIndexInPage(position: Int): Int = this@DownloadsScene.listIndexInPage(position)
         override fun launchGallery(intent: Intent) = galleryActivityLauncher.launch(intent)
+        override fun isTankCardAt(position: Int): Boolean = this@DownloadsScene.isTankCardAt(position)
+        override fun openTankCard(info: DownloadInfo) = this@DownloadsScene.openTankCard(info)
     }
 
     private inner class SelectionHelperCallback : DownloadSelectionHelper.Callback {
@@ -767,6 +837,8 @@ class DownloadsScene : ToolbarScene(),
         override val longClickListener: EasyRecyclerView.OnItemLongClickListener get() = this@DownloadsScene
         override fun setDrawerLockMode(lockMode: Int, gravity: Int) =
             this@DownloadsScene.setDrawerLockMode(lockMode, gravity)
+        override fun isTankCardAt(position: Int): Boolean = this@DownloadsScene.isTankCardAt(position)
+        override fun onTankCardLongPress(position: Int) = this@DownloadsScene.onTankCardLongPress(position)
     }
 
     private inner class LabelDrawCallback : DownloadLabelDraw.Callback {

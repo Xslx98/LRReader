@@ -68,7 +68,9 @@ class RoomMigrationTest {
             "DOWNLOAD_LABELS", "DOWNLOAD_DIRNAME",
             "QUICK_SEARCH", "SERVER_PROFILES",
             "ARCHIVE_LOCAL_STATE",
-            "SEARCH_HISTORY", "DAILY_READING_AGGREGATE"
+            "SEARCH_HISTORY", "DAILY_READING_AGGREGATE",
+            // v30: tank downloads grouping (Track 2)
+            "TANK_DOWNLOAD_GROUP"
         )
         assertEquals(expectedTables, tables)
     }

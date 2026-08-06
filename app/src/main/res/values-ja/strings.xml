@@ -285,6 +285,7 @@
     <string name="tank_edit_meta">メタデータを編集</string>
     <string name="tank_summary_hint">概要</string>
     <string name="tank_tags_hint">追加タグ(カンマ区切り)</string>
+    <string name="tank_download">単行本をダウンロード</string>
     <string name="tank_delete">単行本を削除</string>
     <string name="tank_delete_confirm">この単行本を削除しますか？中のアーカイブは削除されませんが、単行本自体の概要・追加タグ・読書進捗は失われます。</string>
     <string name="tank_locked">単行本はロックされています。後でもう一度お試しください</string>
