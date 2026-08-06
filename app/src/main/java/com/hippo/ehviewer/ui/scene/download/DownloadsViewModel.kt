@@ -16,6 +16,7 @@ import com.hippo.ehviewer.dao.DownloadLabel
 import com.hippo.ehviewer.download.DownloadInfoListener
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.download.ProgressSnapshot
+import com.hippo.ehviewer.download.TankDownloadGrouping
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.ehviewer.spider.SpiderInfo
 import com.hippo.ehviewer.sync.DownloadListInfosExecutor
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.withContext
 import com.hippo.ehviewer.download.DownloadState
 import java.util.concurrent.CompletableFuture
@@ -119,17 +121,59 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     private fun startObservingRoomFlow() {
         roomFlowJob?.cancel()
         roomFlowJob = viewModelScope.launch {
-            downloadsFlow.collectLatest { allDownloads ->
+            // Tank grouping (Track 2) runs BEFORE the label filter: tagged
+            // member rows fold into one synthetic card per live group
+            // (rendered in the default list; members leave every label
+            // list while tagged).
+            combine(
+                downloadsFlow,
+                ServiceRegistry.dataModule.downloadDbRepository.observeTankGroups(),
+            ) { allDownloads, groups ->
+                TankDownloadGrouping.group(allDownloads, groups)
+            }.collectLatest { grouped ->
+                _tankMembers.value = grouped.tankMembers
                 val label = _currentLabel.value
                 val filtered = if (label == null) {
-                    allDownloads.filter { it.label == null }
+                    grouped.display.filter { it.label == null }
                 } else {
-                    allDownloads.filter { it.label == label }
+                    grouped.display.filter { it.label == label }
                 }
                 _downloadList.value = filtered
                 _backList.value = filtered
             }
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Tank download grouping (Track 2)
+    // -------------------------------------------------------------------------
+
+    private val _tankMembers = MutableStateFlow<Map<String, List<DownloadInfo>>>(emptyMap())
+
+    /** Live member rows behind each tank card, keyed by tank id. */
+    val tankMembers: StateFlow<Map<String, List<DownloadInfo>>> = _tankMembers.asStateFlow()
+
+    /** Member rows of one tank card (empty when the group vanished). */
+    fun tankMembersOf(tankId: String): List<DownloadInfo> =
+        _tankMembers.value[tankId].orEmpty()
+
+    /**
+     * Aggregate page progress for a tank card from the live progress map:
+     * (finished pages incl. already-complete members, total known pages).
+     * Members without a snapshot fall back to their archive-neutral zero —
+     * the card's bar is honest about what is actually known.
+     */
+    fun tankProgressOf(tankId: String): Pair<Int, Int> {
+        var finished = 0
+        var total = 0
+        for (member in tankMembersOf(tankId)) {
+            val snap = downloadManager.progressFor(member.arcid)
+            if (snap != null && snap.total > 0) {
+                finished += snap.finished
+                total += snap.total
+            }
+        }
+        return finished to total
     }
 
     override fun onCleared() {
