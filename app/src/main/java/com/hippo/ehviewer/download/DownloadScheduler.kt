@@ -41,7 +41,9 @@ internal class DownloadScheduler(
     private val repo: DownloadRepository,
     private val eventBus: DownloadEventBus,
     private val speedTracker: DownloadSpeedTracker,
-    private val progressTracker: DownloadProgressTracker = DownloadProgressTracker()
+    // No default: every construction site must thread the shared tracker, or
+    // scheduler writes and UI reads would silently split into two instances.
+    private val progressTracker: DownloadProgressTracker
 ) {
 
     /** Downloads queued to start. */

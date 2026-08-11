@@ -37,7 +37,9 @@ import java.lang.ref.WeakReference
  */
 internal class DownloadSpeedTracker(
     private val callback: Callback,
-    private val progressTracker: DownloadProgressTracker = DownloadProgressTracker()
+    // No default: every construction site must thread the shared tracker (see
+    // DownloadScheduler's matching note).
+    private val progressTracker: DownloadProgressTracker
 ) : Runnable {
 
     private val handler = Handler(Looper.getMainLooper())
