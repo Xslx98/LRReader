@@ -557,6 +557,12 @@ public abstract class StageActivity extends EhActivity {
 
         FragmentManager fragmentManager = getSupportFragmentManager();
         Fragment fragment = fragmentManager.findFragmentByTag(tag);
+        if (fragment == null) {
+            // Tag list and FragmentManager can diverge after a post-save
+            // commitAllowingStateLoss was dropped; detach(null) would NPE.
+            Log.e(TAG, "refreshTopScene: Can't find fragment with tag: " + tag);
+            return;
+        }
 
         FragmentTransaction transaction = fragmentManager.beginTransaction();
         transaction.detach(fragment);

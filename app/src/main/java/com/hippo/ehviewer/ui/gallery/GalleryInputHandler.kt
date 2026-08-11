@@ -194,8 +194,7 @@ class GalleryInputHandler(private val mCallback: Callback) {
         if (mTransferService?.isShutdown != false) {
             mTransferService = Executors.newSingleThreadScheduledExecutor()
         }
-        val initialDelay = ReadingSettings.getStartTransferTime().toLong()
-        val waitTime = initialDelay * 2L
+        val (initialDelay, waitTime) = autoReadTimings(ReadingSettings.getStartTransferTime().toLong())
         try {
             mTransferService?.scheduleWithFixedDelay({
                 mTransHandle.post {
@@ -261,5 +260,13 @@ class GalleryInputHandler(private val mCallback: Callback) {
 
     companion object {
         private const val TAG = "GalleryInputHandler"
+
+        /**
+         * Auto-read timer parameters in seconds: (initial delay, repeat period).
+         * Both equal the user's configured interval.
+         */
+        @JvmStatic
+        fun autoReadTimings(configuredSeconds: Long): Pair<Long, Long> =
+            configuredSeconds to configuredSeconds
     }
 }

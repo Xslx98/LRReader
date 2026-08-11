@@ -730,16 +730,21 @@ class MainActivity : StageActivity(),
     }
 
     private fun checkDownloadLocation() {
-        val uniFile = DownloadSettings.getDownloadLocation()
-        // null == uniFile for first start
-        if (uniFile == null || uniFile.ensureDir()) {
-            return
+        // getDownloadLocation + ensureDir stat/mkdirs the download root — keep
+        // that off the main thread's first-frame path.
+        lifecycleScope.launch {
+            val valid = withContext(Dispatchers.IO) {
+                val uniFile = DownloadSettings.getDownloadLocation()
+                // null == uniFile for first start
+                uniFile == null || uniFile.ensureDir()
+            }
+            if (valid || isFinishing) return@launch
+            AlertDialog.Builder(this@MainActivity)
+                .setTitle(R.string.waring)
+                .setMessage(R.string.invalid_download_location)
+                .setPositiveButton(R.string.get_it, null)
+                .show()
         }
-        AlertDialog.Builder(this)
-            .setTitle(R.string.waring)
-            .setMessage(R.string.invalid_download_location)
-            .setPositiveButton(R.string.get_it, null)
-            .show()
     }
 
     @Suppress("DEPRECATION")

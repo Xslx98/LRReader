@@ -756,17 +756,7 @@ class DownloadService : Service(), DownloadListener {
                 val now = SystemClock.uptimeMillis()
                 if (now - mLastTime > DELAY) {
                     // Wait long enough, do it now
-                    if (mService != null) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                            mService?.startForeground(
-                                mId,
-                                mBuilder.build(),
-                                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-                            )
-                        } else {
-                            mService?.startForeground(mId, mBuilder.build())
-                        }
-                    }
+                    promoteToForeground()
                 } else {
                     // Too quick, post delay
                     mOps = OPS_START_FOREGROUND
@@ -777,26 +767,38 @@ class DownloadService : Service(), DownloadListener {
             }
         }
 
+        // startForeground can throw on the main thread even after the service is
+        // running (ForegroundServiceStartNotAllowedException on Android 12+
+        // background edge cases, SecurityException on some OEMs) — degrade to a
+        // missing notification like startForegroundPlaceholder does.
+        private fun promoteToForeground() {
+            val service = mService ?: return
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    service.startForeground(
+                        mId,
+                        mBuilder.build(),
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                    )
+                } else {
+                    service.startForeground(mId, mBuilder.build())
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "startForeground(delay) failed", e)
+            }
+        }
+
         override fun run() {
             mPosted = false
             when (mOps) {
                 OPS_NOTIFY -> mNotifyManager?.notify(mId, mBuilder.build())
                 OPS_CANCEL -> mNotifyManager?.cancel(mId)
-                OPS_START_FOREGROUND -> if (mService != null) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                        mService?.startForeground(
-                            mId,
-                            mBuilder.build(),
-                            ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-                        )
-                    } else {
-                        mService?.startForeground(mId, mBuilder.build())
-                    }
-                }
+                OPS_START_FOREGROUND -> promoteToForeground()
             }
         }
 
         companion object {
+            private const val TAG = "DownloadService"
             private const val OPS_NOTIFY = 0
             private const val OPS_CANCEL = 1
             private const val OPS_START_FOREGROUND = 2
