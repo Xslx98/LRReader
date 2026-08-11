@@ -223,7 +223,10 @@ public class SimpleDiskCache {
     }
 
     public boolean contain(@NonNull String key) {
-        String diskKey = hashKeyForDisk(key);
+        return containDiskKey(hashKeyForDisk(key));
+    }
+
+    private boolean containDiskKey(String diskKey) {
         CounterLock lock = obtainLock(diskKey);
         if (null == mDiskLruCache) {
             releaseLock(diskKey, lock);
@@ -327,8 +330,9 @@ public class SimpleDiskCache {
      */
     @Nullable
     public InputStreamPipe getInputStreamPipe(@NonNull String key) {
-        if (contain(key)) {
-            String diskKey = hashKeyForDisk(key);
+        // Hash once — this sits on the scroll-time disk-read hot path.
+        String diskKey = hashKeyForDisk(key);
+        if (containDiskKey(diskKey)) {
             return new CacheInputStreamPipe(diskKey);
         } else {
             return null;
