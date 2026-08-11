@@ -26,7 +26,6 @@ import android.content.Context
 import androidx.core.content.edit
 import android.content.Intent
 import android.content.ServiceConnection
-import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.os.Debug
 import android.os.Process
@@ -427,12 +426,10 @@ class EhApplication : RecordingApplication() {
         // Check app update
         update()
 
-        // Update version code
-        try {
-            val pi = packageManager.getPackageInfo(packageName, 0)
-            Settings.putVersionCode(pi.versionCode)
-        } catch (e: PackageManager.NameNotFoundException) {
-            Log.w(TAG, "Retrieve package info for version code", e)
+        // Update version code — BuildConfig is the same value at compile time,
+        // so skip the PackageManager binder call and only write on change.
+        if (Settings.getVersionCode() != BuildConfig.VERSION_CODE) {
+            Settings.putVersionCode(BuildConfig.VERSION_CODE)
         }
 
         if (DEBUG_PRINT_NATIVE_MEMORY || DEBUG_PRINT_IMAGE_COUNT) {
