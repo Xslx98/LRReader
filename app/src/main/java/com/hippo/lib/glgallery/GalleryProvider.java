@@ -46,6 +46,9 @@ public abstract class GalleryProvider {
     private final ImageCache mImageCache = new ImageCache();
 
     private boolean mStarted = false;
+    // Written on the UI thread in stop(), read on decoder threads in
+    // notifyPageSucceed — must be volatile.
+    private volatile boolean mStopped = false;
 
     @UiThread
     public void start() {
@@ -60,6 +63,7 @@ public abstract class GalleryProvider {
     @UiThread
     public void stop() {
         OSUtils.checkMainLoop();
+        mStopped = true;
         mImageCache.evictAll();
     }
 
@@ -161,6 +165,15 @@ public abstract class GalleryProvider {
 
     public void notifyPageSucceed(int index, Image image) {
         ImageWrapper imageWrapper = new ImageWrapper(image);
+        if (mStopped) {
+            // A decode completing after stop() must not repopulate the
+            // already-evicted cache — nothing would evict the entry again and
+            // the page would be retained until the provider graph is GC'd.
+            // Recycle it instead (release at zero references recycles the
+            // underlying Image, animated or not).
+            imageWrapper.release();
+            return;
+        }
         mImageCache.add(index, imageWrapper);
         notifyPageSucceed(index, imageWrapper);
     }
