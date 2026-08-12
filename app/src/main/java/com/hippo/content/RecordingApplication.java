@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 
 public abstract class RecordingApplication extends SceneApplication {
 
@@ -75,6 +76,22 @@ public abstract class RecordingApplication extends SceneApplication {
       @Override
       public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
     });
+  }
+
+  /**
+   * The most recently created, not-yet-destroyed activity, or null. Creation
+   * order matches the manual registry this replaced; unlike it, activities
+   * that do not extend EhActivity are visible here too.
+   */
+  public Activity getLastCreatedActivity() {
+    ListIterator<WeakReference<Activity>> it = list.listIterator(list.size());
+    while (it.hasPrevious()) {
+      Activity activity = it.previous().get();
+      if (activity != null) {
+        return activity;
+      }
+    }
+    return null;
   }
 
   public void recreate() {

@@ -63,8 +63,6 @@ class EhApplication : RecordingApplication() {
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    private val mActivityList = mutableListOf<Activity>()
-
     private var initialized = false
 
     override fun attachBaseContext(base: Context) {
@@ -490,16 +488,11 @@ class EhApplication : RecordingApplication() {
 
     // ======== Activity registry ========
 
-    fun registerActivity(activity: Activity) {
-        mActivityList.add(activity)
-    }
-
-    fun unregisterActivity(activity: Activity) {
-        mActivityList.remove(activity)
-    }
-
+    // Backed by RecordingApplication's lifecycle-callback list — one registry
+    // for recreate() and crash metadata instead of a parallel strong-ref list
+    // every EhActivity subclass had to maintain manually.
     val topActivity: Activity?
-        get() = mActivityList.lastOrNull()
+        get() = lastCreatedActivity
 
     // ======== Service override for device compatibility ========
 
