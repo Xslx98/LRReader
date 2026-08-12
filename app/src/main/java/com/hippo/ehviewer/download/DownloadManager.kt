@@ -95,33 +95,37 @@ class DownloadManager(
                 val client = ServiceRegistry.networkModule.okHttpClient
                 val cache = ServiceRegistry.dataModule.profileLookupCache
 
-                // Snapshot the list on main thread
-                val infos = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                    ArrayList(repo.allInfoList)
+                // DownloadInfo is main-thread-owned: snapshot the fields this
+                // sync reads on Main; the IO loop below must never touch the
+                // live objects (a field read there can observe a torn state).
+                val snapshots = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    repo.allInfoList.mapNotNull { info ->
+                        val arcid = info.arcid ?: return@mapNotNull null
+                        RatingSyncSnapshot(info, arcid, info.serverProfileId, info.rating)
+                    }
                 }
-                if (infos.isEmpty()) return@launch
+                if (snapshots.isEmpty()) return@launch
 
                 // Fetch metadata for each archive and collect rating changes.
-                val changes = ArrayList<Pair<DownloadInfo, Float>>()
-                for (info in infos) {
-                    val arcid = info.arcid ?: continue
+                val changes = ArrayList<Pair<RatingSyncSnapshot, Float>>()
+                for (snap in snapshots) {
                     try {
                         // Route to the archive's *source* server (resolved from its
                         // serverProfileId), not the active one — a cross-profile download
                         // otherwise hits the wrong server and, since arcids are content
                         // hashes, could read another server's rating for the same id.
                         val baseUrl = com.lanraragi.reader.client.api
-                            .resolveSourceBaseUrl(info.serverProfileId, cache)
+                            .resolveSourceBaseUrl(snap.serverProfileId, cache)
                         val archive = com.lanraragi.reader.client.api.LRRArchiveApi
-                            .getArchiveMetadata(client, baseUrl, arcid)
+                            .getArchiveMetadata(client, baseUrl, snap.arcid)
                         val serverRating = parseRatingFromTags(archive.tags)
                         // Only update if server has a meaningful rating that
                         // differs from the local value. -1 = no rating tag on
                         // server, 0 = unrated locally; treat both as "unrated".
-                        val localEffective = if (info.rating <= 0) -1f else info.rating
+                        val localEffective = if (snap.rating <= 0) -1f else snap.rating
                         val serverEffective = if (serverRating <= 0) -1f else serverRating
                         if (serverEffective != localEffective) {
-                            changes.add(info to if (serverRating < 0) 0f else serverRating)
+                            changes.add(snap to if (serverRating < 0) 0f else serverRating)
                         }
                     } catch (e: Exception) {
                         // Skip this archive on error, continue with next
@@ -130,12 +134,15 @@ class DownloadManager(
 
                 if (changes.isEmpty()) return@launch
 
-                // DownloadInfo is main-thread-owned: mutate on Main, then persist + notify.
+                // Mutate the live objects on Main; persist via the rating-only
+                // update so no main-owned object is serialized from IO (the
+                // old whole-object putDownloadInfo could commit a torn row —
+                // e.g. a stale `state` racing a WAIT transition).
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                    for ((info, rating) in changes) info.rating = rating
+                    for ((snap, rating) in changes) snap.info.rating = rating
                 }
-                for ((info, _) in changes) {
-                    ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
+                for ((snap, rating) in changes) {
+                    ServiceRegistry.dataModule.downloadDbRepository.updateRating(snap.arcid, rating)
                 }
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                     eventBus.forEachListener { it.onChange() }
@@ -146,6 +153,18 @@ class DownloadManager(
             }
         }
     }
+
+    /**
+     * Main-thread capture of the [DownloadInfo] fields the rating sync reads
+     * off-main. [info] is carried only so the Main-thread mutation step can
+     * write the confirmed rating back to the live object.
+     */
+    private class RatingSyncSnapshot(
+        val info: DownloadInfo,
+        val arcid: String,
+        val serverProfileId: Long,
+        val rating: Float,
+    )
 
     suspend fun awaitInitAsync(timeoutMs: Long = 10_000L) {
         if (repo.initialized) return
