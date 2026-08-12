@@ -54,16 +54,9 @@ abstract class EhActivity : AppCompatActivity() {
         setTheme(getThemeResId(AppearanceSettings.getTheme()))
         super.onCreate(savedInstanceState)
 
-        (application as EhApplication).registerActivity(this)
-
         // Analytics stub (Firebase removed)
         @Suppress("UNUSED_EXPRESSION")
         Analytics.isEnabled
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        (application as EhApplication).unregisterActivity(this)
     }
 
     override fun onResume() {

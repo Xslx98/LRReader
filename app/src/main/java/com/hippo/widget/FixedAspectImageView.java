@@ -124,11 +124,13 @@ public class FixedAspectImageView extends ShapeableImageView {
      * @param ratio width/height
      */
     public void setAspect(float ratio) {
-        if (ratio > 0) {
-            mAspect = ratio;
-        } else {
-            mAspect = -1f;
+        float aspect = ratio > 0 ? ratio : -1f;
+        if (aspect == mAspect) {
+            // Grid binds call this with a constant value on every bind;
+            // skip the redundant requestLayout when nothing changed.
+            return;
         }
+        mAspect = aspect;
         requestLayout();
     }
 

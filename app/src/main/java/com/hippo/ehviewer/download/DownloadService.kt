@@ -174,6 +174,16 @@ class DownloadService : Service(), DownloadListener {
     override fun onDestroy() {
         super.onDestroy()
 
+        // The service stopSelf's when the scheduler goes idle, so reaching
+        // here with an idle (or already-detached) manager means the download
+        // session ended — reset the aggregated completion-notification state
+        // so the next session counts from zero instead of accumulating across
+        // sessions. A mid-session teardown (manager still busy) keeps the
+        // state for the START_STICKY restart.
+        if (mDownloadManager?.isIdle != false) {
+            clear()
+        }
+
         serviceScope.cancel()
         mKeepAlive?.release()
         mKeepAlive = null
@@ -558,6 +568,7 @@ class DownloadService : Service(), DownloadListener {
         val arcid = info.arcid
         val previous = sItemStateArray[arcid]
         if (previous == null) { // Not contain
+            trimDoneEntries()
             sItemStateArray[arcid] = finish
             sItemTitleArray[arcid] = info.title
             sDownloadedCount++
@@ -848,6 +859,19 @@ class DownloadService : Service(), DownloadListener {
         // Keyed by arcid post-W36-10 (gid column dropped from DOWNLOADS).
         private val sItemStateArray = LinkedHashMap<String, Boolean>()
         private val sItemTitleArray = LinkedHashMap<String, String?>()
+
+        // The InboxStyle only renders a handful of lines; cap the backing
+        // maps so a giant batch can't grow them without bound. Counters keep
+        // the true totals — eviction only rolls the oldest lines/titles off.
+        private const val MAX_DONE_ENTRIES = 100
+
+        private fun trimDoneEntries() {
+            while (sItemStateArray.size >= MAX_DONE_ENTRIES) {
+                val eldest = sItemStateArray.keys.firstOrNull() ?: break
+                sItemStateArray.remove(eldest)
+                sItemTitleArray.remove(eldest)
+            }
+        }
 
         private var sFailedCount = 0
         private var sFinishedCount = 0
