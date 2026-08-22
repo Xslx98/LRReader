@@ -1,0 +1,7 @@
+Maintenance release: 12 small fixes from the 2026-08-04 audit.
+- Auto-page-turn now honors the configured interval (was 2x)
+- Reader: stale page decodes after exit are dropped, not cached
+- Download completion notification no longer mixes counts across sessions
+- Rating sync no longer overwrites other archive fields
+- Fewer main-thread and disk-cache overheads on startup and lists
+- Crash guards for settings return and download notifications
