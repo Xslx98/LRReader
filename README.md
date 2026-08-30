@@ -1,3 +1,5 @@
+
+
 # LR Reader
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
@@ -97,6 +99,8 @@ RELEASE_KEY_PASSWORD=<your-key-password>
 # 签名 Release APK / Signed Release APK
 ./gradlew :app:assembleAppReleaseRelease
 ```
+
+生成的 Debug APK 位于 `app/build/outputs/apk/appRelease/debug/` / The generated Debug APK is located at `app/build/outputs/apk/appRelease/debug/`.
 
 > 详细的签名配置和发布流程请参考 [CONTRIBUTING.md](CONTRIBUTING.md)。
 >
