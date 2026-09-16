@@ -46,7 +46,7 @@
 # generated at compile time and referenced statically (no reflective
 # serializer() lookups in this codebase); the library ships consumer rules.
 
-# === Native JNI entry points (libehviewer.so) ===
+# === Native JNI entry points (liblrreader.so) ===
 -keep class com.lanraragi.framework.util.GifHandler { *; }
 
 # Custom views/preferences referenced in XML need no manual keeps: AGP feeds
