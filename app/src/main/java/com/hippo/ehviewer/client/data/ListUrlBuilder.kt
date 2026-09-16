@@ -62,6 +62,22 @@ class ListUrlBuilder : Cloneable, Parcelable {
     @JvmField
     var keyword: String? = null
 
+    /**
+     * LANraragi category id (e.g. "SET_1704939135"), sent as `/api/search?category=`.
+     * Null = no category filter. Independent of [keyword], which stays plain filter text
+     * (spec 2026-09-15: display and transport are separate).
+     */
+    @JvmField
+    var categoryId: String? = null
+
+    /**
+     * Display-only name for [categoryId]. May be null (rows migrated from the legacy
+     * "category:<id>" keyword protocol) or stale after a server-side rename; never
+     * part of equality.
+     */
+    @JvmField
+    var categoryName: String? = null
+
     @JvmField
     var follow: String? = null
 
@@ -85,6 +101,8 @@ class ListUrlBuilder : Cloneable, Parcelable {
         pageIndex = parcel.readInt()
         category = parcel.readInt()
         keyword = parcel.readString()
+        categoryId = parcel.readString()
+        categoryName = parcel.readString()
         advanceSearch = parcel.readInt()
         minRating = parcel.readInt()
         pageFrom = parcel.readInt()
@@ -99,10 +117,28 @@ class ListUrlBuilder : Cloneable, Parcelable {
         pageIndex = 0
         category = LRRUtils.NONE
         keyword = null
+        categoryId = null
+        categoryName = null
         advanceSearch = -1
         minRating = -1
         pageFrom = -1
         pageTo = -1
+    }
+
+    /**
+     * Apply a typed query while staying inside the current category: everything else
+     * resets like a fresh [MODE_NORMAL] search, but [categoryId] / [categoryName] survive
+     * so the server keeps filtering within the category (`category` + `filter` together).
+     * With no category set this is equivalent to `reset(); keyword = q`.
+     */
+    fun setKeywordKeepingCategory(q: String?) {
+        val id = categoryId
+        val name = categoryName
+        reset()
+        mode = MODE_NORMAL
+        categoryId = id
+        categoryName = name
+        keyword = q
     }
 
     public override fun clone(): ListUrlBuilder {
@@ -122,6 +158,10 @@ class ListUrlBuilder : Cloneable, Parcelable {
     fun setCategory(value: Int) { category = value }
     fun getKeyword(): String? = keyword
     fun setKeyword(value: String?) { keyword = value }
+    fun getCategoryId(): String? = categoryId
+    fun setCategoryId(value: String?) { categoryId = value }
+    fun getCategoryName(): String? = categoryName
+    fun setCategoryName(value: String?) { categoryName = value }
     fun setFollow(value: String?) { follow = value }
     fun getAdvanceSearch(): Int = advanceSearch
     fun setAdvanceSearch(value: Int) { advanceSearch = value }
@@ -141,6 +181,8 @@ class ListUrlBuilder : Cloneable, Parcelable {
         pageIndex = lub.pageIndex
         category = lub.category
         keyword = lub.keyword
+        categoryId = lub.categoryId
+        categoryName = lub.categoryName
         follow = lub.follow
         advanceSearch = lub.advanceSearch
         minRating = lub.minRating
@@ -152,6 +194,8 @@ class ListUrlBuilder : Cloneable, Parcelable {
         mode = q.mode
         category = q.category
         keyword = q.keyword
+        categoryId = q.categoryId
+        categoryName = q.categoryName
         advanceSearch = q.advanceSearch
         minRating = q.minRating
         pageFrom = q.pageFrom
@@ -162,6 +206,8 @@ class ListUrlBuilder : Cloneable, Parcelable {
         mode = newMode
         category = -1
         keyword = q
+        categoryId = null
+        categoryName = null
         advanceSearch = -1
         minRating = -1
         pageFrom = -1
@@ -172,6 +218,8 @@ class ListUrlBuilder : Cloneable, Parcelable {
         mode = MODE_TAG
         category = -1
         keyword = q
+        categoryId = null
+        categoryName = null
         advanceSearch = -1
         minRating = -1
         pageFrom = -1
@@ -183,6 +231,8 @@ class ListUrlBuilder : Cloneable, Parcelable {
             mode = this@ListUrlBuilder.mode
             category = this@ListUrlBuilder.category
             keyword = this@ListUrlBuilder.keyword
+            categoryId = this@ListUrlBuilder.categoryId
+            categoryName = this@ListUrlBuilder.categoryName
             advanceSearch = this@ListUrlBuilder.advanceSearch
             minRating = this@ListUrlBuilder.minRating
             pageFrom = this@ListUrlBuilder.pageFrom
@@ -192,9 +242,11 @@ class ListUrlBuilder : Cloneable, Parcelable {
 
     fun equalsQuickSearch(q: QuickSearch?): Boolean {
         if (q == null) return false
+        // categoryName is display-only (may lag a server rename) and deliberately not compared.
         return q.mode == mode &&
             q.category == category &&
             StringUtils.equals(q.keyword, keyword) &&
+            StringUtils.equals(q.categoryId, categoryId) &&
             q.advanceSearch == advanceSearch &&
             q.minRating == minRating &&
             q.pageFrom == pageFrom &&
@@ -429,6 +481,8 @@ class ListUrlBuilder : Cloneable, Parcelable {
         dest.writeInt(pageIndex)
         dest.writeInt(category)
         dest.writeString(keyword)
+        dest.writeString(categoryId)
+        dest.writeString(categoryName)
         dest.writeInt(advanceSearch)
         dest.writeInt(minRating)
         dest.writeInt(pageFrom)

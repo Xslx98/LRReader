@@ -83,15 +83,7 @@ internal class GalleryListSearchHelper(private val callback: Callback) {
                 return
             }
         } else {
-            val oldMode = urlBuilder.mode
-            val newMode = if (oldMode == ListUrlBuilder.MODE_SUBSCRIPTION) {
-                ListUrlBuilder.MODE_SUBSCRIPTION
-            } else {
-                ListUrlBuilder.MODE_NORMAL
-            }
-            urlBuilder.reset()
-            urlBuilder.mode = newMode
-            urlBuilder.keyword = cleanQuery
+            applyQuery(urlBuilder, cleanQuery)
         }
         callback.onUpdateUrlBuilder()
         helper.refresh()
@@ -148,6 +140,22 @@ internal class GalleryListSearchHelper(private val callback: Callback) {
                 true
             }
             else -> false
+        }
+    }
+
+    companion object {
+        /**
+         * Normal-state query application: a fresh search that stays inside the
+         * current category (spec 2026-09-15) and keeps subscription mode as before.
+         * Pure so the rule is testable without an attached ContentLayout.
+         */
+        @JvmStatic
+        fun applyQuery(urlBuilder: ListUrlBuilder, cleanQuery: String) {
+            val keepSubscription = urlBuilder.mode == ListUrlBuilder.MODE_SUBSCRIPTION
+            urlBuilder.setKeywordKeepingCategory(cleanQuery)
+            if (keepSubscription) {
+                urlBuilder.mode = ListUrlBuilder.MODE_SUBSCRIPTION
+            }
         }
     }
 }

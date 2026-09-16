@@ -71,8 +71,21 @@ class GallerySearchHelper(private val mCallback: Callback) {
         ): String? {
             val keyword = urlBuilder.keyword
             val category = urlBuilder.category
+            val categoryId = urlBuilder.categoryId
 
             return when {
+                // Category browsing: the category name (id only as a fallback for rows
+                // migrated without one), "name · keyword" once a query is applied inside it.
+                categoryId != null -> {
+                    val name = urlBuilder.categoryName?.takeIf { it.isNotBlank() } ?: categoryId
+                    val trimmed = keyword?.trim()
+                    if (trimmed.isNullOrEmpty()) {
+                        name
+                    } else {
+                        resources.getString(R.string.search_title_in_category, name, trimmed)
+                    }
+                }
+
                 urlBuilder.mode == ListUrlBuilder.MODE_NORMAL &&
                         LRRUtils.NONE == category &&
                         TextUtils.isEmpty(keyword) &&

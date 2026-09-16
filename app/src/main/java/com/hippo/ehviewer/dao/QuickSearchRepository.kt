@@ -1,5 +1,7 @@
 package com.hippo.ehviewer.dao
 
+import com.lanraragi.reader.client.api.data.LRRCategory
+
 /**
  * Repository for quick-search-related database operations, backed by [BrowsingRoomDao].
  *
@@ -28,6 +30,23 @@ class QuickSearchRepository(private val dao: BrowsingRoomDao) {
 
     suspend fun delete(quickSearch: QuickSearch) {
         dao.deleteQuickSearch(quickSearch)
+    }
+
+    /**
+     * Keep CATEGORY_NAME (display-only) in step with the server after a
+     * successful categories fetch: fills the names MIGRATION_30_31 left NULL
+     * and follows server-side renames. Idempotent — each UPDATE is guarded on
+     * "missing or different", so a repeat call changes nothing. Categories
+     * without a usable id or name are skipped. Returns rows changed.
+     */
+    suspend fun syncCategoryNames(categories: List<LRRCategory>): Int {
+        var changed = 0
+        for (category in categories) {
+            val id = category.id?.trim()?.takeIf { it.isNotEmpty() } ?: continue
+            val name = category.name?.trim()?.takeIf { it.isNotEmpty() } ?: continue
+            changed += dao.updateQuickSearchCategoryName(id, name)
+        }
+        return changed
     }
 
     suspend fun move(fromPosition: Int, toPosition: Int) {

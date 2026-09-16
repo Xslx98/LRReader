@@ -2,6 +2,9 @@ package com.hippo.ehviewer.client.data
 
 import android.os.Parcel
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -25,6 +28,8 @@ class ListUrlBuilderTest {
         minRating = 4
         pageFrom = 10
         pageTo = 20
+        categoryId = "SET_1704939135"
+        categoryName = "Favourites"
     }
 
     @Test
@@ -48,6 +53,8 @@ class ListUrlBuilderTest {
         assertEquals(original.minRating, restored.minRating)
         assertEquals(original.pageFrom, restored.pageFrom)
         assertEquals(original.pageTo, restored.pageTo)
+        assertEquals("SET_1704939135", restored.categoryId)
+        assertEquals("Favourites", restored.categoryName)
     }
 
     @Test
@@ -65,6 +72,8 @@ class ListUrlBuilderTest {
         assertEquals(template.minRating, target.minRating)
         assertEquals(template.pageFrom, target.pageFrom)
         assertEquals(template.pageTo, target.pageTo)
+        assertEquals("SET_1704939135", target.categoryId)
+        assertEquals("Favourites", target.categoryName)
     }
 
     @Test
@@ -77,5 +86,73 @@ class ListUrlBuilderTest {
         assertEquals(0, builder.pageIndex)
         assertEquals(null, builder.keyword)
         assertEquals(-1, builder.advanceSearch)
+        assertNull(builder.categoryId)
+        assertNull(builder.categoryName)
+    }
+
+    @Test
+    fun `setKeywordKeepingCategory resets everything except the category`() {
+        val builder = populated()
+
+        builder.setKeywordKeepingCategory("foo")
+
+        assertEquals(ListUrlBuilder.MODE_NORMAL, builder.mode)
+        assertEquals("foo", builder.keyword)
+        assertEquals("SET_1704939135", builder.categoryId)
+        assertEquals("Favourites", builder.categoryName)
+        assertEquals(0, builder.pageIndex)
+        assertEquals(-1, builder.advanceSearch)
+        assertEquals(-1, builder.minRating)
+        assertEquals(-1, builder.pageFrom)
+        assertEquals(-1, builder.pageTo)
+    }
+
+    @Test
+    fun `quick search round-trip carries category id and name`() {
+        val q = populated().toQuickSearch()
+        assertEquals("SET_1704939135", q.categoryId)
+        assertEquals("Favourites", q.categoryName)
+
+        val back = ListUrlBuilder()
+        back.set(q)
+        assertEquals("SET_1704939135", back.categoryId)
+        assertEquals("Favourites", back.categoryName)
+    }
+
+    @Test
+    fun `equalsQuickSearch compares category id but ignores name`() {
+        val builder = populated()
+        val q = builder.toQuickSearch()
+
+        q.categoryName = "Renamed on server"
+        assertTrue(builder.equalsQuickSearch(q))
+
+        q.categoryId = "SET_other"
+        assertFalse(builder.equalsQuickSearch(q))
+    }
+
+    @Test
+    fun `fresh-search setters drop the category`() {
+        val tagSearch = populated()
+        tagSearch.set("artist:other")
+        assertNull(tagSearch.categoryId)
+        assertNull(tagSearch.categoryName)
+
+        val modeSearch = populated()
+        modeSearch.set("uploader", ListUrlBuilder.MODE_UPLOADER)
+        assertNull(modeSearch.categoryId)
+        assertNull(modeSearch.categoryName)
+    }
+
+    @Test
+    fun `setKeywordKeepingCategory with no category behaves like a fresh normal search`() {
+        val builder = populated().apply { categoryId = null; categoryName = null }
+
+        builder.setKeywordKeepingCategory("bar")
+
+        assertEquals(ListUrlBuilder.MODE_NORMAL, builder.mode)
+        assertEquals("bar", builder.keyword)
+        assertNull(builder.categoryId)
+        assertNull(builder.categoryName)
     }
 }
