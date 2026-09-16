@@ -194,6 +194,8 @@ class ListUrlBuilder : Cloneable, Parcelable {
         mode = q.mode
         category = q.category
         keyword = q.keyword
+        categoryId = q.categoryId
+        categoryName = q.categoryName
         advanceSearch = q.advanceSearch
         minRating = q.minRating
         pageFrom = q.pageFrom
@@ -229,6 +231,8 @@ class ListUrlBuilder : Cloneable, Parcelable {
             mode = this@ListUrlBuilder.mode
             category = this@ListUrlBuilder.category
             keyword = this@ListUrlBuilder.keyword
+            categoryId = this@ListUrlBuilder.categoryId
+            categoryName = this@ListUrlBuilder.categoryName
             advanceSearch = this@ListUrlBuilder.advanceSearch
             minRating = this@ListUrlBuilder.minRating
             pageFrom = this@ListUrlBuilder.pageFrom
@@ -238,9 +242,11 @@ class ListUrlBuilder : Cloneable, Parcelable {
 
     fun equalsQuickSearch(q: QuickSearch?): Boolean {
         if (q == null) return false
+        // categoryName is display-only (may lag a server rename) and deliberately not compared.
         return q.mode == mode &&
             q.category == category &&
             StringUtils.equals(q.keyword, keyword) &&
+            StringUtils.equals(q.categoryId, categoryId) &&
             q.advanceSearch == advanceSearch &&
             q.minRating == minRating &&
             q.pageFrom == pageFrom &&

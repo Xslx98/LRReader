@@ -2,7 +2,9 @@ package com.hippo.ehviewer.client.data
 
 import android.os.Parcel
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -103,6 +105,30 @@ class ListUrlBuilderTest {
         assertEquals(-1, builder.minRating)
         assertEquals(-1, builder.pageFrom)
         assertEquals(-1, builder.pageTo)
+    }
+
+    @Test
+    fun `quick search round-trip carries category id and name`() {
+        val q = populated().toQuickSearch()
+        assertEquals("SET_1704939135", q.categoryId)
+        assertEquals("Favourites", q.categoryName)
+
+        val back = ListUrlBuilder()
+        back.set(q)
+        assertEquals("SET_1704939135", back.categoryId)
+        assertEquals("Favourites", back.categoryName)
+    }
+
+    @Test
+    fun `equalsQuickSearch compares category id but ignores name`() {
+        val builder = populated()
+        val q = builder.toQuickSearch()
+
+        q.categoryName = "Renamed on server"
+        assertTrue(builder.equalsQuickSearch(q))
+
+        q.categoryId = "SET_other"
+        assertFalse(builder.equalsQuickSearch(q))
     }
 
     @Test
