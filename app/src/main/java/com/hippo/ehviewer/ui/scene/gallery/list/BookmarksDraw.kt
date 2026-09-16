@@ -62,26 +62,12 @@ class BookmarksDraw(
                 Log.e(TAG, "Failed to load quick searches for bookmarks drawer", e)
                 return@launch
             }
-            // tag translation updates are persisted on IO thread
-            val judge = AppearanceSettings.getShowTagTranslations()
-            val toUpdate = mutableListOf<QuickSearch>()
-            if (judge && quickSearchList.isNotEmpty()) {
-                for (i in quickSearchList.indices) {
-                    val name = quickSearchList[i].name
-                    if (name != null && name.split(":").size == 2) {
-                        quickSearchList[i].name = TagTranslationUtil.getTagCN(name.split(":").toTypedArray(), this@BookmarksDraw.ehTags)
-                        toUpdate.add(quickSearchList[i])
-                    }
-                }
-            } else if (!judge && quickSearchList.isNotEmpty()) {
-                for (i in quickSearchList.indices) {
-                    val name = quickSearchList[i].name
-                    if (name != null && name.split(":").size == 1) {
-                        quickSearchList[i].name = quickSearchList[i].keyword
-                        toUpdate.add(quickSearchList[i])
-                    }
-                }
-            }
+            // Translated tag names are persisted on the IO thread; with translations
+            // off nothing is rewritten (see QuickSearchNameReconciler for the history).
+            val toUpdate = QuickSearchNameReconciler.reconcile(
+                quickSearchList,
+                AppearanceSettings.getShowTagTranslations()
+            ) { parts -> TagTranslationUtil.getTagCN(parts, this@BookmarksDraw.ehTags) }
             if (toUpdate.isNotEmpty()) {
                 try {
                     for (qs in toUpdate) ServiceRegistry.dataModule.quickSearchRepository.update(qs)

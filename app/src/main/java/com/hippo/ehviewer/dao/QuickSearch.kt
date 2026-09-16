@@ -67,7 +67,19 @@ class QuickSearch(
     @Ignore
     constructor(id: Long?) : this(id, null, 0, 0, null, null, null, 0, 0, 0, 0, 0)
 
-    override fun toString(): String = name ?: ""
+    /**
+     * What the UI shows for this entry. The user-given [name] wins; a name wiped
+     * by the v1.21.0 drawer bug falls back to the category name, the category id,
+     * then the keyword, so a row never renders as an empty line.
+     */
+    val displayName: String
+        get() = name?.takeIf { it.isNotBlank() }
+            ?: categoryName?.takeIf { it.isNotBlank() }
+            ?: categoryId?.takeIf { it.isNotBlank() }
+            ?: keyword?.takeIf { it.isNotBlank() }
+            ?: ""
+
+    override fun toString(): String = displayName
 
     fun toJson(): JSONObject {
         return try {
