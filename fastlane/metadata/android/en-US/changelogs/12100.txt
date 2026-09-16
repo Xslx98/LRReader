@@ -1,0 +1,5 @@
+Category browsing improvements:
+- Opening a category shows its name in the search bar instead of an internal id
+- Type inside a category to search within it; the title reads "Category · keyword"
+- Dynamic categories open the same way
+- Saved category quick searches upgrade automatically; names fill in after the next visit to the categories page
