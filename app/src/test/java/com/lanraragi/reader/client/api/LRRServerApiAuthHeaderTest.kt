@@ -10,7 +10,7 @@
 package com.lanraragi.reader.client.api
 
 import android.util.Base64
-import com.lanraragi.reader.EhProxySelector
+import com.lanraragi.reader.AppProxySelector
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.module.INetworkModule
 import com.lanraragi.reader.module.NetworkMonitor
@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit
  * clients strip LRRAuthInterceptor), using the interceptor's token format
  * `Bearer Base64(key)`.
  *
- * Plain [android.app.Application]: the manifest default (EhApplication) would
+ * Plain [android.app.Application]: the manifest default (LRReaderApplication) would
  * boot the full ServiceRegistry whose real NetworkMonitor reports offline
  * under Robolectric, tripping retryOnFailure's fast-fail.
  */
@@ -60,7 +60,7 @@ class LRRServerApiAuthHeaderTest {
         ServiceRegistry.initializeForTest(
             network = object : INetworkModule {
                 override val cache: Cache get() = throw UnsupportedOperationException()
-                override val proxySelector: EhProxySelector get() = throw UnsupportedOperationException()
+                override val proxySelector: AppProxySelector get() = throw UnsupportedOperationException()
                 override val okHttpClient: OkHttpClient get() = throw UnsupportedOperationException()
                 override val longReadClient: OkHttpClient get() = throw UnsupportedOperationException()
                 override val uploadClient: OkHttpClient get() = throw UnsupportedOperationException()

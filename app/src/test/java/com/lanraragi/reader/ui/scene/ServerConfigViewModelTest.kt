@@ -3,7 +3,7 @@ package com.lanraragi.reader.ui.scene
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.EhDB
+import com.lanraragi.reader.LegacyDb
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.dao.AppDatabase
@@ -14,7 +14,7 @@ import com.lanraragi.reader.module.CoroutineModule
 import com.lanraragi.reader.module.IDataModule
 import com.lanraragi.reader.module.INetworkModule
 import com.lanraragi.reader.module.NetworkMonitor
-import com.lanraragi.reader.EhProxySelector
+import com.lanraragi.reader.AppProxySelector
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRCleartextRefusedException
 import kotlinx.coroutines.CoroutineScope
@@ -82,9 +82,9 @@ class ServerConfigViewModelTest {
             .setTransactionExecutor { it.run() }
             .build()
 
-        val dbField = EhDB::class.java.getDeclaredField("sDatabase")
+        val dbField = LegacyDb::class.java.getDeclaredField("sDatabase")
         dbField.isAccessible = true
-        dbField.set(EhDB, db)
+        dbField.set(LegacyDb, db)
 
         server = MockWebServer()
         server.start()
@@ -407,7 +407,7 @@ class ServerConfigViewModelTest {
         tempDir.mkdirs()
         return object : INetworkModule {
             override val cache: Cache = Cache(tempDir, 1024L * 1024)
-            override val proxySelector: EhProxySelector = EhProxySelector()
+            override val proxySelector: AppProxySelector = AppProxySelector()
             override val okHttpClient: OkHttpClient = client
             override val longReadClient: OkHttpClient = client
             override val uploadClient: OkHttpClient = client

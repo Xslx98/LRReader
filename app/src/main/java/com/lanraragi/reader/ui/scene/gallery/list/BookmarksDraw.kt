@@ -12,11 +12,11 @@ import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.TextView
 import androidx.appcompat.widget.Toolbar
-import com.lanraragi.reader.EhApplication
+import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.GuideSettings
-import com.lanraragi.reader.client.EhTagDatabase
+import com.lanraragi.reader.client.TagTranslationDatabase
 import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.util.TagTranslationUtil
@@ -28,11 +28,11 @@ import kotlinx.coroutines.launch
 class BookmarksDraw(
     private val context: Context,
     private val inflater: LayoutInflater,
-    ehTags: EhTagDatabase?
+    ehTags: TagTranslationDatabase?
 ) {
 
-    private val ehTags: EhTagDatabase? = ehTags ?: EhTagDatabase.getInstance(context)
-    private val ehApplication: EhApplication = context.applicationContext as EhApplication
+    private val ehTags: TagTranslationDatabase? = ehTags ?: TagTranslationDatabase.getInstance(context)
+    private val ehApplication: LRReaderApplication = context.applicationContext as LRReaderApplication
 
     private lateinit var listView: ListView
 

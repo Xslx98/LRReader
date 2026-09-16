@@ -48,7 +48,7 @@ import java.io.IOException
  */
 /**
  * Minimal projection of the legacy `gallery` table used only by
- * [EhDB.mergeOldDB]. Replaces the `GalleryInfo` intermediate that
+ * [LegacyDb.mergeOldDB]. Replaces the `GalleryInfo` intermediate that
  * was retired in W36-11. Holds only the columns the downstream
  * Entity inserters actually copy.
  */
@@ -60,9 +60,9 @@ private data class LegacyGallery(
     val rating: Float,
 )
 
-object EhDB {
+object LegacyDb {
 
-    private const val TAG = "EhDB"
+    private const val TAG = "LegacyDb"
 
     @JvmField
     var MAX_HISTORY_COUNT = 100
@@ -98,7 +98,7 @@ object EhDB {
      * Migrates data from the legacy SQLite database into the current Room database.
      *
      * Suspending function — must be called from a coroutine. The caller in
-     * [EhApplication.onCreate] already runs this on a `Dispatchers.IO`-backed
+     * [LRReaderApplication.onCreate] already runs this on a `Dispatchers.IO`-backed
      * `CoroutineScope`, so no `withContext(Dispatchers.IO)` wrap is required at
      * this level. The DAO calls below are themselves suspending and Room dispatches
      * them to its own background executor.

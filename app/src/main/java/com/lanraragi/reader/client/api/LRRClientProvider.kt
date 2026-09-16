@@ -1,7 +1,7 @@
 package com.lanraragi.reader.client.api
 
 import android.content.Context
-import com.lanraragi.reader.EhApplication
+import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.ServiceRegistry
 import okhttp3.OkHttpClient
 
@@ -25,7 +25,7 @@ object LRRClientProvider {
     private var appContext: Context? = null
 
     /**
-     * Initialize with application context. Called once from EhApplication.onCreate().
+     * Initialize with application context. Called once from LRReaderApplication.onCreate().
      * Safe to call multiple times — subsequent calls are no-ops.
      */
     @JvmStatic
@@ -37,7 +37,7 @@ object LRRClientProvider {
 
     /**
      * Get the shared OkHttpClient configured with LRRAuthInterceptor.
-     * This delegates to [EhApplication.getOkHttpClient] to ensure
+     * This delegates to [LRReaderApplication.getOkHttpClient] to ensure
      * there is only one OkHttpClient instance in the entire app.
      *
      * @throws IllegalStateException if [init] has not been called

@@ -24,7 +24,7 @@ import androidx.appcompat.widget.Toolbar
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.AppearanceSettings
 
-abstract class ToolbarActivity : EhActivity() {
+abstract class ToolbarActivity : BaseActivity() {
 
     override fun getThemeResId(theme: Int): Int {
         return when (theme) {

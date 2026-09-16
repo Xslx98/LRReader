@@ -21,7 +21,7 @@ import android.util.AttributeSet
 import com.hippo.drawerlayout.DrawerLayoutChild
 import com.lanraragi.framework.widget.DrawerView
 
-class EhDrawerView @JvmOverloads constructor(
+class AppDrawerView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0

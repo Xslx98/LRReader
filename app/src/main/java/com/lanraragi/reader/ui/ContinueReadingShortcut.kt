@@ -39,7 +39,7 @@ object ContinueReadingShortcut : ReadingSessionEvents.Listener {
     }
 
     override fun onSessionEnd(end: ReadingSessionEnd) {
-        val context = com.lanraragi.reader.EhApplication.instance
+        val context = com.lanraragi.reader.LRReaderApplication.instance
         ServiceRegistry.coroutineModule.ioScope.launch {
             try {
                 publish(
@@ -110,5 +110,5 @@ object ContinueReadingShortcut : ReadingSessionEvents.Listener {
     }
 
     private fun appOrNull(): Context? =
-        runCatching { com.lanraragi.reader.EhApplication.instance }.getOrNull()
+        runCatching { com.lanraragi.reader.LRReaderApplication.instance }.getOrNull()
 }

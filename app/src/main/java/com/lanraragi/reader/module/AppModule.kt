@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.Crash
-import com.lanraragi.reader.EhApplication
+import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.Settings
 import com.lanraragi.framework.lib.yorozuya.IntIdGenerator
 import kotlinx.coroutines.CompletableDeferred
@@ -17,16 +17,16 @@ import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Application-level utilities: global object registry and temp cache.
- * Extracted from EhApplication to reduce its responsibility scope.
+ * Extracted from LRReaderApplication to reduce its responsibility scope.
  *
- * Also hosts the early-boot [bootScope]/[bootCEH] used by [EhApplication.onCreate]
+ * Also hosts the early-boot [bootScope]/[bootCEH] used by [LRReaderApplication.onCreate]
  * BEFORE [com.lanraragi.reader.ServiceRegistry] has been initialized. Code that runs
  * after `ServiceRegistry.initialize()` should prefer
  * `ServiceRegistry.coroutineModule.ioScope` instead.
  */
 class AppModule(private val context: Context) : IAppModule {
 
-    /** Returns the application context. Use instead of EhApplication.getInstance(). */
+    /** Returns the application context. Use instead of LRReaderApplication.getInstance(). */
     override fun getContext(): Context = context
 
     private val idGenerator = IntIdGenerator()
@@ -89,9 +89,9 @@ class AppModule(private val context: Context) : IAppModule {
         val bootCEH: CoroutineExceptionHandler = createBootCEH(
             saveCrashLog = { t ->
                 val ctx: Context? = try {
-                    EhApplication.instance
+                    LRReaderApplication.instance
                 } catch (e: Throwable) {
-                    Log.w(BOOT_TAG, "Retrieve EhApplication instance for crash log", e)
+                    Log.w(BOOT_TAG, "Retrieve LRReaderApplication instance for crash log", e)
                     null
                 }
                 if (ctx != null) Crash.saveCrashLog(ctx, t)
@@ -117,7 +117,7 @@ class AppModule(private val context: Context) : IAppModule {
 
         /**
          * `CompletableDeferred` for the active server profile id, completed by the
-         * profile-loader coroutine launched from [EhApplication.onCreate]. Downstream
+         * profile-loader coroutine launched from [LRReaderApplication.onCreate]. Downstream
          * code that needs to wait for the active profile to be resolved can `await()`
          * this instead of racing the loader.
          *
@@ -129,7 +129,7 @@ class AppModule(private val context: Context) : IAppModule {
 
         /**
          * Sticky one-shot for non-KeyStore boot failures (DB corruption, Room
-         * migration error, generic loader exception). Set by [EhApplication]
+         * migration error, generic loader exception). Set by [LRReaderApplication]
          * when the profile-load path catches a non-secure-storage exception;
          * read+cleared by the first UI that can surface a dialog (typically
          * [com.lanraragi.reader.ui.MainActivity.onCreate]).

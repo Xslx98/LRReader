@@ -1,6 +1,6 @@
 package com.lanraragi.reader.settings
 
-import com.lanraragi.reader.EhProxySelector
+import com.lanraragi.reader.AppProxySelector
 import com.lanraragi.reader.Settings
 
 /**
@@ -12,7 +12,7 @@ object NetworkSettings {
 
     // --- Proxy Type ---
     private const val KEY_PROXY_TYPE = "proxy_type"
-    private val DEFAULT_PROXY_TYPE = EhProxySelector.TYPE_SYSTEM
+    private val DEFAULT_PROXY_TYPE = AppProxySelector.TYPE_SYSTEM
 
     @JvmStatic
     fun getProxyType(): Int = Settings.getInt(KEY_PROXY_TYPE, DEFAULT_PROXY_TYPE)

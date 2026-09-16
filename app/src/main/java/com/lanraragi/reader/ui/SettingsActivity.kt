@@ -23,7 +23,7 @@ import com.lanraragi.reader.ui.fragment.AdvancedFragment
 import com.lanraragi.reader.ui.fragment.SettingsHeaders
 import com.lanraragi.framework.util.DrawableManager
 
-class SettingsActivity : EhActivity() {
+class SettingsActivity : BaseActivity() {
 
     companion object {
         /** Optional extra naming a settings screen to open directly on launch. */

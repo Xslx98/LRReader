@@ -64,7 +64,7 @@ object Crash {
         var topActivityClazzName = "null"
         var topSceneClazzName = "null"
         try {
-            val topActivity = (context.applicationContext as EhApplication).topActivity
+            val topActivity = (context.applicationContext as LRReaderApplication).topActivity
             if (topActivity != null) {
                 topActivityClazzName = topActivity.javaClass.name
                 if (topActivity is StageActivity) {

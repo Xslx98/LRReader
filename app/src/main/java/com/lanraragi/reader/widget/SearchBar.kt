@@ -49,8 +49,8 @@ import androidx.annotation.StringRes
 import androidx.cardview.widget.CardView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.EhTagDatabase
-import com.lanraragi.reader.client.EhTagDatabase.Companion.NAMESPACE_TO_PREFIX
+import com.lanraragi.reader.client.TagTranslationDatabase
+import com.lanraragi.reader.client.TagTranslationDatabase.Companion.NAMESPACE_TO_PREFIX
 import com.lanraragi.reader.client.api.LRRTagCache
 import com.lanraragi.reader.settings.AppearanceSettings
 import kotlinx.coroutines.launch
@@ -197,7 +197,7 @@ class SearchBar : CardView,
         // Track keywords already added to avoid duplicates between local and server tags
         val existingTagKeys = mutableSetOf<String>()
 
-        val ehTagDatabase = EhTagDatabase.getInstance(getContext())
+        val ehTagDatabase = TagTranslationDatabase.getInstance(getContext())
         if (!TextUtils.isEmpty(text) && ehTagDatabase != null) {
             val s = text.split(" ").dropLastWhile { it.isEmpty() }.toTypedArray()
             if (s.isNotEmpty()) {

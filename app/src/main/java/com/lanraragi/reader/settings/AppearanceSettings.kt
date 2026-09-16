@@ -59,7 +59,7 @@ object AppearanceSettings {
      * Mirror the system dark mode into the app theme, preserving the user's
      * chosen dark variant (DARK vs BLACK) across light/dark round trips.
      * Shared by cold start ([com.lanraragi.reader.Settings.initialize]), the
-     * runtime uiMode change (EhActivity.onConfigurationChanged), and enabling
+     * runtime uiMode change (BaseActivity.onConfigurationChanged), and enabling
      * the auto-switch preference — previously three diverging copies, each of
      * which hardcoded THEME_DARK on the dark transition.
      *
@@ -283,7 +283,7 @@ object AppearanceSettings {
      *
      * Pure function — it takes the already-read preference string, so it is safe
      * to call from `attachBaseContext` before [Settings] is initialized. Shared by
-     * `EhApplication` and `EhActivity` so process-context and per-activity locale
+     * `LRReaderApplication` and `BaseActivity` so process-context and per-activity locale
      * resolution can never drift.
      */
     @JvmStatic

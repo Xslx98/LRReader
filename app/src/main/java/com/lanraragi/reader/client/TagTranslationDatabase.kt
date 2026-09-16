@@ -42,7 +42,7 @@ import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 
-class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
+class TagTranslationDatabase(private val name: String, source: okio.BufferedSource) {
 
     /**
      * Lightweight internal tag entry replacing the deleted legacy [com.lanraragi.reader.client.data.Tag] class.
@@ -165,7 +165,7 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
     }
 
     companion object {
-        private val TAG = EhTagDatabase::class.java.simpleName
+        private val TAG = TagTranslationDatabase::class.java.simpleName
 
         @JvmField
         val NAMESPACE_TO_PREFIX: Map<String, String> = mapOf(
@@ -202,7 +202,7 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
         )
 
         @Volatile
-        private var instance: EhTagDatabase? = null
+        private var instance: TagTranslationDatabase? = null
 
         // EH-LEGACY: multi-language lock not implemented, Chinese-only is sufficient
         // Single-flight guard. Deliberately NOT a ReentrantLock: save() now
@@ -225,7 +225,7 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
         }
 
         @JvmStatic
-        fun getInstance(context: Context): EhTagDatabase? {
+        fun getInstance(context: Context): TagTranslationDatabase? {
             return if (isPossible(context)) {
                 instance
             } else {
@@ -354,11 +354,11 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
                         FileUtils.delete(dataFile)
                     }
 
-                    // Read current EhTagDatabase
+                    // Read current TagTranslationDatabase
                     if (instance == null && dataFile.exists()) {
                         try {
                             dataFile.source().buffer().use { source ->
-                                instance = EhTagDatabase(dataName, source)
+                                instance = TagTranslationDatabase(dataName, source)
                             }
                         } catch (e: java.io.IOException) {
                             Log.w(TAG, "Failed to read existing tag database", e)
@@ -413,10 +413,10 @@ class EhTagDatabase(private val name: String, source: okio.BufferedSource) {
                     tempSha1File.renameTo(sha1File)
                     tempDataFile.renameTo(dataFile)
 
-                    // Read new EhTagDatabase
+                    // Read new TagTranslationDatabase
                     try {
                         dataFile.source().buffer().use { source ->
-                            instance = EhTagDatabase(dataName, source)
+                            instance = TagTranslationDatabase(dataName, source)
                         }
                         throttle.recordSuccess()
                     } catch (e: java.io.IOException) {

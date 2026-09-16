@@ -293,6 +293,6 @@ abstract class BaseScene : SceneFragment() {
         const val LENGTH_LONG = 1
 
         @JvmField
-        val KEY_DRAWER_VIEW_STATE = "com.lanraragi.reader.ui.scene.BaseScene:DRAWER_VIEW_STATE"
+        val KEY_DRAWER_VIEW_STATE = BaseScene::class.java.name + ":DRAWER_VIEW_STATE"
     }
 }

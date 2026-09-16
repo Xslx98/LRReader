@@ -28,7 +28,7 @@ import java.net.ProxySelector
 import java.net.SocketAddress
 import java.net.URI
 
-class EhProxySelector : ProxySelector() {
+class AppProxySelector : ProxySelector() {
 
     private var delegation: ProxySelector?
     private val alternative: ProxySelector

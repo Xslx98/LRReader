@@ -91,7 +91,7 @@ import javax.microedition.khronos.egl.EGL10
 import javax.microedition.khronos.egl.EGLContext
 import javax.microedition.khronos.egl.EGLDisplay
 
-class GalleryActivity : EhActivity(), GalleryView.Listener,
+class GalleryActivity : BaseActivity(), GalleryView.Listener,
     GalleryInputHandler.Callback, GalleryMenuHelper.SettingsCallback {
 
     companion object {
@@ -367,7 +367,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
         }
         super.onCreate(savedInstanceState)
         // StrictMode policies are installed app-wide (debug only) in
-        // EhApplication. The block that used to sit here installed an EMPTY
+        // LRReaderApplication. The block that used to sit here installed an EMPTY
         // VmPolicy (detectFileUriExposure() was called after build()) — a
         // no-op that also cleared any inherited policy, in release too.
 
@@ -730,7 +730,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
 
     override fun onResume() {
         super.onResume()
-        // EhActivity.onForegroundLockCheck may have launched MainActivity for
+        // BaseActivity.onForegroundLockCheck may have launched MainActivity for
         // the security re-prompt — when CLEAR_TOP pops us, we end up
         // finishing. Don't touch GL resources on a doomed activity.
         if (isFinishing) return
@@ -739,7 +739,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
     }
 
     /**
-     * Before the EhActivity default bounces us back to MainActivity for the
+     * Before the BaseActivity default bounces us back to MainActivity for the
      * security prompt, stash a self-resume intent so SecurityScene can
      * re-launch the reader on the same page after a successful unlock.
      * The stash is process-scoped — process death drops it, which is fine

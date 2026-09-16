@@ -29,8 +29,8 @@ import com.hippo.drawerlayout.DrawerLayout
 import com.lanraragi.reader.R
 import com.lanraragi.framework.lib.yorozuya.AnimationUtils
 
-@CoordinatorLayout.DefaultBehavior(EhDrawerLayout.Behavior::class)
-class EhDrawerLayout @JvmOverloads constructor(
+@CoordinatorLayout.DefaultBehavior(AppDrawerLayout.Behavior::class)
+class AppDrawerLayout @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyle: Int = 0
@@ -59,11 +59,11 @@ class EhDrawerLayout @JvmOverloads constructor(
     }
 
     @SuppressLint("RestrictedApi")
-    class Behavior : CoordinatorLayout.Behavior<EhDrawerLayout>() {
+    class Behavior : CoordinatorLayout.Behavior<AppDrawerLayout>() {
 
         override fun layoutDependsOn(
             parent: CoordinatorLayout,
-            child: EhDrawerLayout,
+            child: AppDrawerLayout,
             dependency: View
         ): Boolean {
             return SNACKBAR_BEHAVIOR_ENABLED && dependency is Snackbar.SnackbarLayout
@@ -71,7 +71,7 @@ class EhDrawerLayout @JvmOverloads constructor(
 
         override fun onDependentViewChanged(
             parent: CoordinatorLayout,
-            child: EhDrawerLayout,
+            child: AppDrawerLayout,
             dependency: View
         ): Boolean {
             if (dependency is Snackbar.SnackbarLayout) {
@@ -85,7 +85,7 @@ class EhDrawerLayout @JvmOverloads constructor(
 
         private fun updateChildTranslationForSnackbar(
             parent: CoordinatorLayout,
-            view: EhDrawerLayout,
+            view: AppDrawerLayout,
             child: View
         ) {
             val targetTransY = getChildTranslationYForSnackbar(parent, view)
@@ -129,7 +129,7 @@ class EhDrawerLayout @JvmOverloads constructor(
 
         private fun getChildTranslationYForSnackbar(
             parent: CoordinatorLayout,
-            child: EhDrawerLayout
+            child: AppDrawerLayout
         ): Float {
             var minOffset = 0f
             val dependencies = parent.getDependencies(child)

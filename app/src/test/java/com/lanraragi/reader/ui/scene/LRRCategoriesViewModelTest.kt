@@ -2,7 +2,7 @@ package com.lanraragi.reader.ui.scene
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.EhProxySelector
+import com.lanraragi.reader.AppProxySelector
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.module.IAppModule
 import com.lanraragi.reader.module.INetworkModule
@@ -77,7 +77,7 @@ class LRRCategoriesViewModelTest {
 
         val testNetworkModule = object : INetworkModule {
             override val cache: Cache get() = Cache(File(ctx.cacheDir, "test-cache"), 1024)
-            override val proxySelector: EhProxySelector get() = throw UnsupportedOperationException()
+            override val proxySelector: AppProxySelector get() = throw UnsupportedOperationException()
             override val okHttpClient: OkHttpClient = client
             override val longReadClient: OkHttpClient = client
             override val uploadClient: OkHttpClient = client

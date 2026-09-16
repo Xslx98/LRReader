@@ -17,7 +17,7 @@ package com.lanraragi.framework.util
 
 import com.lanraragi.reader.GetText
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.exception.EhException
+import com.lanraragi.reader.client.exception.AppException
 import com.lanraragi.framework.network.StatusCodeException
 import org.apache.http.conn.ConnectTimeoutException
 import java.net.MalformedURLException
@@ -52,7 +52,7 @@ object ExceptionUtils {
             return GetText.getString(R.string.error_redirection)
         } else if (e is ProtocolException || e is SocketException || e is SSLException) {
             return GetText.getString(R.string.error_socket)
-        } else if (e is EhException) {
+        } else if (e is AppException) {
             return "" + e.message
         } else {
             if (e.localizedMessage == null) {

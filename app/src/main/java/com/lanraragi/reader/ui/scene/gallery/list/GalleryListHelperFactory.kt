@@ -11,7 +11,7 @@ import android.view.View
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.lanraragi.framework.drawable.DrawerArrowDrawable
-import com.lanraragi.reader.client.EhTagDatabase
+import com.lanraragi.reader.client.TagTranslationDatabase
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.ui.scene.BaseScene
@@ -98,7 +98,7 @@ internal object GalleryListHelperFactory {
                 scene.onListItemLongClick(position)
             override fun getBaseScene(): BaseScene = scene
         })
-        tagChipHelper.setEhTags(EhTagDatabase.getInstance(context))
+        tagChipHelper.setEhTags(TagTranslationDatabase.getInstance(context))
 
         val dataHelper = GalleryListDataHelper(object : GalleryListDataHelper.Callback {
             override fun getHostContext(): Context? = scene.ehContext
@@ -184,7 +184,7 @@ internal object GalleryListHelperFactory {
             override fun getScene(): GalleryListScene = scene
             override fun getSceneTag(): String? = scene.tag
             override fun getUrlBuilder(): ListUrlBuilder? = scene.mUrlBuilder
-            override fun getEhTags(): EhTagDatabase? = scene.tagChipHelper?.getEhTags()
+            override fun getEhTags(): TagTranslationDatabase? = scene.tagChipHelper?.getEhTags()
             override fun showTip(resId: Int, length: Int) = scene.showTip(resId, length)
             override fun showTip(message: String, length: Int) = scene.showTip(message, length)
             override fun getString(resId: Int): String = scene.getString(resId)

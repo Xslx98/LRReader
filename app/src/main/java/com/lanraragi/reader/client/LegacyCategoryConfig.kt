@@ -24,7 +24,7 @@ package com.lanraragi.reader.client
  * Retained: category bitmask constants, namespace constants, language
  * constants, image size constants, and path constants.
  */
-object EhConfig {
+object LegacyCategoryConfig {
 
     // ==================== Image Size constants ====================
 

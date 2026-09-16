@@ -20,7 +20,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.preference.Preference
 import com.lanraragi.reader.AppConfig
-import com.lanraragi.reader.EhApplication
+import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.framework.util.LogCat
@@ -56,7 +56,7 @@ class AdvancedFragment : BasePreferenceFragmentCompat(),
     }
 
     private fun clearMemoryCache(): Boolean {
-        (requireActivity().application as EhApplication).clearMemoryCache()
+        (requireActivity().application as LRReaderApplication).clearMemoryCache()
         Runtime.getRuntime().gc()
         return false
     }
@@ -93,7 +93,7 @@ class AdvancedFragment : BasePreferenceFragmentCompat(),
             // fresh process back to this screen) so the fresh process reads it
             // in attachBaseContext.
             AppearanceSettings.putAppLanguageForRestart(language)
-            (requireActivity().application as EhApplication).restart()
+            (requireActivity().application as LRReaderApplication).restart()
             return false
         }
         return false

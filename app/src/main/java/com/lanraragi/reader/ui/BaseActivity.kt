@@ -26,12 +26,12 @@ import androidx.annotation.StyleRes
 import androidx.appcompat.app.AppCompatActivity
 import com.lanraragi.framework.content.ContextLocalWrapper
 import com.lanraragi.reader.Analytics
-import com.lanraragi.reader.EhApplication
+import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.settings.SecuritySettings
 
-abstract class EhActivity : AppCompatActivity() {
+abstract class BaseActivity : AppCompatActivity() {
 
     @StyleRes
     protected abstract fun getThemeResId(theme: Int): Int
@@ -117,7 +117,7 @@ abstract class EhActivity : AppCompatActivity() {
         if (AppearanceSettings.isThemeAutoSwitchAvailable()) {
             val isDark = (newConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
             if (AppearanceSettings.syncThemeWithSystem(isDark)) {
-                (application as EhApplication).recreate()
+                (application as LRReaderApplication).recreate()
             }
         }
     }

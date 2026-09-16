@@ -2,7 +2,7 @@ package com.lanraragi.reader.ui.scene.gallery.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lanraragi.reader.EhDB
+import com.lanraragi.reader.LegacyDb
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry

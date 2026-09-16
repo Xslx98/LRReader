@@ -16,7 +16,7 @@
 
 package com.lanraragi.reader.client.exception
 
-class ParseException : EhException {
+class ParseException : AppException {
 
     val body: String?
 

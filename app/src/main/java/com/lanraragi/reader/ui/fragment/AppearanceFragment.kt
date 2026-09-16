@@ -19,15 +19,15 @@ package com.lanraragi.reader.ui.fragment
 import android.app.Activity
 import android.os.Bundle
 import androidx.preference.Preference
-import com.lanraragi.reader.EhApplication
+import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.AppearanceSettings
 
-class EhFragment : BasePreferenceFragmentCompat(),
+class AppearanceFragment : BasePreferenceFragmentCompat(),
     Preference.OnPreferenceChangeListener {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        addPreferencesFromResource(R.xml.eh_settings)
+        addPreferencesFromResource(R.xml.appearance_settings)
 
         val theme = findPreference<Preference>(AppearanceSettings.KEY_THEME)
         val themeAutoSwitch = findPreference<Preference>(AppearanceSettings.KEY_THEME_AUTO_SWITCH)
@@ -41,7 +41,7 @@ class EhFragment : BasePreferenceFragmentCompat(),
     override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
         val key = preference.key
         if (AppearanceSettings.KEY_THEME == key) {
-            (requireActivity().application as EhApplication).recreate()
+            (requireActivity().application as LRReaderApplication).recreate()
             return true
         } else if (AppearanceSettings.KEY_LIST_MODE == key) {
             requireActivity().setResult(Activity.RESULT_OK)
@@ -52,7 +52,7 @@ class EhFragment : BasePreferenceFragmentCompat(),
             AppearanceSettings.syncThemeWithSystem(
                 AppearanceSettings.getDarkModeStatus(requireContext())
             )
-            (requireActivity().application as EhApplication).recreate()
+            (requireActivity().application as LRReaderApplication).recreate()
             return true
         }
         return true

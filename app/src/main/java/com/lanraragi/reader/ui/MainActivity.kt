@@ -39,7 +39,7 @@ import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.hippo.drawerlayout.DrawerLayout
 import com.lanraragi.reader.BuildConfig
-import com.lanraragi.reader.EhApplication
+import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.ServiceRegistry
@@ -48,7 +48,7 @@ import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.settings.NetworkSettings
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.settings.AppearanceSettings
-import com.lanraragi.reader.client.EhTagDatabase
+import com.lanraragi.reader.client.TagTranslationDatabase
 import com.lanraragi.reader.download.DownloadResumeBanner
 import com.lanraragi.reader.download.DownloadService
 import com.lanraragi.reader.client.data.ListUrlBuilder
@@ -71,7 +71,7 @@ import com.lanraragi.reader.ui.scene.SolidScene
 import com.lanraragi.reader.ui.scene.TankoubonDetailScene
 import com.lanraragi.reader.ui.scene.TankoubonsScene
 import com.lanraragi.reader.client.LRRUrlOpener
-import com.lanraragi.reader.widget.EhDrawerLayout
+import com.lanraragi.reader.widget.AppDrawerLayout
 import com.lanraragi.framework.network.Network
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.framework.scene.SceneFactory
@@ -106,7 +106,7 @@ class MainActivity : StageActivity(),
         private const val KEY_NAV_CHECKED_ITEM = "nav_checked_item"
 
         /**
-         * Set on the relaunch intent after [EhApplication.restart] so the new
+         * Set on the relaunch intent after [LRReaderApplication.restart] so the new
          * process discards the saved scene stack of the killed one.
          */
         const val KEY_RESTART: String = "restart"
@@ -157,7 +157,7 @@ class MainActivity : StageActivity(),
      ---------------*/
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    private var mDrawerLayout: EhDrawerLayout? = null
+    private var mDrawerLayout: AppDrawerLayout? = null
     private var mNavView: NavigationView? = null
     private var mRightDrawer: FrameLayout? = null
 
@@ -412,7 +412,7 @@ class MainActivity : StageActivity(),
     }
 
     override fun onCreate2(savedInstanceState: Bundle?) {
-        // A relaunch after EhApplication.restart() must not restore the dead
+        // A relaunch after LRReaderApplication.restart() must not restore the dead
         // process's scene stack.
         val savedState = if (intent?.getBooleanExtra(KEY_RESTART, false) == true) {
             null
@@ -423,7 +423,7 @@ class MainActivity : StageActivity(),
 
         maybeRequestNotificationPermission()
 
-        val drawerLayout = ViewUtils.`$$`(this, R.id.draw_view) as EhDrawerLayout
+        val drawerLayout = ViewUtils.`$$`(this, R.id.draw_view) as AppDrawerLayout
         mDrawerLayout = drawerLayout
         drawerLayout.setDrawerListener(this)
 
@@ -470,7 +470,7 @@ class MainActivity : StageActivity(),
         mChangeTheme.text = getThemeText()
         mChangeTheme.setOnClickListener {
             AppearanceSettings.putTheme(getNextTheme())
-            (application as EhApplication).recreate()
+            (application as LRReaderApplication).recreate()
         }
 
         if (savedState == null) {
@@ -482,7 +482,7 @@ class MainActivity : StageActivity(),
         } else {
             onRestore(savedState)
         }
-        EhTagDatabase.update(this)
+        TagTranslationDatabase.update(this)
 
         // Prompt user to re-enter credentials if KeyStore became unavailable
         if (LRRAuthManager.isNeedsReauthentication()) {
@@ -661,11 +661,11 @@ class MainActivity : StageActivity(),
     /**
      * Restart the whole app process, finishing this task's activities first so the
      * relaunch starts from a clean stack. The process-rebirth mechanics live in
-     * [EhApplication.restart].
+     * [LRReaderApplication.restart].
      */
     private fun triggerRebirth() {
         finishAffinity()
-        (application as EhApplication).restart()
+        (application as LRReaderApplication).restart()
     }
 
     override fun onStart() {
@@ -823,7 +823,7 @@ class MainActivity : StageActivity(),
      * MainActivity hosts the SecurityScene, so when the app returns from
      * background and a re-lock is pending, push a fresh SecurityScene on top
      * of the existing scene stack instead of bouncing through the
-     * EhActivity default. The scene is launched in re-lock mode so
+     * BaseActivity default. The scene is launched in re-lock mode so
      * successful unlock just pops it back to the previous scene without
      * resetting navigation.
      */

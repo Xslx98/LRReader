@@ -92,7 +92,7 @@ abstract class AppDatabase : RoomDatabase() {
          * Gallery_Tags was an EhViewer-era per-gallery tag cache. Investigation
          * showed it was a dead cache: `insertGalleryTags` and `updateGalleryTags`
          * had ZERO callers anywhere in the codebase, so the table was never
-         * populated. The only reader was `EhDB.queryGalleryTags` called once
+         * populated. The only reader was `LegacyDb.queryGalleryTags` called once
          * from `DownloadListInfosExecutor.searchTagList` — which always got
          * null back and handled it as "no cache, no match". Meanwhile, real
          * tag data for LRR archives is populated directly into
@@ -101,7 +101,7 @@ abstract class AppDatabase : RoomDatabase() {
          * during the LRR conversion and never reconnected.
          *
          * Deleting this table also lets us remove the last meaningful
-         * `@JvmStatic blockingDb` bridge (`EhDB.queryGalleryTags`), bringing
+         * `@JvmStatic blockingDb` bridge (`LegacyDb.queryGalleryTags`), bringing
          * the inventory down from 3 to 2 (only `getDownloadDirname` and
          * `putDownloadDirname` remain).
          */
@@ -311,7 +311,7 @@ abstract class AppDatabase : RoomDatabase() {
          * not orphan already-downloaded archives. The migration adds
          * the column as NULL on every existing row; legacy rows are
          * backfilled at boot from the current download-location setting
-         * (see `EhApplication.backfillLegacyDownloadRootUri`). Once a
+         * (see `LRReaderApplication.backfillLegacyDownloadRootUri`). Once a
          * row has its URI set, subsequent boots are no-ops because the
          * backfill UPDATE is gated on `DOWNLOAD_ROOT_URI IS NULL`.
          */
@@ -944,7 +944,7 @@ abstract class AppDatabase : RoomDatabase() {
          *
          * BookmarkInfo was an EhViewer-era per-gallery "reader bookmark" entity
          * (remembering which page you were on in a gallery). It had zero callers
-         * in the LR Reader codebase — no UI scene, no EhDB wrapper methods,
+         * in the LR Reader codebase — no UI scene, no LegacyDb wrapper methods,
          * not even a single insert/query from anywhere outside the DAO. The
          * DAO methods existed but were never invoked; the BOOKMARKS table
          * has been silently inert for as long as the LRR conversion has

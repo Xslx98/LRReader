@@ -161,7 +161,7 @@ class DownloadListInfosExecutor {
         // cache via searchTagList(gid), but that cache was dead code
         // (insertGalleryTags/updateGalleryTags had zero callers) and
         // was removed in the C5 cleanup (2026-04-08) along with the
-        // EhDB.queryGalleryTags blockingDb bridge.
+        // LegacyDb.queryGalleryTags blockingDb bridge.
         val tagList = info.tgList ?: return false
 
         val searchTags = searchKey.split("  ")

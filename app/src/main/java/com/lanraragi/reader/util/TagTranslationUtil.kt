@@ -1,19 +1,19 @@
 package com.lanraragi.reader.util
 
-import com.lanraragi.reader.client.EhTagDatabase
+import com.lanraragi.reader.client.TagTranslationDatabase
 
 object TagTranslationUtil {
 
     @JvmStatic
-    fun getTagCN(tags: Array<String>, ehTags: EhTagDatabase?): String {
+    fun getTagCN(tags: Array<String>, ehTags: TagTranslationDatabase?): String {
         if (ehTags != null && tags.size == 2) {
-            var namespace = EhTagDatabase.prefixToNamespace("${tags[0]}:")
+            var namespace = TagTranslationDatabase.prefixToNamespace("${tags[0]}:")
             if (namespace == null) {
                 namespace = tags[0]
             }
             val group = ehTags.getTranslation("n:$namespace")
             //翻译标签名
-            var prefix = EhTagDatabase.namespaceToPrefix(tags[0])
+            var prefix = TagTranslationDatabase.namespaceToPrefix(tags[0])
             if (tags[0].length == 1 && tags[0].matches("^[a-z]+$".toRegex())) {
                 prefix = "${tags[0]}:"
             }
@@ -43,11 +43,11 @@ object TagTranslationUtil {
     }
 
     @JvmStatic
-    fun getTagCNBody(tags: Array<String>, ehTags: EhTagDatabase?): String {
+    fun getTagCNBody(tags: Array<String>, ehTags: TagTranslationDatabase?): String {
         if (ehTags != null && tags.size == 2) {
             val group = ehTags.getTranslation("n:${tags[0]}")
             //翻译标签名
-            val prefix = EhTagDatabase.namespaceToPrefix(tags[0])
+            val prefix = TagTranslationDatabase.namespaceToPrefix(tags[0])
             val tagstr = ehTags.getTranslation(if (prefix != null) "$prefix${tags[1]}" else tags[1])
 
             return when {
@@ -67,7 +67,7 @@ object TagTranslationUtil {
     }
 
     @JvmStatic
-    fun getTagCN(tag: String?, ehTags: EhTagDatabase?): String {
+    fun getTagCN(tag: String?, ehTags: TagTranslationDatabase?): String {
         return getTagCN((tag ?: "").split(":").toTypedArray(), ehTags)
     }
 }

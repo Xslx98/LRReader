@@ -21,8 +21,8 @@ import org.robolectric.annotation.Config
 import kotlin.coroutines.Continuation
 
 /**
- * Tests for [EhDB.mergeOldDB] after W1-7: the legacy SQLite-to-Room merge is now
- * a `suspend fun` with no internal `runBlocking`. The caller in `EhApplication`
+ * Tests for [LegacyDb.mergeOldDB] after W1-7: the legacy SQLite-to-Room merge is now
+ * a `suspend fun` with no internal `runBlocking`. The caller in `LRReaderApplication`
  * already runs it on a `Dispatchers.IO`-backed [kotlinx.coroutines.CoroutineScope],
  * so the previous `runBlocking` was pinning an IO worker for nothing.
  *
@@ -37,7 +37,7 @@ import kotlin.coroutines.Continuation
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30], application = android.app.Application::class)
-class EhDBMergeOldDbTest {
+class LegacyDbMergeOldDbTest {
 
     private lateinit var db: AppDatabase
     private lateinit var context: Context
@@ -46,17 +46,17 @@ class EhDBMergeOldDbTest {
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
 
-        // In-memory Room DB injected directly into EhDB.sDatabase via reflection,
-        // bypassing EhDB.initialize() (which depends on Settings).
+        // In-memory Room DB injected directly into LegacyDb.sDatabase via reflection,
+        // bypassing LegacyDb.initialize() (which depends on Settings).
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .setQueryExecutor { it.run() }
             .setTransactionExecutor { it.run() }
             .build()
 
-        val dbField = EhDB::class.java.getDeclaredField("sDatabase")
+        val dbField = LegacyDb::class.java.getDeclaredField("sDatabase")
         dbField.isAccessible = true
-        dbField.set(EhDB, db)
+        dbField.set(LegacyDb, db)
 
         // Make sure no stale legacy DB exists from a previous test run
         context.getDatabasePath("data")?.takeIf { it.exists() }?.delete()
@@ -71,8 +71,8 @@ class EhDBMergeOldDbTest {
     fun mergeOldDB_isSuspendFunction() {
         // Suspend functions are compiled to take a trailing `Continuation` parameter.
         // Locate the JVM method and verify its parameter list ends with Continuation.
-        val method = EhDB::class.java.declaredMethods.firstOrNull { it.name == "mergeOldDB" }
-        assertNotNull("mergeOldDB must exist on EhDB", method)
+        val method = LegacyDb::class.java.declaredMethods.firstOrNull { it.name == "mergeOldDB" }
+        assertNotNull("mergeOldDB must exist on LegacyDb", method)
         val params = method!!.parameterTypes
         assertTrue(
             "mergeOldDB must accept (Context, Continuation) — i.e. be a suspend fun (W1-7)",
@@ -83,10 +83,10 @@ class EhDBMergeOldDbTest {
     @Test
     fun mergeOldDB_hasNoJvmStaticBridge() {
         // `@JvmStatic` on an `object` member compiles a STATIC method directly on the
-        // EhDB Java class (in addition to the instance method on the singleton).
+        // LegacyDb Java class (in addition to the instance method on the singleton).
         // W1-7 explicitly drops `@JvmStatic` because suspend functions can't be
         // bridged usefully through it. Verify no static `mergeOldDB` exists.
-        val staticMethod = EhDB::class.java.declaredMethods.firstOrNull {
+        val staticMethod = LegacyDb::class.java.declaredMethods.firstOrNull {
             it.name == "mergeOldDB" && java.lang.reflect.Modifier.isStatic(it.modifiers)
         }
         assertTrue(
@@ -101,7 +101,7 @@ class EhDBMergeOldDbTest {
         // Behavioural proof: with no legacy `data` SQLite file, the SQLiteOpenHelper
         // creates an empty schema, the rawQuery loops short-circuit (no rows), the
         // helper closes, and the function returns cleanly without touching Room.
-        EhDB.mergeOldDB(context)
+        LegacyDb.mergeOldDB(context)
 
         // Verify the Room DB was not mutated as a side effect.
         // Post-L1-4: legacy tables gone — check the unified
@@ -138,7 +138,7 @@ class EhDBMergeOldDbTest {
             legacy.execSQL("INSERT INTO history VALUES (1, 2, 1700000001234)")
         }
 
-        EhDB.mergeOldDB(context)
+        LegacyDb.mergeOldDB(context)
 
         val rows = db.archiveLocalStateDao().getAllHistory()
         assertEquals(1, rows.size)
@@ -154,16 +154,16 @@ class EhDBMergeOldDbTest {
     @Test
     fun mergeOldDB_canBeCalledTwice_idempotent() = runTest {
         // Calling twice in a row should not throw, and `sHasOldDB` should remain false.
-        EhDB.mergeOldDB(context)
-        EhDB.mergeOldDB(context)
-        assertFalse("needMerge() should be false after merge completes", EhDB.needMerge())
+        LegacyDb.mergeOldDB(context)
+        LegacyDb.mergeOldDB(context)
+        assertFalse("needMerge() should be false after merge completes", LegacyDb.needMerge())
     }
 
     @Test
     fun mergeOldDB_javaMethodIsNotStatic() {
-        // Cross-check: the single `mergeOldDB` method on the EhDB Java class must
-        // be an instance method on the EhDB singleton, not a static.
-        val method = EhDB::class.java.declaredMethods.first { it.name == "mergeOldDB" }
+        // Cross-check: the single `mergeOldDB` method on the LegacyDb Java class must
+        // be an instance method on the LegacyDb singleton, not a static.
+        val method = LegacyDb::class.java.declaredMethods.first { it.name == "mergeOldDB" }
         assertFalse(
             "mergeOldDB Java method must NOT be static (W1-7 drops @JvmStatic)",
             java.lang.reflect.Modifier.isStatic(method.modifiers)

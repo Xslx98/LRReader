@@ -42,7 +42,7 @@ import com.hippo.easyrecyclerview.EasyRecyclerView;
 import com.hippo.easyrecyclerview.FastScroller;
 import com.hippo.easyrecyclerview.HandlerDrawable;
 import com.hippo.easyrecyclerview.LayoutManagerUtils;
-import com.lanraragi.reader.EhApplication;
+import com.lanraragi.reader.LRReaderApplication;
 import com.lanraragi.reader.R;
 import com.hippo.refreshlayout.RefreshLayout;
 import com.lanraragi.framework.util.DrawableManager;
@@ -1097,8 +1097,8 @@ public class ContentLayout extends FrameLayout {
             bundle.putInt(KEY_SHOWN_VIEW, shownView);
             bundle.putString(KEY_TIP, mTipView.getText().toString());
 
-            // KNOWN-ISSUE (P2): uses EhApplication global state to persist data across config changes
-            EhApplication app = (EhApplication) getContext().getApplicationContext();
+            // KNOWN-ISSUE (P2): uses LRReaderApplication global state to persist data across config changes
+            LRReaderApplication app = (LRReaderApplication) getContext().getApplicationContext();
             if (mSavedDataId != IntIdGenerator.INVALID_ID) {
                 app.removeGlobalStuff(mSavedDataId);
                 mSavedDataId = IntIdGenerator.INVALID_ID;
@@ -1127,7 +1127,7 @@ public class ContentLayout extends FrameLayout {
 
                 mSavedDataId = bundle.getInt(KEY_DATA);
                 ArrayList<E> newData = null;
-                EhApplication app = (EhApplication) getContext().getApplicationContext();
+                LRReaderApplication app = (LRReaderApplication) getContext().getApplicationContext();
                 if (mSavedDataId != IntIdGenerator.INVALID_ID) {
                     newData = (ArrayList<E>) app.removeGlobalStuff(mSavedDataId);
                     mSavedDataId = IntIdGenerator.INVALID_ID;
