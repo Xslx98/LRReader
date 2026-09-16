@@ -69,8 +69,40 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
         return search(tags, tag.toByteArray(TextUrl.UTF_8!!))
     }
 
+    /**
+     * Translate one LANraragi tag. [namespace] is the namespace as the server
+     * spells it (`artist`, `series`, `misc`, … or an EhViewer one-letter
+     * shorthand); a blank or `misc` namespace probes the dataset namespaces in
+     * [BARE_TAG_PROBE_ORDER] because the dataset has no namespace-less keys.
+     * Namespaces the dataset does not know (`date_added`, `source`,
+     * user-defined) never translate. Matching is case-insensitive.
+     */
+    fun translateTag(namespace: String?, value: String): String? {
+        val key = value.trim().lowercase()
+        if (key.isEmpty()) return null
+        val ns = namespace?.trim()?.lowercase().orEmpty()
+        if (ns.isEmpty() || ns == BARE_NAMESPACE) {
+            for (prefix in BARE_TAG_PROBE_ORDER) {
+                getTranslation(prefix + key)?.let { return it }
+            }
+            return null
+        }
+        val prefix = datasetPrefixFor(ns) ?: return null
+        return getTranslation(prefix + key)
+    }
+
+    /** Translate a namespace name via the dataset's `n:` rows, or null when it has none. */
+    fun translateNamespace(namespace: String): String? {
+        val canonical = canonicalNamespace(namespace.trim().lowercase()) ?: return null
+        return getTranslation("n:$canonical")
+    }
+
     private fun initTagList(sourceString: String): List<TagEntry> {
-        return sourceString.split("\n").map { parseTag(it) }
+        // `n:` rows name namespaces, not tags; suggesting them would offer
+        // search terms like "rows:artist" that match nothing.
+        return sourceString.split("\n")
+            .filter { it.isNotEmpty() && !it.startsWith(NAMESPACE_ROW_PREFIX) }
+            .map { parseTag(it) }
     }
 
     private fun parseTag(source: String): TagEntry {
@@ -181,7 +213,8 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
             "mixed" to "x:",
             "other" to "o:",
             "parody" to "p:",
-            "reclass" to "r:"
+            "reclass" to "r:",
+            "location" to "loc:"
         )
 
         @JvmField
@@ -198,8 +231,44 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
             "x:" to "mixed",
             "o:" to "other",
             "p:" to "parody",
-            "r:" to "reclass"
+            "r:" to "reclass",
+            "loc:" to "location"
         )
+
+        private const val NAMESPACE_ROW_PREFIX = "n:"
+
+        /** LANraragi's namespace for tags that carry none (see TagParser). */
+        private const val BARE_NAMESPACE = "misc"
+
+        /** LANraragi spellings that differ from the dataset's EhViewer namespaces. */
+        private val NAMESPACE_ALIASES: Map<String, String> = mapOf(
+            "series" to "parody",
+            "misc" to "other",
+            "category" to "reclass",
+            "cos" to "cosplayer",
+            "loc" to "location"
+        )
+
+        /**
+         * Probe order for namespace-less tags: `other` (where EhViewer's old
+         * `misc` tags went) first, then the namespaces most tags live in.
+         */
+        private val BARE_TAG_PROBE_ORDER: List<String> = listOf(
+            "o:", "a:", "g:", "p:", "c:", "f:", "m:", "l:", "x:", "r:", "cos:", "loc:"
+        )
+
+        /** Dataset namespace for a lower-cased LRR namespace, or null when the dataset has none. */
+        internal fun canonicalNamespace(namespace: String): String? {
+            NAMESPACE_ALIASES[namespace]?.let { return it }
+            if (NAMESPACE_TO_PREFIX.containsKey(namespace)) return namespace
+            return PREFIX_TO_NAMESPACE["$namespace:"]
+        }
+
+        /** Dataset key prefix (`a:`, `p:`, …) for a lower-cased LRR namespace, or null. */
+        internal fun datasetPrefixFor(namespace: String): String? {
+            val canonical = canonicalNamespace(namespace) ?: return null
+            return NAMESPACE_TO_PREFIX[canonical]
+        }
 
         @Volatile
         private var instance: TagTranslationDatabase? = null
