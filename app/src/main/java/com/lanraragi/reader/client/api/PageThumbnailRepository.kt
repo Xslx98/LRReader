@@ -12,7 +12,7 @@ package com.lanraragi.reader.client.api
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
-import com.hippo.ehviewer.ServiceRegistry
+import com.lanraragi.reader.ServiceRegistry
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers

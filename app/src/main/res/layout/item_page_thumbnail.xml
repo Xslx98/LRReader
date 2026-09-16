@@ -35,7 +35,7 @@
     android:clickable="true"
     android:focusable="true">
 
-    <com.hippo.ehviewer.ui.widget.AspectClampedImageView
+    <com.lanraragi.reader.ui.widget.AspectClampedImageView
         android:id="@+id/page_thumb_image"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

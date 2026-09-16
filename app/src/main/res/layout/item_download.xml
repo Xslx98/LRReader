@@ -31,7 +31,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-            <com.hippo.ehviewer.widget.FixedThumb
+            <com.lanraragi.reader.widget.FixedThumb
                 android:id="@+id/thumb"
                 android:layout_width="@dimen/gallery_list_thumb_width"
                 android:layout_height="@dimen/gallery_list_thumb_height"
@@ -81,7 +81,7 @@
               CardTitle.maxLines=2 + CardMessage.maxLines=1, so it
               cannot grow into the bottom region.
             -->
-            <com.hippo.ehviewer.widget.SimpleRatingView
+            <com.lanraragi.reader.widget.SimpleRatingView
                 android:id="@+id/rating"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

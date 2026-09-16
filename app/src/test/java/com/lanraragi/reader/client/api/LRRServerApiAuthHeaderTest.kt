@@ -10,10 +10,10 @@
 package com.lanraragi.reader.client.api
 
 import android.util.Base64
-import com.hippo.ehviewer.EhProxySelector
-import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.ehviewer.module.INetworkModule
-import com.hippo.ehviewer.module.NetworkMonitor
+import com.lanraragi.reader.EhProxySelector
+import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.module.INetworkModule
+import com.lanraragi.reader.module.NetworkMonitor
 import kotlinx.coroutines.runBlocking
 import okhttp3.Cache
 import okhttp3.OkHttpClient

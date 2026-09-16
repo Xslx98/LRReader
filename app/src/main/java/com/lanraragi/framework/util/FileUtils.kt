@@ -10,9 +10,9 @@ import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Log
 import androidx.core.net.toUri
-import com.hippo.ehviewer.Analytics
-import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.EhConfig
+import com.lanraragi.reader.Analytics
+import com.lanraragi.reader.R
+import com.lanraragi.reader.client.EhConfig
 import com.lanraragi.framework.lib.yorozuya.IOUtils
 import com.lanraragi.framework.unifile.UniFile
 import java.io.File

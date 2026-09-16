@@ -1,6 +1,6 @@
 package com.lanraragi.reader.client.api
 
-import com.hippo.ehviewer.ServiceRegistry
+import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.data.LRRArchive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

@@ -19,7 +19,7 @@ package com.lanraragi.framework.util;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Resources;
-import com.hippo.ehviewer.R;
+import com.lanraragi.reader.R;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;

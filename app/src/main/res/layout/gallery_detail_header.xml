@@ -131,7 +131,7 @@
         app:barrierDirection="bottom"
         app:constraint_referenced_ids="thumb,uploader,source_badge" />
 
-    <com.hippo.ehviewer.widget.ArchiverDownloadProgress
+    <com.lanraragi.reader.widget.ArchiverDownloadProgress
         android:id="@+id/archiver_download_progress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

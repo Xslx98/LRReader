@@ -23,7 +23,7 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.widget.TextView;
 import androidx.appcompat.app.AlertDialog;
-import com.hippo.ehviewer.R;
+import com.lanraragi.reader.R;
 import android.text.Html;
 
 public class MessagePreference extends DialogPreference {

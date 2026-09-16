@@ -1,0 +1,59 @@
+/*
+ * Copyright 2016 Hippo Seven
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.lanraragi.reader.download
+
+import com.lanraragi.reader.dao.DownloadInfo
+
+interface DownloadListener {
+
+    /**
+     * Get 509 error
+     */
+    fun onGet509()
+
+    /**
+     * Start download
+     */
+    fun onStart(info: DownloadInfo)
+
+    /**
+     * Update download speed
+     */
+    fun onDownload(info: DownloadInfo)
+
+    /**
+     * Update page downloaded
+     */
+    fun onGetPage(info: DownloadInfo)
+
+    /**
+     * Download done
+     */
+    fun onFinish(info: DownloadInfo)
+
+    /**
+     * Download done
+     */
+    fun onCancel(info: DownloadInfo)
+
+    /**
+     * Worker entered (`waiting == true`) or left (`waiting == false`) a
+     * "waiting for network" pause. Default no-op so non-notification listeners
+     * (tests, speed tracker) need not implement it.
+     */
+    fun onNetworkWait(info: DownloadInfo, waiting: Boolean) {}
+}

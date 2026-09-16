@@ -24,7 +24,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import com.hippo.android.resource.AttrResources;
-import com.hippo.ehviewer.R;
+import com.lanraragi.reader.R;
 import com.lanraragi.framework.lib.yorozuya.collect.IntList;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

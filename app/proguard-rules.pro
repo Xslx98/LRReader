@@ -57,7 +57,7 @@
 # Class.forName from code (no XML reference) would need an explicit keep here.
 
 # === Settings fragments (instantiated via PreferenceActivity headers reflection) ===
--keep class com.hippo.ehviewer.ui.fragment.** { <init>(); }
+-keep class com.lanraragi.reader.ui.fragment.** { <init>(); }
 
 # === Scene classes ===
 # Scene NAMES and no-arg constructors must survive: intents/saved state carry
@@ -69,7 +69,7 @@
 -keep class * extends com.lanraragi.framework.scene.SceneFragment { <init>(); }
 
 # === LRRDownloadWorker: preserve volatile semantics for cancellation flag ===
--keepclassmembers class com.hippo.ehviewer.download.LRRDownloadWorker {
+-keepclassmembers class com.lanraragi.reader.download.LRRDownloadWorker {
     volatile <fields>;
 }
 

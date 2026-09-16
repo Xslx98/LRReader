@@ -1,0 +1,1261 @@
+package com.lanraragi.reader.dao
+
+import android.content.ContentValues
+import android.database.sqlite.SQLiteDatabase
+import androidx.room.Room
+import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.sqlite.db.SupportSQLiteOpenHelper
+import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
+import androidx.test.core.app.ApplicationProvider
+import org.junit.After
+import org.junit.Assert.*
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import java.nio.ByteBuffer
+import java.security.MessageDigest
+
+/**
+ * Migration path tests for AppDatabase v9 -> v10 -> v11 -> v12 -> v13 -> v14 -> v15 -> v16 -> v17 -> v18 -> v19.
+ *
+ * These tests exercise the actual migration SQL by:
+ * 1. Creating a database at the source version schema
+ * 2. Inserting test data
+ * 3. Running the migration object's migrate() method
+ * 4. Verifying data integrity and schema changes
+ *
+ * Unlike RoomMigrationTest (which validates the current v18 schema),
+ * these tests verify each migration step preserves data correctly.
+ *
+ * Run with: ./gradlew testAppReleaseDebugUnitTest --tests "*.RoomMigrationPathTest"
+ */
+@RunWith(RobolectricTestRunner::class)
+@Config(application = android.app.Application::class)
+class RoomMigrationPathTest {
+
+    private lateinit var db: SupportSQLiteDatabase
+
+    @After
+    fun tearDown() {
+        if (::db.isInitialized && db.isOpen) {
+            db.close()
+        }
+    }
+
+    // ========== Helper: create in-memory SupportSQLiteDatabase ==========
+
+    /**
+     * Creates an in-memory SupportSQLiteDatabase with the given version
+     * and runs [onCreate] to set up the schema.
+     */
+    private fun createDatabase(version: Int, onCreate: (SupportSQLiteDatabase) -> Unit): SupportSQLiteDatabase {
+        val config = SupportSQLiteOpenHelper.Configuration.builder(
+            ApplicationProvider.getApplicationContext()
+        )
+            .name(null) // in-memory
+            .callback(object : SupportSQLiteOpenHelper.Callback(version) {
+                override fun onCreate(db: SupportSQLiteDatabase) {
+                    onCreate(db)
+                }
+
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+                    // not used -- we call migrate() manually
+                }
+            })
+            .build()
+
+        val helper = FrameworkSQLiteOpenHelperFactory().create(config)
+        return helper.writableDatabase
+    }
+
+    // ========== Schema creation helpers (from schema JSON exports) ==========
+
+    /**
+     * Creates all tables as they existed in schema v9.
+     * v9 and v10 have identical table structures (v9->v10 is a data migration only).
+     */
+    private fun createV9Schema(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS DOWNLOADS (
+                STATE INTEGER NOT NULL, LEGACY INTEGER NOT NULL, TIME INTEGER NOT NULL,
+                LABEL TEXT, ARCHIVE_URI TEXT, GID INTEGER NOT NULL, TOKEN TEXT,
+                TITLE TEXT, TITLE_JPN TEXT, THUMB TEXT, CATEGORY INTEGER NOT NULL,
+                POSTED TEXT, UPLOADER TEXT, RATING REAL NOT NULL, SIMPLE_LANGUAGE TEXT,
+                SERVER_PROFILE_ID INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY(GID))"""
+        )
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS DOWNLOAD_LABELS (
+                _id INTEGER PRIMARY KEY AUTOINCREMENT, LABEL TEXT, TIME INTEGER NOT NULL)"""
+        )
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS DOWNLOAD_DIRNAME (
+                GID INTEGER NOT NULL, DIRNAME TEXT, PRIMARY KEY(GID))"""
+        )
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS HISTORY (
+                MODE INTEGER NOT NULL, TIME INTEGER NOT NULL, GID INTEGER NOT NULL,
+                TOKEN TEXT, TITLE TEXT, TITLE_JPN TEXT, THUMB TEXT,
+                CATEGORY INTEGER NOT NULL, POSTED TEXT, UPLOADER TEXT,
+                RATING REAL NOT NULL, SIMPLE_LANGUAGE TEXT,
+                SERVER_PROFILE_ID INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY(GID))"""
+        )
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS LOCAL_FAVORITES (
+                TIME INTEGER NOT NULL, GID INTEGER NOT NULL, TOKEN TEXT,
+                TITLE TEXT, TITLE_JPN TEXT, THUMB TEXT, CATEGORY INTEGER NOT NULL,
+                POSTED TEXT, UPLOADER TEXT, RATING REAL NOT NULL,
+                SIMPLE_LANGUAGE TEXT, SERVER_PROFILE_ID INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY(GID))"""
+        )
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS QUICK_SEARCH (
+                _id INTEGER PRIMARY KEY AUTOINCREMENT, NAME TEXT,
+                MODE INTEGER NOT NULL, CATEGORY INTEGER NOT NULL, KEYWORD TEXT,
+                ADVANCE_SEARCH INTEGER NOT NULL, MIN_RATING INTEGER NOT NULL,
+                PAGE_FROM INTEGER NOT NULL, PAGE_TO INTEGER NOT NULL,
+                TIME INTEGER NOT NULL)"""
+        )
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS FILTER (
+                _id INTEGER PRIMARY KEY AUTOINCREMENT, MODE INTEGER NOT NULL,
+                TEXT TEXT, ENABLE INTEGER)"""
+        )
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS Black_List (
+                _id INTEGER PRIMARY KEY AUTOINCREMENT, BADGAYNAME TEXT,
+                REASON TEXT, ANGRYWITH TEXT, ADD_TIME TEXT, MODE INTEGER)"""
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_Black_List_BADGAYNAME ON Black_List (BADGAYNAME)")
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS Gallery_Tags (
+                GID INTEGER NOT NULL, ROWS TEXT, ARTIST TEXT, COSPLAYER TEXT,
+                CHARACTER TEXT, FEMALE TEXT, `GROUP` TEXT, LANGUAGE TEXT,
+                MALE TEXT, MISC TEXT, MIXED TEXT, OTHER TEXT, PARODY TEXT,
+                RECLASS TEXT, CREATE_TIME INTEGER, UPDATE_TIME INTEGER,
+                PRIMARY KEY(GID))"""
+        )
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS BOOKMARKS (
+                PAGE INTEGER NOT NULL, TIME INTEGER NOT NULL, GID INTEGER NOT NULL,
+                TOKEN TEXT, TITLE TEXT, TITLE_JPN TEXT, THUMB TEXT,
+                CATEGORY INTEGER NOT NULL, POSTED TEXT, UPLOADER TEXT,
+                RATING REAL NOT NULL, SIMPLE_LANGUAGE TEXT,
+                SERVER_PROFILE_ID INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY(GID))"""
+        )
+        // v9 SERVER_PROFILES has API_KEY column
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS SERVER_PROFILES (
+                ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                NAME TEXT NOT NULL, URL TEXT NOT NULL, API_KEY TEXT,
+                IS_ACTIVE INTEGER NOT NULL)"""
+        )
+    }
+
+    /**
+     * Creates the v11 schema (v10 tables + 4 indexes from MIGRATION_10_11).
+     * v11 still has API_KEY in SERVER_PROFILES.
+     */
+    private fun createV11Schema(db: SupportSQLiteDatabase) {
+        createV9Schema(db) // tables are identical v9-v11 except for indexes
+        // Add v11 indexes
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_DOWNLOADS_SERVER_PROFILE_ID ON DOWNLOADS (SERVER_PROFILE_ID)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_DOWNLOADS_TIME ON DOWNLOADS (TIME)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_HISTORY_SERVER_PROFILE_ID ON HISTORY (SERVER_PROFILE_ID)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_HISTORY_TIME ON HISTORY (TIME)")
+    }
+
+    /**
+     * Creates the v12 schema (v11 + API_KEY removed from SERVER_PROFILES).
+     */
+    private fun createV12Schema(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS DOWNLOADS (
+                STATE INTEGER NOT NULL, LEGACY INTEGER NOT NULL, TIME INTEGER NOT NULL,
+                LABEL TEXT, ARCHIVE_URI TEXT, GID INTEGER NOT NULL, TOKEN TEXT,
+                TITLE TEXT, TITLE_JPN TEXT, THUMB TEXT, CATEGORY INTEGER NOT NULL,
+                POSTED TEXT, UPLOADER TEXT, RATING REAL NOT NULL, SIMPLE_LANGUAGE TEXT,
+                SERVER_PROFILE_ID INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY(GID))"""
+        )
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS DOWNLOAD_LABELS (
+                _id INTEGER PRIMARY KEY AUTOINCREMENT, LABEL TEXT, TIME INTEGER NOT NULL)"""
+        )
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS DOWNLOAD_DIRNAME (
+                GID INTEGER NOT NULL, DIRNAME TEXT, PRIMARY KEY(GID))"""
+        )
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS HISTORY (
+                MODE INTEGER NOT NULL, TIME INTEGER NOT NULL, GID INTEGER NOT NULL,
+                TOKEN TEXT, TITLE TEXT, TITLE_JPN TEXT, THUMB TEXT,
+                CATEGORY INTEGER NOT NULL, POSTED TEXT, UPLOADER TEXT,
+                RATING REAL NOT NULL, SIMPLE_LANGUAGE TEXT,
+                SERVER_PROFILE_ID INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY(GID))"""
+        )
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS LOCAL_FAVORITES (
+                TIME INTEGER NOT NULL, GID INTEGER NOT NULL, TOKEN TEXT,
+                TITLE TEXT, TITLE_JPN TEXT, THUMB TEXT, CATEGORY INTEGER NOT NULL,
+                POSTED TEXT, UPLOADER TEXT, RATING REAL NOT NULL,
+                SIMPLE_LANGUAGE TEXT, SERVER_PROFILE_ID INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY(GID))"""
+        )
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS QUICK_SEARCH (
+                _id INTEGER PRIMARY KEY AUTOINCREMENT, NAME TEXT,
+                MODE INTEGER NOT NULL, CATEGORY INTEGER NOT NULL, KEYWORD TEXT,
+                ADVANCE_SEARCH INTEGER NOT NULL, MIN_RATING INTEGER NOT NULL,
+                PAGE_FROM INTEGER NOT NULL, PAGE_TO INTEGER NOT NULL,
+                TIME INTEGER NOT NULL)"""
+        )
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS FILTER (
+                _id INTEGER PRIMARY KEY AUTOINCREMENT, MODE INTEGER NOT NULL,
+                TEXT TEXT, ENABLE INTEGER)"""
+        )
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS Black_List (
+                _id INTEGER PRIMARY KEY AUTOINCREMENT, BADGAYNAME TEXT,
+                REASON TEXT, ANGRYWITH TEXT, ADD_TIME TEXT, MODE INTEGER)"""
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_Black_List_BADGAYNAME ON Black_List (BADGAYNAME)")
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS Gallery_Tags (
+                GID INTEGER NOT NULL, ROWS TEXT, ARTIST TEXT, COSPLAYER TEXT,
+                CHARACTER TEXT, FEMALE TEXT, `GROUP` TEXT, LANGUAGE TEXT,
+                MALE TEXT, MISC TEXT, MIXED TEXT, OTHER TEXT, PARODY TEXT,
+                RECLASS TEXT, CREATE_TIME INTEGER, UPDATE_TIME INTEGER,
+                PRIMARY KEY(GID))"""
+        )
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS BOOKMARKS (
+                PAGE INTEGER NOT NULL, TIME INTEGER NOT NULL, GID INTEGER NOT NULL,
+                TOKEN TEXT, TITLE TEXT, TITLE_JPN TEXT, THUMB TEXT,
+                CATEGORY INTEGER NOT NULL, POSTED TEXT, UPLOADER TEXT,
+                RATING REAL NOT NULL, SIMPLE_LANGUAGE TEXT,
+                SERVER_PROFILE_ID INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY(GID))"""
+        )
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS SERVER_PROFILES (
+                ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                NAME TEXT NOT NULL, URL TEXT NOT NULL,
+                IS_ACTIVE INTEGER NOT NULL DEFAULT 0)"""
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_DOWNLOADS_SERVER_PROFILE_ID ON DOWNLOADS (SERVER_PROFILE_ID)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_DOWNLOADS_TIME ON DOWNLOADS (TIME)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_HISTORY_SERVER_PROFILE_ID ON HISTORY (SERVER_PROFILE_ID)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_HISTORY_TIME ON HISTORY (TIME)")
+    }
+
+    /**
+     * Creates the v13 schema (v12 + LABEL index on DOWNLOADS).
+     */
+    private fun createV13Schema(db: SupportSQLiteDatabase) {
+        createV12Schema(db) // tables identical to v12
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_DOWNLOADS_LABEL ON DOWNLOADS (LABEL)")
+    }
+
+    // ========== SHA-256 GID computation (mirrors AppDatabase.MIGRATION_9_10) ==========
+
+    private fun sha256Gid(arcid: String): Long {
+        val digest = MessageDigest.getInstance("SHA-256").digest(arcid.toByteArray(Charsets.UTF_8))
+        return ByteBuffer.wrap(digest, 0, 8).getLong() and Long.MAX_VALUE
+    }
+
+    // ========== Test 1: v9 -> v10 (GID recomputation via SHA-256) ==========
+
+    @Test
+    fun `migrate 9 to 10 - GIDs recomputed from TOKEN via SHA-256`() {
+        db = createDatabase(9) { createV9Schema(it) }
+
+        val token1 = "abc123def456"
+        val token2 = "xyz789ghi012"
+        val oldGid1 = token1.hashCode().toLong() and 0x7FFFFFFF // old-style 32-bit GID
+        val oldGid2 = token2.hashCode().toLong() and 0x7FFFFFFF
+        val expectedGid1 = sha256Gid(token1)
+        val expectedGid2 = sha256Gid(token2)
+
+        // Ensure old and new GIDs actually differ (validates test setup)
+        assertNotEquals("GIDs should differ after SHA-256 recompute", oldGid1, expectedGid1)
+
+        val now = System.currentTimeMillis()
+
+        // Insert into DOWNLOADS
+        db.execSQL(
+            "INSERT INTO DOWNLOADS (GID, TOKEN, STATE, LEGACY, TIME, CATEGORY, RATING) VALUES (?, ?, 0, 0, ?, 0, 0.0)",
+            arrayOf<Any>(oldGid1, token1, now)
+        )
+
+        // Insert into HISTORY
+        db.execSQL(
+            "INSERT INTO HISTORY (GID, TOKEN, MODE, TIME, CATEGORY, RATING) VALUES (?, ?, 0, ?, 0, 0.0)",
+            arrayOf<Any>(oldGid2, token2, now)
+        )
+
+        // Insert DOWNLOAD_DIRNAME referencing the download's old GID
+        db.execSQL(
+            "INSERT INTO DOWNLOAD_DIRNAME (GID, DIRNAME) VALUES (?, ?)",
+            arrayOf<Any>(oldGid1, "/storage/gallery_dir")
+        )
+
+        // Insert LOCAL_FAVORITES
+        db.execSQL(
+            "INSERT INTO LOCAL_FAVORITES (GID, TOKEN, TIME, CATEGORY, RATING) VALUES (?, ?, ?, 0, 0.0)",
+            arrayOf<Any>(oldGid1, token1, now)
+        )
+
+        // Insert BOOKMARKS
+        db.execSQL(
+            "INSERT INTO BOOKMARKS (GID, TOKEN, PAGE, TIME, CATEGORY, RATING) VALUES (?, ?, 10, ?, 0, 0.0)",
+            arrayOf<Any>(oldGid2, token2, now)
+        )
+
+        // Insert Gallery_Tags referencing a GID that appears in downloads
+        db.execSQL(
+            "INSERT INTO Gallery_Tags (GID, ARTIST) VALUES (?, ?)",
+            arrayOf<Any>(oldGid1, "test_artist")
+        )
+
+        // Run migration
+        AppDatabase.MIGRATION_9_10.migrate(db)
+
+        // Verify DOWNLOADS GID was recomputed
+        db.query("SELECT GID, TOKEN FROM DOWNLOADS").use { c ->
+            assertTrue("DOWNLOADS should have 1 row", c.moveToFirst())
+            assertEquals(expectedGid1, c.getLong(0))
+            assertEquals(token1, c.getString(1))
+        }
+
+        // Verify HISTORY GID was recomputed
+        db.query("SELECT GID, TOKEN FROM HISTORY").use { c ->
+            assertTrue("HISTORY should have 1 row", c.moveToFirst())
+            assertEquals(expectedGid2, c.getLong(0))
+            assertEquals(token2, c.getString(1))
+        }
+
+        // Verify DOWNLOAD_DIRNAME GID was updated to match new download GID
+        db.query("SELECT GID, DIRNAME FROM DOWNLOAD_DIRNAME").use { c ->
+            assertTrue("DOWNLOAD_DIRNAME should have 1 row", c.moveToFirst())
+            assertEquals(expectedGid1, c.getLong(0))
+            assertEquals("/storage/gallery_dir", c.getString(1))
+        }
+
+        // Verify LOCAL_FAVORITES GID was recomputed
+        db.query("SELECT GID, TOKEN FROM LOCAL_FAVORITES").use { c ->
+            assertTrue("LOCAL_FAVORITES should have 1 row", c.moveToFirst())
+            assertEquals(expectedGid1, c.getLong(0))
+        }
+
+        // Verify BOOKMARKS GID was recomputed
+        db.query("SELECT GID, TOKEN, PAGE FROM BOOKMARKS").use { c ->
+            assertTrue("BOOKMARKS should have 1 row", c.moveToFirst())
+            assertEquals(expectedGid2, c.getLong(0))
+            assertEquals(token2, c.getString(1))
+            assertEquals(10, c.getInt(2))
+        }
+
+        // Verify Gallery_Tags GID was updated
+        db.query("SELECT GID, ARTIST FROM Gallery_Tags").use { c ->
+            assertTrue("Gallery_Tags should have 1 row", c.moveToFirst())
+            assertEquals(expectedGid1, c.getLong(0))
+            assertEquals("test_artist", c.getString(1))
+        }
+    }
+
+    @Test
+    fun `migrate 9 to 10 - rows with null or empty TOKEN are not changed`() {
+        db = createDatabase(9) { createV9Schema(it) }
+
+        val now = System.currentTimeMillis()
+
+        // Insert row with null TOKEN
+        db.execSQL(
+            "INSERT INTO DOWNLOADS (GID, TOKEN, STATE, LEGACY, TIME, CATEGORY, RATING) VALUES (999, NULL, 0, 0, ?, 0, 0.0)",
+            arrayOf(now)
+        )
+        // Insert row with empty TOKEN
+        db.execSQL(
+            "INSERT INTO HISTORY (GID, TOKEN, MODE, TIME, CATEGORY, RATING) VALUES (888, '', 0, ?, 0, 0.0)",
+            arrayOf(now)
+        )
+
+        AppDatabase.MIGRATION_9_10.migrate(db)
+
+        // Null-TOKEN row should keep original GID
+        db.query("SELECT GID FROM DOWNLOADS WHERE GID = 999").use { c ->
+            assertTrue("NULL TOKEN row should keep GID=999", c.moveToFirst())
+        }
+
+        // Empty-TOKEN row should keep original GID
+        db.query("SELECT GID FROM HISTORY WHERE GID = 888").use { c ->
+            assertTrue("Empty TOKEN row should keep GID=888", c.moveToFirst())
+        }
+    }
+
+    @Test
+    fun `migrate 9 to 10 - row where old GID already matches SHA-256 is not changed`() {
+        db = createDatabase(9) { createV9Schema(it) }
+
+        val arcid = "already_correct"
+        val correctGid = sha256Gid(arcid)
+        val now = System.currentTimeMillis()
+
+        db.execSQL(
+            "INSERT INTO DOWNLOADS (GID, TOKEN, STATE, LEGACY, TIME, CATEGORY, RATING) VALUES (?, ?, 0, 0, ?, 0, 0.0)",
+            arrayOf<Any>(correctGid, arcid, now)
+        )
+
+        AppDatabase.MIGRATION_9_10.migrate(db)
+
+        db.query("SELECT GID FROM DOWNLOADS").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(correctGid, c.getLong(0))
+        }
+    }
+
+    // ========== Test 2: v10 -> v11 (Add indexes) ==========
+
+    @Test
+    fun `migrate 10 to 11 - four indexes created on DOWNLOADS and HISTORY`() {
+        // v10 schema is identical to v9 (data migration only, no structural changes)
+        db = createDatabase(10) { createV9Schema(it) }
+
+        // Verify indexes do NOT exist yet
+        val indexesBefore = getIndexNames(db)
+        assertFalse("index_DOWNLOADS_SERVER_PROFILE_ID should not exist before migration",
+            indexesBefore.contains("index_DOWNLOADS_SERVER_PROFILE_ID"))
+        assertFalse("index_DOWNLOADS_TIME should not exist before migration",
+            indexesBefore.contains("index_DOWNLOADS_TIME"))
+        assertFalse("index_HISTORY_SERVER_PROFILE_ID should not exist before migration",
+            indexesBefore.contains("index_HISTORY_SERVER_PROFILE_ID"))
+        assertFalse("index_HISTORY_TIME should not exist before migration",
+            indexesBefore.contains("index_HISTORY_TIME"))
+
+        // Run migration
+        AppDatabase.MIGRATION_10_11.migrate(db)
+
+        // Verify all 4 indexes now exist
+        val indexesAfter = getIndexNames(db)
+        assertTrue("index_DOWNLOADS_SERVER_PROFILE_ID should exist after migration",
+            indexesAfter.contains("index_DOWNLOADS_SERVER_PROFILE_ID"))
+        assertTrue("index_DOWNLOADS_TIME should exist after migration",
+            indexesAfter.contains("index_DOWNLOADS_TIME"))
+        assertTrue("index_HISTORY_SERVER_PROFILE_ID should exist after migration",
+            indexesAfter.contains("index_HISTORY_SERVER_PROFILE_ID"))
+        assertTrue("index_HISTORY_TIME should exist after migration",
+            indexesAfter.contains("index_HISTORY_TIME"))
+    }
+
+    @Test
+    fun `migrate 10 to 11 - existing data preserved after index creation`() {
+        db = createDatabase(10) { createV9Schema(it) }
+
+        val now = System.currentTimeMillis()
+        db.execSQL(
+            "INSERT INTO DOWNLOADS (GID, TOKEN, STATE, LEGACY, TIME, CATEGORY, RATING, SERVER_PROFILE_ID) " +
+                "VALUES (1001, 'tok1', 0, 0, ?, 0, 4.5, 2)",
+            arrayOf(now)
+        )
+        db.execSQL(
+            "INSERT INTO HISTORY (GID, TOKEN, MODE, TIME, CATEGORY, RATING, SERVER_PROFILE_ID) " +
+                "VALUES (2001, 'tok2', 1, ?, 3, 3.0, 1)",
+            arrayOf(now)
+        )
+
+        AppDatabase.MIGRATION_10_11.migrate(db)
+
+        // Verify data still intact
+        db.query("SELECT GID, TOKEN, RATING, SERVER_PROFILE_ID FROM DOWNLOADS").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(1001L, c.getLong(0))
+            assertEquals("tok1", c.getString(1))
+            assertEquals(4.5, c.getDouble(2), 0.001)
+            assertEquals(2, c.getInt(3))
+        }
+
+        db.query("SELECT GID, TOKEN, MODE, SERVER_PROFILE_ID FROM HISTORY").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(2001L, c.getLong(0))
+            assertEquals("tok2", c.getString(1))
+            assertEquals(1, c.getInt(2))
+            assertEquals(1, c.getInt(3))
+        }
+    }
+
+    // ========== Test 3: v11 -> v12 (Remove API_KEY from SERVER_PROFILES) ==========
+
+    @Test
+    fun `migrate 11 to 12 - API_KEY column removed from SERVER_PROFILES`() {
+        db = createDatabase(11) { createV11Schema(it) }
+
+        // Insert a server profile with API_KEY
+        db.execSQL(
+            "INSERT INTO SERVER_PROFILES (NAME, URL, API_KEY, IS_ACTIVE) VALUES ('My Server', 'http://lrr.local:3000', 'secret_key_123', 1)"
+        )
+        db.execSQL(
+            "INSERT INTO SERVER_PROFILES (NAME, URL, API_KEY, IS_ACTIVE) VALUES ('Backup', 'http://backup.local:3000', NULL, 0)"
+        )
+
+        // Verify API_KEY column exists before migration
+        val columnsBefore = getColumnNames(db, "SERVER_PROFILES")
+        assertTrue("API_KEY should exist before migration", columnsBefore.contains("API_KEY"))
+
+        // Run migration
+        AppDatabase.MIGRATION_11_12.migrate(db)
+
+        // Verify API_KEY column is gone
+        val columnsAfter = getColumnNames(db, "SERVER_PROFILES")
+        assertFalse("API_KEY should not exist after migration", columnsAfter.contains("API_KEY"))
+        assertTrue("ID should still exist", columnsAfter.contains("ID"))
+        assertTrue("NAME should still exist", columnsAfter.contains("NAME"))
+        assertTrue("URL should still exist", columnsAfter.contains("URL"))
+        assertTrue("IS_ACTIVE should still exist", columnsAfter.contains("IS_ACTIVE"))
+    }
+
+    @Test
+    fun `migrate 11 to 12 - existing profile data preserved`() {
+        db = createDatabase(11) { createV11Schema(it) }
+
+        db.execSQL(
+            "INSERT INTO SERVER_PROFILES (NAME, URL, API_KEY, IS_ACTIVE) VALUES ('Primary', 'http://lrr.local:3000', 'key123', 1)"
+        )
+        db.execSQL(
+            "INSERT INTO SERVER_PROFILES (NAME, URL, API_KEY, IS_ACTIVE) VALUES ('Secondary', 'http://backup.local:3000', 'key456', 0)"
+        )
+
+        AppDatabase.MIGRATION_11_12.migrate(db)
+
+        db.query("SELECT ID, NAME, URL, IS_ACTIVE FROM SERVER_PROFILES ORDER BY ID").use { c ->
+            // First row
+            assertTrue(c.moveToFirst())
+            assertEquals("Primary", c.getString(1))
+            assertEquals("http://lrr.local:3000", c.getString(2))
+            assertEquals(1, c.getInt(3))
+
+            // Second row
+            assertTrue(c.moveToNext())
+            assertEquals("Secondary", c.getString(1))
+            assertEquals("http://backup.local:3000", c.getString(2))
+            assertEquals(0, c.getInt(3))
+
+            assertFalse("Should only have 2 rows", c.moveToNext())
+        }
+    }
+
+    @Test
+    fun `migrate 11 to 12 - SERVER_PROFILES autoincrement ID preserved`() {
+        db = createDatabase(11) { createV11Schema(it) }
+
+        db.execSQL(
+            "INSERT INTO SERVER_PROFILES (NAME, URL, API_KEY, IS_ACTIVE) VALUES ('S1', 'http://a.com', 'k1', 1)"
+        )
+
+        AppDatabase.MIGRATION_11_12.migrate(db)
+
+        // Verify ID was preserved (should be 1 from autoincrement)
+        db.query("SELECT ID FROM SERVER_PROFILES").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(1L, c.getLong(0))
+        }
+
+        // Verify new inserts still autoincrement
+        db.execSQL("INSERT INTO SERVER_PROFILES (NAME, URL, IS_ACTIVE) VALUES ('S2', 'http://b.com', 0)")
+        db.query("SELECT ID FROM SERVER_PROFILES ORDER BY ID DESC LIMIT 1").use { c ->
+            assertTrue(c.moveToFirst())
+            assertTrue("New ID should be > 1", c.getLong(0) > 1)
+        }
+    }
+
+    // ========== Test 4: v12 -> v13 (Add LABEL index on DOWNLOADS) ==========
+
+    @Test
+    fun `migrate 12 to 13 - LABEL index created on DOWNLOADS`() {
+        db = createDatabase(12) { createV12Schema(it) }
+
+        val indexesBefore = getIndexNames(db)
+        assertFalse("index_DOWNLOADS_LABEL should not exist before migration",
+            indexesBefore.contains("index_DOWNLOADS_LABEL"))
+
+        AppDatabase.MIGRATION_12_13.migrate(db)
+
+        val indexesAfter = getIndexNames(db)
+        assertTrue("index_DOWNLOADS_LABEL should exist after migration",
+            indexesAfter.contains("index_DOWNLOADS_LABEL"))
+    }
+
+    @Test
+    fun `migrate 12 to 13 - existing data preserved after LABEL index creation`() {
+        db = createDatabase(12) { createV12Schema(it) }
+
+        val now = System.currentTimeMillis()
+        db.execSQL(
+            "INSERT INTO DOWNLOADS (GID, TOKEN, STATE, LEGACY, TIME, CATEGORY, RATING, LABEL) " +
+                "VALUES (5001, 'tok_label', 0, 0, ?, 0, 4.0, 'My Label')",
+            arrayOf(now)
+        )
+        db.execSQL(
+            "INSERT INTO DOWNLOADS (GID, TOKEN, STATE, LEGACY, TIME, CATEGORY, RATING, LABEL) " +
+                "VALUES (5002, 'tok_null', 0, 0, ?, 0, 3.5, NULL)",
+            arrayOf(now)
+        )
+
+        AppDatabase.MIGRATION_12_13.migrate(db)
+
+        db.query("SELECT GID, TOKEN, LABEL, RATING FROM DOWNLOADS ORDER BY GID").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(5001L, c.getLong(0))
+            assertEquals("tok_label", c.getString(1))
+            assertEquals("My Label", c.getString(2))
+            assertEquals(4.0, c.getDouble(3), 0.001)
+
+            assertTrue(c.moveToNext())
+            assertEquals(5002L, c.getLong(0))
+            assertEquals("tok_null", c.getString(1))
+            assertTrue(c.isNull(2))
+            assertEquals(3.5, c.getDouble(3), 0.001)
+
+            assertFalse("Should only have 2 rows", c.moveToNext())
+        }
+    }
+
+    // ========== Test 4b: v13 -> v14 (Add ALLOW_CLEARTEXT to SERVER_PROFILES) ==========
+
+    @Test
+    fun `migrate 13 to 14 - ALLOW_CLEARTEXT column added with default 1`() {
+        db = createDatabase(13) { createV13Schema(it) }
+
+        // Insert profiles WITHOUT the new column (v13 schema)
+        db.execSQL(
+            "INSERT INTO SERVER_PROFILES (NAME, URL, IS_ACTIVE) VALUES ('Primary', 'http://lrr.local:3000', 1)"
+        )
+        db.execSQL(
+            "INSERT INTO SERVER_PROFILES (NAME, URL, IS_ACTIVE) VALUES ('Backup', 'https://lrr.example.com', 0)"
+        )
+
+        val columnsBefore = getColumnNames(db, "SERVER_PROFILES")
+        assertFalse("ALLOW_CLEARTEXT should not exist before migration",
+            columnsBefore.contains("ALLOW_CLEARTEXT"))
+
+        AppDatabase.MIGRATION_13_14.migrate(db)
+
+        val columnsAfter = getColumnNames(db, "SERVER_PROFILES")
+        assertTrue("ALLOW_CLEARTEXT should exist after migration",
+            columnsAfter.contains("ALLOW_CLEARTEXT"))
+
+        // Both pre-existing rows should be grandfathered to ALLOW_CLEARTEXT=1
+        db.query("SELECT NAME, URL, IS_ACTIVE, ALLOW_CLEARTEXT FROM SERVER_PROFILES ORDER BY ID").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("Primary", c.getString(0))
+            assertEquals("http://lrr.local:3000", c.getString(1))
+            assertEquals(1, c.getInt(2))
+            assertEquals(1, c.getInt(3))
+
+            assertTrue(c.moveToNext())
+            assertEquals("Backup", c.getString(0))
+            assertEquals("https://lrr.example.com", c.getString(1))
+            assertEquals(0, c.getInt(2))
+            assertEquals(1, c.getInt(3))
+
+            assertFalse("Should only have 2 rows", c.moveToNext())
+        }
+    }
+
+    @Test
+    fun `migrate 13 to 14 - empty SERVER_PROFILES table migrates without error`() {
+        db = createDatabase(13) { createV13Schema(it) }
+
+        AppDatabase.MIGRATION_13_14.migrate(db)
+
+        val columns = getColumnNames(db, "SERVER_PROFILES")
+        assertTrue(columns.contains("ALLOW_CLEARTEXT"))
+
+        db.query("SELECT COUNT(*) FROM SERVER_PROFILES").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(0, c.getInt(0))
+        }
+    }
+
+    @Test
+    fun `migrate 13 to 14 - new inserts can specify ALLOW_CLEARTEXT explicitly`() {
+        db = createDatabase(13) { createV13Schema(it) }
+        AppDatabase.MIGRATION_13_14.migrate(db)
+
+        db.execSQL(
+            "INSERT INTO SERVER_PROFILES (NAME, URL, IS_ACTIVE, ALLOW_CLEARTEXT) " +
+                "VALUES ('NoCleartext', 'http://strict.local', 1, 0)"
+        )
+        db.execSQL(
+            "INSERT INTO SERVER_PROFILES (NAME, URL, IS_ACTIVE, ALLOW_CLEARTEXT) " +
+                "VALUES ('YesCleartext', 'http://lan.local', 0, 1)"
+        )
+
+        db.query("SELECT NAME, ALLOW_CLEARTEXT FROM SERVER_PROFILES ORDER BY NAME").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("NoCleartext", c.getString(0))
+            assertEquals(0, c.getInt(1))
+
+            assertTrue(c.moveToNext())
+            assertEquals("YesCleartext", c.getString(0))
+            assertEquals(1, c.getInt(1))
+        }
+    }
+
+    // ========== Test 4c: v14 -> v15 (Drop FILTER table) ==========
+
+    @Test
+    fun `migrate 14 to 15 - FILTER table is dropped`() {
+        // Build a v14 schema by chaining migrations from v9.
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+
+        // Seed a couple of FILTER rows so we can verify they vanish on drop.
+        db.execSQL("INSERT INTO FILTER (MODE, TEXT, ENABLE) VALUES (0, 'doomed_title', 1)")
+        db.execSQL("INSERT INTO FILTER (MODE, TEXT, ENABLE) VALUES (2, 'doomed_tag', 1)")
+
+        assertTrue("FILTER must exist before v14→v15 migration",
+            getTableNames(db).contains("FILTER"))
+
+        AppDatabase.MIGRATION_14_15.migrate(db)
+
+        assertFalse("FILTER must be gone after v14→v15 migration",
+            getTableNames(db).contains("FILTER"))
+
+        // Other tables remain intact.
+        val tables = getTableNames(db)
+        assertTrue(tables.contains("DOWNLOADS"))
+        assertTrue(tables.contains("HISTORY"))
+        assertTrue(tables.contains("SERVER_PROFILES"))
+    }
+
+    @Test
+    fun `migrate 14 to 15 - missing FILTER table is a no-op`() {
+        // Some users may be on a v14 schema where FILTER was already dropped manually
+        // (e.g. via DB editor). DROP TABLE IF EXISTS guarantees idempotency.
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        db.execSQL("DROP TABLE FILTER")
+
+        // Should not throw.
+        AppDatabase.MIGRATION_14_15.migrate(db)
+
+        assertFalse(getTableNames(db).contains("FILTER"))
+    }
+
+    // ========== Test 4d: v15 -> v16 (Drop Black_List table) ==========
+
+    @Test
+    fun `migrate 15 to 16 - Black_List table is dropped`() {
+        // Build a v15 schema by chaining migrations from v9.
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+
+        // Seed a couple of Black_List rows so we can verify they vanish on drop.
+        db.execSQL(
+            "INSERT INTO Black_List (BADGAYNAME, REASON, ANGRYWITH, ADD_TIME, MODE) " +
+                "VALUES ('doomed_uploader', 'spam', 'me', '2025-01-01', 0)"
+        )
+        db.execSQL(
+            "INSERT INTO Black_List (BADGAYNAME, REASON, ANGRYWITH, ADD_TIME, MODE) " +
+                "VALUES ('another_doomed', 'lowq', 'me', '2025-01-02', 0)"
+        )
+
+        assertTrue("Black_List must exist before v15→v16 migration",
+            getTableNames(db).contains("Black_List"))
+
+        AppDatabase.MIGRATION_15_16.migrate(db)
+
+        assertFalse("Black_List must be gone after v15→v16 migration",
+            getTableNames(db).contains("Black_List"))
+
+        // Other tables remain intact.
+        val tables = getTableNames(db)
+        assertTrue(tables.contains("DOWNLOADS"))
+        assertTrue(tables.contains("HISTORY"))
+        assertTrue(tables.contains("SERVER_PROFILES"))
+    }
+
+    @Test
+    fun `migrate 15 to 16 - missing Black_List table is a no-op`() {
+        // Some users may be on a v15 schema where Black_List was already dropped manually
+        // (e.g. via DB editor). DROP TABLE IF EXISTS guarantees idempotency.
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+        db.execSQL("DROP TABLE Black_List")
+
+        // Should not throw.
+        AppDatabase.MIGRATION_15_16.migrate(db)
+
+        assertFalse(getTableNames(db).contains("Black_List"))
+    }
+
+    // ========== Test 4e: v16 -> v17 (Drop BOOKMARKS table) ==========
+
+    @Test
+    fun `migrate 16 to 17 - BOOKMARKS table is dropped`() {
+        // Build a v16 schema by chaining migrations from v9.
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
+
+        // Seed a couple of BOOKMARKS rows so we can verify they vanish on drop.
+        // v9 BOOKMARKS schema: GID PK, TOKEN, TITLE, PAGE NOT NULL, TIME NOT NULL,
+        // CATEGORY NOT NULL, RATING NOT NULL, plus optional TITLE_JPN/THUMB/etc.
+        db.execSQL(
+            "INSERT INTO BOOKMARKS (GID, TOKEN, TITLE, PAGE, TIME, CATEGORY, RATING) " +
+                "VALUES (1001, 'bm_token_1', 'Doomed Bookmark 1', 42, 1700000000000, 0, 0.0)"
+        )
+        db.execSQL(
+            "INSERT INTO BOOKMARKS (GID, TOKEN, TITLE, PAGE, TIME, CATEGORY, RATING) " +
+                "VALUES (1002, 'bm_token_2', 'Doomed Bookmark 2', 17, 1700000001000, 0, 0.0)"
+        )
+
+        assertTrue("BOOKMARKS must exist before v16→v17 migration",
+            getTableNames(db).contains("BOOKMARKS"))
+
+        AppDatabase.MIGRATION_16_17.migrate(db)
+
+        assertFalse("BOOKMARKS must be gone after v16→v17 migration",
+            getTableNames(db).contains("BOOKMARKS"))
+
+        // Other tables remain intact.
+        val tables = getTableNames(db)
+        assertTrue(tables.contains("DOWNLOADS"))
+        assertTrue(tables.contains("HISTORY"))
+        assertTrue(tables.contains("SERVER_PROFILES"))
+    }
+
+    @Test
+    fun `migrate 16 to 17 - missing BOOKMARKS table is a no-op`() {
+        // Some users may be on a v16 schema where BOOKMARKS was already dropped manually
+        // (e.g. via DB editor). DROP TABLE IF EXISTS guarantees idempotency.
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
+        db.execSQL("DROP TABLE BOOKMARKS")
+
+        // Should not throw.
+        AppDatabase.MIGRATION_16_17.migrate(db)
+
+        assertFalse(getTableNames(db).contains("BOOKMARKS"))
+    }
+
+    // ========== Test 4f: v17 -> v18 (Drop Gallery_Tags table) ==========
+
+    @Test
+    fun `migrate 17 to 18 - Gallery_Tags table is dropped`() {
+        // Build a v17 schema by chaining migrations from v9.
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
+        AppDatabase.MIGRATION_16_17.migrate(db)
+
+        // Seed a couple of Gallery_Tags rows so we can verify they vanish on drop.
+        db.execSQL(
+            "INSERT INTO Gallery_Tags (GID, ARTIST, LANGUAGE) " +
+                "VALUES (5001, 'doomed_artist_1', 'chinese')"
+        )
+        db.execSQL(
+            "INSERT INTO Gallery_Tags (GID, ARTIST, LANGUAGE) " +
+                "VALUES (5002, 'doomed_artist_2', 'japanese')"
+        )
+
+        assertTrue("Gallery_Tags must exist before v17→v18 migration",
+            getTableNames(db).contains("Gallery_Tags"))
+
+        AppDatabase.MIGRATION_17_18.migrate(db)
+
+        assertFalse("Gallery_Tags must be gone after v17→v18 migration",
+            getTableNames(db).contains("Gallery_Tags"))
+
+        // Other tables remain intact.
+        val tables = getTableNames(db)
+        assertTrue(tables.contains("DOWNLOADS"))
+        assertTrue(tables.contains("HISTORY"))
+        assertTrue(tables.contains("SERVER_PROFILES"))
+    }
+
+    @Test
+    fun `migrate 17 to 18 - missing Gallery_Tags table is a no-op`() {
+        // Some users may be on a v17 schema where Gallery_Tags was already dropped
+        // manually. DROP TABLE IF EXISTS guarantees idempotency.
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
+        AppDatabase.MIGRATION_16_17.migrate(db)
+        db.execSQL("DROP TABLE Gallery_Tags")
+
+        // Should not throw.
+        AppDatabase.MIGRATION_17_18.migrate(db)
+
+        assertFalse(getTableNames(db).contains("Gallery_Tags"))
+    }
+
+    // ========== Test 4g: v18 -> v19 (Add indexes to LOCAL_FAVORITES, QUICK_SEARCH, DOWNLOAD_LABELS) ==========
+
+    @Test
+    fun `migrate 18 to 19 - three TIME indexes created`() {
+        // Build a v18 schema by chaining migrations from v9.
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
+        AppDatabase.MIGRATION_16_17.migrate(db)
+        AppDatabase.MIGRATION_17_18.migrate(db)
+
+        // Verify indexes do NOT exist yet
+        val indexesBefore = getIndexNames(db)
+        assertFalse("index_LOCAL_FAVORITES_TIME should not exist before migration",
+            indexesBefore.contains("index_LOCAL_FAVORITES_TIME"))
+        assertFalse("index_QUICK_SEARCH_TIME should not exist before migration",
+            indexesBefore.contains("index_QUICK_SEARCH_TIME"))
+        assertFalse("index_DOWNLOAD_LABELS_TIME should not exist before migration",
+            indexesBefore.contains("index_DOWNLOAD_LABELS_TIME"))
+
+        AppDatabase.MIGRATION_18_19.migrate(db)
+
+        // Verify all 3 indexes now exist
+        val indexesAfter = getIndexNames(db)
+        assertTrue("index_LOCAL_FAVORITES_TIME should exist after migration",
+            indexesAfter.contains("index_LOCAL_FAVORITES_TIME"))
+        assertTrue("index_QUICK_SEARCH_TIME should exist after migration",
+            indexesAfter.contains("index_QUICK_SEARCH_TIME"))
+        assertTrue("index_DOWNLOAD_LABELS_TIME should exist after migration",
+            indexesAfter.contains("index_DOWNLOAD_LABELS_TIME"))
+    }
+
+    @Test
+    fun `migrate 18 to 19 - existing data preserved after index creation`() {
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
+        AppDatabase.MIGRATION_16_17.migrate(db)
+        AppDatabase.MIGRATION_17_18.migrate(db)
+
+        val now = System.currentTimeMillis()
+
+        // Seed data into affected tables
+        db.execSQL(
+            "INSERT INTO LOCAL_FAVORITES (GID, TIME, CATEGORY, RATING) VALUES (7001, ?, 0, 4.0)",
+            arrayOf(now)
+        )
+        db.execSQL(
+            "INSERT INTO QUICK_SEARCH (NAME, MODE, CATEGORY, KEYWORD, ADVANCE_SEARCH, MIN_RATING, PAGE_FROM, PAGE_TO, TIME) " +
+                "VALUES ('Test QS', 0, 0, 'test', 0, 0, 0, 0, ?)",
+            arrayOf(now)
+        )
+        db.execSQL(
+            "INSERT INTO DOWNLOAD_LABELS (LABEL, TIME) VALUES ('Test Label', ?)",
+            arrayOf(now)
+        )
+
+        AppDatabase.MIGRATION_18_19.migrate(db)
+
+        // Verify data is preserved
+        db.query("SELECT GID, TIME FROM LOCAL_FAVORITES").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(7001L, c.getLong(0))
+            assertEquals(now, c.getLong(1))
+        }
+
+        db.query("SELECT NAME, KEYWORD FROM QUICK_SEARCH").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("Test QS", c.getString(0))
+            assertEquals("test", c.getString(1))
+        }
+
+        db.query("SELECT LABEL FROM DOWNLOAD_LABELS").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("Test Label", c.getString(0))
+        }
+    }
+
+    @Test
+    fun `migrate 18 to 19 - idempotent when indexes already exist`() {
+        db = createDatabase(9) { createV9Schema(it) }
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
+        AppDatabase.MIGRATION_16_17.migrate(db)
+        AppDatabase.MIGRATION_17_18.migrate(db)
+
+        // Manually create one index before migration
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_LOCAL_FAVORITES_TIME` ON `LOCAL_FAVORITES` (`TIME`)")
+
+        // Should not throw (CREATE INDEX IF NOT EXISTS).
+        AppDatabase.MIGRATION_18_19.migrate(db)
+
+        val indexes = getIndexNames(db)
+        assertTrue(indexes.contains("index_LOCAL_FAVORITES_TIME"))
+        assertTrue(indexes.contains("index_QUICK_SEARCH_TIME"))
+        assertTrue(indexes.contains("index_DOWNLOAD_LABELS_TIME"))
+    }
+
+    // ========== Test 5: Full migration v9 -> v19 ==========
+
+    @Test
+    fun `migrate all v9 to v19 - full chain preserves data`() {
+        db = createDatabase(9) { createV9Schema(it) }
+
+        val arcid = "full_chain_test_arcid"
+        val oldGid = arcid.hashCode().toLong() and 0x7FFFFFFF
+        val expectedGid = sha256Gid(arcid)
+        val now = System.currentTimeMillis()
+
+        // Seed v9 data across multiple tables
+        db.execSQL(
+            "INSERT INTO DOWNLOADS (GID, TOKEN, STATE, LEGACY, TIME, CATEGORY, RATING, TITLE) " +
+                "VALUES (?, ?, 0, 0, ?, 0, 5.0, 'Test Manga')",
+            arrayOf<Any>(oldGid, arcid, now)
+        )
+        db.execSQL(
+            "INSERT INTO DOWNLOAD_DIRNAME (GID, DIRNAME) VALUES (?, '/test/dir')",
+            arrayOf<Any>(oldGid)
+        )
+        db.execSQL(
+            "INSERT INTO HISTORY (GID, TOKEN, MODE, TIME, CATEGORY, RATING) VALUES (?, ?, 0, ?, 0, 3.5)",
+            arrayOf<Any>(oldGid, arcid, now)
+        )
+        db.execSQL(
+            "INSERT INTO SERVER_PROFILES (NAME, URL, API_KEY, IS_ACTIVE) VALUES ('TestSrv', 'http://test.local', 'secret', 1)"
+        )
+        db.execSQL(
+            "INSERT INTO Gallery_Tags (GID, ARTIST, LANGUAGE) VALUES (?, 'mangaka', 'japanese')",
+            arrayOf<Any>(oldGid)
+        )
+
+        // Run all 10 migrations in order
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
+        AppDatabase.MIGRATION_16_17.migrate(db)
+        AppDatabase.MIGRATION_17_18.migrate(db)
+        AppDatabase.MIGRATION_18_19.migrate(db)
+
+        // Verify GID recomputation (v9->v10)
+        db.query("SELECT GID, TOKEN, TITLE, RATING FROM DOWNLOADS").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(expectedGid, c.getLong(0))
+            assertEquals(arcid, c.getString(1))
+            assertEquals("Test Manga", c.getString(2))
+            assertEquals(5.0, c.getDouble(3), 0.001)
+        }
+
+        db.query("SELECT GID, DIRNAME FROM DOWNLOAD_DIRNAME").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(expectedGid, c.getLong(0))
+            assertEquals("/test/dir", c.getString(1))
+        }
+
+        db.query("SELECT GID, TOKEN, RATING FROM HISTORY").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(expectedGid, c.getLong(0))
+            assertEquals(arcid, c.getString(1))
+            assertEquals(3.5, c.getDouble(2), 0.001)
+        }
+
+        // NOTE: the old `SELECT ... FROM Gallery_Tags` assertion was removed
+        // when Gallery_Tags was dropped in v17→v18 (C5). The table no longer
+        // exists at the end of the chain, so we cannot query it here. The
+        // Gallery_Tags GID recomputation (v9→v10) is still exercised in the
+        // separate `migrate 9 to 10` tests earlier in this file.
+
+        // Verify indexes exist (v10->v11)
+        val indexes = getIndexNames(db)
+        assertTrue(indexes.contains("index_DOWNLOADS_SERVER_PROFILE_ID"))
+        assertTrue(indexes.contains("index_DOWNLOADS_TIME"))
+        assertTrue(indexes.contains("index_HISTORY_SERVER_PROFILE_ID"))
+        assertTrue(indexes.contains("index_HISTORY_TIME"))
+
+        // Verify LABEL index (v12->v13)
+        assertTrue(indexes.contains("index_DOWNLOADS_LABEL"))
+
+        // Verify v19 TIME indexes
+        assertTrue(indexes.contains("index_LOCAL_FAVORITES_TIME"))
+        assertTrue(indexes.contains("index_QUICK_SEARCH_TIME"))
+        assertTrue(indexes.contains("index_DOWNLOAD_LABELS_TIME"))
+
+        // Verify API_KEY removed from SERVER_PROFILES (v11->v12)
+        val columns = getColumnNames(db, "SERVER_PROFILES")
+        assertFalse("API_KEY should be removed", columns.contains("API_KEY"))
+
+        db.query("SELECT NAME, URL, IS_ACTIVE, ALLOW_CLEARTEXT FROM SERVER_PROFILES").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("TestSrv", c.getString(0))
+            assertEquals("http://test.local", c.getString(1))
+            assertEquals(1, c.getInt(2))
+            assertEquals(1, c.getInt(3))
+        }
+    }
+
+    @Test
+    fun `migrate all v9 to v19 - empty database succeeds`() {
+        db = createDatabase(9) { createV9Schema(it) }
+
+        // Run all migrations on empty database -- should not throw
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
+        AppDatabase.MIGRATION_16_17.migrate(db)
+        AppDatabase.MIGRATION_17_18.migrate(db)
+        AppDatabase.MIGRATION_18_19.migrate(db)
+
+        // Verify tables still exist and are queryable
+        db.query("SELECT COUNT(*) FROM DOWNLOADS").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(0, c.getInt(0))
+        }
+        db.query("SELECT COUNT(*) FROM SERVER_PROFILES").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(0, c.getInt(0))
+        }
+    }
+
+    @Test
+    fun `migrate all v9 to v19 - final schema matches Room v19`() {
+        db = createDatabase(9) { createV9Schema(it) }
+
+        AppDatabase.MIGRATION_9_10.migrate(db)
+        AppDatabase.MIGRATION_10_11.migrate(db)
+        AppDatabase.MIGRATION_11_12.migrate(db)
+        AppDatabase.MIGRATION_12_13.migrate(db)
+        AppDatabase.MIGRATION_13_14.migrate(db)
+        AppDatabase.MIGRATION_14_15.migrate(db)
+        AppDatabase.MIGRATION_15_16.migrate(db)
+        AppDatabase.MIGRATION_16_17.migrate(db)
+        AppDatabase.MIGRATION_17_18.migrate(db)
+        AppDatabase.MIGRATION_18_19.migrate(db)
+
+        // Verify all 7 tables exist (FILTER dropped in v14→v15,
+        // Black_List dropped in v15→v16, BOOKMARKS dropped in v16→v17,
+        // Gallery_Tags dropped in v17→v18)
+        val tables = getTableNames(db)
+        val expectedTables = setOf(
+            "DOWNLOADS", "DOWNLOAD_LABELS", "DOWNLOAD_DIRNAME",
+            "HISTORY", "LOCAL_FAVORITES", "QUICK_SEARCH",
+            "SERVER_PROFILES"
+        )
+        assertEquals(expectedTables, tables)
+
+        // Verify SERVER_PROFILES v14 columns: ID, NAME, URL, IS_ACTIVE, ALLOW_CLEARTEXT
+        val profileCols = getColumnNames(db, "SERVER_PROFILES")
+        assertEquals(setOf("ID", "NAME", "URL", "IS_ACTIVE", "ALLOW_CLEARTEXT"), profileCols)
+
+        // Verify v11 indexes on DOWNLOADS and HISTORY (Black_List index gone with table)
+        val indexes = getIndexNames(db)
+        assertTrue(indexes.contains("index_DOWNLOADS_SERVER_PROFILE_ID"))
+        assertTrue(indexes.contains("index_DOWNLOADS_TIME"))
+        assertTrue(indexes.contains("index_HISTORY_SERVER_PROFILE_ID"))
+        assertTrue(indexes.contains("index_HISTORY_TIME"))
+        // Verify v13 LABEL index
+        assertTrue(indexes.contains("index_DOWNLOADS_LABEL"))
+        // Verify v19 TIME indexes
+        assertTrue(indexes.contains("index_LOCAL_FAVORITES_TIME"))
+        assertTrue(indexes.contains("index_QUICK_SEARCH_TIME"))
+        assertTrue(indexes.contains("index_DOWNLOAD_LABELS_TIME"))
+    }
+
+    // ========== Utility functions ==========
+
+    private fun getIndexNames(db: SupportSQLiteDatabase): Set<String> {
+        val indexes = mutableSetOf<String>()
+        db.query(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name NOT LIKE 'sqlite_%'"
+        ).use { c ->
+            while (c.moveToNext()) {
+                indexes.add(c.getString(0))
+            }
+        }
+        return indexes
+    }
+
+    private fun getColumnNames(db: SupportSQLiteDatabase, table: String): Set<String> {
+        val columns = mutableSetOf<String>()
+        db.query("PRAGMA table_info($table)").use { c ->
+            while (c.moveToNext()) {
+                columns.add(c.getString(c.getColumnIndexOrThrow("name")))
+            }
+        }
+        return columns
+    }
+
+    private fun getTableNames(db: SupportSQLiteDatabase): Set<String> {
+        val tables = mutableSetOf<String>()
+        db.query(
+            "SELECT name FROM sqlite_master WHERE type='table' " +
+                "AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'room_%' " +
+                "AND name != 'android_metadata'"
+        ).use { c ->
+            while (c.moveToNext()) {
+                tables.add(c.getString(0))
+            }
+        }
+        return tables
+    }
+}

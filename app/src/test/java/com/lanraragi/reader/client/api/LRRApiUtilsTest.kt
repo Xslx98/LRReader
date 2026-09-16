@@ -4,7 +4,7 @@ import com.lanraragi.reader.client.api.*
 import com.lanraragi.reader.client.api.data.*
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.hippo.ehviewer.R
+import com.lanraragi.reader.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.job

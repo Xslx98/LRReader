@@ -40,7 +40,7 @@
 
     <!-- LANraragi: removed download_thread, preload_image, list_pagination, image_size, download_origin_image, download_timeout, download_order_asc -->
 
-    <com.hippo.ehviewer.preference.CleanRedundancyPreference
+    <com.lanraragi.reader.preference.CleanRedundancyPreference
         android:key="clean_redundancy"
         android:summary="@string/settings_download_clean_redundancy_summary"
         android:title="@string/settings_download_clean_redundancy"

@@ -55,7 +55,7 @@
                 android:padding="12dp"
                 android:contentDescription="@string/search"/>
 
-            <com.hippo.ehviewer.widget.SearchEditText
+            <com.lanraragi.reader.widget.SearchEditText
                 android:id="@+id/search_edit_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
