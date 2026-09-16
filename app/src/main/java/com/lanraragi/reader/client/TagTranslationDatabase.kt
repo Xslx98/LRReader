@@ -244,9 +244,17 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
         private val NAMESPACE_ALIASES: Map<String, String> = mapOf(
             "series" to "parody",
             "misc" to "other",
-            "category" to "reclass",
             "cos" to "cosplayer",
             "loc" to "location"
+        )
+
+        /**
+         * Aliases that only apply to tag values: an LRR `category:doujinshi`
+         * value is an EhViewer reclass, but labelling the group "重新分类"
+         * (reclass) would misname it, so its header stays untranslated.
+         */
+        private val VALUE_ONLY_ALIASES: Map<String, String> = mapOf(
+            "category" to "reclass"
         )
 
         /**
@@ -266,7 +274,7 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
 
         /** Dataset key prefix (`a:`, `p:`, …) for a lower-cased LRR namespace, or null. */
         internal fun datasetPrefixFor(namespace: String): String? {
-            val canonical = canonicalNamespace(namespace) ?: return null
+            val canonical = VALUE_ONLY_ALIASES[namespace] ?: canonicalNamespace(namespace) ?: return null
             return NAMESPACE_TO_PREFIX[canonical]
         }
 

@@ -101,6 +101,9 @@ class TagTranslationDatabaseTest {
         assertEquals("地点", sample.translateNamespace("location"))
         assertNull(sample.translateNamespace("date_added"))
         assertNull(sample.translateNamespace("group"))
+        // Values under `category:` translate as reclass, but the header must
+        // not be relabelled "reclass".
+        assertNull(sample.translateNamespace("category"))
     }
 
     @Test
