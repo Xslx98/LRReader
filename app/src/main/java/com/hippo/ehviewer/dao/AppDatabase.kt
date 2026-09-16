@@ -47,7 +47,7 @@ import kotlinx.serialization.json.Json
         DailyReadingAggregate::class,
         TankDownloadGroup::class
     ],
-    version = 30,
+    version = 31,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class, DownloadStateConverter::class)
@@ -80,7 +80,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DB_NAME
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31)
                     .build()
                     .also { INSTANCE = it }
             }
@@ -403,6 +403,30 @@ abstract class AppDatabase : RoomDatabase() {
          * count, written at reading-session end. Purely additive; no UI
          * consumer yet (accumulates history for future trend features).
          */
+        /**
+         * v30 → v31: readable category browsing (spec 2026-09-15). Adds
+         * `CATEGORY_ID` / `CATEGORY_NAME` to `QUICK_SEARCH` so a category
+         * filter no longer rides in `KEYWORD` as `"category:<id>"`. Legacy
+         * rows are rewritten in place (id → column, keyword cleared, name
+         * left NULL for the runtime back-fill); SEARCH_HISTORY rows that
+         * captured that pre-filled text are deleted — they are unreadable
+         * and, without the protocol, unrunnable. `substr()` keeps the match
+         * case-exact (SQLite `LIKE` is ASCII-case-insensitive); a bare
+         * `"category:"` with no id stays plain text.
+         */
+        @VisibleForTesting
+        internal val MIGRATION_30_31 = object : Migration(30, 31) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `QUICK_SEARCH` ADD COLUMN `CATEGORY_ID` TEXT")
+                db.execSQL("ALTER TABLE `QUICK_SEARCH` ADD COLUMN `CATEGORY_NAME` TEXT")
+                db.execSQL(
+                    "UPDATE `QUICK_SEARCH` SET `CATEGORY_ID` = substr(`KEYWORD`, 10), `KEYWORD` = NULL " +
+                        "WHERE substr(`KEYWORD`, 1, 9) = 'category:' AND length(`KEYWORD`) > 9"
+                )
+                db.execSQL("DELETE FROM `SEARCH_HISTORY` WHERE substr(`QUERY`, 1, 9) = 'category:'")
+            }
+        }
+
         /**
          * v29 → v30: tank downloads (Track 2). Adds the grouping tag
          * `DOWNLOAD_TANK_ID` to `ARCHIVE_LOCAL_STATE` (null = standalone
