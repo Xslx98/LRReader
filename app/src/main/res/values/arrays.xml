@@ -42,8 +42,6 @@
         <item>1</item>
     </string-array>
 
-
-
     <string-array name="detail_size_entries" translatable="false">
         <item>@string/settings_eh_detail_size_long</item>
         <item>@string/settings_eh_detail_size_short</item>
@@ -195,19 +193,18 @@
         <item>zh-TW</item>
     </string-array>
 
-    <string-array name="tag_translation_metadata" tools:ignore="InconsistentArrays">
-<!--        <item>tag-translations-zh-rCN.sha1</item>-->
-<!--        <item>https://github.com/Mapaler/EhViewer/tree/tag-translations/tag-translations/tag-translations-zh-rCN.sha1</item>-->
-<!--        <item>tag-translations-zh-rCN</item>-->
-<!--        <item>https://github.com/Mapaler/EhViewer/raw/tag-translations/tag-translations/tag-translations-zh-rCN</item>-->
+    <!-- Tag-translation dataset: [sha1 file name, sha1 URL, data file name, data URL].
+         Every locale shares this one array (the dataset is zh-CN only; the
+         "show tag translations" switch is what gates display). The remote
+         ".json" file is NOT JSON: it is the length-prefixed "tag CR base64 LF" line
+         format TagTranslationDatabase parses, mirrored daily from
+         EhTagTranslation/Database by xiaojieonly. -->
+    <string-array name="tag_translation_metadata">
         <item>tag-translations-zh-rCN.sha1</item>
-        <item>https://raw.githubusercontent.com/Mapaler/EhViewer/tag-translations/tag-translations/tag-translations-zh-rCN.sha1</item>
+        <item>https://raw.githubusercontent.com/xiaojieonly/EhTagTranslation/main/tag-translations/tag-translations-zh-rCN.json.sha1</item>
         <item>tag-translations-zh-rCN</item>
-        <item>https://raw.githubusercontent.com/Mapaler/EhViewer/tag-translations/tag-translations/tag-translations-zh-rCN</item>
+        <item>https://raw.githubusercontent.com/xiaojieonly/EhTagTranslation/main/tag-translations/tag-translations-zh-rCN.json</item>
     </string-array>
-
-
-
 
     <string-array name="network_resume_timeout_entries" translatable="false">
         <item>@string/settings_download_network_timeout_1m</item>
