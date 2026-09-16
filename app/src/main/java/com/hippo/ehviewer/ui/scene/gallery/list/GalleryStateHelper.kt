@@ -3,16 +3,16 @@ package com.hippo.ehviewer.ui.scene.gallery.list
 import android.animation.Animator
 import android.view.Gravity
 import android.view.View
-import com.hippo.drawable.AddDeleteDrawable
-import com.hippo.drawable.DrawerArrowDrawable
+import com.lanraragi.framework.drawable.AddDeleteDrawable
+import com.lanraragi.framework.drawable.DrawerArrowDrawable
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.widget.SearchBar
-import com.hippo.widget.FabLayout
-import com.hippo.widget.SearchBarMover
-import com.hippo.view.ViewTransition
+import com.lanraragi.framework.widget.FabLayout
+import com.lanraragi.framework.widget.SearchBarMover
+import com.lanraragi.framework.view.ViewTransition
 import com.hippo.ehviewer.widget.SearchLayout
-import com.hippo.lib.yorozuya.AnimationUtils
-import com.hippo.lib.yorozuya.SimpleAnimatorListener
+import com.lanraragi.framework.lib.yorozuya.AnimationUtils
+import com.lanraragi.framework.lib.yorozuya.SimpleAnimatorListener
 
 /**
  * Manages search state machine and FAB animations for GalleryListScene.

@@ -9,18 +9,18 @@ import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.hippo.drawable.AddDeleteDrawable
-import com.hippo.drawable.DrawerArrowDrawable
+import com.lanraragi.framework.drawable.AddDeleteDrawable
+import com.lanraragi.framework.drawable.DrawerArrowDrawable
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.widget.SearchBar
 import com.hippo.ehviewer.widget.SearchLayout
-import com.hippo.scene.Announcer
-import com.hippo.view.ViewTransition
-import com.hippo.widget.FabLayout
-import com.hippo.widget.SearchBarMover
+import com.lanraragi.framework.scene.Announcer
+import com.lanraragi.framework.view.ViewTransition
+import com.lanraragi.framework.widget.FabLayout
+import com.lanraragi.framework.widget.SearchBarMover
 import androidx.recyclerview.widget.RecyclerView
 
 /**

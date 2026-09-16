@@ -12,7 +12,7 @@ import android.view.ViewConfiguration
 import com.hippo.android.resource.AttrResources
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ui.gallery.StampGeometry
-import com.hippo.lib.glgallery.PageTransform
+import com.lanraragi.framework.lib.glgallery.PageTransform
 import com.lanraragi.reader.client.api.LRRStampApi.StampData
 import kotlin.math.hypot
 

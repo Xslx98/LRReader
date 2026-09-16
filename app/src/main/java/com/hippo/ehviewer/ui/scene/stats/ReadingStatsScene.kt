@@ -11,13 +11,13 @@ import android.widget.TextView
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.appbar.MaterialToolbar
 import com.hippo.android.resource.AttrResources
-import com.hippo.drawable.RoundSideRectDrawable
+import com.lanraragi.framework.drawable.RoundSideRectDrawable
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.stats.ReadingStatsCalculator
 import com.hippo.ehviewer.stats.TagPreferenceCalculator
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.util.collectFlow
-import com.hippo.widget.AutoWrapLayout
+import com.lanraragi.framework.widget.AutoWrapLayout
 import java.util.Locale
 
 /**

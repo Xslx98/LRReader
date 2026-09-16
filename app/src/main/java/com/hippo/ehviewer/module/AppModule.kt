@@ -6,7 +6,7 @@ import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.Crash
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.Settings
-import com.hippo.lib.yorozuya.IntIdGenerator
+import com.lanraragi.framework.lib.yorozuya.IntIdGenerator
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope

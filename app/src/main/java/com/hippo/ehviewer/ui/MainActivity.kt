@@ -72,11 +72,11 @@ import com.hippo.ehviewer.ui.scene.TankoubonDetailScene
 import com.hippo.ehviewer.ui.scene.TankoubonsScene
 import com.hippo.ehviewer.client.LRRUrlOpener
 import com.hippo.ehviewer.widget.EhDrawerLayout
-import com.hippo.network.Network
-import com.hippo.scene.Announcer
-import com.hippo.scene.SceneFactory
-import com.hippo.scene.SceneFragment
-import com.hippo.scene.StageActivity
+import com.lanraragi.framework.network.Network
+import com.lanraragi.framework.scene.Announcer
+import com.lanraragi.framework.scene.SceneFactory
+import com.lanraragi.framework.scene.SceneFragment
+import com.lanraragi.framework.scene.StageActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -90,8 +90,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.hippo.lib.yorozuya.ResourcesUtils
-import com.hippo.lib.yorozuya.ViewUtils
+import com.lanraragi.framework.lib.yorozuya.ResourcesUtils
+import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import java.io.File
 import com.hippo.ehviewer.settings.UpdateSettings
 import com.hippo.ehviewer.updater.AppUpdater

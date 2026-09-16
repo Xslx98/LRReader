@@ -23,11 +23,11 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
-import com.hippo.lib.glgallery.GalleryPageView
-import com.hippo.lib.image.Image
-import com.hippo.unifile.UniFile
-import com.hippo.lib.yorozuya.FileUtils
-import com.hippo.lib.yorozuya.IOUtils
+import com.lanraragi.framework.lib.glgallery.GalleryPageView
+import com.lanraragi.framework.lib.image.Image
+import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.framework.lib.yorozuya.FileUtils
+import com.lanraragi.framework.lib.yorozuya.IOUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope

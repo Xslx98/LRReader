@@ -1,7 +1,7 @@
 package com.hippo.ehviewer.ui.scene.download
 
 import com.hippo.ehviewer.dao.DownloadInfo
-import com.hippo.unifile.UniFile
+import com.lanraragi.framework.unifile.UniFile
 import java.io.File
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent

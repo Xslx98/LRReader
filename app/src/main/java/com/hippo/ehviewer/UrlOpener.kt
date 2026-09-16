@@ -26,8 +26,8 @@ import android.text.TextUtils
 import android.widget.Toast
 import com.hippo.ehviewer.client.LRRUrlOpener
 import com.hippo.ehviewer.ui.MainActivity
-import com.hippo.scene.StageActivity
-import com.hippo.util.ExceptionUtils
+import com.lanraragi.framework.scene.StageActivity
+import com.lanraragi.framework.util.ExceptionUtils
 
 object UrlOpener {
 

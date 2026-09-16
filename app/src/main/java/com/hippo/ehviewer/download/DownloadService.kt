@@ -38,10 +38,10 @@ import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.util.LauncherIcon
-import com.hippo.util.ReadableTime
-import com.hippo.lib.yorozuya.FileUtils
-import com.hippo.lib.yorozuya.collect.SparseJBArray
-import com.hippo.lib.yorozuya.collect.SparseJLArray
+import com.lanraragi.framework.util.ReadableTime
+import com.lanraragi.framework.lib.yorozuya.FileUtils
+import com.lanraragi.framework.lib.yorozuya.collect.SparseJBArray
+import com.lanraragi.framework.lib.yorozuya.collect.SparseJLArray
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

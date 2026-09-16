@@ -2,7 +2,7 @@ package com.hippo.ehviewer.gallery
 
 import android.content.Context
 import com.hippo.ehviewer.ui.GalleryOpenHelper
-import com.hippo.unifile.UniFile
+import com.lanraragi.framework.unifile.UniFile
 import okhttp3.OkHttpClient
 
 /**

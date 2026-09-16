@@ -17,7 +17,7 @@
 package com.hippo.ehviewer.client
 
 import com.hippo.ehviewer.settings.AppearanceSettings
-import com.hippo.network.UrlBuilder
+import com.lanraragi.framework.network.UrlBuilder
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 

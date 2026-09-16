@@ -20,9 +20,9 @@ import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.dao.QuickSearch
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.util.TagTranslationUtil
-import com.hippo.lib.yorozuya.AssertUtils
-import com.hippo.lib.yorozuya.ViewUtils
-import com.hippo.scene.Announcer
+import com.lanraragi.framework.lib.yorozuya.AssertUtils
+import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.framework.scene.Announcer
 import kotlinx.coroutines.launch
 
 class BookmarksDraw(

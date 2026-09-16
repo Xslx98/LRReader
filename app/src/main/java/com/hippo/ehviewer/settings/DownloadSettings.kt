@@ -8,8 +8,8 @@ import androidx.core.content.edit
 import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.ui.CommonOperations
-import com.hippo.unifile.UniFile
-import com.hippo.util.ExceptionUtils
+import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.framework.util.ExceptionUtils
 
 /**
  * Download-related settings extracted from Settings.java.

@@ -25,7 +25,7 @@ import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.ui.scene.download.DownloadLabelHelper
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
 import com.hippo.ehviewer.util.ClipboardUtil
-import com.hippo.lib.yorozuya.AssertUtils
+import com.lanraragi.framework.lib.yorozuya.AssertUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

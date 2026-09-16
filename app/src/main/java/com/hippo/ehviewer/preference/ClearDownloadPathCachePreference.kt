@@ -21,7 +21,7 @@ import androidx.appcompat.app.AlertDialog
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import android.util.Log
-import com.hippo.preference.MessagePreference
+import com.lanraragi.framework.preference.MessagePreference
 import kotlinx.coroutines.launch
 
 class ClearDownloadPathCachePreference : MessagePreference {

@@ -2,7 +2,7 @@ package com.hippo.ehviewer.settings
 
 import android.content.SharedPreferences
 import com.hippo.ehviewer.Settings
-import com.hippo.lib.glgallery.GalleryView
+import com.lanraragi.framework.lib.glgallery.GalleryView
 
 /**
  * Reading-related settings extracted from Settings.java.

@@ -10,8 +10,8 @@ import com.hippo.ehviewer.gallery.ReaderPageCache
 import com.hippo.ehviewer.gallery.ReadingProgressReconciler
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.spider.SpiderDen
-import com.hippo.lib.yorozuya.StringUtils
-import com.hippo.unifile.UniFile
+import com.lanraragi.framework.lib.yorozuya.StringUtils
+import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import java.io.File

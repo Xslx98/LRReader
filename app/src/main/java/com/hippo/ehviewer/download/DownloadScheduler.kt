@@ -21,8 +21,8 @@ import android.os.Looper
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.spider.SpiderQueen
-import com.hippo.lib.image.Image
-import com.hippo.lib.yorozuya.collect.LongList
+import com.lanraragi.framework.lib.image.Image
+import com.lanraragi.framework.lib.yorozuya.collect.LongList
 import kotlinx.coroutines.CoroutineScope
 
 /**

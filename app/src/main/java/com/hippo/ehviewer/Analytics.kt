@@ -6,7 +6,7 @@ package com.hippo.ehviewer
 
 import android.content.Context
 import android.util.Log
-import com.hippo.scene.SceneFragment
+import com.lanraragi.framework.scene.SceneFragment
 
 /**
  * Stub analytics — all methods are no-ops since Firebase was removed.

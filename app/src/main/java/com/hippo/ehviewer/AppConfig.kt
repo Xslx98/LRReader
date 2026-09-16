@@ -20,9 +20,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import com.hippo.ehviewer.client.exception.ParseException
-import com.hippo.lib.yorozuya.FileUtils
-import com.hippo.lib.yorozuya.IOUtils
-import com.hippo.util.ReadableTime
+import com.lanraragi.framework.lib.yorozuya.FileUtils
+import com.lanraragi.framework.lib.yorozuya.IOUtils
+import com.lanraragi.framework.util.ReadableTime
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream

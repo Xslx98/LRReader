@@ -19,9 +19,9 @@ package com.hippo.ehviewer.gallery
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import com.hippo.lib.glgallery.GalleryProvider
-import com.hippo.lib.glgallery.GalleryView
-import com.hippo.unifile.UniFile
+import com.lanraragi.framework.lib.glgallery.GalleryProvider
+import com.lanraragi.framework.lib.glgallery.GalleryView
+import com.lanraragi.framework.unifile.UniFile
 
 abstract class GalleryProvider2 : GalleryProvider() {
 

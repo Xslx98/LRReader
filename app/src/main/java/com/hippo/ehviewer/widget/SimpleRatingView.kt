@@ -23,8 +23,8 @@ import androidx.core.graphics.withSave
 import android.util.AttributeSet
 import android.view.View
 import com.hippo.ehviewer.R
-import com.hippo.lib.yorozuya.MathUtils
-import com.hippo.util.DrawableManager
+import com.lanraragi.framework.lib.yorozuya.MathUtils
+import com.lanraragi.framework.util.DrawableManager
 
 /**
  * 5 stars, from 0 to 10

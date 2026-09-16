@@ -2,10 +2,10 @@ package com.hippo.ehviewer.gallery
 
 import android.content.Context
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.lib.image.Image
-import com.hippo.lib.yorozuya.FileUtils
-import com.hippo.lib.yorozuya.IOUtils
-import com.hippo.unifile.UniFile
+import com.lanraragi.framework.lib.image.Image
+import com.lanraragi.framework.lib.yorozuya.FileUtils
+import com.lanraragi.framework.lib.yorozuya.IOUtils
+import com.lanraragi.framework.unifile.UniFile
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex

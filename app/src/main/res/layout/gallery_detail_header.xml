@@ -46,7 +46,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.hippo.widget.LoadImageView
+    <com.lanraragi.framework.widget.LoadImageView
         android:id="@+id/thumb"
         android:layout_width="@dimen/gallery_detail_thumb_width"
         android:layout_height="@dimen/gallery_detail_thumb_height"

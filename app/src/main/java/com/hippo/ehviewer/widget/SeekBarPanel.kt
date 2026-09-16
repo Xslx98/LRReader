@@ -23,7 +23,7 @@ import android.view.MotionEvent
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import com.hippo.ehviewer.R
-import com.hippo.lib.yorozuya.ViewUtils
+import com.lanraragi.framework.lib.yorozuya.ViewUtils
 
 class SeekBarPanel @JvmOverloads constructor(
     context: Context,

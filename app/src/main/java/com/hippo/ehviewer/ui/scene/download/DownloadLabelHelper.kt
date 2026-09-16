@@ -18,7 +18,7 @@ package com.hippo.ehviewer.ui.scene.download
 import android.content.Context
 import android.content.DialogInterface
 import androidx.appcompat.app.AlertDialog
-import com.hippo.app.CheckBoxDialogBuilder
+import com.lanraragi.framework.app.CheckBoxDialogBuilder
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.DownloadSettings

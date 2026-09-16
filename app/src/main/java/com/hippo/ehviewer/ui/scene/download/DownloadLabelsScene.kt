@@ -34,15 +34,15 @@ import com.h6ah4i.android.widget.advrecyclerview.draggable.ItemDraggableRange
 import com.h6ah4i.android.widget.advrecyclerview.draggable.RecyclerViewDragDropManager
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemViewHolder
 import androidx.lifecycle.ViewModelProvider
-import com.hippo.app.EditTextDialogBuilder
+import com.lanraragi.framework.app.EditTextDialogBuilder
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.dao.DownloadLabel
 import com.hippo.ehviewer.ui.scene.ToolbarScene
-import com.hippo.util.DrawableManager
-import com.hippo.view.ViewTransition
-import com.hippo.lib.yorozuya.AssertUtils
-import com.hippo.lib.yorozuya.ViewUtils
+import com.lanraragi.framework.util.DrawableManager
+import com.lanraragi.framework.view.ViewTransition
+import com.lanraragi.framework.lib.yorozuya.AssertUtils
+import com.lanraragi.framework.lib.yorozuya.ViewUtils
 
 class DownloadLabelsScene : ToolbarScene() {
 

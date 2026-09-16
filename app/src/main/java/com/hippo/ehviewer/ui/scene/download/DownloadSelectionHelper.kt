@@ -17,10 +17,10 @@ package com.hippo.ehviewer.ui.scene.download
 
 import android.view.Gravity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.hippo.drawable.AddDeleteDrawable
+import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.hippo.drawerlayout.DrawerLayout
 import com.hippo.easyrecyclerview.EasyRecyclerView
-import com.hippo.widget.FabLayout
+import com.lanraragi.framework.widget.FabLayout
 
 /**
  * Manages custom choice/selection mode, FAB expand/collapse, and drawer

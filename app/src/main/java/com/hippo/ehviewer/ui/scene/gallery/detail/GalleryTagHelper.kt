@@ -22,14 +22,14 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.hippo.android.resource.AttrResources
-import com.hippo.drawable.RoundSideRectDrawable
+import com.lanraragi.framework.drawable.RoundSideRectDrawable
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.lanraragi.reader.domain.TagGroup
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListSceneDialog
-import com.hippo.widget.AutoWrapLayout
+import com.lanraragi.framework.widget.AutoWrapLayout
 
 /**
  * Stateless utility for tag display and tag long-press actions,

@@ -2,7 +2,7 @@ package com.hippo.ehviewer.ui.scene.download
 
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.spider.SpiderDen
-import com.hippo.unifile.UniFile
+import com.lanraragi.framework.unifile.UniFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.util.concurrent.CompletableFuture

@@ -21,7 +21,7 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.ui.fragment.AdvancedFragment
 import com.hippo.ehviewer.ui.fragment.SettingsHeaders
-import com.hippo.util.DrawableManager
+import com.lanraragi.framework.util.DrawableManager
 
 class SettingsActivity : EhActivity() {
 

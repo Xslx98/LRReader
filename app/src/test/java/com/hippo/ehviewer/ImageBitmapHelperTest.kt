@@ -1,7 +1,7 @@
 package com.hippo.ehviewer
 
 import android.graphics.Bitmap
-import com.hippo.lib.image.Image
+import com.lanraragi.framework.lib.image.Image
 import com.hippo.streampipe.InputStreamPipe
 import java.io.File
 import java.io.FileInputStream

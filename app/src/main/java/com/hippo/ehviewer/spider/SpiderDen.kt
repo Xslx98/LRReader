@@ -22,9 +22,9 @@ import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.gallery.GalleryProvider2
 import com.hippo.ehviewer.settings.DownloadSettings
-import com.hippo.unifile.FilenameFilter
-import com.hippo.unifile.UniFile
-import com.hippo.lib.yorozuya.FileUtils
+import com.lanraragi.framework.unifile.FilenameFilter
+import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.framework.lib.yorozuya.FileUtils
 import java.util.Locale
 
 /**

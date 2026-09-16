@@ -30,8 +30,8 @@ import androidx.customview.view.AbsSavedState
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.lib.yorozuya.IntIdGenerator
-import com.hippo.preference.DialogPreference
+import com.lanraragi.framework.lib.yorozuya.IntIdGenerator
+import com.lanraragi.framework.preference.DialogPreference
 import kotlinx.coroutines.launch
 
 abstract class TaskPreference : DialogPreference {

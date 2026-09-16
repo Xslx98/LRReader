@@ -73,17 +73,17 @@ import com.hippo.ehviewer.widget.GalleryGuideView
 import com.hippo.ehviewer.widget.GalleryHeader
 import com.hippo.ehviewer.widget.ReversibleSeekBar
 import com.hippo.ehviewer.widget.StampOverlayView
-import com.hippo.lib.glgallery.GalleryProvider
-import com.hippo.lib.glgallery.GalleryView
-import com.hippo.lib.glgallery.SimpleAdapter
-import com.hippo.lib.glview.view.GLRootView
-import com.hippo.unifile.UniFile
-import com.hippo.util.SystemUiHelper
-import com.hippo.widget.ColorView
-import com.hippo.lib.yorozuya.ConcurrentPool
-import com.hippo.lib.yorozuya.MathUtils
-import com.hippo.lib.yorozuya.ResourcesUtils
-import com.hippo.lib.yorozuya.ViewUtils
+import com.lanraragi.framework.lib.glgallery.GalleryProvider
+import com.lanraragi.framework.lib.glgallery.GalleryView
+import com.lanraragi.framework.lib.glgallery.SimpleAdapter
+import com.lanraragi.framework.lib.glview.view.GLRootView
+import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.framework.util.SystemUiHelper
+import com.lanraragi.framework.widget.ColorView
+import com.lanraragi.framework.lib.yorozuya.ConcurrentPool
+import com.lanraragi.framework.lib.yorozuya.MathUtils
+import com.lanraragi.framework.lib.yorozuya.ResourcesUtils
+import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import java.io.File
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.launch
@@ -1137,7 +1137,7 @@ class GalleryActivity : EhActivity(), GalleryView.Listener,
             mainHandler.post(task)
         }
 
-        override fun onPageSucceed(index: Int, image: com.hippo.lib.glview.image.ImageWrapper) {
+        override fun onPageSucceed(index: Int, image: com.lanraragi.framework.lib.glview.image.ImageWrapper) {
             super.onPageSucceed(index, image)
             // Setting the page image doesn't by itself flip GalleryView
             // back into a fill cycle — it just paints the new texture

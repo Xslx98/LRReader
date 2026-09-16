@@ -7,7 +7,7 @@ import com.hippo.drawerlayout.DrawerLayout
 import com.hippo.easyrecyclerview.FastScroller
 import com.hippo.ehviewer.widget.SearchBar
 import com.hippo.ehviewer.widget.SearchLayout
-import com.hippo.widget.SearchBarMover
+import com.lanraragi.framework.widget.SearchBarMover
 
 /**
  * Consolidates all SearchBar-related interface implementations that were formerly

@@ -21,7 +21,7 @@ import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
-import com.hippo.lib.yorozuya.ViewUtils
+import com.lanraragi.framework.lib.yorozuya.ViewUtils
 
 /**
  * Server configuration scene for LANraragi Reader.

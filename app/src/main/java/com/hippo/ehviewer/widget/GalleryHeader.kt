@@ -25,7 +25,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import com.hippo.ehviewer.R
-import com.hippo.lib.yorozuya.ObjectUtils
+import com.lanraragi.framework.lib.yorozuya.ObjectUtils
 
 class GalleryHeader(context: Context, attrs: AttributeSet) : ViewGroup(context, attrs) {
 

@@ -33,8 +33,8 @@ import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.hippo.ehviewer.settings.AppLockGate
 import com.hippo.ehviewer.settings.SecuritySettings
-import com.hippo.lib.yorozuya.ViewUtils
-import com.hippo.widget.lockpattern.LockPatternView
+import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.framework.widget.lockpattern.LockPatternView
 
 class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
 

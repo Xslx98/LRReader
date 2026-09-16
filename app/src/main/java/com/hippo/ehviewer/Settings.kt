@@ -24,7 +24,7 @@ import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.settings.ReadingSettings
-import com.hippo.lib.yorozuya.NumberUtils
+import com.lanraragi.framework.lib.yorozuya.NumberUtils
 
 object Settings {
 

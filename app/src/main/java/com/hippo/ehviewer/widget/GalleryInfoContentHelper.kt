@@ -17,7 +17,7 @@
 package com.hippo.ehviewer.widget
 
 import android.os.Parcelable
-import com.hippo.widget.ContentLayout
+import com.lanraragi.framework.widget.ContentLayout
 import com.lanraragi.reader.domain.Archive
 
 abstract class GalleryInfoContentHelper : ContentLayout.ContentHelper<Archive>() {

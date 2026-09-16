@@ -35,8 +35,8 @@ import com.hippo.ehviewer.ui.scene.TankoubonDetailViewModel.TankDetailUiEvent
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.ehviewer.util.collectFlow
 import com.hippo.ehviewer.util.collectFlowWhileCreated
-import com.hippo.scene.Announcer
-import com.hippo.widget.LoadImageViewNew
+import com.lanraragi.framework.scene.Announcer
+import com.lanraragi.framework.widget.LoadImageViewNew
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.domain.Archive
 import java.util.Collections

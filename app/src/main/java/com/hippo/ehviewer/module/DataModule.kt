@@ -3,7 +3,7 @@ package com.hippo.ehviewer.module
 import android.content.Context
 import android.util.Log
 import androidx.collection.LruCache
-import com.hippo.beerbelly.SimpleDiskCache
+import com.lanraragi.framework.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.FavouriteStatusRouter
 import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.domain.ArchiveDetail

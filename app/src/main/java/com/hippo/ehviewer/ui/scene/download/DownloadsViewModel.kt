@@ -10,7 +10,7 @@ import com.hippo.ehviewer.settings.DownloadSettings
 import com.lanraragi.reader.client.api.toHexLower
 import com.hippo.ehviewer.callBack.DownloadSearchCallback
 import com.hippo.ehviewer.dao.DownloadInfo
-import com.hippo.util.FileUtils
+import com.lanraragi.framework.util.FileUtils
 import kotlinx.coroutines.Dispatchers
 import com.hippo.ehviewer.dao.DownloadLabel
 import com.hippo.ehviewer.download.DownloadInfoListener
@@ -20,7 +20,7 @@ import com.hippo.ehviewer.download.TankDownloadGrouping
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.ehviewer.spider.SpiderInfo
 import com.hippo.ehviewer.sync.DownloadListInfosExecutor
-import com.hippo.unifile.UniFile
+import com.lanraragi.framework.unifile.UniFile
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow

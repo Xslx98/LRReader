@@ -3,7 +3,7 @@
  */
 package com.hippo.ehviewer.client
 
-import com.hippo.scene.Announcer
+import com.lanraragi.framework.scene.Announcer
 
 /**
  * LRRUrlOpener — STUB. E-Hentai URL parsing has been removed.

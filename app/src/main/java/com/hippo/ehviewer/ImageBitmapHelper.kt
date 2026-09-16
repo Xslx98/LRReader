@@ -16,8 +16,8 @@
 
 package com.hippo.ehviewer
 
-import com.hippo.conaco.ValueHelper
-import com.hippo.lib.image.Image
+import com.lanraragi.framework.conaco.ValueHelper
+import com.lanraragi.framework.lib.image.Image
 import com.hippo.streampipe.InputStreamPipe
 import java.io.File
 import java.io.FileInputStream

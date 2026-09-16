@@ -6,8 +6,8 @@ import com.hippo.ehviewer.BuildConfig
 import com.hippo.ehviewer.GetText
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.lib.glgallery.GalleryProvider
-import com.hippo.unifile.UniFile
+import com.lanraragi.framework.lib.glgallery.GalleryProvider
+import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.probeSourceHealthy

@@ -26,7 +26,7 @@ import android.view.View
 import android.widget.ImageView
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.settings.ReadingSettings
-import com.hippo.lib.glgallery.GalleryView
+import com.lanraragi.framework.lib.glgallery.GalleryView
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit

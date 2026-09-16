@@ -85,7 +85,7 @@
         android:layout_height="match_parent"
         android:layout_weight="1">
 
-        <com.hippo.widget.lockpattern.LockPatternView
+        <com.lanraragi.framework.widget.lockpattern.LockPatternView
             android:id="@+id/pattern_view"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>

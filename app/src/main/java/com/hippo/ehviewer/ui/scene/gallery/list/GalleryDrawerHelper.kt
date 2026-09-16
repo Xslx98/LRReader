@@ -14,8 +14,8 @@ import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.TextView
 import androidx.viewpager.widget.ViewPager
-import com.hippo.app.CheckBoxDialogBuilder
-import com.hippo.app.EditTextDialogBuilder
+import com.lanraragi.framework.app.CheckBoxDialogBuilder
+import com.lanraragi.framework.app.EditTextDialogBuilder
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.data.ListUrlBuilder

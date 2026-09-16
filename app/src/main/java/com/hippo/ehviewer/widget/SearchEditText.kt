@@ -21,7 +21,7 @@ import android.util.AttributeSet
 import android.view.KeyEvent
 import android.view.MotionEvent
 import androidx.appcompat.widget.AppCompatEditText
-import com.hippo.util.ExceptionUtils
+import com.lanraragi.framework.util.ExceptionUtils
 
 class SearchEditText : AppCompatEditText {
 

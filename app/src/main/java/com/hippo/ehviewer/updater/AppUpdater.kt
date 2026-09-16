@@ -5,7 +5,7 @@ import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.BuildConfig
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.UpdateSettings
-import com.hippo.util.ExceptionUtils
+import com.lanraragi.framework.util.ExceptionUtils
 import com.lanraragi.reader.client.api.await
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

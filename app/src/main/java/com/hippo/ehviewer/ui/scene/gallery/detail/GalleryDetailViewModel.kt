@@ -501,7 +501,7 @@ class GalleryDetailViewModel : ViewModel() {
                     .getLocalDownloadDir(context, archive)
             }
             if (dir != null) {
-                val uniFile = com.hippo.unifile.UniFile.fromFile(dir)
+                val uniFile = com.lanraragi.framework.unifile.UniFile.fromFile(dir)
                 if (uniFile != null) {
                     if (BuildConfig.DEBUG) {
                         android.util.Log.i(

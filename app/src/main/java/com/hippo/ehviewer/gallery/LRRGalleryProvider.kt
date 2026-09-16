@@ -10,9 +10,9 @@ import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LrrFileListCache
 import com.lanraragi.reader.client.api.resolvePageUrl
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
-import com.hippo.lib.glgallery.GalleryProvider
-import com.hippo.lib.image.Image
-import com.hippo.unifile.UniFile
+import com.lanraragi.framework.lib.glgallery.GalleryProvider
+import com.lanraragi.framework.lib.image.Image
+import com.lanraragi.framework.unifile.UniFile
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.CompletableDeferred

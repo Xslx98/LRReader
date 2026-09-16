@@ -24,7 +24,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.hippo.widget.ProgressView
+        <com.lanraragi.framework.widget.ProgressView
             android:id="@+id/download_progress_view"
             style="@style/ProgressView"
             android:layout_width="wrap_content"
@@ -85,7 +85,7 @@
             android:gravity="center_horizontal"
             android:text="@string/no_download_info" />
 
-        <com.hippo.widget.FabLayout
+        <com.lanraragi.framework.widget.FabLayout
             android:id="@+id/fab_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -157,7 +157,7 @@
                 app:backgroundTint="?attr/widgetColorThemePrimary"
                 style="@style/Widget.Design.FloatingActionButton"/>
 
-        </com.hippo.widget.FabLayout>
+        </com.lanraragi.framework.widget.FabLayout>
 
     </FrameLayout>
 </LinearLayout>

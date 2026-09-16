@@ -40,9 +40,9 @@ import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
 import com.hippo.ehviewer.widget.SimpleRatingView
 import com.hippo.ehviewer.widget.TileThumbNew
-import com.hippo.lib.yorozuya.ViewUtils
-import com.hippo.widget.LoadImageViewNew
-import com.hippo.widget.recyclerview.AutoStaggeredGridLayoutManager
+import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.framework.widget.LoadImageViewNew
+import com.lanraragi.framework.widget.recyclerview.AutoStaggeredGridLayoutManager
 import com.lanraragi.reader.client.api.isTankoubonId
 
 @SuppressLint("InflateParams")
