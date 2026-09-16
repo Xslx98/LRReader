@@ -17,7 +17,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.ui.scene.LRRCategoriesViewModel.CategoriesUiEvent
 import com.hippo.ehviewer.util.collectFlow
 import com.lanraragi.reader.client.api.data.LRRCategory
@@ -327,16 +326,8 @@ class LRRCategoriesScene : BaseScene() {
             putString(GalleryListScene.KEY_ACTION, GalleryListScene.ACTION_LIST_URL_BUILDER)
         }
 
-        val builder = ListUrlBuilder().apply {
-            mode = ListUrlBuilder.MODE_NORMAL
-            keyword = if (category.isDynamic()) {
-                // Dynamic category: use its search query as keyword
-                category.search!!.trim()
-            } else {
-                // Static category: use category ID filter
-                "category:${category.id}"
-            }
-        }
+        // Static and dynamic categories alike open by id; see categoryListBuilder.
+        val builder = categoryListBuilder(category) ?: return
 
         args.putParcelable(GalleryListScene.KEY_LIST_URL_BUILDER, builder)
         startScene(Announcer(GalleryListScene::class.java).setArgs(args))

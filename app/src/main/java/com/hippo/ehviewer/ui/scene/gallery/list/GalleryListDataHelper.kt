@@ -69,19 +69,7 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
             return
         }
 
-        var filter: String? = null
-        var categoryId: String? = null
-        val urlBuilder = callback.getUrlBuilder()
-        if (urlBuilder != null) {
-            val keyword = urlBuilder.keyword
-            if (!keyword.isNullOrEmpty()) {
-                if (keyword.startsWith("category:")) {
-                    categoryId = keyword.substring("category:".length)
-                } else {
-                    filter = keyword
-                }
-            }
-        }
+        val (filter, categoryId) = searchInputsFor(callback.getUrlBuilder())
 
         val sortBy = callback.getSortBy()
         val sortOrder = callback.getSortOrder()
@@ -219,8 +207,24 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
         onGetException(taskId, e)
     }
 
+    /** The two `/api/search` inputs a [ListUrlBuilder] contributes. */
+    data class SearchInputs(val filter: String?, val categoryId: String?)
+
     companion object {
         private const val TAG = "GalleryListDataHelper"
         const val LRR_PAGE_SIZE = 50
+
+        /**
+         * Builder → search parameters. The keyword is plain `filter` text and
+         * [ListUrlBuilder.categoryId] is the `category` parameter; both may be
+         * present (search within a category). The retired "category:<id>"
+         * keyword protocol is deliberately NOT recognised here — MIGRATION_30_31
+         * rewrote every persisted row, so such a keyword is ordinary text.
+         */
+        @JvmStatic
+        fun searchInputsFor(urlBuilder: ListUrlBuilder?): SearchInputs = SearchInputs(
+            filter = urlBuilder?.keyword?.trim()?.takeIf { it.isNotEmpty() },
+            categoryId = urlBuilder?.categoryId?.takeIf { it.isNotBlank() }
+        )
     }
 }

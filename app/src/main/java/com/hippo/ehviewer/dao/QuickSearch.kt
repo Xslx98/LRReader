@@ -34,6 +34,16 @@ class QuickSearch(
     @JvmField
     var keyword: String? = null,
 
+    /** LANraragi category id filter (schema v31); null = no category. */
+    @ColumnInfo(name = "CATEGORY_ID")
+    @JvmField
+    var categoryId: String? = null,
+
+    /** Display-only name for [categoryId]; back-filled after a categories fetch. */
+    @ColumnInfo(name = "CATEGORY_NAME")
+    @JvmField
+    var categoryName: String? = null,
+
     @ColumnInfo(name = "ADVANCE_SEARCH")
     @JvmField
     var advanceSearch: Int = 0,
@@ -55,7 +65,7 @@ class QuickSearch(
     var time: Long = 0
 ) {
     @Ignore
-    constructor(id: Long?) : this(id, null, 0, 0, null, 0, 0, 0, 0, 0)
+    constructor(id: Long?) : this(id, null, 0, 0, null, null, null, 0, 0, 0, 0, 0)
 
     override fun toString(): String = name ?: ""
 
@@ -66,6 +76,8 @@ class QuickSearch(
                 put("mode", mode)
                 put("category", category)
                 put("keyword", keyword)
+                put("categoryId", categoryId)
+                put("categoryName", categoryName)
                 put("advanceSearch", advanceSearch)
                 put("minRating", minRating)
                 put("pageFrom", pageFrom)
@@ -85,6 +97,8 @@ class QuickSearch(
                 mode = `object`.optInt("mode", 0)
                 category = `object`.optInt("category", 0)
                 keyword = `object`.optString("keyword", null)
+                categoryId = `object`.optString("categoryId", null)
+                categoryName = `object`.optString("categoryName", null)
                 advanceSearch = `object`.optInt("advanceSearch", 0)
                 minRating = `object`.optInt("minRating", 0)
                 pageFrom = `object`.optInt("pageFrom", 0)
