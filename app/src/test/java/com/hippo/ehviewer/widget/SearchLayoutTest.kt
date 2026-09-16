@@ -53,4 +53,21 @@ class SearchLayoutTest {
         assertEquals("some query", builder.keyword)
         assertEquals(0, builder.pageIndex)
     }
+
+    @Test
+    fun `formatListUrlBuilder keeps the current category`() {
+        val layout = newSearchLayout()
+        val builder = ListUrlBuilder()
+        builder.categoryId = "SET_1"
+        builder.categoryName = "Favourites"
+        builder.pageIndex = 3
+
+        layout.formatListUrlBuilder(builder, "some query")
+
+        assertEquals(ListUrlBuilder.MODE_NORMAL, builder.mode)
+        assertEquals("some query", builder.keyword)
+        assertEquals("SET_1", builder.categoryId)
+        assertEquals("Favourites", builder.categoryName)
+        assertEquals(0, builder.pageIndex)
+    }
 }

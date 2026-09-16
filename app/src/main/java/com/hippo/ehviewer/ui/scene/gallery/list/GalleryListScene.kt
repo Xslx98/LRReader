@@ -404,6 +404,7 @@ class GalleryListScene : BaseScene(),
 
         val checkedItemId = if (ListUrlBuilder.MODE_NORMAL == builder.mode &&
             LRRUtils.NONE == category &&
+            builder.categoryId == null &&
             TextUtils.isEmpty(keyword)
         ) {
             R.id.nav_homepage
