@@ -179,10 +179,9 @@ class SearchLayout @JvmOverloads constructor(
 
     @Throws(EhException::class)
     fun formatListUrlBuilder(urlBuilder: ListUrlBuilder, query: String?) {
-        urlBuilder.reset()
-        // LANraragi: always simple keyword search
-        urlBuilder.mode = ListUrlBuilder.MODE_NORMAL
-        urlBuilder.keyword = query
+        // LANraragi: always a simple keyword search, scoped to the current
+        // category when there is one (category + filter travel together).
+        urlBuilder.setKeywordKeepingCategory(query)
     }
 
     private inner class SimpleHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
