@@ -18,7 +18,6 @@ import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.download.ProgressSnapshot
 import com.lanraragi.reader.download.TankDownloadGrouping
 import com.lanraragi.reader.spider.SpiderDen
-import com.lanraragi.reader.spider.SpiderInfo
 import com.lanraragi.reader.sync.DownloadListInfosExecutor
 import com.lanraragi.framework.unifile.UniFile
 import kotlinx.coroutines.Job
@@ -252,15 +251,6 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     val perPageCountChoices: IntArray = PER_PAGE_COUNT_CHOICES
 
     // -------------------------------------------------------------------------
-    // Spider info cache
-    // -------------------------------------------------------------------------
-
-    private val _spiderInfoMap = MutableStateFlow<MutableMap<String, SpiderInfo>>(HashMap())
-
-    /** Cached spider info for reading progress display, keyed by arcid. */
-    val spiderInfoMap: StateFlow<Map<String, SpiderInfo>> = _spiderInfoMap.asStateFlow()
-
-    // -------------------------------------------------------------------------
     // Download dir cache (thumbnail binds)
     // -------------------------------------------------------------------------
 
@@ -441,22 +431,6 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     fun adapterPositionForListIndex(index: Int): Int? {
         val inPage = listIndexInPage(index)
         return if (positionInList(inPage) == index) inPage else null
-    }
-
-    // -------------------------------------------------------------------------
-    // Spider info
-    // -------------------------------------------------------------------------
-
-    fun removeSpiderInfo(arcid: String) {
-        _spiderInfoMap.value.remove(arcid)
-    }
-
-    fun putSpiderInfo(arcid: String, info: SpiderInfo) {
-        _spiderInfoMap.value[arcid] = info
-    }
-
-    fun putAllSpiderInfo(map: Map<String, SpiderInfo>) {
-        _spiderInfoMap.value.putAll(map)
     }
 
     // -------------------------------------------------------------------------

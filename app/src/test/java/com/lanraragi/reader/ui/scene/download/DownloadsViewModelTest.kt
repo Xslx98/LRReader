@@ -257,31 +257,6 @@ class DownloadsViewModelTest {
     }
 
     // ═══════════════════════════════════════════════════════════
-    // E. Spider info cache
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
-    fun putSpiderInfo_addsToMap() {
-        val spiderInfo = com.lanraragi.reader.spider.SpiderInfo().apply {
-            arcid = "abc123"
-            pages = 10
-        }
-        vm.putSpiderInfo("abc123", spiderInfo)
-        assertEquals(spiderInfo, vm.spiderInfoMap.value["abc123"])
-    }
-
-    @Test
-    fun removeSpiderInfo_removesFromMap() {
-        val spiderInfo = com.lanraragi.reader.spider.SpiderInfo().apply {
-            arcid = "abc123"
-            pages = 10
-        }
-        vm.putSpiderInfo("abc123", spiderInfo)
-        vm.removeSpiderInfo("abc123")
-        assertNull(vm.spiderInfoMap.value["abc123"])
-    }
-
-    // ═══════════════════════════════════════════════════════════
     // F. DownloadInfoListener -> sealed event forwarding
     // ═══════════════════════════════════════════════════════════
 

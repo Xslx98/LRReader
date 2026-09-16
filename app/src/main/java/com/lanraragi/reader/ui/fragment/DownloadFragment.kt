@@ -337,62 +337,6 @@ class DownloadFragment : PreferenceFragmentCompat(),
                     dir.delete()
                     continue
                 }
-
-                val ehViewerFile = dir.findFile(DownloadManager.DOWNLOAD_INFO_FILENAME)
-                if (ehViewerFile == null) {
-                    logs.add("Missing .ehviewer file: ${dir.name}")
-                    invalidCount++
-                    continue
-                }
-
-                try {
-                    val content = IOUtils.readString(
-                        ehViewerFile.openInputStream(), StandardCharsets.UTF_8.name()
-                    )
-                    val contentLines = content.split("\n")
-                    if (contentLines.size < 8) {
-                        logs.add("Invalid .ehviewer file: ${dir.name}")
-                        invalidCount++
-                        // SpiderInfo v2: line[3] = arcid
-                        val arcid = if (contentLines.size > 3) contentLines[3].trim() else null
-                        if (!arcid.isNullOrEmpty()) {
-                            resetDownloadStateToNone(arcid)
-                        }
-                        continue
-                    }
-                    val pageCount = contentLines[7].toInt()
-                    var imageFileCount = 0
-                    for (subFile in subFiles) {
-                        val name = subFile.name
-                        if (name != null && !name.startsWith(".")) {
-                            imageFileCount++
-                        }
-                    }
-
-                    if (imageFileCount != pageCount) {
-                        logs.add(
-                            "Inconsistent file count: ${dir.name}, expected: $pageCount, actual: $imageFileCount"
-                        )
-                        invalidCount++
-                        for (subFile in subFiles) {
-                            val name = subFile.name
-                            if (name != null && name != DownloadManager.DOWNLOAD_INFO_FILENAME && !name.startsWith(".")) {
-                                subFile.delete()
-                            }
-                        }
-                        // SpiderInfo v2: line[3] = arcid
-                        val arcid = if (contentLines.size > 3) contentLines[3].trim() else null
-                        if (!arcid.isNullOrEmpty()) {
-                            resetDownloadStateToNone(arcid)
-                        }
-                    }
-                } catch (e: IOException) {
-                    logs.add("Error processing directory: ${dir.name} - ${e.message}")
-                    invalidCount++
-                } catch (e: NumberFormatException) {
-                    logs.add("Error processing directory: ${dir.name} - ${e.message}")
-                    invalidCount++
-                }
             }
 
             if (logs.isNotEmpty()) {
@@ -402,19 +346,6 @@ class DownloadFragment : PreferenceFragmentCompat(),
             val resultCount = invalidCount
             mainHandler.post { dismissAndShowCleanResult(dialog, resultCount) }
         }
-    }
-
-    /**
-     * Resets a download row to [DownloadState.NONE]. The in-memory DownloadManager
-     * lookup/mutation must happen on the main thread (DownloadRepository asserts it);
-     * the Room write is a suspend call that hops to IO on its own.
-     */
-    private suspend fun resetDownloadStateToNone(arcid: String) {
-        val gi = withContext(Dispatchers.Main) {
-            ServiceRegistry.dataModule.downloadManager.getDownloadInfo(arcid)
-                ?.also { it.state = DownloadState.NONE }
-        } ?: return
-        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(gi)
     }
 
     @Suppress("DEPRECATION")
