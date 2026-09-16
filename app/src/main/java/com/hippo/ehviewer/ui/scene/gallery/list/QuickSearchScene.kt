@@ -38,9 +38,9 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.dao.QuickSearch
 import com.hippo.ehviewer.ui.scene.ToolbarScene
 import com.hippo.ehviewer.util.collectFlow
-import com.hippo.lib.yorozuya.ViewUtils
-import com.hippo.util.DrawableManager
-import com.hippo.view.ViewTransition
+import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.framework.util.DrawableManager
+import com.lanraragi.framework.view.ViewTransition
 
 class QuickSearchScene : ToolbarScene() {
 

@@ -1,6 +1,6 @@
 package com.hippo.ehviewer.ui.scene.download.part
 
-import com.hippo.unifile.UniFile
+import com.lanraragi.framework.unifile.UniFile
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.concurrent.CompletableFuture

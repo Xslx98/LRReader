@@ -27,7 +27,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Spinner
 import com.hippo.ehviewer.R
-import com.hippo.lib.yorozuya.NumberUtils
+import com.lanraragi.framework.lib.yorozuya.NumberUtils
 
 class AdvanceSearchTable @JvmOverloads constructor(
     context: Context,

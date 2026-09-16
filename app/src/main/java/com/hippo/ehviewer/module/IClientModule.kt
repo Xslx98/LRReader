@@ -1,8 +1,8 @@
 package com.hippo.ehviewer.module
 
-import com.hippo.conaco.Conaco
+import com.lanraragi.framework.conaco.Conaco
 import com.hippo.ehviewer.ImageBitmapHelper
-import com.hippo.lib.image.Image
+import com.lanraragi.framework.lib.image.Image
 
 /**
  * Abstraction over [ClientModule] to allow ServiceRegistry consumers to depend on the

@@ -25,8 +25,8 @@ import android.widget.TextView
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.settings.PrivacySettings
-import com.hippo.lib.yorozuya.ViewUtils
-import com.hippo.text.LinkMovementMethod2
+import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.framework.text.LinkMovementMethod2
 
 class AnalyticsScene : SolidScene(), View.OnClickListener {
 

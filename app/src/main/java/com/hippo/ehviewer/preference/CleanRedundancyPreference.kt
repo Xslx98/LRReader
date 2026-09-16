@@ -23,7 +23,7 @@ import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.DownloadSettings
-import com.hippo.unifile.UniFile
+import com.lanraragi.framework.unifile.UniFile
 
 class CleanRedundancyPreference : TaskPreference {
 

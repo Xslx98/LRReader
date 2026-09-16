@@ -32,7 +32,7 @@ import kotlinx.coroutines.CancellationException
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.spider.SpiderDen
 import com.hippo.ehviewer.spider.SpiderInfo
-import com.hippo.lib.yorozuya.ObjectUtils
+import com.lanraragi.framework.lib.yorozuya.ObjectUtils
 import com.lanraragi.reader.domain.Archive
 
 import kotlinx.coroutines.CoroutineScope

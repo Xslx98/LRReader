@@ -39,10 +39,10 @@ import com.hippo.ehviewer.settings.AppLockGate
 import com.hippo.ehviewer.settings.SecuritySettings
 import com.hippo.ehviewer.ui.scene.SecurityViewModel.SecurityUiEvent
 import com.hippo.ehviewer.util.collectFlow
-import com.hippo.hardware.ShakeDetector
-import com.hippo.widget.lockpattern.LockPatternUtils
-import com.hippo.widget.lockpattern.LockPatternView
-import com.hippo.lib.yorozuya.ViewUtils
+import com.lanraragi.framework.hardware.ShakeDetector
+import com.lanraragi.framework.widget.lockpattern.LockPatternUtils
+import com.lanraragi.framework.widget.lockpattern.LockPatternView
+import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 
 class SecurityScene : SolidScene(),

@@ -15,12 +15,12 @@
  */
 package com.hippo.ehviewer.ui.scene.download.part
 
-import com.hippo.conaco.DataContainer
-import com.hippo.conaco.ProgressNotifier
-import com.hippo.io.UniFileInputStreamPipe
-import com.hippo.lib.yorozuya.IOUtils
+import com.lanraragi.framework.conaco.DataContainer
+import com.lanraragi.framework.conaco.ProgressNotifier
+import com.lanraragi.framework.io.UniFileInputStreamPipe
+import com.lanraragi.framework.lib.yorozuya.IOUtils
 import com.hippo.streampipe.InputStreamPipe
-import com.hippo.unifile.UniFile
+import com.lanraragi.framework.unifile.UniFile
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream

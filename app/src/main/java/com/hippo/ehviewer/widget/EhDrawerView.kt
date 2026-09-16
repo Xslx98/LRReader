@@ -19,7 +19,7 @@ package com.hippo.ehviewer.widget
 import android.content.Context
 import android.util.AttributeSet
 import com.hippo.drawerlayout.DrawerLayoutChild
-import com.hippo.widget.DrawerView
+import com.lanraragi.framework.widget.DrawerView
 
 class EhDrawerView @JvmOverloads constructor(
     context: Context,

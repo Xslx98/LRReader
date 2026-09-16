@@ -5,8 +5,8 @@ import com.hippo.ehviewer.R
 import com.lanraragi.reader.domain.Archive
 import com.hippo.ehviewer.ui.scene.TankoubonDetailScene
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
-import com.hippo.scene.Announcer
-import com.hippo.scene.SceneFragment
+import com.lanraragi.framework.scene.Announcer
+import com.lanraragi.framework.scene.SceneFragment
 import com.lanraragi.reader.client.api.isTankoubonId
 
 /**

@@ -20,7 +20,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.hippo.widget.MaxSizeContainer
+    <com.lanraragi.framework.widget.MaxSizeContainer
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -34,7 +34,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <com.hippo.widget.lockpattern.LockPatternView
+            <com.lanraragi.framework.widget.lockpattern.LockPatternView
                 android:id="@+id/pattern_view"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
@@ -60,5 +60,5 @@
 
         </LinearLayout>
 
-    </com.hippo.widget.MaxSizeContainer>
+    </com.lanraragi.framework.widget.MaxSizeContainer>
 </FrameLayout>

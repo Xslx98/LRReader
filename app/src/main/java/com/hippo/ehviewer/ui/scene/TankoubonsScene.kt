@@ -18,8 +18,8 @@ import com.hippo.ehviewer.client.LRRCacheKeyFactory
 import com.hippo.ehviewer.client.TankCoverCacheStamp
 import com.hippo.ehviewer.ui.scene.TankoubonsViewModel.TankUiEvent
 import com.hippo.ehviewer.util.collectFlow
-import com.hippo.scene.Announcer
-import com.hippo.widget.LoadImageViewNew
+import com.lanraragi.framework.scene.Announcer
+import com.lanraragi.framework.widget.LoadImageViewNew
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.TankoubonSupportGate

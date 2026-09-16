@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.collection.LruCache
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.hippo.beerbelly.SimpleDiskCache
+import com.lanraragi.framework.beerbelly.SimpleDiskCache
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.FavouriteStatusRouter
 import java.io.File

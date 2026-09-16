@@ -5,8 +5,8 @@ import android.util.Log
 import androidx.core.content.edit
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.module.Cacheable
-import com.hippo.lib.image.Image
-import com.hippo.unifile.UniFile
+import com.lanraragi.framework.lib.image.Image
+import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LrrFileListCache
 import com.lanraragi.reader.client.api.resolvePageUrl

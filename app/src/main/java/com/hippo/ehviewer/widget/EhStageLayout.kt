@@ -19,7 +19,7 @@ package com.hippo.ehviewer.widget
 import android.content.Context
 import android.util.AttributeSet
 import com.hippo.drawerlayout.DrawerLayoutChild
-import com.hippo.scene.StageLayout
+import com.lanraragi.framework.scene.StageLayout
 
 class EhStageLayout @JvmOverloads constructor(
     context: Context,

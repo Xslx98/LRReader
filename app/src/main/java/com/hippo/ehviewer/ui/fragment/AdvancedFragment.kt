@@ -23,8 +23,8 @@ import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.settings.AppearanceSettings
-import com.hippo.util.LogCat
-import com.hippo.util.ReadableTime
+import com.lanraragi.framework.util.LogCat
+import com.lanraragi.framework.util.ReadableTime
 import java.io.File
 
 class AdvancedFragment : BasePreferenceFragmentCompat(),

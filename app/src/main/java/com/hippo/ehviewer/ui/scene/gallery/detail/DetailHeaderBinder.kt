@@ -19,9 +19,9 @@ import com.lanraragi.reader.domain.ArchiveDetail
 import com.hippo.ehviewer.ui.scene.TransitionNameFactory
 import com.hippo.ehviewer.ui.widget.bindSourceServerBadge
 import com.hippo.ehviewer.widget.ArchiverDownloadProgress
-import com.hippo.reveal.ViewAnimationUtils
-import com.hippo.util.DrawableManager
-import com.hippo.widget.LoadImageView
+import com.lanraragi.framework.reveal.ViewAnimationUtils
+import com.lanraragi.framework.util.DrawableManager
+import com.lanraragi.framework.widget.LoadImageView
 import kotlinx.coroutines.launch
 
 /**

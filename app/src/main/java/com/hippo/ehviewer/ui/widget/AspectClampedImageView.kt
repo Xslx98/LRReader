@@ -14,7 +14,7 @@ import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import androidx.core.content.withStyledAttributes
 import com.hippo.ehviewer.R
-import com.hippo.widget.FixedAspectImageView
+import com.lanraragi.framework.widget.FixedAspectImageView
 
 /**
  * ImageView that locks the view's own width:height ratio (via the

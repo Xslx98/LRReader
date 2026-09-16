@@ -24,7 +24,7 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.annotation.StyleRes
 import androidx.appcompat.app.AppCompatActivity
-import com.hippo.content.ContextLocalWrapper
+import com.lanraragi.framework.content.ContextLocalWrapper
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.EhApplication
 import com.hippo.ehviewer.settings.AppLockGate

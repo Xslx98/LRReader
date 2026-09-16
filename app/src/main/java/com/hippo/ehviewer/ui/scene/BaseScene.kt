@@ -33,8 +33,8 @@ import androidx.annotation.StyleRes
 import com.hippo.drawerlayout.DrawerLayout
 import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.ui.MainActivity
-import com.hippo.scene.SceneFragment
-import com.hippo.util.AppHelper
+import com.lanraragi.framework.scene.SceneFragment
+import com.lanraragi.framework.util.AppHelper
 
 /**
  * Base class for all in-app scenes.

@@ -22,9 +22,9 @@ import android.util.SparseArray
 import androidx.core.util.size
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.settings.DownloadSettings
-import com.hippo.unifile.UniFile
-import com.hippo.lib.yorozuya.IOUtils
-import com.hippo.lib.yorozuya.NumberUtils
+import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.framework.lib.yorozuya.IOUtils
+import com.lanraragi.framework.lib.yorozuya.NumberUtils
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream

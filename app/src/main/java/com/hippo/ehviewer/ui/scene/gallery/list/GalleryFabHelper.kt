@@ -1,7 +1,7 @@
 package com.hippo.ehviewer.ui.scene.gallery.list
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.hippo.widget.FabLayout
+import com.lanraragi.framework.widget.FabLayout
 
 /**
  * Handles FabLayout primary/secondary click and expand/collapse callbacks

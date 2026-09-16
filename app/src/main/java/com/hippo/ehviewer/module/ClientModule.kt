@@ -1,14 +1,14 @@
 package com.hippo.ehviewer.module
 
 import android.content.Context
-import com.hippo.conaco.Conaco
+import com.lanraragi.framework.conaco.Conaco
 import com.hippo.ehviewer.ImageBitmapHelper
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.gallery.ReaderPageCache
 import com.lanraragi.reader.client.api.LRRTagCache
 import com.lanraragi.reader.client.api.PageThumbnailCache
-import com.hippo.lib.image.Image
+import com.lanraragi.framework.lib.image.Image
 import java.io.File
 
 /**

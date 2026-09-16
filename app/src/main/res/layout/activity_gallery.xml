@@ -21,7 +21,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.hippo.lib.glview.view.GLRootView
+    <com.lanraragi.framework.lib.glview.view.GLRootView
         android:id="@+id/gl_root_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
@@ -38,7 +38,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="top">
 
-        <com.hippo.widget.TextClock
+        <com.lanraragi.framework.widget.TextClock
             android:id="@+id/clock"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -58,7 +58,7 @@
             app:stroke_width="0.5dp"
             android:textColor="?android:attr/textColorSecondary" />
 
-        <com.hippo.widget.BatteryView
+        <com.lanraragi.framework.widget.BatteryView
             android:id="@+id/battery"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -161,7 +161,7 @@
             tools:ignore="ButtonOrder" />
     </LinearLayout>
 
-    <com.hippo.widget.ColorView
+    <com.lanraragi.framework.widget.ColorView
         android:id="@+id/mask"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

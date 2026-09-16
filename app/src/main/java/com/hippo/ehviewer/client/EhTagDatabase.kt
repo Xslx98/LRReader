@@ -22,11 +22,11 @@ import com.hippo.ehviewer.Analytics
 import com.hippo.ehviewer.AppConfig
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.lib.yorozuya.FileUtils
-import com.hippo.lib.yorozuya.IOUtils
-import com.hippo.util.ExceptionUtils
+import com.lanraragi.framework.lib.yorozuya.FileUtils
+import com.lanraragi.framework.lib.yorozuya.IOUtils
+import com.lanraragi.framework.util.ExceptionUtils
 import android.util.Log
-import com.hippo.util.TextUrl
+import com.lanraragi.framework.util.TextUrl
 import com.lanraragi.reader.client.api.await
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch

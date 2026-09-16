@@ -6,7 +6,7 @@ import com.hippo.ehviewer.callBack.DownloadSearchCallback
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.spider.SpiderDen
-import com.hippo.unifile.UniFile
+import com.lanraragi.framework.unifile.UniFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

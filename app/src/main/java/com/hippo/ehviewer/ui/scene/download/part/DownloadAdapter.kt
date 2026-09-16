@@ -54,12 +54,12 @@ import com.hippo.ehviewer.ui.scene.download.DownloadsScene
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.ehviewer.ui.scene.gallery.list.EnterGalleryDetailTransaction
 import com.hippo.ehviewer.widget.SimpleRatingView
-import com.hippo.lib.yorozuya.ViewUtils
+import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.hippo.ripple.Ripple
-import com.hippo.scene.Announcer
-import com.hippo.unifile.UniFile
-import com.hippo.util.NaturalComparator
-import com.hippo.widget.LoadImageView
+import com.lanraragi.framework.scene.Announcer
+import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.framework.util.NaturalComparator
+import com.lanraragi.framework.widget.LoadImageView
 import kotlinx.coroutines.launch
 import com.hippo.ehviewer.download.DownloadState
 import com.lanraragi.reader.client.api.isTankoubonId
@@ -448,7 +448,7 @@ class DownloadAdapter(
                 holder.progressBar.progress = target
             }
         }
-        holder.speed.text = com.hippo.lib.yorozuya.FileUtils.humanReadableByteCount(speed, false) + "/S"
+        holder.speed.text = com.lanraragi.framework.lib.yorozuya.FileUtils.humanReadableByteCount(speed, false) + "/S"
     }
 
     private fun cancelProgressGlide(holder: DownloadHolder) {

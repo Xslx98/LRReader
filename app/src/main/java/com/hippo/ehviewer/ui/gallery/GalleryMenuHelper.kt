@@ -187,13 +187,13 @@ class GalleryMenuHelper @SuppressLint("InflateParams") constructor(
 
     private fun applyCurrentSettings() {
         val screenRotation = mScreenRotation.selectedItemPosition
-        val layoutMode = com.hippo.lib.glgallery.GalleryView.sanitizeLayoutMode(
+        val layoutMode = com.lanraragi.framework.lib.glgallery.GalleryView.sanitizeLayoutMode(
             mReadingDirection.selectedItemPosition
         )
-        val scaleMode = com.hippo.lib.glgallery.GalleryView.sanitizeScaleMode(
+        val scaleMode = com.lanraragi.framework.lib.glgallery.GalleryView.sanitizeScaleMode(
             mScaleMode.selectedItemPosition
         )
-        val startPosition = com.hippo.lib.glgallery.GalleryView.sanitizeStartPosition(
+        val startPosition = com.lanraragi.framework.lib.glgallery.GalleryView.sanitizeStartPosition(
             mStartPosition.selectedItemPosition
         )
         val keepScreenOn = mKeepScreenOn.isChecked

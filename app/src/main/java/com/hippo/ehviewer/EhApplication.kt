@@ -32,8 +32,8 @@ import android.os.Process
 import android.os.StrictMode
 import android.os.Trace
 import android.util.Log
-import com.hippo.content.ContextLocalWrapper
-import com.hippo.content.RecordingApplication
+import com.lanraragi.framework.content.ContextLocalWrapper
+import com.lanraragi.framework.content.RecordingApplication
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.module.AppModule
 import kotlinx.coroutines.Dispatchers
@@ -48,14 +48,14 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.hippo.ehviewer.ui.CommonOperations
-import com.hippo.lib.image.Image
+import com.lanraragi.framework.lib.image.Image
 import android.os.Handler
 import android.os.Looper
-import com.hippo.lib.yorozuya.FileUtils
-import com.hippo.unifile.UniFile
-import com.hippo.util.BitmapUtils
-import com.hippo.util.ExceptionUtils
-import com.hippo.util.ReadableTime
+import com.lanraragi.framework.lib.yorozuya.FileUtils
+import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.framework.util.BitmapUtils
+import com.lanraragi.framework.util.ExceptionUtils
+import com.lanraragi.framework.util.ReadableTime
 import java.io.File
 import java.util.Locale
 
@@ -157,7 +157,7 @@ class EhApplication : RecordingApplication() {
         // so production cold-start traces are not a black box.
         trace("EhApp.GetText.init") { GetText.initialize(this) }
         trace("EhApp.StatusCodeException.init") {
-            com.hippo.network.StatusCodeException.initialize(this)
+            com.lanraragi.framework.network.StatusCodeException.initialize(this)
         }
         trace("EhApp.Settings.init") { Settings.initialize(this) }
         trace("EhApp.ReadableTime.init") { ReadableTime.initialize(this) }

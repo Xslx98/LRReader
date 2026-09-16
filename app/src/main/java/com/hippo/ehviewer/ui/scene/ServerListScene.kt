@@ -25,8 +25,8 @@ import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.client.api.friendlyError
 import com.hippo.ehviewer.dao.ServerProfile
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
-import com.hippo.scene.Announcer
-import com.hippo.scene.StageActivity
+import com.lanraragi.framework.scene.Announcer
+import com.lanraragi.framework.scene.StageActivity
 
 /**
  * Server list management scene. Shows all saved server profiles in a list.

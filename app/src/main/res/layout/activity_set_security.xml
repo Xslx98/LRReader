@@ -34,7 +34,7 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <com.hippo.widget.MaxSizeContainer
+        <com.lanraragi.framework.widget.MaxSizeContainer
             xmlns:app="http://schemas.android.com/apk/res-auto"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -43,12 +43,12 @@
             app:maxWidth="320dp"
             app:maxHeight="320dp">
 
-            <com.hippo.widget.lockpattern.LockPatternView
+            <com.lanraragi.framework.widget.lockpattern.LockPatternView
                 android:id="@+id/pattern_view"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
 
-        </com.hippo.widget.MaxSizeContainer>
+        </com.lanraragi.framework.widget.MaxSizeContainer>
     </FrameLayout>
 
     <CheckBox

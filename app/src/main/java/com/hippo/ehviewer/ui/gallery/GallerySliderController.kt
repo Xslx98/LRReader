@@ -24,12 +24,12 @@ import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
 import com.hippo.ehviewer.widget.ReversibleSeekBar
-import com.hippo.lib.glgallery.GalleryView
-import com.hippo.util.SystemUiHelper
+import com.lanraragi.framework.lib.glgallery.GalleryView
+import com.lanraragi.framework.util.SystemUiHelper
 import android.os.Handler
 import android.os.Looper
-import com.hippo.lib.yorozuya.AnimationUtils
-import com.hippo.lib.yorozuya.SimpleAnimatorListener
+import com.lanraragi.framework.lib.yorozuya.AnimationUtils
+import com.lanraragi.framework.lib.yorozuya.SimpleAnimatorListener
 
 /**
  * Controls the page seek bar panel and auto-transfer button animations,

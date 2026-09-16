@@ -18,8 +18,8 @@ package com.hippo.ehviewer
 
 import android.text.TextUtils
 import com.hippo.ehviewer.settings.NetworkSettings
-import com.hippo.network.InetValidator
-import com.hippo.util.ExceptionUtils
+import com.lanraragi.framework.network.InetValidator
+import com.lanraragi.framework.util.ExceptionUtils
 import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress

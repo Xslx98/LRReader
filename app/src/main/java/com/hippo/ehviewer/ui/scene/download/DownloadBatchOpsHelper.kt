@@ -39,7 +39,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.hippo.ehviewer.ui.scene.download.part.DownloadAdapter.Companion.DRAG_ENABLE
 import com.hippo.easyrecyclerview.EasyRecyclerView
-import com.hippo.widget.FabLayout
+import com.lanraragi.framework.widget.FabLayout
 import com.lanraragi.reader.client.api.isTankoubonId
 
 /**

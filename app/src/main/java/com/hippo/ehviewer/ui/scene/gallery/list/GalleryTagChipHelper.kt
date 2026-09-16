@@ -19,7 +19,7 @@ import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.ui.scene.BaseScene
 import com.hippo.ehviewer.util.TagTranslationUtil
-import com.hippo.widget.LoadImageViewNew
+import com.lanraragi.framework.widget.LoadImageViewNew
 
 /**
  * Handles tag chip building, popup window, and tag click/long-click for GalleryListScene.
@@ -34,7 +34,7 @@ class GalleryTagChipHelper(private val callback: Callback) {
         fun isDrawersVisible(): Boolean
         fun closeDrawer(gravity: Int)
         fun getUrlBuilder(): ListUrlBuilder?
-        fun getContentHelper(): com.hippo.widget.ContentLayout.ContentHelper<*>?
+        fun getContentHelper(): com.lanraragi.framework.widget.ContentLayout.ContentHelper<*>?
         fun isFilterOpen(): Boolean
         fun buildFilterSearch(tagName: String): String
         fun updateFilterDisplay()

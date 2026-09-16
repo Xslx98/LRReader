@@ -13,8 +13,8 @@ import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.settings.DownloadSettings
-import com.hippo.lib.yorozuya.ObjectUtils
-import com.hippo.scene.Announcer
+import com.lanraragi.framework.lib.yorozuya.ObjectUtils
+import com.lanraragi.framework.scene.Announcer
 
 /**
  * Manages the drawer view showing download labels.

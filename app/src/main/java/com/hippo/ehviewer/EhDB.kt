@@ -26,8 +26,8 @@ import android.util.Log
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.dao.*
 import com.hippo.ehviewer.mapper.toArchiveJson
-import com.hippo.util.ExceptionUtils
-import com.hippo.lib.yorozuya.IOUtils
+import com.lanraragi.framework.util.ExceptionUtils
+import com.lanraragi.framework.lib.yorozuya.IOUtils
 import com.lanraragi.reader.domain.Archive
 
 import java.io.File

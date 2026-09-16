@@ -20,7 +20,7 @@ import androidx.activity.ComponentActivity
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.hippo.android.resource.AttrResources
-import com.hippo.drawable.RoundSideRectDrawable
+import com.lanraragi.framework.drawable.RoundSideRectDrawable
 import com.hippo.ehviewer.R
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.domain.TagGroup
@@ -29,7 +29,7 @@ import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.hippo.ehviewer.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRTagCache
 import com.lanraragi.reader.client.api.friendlyError
-import com.hippo.widget.AutoWrapLayout
+import com.lanraragi.framework.widget.AutoWrapLayout
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

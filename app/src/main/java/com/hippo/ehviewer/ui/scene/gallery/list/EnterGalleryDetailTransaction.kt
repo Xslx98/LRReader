@@ -24,7 +24,7 @@ import androidx.fragment.app.FragmentTransaction
 import androidx.transition.TransitionInflater
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
-import com.hippo.scene.TransitionHelper
+import com.lanraragi.framework.scene.TransitionHelper
 
 class EnterGalleryDetailTransaction(private val thumb: View?) : TransitionHelper {
 

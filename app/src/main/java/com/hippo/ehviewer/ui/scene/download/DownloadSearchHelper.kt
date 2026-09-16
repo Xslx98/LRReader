@@ -22,8 +22,8 @@ import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.widget.SearchBar
-import com.hippo.util.DrawableManager
-import com.hippo.widget.SearchBarMover
+import com.lanraragi.framework.util.DrawableManager
+import com.lanraragi.framework.widget.SearchBarMover
 
 /**
  * Manages the search dialog and search mode state for DownloadsScene.

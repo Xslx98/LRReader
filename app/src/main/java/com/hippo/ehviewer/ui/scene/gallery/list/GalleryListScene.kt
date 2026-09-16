@@ -44,8 +44,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.hippo.android.resource.AttrResources
-import com.hippo.drawable.AddDeleteDrawable
-import com.hippo.drawable.DrawerArrowDrawable
+import com.lanraragi.framework.drawable.AddDeleteDrawable
+import com.lanraragi.framework.drawable.DrawerArrowDrawable
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.client.LRRUtils
@@ -64,18 +64,18 @@ import com.hippo.ehviewer.ui.scene.ListMultiSelectHelper
 import com.hippo.ehviewer.ui.scene.gallery.detail.GalleryDetailScene
 import com.hippo.ehviewer.widget.SearchBar
 import com.hippo.ehviewer.widget.SearchLayout
-import com.hippo.lib.yorozuya.AssertUtils
-import com.hippo.lib.yorozuya.ViewUtils
+import com.lanraragi.framework.lib.yorozuya.AssertUtils
+import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.hippo.refreshlayout.RefreshLayout
 import com.hippo.ripple.Ripple
-import com.hippo.scene.Announcer
+import com.lanraragi.framework.scene.Announcer
 import com.hippo.ehviewer.util.DetachBuffer
 import com.hippo.ehviewer.util.collectFlow
 import com.hippo.ehviewer.util.collectFlowWhileCreated
-import com.hippo.view.ViewTransition
-import com.hippo.widget.ContentLayout
-import com.hippo.widget.FabLayout
-import com.hippo.widget.SearchBarMover
+import com.lanraragi.framework.view.ViewTransition
+import com.lanraragi.framework.widget.ContentLayout
+import com.lanraragi.framework.widget.FabLayout
+import com.lanraragi.framework.widget.SearchBarMover
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.lanraragi.reader.client.api.TankoubonSupportGate
@@ -983,7 +983,7 @@ class GalleryListScene : BaseScene(),
         const val STATE_SEARCH_SHOW_LIST = GalleryStateHelper.STATE_SEARCH_SHOW_LIST
 
         @JvmStatic
-        fun startScene(scene: com.hippo.scene.SceneFragment, lub: ListUrlBuilder) {
+        fun startScene(scene: com.lanraragi.framework.scene.SceneFragment, lub: ListUrlBuilder) {
             scene.startScene(getStartAnnouncer(lub))
         }
 

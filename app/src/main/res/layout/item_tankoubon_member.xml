@@ -19,7 +19,7 @@
     android:focusable="true"
     tools:ignore="Overdraw">
 
-    <com.hippo.widget.LoadImageViewNew
+    <com.lanraragi.framework.widget.LoadImageViewNew
         android:id="@+id/member_thumb"
         android:layout_width="56dp"
         android:layout_height="80dp"

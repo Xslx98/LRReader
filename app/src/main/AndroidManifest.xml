@@ -157,13 +157,13 @@
             android:foregroundServiceType="dataSync" />
 
         <provider
-            android:name="com.hippo.content.FileProvider"
+            android:name="com.lanraragi.framework.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
 
             <meta-data
-                android:name="com.hippo.content.FILE_PROVIDER_PATHS"
+                android:name="com.lanraragi.framework.content.FILE_PROVIDER_PATHS"
                 android:resource="@xml/filepaths" />
 
         </provider>

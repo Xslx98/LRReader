@@ -14,9 +14,9 @@ import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.lanraragi.reader.client.api.data.LRRSearchResult
 import com.hippo.ehviewer.settings.AppearanceSettings
 import com.hippo.ehviewer.widget.SearchBar
-import com.hippo.lib.yorozuya.MathUtils
-import com.hippo.scene.Announcer
-import com.hippo.util.DrawableManager
+import com.lanraragi.framework.lib.yorozuya.MathUtils
+import com.lanraragi.framework.scene.Announcer
+import com.lanraragi.framework.util.DrawableManager
 import kotlin.math.ceil
 
 /**

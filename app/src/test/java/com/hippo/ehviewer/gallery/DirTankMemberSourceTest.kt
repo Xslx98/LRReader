@@ -5,7 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import androidx.test.core.app.ApplicationProvider
 import com.hippo.ehviewer.ServiceRegistry
-import com.hippo.unifile.UniFile
+import com.lanraragi.framework.unifile.UniFile
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException

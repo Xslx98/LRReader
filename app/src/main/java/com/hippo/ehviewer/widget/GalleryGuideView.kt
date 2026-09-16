@@ -27,7 +27,7 @@ import android.widget.TextView
 import com.hippo.android.resource.AttrResources
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.settings.GuideSettings
-import com.hippo.lib.yorozuya.ViewUtils
+import com.lanraragi.framework.lib.yorozuya.ViewUtils
 
 class GalleryGuideView @JvmOverloads constructor(
     context: Context,

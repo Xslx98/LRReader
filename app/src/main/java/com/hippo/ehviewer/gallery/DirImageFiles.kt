@@ -10,11 +10,11 @@
 package com.hippo.ehviewer.gallery
 
 import android.content.Context
-import com.hippo.lib.image.Image
-import com.hippo.lib.yorozuya.IOUtils
-import com.hippo.lib.yorozuya.StringUtils
-import com.hippo.unifile.UniFile
-import com.hippo.util.NaturalComparator
+import com.lanraragi.framework.lib.image.Image
+import com.lanraragi.framework.lib.yorozuya.IOUtils
+import com.lanraragi.framework.lib.yorozuya.StringUtils
+import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.framework.util.NaturalComparator
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -31,7 +31,7 @@ import java.io.FileOutputStream
 internal object DirImageFiles {
 
     /** Filter for files whose extensions match any supported image format. */
-    val imageFilter = com.hippo.unifile.FilenameFilter { _, name ->
+    val imageFilter = com.lanraragi.framework.unifile.FilenameFilter { _, name ->
         StringUtils.endsWith(name.lowercase(), GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS)
     }
 

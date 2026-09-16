@@ -18,15 +18,15 @@ package com.hippo.ehviewer.ui
 
 import android.content.Intent
 import android.util.Log
-import com.hippo.app.ListCheckBoxDialogBuilder
+import com.lanraragi.framework.app.ListCheckBoxDialogBuilder
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.ServiceRegistry
 import com.hippo.ehviewer.download.DownloadEntryGate
 import com.hippo.ehviewer.download.DownloadService
 import com.hippo.ehviewer.settings.DownloadSettings
 import com.hippo.ehviewer.ui.scene.BaseScene
-import com.hippo.lib.yorozuya.IOUtils
-import com.hippo.unifile.UniFile
+import com.lanraragi.framework.lib.yorozuya.IOUtils
+import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.domain.Archive
 import java.io.IOException
 

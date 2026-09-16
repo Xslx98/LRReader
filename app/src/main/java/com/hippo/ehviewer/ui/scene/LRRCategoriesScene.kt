@@ -21,7 +21,7 @@ import com.hippo.ehviewer.ui.scene.LRRCategoriesViewModel.CategoriesUiEvent
 import com.hippo.ehviewer.util.collectFlow
 import com.lanraragi.reader.client.api.data.LRRCategory
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
-import com.hippo.scene.Announcer
+import com.lanraragi.framework.scene.Announcer
 
 /**
  * Scene that displays LANraragi categories with full CRUD support.

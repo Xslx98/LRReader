@@ -30,7 +30,7 @@
             android:padding="@dimen/keyline_margin"
             android:clipChildren="false"
             android:clipToPadding="false"/>
-        <com.hippo.widget.ProgressView
+        <com.lanraragi.framework.widget.ProgressView
             android:id="@+id/scene_label_progress"
             android:visibility="gone"
             style="@style/ProgressView"

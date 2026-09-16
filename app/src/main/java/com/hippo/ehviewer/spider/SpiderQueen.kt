@@ -6,9 +6,9 @@
 package com.hippo.ehviewer.spider
 
 import androidx.annotation.IntDef
-import com.hippo.lib.glgallery.GalleryProvider
-import com.hippo.lib.image.Image
-import com.hippo.unifile.UniFile
+import com.lanraragi.framework.lib.glgallery.GalleryProvider
+import com.lanraragi.framework.lib.image.Image
+import com.lanraragi.framework.unifile.UniFile
 
 /**
  * SpiderQueen -- STUB.

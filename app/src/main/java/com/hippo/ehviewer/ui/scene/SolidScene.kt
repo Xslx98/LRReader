@@ -20,7 +20,7 @@ import android.os.Bundle
 import android.util.Log
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.hippo.ehviewer.ui.scene.gallery.list.GalleryListScene
-import com.hippo.scene.Announcer
+import com.lanraragi.framework.scene.Announcer
 
 /**
  * Scene for safety, can't be covered.

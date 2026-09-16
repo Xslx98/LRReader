@@ -27,7 +27,7 @@ import com.hippo.ehviewer.settings.UpdateSettings
 import com.hippo.ehviewer.ui.LicenseActivity
 import com.hippo.ehviewer.ui.dialog.UpdateDialog
 import com.hippo.ehviewer.updater.AppUpdater
-import com.hippo.util.AppHelper
+import com.lanraragi.framework.util.AppHelper
 import kotlinx.coroutines.launch
 
 class AboutFragment : BasePreferenceFragmentCompat(),

@@ -19,7 +19,7 @@ package com.hippo.ehviewer.download
 import android.os.Handler
 import android.os.Looper
 import com.hippo.ehviewer.dao.DownloadInfo
-import com.hippo.lib.yorozuya.MathUtils
+import com.lanraragi.framework.lib.yorozuya.MathUtils
 import java.lang.ref.WeakReference
 
 /**

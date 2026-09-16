@@ -54,11 +54,11 @@ import com.hippo.ehviewer.client.EhTagDatabase.Companion.NAMESPACE_TO_PREFIX
 import com.lanraragi.reader.client.api.LRRTagCache
 import com.hippo.ehviewer.settings.AppearanceSettings
 import kotlinx.coroutines.launch
-import com.hippo.lib.yorozuya.AnimationUtils
-import com.hippo.lib.yorozuya.MathUtils
-import com.hippo.lib.yorozuya.SimpleAnimatorListener
-import com.hippo.lib.yorozuya.ViewUtils
-import com.hippo.view.ViewTransition
+import com.lanraragi.framework.lib.yorozuya.AnimationUtils
+import com.lanraragi.framework.lib.yorozuya.MathUtils
+import com.lanraragi.framework.lib.yorozuya.SimpleAnimatorListener
+import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.framework.view.ViewTransition
 
 class SearchBar : CardView,
     View.OnClickListener,
