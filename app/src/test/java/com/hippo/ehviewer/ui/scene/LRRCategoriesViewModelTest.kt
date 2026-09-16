@@ -8,6 +8,7 @@ import com.hippo.ehviewer.module.IAppModule
 import com.hippo.ehviewer.module.INetworkModule
 import com.hippo.ehviewer.module.NetworkMonitor
 import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.data.LRRCategory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -160,6 +161,21 @@ class LRRCategoriesViewModelTest {
         awaitCondition { vm.categories.value.size == 2 }
         assertEquals("Favorites", vm.categories.value[0].name)
         assertEquals("Dynamic", vm.categories.value[1].name)
+    }
+
+    @Test
+    fun loadCategories_success_syncsQuickSearchCategoryNames() {
+        server.enqueue(MockResponse().setBody("""[
+            {"id":"SET_aaaaaaaaaa","name":"Favorites","archives":["a1"],"pinned":"1","search":""},
+            {"id":"c2","name":"Dynamic","archives":[],"pinned":"0","search":"artist:foo"}
+        ]"""))
+        val synced = CopyOnWriteArrayList<List<LRRCategory>>()
+
+        val vm = LRRCategoriesViewModel(categoryNameSync = { synced.add(it) })
+        vm.loadCategories()
+
+        awaitCondition { synced.isNotEmpty() }
+        assertEquals(listOf("SET_aaaaaaaaaa", "c2"), synced.single().map { it.id })
     }
 
     @Test

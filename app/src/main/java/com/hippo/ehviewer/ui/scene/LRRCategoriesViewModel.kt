@@ -26,7 +26,18 @@ import kotlinx.coroutines.launch
  * one-shot Toast messages. View construction, adapter, dialogs, and
  * navigation remain in the Scene.
  */
-class LRRCategoriesViewModel : ViewModel() {
+class LRRCategoriesViewModel(
+    /**
+     * Test seam for the quick-search category-name back-fill (spec 2026-09-15,
+     * Q4). The default reaches [ServiceRegistry] lazily, at call time, so the
+     * no-arg construction the Scene's ViewModelProvider uses never touches the
+     * registry — and tests that don't care (no data module installed) still
+     * construct the VM without pinning this parameter.
+     */
+    private val categoryNameSync: suspend (List<LRRCategory>) -> Unit = { categories ->
+        ServiceRegistry.dataModule.quickSearchRepository.syncCategoryNames(categories)
+    }
+) : ViewModel() {
 
     // -------------------------------------------------------------------------
     // Category list state
@@ -101,6 +112,7 @@ class LRRCategoriesViewModel : ViewModel() {
                 pinned.addAll(unpinned)
 
                 _categories.value = ArrayList(pinned)
+            syncNames(pinned)
                 _isLoading.value = false
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
@@ -212,11 +224,28 @@ class LRRCategoriesViewModel : ViewModel() {
             pinned.addAll(unpinned)
 
             _categories.value = ArrayList(pinned)
+            syncNames(pinned)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
             Log.e(TAG, "Failed to reload categories after CRUD", e)
             val context = ServiceRegistry.appModule.getContext()
             _uiEvent.tryEmit(CategoriesUiEvent.ShowError(friendlyError(context, e)))
+        }
+    }
+
+    /**
+     * Back-fill / refresh quick-search category names from a freshly loaded
+     * list. Display-only data: a failure must never surface as a categories
+     * error, so it is logged and swallowed (cancellation still propagates).
+     */
+    private suspend fun syncNames(categories: List<LRRCategory>) {
+        try {
+            categoryNameSync(categories)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Literal message only: a template with property access would defeat the R8 Log strip.
+            Log.w(TAG, "Quick-search category name sync failed")
         }
     }
 

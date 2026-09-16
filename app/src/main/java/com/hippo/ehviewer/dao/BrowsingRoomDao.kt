@@ -32,6 +32,17 @@ interface BrowsingRoomDao {
     @Query("SELECT * FROM QUICK_SEARCH ORDER BY TIME ASC LIMIT :limit OFFSET :offset")
     suspend fun getQuickSearchRange(offset: Int, limit: Int): List<QuickSearch>
 
+    /**
+     * Display-name sync for category quick searches: only rows whose name is
+     * missing or differs are touched, so a repeated call with the same
+     * categories writes nothing. Returns the number of rows changed.
+     */
+    @Query(
+        "UPDATE QUICK_SEARCH SET CATEGORY_NAME = :name " +
+            "WHERE CATEGORY_ID = :id AND (CATEGORY_NAME IS NULL OR CATEGORY_NAME != :name)"
+    )
+    suspend fun updateQuickSearchCategoryName(id: String, name: String): Int
+
     // ---- SEARCH_HISTORY (per-profile automatic search history) ----
 
     /** Composite PK (QUERY, SERVER_PROFILE_ID) makes REPLACE = dedupe-promote. */
