@@ -1,0 +1,3 @@
+Fixes false "threat" warnings from some Chinese OEM security scanners (e.g. vivo): the app's internal identity has changed and the package no longer carries traces of the upstream project.
+Note: after updating, re-add any pinned home-screen icon, the Continue Reading widget and pinned shortcuts once; history, downloads and server settings are kept.
+Cleaned up legacy dead code.
