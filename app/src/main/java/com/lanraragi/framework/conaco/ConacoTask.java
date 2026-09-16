@@ -383,7 +383,7 @@ public class ConacoTask<V> {
                 // Error bodies (404 page, reverse-proxy 502 HTML) must never be
                 // cached or decoded as the image for this key.
                 if (!response.isSuccessful()) {
-                    if (com.hippo.ehviewer.BuildConfig.DEBUG) {
+                    if (com.lanraragi.reader.BuildConfig.DEBUG) {
                         Log.w(TAG, "Fetch failed: HTTP " + response.code() + " for " + mUrl);
                     }
                     response.close();
@@ -451,7 +451,7 @@ public class ConacoTask<V> {
                 // Expected on cancellation (Call.cancel -> IOException); any
                 // other failure used to vanish without a trace, making broken
                 // thumbnails undiagnosable.
-                if (com.hippo.ehviewer.BuildConfig.DEBUG && !mStop && !mCancelled) {
+                if (com.lanraragi.reader.BuildConfig.DEBUG && !mStop && !mCancelled) {
                     Log.w(TAG, "Network load failed for " + mUrl, e);
                 }
                 return null;

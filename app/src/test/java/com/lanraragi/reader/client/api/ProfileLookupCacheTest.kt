@@ -3,10 +3,10 @@ package com.lanraragi.reader.client.api
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.hippo.ehviewer.containedTestScope
-import com.hippo.ehviewer.dao.AppDatabase
-import com.hippo.ehviewer.dao.ProfileRepository
-import com.hippo.ehviewer.dao.ServerProfile
+import com.lanraragi.reader.containedTestScope
+import com.lanraragi.reader.dao.AppDatabase
+import com.lanraragi.reader.dao.ProfileRepository
+import com.lanraragi.reader.dao.ServerProfile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel

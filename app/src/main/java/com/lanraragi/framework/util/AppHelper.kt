@@ -32,7 +32,7 @@ import android.content.pm.PackageManager
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
-import com.hippo.ehviewer.R
+import com.lanraragi.reader.R
 import java.lang.RuntimeException
 import androidx.core.net.toUri
 

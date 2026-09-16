@@ -19,7 +19,7 @@ import android.os.Build
 import android.util.Log
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toDrawable
-import com.hippo.ehviewer.Analytics
+import com.lanraragi.reader.Analytics
 import java.io.FileInputStream
 import java.nio.channels.FileChannel
 import java.util.concurrent.atomic.AtomicReference

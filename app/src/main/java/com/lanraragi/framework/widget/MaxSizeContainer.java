@@ -21,7 +21,7 @@ import android.content.res.TypedArray;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
-import com.hippo.ehviewer.R;
+import com.lanraragi.reader.R;
 import com.lanraragi.framework.lib.yorozuya.AssertUtils;
 
 public class MaxSizeContainer extends ViewGroup {

@@ -1,8 +1,8 @@
 package com.lanraragi.reader.client.api
 
 import android.content.Context
-import com.hippo.ehviewer.EhApplication
-import com.hippo.ehviewer.ServiceRegistry
+import com.lanraragi.reader.EhApplication
+import com.lanraragi.reader.ServiceRegistry
 import okhttp3.OkHttpClient
 
 /**

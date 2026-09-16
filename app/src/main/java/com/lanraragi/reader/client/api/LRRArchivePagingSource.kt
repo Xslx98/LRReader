@@ -2,7 +2,7 @@ package com.lanraragi.reader.client.api
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import com.hippo.ehviewer.settings.AppearanceSettings
+import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.CancellationException
 import okhttp3.OkHttpClient

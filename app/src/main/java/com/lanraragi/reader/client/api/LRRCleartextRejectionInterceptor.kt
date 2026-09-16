@@ -1,6 +1,6 @@
 package com.lanraragi.reader.client.api
 
-import com.hippo.ehviewer.ServiceRegistry
+import com.lanraragi.reader.ServiceRegistry
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Interceptor

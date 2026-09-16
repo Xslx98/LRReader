@@ -2,8 +2,8 @@ package com.lanraragi.reader.client.api
 
 import android.content.Context
 import android.util.Log
-import com.hippo.ehviewer.R
-import com.hippo.ehviewer.ServiceRegistry
+import com.lanraragi.reader.R
+import com.lanraragi.reader.ServiceRegistry
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive

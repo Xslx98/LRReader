@@ -15,9 +15,9 @@
  */
 package com.lanraragi.framework.util
 
-import com.hippo.ehviewer.GetText
-import com.hippo.ehviewer.R
-import com.hippo.ehviewer.client.exception.EhException
+import com.lanraragi.reader.GetText
+import com.lanraragi.reader.R
+import com.lanraragi.reader.client.exception.EhException
 import com.lanraragi.framework.network.StatusCodeException
 import org.apache.http.conn.ConnectTimeoutException
 import java.net.MalformedURLException

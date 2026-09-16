@@ -27,7 +27,7 @@ import android.os.BatteryManager;
 import android.util.AttributeSet;
 import androidx.appcompat.widget.AppCompatTextView;
 import com.lanraragi.framework.drawable.BatteryDrawable;
-import com.hippo.ehviewer.R;
+import com.lanraragi.reader.R;
 
 public class BatteryView extends AppCompatTextView {
 

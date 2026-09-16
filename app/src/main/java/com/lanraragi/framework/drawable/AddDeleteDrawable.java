@@ -28,7 +28,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 
-import com.hippo.ehviewer.R;
+import com.lanraragi.reader.R;
 import com.lanraragi.framework.lib.yorozuya.MathUtils;
 
 public class AddDeleteDrawable extends Drawable {

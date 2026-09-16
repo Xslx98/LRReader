@@ -29,7 +29,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
 
-import com.hippo.ehviewer.UrlOpener;
+import com.lanraragi.reader.UrlOpener;
 
 /**
  * A movement method that traverses links in the text buffer and scrolls if necessary.

@@ -23,7 +23,7 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.hippo.ehviewer.R;
+import com.lanraragi.reader.R;
 
 import java.util.ArrayList;
 import java.util.List;

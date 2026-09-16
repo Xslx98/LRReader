@@ -14,5 +14,5 @@ dependencyResolutionManagement {
         maven { url "https://jitpack.io" }
     }
 }
-rootProject.name = "ehviewer"
+rootProject.name = "LRReader"
 include ':app'

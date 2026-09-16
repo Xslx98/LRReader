@@ -13,7 +13,7 @@
   WHERE THE REAL CLEARTEXT POLICY LIVES:
 
   The authoritative cleartext gate is `LRRCleartextRejectionInterceptor`
-  (see app/src/main/java/com/hippo/ehviewer/client/lrr/). It throws
+  (see app/src/main/java/com/lanraragi/reader/client/lrr/). It throws
   LRRCleartextRefusedException for any HTTP request that is NOT directed
   at the currently-configured active LANraragi server, AND additionally
   requires that profile's `allowCleartext` flag to be true (per-profile

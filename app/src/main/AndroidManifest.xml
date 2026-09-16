@@ -46,7 +46,7 @@
         android:name="android.hardware.type.pc"
         android:required="false" />
     <application
-        android:name="com.hippo.ehviewer.EhApplication"
+        android:name="com.lanraragi.reader.EhApplication"
         android:allowBackup="false"
         android:fullBackupContent="false"
         android:hardwareAccelerated="true"
@@ -66,7 +66,7 @@
             android:value="2.1" />
 
         <activity
-            android:name="com.hippo.ehviewer.ui.MainActivity"
+            android:name="com.lanraragi.reader.ui.MainActivity"
             android:alwaysRetainTaskState="true"
             android:configChanges="screenSize|uiMode"
             android:exported="true"
@@ -91,9 +91,9 @@
              and immediately started MainActivity, costing a full extra Activity
              launch on every cold start). -->
         <activity-alias
-            android:name="com.hippo.ehviewer.ui.splash.SplashActivity"
+            android:name="com.lanraragi.reader.ui.splash.SplashActivity"
             android:exported="true"
-            android:targetActivity="com.hippo.ehviewer.ui.MainActivity">
+            android:targetActivity="com.lanraragi.reader.ui.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -102,7 +102,7 @@
         </activity-alias>
 
         <activity
-            android:name="com.hippo.ehviewer.ui.GalleryActivity"
+            android:name="com.lanraragi.reader.ui.GalleryActivity"
             android:configChanges="screenSize|uiMode"
             android:exported="false"
             android:launchMode="singleTask"
@@ -118,7 +118,7 @@
         </activity>
 
         <activity
-            android:name="com.hippo.ehviewer.ui.SettingsActivity"
+            android:name="com.lanraragi.reader.ui.SettingsActivity"
             android:configChanges="screenSize|uiMode"
             android:theme="@style/AppTheme.Settings" />
 
@@ -127,13 +127,13 @@
         <!-- LANraragi: Removed legacy DirPickerActivity (SAF-only now) -->
 
         <activity
-            android:name="com.hippo.ehviewer.ui.LicenseActivity"
+            android:name="com.lanraragi.reader.ui.LicenseActivity"
             android:configChanges="screenSize|uiMode"
             android:label="@string/license"
             android:theme="@style/AppTheme.Toolbar" />
 
         <activity
-            android:name="com.hippo.ehviewer.ui.SetSecurityActivity"
+            android:name="com.lanraragi.reader.ui.SetSecurityActivity"
             android:configChanges="screenSize|uiMode"
             android:label="@string/set_pattern_protection"
             android:theme="@style/AppTheme.Toolbar" />
@@ -143,7 +143,7 @@
         <!-- LANraragi: Removed EH-only HostsActivity -->
 
         <activity
-            android:name="com.hippo.ehviewer.shortcuts.ShortcutsActivity"
+            android:name="com.lanraragi.reader.shortcuts.ShortcutsActivity"
             android:excludeFromRecents="true"
             android:launchMode="singleTask"
             android:taskAffinity=""
@@ -152,7 +152,7 @@
 
 
         <service
-            android:name="com.hippo.ehviewer.download.DownloadService"
+            android:name="com.lanraragi.reader.download.DownloadService"
             android:label="@string/download_service_label"
             android:foregroundServiceType="dataSync" />
 
@@ -170,7 +170,7 @@
 
         <!-- Continue-reading home-screen widget (issue #9) -->
         <receiver
-            android:name="com.hippo.ehviewer.appwidget.ContinueReadingWidgetProvider"
+            android:name="com.lanraragi.reader.appwidget.ContinueReadingWidgetProvider"
             android:exported="false"
             android:label="@string/shortcut_continue_reading">
             <intent-filter>

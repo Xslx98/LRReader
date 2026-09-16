@@ -5,8 +5,8 @@ import com.lanraragi.reader.client.api.data.*
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.hippo.ehviewer.dao.AppDatabase
-import com.hippo.ehviewer.dao.ServerProfile
+import com.lanraragi.reader.dao.AppDatabase
+import com.lanraragi.reader.dao.ServerProfile
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.*

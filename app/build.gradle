@@ -12,8 +12,8 @@ if (file('google-services.json').exists()) {
 }
 
 android {
-    namespace 'com.hippo.ehviewer'
-    testNamespace 'com.hippo.ehviewer.debug'
+    namespace 'com.lanraragi.reader'
+    testNamespace 'com.lanraragi.reader.debug'
     compileSdk 35
 
     flavorDimensions "distribute"

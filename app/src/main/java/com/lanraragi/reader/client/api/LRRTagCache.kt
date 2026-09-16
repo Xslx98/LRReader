@@ -2,7 +2,7 @@ package com.lanraragi.reader.client.api
 
 import android.util.Log
 import com.lanraragi.reader.client.api.data.LRRTagStat
-import com.hippo.ehviewer.module.Cacheable
+import com.lanraragi.reader.module.Cacheable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.cancellation.CancellationException
