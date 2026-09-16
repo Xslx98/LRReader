@@ -2,68 +2,37 @@ package com.lanraragi.reader.util
 
 import com.lanraragi.reader.client.TagTranslationDatabase
 
+/**
+ * Display formatting for `namespace:value` tags on top of
+ * [TagTranslationDatabase.translateTag] / [TagTranslationDatabase.translateNamespace].
+ * Every function falls back to the original text, half by half, when the
+ * dataset does not know a part or the database has not loaded yet.
+ */
 object TagTranslationUtil {
 
+    /** `namespace:value` with both halves translated where the dataset knows them. */
     @JvmStatic
     fun getTagCN(tags: Array<String>, ehTags: TagTranslationDatabase?): String {
-        if (ehTags != null && tags.size == 2) {
-            var namespace = TagTranslationDatabase.prefixToNamespace("${tags[0]}:")
-            if (namespace == null) {
-                namespace = tags[0]
-            }
-            val group = ehTags.getTranslation("n:$namespace")
-            //翻译标签名
-            var prefix = TagTranslationDatabase.namespaceToPrefix(tags[0])
-            if (tags[0].length == 1 && tags[0].matches("^[a-z]+$".toRegex())) {
-                prefix = "${tags[0]}:"
-            }
+        if (ehTags == null || tags.size != 2) return tags.joinToString(":")
+        val namespace = ehTags.translateNamespace(tags[0]) ?: tags[0]
+        val value = ehTags.translateTag(tags[0], tags[1]) ?: tags[1]
+        return "$namespace:$value"
+    }
 
-            val tagStr = ehTags.getTranslation(if (prefix != null) "$prefix${tags[1]}" else tags[1])
-
-            return when {
-                group != null && tagStr != null -> "$group:$tagStr"
-                group != null && tagStr == null -> "$group:${tags[1]}"
-                group == null && tagStr != null -> "${tags[0]}:$tagStr"
-                else -> {
-                    if (tagStr != null) "${tags[0]}:$tagStr"
-                    else "${tags[0]}:${tags[1]}"
-                }
-            }
-        } else {
-            val s = StringBuilder()
-            for (i in tags.indices) {
-                if (i == 0) {
-                    s.append(tags[i])
-                } else {
-                    s.append(":").append(tags[i])
-                }
-            }
-            return s.toString()
+    /** The value half only; a bare tag (no namespace) is probed across the dataset namespaces. */
+    @JvmStatic
+    fun getTagCNBody(tags: Array<String>, ehTags: TagTranslationDatabase?): String {
+        return when (tags.size) {
+            2 -> translateValue(tags[0], tags[1], ehTags)
+            1 -> translateValue(null, tags[0], ehTags)
+            else -> tags.lastOrNull().orEmpty()
         }
     }
 
+    /** One tag value under [namespace]; the original [value] when there is no translation. */
     @JvmStatic
-    fun getTagCNBody(tags: Array<String>, ehTags: TagTranslationDatabase?): String {
-        if (ehTags != null && tags.size == 2) {
-            val group = ehTags.getTranslation("n:${tags[0]}")
-            //翻译标签名
-            val prefix = TagTranslationDatabase.namespaceToPrefix(tags[0])
-            val tagstr = ehTags.getTranslation(if (prefix != null) "$prefix${tags[1]}" else tags[1])
-
-            return when {
-                group != null && tagstr != null -> tagstr
-                group != null && tagstr == null -> tags[1]
-                group == null && tagstr != null -> tagstr
-                else -> tags[1]
-            }
-        } else {
-            val s = StringBuilder()
-            for (i in tags) {
-                s.setLength(0)
-                s.append(i)
-            }
-            return s.toString()
-        }
+    fun translateValue(namespace: String?, value: String, ehTags: TagTranslationDatabase?): String {
+        return ehTags?.translateTag(namespace, value) ?: value
     }
 
     @JvmStatic

@@ -111,8 +111,7 @@ class GalleryTagChipHelper(private val callback: Callback) {
 
     fun buildChipGroup(gi: Archive?, tagFlowLayout: ChipGroup): ChipGroup {
         val colorTag = AttrResources.getAttrColor(callback.requireContext(), R.attr.tagBackgroundColor)
-        val tgList = gi?.flatTags
-        if (tgList == null) {
+        if (gi == null) {
             val tagName = callback.requireContext().getString(R.string.lrr_no_preview_tags)
             @SuppressLint("InflateParams")
             val chip = callback.getLayoutInflater().inflate(R.layout.item_chip_tag, null) as Chip
@@ -130,24 +129,27 @@ class GalleryTagChipHelper(private val callback: Callback) {
             tagFlowLayout.addView(chip, 0)
             return tagFlowLayout
         }
-        for (i in tgList.indices) {
-            val tagName = tgList[i]
-            @SuppressLint("InflateParams")
-            val chip = callback.getLayoutInflater().inflate(R.layout.item_chip_tag, null) as Chip
-            chip.chipBackgroundColor = ColorStateList.valueOf(colorTag)
-            chip.setTextColor(Color.WHITE)
-            if (AppearanceSettings.getShowTagTranslations()) {
-                ensureEhTags()
-                chip.text = TagTranslationUtil.getTagCNBody(
-                    tagName.split(":").dropLastWhile { it.isEmpty() }.toTypedArray(), ehTags
-                )
-            } else {
-                val tagSplit = tagName.split(":").dropLastWhile { it.isEmpty() }.toTypedArray()
-                chip.text = if (tagSplit.size > 1) tagSplit[1] else tagSplit[0]
+        // Walk the namespace map rather than flatTags: the translation lookup
+        // needs the namespace (`series:` vs `artist:` pick different dataset
+        // prefixes), while click/long-click keep passing the bare value as before.
+        val translate = AppearanceSettings.getShowTagTranslations()
+        if (translate) ensureEhTags()
+        var index = 0
+        for ((namespace, values) in gi.tags) {
+            for (tagName in values) {
+                @SuppressLint("InflateParams")
+                val chip = callback.getLayoutInflater().inflate(R.layout.item_chip_tag, null) as Chip
+                chip.chipBackgroundColor = ColorStateList.valueOf(colorTag)
+                chip.setTextColor(Color.WHITE)
+                chip.text = if (translate) {
+                    TagTranslationUtil.translateValue(namespace, tagName, ehTags)
+                } else {
+                    tagName
+                }
+                chip.setOnClickListener { onTagClick(tagName) }
+                chip.setOnLongClickListener { onTagLongClick(tagName) }
+                tagFlowLayout.addView(chip, index++)
             }
-            chip.setOnClickListener { onTagClick(tagName) }
-            chip.setOnLongClickListener { onTagLongClick(tagName) }
-            tagFlowLayout.addView(chip, i)
         }
 
         return tagFlowLayout

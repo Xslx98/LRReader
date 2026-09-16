@@ -77,14 +77,12 @@ object GalleryTagHelper {
             ll.orientation = LinearLayout.HORIZONTAL
             tagsLayout.addView(ll)
 
-            val readableTagName = ehTags?.getTranslation("n:" + tg.namespace)
+            val readableTagName = ehTags?.translateNamespace(tg.namespace)
 
             val tgName = inflater.inflate(R.layout.item_gallery_tag, ll, false) as TextView
             ll.addView(tgName)
             tgName.text = readableTagName ?: tg.namespace
             tgName.background = RoundSideRectDrawable(colorName)
-
-            val prefix = TagTranslationDatabase.namespaceToPrefix(tg.namespace) ?: ""
 
             val awl = AutoWrapLayout(context)
             ll.addView(awl, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -92,7 +90,7 @@ object GalleryTagHelper {
                 val tag = inflater.inflate(R.layout.item_gallery_tag, awl, false) as TextView
                 awl.addView(tag)
 
-                val readableTag = ehTags?.getTranslation(prefix + tagStr)
+                val readableTag = ehTags?.translateTag(tg.namespace, tagStr)
 
                 tag.text = readableTag ?: tagStr
                 tag.background = RoundSideRectDrawable(colorTag)
