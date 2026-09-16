@@ -36,7 +36,7 @@
         android:title="@string/settings_about_auto_check_for_updates"
         android:summary="@string/settings_about_auto_check_for_updates_summary" />
 
-    <com.hippo.ehviewer.preference.VersionPreference
+    <com.lanraragi.reader.preference.VersionPreference
         android:key="version"
         app:allowDividerAbove="true" />
 

@@ -6,7 +6,7 @@
 cmake_minimum_required(VERSION 3.18.1)
 
 #project(root)
-project("ehviewer")
+project("lrreader")
 
 
 # Creates and names a library, sets it as either STATIC
@@ -16,7 +16,7 @@ project("ehviewer")
 
 add_library( # Sets the name of the library.
 #        root
-        "ehviewer"
+        "lrreader"
         # Sets the library as a shared library.
         SHARED
         image.c
@@ -27,7 +27,7 @@ add_library( # Sets the name of the library.
 # Size-optimize: JNI entry points keep default visibility via JNIEXPORT,
 # everything else is hidden; unreferenced sections are GC'd at link time.
 target_compile_options(
-        ehviewer
+        lrreader
         PRIVATE
         -Oz
         -ffunction-sections
@@ -36,7 +36,7 @@ target_compile_options(
 
 # Ensure generated binary aligns segments for 16KB page size devices.
 target_link_options(
-        ehviewer
+        lrreader
         PRIVATE
         -Wl,--gc-sections
         -Wl,-z,max-page-size=16384)
@@ -64,7 +64,7 @@ find_library(
 # build script, prebuilt third-party libraries, or system libraries.
 
 target_link_libraries( # Specifies the target library.
-        ehviewer
+        lrreader
 
         # Links the target library to the log library
         # included in the NDK.

@@ -35,14 +35,14 @@ data class Archive(
      *
      * Semantics differ by subsystem context (post-L1 ARCHIVE_LOCAL_STATE):
      * - HISTORY entries: actual last-read moment (lifted from
-     *   [com.hippo.ehviewer.dao.HistoryInfo.time]).
+     *   [com.lanraragi.reader.dao.HistoryInfo.time]).
      * - DOWNLOAD entries: always 0; the download add timestamp lives in
      *   `ArchiveLocalState.downloadTime`, not here.
      * - FAVORITE entries: always 0; the favorite add timestamp lives in
      *   `ArchiveLocalState.favoriteTime`, not here.
      *
      * Do **not** use this field as a generic "added time" — pick the
-     * column-typed subsystem timestamp instead (see [com.hippo.ehviewer.mapper]
+     * column-typed subsystem timestamp instead (see [com.lanraragi.reader.mapper]
      * for the conversion sites).
      */
     val lastreadtime: Long,

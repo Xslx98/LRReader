@@ -2,20 +2,20 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <com.hippo.preference.ActivityPreference
+    <com.lanraragi.framework.preference.ActivityPreference
         android:key="pattern_protection"
         android:title="@string/settings_privacy_pattern_protection_title"
-        app:activity="com.hippo.ehviewer.ui.SetSecurityActivity"
+        app:activity="com.lanraragi.reader.ui.SetSecurityActivity"
         app:allowDividerAbove="true" />
 
-    <com.hippo.preference.SwitchPreference
+    <com.lanraragi.framework.preference.SwitchPreference
         android:defaultValue="false"
         android:key="enable_secure"
         android:title="@string/settings_privacy_secure"
         app:summaryOff="@string/settings_privacy_secure_summary"
         app:summaryOn="@string/settings_privacy_secure_summary" />
 
-    <com.hippo.preference.SwitchPreference
+    <com.lanraragi.framework.preference.SwitchPreference
         android:defaultValue="true"
         android:key="delete_confirm_countdown"
         android:title="@string/settings_privacy_delete_confirm_countdown"

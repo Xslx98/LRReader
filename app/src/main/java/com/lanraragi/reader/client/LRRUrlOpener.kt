@@ -1,0 +1,18 @@
+/*
+ * Copyright 2016 Hippo Seven — STUB (LANraragi: E-Hentai URL parsing removed)
+ */
+package com.lanraragi.reader.client
+
+import com.lanraragi.framework.scene.Announcer
+
+/**
+ * LRRUrlOpener — STUB. E-Hentai URL parsing has been removed.
+ * LANraragi does not use E-Hentai URLs.
+ */
+object LRRUrlOpener {
+    @JvmStatic
+    fun parseUrl(url: String?): Announcer? {
+        // LANraragi: E-Hentai URL parsing removed
+        return null
+    }
+}

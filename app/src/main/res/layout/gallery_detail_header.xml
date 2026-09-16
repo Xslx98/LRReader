@@ -46,7 +46,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.hippo.widget.LoadImageView
+    <com.lanraragi.framework.widget.LoadImageView
         android:id="@+id/thumb"
         android:layout_width="@dimen/gallery_detail_thumb_width"
         android:layout_height="@dimen/gallery_detail_thumb_height"
@@ -131,7 +131,7 @@
         app:barrierDirection="bottom"
         app:constraint_referenced_ids="thumb,uploader,source_badge" />
 
-    <com.hippo.ehviewer.widget.ArchiverDownloadProgress
+    <com.lanraragi.reader.widget.ArchiverDownloadProgress
         android:id="@+id/archiver_download_progress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

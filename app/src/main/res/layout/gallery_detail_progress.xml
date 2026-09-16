@@ -19,7 +19,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
     <!--    android:layout_gravity="center"-->
-    <com.hippo.widget.ProgressView
+    <com.lanraragi.framework.widget.ProgressView
         style="@style/ProgressView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

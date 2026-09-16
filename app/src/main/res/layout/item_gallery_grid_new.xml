@@ -23,7 +23,7 @@
     android:layout_margin="2dp"
     style="@style/CardView.Normal">
 
-    <com.hippo.ehviewer.widget.TileThumbNew
+    <com.lanraragi.reader.widget.TileThumbNew
         android:id="@+id/thumb_new"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

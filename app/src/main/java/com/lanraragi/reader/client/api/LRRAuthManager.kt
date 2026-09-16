@@ -158,13 +158,13 @@ object LRRAuthManager {
      * Launch [initialize] on [scope] instead of blocking the caller (INF-9).
      * Readers are held by [awaitInit] until the gate opens, so no call site
      * needs to change. Callers that must order work after init completes
-     * (EhApplication's profile loader) should `join()` the returned [Job].
+     * (LRReaderApplication's profile loader) should `join()` the returned [Job].
      */
     @JvmStatic
     fun scheduleInitialize(context: Context, scope: CoroutineScope): Job {
         sInitScheduled = true
         return scope.launch {
-            Trace.beginSection("EhApp.LRRAuthManager.init")
+            Trace.beginSection("LRRApp.LRRAuthManager.init")
             try {
                 initialize(context)
             } finally {

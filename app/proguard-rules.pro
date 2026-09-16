@@ -46,8 +46,8 @@
 # generated at compile time and referenced statically (no reflective
 # serializer() lookups in this codebase); the library ships consumer rules.
 
-# === Native JNI entry points (libehviewer.so) ===
--keep class com.hippo.util.GifHandler { *; }
+# === Native JNI entry points (liblrreader.so) ===
+-keep class com.lanraragi.framework.util.GifHandler { *; }
 
 # Custom views/preferences referenced in XML need no manual keeps: AGP feeds
 # R8 the AAPT2-generated rules (build/intermediates/aapt_proguard_file/...),
@@ -57,7 +57,7 @@
 # Class.forName from code (no XML reference) would need an explicit keep here.
 
 # === Settings fragments (instantiated via PreferenceActivity headers reflection) ===
--keep class com.hippo.ehviewer.ui.fragment.** { <init>(); }
+-keep class com.lanraragi.reader.ui.fragment.** { <init>(); }
 
 # === Scene classes ===
 # Scene NAMES and no-arg constructors must survive: intents/saved state carry
@@ -66,10 +66,10 @@
 # restore. Only actual SceneFragment subclasses need this — the old package
 # keep pinned all ~550 scene-package classes (ViewModels, adapters, helpers)
 # with original names into the release DEX.
--keep class * extends com.hippo.scene.SceneFragment { <init>(); }
+-keep class * extends com.lanraragi.framework.scene.SceneFragment { <init>(); }
 
 # === LRRDownloadWorker: preserve volatile semantics for cancellation flag ===
--keepclassmembers class com.hippo.ehviewer.download.LRRDownloadWorker {
+-keepclassmembers class com.lanraragi.reader.download.LRRDownloadWorker {
     volatile <fields>;
 }
 

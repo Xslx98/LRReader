@@ -23,17 +23,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.hippo.widget.ContentLayout
+    <com.lanraragi.framework.widget.ContentLayout
         android:id="@+id/content_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
-    <com.hippo.ehviewer.widget.SearchLayout
+    <com.lanraragi.reader.widget.SearchLayout
         android:id="@+id/search_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
-    <com.hippo.ehviewer.widget.SearchBar
+    <com.lanraragi.reader.widget.SearchBar
         android:id="@+id/search_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -42,7 +42,7 @@
         android:layout_marginTop="@dimen/gallery_search_bar_margin_v"
         style="@style/CardView.Normal"/>
 
-    <com.hippo.widget.FabLayout
+    <com.lanraragi.framework.widget.FabLayout
         android:id="@+id/fab_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -101,9 +101,9 @@
             app:backgroundTint="?attr/widgetColorThemePrimary"
             style="@style/Widget.Design.FloatingActionButton"/>
 
-    </com.hippo.widget.FabLayout>
+    </com.lanraragi.framework.widget.FabLayout>
 
-    <com.hippo.widget.FabLayout
+    <com.lanraragi.framework.widget.FabLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingEnd="@dimen/corner_fab_margin"
@@ -122,7 +122,7 @@
             android:scaleY="0"
             style="@style/Widget.Design.FloatingActionButton"/>
 
-    </com.hippo.widget.FabLayout>
+    </com.lanraragi.framework.widget.FabLayout>
 
     <include layout="@layout/widget_batch_action_bar"/>
 </FrameLayout>

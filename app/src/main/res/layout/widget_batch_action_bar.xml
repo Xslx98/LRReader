@@ -4,7 +4,7 @@
   Floating CardView sharing the SearchBar's CardView.Normal language so the
   top search card and this bottom card read as a matched pair.
 
-  No extra window-inset handling needed: the scene container (EhStageLayout)
+  No extra window-inset handling needed: the scene container (AppStageLayout)
   reports the navigation-bar inset to the custom DrawerLayout as an
   additional bottom margin, so layout_gravity="bottom" already sits above
   the gesture/nav bar.

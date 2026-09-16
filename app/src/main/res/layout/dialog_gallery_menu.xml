@@ -14,7 +14,7 @@
   ~ limitations under the License.
   -->
 
-<com.hippo.widget.IndicatingScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.lanraragi.framework.widget.IndicatingScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     style="@style/Indicating"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
@@ -40,7 +40,7 @@
                 android:text="@string/settings_read_screen_rotation"
                 android:textColor="?android:attr/textColorPrimary" />
 
-            <com.hippo.widget.CuteSpinner
+            <com.lanraragi.framework.widget.CuteSpinner
                 android:id="@+id/screen_rotation"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -63,7 +63,7 @@
                 android:text="@string/settings_read_reading_direction"
                 android:textColor="?android:attr/textColorPrimary" />
 
-            <com.hippo.widget.CuteSpinner
+            <com.lanraragi.framework.widget.CuteSpinner
                 android:id="@+id/reading_direction"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -86,7 +86,7 @@
                 android:text="@string/settings_read_page_scaling"
                 android:textColor="?android:attr/textColorPrimary" />
 
-            <com.hippo.widget.CuteSpinner
+            <com.lanraragi.framework.widget.CuteSpinner
                 android:id="@+id/page_scaling"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -109,7 +109,7 @@
                 android:text="@string/settings_read_start_position"
                 android:textColor="?android:attr/textColorPrimary" />
 
-            <com.hippo.widget.CuteSpinner
+            <com.lanraragi.framework.widget.CuteSpinner
                 android:id="@+id/start_position"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -252,4 +252,4 @@
             android:max="200" />
 
     </LinearLayout>
-</com.hippo.widget.IndicatingScrollView>
+</com.lanraragi.framework.widget.IndicatingScrollView>

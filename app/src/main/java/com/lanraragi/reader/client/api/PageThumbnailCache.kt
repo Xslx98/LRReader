@@ -11,8 +11,8 @@ package com.lanraragi.reader.client.api
 
 import android.graphics.Bitmap
 import android.util.LruCache
-import com.hippo.ehviewer.client.LRRCacheKeyFactory
-import com.hippo.ehviewer.module.Cacheable
+import com.lanraragi.reader.client.LRRCacheKeyFactory
+import com.lanraragi.reader.module.Cacheable
 
 /**
  * In-memory LRU of per-page thumbnails for the detail-page preview
@@ -33,9 +33,9 @@ import com.hippo.ehviewer.module.Cacheable
  *
  * **Size budget:** byte-sized LRU at [budgetBytesFor], a heap-tiered
  * budget mirroring the cover-image cache in
- * [com.hippo.ehviewer.module.ClientModule]. It must exceed the grid's
+ * [com.lanraragi.reader.module.ClientModule]. It must exceed the grid's
  * *scroll working set* — the visible viewport (≈3 rows × 3 cols) plus
- * [com.hippo.ehviewer.ui.scene.gallery.detail.PrefetchScrollListener]'s
+ * [com.lanraragi.reader.ui.scene.gallery.detail.PrefetchScrollListener]'s
  * 3 prefetch rows ≈ 18 distinct pages, plus a screen of scroll-back.
  * The previous fixed 6 MB budget assumed an optimistic 350 KB decode;
  * real page thumbnails decode larger, so the cache held fewer entries
@@ -47,11 +47,11 @@ import com.hippo.ehviewer.module.Cacheable
  * set with scroll-back headroom on every heap tier.
  *
  * **Lifetime:** cleared on profile switch via [Cacheable.clearCache]
- * (registered in [com.hippo.ehviewer.module.ClientModule]). It is
+ * (registered in [com.lanraragi.reader.module.ClientModule]). It is
  * deliberately *not* invalidated on detail-page navigation — the
  * ViewModel keeps it warm so a back→forward navigation reuses already
  * decoded thumbnails (see
- * [com.hippo.ehviewer.ui.scene.gallery.detail.PageThumbnailsViewModel.resetForNewEntry]).
+ * [com.lanraragi.reader.ui.scene.gallery.detail.PageThumbnailsViewModel.resetForNewEntry]).
  * Per-page keys are arcid-scoped so a different archive's pages can
  * never collide. [invalidate] is available for explicit per-archive
  * eviction but currently has no caller.

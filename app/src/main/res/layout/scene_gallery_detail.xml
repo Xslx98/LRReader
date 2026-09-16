@@ -33,7 +33,7 @@
 
     </ScrollView>
 
-    <com.hippo.widget.ProgressView
+    <com.lanraragi.framework.widget.ProgressView
         android:id="@+id/progress_view"
         style="@style/ProgressView"
         android:layout_width="wrap_content"

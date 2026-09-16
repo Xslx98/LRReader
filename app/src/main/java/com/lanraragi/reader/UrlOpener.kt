@@ -1,0 +1,75 @@
+/*
+ * Copyright 2016 Hippo Seven
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.lanraragi.reader
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
+import android.util.Log
+import androidx.core.net.toUri
+import android.provider.Browser
+import android.text.TextUtils
+import android.widget.Toast
+import com.lanraragi.reader.client.LRRUrlOpener
+import com.lanraragi.reader.ui.MainActivity
+import com.lanraragi.framework.scene.StageActivity
+import com.lanraragi.framework.util.ExceptionUtils
+
+object UrlOpener {
+
+    private const val TAG = "UrlOpener"
+
+    @JvmStatic
+    @SuppressLint("UnsafeImplicitIntentLaunch")
+    fun openUrl(context: Context, url: String?, ehUrl: Boolean) {
+        try {
+            if (TextUtils.isEmpty(url)) {
+                return
+            }
+        } catch (e: VerifyError) {
+            Log.w(TAG, "Verify URL emptiness", e)
+            return
+        }
+
+        val uri = (url ?: return).toUri()
+
+        if (ehUrl) {
+            val announcer = LRRUrlOpener.parseUrl(url)
+            if (announcer != null) {
+                val intent = Intent(context, MainActivity::class.java).apply {
+                    action = StageActivity.ACTION_START_SCENE
+                    putExtra(StageActivity.KEY_SCENE_NAME, announcer.clazz.name)
+                    putExtra(StageActivity.KEY_SCENE_ARGS, announcer.args)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(intent)
+                return
+            }
+        }
+
+        // Intent.ACTION_VIEW
+        val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+            putExtra(Browser.EXTRA_APPLICATION_ID, context.packageName)
+        }
+        try {
+            context.startActivity(intent)
+        } catch (e: Throwable) {
+            ExceptionUtils.throwIfFatal(e)
+            Toast.makeText(context, R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
+        }
+    }
+}

@@ -24,7 +24,7 @@ object LRRDatabaseApi {
      * the lenient direction for a streamed body).
      */
     private fun longCallClient(): OkHttpClient =
-        com.hippo.ehviewer.ServiceRegistry.networkModule.largeFileClient
+        com.lanraragi.reader.ServiceRegistry.networkModule.largeFileClient
 
     /**
      * GET /api/database/stats — Get tag statistics.

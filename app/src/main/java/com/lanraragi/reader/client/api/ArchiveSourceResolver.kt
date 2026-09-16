@@ -4,7 +4,7 @@ import java.io.IOException
 
 /**
  * Thrown by [resolveSourceBaseUrl] when the supplied server profile id
- * does not resolve to a known [com.hippo.ehviewer.dao.ServerProfile] —
+ * does not resolve to a known [com.lanraragi.reader.dao.ServerProfile] —
  * i.e. the user deleted the source profile while a local reference to
  * the archive (download row, history entry, favorite) still exists.
  * Callers surface a user-facing message and stop.
@@ -15,8 +15,8 @@ class OrphanProfileException(val profileId: Long) :
 /**
  * Resolve the base URL of the LANraragi server that owns this archive,
  * given its server profile id as durably stored on
- * [com.hippo.ehviewer.dao.ArchiveLocalState] /
- * [com.hippo.ehviewer.dao.DownloadInfo].
+ * [com.lanraragi.reader.dao.ArchiveLocalState] /
+ * [com.lanraragi.reader.dao.DownloadInfo].
  *
  * Routing rules:
  *  1. [serverProfileId] == 0 is treated as **legacy data**: archives
