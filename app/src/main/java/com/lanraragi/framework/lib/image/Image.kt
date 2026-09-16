@@ -289,11 +289,11 @@ class Image private constructor(
             // crashes with UnsatisfiedLinkError on the GLThread (caught by AVD
             // smoke after the eager Native.initialize() loader was removed).
             try {
-                System.loadLibrary("ehviewer")
+                System.loadLibrary("lrreader")
             } catch (e: UnsatisfiedLinkError) {
                 // JVM unit tests have no native libs; on device a real load
                 // failure resurfaces at the first nativeTexImage call.
-                Log.w(TAG, "libehviewer load failed")
+                Log.w(TAG, "liblrreader load failed")
             }
         }
 

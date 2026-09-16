@@ -27,7 +27,7 @@ typedef struct GifBean {
 
 extern "C"
 JNIEXPORT jlong JNICALL
-Java_com_hippo_util_GifHandler_loadPath(JNIEnv *env, jobject instance, jstring path_) {
+Java_com_lanraragi_framework_util_GifHandler_loadPath(JNIEnv *env, jobject instance, jstring path_) {
     const char *path = env->GetStringUTFChars(path_, 0);
     int err;
 //用系统函数打开一个gif文件   返回一个结构体，这个结构体为句柄
@@ -83,7 +83,7 @@ Java_com_hippo_util_GifHandler_loadPath(JNIEnv *env, jobject instance, jstring p
 
 extern "C"
 JNIEXPORT jint JNICALL
-Java_com_hippo_util_GifHandler_getWidth__J(JNIEnv *env, jobject instance, jlong ndkGif) {
+Java_com_lanraragi_framework_util_GifHandler_getWidth__J(JNIEnv *env, jobject instance, jlong ndkGif) {
 
     GifFileType *gifFileType = (GifFileType *) ndkGif;
     return gifFileType->SWidth;
@@ -91,7 +91,7 @@ Java_com_hippo_util_GifHandler_getWidth__J(JNIEnv *env, jobject instance, jlong 
 
 extern "C"
 JNIEXPORT jint JNICALL
-Java_com_hippo_util_GifHandler_getHeight__J(JNIEnv *env, jobject instance, jlong ndkGif) {
+Java_com_lanraragi_framework_util_GifHandler_getHeight__J(JNIEnv *env, jobject instance, jlong ndkGif) {
     GifFileType *gifFileType = (GifFileType *) ndkGif;
     return gifFileType->SHeight;
 
@@ -324,7 +324,7 @@ int drawFrame(GifFileType *gif, GifBean *gifBean, AndroidBitmapInfo info, void *
 //}
 extern "C"
 JNIEXPORT jint JNICALL
-Java_com_hippo_util_GifHandler_updateFrame__JLandroid_graphics_Bitmap_2(JNIEnv *env,
+Java_com_lanraragi_framework_util_GifHandler_updateFrame__JLandroid_graphics_Bitmap_2(JNIEnv *env,
                                                                         jobject instance,
                                                                         jlong ndkGif,
                                                                         jobject bitmap) {
@@ -352,7 +352,7 @@ Java_com_hippo_util_GifHandler_updateFrame__JLandroid_graphics_Bitmap_2(JNIEnv *
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_hippo_util_GifHandler_destroy(JNIEnv *env, jobject instance, jlong ndkGif) {
+Java_com_lanraragi_framework_util_GifHandler_destroy(JNIEnv *env, jobject instance, jlong ndkGif) {
     if (ndkGif == 0) return;
     GifFileType *gifFileType = (GifFileType *) ndkGif;
     GifBean *gifBean = (GifBean *) gifFileType->UserData;

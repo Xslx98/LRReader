@@ -12,7 +12,7 @@ public class GifHandler implements Closeable {
     }
 
     static {
-        System.loadLibrary("ehviewer");
+        System.loadLibrary("lrreader");
     }
 
     private native long loadPath(String path);
