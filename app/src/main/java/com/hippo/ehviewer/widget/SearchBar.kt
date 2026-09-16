@@ -400,13 +400,24 @@ class SearchBar : CardView,
     }
 
     override fun onEditorAction(v: TextView, actionId: Int, event: KeyEvent?): Boolean {
-        if (v === mEditText) {
-            if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_NULL) {
+        if (v !== mEditText) return false
+        return when (actionId) {
+            EditorInfo.IME_ACTION_SEARCH -> {
                 applySearch()
-                return true
+                true
             }
+            EditorInfo.IME_NULL -> {
+                // A hardware Enter reaches this listener twice: TextView calls it on
+                // key DOWN and, because we consumed that, again on key UP. Apply once
+                // (on DOWN, or when no key event is attached) but consume both, so
+                // TextView never falls through to its advance-focus handling.
+                if (event == null || event.action == KeyEvent.ACTION_DOWN) {
+                    applySearch()
+                }
+                true
+            }
+            else -> false
         }
-        return false
     }
 
     fun getState(): Int = mState
