@@ -59,7 +59,6 @@ import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.download.DownloadService
 import com.lanraragi.reader.download.ProgressSnapshot
 import com.lanraragi.reader.settings.AppearanceSettings
-import com.lanraragi.reader.spider.SpiderInfo
 import com.lanraragi.reader.ui.scene.ToolbarScene
 import com.lanraragi.reader.ui.scene.download.part.DownloadAdapter
 import com.lanraragi.reader.ui.scene.download.part.DownloadAdapter.Companion.DRAG_ENABLE
@@ -680,9 +679,6 @@ class DownloadsScene : ToolbarScene(),
 
     override val list: List<DownloadInfo>?
         get() = mList
-
-    override val spiderInfoMap: Map<String, SpiderInfo>
-        get() = viewModel.spiderInfoMap.value
 
     override val downloadManager: DownloadManager?
         get() = viewModel.downloadManager

@@ -31,7 +31,6 @@ import com.lanraragi.reader.domain.parseRatingFromTags
 import kotlinx.coroutines.CancellationException
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.spider.SpiderDen
-import com.lanraragi.reader.spider.SpiderInfo
 import com.lanraragi.framework.lib.yorozuya.ObjectUtils
 import com.lanraragi.reader.domain.Archive
 
@@ -547,17 +546,6 @@ class DownloadManager(
                     } catch (e: Exception) {
                         Log.w(TAG, "Server progress reset failed for ${di.arcid} (offline?)", e)
                     }
-
-                    // 4. Legacy EhViewer-era SpiderInfo file, when present.
-                    val dir = SpiderDen.getGalleryDownloadDir(di.arcid, di.title) ?: continue
-                    val file = dir.findFile(".ehviewer") ?: continue
-                    val si = SpiderInfo.read(file) ?: continue
-                    si.startPage = 0
-                    try {
-                        file.openOutputStream()?.use { os -> si.write(os) }
-                    } catch (e: IOException) {
-                        Log.e(TAG, "Can't write SpiderInfo", e)
-                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to reset reading progress", e)
@@ -606,7 +594,6 @@ class DownloadManager(
 
     companion object {
         private val TAG = DownloadManager::class.java.simpleName
-        const val DOWNLOAD_INFO_FILENAME = ".ehviewer"
         const val DOWNLOAD_INFO_HEADER = "gid,token,title,title_jpn,thumb,category,posted,uploader,rating,rated,simple_lang,simple_tags,thumb_width,thumb_height,span_size,span_index,span_group_index,favorite_slot,favorite_name,pages"
         @JvmField val DATE_DESC_COMPARATOR: Comparator<DownloadInfo> = Comparator { lhs, rhs ->
             val dif = lhs.time - rhs.time

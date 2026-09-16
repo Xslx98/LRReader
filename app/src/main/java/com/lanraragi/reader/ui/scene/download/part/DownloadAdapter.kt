@@ -48,7 +48,6 @@ import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.download.DownloadService
 import com.lanraragi.reader.gallery.Pipe
 import com.lanraragi.reader.settings.DownloadSettings
-import com.lanraragi.reader.spider.SpiderInfo
 import com.lanraragi.reader.ui.scene.TransitionNameFactory
 import com.lanraragi.reader.ui.scene.download.DownloadsScene
 import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
@@ -91,7 +90,6 @@ class DownloadAdapter(
         fun positionInList(position: Int): Int
         fun listIndexInPage(position: Int): Int
         val list: List<DownloadInfo>?
-        val spiderInfoMap: Map<String, SpiderInfo>
         val downloadManager: DownloadManager?
         val recyclerView: EasyRecyclerView?
 
@@ -205,13 +203,6 @@ class DownloadAdapter(
                 holder.rating.visibility = View.GONE
             } else {
                 holder.rating.setRating(archive.rating)
-            }
-
-            val spiderInfo = info.arcid?.let { mCallback.spiderInfoMap[it] }
-            if (spiderInfo != null) {
-                val startPage = spiderInfo.startPage + 1
-                val readText = "$startPage/${spiderInfo.pages}"
-                holder.readProgress.text = readText
             }
 
             holder.category.visibility = View.GONE

@@ -26,7 +26,6 @@ import com.lanraragi.reader.download.DownloadState
 import com.lanraragi.reader.gallery.ReadingContext
 import com.lanraragi.reader.gallery.ReadingContextStore
 import com.lanraragi.reader.mapper.toArchive
-import com.lanraragi.reader.spider.SpiderInfo
 import com.lanraragi.reader.ui.GalleryActivity
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.client.api.isTankoubonId
@@ -133,8 +132,8 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
     }
 
     /**
-     * Processes the result from [GalleryActivity]. Updates spider info cache
-     * and notifies the adapter of the changed item.
+     * Processes the result from [GalleryActivity] and notifies the adapter of
+     * the changed item.
      */
     fun updateReadProcess(result: ActivityResult) {
         if (result.resultCode != DownloadsScene.LOCAL_GALLERY_INFO_CHANGE) return
@@ -143,20 +142,6 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
         @Suppress("DEPRECATION")
         val archive = data.getParcelableExtra<Archive>(GalleryActivity.EXTRA_RESULT_ARCHIVE) ?: return
         val arcid = archive.arcid
-
-        callback.viewModel.removeSpiderInfo(arcid)
-        callback.viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val spiderInfo = withContext(Dispatchers.IO) {
-                    SpiderInfo.getSpiderInfo(arcid)
-                }
-                if (spiderInfo != null) {
-                    callback.viewModel.putSpiderInfo(arcid, spiderInfo)
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to load spider info", e)
-            }
-        }
 
         val list = callback.mList ?: return
         val adapter = callback.mAdapter ?: return

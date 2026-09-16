@@ -68,7 +68,5 @@ class SpiderQueen private constructor() : Runnable {
         const val STATE_FINISHED = 2
         const val STATE_FAILED = 3
         const val DECODE_THREAD_NUM = 2
-        const val SPIDER_INFO_FILENAME = ".ehviewer"
-        const val SPIDER_INFO_BACKUP_DIR = "backupDir"
     }
 }
