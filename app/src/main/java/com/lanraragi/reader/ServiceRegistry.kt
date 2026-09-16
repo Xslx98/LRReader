@@ -15,11 +15,11 @@ import com.lanraragi.reader.module.NetworkModule
 
 /**
  * Central service registry that replaces the Service Locator pattern
- * previously embedded in EhApplication. All singletons are organized
+ * previously embedded in LRReaderApplication. All singletons are organized
  * into domain-specific modules and exposed as interface references so
  * that consumers depend on contracts rather than concrete classes.
  *
- * Must be initialized after Settings.initialize() in EhApplication.onCreate().
+ * Must be initialized after Settings.initialize() in LRReaderApplication.onCreate().
  */
 object ServiceRegistry {
 
@@ -49,7 +49,7 @@ object ServiceRegistry {
 
     /**
      * Initialize all modules with their production implementations. Must be called
-     * from EhApplication.onCreate() after Settings and EhDB have been initialized.
+     * from LRReaderApplication.onCreate() after Settings and LegacyDb have been initialized.
      */
     fun initialize(context: Context) {
         cacheables.clear()

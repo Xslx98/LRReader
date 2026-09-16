@@ -39,7 +39,7 @@ import com.lanraragi.framework.conaco.Conaco;
 import com.lanraragi.framework.conaco.ConacoTask;
 import com.lanraragi.framework.conaco.Unikery;
 import com.lanraragi.framework.drawable.PreciselyClipDrawable;
-import com.lanraragi.reader.EhApplication;
+import com.lanraragi.reader.LRReaderApplication;
 import com.lanraragi.reader.ServiceRegistry;
 import com.lanraragi.reader.R;
 import com.lanraragi.framework.lib.image.Image;

@@ -5,8 +5,8 @@ import com.lanraragi.reader.client.api.data.LRRCategory
 /**
  * Repository for quick-search-related database operations, backed by [BrowsingRoomDao].
  *
- * Thin delegation layer extracted from [com.lanraragi.reader.EhDB] as part of the
- * incremental God Object decomposition. No business logic beyond what EhDB
+ * Thin delegation layer extracted from [com.lanraragi.reader.LegacyDb] as part of the
+ * incremental God Object decomposition. No business logic beyond what LegacyDb
  * already had (id/time assignment, reorder algorithm).
  *
  * Registered as a lazy val in [com.lanraragi.reader.module.DataModule].

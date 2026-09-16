@@ -23,7 +23,7 @@ import org.robolectric.annotation.Config
  * Run with: ./gradlew testAppReleaseDebugUnitTest --tests "*.RoomMigrationTest"
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(application = android.app.Application::class) // Bypass EhApplication native lib
+@Config(application = android.app.Application::class) // Bypass LRReaderApplication native lib
 class RoomMigrationTest {
 
     private lateinit var db: AppDatabase

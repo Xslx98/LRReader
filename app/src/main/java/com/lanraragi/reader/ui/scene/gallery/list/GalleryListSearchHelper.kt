@@ -4,7 +4,7 @@ import android.view.Gravity
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import com.lanraragi.reader.client.data.ListUrlBuilder
-import com.lanraragi.reader.client.exception.EhException
+import com.lanraragi.reader.client.exception.AppException
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.reader.widget.SearchLayout
@@ -78,7 +78,7 @@ internal class GalleryListSearchHelper(private val callback: Callback) {
         ) {
             try {
                 searchLayout.formatListUrlBuilder(urlBuilder, cleanQuery)
-            } catch (e: EhException) {
+            } catch (e: AppException) {
                 callback.showTip(e.message ?: "", BaseScene.LENGTH_LONG)
                 return
             }

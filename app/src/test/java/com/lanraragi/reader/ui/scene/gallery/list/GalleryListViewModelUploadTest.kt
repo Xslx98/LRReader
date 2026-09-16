@@ -3,8 +3,8 @@ package com.lanraragi.reader.ui.scene.gallery.list
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.EhDB
-import com.lanraragi.reader.EhProxySelector
+import com.lanraragi.reader.LegacyDb
+import com.lanraragi.reader.AppProxySelector
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.module.IAppModule
@@ -59,9 +59,9 @@ class GalleryListViewModelUploadTest {
         db = Room.inMemoryDatabaseBuilder(ctx, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        val field = EhDB::class.java.getDeclaredField("sDatabase")
+        val field = LegacyDb::class.java.getDeclaredField("sDatabase")
         field.isAccessible = true
-        field.set(EhDB, db)
+        field.set(LegacyDb, db)
 
         LRRAuthManager.initialize(ctx)
         LRRAuthManager.initializeForTesting(
@@ -78,7 +78,7 @@ class GalleryListViewModelUploadTest {
 
         val testNetworkModule = object : INetworkModule {
             override val cache: Cache get() = Cache(File(ctx.cacheDir, "upload-test-cache"), 1024)
-            override val proxySelector: EhProxySelector get() = throw UnsupportedOperationException()
+            override val proxySelector: AppProxySelector get() = throw UnsupportedOperationException()
             override val okHttpClient: OkHttpClient = client
             override val longReadClient: OkHttpClient = client
             override val uploadClient: OkHttpClient = client

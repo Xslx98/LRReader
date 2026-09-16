@@ -15,19 +15,19 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Tests for EhDB async DAO operations.
+ * Tests for LegacyDb async DAO operations.
  *
  * **History:** Prior to W3-5 (2026-04-11), this test verified the `blockingDb()` main-thread
- * guard. That guard and all `@JvmStatic blockingDb`-bridged methods have been deleted — EhDB
+ * guard. That guard and all `@JvmStatic blockingDb`-bridged methods have been deleted — LegacyDb
  * now exposes only `suspend fun *Async()` methods. The test has been updated to verify the
  * async methods work correctly via Room's in-memory database.
  *
- * Uses in-memory Room directly (bypassing EhDB.initialize() which requires Settings to be
+ * Uses in-memory Room directly (bypassing LegacyDb.initialize() which requires Settings to be
  * initialized).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30], application = android.app.Application::class)
-class EhDBMainThreadCheckTest {
+class LegacyDbMainThreadCheckTest {
 
     private lateinit var db: AppDatabase
 
@@ -69,16 +69,16 @@ class EhDBMainThreadCheckTest {
 
     /**
      * Verifies that `getDownloadDirname` and `putDownloadDirname` @JvmStatic bridges
-     * no longer exist on [EhDB]. This is a compile-time guarantee — if someone re-adds
+     * no longer exist on [LegacyDb]. This is a compile-time guarantee — if someone re-adds
      * a `blockingDb` bridge, this test will fail to compile.
      *
      * At runtime, we verify the async variants work correctly via the DAO.
      */
     @Test
     fun blockingDbBridges_removed() {
-        // Compile-time proof: EhDB has no getDownloadDirname or putDownloadDirname methods.
+        // Compile-time proof: LegacyDb has no getDownloadDirname or putDownloadDirname methods.
         // If someone re-adds them, the reflection check below will fail the assertion.
-        val ehdbMethods = EhDB::class.java.declaredMethods.map { it.name }
+        val ehdbMethods = LegacyDb::class.java.declaredMethods.map { it.name }
         assertFalse(
             "getDownloadDirname blockingDb bridge should not exist",
             ehdbMethods.contains("getDownloadDirname")

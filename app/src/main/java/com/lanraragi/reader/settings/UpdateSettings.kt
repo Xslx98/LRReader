@@ -1,6 +1,6 @@
 package com.lanraragi.reader.settings
 
-import com.lanraragi.reader.EhApplication
+import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.Settings
 
 /**
@@ -14,7 +14,7 @@ object UpdateSettings {
 
     // --- Beta Update Channel ---
     private const val KEY_BETA_UPDATE_CHANNEL = "beta_update_channel"
-    private val DEFAULT_BETA_UPDATE_CHANNEL = EhApplication.BETA
+    private val DEFAULT_BETA_UPDATE_CHANNEL = LRReaderApplication.BETA
 
     @JvmStatic
     fun getBetaUpdateChannel(): Boolean =

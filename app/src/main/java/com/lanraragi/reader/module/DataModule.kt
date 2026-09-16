@@ -21,7 +21,7 @@ import java.io.File
 /**
  * Manages data-layer singletons: DownloadManager, GalleryDetailCache,
  * SpiderInfoCache, and FavouriteStatusRouter.
- * Extracted from EhApplication to reduce its responsibility scope.
+ * Extracted from LRReaderApplication to reduce its responsibility scope.
  */
 class DataModule(private val context: Context) : IDataModule, Cacheable {
 

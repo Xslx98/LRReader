@@ -5,7 +5,7 @@ import androidx.collection.LruCache
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.framework.beerbelly.SimpleDiskCache
-import com.lanraragi.reader.EhDB
+import com.lanraragi.reader.LegacyDb
 import com.lanraragi.reader.FavouriteStatusRouter
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.domain.ArchiveDetail
@@ -66,10 +66,10 @@ class QuickSearchViewModelTest {
             .setTransactionExecutor { it.run() }
             .build()
 
-        // Still needed for any EhDB calls that remain in the delegation chain
-        val field = EhDB::class.java.getDeclaredField("sDatabase")
+        // Still needed for any LegacyDb calls that remain in the delegation chain
+        val field = LegacyDb::class.java.getDeclaredField("sDatabase")
         field.isAccessible = true
-        field.set(EhDB, db)
+        field.set(LegacyDb, db)
 
         // Set up ServiceRegistry with a test DataModule providing the repository
         ServiceRegistry.initializeForTest(

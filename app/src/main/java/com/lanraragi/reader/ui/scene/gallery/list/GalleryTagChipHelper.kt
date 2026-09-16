@@ -13,7 +13,7 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.hippo.android.resource.AttrResources
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.EhTagDatabase
+import com.lanraragi.reader.client.TagTranslationDatabase
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.settings.AppearanceSettings
@@ -48,13 +48,13 @@ class GalleryTagChipHelper(private val callback: Callback) {
     private var popupWindow: PopupWindow? = null
     private var popupWindowPosition = -1
     private var tagDialog: GalleryListSceneDialog? = null
-    private var ehTags: EhTagDatabase? = null
+    private var ehTags: TagTranslationDatabase? = null
 
-    fun setEhTags(tags: EhTagDatabase?) {
+    fun setEhTags(tags: TagTranslationDatabase?) {
         ehTags = tags
     }
 
-    fun getEhTags(): EhTagDatabase? = ehTags
+    fun getEhTags(): TagTranslationDatabase? = ehTags
 
     fun dismissPopup() {
         popupWindow?.dismiss()
@@ -188,7 +188,7 @@ class GalleryTagChipHelper(private val callback: Callback) {
 
     private fun ensureEhTags() {
         if (ehTags == null) {
-            ehTags = EhTagDatabase.getInstance(callback.requireContext())
+            ehTags = TagTranslationDatabase.getInstance(callback.requireContext())
         }
     }
 }

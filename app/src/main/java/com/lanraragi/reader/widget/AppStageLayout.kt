@@ -21,7 +21,7 @@ import android.util.AttributeSet
 import com.hippo.drawerlayout.DrawerLayoutChild
 import com.lanraragi.framework.scene.StageLayout
 
-class EhStageLayout @JvmOverloads constructor(
+class AppStageLayout @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0

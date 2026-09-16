@@ -30,7 +30,7 @@ object DailyReadingAggregateRecorder : ReadingSessionEvents.Listener {
     }
 
     override fun onSessionEnd(end: ReadingSessionEnd) {
-        val app = runCatching { com.lanraragi.reader.EhApplication.instance }.getOrNull() ?: return
+        val app = runCatching { com.lanraragi.reader.LRReaderApplication.instance }.getOrNull() ?: return
         ServiceRegistry.coroutineModule.ioScope.launch {
             try {
                 record(AppDatabase.getInstance(app), end, LocalDate.now().toEpochDay())

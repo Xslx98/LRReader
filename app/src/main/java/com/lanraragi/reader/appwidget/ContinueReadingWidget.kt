@@ -46,7 +46,7 @@ object ContinueReadingWidget : ReadingSessionEvents.Listener {
     }
 
     override fun onSessionEnd(end: ReadingSessionEnd) {
-        val context = com.lanraragi.reader.EhApplication.instance
+        val context = com.lanraragi.reader.LRReaderApplication.instance
         ServiceRegistry.coroutineModule.ioScope.launch {
             try {
                 update(
@@ -118,7 +118,7 @@ object ContinueReadingWidget : ReadingSessionEvents.Listener {
      * [ContinueReadingShortcut.removeSafely].
      */
     fun refreshSafely() {
-        val app = runCatching { com.lanraragi.reader.EhApplication.instance }.getOrNull() ?: return
+        val app = runCatching { com.lanraragi.reader.LRReaderApplication.instance }.getOrNull() ?: return
         ServiceRegistry.coroutineModule.ioScope.launch {
             try {
                 refresh(

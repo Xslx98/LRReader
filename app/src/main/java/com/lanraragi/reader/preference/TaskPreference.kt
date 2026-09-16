@@ -27,7 +27,7 @@ import android.view.View
 import android.widget.ProgressBar
 import androidx.appcompat.app.AlertDialog
 import androidx.customview.view.AbsSavedState
-import com.lanraragi.reader.EhApplication
+import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.framework.lib.yorozuya.IntIdGenerator
@@ -53,7 +53,7 @@ abstract class TaskPreference : DialogPreference {
         if (mTask == null) {
             mTask = onCreateTask().also { task ->
                 task.setPreference(this)
-                mTaskId = (context.applicationContext as EhApplication).putGlobalStuff(task)
+                mTaskId = (context.applicationContext as LRReaderApplication).putGlobalStuff(task)
                 task.launch()
             }
         }
@@ -91,7 +91,7 @@ abstract class TaskPreference : DialogPreference {
         val myState = state as SavedState
         mTaskId = myState.asyncTaskId
         if (IntIdGenerator.INVALID_ID != mTaskId) {
-            val o = (context.applicationContext as EhApplication).getGlobalStuff(mTaskId)
+            val o = (context.applicationContext as LRReaderApplication).getGlobalStuff(mTaskId)
             if (o is Task) {
                 mTask = o
                 mTask!!.setPreference(this)
@@ -131,14 +131,14 @@ abstract class TaskPreference : DialogPreference {
 
     abstract class Task(context: Context) : Runnable {
 
-        private val mApplication: EhApplication = context.applicationContext as EhApplication
+        private val mApplication: LRReaderApplication = context.applicationContext as LRReaderApplication
         @Volatile
         private var mPreference: TaskPreference? = null
         @Volatile
         private var mCancelled: Boolean = false
         private val mMainHandler: Handler = Handler(Looper.getMainLooper())
 
-        fun getApplication(): EhApplication = mApplication
+        fun getApplication(): LRReaderApplication = mApplication
 
         fun getPreference(): TaskPreference? = mPreference
 

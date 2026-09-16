@@ -21,7 +21,7 @@ import android.os.Parcelable
 import android.text.TextUtils
 import android.util.Log
 import androidx.annotation.IntDef
-import com.lanraragi.reader.client.EhConfig
+import com.lanraragi.reader.client.LegacyCategoryConfig
 import com.lanraragi.reader.client.LRRUrl
 import com.lanraragi.reader.client.LRRUtils
 import com.lanraragi.reader.dao.QuickSearch
@@ -285,19 +285,19 @@ class ListUrlBuilder : Cloneable, Parcelable {
 
             when (key) {
                 "f_cats" -> {
-                    val cats = NumberUtils.parseIntSafely(value, EhConfig.ALL_CATEGORY)
-                    parsedCategory = parsedCategory or (cats.inv() and EhConfig.ALL_CATEGORY)
+                    val cats = NumberUtils.parseIntSafely(value, LegacyCategoryConfig.ALL_CATEGORY)
+                    parsedCategory = parsedCategory or (cats.inv() and LegacyCategoryConfig.ALL_CATEGORY)
                 }
-                "f_doujinshi" -> if ("1" == value) parsedCategory = parsedCategory or EhConfig.DOUJINSHI
-                "f_manga" -> if ("1" == value) parsedCategory = parsedCategory or EhConfig.MANGA
-                "f_artistcg" -> if ("1" == value) parsedCategory = parsedCategory or EhConfig.ARTIST_CG
-                "f_gamecg" -> if ("1" == value) parsedCategory = parsedCategory or EhConfig.GAME_CG
-                "f_western" -> if ("1" == value) parsedCategory = parsedCategory or EhConfig.WESTERN
-                "f_non-h" -> if ("1" == value) parsedCategory = parsedCategory or EhConfig.NON_H
-                "f_imageset" -> if ("1" == value) parsedCategory = parsedCategory or EhConfig.IMAGE_SET
-                "f_cosplay" -> if ("1" == value) parsedCategory = parsedCategory or EhConfig.COSPLAY
-                "f_asianporn" -> if ("1" == value) parsedCategory = parsedCategory or EhConfig.ASIAN_PORN
-                "f_misc" -> if ("1" == value) parsedCategory = parsedCategory or EhConfig.MISC
+                "f_doujinshi" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.DOUJINSHI
+                "f_manga" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.MANGA
+                "f_artistcg" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.ARTIST_CG
+                "f_gamecg" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.GAME_CG
+                "f_western" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.WESTERN
+                "f_non-h" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.NON_H
+                "f_imageset" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.IMAGE_SET
+                "f_cosplay" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.COSPLAY
+                "f_asianporn" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.ASIAN_PORN
+                "f_misc" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.MISC
                 "f_search" -> {
                     try {
                         parsedKeyword = URLDecoder.decode(value, "utf-8")
@@ -429,7 +429,7 @@ class ListUrlBuilder : Cloneable, Parcelable {
                 val url = if (mode == MODE_NORMAL) LRRUrl.getHost() else LRRUrl.getWatchedUrl()
                 val ub = UrlBuilder(url)
                 if (category != LRRUtils.NONE) {
-                    ub.addQuery("f_cats", category.inv() and EhConfig.ALL_CATEGORY)
+                    ub.addQuery("f_cats", category.inv() and LegacyCategoryConfig.ALL_CATEGORY)
                 }
                 // Search key
                 keyword?.trim()?.takeIf { it.isNotEmpty() }?.let {

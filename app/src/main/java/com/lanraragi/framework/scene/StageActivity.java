@@ -30,7 +30,7 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.lanraragi.reader.R;
-import com.lanraragi.reader.ui.EhActivity;
+import com.lanraragi.reader.ui.BaseActivity;
 import com.lanraragi.framework.lib.yorozuya.AssertUtils;
 import com.lanraragi.framework.lib.yorozuya.IntIdGenerator;
 
@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public abstract class StageActivity extends EhActivity {
+public abstract class StageActivity extends BaseActivity {
 
     private static final String TAG = StageActivity.class.getSimpleName();
 

@@ -19,7 +19,7 @@ package com.lanraragi.reader.preference
 import android.content.Context
 import android.util.AttributeSet
 import android.widget.Toast
-import com.lanraragi.reader.EhApplication
+import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.DownloadSettings
@@ -35,7 +35,7 @@ class CleanRedundancyPreference : TaskPreference {
 
     private class ClearTask(context: Context) : Task(context) {
 
-        private val mApplication: EhApplication = context.applicationContext as EhApplication
+        private val mApplication: LRReaderApplication = context.applicationContext as LRReaderApplication
         private val mManager = ServiceRegistry.dataModule.downloadManager
 
         // Snapshot of arcid prefixes for all known downloads. Files in the

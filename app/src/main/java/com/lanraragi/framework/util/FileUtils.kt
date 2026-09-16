@@ -12,7 +12,7 @@ import android.util.Log
 import androidx.core.net.toUri
 import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.EhConfig
+import com.lanraragi.reader.client.LegacyCategoryConfig
 import com.lanraragi.framework.lib.yorozuya.IOUtils
 import com.lanraragi.framework.unifile.UniFile
 import java.io.File
@@ -130,7 +130,7 @@ class FileUtils {
 //                    Uri uri = Uri.parse(path);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val uri =
-                    ("content://com.android.externalstorage.documents/document/primary%3ADownload/" + EhConfig.TORRENT_PATH).toUri()
+                    ("content://com.android.externalstorage.documents/document/primary%3ADownload/" + LegacyCategoryConfig.TORRENT_PATH).toUri()
                 intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
                 intent.addCategory(Intent.CATEGORY_OPENABLE)
                 intent.setType("*/*")

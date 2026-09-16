@@ -17,12 +17,12 @@ import org.robolectric.annotation.Config
  * Uses Robolectric + in-memory Room database (no emulator needed).
  *
  * @Config(application = ...) is NOT set to avoid loading the real Application
- * class (EhApplication) which loads native libraries.
+ * class (LRReaderApplication) which loads native libraries.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(
     sdk = [30],
-    application = android.app.Application::class  // bypass EhApplication
+    application = android.app.Application::class  // bypass LRReaderApplication
 )
 class ServerProfileDaoTest {
 

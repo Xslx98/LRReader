@@ -24,7 +24,7 @@ import android.util.AttributeSet
 import android.widget.LinearLayout
 import com.hippo.drawerlayout.DrawerLayoutChild
 
-class EhNavigationView @JvmOverloads constructor(
+class AppNavigationView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0

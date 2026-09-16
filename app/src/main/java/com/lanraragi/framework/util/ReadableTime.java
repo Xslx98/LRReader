@@ -61,7 +61,7 @@ public final class ReadableTime {
 
     /**
      * Formats live in a nested holder so that loading ReadableTime (which
-     * EhApplication.onCreate does via initialize()) does NOT construct six
+     * LRReaderApplication.onCreate does via initialize()) does NOT construct six
      * SimpleDateFormats + a Calendar on the main thread — SimpleDateFormat
      * construction loads ICU locale data, a well-known one-time hit that
      * nothing needs until the first timestamp is actually rendered. JVM

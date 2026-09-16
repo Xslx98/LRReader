@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 /**
  * Repository for server profile database operations, backed by [MiscRoomDao].
  *
- * Second domain repository extracted from [com.lanraragi.reader.EhDB] (after
+ * Second domain repository extracted from [com.lanraragi.reader.LegacyDb] (after
  * [HistoryRepository]), continuing the incremental God Object decomposition.
  *
  * Registered as a lazy val in [com.lanraragi.reader.module.DataModule].

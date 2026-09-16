@@ -7,8 +7,8 @@ import android.content.Intent
  * app returns to the foreground", plus an optional resume intent so the user
  * can be put back where they were after unlock (e.g. reader auto-resume).
  *
- * EhApplication wires a `ProcessLifecycleOwner` observer that calls
- * [onAppBackgrounded] from `ON_STOP`. EhActivity / MainActivity read the flag
+ * LRReaderApplication wires a `ProcessLifecycleOwner` observer that calls
+ * [onAppBackgrounded] from `ON_STOP`. BaseActivity / MainActivity read the flag
  * from `onResume` to decide whether to bounce the user back to SecurityScene.
  *
  * Reads/writes happen on the main thread in normal use; fields are marked

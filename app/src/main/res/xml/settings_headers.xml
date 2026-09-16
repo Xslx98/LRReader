@@ -21,7 +21,7 @@
         android:icon="@drawable/v_sad_panda_primary_x24"
         android:title="@string/settings_eh"
 
-        app:fragment="com.lanraragi.reader.ui.fragment.EhFragment" />
+        app:fragment="com.lanraragi.reader.ui.fragment.AppearanceFragment" />
 
     <com.lanraragi.reader.ui.fragment.BasePreference
         android:icon="@drawable/v_book_open_primary_x24"

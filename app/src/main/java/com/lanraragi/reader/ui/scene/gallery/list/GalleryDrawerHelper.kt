@@ -17,7 +17,7 @@ import androidx.viewpager.widget.ViewPager
 import com.lanraragi.framework.app.CheckBoxDialogBuilder
 import com.lanraragi.framework.app.EditTextDialogBuilder
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.EhTagDatabase
+import com.lanraragi.reader.client.TagTranslationDatabase
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.QuickSearch
@@ -42,7 +42,7 @@ class GalleryDrawerHelper(private val callback: Callback) {
         fun getScene(): GalleryListScene
         fun getSceneTag(): String?
         fun getUrlBuilder(): ListUrlBuilder?
-        fun getEhTags(): EhTagDatabase?
+        fun getEhTags(): TagTranslationDatabase?
         fun showTip(resId: Int, length: Int)
         fun showTip(message: String, length: Int)
         fun getString(resId: Int): String

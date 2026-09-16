@@ -3,7 +3,7 @@ package com.lanraragi.reader.download
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.EhDB
+import com.lanraragi.reader.LegacyDb
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.mapper.toArchive
@@ -32,8 +32,8 @@ import com.lanraragi.reader.download.DownloadState
  * Unit tests for [DownloadManager] — the core download state management class.
  *
  * Uses Robolectric for Android Context + an in-memory Room database injected
- * into [EhDB] via reflection to avoid the AppDatabase singleton cache and
- * the Settings dependency in [EhDB.initialize].
+ * into [LegacyDb] via reflection to avoid the AppDatabase singleton cache and
+ * the Settings dependency in [LegacyDb.initialize].
  */
 
 @RunWith(RobolectricTestRunner::class)
@@ -91,14 +91,14 @@ class DownloadManagerTest {
             .setTransactionExecutor { it.run() }
             .build()
 
-        // Inject into EhDB via reflection (bypass EhDB.initialize which has Settings dependency)
-        val dbField = EhDB::class.java.getDeclaredField("sDatabase")
+        // Inject into LegacyDb via reflection (bypass LegacyDb.initialize which has Settings dependency)
+        val dbField = LegacyDb::class.java.getDeclaredField("sDatabase")
         dbField.isAccessible = true
-        dbField.set(EhDB, db)
+        dbField.set(LegacyDb, db)
 
         // Provide a DataModule with downloadDbRepository so that
         // DownloadRepository (the in-memory layer) can resolve DB operations
-        // through ServiceRegistry instead of the deprecated EhDB methods.
+        // through ServiceRegistry instead of the deprecated LegacyDb methods.
         ServiceRegistry.initializeForTest(
             data = object : com.lanraragi.reader.module.IDataModule {
                 override val searchHistoryRepository get() = throw NotImplementedError("not needed")

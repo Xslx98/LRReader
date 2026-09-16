@@ -19,18 +19,18 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.lanraragi.reader.widget.EhDrawerLayout
+    <com.lanraragi.reader.widget.AppDrawerLayout
         android:id="@+id/draw_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fitsSystemWindows="true">
 
-        <com.lanraragi.reader.widget.EhStageLayout
+        <com.lanraragi.reader.widget.AppStageLayout
             android:id="@+id/fragment_container"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <com.lanraragi.reader.widget.EhNavigationView
+        <com.lanraragi.reader.widget.AppNavigationView
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_gravity="start"
@@ -39,7 +39,7 @@
             android:orientation="vertical"
             app:insetForeground="@android:color/transparent">
 
-            <!-- Menu and theme-toggle row are stacked siblings (EhNavigationView
+            <!-- Menu and theme-toggle row are stacked siblings (AppNavigationView
                  is a vertical LinearLayout), NOT an overlay: the drawer panel
                  spans screen-minus-56dp — far wider than the 280dp menu — and a
                  match_parent overlay child inflates a wrap_content ancestor to
@@ -91,9 +91,9 @@
                     android:textAppearance="?attr/textAppearanceSubtitle2"
                     android:textColor="?android:attr/textColorSecondary" />
             </LinearLayout>
-        </com.lanraragi.reader.widget.EhNavigationView>
+        </com.lanraragi.reader.widget.AppNavigationView>
 
-        <com.lanraragi.reader.widget.EhDrawerView
+        <com.lanraragi.reader.widget.AppDrawerView
             android:id="@+id/right_drawer"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
@@ -102,5 +102,5 @@
             android:clickable="true"
             android:maxWidth="@dimen/drawer_max_width" />
 
-    </com.lanraragi.reader.widget.EhDrawerLayout>
+    </com.lanraragi.reader.widget.AppDrawerLayout>
 </com.lanraragi.framework.widget.SafeCoordinatorLayout>

@@ -5,7 +5,7 @@ import androidx.core.content.edit
 import java.util.concurrent.TimeUnit
 
 /**
- * Throttles [EhTagDatabase] network update checks.
+ * Throttles [TagTranslationDatabase] network update checks.
  *
  * The update check used to hit GitHub on every MainActivity creation (cold
  * start, rotation, theme toggle) with no TTL — a WAN request plus a full

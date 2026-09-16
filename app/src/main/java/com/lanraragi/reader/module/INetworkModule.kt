@@ -1,6 +1,6 @@
 package com.lanraragi.reader.module
 
-import com.lanraragi.reader.EhProxySelector
+import com.lanraragi.reader.AppProxySelector
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
@@ -16,7 +16,7 @@ interface INetworkModule {
     val cache: Cache
 
     /** Proxy selector respecting Settings-driven proxy configuration. */
-    val proxySelector: EhProxySelector
+    val proxySelector: AppProxySelector
 
     /** Main HTTP client used for API calls and short-read operations. */
     val okHttpClient: OkHttpClient

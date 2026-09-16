@@ -59,7 +59,7 @@ import com.lanraragi.framework.util.ReadableTime
 import java.io.File
 import java.util.Locale
 
-class EhApplication : RecordingApplication() {
+class LRReaderApplication : RecordingApplication() {
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -69,7 +69,7 @@ class EhApplication : RecordingApplication() {
         // Apply locale before super.attachBaseContext() so the Application context
         // uses the correct language. Settings is not yet initialized here, so read
         // the preference directly from SharedPreferences and resolve it via the
-        // shared AppearanceSettings.resolveAppLocale (same logic EhActivity uses).
+        // shared AppearanceSettings.resolveAppLocale (same logic BaseActivity uses).
         var locale: Locale? = null
         try {
             val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(base)
@@ -152,19 +152,19 @@ class EhApplication : RecordingApplication() {
 
         // Wrap each main-thread initialiser in a Trace section so cold-start
         // profiles in Android Studio Profiler / perfetto show exactly which
-        // step dominates EhApplication.onCreate. Tracing is built into the OS
+        // step dominates LRReaderApplication.onCreate. Tracing is built into the OS
         // and is essentially free at runtime — kept enabled for release too
         // so production cold-start traces are not a black box.
-        trace("EhApp.GetText.init") { GetText.initialize(this) }
-        trace("EhApp.StatusCodeException.init") {
+        trace("LRRApp.GetText.init") { GetText.initialize(this) }
+        trace("LRRApp.StatusCodeException.init") {
             com.lanraragi.framework.network.StatusCodeException.initialize(this)
         }
-        trace("EhApp.Settings.init") { Settings.initialize(this) }
-        trace("EhApp.ReadableTime.init") { ReadableTime.initialize(this) }
-        trace("EhApp.AppConfig.init") { AppConfig.initialize(this) }
+        trace("LRRApp.Settings.init") { Settings.initialize(this) }
+        trace("LRRApp.ReadableTime.init") { ReadableTime.initialize(this) }
+        trace("LRRApp.AppConfig.init") { AppConfig.initialize(this) }
         // Skip SpiderDen disk cache in LRR mode — it's EH-specific and wastes 40-640MB
         // SpiderDen.initialize(this);
-        trace("EhApp.EhDB.init") { EhDB.initialize(this) }
+        trace("LRRApp.LegacyDb.init") { LegacyDb.initialize(this) }
 
         // Load active server profile into LRRAuthManager asynchronously, and verify
         // every profile has its API key still encrypted in storage. If any profile
@@ -179,7 +179,7 @@ class EhApplication : RecordingApplication() {
                 // async initialize. Inside the try so the finally still completes
                 // activeProfileIdDeferred if join() ever throws.
                 authInitJob.join()
-                val allProfiles = com.lanraragi.reader.dao.AppDatabase.getInstance(this@EhApplication)
+                val allProfiles = com.lanraragi.reader.dao.AppDatabase.getInstance(this@LRReaderApplication)
                     .miscDao().getAllServerProfiles()
                 LRRAuthManager.markReauthIfProfilesUnprotected(allProfiles.map { it.id })
                 val activeProfile = allProfiles.firstOrNull { it.isActive }
@@ -210,8 +210,8 @@ class EhApplication : RecordingApplication() {
         // Legacy migration — runs once on first launch after upgrading from old DB format.
         // ServiceRegistry is not yet initialized, so use AppModule.bootScope.
         AppModule.bootScope.launch {
-            if (EhDB.needMerge()) {
-                EhDB.mergeOldDB(this@EhApplication)
+            if (LegacyDb.needMerge()) {
+                LegacyDb.mergeOldDB(this@LRReaderApplication)
             }
         }
 
@@ -225,8 +225,8 @@ class EhApplication : RecordingApplication() {
                 val profileId = AppModule.activeProfileIdDeferred.await()
                 if (profileId != null) {
                     com.lanraragi.reader.dao.LegacySearchHistoryImporter.importIfPresent(
-                        this@EhApplication,
-                        com.lanraragi.reader.dao.AppDatabase.getInstance(this@EhApplication),
+                        this@LRReaderApplication,
+                        com.lanraragi.reader.dao.AppDatabase.getInstance(this@LRReaderApplication),
                         profileId,
                     )
                 }
@@ -235,7 +235,7 @@ class EhApplication : RecordingApplication() {
             }
         }
 
-        trace("EhApp.LRRClientProvider.init") { LRRClientProvider.init(this) }
+        trace("LRRApp.LRRClientProvider.init") { LRRClientProvider.init(this) }
 
         // Continue-reading shortcut publisher rides the reading-session-end
         // seam (issue #15). Registration is cheap; work happens per session end.
@@ -254,14 +254,14 @@ class EhApplication : RecordingApplication() {
         // keep off the cold-start main thread.
         AppModule.bootScope.launch {
             try {
-                com.lanraragi.reader.shortcuts.AppShortcuts.registerBaseline(this@EhApplication)
+                com.lanraragi.reader.shortcuts.AppShortcuts.registerBaseline(this@LRReaderApplication)
             } catch (e: Exception) {
                 Log.w(TAG, "baseline shortcut registration failed")
             }
         }
 
-        // Initialize ServiceRegistry (must be after Settings/EhDB)
-        trace("EhApp.ServiceRegistry.init") { ServiceRegistry.initialize(this) }
+        // Initialize ServiceRegistry (must be after Settings/LegacyDb)
+        trace("LRRApp.ServiceRegistry.init") { ServiceRegistry.initialize(this) }
         // Eagerly start network monitoring so isAvailable() is ready before first API call
         ServiceRegistry.networkModule.networkMonitor
         // Eagerly start the profile snapshot collector. Interceptors and the
@@ -292,8 +292,8 @@ class EhApplication : RecordingApplication() {
         // libehviewer.so needs no eager load: its only consumer (GifHandler)
         // loads it in its own static initializer on first use.
         ServiceRegistry.coroutineModule.ioScope.launch {
-            BitmapUtils.initialize(this@EhApplication)
-            Image.initialize(this@EhApplication)
+            BitmapUtils.initialize(this@LRReaderApplication)
+            Image.initialize(this@LRReaderApplication)
         }
 
         // One-time http_cache purge (audit #29): thumbnails used to be
@@ -345,7 +345,7 @@ class EhApplication : RecordingApplication() {
         // background. ProcessLifecycleOwner debounces by ~700 ms, so config
         // changes (rotation), the notification shade, BiometricPrompt, and
         // other transient overlays do NOT fire ON_STOP and therefore do not
-        // trigger a spurious lock. EhActivity / MainActivity consume the flag
+        // trigger a spurious lock. BaseActivity / MainActivity consume the flag
         // from onResume and gate on hasPattern() there — keeping the
         // EncryptedSharedPreferences read off the lifecycle hot path.
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
@@ -490,7 +490,7 @@ class EhApplication : RecordingApplication() {
 
     // Backed by RecordingApplication's lifecycle-callback list — one registry
     // for recreate() and crash metadata instead of a parallel strong-ref list
-    // every EhActivity subclass had to maintain manually.
+    // every BaseActivity subclass had to maintain manually.
     val topActivity: Activity?
         get() = lastCreatedActivity
 
@@ -646,7 +646,7 @@ class EhApplication : RecordingApplication() {
     }
 
     companion object {
-        private val TAG = EhApplication::class.java.simpleName
+        private val TAG = LRReaderApplication::class.java.simpleName
 
         const val BETA: Boolean = false
 
@@ -657,7 +657,7 @@ class EhApplication : RecordingApplication() {
         private const val DEBUG_PRINT_INTERVAL = 3000L
 
         @JvmStatic
-        lateinit var instance: EhApplication
+        lateinit var instance: LRReaderApplication
             private set
     }
 }

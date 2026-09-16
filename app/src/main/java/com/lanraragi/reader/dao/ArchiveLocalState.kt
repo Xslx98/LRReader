@@ -86,7 +86,7 @@ data class ArchiveLocalState(
      * so an old download stays reachable at its original tree even after
      * the setting flips. NULL on:
      *   - rows lifted from pre-v26 databases before the boot backfill runs
-     *     (see EhApplication startup), and
+     *     (see LRReaderApplication startup), and
      *   - rows where the download was added before the column existed and
      *     the user has since cleared the download location.
      * NULL is the "use current setting" sentinel.

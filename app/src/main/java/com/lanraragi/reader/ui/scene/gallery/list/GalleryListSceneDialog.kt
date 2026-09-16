@@ -9,7 +9,7 @@ import androidx.appcompat.app.AlertDialog
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.UrlOpener
-import com.lanraragi.reader.client.EhTagDatabase
+import com.lanraragi.reader.client.TagTranslationDatabase
 import com.lanraragi.reader.client.LRRUrl
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.util.TagTranslationUtil
@@ -22,7 +22,7 @@ class GalleryListSceneDialog(val baseScene: BaseScene) {
         this.tagName = tagName
     }
 
-    fun showTagLongPressDialog(ehTags: EhTagDatabase?) {
+    fun showTagLongPressDialog(ehTags: TagTranslationDatabase?) {
         val temp: String?
         val index = tagName!!.indexOf(':')
         temp = if (index >= 0) {

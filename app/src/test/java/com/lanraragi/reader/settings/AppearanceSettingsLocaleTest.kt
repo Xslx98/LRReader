@@ -10,8 +10,8 @@ import java.util.Locale
 
 /**
  * Tests for [AppearanceSettings.resolveAppLocale] — the language-string → [Locale]
- * resolution shared by `EhApplication.attachBaseContext` and
- * `EhActivity.attachBaseContext`. A fresh process/activity reads the persisted
+ * resolution shared by `LRReaderApplication.attachBaseContext` and
+ * `BaseActivity.attachBaseContext`. A fresh process/activity reads the persisted
  * `app_language` value and resolves it here, so this is the logic that decides
  * which locale the whole UI (and the app-context strings behind GetText /
  * notifications / services) uses.

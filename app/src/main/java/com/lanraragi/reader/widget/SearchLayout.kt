@@ -35,7 +35,7 @@ import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.easyrecyclerview.MarginItemDecoration
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.data.ListUrlBuilder
-import com.lanraragi.reader.client.exception.EhException
+import com.lanraragi.reader.client.exception.AppException
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 
 /**
@@ -177,7 +177,7 @@ class SearchLayout @JvmOverloads constructor(
         normalView.restoreHierarchyState(container)
     }
 
-    @Throws(EhException::class)
+    @Throws(AppException::class)
     fun formatListUrlBuilder(urlBuilder: ListUrlBuilder, query: String?) {
         // LANraragi: always a simple keyword search, scoped to the current
         // category when there is one (category + filter travel together).

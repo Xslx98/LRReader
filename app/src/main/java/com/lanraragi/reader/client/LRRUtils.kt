@@ -52,16 +52,16 @@ object LRRUtils {
     )
 
     private val CATEGORY_VALUES = intArrayOf(
-        EhConfig.MISC,
-        EhConfig.DOUJINSHI,
-        EhConfig.MANGA,
-        EhConfig.ARTIST_CG,
-        EhConfig.GAME_CG,
-        EhConfig.IMAGE_SET,
-        EhConfig.COSPLAY,
-        EhConfig.ASIAN_PORN,
-        EhConfig.NON_H,
-        EhConfig.WESTERN,
+        LegacyCategoryConfig.MISC,
+        LegacyCategoryConfig.DOUJINSHI,
+        LegacyCategoryConfig.MANGA,
+        LegacyCategoryConfig.ARTIST_CG,
+        LegacyCategoryConfig.GAME_CG,
+        LegacyCategoryConfig.IMAGE_SET,
+        LegacyCategoryConfig.COSPLAY,
+        LegacyCategoryConfig.ASIAN_PORN,
+        LegacyCategoryConfig.NON_H,
+        LegacyCategoryConfig.WESTERN,
         UNKNOWN
     )
 
@@ -109,16 +109,16 @@ object LRRUtils {
     @JvmStatic
     fun getCategoryColor(category: Int): Int {
         when (category) {
-            EhConfig.DOUJINSHI -> return BG_COLOR_DOUJINSHI
-            EhConfig.MANGA -> return BG_COLOR_MANGA
-            EhConfig.ARTIST_CG -> return BG_COLOR_ARTIST_CG
-            EhConfig.GAME_CG -> return BG_COLOR_GAME_CG
-            EhConfig.WESTERN -> return BG_COLOR_WESTERN
-            EhConfig.NON_H -> return BG_COLOR_NON_H
-            EhConfig.IMAGE_SET -> return BG_COLOR_IMAGE_SET
-            EhConfig.COSPLAY -> return BG_COLOR_COSPLAY
-            EhConfig.ASIAN_PORN -> return BG_COLOR_ASIAN_PORN
-            EhConfig.MISC -> return BG_COLOR_MISC
+            LegacyCategoryConfig.DOUJINSHI -> return BG_COLOR_DOUJINSHI
+            LegacyCategoryConfig.MANGA -> return BG_COLOR_MANGA
+            LegacyCategoryConfig.ARTIST_CG -> return BG_COLOR_ARTIST_CG
+            LegacyCategoryConfig.GAME_CG -> return BG_COLOR_GAME_CG
+            LegacyCategoryConfig.WESTERN -> return BG_COLOR_WESTERN
+            LegacyCategoryConfig.NON_H -> return BG_COLOR_NON_H
+            LegacyCategoryConfig.IMAGE_SET -> return BG_COLOR_IMAGE_SET
+            LegacyCategoryConfig.COSPLAY -> return BG_COLOR_COSPLAY
+            LegacyCategoryConfig.ASIAN_PORN -> return BG_COLOR_ASIAN_PORN
+            LegacyCategoryConfig.MISC -> return BG_COLOR_MISC
             else -> return BG_COLOR_UNKNOWN
         }
     }

@@ -2,7 +2,7 @@ package com.lanraragi.reader.module
 
 import android.content.Context
 import android.util.Log
-import com.lanraragi.reader.EhProxySelector
+import com.lanraragi.reader.AppProxySelector
 import okhttp3.Cache
 import okhttp3.ConnectionPool
 import okhttp3.CookieJar
@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit
 /**
  * Manages all network-related singletons: OkHttpClient (main + image),
  * HTTP cache, and proxy selector.
- * Extracted from EhApplication to reduce its responsibility scope.
+ * Extracted from LRReaderApplication to reduce its responsibility scope.
  *
  * Internal dependency order:
  *   Cache → ProxySelector → OkHttpClient → ImageOkHttpClient
@@ -35,7 +35,7 @@ class NetworkModule(private val context: Context) : INetworkModule, Cacheable {
         Cache(File(context.cacheDir, "http_cache"), 200L * 1024L * 1024L)
     }
 
-    override val proxySelector: EhProxySelector by lazy { EhProxySelector() }
+    override val proxySelector: AppProxySelector by lazy { AppProxySelector() }
 
     /**
      * Shared dispatcher. The OkHttp default caps concurrent requests to the

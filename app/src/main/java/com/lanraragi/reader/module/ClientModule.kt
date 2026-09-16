@@ -14,7 +14,7 @@ import java.io.File
 /**
  * Manages client-side singletons: Conaco (image loader) and
  * ImageBitmapHelper (bitmap decoder).
- * Extracted from EhApplication to reduce its responsibility scope.
+ * Extracted from LRReaderApplication to reduce its responsibility scope.
  */
 class ClientModule(
     private val context: Context,

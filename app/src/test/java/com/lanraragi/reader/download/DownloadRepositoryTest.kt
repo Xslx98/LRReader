@@ -3,7 +3,7 @@ package com.lanraragi.reader.download
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.EhDB
+import com.lanraragi.reader.LegacyDb
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.client.api.LRRAuthManager
@@ -29,8 +29,8 @@ import com.lanraragi.reader.download.DownloadState
  * Unit tests for [DownloadRepository] — collection management and DB persistence.
  *
  * Uses Robolectric for Android Context + an in-memory Room database injected
- * into [EhDB] via reflection to avoid the AppDatabase singleton cache and
- * the Settings dependency in [EhDB.initialize].
+ * into [LegacyDb] via reflection to avoid the AppDatabase singleton cache and
+ * the Settings dependency in [LegacyDb.initialize].
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], application = android.app.Application::class)
@@ -45,7 +45,7 @@ class DownloadRepositoryTest {
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
 
-        // Initialize Settings (needed by EhDB internals)
+        // Initialize Settings (needed by LegacyDb internals)
         Settings.initialize(context)
 
         // Initialize CoroutineModule for ServiceRegistry
@@ -78,10 +78,10 @@ class DownloadRepositoryTest {
             .setTransactionExecutor { it.run() }
             .build()
 
-        // Inject into EhDB via reflection
-        val dbField = EhDB::class.java.getDeclaredField("sDatabase")
+        // Inject into LegacyDb via reflection
+        val dbField = LegacyDb::class.java.getDeclaredField("sDatabase")
         dbField.isAccessible = true
-        dbField.set(EhDB, db)
+        dbField.set(LegacyDb, db)
 
         ServiceRegistry.initializeForTest(
             data = object : com.lanraragi.reader.module.IDataModule {

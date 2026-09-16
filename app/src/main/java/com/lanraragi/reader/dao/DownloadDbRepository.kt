@@ -163,7 +163,7 @@ class DownloadDbRepository(
 
     /**
      * One-shot UPDATE driven by the boot-time backfill in
-     * [com.lanraragi.reader.EhApplication]. Sets DOWNLOAD_ROOT_URI on
+     * [com.lanraragi.reader.LRReaderApplication]. Sets DOWNLOAD_ROOT_URI on
      * every download row that still has it as NULL, so legacy rows
      * adopt the current download location as their persistent root
      * before the user can change the setting again.

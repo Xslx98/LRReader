@@ -2,7 +2,7 @@ package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.EhProxySelector
+import com.lanraragi.reader.AppProxySelector
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.module.INetworkModule
@@ -86,7 +86,7 @@ class GalleryListViewModelBatchTest {
             .build()
         val testNetworkModule = object : INetworkModule {
             override val cache: Cache get() = Cache(File(ctx.cacheDir, "batch-test-cache"), 1024)
-            override val proxySelector: EhProxySelector get() = throw UnsupportedOperationException()
+            override val proxySelector: AppProxySelector get() = throw UnsupportedOperationException()
             override val okHttpClient: OkHttpClient = client
             override val longReadClient: OkHttpClient = client
             override val uploadClient: OkHttpClient = client

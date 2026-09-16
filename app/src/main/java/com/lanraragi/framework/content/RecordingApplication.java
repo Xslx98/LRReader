@@ -81,7 +81,7 @@ public abstract class RecordingApplication extends SceneApplication {
   /**
    * The most recently created, not-yet-destroyed activity, or null. Creation
    * order matches the manual registry this replaced; unlike it, activities
-   * that do not extend EhActivity are visible here too.
+   * that do not extend BaseActivity are visible here too.
    */
   public Activity getLastCreatedActivity() {
     ListIterator<WeakReference<Activity>> it = list.listIterator(list.size());

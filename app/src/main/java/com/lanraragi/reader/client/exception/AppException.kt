@@ -16,7 +16,7 @@
 
 package com.lanraragi.reader.client.exception
 
-open class EhException : Exception {
+open class AppException : Exception {
     constructor(detailMessage: String?) : super(detailMessage)
     constructor(detailMessage: String?, cause: Throwable?) : super(detailMessage, cause)
 }

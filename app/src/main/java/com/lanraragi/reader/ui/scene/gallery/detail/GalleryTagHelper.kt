@@ -24,7 +24,7 @@ import android.widget.TextView
 import com.hippo.android.resource.AttrResources
 import com.lanraragi.framework.drawable.RoundSideRectDrawable
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.EhTagDatabase
+import com.lanraragi.reader.client.TagTranslationDatabase
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.ui.scene.BaseScene
@@ -38,10 +38,10 @@ import com.lanraragi.framework.widget.AutoWrapLayout
  */
 object GalleryTagHelper {
 
-    /** Cached [EhTagDatabase] instance from the last [bindTags] call. */
-    private var ehTags: EhTagDatabase? = null
+    /** Cached [TagTranslationDatabase] instance from the last [bindTags] call. */
+    private var ehTags: TagTranslationDatabase? = null
 
-    fun getEhTags(): EhTagDatabase? = ehTags
+    fun getEhTags(): TagTranslationDatabase? = ehTags
 
     /**
      * Populate the tags LinearLayout with tag group chips.
@@ -64,7 +64,7 @@ object GalleryTagHelper {
         }
 
         ehTags = if (AppearanceSettings.getShowTagTranslations()) {
-            EhTagDatabase.getInstance(context)
+            TagTranslationDatabase.getInstance(context)
         } else {
             null
         }
@@ -84,7 +84,7 @@ object GalleryTagHelper {
             tgName.text = readableTagName ?: tg.namespace
             tgName.background = RoundSideRectDrawable(colorName)
 
-            val prefix = EhTagDatabase.namespaceToPrefix(tg.namespace) ?: ""
+            val prefix = TagTranslationDatabase.namespaceToPrefix(tg.namespace) ?: ""
 
             val awl = AutoWrapLayout(context)
             ll.addView(awl, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -108,7 +108,7 @@ object GalleryTagHelper {
      */
     fun showTagDialog(baseScene: BaseScene, context: Context, tag: String) {
         if (ehTags == null) {
-            ehTags = EhTagDatabase.getInstance(context)
+            ehTags = TagTranslationDatabase.getInstance(context)
         }
         val dialog = GalleryListSceneDialog(baseScene)
         dialog.setTagName(tag)

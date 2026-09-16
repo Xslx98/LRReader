@@ -46,7 +46,7 @@
         android:name="android.hardware.type.pc"
         android:required="false" />
     <application
-        android:name="com.lanraragi.reader.EhApplication"
+        android:name="com.lanraragi.reader.LRReaderApplication"
         android:allowBackup="false"
         android:fullBackupContent="false"
         android:hardwareAccelerated="true"
