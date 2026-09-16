@@ -1,0 +1,3 @@
+Fixed:
+- Category quick searches lost their name the next time the drawer opened (always, on non-Chinese locales); already-blanked entries now show the category name
+- Pressing Enter on a hardware keyboard no longer sends the search twice

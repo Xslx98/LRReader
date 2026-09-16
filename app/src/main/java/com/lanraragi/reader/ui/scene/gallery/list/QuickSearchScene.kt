@@ -213,7 +213,7 @@ class QuickSearchScene : ToolbarScene() {
         }
 
         override fun onBindViewHolder(holder: QuickSearchHolder, position: Int) {
-            renderedList.getOrNull(position)?.let { holder.label.text = it.name }
+            renderedList.getOrNull(position)?.let { holder.label.text = it.displayName }
         }
 
         override fun getItemId(position: Int): Long {
