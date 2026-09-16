@@ -10,7 +10,7 @@
 
 #define TAG "ImageDecoder_wrapper"
 
-#include "ehviewer.h"
+#include "lrreader.h"
 
 #define IMAGE_TILE_MAX_SIZE (512 * 512)
 
@@ -146,7 +146,7 @@ bool copyPixels(const void *src, int src_w, int src_h, int src_x, int src_y,
 }
 
 JNIEXPORT void JNICALL
-Java_com_hippo_lib_image_Image_nativeTexImage(JNIEnv *env, jclass clazz, jobject bitmap, jboolean init,
+Java_com_lanraragi_framework_lib_image_Image_nativeTexImage(JNIEnv *env, jclass clazz, jobject bitmap, jboolean init,
                                               jint offset_x, jint offset_y, jint width, jint height) {
     if (width * height > IMAGE_TILE_MAX_SIZE)
         return;

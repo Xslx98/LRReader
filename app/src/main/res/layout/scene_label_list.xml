@@ -23,14 +23,14 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-        <com.hippo.easyrecyclerview.EasyRecyclerView
+        <com.lanraragi.framework.widget.FrameworkRecyclerView
             android:id="@+id/recycler_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:padding="@dimen/keyline_margin"
             android:clipChildren="false"
             android:clipToPadding="false"/>
-        <com.hippo.widget.ProgressView
+        <com.lanraragi.framework.widget.ProgressView
             android:id="@+id/scene_label_progress"
             android:visibility="gone"
             style="@style/ProgressView"

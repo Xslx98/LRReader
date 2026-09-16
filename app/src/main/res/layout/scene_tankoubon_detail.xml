@@ -27,7 +27,7 @@
         android:orientation="horizontal"
         android:padding="16dp">
 
-        <com.hippo.widget.LoadImageViewNew
+        <com.lanraragi.framework.widget.LoadImageViewNew
             android:id="@+id/tank_cover"
             android:layout_width="88dp"
             android:layout_height="124dp"

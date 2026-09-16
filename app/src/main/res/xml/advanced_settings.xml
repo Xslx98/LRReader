@@ -17,7 +17,7 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <com.hippo.preference.SwitchPreference
+    <com.lanraragi.framework.preference.SwitchPreference
         android:defaultValue="false"
         android:key="save_crash_log"
         android:summary="@string/settings_advanced_save_crash_log_summary"
@@ -29,7 +29,7 @@
         android:title="@string/settings_advanced_dump_logcat"
         app:allowDividerAbove="true" />
 
-    <com.hippo.ehviewer.preference.ClearDownloadPathCachePreference
+    <com.lanraragi.reader.preference.ClearDownloadPathCachePreference
         android:key="clear_download_path_cache"
         android:summary="@string/settings_advanced_clear_download_path_cache_summary"
         android:title="@string/settings_advanced_clear_download_path_cache"
@@ -41,7 +41,7 @@
         android:title="@string/settings_advanced_clear_memory_cache"
         app:allowDividerAbove="true" />
 
-    <com.hippo.preference.ListPreference
+    <com.lanraragi.framework.preference.ListPreference
         android:defaultValue="160"
         android:key="read_cache_size"
         android:summary="%s"
@@ -50,7 +50,7 @@
         app:entries="@array/read_cache_size_entries"
         app:entryValues="@array/read_cache_size_entry_values" />
 
-    <com.hippo.preference.ListPreference
+    <com.lanraragi.framework.preference.ListPreference
         android:defaultValue="system"
         android:key="app_language"
         android:summary="%s"
@@ -59,7 +59,7 @@
         app:entries="@array/app_language_entries"
         app:entryValues="@array/app_language_entry_values" />
 
-    <!--    <com.hippo.preference.SwitchPreference-->
+    <!--    <com.lanraragi.framework.preference.SwitchPreference-->
     <!--        android:defaultValue="false"-->
     <!--        android:key="url_replace"-->
     <!--        android:summary="@string/settings_advanced_url_replace_summary"-->

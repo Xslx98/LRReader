@@ -32,7 +32,7 @@
         android:importantForAccessibility="no"
         app:srcCompat="@drawable/v_chart_accent_x48"/>
 
-    <com.hippo.widget.MaxSizeContainer
+    <com.lanraragi.framework.widget.MaxSizeContainer
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -56,7 +56,7 @@
 
         </ScrollView>
 
-    </com.hippo.widget.MaxSizeContainer>
+    </com.lanraragi.framework.widget.MaxSizeContainer>
 
     <LinearLayout
         android:id="@+id/buttonPanel"

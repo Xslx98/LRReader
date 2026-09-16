@@ -17,7 +17,7 @@ import org.junit.Test
  *
  * The cache must hold the detail-page grid's *scroll working set* — the
  * visible viewport (≈3 rows × 3 cols) plus
- * [com.hippo.ehviewer.ui.scene.gallery.detail.PrefetchScrollListener]'s
+ * [com.lanraragi.reader.ui.scene.gallery.detail.PrefetchScrollListener]'s
  * 3 prefetch rows ≈ 18 distinct pages, before any scroll-back. If the
  * LRU is smaller than this it evicts tiles that are still on screen and
  * they flicker on rebind. These tests pin the budget above the working

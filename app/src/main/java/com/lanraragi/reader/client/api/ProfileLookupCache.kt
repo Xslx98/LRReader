@@ -1,7 +1,7 @@
 package com.lanraragi.reader.client.api
 
-import com.hippo.ehviewer.dao.ProfileRepository
-import com.hippo.ehviewer.dao.ServerProfile
+import com.lanraragi.reader.dao.ProfileRepository
+import com.lanraragi.reader.dao.ServerProfile
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow

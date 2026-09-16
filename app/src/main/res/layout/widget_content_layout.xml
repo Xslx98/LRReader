@@ -18,7 +18,7 @@
 <merge
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <com.hippo.widget.ProgressView
+    <com.lanraragi.framework.widget.ProgressView
         android:id="@+id/progress"
         style="@style/ProgressView"
         android:layout_width="wrap_content"
@@ -39,20 +39,20 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.hippo.refreshlayout.RefreshLayout
+        <com.lanraragi.framework.widget.FrameworkRefreshLayout
             android:id="@+id/refresh_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <com.hippo.easyrecyclerview.EasyRecyclerView
+            <com.lanraragi.framework.widget.FrameworkRecyclerView
                 android:id="@+id/recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:clipToPadding="false"/>
 
-        </com.hippo.refreshlayout.RefreshLayout>
+        </com.lanraragi.framework.widget.FrameworkRefreshLayout>
 
-        <com.hippo.easyrecyclerview.FastScroller
+        <com.lanraragi.framework.widget.FrameworkFastScroller
             android:id="@+id/fast_scroller"
             android:layout_width="30dp"
             android:layout_height="match_parent"

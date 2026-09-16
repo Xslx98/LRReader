@@ -1,0 +1,1044 @@
+package com.lanraragi.reader.download
+
+import android.content.Context
+import androidx.room.Room
+import androidx.test.core.app.ApplicationProvider
+import com.lanraragi.reader.LegacyDb
+import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.Settings
+import com.lanraragi.reader.mapper.toArchive
+import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.dao.AppDatabase
+import com.lanraragi.reader.dao.DownloadInfo
+import com.lanraragi.reader.dao.DownloadDbRepository
+import com.lanraragi.reader.dao.DownloadLabel
+import com.lanraragi.reader.module.CoroutineModule
+import com.lanraragi.reader.containedTestScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Assert.*
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import com.lanraragi.reader.download.DownloadState
+
+/**
+ * Unit tests for [DownloadManager] — the core download state management class.
+ *
+ * Uses Robolectric for Android Context + an in-memory Room database injected
+ * into [LegacyDb] via reflection to avoid the AppDatabase singleton cache and
+ * the Settings dependency in [LegacyDb.initialize].
+ */
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [28], application = android.app.Application::class)
+class DownloadManagerTest {
+
+    private lateinit var context: Context
+    private lateinit var db: AppDatabase
+    private lateinit var manager: DownloadManager
+    private lateinit var testScope: CoroutineScope
+
+    @Before
+    fun setUp() {
+        context = ApplicationProvider.getApplicationContext()
+
+        // Initialize Settings (needed by DownloadSettings accessed from DownloadManager)
+        Settings.initialize(context)
+
+        // Initialize CoroutineModule for ServiceRegistry (needed by DownloadManager default scope)
+        ServiceRegistry.initializeForTest(CoroutineModule())
+
+        // Create a test scope that runs on the unconfined dispatcher for synchronous execution
+        // Handler-bearing scope: see containedTestScope's KDoc for why the
+        // handler is load-bearing (NotImplementedError fakes + fire-and-forget
+        // coroutines would otherwise poison the whole suite).
+        testScope = containedTestScope()
+
+        // Initialize LRRAuthManager — KeyStore unavailable under Robolectric,
+        // but sActiveProfileId defaults to 0 which is fine for our tests.
+        LRRAuthManager.initialize(context)
+        // In Robolectric, EncryptedSharedPreferences always fails — inject plain prefs.
+        // The method is 'internal' in Kotlin, so its JVM name may be mangled.
+        // Search by prefix to handle both plain and mangled names.
+        val method = LRRAuthManager::class.java.declaredMethods.first {
+            it.name.startsWith("initializeForTesting") &&
+                it.parameterTypes.size == 1 &&
+                it.parameterTypes[0] == android.content.SharedPreferences::class.java
+        }
+        method.isAccessible = true
+        method.invoke(
+            null,
+            context.getSharedPreferences("lrr_auth_test", Context.MODE_PRIVATE)
+        )
+
+        // Create in-memory Room database with synchronous executors so that
+        // `suspend` DAO methods (which Room normally dispatches to its query
+        // executor) resume on the calling thread. Combined with the
+        // `Dispatchers.Unconfined` test scope below, this means the IO phase of
+        // [DownloadManager.loadDataFromDb] completes on the test main thread,
+        // which lets the main-thread publish step run inline (no looper drain
+        // required) and lets `awaitInit` return immediately.
+        db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
+            .allowMainThreadQueries()
+            .setQueryExecutor { it.run() }
+            .setTransactionExecutor { it.run() }
+            .build()
+
+        // Inject into LegacyDb via reflection (bypass LegacyDb.initialize which has Settings dependency)
+        val dbField = LegacyDb::class.java.getDeclaredField("sDatabase")
+        dbField.isAccessible = true
+        dbField.set(LegacyDb, db)
+
+        // Provide a DataModule with downloadDbRepository so that
+        // DownloadRepository (the in-memory layer) can resolve DB operations
+        // through ServiceRegistry instead of the deprecated LegacyDb methods.
+        ServiceRegistry.initializeForTest(
+            data = object : com.lanraragi.reader.module.IDataModule {
+                override val searchHistoryRepository get() = throw NotImplementedError("not needed")
+                override val downloadDbRepository get() =
+                    DownloadDbRepository(
+                        db.archiveLocalStateDao(), db.downloadDao(), db,
+                        kotlinx.coroutines.Dispatchers.Unconfined
+                    )
+                override val downloadManager get() = throw NotImplementedError("set after init")
+                override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
+                override val historyRepository get() = com.lanraragi.reader.dao.HistoryRepository(db.archiveLocalStateDao(), db)
+                override val profileRepository get() = throw NotImplementedError("not needed")
+                override val profileLookupCache get() = throw NotImplementedError("not needed")
+                override val quickSearchRepository get() = throw NotImplementedError("not needed")
+                override val favoritesRepository get() = throw NotImplementedError("not needed")
+                override val archiveDetailCache get() = throw NotImplementedError("not needed")
+                override val spiderInfoCache get() = throw NotImplementedError("not needed")
+                override fun clearArchiveDetailCache() {}
+            }
+        )
+
+        // Configure a fake server URL so LRRDownloadWorker can be constructed
+        // (ensureDownload creates workers that check for a non-null server URL)
+        LRRAuthManager.setServerUrl("http://localhost:3000")
+
+        // Drain any pending Handler callbacks from prior tests before creating manager
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        // Create the manager under test with test scope and wait for async init to complete
+        manager = DownloadManager(context, testScope)
+        kotlinx.coroutines.runBlocking { manager.awaitInitAsync() }
+
+        // Drain the Handler.post from loadDataFromDb() listener notification
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+    }
+
+    @After
+    fun tearDown() {
+        // Cancel all pending coroutines launched by DownloadManager (DB writes, etc.)
+        // to prevent async operations from leaking into the next test.
+        testScope.cancel()
+        // Drain any pending Handler callbacks (e.g., from async reload)
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+        db.close()
+        LRRAuthManager.clear()
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // A. Construction & Data Loading
+    // ═══════════════════════════════════════════════════════════
+
+    @Test
+    fun constructor_loadsEmptyListFromEmptyDb() {
+        // Manager was created in setUp with an empty DB
+        assertTrue(manager.allDownloadInfoList.isEmpty())
+        assertEquals(0, manager.downloadInfoList.size)
+    }
+
+    @Test
+    fun constructor_loadsExistingDownloads() {
+        // Insert downloads into DB before constructing a new manager
+        val info1 = DownloadInfo().apply {
+            arcid = "token1"
+            title = "Gallery One"
+            state = DownloadState.NONE
+            time = System.currentTimeMillis()
+        }
+        val info2 = DownloadInfo().apply {
+            arcid = "token2"
+            title = "Gallery Two"
+            state = DownloadState.FINISH
+            time = System.currentTimeMillis() + 1
+        }
+        runBlocking {
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info1)
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info2)
+        }
+
+        val freshManager = DownloadManager(context, testScope)
+        kotlinx.coroutines.runBlocking { freshManager.awaitInitAsync() }
+
+        assertEquals(2, freshManager.allDownloadInfoList.size)
+        assertTrue(freshManager.containDownloadInfo("token1"))
+        assertTrue(freshManager.containDownloadInfo("token2"))
+    }
+
+    @Test
+    fun constructor_loadsExistingLabels() {
+        // Insert labels into DB before constructing a new manager
+        runBlocking {
+            ServiceRegistry.dataModule.downloadDbRepository.addDownloadLabel("Comics")
+            ServiceRegistry.dataModule.downloadDbRepository.addDownloadLabel("Manga")
+        }
+
+        val freshManager = DownloadManager(context, testScope)
+        kotlinx.coroutines.runBlocking { freshManager.awaitInitAsync() }
+
+        val labels = freshManager.labelList.map { it.label }
+        assertTrue("Comics" in labels)
+        assertTrue("Manga" in labels)
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // B. Download Lifecycle
+    // ═══════════════════════════════════════════════════════════
+
+    @Test
+    fun startDownload_addsInfoToListAndNotifies() {
+        val notifications = mutableListOf<String>()
+        manager.addDownloadInfoListener(object : FakeDownloadInfoListener() {
+            override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
+                notifications.add("add:${info.arcid}")
+            }
+        })
+
+        val gallery = DownloadInfo().apply {
+            arcid = "tok_2001"
+            title = "Test Download"
+        }
+        // Start download with null (default) label
+        manager.startDownload(gallery.toArchive(), null)
+
+        assertTrue(manager.containDownloadInfo("tok_2001"))
+        // ensureDownload() may immediately promote WAIT -> DOWNLOAD
+        val state = manager.getDownloadState("tok_2001")
+        assertTrue(
+            "Expected WAIT or DOWNLOAD, got $state",
+            state == DownloadState.WAIT || state == DownloadState.DOWNLOAD
+        )
+        assertTrue(notifications.contains("add:tok_2001"))
+    }
+
+    @Test
+    fun startDownload_existingDownload_restartsIt() {
+        // Add a download first with STATE_NONE via addDownload
+        val gallery = DownloadInfo().apply {
+            arcid = "tok_2002"
+            title = "Existing"
+        }
+        manager.addDownload(gallery.toArchive(), null, DownloadState.NONE)
+        assertEquals(DownloadState.NONE, manager.getDownloadState("tok_2002"))
+
+        // Now start it — should set to WAIT (ensureDownload may promote to DOWNLOAD)
+        manager.startDownload(gallery.toArchive(), null)
+        val state = manager.getDownloadState("tok_2002")
+        assertTrue(
+            "Expected WAIT or DOWNLOAD after restart, got $state",
+            state == DownloadState.WAIT || state == DownloadState.DOWNLOAD
+        )
+    }
+
+    @Test
+    fun deleteDownload_removesFromAllLists() {
+        val gallery = DownloadInfo().apply {
+            arcid = "tok_2003"
+            title = "To Delete"
+        }
+        manager.addDownload(gallery.toArchive(), null, DownloadState.NONE)
+        assertTrue(manager.containDownloadInfo("tok_2003"))
+
+        manager.deleteDownload("tok_2003")
+
+        assertFalse(manager.containDownloadInfo("tok_2003"))
+        assertNull(manager.getDownloadInfo("tok_2003"))
+    }
+
+    @Test
+    fun stopAllDownload_stopsAllActive() {
+        // Add some downloads in WAIT state
+        for (i in 1..3) {
+            val gallery = DownloadInfo().apply {
+                arcid = "tok_$i"
+                title = "Gallery $i"
+            }
+            manager.addDownload(gallery.toArchive(), null, DownloadState.NONE)
+        }
+
+        // Put them into wait state via startDownload
+        for (i in 1..3) {
+            val gallery = DownloadInfo().apply {
+                arcid = "tok_$i"
+                title = "Gallery $i"
+            }
+            manager.startDownload(gallery.toArchive(), null)
+        }
+
+        manager.stopAllDownload()
+
+        for (i in 1..3) {
+            val state = manager.getDownloadState("tok_$i")
+            assertTrue(
+                "Expected STATE_NONE or STATE_DOWNLOAD after stop, got $state",
+                state == DownloadState.NONE || state == DownloadState.DOWNLOAD
+            )
+        }
+    }
+
+    @Test
+    fun getDownloadState_returnsCorrectState() {
+        // Non-existent returns INVALID
+        assertEquals(DownloadState.INVALID, manager.getDownloadState("nonexistent"))
+
+        // Added returns the correct state
+        val gallery = DownloadInfo().apply {
+            arcid = "tok_2005"
+            title = "State Test"
+        }
+        manager.addDownload(gallery.toArchive(), null, DownloadState.FINISH)
+        assertEquals(DownloadState.FINISH, manager.getDownloadState("tok_2005"))
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // C. Label Management
+    // ═══════════════════════════════════════════════════════════
+
+    @Test
+    fun addLabel_createsNewLabelInDbAndList() {
+        manager.addLabel("NewLabel")
+
+        val labels = manager.labelList.map { it.label }
+        assertTrue("NewLabel" in labels)
+
+        // With Unconfined dispatcher, DB write completes synchronously
+        // but give a tiny grace period for coroutine dispatch
+        Thread.sleep(100)
+
+        // Verify in DB
+        val dbLabels = runBlocking { ServiceRegistry.dataModule.downloadDbRepository.getAllDownloadLabels() }
+        assertTrue(dbLabels.any { it.label == "NewLabel" })
+    }
+
+    @Test
+    fun renameLabel_updatesInfoLabels() {
+        manager.addLabel("OldName")
+
+        // Add a download with that label
+        val gallery = DownloadInfo().apply {
+            arcid = "tok_4001"
+            title = "Labeled"
+        }
+        manager.addDownload(gallery.toArchive(), "OldName", DownloadState.NONE)
+
+        // Rename the label
+        manager.renameLabel("OldName", "NewName")
+
+        // Verify label list updated
+        val labels = manager.labelList.map { it.label }
+        assertFalse("OldName" in labels)
+        assertTrue("NewName" in labels)
+
+        // Verify the download's label was updated
+        val info = manager.getDownloadInfo("tok_4001")
+        assertEquals("NewName", info?.label)
+    }
+
+    @Test
+    fun removeLabel_movesInfoToDefault() {
+        manager.addLabel("ToRemove")
+
+        // Add a download with that label
+        val gallery = DownloadInfo().apply {
+            arcid = "tok_4002"
+            title = "Will Move"
+        }
+        manager.addDownload(gallery.toArchive(), "ToRemove", DownloadState.NONE)
+
+        // Delete the label
+        manager.deleteLabel("ToRemove")
+
+        // Verify label removed
+        val labels = manager.labelList.map { it.label }
+        assertFalse("ToRemove" in labels)
+
+        // Verify the download moved to default (null label)
+        val info = manager.getDownloadInfo("tok_4002")
+        assertNull("Download should have null label (default)", info?.label)
+
+        // Verify it's in the default list
+        assertTrue(manager.defaultDownloadInfoList.any { it.arcid == "tok_4002" })
+    }
+
+    @Test
+    fun getLabelList_returnsAllLabels() {
+        manager.addLabel("Alpha")
+        manager.addLabel("Beta")
+        manager.addLabel("Gamma")
+
+        val labels = manager.labelList.map { it.label }
+        assertEquals(3, labels.size)
+        assertTrue("Alpha" in labels)
+        assertTrue("Beta" in labels)
+        assertTrue("Gamma" in labels)
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // D. Listener Notifications
+    // ═══════════════════════════════════════════════════════════
+
+    @Test
+    fun addDownloadInfoListener_receivesCallbacks() {
+        val events = mutableListOf<String>()
+        val listener = object : FakeDownloadInfoListener() {
+            override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
+                events.add("add:${info.arcid}")
+            }
+            override fun onUpdateLabels() {
+                events.add("updateLabels")
+            }
+        }
+        manager.addDownloadInfoListener(listener)
+
+        val gallery = DownloadInfo().apply {
+            arcid = "tok_5001"
+            title = "Listener Test"
+        }
+        manager.addDownload(gallery.toArchive(), null, DownloadState.NONE)
+        manager.addLabel("ListenerLabel")
+
+        assertTrue("add:tok_5001" in events)
+        assertTrue("updateLabels" in events)
+    }
+
+    @Test
+    fun removeDownloadInfoListener_stopsReceiving() {
+        val events = mutableListOf<String>()
+        val listener = object : FakeDownloadInfoListener() {
+            override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
+                events.add("add:${info.arcid}")
+            }
+        }
+        manager.addDownloadInfoListener(listener)
+
+        // First add — should be received
+        val gallery1 = DownloadInfo().apply {
+            arcid = "tok_5002"
+            title = "First"
+        }
+        manager.addDownload(gallery1.toArchive(), null, DownloadState.NONE)
+        assertEquals(1, events.size)
+
+        // Remove listener
+        manager.removeDownloadInfoListener(listener)
+
+        // Second add — should NOT be received
+        val gallery2 = DownloadInfo().apply {
+            arcid = "tok_5003"
+            title = "Second"
+        }
+        manager.addDownload(gallery2.toArchive(), null, DownloadState.NONE)
+        assertEquals(1, events.size) // Still 1 — listener was removed
+    }
+
+    @Test
+    fun reload_clearsAndReloadsFromDb() {
+        // Insert a download directly to DB (bypassing manager) so we have
+        // guaranteed data to reload from.
+        val info = DownloadInfo().apply {
+            arcid = "tok_5004"
+            title = "Reload Test"
+            state = DownloadState.NONE
+            time = System.currentTimeMillis()
+        }
+        runBlocking { ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info) }
+
+        val events = mutableListOf<String>()
+        manager.addDownloadInfoListener(object : FakeDownloadInfoListener() {
+            override fun onReload() {
+                events.add("reload")
+            }
+            override fun onUpdateAll() {
+                events.add("updateAll")
+            }
+        })
+
+        // Reload — should pick up the DB-inserted download
+        manager.reload()
+
+        // Condition-based wait: the reload pipeline hops through a real IO
+        // dispatch, so a fixed sleep races it under full-suite load (observed
+        // flaking at 200 ms). Poll with a generous deadline instead; the
+        // normal case still completes in a few iterations.
+        val deadline = System.currentTimeMillis() + 5_000
+        while ("reload" !in events && System.currentTimeMillis() < deadline) {
+            Thread.sleep(20)
+            org.robolectric.shadows.ShadowLooper.idleMainLooper()
+        }
+
+        // After reload, our download should be present (DB may also contain
+        // data from prior tests since the in-memory DB is shared in the suite)
+        assertTrue(
+            "allDownloadInfoList should not be empty after reload",
+            manager.allDownloadInfoList.isNotEmpty()
+        )
+        assertTrue(manager.containDownloadInfo("tok_5004"))
+        assertTrue("reload" in events)
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // E. Query Methods
+    // ═══════════════════════════════════════════════════════════
+
+    @Test
+    fun containDownloadInfo_returnsTrueForExisting() {
+        assertFalse(manager.containDownloadInfo("tok_6001"))
+
+        val gallery = DownloadInfo().apply {
+            arcid = "tok_6001"
+            title = "Contain Test"
+        }
+        manager.addDownload(gallery.toArchive(), null, DownloadState.NONE)
+
+        assertTrue(manager.containDownloadInfo("tok_6001"))
+    }
+
+    @Test
+    fun getDownloadInfo_returnsCorrectInfo() {
+        assertNull(manager.getDownloadInfo("tok_6002"))
+
+        val gallery = DownloadInfo().apply {
+            arcid = "tok_6002"
+            title = "Info Test"
+        }
+        manager.addDownload(gallery.toArchive(), null, DownloadState.NONE)
+
+        val info = manager.getDownloadInfo("tok_6002")
+        assertNotNull(info)
+        assertEquals("tok_6002", info!!.arcid)
+        assertEquals("Info Test", info.title)
+    }
+
+    @Test
+    fun getDownloadCount_returnsCorrectCount() {
+        assertEquals(0, manager.allDownloadInfoList.size)
+
+        for (i in 1..5) {
+            val gallery = DownloadInfo().apply {
+                arcid = "tok_$i"
+                title = "Count $i"
+            }
+            manager.addDownload(gallery.toArchive(), null, DownloadState.NONE)
+        }
+
+        assertEquals(5, manager.allDownloadInfoList.size)
+        assertEquals(5, manager.downloadInfoList.size)
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // Helper: Fake DownloadInfoListener with no-op defaults
+    // ═══════════════════════════════════════════════════════════
+
+    // ===============================================================
+    // F. Thread Safety -- assertMainThread coverage
+    // ===============================================================
+
+    @Test
+    fun publicMethods_throwOnBackgroundThread() {
+        val methodsToCheck: List<Pair<String, () -> Unit>> = listOf(
+            "containLabel" to { manager.containLabel("x") },
+            "containDownloadInfo" to { manager.containDownloadInfo("") },
+            "labelList" to { manager.labelList },
+            "getLabelCount" to { manager.getLabelCount(null) },
+            "allDownloadInfoList" to { manager.allDownloadInfoList },
+            "defaultDownloadInfoList" to { manager.defaultDownloadInfoList },
+            "getLabelDownloadInfoList" to { manager.getLabelDownloadInfoList(null) },
+            "downloadInfoList" to { manager.downloadInfoList },
+            "getDownloadInfo" to { manager.getDownloadInfo("") },
+            "getDownloadState" to { manager.getDownloadState("") },
+            "addDownloadInfoListener" to { manager.addDownloadInfoListener(FakeDownloadInfoListener()) },
+            "removeDownloadInfoListener" to { manager.removeDownloadInfoListener(FakeDownloadInfoListener()) },
+            "setDownloadListener" to { manager.setDownloadListener(null) },
+            "isIdle" to { manager.isIdle },
+            "resetAllReadingProgress" to { manager.resetAllReadingProgress() },
+        )
+
+        for ((name, block) in methodsToCheck) {
+            var thrown: Throwable? = null
+            val t = Thread {
+                try {
+                    block()
+                } catch (e: Throwable) {
+                    thrown = e
+                }
+            }
+            t.start()
+            t.join(5000)
+            assertTrue(
+                "$name should throw IllegalStateException on background thread, but threw: $thrown",
+                thrown is IllegalStateException
+            )
+        }
+    }
+
+    @Test
+    fun awaitInitAsync_throwsOnMainThread() {
+        // Use a real IO dispatcher so init is not already complete by the time
+        // we try to await it from the main thread.
+        val lazyScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        val uninitManager = DownloadManager(context, lazyScope)
+        try {
+            assertThrows(IllegalStateException::class.java) {
+                // Robolectric runs tests on the main looper, so launching a
+                // runBlocking here executes awaitInitAsync on the main thread
+                // and the guard inside the suspend function must fire.
+                kotlinx.coroutines.runBlocking {
+                    uninitManager.awaitInitAsync()
+                }
+            }
+        } finally {
+            lazyScope.cancel()
+        }
+    }
+
+    /**
+     * Race regression test for W0-1.
+     *
+     * The pre-fix [DownloadManager.loadDataFromDb] wrote directly into the
+     * main-thread-only collections (mLabelList, mLabelSet, mMap, ...) from the
+     * IO coroutine. With a real [Dispatchers.IO] scope this races with any
+     * main-thread reader (such as `containLabel`), and would intermittently
+     * surface as `ConcurrentModificationException`, partial-state reads, or
+     * `HashMap` data corruption.
+     *
+     * Each iteration constructs a fresh manager backed by a real IO dispatcher,
+     * spams the public read API while the IO phase is in flight, drains the
+     * main looper to let the new publish phase post run, then waits for init
+     * and asserts the published state is complete.
+     *
+     * The fix guarantees that the IO phase only touches the database; all
+     * shared-collection writes happen via [DownloadManager.runOnMainThread] on
+     * the test main thread. With the fix this test runs 1000 iterations
+     * without throwing.
+     */
+    @Test
+    fun loadDataFromDb_concurrentReads_isStable_underBackgroundIo() {
+        // Pre-populate the DB once.
+        val labelCount = 50
+        val infoCount = 200
+        val labelStrings = (0 until labelCount).map { "race-label-$it" }
+        runBlocking {
+            for (s in labelStrings) {
+                ServiceRegistry.dataModule.downloadDbRepository.addDownloadLabel(s)
+            }
+            for (i in 0 until infoCount) {
+                val info = DownloadInfo().apply {
+                    arcid = "race-token-$i"
+                    title = "race title $i"
+                    label = labelStrings[i % labelCount]
+                    state = DownloadState.NONE
+                    time = System.currentTimeMillis() + i
+                }
+                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
+            }
+        }
+
+        val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        try {
+            repeat(1000) { iteration ->
+                val freshManager = DownloadManager(context, ioScope)
+
+                // Spam main-thread reads while the IO phase is in flight on the
+                // background dispatcher. None of these should throw and none
+                // should observe a partially-mutated collection.
+                for (spin in 0 until 50) {
+                    try {
+                        // Snapshot copies — exercises iteration of the live list.
+                        val labelsSnapshot = freshManager.labelList.toList()
+                        // Existence checks — exercises HashSet read concurrent
+                        // with what used to be a HashSet write.
+                        freshManager.containLabel(labelStrings[spin % labelCount])
+                        freshManager.containDownloadInfo("race-token-$spin")
+                        // Sanity assertion: snapshot must never be partially
+                        // populated. It is either empty (publish hasn't run) or
+                        // exactly the full label set.
+                        val size = labelsSnapshot.size
+                        assertTrue(
+                            "iter=$iteration spin=$spin: unexpected partial labelList size $size",
+                            size == 0 || size == labelCount
+                        )
+                    } catch (e: ConcurrentModificationException) {
+                        fail("iter=$iteration spin=$spin: ConcurrentModificationException $e")
+                    }
+                    if (spin % 5 == 0) {
+                        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+                    }
+                }
+
+                // Drain the publish post and confirm init completed cleanly.
+                // We cannot use runBlocking { awaitInitAsync() } here because
+                // it would block the main thread, preventing the main looper
+                // from processing the mainHandler.post dispatched by the IO
+                // coroutine — a deadlock. Instead, poll: drain the looper then
+                // sleep briefly until the publish phase has landed.
+                var initDone = false
+                for (attempt in 0 until 500) {
+                    org.robolectric.shadows.ShadowLooper.idleMainLooper()
+                    if (freshManager.labelList.size == labelCount) { initDone = true; break }
+                    Thread.sleep(1)
+                }
+                assertTrue("iter=$iteration: init did not complete within timeout", initDone)
+                assertEquals(
+                    "iter=$iteration: published label count mismatch",
+                    labelCount,
+                    freshManager.labelList.size
+                )
+                assertEquals(
+                    "iter=$iteration: published info count mismatch",
+                    infoCount,
+                    freshManager.allDownloadInfoList.size
+                )
+            }
+        } finally {
+            ioScope.cancel()
+            org.robolectric.shadows.ShadowLooper.idleMainLooper()
+        }
+    }
+
+    @Test
+    fun collections_arePlainTypes_notConcurrent() {
+        val fields = DownloadManager::class.java.declaredFields
+        val concurrentTypes = listOf(
+            "CopyOnWriteArrayList",
+            "ConcurrentHashMap",
+            "ConcurrentLinkedQueue",
+            "ConcurrentSkipListMap"
+        )
+        for (field in fields) {
+            val typeName = field.type.simpleName
+            assertFalse(
+                "Field '${field.name}' should not use concurrent collection type $typeName",
+                concurrentTypes.any { typeName.contains(it) }
+            )
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // G. Sort Order Invariants (binary-insertion correctness)
+    // ═══════════════════════════════════════════════════════════
+
+    @Test
+    fun addDownloadBatch_producesDateDescSortedAllList() {
+        // Add items with deliberately non-sorted timestamps
+        val timestamps = listOf(500L, 100L, 900L, 300L, 700L)
+        val infos = timestamps.mapIndexed { i, ts ->
+            DownloadInfo().apply {
+                arcid = "tok_sort_$i"
+                title = "Sort Test $i"
+                state = DownloadState.NONE
+                time = ts
+            }
+        }
+        manager.addDownload(infos)
+        // Drain the handler post from addDownload
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        val allList = manager.allDownloadInfoList
+        assertEquals(5, allList.size)
+        // Verify DATE_DESC order: newest first
+        for (i in 0 until allList.size - 1) {
+            assertTrue(
+                "allDownloadInfoList not in DATE_DESC order at index $i: " +
+                    "${allList[i].time} should >= ${allList[i + 1].time}",
+                allList[i].time >= allList[i + 1].time
+            )
+        }
+        // Verify exact expected order (timestamps 500, 100, 900, 300, 700
+        // → DESC: 900(i=2), 700(i=4), 500(i=0), 300(i=3), 100(i=1))
+        assertEquals(
+            listOf("tok_sort_2", "tok_sort_4", "tok_sort_0", "tok_sort_3", "tok_sort_1"),
+            allList.map { it.arcid }
+        )
+    }
+
+    @Test
+    fun addDownloadBatch_producesDateDescSortedPerLabelList() {
+        manager.addLabel("SortLabel")
+
+        val timestamps = listOf(200L, 800L, 400L, 600L)
+        val infos = timestamps.mapIndexed { i, ts ->
+            DownloadInfo().apply {
+                arcid = "tok_lsort_$i"
+                title = "Label Sort $i"
+                label = "SortLabel"
+                state = DownloadState.NONE
+                time = ts
+            }
+        }
+        manager.addDownload(infos)
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        val labelList = manager.getLabelDownloadInfoList("SortLabel")!!
+        assertEquals(4, labelList.size)
+        for (i in 0 until labelList.size - 1) {
+            assertTrue(
+                "Per-label list not in DATE_DESC order at index $i",
+                labelList[i].time >= labelList[i + 1].time
+            )
+        }
+    }
+
+    @Test
+    fun changeLabel_maintainsSortOrder() {
+        manager.addLabel("SourceLabel")
+        manager.addLabel("DestLabel")
+
+        // Add items to DestLabel with known timestamps
+        val destInfos = listOf(900L, 300L).mapIndexed { i, ts ->
+            DownloadInfo().apply {
+                arcid = "tok_dest_$i"
+                title = "Dest $i"
+                label = "DestLabel"
+                state = DownloadState.NONE
+                time = ts
+            }
+        }
+        manager.addDownload(destInfos)
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        // Add an item to SourceLabel that should land between the two dest items
+        val sourceInfo = DownloadInfo().apply {
+            arcid = "tok_src"
+            title = "Source Item"
+            label = "SourceLabel"
+            state = DownloadState.NONE
+            time = 600L
+        }
+        manager.addDownload(listOf(sourceInfo))
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        // Move the source item to DestLabel
+        manager.changeLabel(listOf(manager.getDownloadInfo("tok_src")!!), "DestLabel")
+
+        val destList = manager.getLabelDownloadInfoList("DestLabel")!!
+        assertEquals(3, destList.size)
+        for (i in 0 until destList.size - 1) {
+            assertTrue(
+                "DestLabel list not in DATE_DESC order at index $i: " +
+                    "${destList[i].time} should >= ${destList[i + 1].time}",
+                destList[i].time >= destList[i + 1].time
+            )
+        }
+        // Verify the moved item landed in the middle (time=600 between 900 and 300)
+        assertEquals("tok_src", destList[1].arcid)
+    }
+
+    @Test
+    fun deleteLabel_maintainsSortOrderInDefaultList() {
+        manager.addLabel("ToDelete")
+
+        // Add items to default list with known timestamps
+        val defaultGallery = DownloadInfo().apply {
+            arcid = "tok_def"
+            title = "Default Item"
+        }
+        manager.addDownload(defaultGallery.toArchive(), null, DownloadState.NONE)
+        // Manually set time for deterministic ordering
+        manager.getDownloadInfo("tok_def")!!.time = 500L
+
+        // Add items to the label that will be deleted
+        val labelInfos = listOf(800L, 200L).mapIndexed { i, ts ->
+            DownloadInfo().apply {
+                arcid = "tok_del_$i"
+                title = "Delete Label Item $i"
+                label = "ToDelete"
+                state = DownloadState.NONE
+                time = ts
+            }
+        }
+        manager.addDownload(labelInfos)
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        // Delete the label — items should merge into default list in sorted order
+        manager.deleteLabel("ToDelete")
+
+        val defaultList = manager.defaultDownloadInfoList
+        assertEquals(3, defaultList.size)
+        for (i in 0 until defaultList.size - 1) {
+            assertTrue(
+                "Default list not in DATE_DESC order at index $i: " +
+                    "${defaultList[i].time} should >= ${defaultList[i + 1].time}",
+                defaultList[i].time >= defaultList[i + 1].time
+            )
+        }
+    }
+
+    @Test
+    fun insertSorted_handlesEqualTimestamps() {
+        // Add items with the same timestamp — should not crash or corrupt order
+        val infos = (0..4).map { i ->
+            DownloadInfo().apply {
+                arcid = "tok_eq_$i"
+                title = "Equal Time $i"
+                state = DownloadState.NONE
+                time = 1000L // all same timestamp
+            }
+        }
+        manager.addDownload(infos)
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        val allList = manager.allDownloadInfoList
+        assertEquals(5, allList.size)
+        // All timestamps equal — just verify no crash and all items present
+        val arcids = allList.map { it.arcid }.toSet()
+        assertEquals(
+            setOf("tok_eq_0", "tok_eq_1", "tok_eq_2", "tok_eq_3", "tok_eq_4"),
+            arcids
+        )
+    }
+
+    @Test
+    fun insertSorted_companionHelper_correctInsertionPoints() {
+        // Directly test the companion insertSorted helper
+        val list = mutableListOf<DownloadInfo>()
+
+        // Insert in random order and verify sorted after each
+        val timestamps = listOf(500L, 900L, 100L, 700L, 300L)
+        for ((i, ts) in timestamps.withIndex()) {
+            val info = DownloadInfo().apply {
+                arcid = "tok_helper_$i"
+                title = "Helper $i"
+                time = ts
+            }
+            DownloadManager.insertSorted(list, info)
+
+            // After every insertion, list must be in DATE_DESC order
+            for (j in 0 until list.size - 1) {
+                assertTrue(
+                    "List not sorted after inserting time=$ts at step $i, index $j: " +
+                        "${list[j].time} should >= ${list[j + 1].time}",
+                    list[j].time >= list[j + 1].time
+                )
+            }
+        }
+
+        assertEquals(5, list.size)
+        // Expected order: 900, 700, 500, 300, 100
+        assertEquals(listOf(900L, 700L, 500L, 300L, 100L), list.map { it.time })
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // FGS budget pause (Android 15 dataSync 6h cap)
+    // ═══════════════════════════════════════════════════════════
+
+    @Test
+    fun pauseAllForSystemBudget_flagsActiveDownloadsForResumeBanner_andStopsThem() {
+        DownloadResumeBanner.clear()
+
+        // One active and one idle row. Seed deterministically: startDownload
+        // would spawn a real worker whose immediate failure (unreachable test
+        // URL + Unconfined scope) can flip the state before the pause runs.
+        val active = DownloadInfo().apply { arcid = "tok_fgs_active"; title = "Active" }
+        manager.addDownload(active.toArchive(), null, DownloadState.NONE)
+        val idle = DownloadInfo().apply { arcid = "tok_fgs_idle"; title = "Idle" }
+        manager.addDownload(idle.toArchive(), null, DownloadState.NONE)
+        manager.allDownloadInfoList.first { it.arcid == "tok_fgs_active" }.state =
+            DownloadState.DOWNLOAD
+
+        var updateAllSeen = false
+        manager.addDownloadInfoListener(object : FakeDownloadInfoListener() {
+            override fun onUpdateAll() { updateAllSeen = true }
+        })
+
+        manager.pauseAllForSystemBudget()
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        // The active download is flagged for the "timed out — retry" banner...
+        val snapshot = DownloadResumeBanner.consume()
+        assertTrue("Expected TimedOut, got $snapshot", snapshot is DownloadResumeBanner.Snapshot.TimedOut)
+        val arcids = (snapshot as DownloadResumeBanner.Snapshot.TimedOut).arcids
+        assertTrue("tok_fgs_active" in arcids)
+        // ...the idle row is not...
+        assertTrue("tok_fgs_idle" !in arcids)
+        // ...and the stop-everything broadcast fired (scheduler-tracked rows
+        // are flipped by stopAllDownload; the hand-seeded state above is not
+        // scheduler-tracked, so assert the observable stop signal instead).
+        assertTrue(updateAllSeen)
+    }
+
+    @Test
+    fun pauseAllForSystemBudget_withNothingActive_leavesBannerEmpty() {
+        DownloadResumeBanner.clear()
+
+        manager.pauseAllForSystemBudget()
+
+        assertEquals(DownloadResumeBanner.Snapshot.None, DownloadResumeBanner.consume())
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // Legacy imported-archive row purge (audit #69 feature removal)
+    // ═══════════════════════════════════════════════════════════
+
+    @Test
+    fun purgeImportedArchiveRows_removesOnlyLegacyImportedRows() {
+        val imported = DownloadInfo().apply {
+            arcid = "tok_imported"
+            title = "Legacy Imported"
+            state = DownloadState.FINISH
+            time = 100L
+            archiveUri = "content://com.android.externalstorage.documents/document/primary%3Atest.cbz"
+        }
+        val normal = DownloadInfo().apply {
+            arcid = "tok_normal"
+            title = "Regular Download"
+            state = DownloadState.FINISH
+            time = 200L
+        }
+        manager.addDownload(listOf(imported, normal))
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        val purged = manager.purgeImportedArchiveRows()
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        assertEquals(1, purged)
+        assertFalse(manager.containDownloadInfo("tok_imported"))
+        assertTrue(manager.containDownloadInfo("tok_normal"))
+    }
+
+    @Test
+    fun purgeImportedArchiveRows_isIdempotentAndNoOpWithoutLegacyRows() {
+        val normal = DownloadInfo().apply {
+            arcid = "tok_only_normal"
+            title = "Regular"
+            state = DownloadState.FINISH
+            time = 100L
+        }
+        manager.addDownload(listOf(normal))
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        assertEquals(0, manager.purgeImportedArchiveRows())
+        assertTrue(manager.containDownloadInfo("tok_only_normal"))
+    }
+
+    private open class FakeDownloadInfoListener : DownloadInfoListener {
+        override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {}
+        override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {}
+        override fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: List<DownloadInfo>) {}
+        override fun onUpdateAll() {}
+        override fun onReload() {}
+        override fun onChange() {}
+        override fun onRenameLabel(from: String, to: String) {}
+        override fun onRemove(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {}
+        override fun onUpdateLabels() {}
+    }
+}

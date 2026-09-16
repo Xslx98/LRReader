@@ -1,0 +1,637 @@
+/*
+ * Copyright 2015-2016 Hippo Seven
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.lanraragi.framework.conaco;
+
+
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+
+import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
+
+import com.lanraragi.framework.beerbelly.SimpleDiskCache;
+import com.hippo.streampipe.InputStreamPipe;
+import com.hippo.streampipe.OutputStreamPipe;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.ref.WeakReference;
+import java.util.concurrent.Executor;
+
+import okhttp3.Call;
+import okhttp3.HttpUrl;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
+
+public class ConacoTask<V> {
+
+    private static final String TAG = ConacoTask.class.getSimpleName();
+
+    private final int mId;
+    private final WeakReference<Unikery<V>> mUnikeryWeakReference;
+    private final String mKey;
+    private final String mUrl;
+    private final DataContainer mDataContainer;
+    private final boolean mUseMemoryCache;
+    private final boolean mUseDiskCache;
+    private final boolean mUseNetwork;
+    private final ValueHelper<V> mHelper;
+    private final ValueCache<V> mCache;
+    private final OkHttpClient mOkHttpClient;
+    private final Executor mDiskExecutor;
+    private final Executor mNetworkExecutor;
+    private final Conaco<V> mConaco;
+
+    private DiskLoadTask mDiskLoadTask;
+    private NetworkLoadTask mNetworkLoadTask;
+    // Written on the network executor (doWork), cancelled from the UI thread
+    // (stop) — without volatile the UI thread could miss the freshly published
+    // Call and the cancel would be lost.
+    private volatile Call mCall;
+    private boolean mStart;
+    private boolean hardware = true;
+    private final int mTargetWidth;
+    private final int mTargetHeight;
+    private volatile boolean mStop;
+
+    private ConacoTask(Builder<V> builder) {
+        mId = builder.mId;
+        mUnikeryWeakReference = new WeakReference<>(builder.mUnikery);
+        mKey = builder.mKey;
+        mUrl = builder.mUrl;
+        mDataContainer = builder.mDataContainer;
+        mUseMemoryCache = builder.mUseMemoryCache;
+        mUseDiskCache = builder.mUseDiskCache;
+        mUseNetwork = builder.mUseNetwork;
+        mHelper = builder.mHelper;
+        mCache = builder.mCache;
+        mOkHttpClient = builder.mOkHttpClient;
+        mDiskExecutor = builder.mDiskExecutor;
+        mNetworkExecutor = builder.mNetworkExecutor;
+        mConaco = builder.mConaco;
+        hardware = builder.hardware;
+        mTargetWidth = builder.mTargetWidth;
+        mTargetHeight = builder.mTargetHeight;
+    }
+
+    int getId() {
+        return mId;
+    }
+
+    String getKey() {
+        return mKey;
+    }
+
+    boolean useMemoryCache() {
+        return mUseMemoryCache;
+    }
+
+    @Nullable
+    Unikery<V> getUnikery() {
+        return mUnikeryWeakReference.get();
+    }
+
+    void clearUnikery() {
+        mUnikeryWeakReference.clear();
+    }
+
+    private void onFinish() {
+        if (!mStop) {
+            mConaco.finishConacoTask(this);
+        }/* else  {
+            // It is done by Conaco
+        }*/
+    }
+
+    @UiThread
+    void start() {
+        if (mStop || mStart) {
+            return;
+        }
+
+        mStart = true;
+
+        Unikery<V> unikery = mUnikeryWeakReference.get();
+        if (unikery != null && unikery.getTaskId() == mId) {
+            if (mUseDiskCache) {
+                mDiskLoadTask = new DiskLoadTask();
+                mDiskExecutor.execute(mDiskLoadTask);
+                return;
+            } else if (mUseNetwork) {
+                unikery.onMiss(Conaco.SOURCE_DISK);
+                unikery.onRequest();
+                mNetworkLoadTask = new NetworkLoadTask();
+                mNetworkExecutor.execute(mNetworkLoadTask);
+                return;
+            } else {
+                unikery.onMiss(Conaco.SOURCE_DISK);
+                unikery.onMiss(Conaco.SOURCE_NETWORK);
+                unikery.onFailure();
+            }
+        }
+
+        onFinish();
+    }
+
+    @UiThread
+    void stop() {
+        if (mStop) {
+            return;
+        }
+
+        mStop = true;
+
+        // Stop jobs
+        if (mDiskLoadTask != null) { // Getting from disk
+            mDiskLoadTask.cancel();
+        } else if (mNetworkLoadTask != null) { // Getting from network
+            mNetworkLoadTask.cancel();
+            Call call = mCall;
+            if (call != null) {
+                call.cancel();
+                mCall = null;
+            }
+        }
+
+        Unikery<V> unikery = mUnikeryWeakReference.get();
+        if (unikery != null) {
+            unikery.onCancel();
+        }
+
+        // Conaco handle the clean up
+    }
+
+    private boolean isNotNecessary(DiskLoadTask task) {
+        Unikery<V> unikery = mUnikeryWeakReference.get();
+        return mStop || task.isCancelled() || unikery == null || unikery.getTaskId() != mId;
+    }
+
+    private boolean isNotNecessary(NetworkLoadTask task) {
+        Unikery<V> unikery = mUnikeryWeakReference.get();
+        return mStop || task.isCancelled() || unikery == null || unikery.getTaskId() != mId;
+    }
+
+    private static void putFromDiskCacheToDataContainer(String key, ValueCache cache, DataContainer container) {
+        SimpleDiskCache diskCache = cache.getDiskCache();
+        if (diskCache != null) {
+            InputStreamPipe pipe = diskCache.getInputStreamPipe(key);
+            if (pipe != null) {
+                try {
+                    pipe.obtain();
+                    container.save(pipe.open(), -1L, null, null);
+                } catch (IOException e) {
+                    Log.d(TAG, "Can't save value from disk cache to data container");
+                    e.printStackTrace();
+                    container.remove();
+                } finally {
+                    pipe.close();
+                    pipe.release();
+                }
+            }
+        }
+    }
+
+    private static void putFromDataContainerToDiskCache(String key, ValueCache cache, DataContainer container) {
+        InputStreamPipe pipe = container.get();
+        if (pipe != null) {
+            try {
+                pipe.obtain();
+                cache.putRawToDisk(key, pipe.open());
+            } catch (IOException e) {
+                Log.w(TAG, "Can't save value from data container to disk cache", e);
+                cache.removeFromDisk(key);
+            } finally {
+                pipe.close();
+                pipe.release();
+            }
+        }
+    }
+
+    private class DiskLoadTask implements Runnable {
+        private volatile boolean mCancelled;
+
+        void cancel() { mCancelled = true; }
+        boolean isCancelled() { return mCancelled; }
+
+        @Override
+        public void run() {
+            V value = doWork();
+            new Handler(Looper.getMainLooper()).post(() -> onComplete(value));
+        }
+
+        private V doWork() {
+            if (isNotNecessary(this)) {
+                return null;
+            }
+
+            V value = null;
+
+            // First check data container
+            if (mDataContainer != null && mDataContainer.isEnabled()) {
+                InputStreamPipe isp = mDataContainer.get();
+                if (isp != null) {
+                    value = mHelper.decode(isp, hardware, mTargetWidth, mTargetHeight);
+                }
+            }
+
+            // Then check disk cache
+            if (mKey != null) {
+                if (value == null && mUseDiskCache) {
+                    value = mCache.getFromDisk(mKey, hardware, mTargetWidth, mTargetHeight);
+                    // Put back to data container
+                    if (value != null && mDataContainer != null && mDataContainer.isEnabled()) {
+                        putFromDiskCacheToDataContainer(mKey, mCache, mDataContainer);
+                    }
+                }
+
+                if (value != null && mUseMemoryCache && mHelper.useMemoryCache(mKey, value)) {
+                    // Put it to memory
+                    mCache.putToMemory(mKey, value);
+                }
+            }
+
+            return value;
+        }
+
+        private void onComplete(V value) {
+            mDiskLoadTask = null;
+
+            if (mCancelled || mStop) {
+                onFinish();
+            } else {
+                Unikery<V> unikery = mUnikeryWeakReference.get();
+                if (unikery != null && unikery.getTaskId() == mId) {
+                    boolean getValue = false;
+                    if ((value == null || !(getValue = unikery.onGetValue(value, Conaco.SOURCE_DISK))) && mUseNetwork) {
+                        unikery.onMiss(Conaco.SOURCE_DISK);
+                        unikery.onRequest();
+                        mNetworkLoadTask = new NetworkLoadTask();
+                        mNetworkExecutor.execute(mNetworkLoadTask);
+                        return;
+                    } else if (!getValue) {
+                        unikery.onMiss(Conaco.SOURCE_DISK);
+                        unikery.onFailure();
+                    }
+                }
+                onFinish();
+            }
+        }
+    }
+
+    private class NetworkLoadTask implements Runnable, ProgressNotifier {
+        private volatile boolean mCancelled;
+        private final Handler mMainHandler = new Handler(Looper.getMainLooper());
+
+        void cancel() { mCancelled = true; }
+        boolean isCancelled() { return mCancelled; }
+
+        @Override
+        public void notifyProgress(long singleReceivedSize, long receivedSize, long totalSize) {
+            // Deliberately a no-op. This used to post a main-thread Runnable
+            // per 4KB chunk (per download, several downloads in parallel while
+            // scrolling) into Unikery.onProgress — and every Unikery
+            // implementation's onProgress is empty. If a real progress
+            // consumer ever appears, reinstate posting HERE with throttling,
+            // never per-chunk.
+        }
+
+        private boolean putToDiskCache(InputStream is, long length) {
+            SimpleDiskCache diskCache = mCache.getDiskCache();
+            if (diskCache == null) {
+                return false;
+            }
+
+            OutputStreamPipe pipe = diskCache.getOutputStreamPipe(mKey);
+            try {
+                pipe.obtain();
+                OutputStream os = pipe.open();
+
+                final byte buffer[] = new byte[1024 * 4];
+                long receivedSize = 0;
+                int bytesRead;
+
+                while ((bytesRead = is.read(buffer)) != -1) {
+                    // A cancelled task must not run the download to
+                    // completion; false discards the partial cache entry.
+                    if (isNotNecessary(this)) {
+                        return false;
+                    }
+                    os.write(buffer, 0, bytesRead);
+                    receivedSize += bytesRead;
+                    notifyProgress((long) bytesRead, receivedSize, length);
+                }
+
+                return true;
+            } catch (IOException e) {
+                return false;
+            } finally {
+                pipe.close();
+                pipe.release();
+            }
+        }
+
+        private boolean putToDataContainer(InputStream is, ResponseBody body) {
+            // Get media type
+            String mediaType;
+            MediaType mt = body.contentType();
+            if (mt != null) {
+                mediaType = mt.type() + '/' + mt.subtype();
+            } else {
+                mediaType = null;
+            }
+            return mDataContainer.save(is, body.contentLength(), mediaType, this);
+        }
+
+        @Override
+        public void run() {
+            V value = doWork();
+            mMainHandler.post(() -> onComplete(value));
+        }
+
+        private V doWork() {
+            if (isNotNecessary(this)) {
+                return null;
+            }
+
+            V value;
+            InputStream is = null;
+            try {
+                // Load it from internet
+                Request request = new Request.Builder().url(mUrl).build();
+                mCall = mOkHttpClient.newCall(request);
+
+                Response response = mCall.execute();
+                // Error bodies (404 page, reverse-proxy 502 HTML) must never be
+                // cached or decoded as the image for this key.
+                if (!response.isSuccessful()) {
+                    if (com.lanraragi.reader.BuildConfig.DEBUG) {
+                        Log.w(TAG, "Fetch failed: HTTP " + response.code() + " for " + mUrl);
+                    }
+                    response.close();
+                    return null;
+                }
+                ResponseBody body = response.body();
+                is = body.byteStream();
+
+                if (isNotNecessary(this)) {
+                    return null;
+                }
+
+                if ((mDataContainer == null || !mDataContainer.isEnabled()) && mKey != null) {
+                    if (putToDiskCache(is, body.contentLength())) {
+                        // Get object from disk cache
+                        value = mCache.getFromDisk(mKey, hardware, mTargetWidth, mTargetHeight);
+                        if (value == null) {
+                            // Maybe bad download, remove it from disk cache
+                            mCache.removeFromDisk(mKey);
+                        } else if (mUseMemoryCache && mHelper.useMemoryCache(mKey, value)) {
+                            // Put it to memory
+                            mCache.putToMemory(mKey, value);
+                        }
+                        return value;
+                    } else {
+                        // Maybe bad download, remove it from disk cache
+                        mCache.removeFromDisk(mKey);
+                        return null;
+                    }
+                } else if (mDataContainer != null && mDataContainer.isEnabled()) {
+                    // Check url Moved
+                    HttpUrl requestHttpUrl = request.url();
+                    HttpUrl responseHttpUrl = response.request().url();
+                    if (!responseHttpUrl.equals(requestHttpUrl)) {
+                        mDataContainer.onUrlMoved(mUrl, responseHttpUrl.url().toString());
+                    }
+
+                    // Put to data container
+                    if (!putToDataContainer(is, body)) {
+                        return null;
+                    }
+
+                    // Get value from data container
+                    InputStreamPipe isp = mDataContainer.get();
+                    if (isp == null) {
+                        return null;
+                    }
+                    value = mHelper.decode(isp, hardware, mTargetWidth, mTargetHeight);
+                    if (value == null) {
+                        mDataContainer.remove();
+                    } else if (mKey != null) {
+                        // Put to disk cache
+                        putFromDataContainerToDiskCache(mKey, mCache, mDataContainer);
+
+                        if (mUseMemoryCache && mHelper.useMemoryCache(mKey, value)) {
+                            // Put it to memory
+                            mCache.putToMemory(mKey, value);
+                        }
+                    }
+                    return value;
+                } else {
+                    return null;
+                }
+            } catch (Exception e) {
+                // Expected on cancellation (Call.cancel -> IOException); any
+                // other failure used to vanish without a trace, making broken
+                // thumbnails undiagnosable.
+                if (com.lanraragi.reader.BuildConfig.DEBUG && !mStop && !mCancelled) {
+                    Log.w(TAG, "Network load failed for " + mUrl, e);
+                }
+                return null;
+            } finally {
+                mCall = null;
+                try {
+                    if (is != null) {
+                        is.close();
+                    }
+                } catch (IOException e) {
+                    // Ignore
+                }
+            }
+        }
+
+        private void onComplete(V value) {
+            mNetworkLoadTask = null;
+
+            if (mCancelled || mStop) {
+                onFinish();
+            } else {
+                Unikery<V> unikery = mUnikeryWeakReference.get();
+                if (unikery != null && unikery.getTaskId() == mId) {
+                    if (value == null || !unikery.onGetValue(value, Conaco.SOURCE_NETWORK)) {
+                        unikery.onFailure();
+                    }
+                }
+                onFinish();
+            }
+        }
+    }
+
+    public static class Builder<T> {
+
+        private int mId;
+        private Unikery<T> mUnikery;
+        private String mKey;
+        private String mUrl;
+        private DataContainer mDataContainer;
+        private boolean mUseMemoryCache = true;
+        private boolean mUseDiskCache = true;
+        private boolean mUseNetwork = true;
+        private ValueHelper<T> mHelper;
+        private ValueCache<T> mCache;
+        private OkHttpClient mOkHttpClient;
+        private Executor mDiskExecutor;
+        private Executor mNetworkExecutor;
+        private Conaco<T> mConaco;
+        private boolean hardware = true;
+        private int mTargetWidth;
+        private int mTargetHeight;
+
+        public Builder<T> setId(int id) {
+            mId = id;
+            return this;
+        }
+
+        public Builder<T> setUnikery(Unikery<T> unikery) {
+            mUnikery = unikery;
+            return this;
+        }
+
+        public Unikery<T> getUnikery() {
+            return mUnikery;
+        }
+
+        public Builder<T> setKey(String key) {
+            mKey = key;
+            return this;
+        }
+
+        public String getKey() {
+            return mKey;
+        }
+
+        public Builder<T> setUrl(String url) {
+            mUrl = url;
+            return this;
+        }
+
+        public String getUrl() {
+            return mUrl;
+        }
+
+        public Builder<T> setDataContainer(DataContainer dataContainer) {
+            mDataContainer = dataContainer;
+            return this;
+        }
+
+        public Builder<T> setUseMemoryCache(boolean useMemoryCache) {
+            mUseMemoryCache = useMemoryCache;
+            return this;
+        }
+
+        boolean isUseMemoryCache() {
+            return mUseMemoryCache;
+        }
+
+        public Builder<T> setUseDiskCache(boolean useDiskCache) {
+            mUseDiskCache = useDiskCache;
+            return this;
+        }
+
+        boolean isUseDiskCache() {
+            return mUseDiskCache;
+        }
+
+        public Builder<T> setUseNetwork(boolean useNetwork) {
+            mUseNetwork = useNetwork;
+            return this;
+        }
+
+        boolean isUseNetwork() {
+            return mUseNetwork;
+        }
+
+        Builder<T> setHelper(ValueHelper<T> helper) {
+            mHelper = helper;
+            return this;
+        }
+
+        ValueHelper<T> getHelper() {
+            return mHelper;
+        }
+
+        Builder<T> setCache(ValueCache<T> cache) {
+            mCache = cache;
+            return this;
+        }
+
+        Builder<T> setOkHttpClient(OkHttpClient okHttpClient) {
+            mOkHttpClient = okHttpClient;
+            return this;
+        }
+
+        Builder<T> setDiskExecutor(Executor diskExecutor) {
+            mDiskExecutor = diskExecutor;
+            return this;
+        }
+
+        Builder<T> setNetworkExecutor(Executor networkExecutor) {
+            mNetworkExecutor = networkExecutor;
+            return this;
+        }
+
+        Builder<T> setConaco(Conaco<T> conaco) {
+            mConaco = conaco;
+            return this;
+        }
+
+        public void isValid() {
+            if (mUnikery == null) {
+                throw new IllegalStateException("Must set unikery");
+            }
+            if (mKey == null && mUrl == null && mDataContainer == null) {
+                throw new IllegalStateException("At least one of mKey and mUrl and mDataContainer have to not be null");
+            }
+        }
+
+        public ConacoTask<T> build() {
+            return new ConacoTask<>(this);
+        }
+
+        public boolean isHardware() {
+            return hardware;
+        }
+
+        /**
+         * Target decode size hint in pixels; decoded dimensions stay at or
+         * above it. Zero (the default) keeps the legacy full-size decode.
+         */
+        public Builder<T> setTargetSize(int targetWidth, int targetHeight) {
+            mTargetWidth = targetWidth;
+            mTargetHeight = targetHeight;
+            return this;
+        }
+
+        public Builder<T> setHardware(boolean hardware) {
+            this.hardware = hardware;
+            return this;
+        }
+    }
+}
