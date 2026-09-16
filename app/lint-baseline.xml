@@ -2,25 +2,36 @@
 <issues format="6" by="lint 8.13.2" type="baseline" client="gradle" dependencies="false" name="AGP (8.13.2)" variant="all" version="8.13.2">
 
     <issue
+        id="EmptySuperCall"
+        message="No need to call `super.onCleared`; the super method is defined to be empty"
+        errorLine1="        super.onCleared()"
+        errorLine2="              ~~~~~~~~~">
+        <location
+            file="src/main/java/com/lanraragi/reader/ui/scene/download/DownloadsViewModel.kt"
+            line="179"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="EmptySuperCall"
+        message="No need to call `super.onCleared`; the super method is defined to be empty"
+        errorLine1="        super.onCleared()"
+        errorLine2="              ~~~~~~~~~">
+        <location
+            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/list/GalleryListViewModel.kt"
+            line="528"
+            column="15"/>
+    </issue>
+
+    <issue
         id="SuspiciousImport"
         message="Don&apos;t include `android.R` here; use a fully qualified name for each usage instead"
         errorLine1="import android.R"
         errorLine2="~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/DrawerView.kt"
+            file="src/main/java/com/lanraragi/framework/widget/DrawerView.kt"
             line="18"
             column="1"/>
-    </issue>
-
-    <issue
-        id="CustomViewStyleable"
-        message="By convention, the custom view (`AvatarImageView`) and the declare-styleable (`LoadImageView`) should have the same name (various editor features rely on this convention)"
-        errorLine1="        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.LoadImageView, defStyleAttr, 0);"
-        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/widget/AvatarImageView.java"
-            line="108"
-            column="62"/>
     </issue>
 
     <issue
@@ -29,7 +40,7 @@
         errorLine1="                androidx.appcompat.R.styleable.Spinner, defStyleAttr, 0);"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/CuteSpinner.java"
+            file="src/main/java/com/lanraragi/framework/widget/CuteSpinner.java"
             line="61"
             column="17"/>
     </issue>
@@ -40,7 +51,7 @@
         errorLine1="        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.Indicating);"
         errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/IndicatingListView.java"
+            file="src/main/java/com/lanraragi/framework/widget/IndicatingListView.java"
             line="53"
             column="62"/>
     </issue>
@@ -51,7 +62,7 @@
         errorLine1="        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.Indicating);"
         errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/IndicatingScrollView.java"
+            file="src/main/java/com/lanraragi/framework/widget/IndicatingScrollView.java"
             line="53"
             column="62"/>
     </issue>
@@ -59,22 +70,22 @@
     <issue
         id="DefaultLocale"
         message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
-        errorLine1="            ratingText.text = String.format(&quot;%.0f\u2605&quot;, gd.rating)"
+        errorLine1="            ratingText.text = String.format(&quot;%.0f★&quot;, archive.rating)"
         errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/detail/DetailHeaderBinder.kt"
-            line="147"
+            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/detail/DetailHeaderBinder.kt"
+            line="177"
             column="31"/>
     </issue>
 
     <issue
         id="DefaultLocale"
         message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
-        errorLine1="            ratingText.text = String.format(&quot;%.0f\u2605&quot;, gd.rating)"
+        errorLine1="            ratingText.text = String.format(&quot;%.0f★&quot;, archive.rating)"
         errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/detail/DetailHeaderBinder.kt"
-            line="147"
+            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/detail/DetailHeaderBinder.kt"
+            line="177"
             column="31"/>
     </issue>
 
@@ -84,7 +95,7 @@
         errorLine1="        String line = String.format("
         errorLine2="                      ^">
         <location
-            file="src/main/java/com/hippo/lib/glview/glrenderer/GLES11Canvas.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/glrenderer/GLES11Canvas.java"
             line="813"
             column="23"/>
     </issue>
@@ -95,7 +106,7 @@
         errorLine1="            final String extension = name.substring(lastDot + 1).toLowerCase();"
         errorLine2="                                                                 ~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/unifile/RawFile.java"
+            file="src/main/java/com/lanraragi/framework/unifile/RawFile.java"
             line="49"
             column="66"/>
     </issue>
@@ -106,7 +117,7 @@
         errorLine1="            mDisappearingChildrenField = ViewGroup.class.getDeclaredField(&quot;mDisappearingChildren&quot;);"
         errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/scene/StageLayout.java"
+            file="src/main/java/com/lanraragi/framework/scene/StageLayout.java"
             line="56"
             column="42"/>
     </issue>
@@ -117,8 +128,8 @@
         errorLine1="            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values"
         errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/gallery/GalleryImageOperations.kt"
-            line="144"
+            file="src/main/java/com/lanraragi/reader/ui/gallery/GalleryImageOperations.kt"
+            line="200"
             column="51"/>
     </issue>
 
@@ -129,7 +140,7 @@
         errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/lanraragi/reader/client/api/LRRAuthManager.kt"
-            line="467"
+            line="602"
             column="49"/>
     </issue>
 
@@ -139,7 +150,7 @@
         errorLine1="    @Nullable"
         errorLine2="    ~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/settings/DownloadSettings.kt"
+            file="src/main/java/com/lanraragi/reader/settings/DownloadSettings.kt"
             line="37"
             column="5"/>
     </issue>
@@ -151,7 +162,7 @@
         errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/lanraragi/reader/client/api/LRRAuthManager.kt"
-            line="467"
+            line="602"
             column="14"/>
     </issue>
 
@@ -161,7 +172,7 @@
         errorLine1="      Class&lt;?> clazz = ClassLoader.getSystemClassLoader().loadClass(&quot;android.widget.Editor&quot;);"
         errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/HackyTextInputEditText.java"
+            file="src/main/java/com/lanraragi/framework/widget/HackyTextInputEditText.java"
             line="40"
             column="24"/>
     </issue>
@@ -172,7 +183,7 @@
         errorLine1="            val sdf = SimpleDateFormat() // 格式化时间"
         errorLine2="                      ~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/util/TimeUtils.kt"
+            file="src/main/java/com/lanraragi/framework/util/TimeUtils.kt"
             line="10"
             column="23"/>
     </issue>
@@ -180,23 +191,12 @@
     <issue
         id="AppBundleLocaleChanges"
         message="Found dynamic locale changes, but did not find corresponding Play Core library calls for downloading languages and splitting by language is not disabled in the `bundle` configuration"
-        errorLine1="      configuration.setLocale(newLocale);"
-        errorLine2="      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="    configuration.setLocale(newLocale);"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/content/ContextLocalWrapper.java"
-            line="42"
-            column="7"/>
-    </issue>
-
-    <issue
-        id="CustomSplashScreen"
-        message="The application should not provide its own launch screen"
-        errorLine1="class SplashActivity : EhActivity() {"
-        errorLine2="      ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/splash/SplashActivity.kt"
-            line="13"
-            column="7"/>
+            file="src/main/java/com/lanraragi/framework/content/ContextLocalWrapper.java"
+            line="55"
+            column="5"/>
     </issue>
 
     <issue
@@ -205,9 +205,229 @@
         errorLine1="        FragmentTransaction transaction = fragmentManager.beginTransaction();"
         errorLine2="                                                          ~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/scene/StageActivity.java"
-            line="561"
+            file="src/main/java/com/lanraragi/framework/scene/StageActivity.java"
+            line="567"
             column="59"/>
+    </issue>
+
+    <issue
+        id="AndroidGradlePluginVersion"
+        message="A newer version of com.android.application than 8.13.2 is available: 9.4.0"
+        errorLine1="agp = &quot;8.13.2&quot;"
+        errorLine2="      ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="6"
+            column="7"/>
+    </issue>
+
+    <issue
+        id="AndroidGradlePluginVersion"
+        message="A newer version of com.android.library than 8.13.2 is available: 9.4.0"
+        errorLine1="agp = &quot;8.13.2&quot;"
+        errorLine2="      ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="6"
+            column="7"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.activity:activity than 1.10.1 is available: 1.13.0"
+        errorLine1="activity = &quot;1.10.1&quot;"
+        errorLine2="           ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="15"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.appcompat:appcompat than 1.7.1 is available: 1.8.0"
+        errorLine1="appcompat = &quot;1.7.1&quot;"
+        errorLine2="            ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="16"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.core:core-ktx than 1.16.0 is available: 1.19.0"
+        errorLine1="core-ktx = &quot;1.16.0&quot;"
+        errorLine2="           ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="20"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.fragment:fragment than 1.8.9 is available: 1.9.0"
+        errorLine1="fragment = &quot;1.8.9&quot;"
+        errorLine2="           ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="21"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.paging:paging-runtime-ktx than 3.5.0 is available: 3.5.1"
+        errorLine1="paging = &quot;3.5.0&quot;"
+        errorLine2="         ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="23"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.paging:paging-testing than 3.5.0 is available: 3.5.1"
+        errorLine1="paging = &quot;3.5.0&quot;"
+        errorLine2="         ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="23"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-compiler than 2.8.4 is available: 2.8.5"
+        errorLine1="room = &quot;2.8.4&quot;"
+        errorLine2="       ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="26"
+            column="8"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-ktx than 2.8.4 is available: 2.8.5"
+        errorLine1="room = &quot;2.8.4&quot;"
+        errorLine2="       ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="26"
+            column="8"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-runtime than 2.8.4 is available: 2.8.5"
+        errorLine1="room = &quot;2.8.4&quot;"
+        errorLine2="       ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="26"
+            column="8"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-testing than 2.8.4 is available: 2.8.5"
+        errorLine1="room = &quot;2.8.4&quot;"
+        errorLine2="       ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="26"
+            column="8"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.google.firebase.crashlytics than 3.0.7 is available: 3.0.8"
+        errorLine1="firebase-crashlytics-plugin = &quot;3.0.7&quot;"
+        errorLine2="                              ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="35"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jetbrains.kotlin.android than 2.3.21 is available: 2.4.20"
+        errorLine1="kotlin = &quot;2.3.21&quot;"
+        errorLine2="         ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="11"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jetbrains.kotlin.plugin.parcelize than 2.3.21 is available: 2.4.20"
+        errorLine1="kotlin = &quot;2.3.21&quot;"
+        errorLine2="         ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="11"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jetbrains.kotlin.plugin.serialization than 2.3.21 is available: 2.4.20"
+        errorLine1="kotlin = &quot;2.3.21&quot;"
+        errorLine2="         ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="11"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of com.jaredsburrows.license than 0.9.9 is available: 0.9.91"
+        errorLine1="license-plugin = &quot;0.9.9&quot;"
+        errorLine2="                 ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="44"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of com.squareup.okhttp3:mockwebserver than 4.12.0 is available: 5.5.0"
+        errorLine1="okhttp = &quot;4.12.0&quot;"
+        errorLine2="         ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="45"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of com.squareup.okhttp3:okhttp than 4.12.0 is available: 5.5.0"
+        errorLine1="okhttp = &quot;4.12.0&quot;"
+        errorLine2="         ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="45"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.robolectric:robolectric than 4.16.1 is available: 4.17"
+        errorLine1="robolectric = &quot;4.16.1&quot;"
+        errorLine2="              ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="46"
+            column="15"/>
     </issue>
 
     <issue
@@ -217,27 +437,15 @@
             file="src/main/res/layout/preference_widget_seekbar.xml"/>
     </issue>
 
-
     <issue
         id="SwitchIntDef"
         message="Switch statement on an `int` with known associated constant missing case `MeasureSpec.EXACTLY`"
         errorLine1="        switch (mode) {"
         errorLine2="        ~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/MaxSizeContainer.java"
+            file="src/main/java/com/lanraragi/framework/widget/MaxSizeContainer.java"
             line="57"
             column="9"/>
-    </issue>
-
-    <issue
-        id="DiscouragedApi"
-        message="Fixed screen orientations will be ignored in most cases, starting from Android 16. Android is moving toward a model where apps are expected to adapt to various orientations, display sizes, and aspect ratios."
-        errorLine1="            android:screenOrientation=&quot;fullSensor&quot;"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/AndroidManifest.xml"
-            line="68"
-            column="13"/>
     </issue>
 
     <issue
@@ -246,7 +454,7 @@
         errorLine1="@TargetApi(Build.VERSION_CODES.KITKAT)"
         errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/unifile/DocumentsContractApi19.java"
+            file="src/main/java/com/lanraragi/framework/unifile/DocumentsContractApi19.java"
             line="31"
             column="1"/>
     </issue>
@@ -257,7 +465,7 @@
         errorLine1="@TargetApi(Build.VERSION_CODES.LOLLIPOP)"
         errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/unifile/DocumentsContractApi21.java"
+            file="src/main/java/com/lanraragi/framework/unifile/DocumentsContractApi21.java"
             line="31"
             column="1"/>
     </issue>
@@ -268,7 +476,7 @@
         errorLine1="    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/view/GLRootView.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/view/GLRootView.java"
             line="441"
             column="5"/>
     </issue>
@@ -279,19 +487,8 @@
         errorLine1="    @TargetApi(ApiHelper.VERSION_CODES.HONEYCOMB)"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/MotionEventHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/MotionEventHelper.java"
             line="36"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="UseRequiresApi"
-        message="Use `@RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR1) instead of `@TargetApi` to propagate the requirement to callers of `doBlur`"
-        errorLine1="    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/util/RSBlur.java"
-            line="42"
             column="5"/>
     </issue>
 
@@ -301,7 +498,7 @@
         errorLine1="@TargetApi(Build.VERSION_CODES.HONEYCOMB)"
         errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/util/SystemUiHelperImplHC.kt"
+            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplHC.kt"
             line="27"
             column="1"/>
     </issue>
@@ -312,7 +509,7 @@
         errorLine1="@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)"
         errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/util/SystemUiHelperImplICS.kt"
+            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplICS.kt"
             line="24"
             column="1"/>
     </issue>
@@ -323,7 +520,7 @@
         errorLine1="@TargetApi(Build.VERSION_CODES.JELLY_BEAN)"
         errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/util/SystemUiHelperImplJB.kt"
+            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplJB.kt"
             line="24"
             column="1"/>
     </issue>
@@ -334,7 +531,7 @@
         errorLine1="@TargetApi(Build.VERSION_CODES.KITKAT)"
         errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/util/SystemUiHelperImplKK.kt"
+            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplKK.kt"
             line="24"
             column="1"/>
     </issue>
@@ -345,7 +542,7 @@
         errorLine1="    @TargetApi(Build.VERSION_CODES.LOLLIPOP)"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/reveal/ViewAnimationUtils.java"
+            file="src/main/java/com/lanraragi/framework/reveal/ViewAnimationUtils.java"
             line="36"
             column="5"/>
     </issue>
@@ -356,7 +553,7 @@
         errorLine1="    @TargetApi(Build.VERSION_CODES.HONEYCOMB)"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/yorozuya/ViewUtils.java"
+            file="src/main/java/com/lanraragi/framework/lib/yorozuya/ViewUtils.java"
             line="266"
             column="5"/>
     </issue>
@@ -367,7 +564,7 @@
         errorLine1="    @TargetApi(Build.VERSION_CODES.HONEYCOMB)"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/yorozuya/ViewUtils.java"
+            file="src/main/java/com/lanraragi/framework/lib/yorozuya/ViewUtils.java"
             line="275"
             column="5"/>
     </issue>
@@ -378,7 +575,7 @@
         errorLine1="                context.resources.getDrawable(R.drawable.shadow_8dp) as NinePatchDrawable"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadDragDropHelper.kt"
+            file="src/main/java/com/lanraragi/reader/ui/scene/download/DownloadDragDropHelper.kt"
             line="60"
             column="17"/>
     </issue>
@@ -389,42 +586,9 @@
         errorLine1="            setShadow((NinePatchDrawable) context.getResources().getDrawable(R.drawable.shadow_2dp)); // LEGACY (upstream): dark theme shadow not implemented"
         errorLine2="                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/ShadowLinearLayout.java"
+            file="src/main/java/com/lanraragi/framework/widget/ShadowLinearLayout.java"
             line="57"
             column="43"/>
-    </issue>
-
-    <issue
-        id="UseCompatTextViewDrawableXml"
-        message="Use `app:drawableStartCompat` instead of `android:drawableStart`"
-        errorLine1="            android:drawableStart=&quot;@drawable/ic_camera_24&quot;"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/background_change_bottom_pop.xml"
-            line="31"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UseCompatTextViewDrawableXml"
-        message="Use `app:drawableStartCompat` instead of `android:drawableStart`"
-        errorLine1="            android:drawableStart=&quot;@drawable/ic_photo_library_24&quot;"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/background_change_bottom_pop.xml"
-            line="52"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UseCompatTextViewDrawableXml"
-        message="Use `app:drawableStartCompat` instead of `android:drawableStart`"
-        errorLine1="            android:drawableStart=&quot;@drawable/v_restore_x24&quot;"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/background_change_bottom_pop.xml"
-            line="73"
-            column="13"/>
     </issue>
 
     <issue
@@ -434,7 +598,7 @@
         errorLine2="                                      ~~~~">
         <location
             file="src/main/res/values/arrays.xml"
-            line="338"
+            line="203"
             column="39"/>
     </issue>
 
@@ -445,73 +609,29 @@
         errorLine2="                                                                                                                           ~~~~">
         <location
             file="src/main/res/values/arrays.xml"
-            line="339"
+            line="204"
             column="124"/>
     </issue>
 
     <issue
         id="PluralsCandidate"
         message="Formatting %d followed by words (&quot;succeeded&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;stat_download_done_text_succeeded&quot;>%d succeeded&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="384"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;succeeded&quot;): This should probably be a plural rather than a string"
         errorLine1="    &lt;string name=&quot;stat_download_done_text_mix&quot;>%1$d succeeded, %2$d failed&lt;/string>"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-en/strings.xml"
-            line="386"
+            file="src/main/res/values/strings.xml"
+            line="282"
             column="5"/>
     </issue>
 
     <issue
         id="PluralsCandidate"
         message="Formatting %d followed by words (&quot;items&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;download_remove_dialog_message_2&quot;>Remove %d items from download list ?&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="391"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;succeeded&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;stat_download_done_text_succeeded&quot;>%d succeeded&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="    &lt;string name=&quot;settings_download_clean_redundancy_done&quot;>Redundancy cleaning completed, clean-up %d items totally&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="464"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;succeeded&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;stat_download_done_text_mix&quot;>%1$d succeeded, %2$d failed&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="466"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;items&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;download_remove_dialog_message_2&quot;>Remove %d items from download list ?&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="471"
+            line="607"
             column="5"/>
     </issue>
 
@@ -533,32 +653,9 @@
         errorLine2="                             ~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="44"
+            line="50"
             column="30"/>
     </issue>
-
-    <issue
-        id="NotifyDataSetChanged"
-        message="It will always be more efficient to use more specific change events if you can. Rely on `notifyDataSetChanged` as a last resort."
-        errorLine1="            mAdapter.notifyDataSetChanged();"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/widget/DirExplorer.java"
-            line="118"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteLayoutParam"
-        message="Invalid layout param in a `FrameLayout`: `layout_weight`"
-        errorLine1="                        android:layout_weight=&quot;1&quot;"
-        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/activity_main.xml"
-            line="54"
-            column="25"/>
-    </issue>
-
 
     <issue
         id="ObsoleteSdkInt"
@@ -566,7 +663,7 @@
         errorLine1="                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {"
         errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/drawable/AddDeleteDrawable.java"
+            file="src/main/java/com/lanraragi/framework/drawable/AddDeleteDrawable.java"
             line="155"
             column="21"/>
     </issue>
@@ -577,7 +674,7 @@
         errorLine1="        val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
         errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/util/AndroidUtil.kt"
+            file="src/main/java/com/lanraragi/framework/util/AndroidUtil.kt"
             line="27"
             column="31"/>
     </issue>
@@ -588,7 +685,7 @@
         errorLine1="    public static final boolean AT_LEAST_16 = Build.VERSION.SDK_INT >= 16;"
         errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="43"
             column="47"/>
     </issue>
@@ -599,7 +696,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.JELLY_BEAN;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="46"
             column="13"/>
     </issue>
@@ -610,7 +707,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.ICE_CREAM_SANDWICH;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="49"
             column="13"/>
     </issue>
@@ -621,7 +718,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.JELLY_BEAN;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="61"
             column="13"/>
     </issue>
@@ -632,7 +729,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="64"
             column="13"/>
     </issue>
@@ -643,7 +740,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.JELLY_BEAN;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="67"
             column="13"/>
     </issue>
@@ -654,7 +751,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="77"
             column="13"/>
     </issue>
@@ -665,7 +762,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB_MR1;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="80"
             column="13"/>
     </issue>
@@ -676,7 +773,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.JELLY_BEAN;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="83"
             column="13"/>
     </issue>
@@ -687,7 +784,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="86"
             column="13"/>
     </issue>
@@ -698,7 +795,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="89"
             column="13"/>
     </issue>
@@ -709,7 +806,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.JELLY_BEAN;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="114"
             column="13"/>
     </issue>
@@ -720,7 +817,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="117"
             column="13"/>
     </issue>
@@ -731,7 +828,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.ICE_CREAM_SANDWICH;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="120"
             column="13"/>
     </issue>
@@ -742,7 +839,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.ICE_CREAM_SANDWICH;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="123"
             column="13"/>
     </issue>
@@ -753,7 +850,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.ICE_CREAM_SANDWICH;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="126"
             column="13"/>
     </issue>
@@ -764,7 +861,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="129"
             column="13"/>
     </issue>
@@ -775,7 +872,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.JELLY_BEAN_MR1;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="135"
             column="13"/>
     </issue>
@@ -786,7 +883,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="138"
             column="13"/>
     </issue>
@@ -797,7 +894,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="141"
             column="13"/>
     </issue>
@@ -808,7 +905,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="144"
             column="13"/>
     </issue>
@@ -819,7 +916,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.JELLY_BEAN;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="147"
             column="13"/>
     </issue>
@@ -830,7 +927,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="150"
             column="13"/>
     </issue>
@@ -841,7 +938,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="154"
             column="13"/>
     </issue>
@@ -852,7 +949,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.JELLY_BEAN_MR1;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="157"
             column="13"/>
     </issue>
@@ -863,7 +960,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="160"
             column="13"/>
     </issue>
@@ -874,7 +971,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.ICE_CREAM_SANDWICH;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="163"
             column="13"/>
     </issue>
@@ -885,7 +982,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB_MR1;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="166"
             column="13"/>
     </issue>
@@ -896,7 +993,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.JELLY_BEAN;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="169"
             column="13"/>
     </issue>
@@ -907,7 +1004,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.JELLY_BEAN;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="172"
             column="13"/>
     </issue>
@@ -918,7 +1015,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="175"
             column="13"/>
     </issue>
@@ -929,7 +1026,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="178"
             column="13"/>
     </issue>
@@ -940,7 +1037,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.JELLY_BEAN_MR2;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="184"
             column="13"/>
     </issue>
@@ -951,7 +1048,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.JELLY_BEAN;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="187"
             column="13"/>
     </issue>
@@ -962,7 +1059,7 @@
         errorLine1="                    Build.VERSION.SDK_INT >= VERSION_CODES.JELLY_BEAN_MR2;"
         errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="190"
             column="21"/>
     </issue>
@@ -973,7 +1070,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= VERSION_CODES.JELLY_BEAN_MR1;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/ApiHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/ApiHelper.java"
             line="193"
             column="13"/>
     </issue>
@@ -981,10 +1078,21 @@
     <issue
         id="ObsoleteSdkInt"
         message="Unnecessary; `SDK_INT` is always >= 28"
+        errorLine1="            private val SNACKBAR_BEHAVIOR_ENABLED = Build.VERSION.SDK_INT >= 11"
+        errorLine2="                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/lanraragi/reader/widget/AppDrawerLayout.kt"
+            line="146"
+            column="53"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 28"
         errorLine1="                val isVpn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {"
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/util/AppHelper.kt"
+            file="src/main/java/com/lanraragi/framework/util/AppHelper.kt"
             line="155"
             column="33"/>
     </issue>
@@ -995,9 +1103,20 @@
         errorLine1="                val isVpn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {"
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/util/AppHelper.kt"
+            file="src/main/java/com/lanraragi/framework/util/AppHelper.kt"
             line="155"
             column="33"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 28"
+        errorLine1="        private val DRAW_SCRIM = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP"
+        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/lanraragi/reader/widget/AppNavigationView.kt"
+            line="67"
+            column="34"/>
     </issue>
 
     <issue
@@ -1006,30 +1125,8 @@
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/AvatarImageView.java"
-            line="396"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="        if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.P){"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/widget/AvatarImageView.java"
-            line="425"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is never &lt; 28"
-        errorLine1="        if (Build.VERSION.SDK_INT &lt; Build.VERSION_CODES.LOLLIPOP) {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/widget/CheckTextView.java"
-            line="82"
+            file="src/main/java/com/lanraragi/reader/ui/BaseActivity.kt"
+            line="49"
             column="13"/>
     </issue>
 
@@ -1039,8 +1136,8 @@
         errorLine1="    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/content/ContextLocalWrapper.java"
-            line="41"
+            file="src/main/java/com/lanraragi/framework/content/ContextLocalWrapper.java"
+            line="66"
             column="9"/>
     </issue>
 
@@ -1050,8 +1147,8 @@
         errorLine1="    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {"
         errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/content/ContextLocalWrapper.java"
-            line="50"
+            file="src/main/java/com/lanraragi/framework/content/ContextLocalWrapper.java"
+            line="75"
             column="16"/>
     </issue>
 
@@ -1061,7 +1158,7 @@
         errorLine1="@TargetApi(Build.VERSION_CODES.KITKAT)"
         errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/unifile/DocumentsContractApi19.java"
+            file="src/main/java/com/lanraragi/framework/unifile/DocumentsContractApi19.java"
             line="31"
             column="1"/>
     </issue>
@@ -1072,7 +1169,7 @@
         errorLine1="@TargetApi(Build.VERSION_CODES.LOLLIPOP)"
         errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/unifile/DocumentsContractApi21.java"
+            file="src/main/java/com/lanraragi/framework/unifile/DocumentsContractApi21.java"
             line="31"
             column="1"/>
     </issue>
@@ -1083,8 +1180,8 @@
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/download/DownloadService.kt"
-            line="89"
+            file="src/main/java/com/lanraragi/reader/download/DownloadService.kt"
+            line="123"
             column="13"/>
     </issue>
 
@@ -1094,42 +1191,9 @@
         errorLine1="                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {"
         errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/drawable/DrawerArrowDrawable.java"
+            file="src/main/java/com/lanraragi/framework/drawable/DrawerArrowDrawable.java"
             line="209"
             column="21"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/EhActivity.kt"
-            line="49"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="            private val SNACKBAR_BEHAVIOR_ENABLED = Build.VERSION.SDK_INT >= 11"
-        errorLine2="                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/widget/EhDrawerLayout.kt"
-            line="146"
-            column="53"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="        private val DRAW_SCRIM = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP"
-        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/widget/EhNavigationView.kt"
-            line="67"
-            column="34"/>
     </issue>
 
     <issue
@@ -1138,7 +1202,7 @@
         errorLine1="            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/util/FileUtils.kt"
+            file="src/main/java/com/lanraragi/framework/util/FileUtils.kt"
             line="131"
             column="17"/>
     </issue>
@@ -1149,7 +1213,7 @@
         errorLine1="            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/util/FileUtils.kt"
+            file="src/main/java/com/lanraragi/framework/util/FileUtils.kt"
             line="131"
             column="17"/>
     </issue>
@@ -1160,7 +1224,7 @@
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/view/GLRootView.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/view/GLRootView.java"
             line="191"
             column="13"/>
     </issue>
@@ -1171,7 +1235,7 @@
         errorLine1="    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/view/GLRootView.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/view/GLRootView.java"
             line="441"
             column="5"/>
     </issue>
@@ -1182,8 +1246,8 @@
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/GalleryActivity.kt"
-            line="409"
+            file="src/main/java/com/lanraragi/reader/ui/GalleryActivity.kt"
+            line="604"
             column="13"/>
     </issue>
 
@@ -1193,7 +1257,7 @@
         errorLine1="    @RequiresApi(api = Build.VERSION_CODES.P)"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/widget/GalleryHeader.kt"
+            file="src/main/java/com/lanraragi/reader/widget/GalleryHeader.kt"
             line="47"
             column="5"/>
     </issue>
@@ -1204,7 +1268,7 @@
         errorLine1="    @RequiresApi(api = Build.VERSION_CODES.P)"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/widget/GalleryHeader.kt"
+            file="src/main/java/com/lanraragi/reader/widget/GalleryHeader.kt"
             line="72"
             column="5"/>
     </issue>
@@ -1215,7 +1279,7 @@
         errorLine1="    @RequiresApi(api = Build.VERSION_CODES.P)"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/widget/GalleryHeader.kt"
+            file="src/main/java/com/lanraragi/reader/widget/GalleryHeader.kt"
             line="94"
             column="5"/>
     </issue>
@@ -1226,7 +1290,7 @@
         errorLine1="    @RequiresApi(api = Build.VERSION_CODES.P)"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/widget/GalleryHeader.kt"
+            file="src/main/java/com/lanraragi/reader/widget/GalleryHeader.kt"
             line="110"
             column="5"/>
     </issue>
@@ -1237,7 +1301,7 @@
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &amp;&amp; displayCutout != null) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/widget/GalleryHeader.kt"
+            file="src/main/java/com/lanraragi/reader/widget/GalleryHeader.kt"
             line="138"
             column="13"/>
     </issue>
@@ -1248,8 +1312,8 @@
         errorLine1="            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/history/HistoryScene.kt"
-            line="361"
+            file="src/main/java/com/lanraragi/reader/ui/scene/history/HistoryScene.kt"
+            line="522"
             column="17"/>
     </issue>
 
@@ -1259,8 +1323,8 @@
         errorLine1="            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/image/Image.kt"
-            line="52"
+            file="src/main/java/com/lanraragi/framework/lib/image/Image.kt"
+            line="54"
             column="17"/>
     </issue>
 
@@ -1270,8 +1334,8 @@
         errorLine1="        animated = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
         errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/image/Image.kt"
-            line="122"
+            file="src/main/java/com/lanraragi/framework/lib/image/Image.kt"
+            line="140"
             column="24"/>
     </issue>
 
@@ -1281,8 +1345,8 @@
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/image/Image.kt"
-            line="141"
+            file="src/main/java/com/lanraragi/framework/lib/image/Image.kt"
+            line="159"
             column="13"/>
     </issue>
 
@@ -1292,11 +1356,10 @@
         errorLine1="            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/image/Image.kt"
-            line="244"
+            file="src/main/java/com/lanraragi/framework/lib/image/Image.kt"
+            line="262"
             column="17"/>
     </issue>
-
 
     <issue
         id="ObsoleteSdkInt"
@@ -1304,8 +1367,8 @@
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/LoadImageView.java"
-            line="325"
+            file="src/main/java/com/lanraragi/framework/widget/LoadImageView.java"
+            line="351"
             column="13"/>
     </issue>
 
@@ -1315,8 +1378,8 @@
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/LoadImageView.java"
-            line="353"
+            file="src/main/java/com/lanraragi/framework/widget/LoadImageView.java"
+            line="379"
             column="13"/>
     </issue>
 
@@ -1326,8 +1389,8 @@
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/LoadImageView.java"
-            line="363"
+            file="src/main/java/com/lanraragi/framework/widget/LoadImageView.java"
+            line="389"
             column="13"/>
     </issue>
 
@@ -1337,7 +1400,18 @@
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/LoadImageView.java"
+            file="src/main/java/com/lanraragi/framework/widget/LoadImageView.java"
+            line="399"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 28"
+        errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/lanraragi/framework/widget/LoadImageViewNew.java"
             line="373"
             column="13"/>
     </issue>
@@ -1348,8 +1422,8 @@
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/LoadImageViewNew.java"
-            line="338"
+            file="src/main/java/com/lanraragi/framework/widget/LoadImageViewNew.java"
+            line="383"
             column="13"/>
     </issue>
 
@@ -1359,19 +1433,8 @@
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/LoadImageViewNew.java"
-            line="348"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/widget/LoadImageViewNew.java"
-            line="359"
+            file="src/main/java/com/lanraragi/framework/widget/LoadImageViewNew.java"
+            line="394"
             column="13"/>
     </issue>
 
@@ -1381,8 +1444,8 @@
         errorLine1="        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/MainActivity.kt"
-            line="336"
+            file="src/main/java/com/lanraragi/reader/ui/MainActivity.kt"
+            line="433"
             column="13"/>
     </issue>
 
@@ -1392,19 +1455,8 @@
         errorLine1="    @TargetApi(ApiHelper.VERSION_CODES.HONEYCOMB)"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/glview/util/MotionEventHelper.java"
+            file="src/main/java/com/lanraragi/framework/lib/glview/util/MotionEventHelper.java"
             line="36"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 17"
-        errorLine1="    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/util/RSBlur.java"
-            line="42"
             column="5"/>
     </issue>
 
@@ -1414,7 +1466,7 @@
         errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/ShadowLinearLayout.java"
+            file="src/main/java/com/lanraragi/framework/widget/ShadowLinearLayout.java"
             line="53"
             column="13"/>
     </issue>
@@ -1425,7 +1477,7 @@
         errorLine1="@TargetApi(Build.VERSION_CODES.HONEYCOMB)"
         errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/util/SystemUiHelperImplHC.kt"
+            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplHC.kt"
             line="27"
             column="1"/>
     </issue>
@@ -1436,7 +1488,7 @@
         errorLine1="@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)"
         errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/util/SystemUiHelperImplICS.kt"
+            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplICS.kt"
             line="24"
             column="1"/>
     </issue>
@@ -1447,7 +1499,7 @@
         errorLine1="@TargetApi(Build.VERSION_CODES.JELLY_BEAN)"
         errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/util/SystemUiHelperImplJB.kt"
+            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplJB.kt"
             line="24"
             column="1"/>
     </issue>
@@ -1458,31 +1510,9 @@
         errorLine1="@TargetApi(Build.VERSION_CODES.KITKAT)"
         errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/util/SystemUiHelperImplKK.kt"
+            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplKK.kt"
             line="24"
             column="1"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="        if (Build.VERSION.SDK_INT>= Build.VERSION_CODES.P){"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/drawable/UnikeryDrawable.java"
-            line="155"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="        imageUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {"
-        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/main/UserImageChange.kt"
-            line="139"
-            column="24"/>
     </issue>
 
     <issue
@@ -1491,7 +1521,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/reveal/ViewAnimationUtils.java"
+            file="src/main/java/com/lanraragi/framework/reveal/ViewAnimationUtils.java"
             line="31"
             column="13"/>
     </issue>
@@ -1502,7 +1532,7 @@
         errorLine1="            Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2;"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/reveal/ViewAnimationUtils.java"
+            file="src/main/java/com/lanraragi/framework/reveal/ViewAnimationUtils.java"
             line="34"
             column="13"/>
     </issue>
@@ -1513,7 +1543,7 @@
         errorLine1="    @TargetApi(Build.VERSION_CODES.LOLLIPOP)"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/reveal/ViewAnimationUtils.java"
+            file="src/main/java/com/lanraragi/framework/reveal/ViewAnimationUtils.java"
             line="36"
             column="5"/>
     </issue>
@@ -1524,7 +1554,7 @@
         errorLine1="    @TargetApi(Build.VERSION_CODES.HONEYCOMB)"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/yorozuya/ViewUtils.java"
+            file="src/main/java/com/lanraragi/framework/lib/yorozuya/ViewUtils.java"
             line="266"
             column="5"/>
     </issue>
@@ -1535,7 +1565,7 @@
         errorLine1="        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.HONEYCOMB) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/yorozuya/ViewUtils.java"
+            file="src/main/java/com/lanraragi/framework/lib/yorozuya/ViewUtils.java"
             line="268"
             column="13"/>
     </issue>
@@ -1546,7 +1576,7 @@
         errorLine1="    @TargetApi(Build.VERSION_CODES.HONEYCOMB)"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/yorozuya/ViewUtils.java"
+            file="src/main/java/com/lanraragi/framework/lib/yorozuya/ViewUtils.java"
             line="275"
             column="5"/>
     </issue>
@@ -1557,7 +1587,7 @@
         errorLine1="        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.HONEYCOMB) {"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/yorozuya/ViewUtils.java"
+            file="src/main/java/com/lanraragi/framework/lib/yorozuya/ViewUtils.java"
             line="277"
             column="13"/>
     </issue>
@@ -1568,65 +1598,9 @@
         errorLine1="            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/yorozuya/ViewUtils.java"
+            file="src/main/java/com/lanraragi/framework/lib/yorozuya/ViewUtils.java"
             line="319"
             column="17"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v15`) is unnecessary; `minSdkVersion` is 28. Merge all the resources in this folder into `drawable-hdpi`.">
-        <location
-            file="src/main/res/drawable-hdpi-v15"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v15`) is unnecessary; `minSdkVersion` is 28. Merge all the resources in this folder into `drawable-mdpi`.">
-        <location
-            file="src/main/res/drawable-mdpi-v15"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v21`) is unnecessary; `minSdkVersion` is 28. Merge all the resources in this folder into `drawable`.">
-        <location
-            file="src/main/res/drawable-v21"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v25`) is unnecessary; `minSdkVersion` is 28. Merge all the resources in this folder into `drawable`.">
-        <location
-            file="src/main/res/drawable-v25"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v26`) is unnecessary; `minSdkVersion` is 28. Merge all the resources in this folder into `drawable`.">
-        <location
-            file="src/main/res/drawable-v26"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v15`) is unnecessary; `minSdkVersion` is 28. Merge all the resources in this folder into `drawable-xhdpi`.">
-        <location
-            file="src/main/res/drawable-xhdpi-v15"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v15`) is unnecessary; `minSdkVersion` is 28. Merge all the resources in this folder into `drawable-xxhdpi`.">
-        <location
-            file="src/main/res/drawable-xxhdpi-v15"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v21`) is unnecessary; `minSdkVersion` is 28. Merge all the resources in this folder into `layout`.">
-        <location
-            file="src/main/res/layout-v21"/>
     </issue>
 
     <issue
@@ -1634,20 +1608,6 @@
         message="This folder configuration (`v26`) is unnecessary; `minSdkVersion` is 28. Merge all the resources in this folder into `mipmap-anydpi`.">
         <location
             file="src/main/res/mipmap-anydpi-v26"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v21`) is unnecessary; `minSdkVersion` is 28. Merge all the resources in this folder into `transition`.">
-        <location
-            file="src/main/res/transition-v21"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v22`) is unnecessary; `minSdkVersion` is 28. Merge all the resources in this folder into `transition`.">
-        <location
-            file="src/main/res/transition-v22"/>
     </issue>
 
     <issue
@@ -1665,14 +1625,26 @@
     </issue>
 
     <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v25`) is unnecessary; `minSdkVersion` is 28. Merge all the resources in this folder into `xml`.">
+        id="StaticFieldLeak"
+        message="Do not place Android context classes in static fields (static reference to `AppConfig` which has field `sContext` pointing to `Context`); this is a memory leak"
+        errorLine1="object AppConfig {"
+        errorLine2="^">
         <location
-            file="src/main/res/xml-v25"/>
+            file="src/main/java/com/lanraragi/reader/AppConfig.kt"
+            line="32"
+            column="1"/>
     </issue>
 
-
-
+    <issue
+        id="StaticFieldLeak"
+        message="Do not place Android context classes in static fields (static reference to `Settings` which has field `sContext` pointing to `Context`); this is a memory leak"
+        errorLine1="object Settings {"
+        errorLine2="^">
+        <location
+            file="src/main/java/com/lanraragi/reader/Settings.kt"
+            line="29"
+            column="1"/>
+    </issue>
 
     <issue
         id="AnimatorKeep"
@@ -1680,11 +1652,11 @@
         errorLine1="    public void setProgress(float progress) {"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/drawable/AddDeleteDrawable.java"
+            file="src/main/java/com/lanraragi/framework/drawable/AddDeleteDrawable.java"
             line="127"
             column="17"/>
         <location
-            file="src/main/java/com/hippo/drawable/AddDeleteDrawable.java"
+            file="src/main/java/com/lanraragi/framework/drawable/AddDeleteDrawable.java"
             line="153"
             column="66"
             message="ObjectAnimator usage here"/>
@@ -1693,30 +1665,14 @@
     <issue
         id="AnimatorKeep"
         message="This method is accessed from an ObjectAnimator so it should be annotated with `@Keep` to ensure that it is not discarded or renamed in release builds"
-        errorLine1="    public void setRadius(float radius) {"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/widget/CheckTextView.java"
-            line="103"
-            column="17"/>
-        <location
-            file="src/main/java/com/hippo/widget/CheckTextView.java"
-            line="139"
-            column="72"
-            message="ObjectAnimator usage here"/>
-    </issue>
-
-    <issue
-        id="AnimatorKeep"
-        message="This method is accessed from an ObjectAnimator so it should be annotated with `@Keep` to ensure that it is not discarded or renamed in release builds"
         errorLine1="    public void setProgress(float progress) {"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/drawable/DrawerArrowDrawable.java"
+            file="src/main/java/com/lanraragi/framework/drawable/DrawerArrowDrawable.java"
             line="183"
             column="17"/>
         <location
-            file="src/main/java/com/hippo/drawable/DrawerArrowDrawable.java"
+            file="src/main/java/com/lanraragi/framework/drawable/DrawerArrowDrawable.java"
             line="207"
             column="66"
             message="ObjectAnimator usage here"/>
@@ -1728,11 +1684,11 @@
         errorLine1="    public void setTrimStart(float trimStart) {"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/ProgressView.java"
+            file="src/main/java/com/lanraragi/framework/widget/ProgressView.java"
             line="169"
             column="17"/>
         <location
-            file="src/main/java/com/hippo/widget/ProgressView.java"
+            file="src/main/java/com/lanraragi/framework/widget/ProgressView.java"
             line="100"
             column="65"
             message="ObjectAnimator usage here"/>
@@ -1744,11 +1700,11 @@
         errorLine1="    public void setTrimEnd(float trimEnd) {"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/ProgressView.java"
+            file="src/main/java/com/lanraragi/framework/widget/ProgressView.java"
             line="180"
             column="17"/>
         <location
-            file="src/main/java/com/hippo/widget/ProgressView.java"
+            file="src/main/java/com/lanraragi/framework/widget/ProgressView.java"
             line="105"
             column="63"
             message="ObjectAnimator usage here"/>
@@ -1760,11 +1716,11 @@
         errorLine1="    public void setTrimOffset(float trimOffset) {"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/ProgressView.java"
+            file="src/main/java/com/lanraragi/framework/widget/ProgressView.java"
             line="191"
             column="17"/>
         <location
-            file="src/main/java/com/hippo/widget/ProgressView.java"
+            file="src/main/java/com/lanraragi/framework/widget/ProgressView.java"
             line="110"
             column="66"
             message="ObjectAnimator usage here"/>
@@ -1776,11 +1732,11 @@
         errorLine1="    public void setTrimRotation(float trimRotation) {"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/ProgressView.java"
+            file="src/main/java/com/lanraragi/framework/widget/ProgressView.java"
             line="202"
             column="17"/>
         <location
-            file="src/main/java/com/hippo/widget/ProgressView.java"
+            file="src/main/java/com/lanraragi/framework/widget/ProgressView.java"
             line="115"
             column="68"
             message="ObjectAnimator usage here"/>
@@ -1792,12 +1748,12 @@
         errorLine1="    fun setProgress(progress: Float) {"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/widget/SearchBar.kt"
-            line="498"
+            file="src/main/java/com/lanraragi/reader/widget/SearchBar.kt"
+            line="548"
             column="9"/>
         <location
-            file="src/main/java/com/hippo/ehviewer/widget/SearchBar.kt"
-            line="441"
+            file="src/main/java/com/lanraragi/reader/widget/SearchBar.kt"
+            line="491"
             column="51"
             message="The method referenced here (setProgress) has not been annotated with `@Keep` which means it could be discarded or renamed in release builds"/>
     </issue>
@@ -1810,17 +1766,6 @@
         <location
             file="src/main/res/layout/activity_gallery.xml"
             line="17"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="MergeRootFrame"
-        message="This `&lt;FrameLayout>` can be replaced with a `&lt;merge>` tag"
-        errorLine1="&lt;FrameLayout"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/activity_hosts.xml"
-            line="18"
             column="1"/>
     </issue>
 
@@ -1846,18 +1791,6 @@
             column="2"/>
     </issue>
 
-
-    <issue
-        id="DisableBaselineAlignment"
-        message="Set `android:baselineAligned=&quot;false&quot;` on this element for better performance"
-        errorLine1="&lt;LinearLayout"
-        errorLine2=" ~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout-v21/preference_widget_seekbar.xml"
-            line="18"
-            column="2"/>
-    </issue>
-
     <issue
         id="DisableBaselineAlignment"
         message="Set `android:baselineAligned=&quot;false&quot;` on this element for better performance"
@@ -1865,10 +1798,9 @@
         errorLine2=" ~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/preference_widget_seekbar.xml"
-            line="18"
+            line="19"
             column="2"/>
     </issue>
-
 
     <issue
         id="NestedWeights"
@@ -1881,24 +1813,6 @@
             column="13"/>
     </issue>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     <issue
         id="UnusedResources"
         message="The resource `R.array.picture_decoding_method` appears to be unused"
@@ -1906,7 +1820,7 @@
         errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/arrays.xml"
-            line="226"
+            line="96"
             column="19"/>
     </issue>
 
@@ -1917,19 +1831,9 @@
         errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/arrays.xml"
-            line="231"
+            line="101"
             column="19"/>
     </issue>
-
-
-
-
-
-
-
-
-
-
 
     <issue
         id="UnusedResources"
@@ -1938,191 +1842,9 @@
         errorLine2="           ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/colors.xml"
-            line="82"
+            line="73"
             column="12"/>
     </issue>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.light_blue_600` appears to be unused"
-        errorLine1="    &lt;color name=&quot;light_blue_600&quot;>#FF039BE5&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="194"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.light_blue_900` appears to be unused"
-        errorLine1="    &lt;color name=&quot;light_blue_900&quot;>#FF01579B&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="195"
-            column="12"/>
-    </issue>
-
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.light_blue_A400` appears to be unused"
-        errorLine1="    &lt;color name=&quot;light_blue_A400&quot;>#FF00B0FF&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="197"
-            column="12"/>
-    </issue>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     <issue
         id="UnusedResources"
@@ -2131,7 +1853,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="23"
+            line="19"
             column="13"/>
     </issue>
 
@@ -2142,202 +1864,9 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="24"
+            line="20"
             column="13"/>
     </issue>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     <issue
         id="UnusedResources"
@@ -2346,7 +1875,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="625"
+            line="556"
             column="13"/>
     </issue>
 
@@ -2357,7 +1886,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="626"
+            line="557"
             column="13"/>
     </issue>
 
@@ -2368,275 +1897,9 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="627"
+            line="558"
             column="13"/>
     </issue>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     <issue
         id="UselessLeaf"
@@ -2645,7 +1908,7 @@
         errorLine2="             ~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/dialog_gallery_menu.xml"
-            line="192"
+            line="213"
             column="14"/>
     </issue>
 
@@ -2656,7 +1919,7 @@
         errorLine2="             ~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/dialog_gallery_menu.xml"
-            line="206"
+            line="227"
             column="14"/>
     </issue>
 
@@ -2670,18 +1933,6 @@
             line="8"
             column="6"/>
     </issue>
-
-    <issue
-        id="UselessParent"
-        message="This `LinearLayout` layout or its `FrameLayout` parent is unnecessary"
-        errorLine1="                    &lt;LinearLayout"
-        errorLine2="                     ~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/activity_main.xml"
-            line="68"
-            column="22"/>
-    </issue>
-
 
     <issue
         id="UselessParent"
@@ -2740,23 +1991,12 @@
 
     <issue
         id="UselessParent"
-        message="This `RelativeLayout` layout or its `LinearLayout` parent is unnecessary"
-        errorLine1="        &lt;RelativeLayout"
-        errorLine2="         ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/item_download.xml"
-            line="30"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="UselessParent"
         message="This `ScrollView` layout or its `LinearLayout` parent is unnecessary; transfer the `background` attribute to the other view"
         errorLine1="    &lt;ScrollView"
         errorLine2="     ~~~~~~~~~~">
         <location
             file="src/main/res/layout/list_thumb_popupwindow.xml"
-            line="9"
+            line="10"
             column="6"/>
     </issue>
 
@@ -2772,25 +2012,25 @@
     </issue>
 
     <issue
+        id="UselessParent"
+        message="This `FrameLayout` layout or its `LinearLayout` parent is unnecessary"
+        errorLine1="    &lt;FrameLayout"
+        errorLine2="     ~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/scene_download.xml"
+            line="23"
+            column="6"/>
+    </issue>
+
+    <issue
         id="TypographyEllipsis"
         message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
         errorLine1="    &lt;string name=&quot;download_searching&quot;>검색 중...&lt;/string>"
         errorLine2="                                      ~~~~~~~">
         <location
             file="src/main/res/values-ko/strings.xml"
-            line="411"
+            line="248"
             column="39"/>
-    </issue>
-
-    <issue
-        id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;page_menu_save_to&quot;>Save to...&lt;/string>"
-        errorLine2="                                     ~~~~~~~~~~">
-        <location
-            file="src/main/res/values-en/strings.xml"
-            line="465"
-            column="38"/>
     </issue>
 
     <issue
@@ -2800,78 +2040,8 @@
         errorLine2="                                          ~~~~~~~~~">
         <location
             file="src/main/res/values-zh-rCN/strings.xml"
-            line="1108"
+            line="766"
             column="43"/>
-    </issue>
-
-    <issue
-        id="IconLauncherShape"
-        message="Launcher icons should not fill every pixel of their square region; see the design guide for details">
-        <location
-            file="src/main/res/mipmap-hdpi/ic_launcher.png"/>
-    </issue>
-
-    <issue
-        id="IconLauncherShape"
-        message="Launcher icons should not fill every pixel of their square region; see the design guide for details">
-        <location
-            file="src/main/res/mipmap-mdpi/ic_launcher.png"/>
-    </issue>
-
-    <issue
-        id="IconLauncherShape"
-        message="Launcher icons should not fill every pixel of their square region; see the design guide for details">
-        <location
-            file="src/main/res/mipmap-xhdpi/ic_launcher.png"/>
-    </issue>
-
-    <issue
-        id="IconLauncherShape"
-        message="Launcher icons should not fill every pixel of their square region; see the design guide for details">
-        <location
-            file="src/main/res/mipmap-xxhdpi/ic_launcher.png"/>
-    </issue>
-
-    <issue
-        id="IconLauncherShape"
-        message="Launcher icons should not fill every pixel of their square region; see the design guide for details">
-        <location
-            file="src/main/res/mipmap-xxxhdpi/ic_launcher.png"/>
-    </issue>
-
-    <issue
-        id="IconLauncherShape"
-        message="Launcher icon used as round icon did not have a circular shape">
-        <location
-            file="src/main/res/mipmap-hdpi/ic_launcher_round.png"/>
-    </issue>
-
-    <issue
-        id="IconLauncherShape"
-        message="Launcher icon used as round icon did not have a circular shape">
-        <location
-            file="src/main/res/mipmap-mdpi/ic_launcher_round.png"/>
-    </issue>
-
-    <issue
-        id="IconLauncherShape"
-        message="Launcher icon used as round icon did not have a circular shape">
-        <location
-            file="src/main/res/mipmap-xhdpi/ic_launcher_round.png"/>
-    </issue>
-
-    <issue
-        id="IconLauncherShape"
-        message="Launcher icon used as round icon did not have a circular shape">
-        <location
-            file="src/main/res/mipmap-xxhdpi/ic_launcher_round.png"/>
-    </issue>
-
-    <issue
-        id="IconLauncherShape"
-        message="Launcher icon used as round icon did not have a circular shape">
-        <location
-            file="src/main/res/mipmap-xxxhdpi/ic_launcher_round.png"/>
     </issue>
 
     <issue
@@ -2927,21 +2097,6 @@
     </issue>
 
     <issue
-        id="IconDipSize"
-        message="The image `sadpanda_low_poly.webp` varies significantly in its density-independent (dip) size across the various density versions: drawable-hdpi-v15/sadpanda_low_poly.webp: 427x427 dp (640x640 px), drawable-mdpi-v15/sadpanda_low_poly.webp: 640x640 dp (640x640 px), drawable-xhdpi-v15/sadpanda_low_poly.webp: 320x320 dp (640x640 px), drawable-xxhdpi-v15/sadpanda_low_poly.webp: 213x213 dp (640x640 px)">
-        <location
-            file="src/main/res/drawable-xxhdpi-v15/sadpanda_low_poly.webp"/>
-        <location
-            file="src/main/res/drawable-xhdpi-v15/sadpanda_low_poly.webp"/>
-        <location
-            file="src/main/res/drawable-hdpi-v15/sadpanda_low_poly.webp"/>
-        <location
-            file="src/main/res/drawable-mdpi-v15/sadpanda_low_poly.webp"/>
-    </issue>
-
-
-
-    <issue
         id="IconDuplicatesConfig"
         message="The `ic_pause_x24.png` icon has identical contents in the following configuration folders: drawable-xxhdpi, drawable-xxxhdpi">
         <location
@@ -2957,19 +2112,6 @@
             file="src/main/res/drawable-xxxhdpi/ic_stat_alert.png"/>
         <location
             file="src/main/res/drawable-xxhdpi/ic_stat_alert.png"/>
-    </issue>
-
-    <issue
-        id="IconDuplicatesConfig"
-        message="The `sadpanda_low_poly.webp` icon has identical contents in the following configuration folders: drawable-hdpi-v15, drawable-mdpi-v15, drawable-xhdpi-v15, drawable-xxhdpi-v15">
-        <location
-            file="src/main/res/drawable-xxhdpi-v15/sadpanda_low_poly.webp"/>
-        <location
-            file="src/main/res/drawable-xhdpi-v15/sadpanda_low_poly.webp"/>
-        <location
-            file="src/main/res/drawable-mdpi-v15/sadpanda_low_poly.webp"/>
-        <location
-            file="src/main/res/drawable-hdpi-v15/sadpanda_low_poly.webp"/>
     </issue>
 
     <issue
@@ -3012,91 +2154,6 @@
     </issue>
 
     <issue
-        id="IconDuplicates"
-        message="The following unrelated icon files have identical contents: ic_launcher.png, ic_launcher_round.png">
-        <location
-            file="src/main/res/mipmap-hdpi/ic_launcher_round.png"/>
-        <location
-            file="src/main/res/mipmap-hdpi/ic_launcher.png"/>
-    </issue>
-
-    <issue
-        id="IconDuplicates"
-        message="The following unrelated icon files have identical contents: ic_launcher.png, ic_launcher_round.png">
-        <location
-            file="src/main/res/mipmap-mdpi/ic_launcher_round.png"/>
-        <location
-            file="src/main/res/mipmap-mdpi/ic_launcher.png"/>
-    </issue>
-
-    <issue
-        id="IconDuplicates"
-        message="The following unrelated icon files have identical contents: ic_launcher.png, ic_launcher_round.png">
-        <location
-            file="src/main/res/mipmap-xhdpi/ic_launcher_round.png"/>
-        <location
-            file="src/main/res/mipmap-xhdpi/ic_launcher.png"/>
-    </issue>
-
-    <issue
-        id="IconDuplicates"
-        message="The following unrelated icon files have identical contents: ic_launcher.png, ic_launcher_round.png">
-        <location
-            file="src/main/res/mipmap-xxhdpi/ic_launcher_round.png"/>
-        <location
-            file="src/main/res/mipmap-xxhdpi/ic_launcher.png"/>
-    </issue>
-
-    <issue
-        id="IconDuplicates"
-        message="The following unrelated icon files have identical contents: ic_launcher.png, ic_launcher_round.png">
-        <location
-            file="src/main/res/mipmap-xxxhdpi/ic_launcher_round.png"/>
-        <location
-            file="src/main/res/mipmap-xxxhdpi/ic_launcher.png"/>
-    </issue>
-
-    <issue
-        id="IconExtension"
-        message="Misleading file extension; named `.webp` but the file format is `JPEG`">
-        <location
-            file="src/main/res/drawable-hdpi-v15/sadpanda_low_poly.webp"/>
-    </issue>
-
-    <issue
-        id="IconExtension"
-        message="Misleading file extension; named `.webp` but the file format is `JPEG`">
-        <location
-            file="src/main/res/drawable-mdpi-v15/sadpanda_low_poly.webp"/>
-    </issue>
-
-    <issue
-        id="IconExtension"
-        message="Misleading file extension; named `.webp` but the file format is `JPEG`">
-        <location
-            file="src/main/res/drawable-xhdpi-v15/sadpanda_low_poly.webp"/>
-    </issue>
-
-    <issue
-        id="IconExtension"
-        message="Misleading file extension; named `.webp` but the file format is `JPEG`">
-        <location
-            file="src/main/res/drawable-xxhdpi-v15/sadpanda_low_poly.webp"/>
-    </issue>
-
-
-    <issue
-        id="Autofill"
-        message="Missing `autofillHints` attribute"
-        errorLine1="  &lt;EditText"
-        errorLine2="   ~~~~~~~~">
-        <location
-            file="src/main/res/layout/dialog_js_prompt.xml"
-            line="31"
-            column="4"/>
-    </issue>
-
-    <issue
         id="Autofill"
         message="Missing `autofillHints` attribute"
         errorLine1="        &lt;EditText"
@@ -3124,7 +2181,7 @@
         errorLine1="        val a = context.obtainStyledAttributes(attrs, SIZE_ATTRS)"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/DrawerView.kt"
+            file="src/main/java/com/lanraragi/framework/widget/DrawerView.kt"
             line="45"
             column="17"/>
     </issue>
@@ -3135,8 +2192,8 @@
         errorLine1="                        BitmapDrawable(Resources.getSystem(), bitmap)"
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/lib/image/Image.kt"
-            line="105"
+            file="src/main/java/com/lanraragi/framework/lib/image/Image.kt"
+            line="123"
             column="25"/>
     </issue>
 
@@ -3146,20 +2203,20 @@
         errorLine1="                val saveCount = canvas.save()"
         errorLine2="                                ~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/drawable/PreciselyClipDrawable.kt"
+            file="src/main/java/com/lanraragi/framework/drawable/PreciselyClipDrawable.kt"
             line="95"
             column="33"/>
     </issue>
 
     <issue
-        id="ClickableViewAccessibility"
-        message="Custom view `LinkifyTextView` overrides `onTouchEvent` but not `performClick`"
-        errorLine1="    public boolean onTouchEvent(@NonNull MotionEvent event) {"
-        errorLine2="                   ~~~~~~~~~~~~">
+        id="UseKtx"
+        message="Use the KTX extension property `View.isVisible` instead?"
+        errorLine1="    val isShowing: Boolean get() = root.visibility == View.VISIBLE"
+        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/LinkifyTextView.java"
+            file="src/main/java/com/lanraragi/reader/ui/gallery/ReaderContinuationController.kt"
             line="52"
-            column="20"/>
+            column="36"/>
     </issue>
 
     <issue
@@ -3168,7 +2225,7 @@
         errorLine1="    public boolean onTouchEvent(@NonNull MotionEvent event) {"
         errorLine2="                   ~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/lockpattern/LockPatternView.java"
+            file="src/main/java/com/lanraragi/framework/widget/lockpattern/LockPatternView.java"
             line="725"
             column="20"/>
     </issue>
@@ -3179,7 +2236,7 @@
         errorLine1="    public boolean onTouchEvent(MotionEvent ev) {"
         errorLine2="                   ~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/SafeCoordinatorLayout.java"
+            file="src/main/java/com/lanraragi/framework/widget/SafeCoordinatorLayout.java"
             line="50"
             column="20"/>
     </issue>
@@ -3190,20 +2247,9 @@
         errorLine1="    public boolean onTouchEvent(@NonNull MotionEvent event) {"
         errorLine2="                   ~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/widget/Slider.java"
+            file="src/main/java/com/lanraragi/framework/widget/Slider.java"
             line="399"
             column="20"/>
-    </issue>
-
-    <issue
-        id="LabelFor"
-        message="Missing accessibility label: provide either a view with an `android:labelFor` that references this view or provide an `android:hint`"
-        errorLine1="  &lt;EditText"
-        errorLine2="   ~~~~~~~~">
-        <location
-            file="src/main/res/layout/dialog_js_prompt.xml"
-            line="31"
-            column="4"/>
     </issue>
 
     <issue
@@ -3234,7 +2280,7 @@
         errorLine1="            mSpf.setText(pageFrom.toString())"
         errorLine2="                         ~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/widget/AdvanceSearchTable.kt"
+            file="src/main/java/com/lanraragi/reader/widget/AdvanceSearchTable.kt"
             line="153"
             column="26"/>
     </issue>
@@ -3245,7 +2291,7 @@
         errorLine1="            mSpt.setText(pageTo.toString())"
         errorLine2="                         ~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/widget/AdvanceSearchTable.kt"
+            file="src/main/java/com/lanraragi/reader/widget/AdvanceSearchTable.kt"
             line="163"
             column="26"/>
     </issue>
@@ -3256,56 +2302,65 @@
         errorLine1="            ratingText.text = &quot;Not rated&quot;"
         errorLine2="                               ~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/detail/DetailHeaderBinder.kt"
-            line="150"
+            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/detail/DetailHeaderBinder.kt"
+            line="180"
             column="32"/>
     </issue>
 
     <issue
         id="SetTextI18n"
         message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
-        errorLine1="        pages.text = &quot;${displayProgress}/${info.pages}P&quot;"
+        errorLine1="        pages.text = &quot;${displayProgress}/${totalPages}P&quot;"
         errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/detail/DetailHeaderBinder.kt"
-            line="189"
+            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/detail/DetailHeaderBinder.kt"
+            line="234"
             column="22"/>
     </issue>
 
     <issue
         id="SetTextI18n"
         message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
-        errorLine1="                    holder.pages?.text = &quot;${displayProgress}/${gi.pages}P&quot;"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="            row.text = &quot;${tank.name} ($count)&quot;"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryAdapter.kt"
-            line="194"
+            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/detail/DetailTankoubonBinder.kt"
+            line="46"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        errorLine1="                    holder.pages?.text = &quot;${displayProgress}/${archive.pagecount}P&quot;"
+        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/list/GalleryAdapterNew.kt"
+            line="246"
             column="42"/>
     </issue>
 
     <issue
         id="SetTextI18n"
         message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
-        errorLine1="                    holder.pages?.text = &quot;${displayProgress}/${gi.pages}P&quot;"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="                uploadProgressPercent?.text = &quot;${state.percent}%&quot;"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryAdapterNew.kt"
-            line="208"
-            column="42"/>
+            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/list/GalleryListScene.kt"
+            line="650"
+            column="47"/>
     </issue>
 
     <issue
         id="SetTextI18n"
         message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
-        errorLine1="                        text = &quot;$tagText \u2715&quot;"
-        errorLine2="                               ~~~~~~~~~~~~~~~~~">
+        errorLine1="                        percentView.text = &quot;$pct%&quot;"
+        errorLine2="                                           ~~~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/detail/TagEditDialog.kt"
-            line="169"
-            column="32"/>
+            file="src/main/java/com/lanraragi/reader/ui/dialog/UpdateDialog.kt"
+            line="146"
+            column="44"/>
     </issue>
-
-
 
     <issue
         id="HardcodedText"
@@ -3314,7 +2369,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/scene_server_config.xml"
-            line="34"
+            line="36"
             column="17"/>
     </issue>
 
@@ -3336,7 +2391,7 @@
         errorLine2="             ~~~~~~~~">
         <location
             file="src/main/res/layout/item_download.xml"
-            line="86"
+            line="127"
             column="14"/>
     </issue>
 
@@ -3358,7 +2413,7 @@
         errorLine2="         ~~~~~~~~">
         <location
             file="src/main/res/layout/item_gallery_list_new.xml"
-            line="71"
+            line="78"
             column="10"/>
     </issue>
 
@@ -3368,31 +2423,108 @@
         errorLine1="                    scene.closeDrawer(Gravity.RIGHT)"
         errorLine2="                                              ~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/BookmarksDraw.kt"
-            line="96"
+            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/list/BookmarksDraw.kt"
+            line="115"
             column="47"/>
     </issue>
 
     <issue
         id="RtlHardcoded"
         message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
-        errorLine1="                    scene.openDrawer(Gravity.RIGHT)"
-        errorLine2="                                             ~~~~~">
+        errorLine1="            callback.closeDrawer(Gravity.RIGHT)"
+        errorLine2="                                         ~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadGuideHelper.kt"
-            line="143"
-            column="46"/>
+            file="src/main/java/com/lanraragi/reader/ui/scene/download/DownloadLabelDraw.kt"
+            line="172"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)"
+        errorLine2="                                                                                     ~~~~">
+        <location
+            file="src/main/java/com/lanraragi/reader/ui/scene/download/DownloadSelectionHelper.kt"
+            line="51"
+            column="86"/>
     </issue>
 
     <issue
         id="RtlHardcoded"
         message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
-        errorLine1="                scene.closeDrawer(Gravity.RIGHT)"
-        errorLine2="                                          ~~~~~">
+        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)"
+        errorLine2="                                                                                     ~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadLabelDraw.kt"
-            line="109"
-            column="43"/>
+            file="src/main/java/com/lanraragi/reader/ui/scene/download/DownloadSelectionHelper.kt"
+            line="52"
+            column="86"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.LEFT)"
+        errorLine2="                                                                                ~~~~">
+        <location
+            file="src/main/java/com/lanraragi/reader/ui/scene/download/DownloadSelectionHelper.kt"
+            line="55"
+            column="81"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)"
+        errorLine2="                                                                                ~~~~~">
+        <location
+            file="src/main/java/com/lanraragi/reader/ui/scene/download/DownloadSelectionHelper.kt"
+            line="56"
+            column="81"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)"
+        errorLine2="                                                                                     ~~~~">
+        <location
+            file="src/main/java/com/lanraragi/reader/ui/scene/download/DownloadSelectionHelper.kt"
+            line="97"
+            column="86"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)"
+        errorLine2="                                                                                     ~~~~~">
+        <location
+            file="src/main/java/com/lanraragi/reader/ui/scene/download/DownloadSelectionHelper.kt"
+            line="98"
+            column="86"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.LEFT)"
+        errorLine2="                                                                                ~~~~">
+        <location
+            file="src/main/java/com/lanraragi/reader/ui/scene/download/DownloadSelectionHelper.kt"
+            line="104"
+            column="81"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)"
+        errorLine2="                                                                                ~~~~~">
+        <location
+            file="src/main/java/com/lanraragi/reader/ui/scene/download/DownloadSelectionHelper.kt"
+            line="105"
+            column="81"/>
     </issue>
 
     <issue
@@ -3401,8 +2533,8 @@
         errorLine1="        setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)"
         errorLine2="                                                                        ~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadsScene.kt"
-            line="650"
+            file="src/main/java/com/lanraragi/reader/ui/scene/download/DownloadsScene.kt"
+            line="632"
             column="73"/>
     </issue>
 
@@ -3412,8 +2544,8 @@
         errorLine1="            setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)"
         errorLine2="                                                                       ~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadsScene.kt"
-            line="656"
+            file="src/main/java/com/lanraragi/reader/ui/scene/download/DownloadsScene.kt"
+            line="638"
             column="72"/>
     </issue>
 
@@ -3423,7 +2555,7 @@
         errorLine1="            callback.toggleDrawer(Gravity.LEFT)"
         errorLine2="                                          ~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryListSearchHelper.kt"
+            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/list/GalleryListSearchHelper.kt"
             line="46"
             column="43"/>
     </issue>
@@ -3434,8 +2566,8 @@
         errorLine1="            callback.setDrawerLockMode(LOCK_MODE_UNLOCKED, Gravity.LEFT)"
         errorLine2="                                                                   ~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryStateHelper.kt"
-            line="277"
+            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/list/GalleryStateHelper.kt"
+            line="284"
             column="68"/>
     </issue>
 
@@ -3445,8 +2577,8 @@
         errorLine1="            callback.setDrawerLockMode(LOCK_MODE_UNLOCKED, Gravity.RIGHT)"
         errorLine2="                                                                   ~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryStateHelper.kt"
-            line="278"
+            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/list/GalleryStateHelper.kt"
+            line="285"
             column="68"/>
     </issue>
 
@@ -3456,8 +2588,8 @@
         errorLine1="            callback.setDrawerLockMode(LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)"
         errorLine2="                                                                        ~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryStateHelper.kt"
-            line="280"
+            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/list/GalleryStateHelper.kt"
+            line="287"
             column="73"/>
     </issue>
 
@@ -3467,8 +2599,8 @@
         errorLine1="            callback.setDrawerLockMode(LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)"
         errorLine2="                                                                        ~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryStateHelper.kt"
-            line="281"
+            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/list/GalleryStateHelper.kt"
+            line="288"
             column="73"/>
     </issue>
 
@@ -3478,8 +2610,8 @@
         errorLine1="            callback.setDrawerLockMode(LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)"
         errorLine2="                                                                        ~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryStateHelper.kt"
-            line="292"
+            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/list/GalleryStateHelper.kt"
+            line="299"
             column="73"/>
     </issue>
 
@@ -3489,8 +2621,8 @@
         errorLine1="            callback.setDrawerLockMode(LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)"
         errorLine2="                                                                        ~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryStateHelper.kt"
-            line="293"
+            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/list/GalleryStateHelper.kt"
+            line="300"
             column="73"/>
     </issue>
 
@@ -3500,8 +2632,8 @@
         errorLine1="            callback.setDrawerLockMode(LOCK_MODE_UNLOCKED, Gravity.LEFT)"
         errorLine2="                                                                   ~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryStateHelper.kt"
-            line="296"
+            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/list/GalleryStateHelper.kt"
+            line="303"
             column="68"/>
     </issue>
 
@@ -3511,8 +2643,8 @@
         errorLine1="            callback.setDrawerLockMode(LOCK_MODE_UNLOCKED, Gravity.RIGHT)"
         errorLine2="                                                                   ~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryStateHelper.kt"
-            line="297"
+            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/list/GalleryStateHelper.kt"
+            line="304"
             column="68"/>
     </issue>
 
@@ -3522,8 +2654,8 @@
         errorLine1="            callback.closeDrawer(Gravity.RIGHT)"
         errorLine2="                                         ~~~~~">
         <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryTagChipHelper.kt"
-            line="157"
+            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/list/GalleryTagChipHelper.kt"
+            line="158"
             column="42"/>
     </issue>
 
@@ -3533,7 +2665,7 @@
         errorLine1="        mPopup.showAtLocation(this, Gravity.TOP | Gravity.LEFT, mPopupX, mPopupY);"
         errorLine2="                                                          ~~~~">
         <location
-            file="src/main/java/com/hippo/widget/Slider.java"
+            file="src/main/java/com/lanraragi/framework/widget/Slider.java"
             line="244"
             column="59"/>
     </issue>
@@ -3543,336 +2675,6 @@
         message="The project references RTL attributes, but does not explicitly enable or disable RTL support with `android:supportsRtl` in the manifest">
         <location
             file="src/main/AndroidManifest.xml"/>
-    </issue>
-
-    <issue
-        id="AndroidGradlePluginVersion"
-        message="A newer version of com.android.application than 8.13.2 is available: 9.2.1"
-        errorLine1="agp = &quot;8.13.2&quot;"
-        errorLine2="      ~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="6"
-            column="7"/>
-    </issue>
-
-    <issue
-        id="AndroidGradlePluginVersion"
-        message="A newer version of com.android.library than 8.13.2 is available: 9.2.1"
-        errorLine1="agp = &quot;8.13.2&quot;"
-        errorLine2="      ~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="6"
-            column="7"/>
-    </issue>
-
-    <issue
-        id="EmptySuperCall"
-        message="No need to call `super.onCleared`; the super method is defined to be empty"
-        errorLine1="        super.onCleared()"
-        errorLine2="              ~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadsViewModel.kt"
-            line="136"
-            column="15"/>
-    </issue>
-
-    <issue
-        id="EmptySuperCall"
-        message="No need to call `super.onCleared`; the super method is defined to be empty"
-        errorLine1="        super.onCleared()"
-        errorLine2="              ~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryListViewModel.kt"
-            line="526"
-            column="15"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.activity:activity than 1.10.1 is available: 1.13.0"
-        errorLine1="activity = &quot;1.10.1&quot;"
-        errorLine2="           ~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="15"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.browser:browser than 1.8.0 is available: 1.10.0"
-        errorLine1="browser = &quot;1.8.0&quot;"
-        errorLine2="          ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="18"
-            column="11"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.core:core-ktx than 1.16.0 is available: 1.19.0"
-        errorLine1="core-ktx = &quot;1.16.0&quot;"
-        errorLine2="           ~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="21"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of com.squareup.okhttp3:mockwebserver than 4.12.0 is available: 5.4.0"
-        errorLine1="okhttp = &quot;4.12.0&quot;"
-        errorLine2="         ~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="49"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of com.squareup.okhttp3:okhttp than 4.12.0 is available: 5.4.0"
-        errorLine1="okhttp = &quot;4.12.0&quot;"
-        errorLine2="         ~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="49"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of org.jetbrains.kotlin.android than 2.3.21 is available: 2.4.0"
-        errorLine1="kotlin = &quot;2.3.21&quot;"
-        errorLine2="         ~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="11"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of org.jetbrains.kotlin.plugin.parcelize than 2.3.21 is available: 2.4.0"
-        errorLine1="kotlin = &quot;2.3.21&quot;"
-        errorLine2="         ~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="11"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of org.jetbrains.kotlin.plugin.serialization than 2.3.21 is available: 2.4.0"
-        errorLine1="kotlin = &quot;2.3.21&quot;"
-        errorLine2="         ~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="11"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="RtlHardcoded"
-        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
-        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)"
-        errorLine2="                                                                                     ~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadSelectionHelper.kt"
-            line="46"
-            column="86"/>
-    </issue>
-
-    <issue
-        id="RtlHardcoded"
-        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
-        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)"
-        errorLine2="                                                                                     ~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadSelectionHelper.kt"
-            line="46"
-            column="86"/>
-    </issue>
-
-    <issue
-        id="RtlHardcoded"
-        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
-        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)"
-        errorLine2="                                                                                     ~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadSelectionHelper.kt"
-            line="46"
-            column="86"/>
-    </issue>
-
-    <issue
-        id="RtlHardcoded"
-        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
-        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)"
-        errorLine2="                                                                                     ~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadSelectionHelper.kt"
-            line="46"
-            column="86"/>
-    </issue>
-
-    <issue
-        id="RtlHardcoded"
-        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
-        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)"
-        errorLine2="                                                                                     ~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadSelectionHelper.kt"
-            line="45"
-            column="86"/>
-    </issue>
-
-    <issue
-        id="RtlHardcoded"
-        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
-        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)"
-        errorLine2="                                                                                     ~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadSelectionHelper.kt"
-            line="45"
-            column="86"/>
-    </issue>
-
-    <issue
-        id="RtlHardcoded"
-        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
-        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)"
-        errorLine2="                                                                                     ~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadSelectionHelper.kt"
-            line="45"
-            column="86"/>
-    </issue>
-
-    <issue
-        id="RtlHardcoded"
-        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
-        errorLine1="            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)"
-        errorLine2="                                                                                     ~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/download/DownloadSelectionHelper.kt"
-            line="45"
-            column="86"/>
-    </issue>
-
-    <issue
-        id="SetTextI18n"
-        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
-        errorLine1="                        percentView.text = &quot;$pct%&quot;"
-        errorLine2="                                           ~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/dialog/UpdateDialog.kt"
-            line="146"
-            column="44"/>
-    </issue>
-
-    <issue
-        id="SetTextI18n"
-        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
-        errorLine1="            row.text = &quot;${tank.name} ($count)&quot;"
-        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/detail/DetailTankoubonBinder.kt"
-            line="44"
-            column="24"/>
-    </issue>
-
-    <issue
-        id="SetTextI18n"
-        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
-        errorLine1="                uploadProgressPercent?.text = &quot;${state.percent}%&quot;"
-        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/scene/gallery/list/GalleryListScene.kt"
-            line="626"
-            column="47"/>
-    </issue>
-
-    <issue
-        id="SmallSp"
-        message="Avoid using sizes smaller than `11sp`: `10sp`"
-        errorLine1="        android:textSize=&quot;10sp&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/item_gallery_grid.xml"
-            line="46"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="StaticFieldLeak"
-        message="Do not place Android context classes in static fields (static reference to `AppConfig` which has field `sContext` pointing to `Context`); this is a memory leak"
-        errorLine1="object AppConfig {"
-        errorLine2="^">
-        <location
-            file="src/main/java/com/hippo/ehviewer/AppConfig.kt"
-            line="32"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="StaticFieldLeak"
-        message="Do not place Android context classes in static fields (static reference to `Settings` which has field `sContext` pointing to `Context`); this is a memory leak"
-        errorLine1="object Settings {"
-        errorLine2="^">
-        <location
-            file="src/main/java/com/hippo/ehviewer/Settings.kt"
-            line="29"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.text_medium` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;text_medium&quot;&gt;18sp&lt;/dimen&gt;"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="31"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.dimen.title_text_top_padding` appears to be unused"
-        errorLine1="    &lt;dimen name=&quot;title_text_top_padding&quot;&gt;6dp&lt;/dimen&gt;"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/dimens.xml"
-            line="26"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension property `View.isVisible` instead?"
-        errorLine1="    val isShowing: Boolean get() = root.visibility == View.VISIBLE"
-        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hippo/ehviewer/ui/gallery/ReaderContinuationController.kt"
-            line="52"
-            column="36"/>
-    </issue>
-
-    <issue
-        id="UselessParent"
-        message="This `FrameLayout` layout or its `LinearLayout` parent is unnecessary"
-        errorLine1="    &lt;FrameLayout"
-        errorLine2="     ~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/scene_download.xml"
-            line="23"
-            column="6"/>
     </issue>
 
 </issues>
