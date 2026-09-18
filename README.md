@@ -98,6 +98,9 @@ RELEASE_KEY_PASSWORD=<your-key-password>
 ./gradlew :app:assembleAppReleaseRelease
 ```
 
+构建产物 | Output: Debug APK 位于 `app/build/outputs/apk/appRelease/debug/`，Release APK 位于 `app/build/outputs/apk/appRelease/release/`。
+The Debug APK lands in `app/build/outputs/apk/appRelease/debug/`, the Release APK in `app/build/outputs/apk/appRelease/release/`.
+
 > 详细的签名配置和发布流程请参考 [CONTRIBUTING.md](CONTRIBUTING.md)。
 >
 > See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed signing and release instructions.
