@@ -29,6 +29,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.Call
 import okhttp3.OkHttpClient
+import com.lanraragi.reader.download.DownloadPageNaming
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -44,11 +45,24 @@ import java.util.concurrent.atomic.AtomicReference
  * 1. start() -> calls LRRArchiveApi.extractArchive() on IO thread to get page paths
  * 2. onRequest(index) -> downloads the specific page image, decodes it, notifies UI
  * 3. Adjacent pages are preloaded (download only) for faster navigation
+ *
+ * **Hybrid mode** (non-null [downloadDir]): the archive has a partial local
+ * download (in progress, paused or failed). Page files are then resolved in
+ * the download directory under the worker's naming
+ * ([com.lanraragi.reader.download.DownloadPageNaming]) instead of the reader
+ * cache: pages the worker has already landed are read straight from disk,
+ * and pages the reader fetches itself are written there, so the worker's
+ * "already on disk and valid → skip" branch later picks them up. Both
+ * writers use unique `.tmp` + rename, so a page written by both sides just
+ * ends up with the same bytes twice. Reader-written pages are not reported
+ * to the download progress tracker (ADR-001 publishing channels); the
+ * worker counts them when its window reaches them.
  */
 class LRRGalleryProvider(
     context: Context,
     private val arcId: String,
     private val serverProfileId: Long = 0L,
+    private val downloadDir: File? = null,
 ) : GalleryProvider2() {
 
     /**
@@ -598,7 +612,8 @@ class LRRGalleryProvider(
 
     // ==================== Internal ====================
 
-    private fun getCacheFile(index: Int): File = File(cacheDir, "page_$index")
+    private fun getCacheFile(index: Int): File =
+        resolvePageFile(downloadDir, cacheDir, index, stateRef.get().paths?.getOrNull(index))
 
     // Per-page download mutexes (same-page exclusion across the user-request
     // and preload paths). Replaces mod-32 striped Java monitors: a stripe
@@ -766,6 +781,24 @@ class LRRGalleryProvider(
 
     companion object {
         private const val TAG = "LRRGalleryProvider"
+
+        /**
+         * Where page [index] lives on disk. Hybrid mode ([downloadDir] set)
+         * addresses the download directory by the worker's naming, which
+         * needs the server page path for its extension; until the page list
+         * is loaded (or outside it) the reader cache is used, which is where
+         * every page lives in plain streaming mode.
+         */
+        internal fun resolvePageFile(
+            downloadDir: File?,
+            cacheDir: File,
+            index: Int,
+            pagePath: String?,
+        ): File = if (downloadDir != null && pagePath != null) {
+            DownloadPageNaming.pageFile(downloadDir, index, pagePath)
+        } else {
+            File(cacheDir, "page_$index")
+        }
         private const val BUFFER_SIZE = 65536 // 64KB buffer for save()
         private const val PRELOAD_COUNT = 5 // Preload next 5 pages (LAN is fast)
         private const val PRELOAD_PARALLELISM = 2 // Concurrent preload downloads
