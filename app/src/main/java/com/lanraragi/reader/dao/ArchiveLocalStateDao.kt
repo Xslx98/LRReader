@@ -360,6 +360,10 @@ interface ArchiveLocalStateDao {
     @Query("SELECT DOWNLOAD_ROOT_URI FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid AND DOWNLOAD_STATE IS NOT NULL")
     suspend fun getDownloadRootUri(arcid: String): String?
 
+    /** Current persisted download state of [arcid], null when it has no download row. */
+    @Query("SELECT DOWNLOAD_STATE FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid AND DOWNLOAD_STATE IS NOT NULL")
+    suspend fun getDownloadState(arcid: String): DownloadState?
+
     /**
      * Whether [arcid] has a download row at all (any state). Coroutine-safe
      * alternative to the main-thread-only in-memory

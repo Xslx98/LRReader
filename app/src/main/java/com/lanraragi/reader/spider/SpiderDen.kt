@@ -168,7 +168,7 @@ object SpiderDen {
      * revoke surfaces as a `null` from the entire helper rather than
      * a crash.
      */
-    private fun resolveRootDir(storedUri: String?): UniFile? {
+    internal fun resolveRootDir(storedUri: String?): UniFile? {
         if (!storedUri.isNullOrEmpty()) {
             try {
                 val parsed = storedUri.toUri()
