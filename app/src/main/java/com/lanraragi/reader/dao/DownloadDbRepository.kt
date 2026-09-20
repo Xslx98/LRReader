@@ -171,6 +171,10 @@ class DownloadDbRepository(
     suspend fun isDownloadTracked(arcid: String): Boolean =
         archiveLocalStateDao.hasDownloadRow(arcid)
 
+    /** Fresh persisted state of [arcid]'s download row, null when there is none. */
+    suspend fun getDownloadState(arcid: String): DownloadState? =
+        archiveLocalStateDao.getDownloadState(arcid)
+
     /**
      * One-shot UPDATE driven by the boot-time backfill in
      * [com.lanraragi.reader.LRReaderApplication]. Sets DOWNLOAD_ROOT_URI on
