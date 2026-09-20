@@ -20,7 +20,9 @@ import java.io.File
  * Shared utility for building the optimal Intent to open a gallery for reading.
  *
  * If local downloaded files exist for the given archive, opens with [GalleryActivity.ACTION_DIR]
- * (instant, offline). Otherwise falls back to [GalleryActivity.ACTION_LRR] (server streaming).
+ * (instant, offline). Otherwise falls back to [GalleryActivity.ACTION_LRR] (server streaming);
+ * a partial local copy with network up streams in hybrid mode, reading and
+ * filling the download directory ([GalleryActivity.KEY_DOWNLOAD_DIR]).
  */
 object GalleryOpenHelper {
 
@@ -146,17 +148,23 @@ object GalleryOpenHelper {
             }
         } else {
             // No local files, or an incomplete local copy with network up —
-            // stream from LANraragi server.
+            // stream from LANraragi server. A partial local copy puts the
+            // streaming provider in hybrid mode: it reads the pages already
+            // on disk and writes the ones it fetches into the same directory
+            // (see LRRGalleryProvider), whatever the download's current state.
             if (downloadDir != null && BuildConfig.DEBUG) {
                 Log.i(
                     TAG,
                     "[ROUTE] incomplete local copy for arcid=${archive.arcid}" +
                         " (${countImageFiles(downloadDir)}/${archive.pagecount})," +
-                        " streaming from server instead"
+                        " streaming from server in hybrid mode"
                 )
             }
             intent.action = GalleryActivity.ACTION_LRR
             intent.putExtra(GalleryActivity.KEY_ARCHIVE, archive)
+            if (downloadDir != null) {
+                intent.putExtra(GalleryActivity.KEY_DOWNLOAD_DIR, downloadDir.absolutePath)
+            }
             // Fire-and-forget LRR warmup. preloadForDetail downloads the
             // bytes and decode-warms the slot. Idempotent w.r.t. an
             // earlier detail-page trigger; the slot's
