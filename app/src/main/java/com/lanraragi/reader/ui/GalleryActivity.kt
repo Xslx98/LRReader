@@ -106,6 +106,12 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         /** Parcelable [com.lanraragi.reader.gallery.TankSessionSeed] for [ACTION_TANK]. */
         const val KEY_TANK_SEED = "tank_seed"
         const val KEY_FILENAME = "filename"
+        /**
+         * ACTION_LRR only: absolute path of a partial local download for this
+         * archive. Puts [LRRGalleryProvider] in hybrid mode — read landed
+         * pages from the download directory, write fetched ones back there.
+         */
+        const val KEY_DOWNLOAD_DIR = "download_dir"
         const val KEY_ARCHIVE = "archive"
 
         /** onBackPressed result-extra carrying the (possibly mutated) archive back to the launching scene. */
@@ -137,6 +143,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
 
     private var mAction: String? = null
     private var mFilename: String? = null
+    private var mDownloadDir: String? = null
     private var mArchive: Archive? = null
 
     /**
@@ -214,8 +221,11 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
             ACTION_LRR -> {
                 val archive = mArchive
                 if (archive != null) {
+                    val downloadDir = mDownloadDir
+                        ?.let(::File)
+                        ?.takeIf { it.isDirectory }
                     mGalleryProvider = LRRGalleryProvider(
-                        this, archive.arcid, archive.serverProfileId
+                        this, archive.arcid, archive.serverProfileId, downloadDir
                     )
                 }
             }
@@ -258,6 +268,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
 
         mAction = intent.action
         mFilename = intent.getStringExtra(KEY_FILENAME)
+        mDownloadDir = intent.getStringExtra(KEY_DOWNLOAD_DIR)
         mArchive = intent.getParcelableExtra(KEY_ARCHIVE)
         mTankSeed = intent.getParcelableExtra(KEY_TANK_SEED)
         val onEvent = intent.getBooleanExtra(DATA_IN_EVENT, false)
@@ -319,6 +330,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     private fun onRestore(savedInstanceState: Bundle) {
         mAction = savedInstanceState.getString(KEY_ACTION)
         mFilename = savedInstanceState.getString(KEY_FILENAME)
+        mDownloadDir = savedInstanceState.getString(KEY_DOWNLOAD_DIR)
         mArchive = savedInstanceState.getParcelable(KEY_ARCHIVE)
         mTankSeed = savedInstanceState.getParcelable(KEY_TANK_SEED)
         mPage = savedInstanceState.getInt(KEY_PAGE, -1)
@@ -330,6 +342,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         super.onSaveInstanceState(outState)
         outState.putString(KEY_ACTION, mAction)
         outState.putString(KEY_FILENAME, mFilename)
+        outState.putString(KEY_DOWNLOAD_DIR, mDownloadDir)
         mArchive?.let { outState.putParcelable(KEY_ARCHIVE, it) }
         mTankSeed?.let { outState.putParcelable(KEY_TANK_SEED, it) }
         outState.putInt(KEY_PAGE, mPage)
