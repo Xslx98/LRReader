@@ -239,18 +239,12 @@ object GalleryOpenHelper {
      * an existing `file://` directory that actually contains page images, so
      * callers can route straight to [GalleryActivity.ACTION_DIR].
      *
-     * Resolution is layered so a stale persisted pointer can't silently send
-     * a fully-downloaded archive to network streaming (the bug this guards):
+     * Resolution:
      *  1. Primary — [SpiderDen.getGalleryDownloadDir] maps arcid → the DB
-     *     `dirname` under the recorded root. Fast path; hits for almost every
-     *     archive.
-     *  2. Recovery — when the primary path is missing or empty, re-find the
-     *     folder by its `arcid-` prefix under the current download root (the
-     *     same naming [SpiderDen] creates) and repair the DB pointer so the
-     *     primary path succeeds next time. Covers a dirname that drifted from
-     *     the real folder (sanitisation change, title edit, aborted move,
-     *     legacy row).
-     *  3. Legacy — the pre-W34 app-private, title-named folder.
+     *     `dirname` under the recorded root. Directories are title-named
+     *     (DownloadDirNaming), so the persisted pointer is the only
+     *     arcid → directory link; there is no prefix to scan for.
+     *  2. Legacy — the pre-W34 app-private, title-named folder.
      */
     @JvmStatic
     suspend fun getLocalDownloadDir(context: Context, archive: Archive): File? {
@@ -258,30 +252,7 @@ object GalleryOpenHelper {
         fileDirFromUni(SpiderDen.getGalleryDownloadDir(archive.arcid, archive.title))
             ?.let { primary -> if (hasImageFiles(primary)) return primary }
 
-        // 2. Defensive recovery by arcid prefix under the current root.
-        fileDirFromUni(DownloadSettings.getDownloadLocation())?.let { root ->
-            val recovered = root.listFiles()?.firstOrNull { f ->
-                f.isDirectory && f.name.startsWith("${archive.arcid}-") && hasImageFiles(f)
-            }
-            if (recovered != null) {
-                if (BuildConfig.DEBUG) {
-                    Log.w(
-                        TAG,
-                        "[DIR-RESCUE] primary resolution missed arcid=${archive.arcid}; " +
-                            "recovered '${recovered.name}' by prefix scan"
-                    )
-                }
-                // Self-heal the DB pointer so the fast path hits next time
-                // (and so the download worker doesn't orphan into a new dir).
-                runCatching {
-                    ServiceRegistry.dataModule.downloadDbRepository
-                        .putDownloadDirname(archive.arcid, recovered.name)
-                }
-                return recovered
-            }
-        }
-
-        // 3. Legacy app-private fallback.
+        // 2. Legacy app-private fallback.
         val title = archive.title.takeIf { it.isNotEmpty() } ?: return null
         val baseDir = File(context.getExternalFilesDir(null), "download")
         val dirName = title.replace("[\\\\/:*?\"<>|]".toRegex(), "_").trim()
