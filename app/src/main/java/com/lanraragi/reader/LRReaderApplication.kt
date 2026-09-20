@@ -42,6 +42,8 @@ import kotlinx.coroutines.withContext
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.AppearanceSettings
+import com.lanraragi.reader.download.DownloadDirMigration
+import com.lanraragi.reader.spider.SpiderDen
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.settings.PrivacySettings
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -334,6 +336,28 @@ class LRReaderApplication : RecordingApplication() {
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "imported-archive row purge failed")
+            }
+        }
+
+        // One-time rename of `<arcid>-<title>` download directories to the
+        // title-only rule (DownloadDirNaming). Downloads never auto-resume
+        // at boot (WAIT/DOWNLOAD rows are reset to NONE on load), so the
+        // directories are quiescent here; the migration still re-checks
+        // each row's state and leaves anything active or failing for the
+        // next boot, setting the pref guard only once every row is done.
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            try {
+                val prefs = getSharedPreferences("boot_cleanup", MODE_PRIVATE)
+                if (!prefs.getBoolean(DownloadDirMigration.PREF_DONE, false)) {
+                    val outcome = DownloadDirMigration(
+                        ServiceRegistry.dataModule.downloadDbRepository,
+                        SpiderDen::resolveRootDir,
+                    ).run()
+                    if (BuildConfig.DEBUG) Log.i(TAG, "Download dir migration: ${outcome.results}")
+                    if (outcome.complete) prefs.edit { putBoolean(DownloadDirMigration.PREF_DONE, true) }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Download dir migration failed; will retry next boot")
             }
         }
 

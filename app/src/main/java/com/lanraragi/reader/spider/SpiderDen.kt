@@ -21,8 +21,8 @@ import android.util.Log
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.gallery.GalleryProvider2
+import com.lanraragi.reader.download.DownloadDirNaming
 import com.lanraragi.reader.settings.DownloadSettings
-import com.lanraragi.framework.unifile.FilenameFilter
 import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.framework.lib.yorozuya.FileUtils
 import java.util.Locale
@@ -60,11 +60,7 @@ object SpiderDen {
      *
      * @param arcid LANraragi archive id (the directory's primary key)
      * @param title display title — used only when the directory has to be
-     *   created (it becomes part of the directory name)
-     * @param legacyGid optional EH-era gid; used as a fallback prefix when
-     *   listing directories so that very old installs (pre-W34-1) whose
-     *   on-disk dirs are gid-prefixed can still be matched. Pass `null` if
-     *   the caller has no gid value (e.g. arcid-only contexts).
+     *   created (it becomes the directory name, see DownloadDirNaming)
      * @param rootUriOverride explicit override skipping the DB lookup;
      *   pass `info.downloadRootUri` when the caller already has a
      *   `DownloadInfo` in scope.
@@ -73,7 +69,6 @@ object SpiderDen {
     suspend fun getGalleryDownloadDir(
         arcid: String,
         title: String?,
-        legacyGid: Long? = null,
         rootUriOverride: String? = null,
     ): UniFile? {
         val downloadDbRepo = ServiceRegistry.dataModule.downloadDbRepository
@@ -95,42 +90,12 @@ object SpiderDen {
             dirname = sanitized
         }
 
-        // Find it by arcid prefix (new format), then fall back to gid prefix (legacy)
+        // Create it — the sanitised title, de-duplicated against siblings
+        // (DownloadDirNaming); the DB pointer is the only arcid → dir link.
         if (dirname == null) {
-            try {
-                // Try arcid-prefixed directory first (new format)
-                var files = dir.listFiles(StartWithFilenameFilter("$arcid-"))
-                // Fall back to gid-prefixed directory (legacy installs)
-                if ((files == null || files.isEmpty()) && legacyGid != null && legacyGid != 0L) {
-                    files = dir.listFiles(StartWithFilenameFilter("$legacyGid-"))
-                }
-                if (files != null) {
-                    // Get max-length-name dir
-                    var maxLength = -1
-                    for (file in files) {
-                        if (file.isDirectory) {
-                            val name = file.name ?: continue
-                            val length = name.length
-                            if (length > maxLength) {
-                                maxLength = length
-                                dirname = name
-                            }
-                        }
-                    }
-                    if (dirname != null) {
-                        downloadDbRepo.putDownloadDirname(arcid, dirname)
-                    }
-                }
-            } catch (e: Exception) {
-                // Failed to list files, maybe storage is unavailable or permission lost
-                // Continue to create new directory
-                android.util.Log.w("SpiderDen", "Failed to list files in download directory", e)
+            dirname = DownloadDirNaming.uniqueName(DownloadDirNaming.baseName(arcid, title)) { name ->
+                dir.findFile(name) != null
             }
-        }
-
-        // Create it — use arcid as prefix for unique directory names
-        if (dirname == null) {
-            dirname = FileUtils.sanitizeFilename("$arcid-$title")
             downloadDbRepo.putDownloadDirname(arcid, dirname)
         }
 
@@ -164,7 +129,7 @@ object SpiderDen {
      * revoke surfaces as a `null` from the entire helper rather than
      * a crash.
      */
-    private fun resolveRootDir(storedUri: String?): UniFile? {
+    internal fun resolveRootDir(storedUri: String?): UniFile? {
         if (!storedUri.isNullOrEmpty()) {
             try {
                 val parsed = storedUri.toUri()
@@ -176,9 +141,5 @@ object SpiderDen {
             }
         }
         return DownloadSettings.getDownloadLocation()
-    }
-
-    private class StartWithFilenameFilter(private val prefix: String) : FilenameFilter {
-        override fun accept(dir: UniFile, filename: String): Boolean = filename.startsWith(prefix)
     }
 }
