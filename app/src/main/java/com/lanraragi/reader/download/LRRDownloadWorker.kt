@@ -244,8 +244,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         try {
             OrderedPageWindow.run(scope, total, PARALLEL_PAGES, { cancelled }) { i ->
                 val pagePath = resolvedPagePaths[i]
-                val ext = getExtension(pagePath)
-                val pageFile = File(downloadDir, "%04d%s".format(i + 1, ext))
+                val pageFile = DownloadPageNaming.pageFile(downloadDir, i, pagePath)
 
                 // Skip if already downloaded and valid (an earlier run, or the
                 // reader's hybrid session writing into this directory).
@@ -657,12 +656,6 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         private fun sanitizeFilename(name: String?): String {
             if (name == null) return "unknown"
             return name.replace(Regex("[\\\\/:*?\"<>|]"), "_").trim()
-        }
-
-        @JvmStatic
-        private fun getExtension(path: String): String {
-            val dot = path.lastIndexOf('.')
-            return if (dot >= 0) path.substring(dot) else ".jpg"
         }
     }
 }
