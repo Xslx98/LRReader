@@ -221,9 +221,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
             ACTION_LRR -> {
                 val archive = mArchive
                 if (archive != null) {
-                    val downloadDir = mDownloadDir
-                        ?.let(::File)
-                        ?.takeIf { it.isDirectory }
+                    val downloadDir = mDownloadDir?.let(::File)
                     mGalleryProvider = LRRGalleryProvider(
                         this, archive.arcid, archive.serverProfileId, downloadDir
                     )

@@ -162,6 +162,16 @@ class DownloadDbRepository(
         archiveLocalStateDao.getDownloadRootUri(arcid)
 
     /**
+     * True when [arcid] is in the download list in any state. Safe to call
+     * from IO coroutines (unlike the in-memory `DownloadManager` lookups,
+     * which assert the main thread); used by the reader's routing to
+     * decide whether a partial or not-yet-started download should open
+     * as a hybrid session.
+     */
+    suspend fun isDownloadTracked(arcid: String): Boolean =
+        archiveLocalStateDao.hasDownloadRow(arcid)
+
+    /**
      * One-shot UPDATE driven by the boot-time backfill in
      * [com.lanraragi.reader.LRReaderApplication]. Sets DOWNLOAD_ROOT_URI on
      * every download row that still has it as NULL, so legacy rows

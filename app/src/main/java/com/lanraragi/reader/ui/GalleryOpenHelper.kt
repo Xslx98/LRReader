@@ -162,8 +162,13 @@ object GalleryOpenHelper {
             }
             intent.action = GalleryActivity.ACTION_LRR
             intent.putExtra(GalleryActivity.KEY_ARCHIVE, archive)
-            if (downloadDir != null) {
-                intent.putExtra(GalleryActivity.KEY_DOWNLOAD_DIR, downloadDir.absolutePath)
+            // A tracked download whose directory has no pages yet (tapped
+            // READ right after DOWNLOAD, or a download that failed before
+            // its first page) is still a hybrid session: the provider
+            // creates the directory and both sides fill it.
+            val hybridDir = downloadDir ?: pendingDownloadDir(archive)
+            if (hybridDir != null) {
+                intent.putExtra(GalleryActivity.KEY_DOWNLOAD_DIR, hybridDir.absolutePath)
             }
             // Fire-and-forget LRR warmup. preloadForDetail downloads the
             // bytes and decode-warms the slot. Idempotent w.r.t. an
@@ -204,6 +209,28 @@ object GalleryOpenHelper {
         }
 
         return intent
+    }
+
+    /**
+     * The download directory of an archive that is in the download list but
+     * has no page on disk yet, or null when the archive is not being
+     * downloaded or its root is not a plain `file://` tree (SAF roots stay
+     * on the streaming path, matching [getLocalDownloadDir]). The directory
+     * may not exist yet; the hybrid provider creates it.
+     */
+    private suspend fun pendingDownloadDir(archive: Archive): File? {
+        // Room lookup, not DownloadManager.getDownloadInfo: this runs on an
+        // IO coroutine and the in-memory repository asserts the main thread.
+        val tracked = runCatching {
+            ServiceRegistry.dataModule.downloadDbRepository.isDownloadTracked(archive.arcid)
+        }.getOrDefault(false)
+        if (!tracked) return null
+        val uni = runCatching {
+            SpiderDen.getGalleryDownloadDir(archive.arcid, archive.title)
+        }.getOrNull() ?: return null
+        val uri = uni.uri
+        if ("file" != uri.scheme) return null
+        return File(uri.path ?: return null)
     }
 
     /**
