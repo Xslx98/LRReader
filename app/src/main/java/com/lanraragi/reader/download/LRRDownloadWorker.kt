@@ -19,13 +19,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -234,95 +230,86 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
             }
         }
 
-        // Step 3: Download pages in parallel
+        // Step 3: Download pages through an ordered sliding window.
         // LANraragi's /api/archives/:id/page supports concurrent requests and
         // extracts pages on-the-fly if the background Minion job hasn't reached
         // them yet. Hypnotoad (4 workers × 1000 connections) handles this fine.
+        // PARALLEL_PAGES workers claim ascending indices from a shared cursor
+        // (OrderedPageWindow), so at most PARALLEL_PAGES pages are in flight
+        // and the on-disk arrival order tracks the page order — a reader that
+        // consumes this directory mid-download sees pages land in order.
         val finished = AtomicInteger(0)
         val downloaded = AtomicInteger(0)
-        val semaphore = Semaphore(PARALLEL_PAGES)
 
-        val jobs = resolvedPagePaths.indices.map { i ->
-            scope.async {
-                if (cancelled) return@async
-
+        try {
+            OrderedPageWindow.run(scope, total, PARALLEL_PAGES, { cancelled }) { i ->
                 val pagePath = resolvedPagePaths[i]
-                val ext = getExtension(pagePath)
-                val pageFile = File(downloadDir, "%04d%s".format(i + 1, ext))
+                val pageFile = DownloadPageNaming.pageFile(downloadDir, i, pagePath)
 
-                // Skip if already downloaded and valid
+                // Skip if already downloaded and valid (an earlier run, or the
+                // reader's hybrid session writing into this directory).
                 if (pageFile.exists() && pageFile.length() > MIN_IMAGE_SIZE && validateImageFile(pageFile)) {
                     val f = finished.incrementAndGet()
                     val d = downloaded.incrementAndGet()
                     listener?.onPageSuccess(i, f, d, total)
-                    return@async
+                    return@run
                 }
 
-                // Acquire semaphore slot — limits concurrent HTTP requests
-                semaphore.withPermit {
-                    if (cancelled) return@withPermit
-
-                    var success = false
-                    var attempt = 0
-                    while (!cancelled && !success) {
-                        try {
-                            downloadPage(pageClient, pagePath, pageFile, i, total)
-                            if (!pageFile.exists() || pageFile.length() < MIN_IMAGE_SIZE) {
-                                if (pageFile.exists()) pageFile.delete()
-                                throw IOException("Downloaded file too small or missing")
+                var success = false
+                var attempt = 0
+                while (!cancelled && !success) {
+                    try {
+                        downloadPage(pageClient, pagePath, pageFile, i, total)
+                        if (!pageFile.exists() || pageFile.length() < MIN_IMAGE_SIZE) {
+                            if (pageFile.exists()) pageFile.delete()
+                            throw IOException("Downloaded file too small or missing")
+                        }
+                        success = true
+                    } catch (e: Exception) {
+                        // Not just IOException: a runtime failure (URL
+                        // building, malformed path, provider quirk) used
+                        // to escape this loop and abort the WHOLE archive
+                        // via the generic handler instead of costing this
+                        // page a retry. Coroutine cancellation still
+                        // propagates.
+                        if (e is CancellationException) throw e
+                        if (cancelled) break
+                        if (!networkMonitor.isAvailable) {
+                            // Network-induced failure: pause and wait for the
+                            // network instead of consuming a retry. Loop to
+                            // re-attempt the same page once it returns.
+                            if (BuildConfig.DEBUG) Log.w(TAG, "Page $i: network down, waiting", e)
+                            if (pageFile.exists()) pageFile.delete()
+                            val resumed = waitForNetworkIfDown()
+                            if (!resumed) {
+                                listener?.onPageFailure(
+                                    i, e.message ?: "Network timeout",
+                                    finished.get(), downloaded.get(), total
+                                )
+                                break
                             }
-                            success = true
-                        } catch (e: Exception) {
-                            // Not just IOException: a runtime failure (URL
-                            // building, malformed path, provider quirk) used
-                            // to escape this loop and abort the WHOLE archive
-                            // via the generic handler instead of costing this
-                            // page a retry. Coroutine cancellation still
-                            // propagates.
-                            if (e is CancellationException) throw e
-                            if (cancelled) break
-                            if (!networkMonitor.isAvailable) {
-                                // Network-induced failure: pause and wait for the
-                                // network instead of consuming a retry. Loop to
-                                // re-attempt the same page once it returns.
-                                if (BuildConfig.DEBUG) Log.w(TAG, "Page $i: network down, waiting", e)
-                                if (pageFile.exists()) pageFile.delete()
-                                val resumed = waitForNetworkIfDown()
-                                if (!resumed) {
-                                    listener?.onPageFailure(
-                                        i, e.message ?: "Network timeout",
-                                        finished.get(), downloaded.get(), total
-                                    )
-                                    break
-                                }
-                            } else {
-                                // Genuine error (HTTP 4xx, corrupt image, etc.).
-                                attempt++
-                                Log.e(TAG, "Failed to download page $i (attempt $attempt)", e)
-                                if (attempt >= MAX_RETRY) {
-                                    listener?.onPageFailure(
-                                        i, e.message ?: "Unknown error",
-                                        finished.get(), downloaded.get(), total
-                                    )
-                                    break
-                                }
-                                if (pageFile.exists()) pageFile.delete()
+                        } else {
+                            // Genuine error (HTTP 4xx, corrupt image, etc.).
+                            attempt++
+                            Log.e(TAG, "Failed to download page $i (attempt $attempt)", e)
+                            if (attempt >= MAX_RETRY) {
+                                listener?.onPageFailure(
+                                    i, e.message ?: "Unknown error",
+                                    finished.get(), downloaded.get(), total
+                                )
+                                break
                             }
+                            if (pageFile.exists()) pageFile.delete()
                         }
                     }
+                }
 
-                    if (success) {
-                        val f = finished.incrementAndGet()
-                        val d = downloaded.incrementAndGet()
-                        listener?.onPageSuccess(i, f, d, total)
-                    }
+                if (success) {
+                    val f = finished.incrementAndGet()
+                    val d = downloaded.incrementAndGet()
+                    listener?.onPageSuccess(i, f, d, total)
                 }
             }
-        }
-
-        // Wait for all page downloads to complete (or cancellation)
-        try {
-            jobs.awaitAll()
         } catch (e: CancellationException) {
             Log.d(TAG, "Download cancelled", e)
         }
@@ -669,12 +656,6 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         private fun sanitizeFilename(name: String?): String {
             if (name == null) return "unknown"
             return name.replace(Regex("[\\\\/:*?\"<>|]"), "_").trim()
-        }
-
-        @JvmStatic
-        private fun getExtension(path: String): String {
-            val dot = path.lastIndexOf('.')
-            return if (dot >= 0) path.substring(dot) else ".jpg"
         }
     }
 }

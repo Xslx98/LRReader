@@ -29,8 +29,10 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.Call
 import okhttp3.OkHttpClient
+import com.lanraragi.reader.download.DownloadPageNaming
 import java.io.File
 import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.io.IOException
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
@@ -44,11 +46,24 @@ import java.util.concurrent.atomic.AtomicReference
  * 1. start() -> calls LRRArchiveApi.extractArchive() on IO thread to get page paths
  * 2. onRequest(index) -> downloads the specific page image, decodes it, notifies UI
  * 3. Adjacent pages are preloaded (download only) for faster navigation
+ *
+ * **Hybrid mode** (non-null [downloadDir]): the archive has a partial local
+ * download (in progress, paused or failed). Page files are then resolved in
+ * the download directory under the worker's naming
+ * ([com.lanraragi.reader.download.DownloadPageNaming]) instead of the reader
+ * cache: pages the worker has already landed are read straight from disk,
+ * and pages the reader fetches itself are written there, so the worker's
+ * "already on disk and valid → skip" branch later picks them up. Both
+ * writers use unique `.tmp` + rename, so a page written by both sides just
+ * ends up with the same bytes twice. Reader-written pages are not reported
+ * to the download progress tracker (ADR-001 publishing channels); the
+ * worker counts them when its window reaches them.
  */
 class LRRGalleryProvider(
     context: Context,
     private val arcId: String,
     private val serverProfileId: Long = 0L,
+    private val downloadDir: File? = null,
 ) : GalleryProvider2() {
 
     /**
@@ -183,6 +198,7 @@ class LRRGalleryProvider(
 
         // Prepare cache directory (handles .nomedia and LRU access timestamp)
         cacheDir = ReaderPageCache.ensureCacheDir(context, arcId)
+        downloadDir?.let(::ensureHybridDir)
 
         // Shared page-streaming client (no call cap, no HTTP cache) — see
         // INetworkModule.pageStreamClient for the rationale.
@@ -598,7 +614,8 @@ class LRRGalleryProvider(
 
     // ==================== Internal ====================
 
-    private fun getCacheFile(index: Int): File = File(cacheDir, "page_$index")
+    private fun getCacheFile(index: Int): File =
+        resolvePageFile(downloadDir, cacheDir, index, stateRef.get().paths?.getOrNull(index))
 
     // Per-page download mutexes (same-page exclusion across the user-request
     // and preload paths). Replaces mod-32 striped Java monitors: a stripe
@@ -650,6 +667,8 @@ class LRRGalleryProvider(
             if (index >= paths.size) {
                 throw IOException("Page index $index out of bounds (size=${paths.size})")
             }
+            if (downloadDir != null && adoptWarmCachedPage(index, cacheFile)) return
+
             val pageUrl = resolvePageUrl(serverUrl, paths[index])
             val currentPageClient = pageClient
                 ?: ServiceRegistry.networkModule.okHttpClient
@@ -671,6 +690,56 @@ class LRRGalleryProvider(
             } finally {
                 inflightCalls.remove(index)
             }
+        }
+    }
+
+    /**
+     * Hybrid mode: the download directory may not exist yet (READ tapped
+     * right after DOWNLOAD) — create it the way the worker does, `.nomedia`
+     * included, so page writes have a parent and the gallery stays out of
+     * the media scanner even if the worker never gets there.
+     */
+    private fun ensureHybridDir(dir: File) {
+        try {
+            if (!dir.isDirectory && !dir.mkdirs()) {
+                Log.w(TAG, "Hybrid download dir could not be created: $dir")
+                return
+            }
+            val noMedia = File(dir, ".nomedia")
+            if (!noMedia.exists()) noMedia.createNewFile()
+        } catch (e: IOException) {
+            Log.w(TAG, "Hybrid download dir setup failed: ${e.message}")
+        }
+    }
+
+    /**
+     * Hybrid mode: the open-helper warm-up ([ReaderPageCache.preloadForDetail])
+     * may already have fetched this page into the reader cache before the
+     * session knew it would address the download directory. Move that copy
+     * into [target] instead of fetching the bytes a second time. Returns
+     * true when [target] is now populated.
+     */
+    private fun adoptWarmCachedPage(index: Int, target: File): Boolean {
+        val warm = File(cacheDir, "page_$index")
+        if (!warm.exists() || warm.length() <= ReaderPageCache.MIN_IMAGE_SIZE) return false
+        if (!ReaderPageCache.validateImageFile(warm)) return false
+        val tmp = File(target.parentFile ?: return false, "${target.name}.${Thread.currentThread().id}.tmp")
+        return try {
+            FileInputStream(warm).use { input ->
+                FileOutputStream(tmp).use { output -> input.copyTo(output, BUFFER_SIZE) }
+            }
+            if (tmp.renameTo(target)) {
+                warm.delete()
+                if (BuildConfig.DEBUG) Log.d(TAG, "Adopted warm-cached page $index into download dir")
+                true
+            } else {
+                tmp.delete()
+                false
+            }
+        } catch (e: IOException) {
+            tmp.delete()
+            Log.w(TAG, "Failed to adopt warm-cached page $index: ${e.message}")
+            false
         }
     }
 
@@ -766,6 +835,24 @@ class LRRGalleryProvider(
 
     companion object {
         private const val TAG = "LRRGalleryProvider"
+
+        /**
+         * Where page [index] lives on disk. Hybrid mode ([downloadDir] set)
+         * addresses the download directory by the worker's naming, which
+         * needs the server page path for its extension; until the page list
+         * is loaded (or outside it) the reader cache is used, which is where
+         * every page lives in plain streaming mode.
+         */
+        internal fun resolvePageFile(
+            downloadDir: File?,
+            cacheDir: File,
+            index: Int,
+            pagePath: String?,
+        ): File = if (downloadDir != null && pagePath != null) {
+            DownloadPageNaming.pageFile(downloadDir, index, pagePath)
+        } else {
+            File(cacheDir, "page_$index")
+        }
         private const val BUFFER_SIZE = 65536 // 64KB buffer for save()
         private const val PRELOAD_COUNT = 5 // Preload next 5 pages (LAN is fast)
         private const val PRELOAD_PARALLELISM = 2 // Concurrent preload downloads
