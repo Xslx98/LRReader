@@ -21,6 +21,7 @@ import android.util.Log
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.gallery.GalleryProvider2
+import com.lanraragi.reader.download.DownloadDirNaming
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.framework.unifile.FilenameFilter
 import com.lanraragi.framework.unifile.UniFile
@@ -128,9 +129,12 @@ object SpiderDen {
             }
         }
 
-        // Create it — use arcid as prefix for unique directory names
+        // Create it — the sanitised title, de-duplicated against siblings
+        // (DownloadDirNaming); the DB pointer is the only arcid → dir link.
         if (dirname == null) {
-            dirname = FileUtils.sanitizeFilename("$arcid-$title")
+            dirname = DownloadDirNaming.uniqueName(DownloadDirNaming.baseName(arcid, title)) { name ->
+                dir.findFile(name) != null
+            }
             downloadDbRepo.putDownloadDirname(arcid, dirname)
         }
 
