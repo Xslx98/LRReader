@@ -197,6 +197,7 @@ class LRRGalleryProvider(
 
         // Prepare cache directory (handles .nomedia and LRU access timestamp)
         cacheDir = ReaderPageCache.ensureCacheDir(context, arcId)
+        downloadDir?.let(::ensureHybridDir)
 
         // Shared page-streaming client (no call cap, no HTTP cache) — see
         // INetworkModule.pageStreamClient for the rationale.
@@ -686,6 +687,25 @@ class LRRGalleryProvider(
             } finally {
                 inflightCalls.remove(index)
             }
+        }
+    }
+
+    /**
+     * Hybrid mode: the download directory may not exist yet (READ tapped
+     * right after DOWNLOAD) — create it the way the worker does, `.nomedia`
+     * included, so page writes have a parent and the gallery stays out of
+     * the media scanner even if the worker never gets there.
+     */
+    private fun ensureHybridDir(dir: File) {
+        try {
+            if (!dir.isDirectory && !dir.mkdirs()) {
+                Log.w(TAG, "Hybrid download dir could not be created: $dir")
+                return
+            }
+            val noMedia = File(dir, ".nomedia")
+            if (!noMedia.exists()) noMedia.createNewFile()
+        } catch (e: IOException) {
+            Log.w(TAG, "Hybrid download dir setup failed: ${e.message}")
         }
     }
 
