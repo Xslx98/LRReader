@@ -239,6 +239,8 @@
     <string name="page_menu_share">@string/share</string>
     <string name="page_menu_save">保存</string>
     <string name="page_menu_save_to">名前を付けて保存</string>
+    <string name="page_menu_set_tank_cover">単行本の表紙に設定</string>
+    <string name="page_menu_set_cover">表紙に設定</string>
     <string name="gallery_menu_title">メニュー</string>
     <string name="share_image">画像を共有</string>
     <string name="image_saved">画像は「%s」に保存されました</string>
@@ -300,6 +302,8 @@
     <string name="tank_member_delete_blocked">このアーカイブはダウンロード済みの単行本「%1$s」に含まれています。ダウンロード一覧から単行本ごと削除してください。</string>
     <string name="tank_set_cover">表紙に設定</string>
     <string name="tank_cover_updated">表紙を更新しました</string>
+    <string name="tank_cover_pick_title">表紙ページを選択 · %1$s</string>
+    <string name="tank_cover_use_page1">1ページ目を使う</string>
     <string name="tank_reorder_failed">並べ替えに失敗しました。元に戻します</string>
     <string name="tank_already_sorted">すでに並んでいます</string>
     <string name="tank_sorted">メンバーを並べ替えました</string>

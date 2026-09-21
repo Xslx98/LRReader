@@ -281,6 +281,8 @@
     <string name="page_menu_share">แชร์</string>
     <string name="page_menu_save">บันทึก</string>
     <string name="page_menu_save_to">บันทึกลงที่…</string>
+    <string name="page_menu_set_tank_cover">ตั้งเป็นปกรวมเล่ม</string>
+    <string name="page_menu_set_cover">ตั้งเป็นปก</string>
     <string name="gallery_menu_title">เมนู</string>
     <string name="share_image">แชร์รูปภาพ</string>
     <string name="image_saved">ภาพถูกบันทึกไปที่ %s</string>
@@ -342,6 +344,8 @@
     <string name="tank_member_delete_blocked">ไฟล์นี้อยู่ในรวมเล่มที่ดาวน์โหลดแล้ว “%1$s” โปรดลบรวมเล่มทั้งชุดจากรายการดาวน์โหลด</string>
     <string name="tank_set_cover">ตั้งเป็นปก</string>
     <string name="tank_cover_updated">อัปเดตปกแล้ว</string>
+    <string name="tank_cover_pick_title">เลือกหน้าปก · %1$s</string>
+    <string name="tank_cover_use_page1">ใช้หน้า 1</string>
     <string name="tank_reorder_failed">จัดลำดับไม่สำเร็จ คืนลำดับเดิมแล้ว</string>
     <string name="tank_already_sorted">เรียงลำดับอยู่แล้ว</string>
     <string name="tank_sorted">จัดเรียงสมาชิกแล้ว</string>

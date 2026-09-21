@@ -31,6 +31,7 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.hippo.easyrecyclerview.MarginItemDecoration
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.client.ArchiveCoverStamps
 import com.lanraragi.reader.client.LRRCacheKeyFactory
 import com.lanraragi.reader.client.LRRUtils
 import com.lanraragi.reader.download.DownloadManager
@@ -213,12 +214,12 @@ abstract class GalleryAdapterNew(
         when (mType) {
             TYPE_GRID -> {
                 (holder.thumb as TileThumbNew).setThumbSize(0, 0)
-                holder.thumb.load(LRRCacheKeyFactory.getThumbKey(arcid), archive.thumbnailUrl)
+                holder.thumb.load(LRRCacheKeyFactory.getThumbKey(arcid), ArchiveCoverStamps.bust(archive.thumbnailUrl, arcid))
                 holder.category?.visibility = View.GONE
                 holder.simpleLanguage?.text = null
             }
             else -> {
-                holder.thumb.load(LRRCacheKeyFactory.getThumbKey(arcid), archive.thumbnailUrl)
+                holder.thumb.load(LRRCacheKeyFactory.getThumbKey(arcid), ArchiveCoverStamps.bust(archive.thumbnailUrl, arcid))
                 holder.title?.text = archive.title
                 holder.uploader?.text = null
                 if (!AppearanceSettings.getShowGalleryRating()) {

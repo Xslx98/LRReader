@@ -11,6 +11,7 @@ import androidx.core.view.ViewCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.R
+import com.lanraragi.reader.client.ArchiveCoverStamps
 import com.lanraragi.reader.client.LRRCacheKeyFactory
 
 import com.lanraragi.reader.client.api.LRRAuthManager
@@ -104,10 +105,15 @@ internal class DetailHeaderBinder(
         }
     }
 
+    /** Re-fetches the cover after the app changed it (new stamp → new key and bust URL). */
+    fun reloadCover(archive: Archive) {
+        thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), ArchiveCoverStamps.bust(archive.thumbnailUrl, archive.arcid))
+    }
+
     fun bindViewFirst(action: String?, archive: Archive?) {
         if (archive == null) return
         if (action == GalleryDetailScene.ACTION_ARCHIVE) {
-            thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), archive.thumbnailUrl)
+            thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), ArchiveCoverStamps.bust(archive.thumbnailUrl, archive.arcid))
             title.text = archive.title
             // Archive has no uploader (LRR never populates it); clear the
             // field so a previous binding does not leak through.
@@ -153,14 +159,14 @@ internal class DetailHeaderBinder(
         val archive = ad.archive
 
         if (!hadEagerBind) {
-            thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), archive.thumbnailUrl)
+            thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), ArchiveCoverStamps.bust(archive.thumbnailUrl, archive.arcid))
         } else if (useNetWorkLoadThumb) {
             // bindViewFirst loaded a stale thumb URL; force a network refresh.
-            thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), archive.thumbnailUrl)
+            thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), ArchiveCoverStamps.bust(archive.thumbnailUrl, archive.arcid))
             useNetWorkLoadThumb = false
         } else {
             // Eager bind already cached the same URL — read from disk.
-            thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), archive.thumbnailUrl, false)
+            thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), ArchiveCoverStamps.bust(archive.thumbnailUrl, archive.arcid), false)
         }
 
         title.text = archive.title

@@ -20,6 +20,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.snackbar.Snackbar
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.client.ArchiveCoverStamps
 import com.lanraragi.reader.download.TankFillDispatcher
 import com.lanraragi.reader.client.LRRCacheKeyFactory
 import com.lanraragi.reader.client.TankCoverCacheStamp
@@ -32,6 +33,7 @@ import com.lanraragi.reader.tankoubon.TankMemberOrderOps
 import com.lanraragi.reader.tankoubon.TankMemberSelection
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.ui.scene.TankoubonDetailViewModel.TankDetailUiEvent
+import com.lanraragi.reader.ui.scene.gallery.detail.PageThumbnailsViewModel
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.util.collectFlowWhileCreated
 import com.lanraragi.framework.widget.LoadImageViewNew
@@ -98,6 +100,9 @@ class TankoubonDetailScene : BaseScene() {
     /** Cover "key|url" last handed to the loader; guards duplicate loads. */
     private var mCoverBoundUrl: String? = null
 
+    /** Page picker for "set as cover" (action card + header cover tap). */
+    private var mCoverPicker: TankCoverPagePicker? = null
+
     private lateinit var viewModel: TankoubonDetailViewModel
 
     override fun getNavCheckedItem(): Int = R.id.nav_tankoubons
@@ -129,6 +134,23 @@ class TankoubonDetailScene : BaseScene() {
 
         mToolbar = view.findViewById(R.id.toolbar)
         mCover = view.findViewById(R.id.tank_cover)
+        // Scene-scoped thumbnail VM: the archive detail page drives the
+        // activity-scoped one and must not be reset from here.
+        mCoverPicker = TankCoverPagePicker(
+            view.context,
+            viewLifecycleOwner,
+            ViewModelProvider(this)[PageThumbnailsViewModel::class.java],
+        )
+        // Header cover tap: pick a page for the remembered cover member (or member #1).
+        // On the frame, not the image: LoadImageViewNew resets its own click
+        // listener on every load (retry-on-click).
+        view.findViewById<View>(R.id.tank_cover_frame).setOnClickListener {
+            val members = viewModel.members.value
+            if (members.isEmpty()) return@setOnClickListener
+            val remembered = viewModel.coverChoices.get(viewModel.tankId)?.arcid
+            val index = members.indexOfFirst { it.arcid == remembered }.takeIf { it >= 0 } ?: 0
+            pickCoverPage(index)
+        }
         mProgressText = view.findViewById(R.id.tank_detail_progress)
         mBtnReadStart = view.findViewById(R.id.btn_read_start)
         mBtnReadContinue = view.findViewById(R.id.btn_read_continue)
@@ -222,8 +244,7 @@ class TankoubonDetailScene : BaseScene() {
         mActionCover?.setOnClickListener {
             val only = selection.selected.singleOrNull() ?: return@setOnClickListener
             val index = viewModel.members.value.indexOfFirst { it.arcid == only }
-            if (index >= 0) viewModel.setCover(index)
-            selection.clear()
+            if (index >= 0) pickCoverPage(index) { selection.clear() }
         }
         card.findViewById<View>(R.id.member_action_remove).setOnClickListener {
             val ids = selection.selected.toList()
@@ -378,6 +399,8 @@ class TankoubonDetailScene : BaseScene() {
         mErrorRetry = null
         mToolbar = null
         mCover = null
+        mCoverPicker?.dismiss()
+        mCoverPicker = null
         mProgressText = null
         mBtnReadStart = null
         mBtnReadContinue = null
@@ -474,6 +497,7 @@ class TankoubonDetailScene : BaseScene() {
         val hasMembers = viewModel.members.value.isNotEmpty()
         mBtnReadStart?.visibility = if (hasMembers) View.VISIBLE else View.GONE
         mCover?.visibility = if (hasMembers) View.VISIBLE else View.GONE
+        (mCover?.parent as? View)?.visibility = if (hasMembers) View.VISIBLE else View.GONE
 
         if (p > 1) {
             mProgressText?.apply {
@@ -649,6 +673,26 @@ class TankoubonDetailScene : BaseScene() {
      * would be shadowed by the stale cached image forever. (The pre-bump
      * image stays cached under the old key until evicted — accepted.)
      */
+    override fun onResume() {
+        super.onResume()
+        // The reader may have set a new cover (TankCoverCacheStamp bumped);
+        // bindCover short-circuits when the key/url binding is unchanged.
+        bindCover()
+    }
+
+    /**
+     * Opens the page picker for member [memberIndex]; the picked page (or
+     * page 1 via the shortcut) becomes the cover. [afterPick] runs once a
+     * page was chosen (not on dismiss).
+     */
+    private fun pickCoverPage(memberIndex: Int, afterPick: () -> Unit = {}) {
+        val member = viewModel.members.value.getOrNull(memberIndex) ?: return
+        mCoverPicker?.show(member) { page0 ->
+            viewModel.setCover(memberIndex, page0)
+            afterPick()
+        }
+    }
+
     private fun bindCover() {
         val baseUrl = viewModel.baseUrl ?: return
         val tankId = viewModel.tankId
@@ -660,7 +704,7 @@ class TankoubonDetailScene : BaseScene() {
             // No generated cover server-side (probe 202, generation queued):
             // stand in with the first member's cover.
             key = LRRCacheKeyFactory.getThumbKey(fallback.arcid)
-            url = fallback.thumbnailUrl
+            url = ArchiveCoverStamps.bust(fallback.thumbnailUrl, fallback.arcid)
         } else {
             val bust = TankCoverCacheStamp.value
             key = LRRCacheKeyFactory.getThumbKey("$tankId#$bust")
@@ -748,7 +792,7 @@ class TankoubonDetailScene : BaseScene() {
         override fun onBindViewHolder(holder: MemberViewHolder, position: Int) {
             val a = mMembers[position]
 
-            holder.thumb.load(LRRCacheKeyFactory.getThumbKey(a.arcid), a.thumbnailUrl)
+            holder.thumb.load(LRRCacheKeyFactory.getThumbKey(a.arcid), ArchiveCoverStamps.bust(a.thumbnailUrl, a.arcid))
             holder.title.text = a.title
 
             if (a.pagecount > 0) {

@@ -523,6 +523,14 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         mInputHandler.galleryView = galleryView
         mImageOps.galleryProvider = galleryProvider
         mImageOps.archive = mArchive
+        // Tank sessions keep mArchive null (composite reader invariant); an
+        // archive session always has one, including downloaded copies read
+        // offline. A bare directory session has no server to write to.
+        mImageOps.coverTarget = mTankSeed?.let {
+            GalleryImageOperations.CoverTarget.Tank(it.tankId, it.profileId)
+        } ?: mArchive?.let {
+            GalleryImageOperations.CoverTarget.Archive(it.arcid, it.serverProfileId)
+        }
 
         // System UI helper
         if (ReadingSettings.getReadingFullscreen()) {

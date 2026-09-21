@@ -16,6 +16,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.snackbar.Snackbar
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.client.ArchiveCoverStamps
 import com.lanraragi.reader.download.TankFillDispatcher
 import com.lanraragi.reader.client.LRRCacheKeyFactory
 import com.lanraragi.reader.client.TankCoverCacheStamp
@@ -358,7 +359,7 @@ class TankoubonsScene : BaseScene() {
                 if (fallback != null) {
                     holder.thumb.load(
                         LRRCacheKeyFactory.getThumbKey(fallback.arcid),
-                        fallback.thumbnailUrl
+                        ArchiveCoverStamps.bust(fallback.thumbnailUrl, fallback.arcid)
                     )
                 } else {
                     val stamp = TankCoverCacheStamp.value

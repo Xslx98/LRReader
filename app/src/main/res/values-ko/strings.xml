@@ -285,6 +285,8 @@
     <string name="page_menu_share">@string/share</string>
     <string name="page_menu_save">저장</string>
     <string name="page_menu_save_to">다른 이름으로 저장</string>
+    <string name="page_menu_set_tank_cover">단행본 표지로 설정</string>
+    <string name="page_menu_set_cover">표지로 설정</string>
     <string name="gallery_menu_title">메뉴</string>
     <string name="share_image">이미지 공유</string>
     <string name="image_saved">이미지를 %s 경로에 저장함</string>
@@ -346,6 +348,8 @@
     <string name="tank_member_delete_blocked">이 아카이브는 다운로드된 단행본 “%1$s”에 속합니다. 다운로드 목록에서 단행본 전체를 삭제하세요.</string>
     <string name="tank_set_cover">표지로 설정</string>
     <string name="tank_cover_updated">표지가 업데이트되었습니다</string>
+    <string name="tank_cover_pick_title">표지 페이지 선택 · %1$s</string>
+    <string name="tank_cover_use_page1">1페이지 사용</string>
     <string name="tank_reorder_failed">순서 변경 실패, 원래 순서로 복원</string>
     <string name="tank_already_sorted">이미 정렬되어 있습니다</string>
     <string name="tank_sorted">멤버를 정렬했습니다</string>
