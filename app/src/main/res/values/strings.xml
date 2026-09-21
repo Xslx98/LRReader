@@ -475,6 +475,7 @@
     <string name="search_title_in_category" translatable="false">%1$s · %2$s</string>
     <string name="detail_tankoubons_label">Tankoubons</string>
     <string name="detail_tankoubons_edit">Edit</string>
+    <string name="detail_tankoubons_none">Not in any tankoubon</string>
     <string name="tank_add_to">Add to Tankoubon</string>
     <string name="batch_add_to_tankoubon">Tank</string>
 
