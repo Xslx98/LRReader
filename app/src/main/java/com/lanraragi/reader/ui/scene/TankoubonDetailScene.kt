@@ -22,18 +22,15 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.download.TankFillDispatcher
 import com.lanraragi.reader.client.LRRCacheKeyFactory
 import com.lanraragi.reader.client.TankCoverCacheStamp
-import com.lanraragi.reader.gallery.ReadingContext
-import com.lanraragi.reader.gallery.ReadingContextStore
 import com.lanraragi.reader.gallery.TankMemberSeed
+import com.lanraragi.reader.gallery.GalleryProvider2
 import com.lanraragi.reader.gallery.TankPageMath
 import com.lanraragi.reader.gallery.TankSeedStore
 import com.lanraragi.reader.gallery.TankSessionSeed
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.ui.scene.TankoubonDetailViewModel.TankDetailUiEvent
-import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.util.collectFlowWhileCreated
-import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.framework.widget.LoadImageViewNew
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.domain.Archive
@@ -45,7 +42,7 @@ import kotlinx.coroutines.withContext
 /**
  * Detail scene for a single tankoubon: its ordered member archives plus
  * the tank-level read entries (read from start / continue at the global
- * progress page). Clicking a member opens its [GalleryDetailScene].
+ * progress page). Clicking a member opens the whole-tank session on it.
  *
  * Business logic (API calls, page math inputs) is delegated to
  * [TankoubonDetailViewModel]. The ViewModel is SCENE-scoped (not activity)
@@ -373,36 +370,23 @@ class TankoubonDetailScene : BaseScene() {
         )
     }
 
-    private fun openMemberDetail(archive: Archive) {
-        publishTankContext(archive)
-        // Deposit the full seed so the member detail's READ entries can
-        // rebuild the whole-tank session (TankSessionRouter).
-        buildSessionSeed()?.let { TankSeedStore.publish(it) }
-        val args = Bundle().apply {
-            putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_ARCHIVE)
-            putParcelable(GalleryDetailScene.KEY_ARCHIVE, archive)
-        }
-        startScene(Announcer(GalleryDetailScene::class.java).setArgs(args))
-    }
-
     /**
-     * Publishes this tank as the current [ReadingContext] anchored on
-     * [anchor], so [com.lanraragi.reader.gallery.NextArchiveResolver] can chain
-     * into the next member once the reader reaches the end of [anchor].
-     * A no-op until the VM has resolved its source base URL (first load).
+     * Member row click (spec 2026-09-21 §5): members have no standalone
+     * detail page — the row opens the WHOLE-TANK session positioned on that
+     * member (saved tank progress inside it restores, otherwise its first
+     * page). Long-press keeps the member actions (remove / set cover).
      */
-    private fun publishTankContext(anchor: Archive) {
-        val url = viewModel.baseUrl ?: return
-        ReadingContextStore.publish(
-            ReadingContext.Tankoubon(
-                sourceProfileId = viewModel.profileId,
-                sourceBaseUrl = url,
-                tankId = viewModel.tankId,
-                orderedMemberIds = viewModel.memberIds,
-                pageOffsets = viewModel.pageOffsets,
-                anchorArcid = anchor.arcid,
-            )
+    private fun openMemberSession(archive: Archive) {
+        val ctx = ehContext ?: return
+        val seed = buildSessionSeed() ?: return
+        val members = viewModel.members.value
+        val start = TankPageMath.anchoredStart(
+            members.map { it.pagecount },
+            members.indexOfFirst { it.arcid == archive.arcid },
+            GalleryProvider2.loadReadingProgress(ctx, viewModel.tankId),
         )
+        TankSeedStore.publish(seed)
+        startActivity(GalleryOpenHelper.buildTankReadIntent(ctx, seed, start))
     }
 
     // ==================== Management ops ====================
@@ -665,7 +649,7 @@ class TankoubonDetailScene : BaseScene() {
                 holder.pages.visibility = View.GONE
             }
 
-            holder.itemView.setOnClickListener { openMemberDetail(a) }
+            holder.itemView.setOnClickListener { openMemberSession(a) }
         }
 
         override fun getItemCount(): Int = mMembers.size
