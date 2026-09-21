@@ -6,6 +6,8 @@ import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator
+import android.app.Activity
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.ColorFilter
@@ -14,8 +16,11 @@ import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
+import android.os.Handler
+import android.os.Looper
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.PixelCopy
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.LinearInterpolator
@@ -24,7 +29,6 @@ import android.view.animation.PathInterpolator
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.view.doOnPreDraw
-import androidx.core.view.drawToBitmap
 import androidx.recyclerview.widget.RecyclerView
 import com.lanraragi.reader.R
 import kotlin.math.PI
@@ -105,7 +109,6 @@ internal class TankMergeAnimator(
         }
         recyclerView.stopScroll()
         blockTouch()
-        dimRows(plan)
         when (val dest = plan.destination) {
             is TankMergePlanner.Destination.Row -> {
                 if (dest.needsScroll) {
@@ -170,14 +173,40 @@ internal class TankMergeAnimator(
         root.postDelayed(proceed, SCROLL_TIMEOUT_MS)
     }
 
+    /**
+     * Covers are hardware bitmaps (ImageDecoder), which a software canvas
+     * cannot draw, so the flyers are cut from a [PixelCopy] of the scene
+     * root taken BEFORE the rows dim. The copy is asynchronous but lands
+     * within a frame; a failed copy just means no cover flyers.
+     */
     private fun launch(plan: TankMergePlanner.MergePlan) {
         if (finished) return
-        val flyerSources = plan.flyerPositions.mapNotNull { host.thumbViewAt(it) }
+        val window = (root.context as? Activity)?.window
+        if (window == null || root.width <= 0 || root.height <= 0 || plan.flyerPositions.isEmpty()) {
+            launchFlyers(plan, snapshot = null)
+            return
+        }
+        val snapshot = Bitmap.createBitmap(root.width, root.height, Bitmap.Config.ARGB_8888)
+        root.getLocationInWindow(tmpRootLoc)
+        val src = Rect(tmpRootLoc[0], tmpRootLoc[1], tmpRootLoc[0] + root.width, tmpRootLoc[1] + root.height)
+        runCatching {
+            PixelCopy.request(window, src, snapshot, { result ->
+                if (!finished) launchFlyers(plan, snapshot.takeIf { result == PixelCopy.SUCCESS })
+            }, root.handler ?: Handler(Looper.getMainLooper()))
+        }.onFailure { launchFlyers(plan, snapshot = null) }
+    }
+
+    private fun launchFlyers(plan: TankMergePlanner.MergePlan, snapshot: Bitmap?) {
+        if (finished) return
+        dimRows(plan)
         var index = 0
-        flyerSources.forEach { thumb ->
-            val flyer = makeCoverFlyer(thumb) ?: return@forEach
-            fly(flyer, rectInRoot(thumb), startDelay = FLYER_STAGGER_MS * index)
-            index++
+        if (snapshot != null) {
+            plan.flyerPositions.mapNotNull { host.thumbViewAt(it) }.forEach { thumb ->
+                val from = rectInRoot(thumb)
+                val flyer = makeCoverFlyer(snapshot, from) ?: return@forEach
+                fly(flyer, from, startDelay = FLYER_STAGGER_MS * index)
+                index++
+            }
         }
         if (plan.extraCount > 0) {
             val origin = host.batchButtonView()?.let { rectInRoot(it) } ?: bottomCenterRect()
@@ -283,9 +312,13 @@ internal class TankMergeAnimator(
 
     // ─── Flyers ──────────────────────────────────────────────────────────
 
-    private fun makeCoverFlyer(thumb: View): View? {
-        if (!thumb.isLaidOut || thumb.width <= 0 || thumb.height <= 0) return null
-        val bitmap = runCatching { thumb.drawToBitmap() }.getOrNull() ?: return null
+    private fun makeCoverFlyer(snapshot: Bitmap, from: Rect): View? {
+        val clipped = Rect(from)
+        if (!clipped.intersect(0, 0, snapshot.width, snapshot.height) || clipped.isEmpty) return null
+        val bitmap = runCatching {
+            Bitmap.createBitmap(snapshot, clipped.left, clipped.top, clipped.width(), clipped.height())
+        }.getOrNull() ?: return null
+        from.set(clipped)
         return ImageView(root.context).apply {
             setImageBitmap(bitmap)
             scaleType = ImageView.ScaleType.FIT_XY
