@@ -352,6 +352,14 @@
     <string name="tank_sort_by_title">제목순 정렬</string>
     <string name="tank_reverse_order">순서 반전</string>
     <string name="tank_auto_sort">멤버 자동 정렬</string>
+    <string name="tank_move_top">맨 위로</string>
+    <string name="tank_move_bottom">맨 아래로</string>
+    <string name="tank_move_to_position">위치 지정…</string>
+    <string name="tank_insert_before">앞에 삽입…</string>
+    <string name="tank_reverse_selected">반전</string>
+    <string name="tank_pick_insert_target">앞에 삽입할 멤버를 탭하세요</string>
+    <string name="tank_position_hint">위치 (1–%1$d)</string>
+    <string name="tank_drag_handle">드래그하여 순서 변경</string>
     <string name="tank_badge">단행본</string>
     <string name="settings_eh_group_tanks">탐색에서 단행본 묶기</string>
     <string name="settings_eh_group_tanks_summary">단행본의 아카이브를 하나의 항목으로 묶기(LANraragi 0.9.8+)</string>

@@ -437,6 +437,14 @@
     <string name="tank_sort_by_title">Sort by title</string>
     <string name="tank_reverse_order">Reverse order</string>
     <string name="tank_auto_sort">Auto-sort members</string>
+    <string name="tank_move_top">Top</string>
+    <string name="tank_move_bottom">Bottom</string>
+    <string name="tank_move_to_position">Position…</string>
+    <string name="tank_insert_before">Insert before…</string>
+    <string name="tank_reverse_selected">Reverse</string>
+    <string name="tank_pick_insert_target">Tap the member to insert before</string>
+    <string name="tank_position_hint">Position (1–%1$d)</string>
+    <string name="tank_drag_handle">Drag to reorder</string>
     <string name="tank_badge">Tankoubon</string>
     <string name="settings_eh_group_tanks">Group Tankoubons in browse</string>
     <string name="settings_eh_group_tanks_summary">Fold archives of a Tankoubon into a single entry (LANraragi 0.9.8+)</string>

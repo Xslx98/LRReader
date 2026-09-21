@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Tankoubon detail scene: cover + read entries header, then member list -->
+<!-- Tankoubon detail scene: cover + read entries header, then member list;
+     the multi-select action card floats over the bottom (spec 2026-09-21 §4). -->
 
-<LinearLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+<LinearLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -103,3 +108,7 @@
         android:paddingBottom="4dp" />
 
 </LinearLayout>
+
+    <include layout="@layout/widget_tank_member_action_card" />
+
+</FrameLayout>

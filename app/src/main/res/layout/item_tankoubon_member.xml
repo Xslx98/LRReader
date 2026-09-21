@@ -19,6 +19,16 @@
     android:focusable="true"
     tools:ignore="Overdraw">
 
+    <CheckBox
+        android:id="@+id/member_check"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:clickable="false"
+        android:focusable="false"
+        android:importantForAccessibility="no"
+        android:visibility="gone" />
+
     <com.lanraragi.framework.widget.LoadImageViewNew
         android:id="@+id/member_thumb"
         android:layout_width="56dp"
@@ -55,5 +65,17 @@
             android:ellipsize="end" />
 
     </LinearLayout>
+
+    <!-- Drag handle (spec 2026-09-21 §4): touching it starts the reorder drag;
+         a long-press on the row itself enters multi-select instead. -->
+    <ImageView
+        android:id="@+id/member_drag_handle"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="4dp"
+        android:padding="12dp"
+        android:src="@drawable/v_reorder_x24"
+        android:contentDescription="@string/tank_drag_handle"
+        android:background="?attr/selectableItemBackgroundBorderless" />
 
 </LinearLayout>
