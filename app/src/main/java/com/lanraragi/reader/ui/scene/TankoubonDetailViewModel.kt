@@ -220,7 +220,12 @@ class TankoubonDetailViewModel : ViewModel() {
 
                 // Multi-profile red line: this tank may belong to a non-active
                 // profile, so the mapper gets the EXPLICIT source context.
-                val mapped = full.fullData.map {
+                // Member ORDER is `archives` (the same list a reorder PUTs);
+                // full_data is only the metadata lookup — never trust its order.
+                val byId = full.fullData.associateBy { it.arcid }
+                val ordered = full.archives.mapNotNull { byId[it] } +
+                    full.fullData.filter { it.arcid !in full.archives }
+                val mapped = ordered.map {
                     it.toArchive(sourceProfileId = profileId, sourceBaseUrl = url)
                 }
                 memberIds = mapped.map { it.arcid }
@@ -401,9 +406,22 @@ class TankoubonDetailViewModel : ViewModel() {
                     ctx.getString(R.string.tank_reorder_failed)
                 }
                 _uiEvent.tryEmit(TankDetailUiEvent.ShowError(message))
-                load() // rollback to server truth
+                // Roll back locally first (the server may be unreachable, in
+                // which case the reload below cannot restore anything), then
+                // re-fetch server truth.
+                restoreOrder(previousOrder)
+                load()
             }
         }
+    }
+
+    /** Puts [members] / [memberIds] / [pageOffsets] back to [order] without a network call. */
+    private fun restoreOrder(order: List<String>) {
+        val byId = _members.value.associateBy { it.arcid }
+        val restored = order.mapNotNull { byId[it] } + _members.value.filter { it.arcid !in order }
+        memberIds = restored.map { it.arcid }
+        pageOffsets = TankPageMath.pageOffsets(restored.map { it.pagecount })
+        _members.value = restored
     }
 
     // -------------------------------------------------------------------------

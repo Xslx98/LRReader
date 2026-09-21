@@ -70,6 +70,10 @@ class TankoubonDetailViewModelTest {
     @Volatile
     private var putStatus = 200
 
+    /** Order full_data is emitted in; null = same as [serverOrder]. */
+    @Volatile
+    private var fullDataOrder: List<String>? = null
+
     private val putBodies = CopyOnWriteArrayList<List<String>>()
 
     private val titles = mapOf(ID_EP1 to "第1话", ID_EP2 to "第2话", ID_EXTRA to "番外")
@@ -142,7 +146,7 @@ class TankoubonDetailViewModelTest {
     }
 
     private fun fullJson(): String {
-        val data = serverOrder.joinToString(",") { id ->
+        val data = (fullDataOrder ?: serverOrder).joinToString(",") { id ->
             """{"arcid":"$id","title":"${titles.getValue(id)}","tags":"","lastreadtime":0,"progress":0,""" +
                 """"pagecount":10,"isnew":"false","extension":"zip","filename":"$id.zip","size":1,"summary":""}"""
         }
@@ -243,6 +247,28 @@ class TankoubonDetailViewModelTest {
         awaitCondition { vm.members.value.map { it.arcid } == listOf(ID_EP2, ID_EXTRA, ID_EP1) }
         assertEquals(listOf(ID_EP2, ID_EXTRA, ID_EP1), vm.memberIds)
         assertTrue(events.none { it is TankDetailUiEvent.OrderApplied })
+    }
+
+    @Test
+    fun applyOrder_failureWithUnreachableServerStillRollsBackLocally() {
+        val vm = loadedVm()
+        val events = collectEvents(vm)
+        server.shutdown()
+
+        vm.sortByTitle()
+
+        awaitCondition { events.any { it is TankDetailUiEvent.ShowError } }
+        awaitCondition { vm.members.value.map { it.arcid } == listOf(ID_EP2, ID_EXTRA, ID_EP1) }
+        assertEquals(listOf(ID_EP2, ID_EXTRA, ID_EP1), vm.memberIds)
+    }
+
+    @Test
+    fun load_ordersMembersByArchivesNotFullData() {
+        // full_data arrives in a different order than `archives`.
+        fullDataOrder = listOf(ID_EP1, ID_EP2, ID_EXTRA)
+        val vm = loadedVm()
+        assertEquals(listOf(ID_EP2, ID_EXTRA, ID_EP1), vm.members.value.map { it.arcid })
+        assertEquals(listOf(ID_EP2, ID_EXTRA, ID_EP1), vm.memberIds)
     }
 
     private companion object {
