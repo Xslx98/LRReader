@@ -320,6 +320,23 @@ class GalleryListViewModelBatchTest {
     }
 
     @Test
+    fun `addToTankoubon result carries the picked tank name for the merge animation`() = runTest {
+        server.dispatcher = recordingDispatcher(CopyOnWriteArrayList())
+
+        val vm = newVm()
+        val result = awaitBatchResult(vm) {
+            vm.runBatch(
+                GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID, wasEmpty = false, tankName = "Vol. 1"),
+                listOf(archiveOf(ARC_A)),
+            )
+        }
+
+        val op = result.op as GalleryListViewModel.BatchOp.AddToTankoubon
+        assertEquals(TANK_ID, op.tankId)
+        assertEquals("Vol. 1", op.tankName)
+    }
+
+    @Test
     fun `addToTankoubon batch on a non-empty tank never touches the cover`() = runTest {
         val paths = CopyOnWriteArrayList<String>()
         server.dispatcher = recordingDispatcher(paths)
