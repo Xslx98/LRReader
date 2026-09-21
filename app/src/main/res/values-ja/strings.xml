@@ -352,6 +352,10 @@
     <plurals name="batch_download_all_local">
         <item quantity="other">%d 件はダウンロード済みです</item>
     </plurals>
+    <plurals name="tank_fill_unreachable">
+        <item quantity="other">不足している %d 件をサーバーから取得できませんでした</item>
+    </plurals>
+    <string name="batch_move_tank_unsupported">単行本カードはラベルに移動できません</string>
     <string name="batch_download_queued_some_local">%1$d 件をダウンロード待ちに追加、%2$d 件はダウンロード済みです</string>
     <string name="download_already_local">ダウンロード済みです</string>
     <plurals name="batch_done_category">

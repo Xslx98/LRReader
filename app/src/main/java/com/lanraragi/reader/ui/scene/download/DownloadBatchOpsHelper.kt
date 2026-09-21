@@ -40,7 +40,6 @@ import kotlinx.coroutines.withContext
 import com.lanraragi.reader.ui.scene.download.part.DownloadAdapter.Companion.DRAG_ENABLE
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.lanraragi.framework.widget.FabLayout
-import com.lanraragi.reader.client.api.isTankoubonId
 
 /**
  * Manages batch/bulk operations (start, stop, delete, move, random, drag toggle)
@@ -100,46 +99,40 @@ internal class DownloadBatchOpsHelper(private val callback: Callback) {
             return
         }
 
-        var arcidList: ArrayList<String>? = null
-        var downloadInfoList: MutableList<DownloadInfo>? = null
-        val collectArcid = position == 1 || position == 2 || position == 3
-        val collectDownloadInfo = position == 3 || position == 4
-        if (collectArcid) arcidList = ArrayList()
-        if (collectDownloadInfo) downloadInfoList = java.util.LinkedList()
-
         val stateArray = recyclerView.checkedItemPositions ?: return
+        val selected = ArrayList<DownloadInfo>()
         for (i in 0 until stateArray.size) {
-            if (stateArray.valueAt(i)) {
-                val info = list[callback.positionInList(stateArray.keyAt(i))]
-                // Tank cards can't be selected, but check-all may still have
-                // visually ticked one — a TANK_ id must never reach batch ops.
-                if (isTankoubonId(info.arcid)) continue
-                downloadInfoList?.add(info)
-                arcidList?.add(info.arcid)
-            }
+            if (stateArray.valueAt(i)) selected.add(list[callback.positionInList(stateArray.keyAt(i))])
         }
+        // A checked tank card stands for its member rows (spec 2026-09-21
+        // §4); the TANK_ id itself never reaches the service or scheduler.
+        val expanded = DownloadBatchSelection.expand(selected) { callback.viewModel.tankMembersOf(it) }
 
         when (position) {
             1 -> { // Start
-                val arcids = arcidList ?: return
-                startRange(arcids, act)
+                startRange(expanded.arcids, act)
                 recyclerView.outOfCustomChoiceMode()
             }
             2 -> { // Stop
-                val arcids = arcidList ?: return
-                stopRange(arcids)
+                stopRange(expanded.arcids)
                 recyclerView.outOfCustomChoiceMode()
             }
             3 -> { // Delete
-                val arcids = arcidList ?: return
-                val infos = downloadInfoList ?: return
+                val infos = expanded.infos
+                val arcids = expanded.arcids
                 deleteRange(context, infos, arcids) { deleteFiles ->
                     recyclerView.outOfCustomChoiceMode()
                     callback.viewModel.deleteRangeDownloads(infos, arcids, deleteFiles)
+                    // Same as the single-card delete flow: the group row goes with its members.
+                    for (tankId in expanded.cardIds) callback.viewModel.downloadManager.dissolveTankGroupAsync(tankId)
                 }
             }
-            4 -> { // Move
-                val infos = downloadInfoList ?: return
+            4 -> { // Move — cards have no label home (no group-row label column)
+                if (expanded.hasCards) {
+                    Toast.makeText(context, R.string.batch_move_tank_unsupported, Toast.LENGTH_SHORT).show()
+                }
+                val infos = expanded.rowsOnly
+                if (infos.isEmpty()) return
                 moveRange(context, infos) { label ->
                     recyclerView.outOfCustomChoiceMode()
                     callback.viewModel.moveDownloads(infos, label)

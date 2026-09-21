@@ -30,6 +30,7 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.res.ResourcesCompat
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
@@ -54,10 +55,13 @@ import com.lanraragi.reader.gallery.TankMemberSeed
 import com.lanraragi.reader.gallery.TankSeedStore
 import com.lanraragi.reader.gallery.TankSessionSeed
 import com.lanraragi.reader.ui.GalleryOpenHelper
-import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.download.DownloadService
+import com.lanraragi.reader.download.DownloadState
 import com.lanraragi.reader.download.ProgressSnapshot
+import com.lanraragi.reader.download.TankFillDispatcher
+import com.lanraragi.reader.client.api.LRRArchiveApi
+import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.ui.scene.ToolbarScene
 import com.lanraragi.reader.ui.scene.download.part.DownloadAdapter
@@ -600,6 +604,11 @@ class DownloadsScene : ToolbarScene(),
             if (arcid !in newMap) affected.add(arcid)
         }
         if (affected.isEmpty()) return
+        // A member's tick must repaint the CARD that folds it (the member
+        // row itself is not on the display list).
+        for (arcid in affected.toList()) {
+            viewModel.tankCardIdFor(arcid)?.let { affected.add(it) }
+        }
         for ((indexInList, info) in list.withIndex()) {
             val id = info.arcid ?: continue
             if (id !in affected) continue
@@ -689,19 +698,12 @@ class DownloadsScene : ToolbarScene(),
     override fun downloadDirFutureFor(info: DownloadInfo): CompletableFuture<UniFile?> =
         viewModel.downloadDirFutureFor(info)
 
-    override fun tankProgressFor(tankId: String): Pair<Int, Int> =
-        viewModel.tankProgressOf(tankId)
+    override fun tankProgressSnapshotFor(tankId: String): ProgressSnapshot? =
+        viewModel.tankProgressSnapshot(tankId)
 
     override fun tankMemberCountFor(tankId: String): Int = viewModel.tankMembersOf(tankId).size
 
     // ── Tank download cards (Track 2) ─────────────────────────
-
-    /** True when the row at adapter [position] is a synthetic tank card. */
-    internal fun isTankCardAt(position: Int): Boolean {
-        val list = mList ?: return false
-        val pos = positionInList(position)
-        return pos in list.indices && isTankoubonId(list[pos].arcid)
-    }
 
     /**
      * Open a tank card: rebuild the whole-tank composite session from the
@@ -733,24 +735,63 @@ class DownloadsScene : ToolbarScene(),
     }
 
     /**
-     * Long-press action for a tank card: the SAME delete confirm as a
-     * download row (user decision: card behaves like a single item), then
-     * every member row (+files when checked) and the group row go.
+     * Card start control (spec 2026-09-21 §4): fill the tank through the
+     * shared [TankFillDispatcher] — members already on disk are skipped,
+     * partial / failed ones restart, and group ids WITHOUT a download row
+     * (the INCOMPLETE case) get their metadata from the source server
+     * before enqueueing. Unreachable metadata is reported, never silently
+     * dropped; the group row is re-tagged with the full membership.
      */
-    internal fun onTankCardLongPress(position: Int) {
+    internal fun onTankCardStart(card: DownloadInfo) {
         val context = ehContext ?: return
-        val list = mList ?: return
-        val pos = positionInList(position)
-        val card = list.getOrNull(pos) ?: return
-        if (!isTankoubonId(card.arcid)) return
-        val members = viewModel.tankMembersOf(card.arcid)
-        if (members.isEmpty()) return
-        DownloadLabelHelper.showDeleteRangeDialog(context, 1) { deleteFiles ->
-            viewModel.deleteRangeDownloads(
-                members, members.map { it.arcid }, deleteFiles
-            )
-            viewModel.downloadManager.dissolveTankGroupAsync(card.arcid)
+        val tankId = card.arcid
+        val profileId = card.serverProfileId
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val data = ServiceRegistry.dataModule
+                val (ids, resolved) = withContext(Dispatchers.IO) {
+                    val ids = data.downloadDbRepository.getTankGroupMemberIds(tankId)
+                    val present = data.downloadDbRepository.getTankMemberArchives(tankId)
+                    val url = runCatching {
+                        resolveSourceBaseUrl(profileId, data.profileLookupCache)
+                    }.getOrNull()
+                    val client = ServiceRegistry.networkModule.okHttpClient
+                    ids to TankFillDispatcher.resolveMembers(ids, present) { id ->
+                        if (url == null) {
+                            null
+                        } else {
+                            runCatching {
+                                LRRArchiveApi.getArchiveMetadata(client, url, id)
+                                    .toArchive(sourceProfileId = profileId, sourceBaseUrl = url)
+                            }.getOrNull()
+                        }
+                    }
+                }
+                val ctx = ehContext ?: return@launch
+                val dm = viewModel.downloadManager
+                val plan = TankFillDispatcher.plan(resolved.members) { dm.getDownloadState(it) }
+                TankFillDispatcher.dispatch(ctx, dm, plan, tankId, card.title.orEmpty(), profileId, ids)
+                Toast.makeText(ctx, TankFillDispatcher.feedback(resources, plan), Toast.LENGTH_SHORT).show()
+                if (resolved.unresolved.isNotEmpty()) {
+                    val n = resolved.unresolved.size
+                    Toast.makeText(
+                        ctx, resources.getQuantityString(R.plurals.tank_fill_unreachable, n, n), Toast.LENGTH_LONG
+                    ).show()
+                }
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                Log.e(TAG, "Failed to start tank card", e)
+                Toast.makeText(context, R.string.error_unknown, Toast.LENGTH_SHORT).show()
+            }
         }
+    }
+
+    /** Card stop control: halt every member still queued or downloading. */
+    internal fun onTankCardStop(card: DownloadInfo) {
+        val active = viewModel.tankMembersOf(card.arcid)
+            .filter { it.state == DownloadState.WAIT || it.state == DownloadState.DOWNLOAD }
+            .map { it.arcid }
+        if (active.isNotEmpty()) viewModel.stopRangeDownloads(active)
     }
 
     override fun onClickTitle() {
@@ -824,7 +865,6 @@ class DownloadsScene : ToolbarScene(),
         override fun positionInList(position: Int): Int = this@DownloadsScene.positionInList(position)
         override fun listIndexInPage(position: Int): Int = this@DownloadsScene.listIndexInPage(position)
         override fun launchGallery(intent: Intent) = galleryActivityLauncher.launch(intent)
-        override fun isTankCardAt(position: Int): Boolean = this@DownloadsScene.isTankCardAt(position)
         override fun openTankCard(info: DownloadInfo) = this@DownloadsScene.openTankCard(info)
     }
 
@@ -835,8 +875,6 @@ class DownloadsScene : ToolbarScene(),
         override val longClickListener: EasyRecyclerView.OnItemLongClickListener get() = this@DownloadsScene
         override fun setDrawerLockMode(lockMode: Int, gravity: Int) =
             this@DownloadsScene.setDrawerLockMode(lockMode, gravity)
-        override fun isTankCardAt(position: Int): Boolean = this@DownloadsScene.isTankCardAt(position)
-        override fun onTankCardLongPress(position: Int) = this@DownloadsScene.onTankCardLongPress(position)
     }
 
     private inner class LabelDrawCallback : DownloadLabelDraw.Callback {

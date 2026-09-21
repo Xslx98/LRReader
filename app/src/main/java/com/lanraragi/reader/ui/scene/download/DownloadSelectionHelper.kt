@@ -34,12 +34,6 @@ internal class DownloadSelectionHelper(private val callback: Callback) {
         val actionFabDrawable: AddDeleteDrawable?
         val longClickListener: EasyRecyclerView.OnItemLongClickListener
         fun setDrawerLockMode(lockMode: Int, gravity: Int)
-
-        /** True when the row is a synthetic tank card (Track 2) — never selectable. */
-        fun isTankCardAt(position: Int): Boolean
-
-        /** Long-press action for a tank card (delete flow). */
-        fun onTankCardLongPress(position: Int)
     }
 
     /** [EasyRecyclerView.CustomChoiceListener] that bridges into this helper. */
@@ -73,13 +67,8 @@ internal class DownloadSelectionHelper(private val callback: Callback) {
 
     fun onItemLongClick(position: Int): Boolean {
         val recyclerView = callback.mRecyclerView ?: return false
-        // Tank cards never enter multi-select: outside choice mode a
-        // long-press opens the card's own actions (delete); inside it the
-        // press is swallowed so the card can't be toggled.
-        if (callback.isTankCardAt(position)) {
-            if (!recyclerView.isInCustomChoice) callback.onTankCardLongPress(position)
-            return true
-        }
+        // Tank cards enter multi-select like any row (spec 2026-09-21 §4);
+        // batch ops expand them into member rows.
         if (!recyclerView.isInCustomChoice) {
             recyclerView.intoCustomChoiceMode()
         }
