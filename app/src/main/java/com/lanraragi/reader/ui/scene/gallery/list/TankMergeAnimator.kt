@@ -348,6 +348,7 @@ internal class TankMergeAnimator(
             setTextSize(TypedValue.COMPLEX_UNIT_SP, PILL_TEXT_SP)
             typeface = android.graphics.Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
+            isSingleLine = true
             val padH = (PILL_PAD_H_DP * density).toInt()
             val padV = (PILL_PAD_V_DP * density).toInt()
             setPadding(padH, padV, padH, padV)
@@ -359,10 +360,13 @@ internal class TankMergeAnimator(
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
             )
-            // Sized by content; the origin rect only supplies the start centre.
+            // Sized by content (+ slack so the exact re-measure never wraps);
+            // the origin rect only supplies the start centre.
+            val halfW = measuredWidth / 2 + PILL_SLACK_PX
+            val halfH = measuredHeight / 2
             origin.set(
-                origin.centerX() - measuredWidth / 2, origin.centerY() - measuredHeight / 2,
-                origin.centerX() + measuredWidth / 2, origin.centerY() + measuredHeight / 2,
+                origin.centerX() - halfW, origin.centerY() - halfH,
+                origin.centerX() + halfW, origin.centerY() + halfH,
             )
         }
     }
@@ -553,6 +557,7 @@ internal class TankMergeAnimator(
         const val PILL_PAD_H_DP = 10f
         const val PILL_PAD_V_DP = 4f
         const val PILL_CORNER_DP = 999f
+        const val PILL_SLACK_PX = 2
         const val FALLBACK_TARGET_DP = 48f
     }
 }
