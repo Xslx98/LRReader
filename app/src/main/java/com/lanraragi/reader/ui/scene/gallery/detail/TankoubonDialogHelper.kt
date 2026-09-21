@@ -13,6 +13,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.event.AppEventBus
+import com.lanraragi.reader.event.TankMembershipChangedEvent
 import com.lanraragi.reader.ui.scene.TankDialogs
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
@@ -218,6 +220,8 @@ object TankoubonDialogHelper {
         (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val client = ServiceRegistry.networkModule.okHttpClient
+                val joined = mutableListOf<TankMembershipChangedEvent.JoinedTank>()
+                val left = mutableListOf<String>()
                 // Sequential on purpose: the server appends members in call
                 // order, and a locked tank should fail fast and visibly.
                 for (i in tanks.indices) {
@@ -225,16 +229,24 @@ object TankoubonDialogHelper {
                     val tankId = tanks[i].id
                     if (checked[i]) {
                         LRRTankoubonApi.addToTankoubon(client, serverUrl, tankId, arcid)
-                        if (tanks[i].archives.isEmpty()) {
+                        val wasEmpty = tanks[i].archives.isEmpty()
+                        if (wasEmpty) {
                             seedTankCoverBestEffort(client, serverUrl, tankId)
                         }
+                        joined += TankMembershipChangedEvent.JoinedTank(tankId, tanks[i].name, wasEmpty)
                     } else {
                         LRRTankoubonApi.removeFromTankoubon(client, serverUrl, tankId, arcid)
+                        left += tankId
                     }
                 }
                 val newIds = tanks.indices.filter { checked[it] }.map { tanks[it].id }
                 Handler(Looper.getMainLooper()).post {
                     Toast.makeText(activity, R.string.tank_op_done, Toast.LENGTH_SHORT).show()
+                    if (joined.isNotEmpty() || left.isNotEmpty()) {
+                        AppEventBus.postTankMembershipChangedEvent(
+                            TankMembershipChangedEvent(arcid, joined, left)
+                        )
+                    }
                     onChanged(newIds)
                 }
             } catch (ce: CancellationException) {

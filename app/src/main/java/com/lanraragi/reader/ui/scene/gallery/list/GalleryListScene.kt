@@ -56,6 +56,7 @@ import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.event.AppEventBus
+import com.lanraragi.reader.event.TankMembershipChangedEvent
 import com.lanraragi.reader.gallery.ReadingContext
 import com.lanraragi.reader.gallery.ReadingContextStore
 import com.lanraragi.reader.settings.AppearanceSettings
@@ -130,6 +131,10 @@ class GalleryListScene : BaseScene(),
      * after the user is actually looking at the list, not while it's hidden.
      */
     private val deletionBuffer = DetachBuffer<String>()
+
+    // Tank membership edits made on the detail page while this list was
+    // covered; replayed in onResume so the merge choreography plays on screen.
+    private val tankMembershipBuffer = DetachBuffer<TankMembershipChangedEvent>()
 
     // Batch results (per-item failure dialog + ClearNew badge refresh) that
     // arrived while this list was detached under a pushed scene; replayed in
@@ -299,6 +304,15 @@ class GalleryListScene : BaseScene(),
         collectFlowWhileCreated(this, AppEventBus.archiveDeletedEvent) { event ->
             deletionBuffer.deliverOrBuffer(event.arcid, ready = isResumed) {
                 removeArchiveLocally(it)
+            }
+        }
+
+        // Detail-page Tankoubons › Edit: same whole-lifetime collection and
+        // onResume replay as deletions — the edit happens while this list is
+        // covered, and the merge animation must play after the pop-back.
+        collectFlowWhileCreated(this, AppEventBus.tankMembershipChangedEvent) { event ->
+            tankMembershipBuffer.deliverOrBuffer(event, ready = isResumed) {
+                onTankMembershipChanged(it)
             }
         }
 
@@ -840,6 +854,11 @@ class GalleryListScene : BaseScene(),
             if (drained.isNotEmpty()) {
                 recyclerView.post { drained.forEach { removeArchiveLocally(it) } }
             }
+            val membership = mutableListOf<TankMembershipChangedEvent>()
+            tankMembershipBuffer.drain { membership.add(it) }
+            if (membership.isNotEmpty()) {
+                recyclerView.post { membership.forEach { onTankMembershipChanged(it) } }
+            }
         }
 
         // Replay batch results that completed while this list was detached. Only
@@ -1037,6 +1056,32 @@ class GalleryListScene : BaseScene(),
         animator.start(plan) {
             if (tankMergeAnimator === animator) tankMergeAnimator = null
             onDone()
+        }
+    }
+
+    /**
+     * Detail-page membership edit (spec 2026-09-22 §6): a join plays the
+     * single-flyer choreography into the first joined tank and ends in the
+     * batch Snackbar (count 1, "Open"); a leave-only edit in group mode
+     * reloads quietly — the archive's correct position needs the server
+     * sort. Ungrouped lists have nothing to move.
+     */
+    private fun onTankMembershipChanged(event: TankMembershipChangedEvent) {
+        val baseUrl = LRRClientProvider.getBaseUrl()
+        val groupMode = AppearanceSettings.getGroupTanks() && !TankoubonSupportGate.isUnsupported(baseUrl)
+        if (!groupMode) return
+        val joined = event.joined.firstOrNull()
+        if (joined == null) {
+            if (event.left.isNotEmpty()) mHelper?.firstRefresh()
+            return
+        }
+        runTankMerge(joined.id, joined.name, joined.wasEmpty, listOf(event.arcid)) {
+            val res = resources2 ?: return@runTankMerge
+            showTip(
+                res.getQuantityString(R.plurals.batch_done_tankoubon, 1, 1),
+                LENGTH_LONG,
+                res.getString(R.string.tank_merge_open),
+            ) { openTankoubonDetail(joined.id, joined.name) }
         }
     }
 
