@@ -5,12 +5,10 @@ import android.content.Intent
 import android.util.Log
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.gallery.GalleryProvider2
+import com.lanraragi.reader.gallery.DownloadDirResolver
 import com.lanraragi.reader.gallery.ReaderPageCache
 import com.lanraragi.reader.gallery.ReadingProgressReconciler
 import com.lanraragi.reader.settings.DownloadSettings
-import com.lanraragi.reader.spider.SpiderDen
-import com.lanraragi.framework.lib.yorozuya.StringUtils
 import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
@@ -166,7 +164,7 @@ object GalleryOpenHelper {
             // READ right after DOWNLOAD, or a download that failed before
             // its first page) is still a hybrid session: the provider
             // creates the directory and both sides fill it.
-            val hybridDir = downloadDir ?: pendingDownloadDir(archive)
+            val hybridDir = downloadDir ?: DownloadDirResolver.pendingDownloadDir(archive)
             if (hybridDir != null) {
                 intent.putExtra(GalleryActivity.KEY_DOWNLOAD_DIR, hybridDir.absolutePath)
             }
@@ -211,105 +209,21 @@ object GalleryOpenHelper {
         return intent
     }
 
-    /**
-     * The download directory of an archive that is in the download list but
-     * has no page on disk yet, or null when the archive is not being
-     * downloaded or its root is not a plain `file://` tree (SAF roots stay
-     * on the streaming path, matching [getLocalDownloadDir]). The directory
-     * may not exist yet; the hybrid provider creates it.
-     */
-    private suspend fun pendingDownloadDir(archive: Archive): File? {
-        // Room lookup, not DownloadManager.getDownloadInfo: this runs on an
-        // IO coroutine and the in-memory repository asserts the main thread.
-        val tracked = runCatching {
-            ServiceRegistry.dataModule.downloadDbRepository.isDownloadTracked(archive.arcid)
-        }.getOrDefault(false)
-        if (!tracked) return null
-        val uni = runCatching {
-            SpiderDen.getGalleryDownloadDir(archive.arcid, archive.title)
-        }.getOrNull() ?: return null
-        val uri = uni.uri
-        if ("file" != uri.scheme) return null
-        return File(uri.path ?: return null)
-    }
-
-    /**
-     * Resolve the local download directory for an archive, or null if the
-     * archive isn't readable offline. A non-null result is guaranteed to be
-     * an existing `file://` directory that actually contains page images, so
-     * callers can route straight to [GalleryActivity.ACTION_DIR].
-     *
-     * Resolution:
-     *  1. Primary — [SpiderDen.getGalleryDownloadDir] maps arcid → the DB
-     *     `dirname` under the recorded root. Directories are title-named
-     *     (DownloadDirNaming), so the persisted pointer is the only
-     *     arcid → directory link; there is no prefix to scan for.
-     *  2. Legacy — the pre-W34 app-private, title-named folder.
-     */
+    /** See [DownloadDirResolver.localDownloadDir]; kept here for the existing call sites. */
     @JvmStatic
-    suspend fun getLocalDownloadDir(context: Context, archive: Archive): File? {
-        // 1. Primary resolution.
-        fileDirFromUni(SpiderDen.getGalleryDownloadDir(archive.arcid, archive.title))
-            ?.let { primary -> if (hasImageFiles(primary)) return primary }
+    suspend fun getLocalDownloadDir(context: Context, archive: Archive): File? =
+        DownloadDirResolver.localDownloadDir(context, archive)
 
-        // 2. Legacy app-private fallback.
-        val title = archive.title.takeIf { it.isNotEmpty() } ?: return null
-        val baseDir = File(context.getExternalFilesDir(null), "download")
-        val dirName = title.replace("[\\\\/:*?\"<>|]".toRegex(), "_").trim()
-        val oldDir = File(baseDir, dirName)
-        return if (oldDir.isDirectory && hasImageFiles(oldDir)) oldDir else null
-    }
-
-    /**
-     * Map a [UniFile] to a [File] only when it is a `file://` directory.
-     * Returns null for content:// (SAF) trees — those can't be handed to
-     * [GalleryActivity.ACTION_DIR], which expects a filesystem path — and for
-     * non-existent paths.
-     */
-    private fun fileDirFromUni(uni: UniFile?): File? {
-        val uri = uni?.uri ?: return null
-        if ("file" != uri.scheme) return null
-        val dir = File(uri.path ?: return null)
-        return if (dir.isDirectory) dir else null
-    }
-
-    /**
-     * Check if a directory contains at least one image file, matching against
-     * the shared [GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS] whitelist so this
-     * routing check recognises exactly what the reader's dir lister
-     * ([com.lanraragi.reader.gallery.DirImageFiles]) will enumerate.
-     */
+    /** See [DownloadDirResolver.hasImageFiles]. */
     @JvmStatic
-    fun hasImageFiles(dir: File): Boolean {
-        val files = dir.listFiles() ?: return false
-        return files.any { f ->
-            f.isFile && StringUtils.endsWith(
-                f.name.lowercase(),
-                GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS
-            )
-        }
-    }
+    fun hasImageFiles(dir: File): Boolean = DownloadDirResolver.hasImageFiles(dir)
 
-    /** Count page-image files in [dir] using the same extension whitelist as [hasImageFiles]. */
+    /** See [DownloadDirResolver.countImageFiles]. */
     @JvmStatic
-    fun countImageFiles(dir: File): Int {
-        val files = dir.listFiles() ?: return 0
-        return files.count { f ->
-            f.isFile && StringUtils.endsWith(
-                f.name.lowercase(),
-                GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS
-            )
-        }
-    }
+    fun countImageFiles(dir: File): Int = DownloadDirResolver.countImageFiles(dir)
 
-    /**
-     * A local copy is complete when it holds at least [expectedPages] page
-     * images. An unknown server pagecount (<= 0) is treated as complete —
-     * we have no basis to second-guess the directory.
-     */
+    /** See [DownloadDirResolver.isLocalCopyComplete]. */
     @JvmStatic
-    fun isLocalCopyComplete(dir: File, expectedPages: Int): Boolean {
-        if (expectedPages <= 0) return true
-        return countImageFiles(dir) >= expectedPages
-    }
+    fun isLocalCopyComplete(dir: File, expectedPages: Int): Boolean =
+        DownloadDirResolver.isLocalCopyComplete(dir, expectedPages)
 }
