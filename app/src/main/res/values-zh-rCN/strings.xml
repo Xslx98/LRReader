@@ -381,7 +381,6 @@
     <string name="detail_tankoubons_edit">编辑</string>
     <string name="tank_add_to">加入合订本</string>
     <string name="batch_add_to_tankoubon">合订本</string>
-    <string name="tank_none">服务器上没有合订本</string>
 
     <!-- List multi-select batch operations -->
     <plurals name="batch_selected_count">

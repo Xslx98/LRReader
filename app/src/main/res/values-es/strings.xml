@@ -382,7 +382,6 @@
     <string name="detail_tankoubons_edit">Editar</string>
     <string name="tank_add_to">Añadir a tankoubon</string>
     <string name="batch_add_to_tankoubon">Tank</string>
-    <string name="tank_none">No hay tankoubons en este servidor</string>
 
     <!-- List multi-select batch operations -->
     <plurals name="batch_selected_count">
