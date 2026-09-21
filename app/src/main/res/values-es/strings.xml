@@ -331,6 +331,7 @@
     <string name="tank_delete_confirm">¿Eliminar este tankoubon? Los archivos que contiene no se eliminarán, pero se perderán el resumen, las etiquetas adicionales y el progreso de lectura del propio tankoubon.</string>
     <string name="tank_locked">El tankoubon está bloqueado, inténtalo más tarde</string>
     <string name="tank_op_done">Hecho</string>
+    <string name="tank_merge_open">Abrir</string>
     <string name="tank_progress_page">Leído hasta la página %1$d</string>
     <string name="tank_read_from_start">Leer desde el principio</string>
     <string name="tank_continue_reading">Continuar leyendo (página %1$d)</string>

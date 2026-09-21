@@ -48,6 +48,23 @@ internal class GalleryBatchOpsHelper(
         fun refreshList()
         fun showTip(message: String)
 
+        /** Snackbar with one action (used for the post-merge "Open" affordance). */
+        fun showTipWithAction(message: String, actionText: String, action: () -> Unit)
+
+        /**
+         * Plays the merge-into-tankoubon choreography for [succeeded] and
+         * invokes [onDone] when the list is settled (at once when there is
+         * nothing to animate). Feedback for the batch waits for it.
+         */
+        fun animateTankMerge(
+            op: GalleryListViewModel.BatchOp.AddToTankoubon,
+            succeeded: List<String>,
+            onDone: () -> Unit,
+        )
+
+        /** Pushes the tank's member-management scene. */
+        fun openTankoubon(tankId: String, tankName: String)
+
         /**
          * Stable per-scene identity stamped on batches this scene starts, so
          * the shared activity-scoped ViewModel's broadcast result is handled by
@@ -68,6 +85,9 @@ internal class GalleryBatchOpsHelper(
 
     /** Last count reported by the selection helper; restored after a run ends. */
     private var selectedCount = 0
+
+    /** The Tank action, the merge animation's fallback landing spot. */
+    val tankButton: View get() = tankoubonButton
 
     init {
         selectAllView.setOnClickListener { callback.checkAllSelection() }
@@ -131,18 +151,35 @@ internal class GalleryBatchOpsHelper(
     }
 
     fun onBatchResult(result: GalleryListViewModel.BatchResult) {
+        val op = result.op
+        if (op is GalleryListViewModel.BatchOp.AddToTankoubon && result.succeeded.isNotEmpty()) {
+            // The list first shows the archives merging into the tank; the
+            // Snackbar (with "Open") or the failure dialog follows the animation.
+            callback.animateTankMerge(op, result.succeeded) { showFeedback(result) }
+            return
+        }
+        showFeedback(result)
+    }
+
+    private fun showFeedback(result: GalleryListViewModel.BatchResult) {
         val activity = callback.activity ?: return
         val tip = BatchFeedbackPresenter.tipFor(result)
         if (tip != null) {
-            callback.showTip(
-                when (tip) {
-                    is BatchFeedbackPresenter.Tip.Plural ->
-                        activity.resources.getQuantityString(tip.textRes, tip.count, tip.count)
-                    is BatchFeedbackPresenter.Tip.QueuedWithLocal -> activity.getString(
-                        R.string.batch_download_queued_some_local, tip.queued, tip.alreadyLocal
-                    )
+            val text = when (tip) {
+                is BatchFeedbackPresenter.Tip.Plural ->
+                    activity.resources.getQuantityString(tip.textRes, tip.count, tip.count)
+                is BatchFeedbackPresenter.Tip.QueuedWithLocal -> activity.getString(
+                    R.string.batch_download_queued_some_local, tip.queued, tip.alreadyLocal
+                )
+            }
+            val op = result.op
+            if (op is GalleryListViewModel.BatchOp.AddToTankoubon) {
+                callback.showTipWithAction(text, activity.getString(R.string.tank_merge_open)) {
+                    callback.openTankoubon(op.tankId, op.tankName)
                 }
-            )
+            } else {
+                callback.showTip(text)
+            }
         } else {
             BatchFeedbackPresenter.dialogFor(result)?.let { showFailureDialog(activity, it) }
         }

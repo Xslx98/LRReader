@@ -124,6 +124,7 @@ internal object GalleryListHelperFactory {
             override fun showActionFab() { scene.stateHelper?.showActionFab() }
             override fun getString(resId: Int): String = scene.getString(resId)
             override fun exitMultiSelect() { scene.multiSelectHelper?.exit() }
+            override fun cancelTankMerge() { scene.cancelTankMerge() }
         })
 
         val searchHelper = GallerySearchHelper(object : GallerySearchHelper.Callback {
