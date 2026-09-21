@@ -406,6 +406,7 @@
         <item quantity="many">No se pudieron obtener %d archivos faltantes del servidor</item>
         <item quantity="other">No se pudieron obtener %d archivos faltantes del servidor</item>
     </plurals>
+    <string name="batch_move_tank_unsupported">Las tarjetas de tankoubon no se pueden mover a una etiqueta</string>
     <string name="batch_download_queued_some_local">%1$d en cola de descarga, %2$d ya descargados</string>
     <string name="download_already_local">Ya descargado</string>
     <plurals name="batch_done_category">
