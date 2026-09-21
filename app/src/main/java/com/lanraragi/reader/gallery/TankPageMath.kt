@@ -30,6 +30,21 @@ object TankPageMath {
      * the progress was written); a global page never lands on a 0-page member.
      * Null when the page is not positive or the tank has no pages at all.
      */
+    /**
+     * Start page (0-indexed global) for a whole-tank session entered THROUGH
+     * member [anchorIndex] (spec 2026-09-21 §5): -1 when the saved global
+     * progress [savedGlobal0] already lies inside that member (the provider
+     * restores it), else the member's first page. Unknown page counts or an
+     * out-of-range anchor fall back to -1.
+     */
+    fun anchoredStart(pagecounts: List<Int>, anchorIndex: Int, savedGlobal0: Int): Int {
+        if (anchorIndex !in pagecounts.indices) return -1
+        val map = TankPageMap(pagecounts)
+        if (map.total <= 0) return -1
+        val savedMember = map.locate(savedGlobal0)?.first
+        return if (savedMember == anchorIndex) -1 else map.memberStart(anchorIndex)
+    }
+
     fun locate(offsets: List<Int>, globalPage1: Int): Pair<Int, Int>? {
         val total = offsets.last()
         if (globalPage1 < 1 || total <= 0) return null
