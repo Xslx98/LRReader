@@ -216,51 +216,6 @@ class TankoubonsViewModel : ViewModel() {
     }
 
     /**
-     * Renames an existing tankoubon on the server, then reloads the list.
-     */
-    fun rename(tankId: String, name: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
-                val client = ServiceRegistry.networkModule.okHttpClient
-
-                LRRTankoubonApi.renameTankoubon(client, serverUrl, tankId, name)
-
-                _uiEvent.tryEmit(TankUiEvent.ShowSuccess(R.string.tank_op_done))
-                loadTankoubonsInternal()
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                Log.e(TAG, "Failed to rename tankoubon", e)
-                val context = ServiceRegistry.appModule.getContext()
-                _uiEvent.tryEmit(TankUiEvent.ShowError(errorMessage(context, e)))
-            }
-        }
-    }
-
-    /**
-     * Updates a tankoubon's summary/tags metadata, then reloads the list.
-     * Membership is left untouched (archives = null).
-     */
-    fun editMeta(tankId: String, summary: String, tags: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
-                val client = ServiceRegistry.networkModule.okHttpClient
-
-                LRRTankoubonApi.updateTankoubon(client, serverUrl, tankId, summary = summary, tags = tags)
-
-                _uiEvent.tryEmit(TankUiEvent.ShowSuccess(R.string.tank_op_done))
-                loadTankoubonsInternal()
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                Log.e(TAG, "Failed to update tankoubon metadata", e)
-                val context = ServiceRegistry.appModule.getContext()
-                _uiEvent.tryEmit(TankUiEvent.ShowError(errorMessage(context, e)))
-            }
-        }
-    }
-
-    /**
      * Deletes a tankoubon from the server (never its archives), then reloads
      * the list.
      */
