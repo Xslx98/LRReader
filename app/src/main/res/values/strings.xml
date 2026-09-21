@@ -434,6 +434,9 @@
     <string name="tank_already_sorted">Already in order</string>
     <string name="tank_sorted">Members sorted</string>
     <string name="tank_undo">Undo</string>
+    <string name="tank_sort_by_title">Sort by title</string>
+    <string name="tank_reverse_order">Reverse order</string>
+    <string name="tank_auto_sort">Auto-sort members</string>
     <string name="tank_badge">Tankoubon</string>
     <string name="settings_eh_group_tanks">Group Tankoubons in browse</string>
     <string name="settings_eh_group_tanks_summary">Fold archives of a Tankoubon into a single entry (LANraragi 0.9.8+)</string>

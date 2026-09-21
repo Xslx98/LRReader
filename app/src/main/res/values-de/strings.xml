@@ -284,6 +284,9 @@
     <string name="tank_already_sorted">Bereits sortiert</string>
     <string name="tank_sorted">Mitglieder sortiert</string>
     <string name="tank_undo">Rückgängig</string>
+    <string name="tank_sort_by_title">Nach Titel sortieren</string>
+    <string name="tank_reverse_order">Reihenfolge umkehren</string>
+    <string name="tank_auto_sort">Mitglieder automatisch sortieren</string>
     <string name="tank_badge">Tankoubon</string>
     <string name="settings_eh_group_tanks">Tankoubons beim Stöbern gruppieren</string>
     <string name="settings_eh_group_tanks_summary">Archive eines Tankoubons zu einem Eintrag zusammenfassen (LANraragi 0.9.8+)</string>

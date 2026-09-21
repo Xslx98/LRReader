@@ -238,15 +238,16 @@ class TankoubonsScene : BaseScene() {
     }
 
     /**
-     * Long-press action menu (spec 2026-09-21 §7): download / manage
-     * members / delete. Rename and metadata editing live in the member
-     * management scene's overflow.
+     * Long-press action menu (spec 2026-09-21 §7 + §3): download /
+     * auto-sort members / manage members / delete. Rename and metadata
+     * editing live in the member management scene's overflow.
      */
     private fun showTankActions(tank: LRRTankoubonApi.Tankoubon) {
         val ctx = ehContext ?: return
 
         val items = arrayOf(
             getString(R.string.tank_download),
+            getString(R.string.tank_auto_sort),
             getString(R.string.tank_manage_members),
             getString(R.string.tank_delete)
         )
@@ -256,8 +257,9 @@ class TankoubonsScene : BaseScene() {
             .setItems(items) { _, which ->
                 when (which) {
                     0 -> viewModel.fillTank(tank)
-                    1 -> openTankDetail(tank)
-                    2 -> showDeleteDialog(tank)
+                    1 -> viewModel.autoSort(tank)
+                    2 -> openTankDetail(tank)
+                    3 -> showDeleteDialog(tank)
                 }
             }
             .show()

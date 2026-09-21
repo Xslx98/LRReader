@@ -148,6 +148,14 @@ class TankoubonDetailScene : BaseScene() {
                         showEditMetaDialog()
                         true
                     }
+                    R.id.action_tank_sort_title -> {
+                        viewModel.sortByTitle()
+                        true
+                    }
+                    R.id.action_tank_reverse -> {
+                        viewModel.reverseOrder()
+                        true
+                    }
                     R.id.action_tank_download -> {
                         downloadTank()
                         true

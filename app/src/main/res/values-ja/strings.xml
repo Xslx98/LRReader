@@ -303,6 +303,9 @@
     <string name="tank_already_sorted">すでに並んでいます</string>
     <string name="tank_sorted">メンバーを並べ替えました</string>
     <string name="tank_undo">元に戻す</string>
+    <string name="tank_sort_by_title">タイトル順に並べ替え</string>
+    <string name="tank_reverse_order">順序を反転</string>
+    <string name="tank_auto_sort">メンバーを自動で並べ替え</string>
     <string name="tank_badge">単行本</string>
     <string name="settings_eh_group_tanks">ブラウズで単行本をまとめる</string>
     <string name="settings_eh_group_tanks_summary">単行本のアーカイブを 1 つの項目にまとめる(LANraragi 0.9.8+)</string>
