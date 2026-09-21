@@ -50,6 +50,9 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
 
         /** Leave multi-select mode (no-op when it is not active). */
         fun exitMultiSelect()
+
+        /** Settle an in-flight merge-into-tankoubon animation before positions change. */
+        fun cancelTankMerge() {}
     }
 
     override fun getPageData(taskId: Int, type: Int, page: Int) {
@@ -60,6 +63,7 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
         // keep existing positions valid.
         if (type != TYPE_NEXT_PAGE && type != TYPE_NEXT_PAGE_KEEP_POS) {
             callback.exitMultiSelect()
+            callback.cancelTankMerge()
         }
         val serverUrl = LRRAuthManager.getServerUrl()
         if (serverUrl.isNullOrEmpty()) {
