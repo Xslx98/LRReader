@@ -14,6 +14,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.lanraragi.reader.R
+import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.download.TankFillDispatcher
 import com.lanraragi.reader.client.LRRCacheKeyFactory
 import com.lanraragi.reader.client.TankCoverCacheStamp
 import com.lanraragi.reader.ui.scene.TankoubonsViewModel.TankUiEvent
@@ -151,7 +153,21 @@ class TankoubonsScene : BaseScene() {
                 is TankUiEvent.ShowSuccess -> {
                     Toast.makeText(ctx, event.messageResId, Toast.LENGTH_SHORT).show()
                 }
+                is TankUiEvent.OpenReader -> startActivity(event.intent)
+                is TankUiEvent.FillTank -> dispatchFill(event)
             }
+        }
+
+        // Row spinner follows the VM's in-flight session build: repaint the
+        // row that stopped spinning and the one that started.
+        var lastOpening: String? = null
+        collectFlow(viewLifecycleOwner, viewModel.openingTankId) { opening ->
+            val adapter = mAdapter ?: return@collectFlow
+            for (id in listOfNotNull(lastOpening, opening)) {
+                val index = mTanks.indexOfFirst { it.id == id }
+                if (index >= 0) adapter.notifyItemChanged(index)
+            }
+            lastOpening = opening
         }
 
         viewModel.loadTankoubons()
@@ -174,6 +190,25 @@ class TankoubonsScene : BaseScene() {
         mLastSnapshot = emptyList()
     }
 
+    /**
+     * Long-press "download" (spec 2026-09-21 §7): the SAME fill path as the
+     * tank detail overflow and the downloads card start control. Runs on the
+     * main thread because download-manager state lookups are main-only.
+     */
+    private fun dispatchFill(event: TankUiEvent.FillTank) {
+        val ctx = ehContext ?: return
+        if (event.members.isEmpty()) {
+            Toast.makeText(ctx, R.string.error_empty, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val dm = ServiceRegistry.dataModule.downloadManager
+        val plan = TankFillDispatcher.plan(event.members) { dm.getDownloadState(it) }
+        TankFillDispatcher.dispatch(
+            ctx, dm, plan, event.tankId, event.name, LRRAuthManager.getActiveProfileId(), event.memberIdsInOrder,
+        )
+        Toast.makeText(ctx, TankFillDispatcher.feedback(resources, plan), Toast.LENGTH_SHORT).show()
+    }
+
     // ==================== CRUD Operations ====================
 
     private fun showCreateDialog() {
@@ -183,38 +218,22 @@ class TankoubonsScene : BaseScene() {
         }
     }
 
-    private fun showRenameDialog(tank: LRRTankoubonApi.Tankoubon) {
-        val ctx = ehContext ?: return
-        TankDialogs.showNameInputDialog(ctx, R.string.tank_rename, tank.name) {
-            viewModel.rename(tank.id, it)
-        }
-    }
-
-    private fun showEditMetaDialog(tank: LRRTankoubonApi.Tankoubon) {
-        val ctx = ehContext ?: return
-        TankDialogs.showMetaDialog(
-            ctx,
-            tank.summary.orEmpty(),
-            tank.tags.orEmpty()
-        ) { summary, tags ->
-            viewModel.editMeta(tank.id, summary, tags)
-        }
-    }
-
     private fun showDeleteDialog(tank: LRRTankoubonApi.Tankoubon) {
         val ctx = ehContext ?: return
         TankDialogs.showDeleteConfirm(ctx) { viewModel.delete(tank.id) }
     }
 
     /**
-     * Show long-press action menu for a tankoubon item.
+     * Long-press action menu (spec 2026-09-21 §7): download / manage
+     * members / delete. Rename and metadata editing live in the member
+     * management scene's overflow.
      */
     private fun showTankActions(tank: LRRTankoubonApi.Tankoubon) {
         val ctx = ehContext ?: return
 
         val items = arrayOf(
-            getString(R.string.tank_rename),
-            getString(R.string.tank_edit_meta),
+            getString(R.string.tank_download),
+            getString(R.string.tank_manage_members),
             getString(R.string.tank_delete)
         )
 
@@ -222,8 +241,8 @@ class TankoubonsScene : BaseScene() {
             .setTitle(tank.name)
             .setItems(items) { _, which ->
                 when (which) {
-                    0 -> showRenameDialog(tank)
-                    1 -> showEditMetaDialog(tank)
+                    0 -> viewModel.fillTank(tank)
+                    1 -> openTankDetail(tank)
                     2 -> showDeleteDialog(tank)
                 }
             }
@@ -347,8 +366,11 @@ class TankoubonsScene : BaseScene() {
                 holder.progress.visibility = View.GONE
             }
 
-            // Click to open member list
-            holder.itemView.setOnClickListener { openTankDetail(tank) }
+            // Click = read (spec 2026-09-21 §7); the row spins while the
+            // whole-tank session is being built from server truth.
+            holder.loading.visibility =
+                if (viewModel.openingTankId.value == tank.id) View.VISIBLE else View.GONE
+            holder.itemView.setOnClickListener { viewModel.openTank(tank) }
 
             // Long-press for actions menu
             holder.itemView.setOnLongClickListener {
@@ -365,6 +387,7 @@ class TankoubonsScene : BaseScene() {
         val name: TextView = itemView.findViewById(R.id.tank_name)
         val count: TextView = itemView.findViewById(R.id.tank_count)
         val progress: TextView = itemView.findViewById(R.id.tank_progress)
+        val loading: View = itemView.findViewById(R.id.tank_loading)
     }
 
     /**

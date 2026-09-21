@@ -65,4 +65,14 @@
 
     </LinearLayout>
 
+    <!-- Inline spinner while the row's whole-tank session is being built
+         (spec 2026-09-21 §7: click = read). -->
+    <ProgressBar
+        android:id="@+id/tank_loading"
+        style="?android:attr/progressBarStyleSmall"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="12dp"
+        android:visibility="gone" />
+
 </LinearLayout>
