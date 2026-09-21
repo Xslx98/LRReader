@@ -52,6 +52,7 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.ArchiveCoverStamps
 import com.lanraragi.reader.client.LRRCacheKeyFactory
 import com.lanraragi.reader.client.LRRUtils
+import com.lanraragi.reader.client.TankCoverCacheStamp
 import com.lanraragi.reader.gallery.ReadingContext
 import com.lanraragi.reader.gallery.ReadingContextStore
 import com.lanraragi.reader.gallery.HistoryTankRedirect
@@ -96,6 +97,9 @@ class HistoryScene : ToolbarScene(),
     private lateinit var mRecyclerView: EasyRecyclerView
     private var mViewTransition: ViewTransition? = null
     private var mAdapter: RecyclerView.Adapter<*>? = null
+
+    /** [TankCoverCacheStamp] value the tank pseudo-rows were last bound with. */
+    private var mTankCoverStampSeen = TankCoverCacheStamp.value
     private lateinit var mLayoutManager: AutoStaggeredGridLayoutManager
 
     /*---------------
@@ -248,6 +252,15 @@ class HistoryScene : ToolbarScene(),
 
     override fun onResume() {
         super.onResume()
+        // Tank pseudo-rows bind their cover by TankCoverCacheStamp; rebind
+        // them when it moved while this list was covered.
+        val stamp = TankCoverCacheStamp.value
+        if (stamp != mTankCoverStampSeen) {
+            mTankCoverStampSeen = stamp
+            viewModel.historyList.value.forEachIndexed { index, archive ->
+                if (isTankoubonId(archive.arcid)) mAdapter?.notifyItemChanged(index)
+            }
+        }
         // Refresh column size to pick up detail_size changes from settings
         if (::mLayoutManager.isInitialized) {
             val columnWidth = resources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId())
