@@ -10,6 +10,7 @@ import com.lanraragi.reader.module.INetworkModule
 import com.lanraragi.reader.client.TankCoverCacheStamp
 import com.lanraragi.reader.module.NetworkMonitor
 import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.download.TankMembershipSync
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import kotlinx.coroutines.CoroutineScope
