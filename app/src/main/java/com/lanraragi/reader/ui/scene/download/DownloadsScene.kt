@@ -692,6 +692,8 @@ class DownloadsScene : ToolbarScene(),
     override fun tankProgressFor(tankId: String): Pair<Int, Int> =
         viewModel.tankProgressOf(tankId)
 
+    override fun tankMemberCountFor(tankId: String): Int = viewModel.tankMembersOf(tankId).size
+
     // ── Tank download cards (Track 2) ─────────────────────────
 
     /** True when the row at adapter [position] is a synthetic tank card. */

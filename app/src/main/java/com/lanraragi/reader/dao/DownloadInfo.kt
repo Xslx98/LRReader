@@ -123,6 +123,15 @@ class DownloadInfo() : Parcelable {
     @JvmField
     var fileSize: Long = -1
 
+    /**
+     * Synthetic tank card only (spec 2026-09-21 §4): number of ids on the
+     * group row that have NO download row yet — the card renders
+     * INCOMPLETE and its start control fills the gap. Always 0 on real
+     * rows; never persisted or parcelled.
+     */
+    @JvmField
+    var tankMissingCount: Int = 0
+
     // ── Parcelable ──
 
     private constructor(`in`: Parcel) : this() {

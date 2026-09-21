@@ -24,6 +24,9 @@ import kotlinx.serialization.json.Json
  * - An arcid claimed by several groups folds into the FIRST group
  *   (observeTankGroups order: newest first).
  * - A group with zero surviving member rows renders no card.
+ * - Group ids with NO download row are counted on the card as
+ *   [DownloadInfo.tankMissingCount] (INCOMPLETE rendering, spec
+ *   2026-09-21 §4) — the state ladder itself stays over surviving rows.
  * - Card state aggregates member states: any WAIT/DOWNLOAD → DOWNLOAD,
  *   else any FAILED → FAILED, else all FINISH → FINISH, else NONE.
  * - Card time = max member DOWNLOAD_TIME so the card sorts where its
@@ -63,7 +66,7 @@ object TankDownloadGrouping {
         if (members.isEmpty()) return Result(all, emptyMap())
 
         val cards = members.map { (tankId, memberList) ->
-            cardFor(groupsById.getValue(tankId), memberList)
+            cardFor(groupsById.getValue(tankId), memberList, memberIdsOf(groupsById.getValue(tankId)))
         }
         val display = (standalone + cards).sortedByDescending { it.time }
         return Result(display, members)
@@ -73,7 +76,11 @@ object TankDownloadGrouping {
         json.decodeFromString(ListSerializer(String.serializer()), group.memberIdsJson)
     }.getOrDefault(emptyList())
 
-    private fun cardFor(group: TankDownloadGroup, members: List<DownloadInfo>): DownloadInfo {
+    private fun cardFor(
+        group: TankDownloadGroup,
+        members: List<DownloadInfo>,
+        groupIds: List<String>,
+    ): DownloadInfo {
         val card = DownloadInfo()
         card.arcid = group.tankId
         card.tankId = group.tankId
@@ -82,6 +89,8 @@ object TankDownloadGrouping {
         card.serverProfileId = group.serverProfileId
         card.time = members.maxOf { it.time }.coerceAtLeast(group.createdTime)
         card.state = aggregateState(members)
+        val present = members.mapTo(HashSet()) { it.arcid }
+        card.tankMissingCount = groupIds.count { it !in present }
         return card
     }
 
