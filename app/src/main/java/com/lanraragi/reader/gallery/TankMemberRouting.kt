@@ -4,6 +4,7 @@ import android.content.Context
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.framework.unifile.UniFile
 import okhttp3.OkHttpClient
+import java.io.File
 
 /**
  * Per-member source routing for the tank composite reader — the standalone
@@ -15,7 +16,7 @@ import okhttp3.OkHttpClient
  *  - local pages (or a tracked download's pending dir) with network up →
  *    [LrrTankMemberSource] in hybrid mode, reading and filling that dir;
  *  - local pages offline → [DirTankMemberSource] over the partial dir
- *    (missing pages surface as the reader's per-page error);
+ *    (missing pages, tail included, surface as the reader's per-page error);
  *  - nothing local → plain streaming.
  */
 internal object TankMemberRouting {
@@ -34,18 +35,28 @@ internal object TankMemberRouting {
         val archive = member.toRoutingArchive(profileId)
         val localDir = runCatching { resolver.localDownloadDir(context, archive) }.getOrNull()
         if (localDir != null) {
-            val complete = resolver.isLocalCopyComplete(localDir, member.pagecount)
-            if (complete || !networkAvailable()) {
-                UniFile.fromFile(localDir)?.let { uniFile ->
-                    return DirTankMemberSource(context, member.arcid, uniFile)
-                }
-            }
+            dirSourceOrNull(context, member, localDir, resolver, networkAvailable)?.let { return it }
         }
         val hybridDir = localDir ?: runCatching { resolver.pendingDownloadDir(archive) }.getOrNull()
         val store = hybridDir?.let {
             HybridPageStore(it, ReaderPageCache.getCacheDir(context, member.arcid))
         }
         return LrrTankMemberSource(context, member.arcid, serverUrl, pageClient, listClient, store)
+    }
+
+    /** Dir source for a complete copy, or offline for a partial one (missing pages = errors); else null. */
+    private fun dirSourceOrNull(
+        context: Context,
+        member: TankMemberSeed,
+        localDir: File,
+        resolver: DownloadDirResolver,
+        networkAvailable: () -> Boolean,
+    ): TankMemberSource? {
+        val complete = resolver.isLocalCopyComplete(localDir, member.pagecount)
+        if (!complete && networkAvailable()) return null
+        val uniFile = UniFile.fromFile(localDir) ?: return null
+        val expected = if (complete) 0 else member.pagecount
+        return DirTankMemberSource(context, member.arcid, uniFile, expected)
     }
 }
 

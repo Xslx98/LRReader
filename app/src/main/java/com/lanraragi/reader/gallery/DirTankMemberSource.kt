@@ -14,16 +14,20 @@ import kotlinx.coroutines.withContext
 
 /**
  * Locally-downloaded member source for the tank composite reader: pages
- * come straight from the member's download directory. Only COMPLETE local
- * copies are routed here (see [TankGalleryProvider]'s per-member routing),
- * so unlike [DirGalleryProvider] there is no gap/expectedPageCount
- * handling — the numeric map, when present, is only used to keep page
- * order faithful to real page numbers.
+ * come straight from the member's download directory. Complete local
+ * copies and — offline — partial ones are routed here (see
+ * [TankMemberRouting]). The numeric map keeps page order faithful to real
+ * page numbers, so a middle gap is an explicit missing page; a trailing
+ * gap is only visible when [expectedPageCount] says the archive is longer
+ * than the directory ([DirImageFiles.pageSpaceSize]) — routing passes it
+ * for a known-partial copy and 0 for a complete one.
  */
 internal class DirTankMemberSource(
     context: Context,
     override val arcid: String,
     private val dir: UniFile,
+    /** Server pagecount for a known-partial dir (missing tail = error pages); 0 = trust the dir. */
+    val expectedPageCount: Int = 0,
 ) : TankMemberSource {
 
     private val appContext = context.applicationContext
@@ -34,19 +38,25 @@ internal class DirTankMemberSource(
     @Volatile
     private var pageIndexMap: Map<Int, Int>? = null
 
+    /** Pages the reader exposes; may exceed the file count for a partial dir. */
+    @Volatile
+    private var pageSpace: Int? = null
+
     private val listMutex = Mutex()
 
-    override fun knownPageCount(): Int? = files?.size
+    override fun knownPageCount(): Int? = pageSpace
 
     override suspend fun ensurePageCount(): Int {
-        files?.let { return it.size }
+        pageSpace?.let { return it }
         listMutex.withLock {
-            files?.let { return it.size }
+            pageSpace?.let { return it }
             val listed = withContext(Dispatchers.IO) { DirImageFiles.listSorted(dir) }
                 ?: throw IOException("Cannot enumerate download dir for $arcid")
+            val map = DirImageFiles.numericPageIndices(listed.map { it.name ?: "" })
             files = listed
-            pageIndexMap = DirImageFiles.numericPageIndices(listed.map { it.name ?: "" })
-            return listed.size
+            pageIndexMap = map
+            return DirImageFiles.pageSpaceSize(map, listed.size, expectedPageCount)
+                .also { pageSpace = it }
         }
     }
 

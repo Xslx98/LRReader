@@ -64,6 +64,7 @@ class TankMemberRoutingTest {
         val dir = tmp.newFolder("complete")
         val source = resolve(FakeResolver(dir, null, complete = true), online = true)
         assertTrue(source is DirTankMemberSource)
+        assertEquals(0, (source as DirTankMemberSource).expectedPageCount)
     }
 
     @Test
@@ -87,6 +88,7 @@ class TankMemberRoutingTest {
         val dir = tmp.newFolder("partial-offline")
         val source = resolve(FakeResolver(dir, null, complete = false), online = false)
         assertTrue(source is DirTankMemberSource)
+        assertEquals(member.pagecount, (source as DirTankMemberSource).expectedPageCount)
     }
 
     @Test
