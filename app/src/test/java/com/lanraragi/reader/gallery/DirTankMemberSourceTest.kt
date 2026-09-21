@@ -96,6 +96,23 @@ class DirTankMemberSourceTest {
     }
 
     @Test
+    fun `partial dir with expected count exposes the missing tail as error pages`(): Unit = runBlocking {
+        val source = DirTankMemberSource(ctx, "f".repeat(40), UniFile.fromFile(workerNamedDir(2))!!, 5)
+        assertEquals(5, source.ensurePageCount())
+        assertEquals(5, source.knownPageCount())
+        source.obtainImage(1)!!.recycle()
+        assertThrows(IOException::class.java) {
+            runBlocking { source.obtainImage(4) }
+        }
+    }
+
+    @Test
+    fun `expected count below the dir never shrinks the page space`() = runBlocking {
+        val source = DirTankMemberSource(ctx, "f".repeat(40), UniFile.fromFile(workerNamedDir(3))!!, 2)
+        assertEquals(3, source.ensurePageCount())
+    }
+
+    @Test
     fun `ensurePageCount on a vanished dir throws`(): Unit = runBlocking {
         val dir = workerNamedDir(1)
         dir.deleteRecursively()
