@@ -332,6 +332,12 @@ internal class DownloadScheduler(
             is DownloadEvent.OnGetPages -> {
                 val info = event.taskInfo
                 progressTracker.update(info.arcid, total = event.pages)
+                // Persist the real page count so a tank card can aggregate
+                // this member's total even after its live snapshot is gone.
+                if (event.pages > 0 && info.pagecount != event.pages) {
+                    info.pagecount = event.pages
+                    repo.persistInfo(info)
+                }
                 val list = repo.getInfoListForLabel(info.label)
                 if (list != null) {
                     eventBus.forEachListener {

@@ -215,6 +215,20 @@ class TankDownloadGroupRepositoryTest {
         assertNull(repo.findTankGroupClaiming(ARC_A, 2L))
     }
 
+    // ── pagecount persistence (tank card aggregate needs member totals) ──
+
+    @Test
+    fun putDownloadInfo_persistsPagecount_andKeepsItWhenALaterWriteHasNone() = runTest {
+        repo.putDownloadInfo(downloadInfo(ARC_A, "A").also { it.pagecount = 42 })
+        assertEquals(42, repo.observeDownloads().first().single().pagecount)
+
+        repo.putDownloadInfo(downloadInfo(ARC_A, "A").also { it.state = DownloadState.FINISH })
+        assertEquals(42, repo.observeDownloads().first().single().pagecount)
+
+        repo.putTankGroup(TANK, 1L, "MyTank", listOf(ARC_A))
+        assertEquals(42, repo.getTankMemberArchives(TANK).single().pagecount)
+    }
+
     private companion object {
         val ARC_A = "a".repeat(40)
         val ARC_B = "b".repeat(40)

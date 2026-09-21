@@ -98,6 +98,15 @@ class DownloadInfo() : Parcelable {
     @JvmField
     var tankId: String? = null
 
+    /**
+     * Page count of the archive, mirrored from `archive_json` (seeded from
+     * the server metadata at enqueue time, corrected by the worker once the
+     * page list is known). 0 = unknown. Persisted so a tank card can
+     * aggregate progress over members that are queued or already finished.
+     */
+    @JvmField
+    var pagecount: Int = 0
+
     // ── Transient, non-persisted helpers ──
 
     /**
@@ -148,6 +157,7 @@ class DownloadInfo() : Parcelable {
         archiveUri = `in`.readString()
         downloadRootUri = `in`.readString()
         tankId = `in`.readString()
+        pagecount = `in`.readInt()
         simpleTags = `in`.createStringArray()
         @Suppress("UNCHECKED_CAST")
         tgList = `in`.readArrayList(String::class.java.classLoader) as? ArrayList<String>
@@ -170,6 +180,7 @@ class DownloadInfo() : Parcelable {
         dest.writeString(archiveUri)
         dest.writeString(downloadRootUri)
         dest.writeString(tankId)
+        dest.writeInt(pagecount)
         dest.writeStringArray(simpleTags)
         dest.writeList(tgList)
         dest.writeLong(fileSize)

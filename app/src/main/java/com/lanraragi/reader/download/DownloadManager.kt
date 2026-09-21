@@ -77,7 +77,29 @@ class DownloadManager(
             eventBus.forEachListener { it.onReload() }
             syncRatingsFromServer()
         }
+        scope.launch {
+            try {
+                ServiceRegistry.dataModule.downloadDbRepository.observeTankGroups().collect { groups ->
+                    tankIndex = TankGroupIndex.build(groups)
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Tank group index collector died", e)
+            }
+        }
     }
+
+    /**
+     * Latest arcid → downloaded-tank lookup (group-row truth), refreshed
+     * from Room on every group change. Readable from any thread; the
+     * download service uses it to treat a tank as ONE download unit.
+     */
+    @Volatile
+    private var tankIndex: Map<String, TankGroupIndex.Ref> = emptyMap()
+
+    /** The downloaded tank [arcid] belongs to, or null for a standalone download. */
+    fun tankGroupFor(arcid: String): TankGroupIndex.Ref? = tankIndex[arcid]
 
     /** @return the current progress snapshot for [arcid], or null if not tracked. */
     fun progressFor(arcid: String): ProgressSnapshot? = progressTracker.snapshot(arcid)

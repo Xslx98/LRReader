@@ -8,7 +8,33 @@ import org.junit.Test
 /** Aggregate progress behind a tank card (spec 2026-09-21 §4): sums over members with a live snapshot. */
 class TankProgressAggregateTest {
 
-    private fun info(arcid: String) = DownloadInfo().also { it.arcid = arcid }
+    private fun info(arcid: String, state: DownloadState = DownloadState.NONE, pages: Int = 0) =
+        DownloadInfo().also { it.arcid = arcid; it.state = state; it.pagecount = pages }
+
+    @Test
+    fun `finished members count as fully done and queued members count toward the total`() {
+        val snaps = mapOf("active" to ProgressSnapshot("active", speed = 10L, finished = 3, total = 10))
+        val agg = TankProgressAggregate.of(
+            "TANK_1",
+            listOf(
+                info("done", DownloadState.FINISH, pages = 12),
+                info("active", DownloadState.DOWNLOAD, pages = 10),
+                info("queued", DownloadState.WAIT, pages = 8),
+                info("unknown", DownloadState.WAIT, pages = 0),
+            ),
+        ) { snaps[it] }!!
+
+        assertEquals(15, agg.finished)
+        assertEquals(30, agg.total)
+        assertEquals(10L, agg.speed)
+    }
+
+    @Test
+    fun `a finished member without a known page count contributes nothing`() {
+        val agg = TankProgressAggregate.of("TANK_1", listOf(info("done", DownloadState.FINISH), info("q", DownloadState.WAIT, 5))) { null }!!
+        assertEquals(0, agg.finished)
+        assertEquals(5, agg.total)
+    }
 
     @Test
     fun `sums finished total speed and partial pages over members with snapshots`() {
