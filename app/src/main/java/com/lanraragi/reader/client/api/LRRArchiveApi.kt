@@ -570,6 +570,30 @@ object LRRArchiveApi {
     suspend fun clearNewFlag(arcid: String) =
         clearNewFlag(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), arcid)
 
+    /**
+     * PUT /api/archives/{id}/thumbnail?page=N — sets the archive cover to
+     * page [page1] (1-indexed, as the web client's reader overlay does).
+     * The server extracts the page thumbnail and copies it over the cover;
+     * it may answer before the file exists, which callers treat as success.
+     */
+    @JvmStatic
+    suspend fun updateThumbnail(
+        client: OkHttpClient,
+        baseUrl: String,
+        arcid: String,
+        page1: Int,
+    ) = withContext(Dispatchers.IO) {
+        if (page1 < 1) throw LRRClientValidationException("page1 must be >= 1: $page1")
+        val url = parseBaseUrl(baseUrl).newBuilder()
+            .addPathSegments("api/archives")
+            .addPathSegment(requireValidArcid(arcid))
+            .addPathSegment("thumbnail")
+            .addQueryParameter("page", page1.toString())
+            .build()
+        val request = Request.Builder().url(url).put(EMPTY_REQUEST_BODY).build()
+        client.newCall(request).await().use { response -> ensureSuccess(response) }
+    }
+
     @JvmStatic
     suspend fun updateProgress(arcid: String, page: Int) =
         updateProgress(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), arcid, page)
