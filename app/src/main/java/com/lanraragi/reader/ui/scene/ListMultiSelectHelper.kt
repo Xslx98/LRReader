@@ -26,6 +26,19 @@ class ListMultiSelectHelper(
     /** Register via [EasyRecyclerView.setCustomCheckedListener]. */
     val choiceListener: EasyRecyclerView.CustomChoiceListener = ChoiceListenerImpl()
 
+    private var dragSelect: DragSelectTouchListener? = null
+
+    /**
+     * Enables drag-to-select on [rv] (spec 2026-09-22-drag-select): the
+     * long-press that enters the mode keeps sliding to extend the selection.
+     * [canSelect] rows the drag passes over but never checks.
+     */
+    fun attachDragSelect(rv: EasyRecyclerView, canSelect: (Int) -> Boolean) {
+        val listener = DragSelectTouchListener(rv, DragSelectTouchListener.forEasyRecyclerView(rv, canSelect))
+        rv.addOnItemTouchListener(listener)
+        dragSelect = listener
+    }
+
     val isActive: Boolean
         get() = recyclerView()?.isInCustomChoice == true
 
@@ -41,6 +54,8 @@ class ListMultiSelectHelper(
             if (!rv.isInCustomChoice) return false
         }
         rv.toggleItemChecked(position)
+        // The finger is still down: the same touch stream becomes a drag.
+        dragSelect?.startDrag(position)
         return true
     }
 
@@ -56,6 +71,7 @@ class ListMultiSelectHelper(
     }
 
     fun exit() {
+        dragSelect?.cancel()
         recyclerView()?.takeIf { it.isInCustomChoice }?.outOfCustomChoiceMode()
     }
 

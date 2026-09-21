@@ -551,6 +551,10 @@ class GalleryListScene : BaseScene(),
         // both calls below are required before the mode can be entered.
         recyclerView.setChoiceMode(EasyRecyclerView.CHOICE_MODE_MULTIPLE_CUSTOM)
         recyclerView.setCustomCheckedListener(multiSelect.choiceListener)
+        // Tank pseudo-rows are passed over by a drag, never checked.
+        multiSelect.attachDragSelect(recyclerView) { position ->
+            mHelper?.getDataAtEx(position)?.let { !isTankoubonId(it.arcid) } ?: false
+        }
         recyclerView.addOnScrollListener(mOnScrollListener)
         fastScroller.setPadding(
             fastScroller.paddingLeft, fastScroller.paddingTop + paddingTopSB,
