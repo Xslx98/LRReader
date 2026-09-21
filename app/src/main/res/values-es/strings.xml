@@ -401,6 +401,11 @@
         <item quantity="many">%d elementos ya están descargados</item>
         <item quantity="other">%d elementos ya están descargados</item>
     </plurals>
+    <plurals name="tank_fill_unreachable">
+        <item quantity="one">No se pudo obtener %d archivo faltante del servidor</item>
+        <item quantity="many">No se pudieron obtener %d archivos faltantes del servidor</item>
+        <item quantity="other">No se pudieron obtener %d archivos faltantes del servidor</item>
+    </plurals>
     <string name="batch_download_queued_some_local">%1$d en cola de descarga, %2$d ya descargados</string>
     <string name="download_already_local">Ya descargado</string>
     <plurals name="batch_done_category">

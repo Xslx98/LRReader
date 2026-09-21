@@ -402,6 +402,11 @@
         <item quantity="many">%d éléments déjà téléchargés</item>
         <item quantity="other">%d éléments déjà téléchargés</item>
     </plurals>
+    <plurals name="tank_fill_unreachable">
+        <item quantity="one">%d archive manquante n\'a pas pu être récupérée depuis le serveur</item>
+        <item quantity="many">%d archives manquantes n\'ont pas pu être récupérées depuis le serveur</item>
+        <item quantity="other">%d archives manquantes n\'ont pas pu être récupérées depuis le serveur</item>
+    </plurals>
     <string name="batch_download_queued_some_local">%1$d mis en file d\'attente, %2$d déjà téléchargés</string>
     <string name="download_already_local">Déjà téléchargé</string>
     <plurals name="batch_done_category">

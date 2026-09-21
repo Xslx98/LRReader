@@ -338,6 +338,10 @@
         <item quantity="one">%d Element ist bereits heruntergeladen</item>
         <item quantity="other">%d Elemente sind bereits heruntergeladen</item>
     </plurals>
+    <plurals name="tank_fill_unreachable">
+        <item quantity="one">%d fehlendes Archiv konnte nicht vom Server geladen werden</item>
+        <item quantity="other">%d fehlende Archive konnten nicht vom Server geladen werden</item>
+    </plurals>
     <string name="batch_download_queued_some_local">%1$d in die Warteschlange eingereiht, %2$d bereits heruntergeladen</string>
     <string name="download_already_local">Bereits heruntergeladen</string>
     <plurals name="batch_done_category">
