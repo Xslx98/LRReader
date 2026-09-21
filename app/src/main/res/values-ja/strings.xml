@@ -150,6 +150,7 @@
         <item quantity="other">%d 未完成</item>
     </plurals>
     <string name="download_state_finish">ダウンロード完了</string>
+    <string name="download_state_tank_incomplete">不完全（%1$d/%2$d 冊）</string>
     <string name="stat_509_alert_title">509 エラー</string>
     <string name="stat_509_alert_text">ダウンロード制限に達しました。しばらくしてからもう一度やり直してください。</string>
     <string name="stat_download_done_title">ダウンロード完了</string>
