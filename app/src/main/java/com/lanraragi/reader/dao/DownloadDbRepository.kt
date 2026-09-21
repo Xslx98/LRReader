@@ -325,6 +325,16 @@ class DownloadDbRepository(
         return result
     }
 
+    /**
+     * The downloaded tank group of [profileId] whose MEMBER ID LIST claims
+     * [arcid], or null (spec 2026-09-21 §6: members of a downloaded tank
+     * cannot be deleted one by one). Group-row truth, not the per-row tag.
+     */
+    suspend fun findTankGroupClaiming(arcid: String, profileId: Long): TankDownloadGroup? =
+        tankGroupDao.getAll().firstOrNull { group ->
+            group.serverProfileId == profileId && arcid in TankGroupReconciler.decode(group.memberIdsJson)
+        }
+
     /** Ordered member ids stored on the group row (empty when the row is gone). */
     suspend fun getTankGroupMemberIds(tankId: String): List<String> {
         val group = tankGroupDao.getById(tankId) ?: return emptyList()

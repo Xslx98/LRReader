@@ -204,6 +204,17 @@ class TankDownloadGroupRepositoryTest {
         assertEquals(listOf(ARC_A), repo.getTankGroupMemberIds(TANK))
     }
 
+    // ── findTankGroupClaiming (spec 2026-09-21 §6) ──────────────
+
+    @Test
+    fun findTankGroupClaiming_matchesGroupRowMembership_activeProfileOnly() = runTest {
+        repo.putTankGroup(TANK, 1L, "MyTank", listOf(ARC_A))
+
+        assertEquals("MyTank", repo.findTankGroupClaiming(ARC_A, 1L)!!.name)
+        assertNull(repo.findTankGroupClaiming(ARC_B, 1L))
+        assertNull(repo.findTankGroupClaiming(ARC_A, 2L))
+    }
+
     private companion object {
         val ARC_A = "a".repeat(40)
         val ARC_B = "b".repeat(40)
