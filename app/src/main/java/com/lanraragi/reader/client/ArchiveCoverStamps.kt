@@ -1,6 +1,7 @@
 package com.lanraragi.reader.client
 
 import com.lanraragi.reader.Settings
+import com.lanraragi.reader.client.api.isTankoubonId
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -28,7 +29,9 @@ object ArchiveCoverStamps {
         loaded = initial?.toMutableMap()
     }
 
-    fun get(arcid: String): Long = map()[arcid] ?: 0L
+    /** Cover stamp for [arcid]; a `TANK_` id answers the process-wide [TankCoverCacheStamp]. */
+    fun get(arcid: String): Long =
+        if (isTankoubonId(arcid)) TankCoverCacheStamp.value else map()[arcid] ?: 0L
 
     @Synchronized
     fun bump(arcid: String) {
@@ -37,7 +40,11 @@ object ArchiveCoverStamps {
         persist(m)
     }
 
-    /** [url] with `ts=<stamp>` appended when the archive's cover was changed by the app. */
+    /**
+     * [url] with `ts=<stamp>` appended when the cover may have changed: an
+     * archive whose cover the app changed, or any tank row (the tank stamp
+     * moves on every tank fetch and cover write).
+     */
     fun bust(url: String, arcid: String): String {
         val stamp = get(arcid)
         if (stamp == 0L || url.isEmpty()) return url

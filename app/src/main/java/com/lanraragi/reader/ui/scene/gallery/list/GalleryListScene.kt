@@ -51,6 +51,7 @@ import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.LRRUtils
 
+import com.lanraragi.reader.client.TankCoverCacheStamp
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.dao.QuickSearch
@@ -166,6 +167,9 @@ class GalleryListScene : BaseScene(),
 
     /** Scene root FrameLayout: hosts the merge animation's overlay flyers. */
     private var rootLayout: ViewGroup? = null
+
+    /** [TankCoverCacheStamp] value the tank rows were last bound with. */
+    private var mTankCoverStampSeen = TankCoverCacheStamp.value
     private var tankMergeAnimator: TankMergeAnimator? = null
     internal var uploadHelper: GalleryUploadHelper? = null
     private var mSearchHelper: GallerySearchHelper? = null
@@ -853,6 +857,7 @@ class GalleryListScene : BaseScene(),
         // Re-sync the history snapshot: the active profile may have changed
         // while this scene was backgrounded.
         mHistoryStore?.refresh()
+        rebindTankRowsIfCoverStampMoved()
         adapter?.let {
             it.setType(AppearanceSettings.getListMode())
             it.refreshColumnSize()
@@ -993,6 +998,22 @@ class GalleryListScene : BaseScene(),
     // handled by GallerySearchBarHelper (registered in initHelpers)
 
     // Inner adapter — too small to extract
+
+    /**
+     * A tank screen or the reader changed / revalidated tank covers while
+     * this list was covered (TankCoverCacheStamp bumped): folded tank rows
+     * bind their cover by that stamp, so rebind them to fetch the new one.
+     */
+    private fun rebindTankRowsIfCoverStampMoved() {
+        val stamp = TankCoverCacheStamp.value
+        if (stamp == mTankCoverStampSeen) return
+        mTankCoverStampSeen = stamp
+        val helper = mHelper ?: return
+        val adapter = adapter ?: return
+        helper.getData().forEachIndexed { index, archive ->
+            if (isTankoubonId(archive.arcid)) adapter.notifyItemChanged(index)
+        }
+    }
 
     // ─── Merge-into-tankoubon choreography (spec 2026-09-22) ─────────────
 
