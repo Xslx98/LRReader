@@ -20,6 +20,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.snackbar.Snackbar
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.client.ArchiveCoverStamps
 import com.lanraragi.reader.download.TankFillDispatcher
 import com.lanraragi.reader.client.LRRCacheKeyFactory
 import com.lanraragi.reader.client.TankCoverCacheStamp
@@ -660,7 +661,7 @@ class TankoubonDetailScene : BaseScene() {
             // No generated cover server-side (probe 202, generation queued):
             // stand in with the first member's cover.
             key = LRRCacheKeyFactory.getThumbKey(fallback.arcid)
-            url = fallback.thumbnailUrl
+            url = ArchiveCoverStamps.bust(fallback.thumbnailUrl, fallback.arcid)
         } else {
             val bust = TankCoverCacheStamp.value
             key = LRRCacheKeyFactory.getThumbKey("$tankId#$bust")
@@ -748,7 +749,7 @@ class TankoubonDetailScene : BaseScene() {
         override fun onBindViewHolder(holder: MemberViewHolder, position: Int) {
             val a = mMembers[position]
 
-            holder.thumb.load(LRRCacheKeyFactory.getThumbKey(a.arcid), a.thumbnailUrl)
+            holder.thumb.load(LRRCacheKeyFactory.getThumbKey(a.arcid), ArchiveCoverStamps.bust(a.thumbnailUrl, a.arcid))
             holder.title.text = a.title
 
             if (a.pagecount > 0) {

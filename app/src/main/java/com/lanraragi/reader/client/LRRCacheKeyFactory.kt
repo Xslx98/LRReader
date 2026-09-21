@@ -18,9 +18,14 @@ package com.lanraragi.reader.client
 
 object LRRCacheKeyFactory {
 
+    /**
+     * Cover thumbnail key. The trailing number is the archive's
+     * [ArchiveCoverStamps] stamp: 0 until the app changes the cover, so
+     * untouched archives keep their historical key.
+     */
     @JvmStatic
     fun getThumbKey(arcid: String): String =
-        "preview:large:$arcid:0"
+        "preview:large:$arcid:${ArchiveCoverStamps.get(arcid)}"
 
     @JvmStatic
     fun getImageKey(arcid: String, index: Int): String =
