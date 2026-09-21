@@ -143,6 +143,67 @@ class TankDownloadGroupRepositoryTest {
         assertEquals(TANK, repo.observeDownloads().first().single().tankId)
     }
 
+    // ── reconcileTankGroup (spec 2026-09-21 §1) ─────────────────
+
+    @Test
+    fun reconcileTankGroup_addedMember_rewritesRowAndTagsIt() = runTest {
+        repo.putDownloadInfo(downloadInfo(ARC_A, "A"))
+        repo.putDownloadInfo(downloadInfo(ARC_B, "B"))
+        repo.putTankGroup(TANK, 1L, "MyTank", listOf(ARC_A))
+
+        val result = repo.reconcileTankGroup(TANK, "MyTank", listOf(ARC_A, ARC_B), activeProfileId = 1L)
+
+        assertEquals(listOf(ARC_B), result!!.added)
+        assertEquals(listOf(ARC_A, ARC_B), repo.getTankGroupMemberIds(TANK))
+        val tags = repo.observeDownloads().first().associate { it.arcid to it.tankId }
+        assertEquals(TANK, tags[ARC_A])
+        assertEquals(TANK, tags[ARC_B])
+    }
+
+    @Test
+    fun reconcileTankGroup_removedMember_untagsRow_keepsDownload() = runTest {
+        repo.putDownloadInfo(downloadInfo(ARC_A, "A"))
+        repo.putDownloadInfo(downloadInfo(ARC_B, "B"))
+        repo.putTankGroup(TANK, 1L, "MyTank", listOf(ARC_A, ARC_B))
+
+        val result = repo.reconcileTankGroup(TANK, "MyTank", listOf(ARC_A), activeProfileId = 1L)
+
+        assertEquals(listOf(ARC_B), result!!.removed)
+        assertEquals(listOf(ARC_A), repo.getTankGroupMemberIds(TANK))
+        val rows = repo.observeDownloads().first()
+        assertEquals(2, rows.size)
+        assertNull(rows.single { it.arcid == ARC_B }.tankId)
+        assertEquals(TANK, rows.single { it.arcid == ARC_A }.tankId)
+    }
+
+    @Test
+    fun reconcileTankGroup_reorderAndRename_keepCreatedTime() = runTest {
+        repo.putTankGroup(TANK, 1L, "MyTank", listOf(ARC_A, ARC_B))
+        val created = repo.getTankGroup(TANK)!!.createdTime
+
+        repo.reconcileTankGroup(TANK, "Renamed", listOf(ARC_B, ARC_A), activeProfileId = 1L)
+
+        val group = repo.getTankGroup(TANK)!!
+        assertEquals("Renamed", group.name)
+        assertEquals(created, group.createdTime)
+        assertEquals(listOf(ARC_B, ARC_A), repo.getTankGroupMemberIds(TANK))
+    }
+
+    @Test
+    fun reconcileTankGroup_unchanged_returnsNull() = runTest {
+        repo.putTankGroup(TANK, 1L, "MyTank", listOf(ARC_A, ARC_B))
+        assertNull(repo.reconcileTankGroup(TANK, "MyTank", listOf(ARC_A, ARC_B), activeProfileId = 1L))
+    }
+
+    @Test
+    fun reconcileTankGroup_unknownGroup_orOtherProfile_isNoOp() = runTest {
+        assertNull(repo.reconcileTankGroup(TANK, "MyTank", listOf(ARC_A), activeProfileId = 1L))
+
+        repo.putTankGroup(TANK, 2L, "MyTank", listOf(ARC_A))
+        assertNull(repo.reconcileTankGroup(TANK, "Other", listOf(ARC_B), activeProfileId = 1L))
+        assertEquals(listOf(ARC_A), repo.getTankGroupMemberIds(TANK))
+    }
+
     private companion object {
         val ARC_A = "a".repeat(40)
         val ARC_B = "b".repeat(40)
