@@ -1,0 +1,1 @@
+A downloaded tankoubon is now one download unit: the progress notification carries the tankoubon name and whole-tank progress, the Downloads card counts every member from the first page, and "Download finished" fires once for the whole tankoubon instead of once per member.
