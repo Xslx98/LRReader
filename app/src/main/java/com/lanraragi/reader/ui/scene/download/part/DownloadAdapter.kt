@@ -61,6 +61,7 @@ import com.lanraragi.framework.util.NaturalComparator
 import com.lanraragi.framework.widget.LoadImageView
 import kotlinx.coroutines.launch
 import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.download.ProgressSnapshot
 import com.lanraragi.reader.client.api.isTankoubonId
 import java.util.concurrent.CompletableFuture
 
@@ -100,8 +101,8 @@ class DownloadAdapter(
          */
         fun downloadDirFutureFor(info: DownloadInfo): CompletableFuture<UniFile?>
 
-        /** Aggregate (finished, total) member pages behind a tank card (Track 2). */
-        fun tankProgressFor(tankId: String): Pair<Int, Int>
+        /** Aggregate member progress behind a tank card, null when no member has a live snapshot. */
+        fun tankProgressSnapshotFor(tankId: String): ProgressSnapshot?
 
         /** Number of member download rows currently behind a tank card. */
         fun tankMemberCountFor(tankId: String): Int
@@ -179,7 +180,11 @@ class DownloadAdapter(
             ) {
                 // Same row ticking: animate the sub-page advance (80 ms
                 // system ease between the tracker's 2 s ticks).
-                bindProgress(holder, info, animate = true)
+                if (isTankoubonId(info.arcid)) {
+                    mScene.resources2?.let { bindTankCard(holder, info, it, animate = true) }
+                } else {
+                    bindProgress(holder, info, animate = true)
+                }
             }
             return
         }
@@ -293,11 +298,10 @@ class DownloadAdapter(
     private fun bindForState(holder: DownloadHolder, info: DownloadInfo) {
         val resources = mScene.resources2 ?: return
 
-        // Tank cards (synthetic TANK_ rows, Track 2) render as a single
-        // aggregate: state text + member-page tally, no per-row
-        // start/stop (the card is not one schedulable download).
+        // Tank cards (synthetic TANK_ rows) render like an ordinary row
+        // over the members' aggregate progress (spec 2026-09-21 §4).
         if (isTankoubonId(info.arcid)) {
-            bindTankCard(holder, info, resources)
+            bindTankCard(holder, info, resources, animate = false)
             return
         }
 
@@ -338,23 +342,40 @@ class DownloadAdapter(
     }
 
     @SuppressLint("SetTextI18n")
+    /** Which controls a tank card shows; see [tankCardControls]. */
+    data class TankCardControls(val start: Boolean, val stop: Boolean, val progress: Boolean)
+
+    /**
+     * Tank card rendering. A downloading card takes the ordinary progress
+     * path over the members' AGGREGATE snapshot (bar / percent / speed /
+     * stop); any other state renders the status line with start shown by
+     * [tankCardControls] — including INCOMPLETE (group members without a
+     * download row), which the start control fills.
+     */
     private fun bindTankCard(
         holder: DownloadHolder,
         info: DownloadInfo,
         resources: android.content.res.Resources,
+        animate: Boolean,
     ) {
-        cancelProgressGlide(holder)
-        applyTitleLines(holder, showingProgress = false)
         // No spider info exists for a TANK_ id — clear whatever a recycled
         // holder carried instead of showing another row's read progress.
         holder.readProgress.text = null
+        val controls = tankCardControls(info.state, info.tankMissingCount)
+        val snap = mCallback.tankProgressSnapshotFor(info.arcid)
+        if (controls.progress) {
+            bindProgress(holder, info, animate, snap)
+            return
+        }
+        cancelProgressGlide(holder)
+        applyTitleLines(holder, showingProgress = false)
         setVisibility(holder.uploader, View.GONE)
         setVisibility(holder.state, View.VISIBLE)
         setVisibility(holder.progressBar, View.GONE)
         setVisibility(holder.percent, View.GONE)
         setVisibility(holder.speed, View.GONE)
-        setVisibility(holder.start, View.GONE)
-        setVisibility(holder.stop, View.GONE)
+        setVisibility(holder.start, if (controls.start) View.VISIBLE else View.GONE)
+        setVisibility(holder.stop, if (controls.stop) View.VISIBLE else View.GONE)
         val base = when (info.state) {
             DownloadState.WAIT,
             DownloadState.DOWNLOAD -> resources.getString(R.string.download_state_downloading)
@@ -362,8 +383,7 @@ class DownloadAdapter(
             DownloadState.FINISH -> resources.getString(R.string.download_state_finish)
             else -> resources.getString(R.string.download_state_none)
         }
-        val (finished, total) = mCallback.tankProgressFor(info.arcid)
-        holder.state.text = tankCardStateText(resources, info, base, finished, total)
+        holder.state.text = tankCardStateText(resources, info, base, snap?.finished ?: 0, snap?.total ?: 0)
     }
 
     /**
@@ -412,7 +432,12 @@ class DownloadAdapter(
     }
 
     @SuppressLint("SetTextI18n")
-    private fun bindProgress(holder: DownloadHolder, info: DownloadInfo, animate: Boolean) {
+    private fun bindProgress(
+        holder: DownloadHolder,
+        info: DownloadInfo,
+        animate: Boolean,
+        snap: ProgressSnapshot? = mCallback.downloadManager?.progressFor(info.arcid),
+    ) {
         applyTitleLines(holder, showingProgress = true)
         setVisibility(holder.uploader, View.GONE)
         setVisibility(holder.rating, View.GONE)
@@ -429,11 +454,10 @@ class DownloadAdapter(
             setVisibility(holder.stop, View.GONE)
         }
 
-        // Authoritative transient-progress source is the in-memory tracker,
-        // not the Room-backed DownloadInfo (whose @Ignore fields are stale
-        // copies from the scheduler's own instance and never reach this
-        // Room-emitted instance). See ADR-001 Option D.
-        val snap = mCallback.downloadManager?.progressFor(info.arcid)
+        // Authoritative transient-progress source is the in-memory tracker
+        // (or, for a tank card, the members' aggregate), not the Room-backed
+        // DownloadInfo (whose @Ignore fields are stale copies from the
+        // scheduler's own instance). See ADR-001 Option D.
         val speed = (snap?.speed ?: -1L).coerceAtLeast(0L)
 
         if (snap == null || snap.total <= 0 || snap.finished < 0) {
@@ -658,6 +682,22 @@ class DownloadAdapter(
 
     companion object {
         private val TAG = DownloadAdapter::class.java.simpleName
+
+        /**
+         * Tank card control ladder (spec 2026-09-21 §4). WAIT/DOWNLOAD →
+         * stop + progress; FAILED → start; FINISH with every member present
+         * → nothing; FINISH with [missing] members (INCOMPLETE), NONE,
+         * INVALID → start (fills / restarts the tank).
+         */
+        @JvmStatic
+        internal fun tankCardControls(state: DownloadState, missing: Int): TankCardControls = when (state) {
+            DownloadState.WAIT, DownloadState.DOWNLOAD ->
+                TankCardControls(start = false, stop = true, progress = true)
+            DownloadState.FAILED, DownloadState.NONE, DownloadState.INVALID ->
+                TankCardControls(start = true, stop = false, progress = false)
+            DownloadState.FINISH ->
+                TankCardControls(start = missing > 0, stop = false, progress = false)
+        }
 
         @JvmField
         var DRAG_ENABLE = false
