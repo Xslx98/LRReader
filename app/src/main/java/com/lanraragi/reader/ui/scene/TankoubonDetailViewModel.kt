@@ -269,11 +269,16 @@ class TankoubonDetailViewModel : ViewModel() {
     }
 
     /** Removes [arcid] from the tank, then reloads. */
-    fun removeMember(arcid: String) = mutateAndReload { client, url ->
-        LRRTankoubonApi.removeFromTankoubon(client, url, tankId, arcid)
-        // Downloaded-tank grouping follows: the member's download row (if
-        // any) reappears as a standalone download.
-        ServiceRegistry.dataModule.downloadManager.untagTankMemberAsync(tankId, arcid)
+    fun removeMember(arcid: String) = removeMembers(listOf(arcid))
+
+    /** Removes every id in [arcids] (one DELETE each), then reloads once. */
+    fun removeMembers(arcids: List<String>) = mutateAndReload { client, url ->
+        for (arcid in arcids) {
+            LRRTankoubonApi.removeFromTankoubon(client, url, tankId, arcid)
+            // Downloaded-tank grouping follows: the member's download row (if
+            // any) reappears as a standalone download.
+            ServiceRegistry.dataModule.downloadManager.untagTankMemberAsync(tankId, arcid)
+        }
     }
 
     /**
