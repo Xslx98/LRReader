@@ -650,6 +650,13 @@ class TankoubonDetailScene : BaseScene() {
      * would be shadowed by the stale cached image forever. (The pre-bump
      * image stays cached under the old key until evicted — accepted.)
      */
+    override fun onResume() {
+        super.onResume()
+        // The reader may have set a new cover (TankCoverCacheStamp bumped);
+        // bindCover short-circuits when the key/url binding is unchanged.
+        bindCover()
+    }
+
     private fun bindCover() {
         val baseUrl = viewModel.baseUrl ?: return
         val tankId = viewModel.tankId

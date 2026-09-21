@@ -285,6 +285,8 @@
     <string name="page_menu_share">@string/share</string>
     <string name="page_menu_save">저장</string>
     <string name="page_menu_save_to">다른 이름으로 저장</string>
+    <string name="page_menu_set_tank_cover">단행본 표지로 설정</string>
+    <string name="page_menu_set_cover">표지로 설정</string>
     <string name="gallery_menu_title">메뉴</string>
     <string name="share_image">이미지 공유</string>
     <string name="image_saved">이미지를 %s 경로에 저장함</string>

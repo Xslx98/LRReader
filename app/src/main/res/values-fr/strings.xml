@@ -640,6 +640,8 @@
     <string name="settings_privacy_delete_confirm_countdown_summary_on">Le bouton Supprimer reste désactivé pendant 3 secondes avant de pouvoir être touché.</string>
     <string name="settings_privacy_delete_confirm_countdown_summary_off">Le bouton Supprimer est immédiatement utilisable. Plus rapide, mais plus facile à supprimer par erreur.</string>
     <string name="page_menu_save_to">Enregistrer sous…</string>
+    <string name="page_menu_set_tank_cover">Définir comme couverture du tankoubon</string>
+    <string name="page_menu_set_cover">Définir comme couverture</string>
     <string name="settings_advanced_app_language_title">Langue de l\'app (Language)</string>
     <string name="app_language_system">Langue du système (défaut)</string>
     <string name="settings_eh_theme">Thème</string>

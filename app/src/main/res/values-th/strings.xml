@@ -281,6 +281,8 @@
     <string name="page_menu_share">แชร์</string>
     <string name="page_menu_save">บันทึก</string>
     <string name="page_menu_save_to">บันทึกลงที่…</string>
+    <string name="page_menu_set_tank_cover">ตั้งเป็นปกรวมเล่ม</string>
+    <string name="page_menu_set_cover">ตั้งเป็นปก</string>
     <string name="gallery_menu_title">เมนู</string>
     <string name="share_image">แชร์รูปภาพ</string>
     <string name="image_saved">ภาพถูกบันทึกไปที่ %s</string>
