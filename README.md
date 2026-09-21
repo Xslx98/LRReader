@@ -27,15 +27,16 @@ An Android client for [LANraragi](https://github.com/Difegue/LANraragi), built u
 | 📖 **高性能阅读 / High-Performance Reader** | GL 渲染管线 + 按需解码 + 智能预加载 / GL rendering pipeline, on-demand decoding and smart preloading |
 | ⏭️ **跨档案续读 / Reader Continuation** | 读到末页自动衔接下一本，无需回列表 / End-of-book panel jumps straight to the next archive |
 | ▶️ **继续阅读 / Continue Reading** | 桌面快捷方式一键回到上次阅读的档案与页码 / Launcher shortcut back to your last archive and page |
-| 📚 **合订本 / Tankoubon** | 浏览与管理合订本：成员排序、全局阅读进度、封面管理 / Browse & manage tankoubons: member ordering, global progress, cover management (LANraragi 0.9.8+) |
+| 📚 **合订本 / Tankoubon** | 浏览与管理合订本：全局阅读进度、封面管理、成员多选整理（置顶/置底/移到第 N 位/插入到某本之前/反转）与拖动手柄，「按标题排序」自动识别第N话/回/卷/章、Vol/Ch、范围与上/中/下，番外殿后，可撤销 / Browse & manage tankoubons: global progress, cover management, multi-select member reordering (top/bottom/position/insert-before/reverse) with a drag handle, and an undoable episode-aware "Sort by title" (第N话/回/卷/章, Vol/Ch, ranges, 上/中/下, 番外 last) (LANraragi 0.9.8+) |
 | 📕 **整本无缝阅读 / Seamless Tank Reading** | 合订本作为一本书阅读：全局页码、双向无缝跨成员翻页、阅读位置续读 / Read a whole tankoubon as one book: global page numbering, seamless page turns across members in both directions, resumable position (LANraragi 0.9.8+) |
 | 📦 **合订本下载 / Tank Download** | 一键下载整个合订本，下载列表聚合为单卡片，点击即离线整本阅读；已下载成员自动并入零重复下载 / One-tap whole-tank download aggregated into a single card that opens the offline whole-tank session; already-downloaded members merge in with zero re-download (LANraragi 0.9.8+) |
+| ⏬ **边下边读 / Read While Downloading** | 下载中的档案（含合订本成员）可直接阅读：已落盘页秒开，阅读器取回的页写入下载目录供下载器复用；离线时缺页显示错误页而非截断 / Read an archive (or tankoubon member) while it downloads: landed pages open instantly, pages fetched by the reader are written into the download directory for the worker to reuse; offline, missing pages show as errors instead of ending early |
 | 🔖 **页面标注 / Page Stamps** | 阅读器内查看、放置、编辑页面标注 / View, place and edit per-page stamps in the reader (LANraragi 0.9.8+) |
 | 🔄 **进度同步 / Progress Sync** | 阅读进度与服务器双向同步，跨设备续读 / Two-way reading-progress sync with the server |
 | 📊 **阅读统计 / Reading Stats** | 阅读量、分服务器统计与标签偏好分析 / Reading totals, per-server breakdown and tag-preference analysis |
 | 🖼️ **页面预览 / Page Previews** | 详情页全页面缩略图网格，支持跳页与密度调节 / Per-page thumbnail grid on detail page with jump-to-page and configurable density |
 | ⬇️ **离线下载 / Offline Download** | 后台下载整本档案，断点续传 + 断网自动等网恢复 / Background archive download with resume and automatic recovery after network loss |
-| ☑️ **多选批量 / Batch Operations** | 列表长按多选：批量下载、加分类、清 NEW、删除 / Long-press multi-select for batch download, categorize, clear-new, delete |
+| ☑️ **多选批量 / Batch Operations** | 列表长按多选：批量下载、加分类、加入合订本（无合订本时直接新建）、清 NEW、删除 / Long-press multi-select for batch download, categorize, add to tankoubon (creates one when none exists), clear-new, delete |
 | 🏷️ **标签翻译 / Tag Translation** | 中文环境下自动翻译标签 / Auto-translate tags in Chinese locale (EhTagDatabase) |
 | ⭐ **档案评分 / Archive Rating** | 基于标签的 emoji 星级评分 / Tag-based emoji star rating |
 | 📁 **分类管理 / Category Management** | 浏览、创建、编辑 LANraragi 分类 / Browse, create, edit LANraragi categories |
@@ -56,6 +57,31 @@ An Android client for [LANraragi](https://github.com/Difegue/LANraragi), built u
 | 渠道 / Channel | 链接 / Link |
 |---|---|
 | GitHub Releases | [最新版本 / Latest](https://github.com/Xslx98/LRReader/releases) |
+
+> Release 仅提供 arm64-v8a APK（Android 9+）。应用内可自动检查并安装更新。
+>
+> Releases ship an arm64-v8a APK only (Android 9+). The app can check for and install updates itself.
+
+## 🚀 首次使用 | First Use
+
+1. **安装并打开 App**，首次启动进入引导页，填写服务器地址与 API Key。
+   **Install and open the app.** The first launch shows an onboarding page asking for the server address and API Key.
+2. **服务器地址**：填 LANraragi 的地址与端口，例如 `192.168.1.100:3000`。不写协议时默认尝试 `https://`，局域网 IP 会再回退到 `http://`（明文连接会要求你确认一次）。公网访问建议走反向代理的 HTTPS。
+   **Server address**: the LANraragi host and port, e.g. `192.168.1.100:3000`. Without a scheme the app tries `https://` first and falls back to `http://` for LAN addresses (you confirm the cleartext connection once). Prefer HTTPS behind a reverse proxy for remote access.
+3. **API Key 从哪来**（以 LANraragi 网页端为准）：
+   **Where the API Key comes from** (in the LANraragi web UI):
+   1. 打开 LANraragi 网页，点 **Admin Login** 登录（管理员密码默认为 `kamimamita`，请尽快修改），再点 **Settings**（即 `/config` 页面）进入 Admin Settings。
+      Open the LANraragi web UI, log in via **Admin Login** (the default admin password is `kamimamita` — change it), then open **Settings** (the `/config` page) to reach Admin Settings.
+   2. 左侧选择 **Security** 分类，勾选 **Enable Password**（未启用密码时不显示密码相关字段）。
+      Pick the **Security** category and tick **Enable Password** (the password-related fields only appear once it is enabled).
+   3. 在 **API Key** 文本框填入任意一串字符串（这不是登录密码，空字符串无效），点 **Save Settings**。
+      Type any string into the **API Key** field (it is not the login password; an empty key does not work) and click **Save Settings**.
+   4. 把这串 Key 填进 App。App 会按 LANraragi 客户端 API 的要求自动以 `Authorization: Bearer <base64(key)>` 发送，无需自己编码。
+      Enter that key in the app. It is sent as `Authorization: Bearer <base64(key)>` exactly as the LANraragi client API expects; no manual encoding needed.
+   - 服务器**没有**启用密码时 API Key 可留空；启用了 **No-Fun Mode** 时连阅读也需要密码，所有接口都必须带 Key。
+     If the server has **no** password enabled the key can stay empty; with **No-Fun Mode** on, every API call (reading included) requires the key.
+4. **测试连接并保存**。之后可在抽屉「切换服务器」中添加更多实例，每个实例各存一份 Key（加密保存）。
+   **Test the connection and save.** More instances can be added later under "Switch Server" in the drawer; each keeps its own encrypted key.
 
 ## 🛠️ 构建 | Build
 
@@ -113,7 +139,7 @@ The Debug APK lands in `app/build/outputs/apk/appRelease/debug/`, the Release AP
 | **网络 / Network** | OkHttp 4.12 + Kotlin Coroutines |
 | **API 序列化 / Serialization** | kotlinx-serialization (all JSON) |
 | **列表分页 / Paging** | Jetpack Paging 3 |
-| **数据库 / Database** | Room 2.8 + KSP (schema v30, 多服务器复合主键 / composite key for multi-server state) |
+| **数据库 / Database** | Room 2.8 + KSP (schema v31, 多服务器复合主键 / composite key for multi-server state) |
 | **图像解码 / Image Decoding** | Android ImageDecoder（按目标尺寸采样）+ 轻量 JNI 辅助 / Platform ImageDecoder with target-size sampling + minimal JNI helpers |
 | **安全 / Security** | EncryptedSharedPreferences (API Key, 模式锁 / pattern lock) |
 | **构建 / Build** | Gradle + R8/ProGuard |
@@ -125,17 +151,18 @@ The Debug APK lands in `app/build/outputs/apk/appRelease/debug/`, the Release AP
 LRReader/
 ├── app/src/main/
 │   ├── java/
-│   │   ├── com/hippo/ehviewer/         # Business code (Kotlin)
-│   │   │   ├── dao/                    # Room Database (AppDatabase.kt, schema v30)
-│   │   │   ├── download/               # Download subsystem (DownloadManager facade)
+│   │   ├── com/lanraragi/reader/       # Business code (Kotlin)
+│   │   │   ├── client/api/             # LANraragi REST client (LRRArchiveApi, LRRTankoubonApi, …)
+│   │   │   ├── dao/                    # Room Database (AppDatabase.kt, schema v31)
+│   │   │   ├── domain/                 # Domain models (Archive, …)
+│   │   │   ├── download/               # Download subsystem (DownloadManager facade, worker)
+│   │   │   ├── gallery/                # Reader providers (streaming / local dir / hybrid / tankoubon)
+│   │   │   ├── tankoubon/              # Member sorting + reorder logic (pure Kotlin)
 │   │   │   ├── settings/               # Modular settings (Privacy, Network, Reading, …)
 │   │   │   ├── stats/                  # Reading statistics + daily aggregate
-│   │   │   ├── ui/                     # Activities, Scenes, Fragments, ViewModels
-│   │   │   └── Settings.kt             # Shared preferences entry
-│   │   ├── com/lanraragi/reader/       # LANraragi-specific code
-│   │   │   ├── client/api/             # REST API client (LRRArchiveApi, LRRClientProvider, …)
-│   │   │   └── domain/                 # Domain models (Archive, …)
-│   │   └── com/hippo/{glview,widget,…} # Legacy GLView / Conaco / widget framework (Java)
+│   │   │   ├── ui/                     # Activities, Scenes, ViewModels
+│   │   │   └── ServiceRegistry.kt      # Module registry (network / data / coroutine …)
+│   │   └── com/lanraragi/framework/    # Legacy GLView / Conaco / widget framework (Java)
 │   ├── cpp/                            # Minimal JNI helpers (GIF background decode, GL texImage)
 │   ├── res/                            # Resources (10 languages)
 │   └── assets/                         # Open-source license page
