@@ -1,19 +1,27 @@
 package com.lanraragi.reader.gallery
 
 import android.content.Context
-import com.lanraragi.reader.ui.GalleryOpenHelper
+import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.framework.unifile.UniFile
 import okhttp3.OkHttpClient
+import java.io.File
 
 /**
- * Per-member source routing for the tank composite reader: a member with a
- * COMPLETE local download reads from disk, everything else streams. Same
- * completeness decision as [GalleryOpenHelper]'s standalone routing so the
- * two session kinds can never disagree about where a member's pages come
- * from.
+ * Per-member source routing for the tank composite reader — the standalone
+ * reader's rule ([com.lanraragi.reader.ui.GalleryOpenHelper]) applied per
+ * member, through the shared [DownloadDirResolver] so the two session
+ * kinds can never disagree about where a member's pages come from:
+ *
+ *  - complete local copy → [DirTankMemberSource];
+ *  - local pages (or a tracked download's pending dir) with network up →
+ *    [LrrTankMemberSource] in hybrid mode, reading and filling that dir;
+ *  - local pages offline → [DirTankMemberSource] over the partial dir
+ *    (missing pages, tail included, surface as the reader's per-page error);
+ *  - nothing local → plain streaming.
  */
 internal object TankMemberRouting {
 
+    @Suppress("LongParameterList")
     suspend fun resolve(
         context: Context,
         member: TankMemberSeed,
@@ -21,19 +29,34 @@ internal object TankMemberRouting {
         serverUrl: String,
         pageClient: OkHttpClient,
         listClient: OkHttpClient,
+        resolver: DownloadDirResolver = DownloadDirResolver,
+        networkAvailable: () -> Boolean = { ServiceRegistry.networkModule.networkMonitor.isAvailable },
     ): TankMemberSource {
-        val localDir = runCatching {
-            GalleryOpenHelper.getLocalDownloadDir(context, member.toRoutingArchive(profileId))
-        }.getOrNull()
-        if (localDir != null &&
-            GalleryOpenHelper.isLocalCopyComplete(localDir, member.pagecount)
-        ) {
-            val uniFile = UniFile.fromFile(localDir)
-            if (uniFile != null) {
-                return DirTankMemberSource(context, member.arcid, uniFile)
-            }
+        val archive = member.toRoutingArchive(profileId)
+        val localDir = runCatching { resolver.localDownloadDir(context, archive) }.getOrNull()
+        if (localDir != null) {
+            dirSourceOrNull(context, member, localDir, resolver, networkAvailable)?.let { return it }
         }
-        return LrrTankMemberSource(context, member.arcid, serverUrl, pageClient, listClient)
+        val hybridDir = localDir ?: runCatching { resolver.pendingDownloadDir(archive) }.getOrNull()
+        val store = hybridDir?.let {
+            HybridPageStore(it, ReaderPageCache.getCacheDir(context, member.arcid))
+        }
+        return LrrTankMemberSource(context, member.arcid, serverUrl, pageClient, listClient, store)
+    }
+
+    /** Dir source for a complete copy, or offline for a partial one (missing pages = errors); else null. */
+    private fun dirSourceOrNull(
+        context: Context,
+        member: TankMemberSeed,
+        localDir: File,
+        resolver: DownloadDirResolver,
+        networkAvailable: () -> Boolean,
+    ): TankMemberSource? {
+        val complete = resolver.isLocalCopyComplete(localDir, member.pagecount)
+        if (!complete && networkAvailable()) return null
+        val uniFile = UniFile.fromFile(localDir) ?: return null
+        val expected = if (complete) 0 else member.pagecount
+        return DirTankMemberSource(context, member.arcid, uniFile, expected)
     }
 }
 

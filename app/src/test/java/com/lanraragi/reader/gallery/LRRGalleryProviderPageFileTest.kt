@@ -7,7 +7,7 @@ import java.io.File
 class LRRGalleryProviderPageFileTest {
 
     private val cacheDir = File("cache")
-    private val downloadDir = File("dl")
+    private val store = HybridPageStore(File("dl"), cacheDir)
 
     @Test
     fun streamingMode_usesReaderCache() {
@@ -20,8 +20,8 @@ class LRRGalleryProviderPageFileTest {
     @Test
     fun hybridMode_usesWorkerNamingInDownloadDir() {
         assertEquals(
-            File(downloadDir, "0004.png"),
-            LRRGalleryProvider.resolvePageFile(downloadDir, cacheDir, 3, "arc/003.png"),
+            File("dl", "0004.png"),
+            LRRGalleryProvider.resolvePageFile(store, cacheDir, 3, "arc/003.png"),
         )
     }
 
@@ -29,7 +29,7 @@ class LRRGalleryProviderPageFileTest {
     fun hybridMode_fallsBackToCacheUntilPageListIsKnown() {
         assertEquals(
             File(cacheDir, "page_3"),
-            LRRGalleryProvider.resolvePageFile(downloadDir, cacheDir, 3, null),
+            LRRGalleryProvider.resolvePageFile(store, cacheDir, 3, null),
         )
     }
 }
