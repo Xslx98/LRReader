@@ -397,6 +397,7 @@
     <plurals name="tank_fill_unreachable">
         <item quantity="other">ไม่สามารถดึงไฟล์ที่ขาด %d รายการจากเซิร์ฟเวอร์</item>
     </plurals>
+    <string name="batch_move_tank_unsupported">การ์ดรวมเล่มไม่สามารถย้ายไปยังป้ายกำกับได้</string>
     <string name="batch_download_queued_some_local">เพิ่ม %1$d รายการลงคิวดาวน์โหลดแล้ว อีก %2$d รายการดาวน์โหลดไว้แล้ว</string>
     <string name="download_already_local">ดาวน์โหลดไว้แล้ว</string>
     <plurals name="batch_done_category">

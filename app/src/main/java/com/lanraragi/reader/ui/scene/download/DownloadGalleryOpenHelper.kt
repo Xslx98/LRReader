@@ -53,9 +53,6 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
         fun listIndexInPage(position: Int): Int
         fun launchGallery(intent: Intent)
 
-        /** True when the row is a synthetic tank card (Track 2). */
-        fun isTankCardAt(position: Int): Boolean
-
         /** Open the whole-tank composite session for a tank card row. */
         fun openTankCard(info: DownloadInfo)
     }
@@ -69,8 +66,6 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
         val context = callback.ehContext ?: return false
 
         if (recyclerView.isInCustomChoice) {
-            // Tank cards are not selectable — swallow instead of toggling.
-            if (callback.isTankCardAt(position)) return true
             recyclerView.toggleItemChecked(position)
             return true
         }

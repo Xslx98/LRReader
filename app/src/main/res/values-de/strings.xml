@@ -342,6 +342,7 @@
         <item quantity="one">%d fehlendes Archiv konnte nicht vom Server geladen werden</item>
         <item quantity="other">%d fehlende Archive konnten nicht vom Server geladen werden</item>
     </plurals>
+    <string name="batch_move_tank_unsupported">Tankoubon-Karten können keinem Label zugewiesen werden</string>
     <string name="batch_download_queued_some_local">%1$d in die Warteschlange eingereiht, %2$d bereits heruntergeladen</string>
     <string name="download_already_local">Bereits heruntergeladen</string>
     <plurals name="batch_done_category">
