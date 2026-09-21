@@ -102,6 +102,9 @@ class DownloadAdapter(
 
         /** Aggregate (finished, total) member pages behind a tank card (Track 2). */
         fun tankProgressFor(tankId: String): Pair<Int, Int>
+
+        /** Number of member download rows currently behind a tank card. */
+        fun tankMemberCountFor(tankId: String): Int
     }
 
     init {
@@ -360,7 +363,32 @@ class DownloadAdapter(
             else -> resources.getString(R.string.download_state_none)
         }
         val (finished, total) = mCallback.tankProgressFor(info.arcid)
-        holder.state.text = if (total > 0) "$base $finished/$total" else base
+        holder.state.text = tankCardStateText(resources, info, base, finished, total)
+    }
+
+    /**
+     * Tank card status line. A group whose row lists members with no
+     * download row yet (spec 2026-09-21 §4) reads INCOMPLETE with the
+     * archive count instead of the page tally; downloading / failed
+     * members keep their own wording so an in-flight fill is not
+     * mislabelled.
+     */
+    private fun tankCardStateText(
+        resources: android.content.res.Resources,
+        info: DownloadInfo,
+        base: String,
+        finished: Int,
+        total: Int,
+    ): String {
+        val incomplete = info.tankMissingCount > 0 &&
+            (info.state == DownloadState.FINISH || info.state == DownloadState.NONE)
+        if (incomplete) {
+            val present = mCallback.tankMemberCountFor(info.arcid)
+            return resources.getString(
+                R.string.download_state_tank_incomplete, present, present + info.tankMissingCount
+            )
+        }
+        return if (total > 0) "$base $finished/$total" else base
     }
 
     private fun bindState(holder: DownloadHolder, info: DownloadInfo, state: String) {

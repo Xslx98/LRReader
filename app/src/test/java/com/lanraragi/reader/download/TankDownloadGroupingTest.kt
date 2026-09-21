@@ -143,6 +143,28 @@ class TankDownloadGroupingTest {
         assertNull(result.display[0].tankId)
     }
 
+    // ── INCOMPLETE derivation (spec 2026-09-21 §4: group ids without a row) ──
+
+    @Test
+    fun `card counts group members that have no download row`() {
+        val result = TankDownloadGrouping.group(
+            listOf(info("m1", TANK), info("m2", TANK)),
+            listOf(group(memberIdsJson = """["m1","m2","m3","m4"]""")),
+        )
+        val card = result.display.single()
+        assertEquals(2, card.tankMissingCount)
+        assertEquals(DownloadState.FINISH, card.state)
+    }
+
+    @Test
+    fun `complete group has zero missing members`() {
+        val result = TankDownloadGrouping.group(
+            listOf(info("m1", TANK), info("m2", TANK)),
+            listOf(group()),
+        )
+        assertEquals(0, result.display.single().tankMissingCount)
+    }
+
     private companion object {
         const val TANK = "TANK_1688000000"
     }
