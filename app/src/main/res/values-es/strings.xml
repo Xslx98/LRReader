@@ -381,6 +381,7 @@
     <string name="stats_tag_chip">%1$s · %2$d</string>
     <string name="detail_tankoubons_label">Tankoubons</string>
     <string name="detail_tankoubons_edit">Editar</string>
+    <string name="detail_tankoubons_none">No está en ningún tankoubon</string>
     <string name="tank_add_to">Añadir a tankoubon</string>
     <string name="batch_add_to_tankoubon">Tank</string>
 

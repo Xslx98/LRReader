@@ -10,9 +10,10 @@ import com.lanraragi.reader.client.api.LRRTankoubonApi
 /**
  * Binds the detail page's "belongs to Tankoubons" section. Passive like the
  * other Detail*Binder classes: the Scene collects
- * [GalleryDetailViewModel.archiveTankoubons] and calls [bind]; empty list
- * keeps the whole section GONE (pre-0.9.8 servers and tank-less archives
- * simply never show it).
+ * [GalleryDetailViewModel.archiveTankoubons] and calls [bind]; `null` keeps
+ * the whole section GONE (pre-0.9.8 servers, lookup failure), an empty list
+ * shows a "not in any tankoubon" placeholder so the Edit entry is still
+ * reachable for adding the archive to one.
  */
 internal class DetailTankoubonBinder(
     private val section: View,
@@ -26,15 +27,22 @@ internal class DetailTankoubonBinder(
         edit.setOnClickListener { onEditClick() }
     }
 
-    fun bind(tanks: List<LRRTankoubonApi.Tankoubon>) {
+    fun bind(tanks: List<LRRTankoubonApi.Tankoubon>?) {
         container.removeAllViews()
-        if (tanks.isEmpty()) {
+        if (tanks == null) {
             section.visibility = View.GONE
             return
         }
         section.visibility = View.VISIBLE
         val ctx = container.context
         val pad = (ROW_PADDING_DP * ctx.resources.displayMetrics.density).toInt()
+        if (tanks.isEmpty()) {
+            val placeholder = TextView(ctx)
+            placeholder.setText(R.string.detail_tankoubons_none)
+            placeholder.setPadding(0, pad, 0, pad)
+            container.addView(placeholder)
+            return
+        }
         val selectable = TypedValue().also {
             ctx.theme.resolveAttribute(android.R.attr.selectableItemBackground, it, true)
         }
