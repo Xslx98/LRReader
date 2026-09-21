@@ -289,8 +289,15 @@ class GalleryListViewModel : ViewModel() {
          *   (as observed by the picker) — the batch then seeds the tank cover
          *   from global page 1 after the first successful add, because the
          *   server's append endpoint never generates one on its own.
+         * @param tankName display name as the picker saw it (or as typed for a
+         *   just-created tank); carried on the op so the list can build the
+         *   provisional tank row and the Snackbar without another fetch.
          */
-        data class AddToTankoubon(val tankId: String, val wasEmpty: Boolean = false) : BatchOp
+        data class AddToTankoubon(
+            val tankId: String,
+            val wasEmpty: Boolean = false,
+            val tankName: String = "",
+        ) : BatchOp
         data object ClearNew : BatchOp
         data object DeleteArchives : BatchOp
     }
