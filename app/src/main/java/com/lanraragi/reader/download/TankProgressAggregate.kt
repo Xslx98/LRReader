@@ -12,12 +12,17 @@ package com.lanraragi.reader.download
 import com.lanraragi.reader.dao.DownloadInfo
 
 /**
- * Aggregate [ProgressSnapshot] behind a downloads-list tank card (spec
- * 2026-09-21 §4): finished / total pages, speed and in-flight page
- * fractions summed over the members that have a live snapshot with a
- * known total. Members without one contribute nothing (the bar is honest
- * about what is actually known); no contributing member → null, and the
- * card falls back to its textual state line.
+ * Aggregate [ProgressSnapshot] behind a downloads-list tank card: the WHOLE
+ * tank as one download. Per member, in order of authority:
+ * - a live snapshot with a known total (the member being downloaded);
+ * - a FINISH member: its persisted page count, fully done;
+ * - any other member (queued / failed / partial) with a persisted page
+ *   count: 0 done of that count;
+ * - a member with no snapshot and no page count contributes nothing (the
+ *   bar is honest about what is actually known).
+ * Speed and in-flight page fractions come from live snapshots only. No
+ * contributing member → null, and the card falls back to its textual
+ * state line.
  *
  * Read-only over the tracker's published snapshots — never a new emission
  * channel (ADR-001 §11).
@@ -35,13 +40,21 @@ object TankProgressAggregate {
         var partial = 0f
         var any = false
         for (member in members) {
-            val snap = snapshotOf(member.arcid) ?: continue
-            if (snap.total <= 0) continue
+            val snap = snapshotOf(member.arcid)
+            when {
+                snap != null && snap.total > 0 -> {
+                    finished += snap.finished.coerceAtLeast(0)
+                    total += snap.total
+                    speed += snap.speed.coerceAtLeast(0L)
+                    partial += snap.partialPages.coerceAtLeast(0f)
+                }
+                member.pagecount > 0 -> {
+                    total += member.pagecount
+                    if (member.state == DownloadState.FINISH) finished += member.pagecount
+                }
+                else -> continue
+            }
             any = true
-            finished += snap.finished.coerceAtLeast(0)
-            total += snap.total
-            speed += snap.speed.coerceAtLeast(0L)
-            partial += snap.partialPages.coerceAtLeast(0f)
         }
         if (!any) return null
         return ProgressSnapshot(

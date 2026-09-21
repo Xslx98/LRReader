@@ -61,6 +61,7 @@ fun Archive.toDownloadInfoView(): DownloadInfo {
     di.rating = rating
     di.simpleTags = flatTags.toTypedArray()
     di.serverProfileId = serverProfileId
+    di.pagecount = pagecount
     return di
 }
 
@@ -83,8 +84,7 @@ fun Archive.toHistoryInfoView(): HistoryInfo {
 
 /**
  * Recover an [Archive] from a [DownloadInfo] view. Lossy: tags
- * collapse to a flat list (the `simpleTags` field), `pagecount` /
- * `progress` / `extension` / `filename` reset to defaults — these are
+ * collapse to a flat list (the `simpleTags` field), `progress` / `extension` / `filename` reset to defaults (`pagecount` is carried) — these are
  * server-driven and round-trip via the next LRR detail fetch.
  */
 fun DownloadInfo.toArchive(): Archive {
@@ -92,7 +92,7 @@ fun DownloadInfo.toArchive(): Archive {
         arcid = this.arcid,
         title = title ?: "",
         tags = groupFlatTags(simpleTags),
-        pagecount = 0,
+        pagecount = pagecount,
         progress = 0,
         extension = "",
         filename = "",
@@ -190,6 +190,7 @@ fun ArchiveLocalState.toDownloadInfoView(): DownloadInfo {
     info.archiveUri = downloadArchiveUri
     info.downloadRootUri = downloadRootUri
     info.tankId = downloadTankId
+    info.pagecount = archive.pagecount
     return info
 }
 
@@ -214,6 +215,7 @@ fun DownloadObservedRow.toDownloadInfoView(): DownloadInfo {
     info.archiveUri = downloadArchiveUri
     info.downloadRootUri = downloadRootUri
     info.tankId = downloadTankId
+    info.pagecount = archive.pagecount
     return info
 }
 
