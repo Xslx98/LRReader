@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -38,6 +39,7 @@ class TankCoverPagePicker(
     private var collectJob: Job? = null
 
     /** Shows the picker for [member]; [onPick] receives the chosen 0-based page. */
+    @SuppressLint("InflateParams") // dialog content: no parent to resolve layout params against
     fun show(member: Archive, onPick: (page0: Int) -> Unit) {
         dismiss()
         val sheet = BottomSheetDialog(context)
