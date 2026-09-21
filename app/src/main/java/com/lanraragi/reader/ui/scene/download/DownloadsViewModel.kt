@@ -17,6 +17,7 @@ import com.lanraragi.reader.download.DownloadInfoListener
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.download.ProgressSnapshot
 import com.lanraragi.reader.download.TankDownloadGrouping
+import com.lanraragi.reader.download.TankProgressAggregate
 import com.lanraragi.reader.spider.SpiderDen
 import com.lanraragi.reader.sync.DownloadListInfosExecutor
 import com.lanraragi.framework.unifile.UniFile
@@ -157,22 +158,19 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
         _tankMembers.value[tankId].orEmpty()
 
     /**
-     * Aggregate page progress for a tank card from the live progress map:
-     * (finished pages incl. already-complete members, total known pages).
-     * Members without a snapshot fall back to their archive-neutral zero —
-     * the card's bar is honest about what is actually known.
+     * Aggregate progress snapshot for a tank card over the live progress map
+     * (members without a snapshot contribute nothing — the card's bar is
+     * honest about what is actually known); null when no member has one.
      */
-    fun tankProgressOf(tankId: String): Pair<Int, Int> {
-        var finished = 0
-        var total = 0
-        for (member in tankMembersOf(tankId)) {
-            val snap = downloadManager.progressFor(member.arcid)
-            if (snap != null && snap.total > 0) {
-                finished += snap.finished
-                total += snap.total
-            }
+    fun tankProgressSnapshot(tankId: String): ProgressSnapshot? =
+        TankProgressAggregate.of(tankId, tankMembersOf(tankId)) { downloadManager.progressFor(it) }
+
+    /** Tank card id that folds [arcid] on the current display, or null for a standalone row. */
+    fun tankCardIdFor(arcid: String): String? {
+        for ((tankId, members) in _tankMembers.value) {
+            if (members.any { it.arcid == arcid }) return tankId
         }
-        return finished to total
+        return null
     }
 
     override fun onCleared() {
