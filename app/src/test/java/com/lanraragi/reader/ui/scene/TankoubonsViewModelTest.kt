@@ -10,6 +10,7 @@ import com.lanraragi.reader.module.INetworkModule
 import com.lanraragi.reader.client.TankCoverCacheStamp
 import com.lanraragi.reader.module.NetworkMonitor
 import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.download.TankMembershipSync
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import kotlinx.coroutines.CoroutineScope
@@ -233,6 +234,63 @@ class TankoubonsViewModelTest {
 
         awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.ShowError } }
         assertTrue(calls.isEmpty())
+    }
+
+    // ── drawer click = read, long-press download (spec 2026-09-21 §7) ──
+
+    private fun fullJson(id: String, name: String, vararg arcids: String): String {
+        val data = arcids.joinToString(",") {
+            """{"arcid":"$it","title":"T $it","tags":"","pagecount":3}"""
+        }
+        val ids = arcids.joinToString(",") { "\"$it\"" }
+        return """{"result":{"id":"$id","name":"$name","archives":[$ids],"full_data":[$data],""" +
+            """"summary":null,"tags":null,"progress":0},"total":1,"filtered":1}"""
+    }
+
+    @Test
+    fun openTank_success_emitsReaderIntent_andClearsRowLoading() {
+        val vm = TankoubonsViewModel()
+        val seen = CopyOnWriteArrayList<String>()
+        vm.resumeIntentBuilder = { _, tankId, _ -> seen.add(tankId); android.content.Intent("test.open") }
+        val events = collectEvents(vm)
+        val tank = LRRTankoubonApi.Tankoubon(id = "TANK_0000000001", name = "Alpha")
+
+        vm.openTank(tank)
+
+        awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.OpenReader } }
+        val open = events.filterIsInstance<TankoubonsViewModel.TankUiEvent.OpenReader>().single()
+        assertEquals("test.open", open.intent.action)
+        assertEquals(listOf("TANK_0000000001"), seen)
+        awaitCondition { vm.openingTankId.value == null }
+    }
+
+    @Test
+    fun openTank_failure_emitsError_andClearsRowLoading() {
+        val vm = TankoubonsViewModel()
+        vm.resumeIntentBuilder = { _, _, _ -> throw java.io.IOException("offline") }
+        val events = collectEvents(vm)
+
+        vm.openTank(LRRTankoubonApi.Tankoubon(id = "TANK_0000000001", name = "Alpha"))
+
+        awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.ShowError } }
+        assertFalse(events.any { it is TankoubonsViewModel.TankUiEvent.OpenReader })
+        awaitCondition { vm.openingTankId.value == null }
+    }
+
+    @Test
+    fun fillTank_fetchesMembership_andEmitsMembersInTankOrder() {
+        server.enqueue(MockResponse().setBody(fullJson("TANK_0000000001", "Alpha", arcId(2), arcId(1))))
+        val vm = TankoubonsViewModel()
+        val events = collectEvents(vm)
+
+        vm.fillTank(LRRTankoubonApi.Tankoubon(id = "TANK_0000000001", name = "Alpha"))
+
+        awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.FillTank } }
+        val fill = events.filterIsInstance<TankoubonsViewModel.TankUiEvent.FillTank>().single()
+        assertEquals("TANK_0000000001", fill.tankId)
+        assertEquals("Alpha", fill.name)
+        assertEquals(listOf(arcId(2), arcId(1)), fill.members.map { it.arcid })
+        assertEquals(listOf(arcId(2), arcId(1)), fill.memberIdsInOrder)
     }
 
     // ── cover fallback probe ───────────────────────────────────────
