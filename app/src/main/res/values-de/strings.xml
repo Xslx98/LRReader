@@ -276,6 +276,7 @@
     <string name="tank_read_from_start">Von vorn lesen</string>
     <string name="tank_continue_reading">Weiterlesen (Seite %1$d)</string>
     <string name="tank_member_remove">Aus Tankoubon entfernen</string>
+    <string name="tank_member_delete_blocked">Dieses Archiv gehört zum heruntergeladenen Tankoubon „%1$s“. Lösche stattdessen das ganze Tankoubon in der Download-Liste.</string>
     <string name="tank_set_cover">Als Cover festlegen</string>
     <string name="tank_cover_updated">Cover aktualisiert</string>
     <string name="tank_reorder_failed">Neuordnung fehlgeschlagen, Reihenfolge wiederhergestellt</string>

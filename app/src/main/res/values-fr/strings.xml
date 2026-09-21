@@ -335,6 +335,7 @@
     <string name="tank_read_from_start">Lire depuis le début</string>
     <string name="tank_continue_reading">Continuer la lecture (page %1$d)</string>
     <string name="tank_member_remove">Retirer du tankoubon</string>
+    <string name="tank_member_delete_blocked">Cette archive fait partie du tankoubon téléchargé « %1$s ». Supprimez le tankoubon entier depuis la liste des téléchargements.</string>
     <string name="tank_set_cover">Définir comme couverture</string>
     <string name="tank_cover_updated">Couverture mise à jour</string>
     <string name="tank_reorder_failed">Échec du réordonnancement, ordre restauré</string>

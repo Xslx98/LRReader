@@ -341,6 +341,7 @@
     <string name="tank_read_from_start">처음부터 읽기</string>
     <string name="tank_continue_reading">이어서 읽기(%1$d페이지)</string>
     <string name="tank_member_remove">단행본에서 제거</string>
+    <string name="tank_member_delete_blocked">이 아카이브는 다운로드된 단행본 “%1$s”에 속합니다. 다운로드 목록에서 단행본 전체를 삭제하세요.</string>
     <string name="tank_set_cover">표지로 설정</string>
     <string name="tank_cover_updated">표지가 업데이트되었습니다</string>
     <string name="tank_reorder_failed">순서 변경 실패, 원래 순서로 복원</string>
