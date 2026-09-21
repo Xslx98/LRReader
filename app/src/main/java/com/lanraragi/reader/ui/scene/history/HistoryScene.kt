@@ -49,6 +49,7 @@ import com.hippo.easyrecyclerview.HandlerDrawable
 import com.hippo.easyrecyclerview.MarginItemDecoration
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.client.ArchiveCoverStamps
 import com.lanraragi.reader.client.LRRCacheKeyFactory
 import com.lanraragi.reader.client.LRRUtils
 import com.lanraragi.reader.gallery.ReadingContext
@@ -520,7 +521,7 @@ class HistoryScene : ToolbarScene(),
             if (position >= list.size) return
 
             val archive = list[position]
-            holder.thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), archive.thumbnailUrl)
+            holder.thumb.load(LRRCacheKeyFactory.getThumbKey(archive.arcid), ArchiveCoverStamps.bust(archive.thumbnailUrl, archive.arcid))
             holder.title.text = archive.title
             holder.uploader.text = null
             holder.rating.setRating(archive.rating)

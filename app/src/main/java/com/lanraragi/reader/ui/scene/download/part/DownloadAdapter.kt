@@ -41,6 +41,7 @@ import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.client.ArchiveCoverStamps
 import com.lanraragi.reader.client.LRRCacheKeyFactory
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.mapper.toArchive
@@ -200,7 +201,7 @@ class DownloadAdapter(
             val archive = info.toArchive()
 
             holder.thumb.load(
-                LRRCacheKeyFactory.getThumbKey(info.arcid), archive.thumbnailUrl,
+                LRRCacheKeyFactory.getThumbKey(info.arcid), ArchiveCoverStamps.bust(archive.thumbnailUrl, info.arcid),
                 ThumbDataContainer(mCallback.downloadDirFutureFor(info)), true, false
             )
 

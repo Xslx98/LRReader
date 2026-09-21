@@ -340,6 +340,8 @@
     <string name="tank_member_delete_blocked">Cette archive fait partie du tankoubon téléchargé « %1$s ». Supprimez le tankoubon entier depuis la liste des téléchargements.</string>
     <string name="tank_set_cover">Définir comme couverture</string>
     <string name="tank_cover_updated">Couverture mise à jour</string>
+    <string name="tank_cover_pick_title">Choisir la page de couverture · %1$s</string>
+    <string name="tank_cover_use_page1">Utiliser la page 1</string>
     <string name="tank_reorder_failed">Échec du réordonnancement, ordre restauré</string>
     <string name="tank_already_sorted">Déjà dans l\'ordre</string>
     <string name="tank_sorted">Membres triés</string>
@@ -640,6 +642,8 @@
     <string name="settings_privacy_delete_confirm_countdown_summary_on">Le bouton Supprimer reste désactivé pendant 3 secondes avant de pouvoir être touché.</string>
     <string name="settings_privacy_delete_confirm_countdown_summary_off">Le bouton Supprimer est immédiatement utilisable. Plus rapide, mais plus facile à supprimer par erreur.</string>
     <string name="page_menu_save_to">Enregistrer sous…</string>
+    <string name="page_menu_set_tank_cover">Définir comme couverture du tankoubon</string>
+    <string name="page_menu_set_cover">Définir comme couverture</string>
     <string name="settings_advanced_app_language_title">Langue de l\'app (Language)</string>
     <string name="app_language_system">Langue du système (défaut)</string>
     <string name="settings_eh_theme">Thème</string>

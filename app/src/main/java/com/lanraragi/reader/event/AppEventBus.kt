@@ -44,4 +44,15 @@ object AppEventBus {
         _tankMembershipChangedEvent.tryEmit(event)
     }
 
+    // Non-sticky: the reader changed an archive's cover; covered detail /
+    // list screens re-bind that cover (stamp already bumped).
+    private val _archiveCoverChangedEvent = MutableSharedFlow<ArchiveCoverChangedEvent>(
+        extraBufferCapacity = 16
+    )
+    val archiveCoverChangedEvent = _archiveCoverChangedEvent.asSharedFlow()
+
+    fun postArchiveCoverChangedEvent(event: ArchiveCoverChangedEvent) {
+        _archiveCoverChangedEvent.tryEmit(event)
+    }
+
 }

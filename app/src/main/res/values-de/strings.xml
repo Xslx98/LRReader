@@ -220,6 +220,8 @@
     <string name="page_menu_share">@string/share</string>
     <string name="page_menu_save">Speichern</string>
     <string name="page_menu_save_to">Speichern unter …</string>
+    <string name="page_menu_set_tank_cover">Als Tankoubon-Cover festlegen</string>
+    <string name="page_menu_set_cover">Als Cover festlegen</string>
     <string name="gallery_menu_title">Menü</string>
     <string name="share_image">Das Bild teilen</string>
     <string name="image_saved">Das Bild wurde zu %s gespeichert</string>
@@ -281,6 +283,8 @@
     <string name="tank_member_delete_blocked">Dieses Archiv gehört zum heruntergeladenen Tankoubon „%1$s“. Lösche stattdessen das ganze Tankoubon in der Download-Liste.</string>
     <string name="tank_set_cover">Als Cover festlegen</string>
     <string name="tank_cover_updated">Cover aktualisiert</string>
+    <string name="tank_cover_pick_title">Coverseite wählen · %1$s</string>
+    <string name="tank_cover_use_page1">Seite 1 verwenden</string>
     <string name="tank_reorder_failed">Neuordnung fehlgeschlagen, Reihenfolge wiederhergestellt</string>
     <string name="tank_already_sorted">Bereits sortiert</string>
     <string name="tank_sorted">Mitglieder sortiert</string>

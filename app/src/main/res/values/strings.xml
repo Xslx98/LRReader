@@ -370,6 +370,8 @@
     <string name="page_menu_share">@string/share</string>
     <string name="page_menu_save">Save</string>
     <string name="page_menu_save_to">Save to …</string>
+    <string name="page_menu_set_tank_cover">Set as tankoubon cover</string>
+    <string name="page_menu_set_cover">Set as cover</string>
     <string name="gallery_menu_title">Menu</string>
     <string name="share_image">Share image</string>
     <string name="image_saved">Image saved to %s</string>
@@ -431,6 +433,8 @@
     <string name="tank_member_delete_blocked">This archive belongs to the downloaded tankoubon “%1$s”. Delete the whole tankoubon from the Downloads list instead.</string>
     <string name="tank_set_cover">Set as cover</string>
     <string name="tank_cover_updated">Cover updated</string>
+    <string name="tank_cover_pick_title">Choose cover page · %1$s</string>
+    <string name="tank_cover_use_page1">Use page 1</string>
     <string name="tank_reorder_failed">Reorder failed, restoring order</string>
     <string name="tank_already_sorted">Already in order</string>
     <string name="tank_sorted">Members sorted</string>
