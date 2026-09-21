@@ -490,4 +490,72 @@ class TankoubonsViewModelTest {
         assertEquals("NewTank", vm.tanks.value[0].name)
         assertFalse("Create must not toggle the loading spinner", vm.isLoading.value)
     }
+
+    // ── long-press auto-sort + undo (spec 2026-09-21 §3) ──────────
+
+    private fun fullJsonTitled(id: String, vararg members: Pair<String, String>): String {
+        val data = members.joinToString(",") { (arcid, title) ->
+            """{"arcid":"$arcid","title":"$title","tags":"","pagecount":3}"""
+        }
+        val ids = members.joinToString(",") { "\"${it.first}\"" }
+        return """{"result":{"id":"$id","name":"Alpha","archives":[$ids],"full_data":[$data],""" +
+            """"summary":null,"tags":null,"progress":0},"total":1,"filtered":1}"""
+    }
+
+    @Test
+    fun autoSort_putsEpisodeOrder_andEmitsPreviousOrderForUndo() {
+        val tank = LRRTankoubonApi.Tankoubon(id = "TANK_0000000001", name = "Alpha")
+        server.enqueue(MockResponse().setBody(fullJsonTitled(
+            tank.id, arcId(1) to "第2话", arcId(2) to "番外", arcId(3) to "第1话"
+        )))
+        server.enqueue(MockResponse().setBody("""{"success":1}"""))
+        server.enqueue(MockResponse().setBody(pageJson(1, tankJson(tank.id, "Alpha", archiveCount = 3))))
+        val vm = TankoubonsViewModel()
+        val events = collectEvents(vm)
+
+        vm.autoSort(tank)
+
+        awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.Sorted } }
+        assertTrue(server.takeRequest().path!!.startsWith("/api/tankoubons/${tank.id}/full"))
+        val put = server.takeRequest()
+        assertEquals("PUT", put.method)
+        assertEquals("/api/tankoubons/${tank.id}", put.path)
+        assertTrue(put.body.readUtf8().contains(""""archives":["${arcId(3)}","${arcId(1)}","${arcId(2)}"]"""))
+        val sorted = events.filterIsInstance<TankoubonsViewModel.TankUiEvent.Sorted>().single()
+        assertEquals(listOf(arcId(1), arcId(2), arcId(3)), sorted.previousOrder)
+    }
+
+    @Test
+    fun autoSort_alreadySorted_reportsWithoutPut() {
+        val tank = LRRTankoubonApi.Tankoubon(id = "TANK_0000000001", name = "Alpha")
+        server.enqueue(MockResponse().setBody(fullJsonTitled(
+            tank.id, arcId(1) to "第1话", arcId(2) to "第2话"
+        )))
+        val vm = TankoubonsViewModel()
+        val events = collectEvents(vm)
+
+        vm.autoSort(tank)
+
+        awaitCondition {
+            events.any {
+                it is TankoubonsViewModel.TankUiEvent.ShowSuccess && it.messageResId == R.string.tank_already_sorted
+            }
+        }
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun restoreOrder_putsThePreviousOrderBack() {
+        server.enqueue(MockResponse().setBody("""{"success":1}"""))
+        server.enqueue(MockResponse().setBody(pageJson(1, tankJson("TANK_0000000001", "Alpha", archiveCount = 2))))
+        val vm = TankoubonsViewModel()
+        val events = collectEvents(vm)
+
+        vm.restoreOrder("TANK_0000000001", listOf(arcId(2), arcId(1)))
+
+        awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.ShowSuccess } }
+        val put = server.takeRequest()
+        assertEquals("PUT", put.method)
+        assertTrue(put.body.readUtf8().contains(""""archives":["${arcId(2)}","${arcId(1)}"]"""))
+    }
 }

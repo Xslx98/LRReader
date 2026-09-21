@@ -338,6 +338,9 @@
     <string name="tank_set_cover">设为封面</string>
     <string name="tank_cover_updated">封面已更新</string>
     <string name="tank_reorder_failed">排序失败，已恢复原顺序</string>
+    <string name="tank_already_sorted">已是有序状态</string>
+    <string name="tank_sorted">已排序</string>
+    <string name="tank_undo">撤销</string>
     <string name="tank_badge">合订本</string>
     <string name="settings_eh_group_tanks">浏览时折叠合订本</string>
     <string name="settings_eh_group_tanks_summary">将属于合订本的档案折叠为一个条目(LANraragi 0.9.8+)</string>

@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.snackbar.Snackbar
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.download.TankFillDispatcher
@@ -279,7 +280,20 @@ class TankoubonDetailScene : BaseScene() {
                 Toast.makeText(ctx, R.string.tank_op_done, Toast.LENGTH_SHORT).show()
                 onBackPressed()
             }
+            is TankDetailUiEvent.OrderApplied -> showUndoSnackbar(event.previousOrder)
         }
+    }
+
+    /**
+     * Automatic reorder feedback (spec 2026-09-21 §3): a Snackbar whose
+     * action PUTs the previous order back through the plain (non-undoable)
+     * reorder path, so undoing never offers a second undo.
+     */
+    private fun showUndoSnackbar(previousOrder: List<String>) {
+        val root = view ?: return
+        Snackbar.make(root, R.string.tank_sorted, Snackbar.LENGTH_LONG)
+            .setAction(R.string.tank_undo) { viewModel.reorder(previousOrder) }
+            .show()
     }
 
     override fun onDestroyView() {
