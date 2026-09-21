@@ -136,6 +136,7 @@
         <item quantity="other">%d wurden noch nicht abgeschlossen</item>
     </plurals>
     <string name="download_state_finish">Abgeschlossen</string>
+    <string name="download_state_tank_incomplete">Unvollständig (%1$d/%2$d Archive)</string>
     <string name="download_sort_list">Sortieren</string>
     <string name="download_filter_by_status">Nach Status filtern</string>
     <string name="download_status_all">Alle</string>

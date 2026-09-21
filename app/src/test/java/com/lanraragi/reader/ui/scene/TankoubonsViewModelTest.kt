@@ -10,6 +10,8 @@ import com.lanraragi.reader.module.INetworkModule
 import com.lanraragi.reader.client.TankCoverCacheStamp
 import com.lanraragi.reader.module.NetworkMonitor
 import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.download.TankMembershipSync
+import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -192,6 +194,45 @@ class TankoubonsViewModelTest {
 
         awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.ShowError } }
         assertEquals(before, TankCoverCacheStamp.value)
+    }
+
+    // ── membership follow seam (spec 2026-09-21 §1/§3) ────────────
+
+    @Test
+    fun loadTankoubons_success_handsServerMembershipToSyncOnce() {
+        server.enqueue(MockResponse().setBody(pageJson(
+            1, tankJson("TANK_0000000001", "Alpha", archiveCount = 2, progress = 5)
+        )))
+        val calls = CopyOnWriteArrayList<Triple<Long, String, List<TankMembershipSync.TankTruth>>>()
+        val vm = TankoubonsViewModel()
+        vm.membershipSync = TankMembershipSyncFactory.Runner { p, u, t -> calls.add(Triple(p, u, t)) }
+
+        vm.loadTankoubons()
+
+        awaitCondition { calls.size == 1 }
+        val (_, url, truth) = calls.single()
+        assertEquals(LRRAuthManager.getServerUrl(), url)
+        val tank = truth.single()
+        assertEquals("TANK_0000000001", tank.tankId)
+        assertEquals("Alpha", tank.name)
+        assertEquals(listOf(arcId(1), arcId(2)), tank.memberIds)
+        assertEquals(5, tank.progress)
+        Thread.sleep(200)
+        assertEquals(1, calls.size)
+    }
+
+    @Test
+    fun loadTankoubons_failure_neverInvokesSync() {
+        server.enqueue(MockResponse().setResponseCode(500).setBody("boom"))
+        val calls = CopyOnWriteArrayList<Long>()
+        val vm = TankoubonsViewModel()
+        vm.membershipSync = TankMembershipSyncFactory.Runner { p, _, _ -> calls.add(p) }
+        val events = collectEvents(vm)
+
+        vm.loadTankoubons()
+
+        awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.ShowError } }
+        assertTrue(calls.isEmpty())
     }
 
     // ── cover fallback probe ───────────────────────────────────────

@@ -692,6 +692,8 @@ class DownloadsScene : ToolbarScene(),
     override fun tankProgressFor(tankId: String): Pair<Int, Int> =
         viewModel.tankProgressOf(tankId)
 
+    override fun tankMemberCountFor(tankId: String): Int = viewModel.tankMembersOf(tankId).size
+
     // ── Tank download cards (Track 2) ─────────────────────────
 
     /** True when the row at adapter [position] is a synthetic tank card. */
@@ -927,6 +929,9 @@ internal class DownloadInfoDiffCallback(
             oldItem.legacy == newItem.legacy &&
             ObjectUtils.equal(oldItem.label, newItem.label) &&
             ObjectUtils.equal(oldItem.title, newItem.title) &&
-            ObjectUtils.equal(oldItem.thumb, newItem.thumb)
+            ObjectUtils.equal(oldItem.thumb, newItem.thumb) &&
+            // Tank cards: a membership reconcile can change ONLY the missing
+            // count (Done → Incomplete) — that must re-bind the status line.
+            oldItem.tankMissingCount == newItem.tankMissingCount
     }
 }

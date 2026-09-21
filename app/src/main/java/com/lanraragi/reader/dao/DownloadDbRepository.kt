@@ -2,6 +2,7 @@ package com.lanraragi.reader.dao
 
 import androidx.room.withTransaction
 import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.download.TankGroupReconciler
 import com.lanraragi.reader.mapper.toArchive
 import com.lanraragi.reader.mapper.toArchiveJson
 import com.lanraragi.reader.mapper.toDownloadInfoView
@@ -299,6 +300,29 @@ class DownloadDbRepository(
         for (arcid in memberIdsInOrder) {
             archiveLocalStateDao.setDownloadTankId(arcid, tankId)
         }
+    }
+
+    /**
+     * Bring a downloaded tank group in line with the server's CURRENT
+     * membership (spec 2026-09-21 §1): rewrite ids/order/name via
+     * [TankGroupReconciler], then mirror the per-row tag (added members
+     * tagged, removed members untagged — their download rows survive as
+     * standalone downloads). Returns null when there is no such group, the
+     * group belongs to another profile, or nothing changed.
+     */
+    suspend fun reconcileTankGroup(
+        tankId: String,
+        serverName: String,
+        serverMemberIds: List<String>,
+        activeProfileId: Long,
+    ): TankGroupReconciler.Result? {
+        val group = tankGroupDao.getById(tankId) ?: return null
+        val result = TankGroupReconciler.reconcile(group, serverName, serverMemberIds, activeProfileId)
+            ?: return null
+        tankGroupDao.upsert(result.group)
+        for (arcid in result.added) archiveLocalStateDao.setDownloadTankId(arcid, tankId)
+        for (arcid in result.removed) archiveLocalStateDao.setDownloadTankId(arcid, null)
+        return result
     }
 
     /** Ordered member ids stored on the group row (empty when the row is gone). */

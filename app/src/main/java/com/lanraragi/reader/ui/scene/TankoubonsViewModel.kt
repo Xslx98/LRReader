@@ -12,6 +12,8 @@ import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.archiveThumbnailUrl
 import com.lanraragi.reader.client.api.friendlyError
+import com.lanraragi.reader.download.TankMembershipSync
+import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -105,8 +107,10 @@ class TankoubonsViewModel : ViewModel() {
                     return@launch
                 }
 
-                _tanks.value = fetchAllTanks(serverUrl)
+                val tanks = fetchAllTanks(serverUrl)
+                _tanks.value = tanks
                 _isLoading.value = false
+                syncMembership(serverUrl, tanks)
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to load tankoubons", e)
@@ -222,12 +226,38 @@ class TankoubonsViewModel : ViewModel() {
         try {
             val serverUrl = LRRAuthManager.getServerUrl() ?: return
 
-            _tanks.value = fetchAllTanks(serverUrl)
+            val tanks = fetchAllTanks(serverUrl)
+            _tanks.value = tanks
+            syncMembership(serverUrl, tanks)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
             Log.e(TAG, "Failed to reload tankoubons after CRUD", e)
             val context = ServiceRegistry.appModule.getContext()
             _uiEvent.tryEmit(TankUiEvent.ShowError(errorMessage(context, e)))
+        }
+    }
+
+    /**
+     * Membership follow seam (spec 2026-09-21 §1/§3): every successful list
+     * fetch hands the server's member lists to [TankMembershipSync] so
+     * downloaded group rows and member history rows follow the server.
+     * Replaceable for tests; the default no-ops outside a live app.
+     */
+    internal var membershipSync: TankMembershipSyncFactory.Runner = TankMembershipSyncFactory.runnerSafely()
+
+    private fun syncMembership(serverUrl: String, tanks: List<LRRTankoubonApi.Tankoubon>) {
+        val profileId = LRRAuthManager.getActiveProfileId()
+        val truth = tanks.map {
+            TankMembershipSync.TankTruth(it.id, it.name, it.archives, it.progress, pagecount = 0)
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                membershipSync.sync(profileId, serverUrl, truth)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "tank membership sync failed")
+            }
         }
     }
 

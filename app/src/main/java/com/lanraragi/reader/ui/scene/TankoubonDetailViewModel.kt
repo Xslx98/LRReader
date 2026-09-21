@@ -14,6 +14,8 @@ import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.download.TankMembershipSync
+import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -159,6 +161,26 @@ class TankoubonDetailViewModel : ViewModel() {
      * recreation over a retained ViewModel keeps the loaded state intact.
      * Seeds [tankName] from the nav arg for an instant toolbar title.
      */
+    /**
+     * Membership follow seam (spec 2026-09-21 §1/§3): a successful detail
+     * fetch hands the server's member list to [TankMembershipSync].
+     * Replaceable for tests; the default no-ops outside a live app.
+     */
+    internal var membershipSync: TankMembershipSyncFactory.Runner = TankMembershipSyncFactory.runnerSafely()
+
+    private fun syncMembership(url: String, name: String, memberIds: List<String>, progress: Int, pagecount: Int) {
+        val truth = listOf(TankMembershipSync.TankTruth(tankId, name, memberIds, progress, pagecount))
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                membershipSync.sync(profileId, url, truth)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "tank membership sync failed")
+            }
+        }
+    }
+
     fun init(tankId: String, name: String, profileId: Long) {
         if (initialized) return
         initialized = true
@@ -206,6 +228,7 @@ class TankoubonDetailViewModel : ViewModel() {
                 _progress.value = full.progress
                 _members.value = mapped
                 _isLoading.value = false
+                syncMembership(url, full.name, full.archives, full.progress, mapped.sumOf { it.pagecount })
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 _isLoading.value = false

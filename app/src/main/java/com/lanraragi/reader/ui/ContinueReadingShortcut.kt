@@ -82,6 +82,15 @@ object ContinueReadingShortcut : ReadingSessionEvents.Listener {
         ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
     }
 
+    /** (arcid, profileId) the published shortcut deep-links to, or null when absent. */
+    fun currentTarget(context: Context): Pair<String, Long>? {
+        val current = ShortcutManagerCompat.getDynamicShortcuts(context)
+            .firstOrNull { it.id == SHORTCUT_ID } ?: return null
+        val intent = current.intent ?: return null
+        val arcid = intent.getStringExtra(KEY_ARCID) ?: return null
+        return arcid to intent.getLongExtra(KEY_PROFILE_ID, -1L)
+    }
+
     /** Remove the shortcut (history cleared / profile deleted — issue #16). */
     fun remove(context: Context) {
         ShortcutManagerCompat.removeDynamicShortcuts(context, listOf(SHORTCUT_ID))

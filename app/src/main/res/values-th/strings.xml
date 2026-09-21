@@ -185,6 +185,7 @@
         <item quantity="other">%d ที่ไม่เสร็จ</item>
     </plurals>
     <string name="download_state_finish">เสร็จ</string>
+    <string name="download_state_tank_incomplete">ไม่สมบูรณ์ (%1$d/%2$d ไฟล์)</string>
     <string name="download_sort_list">เรียงลำดับ</string>
     <string name="download_filter_by_status">กรองตามสถานะ</string>
     <string name="download_status_all">ทั้งหมด</string>
