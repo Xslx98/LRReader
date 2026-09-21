@@ -333,6 +333,7 @@
     <string name="tank_read_from_start">从头阅读</string>
     <string name="tank_continue_reading">继续阅读(第 %1$d 页)</string>
     <string name="tank_member_remove">从合订本移出</string>
+    <string name="tank_member_delete_blocked">该档案属于已下载的合订本「%1$s」，请在下载列表中删除整本。</string>
     <string name="tank_set_cover">设为封面</string>
     <string name="tank_cover_updated">封面已更新</string>
     <string name="tank_reorder_failed">排序失败，已恢复原顺序</string>

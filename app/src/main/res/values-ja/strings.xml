@@ -295,6 +295,7 @@
     <string name="tank_read_from_start">最初から読む</string>
     <string name="tank_continue_reading">続きを読む(%1$d ページ)</string>
     <string name="tank_member_remove">単行本から削除</string>
+    <string name="tank_member_delete_blocked">このアーカイブはダウンロード済みの単行本「%1$s」に含まれています。ダウンロード一覧から単行本ごと削除してください。</string>
     <string name="tank_set_cover">表紙に設定</string>
     <string name="tank_cover_updated">表紙を更新しました</string>
     <string name="tank_reorder_failed">並べ替えに失敗しました。元に戻します</string>

@@ -7,10 +7,12 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.R
+import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.UrlOpener
 import com.lanraragi.reader.client.LRRUrl
 import com.lanraragi.reader.client.data.ListUrlBuilder
@@ -194,14 +196,34 @@ internal class DetailActionHandler(
     }
 
     /**
-     * Handles download button click: start a new download or show delete dialog.
+     * Handles download button click: start a new download or show the
+     * delete dialog — unless the archive is a member of a DOWNLOADED
+     * tankoubon (group-row truth, spec 2026-09-21 §6): a bound volume is
+     * deleted as a whole from the downloads list, never one member at a
+     * time, so the click is blocked with a pointer instead. Starting a
+     * download (INVALID state) is always allowed — it just fills the tank.
      */
     private fun onDownloadClick(context: Context, activity: MainActivity) {
         val archive = viewModel.getEffectiveArchive() ?: return
 
         if (viewModel.downloadManager.getDownloadState(archive.arcid) == DownloadState.INVALID) {
             CommonOperations.startDownload(activity, archive, false)
-        } else {
+            return
+        }
+        val profileId = viewModel.getSourceProfileId()
+        lifecycleOwner.lifecycleScope.launch {
+            val claiming = withContext(Dispatchers.IO) {
+                runCatching {
+                    ServiceRegistry.dataModule.downloadDbRepository.findTankGroupClaiming(archive.arcid, profileId)
+                }.getOrNull()
+            }
+            if (claiming != null) {
+                AlertDialog.Builder(context)
+                    .setMessage(context.getString(R.string.tank_member_delete_blocked, claiming.name))
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show()
+                return@launch
+            }
             DownloadLabelHelper.showDeleteDialog(context, archive) { deleteFiles ->
                 DownloadLabelHelper.performDelete(archive, deleteFiles)
             }

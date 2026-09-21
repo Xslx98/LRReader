@@ -337,6 +337,7 @@
     <string name="tank_read_from_start">อ่านตั้งแต่ต้น</string>
     <string name="tank_continue_reading">อ่านต่อ (หน้า %1$d)</string>
     <string name="tank_member_remove">นำออกจากทังโคบง</string>
+    <string name="tank_member_delete_blocked">ไฟล์นี้อยู่ในรวมเล่มที่ดาวน์โหลดแล้ว “%1$s” โปรดลบรวมเล่มทั้งชุดจากรายการดาวน์โหลด</string>
     <string name="tank_set_cover">ตั้งเป็นปก</string>
     <string name="tank_cover_updated">อัปเดตปกแล้ว</string>
     <string name="tank_reorder_failed">จัดลำดับไม่สำเร็จ คืนลำดับเดิมแล้ว</string>
