@@ -1088,6 +1088,10 @@ class GalleryListScene : BaseScene(),
             if (event.left.isNotEmpty()) mHelper?.firstRefresh()
             return
         }
+        // Only a row of THIS list can merge; an archive edited from elsewhere
+        // (history, another server's list) has nothing here to animate.
+        val loadedHere = mHelper?.getData()?.any { it.arcid == event.arcid } == true
+        if (!loadedHere) return
         runTankMerge(joined.id, joined.name, joined.wasEmpty, listOf(event.arcid)) {
             val res = resources2 ?: return@runTankMerge
             showTip(
