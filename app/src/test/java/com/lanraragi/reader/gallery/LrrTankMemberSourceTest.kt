@@ -17,6 +17,7 @@ import okhttp3.mockwebserver.RecordedRequest
 import okio.Buffer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -103,12 +104,18 @@ class LrrTankMemberSourceTest {
         ReaderPageCache.ensureCacheDir(ctx, ARCID).deleteRecursively()
     }
 
-    private fun newSource() = LrrTankMemberSource(
+    private fun newSource(store: HybridPageStore? = null) = LrrTankMemberSource(
         ctx, ARCID,
         serverUrl = server.url("").toString().removeSuffix("/"),
         pageClient = client,
         listClient = client,
+        store = store,
     )
+
+    private fun newStore(): Pair<HybridPageStore, java.io.File> {
+        val downloadDir = java.io.File(ctx.cacheDir, "tank_member_dl_$ARCID").also { it.deleteRecursively() }
+        return HybridPageStore(downloadDir, ReaderPageCache.ensureCacheDir(ctx, ARCID)) to downloadDir
+    }
 
     @Test
     fun `ensurePageCount fetches the list once and reports the real count`() = runBlocking {
@@ -154,6 +161,52 @@ class LrrTankMemberSourceTest {
             runBlocking { source.obtainImage(1) }
         }
         assertTrue("expected quiet-cancel marker, got $e", e is TankPageCancelledException)
+    }
+
+    @Test
+    fun `hybrid store writes fetched pages into the download dir under worker naming`(): Unit = runBlocking {
+        val (store, downloadDir) = newStore()
+        val source = newSource(store)
+        source.ensurePageCount()
+
+        source.obtainImage(0)?.recycle()
+
+        assertEquals(1, pageRequests.get())
+        assertTrue(java.io.File(downloadDir, "0001.png").length() > ReaderPageCache.MIN_IMAGE_SIZE)
+        assertTrue(java.io.File(downloadDir, ".nomedia").isFile)
+        assertFalse(java.io.File(ReaderPageCache.ensureCacheDir(ctx, ARCID), "page_0").exists())
+        downloadDir.deleteRecursively()
+    }
+
+    @Test
+    fun `hybrid store serves a worker-landed page without touching the network`(): Unit = runBlocking {
+        val (store, downloadDir) = newStore()
+        downloadDir.mkdirs()
+        java.io.File(downloadDir, "0002.png").writeBytes(pngBytes)
+        val source = newSource(store)
+        source.ensurePageCount()
+
+        val image = source.obtainImage(1)
+        assertNotNull(image)
+        image!!.recycle()
+        assertEquals("page on disk must not be re-fetched", 0, pageRequests.get())
+        downloadDir.deleteRecursively()
+    }
+
+    @Test
+    fun `hybrid store adopts a warm reader-cache page instead of fetching`(): Unit = runBlocking {
+        val (store, downloadDir) = newStore()
+        val warm = java.io.File(ReaderPageCache.ensureCacheDir(ctx, ARCID), "page_2")
+        warm.writeBytes(pngBytes)
+        val source = newSource(store)
+        source.ensurePageCount()
+
+        source.obtainImage(2)?.recycle()
+
+        assertEquals(0, pageRequests.get())
+        assertTrue(java.io.File(downloadDir, "0003.png").length() > ReaderPageCache.MIN_IMAGE_SIZE)
+        assertFalse("warm copy is moved, not duplicated", warm.exists())
+        downloadDir.deleteRecursively()
     }
 
     private companion object {

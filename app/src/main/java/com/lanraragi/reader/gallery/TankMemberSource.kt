@@ -80,6 +80,11 @@ internal class TankPageCancelledException(cause: IOException) : IOException(caus
  * into the member's OWN standalone reader cache dir — so bytes cached by a
  * tank session serve a later standalone open of the same archive and vice
  * versa.
+ *
+ * **Hybrid mode** (non-null [store]): the member has a download row, so
+ * pages are resolved, read and written in its download directory through
+ * the shared [HybridPageStore] — exactly what the standalone reader does
+ * for a tracked download — and warm reader-cache pages are adopted there.
  */
 internal class LrrTankMemberSource(
     context: Context,
@@ -87,6 +92,8 @@ internal class LrrTankMemberSource(
     private val serverUrl: String,
     private val pageClient: OkHttpClient,
     private val listClient: OkHttpClient,
+    /** Non-null in hybrid mode; exposed for routing tests. */
+    val store: HybridPageStore? = null,
 ) : TankMemberSource {
 
     private val appContext = context.applicationContext
@@ -103,7 +110,11 @@ internal class LrrTankMemberSource(
 
     private val cacheDir: File by lazy { ReaderPageCache.ensureCacheDir(appContext, arcid) }
 
-    private fun cacheFile(page0: Int): File = File(cacheDir, "page_$page0")
+    /** Hybrid mode: the download dir is created (with `.nomedia`) once, before the first write. */
+    private val storeDirReady: Boolean by lazy { store?.ensureDir(); true }
+
+    private fun cacheFile(page0: Int): File =
+        store?.pageFile(page0, paths?.getOrNull(page0)) ?: File(cacheDir, "page_$page0")
 
     override fun knownPageCount(): Int? = paths?.size
 
@@ -184,6 +195,10 @@ internal class LrrTankMemberSource(
         pageMutexes.computeIfAbsent(page0) { Mutex() }.withLock {
             if (stopped) throw TankPageCancelledException(IOException("source stopped"))
             if (file.exists() && file.length() > ReaderPageCache.MIN_IMAGE_SIZE) return
+            if (store != null) {
+                check(storeDirReady)
+                if (store.adoptWarmCachedPage(page0, file)) return
+            }
             val url = resolvePageUrl(serverUrl, pagePaths[page0])
             var call: Call? = null
             try {
