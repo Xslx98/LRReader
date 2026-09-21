@@ -3,20 +3,21 @@ package com.lanraragi.reader.ui.scene
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.snackbar.Snackbar
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.download.TankFillDispatcher
@@ -27,6 +28,8 @@ import com.lanraragi.reader.gallery.GalleryProvider2
 import com.lanraragi.reader.gallery.TankPageMath
 import com.lanraragi.reader.gallery.TankSeedStore
 import com.lanraragi.reader.gallery.TankSessionSeed
+import com.lanraragi.reader.tankoubon.TankMemberOrderOps
+import com.lanraragi.reader.tankoubon.TankMemberSelection
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.ui.scene.TankoubonDetailViewModel.TankDetailUiEvent
 import com.lanraragi.reader.util.collectFlow
@@ -35,14 +38,18 @@ import com.lanraragi.framework.widget.LoadImageViewNew
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.domain.Archive
 import java.util.Collections
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * Detail scene for a single tankoubon: its ordered member archives plus
  * the tank-level read entries (read from start / continue at the global
  * progress page). Clicking a member opens the whole-tank session on it.
+ *
+ * Member management (spec 2026-09-21 §4): a long-press enters multi-select
+ * (checkbox rows, count, select-all) with a floating action card — move to
+ * top / bottom / position / before a picked member, reverse the selection,
+ * remove, and (single selection) set as cover. Every operation is one PUT
+ * of the full order through [TankoubonDetailViewModel.reorder]. Drag
+ * reorder lives on the row's ≡ handle.
  *
  * Business logic (API calls, page math inputs) is delegated to
  * [TankoubonDetailViewModel]. The ViewModel is SCENE-scoped (not activity)
@@ -64,6 +71,12 @@ class TankoubonDetailScene : BaseScene() {
     private var mBtnReadStart: Button? = null
     private var mBtnReadContinue: Button? = null
 
+    private var mActionCard: View? = null
+    private var mActionCount: TextView? = null
+    private var mActionRowMove: View? = null
+    private var mActionRowEdit: View? = null
+    private var mActionCover: View? = null
+
     private val mMembers: MutableList<Archive> = mutableListOf()
     private var mAdapter: MemberAdapter? = null
     private var mItemTouchHelper: ItemTouchHelper? = null
@@ -73,15 +86,14 @@ class TankoubonDetailScene : BaseScene() {
     // callback's clearView (which re-syncs it after an optimistic reorder).
     private var mLastSnapshot: List<Archive> = emptyList()
 
+    /** Multi-select state; every change re-renders the rows and the card. */
+    private val selection = TankMemberSelection { onSelectionChanged() }
+
     /**
-     * True while an ItemTouchHelper drag selection is active. Suppresses
-     * the row's OnLongClickListener: a TOUCH long-press always starts the
-     * drag selection a hair before the row's own long-press fires (both
-     * gesture detectors share the same timeout, ItemTouchHelper's sees the
-     * event first), so without this guard every drag would ALSO open the
-     * member-actions dialog on top of the lifted row.
+     * "Pick target" state of insert-before: the next row tap inserts the
+     * selected block before that row instead of toggling / reading.
      */
-    private var mDragSelectionActive = false
+    private var mPickingTarget = false
 
     /** Cover "key|url" last handed to the loader; guards duplicate loads. */
     private var mCoverBoundUrl: String? = null
@@ -128,37 +140,8 @@ class TankoubonDetailScene : BaseScene() {
         mErrorRetry = view.findViewById(R.id.error_retry)
         mRecyclerView = view.findViewById(R.id.recycler_view)
 
-        mToolbar?.apply {
-            setNavigationIcon(R.drawable.v_arrow_left_dark_x24)
-            setNavigationOnClickListener { onBackPressed() }
-            inflateMenu(R.menu.scene_tankoubon_detail)
-            // Edit-metadata needs server truth (summary/tags): submitting the
-            // dialog's empty defaults before a successful load would WIPE
-            // them. Disabled until the VM has loaded; the isLoading collector
-            // keeps this fresh per load outcome.
-            menu.findItem(R.id.action_tank_edit_meta)?.isEnabled = viewModel.metaLoaded
-            setOnMenuItemClickListener { item ->
-                when (item.itemId) {
-                    R.id.action_tank_rename -> {
-                        showRenameDialog()
-                        true
-                    }
-                    R.id.action_tank_edit_meta -> {
-                        showEditMetaDialog()
-                        true
-                    }
-                    R.id.action_tank_download -> {
-                        downloadTank()
-                        true
-                    }
-                    R.id.action_tank_delete -> {
-                        showDeleteDialog()
-                        true
-                    }
-                    else -> false
-                }
-            }
-        }
+        setupToolbar()
+        setupActionCard(view)
 
         mBtnReadStart?.setOnClickListener {
             if (viewModel.members.value.isNotEmpty()) {
@@ -179,6 +162,75 @@ class TankoubonDetailScene : BaseScene() {
         viewModel.load()
 
         return view
+    }
+
+    private fun setupToolbar() {
+        mToolbar?.apply {
+            setNavigationIcon(R.drawable.v_arrow_left_dark_x24)
+            setNavigationOnClickListener { onBackPressed() }
+            inflateMenu(R.menu.scene_tankoubon_detail)
+            // Edit-metadata needs server truth (summary/tags): submitting the
+            // dialog's empty defaults before a successful load would WIPE
+            // them. Disabled until the VM has loaded; the isLoading collector
+            // keeps this fresh per load outcome.
+            menu.findItem(R.id.action_tank_edit_meta)?.isEnabled = viewModel.metaLoaded
+            setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    R.id.action_tank_rename -> showRenameDialog()
+                    R.id.action_tank_edit_meta -> showEditMetaDialog()
+                    R.id.action_tank_sort_title -> viewModel.sortByTitle()
+                    R.id.action_tank_reverse -> viewModel.reverseOrder()
+                    R.id.action_tank_download -> downloadTank()
+                    R.id.action_tank_delete -> showDeleteDialog()
+                    else -> return@setOnMenuItemClickListener false
+                }
+                true
+            }
+        }
+    }
+
+    /** Wires the floating multi-select action card (spec 2026-09-21 §4). */
+    private fun setupActionCard(root: View) {
+        val card = root.findViewById<View>(R.id.member_action_card) ?: return
+        mActionCard = card
+        mActionCount = card.findViewById(R.id.member_action_count)
+        mActionRowMove = card.findViewById(R.id.member_action_row_move)
+        mActionRowEdit = card.findViewById(R.id.member_action_row_edit)
+        mActionCover = card.findViewById(R.id.member_action_cover)
+        card.findViewById<View>(R.id.member_action_select_all).setOnClickListener {
+            selection.selectAll(mMembers.map { it.arcid })
+        }
+        card.findViewById<View>(R.id.member_action_top).setOnClickListener {
+            applySelectionOrder { order, picked -> TankMemberOrderOps.moveToTop(order, picked) }
+        }
+        card.findViewById<View>(R.id.member_action_bottom).setOnClickListener {
+            applySelectionOrder { order, picked -> TankMemberOrderOps.moveToBottom(order, picked) }
+        }
+        card.findViewById<View>(R.id.member_action_position).setOnClickListener {
+            val ctx = ehContext ?: return@setOnClickListener
+            if (mMembers.isEmpty()) return@setOnClickListener
+            TankDialogs.showPositionDialog(ctx, mMembers.size) { position ->
+                applySelectionOrder { order, picked -> TankMemberOrderOps.moveTo(order, picked, position) }
+            }
+        }
+        card.findViewById<View>(R.id.member_action_insert_before).setOnClickListener {
+            if (selection.count > 0) setPickingTarget(true)
+        }
+        card.findViewById<View>(R.id.member_action_reverse).setOnClickListener {
+            applySelectionOrder { order, picked -> TankMemberOrderOps.reverseSelected(order, picked) }
+        }
+        mActionCover?.setOnClickListener {
+            val only = selection.selected.singleOrNull() ?: return@setOnClickListener
+            val index = viewModel.members.value.indexOfFirst { it.arcid == only }
+            if (index >= 0) viewModel.setCover(index)
+            selection.clear()
+        }
+        card.findViewById<View>(R.id.member_action_remove).setOnClickListener {
+            val ids = selection.selected.toList()
+            if (ids.isEmpty()) return@setOnClickListener
+            selection.clear()
+            viewModel.removeMembers(ids)
+        }
     }
 
     private fun observeViewModel() {
@@ -202,6 +254,8 @@ class TankoubonDetailScene : BaseScene() {
                 mMembers.addAll(newList)
                 mLastSnapshot = ArrayList(newList)
             }
+            // A reload / removal may have dropped selected members.
+            selection.retainAll(newList.map { it.arcid })
             if (mMembers.isEmpty() && !viewModel.isLoading.value) {
                 showEmpty(getString(R.string.error_empty))
             } else if (mMembers.isNotEmpty()) {
@@ -279,7 +333,33 @@ class TankoubonDetailScene : BaseScene() {
                 Toast.makeText(ctx, R.string.tank_op_done, Toast.LENGTH_SHORT).show()
                 onBackPressed()
             }
+            is TankDetailUiEvent.OrderApplied -> showUndoSnackbar(event.previousOrder)
         }
+    }
+
+    /**
+     * Automatic reorder feedback (spec 2026-09-21 §3): a Snackbar whose
+     * action PUTs the previous order back through the plain (non-undoable)
+     * reorder path, so undoing never offers a second undo.
+     */
+    private fun showUndoSnackbar(previousOrder: List<String>) {
+        val root = view ?: return
+        Snackbar.make(root, R.string.tank_sorted, Snackbar.LENGTH_LONG)
+            .setAction(R.string.tank_undo) { viewModel.reorder(previousOrder) }
+            .show()
+    }
+
+    override fun onBackPressed() {
+        // Back leaves "pick target", then multi-select, before leaving the scene.
+        if (mPickingTarget) {
+            setPickingTarget(false)
+            return
+        }
+        if (selection.isActive) {
+            selection.clear()
+            return
+        }
+        super.onBackPressed()
     }
 
     override fun onDestroyView() {
@@ -288,7 +368,7 @@ class TankoubonDetailScene : BaseScene() {
         // object can outlive its view on the back stack.
         mItemTouchHelper?.attachToRecyclerView(null)
         mItemTouchHelper = null
-        mDragSelectionActive = false
+        mPickingTarget = false
         mRecyclerView = null
         mProgress = null
         mErrorView = null
@@ -301,10 +381,79 @@ class TankoubonDetailScene : BaseScene() {
         mProgressText = null
         mBtnReadStart = null
         mBtnReadContinue = null
+        mActionCard = null
+        mActionCount = null
+        mActionRowMove = null
+        mActionRowEdit = null
+        mActionCover = null
         mAdapter = null
         // Reset snapshots so the next view recreation starts clean.
         mLastSnapshot = emptyList()
         mCoverBoundUrl = null
+    }
+
+    // ==================== Multi-select ====================
+
+    /**
+     * Applies a selection-based reorder: [op] maps the current order plus
+     * the selected ids to the new order, which becomes one PUT via
+     * [TankoubonDetailViewModel.reorder] (rollback on failure). The
+     * selection stays active so operations can be chained.
+     */
+    private fun applySelectionOrder(op: (order: List<String>, selected: Set<String>) -> List<String>) {
+        val picked = selection.selected
+        if (picked.isEmpty()) return
+        viewModel.reorder(op(viewModel.memberIds, picked))
+    }
+
+    private fun setPickingTarget(picking: Boolean) {
+        if (mPickingTarget == picking) return
+        mPickingTarget = picking
+        renderActionCard()
+    }
+
+    private fun onSelectionChanged() {
+        if (!selection.isActive) mPickingTarget = false
+        renderActionCard()
+        val adapter = mAdapter ?: return
+        adapter.notifyItemRangeChanged(0, adapter.itemCount, PAYLOAD_SELECTION)
+    }
+
+    private fun renderActionCard() {
+        val card = mActionCard ?: return
+        if (!selection.isActive) {
+            if (card.visibility == View.VISIBLE) BatchBarAnimator.hide(card)
+            return
+        }
+        if (card.visibility != View.VISIBLE) BatchBarAnimator.show(card)
+        mActionCount?.text = if (mPickingTarget) {
+            getString(R.string.tank_pick_insert_target)
+        } else {
+            resources.getQuantityString(R.plurals.batch_selected_count, selection.count, selection.count)
+        }
+        val rows = if (mPickingTarget) View.GONE else View.VISIBLE
+        mActionRowMove?.visibility = rows
+        mActionRowEdit?.visibility = rows
+        mActionCover?.apply {
+            val single = selection.count == 1
+            isEnabled = single
+            alpha = if (single) 1f else DISABLED_ALPHA
+        }
+    }
+
+    /**
+     * Row tap: in "pick target" state inserts the selected block before
+     * this member; in multi-select toggles it; otherwise reads at it.
+     */
+    private fun onMemberClick(archive: Archive) {
+        if (mPickingTarget) {
+            val target = archive.arcid
+            setPickingTarget(false)
+            applySelectionOrder { order, picked -> TankMemberOrderOps.insertBefore(order, picked, target) }
+            return
+        }
+        if (selection.toggle(archive.arcid)) return
+        openMemberSession(archive)
     }
 
     // ==================== Read entries ====================
@@ -374,7 +523,7 @@ class TankoubonDetailScene : BaseScene() {
      * Member row click (spec 2026-09-21 §5): members have no standalone
      * detail page — the row opens the WHOLE-TANK session positioned on that
      * member (saved tank progress inside it restores, otherwise its first
-     * page). Long-press keeps the member actions (remove / set cover).
+     * page).
      */
     private fun openMemberSession(archive: Archive) {
         val ctx = ehContext ?: return
@@ -438,41 +587,10 @@ class TankoubonDetailScene : BaseScene() {
     }
 
     /**
-     * Member actions dialog: remove from tank / set as tank cover. The
-     * set-cover index is resolved from the VM's CURRENT member order at
-     * selection time — the row may have shifted while the dialog was open,
-     * and [TankoubonDetailViewModel.pageOffsets] is only consistent with
-     * the VM's own ordering.
-     */
-    private fun showMemberActions(archive: Archive) {
-        val ctx = ehContext ?: return
-        val items = arrayOf(
-            getString(R.string.tank_member_remove),
-            getString(R.string.tank_set_cover)
-        )
-        AlertDialog.Builder(ctx)
-            .setTitle(archive.title)
-            .setItems(items) { _, which ->
-                when (which) {
-                    0 -> viewModel.removeMember(archive.arcid)
-                    1 -> {
-                        val index = viewModel.members.value
-                            .indexOfFirst { it.arcid == archive.arcid }
-                        if (index >= 0) viewModel.setCover(index)
-                    }
-                }
-            }
-            .show()
-    }
-
-    /**
-     * Drag-to-reorder. A touch long-press picks the row up (ItemTouchHelper's
-     * built-in long-press drag): moving it reorders, releasing it in place
-     * opens the member-actions dialog instead. The dialog deliberately opens
-     * on RELEASE, not at the long-press itself — ItemTouchHelper's gesture
-     * detector fires a hair before any row OnLongClickListener could (see
-     * [mDragSelectionActive]), so an at-timeout dialog would pop over every
-     * drag start.
+     * Drag-to-reorder from the row's ≡ handle (spec 2026-09-21 §4): the
+     * handle's touch-down starts the drag ([ItemTouchHelper.startDrag]);
+     * long-press drag is off because a row long-press now enters
+     * multi-select. Release with a moved row PUTs the new order.
      */
     private fun attachReorder(recycler: RecyclerView) {
         val callback = object : ItemTouchHelper.SimpleCallback(
@@ -481,6 +599,8 @@ class TankoubonDetailScene : BaseScene() {
         ) {
             /** Whether the current drag selection actually swapped rows. */
             private var dragged = false
+
+            override fun isLongPressDragEnabled(): Boolean = false
 
             override fun onMove(
                 rv: RecyclerView,
@@ -502,30 +622,15 @@ class TankoubonDetailScene : BaseScene() {
 
             override fun onSwiped(vh: RecyclerView.ViewHolder, direction: Int) = Unit
 
-            override fun onSelectedChanged(vh: RecyclerView.ViewHolder?, actionState: Int) {
-                super.onSelectedChanged(vh, actionState)
-                if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
-                    mDragSelectionActive = true
-                }
-            }
-
             override fun clearView(rv: RecyclerView, vh: RecyclerView.ViewHolder) {
                 super.clearView(rv, vh)
-                mDragSelectionActive = false
-                if (dragged) {
-                    dragged = false
-                    // Keep the local snapshot in sync so the members
-                    // collector's next DiffUtil pass (the VM re-emission in
-                    // the SAME order) is a no-op instead of a bounce-back.
-                    mLastSnapshot = ArrayList(mMembers)
-                    viewModel.reorder(mMembers.map { it.arcid })
-                } else {
-                    // Picked up and released in place → member actions.
-                    val archive = mMembers.getOrNull(vh.bindingAdapterPosition) ?: return
-                    // clearView can run inside a draw/animation pass; don't
-                    // open a window from there.
-                    rv.post { showMemberActions(archive) }
-                }
+                if (!dragged) return
+                dragged = false
+                // Keep the local snapshot in sync so the members
+                // collector's next DiffUtil pass (the VM re-emission in
+                // the SAME order) is a no-op instead of a bounce-back.
+                mLastSnapshot = ArrayList(mMembers)
+                viewModel.reorder(mMembers.map { it.arcid })
             }
         }
         mItemTouchHelper = ItemTouchHelper(callback).also { it.attachToRecyclerView(recycler) }
@@ -613,22 +718,26 @@ class TankoubonDetailScene : BaseScene() {
 
     private inner class MemberAdapter : RecyclerView.Adapter<MemberViewHolder>() {
 
+        @SuppressLint("ClickableViewAccessibility")
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MemberViewHolder {
             val view = LayoutInflater.from(parent.context)
                 .inflate(R.layout.item_tankoubon_member, parent, false)
             val holder = MemberViewHolder(view)
-            // NON-TOUCH entry to the member actions (accessibility services'
-            // long-click action, which never starts a drag selection). Touch
-            // long-presses are owned by ItemTouchHelper — the flag suppresses
-            // this listener so the dialog doesn't pop over every drag start;
-            // touch users get the dialog by releasing the row in place.
+            // Long-press = enter multi-select and check this row (touch and
+            // accessibility long-click alike). Drags start from the handle.
             holder.itemView.setOnLongClickListener {
-                if (mDragSelectionActive) return@setOnLongClickListener false
+                if (mPickingTarget) return@setOnLongClickListener false
                 val position = holder.bindingAdapterPosition
                 if (position == RecyclerView.NO_POSITION) return@setOnLongClickListener false
                 val archive = mMembers.getOrNull(position) ?: return@setOnLongClickListener false
-                showMemberActions(archive)
+                selection.enterAndToggle(archive.arcid)
                 true
+            }
+            holder.handle.setOnTouchListener { _, event ->
+                if (event.actionMasked == MotionEvent.ACTION_DOWN && !selection.isActive) {
+                    mItemTouchHelper?.startDrag(holder)
+                }
+                false
             }
             return holder
         }
@@ -649,16 +758,35 @@ class TankoubonDetailScene : BaseScene() {
                 holder.pages.visibility = View.GONE
             }
 
-            holder.itemView.setOnClickListener { openMemberSession(a) }
+            holder.itemView.setOnClickListener { onMemberClick(a) }
+            bindSelection(holder, a)
+        }
+
+        override fun onBindViewHolder(holder: MemberViewHolder, position: Int, payloads: MutableList<Any>) {
+            if (payloads.contains(PAYLOAD_SELECTION)) {
+                bindSelection(holder, mMembers[position])
+            } else {
+                super.onBindViewHolder(holder, position, payloads)
+            }
+        }
+
+        /** Checkbox / handle state only — the cheap part of a bind. */
+        private fun bindSelection(holder: MemberViewHolder, a: Archive) {
+            val selecting = selection.isActive
+            holder.check.visibility = if (selecting) View.VISIBLE else View.GONE
+            holder.check.isChecked = selecting && selection.isSelected(a.arcid)
+            holder.handle.visibility = if (selecting) View.GONE else View.VISIBLE
         }
 
         override fun getItemCount(): Int = mMembers.size
     }
 
     private class MemberViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val check: CheckBox = itemView.findViewById(R.id.member_check)
         val thumb: LoadImageViewNew = itemView.findViewById(R.id.member_thumb)
         val title: TextView = itemView.findViewById(R.id.member_title)
         val pages: TextView = itemView.findViewById(R.id.member_pages)
+        val handle: View = itemView.findViewById(R.id.member_drag_handle)
     }
 
     /**
@@ -690,5 +818,8 @@ class TankoubonDetailScene : BaseScene() {
         const val KEY_TANK_ID = "tank_id"
         const val KEY_TANK_NAME = "tank_name"
         const val KEY_PROFILE_ID = "tank_profile_id"
+
+        private const val PAYLOAD_SELECTION = "selection"
+        private const val DISABLED_ALPHA = 0.38f
     }
 }

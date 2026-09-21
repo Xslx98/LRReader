@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Floating action card for the member management multi-select mode (spec
+  2026-09-21 §4). Same CardView language as widget_batch_action_bar: a
+  count / select-all header, then two rows of icon+label actions. In the
+  "pick target" state the header shows the prompt and both rows are hidden.
+-->
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/member_action_card"
+    style="@style/CardView.Normal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom"
+    android:layout_marginStart="@dimen/gallery_search_bar_margin_h"
+    android:layout_marginEnd="@dimen/gallery_search_bar_margin_h"
+    android:layout_marginBottom="8dp"
+    android:visibility="gone">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="36dp">
+
+            <TextView
+                android:id="@+id/member_action_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start|center_vertical"
+                android:layout_marginStart="12dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="?attr/textColorThemePrimary"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:id="@+id/member_action_select_all"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="end"
+                android:background="?attr/selectableItemBackground"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingHorizontal="12dp">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/v_check_all_x24"
+                    app:tint="?attr/drawableColorPrimary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="@string/batch_select_all"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1px"
+            android:background="?attr/dividerColor" />
+
+        <LinearLayout
+            android:id="@+id/member_action_row_move"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/member_action_top"
+                style="@style/BatchActionButton"
+                app:drawableTopCompat="@drawable/v_vertical_align_top_x24"
+                android:text="@string/tank_move_top" />
+
+            <TextView
+                android:id="@+id/member_action_bottom"
+                style="@style/BatchActionButton"
+                app:drawableTopCompat="@drawable/v_vertical_align_bottom_x24"
+                android:text="@string/tank_move_bottom" />
+
+            <TextView
+                android:id="@+id/member_action_position"
+                style="@style/BatchActionButton"
+                app:drawableTopCompat="@drawable/v_format_list_numbered_x24"
+                android:text="@string/tank_move_to_position" />
+
+            <TextView
+                android:id="@+id/member_action_insert_before"
+                style="@style/BatchActionButton"
+                app:drawableTopCompat="@drawable/v_low_priority_x24"
+                android:text="@string/tank_insert_before" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/member_action_row_edit"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/member_action_reverse"
+                style="@style/BatchActionButton"
+                app:drawableTopCompat="@drawable/v_swap_vert_x24"
+                android:text="@string/tank_reverse_selected" />
+
+            <TextView
+                android:id="@+id/member_action_cover"
+                style="@style/BatchActionButton"
+                app:drawableTopCompat="@drawable/v_image_x24"
+                android:text="@string/tank_set_cover" />
+
+            <TextView
+                android:id="@+id/member_action_remove"
+                style="@style/BatchActionButton"
+                app:drawableTint="@color/destructive_action"
+                app:drawableTopCompat="@drawable/v_delete_dark_x24"
+                android:text="@string/tank_member_remove"
+                android:textColor="@color/destructive_action" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

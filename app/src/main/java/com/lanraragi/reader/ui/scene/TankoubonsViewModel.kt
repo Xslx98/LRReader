@@ -16,6 +16,7 @@ import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.download.TankMembershipSync
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.gallery.TankSessionRouter
+import com.lanraragi.reader.tankoubon.TankMemberOrderOps
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -102,6 +103,12 @@ class TankoubonsViewModel : ViewModel() {
             val members: List<Archive>,
             val memberIdsInOrder: List<String>,
         ) : TankUiEvent
+
+        /**
+         * Long-press auto-sort persisted a new order; [previousOrder] is
+         * what [restoreOrder] should PUT back on undo.
+         */
+        data class Sorted(val tankId: String, val previousOrder: List<String>) : TankUiEvent
     }
 
     // -------------------------------------------------------------------------
@@ -143,6 +150,52 @@ class TankoubonsViewModel : ViewModel() {
                 _uiEvent.tryEmit(TankUiEvent.ShowError(errorMessage(context, e)))
             } finally {
                 _openingTankId.value = null
+            }
+        }
+    }
+
+    /**
+     * Long-press auto-sort (spec 2026-09-21 §3): fetch the current
+     * membership, sort it by the episode-aware title key and PUT the whole
+     * order. Already sorted → [R.string.tank_already_sorted]; success →
+     * [TankUiEvent.Sorted] (undo) and a list reload so group rows follow.
+     */
+    fun autoSort(tank: LRRTankoubonApi.Tankoubon) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val context = ServiceRegistry.appModule.getContext()
+            try {
+                val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
+                val client = ServiceRegistry.networkModule.okHttpClient
+                val full = LRRTankoubonApi.getTankoubonFull(client, serverUrl, tank.id).result
+                val titles = full.fullData.associate { it.arcid to it.title }
+                val sorted = TankMemberOrderOps.sortByTitle(full.archives) { titles[it].orEmpty() }
+                if (sorted == full.archives) {
+                    _uiEvent.tryEmit(TankUiEvent.ShowSuccess(R.string.tank_already_sorted))
+                    return@launch
+                }
+                LRRTankoubonApi.updateTankoubon(client, serverUrl, tank.id, archives = sorted)
+                _uiEvent.tryEmit(TankUiEvent.Sorted(tank.id, full.archives))
+                loadTankoubonsInternal()
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                _uiEvent.tryEmit(TankUiEvent.ShowError(errorMessage(context, e)))
+            }
+        }
+    }
+
+    /** Undo of [autoSort]: PUT [previousOrder] back, then reload. */
+    fun restoreOrder(tankId: String, previousOrder: List<String>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val context = ServiceRegistry.appModule.getContext()
+            try {
+                val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
+                val client = ServiceRegistry.networkModule.okHttpClient
+                LRRTankoubonApi.updateTankoubon(client, serverUrl, tankId, archives = previousOrder)
+                _uiEvent.tryEmit(TankUiEvent.ShowSuccess(R.string.tank_op_done))
+                loadTankoubonsInternal()
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                _uiEvent.tryEmit(TankUiEvent.ShowError(errorMessage(context, e)))
             }
         }
     }
