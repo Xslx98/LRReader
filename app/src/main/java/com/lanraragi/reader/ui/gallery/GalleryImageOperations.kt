@@ -35,13 +35,25 @@ import androidx.lifecycle.lifecycleScope
 import com.lanraragi.framework.content.FileProvider
 import com.lanraragi.reader.AppConfig
 import com.lanraragi.reader.R
+import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.client.ArchiveCoverStamps
+import com.lanraragi.reader.client.TankCoverCacheStamp
+import com.lanraragi.reader.client.api.LRRArchiveApi
+import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.client.api.friendlyError
+import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.event.AppEventBus
+import com.lanraragi.reader.event.ArchiveCoverChangedEvent
 import com.lanraragi.reader.gallery.GalleryProvider2
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.gallery.TankGalleryProvider
 import com.lanraragi.reader.settings.ReadingSettings
+import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
 import com.lanraragi.reader.ui.GalleryActivity
 import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.framework.util.ExceptionUtils
 import com.lanraragi.framework.lib.yorozuya.IOUtils
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -55,9 +67,23 @@ import java.io.IOException
  */
 class GalleryImageOperations(private val mActivity: Activity) {
 
+    /** What "set as cover" on a page writes to (spec 2026-09-22-tank-cover §3.1). */
+    sealed interface CoverTarget {
+        val profileId: Long
+
+        /** Whole-tank session: the reader index IS the global 0-based page. */
+        data class Tank(val tankId: String, override val profileId: Long) : CoverTarget
+
+        /** Archive session (online or a downloaded copy with server context). */
+        data class Archive(val arcid: String, override val profileId: Long) : CoverTarget
+    }
+
     var galleryProvider: GalleryProvider2? = null
     var archive: Archive? = null
     var saveToLauncher: ActivityResultLauncher<Intent>? = null
+
+    /** Null (local directory session without server context) hides the cover entry. */
+    var coverTarget: CoverTarget? = null
 
     private var mCacheFileName: String? = null
 
@@ -323,6 +349,13 @@ class GalleryImageOperations(private val mActivity: Activity) {
             actions.add(mActivity.getString(R.string.stamps_menu_add) to { ga.startStampPlacement() })
             actions.add(mActivity.getString(R.string.stamps_menu_list) to { ga.showStampedPagesDialog() })
         }
+        when (coverTarget) {
+            is CoverTarget.Tank ->
+                actions.add(mActivity.getString(R.string.page_menu_set_tank_cover) to { setCoverFromPage(page) })
+            is CoverTarget.Archive ->
+                actions.add(mActivity.getString(R.string.page_menu_set_cover) to { setCoverFromPage(page) })
+            null -> Unit
+        }
 
         builder.setItems(actions.map { it.first }.toTypedArray()) { _, which ->
             actions[which].second()
@@ -330,6 +363,50 @@ class GalleryImageOperations(private val mActivity: Activity) {
 
         val dialog = builder.show()
         applyImmersiveToDialog(dialog)
+    }
+
+    // --- Cover ---
+
+    /**
+     * Makes [page] (0-based reader index) the cover of [coverTarget]. Tank
+     * sessions PUT the global page and remember the (member, page) choice
+     * so the app can re-apply it after its own reorders; archive sessions
+     * PUT the archive route and bump the cover cache stamp. Success is a
+     * toast; failure a friendly-error toast (cosmetic, nothing to roll back).
+     */
+    private fun setCoverFromPage(page: Int) {
+        val target = coverTarget ?: return
+        val provider = galleryProvider
+        (mActivity as ComponentActivity).lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val url = resolveSourceBaseUrl(target.profileId, ServiceRegistry.dataModule.profileLookupCache)
+                    val client = ServiceRegistry.networkModule.okHttpClient
+                    when (target) {
+                        is CoverTarget.Tank -> {
+                            LRRTankoubonApi.updateTankThumbnail(client, url, target.tankId, globalPage1 = page + 1)
+                            TankCoverCacheStamp.bump()
+                            (provider as? TankGalleryProvider)?.locateMember(page)?.let { (arcid, page0) ->
+                                TankCoverChoiceStore.default.put(
+                                    target.tankId,
+                                    TankCoverChoiceStore.Choice(arcid, page0, target.profileId),
+                                )
+                            }
+                        }
+                        is CoverTarget.Archive -> {
+                            LRRArchiveApi.updateThumbnail(client, url, target.arcid, page1 = page + 1)
+                            ArchiveCoverStamps.bump(target.arcid)
+                            AppEventBus.postArchiveCoverChangedEvent(ArchiveCoverChangedEvent(target.arcid))
+                        }
+                    }
+                }
+                Toast.makeText(mActivity, R.string.tank_cover_updated, Toast.LENGTH_SHORT).show()
+            } catch (ce: CancellationException) {
+                throw ce
+            } catch (e: Exception) {
+                Toast.makeText(mActivity, friendlyError(mActivity, e), Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     // --- Utility ---

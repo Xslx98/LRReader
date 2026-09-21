@@ -220,6 +220,8 @@
     <string name="page_menu_share">@string/share</string>
     <string name="page_menu_save">Speichern</string>
     <string name="page_menu_save_to">Speichern unter …</string>
+    <string name="page_menu_set_tank_cover">Als Tankoubon-Cover festlegen</string>
+    <string name="page_menu_set_cover">Als Cover festlegen</string>
     <string name="gallery_menu_title">Menü</string>
     <string name="share_image">Das Bild teilen</string>
     <string name="image_saved">Das Bild wurde zu %s gespeichert</string>

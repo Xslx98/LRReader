@@ -307,6 +307,16 @@ class GalleryListScene : BaseScene(),
             }
         }
 
+        // Reader changed an archive's cover: rebind that row (new stamp → new
+        // key + bust URL). Whole-lifetime like the deletion collector — the
+        // reader is a separate activity, so this list is stopped meanwhile;
+        // notifyItemChanged on a stopped view is applied at the next layout.
+        collectFlowWhileCreated(this, AppEventBus.archiveCoverChangedEvent) { event ->
+            val helper = mHelper ?: return@collectFlowWhileCreated
+            val position = helper.getData().indexOfFirst { it.arcid == event.arcid }
+            if (position >= 0) adapter?.notifyItemChanged(position)
+        }
+
         // Detail-page Tankoubons › Edit: same whole-lifetime collection and
         // onResume replay as deletions — the edit happens while this list is
         // covered, and the merge animation must play after the pop-back.

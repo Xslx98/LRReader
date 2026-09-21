@@ -35,6 +35,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.lanraragi.reader.event.AppEventBus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -620,6 +621,13 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         // "Belongs to Tankoubons" section — an empty list keeps it hidden.
         collectFlow(viewLifecycleOwner, viewModel.archiveTankoubons) { tanks ->
             mTankBinder?.bind(tanks)
+        }
+        // The reader (a separate activity on top) set a new cover for this
+        // archive: STARTED-scoped collection resumes when we come back, and
+        // the event buffer (16) is deep enough for the one-shot signal.
+        collectFlow(viewLifecycleOwner, AppEventBus.archiveCoverChangedEvent) { event ->
+            val archive = viewModel.archive.value ?: return@collectFlow
+            if (archive.arcid == event.arcid) mHeaderBinder?.reloadCover(archive)
         }
 
         // ----- Page-thumbnail grid wiring -----

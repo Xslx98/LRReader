@@ -277,6 +277,8 @@
     <string name="page_menu_share">@string/share</string>
     <string name="page_menu_save">保存</string>
     <string name="page_menu_save_to">保存到 …</string>
+    <string name="page_menu_set_tank_cover">设为合订本封面</string>
+    <string name="page_menu_set_cover">设为封面</string>
     <string name="gallery_menu_title">菜单</string>
     <string name="share_image">分享图片</string>
     <string name="image_saved">图片已保存至 %s</string>

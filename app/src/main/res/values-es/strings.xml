@@ -278,6 +278,8 @@
     <string name="page_menu_share">@string/share</string>
     <string name="page_menu_save">Guardar</string>
     <string name="page_menu_save_to">Guardar en…</string>
+    <string name="page_menu_set_tank_cover">Usar como portada del tankoubon</string>
+    <string name="page_menu_set_cover">Usar como portada</string>
     <string name="gallery_menu_title">Menú</string>
     <string name="share_image">Compartir imagen</string>
     <string name="image_saved">Imagen guardada en  %s</string>
