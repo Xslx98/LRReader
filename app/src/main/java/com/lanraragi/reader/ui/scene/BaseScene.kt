@@ -142,6 +142,14 @@ abstract class BaseScene : SceneFragment() {
         }
     }
 
+    /** Snackbar variant with one action button. */
+    open fun showTip(message: CharSequence, length: Int, actionText: CharSequence, action: () -> Unit) {
+        val activity = activity
+        if (activity is MainActivity) {
+            activity.showTip(message, length, actionText, action)
+        }
+    }
+
     open fun needShowLeftDrawer(): Boolean {
         return true
     }

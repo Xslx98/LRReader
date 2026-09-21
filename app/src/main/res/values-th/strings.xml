@@ -334,6 +334,7 @@
     <string name="tank_delete_confirm">ลบทังโคบงนี้? ไฟล์ข้างในจะไม่ถูกลบ แต่สรุป แท็กเพิ่มเติม และความคืบหน้าการอ่านของทังโคบงจะหายไป</string>
     <string name="tank_locked">ทังโคบงถูกล็อกอยู่ โปรดลองใหม่ภายหลัง</string>
     <string name="tank_op_done">เสร็จสิ้น</string>
+    <string name="tank_merge_open">เปิด</string>
     <string name="tank_progress_page">อ่านถึงหน้า %1$d</string>
     <string name="tank_read_from_start">อ่านตั้งแต่ต้น</string>
     <string name="tank_continue_reading">อ่านต่อ (หน้า %1$d)</string>
@@ -383,6 +384,7 @@
     <string name="stats_tag_chip">%1$s · %2$d</string>
     <string name="detail_tankoubons_label">ทังโคบง</string>
     <string name="detail_tankoubons_edit">แก้ไข</string>
+    <string name="detail_tankoubons_none">ไม่อยู่ในรวมเล่มใด</string>
     <string name="tank_add_to">เพิ่มลงทังโคบง</string>
     <string name="batch_add_to_tankoubon">Tank</string>
 

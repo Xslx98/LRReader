@@ -130,13 +130,16 @@ class GalleryDetailViewModel : ViewModel() {
      */
     val currentRating: StateFlow<Float?> = _currentRating.asStateFlow()
 
-    private val _archiveTankoubons = MutableStateFlow<List<LRRTankoubonApi.Tankoubon>>(emptyList())
+    private val _archiveTankoubons = MutableStateFlow<List<LRRTankoubonApi.Tankoubon>?>(null)
 
     /**
-     * Tankoubons on the source server that contain this archive. Stays empty
-     * (section hidden) on pre-0.9.8 servers and on any lookup failure.
+     * Tankoubons on the source server that contain this archive. `null` =
+     * unknown (not loaded yet, pre-0.9.8 server, lookup failure) and hides
+     * the section; an EMPTY list means the server answered and the archive
+     * is in no tank, which still shows the section so its Edit entry can
+     * add the archive to one (spec 2026-09-22 §6).
      */
-    val archiveTankoubons: StateFlow<List<LRRTankoubonApi.Tankoubon>> = _archiveTankoubons.asStateFlow()
+    val archiveTankoubons: StateFlow<List<LRRTankoubonApi.Tankoubon>?> = _archiveTankoubons.asStateFlow()
 
     // -------------------------------------------------------------------------
     // Loading state
@@ -408,11 +411,13 @@ class GalleryDetailViewModel : ViewModel() {
                 if (TankoubonSupportGate.isUnsupported(serverUrl)) return@launch
                 val client = ServiceRegistry.networkModule.okHttpClient
                 val ids = LRRTankoubonApi.getArchiveTankoubons(client, serverUrl, arcid)
+                // The reverse lookup is a 0.9.8-only route: answering at all
+                // proves support, even with an empty membership.
+                TankoubonSupportGate.markSupported(serverUrl)
                 if (ids.isEmpty()) {
                     _archiveTankoubons.value = emptyList()
                     return@launch
                 }
-                TankoubonSupportGate.markSupported(serverUrl)
                 // id → name/count via the list endpoint (same data the
                 // membership dialog needs). Server pages are 0-based.
                 val idSet = ids.toSet()
@@ -430,7 +435,7 @@ class GalleryDetailViewModel : ViewModel() {
             } catch (e: Exception) {
                 runCatching { resolveSourceServerUrl() }.getOrNull()
                     ?.let { TankoubonSupportGate.markFrom(it, e) }
-                _archiveTankoubons.value = emptyList()
+                _archiveTankoubons.value = null
             }
         }
     }

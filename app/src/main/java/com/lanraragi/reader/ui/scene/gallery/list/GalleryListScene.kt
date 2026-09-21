@@ -39,6 +39,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.lanraragi.reader.ServiceRegistry
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.progressindicator.LinearProgressIndicator
@@ -55,12 +56,15 @@ import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.event.AppEventBus
+import com.lanraragi.reader.event.TankMembershipChangedEvent
 import com.lanraragi.reader.gallery.ReadingContext
 import com.lanraragi.reader.gallery.ReadingContextStore
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.settings.GuideSettings
+import com.lanraragi.reader.tankoubon.TankPseudoArchive
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.ListMultiSelectHelper
+import com.lanraragi.reader.ui.scene.TankoubonDetailScene
 import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.reader.widget.SearchLayout
@@ -128,6 +132,10 @@ class GalleryListScene : BaseScene(),
      */
     private val deletionBuffer = DetachBuffer<String>()
 
+    // Tank membership edits made on the detail page while this list was
+    // covered; replayed in onResume so the merge choreography plays on screen.
+    private val tankMembershipBuffer = DetachBuffer<TankMembershipChangedEvent>()
+
     // Batch results (per-item failure dialog + ClearNew badge refresh) that
     // arrived while this list was detached under a pushed scene; replayed in
     // onResume once the view and batchOpsHelper exist again.
@@ -155,6 +163,10 @@ class GalleryListScene : BaseScene(),
     internal var itemActionHelper: GalleryItemActionHelper? = null
     internal var multiSelectHelper: ListMultiSelectHelper? = null
     private var batchOpsHelper: GalleryBatchOpsHelper? = null
+
+    /** Scene root FrameLayout: hosts the merge animation's overlay flyers. */
+    private var rootLayout: ViewGroup? = null
+    private var tankMergeAnimator: TankMergeAnimator? = null
     internal var uploadHelper: GalleryUploadHelper? = null
     private var mSearchHelper: GallerySearchHelper? = null
     internal var mHistoryStore: ProfileSearchHistoryStore? = null
@@ -295,6 +307,15 @@ class GalleryListScene : BaseScene(),
             }
         }
 
+        // Detail-page Tankoubons › Edit: same whole-lifetime collection and
+        // onResume replay as deletions — the edit happens while this list is
+        // covered, and the merge animation must play after the pop-back.
+        collectFlowWhileCreated(this, AppEventBus.tankMembershipChangedEvent) { event ->
+            tankMembershipBuffer.deliverOrBuffer(event, ready = isResumed) {
+                onTankMembershipChanged(it)
+            }
+        }
+
         // collectFlowWhileCreated(fragment): a batch runs in viewModelScope and
         // can finish while this list is detached under a detail scene the user
         // pushed mid-run. A view-scoped collector (onViewCreated +
@@ -428,6 +449,7 @@ class GalleryListScene : BaseScene(),
         mHideActionFabSlop = ViewConfiguration.get(context).scaledTouchSlop
 
         val mainLayout = ViewUtils.`$$`(view, R.id.main_layout)
+        rootLayout = mainLayout as ViewGroup
         val contentLayout = ViewUtils.`$$`(mainLayout, R.id.content_layout) as ContentLayout
         recyclerView = contentLayout.recyclerView
         val fastScroller = contentLayout.fastScroller
@@ -501,6 +523,19 @@ class GalleryListScene : BaseScene(),
             override fun refreshList() { mHelper?.refresh() }
             override fun showTip(message: String) {
                 this@GalleryListScene.showTip(message, LENGTH_SHORT)
+            }
+            override fun showTipWithAction(message: String, actionText: String, action: () -> Unit) {
+                this@GalleryListScene.showTip(message, LENGTH_LONG, actionText, action)
+            }
+            override fun animateTankMerge(
+                op: GalleryListViewModel.BatchOp.AddToTankoubon,
+                succeeded: List<String>,
+                onDone: () -> Unit,
+            ) {
+                runTankMerge(op.tankId, op.tankName, op.wasEmpty, succeeded, onDone)
+            }
+            override fun openTankoubon(tankId: String, tankName: String) {
+                openTankoubonDetail(tankId, tankName)
             }
             override fun batchOwnerToken(): Any = this@GalleryListScene.batchOwnerToken
         })
@@ -713,9 +748,17 @@ class GalleryListScene : BaseScene(),
         uploadProgressPercent = null
     }
 
+    override fun onPause() {
+        super.onPause()
+        // A merge mid-flight would be burned off-screen: settle the list now.
+        cancelTankMerge()
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
 
+        cancelTankMerge()
+        rootLayout = null
         searchBarMover?.cancelAnimation()
         searchBarMover = null
         val helper = mHelper
@@ -810,6 +853,11 @@ class GalleryListScene : BaseScene(),
             deletionBuffer.drain { drained.add(it) }
             if (drained.isNotEmpty()) {
                 recyclerView.post { drained.forEach { removeArchiveLocally(it) } }
+            }
+            val membership = mutableListOf<TankMembershipChangedEvent>()
+            tankMembershipBuffer.drain { membership.add(it) }
+            if (membership.isNotEmpty()) {
+                recyclerView.post { membership.forEach { onTankMembershipChanged(it) } }
             }
         }
 
@@ -931,6 +979,151 @@ class GalleryListScene : BaseScene(),
     // handled by GallerySearchBarHelper (registered in initHelpers)
 
     // Inner adapter — too small to extract
+
+    // ─── Merge-into-tankoubon choreography (spec 2026-09-22) ─────────────
+
+    /**
+     * Plays the "merge" animation for the archives that just joined
+     * [tankId] and leaves the list in the state a refresh would produce
+     * (group mode: members gone, tank row present — provisional if it was
+     * not loaded). [onDone] fires once the list is settled, or at once when
+     * there is nothing to animate, so the caller shows its feedback then.
+     */
+    internal fun runTankMerge(
+        tankId: String,
+        tankName: String,
+        wasEmpty: Boolean,
+        succeeded: List<String>,
+        onDone: () -> Unit,
+    ) {
+        val helper = mHelper
+        val root = rootLayout
+        if (helper == null || root == null || !::recyclerView.isInitialized || succeeded.isEmpty()) {
+            onDone()
+            return
+        }
+        cancelTankMerge()
+        multiSelectHelper?.exit()
+        val baseUrl = LRRClientProvider.getBaseUrl()
+        val groupMode = AppearanceSettings.getGroupTanks() && !TankoubonSupportGate.isUnsupported(baseUrl)
+        val (first, last) = visibleRange()
+        val plan = TankMergePlanner.plan(
+            loadedIds = helper.getData().map { it.arcid },
+            firstVisible = first,
+            lastVisible = last,
+            succeeded = succeeded,
+            tankId = tankId,
+            groupMode = groupMode,
+        )
+        if (plan.isNoOp) {
+            onDone()
+            return
+        }
+        val provisional = plan.provisionalInsertAt?.let {
+            TankPseudoArchive.provisional(
+                tankId = tankId,
+                tankName = tankName,
+                wasEmpty = wasEmpty,
+                firstAddedThumbnailUrl = helper.getData().firstOrNull { it.arcid == succeeded.first() }?.thumbnailUrl,
+                sourceProfileId = LRRAuthManager.getActiveProfileId(),
+                sourceBaseUrl = baseUrl,
+            )
+        }
+        val host = object : TankMergeAnimator.Host {
+            override fun thumbViewAt(position: Int): View? =
+                (recyclerView.findViewHolderForAdapterPosition(position) as? GalleryAdapterNew.GalleryHolder)?.thumb
+
+            override fun rowViewAt(position: Int): View? =
+                recyclerView.findViewHolderForAdapterPosition(position)?.itemView
+
+            override fun applyEndState() {
+                val insertAt = plan.provisionalInsertAt
+                if (provisional != null && insertAt != null && insertAt in plan.removals && insertAt < helper.size()) {
+                    // The provisional row REPLACES the topmost member in place
+                    // (change animation = crossfade alongside the close-up) rather
+                    // than remove + insert: RecyclerView runs adds only after every
+                    // removal and move has finished, and with the first visible
+                    // rows gone it would also anchor the inserted row above the fold.
+                    plan.removals.filter { it != insertAt }.forEach { if (it < helper.size()) helper.removeAt(it) }
+                    helper.getData()[insertAt] = provisional
+                    adapter?.notifyItemChanged(insertAt)
+                    return
+                }
+                plan.removals.forEach { if (it < helper.size()) helper.removeAt(it) }
+                if (provisional != null && insertAt != null) {
+                    helper.addAt(minOf(insertAt, helper.size()), provisional)
+                }
+            }
+
+            override fun batchButtonView(): View? = batchOpsHelper?.tankButton
+            override fun batchBarView(): View? = batchOpsHelper?.bar
+        }
+        if (!recyclerView.isLaidOut) {
+            // Nothing on screen to animate (view just re-attached): settle silently.
+            host.applyEndState()
+            onDone()
+            return
+        }
+        val animator = TankMergeAnimator(root, recyclerView, host)
+        tankMergeAnimator = animator
+        animator.start(plan) {
+            if (tankMergeAnimator === animator) tankMergeAnimator = null
+            onDone()
+        }
+    }
+
+    /**
+     * Detail-page membership edit (spec 2026-09-22 §6): a join plays the
+     * single-flyer choreography into the first joined tank and ends in the
+     * batch Snackbar (count 1, "Open"); a leave-only edit in group mode
+     * reloads quietly — the archive's correct position needs the server
+     * sort. Ungrouped lists have nothing to move.
+     */
+    private fun onTankMembershipChanged(event: TankMembershipChangedEvent) {
+        val baseUrl = LRRClientProvider.getBaseUrl()
+        val groupMode = AppearanceSettings.getGroupTanks() && !TankoubonSupportGate.isUnsupported(baseUrl)
+        if (!groupMode) return
+        val joined = event.joined.firstOrNull()
+        if (joined == null) {
+            if (event.left.isNotEmpty()) mHelper?.firstRefresh()
+            return
+        }
+        // Only a row of THIS list can merge; an archive edited from elsewhere
+        // (history, another server's list) has nothing here to animate.
+        val loadedHere = mHelper?.getData()?.any { it.arcid == event.arcid } == true
+        if (!loadedHere) return
+        runTankMerge(joined.id, joined.name, joined.wasEmpty, listOf(event.arcid)) {
+            val res = resources2 ?: return@runTankMerge
+            showTip(
+                res.getQuantityString(R.plurals.batch_done_tankoubon, 1, 1),
+                LENGTH_LONG,
+                res.getString(R.string.tank_merge_open),
+            ) { openTankoubonDetail(joined.id, joined.name) }
+        }
+    }
+
+    /** Settles an in-flight merge (end state applied, feedback delivered). */
+    internal fun cancelTankMerge() {
+        val animator = tankMergeAnimator ?: return
+        tankMergeAnimator = null
+        animator.cancel()
+    }
+
+    private fun visibleRange(): Pair<Int, Int> {
+        val lm = recyclerView.layoutManager as? StaggeredGridLayoutManager ?: return -1 to -1
+        val first = lm.findFirstVisibleItemPositions(null).filter { it >= 0 }.minOrNull() ?: -1
+        val last = lm.findLastVisibleItemPositions(null).filter { it >= 0 }.maxOrNull() ?: -1
+        return first to last
+    }
+
+    private fun openTankoubonDetail(tankId: String, tankName: String) {
+        val args = Bundle().apply {
+            putString(TankoubonDetailScene.KEY_TANK_ID, tankId)
+            putString(TankoubonDetailScene.KEY_TANK_NAME, tankName)
+            putLong(TankoubonDetailScene.KEY_PROFILE_ID, LRRAuthManager.getActiveProfileId())
+        }
+        startScene(Announcer(TankoubonDetailScene::class.java).setArgs(args))
+    }
 
     private fun removeArchiveLocally(arcid: String) {
         // Removal left-shifts every later adapter position but the checked
