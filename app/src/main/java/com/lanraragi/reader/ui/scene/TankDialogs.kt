@@ -96,6 +96,27 @@ internal object TankDialogs {
             .show()
     }
 
+    /**
+     * 1-based position input for "move to position" (spec 2026-09-21 §4).
+     * Out-of-range or empty input is ignored; [onOk] only sees 1..[count].
+     */
+    fun showPositionDialog(context: Context, count: Int, onOk: (Int) -> Unit) {
+        val input = EditText(context).apply {
+            hint = context.getString(R.string.tank_position_hint, count)
+            isSingleLine = true
+            inputType = InputType.TYPE_CLASS_NUMBER
+        }
+        AlertDialog.Builder(context)
+            .setTitle(R.string.tank_move_to_position)
+            .setView(wrapDialogContent(context, input))
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val position = input.text.toString().trim().toIntOrNull() ?: return@setPositiveButton
+                if (position in 1..count) onOk(position)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
     /** Keyline-padded container for programmatically built dialog content. */
     private fun wrapDialogContent(ctx: Context, content: View): View {
         val pad = (DIALOG_PADDING_DP * ctx.resources.displayMetrics.density).toInt()

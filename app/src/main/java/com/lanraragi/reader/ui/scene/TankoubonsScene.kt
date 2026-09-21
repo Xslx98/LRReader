@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.snackbar.Snackbar
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.download.TankFillDispatcher
@@ -138,25 +139,7 @@ class TankoubonsScene : BaseScene() {
             }
         }
 
-        // Observe one-shot UI events (success/error toasts)
-        collectFlow(viewLifecycleOwner, viewModel.uiEvent) { event ->
-            val ctx = ehContext ?: return@collectFlow
-            when (event) {
-                is TankUiEvent.ShowError -> {
-                    // If the list is empty, show the error view; otherwise just toast
-                    if (mTanks.isEmpty()) {
-                        showError(unsupportedOr(event.message))
-                    } else {
-                        Toast.makeText(ctx, event.message, Toast.LENGTH_SHORT).show()
-                    }
-                }
-                is TankUiEvent.ShowSuccess -> {
-                    Toast.makeText(ctx, event.messageResId, Toast.LENGTH_SHORT).show()
-                }
-                is TankUiEvent.OpenReader -> startActivity(event.intent)
-                is TankUiEvent.FillTank -> dispatchFill(event)
-            }
-        }
+        observeUiEvents()
 
         // Row spinner follows the VM's in-flight session build: repaint the
         // row that stopped spinning and the one that started.
@@ -209,6 +192,37 @@ class TankoubonsScene : BaseScene() {
         Toast.makeText(ctx, TankFillDispatcher.feedback(resources, plan), Toast.LENGTH_SHORT).show()
     }
 
+    /** One-shot UI events (toasts / navigation / fill dispatch / undo). */
+    private fun observeUiEvents() {
+        collectFlow(viewLifecycleOwner, viewModel.uiEvent) { event ->
+            val ctx = ehContext ?: return@collectFlow
+            when (event) {
+                is TankUiEvent.ShowError -> {
+                    // If the list is empty, show the error view; otherwise just toast
+                    if (mTanks.isEmpty()) {
+                        showError(unsupportedOr(event.message))
+                    } else {
+                        Toast.makeText(ctx, event.message, Toast.LENGTH_SHORT).show()
+                    }
+                }
+                is TankUiEvent.ShowSuccess -> {
+                    Toast.makeText(ctx, event.messageResId, Toast.LENGTH_SHORT).show()
+                }
+                is TankUiEvent.OpenReader -> startActivity(event.intent)
+                is TankUiEvent.FillTank -> dispatchFill(event)
+                is TankUiEvent.Sorted -> showUndoSnackbar(event)
+            }
+        }
+    }
+
+    /** Auto-sort feedback (spec 2026-09-21 §3): Snackbar whose action PUTs the previous order back. */
+    private fun showUndoSnackbar(event: TankUiEvent.Sorted) {
+        val root = view ?: return
+        Snackbar.make(root, R.string.tank_sorted, Snackbar.LENGTH_LONG)
+            .setAction(R.string.tank_undo) { viewModel.restoreOrder(event.tankId, event.previousOrder) }
+            .show()
+    }
+
     // ==================== CRUD Operations ====================
 
     private fun showCreateDialog() {
@@ -224,15 +238,16 @@ class TankoubonsScene : BaseScene() {
     }
 
     /**
-     * Long-press action menu (spec 2026-09-21 §7): download / manage
-     * members / delete. Rename and metadata editing live in the member
-     * management scene's overflow.
+     * Long-press action menu (spec 2026-09-21 §7 + §3): download /
+     * auto-sort members / manage members / delete. Rename and metadata
+     * editing live in the member management scene's overflow.
      */
     private fun showTankActions(tank: LRRTankoubonApi.Tankoubon) {
         val ctx = ehContext ?: return
 
         val items = arrayOf(
             getString(R.string.tank_download),
+            getString(R.string.tank_auto_sort),
             getString(R.string.tank_manage_members),
             getString(R.string.tank_delete)
         )
@@ -242,8 +257,9 @@ class TankoubonsScene : BaseScene() {
             .setItems(items) { _, which ->
                 when (which) {
                     0 -> viewModel.fillTank(tank)
-                    1 -> openTankDetail(tank)
-                    2 -> showDeleteDialog(tank)
+                    1 -> viewModel.autoSort(tank)
+                    2 -> openTankDetail(tank)
+                    3 -> showDeleteDialog(tank)
                 }
             }
             .show()
