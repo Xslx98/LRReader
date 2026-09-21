@@ -1,6 +1,7 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.animation.Animator
+import android.annotation.SuppressLint
 import android.animation.AnimatorListenerAdapter
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
@@ -20,6 +21,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.PixelCopy
 import android.view.View
 import android.view.ViewGroup
@@ -28,6 +30,7 @@ import android.view.animation.OvershootInterpolator
 import android.view.animation.PathInterpolator
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.graphics.createBitmap
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
@@ -190,7 +193,7 @@ internal class TankMergeAnimator(
             launchFlyers(plan, snapshot = null)
             return
         }
-        val snapshot = Bitmap.createBitmap(root.width, root.height, Bitmap.Config.ARGB_8888)
+        val snapshot = createBitmap(root.width, root.height)
         root.getLocationInWindow(tmpRootLoc)
         val src = Rect(tmpRootLoc[0], tmpRootLoc[1], tmpRootLoc[0] + root.width, tmpRootLoc[1] + root.height)
         runCatching {
@@ -337,6 +340,7 @@ internal class TankMergeAnimator(
         }
     }
 
+    @SuppressLint("SetTextI18n") // "+N": a sign and a count, no translatable text
     private fun makePill(count: Int, origin: Rect): View {
         val accent = TypedValue().let { tv ->
             if (root.context.theme.resolveAttribute(R.attr.widgetColorThemeAccent, tv, true)) tv.data
@@ -464,7 +468,11 @@ internal class TankMergeAnimator(
     private fun blockTouch() {
         val blocker = View(root.context).apply {
             isClickable = true
-            setOnTouchListener { _, _ -> true }
+            setOnClickListener { /* swallow: the list is frozen while the merge plays */ }
+            setOnTouchListener { v, event ->
+                if (event.action == MotionEvent.ACTION_UP) v.performClick()
+                true
+            }
         }
         root.addView(
             blocker,
