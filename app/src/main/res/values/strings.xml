@@ -268,7 +268,7 @@
         <item quantity="other">%d incomplete</item>
     </plurals>
     <string name="download_state_finish">Done</string>
-    <string name="download_state_tank_incomplete">Incomplete (%1$d/%2$d archives)</string>
+    <string name="download_state_tank_incomplete" tools:ignore="PluralsCandidate">Incomplete (%1$d/%2$d archives)</string>
     <string name="stat_509_alert_title">509 Alert</string>
     <string name="stat_509_alert_text">Image limit has been reached. Please stop download and have a relax.</string>
     <string name="stat_download_done_title">Download Finished</string>
