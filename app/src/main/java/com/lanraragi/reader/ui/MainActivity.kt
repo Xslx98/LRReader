@@ -952,6 +952,19 @@ class MainActivity : StageActivity(),
         }
     }
 
+    /** [showTip] with one action; degrades to a plain toast (no action) without a drawer. */
+    fun showTip(message: CharSequence, length: Int, actionText: CharSequence, action: () -> Unit) {
+        val drawer = mDrawerLayout
+        if (drawer != null) {
+            Snackbar.make(
+                drawer, message,
+                if (length == BaseScene.LENGTH_LONG) 5000 else 3000
+            ).setAction(actionText) { action() }.show()
+        } else {
+            showTip(message, length)
+        }
+    }
+
     @SuppressLint("RtlHardcoded")
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {

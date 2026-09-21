@@ -13,6 +13,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.event.AppEventBus
+import com.lanraragi.reader.event.TankMembershipChangedEvent
 import com.lanraragi.reader.ui.scene.TankDialogs
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
@@ -62,21 +64,26 @@ object TankoubonDialogHelper {
      * Simple picker for batch ops: single-choice list of the server's tanks
      * with a leading "create" row (inline create then pick). A server with
      * no tankoubon yet skips the list and goes straight to the create
-     * prompt (spec 2026-09-21 §6). [onPicked]'s `wasEmpty` reports whether the
-     * tank had zero members at pick time (a just-created tank always does) so
-     * the batch can seed the tank cover after its first successful add.
+     * prompt (spec 2026-09-21 §6). [onPicked] receives the picked
+     * [LRRTankoubonApi.Tankoubon] as the picker saw it: `archives` empty
+     * means the tank had zero members at pick time (a just-created tank
+     * always does) so the batch can seed the tank cover after its first
+     * successful add; `name` feeds the list's merge animation (provisional
+     * tank row + Snackbar). A created tank is synthesized from the typed name.
      */
     @JvmStatic
     fun pickTankoubon(
         activity: Activity?,
         serverProfileId: Long,
-        onPicked: (tankId: String, wasEmpty: Boolean) -> Unit,
+        onPicked: (tank: LRRTankoubonApi.Tankoubon) -> Unit,
     ) {
         if (activity == null) return
 
         loadTanksAndMembership(activity, serverProfileId, arcid = null) { tanks, _, serverUrl ->
             if (tanks.isEmpty()) {
-                promptCreate(activity, serverUrl) { newId -> onPicked(newId, true) }
+                promptCreate(activity, serverUrl) { newId, name ->
+                    onPicked(LRRTankoubonApi.Tankoubon(id = newId, name = name))
+                }
                 return@loadTanksAndMembership
             }
             val items = arrayOf(activity.getString(R.string.tank_create)) +
@@ -85,10 +92,11 @@ object TankoubonDialogHelper {
                 .setTitle(R.string.tank_add_to)
                 .setItems(items) { _, which ->
                     if (which == 0) {
-                        promptCreate(activity, serverUrl) { newId -> onPicked(newId, true) }
+                        promptCreate(activity, serverUrl) { newId, name ->
+                            onPicked(LRRTankoubonApi.Tankoubon(id = newId, name = name))
+                        }
                     } else {
-                        val tank = tanks[which - 1]
-                        onPicked(tank.id, tank.archives.isEmpty())
+                        onPicked(tanks[which - 1])
                     }
                 }
                 .setNegativeButton(android.R.string.cancel, null)
@@ -191,7 +199,7 @@ object TankoubonDialogHelper {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .setNeutralButton(R.string.tank_create) { _, _ ->
-                promptCreate(activity, serverUrl) {
+                promptCreate(activity, serverUrl) { _, _ ->
                     // Reopen so the fresh tank shows up in the checkbox list.
                     showMembershipDialog(activity, arcid, serverProfileId, onChanged)
                 }
@@ -212,6 +220,8 @@ object TankoubonDialogHelper {
         (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val client = ServiceRegistry.networkModule.okHttpClient
+                val joined = mutableListOf<TankMembershipChangedEvent.JoinedTank>()
+                val left = mutableListOf<String>()
                 // Sequential on purpose: the server appends members in call
                 // order, and a locked tank should fail fast and visibly.
                 for (i in tanks.indices) {
@@ -219,16 +229,24 @@ object TankoubonDialogHelper {
                     val tankId = tanks[i].id
                     if (checked[i]) {
                         LRRTankoubonApi.addToTankoubon(client, serverUrl, tankId, arcid)
-                        if (tanks[i].archives.isEmpty()) {
+                        val wasEmpty = tanks[i].archives.isEmpty()
+                        if (wasEmpty) {
                             seedTankCoverBestEffort(client, serverUrl, tankId)
                         }
+                        joined += TankMembershipChangedEvent.JoinedTank(tankId, tanks[i].name, wasEmpty)
                     } else {
                         LRRTankoubonApi.removeFromTankoubon(client, serverUrl, tankId, arcid)
+                        left += tankId
                     }
                 }
                 val newIds = tanks.indices.filter { checked[it] }.map { tanks[it].id }
                 Handler(Looper.getMainLooper()).post {
                     Toast.makeText(activity, R.string.tank_op_done, Toast.LENGTH_SHORT).show()
+                    if (joined.isNotEmpty() || left.isNotEmpty()) {
+                        AppEventBus.postTankMembershipChangedEvent(
+                            TankMembershipChangedEvent(arcid, joined, left)
+                        )
+                    }
                     onChanged(newIds)
                 }
             } catch (ce: CancellationException) {
@@ -261,14 +279,18 @@ object TankoubonDialogHelper {
         }
     }
 
-    /** Name dialog → createTankoubon → [onCreated] with the new tank id. */
-    private fun promptCreate(activity: Activity, serverUrl: String, onCreated: (tankId: String) -> Unit) {
+    /** Name dialog → createTankoubon → [onCreated] with the new tank id and the typed name. */
+    private fun promptCreate(
+        activity: Activity,
+        serverUrl: String,
+        onCreated: (tankId: String, name: String) -> Unit,
+    ) {
         TankDialogs.showNameInputDialog(activity, R.string.tank_create, "") { name ->
             (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
                 try {
                     val client = ServiceRegistry.networkModule.okHttpClient
                     val newId = LRRTankoubonApi.createTankoubon(client, serverUrl, name)
-                    Handler(Looper.getMainLooper()).post { onCreated(newId) }
+                    Handler(Looper.getMainLooper()).post { onCreated(newId, name) }
                 } catch (ce: CancellationException) {
                     throw ce
                 } catch (e: Exception) {

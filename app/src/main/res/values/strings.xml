@@ -423,6 +423,7 @@
     <string name="tank_delete_confirm">Delete this tankoubon? Archives inside are not deleted, but the tankoubon\'s own summary, additional tags and reading progress will be lost.</string>
     <string name="tank_locked">Tankoubon is locked, try again later</string>
     <string name="tank_op_done">Done</string>
+    <string name="tank_merge_open">Open</string>
     <string name="tank_progress_page">Read up to page %1$d</string>
     <string name="tank_read_from_start">Read from start</string>
     <string name="tank_continue_reading">Continue reading (page %1$d)</string>
@@ -474,6 +475,7 @@
     <string name="search_title_in_category" translatable="false">%1$s · %2$s</string>
     <string name="detail_tankoubons_label">Tankoubons</string>
     <string name="detail_tankoubons_edit">Edit</string>
+    <string name="detail_tankoubons_none">Not in any tankoubon</string>
     <string name="tank_add_to">Add to Tankoubon</string>
     <string name="batch_add_to_tankoubon">Tank</string>
 

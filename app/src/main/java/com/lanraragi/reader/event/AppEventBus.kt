@@ -32,4 +32,16 @@ object AppEventBus {
         _archiveDeletedEvent.tryEmit(event)
     }
 
+    // Non-sticky one-shot like archiveDeletedEvent: the detail page's tank
+    // membership editor reports joined/left tanks so covered list scenes can
+    // play the merge choreography (or reload) once they are back on screen.
+    private val _tankMembershipChangedEvent = MutableSharedFlow<TankMembershipChangedEvent>(
+        extraBufferCapacity = 32
+    )
+    val tankMembershipChangedEvent = _tankMembershipChangedEvent.asSharedFlow()
+
+    fun postTankMembershipChangedEvent(event: TankMembershipChangedEvent) {
+        _tankMembershipChangedEvent.tryEmit(event)
+    }
+
 }
