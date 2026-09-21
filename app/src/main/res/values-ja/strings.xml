@@ -300,6 +300,9 @@
     <string name="tank_set_cover">表紙に設定</string>
     <string name="tank_cover_updated">表紙を更新しました</string>
     <string name="tank_reorder_failed">並べ替えに失敗しました。元に戻します</string>
+    <string name="tank_already_sorted">すでに並んでいます</string>
+    <string name="tank_sorted">メンバーを並べ替えました</string>
+    <string name="tank_undo">元に戻す</string>
     <string name="tank_badge">単行本</string>
     <string name="settings_eh_group_tanks">ブラウズで単行本をまとめる</string>
     <string name="settings_eh_group_tanks_summary">単行本のアーカイブを 1 つの項目にまとめる(LANraragi 0.9.8+)</string>

@@ -342,6 +342,9 @@
     <string name="tank_set_cover">ตั้งเป็นปก</string>
     <string name="tank_cover_updated">อัปเดตปกแล้ว</string>
     <string name="tank_reorder_failed">จัดลำดับไม่สำเร็จ คืนลำดับเดิมแล้ว</string>
+    <string name="tank_already_sorted">เรียงลำดับอยู่แล้ว</string>
+    <string name="tank_sorted">จัดเรียงสมาชิกแล้ว</string>
+    <string name="tank_undo">เลิกทำ</string>
     <string name="tank_badge">ทังโคบง</string>
     <string name="settings_eh_group_tanks">จัดกลุ่มทังโคบงขณะเรียกดู</string>
     <string name="settings_eh_group_tanks_summary">รวมไฟล์ของทังโคบงเป็นรายการเดียว (LANraragi 0.9.8+)</string>

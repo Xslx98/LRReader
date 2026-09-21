@@ -340,6 +340,9 @@
     <string name="tank_set_cover">Définir comme couverture</string>
     <string name="tank_cover_updated">Couverture mise à jour</string>
     <string name="tank_reorder_failed">Échec du réordonnancement, ordre restauré</string>
+    <string name="tank_already_sorted">Déjà dans l\'ordre</string>
+    <string name="tank_sorted">Membres triés</string>
+    <string name="tank_undo">Annuler</string>
     <string name="tank_badge">Tankoubon</string>
     <string name="settings_eh_group_tanks">Regrouper les tankoubons en navigation</string>
     <string name="settings_eh_group_tanks_summary">Regrouper les archives d\'un tankoubon en une seule entrée (LANraragi 0.9.8+)</string>

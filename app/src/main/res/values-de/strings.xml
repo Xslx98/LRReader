@@ -281,6 +281,9 @@
     <string name="tank_set_cover">Als Cover festlegen</string>
     <string name="tank_cover_updated">Cover aktualisiert</string>
     <string name="tank_reorder_failed">Neuordnung fehlgeschlagen, Reihenfolge wiederhergestellt</string>
+    <string name="tank_already_sorted">Bereits sortiert</string>
+    <string name="tank_sorted">Mitglieder sortiert</string>
+    <string name="tank_undo">Rückgängig</string>
     <string name="tank_badge">Tankoubon</string>
     <string name="settings_eh_group_tanks">Tankoubons beim Stöbern gruppieren</string>
     <string name="settings_eh_group_tanks_summary">Archive eines Tankoubons zu einem Eintrag zusammenfassen (LANraragi 0.9.8+)</string>

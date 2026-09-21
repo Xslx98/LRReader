@@ -15,6 +15,7 @@ import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.download.TankMembershipSync
+import com.lanraragi.reader.tankoubon.TankMemberOrderOps
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -150,6 +151,12 @@ class TankoubonDetailViewModel : ViewModel() {
 
         /** The tank was deleted server-side; the scene closes itself. */
         data object Deleted : TankDetailUiEvent
+
+        /**
+         * An automatic reorder (sort by title / reverse) was persisted;
+         * [previousOrder] is what an undo should PUT back.
+         */
+        data class OrderApplied(val previousOrder: List<String>) : TankDetailUiEvent
     }
 
     // -------------------------------------------------------------------------
@@ -167,6 +174,11 @@ class TankoubonDetailViewModel : ViewModel() {
      * Replaceable for tests; the default no-ops outside a live app.
      */
     internal var membershipSync: TankMembershipSyncFactory.Runner = TankMembershipSyncFactory.runnerSafely()
+
+    /** Source base-URL resolution seam (production = [resolveSourceBaseUrl]); replaceable for tests. */
+    internal var baseUrlResolver: suspend (Long) -> String = { id ->
+        resolveSourceBaseUrl(id, ServiceRegistry.dataModule.profileLookupCache)
+    }
 
     private fun syncMembership(url: String, name: String, memberIds: List<String>, progress: Int, pagecount: Int) {
         val truth = listOf(TankMembershipSync.TankTruth(tankId, name, memberIds, progress, pagecount))
@@ -200,10 +212,7 @@ class TankoubonDetailViewModel : ViewModel() {
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val url = resolveSourceBaseUrl(
-                    profileId,
-                    ServiceRegistry.dataModule.profileLookupCache,
-                )
+                val url = baseUrlResolver(profileId)
                 baseUrl = url
                 val client = ServiceRegistry.networkModule.okHttpClient
                 val full = LRRTankoubonApi.getTankoubonFull(client, url, tankId).result
@@ -335,13 +344,36 @@ class TankoubonDetailViewModel : ViewModel() {
      * the drag snapshot didn't know about are appended (matching the
      * server's append-at-end semantics).
      */
-    fun reorder(newOrder: List<String>) {
+    fun reorder(newOrder: List<String>) = applyOrder(newOrder, undoable = false)
+
+    /** Sort by title (spec 2026-09-21 §2): episode-aware key over the current titles; undoable. */
+    fun sortByTitle() {
+        val titles = _members.value.associate { it.arcid to it.title }
+        applyOrder(TankMemberOrderOps.sortByTitle(memberIds) { titles[it].orEmpty() }, undoable = true)
+    }
+
+    /** Reverse order: the whole member order reversed; undoable. */
+    fun reverseOrder() = applyOrder(TankMemberOrderOps.reverse(memberIds), undoable = true)
+
+    /**
+     * Persists [newOrder] (see [reorder] for the reconcile + rollback
+     * contract). [undoable] = an automatic action: a no-op order surfaces
+     * [R.string.tank_already_sorted], success emits
+     * [TankDetailUiEvent.OrderApplied] with the previous order for the undo
+     * Snackbar. After a successful PUT the membership follow seam is fed the
+     * new order so downloaded group rows follow without waiting for a reload.
+     */
+    fun applyOrder(newOrder: List<String>, undoable: Boolean) {
         val currentIds = _members.value.map { it.arcid }
         val currentSet = currentIds.toSet()
         val newOrderSet = newOrder.toSet()
         val finalOrder =
             newOrder.filter { it in currentSet } + currentIds.filter { it !in newOrderSet }
-        if (finalOrder == memberIds) return
+        if (finalOrder == memberIds) {
+            if (undoable) _uiEvent.tryEmit(TankDetailUiEvent.ShowSuccess(R.string.tank_already_sorted))
+            return
+        }
+        val previousOrder = memberIds
         val byId = _members.value.associateBy { it.arcid }
         val reordered = finalOrder.mapNotNull { byId[it] }
         val ids = reordered.map { it.arcid }
@@ -353,6 +385,8 @@ class TankoubonDetailViewModel : ViewModel() {
             try {
                 val client = ServiceRegistry.networkModule.okHttpClient
                 LRRTankoubonApi.updateTankoubon(client, url, tankId, archives = ids)
+                if (undoable) _uiEvent.tryEmit(TankDetailUiEvent.OrderApplied(previousOrder))
+                syncMembership(url, _tankName.value, ids, _progress.value, reordered.sumOf { it.pagecount })
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 val ctx = ServiceRegistry.appModule.getContext()
