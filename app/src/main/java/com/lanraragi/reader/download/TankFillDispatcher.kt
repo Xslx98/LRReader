@@ -80,6 +80,31 @@ object TankFillDispatcher {
         downloadManager.tagTankDownloadGroup(tankId, tankName, profileId, memberIdsInOrder)
     }
 
+    /** [resolveMembers] outcome: ordered members plus ids no metadata could be fetched for. */
+    class Resolved(val members: List<Archive>, val unresolved: List<String>)
+
+    /**
+     * Members for a fill from a downloads card: rows already on the device
+     * ([present], any order) plus the group ids without a row, whose
+     * metadata [fetchMissing] supplies (null = unreachable; reported in
+     * [Resolved.unresolved] so the caller can tell the user). Tank order
+     * from [memberIdsInOrder] is kept.
+     */
+    suspend fun resolveMembers(
+        memberIdsInOrder: List<String>,
+        present: List<Archive>,
+        fetchMissing: suspend (String) -> Archive?,
+    ): Resolved {
+        val byId = present.associateBy { it.arcid }
+        val members = ArrayList<Archive>(memberIdsInOrder.size)
+        val unresolved = ArrayList<String>()
+        for (id in memberIdsInOrder) {
+            val archive = byId[id] ?: fetchMissing(id)
+            if (archive != null) members.add(archive) else unresolved.add(id)
+        }
+        return Resolved(members, unresolved)
+    }
+
     /** User feedback line, mirroring the batch-download wording. */
     fun feedback(resources: Resources, plan: Plan): String = when {
         plan.queued == 0 && plan.alreadyLocal > 0 ->
