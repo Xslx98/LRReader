@@ -482,7 +482,7 @@ class DownloadService : Service(), DownloadListener {
         )
 
         val dlBuilder = mDownloadingBuilder ?: return
-        dlBuilder.setContentTitle(info.title)
+        dlBuilder.setContentTitle(notificationTitle(info))
             .setContentText(null)
             .setContentInfo(null)
             .setProgress(0, 0, true)
@@ -498,18 +498,23 @@ class DownloadService : Service(), DownloadListener {
         if (info.arcid in mPausedArcids) return
         ensureDownloadingBuilder()
 
-        val snap = mDownloadManager?.progressFor(info.arcid)
+        // A tank member reports the WHOLE tank's progress (spec 2026-09-21
+        // follow-up: a tankoubon is one download unit) — finished / total
+        // aggregate over every member, keyed by the tank id.
+        val tank = mDownloadManager?.tankGroupFor(info.arcid)
+        val snap = if (tank != null) tankProgress(tank) else mDownloadManager?.progressFor(info.arcid)
         val finished = snap?.finished ?: -1
+        val gateKey = tank?.tankId ?: info.arcid
 
         // Progress-delta gate (paired with NotificationDelay's 2 s time gate
         // for the AOSP "both must pass" behaviour). When the same archive is
         // ticking but no page has completed, skip the rebuild + IPC entirely
         // — there is nothing user-visible to redraw, and a flood of these
         // calls is what drove NotificationManagerService into Shedding mode.
-        if (info.arcid == mLastNotifiedArcid && finished == mLastNotifiedFinished) {
+        if (gateKey == mLastNotifiedArcid && finished == mLastNotifiedFinished) {
             return
         }
-        mLastNotifiedArcid = info.arcid
+        mLastNotifiedArcid = gateKey
         mLastNotifiedFinished = finished
 
         var speed = snap?.speed ?: -1L
@@ -529,7 +534,7 @@ class DownloadService : Service(), DownloadListener {
         }
         val total = snap?.total ?: -1
         val dlBuilder = mDownloadingBuilder ?: return
-        dlBuilder.setContentTitle(info.title)
+        dlBuilder.setContentTitle(tank?.name ?: info.title)
             .setContentText(text)
             .setContentInfo(if (total == -1 || finished == -1) null else "$finished/$total")
             .setProgress(total, finished, false)
@@ -564,13 +569,33 @@ class DownloadService : Service(), DownloadListener {
 
         ensureDownloadedBuilder()
 
-        val finish = info.state == DownloadState.FINISH
-        val arcid = info.arcid
+        // A tank member never gets its own "done" line: the tank is one
+        // entry, recorded only once every member is terminal.
+        val tank = mDownloadManager?.tankGroupFor(info.arcid)
+        val finish: Boolean
+        val arcid: String
+        val title: String?
+        if (tank != null) {
+            when (tankCompletion(tank, info)) {
+                TankNotificationPolicy.Outcome.PENDING -> {
+                    checkStopSelf()
+                    return
+                }
+                TankNotificationPolicy.Outcome.DONE -> finish = true
+                TankNotificationPolicy.Outcome.FAILED -> finish = false
+            }
+            arcid = tank.tankId
+            title = tank.name
+        } else {
+            finish = info.state == DownloadState.FINISH
+            arcid = info.arcid
+            title = info.title
+        }
         val previous = sItemStateArray[arcid]
         if (previous == null) { // Not contain
             trimDoneEntries()
             sItemStateArray[arcid] = finish
-            sItemTitleArray[arcid] = info.title
+            sItemTitleArray[arcid] = title
             sDownloadedCount++
             if (finish) {
                 sFinishedCount++
@@ -579,7 +604,7 @@ class DownloadService : Service(), DownloadListener {
             }
         } else { // Contain
             sItemStateArray[arcid] = finish
-            sItemTitleArray[arcid] = info.title
+            sItemTitleArray[arcid] = title
             if (previous && !finish) {
                 sFinishedCount--
                 sFailedCount++
@@ -693,6 +718,30 @@ class DownloadService : Service(), DownloadListener {
             mLastNotifiedArcid = null
             mLastNotifiedFinished = -1
         }
+    }
+
+    /** Notification title: the tank's name for a member, the archive's title otherwise. */
+    private fun notificationTitle(info: DownloadInfo): String? =
+        mDownloadManager?.tankGroupFor(info.arcid)?.name ?: info.title
+
+    /** Whole-tank progress over the members' rows + live snapshots (main thread). */
+    private fun tankProgress(tank: TankGroupIndex.Ref): ProgressSnapshot? {
+        val dm = mDownloadManager ?: return null
+        val members = tank.memberIds.mapNotNull { dm.getDownloadInfo(it) }
+        return TankProgressAggregate.of(tank.tankId, members) { dm.progressFor(it) }
+    }
+
+    /**
+     * Completion outcome for the tank [just]'s row belongs to. [just] is the
+     * member that finished right now; its state is read from the event object
+     * (the in-memory row is the same instance, but stay explicit).
+     */
+    private fun tankCompletion(tank: TankGroupIndex.Ref, just: DownloadInfo): TankNotificationPolicy.Outcome {
+        val dm = mDownloadManager ?: return TankNotificationPolicy.Outcome.PENDING
+        val states = tank.memberIds.map { id ->
+            if (id == just.arcid) just.state else dm.getDownloadState(id)
+        }
+        return TankNotificationPolicy.completion(states)
     }
 
     private fun checkStopSelf() {
