@@ -247,6 +247,9 @@ class DownloadDbRepository(
                 thumbnailUrl = downloadInfo.thumb?.takeUnless { it.isBlank() } ?: existingArchive.thumbnailUrl,
                 rating = downloadInfo.rating,
                 serverProfileId = downloadInfo.serverProfileId,
+                // A known page count (server metadata / worker page list)
+                // wins; an unknown one never erases a stored value.
+                pagecount = if (downloadInfo.pagecount > 0) downloadInfo.pagecount else existingArchive.pagecount,
             ).toArchiveJson()
         } else {
             downloadInfo.toArchive().toArchiveJson()
