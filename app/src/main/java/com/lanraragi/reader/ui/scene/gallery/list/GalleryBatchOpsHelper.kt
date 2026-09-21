@@ -32,7 +32,8 @@ import com.lanraragi.reader.domain.Archive
  * bar stays visible — even after choice mode exits — until the run finishes.
  */
 internal class GalleryBatchOpsHelper(
-    private val bar: View,
+    /** The floating batch card itself (exposed for the merge animation's geometry). */
+    val bar: View,
     private val callback: Callback,
 ) {
 
