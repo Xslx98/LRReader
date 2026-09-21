@@ -343,7 +343,6 @@
     <string name="detail_tankoubons_edit">編集</string>
     <string name="tank_add_to">単行本に追加</string>
     <string name="batch_add_to_tankoubon">単行本</string>
-    <string name="tank_none">サーバーに単行本はありません</string>
 
     <!-- List multi-select batch operations -->
     <plurals name="batch_selected_count">
