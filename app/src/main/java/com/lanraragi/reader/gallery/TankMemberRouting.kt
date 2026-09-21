@@ -1,16 +1,15 @@
 package com.lanraragi.reader.gallery
 
 import android.content.Context
-import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.framework.unifile.UniFile
 import okhttp3.OkHttpClient
 
 /**
  * Per-member source routing for the tank composite reader: a member with a
  * COMPLETE local download reads from disk, everything else streams. Same
- * completeness decision as [GalleryOpenHelper]'s standalone routing so the
- * two session kinds can never disagree about where a member's pages come
- * from.
+ * completeness decision as the standalone routing, through the shared
+ * [DownloadDirResolver], so the two session kinds can never disagree about
+ * where a member's pages come from.
  */
 internal object TankMemberRouting {
 
@@ -23,10 +22,10 @@ internal object TankMemberRouting {
         listClient: OkHttpClient,
     ): TankMemberSource {
         val localDir = runCatching {
-            GalleryOpenHelper.getLocalDownloadDir(context, member.toRoutingArchive(profileId))
+            DownloadDirResolver.localDownloadDir(context, member.toRoutingArchive(profileId))
         }.getOrNull()
         if (localDir != null &&
-            GalleryOpenHelper.isLocalCopyComplete(localDir, member.pagecount)
+            DownloadDirResolver.isLocalCopyComplete(localDir, member.pagecount)
         ) {
             val uniFile = UniFile.fromFile(localDir)
             if (uniFile != null) {
