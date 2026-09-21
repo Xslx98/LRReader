@@ -640,13 +640,16 @@ class DownloadAdapter(
                 return
             }
 
-            // Tank cards: the thumb behaves like the row (open the
-            // whole-tank session via the scene); start/stop are hidden but
-            // guard anyway — a TANK_ id must never reach the download
-            // service or scheduler.
+            // Tank cards: the thumb opens the whole-tank session, start
+            // fills / restarts the tank, stop halts its members — all via
+            // the scene, which expands the card into member rows. A TANK_
+            // id must never reach the download service or scheduler.
             if (isTankoubonId(list[mCallback.positionInList(index)].arcid)) {
-                if (v === thumb) {
-                    mScene.openTankCard(list[mCallback.positionInList(index)])
+                val card = list[mCallback.positionInList(index)]
+                when (v) {
+                    thumb -> mScene.openTankCard(card)
+                    start -> mScene.onTankCardStart(card)
+                    stop -> mScene.onTankCardStop(card)
                 }
                 return
             }

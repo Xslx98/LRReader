@@ -490,6 +490,10 @@
         <item quantity="one">%d item is already downloaded</item>
         <item quantity="other">%d items are already downloaded</item>
     </plurals>
+    <plurals name="tank_fill_unreachable">
+        <item quantity="one">Could not fetch %d missing archive from the server</item>
+        <item quantity="other">Could not fetch %d missing archives from the server</item>
+    </plurals>
     <string name="batch_download_queued_some_local" tools:ignore="PluralsCandidate">Queued %1$d for download, %2$d already downloaded</string>
     <string name="download_already_local">Already downloaded</string>
     <plurals name="batch_done_category">

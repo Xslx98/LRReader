@@ -428,6 +428,9 @@
     <plurals name="batch_download_all_local">
         <item quantity="other">%d 項已在本地</item>
     </plurals>
+    <plurals name="tank_fill_unreachable">
+        <item quantity="other">有 %d 個缺失成員無法從伺服器取得</item>
+    </plurals>
     <string name="batch_download_queued_some_local">已加入下載隊列（%1$d 項），%2$d 項已在本地</string>
     <string name="download_already_local">已下載，無需重新下載</string>
     <plurals name="batch_done_category">
