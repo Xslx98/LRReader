@@ -342,6 +342,9 @@
     <string name="tank_already_sorted">Ya está ordenado</string>
     <string name="tank_sorted">Miembros ordenados</string>
     <string name="tank_undo">Deshacer</string>
+    <string name="tank_sort_by_title">Ordenar por título</string>
+    <string name="tank_reverse_order">Invertir orden</string>
+    <string name="tank_auto_sort">Ordenar miembros automáticamente</string>
     <string name="tank_badge">Tankoubon</string>
     <string name="settings_eh_group_tanks">Agrupar tankoubons al explorar</string>
     <string name="settings_eh_group_tanks_summary">Agrupar los archivos de un tankoubon en una sola entrada (LANraragi 0.9.8+)</string>

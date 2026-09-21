@@ -341,6 +341,9 @@
     <string name="tank_already_sorted">已是有序状态</string>
     <string name="tank_sorted">已排序</string>
     <string name="tank_undo">撤销</string>
+    <string name="tank_sort_by_title">按标题排序</string>
+    <string name="tank_reverse_order">反转顺序</string>
+    <string name="tank_auto_sort">自动排序成员</string>
     <string name="tank_badge">合订本</string>
     <string name="settings_eh_group_tanks">浏览时折叠合订本</string>
     <string name="settings_eh_group_tanks_summary">将属于合订本的档案折叠为一个条目(LANraragi 0.9.8+)</string>

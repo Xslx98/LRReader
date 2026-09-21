@@ -345,6 +345,9 @@
     <string name="tank_already_sorted">เรียงลำดับอยู่แล้ว</string>
     <string name="tank_sorted">จัดเรียงสมาชิกแล้ว</string>
     <string name="tank_undo">เลิกทำ</string>
+    <string name="tank_sort_by_title">เรียงตามชื่อเรื่อง</string>
+    <string name="tank_reverse_order">กลับลำดับ</string>
+    <string name="tank_auto_sort">จัดเรียงสมาชิกอัตโนมัติ</string>
     <string name="tank_badge">ทังโคบง</string>
     <string name="settings_eh_group_tanks">จัดกลุ่มทังโคบงขณะเรียกดู</string>
     <string name="settings_eh_group_tanks_summary">รวมไฟล์ของทังโคบงเป็นรายการเดียว (LANraragi 0.9.8+)</string>

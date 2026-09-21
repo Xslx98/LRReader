@@ -13,6 +13,14 @@
         android:title="@string/tank_edit_meta" />
 
     <item
+        android:id="@+id/action_tank_sort_title"
+        android:title="@string/tank_sort_by_title" />
+
+    <item
+        android:id="@+id/action_tank_reverse"
+        android:title="@string/tank_reverse_order" />
+
+    <item
         android:id="@+id/action_tank_download"
         android:title="@string/tank_download" />
 
