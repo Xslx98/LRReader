@@ -622,11 +622,13 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         collectFlow(viewLifecycleOwner, viewModel.archiveTankoubons) { tanks ->
             mTankBinder?.bind(tanks)
         }
-        // The reader (a separate activity on top) set a new cover for this
-        // archive: STARTED-scoped collection resumes when we come back, and
-        // the event buffer (16) is deep enough for the one-shot signal.
-        collectFlow(viewLifecycleOwner, AppEventBus.archiveCoverChangedEvent) { event ->
-            val archive = viewModel.archive.value ?: return@collectFlow
+        // The reader (a separate activity on top) sets the cover while this
+        // scene is STOPPED. A replay-0 SharedFlow drops emissions that have
+        // no live subscriber, so collect for the whole view lifetime (the
+        // view survives under another activity); the reload is a cache-key
+        // change plus a fetch, harmless while stopped.
+        collectFlowWhileCreated(viewLifecycleOwner, AppEventBus.archiveCoverChangedEvent) { event ->
+            val archive = viewModel.archive.value ?: return@collectFlowWhileCreated
             if (archive.arcid == event.arcid) mHeaderBinder?.reloadCover(archive)
         }
 
