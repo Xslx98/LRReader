@@ -600,6 +600,11 @@ class DownloadsScene : ToolbarScene(),
             if (arcid !in newMap) affected.add(arcid)
         }
         if (affected.isEmpty()) return
+        // A member's tick must repaint the CARD that folds it (the member
+        // row itself is not on the display list).
+        for (arcid in affected.toList()) {
+            viewModel.tankCardIdFor(arcid)?.let { affected.add(it) }
+        }
         for ((indexInList, info) in list.withIndex()) {
             val id = info.arcid ?: continue
             if (id !in affected) continue
@@ -689,8 +694,8 @@ class DownloadsScene : ToolbarScene(),
     override fun downloadDirFutureFor(info: DownloadInfo): CompletableFuture<UniFile?> =
         viewModel.downloadDirFutureFor(info)
 
-    override fun tankProgressFor(tankId: String): Pair<Int, Int> =
-        viewModel.tankProgressOf(tankId)
+    override fun tankProgressSnapshotFor(tankId: String): ProgressSnapshot? =
+        viewModel.tankProgressSnapshot(tankId)
 
     override fun tankMemberCountFor(tankId: String): Int = viewModel.tankMembersOf(tankId).size
 
