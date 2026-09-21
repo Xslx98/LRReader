@@ -27,20 +27,28 @@ class OrderedPageWindowTest {
 
     @Test
     fun everyIndexProcessedExactlyOnce() = runBlocking {
-        val claimed = Collections.synchronizedList(mutableListOf<Int>())
-        OrderedPageWindow.run(scope, total = 50, workers = 8, isCancelled = { false }) { i ->
-            claimed += i
-            delay((i % 3).toLong())
+        // Repeated to shake out the lost-update race on the window's
+        // lowest-unfinished flow (a regression would hang, hence the timeout).
+        withTimeout(30_000) {
+            repeat(20) {
+                val claimed = Collections.synchronizedList(mutableListOf<Int>())
+                OrderedPageWindow.run(scope, total = 50, workers = 8, isCancelled = { false }) { i ->
+                    claimed += i
+                    delay((i % 3).toLong())
+                }
+                assertEquals((0 until 50).toList(), claimed.sorted())
+                assertEquals(50, claimed.size)
+            }
         }
-        assertEquals((0 until 50).toList(), claimed.sorted())
-        assertEquals(50, claimed.size)
     }
 
     @Test
     fun singleWorkerProcessesStrictlyInOrder() = runBlocking {
         val claimed = mutableListOf<Int>()
-        OrderedPageWindow.run(scope, total = 20, workers = 1, isCancelled = { false }) { i ->
-            claimed += i
+        withTimeout(10_000) {
+            OrderedPageWindow.run(scope, total = 20, workers = 1, isCancelled = { false }) { i ->
+                claimed += i
+            }
         }
         assertEquals((0 until 20).toList(), claimed)
     }

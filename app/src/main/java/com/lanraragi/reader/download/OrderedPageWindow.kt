@@ -67,12 +67,15 @@ internal object OrderedPageWindow {
         val lowestUnfinished = MutableStateFlow(0)
 
         fun markDone(index: Int) {
-            val advanced = synchronized(done) {
+            // Publish INSIDE the lock: two workers finishing out of order
+            // could otherwise write a stale (smaller) lowest after a newer
+            // one, regressing the flow — every worker then waits for a
+            // window that never re-opens (download stalls forever).
+            synchronized(done) {
                 done[index] = true
                 while (lowest < done.size && done[lowest]) lowest++
-                lowest
+                lowestUnfinished.value = lowest
             }
-            lowestUnfinished.value = advanced
         }
     }
 }
