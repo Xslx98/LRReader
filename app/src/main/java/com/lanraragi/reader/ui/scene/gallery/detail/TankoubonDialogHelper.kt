@@ -60,8 +60,9 @@ object TankoubonDialogHelper {
 
     /**
      * Simple picker for batch ops: single-choice list of the server's tanks
-     * with a leading "create" row (inline create then pick). Empty list →
-     * [R.string.tank_none] toast. [onPicked]'s `wasEmpty` reports whether the
+     * with a leading "create" row (inline create then pick). A server with
+     * no tankoubon yet skips the list and goes straight to the create
+     * prompt (spec 2026-09-21 §6). [onPicked]'s `wasEmpty` reports whether the
      * tank had zero members at pick time (a just-created tank always does) so
      * the batch can seed the tank cover after its first successful add.
      */
@@ -75,7 +76,7 @@ object TankoubonDialogHelper {
 
         loadTanksAndMembership(activity, serverProfileId, arcid = null) { tanks, _, serverUrl ->
             if (tanks.isEmpty()) {
-                Toast.makeText(activity, R.string.tank_none, Toast.LENGTH_SHORT).show()
+                promptCreate(activity, serverUrl) { newId -> onPicked(newId, true) }
                 return@loadTanksAndMembership
             }
             val items = arrayOf(activity.getString(R.string.tank_create)) +

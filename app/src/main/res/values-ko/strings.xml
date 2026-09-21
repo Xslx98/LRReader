@@ -389,7 +389,6 @@
     <string name="detail_tankoubons_edit">편집</string>
     <string name="tank_add_to">단행본에 추가</string>
     <string name="batch_add_to_tankoubon">단행본</string>
-    <string name="tank_none">서버에 단행본이 없습니다</string>
 
     <!-- List multi-select batch operations -->
     <plurals name="batch_selected_count">
