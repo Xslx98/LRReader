@@ -142,7 +142,9 @@ class TankoubonDetailScene : BaseScene() {
             ViewModelProvider(this)[PageThumbnailsViewModel::class.java],
         )
         // Header cover tap: pick a page for the remembered cover member (or member #1).
-        mCover?.setOnClickListener {
+        // On the frame, not the image: LoadImageViewNew resets its own click
+        // listener on every load (retry-on-click).
+        view.findViewById<View>(R.id.tank_cover_frame).setOnClickListener {
             val members = viewModel.members.value
             if (members.isEmpty()) return@setOnClickListener
             val remembered = viewModel.coverChoices.get(viewModel.tankId)?.arcid
@@ -495,6 +497,7 @@ class TankoubonDetailScene : BaseScene() {
         val hasMembers = viewModel.members.value.isNotEmpty()
         mBtnReadStart?.visibility = if (hasMembers) View.VISIBLE else View.GONE
         mCover?.visibility = if (hasMembers) View.VISIBLE else View.GONE
+        (mCover?.parent as? View)?.visibility = if (hasMembers) View.VISIBLE else View.GONE
 
         if (p > 1) {
             mProgressText?.apply {

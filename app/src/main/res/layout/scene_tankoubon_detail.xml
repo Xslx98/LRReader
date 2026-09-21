@@ -32,15 +32,25 @@
         android:orientation="horizontal"
         android:padding="16dp">
 
-        <com.lanraragi.framework.widget.LoadImageViewNew
-            android:id="@+id/tank_cover"
+        <!-- The frame takes the "pick cover page" tap: LoadImageViewNew owns
+             its own click listener (retry-on-click after a failed load). -->
+        <FrameLayout
+            android:id="@+id/tank_cover_frame"
             android:layout_width="88dp"
             android:layout_height="124dp"
             android:layout_marginEnd="16dp"
-            android:scaleType="centerCrop"
-            android:contentDescription="@null"
-            android:importantForAccessibility="no"
-            app:retryType="click" />
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="@string/tank_set_cover">
+
+            <com.lanraragi.framework.widget.LoadImageViewNew
+                android:id="@+id/tank_cover"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:contentDescription="@null"
+                android:importantForAccessibility="no"
+                app:retryType="click" />
+        </FrameLayout>
 
         <LinearLayout
             android:layout_width="0dp"
