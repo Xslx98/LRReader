@@ -15,10 +15,12 @@ import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.download.TankMembershipSync
+import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
 import com.lanraragi.reader.tankoubon.TankMemberOrderOps
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -176,6 +178,12 @@ class TankoubonDetailViewModel : ViewModel() {
     internal var membershipSync: TankMembershipSyncFactory.Runner = TankMembershipSyncFactory.runnerSafely()
 
     /** Source base-URL resolution seam (production = [resolveSourceBaseUrl]); replaceable for tests. */
+    /** Remembered cover choice (spec 2026-09-22-tank-cover §4); injectable for tests. */
+    internal var coverChoices: TankCoverChoiceStore = TankCoverChoiceStore.default
+
+    /** Delay before the second best-effort cover re-apply (Minion dequeues every ~5 s). */
+    internal var coverReapplyDelayMs: Long = COVER_REAPPLY_DELAY_MS
+
     internal var baseUrlResolver: suspend (Long) -> String = { id ->
         resolveSourceBaseUrl(id, ServiceRegistry.dataModule.profileLookupCache)
     }
@@ -277,12 +285,60 @@ class TankoubonDetailViewModel : ViewModel() {
     fun removeMember(arcid: String) = removeMembers(listOf(arcid))
 
     /** Removes every id in [arcids] (one DELETE each), then reloads once. */
-    fun removeMembers(arcids: List<String>) = mutateAndReload { client, url ->
-        for (arcid in arcids) {
-            LRRTankoubonApi.removeFromTankoubon(client, url, tankId, arcid)
-            // Downloaded-tank grouping follows: the member's download row (if
-            // any) reappears as a standalone download.
-            ServiceRegistry.dataModule.downloadManager.untagTankMemberAsync(tankId, arcid)
+    fun removeMembers(arcids: List<String>) {
+        val firstBefore = memberIds.firstOrNull()
+        val remaining = _members.value.filter { it.arcid !in arcids }
+        mutateAndReload { client, url ->
+            for (arcid in arcids) {
+                LRRTankoubonApi.removeFromTankoubon(client, url, tankId, arcid)
+                // Downloaded-tank grouping follows: the member's download row (if
+                // any) reappears as a standalone download.
+                ServiceRegistry.dataModule.downloadManager.untagTankMemberAsync(tankId, arcid)
+            }
+            val remainingIds = remaining.map { it.arcid }
+            if (firstBefore != null && firstBefore in arcids) {
+                // Removing the first member queues a cover regeneration upstream.
+                reapplyCoverChoice(client, url, remainingIds, TankPageMath.pageOffsets(remaining.map { it.pagecount }))
+            } else {
+                coverChoices.reconcile(tankId, remainingIds)
+            }
+        }
+    }
+
+    /**
+     * Puts a remembered cover choice back after one of the app's own writes
+     * that makes upstream regenerate the cover (first member, page 1): once
+     * now and once after [coverReapplyDelayMs], because the regeneration
+     * job runs asynchronously and may land after the first re-PUT. Best
+     * effort — failures are silent (cosmetic). No-op without a choice, or
+     * when the chosen archive is no longer a member (the choice is dropped).
+     */
+    private suspend fun reapplyCoverChoice(
+        client: OkHttpClient,
+        url: String,
+        memberIds: List<String>,
+        offsets: List<Int>,
+    ) {
+        val choice = coverChoices.reconcile(tankId, memberIds) ?: return
+        val index = memberIds.indexOf(choice.arcid)
+        if (index < 0) return
+        val page1 = TankPageMath.globalPage1(offsets, index, choice.page0)
+        putCoverQuietly(client, url, page1)
+        viewModelScope.launch(Dispatchers.IO) {
+            delay(coverReapplyDelayMs)
+            putCoverQuietly(client, url, page1)
+        }
+    }
+
+    private suspend fun putCoverQuietly(client: OkHttpClient, url: String, page1: Int) {
+        try {
+            LRRTankoubonApi.updateTankThumbnail(client, url, tankId, page1)
+            TankCoverCacheStamp.bump()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (ignored: Exception) {
+            // Cosmetic: the membership write already succeeded; the next
+            // reorder or an explicit set-cover retries.
         }
     }
 
@@ -297,6 +353,7 @@ class TankoubonDetailViewModel : ViewModel() {
             try {
                 val client = ServiceRegistry.networkModule.okHttpClient
                 LRRTankoubonApi.deleteTankoubon(client, url, tankId)
+                coverChoices.remove(tankId)
                 // Dissolve the downloaded-tank grouping (files/rows stay:
                 // deleting a tank never deletes its archives — the member
                 // downloads reappear standalone).
@@ -310,26 +367,30 @@ class TankoubonDetailViewModel : ViewModel() {
     }
 
     /**
-     * Sets the tank cover to the FIRST page of member [memberIndex]
-     * (1-indexed global page at the API boundary). The server may answer
-     * 200 with a queued Minion job before the thumbnail actually exists —
-     * cosmetic, still treated as success. Bumps [TankCoverCacheStamp] so
-     * every cover bind (this scene AND the tank list) bypasses the stale
-     * cached image.
+     * Sets the tank cover to page [page0] (0-indexed) of member
+     * [memberIndex] (1-indexed global page at the API boundary). The server
+     * may answer 200 with a queued Minion job before the thumbnail actually
+     * exists — cosmetic, still treated as success. Bumps
+     * [TankCoverCacheStamp] so every cover bind (this scene AND the tank
+     * list) bypasses the stale cached image, and remembers the choice so
+     * the app's own reorders can put it back (see [reapplyCoverChoice]).
      */
-    fun setCover(memberIndex: Int) {
+    fun setCover(memberIndex: Int, page0: Int = 0) {
         viewModelScope.launch(Dispatchers.IO) {
             val url = requireBaseUrl() ?: return@launch
             // offsets has size members+1; valid member indices are 0..size-2
             val offsets = pageOffsets
-            if (memberIndex < 0 || memberIndex >= offsets.size - 1) return@launch
+            if (memberIndex < 0 || memberIndex >= offsets.size - 1 || page0 < 0) return@launch
             try {
                 val client = ServiceRegistry.networkModule.okHttpClient
-                val page1 = TankPageMath.globalPage1(offsets, memberIndex, 0)
+                val page1 = TankPageMath.globalPage1(offsets, memberIndex, page0)
                 LRRTankoubonApi.updateTankThumbnail(client, url, tankId, page1)
                 // The cover now exists server-side — drop the stand-in.
                 coverFallbackMember = null
                 TankCoverCacheStamp.bump()
+                _members.value.getOrNull(memberIndex)?.let { member ->
+                    coverChoices.put(tankId, TankCoverChoiceStore.Choice(member.arcid, page0, profileId))
+                }
                 _uiEvent.tryEmit(TankDetailUiEvent.ShowSuccess(R.string.tank_cover_updated))
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
@@ -396,6 +457,8 @@ class TankoubonDetailViewModel : ViewModel() {
                 val client = ServiceRegistry.networkModule.okHttpClient
                 LRRTankoubonApi.updateTankoubon(client, url, tankId, archives = ids)
                 if (undoable) _uiEvent.tryEmit(TankDetailUiEvent.OrderApplied(previousOrder))
+                // Upstream queued a cover regeneration from the new first member.
+                reapplyCoverChoice(client, url, ids, TankPageMath.pageOffsets(reordered.map { it.pagecount }))
                 syncMembership(url, _tankName.value, ids, _progress.value, reordered.sumOf { it.pagecount })
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
@@ -501,6 +564,7 @@ class TankoubonDetailViewModel : ViewModel() {
         }
 
     private companion object {
+        const val COVER_REAPPLY_DELAY_MS = 6_000L
         const val HTTP_LOCKED = 423
         const val TAG = "TankoubonDetailViewModel"
     }
