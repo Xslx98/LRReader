@@ -340,6 +340,8 @@
     <string name="tank_member_delete_blocked">该档案属于已下载的合订本「%1$s」，请在下载列表中删除整本。</string>
     <string name="tank_set_cover">设为封面</string>
     <string name="tank_cover_updated">封面已更新</string>
+    <string name="tank_cover_pick_title">选择封面页 · %1$s</string>
+    <string name="tank_cover_use_page1">用第 1 页</string>
     <string name="tank_reorder_failed">排序失败，已恢复原顺序</string>
     <string name="tank_already_sorted">已是有序状态</string>
     <string name="tank_sorted">已排序</string>
