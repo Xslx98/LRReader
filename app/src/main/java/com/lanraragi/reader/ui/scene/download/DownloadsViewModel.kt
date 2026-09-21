@@ -472,8 +472,10 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
             val infos = ArrayList(downloadInfoList)
             ServiceRegistry.coroutineModule.ioScope.launch {
                 for (info in infos) {
-                    ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(info.arcid)
+                    // Resolve BEFORE dropping the DIRNAME pointer — see
+                    // DownloadLabelHelper.performDelete for why the order matters.
                     val file = SpiderDen.getGalleryDownloadDir(info.arcid, info.title)
+                    ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(info.arcid)
                     file?.delete()
                 }
             }
