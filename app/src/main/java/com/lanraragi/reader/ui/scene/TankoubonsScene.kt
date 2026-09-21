@@ -158,6 +158,18 @@ class TankoubonsScene : BaseScene() {
             }
         }
 
+        // Row spinner follows the VM's in-flight session build: repaint the
+        // row that stopped spinning and the one that started.
+        var lastOpening: String? = null
+        collectFlow(viewLifecycleOwner, viewModel.openingTankId) { opening ->
+            val adapter = mAdapter ?: return@collectFlow
+            for (id in listOfNotNull(lastOpening, opening)) {
+                val index = mTanks.indexOfFirst { it.id == id }
+                if (index >= 0) adapter.notifyItemChanged(index)
+            }
+            lastOpening = opening
+        }
+
         viewModel.loadTankoubons()
 
         return view
@@ -370,8 +382,11 @@ class TankoubonsScene : BaseScene() {
                 holder.progress.visibility = View.GONE
             }
 
-            // Click to open member list
-            holder.itemView.setOnClickListener { openTankDetail(tank) }
+            // Click = read (spec 2026-09-21 §7); the row spins while the
+            // whole-tank session is being built from server truth.
+            holder.loading.visibility =
+                if (viewModel.openingTankId.value == tank.id) View.VISIBLE else View.GONE
+            holder.itemView.setOnClickListener { viewModel.openTank(tank) }
 
             // Long-press for actions menu
             holder.itemView.setOnLongClickListener {
@@ -388,6 +403,7 @@ class TankoubonsScene : BaseScene() {
         val name: TextView = itemView.findViewById(R.id.tank_name)
         val count: TextView = itemView.findViewById(R.id.tank_count)
         val progress: TextView = itemView.findViewById(R.id.tank_progress)
+        val loading: View = itemView.findViewById(R.id.tank_loading)
     }
 
     /**
