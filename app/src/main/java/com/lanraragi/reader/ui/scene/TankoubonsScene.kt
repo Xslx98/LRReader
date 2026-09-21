@@ -218,38 +218,22 @@ class TankoubonsScene : BaseScene() {
         }
     }
 
-    private fun showRenameDialog(tank: LRRTankoubonApi.Tankoubon) {
-        val ctx = ehContext ?: return
-        TankDialogs.showNameInputDialog(ctx, R.string.tank_rename, tank.name) {
-            viewModel.rename(tank.id, it)
-        }
-    }
-
-    private fun showEditMetaDialog(tank: LRRTankoubonApi.Tankoubon) {
-        val ctx = ehContext ?: return
-        TankDialogs.showMetaDialog(
-            ctx,
-            tank.summary.orEmpty(),
-            tank.tags.orEmpty()
-        ) { summary, tags ->
-            viewModel.editMeta(tank.id, summary, tags)
-        }
-    }
-
     private fun showDeleteDialog(tank: LRRTankoubonApi.Tankoubon) {
         val ctx = ehContext ?: return
         TankDialogs.showDeleteConfirm(ctx) { viewModel.delete(tank.id) }
     }
 
     /**
-     * Show long-press action menu for a tankoubon item.
+     * Long-press action menu (spec 2026-09-21 §7): download / manage
+     * members / delete. Rename and metadata editing live in the member
+     * management scene's overflow.
      */
     private fun showTankActions(tank: LRRTankoubonApi.Tankoubon) {
         val ctx = ehContext ?: return
 
         val items = arrayOf(
-            getString(R.string.tank_rename),
-            getString(R.string.tank_edit_meta),
+            getString(R.string.tank_download),
+            getString(R.string.tank_manage_members),
             getString(R.string.tank_delete)
         )
 
@@ -257,8 +241,8 @@ class TankoubonsScene : BaseScene() {
             .setTitle(tank.name)
             .setItems(items) { _, which ->
                 when (which) {
-                    0 -> showRenameDialog(tank)
-                    1 -> showEditMetaDialog(tank)
+                    0 -> viewModel.fillTank(tank)
+                    1 -> openTankDetail(tank)
                     2 -> showDeleteDialog(tank)
                 }
             }
