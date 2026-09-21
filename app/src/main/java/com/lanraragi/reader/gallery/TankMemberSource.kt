@@ -92,7 +92,8 @@ internal class LrrTankMemberSource(
     private val serverUrl: String,
     private val pageClient: OkHttpClient,
     private val listClient: OkHttpClient,
-    private val store: HybridPageStore? = null,
+    /** Non-null in hybrid mode; exposed for routing tests. */
+    val store: HybridPageStore? = null,
 ) : TankMemberSource {
 
     private val appContext = context.applicationContext
