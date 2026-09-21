@@ -433,6 +433,8 @@
     <string name="tank_member_delete_blocked">This archive belongs to the downloaded tankoubon “%1$s”. Delete the whole tankoubon from the Downloads list instead.</string>
     <string name="tank_set_cover">Set as cover</string>
     <string name="tank_cover_updated">Cover updated</string>
+    <string name="tank_cover_pick_title">Choose cover page · %1$s</string>
+    <string name="tank_cover_use_page1">Use page 1</string>
     <string name="tank_reorder_failed">Reorder failed, restoring order</string>
     <string name="tank_already_sorted">Already in order</string>
     <string name="tank_sorted">Members sorted</string>

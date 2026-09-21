@@ -344,6 +344,8 @@
     <string name="tank_member_delete_blocked">ไฟล์นี้อยู่ในรวมเล่มที่ดาวน์โหลดแล้ว “%1$s” โปรดลบรวมเล่มทั้งชุดจากรายการดาวน์โหลด</string>
     <string name="tank_set_cover">ตั้งเป็นปก</string>
     <string name="tank_cover_updated">อัปเดตปกแล้ว</string>
+    <string name="tank_cover_pick_title">เลือกหน้าปก · %1$s</string>
+    <string name="tank_cover_use_page1">ใช้หน้า 1</string>
     <string name="tank_reorder_failed">จัดลำดับไม่สำเร็จ คืนลำดับเดิมแล้ว</string>
     <string name="tank_already_sorted">เรียงลำดับอยู่แล้ว</string>
     <string name="tank_sorted">จัดเรียงสมาชิกแล้ว</string>

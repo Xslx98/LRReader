@@ -340,6 +340,8 @@
     <string name="tank_member_delete_blocked">Cette archive fait partie du tankoubon téléchargé « %1$s ». Supprimez le tankoubon entier depuis la liste des téléchargements.</string>
     <string name="tank_set_cover">Définir comme couverture</string>
     <string name="tank_cover_updated">Couverture mise à jour</string>
+    <string name="tank_cover_pick_title">Choisir la page de couverture · %1$s</string>
+    <string name="tank_cover_use_page1">Utiliser la page 1</string>
     <string name="tank_reorder_failed">Échec du réordonnancement, ordre restauré</string>
     <string name="tank_already_sorted">Déjà dans l\'ordre</string>
     <string name="tank_sorted">Membres triés</string>
