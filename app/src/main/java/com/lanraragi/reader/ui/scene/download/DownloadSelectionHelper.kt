@@ -20,6 +20,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.hippo.drawerlayout.DrawerLayout
 import com.hippo.easyrecyclerview.EasyRecyclerView
+import com.lanraragi.reader.ui.scene.DragSelectTouchListener
 import com.lanraragi.framework.widget.FabLayout
 
 /**
@@ -38,6 +39,15 @@ internal class DownloadSelectionHelper(private val callback: Callback) {
 
     /** [EasyRecyclerView.CustomChoiceListener] that bridges into this helper. */
     val choiceListener: EasyRecyclerView.CustomChoiceListener = ChoiceListenerImpl()
+
+    private var dragSelect: DragSelectTouchListener? = null
+
+    /** Enables drag-to-select on [rv]; every download row (tank cards included) is selectable. */
+    fun attachDragSelect(rv: EasyRecyclerView) {
+        val listener = DragSelectTouchListener(rv, DragSelectTouchListener.forEasyRecyclerView(rv) { true })
+        rv.addOnItemTouchListener(listener)
+        dragSelect = listener
+    }
 
     fun onExpand(expanded: Boolean) {
         val drawable = callback.actionFabDrawable ?: return
@@ -73,6 +83,8 @@ internal class DownloadSelectionHelper(private val callback: Callback) {
             recyclerView.intoCustomChoiceMode()
         }
         recyclerView.toggleItemChecked(position)
+        // The finger is still down: the same touch stream becomes a drag.
+        dragSelect?.startDrag(position)
         return true
     }
 
@@ -88,6 +100,7 @@ internal class DownloadSelectionHelper(private val callback: Callback) {
         }
 
         override fun onOutOfCustomChoice(view: EasyRecyclerView) {
+            dragSelect?.cancel()
             callback.mRecyclerView?.setOnItemLongClickListener(callback.longClickListener)
             callback.mFabLayout?.setExpanded(false)
             callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.LEFT)
