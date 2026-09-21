@@ -1038,18 +1038,20 @@ class GalleryListScene : BaseScene(),
 
             override fun applyEndState() {
                 val insertAt = plan.provisionalInsertAt
-                // Pin the provisional row where the topmost member sat: with the
-                // first visible rows removed, RecyclerView would otherwise anchor
-                // on the next survivor and lay the inserted row out above the fold.
-                val anchorTop = insertAt?.let { rowViewAt(it)?.top?.minus(recyclerView.paddingTop) }
+                if (provisional != null && insertAt != null && insertAt in plan.removals && insertAt < helper.size()) {
+                    // The provisional row REPLACES the topmost member in place
+                    // (change animation = crossfade alongside the close-up) rather
+                    // than remove + insert: RecyclerView runs adds only after every
+                    // removal and move has finished, and with the first visible
+                    // rows gone it would also anchor the inserted row above the fold.
+                    plan.removals.filter { it != insertAt }.forEach { if (it < helper.size()) helper.removeAt(it) }
+                    helper.getData()[insertAt] = provisional
+                    adapter?.notifyItemChanged(insertAt)
+                    return
+                }
                 plan.removals.forEach { if (it < helper.size()) helper.removeAt(it) }
                 if (provisional != null && insertAt != null) {
-                    val at = minOf(insertAt, helper.size())
-                    helper.addAt(at, provisional)
-                    if (anchorTop != null) {
-                        (recyclerView.layoutManager as? StaggeredGridLayoutManager)
-                            ?.scrollToPositionWithOffset(at, anchorTop)
-                    }
+                    helper.addAt(minOf(insertAt, helper.size()), provisional)
                 }
             }
 
