@@ -75,7 +75,23 @@ object TankSessionRouter {
      * — resuming a tank without server truth would read a stale member set.
      */
     @Throws(IOException::class)
-    suspend fun buildResumeIntent(context: Context, tankId: String, profileId: Long): Intent {
+    suspend fun buildResumeIntent(context: Context, tankId: String, profileId: Long): Intent =
+        buildResumeIntent(context, tankId, profileId, anchorArcid = null)
+
+    /**
+     * [buildResumeIntent] entered THROUGH a member (spec 2026-09-21 §5):
+     * when [anchorArcid] is a current member and the saved tank progress
+     * lies outside it, the session opens on that member's first page;
+     * otherwise (inside it, or anchor unknown) the saved progress is
+     * restored.
+     */
+    @Throws(IOException::class)
+    suspend fun buildResumeIntent(
+        context: Context,
+        tankId: String,
+        profileId: Long,
+        anchorArcid: String?,
+    ): Intent {
         val url = resolveSourceBaseUrl(profileId, ServiceRegistry.dataModule.profileLookupCache)
         val full = LRRTankoubonApi.getTankoubonFull(
             ServiceRegistry.networkModule.okHttpClient, url, tankId
@@ -87,6 +103,11 @@ object TankSessionRouter {
         if (members.isEmpty()) throw IOException("tank $tankId has no members")
         val seed = TankSessionSeed(tankId, full.name, profileId, members)
         TankSeedStore.publish(seed)
-        return GalleryOpenHelper.buildTankReadIntent(context, seed, startGlobalPage = -1)
+        val anchorIndex = anchorArcid?.let { id -> members.indexOfFirst { it.arcid == id } } ?: -1
+        val start = TankPageMath.anchoredStart(
+            members.map { it.pagecount }, anchorIndex,
+            GalleryProvider2.loadReadingProgress(context, tankId),
+        )
+        return GalleryOpenHelper.buildTankReadIntent(context, seed, startGlobalPage = start)
     }
 }
