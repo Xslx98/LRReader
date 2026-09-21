@@ -1,6 +1,7 @@
 package com.lanraragi.reader.ui.scene
 
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,6 +14,8 @@ import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.archiveThumbnailUrl
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.download.TankMembershipSync
+import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.gallery.TankSessionRouter
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -84,6 +87,21 @@ class TankoubonsViewModel : ViewModel() {
     sealed interface TankUiEvent {
         data class ShowError(val message: String) : TankUiEvent
         data class ShowSuccess(val messageResId: Int) : TankUiEvent
+
+        /** Drawer row click resolved into a whole-tank reader session (spec 2026-09-21 §7). */
+        data class OpenReader(val intent: Intent) : TankUiEvent
+
+        /**
+         * Long-press "download" resolved the tank's current membership; the
+         * scene dispatches the fill on the main thread (download-manager
+         * state lookups are main-thread only).
+         */
+        data class FillTank(
+            val tankId: String,
+            val name: String,
+            val members: List<Archive>,
+            val memberIdsInOrder: List<String>,
+        ) : TankUiEvent
     }
 
     // -------------------------------------------------------------------------
@@ -96,6 +114,60 @@ class TankoubonsViewModel : ViewModel() {
      * hold `total` entries (safety cap generously above any realistic tank
      * count). Emits [TankUiEvent.ShowError] on failure.
      */
+    // ── Drawer click = read / long-press download (spec 2026-09-21 §7) ──
+
+    private val _openingTankId = MutableStateFlow<String?>(null)
+
+    /** Tank whose row shows an inline spinner while its session is being built. */
+    val openingTankId: StateFlow<String?> = _openingTankId.asStateFlow()
+
+    /** Session-builder seam (production = [TankSessionRouter.buildResumeIntent]). */
+    internal var resumeIntentBuilder: suspend (Context, String, Long) -> Intent =
+        { ctx, tankId, profileId -> TankSessionRouter.buildResumeIntent(ctx, tankId, profileId) }
+
+    /**
+     * Row click: rebuild the whole-tank session from server truth and hand
+     * the intent to the scene (server progress > 1 resumes there, else page
+     * 1). One build at a time; failure surfaces as [TankUiEvent.ShowError].
+     */
+    fun openTank(tank: LRRTankoubonApi.Tankoubon) {
+        if (_openingTankId.value != null) return
+        _openingTankId.value = tank.id
+        val context = ServiceRegistry.appModule.getContext()
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val intent = resumeIntentBuilder(context, tank.id, LRRAuthManager.getActiveProfileId())
+                _uiEvent.tryEmit(TankUiEvent.OpenReader(intent))
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                _uiEvent.tryEmit(TankUiEvent.ShowError(errorMessage(context, e)))
+            } finally {
+                _openingTankId.value = null
+            }
+        }
+    }
+
+    /** Long-press "download": fetch current membership, then let the scene run the fill. */
+    fun fillTank(tank: LRRTankoubonApi.Tankoubon) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
+                val client = ServiceRegistry.networkModule.okHttpClient
+                val full = LRRTankoubonApi.getTankoubonFull(client, serverUrl, tank.id).result
+                val profileId = LRRAuthManager.getActiveProfileId()
+                val byId = full.fullData.associateBy { it.arcid }
+                val members = full.archives.mapNotNull { id ->
+                    byId[id]?.toArchive(sourceProfileId = profileId, sourceBaseUrl = serverUrl)
+                }
+                _uiEvent.tryEmit(TankUiEvent.FillTank(tank.id, full.name, members, full.archives))
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                val context = ServiceRegistry.appModule.getContext()
+                _uiEvent.tryEmit(TankUiEvent.ShowError(errorMessage(context, e)))
+            }
+        }
+    }
+
     fun loadTankoubons() {
         _isLoading.value = true
 

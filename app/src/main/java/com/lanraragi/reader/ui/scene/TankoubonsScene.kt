@@ -14,6 +14,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.lanraragi.reader.R
+import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.download.TankFillDispatcher
 import com.lanraragi.reader.client.LRRCacheKeyFactory
 import com.lanraragi.reader.client.TankCoverCacheStamp
 import com.lanraragi.reader.ui.scene.TankoubonsViewModel.TankUiEvent
@@ -151,6 +153,8 @@ class TankoubonsScene : BaseScene() {
                 is TankUiEvent.ShowSuccess -> {
                     Toast.makeText(ctx, event.messageResId, Toast.LENGTH_SHORT).show()
                 }
+                is TankUiEvent.OpenReader -> startActivity(event.intent)
+                is TankUiEvent.FillTank -> dispatchFill(event)
             }
         }
 
@@ -172,6 +176,25 @@ class TankoubonsScene : BaseScene() {
         mAdapter = null
         // Reset snapshot so the next view recreation starts from a clean baseline.
         mLastSnapshot = emptyList()
+    }
+
+    /**
+     * Long-press "download" (spec 2026-09-21 §7): the SAME fill path as the
+     * tank detail overflow and the downloads card start control. Runs on the
+     * main thread because download-manager state lookups are main-only.
+     */
+    private fun dispatchFill(event: TankUiEvent.FillTank) {
+        val ctx = ehContext ?: return
+        if (event.members.isEmpty()) {
+            Toast.makeText(ctx, R.string.error_empty, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val dm = ServiceRegistry.dataModule.downloadManager
+        val plan = TankFillDispatcher.plan(event.members) { dm.getDownloadState(it) }
+        TankFillDispatcher.dispatch(
+            ctx, dm, plan, event.tankId, event.name, LRRAuthManager.getActiveProfileId(), event.memberIdsInOrder,
+        )
+        Toast.makeText(ctx, TankFillDispatcher.feedback(resources, plan), Toast.LENGTH_SHORT).show()
     }
 
     // ==================== CRUD Operations ====================
