@@ -29,6 +29,7 @@ import android.view.animation.PathInterpolator
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.view.doOnPreDraw
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.lanraragi.reader.R
 import kotlin.math.PI
@@ -70,6 +71,9 @@ internal class TankMergeAnimator(
 
         /** The batch card's Tank button, the fallback landing spot, or null when the card is gone. */
         fun batchButtonView(): View?
+
+        /** The whole batch card; covers under it are not snapshotted (they would carry its pixels). */
+        fun batchBarView(): View?
     }
 
     private val animators = mutableListOf<Animator>()
@@ -200,17 +204,25 @@ internal class TankMergeAnimator(
         if (finished) return
         dimRows(plan)
         var index = 0
+        var folded = plan.extraCount
         if (snapshot != null) {
+            val covered = host.batchBarView()?.takeIf { it.isVisible }?.let { rectInRoot(it) }
             plan.flyerPositions.mapNotNull { host.thumbViewAt(it) }.forEach { thumb ->
                 val from = rectInRoot(thumb)
-                val flyer = makeCoverFlyer(snapshot, from) ?: return@forEach
+                val flyer = if (covered != null && Rect.intersects(from, covered)) null else makeCoverFlyer(snapshot, from)
+                if (flyer == null) {
+                    folded++
+                    return@forEach
+                }
                 fly(flyer, from, startDelay = FLYER_STAGGER_MS * index)
                 index++
             }
+        } else {
+            folded += plan.flyerPositions.size
         }
-        if (plan.extraCount > 0) {
+        if (folded > 0) {
             val origin = host.batchButtonView()?.let { rectInRoot(it) } ?: bottomCenterRect()
-            fly(makePill(plan.extraCount, origin), origin, startDelay = FLYER_STAGGER_MS * index)
+            fly(makePill(folded, origin), origin, startDelay = FLYER_STAGGER_MS * index)
         }
         root.postDelayed({ closeUp(plan) }, CLOSE_UP_DELAY_MS)
         if (flyersInFlight == 0) {

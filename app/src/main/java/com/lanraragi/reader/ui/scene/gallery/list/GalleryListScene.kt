@@ -1056,6 +1056,7 @@ class GalleryListScene : BaseScene(),
             }
 
             override fun batchButtonView(): View? = batchOpsHelper?.tankButton
+            override fun batchBarView(): View? = batchOpsHelper?.bar
         }
         if (!recyclerView.isLaidOut) {
             // Nothing on screen to animate (view just re-attached): settle silently.
