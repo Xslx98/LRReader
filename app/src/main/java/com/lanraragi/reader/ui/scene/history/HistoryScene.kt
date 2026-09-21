@@ -196,6 +196,7 @@ class HistoryScene : ToolbarScene(),
         // both calls below are required before the mode can be entered.
         mRecyclerView.setChoiceMode(EasyRecyclerView.CHOICE_MODE_MULTIPLE_CUSTOM)
         mRecyclerView.setCustomCheckedListener(multiSelect.choiceListener)
+        multiSelect.attachDragSelect(mRecyclerView) { true }
 
         val interval = resources.getDimensionPixelOffset(R.dimen.gallery_list_interval)
         val paddingH = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_h)

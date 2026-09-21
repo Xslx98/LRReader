@@ -380,6 +380,7 @@ class DownloadsScene : ToolbarScene(),
         mRecyclerView.setOnItemLongClickListener(this)
         mRecyclerView.setChoiceMode(EasyRecyclerView.CHOICE_MODE_MULTIPLE_CUSTOM)
         mRecyclerView.setCustomCheckedListener(mSelectionHelper?.choiceListener)
+        mSelectionHelper?.attachDragSelect(mRecyclerView)
         val interval = resources.getDimensionPixelOffset(R.dimen.gallery_list_interval)
         val paddingH = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_h)
         val paddingV = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_v)
