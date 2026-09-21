@@ -70,6 +70,41 @@ class HistoryRepository(
         trimHistory(historyInfoList.map { it.serverProfileId })
     }
 
+    /** Outcome of [foldMembersIntoTank]: which member rows lost their history flag. */
+    class TankFoldResult(val foldedArcids: List<String>, val tankHistoryTime: Long)
+
+    /**
+     * Fold the history rows of a tankoubon's members into ONE TANK_ pseudo
+     * row (spec 2026-09-21 §3: members have no standalone identity). Members
+     * of [profileId] holding a history row are cleared (download / favorite
+     * flags on the same row survive, row pruned only when empty); the tank
+     * row is created from [tankPseudo] at the newest member read time, or —
+     * when a tank row already exists — only has its time bumped forward
+     * (its archive_json is session-written truth and is kept). No member
+     * history → null, nothing written.
+     */
+    suspend fun foldMembersIntoTank(
+        tankId: String,
+        profileId: Long,
+        memberIds: List<String>,
+        tankPseudo: Archive,
+    ): TankFoldResult? {
+        val members = memberIds.mapNotNull { arcid ->
+            dao.loadByArcidAndProfile(arcid, profileId)?.takeIf { it.historyTime != null }
+        }
+        if (members.isEmpty()) return null
+        val newest = members.maxOf { it.historyTime ?: 0L }
+        val existing = dao.loadByArcidAndProfile(tankId, profileId)?.takeIf { it.historyTime != null }
+        val tankTime = maxOf(newest, existing?.historyTime ?: 0L)
+        val json = existing?.archiveJson
+            ?: tankPseudo.copy(lastreadtime = tankTime / 1000L).toArchiveJson()
+        if (existing == null || tankTime != existing.historyTime) {
+            upsertHistorySubsystem(tankId, profileId, json, tankTime, existing?.historyMode ?: 0)
+        }
+        for (row in members) dao.clearHistoryAndPruneForProfile(row.arcid, profileId)
+        return TankFoldResult(members.map { it.arcid }, tankTime)
+    }
+
     suspend fun deleteHistoryInfo(info: HistoryInfo) {
         deleteHistory(info.arcid, info.serverProfileId)
     }
