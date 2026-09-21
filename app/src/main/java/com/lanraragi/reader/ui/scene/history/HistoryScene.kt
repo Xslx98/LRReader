@@ -53,6 +53,7 @@ import com.lanraragi.reader.client.LRRCacheKeyFactory
 import com.lanraragi.reader.client.LRRUtils
 import com.lanraragi.reader.gallery.ReadingContext
 import com.lanraragi.reader.gallery.ReadingContextStore
+import com.lanraragi.reader.gallery.HistoryTankRedirect
 import com.lanraragi.reader.gallery.TankSessionRouter
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.ui.scene.BatchBarAnimator
@@ -353,6 +354,20 @@ class HistoryScene : ToolbarScene(),
             return true
         }
 
+        // A member of a tankoubon has no standalone identity either (spec
+        // 2026-09-21 §5): resolve membership first; the tank session wins,
+        // anything short of a confident answer opens the detail page.
+        val ctx = ehContext ?: return false
+        viewLifecycleOwner.lifecycleScope.launch {
+            val intent = withContext(Dispatchers.IO) {
+                HistoryTankRedirect.resumeIntentOrNull(ctx, archive.arcid, archive.serverProfileId)
+            }
+            if (intent != null) startActivity(intent) else openArchiveDetail(list, position, archive, view)
+        }
+        return true
+    }
+
+    private fun openArchiveDetail(list: List<Archive>, position: Int, archive: Archive, view: View) {
         ReadingContextStore.publish(
             ReadingContext.LocalList(
                 kind = ReadingContext.LocalList.Kind.HISTORY,
@@ -376,7 +391,6 @@ class HistoryScene : ToolbarScene(),
             announcer.setTranHelper(EnterGalleryDetailTransaction(thumb))
         }
         startScene(announcer)
-        return true
     }
 
     /**

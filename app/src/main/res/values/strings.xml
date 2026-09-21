@@ -426,6 +426,7 @@
     <string name="tank_read_from_start">Read from start</string>
     <string name="tank_continue_reading">Continue reading (page %1$d)</string>
     <string name="tank_member_remove">Remove from tankoubon</string>
+    <string name="tank_member_delete_blocked">This archive belongs to the downloaded tankoubon “%1$s”. Delete the whole tankoubon from the Downloads list instead.</string>
     <string name="tank_set_cover">Set as cover</string>
     <string name="tank_cover_updated">Cover updated</string>
     <string name="tank_reorder_failed">Reorder failed, restoring order</string>
