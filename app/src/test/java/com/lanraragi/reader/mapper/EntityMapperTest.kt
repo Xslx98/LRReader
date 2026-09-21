@@ -110,4 +110,11 @@ class EntityMapperTest {
         assertEquals(listOf("english"), back.tags["language"])
         assertEquals(listOf("raw"), back.tags["misc"])
     }
+
+    @Test
+    fun `pagecount rides the DownloadInfo view both ways`() {
+        val di = archive().toDownloadInfoView()
+        assertEquals(33, di.pagecount)
+        assertEquals(33, di.toArchive().pagecount)
+    }
 }

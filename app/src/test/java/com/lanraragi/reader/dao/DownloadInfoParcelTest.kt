@@ -40,6 +40,7 @@ class DownloadInfoParcelTest {
             simpleTags = arrayOf("lang:chinese", "artist:someone")
             tgList = arrayListOf("artist:someone", "lang:chinese")
             fileSize = 12345L
+            pagecount = 77
         }
 
         val parcel = Parcel.obtain()
@@ -58,6 +59,7 @@ class DownloadInfoParcelTest {
             assertEquals(original.legacy, restored.legacy)
             assertEquals(original.time, restored.time)
             assertEquals(original.label, restored.label)
+            assertEquals(77, restored.pagecount)
             assertEquals(original.archiveUri, restored.archiveUri)
             assertArrayEquals(original.simpleTags, restored.simpleTags)
             assertNotNull(restored.tgList)
