@@ -489,9 +489,6 @@
     <string name="settings_advanced_dump_logcat_summary">Logcat-Protokolldatei auf externem Speicher speichern</string>
     <string name="settings_advanced_dump_logcat_failed">Speichern gescheitert</string>
     <string name="settings_advanced_dump_logcat_to">Protokolldatei wurde auf %s gespeichert.</string>
-    <string name="settings_advanced_clear_download_path_cache">Downloadpfadzwischenspeicher löschen</string>
-    <string name="settings_advanced_clear_download_path_cache_summary">Der Galerie-Downloadpfad könnte falsch sein und muss möglicherweise erneut heruntergeladen werden. Das Löschen des Downloadpfad-Zwischenspeichers könnte das Problem lösen.</string>
-    <string name="settings_advanced_clear_download_path_cache_message">Downloadpfadzwischenspeicher löschen?</string>
     <string name="license">Open Source-Lizenzen</string>
     <string name="let_me_select">Manuell auswählen</string>
     <string name="guide_gallery_left">Seiten umblättern</string>

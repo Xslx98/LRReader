@@ -34,9 +34,6 @@ interface DownloadRoomDao {
     @Query("DELETE FROM DOWNLOAD_DIRNAME WHERE ARCID = :arcid")
     suspend fun deleteDirnameByKey(arcid: String)
 
-    @Query("DELETE FROM DOWNLOAD_DIRNAME")
-    suspend fun deleteAllDirnames()
-
     // --- DOWNLOAD_LABELS ---
 
     @Query("SELECT * FROM DOWNLOAD_LABELS ORDER BY TIME ASC")
