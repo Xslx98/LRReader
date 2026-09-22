@@ -216,6 +216,7 @@ internal class DownloadScheduler(
                 }
             }
             // Check all in wait list
+            val stopped = ArrayList<DownloadInfo>()
             val iterator = waitList.iterator()
             while (iterator.hasNext()) {
                 val info = iterator.next()
@@ -223,9 +224,10 @@ internal class DownloadScheduler(
                     iterator.remove()
                     info.state = DownloadState.NONE
                     progressTracker.clear(info.arcid)
-                    repo.persistInfo(info)
+                    stopped.add(info)
                 }
             }
+            if (stopped.isNotEmpty()) repo.persistInfoBatch(stopped)
         }
     }
 
@@ -238,8 +240,8 @@ internal class DownloadScheduler(
         for (info in waitList) {
             info.state = DownloadState.NONE
             progressTracker.clear(info.arcid)
-            repo.persistInfo(info)
         }
+        if (waitList.isNotEmpty()) repo.persistInfoBatch(waitList)
         waitList.clear()
         // Stop current
         stopCurrentDownload()
