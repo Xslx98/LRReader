@@ -342,6 +342,7 @@
     <string name="tank_view_detail">รายละเอียด</string>
     <string name="tank_detail_pages">%1$d/%2$dP</string>
     <string name="tank_tag_sync_failed">รวมแท็กของ “%1$s” ไม่สำเร็จ</string>
+    <string name="tank_category_sync_failed">อัปเดตหมวดหมู่ของ “%1$s” ไม่สำเร็จ</string>
     <string name="tank_reset_tags">รีเซ็ตเป็นผลรวมแท็กของสมาชิก</string>
     <string name="tank_reset_tags_confirm">แทนที่แท็กของทังโคบงด้วยผลรวมแท็กของสมาชิกหรือไม่ แท็กที่พิมพ์เองจะหายไป ส่วนคะแนนจะคงไว้</string>
     <string name="tank_delete_confirm">ลบทังโคบงนี้? ไฟล์ข้างในจะไม่ถูกลบ แต่สรุป แท็กเพิ่มเติม และความคืบหน้าการอ่านของทังโคบงจะหายไป</string>
