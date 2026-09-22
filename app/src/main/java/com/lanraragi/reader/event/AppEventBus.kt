@@ -55,6 +55,17 @@ object AppEventBus {
         _archiveCoverChangedEvent.tryEmit(event)
     }
 
+    // Non-sticky: a rating was saved on the server; covered list scenes
+    // update that row (replaces the lossy scene-result round trip).
+    private val _archiveRatingChangedEvent = MutableSharedFlow<ArchiveRatingChangedEvent>(
+        extraBufferCapacity = 16
+    )
+    val archiveRatingChangedEvent = _archiveRatingChangedEvent.asSharedFlow()
+
+    fun postArchiveRatingChangedEvent(event: ArchiveRatingChangedEvent) {
+        _archiveRatingChangedEvent.tryEmit(event)
+    }
+
     // Non-sticky: a tank tag materialization failed after its membership
     // write succeeded (spec 2026-09-22 §5.3); the shell shows a Snackbar.
     private val _tankTagSyncFailedEvent = MutableSharedFlow<TankTagSyncFailedEvent>(

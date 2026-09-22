@@ -329,24 +329,6 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         }
     }
 
-    /**
-     * Hands a changed rating back to the launching list (same contract as
-     * the archive page: [GalleryDetailScene.KEY_ARCID] +
-     * [GalleryDetailScene.KEY_RATING_RESULT]) so the folded tank row's
-     * stars update without a refresh.
-     */
-    override fun onBackPressed() {
-        val s = viewModel.state.value
-        val initial = viewModel.initialRating
-        if (s != null && !initial.isNaN() && s.rating.coerceAtLeast(0f) != initial) {
-            val data = Bundle()
-            data.putString(GalleryDetailScene.KEY_ARCID, s.tankId)
-            data.putFloat(GalleryDetailScene.KEY_RATING_RESULT, s.rating.coerceAtLeast(0f))
-            setResult(RESULT_OK, data)
-        }
-        finish()
-    }
-
     private fun showLoading() {
         // Keep the seeded header visible while a reload runs after a first
         // success; a cold load shows the full-page spinner.

@@ -120,12 +120,12 @@ class HistoryViewModel : ViewModel() {
     }
 
     // -------------------------------------------------------------------------
-    // In-place update (for onSceneResult rating propagation)
+    // In-place update (for detail-page rating propagation)
     // -------------------------------------------------------------------------
 
     /**
      * Update the rating of the Archive at [position] in the display list.
-     * Used by HistoryScene.onSceneResult for immediate UI feedback.
+     * Used by HistoryScene on an ArchiveRatingChangedEvent for immediate UI feedback.
      */
     fun updateRatingAtPosition(position: Int, newRating: Float) {
         val current = _historyList.value.toMutableList()
