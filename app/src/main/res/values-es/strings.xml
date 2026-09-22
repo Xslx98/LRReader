@@ -901,6 +901,8 @@ Esta acción no se puede deshacer.</string>
     <string name="security_storage_retry">Reintentar</string>
     <string name="security_reset_app_lock">Restablecer bloqueo</string>
     <string name="security_reset_app_lock_confirm">¿Restablecer el bloqueo y eliminar todas las claves API guardadas? Tendrás que volver a introducir las credenciales del servidor.</string>
+    <string name="security_fingerprint_changed">Las huellas del dispositivo cambiaron, así que se desactivó el desbloqueo con huella. Puedes volver a activarlo en los ajustes de privacidad.</string>
+    <string name="security_pattern_unverifiable_message">Las huellas del dispositivo cambiaron y este patrón se guardó de forma que solo puede comprobarse con la clave de huella anterior. Restablece el bloqueo para continuar: se eliminarán el patrón y todas las claves API guardadas. La biblioteca y las descargas se conservan.</string>
     <string name="lrr_boot_load_failed_title">Error de inicio</string>
     <string name="lrr_boot_load_failed_message">No se pudieron cargar tus perfiles de servidor guardados al iniciar. La aplicación se está ejecutando sin un perfil cargado; es posible que necesites reconfigurar o reinstalar.\n\nDetalles: %1$s</string>
     <string name="lrr_boot_load_failed_retry">Reintentar</string>

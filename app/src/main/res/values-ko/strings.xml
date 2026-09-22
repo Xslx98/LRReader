@@ -859,6 +859,8 @@
     <string name="security_storage_retry">다시 시도</string>
     <string name="security_reset_app_lock">앱 잠금 재설정</string>
     <string name="security_reset_app_lock_confirm">앱 잠금을 재설정하고 저장된 모든 API 키를 삭제할까요? 서버 자격 증명을 다시 입력해야 합니다.</string>
+    <string name="security_fingerprint_changed">기기의 지문이 변경되어 지문 잠금 해제가 꺼졌습니다. 개인정보 설정에서 다시 켤 수 있습니다.</string>
+    <string name="security_pattern_unverifiable_message">기기의 지문이 변경되었고 이 패턴은 이전 지문 키로만 확인할 수 있는 방식으로 저장되었습니다. 계속하려면 앱 잠금을 재설정하세요. 패턴과 저장된 모든 서버 API 키가 삭제됩니다. 라이브러리와 다운로드는 유지됩니다.</string>
     <string name="lrr_boot_load_failed_title">시작 오류</string>
     <string name="lrr_boot_load_failed_message">시작 시 저장된 서버 프로필을 불러올 수 없습니다. 프로필이 로드되지 않은 상태로 실행 중입니다. 다시 구성하거나 재설치해야 할 수 있습니다.\n\n세부 정보: %1$s</string>
     <string name="lrr_boot_load_failed_retry">다시 시도</string>

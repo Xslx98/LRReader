@@ -71,6 +71,20 @@ class SecurityViewModel : ViewModel() {
          * [onBiometricCipherUnavailable].
          */
         data class NeedBiometricVerification(val pattern: String) : SecurityUiEvent
+
+        /**
+         * The pattern was verified, but only after the fingerprint key had
+         * been invalidated (new fingerprint enrolled): fingerprint unlock
+         * was switched off. Scene should tell the user, then navigate on.
+         */
+        data object VerifiedAfterFingerprintChange : SecurityUiEvent
+
+        /**
+         * The fingerprint key is gone and the pattern was saved without a
+         * plain hash, so it can never be verified again. Scene should offer
+         * resetting the app lock.
+         */
+        data object PatternUnverifiable : SecurityUiEvent
     }
 
     private val _uiEvent = MutableSharedFlow<SecurityUiEvent>(extraBufferCapacity = 1)
@@ -130,12 +144,20 @@ class SecurityViewModel : ViewModel() {
     }
 
     /**
-     * Called when biometric prompt fails to get cipher (KeyStore invalidated).
-     * Falls back to PBKDF2 verification.
+     * Called when the keystore cipher cannot be obtained, typically
+     * KeyPermanentlyInvalidatedException after a new fingerprint was
+     * enrolled. Falls back to the plain PBKDF2 hash; on success the dead
+     * keystore binding and fingerprint unlock are switched off.
      */
     fun onBiometricCipherUnavailable(patternString: String) {
+        if (!LRRAuthManager.canVerifyWithoutKeystore()) {
+            _uiEvent.tryEmit(SecurityUiEvent.PatternUnverifiable)
+            return
+        }
         if (SecuritySettings.verifyPattern(patternString)) {
-            _uiEvent.tryEmit(SecurityUiEvent.PatternVerified)
+            LRRAuthManager.unbindPatternFromKeystore()
+            SecuritySettings.putEnableFingerprint(false)
+            _uiEvent.tryEmit(SecurityUiEvent.VerifiedAfterFingerprintChange)
         } else {
             onVerificationFailed()
         }
