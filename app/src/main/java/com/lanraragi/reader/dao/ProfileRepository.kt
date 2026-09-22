@@ -43,10 +43,6 @@ class ProfileRepository(private val dao: MiscRoomDao) {
         dao.deleteServerProfile(profile)
     }
 
-    suspend fun deactivateAll() {
-        dao.deactivateAllProfiles()
-    }
-
     /** Atomically make [id] the sole active profile. */
     suspend fun activateExclusive(id: Long) {
         dao.setActiveProfileExclusive(id)
