@@ -66,18 +66,19 @@ class SecurityScene : SolidScene(),
 
     private fun dismissAfterUnlock() {
         if (ehContext == null || !isAdded) return
-        if (isRelockMode) {
-            // Capture context + resume intent BEFORE finishing — finish()
-            // detaches this fragment so ehContext may turn null right after.
-            val ctx = ehContext
-            val resumeIntent = AppLockGate.consumeResumeIntent()
-            finish()
-            if (ctx != null && resumeIntent != null) {
-                ctx.startActivity(resumeIntent)
-            }
-        } else {
+        AppLockGate.markUnlocked()
+        // Capture context + resume intent BEFORE finishing — finish()
+        // detaches this fragment so ehContext may turn null right after.
+        val ctx = ehContext
+        val resumeIntent = AppLockGate.consumeResumeIntent()
+        if (!isRelockMode) {
             startSceneForCheckStep(CHECK_STEP_SECURITY, arguments)
-            finish()
+        }
+        finish()
+        // An Activity redirected here while locked (reader restored after
+        // process death, continue-reading widget) is reopened.
+        if (ctx != null && resumeIntent != null) {
+            ctx.startActivity(resumeIntent)
         }
     }
 

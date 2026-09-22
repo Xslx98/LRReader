@@ -485,6 +485,9 @@ class MainActivity : StageActivity(),
             }
         } else {
             onRestore(savedState)
+            // A scene stack restored after process death must not show
+            // before the lock: push the lock screen over it right away.
+            onForegroundLockCheck()
         }
         TagTranslationDatabase.update(this)
 
@@ -853,15 +856,15 @@ class MainActivity : StageActivity(),
      * successful unlock just pops it back to the previous scene without
      * resetting navigation.
      */
+    override fun hostsLockScreen(): Boolean = true
+
     override fun onForegroundLockCheck() {
-        if (!AppLockGate.consumeShouldRelock()) return
-        // Always consume above so a removed pattern doesn't leave the flag set
-        // forever. Push SecurityScene only if a pattern is still configured.
-        if (!SecuritySettings.isLockEnabled()) return
-        // Skip if SecurityScene is already on top — avoids stacking a
-        // duplicate when the user backgrounds the lock prompt itself.
-        val top = topSceneClass
-        if (top != null && SecurityScene::class.java.isAssignableFrom(top)) return
+        if (!AppLockGate.isLocked()) return
+        // Skip if SecurityScene is already on top (the cold-start launch
+        // scene, or the user backgrounded the lock prompt itself), and while
+        // no scene exists yet (the launch announcer is the lock screen).
+        val top = topSceneClass ?: return
+        if (SecurityScene::class.java.isAssignableFrom(top)) return
         val args = Bundle().apply {
             putBoolean(SecurityScene.KEY_RELOCK_MODE, true)
         }
