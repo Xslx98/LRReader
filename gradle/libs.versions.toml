@@ -103,13 +103,6 @@ seven332-refreshlayout = { module = "com.github.seven332:refreshlayout", version
 seven332-ripple = { module = "com.github.seven332:ripple", version = "0.1.2" }
 seven332-streampipe = { module = "com.github.seven332:streampipe", version = "0.1.0" }
 pagination-sxj = { module = "com.github.xiaojieonly:Pagination_Sxj", version = "8d2c34d8f53927aeaa1d405d8653969379cb37ec" }
-request-inspector = { module = "com.github.xiaojieonly:Android-Request-Inspector-WebView", version = "70403bb" }
-
-# --- Force-resolved JitPack (used in resolutionStrategy) ---
-seven332-glgallery = { module = "com.github.seven332:glgallery", version = "25893283ca" }
-seven332-glview = { module = "com.github.seven332:glview", version = "ba6aee61d7" }
-seven332-glview-image = { module = "com.github.seven332:glview-image", version = "68d94b0fc2" }
-seven332-image = { module = "com.github.seven332:image", version = "09b43c0c68" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

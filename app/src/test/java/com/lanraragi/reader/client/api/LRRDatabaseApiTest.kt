@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.client.api.*
 import com.lanraragi.reader.client.api.data.*
 import kotlinx.coroutines.test.runTest
@@ -50,7 +51,7 @@ class LRRDatabaseApiTest {
         assertTrue(result.contains("artist"))
         assertTrue(result.contains("foo"))
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("GET", req.method)
         assertEquals("/api/database/stats", req.path)
     }
@@ -95,7 +96,7 @@ class LRRDatabaseApiTest {
         assertEquals("bar", result[1].text)
         assertEquals(10, result[1].weight)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("GET", req.method)
         assertEquals("/api/database/stats", req.path)
     }

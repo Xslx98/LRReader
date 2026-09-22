@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.awaitRequest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
@@ -45,7 +46,7 @@ class LRRStampApiTest {
         val pages = LRRStampApi.getStampedPages(client, baseUrl, arcid)
 
         assertEquals(listOf(3, 1), pages)
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("GET", req.method)
         assertEquals("/api/archives/$arcid/stamps", req.path)
     }
@@ -75,7 +76,7 @@ class LRRStampApiTest {
         assertEquals("STAMPS_5_1719999999999", stamps[0].id)
         assertEquals("12.5,34", stamps[0].position)
         assertEquals("hello", stamps[0].content)
-        assertEquals("/api/archives/$arcid/stamps/5", server.takeRequest().path)
+        assertEquals("/api/archives/$arcid/stamps/5", server.awaitRequest().path)
     }
 
     @Test
@@ -93,7 +94,7 @@ class LRRStampApiTest {
         val id = LRRStampApi.addStamp(client, baseUrl, arcid, page1 = 2, content = "täst text", position = "10.00,20.50")
 
         assertEquals("STAMPS_2_1719999999999", id)
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("PUT", req.method)
         assertEquals("/api/archives/$arcid/stamps/2", req.requestUrl!!.encodedPath)
         assertEquals("täst text", req.requestUrl!!.queryParameter("content"))
@@ -142,7 +143,7 @@ class LRRStampApiTest {
 
         LRRStampApi.updateStamp(client, baseUrl, "STAMPS_2_1719999999999", content = "new", position = null)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("PUT", req.method)
         assertEquals("/api/stamps/STAMPS_2_1719999999999", req.requestUrl!!.encodedPath)
         assertEquals("new", req.requestUrl!!.queryParameter("content"))
@@ -170,7 +171,7 @@ class LRRStampApiTest {
 
         LRRStampApi.deleteStamp(client, baseUrl, "STAMPS_2_1719999999999")
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("DELETE", req.method)
         assertEquals("/api/stamps/STAMPS_2_1719999999999", req.requestUrl!!.encodedPath)
     }

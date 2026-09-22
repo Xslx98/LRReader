@@ -9,6 +9,7 @@
  */
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.awaitRequest
 import android.util.Base64
 import com.lanraragi.reader.AppProxySelector
 import com.lanraragi.reader.ServiceRegistry
@@ -82,7 +83,7 @@ class LRRServerApiAuthHeaderTest {
     fun withApiKey_sendsBearerToken() = runBlocking {
         server.enqueue(MockResponse().setResponseCode(200).setBody(infoJson))
         LRRServerApi.getServerInfo(client, baseUrl(), "secret-key")
-        val recorded = server.takeRequest()
+        val recorded = server.awaitRequest()
         val expected = "Bearer " + Base64.encodeToString(
             "secret-key".toByteArray(Charsets.UTF_8), Base64.NO_WRAP
         )
@@ -93,20 +94,20 @@ class LRRServerApiAuthHeaderTest {
     fun withNullKey_sendsNoAuthHeader() = runBlocking {
         server.enqueue(MockResponse().setResponseCode(200).setBody(infoJson))
         LRRServerApi.getServerInfo(client, baseUrl(), null)
-        assertNull(server.takeRequest().getHeader("Authorization"))
+        assertNull(server.awaitRequest().getHeader("Authorization"))
     }
 
     @Test
     fun withEmptyKey_sendsNoAuthHeader() = runBlocking {
         server.enqueue(MockResponse().setResponseCode(200).setBody(infoJson))
         LRRServerApi.getServerInfo(client, baseUrl(), "")
-        assertNull(server.takeRequest().getHeader("Authorization"))
+        assertNull(server.awaitRequest().getHeader("Authorization"))
     }
 
     @Test
     fun legacyTwoArgOverload_sendsNoAuthHeader() = runBlocking {
         server.enqueue(MockResponse().setResponseCode(200).setBody(infoJson))
         LRRServerApi.getServerInfo(client, baseUrl())
-        assertNull(server.takeRequest().getHeader("Authorization"))
+        assertNull(server.awaitRequest().getHeader("Authorization"))
     }
 }

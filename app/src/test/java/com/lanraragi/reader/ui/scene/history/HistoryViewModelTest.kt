@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.history
 
+import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
@@ -27,7 +28,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import org.robolectric.shadows.ShadowLooper
 
 /**
  * Unit tests for [HistoryViewModel] — history list loading, delete,
@@ -123,7 +123,7 @@ class HistoryViewModelTest {
 
         val vm = HistoryViewModel()
         vm.loadHistory()
-        drainCoroutines()
+        awaitViewModelIdle(vm)
 
         assertEquals(2, vm.historyList.value.size)
     }
@@ -140,7 +140,7 @@ class HistoryViewModelTest {
         }
 
         vm.loadHistory()
-        drainCoroutines()
+        awaitViewModelIdle(vm)
 
         assertTrue(updates.isNotEmpty())
         assertEquals(1, updates.first().newList.size)
@@ -152,7 +152,7 @@ class HistoryViewModelTest {
     fun loadHistory_fromEmptyDb_resultsInEmptyList() {
         val vm = HistoryViewModel()
         vm.loadHistory()
-        drainCoroutines()
+        awaitViewModelIdle(vm)
 
         assertTrue(vm.historyList.value.isEmpty())
     }
@@ -167,12 +167,12 @@ class HistoryViewModelTest {
 
         val vm = HistoryViewModel()
         vm.loadHistory()
-        drainCoroutines()
+        awaitViewModelIdle(vm)
         assertEquals(2, vm.historyList.value.size)
 
         val itemToDelete = vm.getRawHistoryInfo(0)!!
         vm.deleteHistoryItem(itemToDelete)
-        drainCoroutines()
+        awaitViewModelIdle(vm)
 
         assertEquals(1, vm.historyList.value.size)
     }
@@ -183,11 +183,11 @@ class HistoryViewModelTest {
 
         val vm = HistoryViewModel()
         vm.loadHistory()
-        drainCoroutines()
+        awaitViewModelIdle(vm)
         assertEquals(2, vm.historyList.value.size)
 
         vm.clearAllHistory()
-        drainCoroutines()
+        awaitViewModelIdle(vm)
 
         assertTrue(vm.historyList.value.isEmpty())
     }
@@ -202,7 +202,7 @@ class HistoryViewModelTest {
 
         val vm = HistoryViewModel()
         vm.loadHistory()
-        drainCoroutines()
+        awaitViewModelIdle(vm)
         assertEquals(1, vm.historyList.value.size)
 
         vm.resetSnapshot()
@@ -215,7 +215,7 @@ class HistoryViewModelTest {
 
         val vm = HistoryViewModel()
         vm.loadHistory()
-        drainCoroutines()
+        awaitViewModelIdle(vm)
 
         vm.resetSnapshot()
 
@@ -226,7 +226,7 @@ class HistoryViewModelTest {
         }
 
         vm.loadHistory()
-        drainCoroutines()
+        awaitViewModelIdle(vm)
 
         assertTrue(updates.isNotEmpty())
         assertEquals(1, updates.last().newList.size)
@@ -263,24 +263,5 @@ class HistoryViewModelTest {
                 repo.putHistoryInfo(archive)
             }
         }
-    }
-
-    /**
-     * Drain all pending coroutine dispatches and looper callbacks so that
-     * viewModelScope.launch coroutines complete before assertions.
-     *
-     * The HistoryViewModel uses `withContext(Dispatchers.IO)` which runs
-     * on a real IO thread. We give it a brief moment to complete, then
-     * idle the main looper so the continuation resumes on Main and
-     * StateFlow values get published.
-     */
-    private fun drainCoroutines() {
-        // Give IO coroutines time to complete (Room executors are sync,
-        // so the actual DB work is instantaneous; we just need the IO
-        // dispatcher to schedule and resume)
-        Thread.sleep(100)
-        ShadowLooper.idleMainLooper()
-        Thread.sleep(50)
-        ShadowLooper.idleMainLooper()
     }
 }

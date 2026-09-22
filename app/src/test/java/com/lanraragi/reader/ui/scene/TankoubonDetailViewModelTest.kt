@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene
 
+import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.AppProxySelector
@@ -195,7 +196,7 @@ class TankoubonDetailViewModelTest {
         assertEquals(listOf(ID_EP1, ID_EP2, ID_EXTRA), putBodies[0])
         assertEquals(listOf(ID_EP1, ID_EP2, ID_EXTRA), vm.members.value.map { it.arcid })
         assertEquals(listOf(ID_EP1, ID_EP2, ID_EXTRA), vm.memberIds)
-        Thread.sleep(100)
+        awaitViewModelIdle(vm)
         assertTrue("non-undoable reorders emit no OrderApplied", events.none { it is TankDetailUiEvent.OrderApplied })
     }
 

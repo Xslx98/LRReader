@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.client.api.*
 import com.lanraragi.reader.client.api.data.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -58,7 +59,7 @@ class LRRServerApiTest {
         assertEquals("0.9.21", info.version)
         assertTrue(info.serverTracksProgress)
 
-        val request = server.takeRequest()
+        val request = server.awaitRequest()
         assertEquals("GET", request.method)
         assertEquals("/api/info", request.path)
     }
@@ -95,7 +96,7 @@ class LRRServerApiTest {
 
         LRRServerApi.getServerInfo(client, baseUrl)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("GET", req.method)
         assertEquals("/api/info", req.path)
     }

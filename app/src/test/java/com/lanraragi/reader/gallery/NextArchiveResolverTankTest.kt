@@ -1,5 +1,6 @@
 package com.lanraragi.reader.gallery
 
+import com.lanraragi.reader.awaitRequest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
@@ -81,8 +82,8 @@ class NextArchiveResolverTankTest {
         assertEquals(a2, adv.anchorArcid)
         // advanced context carries the SERVER's offsets, not the snapshot's
         assertEquals(listOf(0, 20, 50), adv.pageOffsets)
-        assertEquals("/api/tankoubons/TANK_1688616437/full?page=-1", server.takeRequest().path)
-        assertEquals("/api/archives/$a2/metadata", server.takeRequest().path)
+        assertEquals("/api/tankoubons/TANK_1688616437/full?page=-1", server.awaitRequest().path)
+        assertEquals("/api/archives/$a2/metadata", server.awaitRequest().path)
     }
 
     @Test
@@ -172,7 +173,7 @@ class NextArchiveResolverTankTest {
         assertEquals(a3, next.archive.arcid)          // tank skipped
         val adv = next.advanced as ReadingContext.OnlineSearch
         assertEquals(2, adv.anchorIndex)              // RAW index of a3, not filtered index
-        assertTrue(server.takeRequest().path!!.contains("groupby_tanks=true"))
+        assertTrue(server.awaitRequest().path!!.contains("groupby_tanks=true"))
     }
 
     @Test
@@ -205,7 +206,7 @@ class NextArchiveResolverTankTest {
         assertEquals(a4, next.archive.arcid)
         assertEquals(3, (next.advanced as ReadingContext.OnlineSearch).anchorIndex)  // RAW index
         // start=0 omits the query param entirely (LRRSearchApi only sends start > 0).
-        assertFalse(server.takeRequest().path!!.contains("start="))
-        assertTrue(server.takeRequest().path!!.contains("start=2"))
+        assertFalse(server.awaitRequest().path!!.contains("start="))
+        assertTrue(server.awaitRequest().path!!.contains("start=2"))
     }
 }

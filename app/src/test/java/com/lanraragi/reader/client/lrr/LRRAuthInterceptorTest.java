@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.lrr;
 
+import com.lanraragi.reader.MockWebServerAwaitKt;
 import com.lanraragi.reader.client.api.*;
 import com.lanraragi.reader.client.api.data.*;
 import android.content.Context;
@@ -80,7 +81,7 @@ public class LRRAuthInterceptorTest {
         Request request = new Request.Builder().url(server.url("/api/info")).build();
         client.newCall(request).execute().close();
 
-        RecordedRequest recorded = server.takeRequest();
+        RecordedRequest recorded = MockWebServerAwaitKt.awaitRequest(server, 10);
         assertNull(recorded.getHeader("Authorization"));
     }
 
@@ -93,7 +94,7 @@ public class LRRAuthInterceptorTest {
         Request request = new Request.Builder().url(server.url("/api/info")).build();
         client.newCall(request).execute().close();
 
-        RecordedRequest recorded = server.takeRequest();
+        RecordedRequest recorded = MockWebServerAwaitKt.awaitRequest(server, 10);
         assertNull(recorded.getHeader("Authorization"));
     }
 
@@ -106,7 +107,7 @@ public class LRRAuthInterceptorTest {
         Request request = new Request.Builder().url(server.url("/api/info")).build();
         client.newCall(request).execute().close();
 
-        RecordedRequest recorded = server.takeRequest();
+        RecordedRequest recorded = MockWebServerAwaitKt.awaitRequest(server, 10);
         String authHeader = recorded.getHeader("Authorization");
         assertNotNull("Authorization header should be present", authHeader);
         assertTrue(authHeader.startsWith("Bearer "));
@@ -124,7 +125,7 @@ public class LRRAuthInterceptorTest {
         Request request = new Request.Builder().url(server.url("/api/info")).build();
         client.newCall(request).execute().close();
 
-        RecordedRequest recorded = server.takeRequest();
+        RecordedRequest recorded = MockWebServerAwaitKt.awaitRequest(server, 10);
         assertNull(recorded.getHeader("Authorization"));
     }
 
@@ -137,7 +138,7 @@ public class LRRAuthInterceptorTest {
         Request request = new Request.Builder().url(server.url("/api/info")).build();
         client.newCall(request).execute().close();
 
-        RecordedRequest recorded = server.takeRequest();
+        RecordedRequest recorded = MockWebServerAwaitKt.awaitRequest(server, 10);
         assertNull(recorded.getHeader("Authorization"));
     }
 
@@ -288,7 +289,7 @@ public class LRRAuthInterceptorTest {
                 .build();
         client.newCall(request).execute().close();
 
-        RecordedRequest recorded = server.takeRequest();
+        RecordedRequest recorded = MockWebServerAwaitKt.awaitRequest(server, 10);
         assertNotNull("Authorization header expected on matching host/port",
                 recorded.getHeader("Authorization"));
     }
@@ -309,7 +310,7 @@ public class LRRAuthInterceptorTest {
         Request request = new Request.Builder().url(server.url("/api/info")).build();
         client.newCall(request).execute().close();
 
-        RecordedRequest recorded = server.takeRequest();
+        RecordedRequest recorded = MockWebServerAwaitKt.awaitRequest(server, 10);
         assertNull(recorded.getHeader("Authorization"));
     }
 
@@ -328,7 +329,7 @@ public class LRRAuthInterceptorTest {
         Request request = new Request.Builder().url(server.url("/api/info")).build();
         client.newCall(request).execute().close();
 
-        RecordedRequest recorded = server.takeRequest();
+        RecordedRequest recorded = MockWebServerAwaitKt.awaitRequest(server, 10);
         assertNotNull("Case-insensitive host match expected",
                 recorded.getHeader("Authorization"));
     }
@@ -349,7 +350,7 @@ public class LRRAuthInterceptorTest {
         Request request = new Request.Builder().url(server.url("/api/info")).build();
         client.newCall(request).execute().close();
 
-        RecordedRequest recorded = server.takeRequest();
+        RecordedRequest recorded = MockWebServerAwaitKt.awaitRequest(server, 10);
         assertNotNull(recorded.getHeader("Authorization"));
     }
 
@@ -395,7 +396,7 @@ public class LRRAuthInterceptorTest {
         Request request = new Request.Builder().url(server.url("/api/info")).build();
         client.newCall(request).execute().close();
 
-        RecordedRequest recorded = server.takeRequest();
+        RecordedRequest recorded = MockWebServerAwaitKt.awaitRequest(server, 10);
         String auth = recorded.getHeader("Authorization");
         assertNotNull("Cleartext-but-matching-scheme should still inject token", auth);
         assertTrue(auth.startsWith("Bearer "));
@@ -442,7 +443,7 @@ public class LRRAuthInterceptorTest {
         Request request = new Request.Builder().url(server.url("/api/info")).build();
         client.newCall(request).execute().close();
 
-        RecordedRequest recorded = server.takeRequest();
+        RecordedRequest recorded = MockWebServerAwaitKt.awaitRequest(server, 10);
         assertNull("Token must not be sent to a different host", recorded.getHeader("Authorization"));
     }
 }

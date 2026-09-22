@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.client.api.*
 import com.lanraragi.reader.client.api.data.*
 import kotlinx.coroutines.test.runTest
@@ -46,7 +47,7 @@ class LRRShinobuApiTest {
         assertTrue(result.contains("is_alive"))
         assertTrue(result.contains("12345"))
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("GET", req.method)
         assertEquals("/api/shinobu", req.path)
     }
@@ -72,7 +73,7 @@ class LRRShinobuApiTest {
 
         LRRShinobuApi.restartShinobu(client, baseUrl)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("POST", req.method)
         assertEquals("/api/shinobu/restart", req.path)
     }

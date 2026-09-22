@@ -35,7 +35,6 @@ android {
         testOptions.unitTests.includeAndroidResources = true
         testOptions.unitTests.returnDefaultValues = true
         ndk {
-            moduleName "native-lib"
             abiFilters "arm64-v8a"
         }
         externalNativeBuild {
@@ -142,6 +141,9 @@ detekt {
     config.setFrom("$rootDir/config/detekt/detekt.yml")
     buildUponDefaultConfig = true
     source.setFrom("src/main/java")
+    // Pre-existing findings; new ones fail the build (maxIssues: 0).
+    // detektMain/type-resolution tasks use per-variant siblings of this file.
+    baseline = file("$rootDir/config/detekt/baseline.xml")
 }
 
 // W0-5: forbid string-concatenated baseUrl in LRR API code.
@@ -225,7 +227,6 @@ dependencies {
     implementation libs.advrecyclerview
 
     implementation libs.okhttp
-    debugImplementation libs.request.inspector
 
     // Room database (replaces GreenDAO)
     implementation libs.room.runtime
@@ -245,11 +246,6 @@ dependencies {
 
 configurations.configureEach {
     resolutionStrategy {
-        force libs.seven332.glgallery
-        force libs.seven332.glview
-        force libs.seven332.glview.image
-        force libs.seven332.image
-
         exclude group: 'com.github.seven332', module: 'okhttp'
     }
 }

@@ -3,7 +3,7 @@
 # Reference: https://detekt.dev/docs/rules/overview
 
 build:
-  maxIssues: -1  # Report all issues without failing build (initially)
+  maxIssues: 0  # Fail on any finding not in config/detekt/baseline*.xml
 
 complexity:
   LongMethod:

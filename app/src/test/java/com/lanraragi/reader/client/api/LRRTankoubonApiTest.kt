@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.awaitRequest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
@@ -60,7 +61,7 @@ class LRRTankoubonApiTest {
         assertEquals(12, r.result[0].progress)
         assertEquals(3, r.total)
         assertEquals(1, r.filtered)
-        assertEquals("/api/tankoubons", server.takeRequest().path)
+        assertEquals("/api/tankoubons", server.awaitRequest().path)
     }
 
     @Test
@@ -82,7 +83,7 @@ class LRRTankoubonApiTest {
         assertEquals(listOf(arcid), r.result.archives)
         assertEquals(1, r.result.fullData.size)
         assertEquals(20, r.result.fullData[0].pagecount)
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("/api/tankoubons/$tankId/full?page=-1", req.path)
     }
 
@@ -108,7 +109,7 @@ class LRRTankoubonApiTest {
         val ids = LRRTankoubonApi.getArchiveTankoubons(client, baseUrl, arcid)
 
         assertEquals(listOf(tankId), ids)
-        assertEquals("/api/archives/$arcid/tankoubons", server.takeRequest().path)
+        assertEquals("/api/archives/$arcid/tankoubons", server.awaitRequest().path)
     }
 
     @Test
@@ -134,7 +135,7 @@ class LRRTankoubonApiTest {
 
         LRRTankoubonApi.getTankoubons(client, baseUrl, page = 3)
 
-        assertEquals("/api/tankoubons?page=3", server.takeRequest().path)
+        assertEquals("/api/tankoubons?page=3", server.awaitRequest().path)
     }
 
     @Test
@@ -143,7 +144,7 @@ class LRRTankoubonApiTest {
 
         LRRTankoubonApi.getTankoubons(client, baseUrl, page = 0)
 
-        assertEquals("/api/tankoubons", server.takeRequest().path)
+        assertEquals("/api/tankoubons", server.awaitRequest().path)
     }
 
     @Test
@@ -174,7 +175,7 @@ class LRRTankoubonApiTest {
         assertTrue(LRRTankoubonApi.hasTankThumbnail(client, baseUrl, tankId))
         assertEquals(
             "/api/tankoubons/$tankId/thumbnail?no_fallback=true",
-            server.takeRequest().path
+            server.awaitRequest().path
         )
     }
 
@@ -243,7 +244,7 @@ class LRRTankoubonApiTest {
         val id = LRRTankoubonApi.createTankoubon(client, baseUrl, "Series A")
 
         assertEquals(tankId, id)
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("PUT", req.method)
         assertEquals("/api/tankoubons", req.path)
         assertTrue(req.body.readUtf8().contains("name=Series%20A"))
@@ -259,7 +260,7 @@ class LRRTankoubonApiTest {
 
         LRRTankoubonApi.renameTankoubon(client, baseUrl, tankId, "New name")
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("PUT", req.method)
         assertEquals("/api/tankoubons/$tankId", req.path)
         val body = req.body.readUtf8()
@@ -288,7 +289,7 @@ class LRRTankoubonApiTest {
             summary = "s2",
         )
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("PUT", req.method)
         assertEquals("/api/tankoubons/$tankId", req.path)
         assertEquals("application/json; charset=utf-8", req.getHeader("Content-Type"))
@@ -306,7 +307,7 @@ class LRRTankoubonApiTest {
 
         LRRTankoubonApi.updateTankoubon(client, baseUrl, tankId, archives = listOf(arcid))
 
-        val body = server.takeRequest().body.readUtf8()
+        val body = server.awaitRequest().body.readUtf8()
         assertTrue(body.contains(""""archives":["$arcid"]"""))
         assertFalse(body.contains(""""metadata""""))
     }
@@ -317,7 +318,7 @@ class LRRTankoubonApiTest {
 
         LRRTankoubonApi.updateTankoubon(client, baseUrl, tankId, summary = "x")
 
-        val body = server.takeRequest().body.readUtf8()
+        val body = server.awaitRequest().body.readUtf8()
         assertTrue(body.contains(""""summary":"x""""))
         assertFalse(body.contains(""""archives""""))
     }
@@ -340,10 +341,10 @@ class LRRTankoubonApiTest {
         LRRTankoubonApi.addToTankoubon(client, baseUrl, tankId, arcid)
         LRRTankoubonApi.removeFromTankoubon(client, baseUrl, tankId, arcid)
 
-        val put = server.takeRequest()
+        val put = server.awaitRequest()
         assertEquals("PUT", put.method)
         assertEquals("/api/tankoubons/$tankId/$arcid", put.path)
-        val del = server.takeRequest()
+        val del = server.awaitRequest()
         assertEquals("DELETE", del.method)
         assertEquals("/api/tankoubons/$tankId/$arcid", del.path)
     }
@@ -370,7 +371,7 @@ class LRRTankoubonApiTest {
 
         LRRTankoubonApi.updateTankThumbnail(client, baseUrl, tankId, globalPage1 = 21)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("PUT", req.method)
         assertEquals("/api/tankoubons/$tankId/thumbnail?page=21", req.path)
     }
@@ -382,7 +383,7 @@ class LRRTankoubonApiTest {
 
         LRRTankoubonApi.updateTankProgress(client, baseUrl, tankId, globalPage1 = 26)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("PUT", req.method)
         assertEquals("/api/tankoubons/$tankId/progress/26", req.path)
     }
