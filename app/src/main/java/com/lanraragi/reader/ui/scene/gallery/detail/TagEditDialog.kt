@@ -29,6 +29,7 @@ import okhttp3.OkHttpClient
 import com.lanraragi.reader.domain.BARE_TAG_BUCKET
 import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.domain.explicitlyNamespacedValues
+import com.lanraragi.reader.domain.mergeTagEdits
 import com.lanraragi.reader.domain.toLrrTagString
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
@@ -296,7 +297,7 @@ object TagEditDialog {
             .setView(scrollView)
             .setPositiveButton(R.string.lrr_save) { _, _ ->
                 performUpdate(
-                    activity, arcid, tagsToString(tagGroups), snapshotGroups(groups),
+                    activity, arcid, tagGroups.orEmpty(), snapshotGroups(groups),
                     serverProfileId, callback, writer,
                 )
             }
@@ -610,7 +611,7 @@ object TagEditDialog {
     private fun performUpdate(
         activity: Activity,
         arcid: String,
-        fallbackOldTags: String,
+        opened: List<TagGroup>,
         edited: List<TagGroup>,
         serverProfileId: Long,
         callback: Callback?,
@@ -635,9 +636,14 @@ object TagEditDialog {
                 } catch (ignored: Exception) {
                     null
                 }
-                val oldTags = raw ?: fallbackOldTags
                 val explicitBucket = raw?.let { explicitlyNamespacedValues(it, BARE_TAG_BUCKET) }.orEmpty()
-                val tags = toLrrTagString(edited, explicitBucket)
+                val openedTags = toLrrTagString(opened, explicitBucket)
+                val editedTags = toLrrTagString(edited, explicitBucket)
+                val oldTags = raw ?: openedTags
+                // The editor was built from what the page loaded; the server
+                // may have changed since (a rating saved from this very page).
+                // Apply only the user's edit to the server's current string.
+                val tags = if (raw != null) mergeTagEdits(openedTags, editedTags, raw) else editedTags
                 writer.write(client, baseUrl, arcid, tags)
                 writer.afterWrite(client, baseUrl, arcid, oldTags, tags)
                 activity.runOnUiThread {

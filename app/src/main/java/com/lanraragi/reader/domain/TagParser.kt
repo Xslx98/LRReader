@@ -120,3 +120,23 @@ fun splitNamespace(tag: String): Array<String> {
         arrayOf(trimmed)
     }
 }
+
+/**
+ * Three-way merge of a tag edit: apply what the user changed between
+ * [opened] (the string the editor was built from) and [edited] onto the
+ * [server]'s current string. Tags the server gained meanwhile — a rating
+ * saved from the same page, another client's edit — survive; tags the user
+ * removed go, tags they added are appended. All three are LANraragi
+ * comma-separated strings serialized with the same rule.
+ */
+fun mergeTagEdits(opened: String, edited: String, server: String): String {
+    fun tokens(s: String) = s.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+    val openedSet = tokens(opened).toSet()
+    val editedTokens = tokens(edited)
+    val removed = openedSet - editedTokens.toSet()
+    val out = tokens(server).filterTo(mutableListOf()) { it !in removed }
+    for (tag in editedTokens) {
+        if (tag !in openedSet && tag !in out) out += tag
+    }
+    return out.joinToString(", ")
+}

@@ -118,4 +118,20 @@ class TagParserTest {
         assertEquals(listOf("english"), splitNamespace(" english ").toList())
         assertEquals(listOf(":odd"), splitNamespace(":odd").toList())
     }
+
+    @Test
+    fun mergeTagEdits_keepsServerChangesMadeWhileEditing() {
+        val opened = "artist:a, full color"
+        val edited = "artist:b, full color"
+        val server = "artist:a, full color, rating:\u2b50\u2b50\u2b50"
+        assertEquals(
+            "full color, rating:\u2b50\u2b50\u2b50, artist:b",
+            mergeTagEdits(opened, edited, server)
+        )
+    }
+
+    @Test
+    fun mergeTagEdits_noEditIsANoOpOnTheServerString() {
+        assertEquals("x, y, z", mergeTagEdits("x, y", "x, y", "x, y, z"))
+    }
 }
