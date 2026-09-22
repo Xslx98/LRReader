@@ -199,7 +199,9 @@ object LRRTankoubonApi {
             .addPathSegment("thumbnail")
             .addQueryParameter("no_fallback", "true")
             .build()
-        val request = Request.Builder().url(url).get().build()
+        // HEAD: only the status matters (202 = no cover yet). A GET moved
+        // the whole cover image, then Conaco fetched it again to display.
+        val request = Request.Builder().url(url).head().build()
         client.newCall(request).await().use { response ->
             if (response.code == HTTP_ACCEPTED) {
                 false
