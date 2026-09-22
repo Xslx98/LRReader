@@ -1,5 +1,6 @@
 package com.lanraragi.reader.util
 
+import com.lanraragi.reader.domain.splitNamespace
 import com.lanraragi.reader.client.TagTranslationDatabase
 
 /**
@@ -37,6 +38,6 @@ object TagTranslationUtil {
 
     @JvmStatic
     fun getTagCN(tag: String?, ehTags: TagTranslationDatabase?): String {
-        return getTagCN((tag ?: "").split(":").toTypedArray(), ehTags)
+        return getTagCN(splitNamespace(tag ?: ""), ehTags)
     }
 }
