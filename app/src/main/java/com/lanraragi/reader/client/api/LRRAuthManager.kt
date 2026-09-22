@@ -652,6 +652,32 @@ object LRRAuthManager {
     }
 
     /**
+     * Whether the pattern can be checked without the keystore key, i.e. a
+     * plain PBKDF2 hash is stored. False only for keystore-bound patterns
+     * saved before that hash was kept.
+     */
+    @JvmStatic
+    fun canVerifyWithoutKeystore(): Boolean {
+        awaitInit()
+        return sPrefs?.contains(KEY_PATTERN_HASH_V2) == true
+    }
+
+    /**
+     * Drop the keystore binding (after the key was invalidated), keeping the
+     * pattern itself: it stays verifiable through the plain PBKDF2 hash.
+     */
+    @JvmStatic
+    fun unbindPatternFromKeystore() {
+        awaitInit()
+        sPrefs?.edit {
+            remove(KEY_PATTERN_ENCRYPTED)
+            remove(KEY_PATTERN_IV)
+        }
+        sPlainPrefs?.edit { putBoolean(KEY_PATTERN_KEYSTORE_BOUND, false) }
+        deletePatternKeystoreKey()
+    }
+
+    /**
      * Delete the KeyStore-backed AES key for pattern hash encryption.
      * Called when clearing the pattern or when falling back to PBKDF2-only.
      */
@@ -873,7 +899,10 @@ object LRRAuthManager {
                 putString(KEY_PATTERN_ENCRYPTED, Base64.encodeToString(encrypted, Base64.NO_WRAP))
                 putString(KEY_PATTERN_IV, Base64.encodeToString(iv, Base64.NO_WRAP))
                 putString(KEY_PATTERN_SALT, Base64.encodeToString(salt, Base64.NO_WRAP))
-                remove(KEY_PATTERN_HASH_V2)
+                // Keep the plain PBKDF2 hash too: the keystore key is
+                // invalidated whenever a new fingerprint is enrolled, and
+                // without this hash the pattern could never be verified again.
+                putString(KEY_PATTERN_HASH_V2, Base64.encodeToString(hash, Base64.NO_WRAP))
             }
             sPlainPrefs?.edit {
                 putBoolean(KEY_PATTERN_KEYSTORE_BOUND, true)
@@ -992,6 +1021,11 @@ object LRRAuthManager {
             try {
                 val actual = factory.generateSecret(specCurrent).encoded
                 if (MessageDigest.isEqual(actual, expected)) {
+                    // Self-heal patterns saved before the plain hash was kept
+                    // alongside the encrypted one (see setPatternWithCipher).
+                    if (!prefs.contains(KEY_PATTERN_HASH_V2)) {
+                        prefs.edit { putString(KEY_PATTERN_HASH_V2, Base64.encodeToString(actual, Base64.NO_WRAP)) }
+                    }
                     resetFailures()
                     return true
                 }

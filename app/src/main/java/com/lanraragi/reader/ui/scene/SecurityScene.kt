@@ -238,7 +238,19 @@ class SecurityScene : SolidScene(),
             .show()
     }
 
-    private fun confirmResetAppLock() {
+    private fun showPatternUnverifiableDialog() {
+        mPatternView?.isEnabled = false
+        val ctx = ehContext ?: return
+        AlertDialog.Builder(ctx)
+            .setMessage(R.string.security_pattern_unverifiable_message)
+            .setCancelable(false)
+            .setPositiveButton(R.string.security_reset_app_lock) { _, _ ->
+                confirmResetAppLock(onCancel = ::showPatternUnverifiableDialog)
+            }
+            .show()
+    }
+
+    private fun confirmResetAppLock(onCancel: () -> Unit = ::showStorageUnavailableDialog) {
         val ctx = ehContext ?: return
         AlertDialog.Builder(ctx)
             .setMessage(R.string.security_reset_app_lock_confirm)
@@ -248,7 +260,7 @@ class SecurityScene : SolidScene(),
                 AppLockGate.reset()
                 (ctx.applicationContext as LRReaderApplication).restart()
             }
-            .setNegativeButton(android.R.string.cancel) { _, _ -> showStorageUnavailableDialog() }
+            .setNegativeButton(android.R.string.cancel) { _, _ -> onCancel() }
             .show()
     }
 
@@ -318,6 +330,15 @@ class SecurityScene : SolidScene(),
             is SecurityUiEvent.NeedBiometricVerification -> {
                 verifyWithBiometric(event.pattern)
             }
+
+            is SecurityUiEvent.VerifiedAfterFingerprintChange -> {
+                ehContext?.let {
+                    Toast.makeText(it, R.string.security_fingerprint_changed, Toast.LENGTH_LONG).show()
+                }
+                dismissAfterUnlock()
+            }
+
+            is SecurityUiEvent.PatternUnverifiable -> showPatternUnverifiableDialog()
         }
     }
 
