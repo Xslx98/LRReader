@@ -619,10 +619,23 @@ interface ArchiveLocalStateDao {
         }
     }
 
+    /**
+     * History upserts merge into the row's existing `archive_json` instead
+     * of replacing it: the row is shared with the download subsystem, and
+     * history callers often pass lossy views (pagecount 0, progress 0, no
+     * summary) whose wholesale write made a partial download look complete.
+     * [merge] receives the stored json (null for a new row) and the
+     * incoming one; it runs inside the transaction, so keep it pure.
+     */
     @Transaction
-    suspend fun upsertHistoryBatch(rows: List<HistoryUpsertRow>) {
+    suspend fun upsertHistoryBatch(
+        rows: List<HistoryUpsertRow>,
+        merge: (existingJson: String?, incomingJson: String) -> String,
+    ) {
         for (r in rows) {
-            upsertHistory(r.arcid, r.serverProfileId, r.archiveJson, r.historyTime, r.historyMode)
+            val existing = loadByArcidAndProfile(r.arcid, r.serverProfileId)
+            val json = merge(existing?.archiveJson, r.archiveJson)
+            upsertHistory(r.arcid, r.serverProfileId, json, r.historyTime, r.historyMode)
         }
     }
 
