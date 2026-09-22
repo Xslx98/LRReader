@@ -338,6 +338,7 @@
     <string name="tank_detail_members">สมาชิก</string>
     <string name="tank_member_more">+%1$d</string>
     <string name="tank_member_view_detail">ดูรายละเอียดของเล่มนี้</string>
+    <string name="tank_page_divider">ตอนที่ %1$d · %2$s</string>
     <string name="tank_delete_confirm">ลบทังโคบงนี้? ไฟล์ข้างในจะไม่ถูกลบ แต่สรุป แท็กเพิ่มเติม และความคืบหน้าการอ่านของทังโคบงจะหายไป</string>
     <string name="tank_locked">ทังโคบงถูกล็อกอยู่ โปรดลองใหม่ภายหลัง</string>
     <string name="tank_op_done">เสร็จสิ้น</string>

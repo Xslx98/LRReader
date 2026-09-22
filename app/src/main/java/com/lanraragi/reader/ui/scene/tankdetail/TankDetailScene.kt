@@ -1,17 +1,22 @@
 package com.lanraragi.reader.ui.scene.tankdetail
 
 import android.os.Bundle
+import android.text.InputType
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RatingBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.hippo.android.resource.AttrResources
@@ -36,6 +41,7 @@ import com.lanraragi.reader.gallery.TankMemberSeed
 import com.lanraragi.reader.gallery.TankPageMath
 import com.lanraragi.reader.gallery.TankSeedStore
 import com.lanraragi.reader.gallery.TankSessionSeed
+import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.tankoubon.TankMemberStrip
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.ui.scene.BaseScene
@@ -45,6 +51,7 @@ import com.lanraragi.reader.ui.scene.gallery.detail.CategoryDialogHelper
 import com.lanraragi.reader.ui.scene.gallery.detail.FavoriteState
 import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.ui.scene.gallery.detail.GalleryTagHelper
+import com.lanraragi.reader.ui.scene.gallery.detail.PrefetchScrollListener
 import com.lanraragi.reader.ui.scene.gallery.detail.TagEditDialog
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
 import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.LoadState
@@ -77,6 +84,13 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
     private var mMembersRecycler: RecyclerView? = null
     private var mMembersAdapter: TankMemberStripAdapter? = null
     private var mMembersManage: View? = null
+
+    private lateinit var pageThumbsViewModel: TankPageThumbnailsViewModel
+    private var mPreviews: View? = null
+    private var mPageGrid: RecyclerView? = null
+    private var mPageGridAdapter: TankPageGridAdapter? = null
+    private var mPageGridEmpty: TextView? = null
+    private var mPageGridSpanCount: Int = SPAN_MIN
 
     private var mViewTransition: ViewTransition? = null
     private var mViewTransition2: ViewTransition? = null
@@ -197,8 +211,8 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
             adapter = membersAdapter
         }
 
-        // Previews are bound by a later step; collapsed until then.
-        ViewUtils.`$$`(belowHeader, R.id.previews).visibility = View.GONE
+        pageThumbsViewModel = ViewModelProvider(this)[TankPageThumbnailsViewModel::class.java]
+        setupPageGrid(ViewUtils.`$$`(belowHeader, R.id.previews))
 
         val progress = ViewUtils.`$$`(mainView, R.id.progress)
         mViewTransition2 = ViewTransition(belowHeader, progress)
@@ -225,6 +239,11 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         mMembersRecycler = null
         mMembersAdapter = null
         mMembersManage = null
+        mPageGrid?.adapter = null
+        mPageGrid = null
+        mPageGridAdapter = null
+        mPageGridEmpty = null
+        mPreviews = null
         mViewTransition = null
         mViewTransition2 = null
         mTip = null
@@ -347,6 +366,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         bindHeart()
         bindTags(s)
         bindMembers(s)
+        bindPreviews(s)
         updateDownloadText()
         val banner = mOfflineBanner ?: return
         if (s.offline) {
@@ -547,6 +567,117 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
     }
 
     // -------------------------------------------------------------------------
+    // Page previews (spec 2026-09-22 §4.7): continuous global grid + member dividers
+    // -------------------------------------------------------------------------
+
+    private fun setupPageGrid(previews: View) {
+        mPreviews = previews
+        val recycler = previews.findViewById<RecyclerView>(R.id.page_thumb_recycler) ?: return
+        mPageGrid = recycler
+        mPageGridEmpty = previews.findViewById(R.id.page_thumb_empty)
+        previews.findViewById<View>(R.id.page_thumb_progress)?.visibility = View.GONE
+
+        val targetWidthPx = resources.getDimensionPixelSize(AppearanceSettings.getDetailPageThumbSizeResId())
+            .coerceAtLeast(1)
+        val spanCount = (resources.displayMetrics.widthPixels / targetWidthPx).coerceIn(SPAN_MIN, SPAN_MAX)
+        mPageGridSpanCount = spanCount
+
+        val adapter = TankPageGridAdapter(
+            onPageClick = { global0 -> openTankSession(startGlobalPage = global0) },
+            onPageRetry = { global0 -> pageThumbsViewModel.retryPage(global0) },
+        )
+        mPageGridAdapter = adapter
+        recycler.layoutManager = GridLayoutManager(previews.context, spanCount).apply {
+            spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                override fun getSpanSize(position: Int): Int = adapter.spanSize(position, spanCount)
+            }
+        }
+        // No item-change animation: the payload rebind must not flash the tile.
+        recycler.itemAnimator = null
+        recycler.adapter = adapter
+        recycler.addOnScrollListener(
+            PrefetchScrollListener(spanCount) { position ->
+                adapter.globalAt(position)?.let { pageThumbsViewModel.requestPage(it) }
+            }
+        )
+        previews.findViewById<View>(R.id.page_thumb_jump)?.setOnClickListener { showJumpToPageDialog() }
+
+        collectFlow(viewLifecycleOwner, pageThumbsViewModel.layout) { layout ->
+            if (layout == null) return@collectFlow
+            val s = viewModel.state.value ?: return@collectFlow
+            adapter.submit(layout, s.members)
+            val empty = mPageGridEmpty
+            if (layout.totalPages == 0) {
+                empty?.setText(R.string.lrr_page_thumbnails_generic)
+                empty?.visibility = View.VISIBLE
+            } else {
+                empty?.visibility = View.GONE
+            }
+            // The scroll listener only fires on scroll; kick the first viewport
+            // after layout so the positions are known.
+            recycler.post { triggerInitialPagePrefetch(layout.size) }
+        }
+        collectFlow(viewLifecycleOwner, pageThumbsViewModel.pageStates) { adapter.submitStates(it) }
+    }
+
+    /** Thumbnails need the source server: hidden offline, otherwise (re)started on the loaded members. */
+    private fun bindPreviews(s: TankDetailState) {
+        val previews = mPreviews ?: return
+        val base = s.baseUrl
+        if (s.offline || base == null) {
+            previews.visibility = View.GONE
+            return
+        }
+        previews.visibility = View.VISIBLE
+        pageThumbsViewModel.start(s.members, base)
+    }
+
+    private fun triggerInitialPagePrefetch(itemCount: Int) {
+        val adapter = mPageGridAdapter ?: return
+        val initial = (mPageGridSpanCount.coerceAtLeast(1) * INITIAL_ROWS).coerceAtMost(itemCount)
+        for (position in 0 until initial) {
+            adapter.globalAt(position)?.let { pageThumbsViewModel.requestPage(it) }
+        }
+    }
+
+    /** Jump = scroll the grid to a 1-indexed GLOBAL page; taps open the reader, this never does. */
+    private fun showJumpToPageDialog() {
+        val ctx = ehContext ?: return
+        val layout = pageThumbsViewModel.layout.value ?: return
+        val pageCount = layout.totalPages
+        if (pageCount <= 0) return
+
+        val container = FrameLayout(ctx).apply {
+            val pad = resources.getDimensionPixelSize(R.dimen.keyline_margin)
+            setPadding(pad, pad / 2, pad, pad / 2)
+        }
+        val input = EditText(ctx).apply {
+            inputType = InputType.TYPE_CLASS_NUMBER
+            hint = getString(R.string.lrr_page_thumbnails_jump_dialog_hint, pageCount)
+        }
+        container.addView(input)
+
+        AlertDialog.Builder(ctx)
+            .setTitle(R.string.lrr_page_thumbnails_jump_dialog_title)
+            .setView(container)
+            .setPositiveButton(R.string.lrr_page_thumbnails_jump_dialog_ok) { dialog, _ ->
+                val raw = input.text?.toString()?.trim()?.toIntOrNull()
+                if (raw == null || raw < 1 || raw > pageCount) {
+                    Toast.makeText(
+                        ctx,
+                        getString(R.string.lrr_page_thumbnails_jump_dialog_out_of_range, pageCount),
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                    return@setPositiveButton
+                }
+                mPageGrid?.scrollToPosition(layout.positionOfGlobal(raw - 1))
+                dialog.dismiss()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    // -------------------------------------------------------------------------
     // Download card
     // -------------------------------------------------------------------------
 
@@ -691,5 +822,8 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         private const val REVEAL_DURATION_MS = 300L
         private const val RATING_STEP = 0.5f
         private const val MAX_STARS = 5f
+        private const val SPAN_MIN = 3
+        private const val SPAN_MAX = 6
+        private const val INITIAL_ROWS = 4
     }
 }

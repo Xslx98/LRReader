@@ -335,6 +335,7 @@
     <string name="tank_detail_members">Miembros</string>
     <string name="tank_member_more">+%1$d</string>
     <string name="tank_member_view_detail">Ver detalles del archivo</string>
+    <string name="tank_page_divider">Capítulo %1$d · %2$s</string>
     <string name="tank_delete_confirm">¿Eliminar este tankoubon? Los archivos que contiene no se eliminarán, pero se perderán el resumen, las etiquetas adicionales y el progreso de lectura del propio tankoubon.</string>
     <string name="tank_locked">El tankoubon está bloqueado, inténtalo más tarde</string>
     <string name="tank_op_done">Hecho</string>

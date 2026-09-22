@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Full-span member divider row of the tank detail page grid (spec 2026-09-22 §4.7). -->
+<TextView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tank_page_divider_title"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="12dp"
+    android:paddingBottom="6dp"
+    android:paddingStart="4dp"
+    android:paddingEnd="4dp"
+    android:ellipsize="end"
+    android:singleLine="true"
+    android:textColor="?attr/textColorThemeAccent"
+    android:textStyle="bold"
+    android:textSize="@dimen/text_little_small"/>
