@@ -1,6 +1,7 @@
 package com.lanraragi.reader.download
 
 import java.io.File
+import java.util.Locale
 
 /**
  * The one definition of how a page is named inside an archive's download
@@ -23,7 +24,12 @@ object DownloadPageNaming {
         return if (dot >= 0) pagePath.substring(dot) else DEFAULT_EXTENSION
     }
 
-    /** The page file for 0-based [index] whose server path is [pagePath]. */
+    /**
+     * The page file for 0-based [index] whose server path is [pagePath].
+     * Formatted with [Locale.US]: the default locale may use non-ASCII
+     * digits (Arabic, Persian), and then the worker and the reader would
+     * name the same page differently.
+     */
     fun pageFile(downloadDir: File, index: Int, pagePath: String): File =
-        File(downloadDir, "%04d%s".format(index + 1, extensionOf(pagePath)))
+        File(downloadDir, String.format(Locale.US, "%04d%s", index + 1, extensionOf(pagePath)))
 }

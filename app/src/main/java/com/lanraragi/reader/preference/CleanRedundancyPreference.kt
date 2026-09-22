@@ -18,88 +18,99 @@ package com.lanraragi.reader.preference
 
 import android.content.Context
 import android.util.AttributeSet
+import android.util.Log
 import android.widget.Toast
-import com.lanraragi.reader.LRReaderApplication
+import androidx.appcompat.app.AlertDialog
+import androidx.preference.Preference
+import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.download.RedundantDownloadScanner
 import com.lanraragi.reader.settings.DownloadSettings
-import com.lanraragi.framework.unifile.UniFile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-class CleanRedundancyPreference : TaskPreference {
+/**
+ * "Clear download redundancy": scans the download location for
+ * directories that belong to no download ([RedundantDownloadScanner]),
+ * then asks before deleting — listing how many and which — so a scan bug
+ * can never silently delete downloads again.
+ */
+class CleanRedundancyPreference : Preference {
 
     constructor(context: Context) : super(context)
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
-    override fun onCreateTask(): Task = ClearTask(context)
+    private var scanning = false
 
-    private class ClearTask(context: Context) : Task(context) {
-
-        private val mApplication: LRReaderApplication = context.applicationContext as LRReaderApplication
-        private val mManager = ServiceRegistry.dataModule.downloadManager
-
-        // Snapshot of arcid prefixes for all known downloads. Files in the
-        // download dir are named "<arcid>-<title>" (post-v20 format) or with
-        // a custom dirname stored in DOWNLOAD_DIRNAME (resolved by SpiderDen).
-        // Match by arcid prefix here — covers the common case; legacy
-        // gid-prefixed dirs from pre-v20 installs that have not been opened
-        // since upgrade may be wrongly flagged as orphan, but those dirs
-        // are repaired the next time the user opens the corresponding
-        // download (SpiderDen.getGalleryDownloadDir falls back to gid prefix
-        // and writes the canonical dirname into DOWNLOAD_DIRNAME).
-        private val knownArcids: Set<String> =
-            mManager.allDownloadInfoList.mapTo(HashSet()) { it.arcid }
-
-        // True for cleared
-        private fun clearFile(file: UniFile): Boolean {
-            val name = file.name ?: return false
-            val dashIdx = name.indexOf('-')
-            val prefix = if (dashIdx >= 0) name.substring(0, dashIdx) else name
-            if (prefix.isEmpty()) {
-                return false
+    override fun onClick() {
+        if (scanning) return
+        scanning = true
+        val appContext = context.applicationContext
+        val scope = ServiceRegistry.coroutineModule.ioScope
+        scope.launch {
+            val candidates = try {
+                val root = DownloadSettings.getDownloadLocation()
+                if (root == null) emptyList() else RedundantDownloadScanner(
+                    ServiceRegistry.dataModule.downloadDbRepository
+                ).scan(root)
+            } catch (e: Exception) {
+                Log.e(TAG, "Redundancy scan failed", e)
+                emptyList()
             }
-            if (prefix in knownArcids) {
-                return false
-            }
-            file.delete()
-            return true
-        }
-
-        override fun doWork(): Any? {
-            val dir = DownloadSettings.getDownloadLocation() ?: run {
-                publishProgress(0, 0)
-                return 0
-            }
-            val files = dir.listFiles() ?: run {
-                publishProgress(0, 0)
-                return 0
-            }
-
-            val total = files.size
-            var count = 0
-            for (i in 0 until total) {
-                if (clearFile(files[i])) {
-                    count++
-                }
-                publishProgress(i + 1, total)
-            }
-
-            return count
-        }
-
-        override fun onPostExecute(result: Any?) {
-            val count = (result as? Int) ?: 0
-
-            Toast.makeText(
-                mApplication,
-                if (count == 0) {
-                    mApplication.getString(R.string.settings_download_clean_redundancy_no_redundancy)
+            withContext(Dispatchers.Main) {
+                scanning = false
+                if (candidates.isEmpty()) {
+                    Toast.makeText(
+                        appContext, R.string.settings_download_clean_redundancy_no_redundancy, Toast.LENGTH_SHORT
+                    ).show()
                 } else {
-                    mApplication.getString(R.string.settings_download_clean_redundancy_done, count)
-                },
-                Toast.LENGTH_SHORT
-            ).show()
-            super.onPostExecute(result)
+                    confirmDelete(candidates)
+                }
+            }
         }
+    }
+
+    private fun confirmDelete(candidates: List<UniFile>) {
+        val names = candidates.take(PREVIEW_COUNT).joinToString("\n") { "• ${it.name}" } +
+            if (candidates.size > PREVIEW_COUNT) "\n…" else ""
+        AlertDialog.Builder(context)
+            .setTitle(
+                context.resources.getQuantityString(
+                    R.plurals.settings_download_clean_redundancy_confirm, candidates.size, candidates.size
+                )
+            )
+            .setMessage(names)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.batch_delete) { _, _ -> delete(candidates) }
+            .show()
+    }
+
+    private fun delete(candidates: List<UniFile>) {
+        val appContext = context.applicationContext
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            val count = candidates.count { dir ->
+                try {
+                    dir.delete()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to delete a redundant download directory", e)
+                    false
+                }
+            }
+            withContext(Dispatchers.Main) {
+                Toast.makeText(
+                    appContext,
+                    appContext.getString(R.string.settings_download_clean_redundancy_done, count),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    private companion object {
+        const val TAG = "CleanRedundancy"
+        const val PREVIEW_COUNT = 8
     }
 }

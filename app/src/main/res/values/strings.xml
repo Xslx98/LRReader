@@ -28,6 +28,10 @@
         <item quantity="one">Cleaned %d download item</item>
         <item quantity="other">Cleaned %d download items</item>
     </plurals>
+    <plurals name="settings_download_clean_redundancy_confirm">
+        <item quantity="one">Delete %d folder not in the download list?</item>
+        <item quantity="other">Delete %d folders not in the download list?</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">No invalid download items to clean</string>
     <string name="settings_download_export_no_items">No items to export</string>
     <string name="settings_download_export_failed">Failed to export download items</string>
@@ -654,9 +658,6 @@
     <string name="settings_advanced_dump_logcat_summary">Save logcat to external storage</string>
     <string name="settings_advanced_dump_logcat_failed">Dump logcat failed</string>
     <string name="settings_advanced_dump_logcat_to">Logcat dumped to %s</string>
-    <string name="settings_advanced_clear_download_path_cache">Clear download path cache</string>
-    <string name="settings_advanced_clear_download_path_cache_summary">Gallery download path might be wrong and it need to be redownloaded. Clearing download path cache might solve the problem.</string>
-    <string name="settings_advanced_clear_download_path_cache_message">Clear download path cache?</string>
     <string name="settings_advanced_clear_memory_cache">Clear memory cache</string>
     <string name="settings_advanced_clear_memory_cache_summary">Clear thumb, gallery info memory cache</string>
     <string name="settings_advanced_read_cache_size">Read cache size</string>

@@ -43,7 +43,7 @@ import java.io.IOException
  *
  * The legacy `blockingDb()` bridge and all `@JvmStatic` annotations have been
  * removed (W3-5/W18-3). There is zero production `runBlocking` usage;
- * [com.lanraragi.reader.spider.SpiderDen.getGalleryDownloadDir] was converted
+ * [com.lanraragi.reader.spider.SpiderDen.findGalleryDownloadDir] was converted
  * to a `suspend fun` in W5-3 (2026-04-11).
  */
 /**

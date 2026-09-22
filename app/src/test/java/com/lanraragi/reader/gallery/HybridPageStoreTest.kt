@@ -91,8 +91,10 @@ class HybridPageStoreTest {
     @Test
     fun isPresent_requiresMoreThanMinImageSize() {
         setUp()
-        val small = File(downloadDir, "0001.jpg").apply { writeBytes(ByteArray(1024)) }
-        val big = File(downloadDir, "0002.jpg").apply { writeBytes(ByteArray(1025)) }
+        val min = ReaderPageCache.MIN_IMAGE_SIZE.toInt()
+        val small = File(downloadDir, "0001.jpg").apply { writeBytes(ByteArray(min)) }
+        // A tiny blank page is still a page (was rejected by the old 1 KB floor).
+        val big = File(downloadDir, "0002.jpg").apply { writeBytes(ByteArray(min + 1)) }
         assertFalse(HybridPageStore.isPresent(File(downloadDir, "missing.jpg")))
         assertFalse(HybridPageStore.isPresent(small))
         assertTrue(HybridPageStore.isPresent(big))

@@ -43,6 +43,7 @@ import com.lanraragi.reader.client.api.LRRClientProvider
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.download.DownloadDirMigration
+import com.lanraragi.reader.download.DuplicateDirPointerRepair
 import com.lanraragi.reader.spider.SpiderDen
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.settings.PrivacySettings
@@ -355,6 +356,10 @@ class LRReaderApplication : RecordingApplication() {
                     ).run()
                     if (BuildConfig.DEBUG) Log.i(TAG, "Download dir migration: ${outcome.results}")
                     if (outcome.complete) prefs.edit { putBoolean(DownloadDirMigration.PREF_DONE, true) }
+                }
+                if (!prefs.getBoolean(DuplicateDirPointerRepair.PREF_DONE, false)) {
+                    DuplicateDirPointerRepair(ServiceRegistry.dataModule.downloadDbRepository).run()
+                    prefs.edit { putBoolean(DuplicateDirPointerRepair.PREF_DONE, true) }
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Download dir migration failed; will retry next boot")

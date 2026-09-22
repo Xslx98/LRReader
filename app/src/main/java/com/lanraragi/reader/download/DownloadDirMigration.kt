@@ -8,7 +8,7 @@ import com.lanraragi.reader.dao.DownloadInfo
 /**
  * One-shot boot migration from `<arcid>-<title>` download directories to
  * the title-only rule in [DownloadDirNaming]. Runs row by row — each row
- * is "rename on disk, then repoint the DB" — and is re-entrant: anything
+ * is "repoint the DB, then rename on disk" — and is re-entrant: anything
  * it could not finish (an active download, a failed rename) is left as is
  * and retried on the next boot; the caller sets its pref guard only when
  * [Outcome.complete] is true.
@@ -45,7 +45,7 @@ class DownloadDirMigration(
     suspend fun migrateRow(info: DownloadInfo): RowResult {
         val arcid = info.arcid
         val dirname = repo.getDownloadDirname(arcid) ?: return RowResult.NO_POINTER
-        if (!DownloadDirNaming.isLegacyName(arcid, dirname)) return RowResult.ALREADY_NEW
+        if (!DownloadDirNaming.isLegacyName(arcid, dirname)) return recoverInterruptedRename(info, dirname)
         // A worker may be writing into this directory right now (the user
         // restarted a download since boot); renaming under it would orphan
         // its pages. Leave the row for the next boot.
@@ -60,9 +60,32 @@ class DownloadDirMigration(
         val newName = DownloadDirNaming.uniqueName(DownloadDirNaming.baseName(arcid, info.title)) { name ->
             root.findFile(name) != null
         }
-        if (!dir.renameTo(newName)) return RowResult.FAILED
+        // Pointer first, then rename: if the process dies in between, the
+        // next boot sees a new-style pointer without its directory and
+        // finishes the rename from the arcid-prefixed legacy directory
+        // (recoverInterruptedRename) — the reverse order left the renamed
+        // directory unreachable once its stale legacy pointer was cleared.
         repo.putDownloadDirname(arcid, newName)
+        if (!dir.renameTo(newName)) {
+            repo.putDownloadDirname(arcid, dirname)
+            return RowResult.FAILED
+        }
         return RowResult.RENAMED
+    }
+
+    /**
+     * A new-style pointer whose directory is missing while an
+     * `<arcid>-…` legacy directory still exists is a rename interrupted
+     * after the pointer was written; complete it. The arcid prefix makes
+     * the match unambiguous.
+     */
+    private fun recoverInterruptedRename(info: DownloadInfo, dirname: String): RowResult {
+        val root = resolveRoot(info.downloadRootUri) ?: return RowResult.ALREADY_NEW
+        if (root.findFile(dirname) != null) return RowResult.ALREADY_NEW
+        val legacy = root.listFiles()?.firstOrNull { f ->
+            f.isDirectory && f.name?.let { DownloadDirNaming.isLegacyName(info.arcid, it) } == true
+        } ?: return RowResult.ALREADY_NEW
+        return if (legacy.renameTo(dirname)) RowResult.RENAMED else RowResult.FAILED
     }
 
     companion object {
