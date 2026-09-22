@@ -17,6 +17,7 @@ import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.OfflineTank
 import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -78,6 +79,11 @@ class TankDetailViewModelTest {
     @Volatile
     private var putStatus = 200
 
+    @Volatile
+    private var deleteStatus = 200
+
+    private val deletes = AtomicInteger(0)
+
     /** `metadata.tags` of every PUT /api/tankoubons/{id} the mock received. */
     private val putTags = CopyOnWriteArrayList<String>()
 
@@ -104,6 +110,14 @@ class TankDetailViewModelTest {
                             MockResponse().setBody("""{"success":1}""")
                         } else {
                             MockResponse().setResponseCode(putStatus)
+                        }
+                    }
+                    request.method == "DELETE" && path == "/api/tankoubons/$TANK" -> {
+                        deletes.incrementAndGet()
+                        if (deleteStatus == 200) {
+                            MockResponse().setBody("""{"success":1}""")
+                        } else {
+                            MockResponse().setResponseCode(deleteStatus)
                         }
                     }
                     path.startsWith("/api/tankoubons/$TANK/full") ->
@@ -193,9 +207,14 @@ class TankDetailViewModelTest {
         vm.baseUrlResolver = { LRRAuthManager.getServerUrl()!! }
         vm.offlineSource = { _, _ -> offline }
         vm.membershipSync = TankMembershipSyncFactory.Runner { _, _, _ -> }
+        vm.forgetCoverChoice = { forgotten.add(it) }
+        vm.dissolveDownloadGroup = { dissolved.add(it) }
         vm.init(TANK, "Seed Name", profileId = 0L)
         return vm
     }
+
+    private val forgotten = CopyOnWriteArrayList<String>()
+    private val dissolved = CopyOnWriteArrayList<String>()
 
     private fun awaitSettled(vm: TankDetailViewModel) =
         awaitCondition { vm.loadState.value !is LoadState.Loading && vm.loadState.value !is LoadState.Idle }
@@ -417,6 +436,58 @@ class TankDetailViewModelTest {
         assertTrue(putTags.isEmpty())
         assertEquals("", vm.state.value!!.tags)
         assertTrue(vm.initialRating.isNaN())
+    }
+
+    // ---- delete (spec §4.8) ----
+
+    private fun collectEvents(vm: TankDetailViewModel): CopyOnWriteArrayList<TankDetailViewModel.Event> {
+        val events = CopyOnWriteArrayList<TankDetailViewModel.Event>()
+        val subscribed = CompletableDeferred<Unit>()
+        eventScope.launch {
+            vm.events.onSubscription { subscribed.complete(Unit) }.collect { events.add(it) }
+        }
+        runBlocking { subscribed.await() }
+        return events
+    }
+
+    @Test
+    fun deleteTank_deletesServerSideThenForgetsCoverAndDissolvesGroup() {
+        val vm = loadedVm()
+        val events = collectEvents(vm)
+
+        vm.deleteTank()
+
+        awaitCondition { events.any { it is TankDetailViewModel.Event.Deleted } }
+        assertEquals(1, deletes.get())
+        assertEquals(listOf(TANK), forgotten)
+        assertEquals(listOf(TANK), dissolved)
+    }
+
+    @Test
+    fun deleteTank_failureReportsErrorAndTouchesNothingLocal() {
+        deleteStatus = 500
+        val vm = loadedVm()
+        val events = collectEvents(vm)
+
+        vm.deleteTank()
+
+        awaitCondition { events.any { it is TankDetailViewModel.Event.Error } }
+        assertTrue(events.none { it is TankDetailViewModel.Event.Deleted })
+        assertTrue(forgotten.isEmpty())
+        assertTrue(dissolved.isEmpty())
+    }
+
+    @Test
+    fun deleteTank_isIgnoredOffline() {
+        fullStatus = 500
+        val vm = newVm(offline = OfflineTank("T", listOf(archive(ID_A, "a", 10))))
+        vm.load()
+        awaitSettled(vm)
+
+        vm.deleteTank()
+
+        Thread.sleep(200)
+        assertEquals(0, deletes.get())
     }
 
     private fun archive(id: String, title: String, pages: Int) = Archive(

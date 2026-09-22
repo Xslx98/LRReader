@@ -3,7 +3,7 @@ package com.lanraragi.reader.ui.scene.gallery.list
 import android.view.View
 import com.lanraragi.reader.R
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.ui.scene.TankoubonDetailScene
+import com.lanraragi.reader.ui.scene.tankdetail.TankDetailScene
 import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.framework.scene.SceneFragment
@@ -44,14 +44,18 @@ class GalleryItemActionHelper(private val callback: Callback) {
         lastItemClickTime = now
 
         // Every list open funnels through here (row click, thumb popup,
-        // random FAB) — tank pseudo-entries branch to their own detail scene;
-        // the archive detail path would 400 on a TANK_ id.
+        // random FAB) — tank pseudo-entries open the tank DETAIL page (spec
+        // 2026-09-22 §3); the archive detail path would 400 on a TANK_ id.
+        // Same request code so a changed tank rating flows back to the row.
         if (isTankoubonId(gi.arcid)) {
             val tankArgs = android.os.Bundle()
-            tankArgs.putString(TankoubonDetailScene.KEY_TANK_ID, gi.arcid)
-            tankArgs.putString(TankoubonDetailScene.KEY_TANK_NAME, gi.title)
-            tankArgs.putLong(TankoubonDetailScene.KEY_PROFILE_ID, gi.serverProfileId)
-            callback.startScene(Announcer(TankoubonDetailScene::class.java).setArgs(tankArgs))
+            tankArgs.putString(TankDetailScene.KEY_TANK_ID, gi.arcid)
+            tankArgs.putString(TankDetailScene.KEY_TANK_NAME, gi.title)
+            tankArgs.putLong(TankDetailScene.KEY_PROFILE_ID, gi.serverProfileId)
+            callback.startScene(
+                Announcer(TankDetailScene::class.java).setArgs(tankArgs)
+                    .setRequestCode(callback.getSceneFragment(), REQUEST_CODE_GALLERY_DETAIL)
+            )
             return true
         }
 

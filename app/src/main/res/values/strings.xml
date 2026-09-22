@@ -428,6 +428,7 @@
     <string name="tank_member_more">+%1$d</string>
     <string name="tank_member_view_detail">View archive details</string>
     <string name="tank_page_divider">Chapter %1$d · %2$s</string>
+    <string name="tank_view_detail">Details</string>
     <string name="tank_delete_confirm">Delete this tankoubon? Archives inside are not deleted, but the tankoubon\'s own summary, additional tags and reading progress will be lost.</string>
     <string name="tank_locked">Tankoubon is locked, try again later</string>
     <string name="tank_op_done">Done</string>

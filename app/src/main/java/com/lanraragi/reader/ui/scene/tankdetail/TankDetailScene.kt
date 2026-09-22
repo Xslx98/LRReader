@@ -45,6 +45,7 @@ import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.tankoubon.TankMemberStrip
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.ui.scene.BaseScene
+import com.lanraragi.reader.ui.scene.TankDialogs
 import com.lanraragi.reader.ui.scene.TankoubonDetailScene
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.ui.scene.gallery.detail.CategoryDialogHelper
@@ -101,6 +102,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
     private var mOfflineRetry: View? = null
 
     private var mThumb: LoadImageView? = null
+    private var mOtherActions: View? = null
     private var mTitle: TextView? = null
     private var mSourceBadge: TextView? = null
     private var mColorBg: View? = null
@@ -165,8 +167,10 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         // Tanks have no uploader; keep the slot collapsed.
         (ViewUtils.`$$`(header, R.id.uploader) as TextView).visibility = View.GONE
         mSourceBadge = ViewUtils.`$$`(header, R.id.source_badge) as TextView
-        // Overflow (manage members / delete) lands in a later step.
-        (ViewUtils.`$$`(header, R.id.other_actions) as ImageView).visibility = View.GONE
+        val otherActions = ViewUtils.`$$`(header, R.id.other_actions) as ImageView
+        mOtherActions = otherActions
+        Ripple.addRipple(otherActions, isDarkTheme)
+        otherActions.setOnClickListener(this)
         val actionCard = ViewUtils.`$$`(header, R.id.action_card) as ViewGroup
         val download = ViewUtils.`$$`(actionCard, R.id.download) as TextView
         val read = ViewUtils.`$$`(actionCard, R.id.read)
@@ -295,6 +299,16 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
             if (state != null) bindState(state)
         }
         collectFlow(viewLifecycleOwner, viewModel.favoriteState) { bindHeart() }
+        collectFlowWhileCreated(viewLifecycleOwner, viewModel.events) { event ->
+            when (event) {
+                TankDetailViewModel.Event.Deleted -> {
+                    ehContext?.let { Toast.makeText(it, R.string.tank_op_done, Toast.LENGTH_SHORT).show() }
+                    finish()
+                }
+                is TankDetailViewModel.Event.Error ->
+                    ehContext?.let { Toast.makeText(it, event.message, Toast.LENGTH_SHORT).show() }
+            }
+        }
         // Rolled back already; re-render from the VM and tell the user.
         collectFlowWhileCreated(viewLifecycleOwner, viewModel.ratingError) { message ->
             viewModel.state.value?.let { bindRating(it.rating) }
@@ -794,6 +808,28 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         GalleryListScene.startScene(this, lub)
     }
 
+    // -------------------------------------------------------------------------
+    // Overflow (spec 2026-09-22 §4.8): manage members / delete
+    // -------------------------------------------------------------------------
+
+    private fun showOverflow(anchor: View) {
+        val ctx = ehContext ?: return
+        val s = viewModel.state.value ?: return
+        PopupMenu(ctx, anchor).apply {
+            menu.add(R.string.tank_manage_members).setOnMenuItemClickListener {
+                openMemberManagement()
+                true
+            }
+            if (!s.offline) {
+                menu.add(R.string.tank_delete).setOnMenuItemClickListener {
+                    TankDialogs.showDeleteConfirm(ctx) { viewModel.deleteTank() }
+                    true
+                }
+            }
+            show()
+        }
+    }
+
     override fun onClick(v: View) {
         when {
             v === mTip -> reload()
@@ -802,6 +838,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
             v === mHeartGroup -> showCategoryDialog()
             v === mEditTagsBtn -> showTagEditDialog()
             v === mMembersManage -> openMemberManagement()
+            v === mOtherActions -> showOverflow(v)
             else -> (v.getTag(R.id.tag) as? String)?.let { openTagSearch(it) }
         }
     }
