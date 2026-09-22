@@ -88,4 +88,27 @@ class TagParserTest {
     fun `stripNamespace trims whitespace around value`() {
         assertEquals("foo", stripNamespace("artist:  foo  "))
     }
+
+    // ---- round trip to the server string (audit 2026-09-22 A10) ----
+
+    @Test
+    fun toLrrTagString_writesBareTagsBackWithoutAPrefix() {
+        val groups = parseLrrTagString("artist:foo, english, full color")
+            .map { (ns, values) -> TagGroup(ns, values) }
+        assertEquals("artist:foo, english, full color", toLrrTagString(groups, emptySet()))
+    }
+
+    @Test
+    fun toLrrTagString_keepsExplicitMiscTags() {
+        val raw = "misc:kept, bare"
+        val groups = parseLrrTagString(raw).map { (ns, values) -> TagGroup(ns, values) }
+        val explicit = explicitlyNamespacedValues(raw, BARE_TAG_BUCKET)
+        assertEquals(setOf("kept"), explicit)
+        assertEquals("misc:kept, bare", toLrrTagString(groups, explicit))
+    }
+
+    @Test
+    fun explicitlyNamespacedValues_matchesOnlyThatNamespace() {
+        assertEquals(setOf("a", "b c"), explicitlyNamespacedValues("misc:a, misc: b c, artist:a, a", "misc"))
+    }
 }
