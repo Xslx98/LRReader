@@ -84,6 +84,14 @@
             <!-- LANraragi: Removed E-Hentai deep links and image search intent filters -->
         </activity>
 
+        <!-- In-app start_scene intents (notifications, URL opener) target this
+             non-exported alias, so MainActivity can tell them apart from
+             start_scene intents other apps send to the exported activity. -->
+        <activity-alias
+            android:name="com.lanraragi.reader.ui.InternalSceneEntry"
+            android:exported="false"
+            android:targetActivity="com.lanraragi.reader.ui.MainActivity" />
+
         <!-- The launcher entry keeps the old SplashActivity component name: home
              screens and launchers persist the component of a pinned icon, so
              renaming it would orphan existing icons. The trampoline Activity

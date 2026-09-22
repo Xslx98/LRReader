@@ -932,7 +932,7 @@ class DownloadService : Service(), DownloadListener {
 
         // Intent targets — string constants to avoid importing UI layer classes.
         // Values must match the actual constants in the respective UI classes.
-        private val TARGET_ACTIVITY: String = com.lanraragi.reader.ui.MainActivity::class.java.name
+        private const val TARGET_ACTIVITY: String = com.lanraragi.reader.ui.MainActivity.INTERNAL_SCENE_ENTRY
         private const val ACTION_START_SCENE = "start_scene"
         private const val KEY_SCENE_NAME = "stage_activity_scene_name"
         private const val KEY_SCENE_ARGS = "stage_activity_scene_args"

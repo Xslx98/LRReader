@@ -101,6 +101,12 @@ public abstract class StageActivity extends BaseActivity {
         if (null == clazzStr) {
             return false;
         }
+        // Checked BEFORE Class.forName: the name may come from another app,
+        // and loading an arbitrary class runs its static initialisers.
+        if (!acceptSceneIntent(intent, clazzStr)) {
+            Log.w(TAG, "Rejected start_scene intent");
+            return false;
+        }
 
         Class<?> clazz;
         try {
@@ -117,7 +123,23 @@ public abstract class StageActivity extends BaseActivity {
             return false;
         }
 
-        startScene(announcer);
+        try {
+            startScene(announcer);
+        } catch (RuntimeException e) {
+            // An unstartable scene (e.g. not registered) must never crash
+            // the app from an intent.
+            Log.e(TAG, "Can't start scene from intent", e);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Whether a {@code start_scene} intent naming {@code clazzName} may be
+     * honoured at all. The intent may come from any app when this activity
+     * is exported. Default: accept.
+     */
+    protected boolean acceptSceneIntent(@NonNull Intent intent, @NonNull String clazzName) {
         return true;
     }
 
