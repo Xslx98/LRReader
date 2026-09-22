@@ -58,7 +58,7 @@ object TankSessionRouter {
         val startGlobalPage = if (memberPage0 >= 0) {
             memberStart + memberPage0
         } else {
-            val savedGlobal = GalleryProvider2.loadReadingProgress(context, seed.tankId)
+            val savedGlobal = TankProgress.start0(context, seed.tankId, seed.serverProgress)
             val savedMember = map.locate(savedGlobal)?.first
             // Saved tank progress inside this member → let the provider
             // restore it (-1); anywhere else → this member's first page.
@@ -101,12 +101,12 @@ object TankSessionRouter {
             byId[id]?.let { TankMemberSeed(it.arcid, it.title, it.pagecount) }
         }
         if (members.isEmpty()) throw IOException("tank $tankId has no members")
-        val seed = TankSessionSeed(tankId, full.name, profileId, members)
+        val seed = TankSessionSeed(tankId, full.name, profileId, members, full.progress)
         TankSeedStore.publish(seed)
         val anchorIndex = anchorArcid?.let { id -> members.indexOfFirst { it.arcid == id } } ?: -1
         val start = TankPageMath.anchoredStart(
             members.map { it.pagecount }, anchorIndex,
-            GalleryProvider2.loadReadingProgress(context, tankId),
+            TankProgress.start0(context, tankId, full.progress),
         )
         return GalleryOpenHelper.buildTankReadIntent(context, seed, startGlobalPage = start)
     }

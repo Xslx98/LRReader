@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
+import com.lanraragi.reader.domain.splitNamespace
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
@@ -162,7 +163,7 @@ class GalleryDrawerHelper(private val callback: Callback) {
                 val parts = text.split("  ").dropLastWhile { it.isEmpty() }.toTypedArray()
                 val newText = StringBuilder()
                 for (part in parts) {
-                    val tags = part.split(":").dropLastWhile { it.isEmpty() }.toTypedArray()
+                    val tags = splitNamespace(part)
                     for (j in tags.indices) {
                         tags[j] = tags[j].replace("\"", "").replace("$", "")
                     }

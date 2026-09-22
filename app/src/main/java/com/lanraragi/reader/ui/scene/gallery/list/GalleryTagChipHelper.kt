@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
+import com.lanraragi.reader.domain.splitNamespace
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.ColorStateList
@@ -119,12 +120,9 @@ class GalleryTagChipHelper(private val callback: Callback) {
             chip.setTextColor(Color.WHITE)
             if (AppearanceSettings.getShowTagTranslations()) {
                 ensureEhTags()
-                chip.text = TagTranslationUtil.getTagCNBody(
-                    tagName.split(":").dropLastWhile { it.isEmpty() }.toTypedArray(), ehTags
-                )
+                chip.text = TagTranslationUtil.getTagCNBody(splitNamespace(tagName), ehTags)
             } else {
-                val tagSplit = tagName.split(":").dropLastWhile { it.isEmpty() }.toTypedArray()
-                chip.text = if (tagSplit.size > 1) tagSplit[1] else tagSplit[0]
+                chip.text = splitNamespace(tagName).last()
             }
             tagFlowLayout.addView(chip, 0)
             return tagFlowLayout

@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.history
 
+import com.lanraragi.reader.client.api.LRRAuthManager
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -119,12 +120,12 @@ class HistoryViewModel : ViewModel() {
     }
 
     // -------------------------------------------------------------------------
-    // In-place update (for onSceneResult rating propagation)
+    // In-place update (for detail-page rating propagation)
     // -------------------------------------------------------------------------
 
     /**
      * Update the rating of the Archive at [position] in the display list.
-     * Used by HistoryScene.onSceneResult for immediate UI feedback.
+     * Used by HistoryScene on an ArchiveRatingChangedEvent for immediate UI feedback.
      */
     fun updateRatingAtPosition(position: Int, newRating: Float) {
         val current = _historyList.value.toMutableList()
@@ -209,16 +210,21 @@ class HistoryViewModel : ViewModel() {
     }
 
     /**
-     * Clears all history entries, then reloads the list.
+     * Clears the shown (active server's) history entries, then reloads the list.
      */
     fun clearAllHistory() {
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) { historyRepository.clearHistory() }
-                // No history left to continue from — drop the launcher entry
-                // (issue #16) and let the widget fall back to its empty state
-                // (issue #9).
-                ContinueReadingShortcut.removeSafely()
+                // Only the shown server's history is gone: drop the launcher
+                // entry if it pointed there (issue #16) and let the widget
+                // re-render from whatever history survives (issue #9).
+                val profileId = LRRAuthManager.getActiveProfileId()
+                if (profileId > 0) {
+                    ContinueReadingShortcut.removeIfProfileSafely(profileId)
+                } else {
+                    ContinueReadingShortcut.removeSafely()
+                }
                 ContinueReadingWidget.refreshSafely()
                 loadHistory()
             } catch (e: Exception) {

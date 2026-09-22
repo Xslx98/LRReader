@@ -24,7 +24,6 @@ import android.content.res.Resources
 import android.graphics.Color
 import android.graphics.Point
 import androidx.core.graphics.drawable.toDrawable
-import android.net.Uri
 import android.os.Bundle
 import android.text.TextUtils
 import androidx.activity.result.contract.ActivityResultContracts
@@ -185,9 +184,6 @@ class GalleryListScene : BaseScene(),
     private var uploadProgressTitle: TextView? = null
     private var uploadProgressPercent: TextView? = null
 
-    /** Stored Uri-callback for the in-flight archive pick. Cleared on result. */
-    private var pendingUploadArchiveCallback: ((Uri?) -> Unit)? = null
-
     /**
      * Archive-picker launcher used by [GalleryUploadHelper.showUploadFilePicker].
      * Registered as a property so registration completes before the Fragment
@@ -196,15 +192,16 @@ class GalleryListScene : BaseScene(),
     private val uploadArchiveLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val cb = pendingUploadArchiveCallback
-        pendingUploadArchiveCallback = null
+        // Handled directly, not through a stashed lambda: after the Activity
+        // is recreated while the picker is open (rotation, process death)
+        // the result reaches this new Fragment, and a stashed callback
+        // would be gone — the pick silently dropped.
         val uri = if (result.resultCode == Activity.RESULT_OK) result.data?.data else null
-        cb?.invoke(uri)
+        if (uri != null) uploadHelper?.handleUploadResult(uri)
     }
 
     /** Bridge for [GalleryUploadHelper.Callback.pickArchive]. */
-    internal fun launchPickArchive(intent: Intent, onPicked: (Uri?) -> Unit) {
-        pendingUploadArchiveCallback = onPicked
+    internal fun launchPickArchive(intent: Intent) {
         uploadArchiveLauncher.launch(intent)
     }
 
@@ -321,6 +318,17 @@ class GalleryListScene : BaseScene(),
             if (position >= 0) adapter?.notifyItemChanged(position)
         }
 
+        // Rating saved on the detail page: update the row in place. Whole-
+        // lifetime like the cover collector — this list is covered then.
+        collectFlowWhileCreated(this, AppEventBus.archiveRatingChangedEvent) { event ->
+            val list = mHelper?.getData() ?: return@collectFlowWhileCreated
+            val i = list.indexOfFirst { it.arcid == event.arcid }
+            if (i >= 0) {
+                list[i] = list[i].copy(rating = event.rating)
+                adapter?.notifyItemChanged(i)
+            }
+        }
+
         // Detail-page Tankoubons › Edit: same whole-lifetime collection and
         // onResume replay as deletions — the edit happens while this list is
         // covered, and the merge animation must play after the pop-back.
@@ -387,26 +395,6 @@ class GalleryListScene : BaseScene(),
         mUrlBuilder = null
         // The DownloadInfoListener is managed by the ViewModel and unregistered
         // in its onCleared() — no cleanup needed here.
-    }
-
-    override fun onSceneResult(requestCode: Int, resultCode: Int, data: android.os.Bundle?) {
-        if (requestCode == GalleryItemActionHelper.REQUEST_CODE_GALLERY_DETAIL
-            && resultCode == RESULT_OK && data != null
-        ) {
-            val arcid = data.getString(GalleryDetailScene.KEY_ARCID)
-            val rating = data.getFloat(GalleryDetailScene.KEY_RATING_RESULT, Float.NaN)
-            if (arcid != null && !rating.isNaN()) {
-                val list = mHelper?.getData() ?: return
-                for (i in list.indices) {
-                    if (list[i].arcid == arcid) {
-                        list[i] = list[i].copy(rating = rating)
-                        adapter?.notifyItemChanged(i)
-                        break
-                    }
-                }
-            }
-        }
-        super.onSceneResult(requestCode, resultCode, data)
     }
 
     fun onUpdateUrlBuilder() {
