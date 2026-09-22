@@ -1,0 +1,318 @@
+package com.lanraragi.reader.ui.scene.tankdetail
+
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import com.lanraragi.reader.AppProxySelector
+import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.TankoubonSupportGate
+import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.module.IAppModule
+import com.lanraragi.reader.module.INetworkModule
+import com.lanraragi.reader.module.NetworkMonitor
+import com.lanraragi.reader.ui.TankMembershipSyncFactory
+import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.LoadState
+import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.OfflineTank
+import java.io.File
+import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+import okhttp3.Cache
+import okhttp3.OkHttpClient
+import okhttp3.mockwebserver.Dispatcher
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+
+/**
+ * [TankDetailViewModel] load contract (spec 2026-09-22 §4, plan A-1):
+ * `/full` → members in `archives` order, totals + page offsets, the
+ * tank's OWN tags/rating, the category heart from static categories;
+ * a failed fetch falls back to the downloaded-tank snapshot (offline
+ * mode, editing disabled); nothing local → error; 404 → unsupported.
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [30], application = android.app.Application::class)
+class TankDetailViewModelTest {
+
+    private lateinit var server: MockWebServer
+    private lateinit var ctx: Context
+
+    @Volatile
+    private var fullStatus = 200
+
+    @Volatile
+    private var categoriesStatus = 200
+
+    @Volatile
+    private var tankTags: String? = "artist:foo, rating:4, language:english"
+
+    @Volatile
+    private var categoriesJson = """[
+        {"id":"SET_STATIC","name":"Favs","archives":["$TANK"],"pinned":"0","search":""},
+        {"id":"SET_DYN","name":"Dyn","archives":["$TANK"],"pinned":"0","search":"foo"}
+    ]"""
+
+    @Before
+    fun setUp() {
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+        ctx = ApplicationProvider.getApplicationContext()
+        TankoubonSupportGate.clear()
+        server = MockWebServer()
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                val path = request.path.orEmpty()
+                return when {
+                    path.startsWith("/api/tankoubons/$TANK/full") ->
+                        if (fullStatus == 200) {
+                            MockResponse().setBody(fullJson())
+                        } else {
+                            MockResponse().setResponseCode(fullStatus)
+                        }
+                    path.startsWith("/api/tankoubons/$TANK/thumbnail") -> MockResponse().setBody("x")
+                    path.startsWith("/api/categories") ->
+                        if (categoriesStatus == 200) {
+                            MockResponse().setBody(categoriesJson)
+                        } else {
+                            MockResponse().setResponseCode(categoriesStatus)
+                        }
+                    else -> MockResponse().setResponseCode(404)
+                }
+            }
+        }
+        server.start()
+
+        val client = OkHttpClient.Builder()
+            .connectTimeout(2, TimeUnit.SECONDS)
+            .readTimeout(2, TimeUnit.SECONDS)
+            .build()
+        LRRAuthManager.initialize(ctx)
+        LRRAuthManager.initializeForTesting(ctx.getSharedPreferences("tank_detail_test", Context.MODE_PRIVATE))
+        LRRAuthManager.setServerUrl(server.url("").toString().removeSuffix("/"))
+
+        val testNetworkModule = object : INetworkModule {
+            override val cache: Cache get() = Cache(File(ctx.cacheDir, "test-cache"), 1024)
+            override val proxySelector: AppProxySelector get() = throw UnsupportedOperationException()
+            override val okHttpClient: OkHttpClient = client
+            override val longReadClient: OkHttpClient = client
+            override val uploadClient: OkHttpClient = client
+            override val networkMonitor: NetworkMonitor get() = throw UnsupportedOperationException()
+        }
+        val testAppModule = object : IAppModule {
+            override fun getContext(): Context = ctx
+            override fun initialize() {}
+            override fun putGlobalStuff(o: Any): Int = 0
+            override fun containGlobalStuff(id: Int): Boolean = false
+            override fun getGlobalStuff(id: Int): Any? = null
+            override fun removeGlobalStuff(id: Int): Any? = null
+            override fun removeGlobalStuff(o: Any) {}
+            override fun putTempCache(key: String, o: Any): String = key
+            override fun containTempCache(key: String): Boolean = false
+            override fun getTempCache(key: String): Any? = null
+            override fun removeTempCache(key: String): Any? = null
+        }
+        ServiceRegistry.initializeForTest(network = testNetworkModule, app = testAppModule)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+        LRRAuthManager.clear()
+        TankoubonSupportGate.clear()
+        server.shutdown()
+    }
+
+    private fun member(id: String, title: String, pages: Int) =
+        """{"arcid":"$id","title":"$title","tags":"artist:foo, rating:2","lastreadtime":0,"progress":0,""" +
+            """"pagecount":$pages,"isnew":"false","extension":"zip","filename":"$id.zip","summary":""}"""
+
+    /** full_data deliberately in a DIFFERENT order than `archives`. */
+    private fun fullJson(): String {
+        val tags = tankTags?.let { "\"$it\"" } ?: "null"
+        return """{"result":{"id":"$TANK","name":"My Tank","summary":"s","tags":$tags,"progress":12,""" +
+            """"archives":["$ID_A","$ID_B","$ID_C"],""" +
+            """"full_data":[${member(ID_C, "c", 30)},${member(ID_A, "a", 10)},${member(ID_B, "b", 20)}]},""" +
+            """"total":1,"filtered":1}"""
+    }
+
+    private fun awaitCondition(timeoutMs: Long = 5000, condition: () -> Boolean) {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (!condition() && System.currentTimeMillis() < deadline) {
+            Thread.sleep(50)
+        }
+        assertTrue("Condition not met within ${timeoutMs}ms", condition())
+    }
+
+    private fun newVm(offline: OfflineTank? = null): TankDetailViewModel {
+        val vm = TankDetailViewModel()
+        vm.baseUrlResolver = { LRRAuthManager.getServerUrl()!! }
+        vm.offlineSource = { _, _ -> offline }
+        vm.membershipSync = TankMembershipSyncFactory.Runner { _, _, _ -> }
+        vm.init(TANK, "Seed Name", profileId = 0L)
+        return vm
+    }
+
+    private fun awaitSettled(vm: TankDetailViewModel) =
+        awaitCondition { vm.loadState.value !is LoadState.Loading && vm.loadState.value !is LoadState.Idle }
+
+    @Test
+    fun load_ordersMembersByArchivesAndComputesTotals() {
+        val vm = newVm()
+        vm.load()
+        awaitSettled(vm)
+
+        val state = vm.state.value
+        assertNotNull(state)
+        state!!
+        assertTrue(vm.loadState.value is LoadState.Loaded)
+        assertEquals("My Tank", state.name)
+        assertEquals(listOf(ID_A, ID_B, ID_C), state.members.map { it.arcid })
+        assertEquals(60, state.totalPages)
+        assertEquals(listOf(0, 10, 30, 60), state.pageOffsets)
+        assertEquals(3, state.memberCount)
+        assertEquals(12, state.progress)
+        assertFalse(state.offline)
+        assertEquals(0L, state.members.first().serverProfileId)
+    }
+
+    @Test
+    fun load_exposesTankOwnTagsAndRatingNotMembers() {
+        val vm = newVm()
+        vm.load()
+        awaitSettled(vm)
+
+        val state = vm.state.value!!
+        assertEquals("artist:foo, rating:4, language:english", state.tags)
+        assertEquals(4f, state.rating, 0f)
+        assertEquals(listOf("artist:foo", "language:english"), state.tagsForDisplay)
+    }
+
+    @Test
+    fun load_nullTagsYieldEmptyTagStringAndUnratedSentinel() {
+        tankTags = null
+        val vm = newVm()
+        vm.load()
+        awaitSettled(vm)
+
+        val state = vm.state.value!!
+        assertEquals("", state.tags)
+        assertEquals("no rating tag = the shared -1 sentinel, as for archives", -1f, state.rating, 0f)
+        assertTrue(state.tagsForDisplay.isEmpty())
+    }
+
+    @Test
+    fun load_heartFollowsStaticCategoriesOnly() {
+        val vm = newVm()
+        vm.load()
+        awaitSettled(vm)
+        awaitCondition { vm.favoriteState.value != null }
+
+        val fav = vm.favoriteState.value!!
+        assertTrue(fav.isFavorited)
+        assertEquals("Favs", fav.name)
+    }
+
+    @Test
+    fun load_categoriesFailureIsNonFatal() {
+        categoriesStatus = 500
+        val vm = newVm()
+        vm.load()
+        awaitSettled(vm)
+
+        assertTrue(vm.loadState.value is LoadState.Loaded)
+        assertEquals(3, vm.state.value!!.members.size)
+        assertNull(vm.favoriteState.value)
+    }
+
+    @Test
+    fun load_fetchFailureFallsBackToDownloadedSnapshot() {
+        fullStatus = 500
+        val snapshot = OfflineTank(
+            name = "Offline Tank",
+            members = listOf(archive(ID_B, "b", 20), archive(ID_A, "a", 10)),
+        )
+        val vm = newVm(offline = snapshot)
+        vm.load()
+        awaitSettled(vm)
+
+        assertTrue(vm.loadState.value is LoadState.Loaded)
+        val state = vm.state.value!!
+        assertTrue(state.offline)
+        assertEquals("Offline Tank", state.name)
+        assertEquals(listOf(ID_B, ID_A), state.members.map { it.arcid })
+        assertEquals(30, state.totalPages)
+        assertEquals(listOf(0, 20, 30), state.pageOffsets)
+        assertEquals("", state.tags)
+        assertNull(vm.favoriteState.value)
+    }
+
+    @Test
+    fun load_fetchFailureWithoutSnapshotIsAnError() {
+        fullStatus = 500
+        val vm = newVm(offline = null)
+        vm.load()
+        awaitSettled(vm)
+
+        assertTrue(vm.loadState.value is LoadState.Error)
+        assertNull(vm.state.value)
+    }
+
+    @Test
+    fun load_404FlipsSupportGateAndReportsUnsupported() {
+        fullStatus = 404
+        val vm = newVm(offline = null)
+        vm.load()
+        awaitSettled(vm)
+
+        assertTrue(vm.loadState.value is LoadState.Unsupported)
+        assertTrue(TankoubonSupportGate.isUnsupported(LRRAuthManager.getServerUrl()!!))
+    }
+
+    @Test
+    fun load_404WithSnapshotStillOpensOffline() {
+        fullStatus = 404
+        val vm = newVm(offline = OfflineTank("T", listOf(archive(ID_A, "a", 10))))
+        vm.load()
+        awaitSettled(vm)
+
+        assertTrue(vm.loadState.value is LoadState.Loaded)
+        assertTrue(vm.state.value!!.offline)
+    }
+
+    @Test
+    fun init_isIdempotent() {
+        val vm = newVm()
+        vm.init("TANK_other", "Other", profileId = 9L)
+        assertEquals(TANK, vm.tankId)
+        assertEquals(0L, vm.profileId)
+        assertEquals("Seed Name", vm.seedName)
+    }
+
+    private fun archive(id: String, title: String, pages: Int) = Archive(
+        arcid = id, title = title, tags = emptyMap(), pagecount = pages, progress = 0,
+        extension = "zip", filename = "$id.zip", thumbnailUrl = "", rating = 0f, isnew = false,
+        lastreadtime = 0L, summary = null, serverProfileId = 0L,
+    )
+
+    private companion object {
+        const val TANK = "TANK_1700000000"
+        val ID_A = "a".repeat(40)
+        val ID_B = "b".repeat(40)
+        val ID_C = "c".repeat(40)
+    }
+}
