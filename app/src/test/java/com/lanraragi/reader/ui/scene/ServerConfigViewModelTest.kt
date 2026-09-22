@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene
 
+import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
@@ -185,7 +186,7 @@ class ServerConfigViewModelTest {
         val baseUrl = server.url("").toString().removeSuffix("/")
         vm.attemptConnection(baseUrl, null, true)
 
-        drainCoroutines()
+        awaitViewModelIdle(vm)
 
         assertTrue(successes.isNotEmpty())
         assertEquals("Test Server", successes.first().serverInfo.name)
@@ -210,7 +211,7 @@ class ServerConfigViewModelTest {
         val baseUrl = server.url("").toString().removeSuffix("/")
         vm.attemptConnection(baseUrl, "test-key", false)
 
-        drainCoroutines()
+        awaitViewModelIdle(vm)
 
         assertTrue(failures.isNotEmpty())
         assertFalse(vm.connecting.value)
@@ -236,7 +237,7 @@ class ServerConfigViewModelTest {
         val baseUrl = server.url("").toString().removeSuffix("/")
         vm.attemptConnection(baseUrl, "candidate-key", false)
 
-        drainCoroutines()
+        awaitViewModelIdle(vm)
 
         assertTrue(failures.isNotEmpty())
         // NET-7: a test attempt must never write the global config at all —
@@ -291,7 +292,7 @@ class ServerConfigViewModelTest {
         val baseUrl = server.url("").toString().removeSuffix("/")
         vm.attemptConnection(baseUrl, "candidate-key", false)
 
-        drainCoroutines()
+        awaitViewModelIdle(vm)
 
         val recorded = server.takeRequest()
         val expected = "Bearer " + android.util.Base64.encodeToString(
@@ -308,7 +309,7 @@ class ServerConfigViewModelTest {
         val baseUrl = server.url("").toString().removeSuffix("/")
         vm.attemptConnection(baseUrl, "candidate-key", false)
 
-        drainCoroutines()
+        awaitViewModelIdle(vm)
 
         // NET-7: success is the single commit point for global auth state.
         assertEquals(baseUrl, LRRAuthManager.getServerUrl())
@@ -324,7 +325,7 @@ class ServerConfigViewModelTest {
 
         val vm = ServerConfigViewModel()
         vm.attemptConnection(server.url("").toString().removeSuffix("/"), "k", false)
-        drainCoroutines()
+        awaitViewModelIdle(vm)
 
         assertTrue(
             "onboarding success must bump serverConfigVersion",
@@ -359,7 +360,7 @@ class ServerConfigViewModelTest {
 
         val baseUrl = server.url("").toString().removeSuffix("/")
         vm.attemptConnection(baseUrl, "candidate-key", false)
-        drainCoroutines()
+        awaitViewModelIdle(vm)
 
         assertTrue("Room failure must surface as connectFailure", failures.isNotEmpty())
         assertEquals("global URL must stay on the old server", "https://old.example.com", LRRAuthManager.getServerUrl())
@@ -384,22 +385,6 @@ class ServerConfigViewModelTest {
         override val archiveDetailCache get() = throw NotImplementedError("not needed")
         override val spiderInfoCache get() = throw NotImplementedError("not needed")
         override fun clearArchiveDetailCache() {}
-    }
-
-    /**
-     * Drain IO coroutines and looper callbacks. The ViewModel uses
-     * `viewModelScope.launch(Dispatchers.IO)` so the work happens on a
-     * real thread. We wait for it to complete, then idle the looper
-     * so that StateFlow emissions propagate.
-     */
-    private fun drainCoroutines() {
-        // Connection tests make real HTTP calls to MockWebServer on
-        // Dispatchers.IO. Give them time to complete + idle the looper
-        // so that StateFlow emissions propagate.
-        Thread.sleep(1000)
-        ShadowLooper.idleMainLooper()
-        Thread.sleep(200)
-        ShadowLooper.idleMainLooper()
     }
 
     private fun createTestNetworkModule(client: OkHttpClient): INetworkModule {

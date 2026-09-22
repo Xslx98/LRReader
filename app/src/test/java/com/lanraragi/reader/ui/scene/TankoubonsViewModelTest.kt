@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene
 
+import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.AppProxySelector
@@ -218,7 +219,7 @@ class TankoubonsViewModelTest {
         assertEquals("Alpha", tank.name)
         assertEquals(listOf(arcId(1), arcId(2)), tank.memberIds)
         assertEquals(5, tank.progress)
-        Thread.sleep(200)
+        awaitViewModelIdle(vm)
         assertEquals(1, calls.size)
     }
 
