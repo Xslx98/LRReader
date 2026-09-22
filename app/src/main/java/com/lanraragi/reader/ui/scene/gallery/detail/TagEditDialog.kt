@@ -26,7 +26,10 @@ import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.tankoubon.TankTagSyncer
 import okhttp3.OkHttpClient
+import com.lanraragi.reader.domain.BARE_TAG_BUCKET
 import com.lanraragi.reader.domain.TagGroup
+import com.lanraragi.reader.domain.explicitlyNamespacedValues
+import com.lanraragi.reader.domain.toLrrTagString
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.ServiceRegistry
@@ -60,6 +63,13 @@ object TagEditDialog {
         suspend fun write(client: OkHttpClient, baseUrl: String, id: String, tags: String)
 
         /**
+         * The object's current tag string as the server stores it, or null
+         * when it cannot be read. Tells bare tags apart from explicit
+         * `misc:` ones, which the grouped display model cannot.
+         */
+        suspend fun readRaw(client: OkHttpClient, baseUrl: String, id: String): String? = null
+
+        /**
          * Best-effort follow-up after a successful [write]; [oldTags] is the
          * string the dialog opened with. Must not throw past cancellation.
          */
@@ -78,6 +88,9 @@ object TagEditDialog {
         override suspend fun write(client: OkHttpClient, baseUrl: String, id: String, tags: String) {
             LRRArchiveApi.updateMetadata(client, baseUrl, id, tags = tags)
         }
+
+        override suspend fun readRaw(client: OkHttpClient, baseUrl: String, id: String): String =
+            LRRArchiveApi.getArchiveMetadata(client, baseUrl, id).tags
 
         override suspend fun afterWrite(client: OkHttpClient, baseUrl: String, id: String, oldTags: String, newTags: String) {
             val tanks = try {
@@ -99,6 +112,9 @@ object TagEditDialog {
         override suspend fun write(client: OkHttpClient, baseUrl: String, id: String, tags: String) {
             LRRTankoubonApi.updateTankoubon(client, baseUrl, id, tags = tags)
         }
+
+        override suspend fun readRaw(client: OkHttpClient, baseUrl: String, id: String): String? =
+            LRRTankoubonApi.getTankoubonFull(client, baseUrl, id).result.tags
     }
 
     /**
@@ -110,35 +126,19 @@ object TagEditDialog {
     )
 
     /**
-     * Reconstruct the raw LANraragi-format tag string from a [TagGroup] list.
-     * Format: "namespace:tag1, namespace:tag2, ..."
+     * Reconstruct the LANraragi-format tag string from a [TagGroup] list:
+     * "namespace:tag1, namespace:tag2, bare, ...". Only a fallback — the
+     * save path prefers the server's own string (see [performUpdate]).
      */
     @JvmStatic
     fun tagsToString(tagGroups: List<TagGroup>?): String {
         if (tagGroups.isNullOrEmpty()) return ""
-        return buildList {
-            for (group in tagGroups) {
-                for (tag in group.tags) {
-                    add("${group.namespace}:$tag")
-                }
-            }
-        }.joinToString(", ")
+        return toLrrTagString(tagGroups, emptySet())
     }
 
-    /**
-     * Reconstruct the tag string from editable model.
-     */
-    private fun editableGroupsToString(groups: List<EditableTagGroup>): String {
-        return buildList {
-            for (group in groups) {
-                for (tag in group.tags) {
-                    if (tag.isNotBlank()) {
-                        add("${group.namespace}:$tag")
-                    }
-                }
-            }
-        }.joinToString(", ")
-    }
+    /** Snapshot of the editable model as domain groups. */
+    private fun snapshotGroups(groups: List<EditableTagGroup>): List<TagGroup> =
+        groups.map { TagGroup(it.namespace, it.tags.toList()) }
 
     /**
      * Parse a domain [TagGroup] list into the mutable editing model.
@@ -295,8 +295,10 @@ object TagEditDialog {
             .setTitle(R.string.lrr_edit_tags)
             .setView(scrollView)
             .setPositiveButton(R.string.lrr_save) { _, _ ->
-                val newTags = editableGroupsToString(groups)
-                performUpdate(activity, arcid, tagsToString(tagGroups), newTags, serverProfileId, callback, writer)
+                performUpdate(
+                    activity, arcid, tagsToString(tagGroups), snapshotGroups(groups),
+                    serverProfileId, callback, writer,
+                )
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
@@ -608,8 +610,8 @@ object TagEditDialog {
     private fun performUpdate(
         activity: Activity,
         arcid: String,
-        oldTags: String,
-        tags: String,
+        fallbackOldTags: String,
+        edited: List<TagGroup>,
         serverProfileId: Long,
         callback: Callback?,
         writer: TagWriter,
@@ -624,6 +626,18 @@ object TagEditDialog {
                     ServiceRegistry.dataModule.profileLookupCache,
                 )
                 val client = LRRClientProvider.getClient()
+                // The server's own string: which bucket values are really
+                // `misc:` tags, and the exact old string for the follow-up.
+                val raw = try {
+                    writer.readRaw(client, baseUrl, arcid)
+                } catch (ce: CancellationException) {
+                    throw ce
+                } catch (ignored: Exception) {
+                    null
+                }
+                val oldTags = raw ?: fallbackOldTags
+                val explicitBucket = raw?.let { explicitlyNamespacedValues(it, BARE_TAG_BUCKET) }.orEmpty()
+                val tags = toLrrTagString(edited, explicitBucket)
                 writer.write(client, baseUrl, arcid, tags)
                 writer.afterWrite(client, baseUrl, arcid, oldTags, tags)
                 activity.runOnUiThread {

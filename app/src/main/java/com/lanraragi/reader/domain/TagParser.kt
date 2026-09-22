@@ -19,6 +19,12 @@ package com.lanraragi.reader.domain
 private const val DEFAULT_NAMESPACE = "misc"
 
 /**
+ * The namespace bare (un-namespaced) tags are grouped under for display.
+ * It is a display bucket, not a real namespace: see [toLrrTagString].
+ */
+const val BARE_TAG_BUCKET = DEFAULT_NAMESPACE
+
+/**
  * Parse an LRR comma-separated tag string into a namespace map preserving
  * insertion order. Empty input returns an empty map.
  */
@@ -66,3 +72,36 @@ private fun groupTags(rawTags: Sequence<String>): Map<String, List<String>> {
     }
     return map
 }
+
+/**
+ * Values [raw] writes with an explicit `namespace:` prefix, e.g. the
+ * `misc:x` tags a server really stores (as opposed to bare `x`).
+ */
+fun explicitlyNamespacedValues(raw: String, namespace: String): Set<String> {
+    val out = HashSet<String>()
+    for (part in raw.splitToSequence(',')) {
+        val tag = part.trim()
+        val colonIdx = tag.indexOf(':')
+        if (colonIdx > 0 && tag.substring(0, colonIdx).trim() == namespace) {
+            out.add(tag.substring(colonIdx + 1).trim())
+        }
+    }
+    return out
+}
+
+/**
+ * Serialize grouped tags back to LANraragi's comma-separated form. Tags in
+ * the [BARE_TAG_BUCKET] display bucket are written bare, unless
+ * [explicitBucketValues] says the server stored them as `misc:value`:
+ * prefixing every bare tag rewrote `english` to `misc:english`.
+ */
+fun toLrrTagString(groups: List<TagGroup>, explicitBucketValues: Set<String>): String =
+    buildList {
+        for (group in groups) {
+            for (tag in group.tags) {
+                if (tag.isBlank()) continue
+                val bare = group.namespace == BARE_TAG_BUCKET && tag !in explicitBucketValues
+                add(if (bare) tag else "${group.namespace}:$tag")
+            }
+        }
+    }.joinToString(", ")

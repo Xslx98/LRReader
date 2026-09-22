@@ -4,6 +4,7 @@ import com.lanraragi.reader.domain.TagGroup
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import com.lanraragi.reader.domain.toLrrTagString
 
 /**
  * Tests for [TagEditDialog] tag serialization/parsing logic.
@@ -105,50 +106,40 @@ class TagEditDialogTest {
         assertEquals("language", result[2].first)
     }
 
-    // ---- editableGroupsToString (private, tested via reflection) ----
+    // ---- saved string (serialization lives in TagParser.toLrrTagString) ----
 
     @Test
-    fun editableGroupsToString_emptyGroups_returnsEmpty() {
-        val result = invokeEditableGroupsToString(emptyList())
-        assertEquals("", result)
+    fun savedString_emptyGroups_returnsEmpty() {
+        assertEquals("", toLrrTagString(emptyList(), emptySet()))
     }
 
     @Test
-    fun editableGroupsToString_singleGroup_formatsCorrectly() {
-        val result = invokeEditableGroupsToString(listOf("artist" to listOf("picasso")))
-        assertEquals("artist:picasso", result)
+    fun savedString_multipleGroups_joinsWithComma() {
+        val groups = listOf(TagGroup("artist", listOf("picasso")), TagGroup("parody", listOf("mona lisa")))
+        assertEquals("artist:picasso, parody:mona lisa", toLrrTagString(groups, emptySet()))
     }
 
     @Test
-    fun editableGroupsToString_multipleGroups_joinsWithComma() {
-        val result = invokeEditableGroupsToString(
-            listOf("artist" to listOf("picasso"), "parody" to listOf("mona lisa"))
-        )
-        assertEquals("artist:picasso, parody:mona lisa", result)
+    fun savedString_skipsBlankTags() {
+        val groups = listOf(TagGroup("artist", listOf("picasso", "", "  ", "monet")))
+        assertEquals("artist:picasso, artist:monet", toLrrTagString(groups, emptySet()))
     }
 
-    @Test
-    fun editableGroupsToString_skipsBlankTags() {
-        val result = invokeEditableGroupsToString(
-            listOf("artist" to listOf("picasso", "", "  ", "monet"))
-        )
-        assertEquals("artist:picasso, artist:monet", result)
-    }
-
-    // ---- Round-trip: tagsToString -> parseTagGroups -> editableGroupsToString ----
+    // ---- Round-trip: tagsToString -> parseTagGroups -> saved string ----
 
     @Test
     fun roundTrip_parseAndReconstruct_matchesOriginal() {
         val groups = listOf(
             TagGroup("artist", listOf("da_vinci", "rembrandt")),
             TagGroup("parody", listOf("starry_night")),
+            TagGroup("misc", listOf("english")),
         )
 
         val tagString = TagEditDialog.tagsToString(groups)
-        val parsed = invokeParseTagGroups(groups)
-        val reconstructed = invokeEditableGroupsToString(parsed)
+        val parsed = invokeParseTagGroups(groups).map { (ns, tags) -> TagGroup(ns, tags) }
 
-        assertEquals(tagString, reconstructed)
+        assertEquals(tagString, toLrrTagString(parsed, emptySet()))
+        assertEquals("artist:da_vinci, artist:rembrandt, parody:starry_night, english", tagString)
     }
 
     // ---- Reflection helpers ----
@@ -176,29 +167,5 @@ class TagEditDialogTest {
             val tags = tagsField.get(group) as List<String>
             namespace to tags.toList()
         }
-    }
-
-    /**
-     * Invoke the private [TagEditDialog.editableGroupsToString] method via reflection.
-     * Takes a list of pairs (namespace, tags) and converts to EditableTagGroup instances.
-     */
-    private fun invokeEditableGroupsToString(
-        groups: List<Pair<String, List<String>>>
-    ): String {
-        val editableClass = Class.forName(
-            "com.lanraragi.reader.ui.scene.gallery.detail.TagEditDialog\$EditableTagGroup"
-        )
-        val constructor = editableClass.declaredConstructors.first()
-        constructor.isAccessible = true
-
-        val editableGroups = groups.map { (namespace, tags) ->
-            constructor.newInstance(namespace, tags.toMutableList())
-        }
-
-        val method = TagEditDialog::class.java.getDeclaredMethod(
-            "editableGroupsToString", List::class.java
-        )
-        method.isAccessible = true
-        return method.invoke(TagEditDialog, editableGroups) as String
     }
 }
