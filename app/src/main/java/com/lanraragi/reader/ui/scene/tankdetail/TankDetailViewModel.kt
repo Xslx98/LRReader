@@ -249,6 +249,14 @@ class TankDetailViewModel : ViewModel() {
     }
 
     /**
+     * Applies the outcome of the category dialog (spec 2026-09-22 §4.3) to
+     * the heart without waiting for the next `/api/categories` round trip.
+     */
+    fun updateFavoriteState(state: FavoriteState) {
+        _favoriteState.value = state
+    }
+
+    /**
      * Sets the tank's OWN rating (spec 2026-09-22 §4.2): the `rating:` slot
      * of the tank tag string is replaced via [mergeRatingIntoTags] and the
      * whole string PUT as `metadata.tags`. Optimistic — [state] shows the
