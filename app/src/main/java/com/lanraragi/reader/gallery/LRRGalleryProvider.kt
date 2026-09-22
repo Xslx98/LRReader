@@ -545,8 +545,15 @@ class LRRGalleryProvider(
         // then scroll-back races onCancelRequest against the job's finally),
         // its quiet PageCancelledException path would otherwise leave this
         // rebound page on an infinite spinner with nothing re-requesting it.
-        if (inflightRequests.putIfAbsent(index, true) != null) {
+        val token = Any()
+        if (inflightRequests.putIfAbsent(index, token) != null) {
             rebindWanted.add(index)
+            // The in-flight job may have finished between putIfAbsent and
+            // add (its finally already consumed rebindWanted): nobody would
+            // re-dispatch, so check again and take over.
+            if (!inflightRequests.containsKey(index) && rebindWanted.remove(index)) {
+                onRequest(index)
+            }
             return
         }
 
@@ -557,7 +564,7 @@ class LRRGalleryProvider(
         val scope = providerScope
         if (scope == null) {
             // stop() was called after onRequest arrived — skip silently
-            inflightRequests.remove(index)
+            inflightRequests.remove(index, token)
             return
         }
         scope.launch {
@@ -576,7 +583,9 @@ class LRRGalleryProvider(
                 Log.e(TAG, "Failed to load page $index: ${e.message}", e)
                 notifyPageFailed(index, e.message)
             } finally {
-                inflightRequests.remove(index)
+                // Only this job's own entry: a force request may already have
+                // replaced it with a newer job's token.
+                inflightRequests.remove(index, token)
                 // A rebind landed while this job was in flight. Success and
                 // failure paths already notified the rebound page (notify* is
                 // keyed by index, not requester); only the quiet cancelled
@@ -623,7 +632,8 @@ class LRRGalleryProvider(
     private fun pageMutex(index: Int): Mutex = pageMutexes.computeIfAbsent(index) { Mutex() }
 
     // Track in-flight page requests to avoid submitting duplicate tasks to the thread pool
-    private val inflightRequests = ConcurrentHashMap<Int, Boolean>()
+    // (value = per-job token, so a finishing job never clears a newer job's entry)
+    private val inflightRequests = ConcurrentHashMap<Int, Any>()
 
     // Pages that were re-requested while an in-flight job existed; consumed in
     // the job's finally to re-dispatch after a cancelled (quiet) run.
