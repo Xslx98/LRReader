@@ -30,6 +30,8 @@ import com.lanraragi.reader.gallery.TankSeedStore
 import com.lanraragi.reader.gallery.TankSessionSeed
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.ui.scene.BaseScene
+import com.lanraragi.reader.ui.scene.gallery.detail.CategoryDialogHelper
+import com.lanraragi.reader.ui.scene.gallery.detail.FavoriteState
 import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.LoadState
 import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.TankDetailState
@@ -72,6 +74,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener {
     private var mSize: TextView? = null
     private var mRatingText: TextView? = null
     private var mRating: RatingBar? = null
+    private var mHeartGroup: View? = null
     private var mHeart: TextView? = null
     private var mHeartOutline: TextView? = null
 
@@ -146,6 +149,9 @@ class TankDetailScene : BaseScene(), View.OnClickListener {
         mRatingText = ViewUtils.`$$`(actions, R.id.rating_text) as TextView
         mRating = ViewUtils.`$$`(actions, R.id.rating) as RatingBar
         val heartGroup = ViewUtils.`$$`(actions, R.id.heart_group)
+        mHeartGroup = heartGroup
+        Ripple.addRipple(heartGroup, isDarkTheme)
+        heartGroup.setOnClickListener(this)
         mHeart = ViewUtils.`$$`(heartGroup, R.id.heart) as TextView
         mHeartOutline = ViewUtils.`$$`(heartGroup, R.id.heart_outline) as TextView
         ensureHeartDrawables()
@@ -188,6 +194,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener {
         mSize = null
         mRatingText = null
         mRating = null
+        mHeartGroup = null
         mHeart = null
         mHeartOutline = null
         mCoverBinding = null
@@ -488,11 +495,29 @@ class TankDetailScene : BaseScene(), View.OnClickListener {
         startActivity(GalleryOpenHelper.buildTankReadIntent(ctx, seed, startGlobalPage))
     }
 
+    /**
+     * Category heart (spec 2026-09-22 §4.3): the shared static-category
+     * dialog acting on the TANK_ id against the tank's SOURCE server;
+     * dynamic categories match server-side and are not offered. Disabled
+     * offline (no server to write to).
+     */
+    private fun showCategoryDialog() {
+        val s = viewModel.state.value ?: return
+        if (s.offline) {
+            ehContext?.let { Toast.makeText(it, R.string.tank_detail_offline, Toast.LENGTH_SHORT).show() }
+            return
+        }
+        CategoryDialogHelper.showCategoryDialog(activity2, s.tankId, s.profileId) { isFavorited, name ->
+            viewModel.updateFavoriteState(FavoriteState(isFavorited, name))
+        }
+    }
+
     override fun onClick(v: View) {
         when {
             v === mTip -> reload()
             v === mRead -> openTankSession(startGlobalPage = -1)
             v === mDownload -> downloadTank()
+            v === mHeartGroup -> showCategoryDialog()
         }
     }
 

@@ -171,6 +171,14 @@ internal fun requireValidTankId(id: String): String {
 }
 
 /**
+ * Validates the member id of a STATIC category route: a 40-char archive
+ * id or a `TANK_` id. Upstream `add_to_category` only checks that the key
+ * exists, so tanks can be category members (spec 2026-09-22 §1/§4.3).
+ */
+internal fun requireValidCategoryMemberId(id: String): String =
+    if (isTankoubonId(id)) requireValidTankId(id) else requireValidArcid(id)
+
+/**
  * Validate that [categoryId] is exactly 14 characters long, matching the
  * spec's `id` constraint on category endpoints (`minLength: 14, maxLength: 14`).
  * LANraragi category IDs are formatted `SET_xxxxxxxxxx`.
