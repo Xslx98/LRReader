@@ -418,7 +418,10 @@ class TankDetailViewModelTest {
     @Test
     fun submitRating_putsWholeTagStringWithRatingSlotReplaced() {
         val vm = loadedVm()
-        assertEquals(4f, vm.initialRating, 0f)
+        val ratingEvents = CopyOnWriteArrayList<com.lanraragi.reader.event.ArchiveRatingChangedEvent>()
+        val collector = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined).launch {
+            com.lanraragi.reader.event.AppEventBus.archiveRatingChangedEvent.collect { ratingEvents += it }
+        }
 
         vm.submitRating(2f)
 
@@ -427,7 +430,10 @@ class TankDetailViewModelTest {
         awaitCondition { putTags.size == 1 }
         assertEquals("artist:foo, language:english, rating:⭐⭐", putTags.single())
         assertEquals(listOf("artist", "language", "rating"), vm.state.value!!.tagGroups.map { it.namespace })
-        assertEquals("initial rating is the loaded value, not the edit", 4f, vm.initialRating, 0f)
+        // The saved rating is announced to covered list scenes.
+        awaitCondition { ratingEvents.isNotEmpty() }
+        assertEquals(2f, ratingEvents.single().rating, 0f)
+        collector.cancel()
     }
 
     @Test
@@ -476,7 +482,6 @@ class TankDetailViewModelTest {
         Thread.sleep(200)
         assertTrue(putTags.isEmpty())
         assertEquals("", vm.state.value!!.tags)
-        assertTrue(vm.initialRating.isNaN())
     }
 
     // ---- delete (spec §4.8) ----

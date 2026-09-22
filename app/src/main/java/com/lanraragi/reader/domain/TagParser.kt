@@ -19,6 +19,12 @@ package com.lanraragi.reader.domain
 private const val DEFAULT_NAMESPACE = "misc"
 
 /**
+ * The namespace bare (un-namespaced) tags are grouped under for display.
+ * It is a display bucket, not a real namespace: see [toLrrTagString].
+ */
+const val BARE_TAG_BUCKET = DEFAULT_NAMESPACE
+
+/**
  * Parse an LRR comma-separated tag string into a namespace map preserving
  * insertion order. Empty input returns an empty map.
  */
@@ -65,4 +71,72 @@ private fun groupTags(rawTags: Sequence<String>): Map<String, List<String>> {
         map.getOrPut(namespace) { mutableListOf() }.add(value)
     }
     return map
+}
+
+/**
+ * Values [raw] writes with an explicit `namespace:` prefix, e.g. the
+ * `misc:x` tags a server really stores (as opposed to bare `x`).
+ */
+fun explicitlyNamespacedValues(raw: String, namespace: String): Set<String> {
+    val out = HashSet<String>()
+    for (part in raw.splitToSequence(',')) {
+        val tag = part.trim()
+        val colonIdx = tag.indexOf(':')
+        if (colonIdx > 0 && tag.substring(0, colonIdx).trim() == namespace) {
+            out.add(tag.substring(colonIdx + 1).trim())
+        }
+    }
+    return out
+}
+
+/**
+ * Serialize grouped tags back to LANraragi's comma-separated form. Tags in
+ * the [BARE_TAG_BUCKET] display bucket are written bare, unless
+ * [explicitBucketValues] says the server stored them as `misc:value`:
+ * prefixing every bare tag rewrote `english` to `misc:english`.
+ */
+fun toLrrTagString(groups: List<TagGroup>, explicitBucketValues: Set<String>): String =
+    buildList {
+        for (group in groups) {
+            for (tag in group.tags) {
+                if (tag.isBlank()) continue
+                val bare = group.namespace == BARE_TAG_BUCKET && tag !in explicitBucketValues
+                add(if (bare) tag else "${group.namespace}:$tag")
+            }
+        }
+    }.joinToString(", ")
+
+/**
+ * Split a `namespace:value` tag at its FIRST colon: `[namespace, value]`,
+ * or `[value]` for a bare tag. A value may itself contain colons
+ * (`artist:re:zero`); `split(":")` cut those apart.
+ */
+fun splitNamespace(tag: String): Array<String> {
+    val trimmed = tag.trim()
+    val colonIdx = trimmed.indexOf(':')
+    return if (colonIdx > 0) {
+        arrayOf(trimmed.substring(0, colonIdx).trim(), trimmed.substring(colonIdx + 1).trim())
+    } else {
+        arrayOf(trimmed)
+    }
+}
+
+/**
+ * Three-way merge of a tag edit: apply what the user changed between
+ * [opened] (the string the editor was built from) and [edited] onto the
+ * [server]'s current string. Tags the server gained meanwhile — a rating
+ * saved from the same page, another client's edit — survive; tags the user
+ * removed go, tags they added are appended. All three are LANraragi
+ * comma-separated strings serialized with the same rule.
+ */
+fun mergeTagEdits(opened: String, edited: String, server: String): String {
+    fun tokens(s: String) = s.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+    val openedSet = tokens(opened).toSet()
+    val editedTokens = tokens(edited)
+    val removed = openedSet - editedTokens.toSet()
+    val out = tokens(server).filterTo(mutableListOf()) { it !in removed }
+    for (tag in editedTokens) {
+        if (tag !in openedSet && tag !in out) out += tag
+    }
+    return out.joinToString(", ")
 }

@@ -540,6 +540,7 @@ class TankoubonDetailScene : BaseScene() {
             tankName = viewModel.tankName.value,
             profileId = viewModel.profileId,
             members = members.map { TankMemberSeed(it.arcid, it.title, it.pagecount) },
+            serverProgress = viewModel.progress.value,
         )
     }
 

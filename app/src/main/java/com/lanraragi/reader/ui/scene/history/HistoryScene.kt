@@ -16,6 +16,8 @@
 
 package com.lanraragi.reader.ui.scene.history
 
+import com.lanraragi.reader.event.AppEventBus
+import com.lanraragi.reader.util.collectFlowWhileCreated
 import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.graphics.Color
@@ -235,6 +237,20 @@ class HistoryScene : ToolbarScene(),
         return view
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        viewModel = ViewModelProvider(requireActivity())[HistoryViewModel::class.java]
+        // Rating saved on the detail page: whole-lifetime collection, since
+        // this list is covered by the detail page when the save lands.
+        collectFlowWhileCreated(this, AppEventBus.archiveRatingChangedEvent) { event ->
+            val i = viewModel.historyList.value.indexOfFirst { it.arcid == event.arcid }
+            if (i >= 0) {
+                viewModel.updateRatingAtPosition(i, event.rating)
+                mAdapter?.notifyItemChanged(i)
+            }
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setTitle(R.string.history)
@@ -427,27 +443,6 @@ class HistoryScene : ToolbarScene(),
                 showTip(friendlyError(ctx, e), LENGTH_SHORT)
             }
         }
-    }
-
-    override fun onSceneResult(requestCode: Int, resultCode: Int, data: Bundle?) {
-        if (requestCode == REQUEST_CODE_GALLERY_DETAIL
-            && resultCode == RESULT_OK && data != null
-        ) {
-            val arcid = data.getString(GalleryDetailScene.KEY_ARCID)
-            val rating = data.getFloat(GalleryDetailScene.KEY_RATING_RESULT, Float.NaN)
-            if (arcid != null && !rating.isNaN()) {
-                // Update the Archive display list in-place
-                val list = viewModel.historyList.value
-                for (i in list.indices) {
-                    if (list[i].arcid == arcid) {
-                        viewModel.updateRatingAtPosition(i, rating)
-                        mAdapter?.notifyItemChanged(i)
-                        break
-                    }
-                }
-            }
-        }
-        super.onSceneResult(requestCode, resultCode, data)
     }
 
     override fun onItemLongClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean =

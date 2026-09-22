@@ -142,8 +142,9 @@ internal fun bearerAuthHeaderValue(apiKey: String): String {
 }
 
 /**
- * Pick the candidate whose configured scheme matches [requestUrl].
- * Returns null when every candidate has the wrong scheme (a
+ * Pick the candidate whose configured scheme matches [requestUrl] and
+ * whose base path best matches its path. Returns null when every
+ * candidate has the wrong scheme (a
  * credential-downgrade attempt — caller should reject). Candidates carry
  * their pre-parsed URL, so this is pure string comparison.
  */
@@ -151,11 +152,26 @@ internal fun pickSchemeMatch(
     candidates: List<ProfileUrlCandidate>,
     requestUrl: HttpUrl,
 ): ProfileUrlCandidate? {
-    for (candidate in candidates) {
-        if (candidate.url.scheme == requestUrl.scheme) return candidate
-    }
-    return null
+    val sameScheme = candidates.filter { it.url.scheme == requestUrl.scheme }
+    if (sameScheme.isEmpty()) return null
+    // Several LANraragi instances can share one host behind a reverse proxy
+    // (https://nas/lrr-a, https://nas/lrr-b): pick the profile whose base
+    // path is the longest prefix of the request path, so each instance gets
+    // its own key. Ties prefer the active profile; no prefix match keeps the
+    // first candidate (the previous host+port+scheme behaviour).
+    val requestPath = requestUrl.encodedPath
+    return sameScheme
+        .filter { isPathPrefix(basePath(it.url), requestPath) }
+        .maxWithOrNull(compareBy<ProfileUrlCandidate>({ basePath(it.url).length }, { it.profile.isActive }))
+        ?: sameScheme.first()
 }
+
+/** A profile URL's path without its trailing slash ("" for the root). */
+private fun basePath(url: HttpUrl): String = url.encodedPath.trimEnd('/')
+
+/** Whether [prefix] is [path] or one of its parent paths, on segment boundaries. */
+private fun isPathPrefix(prefix: String, path: String): Boolean =
+    prefix.isEmpty() || path == prefix || path.startsWith("$prefix/")
 
 /**
  * Result of comparing a request URL against the configured LANraragi server URL.

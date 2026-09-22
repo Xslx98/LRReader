@@ -1,5 +1,7 @@
 package com.lanraragi.reader.ui.scene.tankdetail
 
+import com.lanraragi.reader.event.AppEventBus
+import com.lanraragi.reader.event.ArchiveRatingChangedEvent
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -162,14 +164,6 @@ class TankDetailViewModel : ViewModel() {
     private val _events = MutableSharedFlow<Event>(extraBufferCapacity = 4)
     val events: SharedFlow<Event> = _events.asSharedFlow()
 
-    /**
-     * The tank's rating as first loaded ONLINE this session (unrated = 0),
-     * NaN until then. The scene compares it with the current rating on back
-     * to decide whether to hand a rating result to the list.
-     */
-    var initialRating: Float = Float.NaN
-        private set
-
     // -------------------------------------------------------------------------
     // Seams (production defaults; replaceable for tests)
     // -------------------------------------------------------------------------
@@ -253,7 +247,6 @@ class TankDetailViewModel : ViewModel() {
                 url = baseUrlResolver(profileId)
                 val client = ServiceRegistry.networkModule.okHttpClient
                 val online = fetchOnline(client, url)
-                if (initialRating.isNaN()) initialRating = online.rating.coerceAtLeast(0f)
                 _state.value = online
                 _loadState.value = LoadState.Loaded
                 syncMembership(url, online)
@@ -323,6 +316,7 @@ class TankDetailViewModel : ViewModel() {
             try {
                 val client = ServiceRegistry.networkModule.okHttpClient
                 LRRTankoubonApi.updateTankoubon(client, url, tankId, tags = merged)
+                AppEventBus.postArchiveRatingChangedEvent(ArchiveRatingChangedEvent(tankId, next))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

@@ -55,6 +55,7 @@ object ContinueReadingWidget : ReadingSessionEvents.Listener {
                     ServiceRegistry.dataModule.historyRepository,
                     end.arcid,
                     end.serverProfileId,
+                    endProgress1 = end.endPage + 1,
                 )
             } catch (e: Exception) {
                 Log.w(TAG, "continue-reading widget update failed")
@@ -63,7 +64,9 @@ object ContinueReadingWidget : ReadingSessionEvents.Listener {
     }
 
     /**
-     * Event path: render the just-read archive from its history snapshot.
+     * Event path: render the just-read archive from its history snapshot,
+     * showing the page the session ended on ([endProgress1], 1-indexed)
+     * rather than the snapshot's value, which may not be updated yet.
      * A missing snapshot (row evicted mid-flight) falls back to [refresh].
      */
     suspend fun update(
@@ -71,11 +74,13 @@ object ContinueReadingWidget : ReadingSessionEvents.Listener {
         historyRepository: HistoryRepository,
         arcid: String,
         profileId: Long,
+        endProgress1: Int = 0,
     ) {
         if (!hasWidgets(context)) return
         val archive = historyRepository.getArchiveSnapshot(arcid, profileId)
         if (archive != null) {
-            push(context, buildViews(context, archive))
+            val shown = if (endProgress1 > 0) archive.copy(progress = endProgress1) else archive
+            push(context, buildViews(context, shown))
         } else {
             refresh(context, historyRepository, ServiceRegistry.dataModule.profileRepository)
         }

@@ -16,6 +16,7 @@
 
 package com.lanraragi.reader.widget
 
+import com.lanraragi.reader.domain.splitNamespace
 import android.animation.Animator
 import android.animation.ObjectAnimator
 import android.content.Context
@@ -777,7 +778,7 @@ class SearchBar : CardView,
         }
 
         private fun rebuildKeyword(key: String): String {
-            val strings = key.split(":").dropLastWhile { it.isEmpty() }.toTypedArray()
+            val strings = splitNamespace(key)
             if (strings.size != 2) {
                 return key
             }

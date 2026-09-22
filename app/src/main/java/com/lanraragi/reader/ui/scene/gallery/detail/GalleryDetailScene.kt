@@ -144,7 +144,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
     private var mRequestId: Int = IntIdGenerator.INVALID_ID
     /** Rating when the scene was opened, used to detect changes on exit. */
-    private var mInitialRating: Float = Float.NaN
 
     private var properties: MutableMap<String, String>? = null
 
@@ -555,9 +554,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         // `onGetArchiveDetailSuccessInternal`, so the capture lives here.
         // (StateFlow replay + the isNaN guard make re-subscription a no-op.)
         collectFlow(viewLifecycleOwner, viewModel.archiveDetail) { ad ->
-            if (ad != null && mInitialRating.isNaN()) {
-                mInitialRating = ad.archive.rating
-            }
         }
         // Drive REFRESH→NORMAL transitions off the dedicated load-event
         // SharedFlow rather than the deduped archiveDetail StateFlow.
@@ -1042,18 +1038,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         ) { viewModel.loadArchiveTankoubons() }
     }
 
-    override fun onBackPressed() {
-        val current = viewModel.currentRating.value
-        val arcid = viewModel.getEffectiveArcid()
-        if (current != null && arcid != null && !mInitialRating.isNaN() && current != mInitialRating) {
-            val data = android.os.Bundle()
-            data.putString(KEY_ARCID, arcid)
-            data.putFloat(KEY_RATING_RESULT, current)
-            setResult(RESULT_OK, data)
-        }
-        finish()
-    }
-
 
     internal fun onGetArchiveDetailSuccess(result: ArchiveDetail) {
         try {
@@ -1064,7 +1048,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     }
 
     private fun onGetArchiveDetailSuccessInternal(result: ArchiveDetail) {
-        if (mInitialRating.isNaN()) mInitialRating = result.archive.rating
         viewModel.refreshDownloadState()
         val dlState = viewModel.downloadState.value
         if (dlState != DownloadState.INVALID) {
@@ -1179,7 +1162,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         const val KEY_ARCHIVE = "archive"
         const val KEY_ARCID = "token"
         const val KEY_PAGE = "page"
-        const val KEY_RATING_RESULT = "rating_result"
 
         private const val KEY_ARCHIVE_DETAIL = "archive_detail"
         private const val KEY_REQUEST_ID = "request_id"

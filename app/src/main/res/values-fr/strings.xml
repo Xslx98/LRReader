@@ -261,7 +261,7 @@
     <!-- History -->
     <string name="no_history">Votre historique des lectures de galerie s\'affichera ici</string>
     <string name="clear_all">Tout effacer</string>
-    <string name="clear_all_history">Effacer toute l\'historique ?</string>
+    <string name="clear_all_history">Effacer l\'historique de lecture de ce serveur ?</string>
 
     <string name="show_definition">Montrer les expliques</string>
 

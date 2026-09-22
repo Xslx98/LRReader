@@ -55,7 +55,8 @@ class TagTranslationUtilTest {
     @Test
     fun `getTagCN leaves odd shapes and a missing database alone`() {
         assertEquals("asanagi", TagTranslationUtil.getTagCN("asanagi", sample))
-        assertEquals("a:b:c", TagTranslationUtil.getTagCN("a:b:c", sample))
+        // The value keeps its own colons: split at the first one only.
+        assertEquals("艺术家:re:zero", TagTranslationUtil.getTagCN("artist:re:zero", sample))
         assertEquals("artist:asanagi", TagTranslationUtil.getTagCN("artist:asanagi", null))
     }
 
