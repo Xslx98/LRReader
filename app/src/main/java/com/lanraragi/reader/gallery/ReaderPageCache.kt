@@ -46,7 +46,15 @@ object ReaderPageCache : Cacheable {
     private const val CACHE_PARENT = "lrr_pages"
     private const val BUFFER_SIZE = 65536 // 64KB for LAN transfers
     private const val SP_CACHE_ACCESS = "lrr_cache_access"
-    const val MIN_IMAGE_SIZE = 1024L // 1KB — below this a file is likely corrupt
+    /**
+     * Floor below which a page file cannot be a real image. Deliberately
+     * tiny: blank separator pages stored as 1-bit PNGs or small GIFs are a
+     * few dozen to a few hundred bytes, and a 1 KB floor made such archives
+     * impossible to download or read. Real corruption is caught by the
+     * magic-byte check and the Content-Length match at write time, and
+     * files only appear under their final name via an atomic rename.
+     */
+    const val MIN_IMAGE_SIZE = 16L
     const val MAX_TOTAL_CACHE_BYTES = 500L * 1024L * 1024L // 500MB total limit
     private const val DETAIL_PRELOAD_RADIUS = 1 // Pages before and after the progress page
 

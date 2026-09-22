@@ -11,6 +11,7 @@ import com.lanraragi.reader.client.api.OrphanProfileException
 import com.lanraragi.reader.client.api.resolvePageUrl
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.dao.DownloadInfo
+import com.lanraragi.reader.gallery.ReaderPageCache
 import com.lanraragi.reader.spider.SpiderDen
 import com.lanraragi.reader.spider.SpiderQueen
 import kotlinx.coroutines.CancellationException
@@ -540,9 +541,9 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
     companion object {
         private const val TAG = "LRRDownloadWorker"
         private const val BUFFER_SIZE = 262144         // 256KB — reduces syscall overhead on LAN
-        // 1KB minimum valid image; internal so LocalArchiveVerifier applies
-        // the same threshold as the resume skip.
-        internal const val MIN_IMAGE_SIZE = 1024L
+        // Same floor as the reader (see ReaderPageCache.MIN_IMAGE_SIZE);
+        // internal so LocalArchiveVerifier applies it like the resume skip.
+        internal const val MIN_IMAGE_SIZE = ReaderPageCache.MIN_IMAGE_SIZE
         private const val MAX_RETRY = 2                // Try up to 2 times per page
         private const val MAX_PAGE_SIZE = 200L * 1024 * 1024 // 200MB per page
         /** Settle delay after the network returns before re-attempting, so a
