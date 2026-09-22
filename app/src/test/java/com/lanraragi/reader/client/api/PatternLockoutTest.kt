@@ -28,6 +28,7 @@ class PatternLockoutTest {
 
     private lateinit var ctx: Context
     private var fakeTimeMs: Long = 1_000_000L
+    private var fakeBoot: Int = 7
 
     @Before
     fun setUp() {
@@ -38,13 +39,16 @@ class PatternLockoutTest {
         )
         // Install a fake clock
         fakeTimeMs = 1_000_000L
+        fakeBoot = 7
         LRRAuthManager.clockMillis = { fakeTimeMs }
+        LRRAuthManager.bootCount = { fakeBoot }
     }
 
     @After
     fun tearDown() {
         LRRAuthManager.clear()
-        LRRAuthManager.clockMillis = { System.currentTimeMillis() }
+        LRRAuthManager.clockMillis = { android.os.SystemClock.elapsedRealtime() }
+        LRRAuthManager.bootCount = { -1 }
     }
 
     // ── isLockedOut ─────────────────────────────────────────────────
@@ -82,15 +86,34 @@ class PatternLockoutTest {
     }
 
     @Test
-    fun isLockedOut_fiveMinuteLockoutAfterTenFailures() {
-        repeat(10) { LRRAuthManager.recordFailure() }
+    fun lockoutEscalatesWithEachFurtherFailure() {
+        val expected = listOf(30_000L, 60_000L, 300_000L, 900_000L, 3_600_000L, 3_600_000L)
+        repeat(4) { LRRAuthManager.recordFailure() }
+        for (duration in expected) {
+            LRRAuthManager.recordFailure()
+            assertEquals(duration, LRRAuthManager.getLockoutRemainingMs())
+        }
+    }
+
+    @Test
+    fun lockoutIsNotEndedByAWallClockChange() {
+        repeat(5) { LRRAuthManager.recordFailure() }
+        // A wall-clock jump does not move the monotonic clock at all.
         assertTrue(LRRAuthManager.isLockedOut())
-        // 30 seconds is not enough for the 5-minute lockout
+        fakeTimeMs += 10_000L
+        assertEquals(20_000L, LRRAuthManager.getLockoutRemainingMs())
+    }
+
+    @Test
+    fun rebootReAnchorsTheLockoutInsteadOfEndingIt() {
+        repeat(5) { LRRAuthManager.recordFailure() }
+        fakeTimeMs += 20_000L
+        // Reboot: the monotonic clock restarts near zero.
+        fakeBoot += 1
+        fakeTimeMs = 5_000L
+        assertEquals(30_000L, LRRAuthManager.getLockoutRemainingMs())
         fakeTimeMs += 30_001L
-        assertTrue("Should still be locked out (5min lockout)", LRRAuthManager.isLockedOut())
-        // Advance past 5 minutes
-        fakeTimeMs += 270_000L // total: ~300s
-        assertFalse("Lockout should expire after 5min", LRRAuthManager.isLockedOut())
+        assertFalse(LRRAuthManager.isLockedOut())
     }
 
     // ── getLockoutRemainingMs ────────────────────────────────────────
@@ -108,10 +131,9 @@ class PatternLockoutTest {
     }
 
     @Test
-    fun getLockoutRemainingMs_fiveMinutesAfterTenFailures() {
+    fun getLockoutRemainingMs_oneHourAfterTenFailures() {
         repeat(10) { LRRAuthManager.recordFailure() }
-        val remaining = LRRAuthManager.getLockoutRemainingMs()
-        assertTrue("Remaining should be close to 5min", remaining in 299_000L..300_000L)
+        assertEquals(3_600_000L, LRRAuthManager.getLockoutRemainingMs())
     }
 
     @Test
