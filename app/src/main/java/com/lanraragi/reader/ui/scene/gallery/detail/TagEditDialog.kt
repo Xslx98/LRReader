@@ -24,6 +24,7 @@ import com.lanraragi.framework.drawable.RoundSideRectDrawable
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.tankoubon.TankTagSyncer
 import okhttp3.OkHttpClient
 import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.client.api.LRRClientProvider
@@ -55,20 +56,49 @@ object TagEditDialog {
      * writer decides which server object owns it (an archive's metadata or
      * a tankoubon's own `metadata.tags`, spec 2026-09-22 §4.4).
      */
-    fun interface TagWriter {
+    interface TagWriter {
         suspend fun write(client: OkHttpClient, baseUrl: String, id: String, tags: String)
+
+        /**
+         * Best-effort follow-up after a successful [write]; [oldTags] is the
+         * string the dialog opened with. Must not throw past cancellation.
+         */
+        @Suppress("LongParameterList")
+        suspend fun afterWrite(client: OkHttpClient, baseUrl: String, id: String, oldTags: String, newTags: String) {}
     }
 
-    /** Default: `PUT /api/archives/{id}/metadata`. */
+    /**
+     * Default: `PUT /api/archives/{id}/metadata`, then (spec 2026-09-22
+     * §5.2) every tankoubon containing the archive re-materializes its own
+     * tags with this member's old → new contribution (rule 3). Servers
+     * without the tankoubon routes just skip the follow-up.
+     */
     @JvmField
-    val archiveWriter: TagWriter = TagWriter { client, baseUrl, id, tags ->
-        LRRArchiveApi.updateMetadata(client, baseUrl, id, tags = tags)
+    val archiveWriter: TagWriter = object : TagWriter {
+        override suspend fun write(client: OkHttpClient, baseUrl: String, id: String, tags: String) {
+            LRRArchiveApi.updateMetadata(client, baseUrl, id, tags = tags)
+        }
+
+        override suspend fun afterWrite(client: OkHttpClient, baseUrl: String, id: String, oldTags: String, newTags: String) {
+            val tanks = try {
+                LRRTankoubonApi.getArchiveTankoubons(client, baseUrl, id)
+            } catch (ce: CancellationException) {
+                throw ce
+            } catch (ignored: Exception) {
+                return
+            }
+            for (tankId in tanks) {
+                TankTagSyncer.afterMemberTagsChanged(client, baseUrl, tankId, id, oldTags, newTags)
+            }
+        }
     }
 
     /** Tankoubon: `PUT /api/tankoubons/{id}` with only `metadata.tags` (whole-string replace). */
     @JvmField
-    val tankoubonWriter: TagWriter = TagWriter { client, baseUrl, id, tags ->
-        LRRTankoubonApi.updateTankoubon(client, baseUrl, id, tags = tags)
+    val tankoubonWriter: TagWriter = object : TagWriter {
+        override suspend fun write(client: OkHttpClient, baseUrl: String, id: String, tags: String) {
+            LRRTankoubonApi.updateTankoubon(client, baseUrl, id, tags = tags)
+        }
     }
 
     /**
@@ -266,7 +296,7 @@ object TagEditDialog {
             .setView(scrollView)
             .setPositiveButton(R.string.lrr_save) { _, _ ->
                 val newTags = editableGroupsToString(groups)
-                performUpdate(activity, arcid, newTags, serverProfileId, callback, writer)
+                performUpdate(activity, arcid, tagsToString(tagGroups), newTags, serverProfileId, callback, writer)
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
@@ -578,6 +608,7 @@ object TagEditDialog {
     private fun performUpdate(
         activity: Activity,
         arcid: String,
+        oldTags: String,
         tags: String,
         serverProfileId: Long,
         callback: Callback?,
@@ -592,7 +623,9 @@ object TagEditDialog {
                     serverProfileId,
                     ServiceRegistry.dataModule.profileLookupCache,
                 )
-                writer.write(LRRClientProvider.getClient(), baseUrl, arcid, tags)
+                val client = LRRClientProvider.getClient()
+                writer.write(client, baseUrl, arcid, tags)
+                writer.afterWrite(client, baseUrl, arcid, oldTags, tags)
                 activity.runOnUiThread {
                     Toast.makeText(activity, R.string.lrr_tags_updated, Toast.LENGTH_SHORT).show()
                     callback?.onTagsUpdated()
