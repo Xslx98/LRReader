@@ -19,6 +19,7 @@ import com.lanraragi.reader.ui.scene.TankDialogs
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.tankoubon.TankCategorySyncer
+import com.lanraragi.reader.tankoubon.TankNameSuggester
 import com.lanraragi.reader.tankoubon.TankTagSyncer
 import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.friendlyError
@@ -49,6 +50,7 @@ object TankoubonDialogHelper {
         activity: Activity?,
         arcid: String?,
         serverProfileId: Long,
+        archiveTitle: String? = null,
         onChanged: (List<String>) -> Unit,
     ) {
         if (activity == null || arcid.isNullOrEmpty()) return
@@ -57,7 +59,7 @@ object TankoubonDialogHelper {
             val checked = BooleanArray(tanks.size) { i -> tanks[i].id in memberIds }
             showMembershipCheckboxDialog(
                 activity, tanks, checked, checked.clone(),
-                arcid, serverProfileId, serverUrl, onChanged
+                arcid, serverProfileId, serverUrl, archiveTitle, onChanged
             )
         }
     }
@@ -77,13 +79,16 @@ object TankoubonDialogHelper {
     fun pickTankoubon(
         activity: Activity?,
         serverProfileId: Long,
+        selectedTitles: List<String> = emptyList(),
         onPicked: (tank: LRRTankoubonApi.Tankoubon) -> Unit,
     ) {
         if (activity == null) return
+        // Spec 2026-09-22 §9: "New tankoubon" pre-fills a name extracted from the selection.
+        val suggested = TankNameSuggester.suggest(selectedTitles)
 
         loadTanksAndMembership(activity, serverProfileId, arcid = null) { tanks, _, serverUrl ->
             if (tanks.isEmpty()) {
-                promptCreate(activity, serverUrl) { newId, name ->
+                promptCreate(activity, serverUrl, suggested) { newId, name ->
                     onPicked(LRRTankoubonApi.Tankoubon(id = newId, name = name))
                 }
                 return@loadTanksAndMembership
@@ -94,7 +99,7 @@ object TankoubonDialogHelper {
                 .setTitle(R.string.tank_add_to)
                 .setItems(items) { _, which ->
                     if (which == 0) {
-                        promptCreate(activity, serverUrl) { newId, name ->
+                        promptCreate(activity, serverUrl, suggested) { newId, name ->
                             onPicked(LRRTankoubonApi.Tankoubon(id = newId, name = name))
                         }
                     } else {
@@ -165,6 +170,7 @@ object TankoubonDialogHelper {
         arcid: String,
         serverProfileId: Long,
         serverUrl: String,
+        archiveTitle: String?,
         onChanged: (List<String>) -> Unit,
     ) {
         val container = LinearLayout(activity)
@@ -201,9 +207,9 @@ object TankoubonDialogHelper {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .setNeutralButton(R.string.tank_create) { _, _ ->
-                promptCreate(activity, serverUrl) { _, _ ->
+                promptCreate(activity, serverUrl, TankNameSuggester.suggest(listOfNotNull(archiveTitle))) { _, _ ->
                     // Reopen so the fresh tank shows up in the checkbox list.
-                    showMembershipDialog(activity, arcid, serverProfileId, onChanged)
+                    showMembershipDialog(activity, arcid, serverProfileId, archiveTitle, onChanged)
                 }
             }
             .show()
@@ -300,9 +306,12 @@ object TankoubonDialogHelper {
     private fun promptCreate(
         activity: Activity,
         serverUrl: String,
+        suggestedName: String?,
         onCreated: (tankId: String, name: String) -> Unit,
     ) {
-        TankDialogs.showNameInputDialog(activity, R.string.tank_create, "") { name ->
+        TankDialogs.showNameInputDialog(
+            activity, R.string.tank_create, suggestedName.orEmpty(), selectInitial = true,
+        ) { name ->
             (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
                 try {
                     val client = ServiceRegistry.networkModule.okHttpClient
