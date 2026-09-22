@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import java.util.PriorityQueue
 import java.util.concurrent.atomic.AtomicInteger
 import android.util.Log
 import com.lanraragi.reader.client.api.data.LRRTagStat
@@ -30,6 +31,12 @@ object LRRTagCache : Cacheable {
     @Volatile
     private var lastFetchTime: Long = 0
 
+    /** Last fetch ATTEMPT; a failing or empty server is retried only after [RETRY_MS]. */
+    @Volatile
+    private var lastAttemptTime: Long = 0
+
+    private const val RETRY_MS = 60 * 1000L
+
     private const val TTL_MS = 10 * 60 * 1000L // 10 minutes
 
     /**
@@ -57,6 +64,7 @@ object LRRTagCache : Cacheable {
             refreshMutex.withLock {
                 // Double-check after acquiring lock
                 if (needsRefresh()) {
+                    lastAttemptTime = System.currentTimeMillis()
                     val startedIn = generation.get()
                     try {
                         val fetched = LRRDatabaseApi.getTagStats()
@@ -85,8 +93,15 @@ object LRRTagCache : Cacheable {
     /**
      * @return true if the cache needs a refresh (empty or expired).
      */
-    fun needsRefresh(): Boolean =
-        snapshot.tags.isEmpty() || System.currentTimeMillis() - lastFetchTime > TTL_MS
+    fun needsRefresh(): Boolean {
+        val now = System.currentTimeMillis()
+        if (now - lastAttemptTime < RETRY_MS && (snapshot.tags.isEmpty() || now - lastFetchTime > TTL_MS)) {
+            // Just tried and got nothing usable: back off instead of refetching
+            // on every search-bar open.
+            return false
+        }
+        return snapshot.tags.isEmpty() || now - lastFetchTime > TTL_MS
+    }
 
     /**
      * Synchronous, in-memory filter of cached tags.
@@ -103,20 +118,20 @@ object LRRTagCache : Cacheable {
         val snap = snapshot
         val currentTags = snap.tags
         val currentKeys = snap.searchKeys
-        val results = mutableListOf<LRRTagStat>()
+        // Bounded top-k (min-heap of `limit`) instead of collecting and
+        // sorting every match: tens of thousands of tags per keystroke.
+        if (limit <= 0) return emptyList()
+        val top = PriorityQueue<LRRTagStat>(limit + 1, compareBy { it.weight })
         for (i in currentTags.indices) {
             val tag = currentTags[i]
             val ns = tag.namespace
             if (ns != null && ns in EXCLUDED_NAMESPACES) continue
             if (i < currentKeys.size && currentKeys[i].contains(lower)) {
-                results.add(tag)
+                top.add(tag)
+                if (top.size > limit) top.poll()
             }
         }
-        results.sortByDescending { it.weight }
-        if (results.size > limit) {
-            return results.take(limit)
-        }
-        return results
+        return top.sortedByDescending { it.weight }
     }
 
     /**
@@ -125,6 +140,7 @@ object LRRTagCache : Cacheable {
      */
     fun clear() {
         generation.incrementAndGet()
+        lastAttemptTime = 0
         snapshot = CacheSnapshot(emptyList(), emptyList())
         lastFetchTime = 0
     }
