@@ -60,6 +60,20 @@ public class SimpleDiskCache {
     @NonNull
     private final LockPool mLockPool = new LockPool();
     private int mDiskCacheState;
+
+    /**
+     * Number of clear()/flush() calls waiting for exclusive access. While
+     * non-zero, obtainLock() yields: under steady reads the cache never
+     * went back to NONE, so a clear could wait forever.
+     */
+    private int mExclusiveWaiters;
+
+    /**
+     * Lock holds per thread. A thread already holding a lock never yields
+     * to a waiting clear()/flush() (it would wait for itself: an open
+     * InputStreamPipe keeps its lock across calls).
+     */
+    private final Map<Thread, Integer> mHolders = new HashMap<>();
     @Nullable
     private DiskLruCache mDiskLruCache;
 
@@ -130,7 +144,8 @@ public class SimpleDiskCache {
     }
 
     public synchronized void flush() {
-        // Wait for cache available
+        // Wait for cache available; new readers yield to us meanwhile
+        mExclusiveWaiters++;
         while (mDiskCacheState != STATE_DISK_CACHE_NONE) {
             try {
                 wait();
@@ -138,6 +153,7 @@ public class SimpleDiskCache {
                 e.printStackTrace();
             }
         }
+        mExclusiveWaiters--;
         mDiskCacheState = STATE_DISK_CACHE_BUSY;
 
         if (null != mDiskLruCache) {
@@ -158,7 +174,8 @@ public class SimpleDiskCache {
             return false;
         }
 
-        // Wait for cache available
+        // Wait for cache available; new readers yield to us meanwhile
+        mExclusiveWaiters++;
         while (mDiskCacheState != STATE_DISK_CACHE_NONE) {
             try {
                 wait();
@@ -166,6 +183,7 @@ public class SimpleDiskCache {
                 e.printStackTrace();
             }
         }
+        mExclusiveWaiters--;
         mDiskCacheState = STATE_DISK_CACHE_BUSY;
 
         try {
@@ -187,8 +205,10 @@ public class SimpleDiskCache {
     }
 
     private synchronized CounterLock obtainLock(String key) {
-        // Wait for clear over
-        while (mDiskCacheState == STATE_DISK_CACHE_BUSY) {
+        // Wait for clear over, and let a waiting clear/flush go first
+        Thread thread = Thread.currentThread();
+        while (mDiskCacheState == STATE_DISK_CACHE_BUSY
+                || (mExclusiveWaiters > 0 && !mHolders.containsKey(thread))) {
             try {
                 wait();
             } catch (InterruptedException e) {
@@ -196,6 +216,8 @@ public class SimpleDiskCache {
             }
         }
         mDiskCacheState = STATE_DISK_CACHE_IN_USE;
+        Integer held = mHolders.get(thread);
+        mHolders.put(thread, held == null ? 1 : held + 1);
 
         // Get lock from key
         CounterLock lock;
@@ -210,6 +232,11 @@ public class SimpleDiskCache {
     }
 
     private synchronized void releaseLock(String key, CounterLock lock) {
+        Thread thread = Thread.currentThread();
+        Integer held = mHolders.get(thread);
+        if (held != null) {
+            if (held <= 1) mHolders.remove(thread); else mHolders.put(thread, held - 1);
+        }
         lock.release();
         if (lock.isFree()) {
             mLockMap.remove(key);
@@ -218,6 +245,9 @@ public class SimpleDiskCache {
 
         if (mLockMap.isEmpty()) {
             mDiskCacheState = STATE_DISK_CACHE_NONE;
+            // A pipe released on another thread than it was obtained on
+            // leaves a stale holder entry; with no lock held there is none.
+            mHolders.clear();
             notifyAll();
         }
     }
