@@ -24,7 +24,6 @@ import android.content.res.Resources
 import android.graphics.Color
 import android.graphics.Point
 import androidx.core.graphics.drawable.toDrawable
-import android.net.Uri
 import android.os.Bundle
 import android.text.TextUtils
 import androidx.activity.result.contract.ActivityResultContracts
@@ -185,9 +184,6 @@ class GalleryListScene : BaseScene(),
     private var uploadProgressTitle: TextView? = null
     private var uploadProgressPercent: TextView? = null
 
-    /** Stored Uri-callback for the in-flight archive pick. Cleared on result. */
-    private var pendingUploadArchiveCallback: ((Uri?) -> Unit)? = null
-
     /**
      * Archive-picker launcher used by [GalleryUploadHelper.showUploadFilePicker].
      * Registered as a property so registration completes before the Fragment
@@ -196,15 +192,16 @@ class GalleryListScene : BaseScene(),
     private val uploadArchiveLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val cb = pendingUploadArchiveCallback
-        pendingUploadArchiveCallback = null
+        // Handled directly, not through a stashed lambda: after the Activity
+        // is recreated while the picker is open (rotation, process death)
+        // the result reaches this new Fragment, and a stashed callback
+        // would be gone — the pick silently dropped.
         val uri = if (result.resultCode == Activity.RESULT_OK) result.data?.data else null
-        cb?.invoke(uri)
+        if (uri != null) uploadHelper?.handleUploadResult(uri)
     }
 
     /** Bridge for [GalleryUploadHelper.Callback.pickArchive]. */
-    internal fun launchPickArchive(intent: Intent, onPicked: (Uri?) -> Unit) {
-        pendingUploadArchiveCallback = onPicked
+    internal fun launchPickArchive(intent: Intent) {
         uploadArchiveLauncher.launch(intent)
     }
 
