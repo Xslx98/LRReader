@@ -234,4 +234,16 @@ class TankDownloadGroupRepositoryTest {
         val ARC_B = "b".repeat(40)
         const val TANK = "TANK_1688000000"
     }
+
+    @Test
+    fun putTankGroup_fromASecondProfile_keepsTheOwningProfile() = runTest {
+        repo.putTankGroup(TANK, 1L, "MyTank", listOf(ARC_A, ARC_B))
+        // Another profile pointing at the same server downloads the same tank.
+        repo.putTankGroup(TANK, 2L, "MyTank renamed", listOf(ARC_A, ARC_B))
+
+        val group = repo.getTankGroup(TANK)!!
+        assertEquals(1L, group.serverProfileId)
+        assertEquals("MyTank renamed", group.name)
+        assertEquals(group, repo.findTankGroupClaiming(ARC_A, 1L))
+    }
 }

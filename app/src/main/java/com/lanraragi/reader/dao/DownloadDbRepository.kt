@@ -289,10 +289,15 @@ class DownloadDbRepository(
         name: String,
         memberIdsInOrder: List<String>,
     ) {
+        // A group keeps the profile that first downloaded it. Download rows
+        // are unique per arcid, so a second profile on the same server
+        // "downloading" the tank reuses the same member rows; taking the
+        // group over made the owner's tank card fall apart into singles.
+        val owner = tankGroupDao.getById(tankId)?.serverProfileId?.takeIf { it > 0 } ?: serverProfileId
         tankGroupDao.upsert(
             TankDownloadGroup(
                 tankId = tankId,
-                serverProfileId = serverProfileId,
+                serverProfileId = owner,
                 name = name,
                 memberIdsJson = ArchiveLocalStateJson.encodeToString(
                     ListSerializer(String.serializer()), memberIdsInOrder
