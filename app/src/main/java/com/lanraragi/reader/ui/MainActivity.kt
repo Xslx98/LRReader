@@ -50,6 +50,7 @@ import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.client.TagTranslationDatabase
 import com.lanraragi.reader.download.DownloadResumeBanner
+import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.download.DownloadService
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.dao.AppDatabase
@@ -538,10 +539,31 @@ class MainActivity : StageActivity(),
      * on any profile-table change (rename, URL edit, switch, delete), so the
      * header self-updates without an explicit event channel.
      */
+    /**
+     * Tank tag materialization failures (spec 2026-09-22 §5.3) are
+     * best-effort follow-ups of a membership write that already succeeded;
+     * whichever scene is up, the shell names the tank in a Snackbar.
+     */
+    private fun observeTankTagSyncFailures() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                AppEventBus.tankTagSyncFailedEvent.collect { event ->
+                    val host = mDrawerLayout ?: return@collect
+                    Snackbar.make(
+                        host,
+                        getString(R.string.tank_tag_sync_failed, event.tankName),
+                        Snackbar.LENGTH_LONG,
+                    ).show()
+                }
+            }
+        }
+    }
+
     private fun bindNavHeader(navView: NavigationView) {
         val header = navView.getHeaderView(0)
         header.findViewById<TextView>(R.id.nav_header_version)?.text =
             getString(R.string.nav_header_version_format, BuildConfig.VERSION_NAME)
+        observeTankTagSyncFailures()
         val serverLine = header.findViewById<TextView>(R.id.nav_header_server) ?: return
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {

@@ -375,6 +375,9 @@
     <string name="tank_page_divider">第 %1$d 章 · %2$s</string>
     <string name="tank_view_detail">詳情</string>
     <string name="tank_detail_pages">%1$d/%2$dP</string>
+    <string name="tank_tag_sync_failed">「%1$s」標籤歸併失敗</string>
+    <string name="tank_reset_tags">重設為成員聯集</string>
+    <string name="tank_reset_tags_confirm">以成員標籤的聯集取代合訂本標籤？手寫標籤會遺失，評分保留。</string>
     <string name="tank_delete_confirm">刪除這個合訂本？其中的檔案不會被刪除，但合訂本自身的簡介、附加標籤和閱讀進度將一併遺失。</string>
     <string name="tank_locked">合訂本已被鎖定，請稍後再試</string>
     <string name="tank_op_done">完成</string>

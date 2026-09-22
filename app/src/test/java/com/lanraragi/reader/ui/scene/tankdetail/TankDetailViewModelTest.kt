@@ -255,16 +255,51 @@ class TankDetailViewModelTest {
     }
 
     @Test
-    fun load_nullTagsYieldEmptyTagStringAndUnratedSentinel() {
+    fun load_nullTagsAutoFillTheMembersUnionOnceAndStayUnrated() {
         tankTags = null
         val vm = newVm()
         vm.load()
         awaitSettled(vm)
 
+        // §4.5: legacy tank without tags of its own → members' union written
+        // silently (rating namespace excluded) and rendered at once.
         val state = vm.state.value!!
-        assertEquals("", state.tags)
+        assertEquals("artist:foo", putTags.single())
+        assertEquals("artist:foo", state.tags)
         assertEquals("no rating tag = the shared -1 sentinel, as for archives", -1f, state.rating, 0f)
-        assertTrue(state.tagGroups.isEmpty())
+        assertEquals(listOf(TagGroup("artist", listOf("foo"))), state.tagGroups)
+    }
+
+    @Test
+    fun load_taggedTankIsNotAutoFilled() {
+        val vm = loadedVm()
+
+        assertTrue(putTags.isEmpty())
+        assertEquals("artist:foo, rating:4, language:english", vm.state.value!!.tags)
+    }
+
+    @Test
+    fun resetTags_rewritesExcludedTankTagsPlusTheUnionThenReloads() {
+        val vm = loadedVm()
+
+        vm.resetTags()
+
+        awaitCondition { putTags.size == 1 }
+        assertEquals("rating:4, artist:foo", putTags.single())
+        awaitCondition { vm.loadState.value is LoadState.Loaded && !vm.state.value!!.offline }
+    }
+
+    @Test
+    fun resetTags_isIgnoredOffline() {
+        fullStatus = 500
+        val vm = newVm(offline = OfflineTank("T", listOf(archive(ID_A, "a", 10))))
+        vm.load()
+        awaitSettled(vm)
+
+        vm.resetTags()
+
+        Thread.sleep(200)
+        assertTrue(putTags.isEmpty())
     }
 
     @Test
