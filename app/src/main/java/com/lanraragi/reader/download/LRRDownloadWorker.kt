@@ -120,6 +120,10 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
 
     fun cancel() {
         cancelled = true
+        // A cancelled worker must not report anything more; the scheduler
+        // also fences late events by worker identity.
+        listener = null
+        onNetworkWaitEvent = null
         job?.cancel()
         // Page downloads run on `scope` (siblings of `job`); cancel the whole
         // scope so any coroutine suspended in NetworkWaitBudget.awaitNetworkOrExpire
