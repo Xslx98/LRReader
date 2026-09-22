@@ -112,6 +112,7 @@ class GalleryListViewModelBatchTest {
         // Tag materialization has its own wire tests (TankTagSyncerTest); keep
         // the request counts here about the membership writes.
         vm.tankTagSyncAfterAdd = { _, _, _ -> false }
+        vm.tankCategorySyncAfterAdd = { _, _, _, _, _ -> false }
     }
 
     private fun jsonResponse(code: Int, body: String) = MockResponse()

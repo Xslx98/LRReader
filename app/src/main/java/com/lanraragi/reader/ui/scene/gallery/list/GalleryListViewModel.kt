@@ -14,6 +14,7 @@ import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRArchivePagingSource
 import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.tankoubon.TankCategorySyncer
 import com.lanraragi.reader.tankoubon.TankTagSyncer
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
@@ -515,6 +516,13 @@ class GalleryListViewModel : ViewModel() {
     internal var tankTagSyncAfterAdd: suspend (client: okhttp3.OkHttpClient, baseUrl: String, tankId: String) -> Boolean =
         { client, baseUrl, tankId -> TankTagSyncer.afterAdd(client, baseUrl, tankId) }
 
+    /** Static-category promotion seam (spec 2026-09-22 §6 "add"); replaceable for tests. */
+    internal var tankCategorySyncAfterAdd: suspend (
+        client: okhttp3.OkHttpClient, baseUrl: String, tankId: String, tankName: String, added: List<String>,
+    ) -> Boolean = { client, baseUrl, tankId, tankName, added ->
+        TankCategorySyncer.afterAdd(client, baseUrl, tankId, tankName, added)
+    }
+
     /**
      * After the appends landed: the tank's own tags become `tank ∪ members`
      * (best-effort, one write per batch; failures surface as the shell's
@@ -529,7 +537,10 @@ class GalleryListViewModel : ViewModel() {
         val profileId = archives.firstOrNull { it.arcid == first }?.serverProfileId ?: return
         try {
             withContext(Dispatchers.IO) {
-                tankTagSyncAfterAdd(LRRClientProvider.getClient(), baseUrlResolver(profileId), op.tankId)
+                val client = LRRClientProvider.getClient()
+                val baseUrl = baseUrlResolver(profileId)
+                tankTagSyncAfterAdd(client, baseUrl, op.tankId)
+                tankCategorySyncAfterAdd(client, baseUrl, op.tankId, op.tankName, succeeded)
             }
         } catch (ce: CancellationException) {
             throw ce

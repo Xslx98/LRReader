@@ -18,6 +18,7 @@ import com.lanraragi.reader.event.TankMembershipChangedEvent
 import com.lanraragi.reader.ui.scene.TankDialogs
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.tankoubon.TankCategorySyncer
 import com.lanraragi.reader.tankoubon.TankTagSyncer
 import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.friendlyError
@@ -245,9 +246,16 @@ object TankoubonDialogHelper {
                         left += tankId
                     }
                 }
-                // Materialize tank tags after the membership writes (best-effort).
-                for (tank in joined) TankTagSyncer.afterAdd(client, serverUrl, tank.id)
-                for (snap in beforeRemoval) TankTagSyncer.afterRemove(client, serverUrl, snap, listOf(arcid))
+                // Materialize tank tags + promote static categories after the
+                // membership writes (best-effort, spec 2026-09-22 §5 / §6).
+                for (tank in joined) {
+                    TankTagSyncer.afterAdd(client, serverUrl, tank.id)
+                    TankCategorySyncer.afterAdd(client, serverUrl, tank.id, tank.name, listOf(arcid))
+                }
+                for (snap in beforeRemoval) {
+                    TankTagSyncer.afterRemove(client, serverUrl, snap, listOf(arcid))
+                    TankCategorySyncer.afterRemove(client, serverUrl, snap, listOf(arcid))
+                }
                 val newIds = tanks.indices.filter { checked[it] }.map { tanks[it].id }
                 Handler(Looper.getMainLooper()).post {
                     Toast.makeText(activity, R.string.tank_op_done, Toast.LENGTH_SHORT).show()

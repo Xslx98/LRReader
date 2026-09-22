@@ -209,12 +209,16 @@ class TankDetailViewModelTest {
         vm.membershipSync = TankMembershipSyncFactory.Runner { _, _, _ -> }
         vm.forgetCoverChoice = { forgotten.add(it) }
         vm.dissolveDownloadGroup = { dissolved.add(it) }
+        // Category promotion has its own wire tests (TankCategorySyncerTest); record the calls here.
+        vm.categoryDissolve = { _, _, id, name -> categoryCalls.add("dissolve $id $name"); true }
+        vm.resetCategoriesOp = { _, _, id, _, members -> categoryCalls.add("reset $id ${members.size}"); true }
         vm.init(TANK, "Seed Name", profileId = 0L)
         return vm
     }
 
     private val forgotten = CopyOnWriteArrayList<String>()
     private val dissolved = CopyOnWriteArrayList<String>()
+    private val categoryCalls = CopyOnWriteArrayList<String>()
 
     private fun awaitSettled(vm: TankDetailViewModel) =
         awaitCondition { vm.loadState.value !is LoadState.Loading && vm.loadState.value !is LoadState.Idle }
@@ -286,6 +290,8 @@ class TankDetailViewModelTest {
 
         awaitCondition { putTags.size == 1 }
         assertEquals("rating:4, artist:foo", putTags.single())
+        awaitCondition { categoryCalls.isNotEmpty() }
+        assertEquals(listOf("reset $TANK 3"), categoryCalls)
         awaitCondition { vm.loadState.value is LoadState.Loaded && !vm.state.value!!.offline }
     }
 
@@ -496,6 +502,7 @@ class TankDetailViewModelTest {
         assertEquals(1, deletes.get())
         assertEquals(listOf(TANK), forgotten)
         assertEquals(listOf(TANK), dissolved)
+        assertEquals("categories cleared before the DELETE", listOf("dissolve $TANK My Tank"), categoryCalls)
     }
 
     @Test
