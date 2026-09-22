@@ -21,10 +21,10 @@ import android.util.Log
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.gallery.GalleryProvider2
+import com.lanraragi.reader.download.DownloadDirAllocator
 import com.lanraragi.reader.download.DownloadDirNaming
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.framework.unifile.UniFile
-import com.lanraragi.framework.lib.yorozuya.FileUtils
 import java.util.Locale
 
 /**
@@ -41,66 +41,38 @@ object SpiderDen {
 
     private const val TAG = "SpiderDen"
 
+    /** Process-wide: its mutex is what makes pointer allocation atomic. */
+    private val allocator by lazy {
+        DownloadDirAllocator(ServiceRegistry.dataModule.downloadDbRepository, ::resolveRootDir)
+    }
+
     /**
-     * Resolves the download directory for the given archive.
+     * The download directory [arcid]'s `DOWNLOAD_DIRNAME` pointer names, or
+     * null when the archive has no pointer. Lookup only — never creates a
+     * pointer or a directory; the directory may not exist.
      *
-     * Suspend because it calls [com.lanraragi.reader.dao.DownloadDbRepository].
-     * Callers must be in a coroutine context.
-     *
-     * Resolution chain for the download root (post-v26):
-     *  1. [rootUriOverride] when the caller already holds a
-     *     [com.lanraragi.reader.dao.DownloadInfo.downloadRootUri] in memory.
-     *  2. The URI persisted on the archive's `ARCHIVE_LOCAL_STATE` row
-     *     (`DOWNLOAD_ROOT_URI`) — set when the archive was first added
-     *     to the download subsystem, so it survives later changes to
-     *     [DownloadSettings.getDownloadLocation].
-     *  3. The current [DownloadSettings.getDownloadLocation] as the
-     *     final fallback for legacy rows that have not been backfilled
-     *     and for arcids with no download row at all.
-     *
-     * @param arcid LANraragi archive id (the directory's primary key)
-     * @param title display title — used only when the directory has to be
-     *   created (it becomes the directory name, see DownloadDirNaming)
-     * @param rootUriOverride explicit override skipping the DB lookup;
-     *   pass `info.downloadRootUri` when the caller already has a
-     *   `DownloadInfo` in scope.
+     * Root resolution (post-v26): [rootUriOverride] (the caller's
+     * in-memory `downloadRootUri`), else the row's persisted
+     * `DOWNLOAD_ROOT_URI`, else the current download location. Delete
+     * paths must pass [rootUriOverride]: the row may already be gone.
      */
     @JvmStatic
-    suspend fun getGalleryDownloadDir(
+    suspend fun findGalleryDownloadDir(arcid: String, rootUriOverride: String? = null): UniFile? =
+        allocator.find(arcid, rootUriOverride)
+
+    /**
+     * The download directory for [arcid], creating it (named after
+     * [title], see [DownloadDirNaming]) together with its pointer when
+     * there is none yet. Only callers that are about to write pages — the
+     * download worker and the reader's write-through for tracked
+     * downloads — may call this.
+     */
+    @JvmStatic
+    suspend fun allocateGalleryDownloadDir(
         arcid: String,
         title: String?,
         rootUriOverride: String? = null,
-    ): UniFile? {
-        val downloadDbRepo = ServiceRegistry.dataModule.downloadDbRepository
-        val storedUri = rootUriOverride ?: downloadDbRepo.getDownloadRootUri(arcid)
-        val dir = resolveRootDir(storedUri) ?: return null
-
-        // Read from DB
-        var dirname = downloadDbRepo.getDownloadDirname(arcid)
-        if (dirname != null) {
-            // Some dirname may be invalid in some version. This runs on every
-            // thumbnail bind (a new ThumbDataContainer per bind, fast scroll),
-            // so only write back when sanitizing actually changed the value —
-            // an unconditional putDownloadDirname churned the DB with an
-            // identical value on every bind.
-            val sanitized = FileUtils.sanitizeFilename(dirname)
-            if (sanitized != dirname) {
-                downloadDbRepo.putDownloadDirname(arcid, sanitized)
-            }
-            dirname = sanitized
-        }
-
-        // Create it — the sanitised title, de-duplicated against siblings
-        // (DownloadDirNaming); the DB pointer is the only arcid → dir link.
-        if (dirname == null) {
-            dirname = DownloadDirNaming.uniqueName(DownloadDirNaming.baseName(arcid, title)) { name ->
-                dir.findFile(name) != null
-            }
-            downloadDbRepo.putDownloadDirname(arcid, dirname)
-        }
-
-        return dir.subFile(dirname)
-    }
+    ): UniFile? = allocator.allocate(arcid, title, rootUriOverride)
 
     /**
      * @param extension with dot (e.g. ".jpg")

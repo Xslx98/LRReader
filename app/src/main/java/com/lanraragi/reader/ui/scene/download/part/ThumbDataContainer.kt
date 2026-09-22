@@ -35,7 +35,7 @@ import java.util.concurrent.TimeoutException
  * Implements the Java [DataContainer] interface whose methods cannot be
  * made `suspend`. The download directory resolution (which requires a
  * suspend call to
- * [com.lanraragi.reader.spider.SpiderDen.getGalleryDownloadDir]) is shared
+ * [com.lanraragi.reader.spider.SpiderDen.findGalleryDownloadDir]) is shared
  * per archive through
  * [com.lanraragi.reader.ui.scene.download.DownloadDirCache], so rebinding
  * the same row never restarts it; the result is delivered via

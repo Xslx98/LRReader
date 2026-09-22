@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap
  * Per-arcid cache of resolved download directories for the downloads list.
  *
  * Every thumbnail bind needs the archive's download dir — a Room lookup via
- * [SpiderDen.getGalleryDownloadDir] plus a possible directory listing. Each
+ * [SpiderDen.findGalleryDownloadDir] plus a possible directory listing. Each
  * bind used to start that resolution from scratch (one coroutine per
  * ThumbDataContainer), so a fast scroll churned the DB with identical
  * lookups. This cache keys the in-flight/completed future by arcid so each
@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap
 class DownloadDirCache(
     private val scope: CoroutineScope,
     private val resolver: suspend (DownloadInfo) -> UniFile? = { info ->
-        SpiderDen.getGalleryDownloadDir(info.arcid, info.title, rootUriOverride = info.downloadRootUri)
+        SpiderDen.findGalleryDownloadDir(info.arcid, rootUriOverride = info.downloadRootUri)
     },
 ) {
     private val cache = ConcurrentHashMap<String, CompletableFuture<UniFile?>>()

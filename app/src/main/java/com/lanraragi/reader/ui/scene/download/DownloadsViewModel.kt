@@ -474,7 +474,7 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
                 for (info in infos) {
                     // Resolve BEFORE dropping the DIRNAME pointer — see
                     // DownloadLabelHelper.performDelete for why the order matters.
-                    val file = SpiderDen.getGalleryDownloadDir(info.arcid, info.title)
+                    val file = SpiderDen.findGalleryDownloadDir(info.arcid)
                     ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(info.arcid)
                     file?.delete()
                 }

@@ -105,7 +105,7 @@ object DownloadLabelHelper {
                 // Resolve BEFORE dropping the DIRNAME pointer: it is the only
                 // arcid → directory link (title-only naming, v1.23.0); resolving
                 // without it mints a fresh "(2)" sibling and deletes that instead.
-                val dir = SpiderDen.getGalleryDownloadDir(arcid, title)
+                val dir = SpiderDen.findGalleryDownloadDir(arcid)
                 ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(arcid)
                 dir?.delete()
             }
