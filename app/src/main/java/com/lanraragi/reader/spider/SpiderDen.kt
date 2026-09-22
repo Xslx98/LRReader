@@ -75,6 +75,15 @@ object SpiderDen {
     ): UniFile? = allocator.allocate(arcid, title, rootUriOverride)
 
     /**
+     * Deletes [arcid]'s download directory (recursively) and its pointer;
+     * see [DownloadDirAllocator.delete]. Capture [rootUriOverride] from the
+     * `DownloadInfo` BEFORE removing the download row.
+     */
+    @JvmStatic
+    suspend fun deleteGalleryDownloadDir(arcid: String, rootUriOverride: String?): Boolean =
+        allocator.delete(arcid, rootUriOverride)
+
+    /**
      * @param extension with dot (e.g. ".jpg")
      */
     @JvmStatic
