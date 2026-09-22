@@ -88,6 +88,7 @@ class DownloadDirAllocator(
         if (!isStrictChild(root, dir)) return@withLock false
         repo.removeDownloadDirname(arcid)
         dir.delete()
+        DownloadSizeCache.invalidate(arcid)
         true
     }
 

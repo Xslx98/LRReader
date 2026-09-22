@@ -1,5 +1,6 @@
 package com.lanraragi.reader.sync
 
+import com.lanraragi.reader.download.DownloadSizeCache
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.callBack.DownloadSearchCallback
@@ -88,9 +89,8 @@ class DownloadListInfosExecutor {
         // If sorting by file size, calculate all file sizes first
         if (type == R.id.sort_by_file_size_asc || type == R.id.sort_by_file_size_desc) {
             for (info in arr) {
-                if (info.fileSize < 0) { // Not yet calculated
-                    info.fileSize = calculateDownloadDirSize(info)
-                }
+                info.fileSize = DownloadSizeCache.get(info.arcid)
+                    ?: calculateDownloadDirSize(info).also { DownloadSizeCache.put(info.arcid, it) }
             }
         }
 
@@ -184,11 +184,21 @@ class DownloadListInfosExecutor {
         return try {
             val downloadDir = SpiderDen.findGalleryDownloadDir(info.arcid, info.downloadRootUri)
             if (downloadDir == null || !downloadDir.isDirectory) {
-                return -1
+                return 0
             }
-            calculateFolderSize(downloadDir)
+            // file:// roots (the default): one plain walk. UniFile would
+            // run a provider query per file on a SAF tree.
+            val uri = downloadDir.uri
+            val path = uri.path
+            if ("file" == uri.scheme && path != null) {
+                java.io.File(path).walkTopDown().filter { it.isFile }.sumOf { it.length() }
+            } else {
+                calculateFolderSize(downloadDir)
+            }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
-            -1
+            0
         }
     }
 
