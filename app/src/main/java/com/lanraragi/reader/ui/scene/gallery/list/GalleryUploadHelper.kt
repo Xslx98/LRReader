@@ -34,12 +34,12 @@ class GalleryUploadHelper(private val mCallback: Callback) {
         fun getHostString(resId: Int, vararg formatArgs: Any): String
 
         /**
-         * Launches an archive file picker. The Scene-side implementation is
-         * expected to forward [intent] to a previously-registered
-         * `ActivityResultLauncher` and invoke [onPicked] with the picked Uri
-         * (or `null` when the user cancels).
+         * Launches an archive file picker. The Scene forwards [intent] to a
+         * previously-registered `ActivityResultLauncher` whose result goes
+         * straight to [handleUploadResult] — no callback is stashed, so a
+         * pick survives the Activity being recreated meanwhile.
          */
-        fun pickArchive(intent: Intent, onPicked: (Uri?) -> Unit)
+        fun pickArchive(intent: Intent)
 
         /**
          * Hand the prepared [request] to the ViewModel, which owns the upload
@@ -69,7 +69,7 @@ class GalleryUploadHelper(private val mCallback: Callback) {
                     intent,
                     mCallback.getHostString(R.string.lrr_upload_choose_file)
                 )
-            ) { uri -> if (uri != null) handleUploadResult(uri) }
+            )
         } catch (e: Exception) {
             mCallback.showTip(R.string.lrr_upload_no_file_manager, BaseScene.LENGTH_SHORT)
         }

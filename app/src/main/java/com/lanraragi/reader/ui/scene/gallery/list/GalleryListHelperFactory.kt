@@ -5,7 +5,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
-import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -156,8 +155,7 @@ internal object GalleryListHelperFactory {
             override fun getHostContext(): Context? = scene.ehContext
             override fun getHostString(resId: Int): String = scene.getString(resId)
             override fun getHostString(resId: Int, vararg formatArgs: Any): String = scene.getString(resId, *formatArgs)
-            override fun pickArchive(intent: Intent, onPicked: (Uri?) -> Unit) =
-                scene.launchPickArchive(intent, onPicked)
+            override fun pickArchive(intent: Intent) = scene.launchPickArchive(intent)
             override fun startUpload(request: GalleryListViewModel.UploadRequest) =
                 scene.startArchiveUpload(request)
         })
