@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.client.api.*
 import com.lanraragi.reader.client.api.data.*
 import androidx.paging.PagingConfig
@@ -170,7 +171,7 @@ class LRRArchivePagingSourceTest {
             PagingSource.LoadParams.Refresh(key = null, loadSize = 100, placeholdersEnabled = false)
         )
 
-        val request = server.takeRequest()
+        val request = server.awaitRequest()
         // Page 0 with loadSize 100 → start=0 (omitted from URL since start <= 0).
         // groupby_tanks is always sent (false here: the test helper pins folding off).
         assertEquals("/api/search?sortby=date_added&order=desc&groupby_tanks=false", request.path)
@@ -191,7 +192,7 @@ class LRRArchivePagingSourceTest {
         assertEquals(0, page.prevKey)
         assertEquals(200, page.nextKey)
 
-        val request = server.takeRequest()
+        val request = server.awaitRequest()
         assertTrue("Path should contain start=100", request.path!!.contains("start=100"))
     }
 
@@ -278,7 +279,7 @@ class LRRArchivePagingSourceTest {
             "tank pseudo-entry must use the tank thumbnail route, was: ${page.data[0].thumbnailUrl}",
             page.data[0].thumbnailUrl.contains("/api/tankoubons/TANK_1688616437/thumbnail"),
         )
-        assertTrue(server.takeRequest().path!!.contains("groupby_tanks=true"))
+        assertTrue(server.awaitRequest().path!!.contains("groupby_tanks=true"))
     }
 
     @Test
@@ -333,7 +334,7 @@ class LRRArchivePagingSourceTest {
             PagingSource.LoadParams.Refresh(key = null, loadSize = 100, placeholdersEnabled = false)
         )
 
-        val request = server.takeRequest()
+        val request = server.awaitRequest()
         val path = request.path!!
         assertTrue("Path should contain filter param", path.contains("filter="))
         assertTrue("Path should contain category=SET_aaaaaaaaaa", path.contains("category=SET_aaaaaaaaaa"))
@@ -350,7 +351,7 @@ class LRRArchivePagingSourceTest {
             PagingSource.LoadParams.Refresh(key = null, loadSize = 100, placeholdersEnabled = false)
         )
 
-        val request = server.takeRequest()
+        val request = server.awaitRequest()
         val path = request.path!!
         assertTrue("Path should contain sortby=title", path.contains("sortby=title"))
         assertTrue("Path should contain order=asc", path.contains("order=asc"))
@@ -422,7 +423,7 @@ class LRRArchivePagingSourceTest {
             PagingSource.LoadParams.Refresh(key = null, loadSize = 100, placeholdersEnabled = false)
         )
 
-        val request = server.takeRequest()
+        val request = server.awaitRequest()
         val path = request.path!!
         assertTrue("Path should contain newonly=true", path.contains("newonly=true"))
     }
@@ -438,7 +439,7 @@ class LRRArchivePagingSourceTest {
             PagingSource.LoadParams.Refresh(key = null, loadSize = 100, placeholdersEnabled = false)
         )
 
-        val request = server.takeRequest()
+        val request = server.awaitRequest()
         val path = request.path!!
         assertTrue("Path should contain untaggedonly=true", path.contains("untaggedonly=true"))
     }
@@ -454,7 +455,7 @@ class LRRArchivePagingSourceTest {
             PagingSource.LoadParams.Refresh(key = null, loadSize = 100, placeholdersEnabled = false)
         )
 
-        val request = server.takeRequest()
+        val request = server.awaitRequest()
         val path = request.path!!
         assertTrue("Path should contain newonly=true", path.contains("newonly=true"))
         assertTrue("Path should contain untaggedonly=true", path.contains("untaggedonly=true"))
@@ -471,7 +472,7 @@ class LRRArchivePagingSourceTest {
             PagingSource.LoadParams.Refresh(key = null, loadSize = 100, placeholdersEnabled = false)
         )
 
-        val request = server.takeRequest()
+        val request = server.awaitRequest()
         val path = request.path!!
         assertFalse("Path should NOT contain newonly", path.contains("newonly"))
         assertFalse("Path should NOT contain untaggedonly", path.contains("untaggedonly"))

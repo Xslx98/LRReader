@@ -1,5 +1,6 @@
 package com.lanraragi.reader.download
 
+import com.lanraragi.reader.awaitUntil
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
@@ -321,13 +322,11 @@ class DownloadManagerTest {
         val labels = manager.labelList.map { it.label }
         assertTrue("NewLabel" in labels)
 
-        // With Unconfined dispatcher, DB write completes synchronously
-        // but give a tiny grace period for coroutine dispatch
-        Thread.sleep(100)
-
-        // Verify in DB
-        val dbLabels = runBlocking { ServiceRegistry.dataModule.downloadDbRepository.getAllDownloadLabels() }
-        assertTrue(dbLabels.any { it.label == "NewLabel" })
+        // Verify in DB (the write is launched on the injected scope)
+        awaitUntil(message = "NewLabel never reached the DB") {
+            runBlocking { ServiceRegistry.dataModule.downloadDbRepository.getAllDownloadLabels() }
+                .any { it.label == "NewLabel" }
+        }
     }
 
     @Test

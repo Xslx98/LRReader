@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.detail
 
+import com.lanraragi.reader.awaitRequest
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -48,7 +49,7 @@ class TagEditDialogWriterTest {
 
         TagEditDialog.tankoubonWriter.write(client, baseUrl, "TANK_1700000000", "artist:foo, rating:⭐⭐")
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("PUT", req.method)
         assertEquals("/api/tankoubons/TANK_1700000000", req.path)
         val body = Json.parseToJsonElement(req.body.readUtf8()).jsonObject
@@ -79,9 +80,9 @@ class TagEditDialogWriterTest {
 
         TagEditDialog.archiveWriter.afterWrite(client, baseUrl, arcid, oldTags = "artist:a, parody:p", newTags = "artist:a, new:n")
 
-        assertEquals("/api/archives/$arcid/tankoubons", server.takeRequest().path)
-        assertEquals("/api/tankoubons/TANK_1700000000/full?page=-1", server.takeRequest().path)
-        val put = server.takeRequest()
+        assertEquals("/api/archives/$arcid/tankoubons", server.awaitRequest().path)
+        assertEquals("/api/tankoubons/TANK_1700000000/full?page=-1", server.awaitRequest().path)
+        val put = server.awaitRequest()
         assertEquals("PUT", put.method)
         val body = Json.parseToJsonElement(put.body.readUtf8()).jsonObject
         assertEquals("artist:a, hand:written, new:n", body.getValue("metadata").jsonObject.getValue("tags").jsonPrimitive.content)
@@ -103,7 +104,7 @@ class TagEditDialogWriterTest {
 
         TagEditDialog.archiveWriter.write(client, baseUrl, arcid, "artist:foo")
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("PUT", req.method)
         assertEquals("/api/archives/$arcid/metadata", req.requestUrl?.encodedPath)
         assertEquals("artist:foo", req.requestUrl?.queryParameter("tags"))

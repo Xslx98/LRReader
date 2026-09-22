@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
+import com.lanraragi.reader.awaitRequest
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
@@ -170,7 +171,7 @@ class GalleryListViewModelUploadTest {
         )
         // Only the metadata probe was sent — no upload PUT was attempted.
         assertEquals(1, server.requestCount)
-        val probe = server.takeRequest()
+        val probe = server.awaitRequest()
         assertEquals("GET", probe.method)
         assertTrue("probe should hit /metadata, was ${probe.path}", probe.path!!.endsWith("/metadata"))
     }
@@ -197,8 +198,8 @@ class GalleryListViewModelUploadTest {
             (terminal as GalleryListViewModel.UploadUiState.Success).arcid
         )
         assertEquals(2, server.requestCount)
-        assertTrue(server.takeRequest().path!!.endsWith("/metadata"))
-        val upload = server.takeRequest()
+        assertTrue(server.awaitRequest().path!!.endsWith("/metadata"))
+        val upload = server.awaitRequest()
         assertEquals("PUT", upload.method)
         assertEquals("/api/archives/upload", upload.path)
     }

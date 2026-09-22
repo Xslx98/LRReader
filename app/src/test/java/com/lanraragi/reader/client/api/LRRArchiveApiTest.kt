@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.awaitRequest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
@@ -55,7 +56,7 @@ class LRRArchiveApiTest {
         assertEquals("Test Archive", archive.title)
         assertEquals(10, archive.pagecount)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("GET", req.method)
         assertEquals("/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/metadata", req.path)
     }
@@ -68,7 +69,7 @@ class LRRArchiveApiTest {
         assertEquals(3, pages.size)
         assertEquals("./page1.jpg", pages[0])
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/files", req.path)
     }
 
@@ -89,7 +90,7 @@ class LRRArchiveApiTest {
 
         LRRArchiveApi.updateArchiveMetadata(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "artist:test, rating:⭐⭐")
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("PUT", req.method)
         assertTrue(req.path!!.contains("/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/metadata"))
         assertTrue(req.path!!.contains("tags="))
@@ -103,7 +104,7 @@ class LRRArchiveApiTest {
 
         LRRArchiveApi.updateMetadata(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", tags = "artist:foo, parody:bar")
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("PUT", req.method)
         assertTrue(req.path!!.startsWith("/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/metadata"))
         // Per spec, inputs travel as query parameters (no requestBody node).
@@ -118,7 +119,7 @@ class LRRArchiveApiTest {
 
         LRRArchiveApi.updateMetadata(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", title = "New Title", tags = "artist:test")
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("PUT", req.method)
         assertTrue("path should carry title= query param", req.path!!.contains("title="))
         assertTrue("path should carry tags= query param", req.path!!.contains("tags="))
@@ -131,7 +132,7 @@ class LRRArchiveApiTest {
 
         LRRArchiveApi.updateMetadata(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", summary = "A new summary line")
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("PUT", req.method)
         assertTrue("path should carry summary= query param", req.path!!.contains("summary="))
         // null fields are omitted entirely
@@ -158,7 +159,7 @@ class LRRArchiveApiTest {
 
         LRRArchiveApi.clearNewFlag(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("DELETE", req.method)
         assertEquals("/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/isnew", req.path)
     }
@@ -169,7 +170,7 @@ class LRRArchiveApiTest {
 
         LRRArchiveApi.updateProgress(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 5)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("PUT", req.method)
         assertEquals("/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/progress/5", req.path)
     }
@@ -196,7 +197,7 @@ class LRRArchiveApiTest {
         val filename = LRRArchiveApi.deleteArchive(client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         assertEquals("deleted.zip", filename)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("DELETE", req.method)
         assertEquals("/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", req.path)
     }
@@ -231,7 +232,7 @@ class LRRArchiveApiTest {
         val arcid = LRRArchiveApi.uploadArchive(client, baseUrl, testFile)
         assertEquals("new_arc_id", arcid)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("PUT", req.method)
         assertEquals("/api/archives/upload", req.path)
         val contentType = req.getHeader("Content-Type")!!
@@ -255,7 +256,7 @@ class LRRArchiveApiTest {
         )
         assertEquals("new_id", arcid)
 
-        val body = server.takeRequest().body.readUtf8()
+        val body = server.awaitRequest().body.readUtf8()
         assertTrue(body.contains("title"))
         assertTrue(body.contains("My Manga"))
         assertTrue(body.contains("tags"))
@@ -277,7 +278,7 @@ class LRRArchiveApiTest {
             fileChecksum = "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d"
         )
 
-        val body = server.takeRequest().body.readUtf8()
+        val body = server.awaitRequest().body.readUtf8()
         assertTrue(body.contains("summary"))
         assertTrue(body.contains("A great manga"))
         assertTrue(body.contains("file_checksum"))
@@ -297,7 +298,7 @@ class LRRArchiveApiTest {
             client, baseUrl, testFile,
             progressListener = { written, total -> lastWritten = written; reportedTotal = total }
         )
-        server.takeRequest()
+        server.awaitRequest()
 
         assertEquals("listener should see the file's full byte count as total", 5000L, reportedTotal)
         assertEquals("final progress should reach 100% of the bytes", 5000L, lastWritten)
@@ -349,7 +350,7 @@ class LRRArchiveApiTest {
             client, baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 0
         )
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("GET", req.method)
         val path = req.path!!
         assertTrue("path: $path", path.startsWith("/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/thumbnail"))
@@ -429,7 +430,7 @@ class LRRArchiveApiTest {
         )
         assertTrue(exists)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("GET", req.method)
         assertEquals("/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/metadata", req.path)
     }

@@ -15,6 +15,7 @@
  */
 package com.lanraragi.reader.client
 
+import com.lanraragi.reader.BuildConfig
 import android.content.Context
 import android.util.Base64
 import android.util.Pair
@@ -497,7 +498,8 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
                         }
                         throttle.recordSuccess()
                     } catch (e: java.io.IOException) {
-                        Log.w(TAG, "Failed to read updated tag database", e)
+                        // Throwable-arg Log.w survives R8's strip; gate it.
+                        if (BuildConfig.DEBUG) Log.w(TAG, "Failed to read updated tag database", e)
                     }
                 } finally {
                     updateInFlight.set(false)
