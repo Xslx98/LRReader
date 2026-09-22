@@ -17,6 +17,53 @@ An Android client for [LANraragi](https://github.com/Difegue/LANraragi), built u
 
 ---
 
+## 📥 下载 | Download
+
+| 渠道 / Channel | 链接 / Link |
+|---|---|
+| GitHub Releases | [最新版本 / Latest](https://github.com/Xslx98/LRReader/releases) |
+
+> Release 仅提供 arm64-v8a APK（Android 9+）。应用内可自动检查并安装更新。
+>
+> Releases ship an arm64-v8a APK only (Android 9+). The app can check for and install updates itself.
+
+## 🚀 三步开始使用 | Get Started in Three Steps
+
+LR Reader 是你自己 LANraragi 服务器的手机客户端，所以第一次打开需要告诉它服务器在哪、怎么进门。整个过程只要一两分钟。
+
+LR Reader is a phone client for your own LANraragi server, so on first launch it needs to know where the server is and how to get in. It takes a minute or two.
+
+**1. 填服务器地址 / Enter the server address**
+
+打开 App 会看到引导页。在「服务器地址」里填 LANraragi 的地址和端口，比如 `192.168.1.100:3000`。不用写 `http://` 或 `https://`——App 会先试加密连接，局域网地址再自动改用明文（改用明文时会请你确认一次）。如果从外网访问，建议把 LANraragi 放在支持 HTTPS 的反向代理后面。
+
+The onboarding page opens on first launch. Put your LANraragi address and port in the server field, e.g. `192.168.1.100:3000`. No need to type `http://` or `https://` — the app tries an encrypted connection first and falls back to plain HTTP for LAN addresses (it asks you once before doing so). For access from outside your home, put LANraragi behind an HTTPS reverse proxy.
+
+**2. 拿到 API Key / Get an API Key**
+
+API Key 是 App 进入服务器的钥匙，在 LANraragi 网页端设置：
+
+The API Key is what lets the app into your server. Set it in the LANraragi web UI:
+
+1. 在电脑或手机浏览器打开 LANraragi，点右上角 **Admin Login** 登录。管理员密码默认是 `kamimamita`，登录后请尽快改掉。
+   Open LANraragi in a browser and log in through **Admin Login**. The default admin password is `kamimamita` — change it once you are in.
+2. 点 **Settings**，左侧选 **Security**，勾选 **Enable Password**（不勾的话看不到 API Key 这一栏）。
+   Click **Settings**, pick **Security** on the left and tick **Enable Password** (the API Key field only appears when it is on).
+3. 在 **API Key** 里填一串你自己想的字符（这不是登录密码，留空无效），点 **Save Settings**。
+   Type any string of your choosing into **API Key** (it is not the login password, and an empty key does not work), then **Save Settings**.
+4. 把这串字符填进 App 的「API Key」栏。
+   Copy that string into the app's API Key field.
+
+> 服务器没有开密码时，App 里的 API Key 可以留空。如果开了 **No-Fun Mode**，连看图都要密码，这时一定要填 Key。
+>
+> If your server has no password turned on, leave the key empty. With **No-Fun Mode** on, even reading needs a password, so the key is required.
+
+**3. 测试并保存 / Test and save**
+
+点「测试连接」，看到服务器名和版本就说明通了，再点保存。以后想连别的 LANraragi，在侧边抽屉的「切换服务器」里添加即可，每台服务器的 Key 都单独加密保存。
+
+Tap **Test connection**; seeing the server name and version means you are in — then save. To add more LANraragi servers later, use **Switch Server** in the side drawer; each server keeps its own encrypted key.
+
 ## ✨ 功能特性 | Features
 
 | 功能 / Feature | 说明 / Description |
@@ -27,7 +74,7 @@ An Android client for [LANraragi](https://github.com/Difegue/LANraragi), built u
 | 📖 **高性能阅读 / High-Performance Reader** | GL 渲染管线 + 按需解码 + 智能预加载 / GL rendering pipeline, on-demand decoding and smart preloading |
 | ⏭️ **跨档案续读 / Reader Continuation** | 读到末页自动衔接下一本，无需回列表 / End-of-book panel jumps straight to the next archive |
 | ▶️ **继续阅读 / Continue Reading** | 桌面快捷方式一键回到上次阅读的档案与页码 / Launcher shortcut back to your last archive and page |
-| 📚 **合订本 / Tankoubon** | 浏览与管理合订本：全局阅读进度、封面管理、成员多选整理（置顶/置底/移到第 N 位/插入到某本之前/反转）与拖动手柄，「按标题排序」自动识别第N话/回/卷/章、Vol/Ch、范围与上/中/下，番外殿后，可撤销 / Browse & manage tankoubons: global progress, cover management, multi-select member reordering (top/bottom/position/insert-before/reverse) with a drag handle, and an undoable episode-aware "Sort by title" (第N话/回/卷/章, Vol/Ch, ranges, 上/中/下, 番外 last) (LANraragi 0.9.8+) |
+| 📚 **合订本 / Tankoubon** | 合订本像一本书：专属详情页（封面、评分、分类、标签、成员条、页面预览）；标签自动保持为成员标签的并集，静态分类随成员一起收录；任意页设为封面；新建时自动从所选标题提取名称；成员管理支持多选整理、拖动手柄与「按标题排序」（识别第N话/回/卷/章、Vol/Ch、范围、上/中/下，番外殿后，可撤销） / A tankoubon reads like one book: its own detail page (cover, rating, category, tags, member strip, page previews); tags kept as the union of member tags and static categories following members in; cover from any page; a name suggested from the selected titles on create; member management with multi-select reordering, a drag handle and an undoable episode-aware "Sort by title" (LANraragi 0.9.8+) |
 | 📕 **整本无缝阅读 / Seamless Tank Reading** | 合订本作为一本书阅读：全局页码、双向无缝跨成员翻页、阅读位置续读 / Read a whole tankoubon as one book: global page numbering, seamless page turns across members in both directions, resumable position (LANraragi 0.9.8+) |
 | 📦 **合订本下载 / Tank Download** | 一键下载整个合订本，下载列表聚合为单卡片，点击即离线整本阅读；已下载成员自动并入零重复下载 / One-tap whole-tank download aggregated into a single card that opens the offline whole-tank session; already-downloaded members merge in with zero re-download (LANraragi 0.9.8+) |
 | ⏬ **边下边读 / Read While Downloading** | 下载中的档案（含合订本成员）可直接阅读：已落盘页秒开，阅读器取回的页写入下载目录供下载器复用；离线时缺页显示错误页而非截断 / Read an archive (or tankoubon member) while it downloads: landed pages open instantly, pages fetched by the reader are written into the download directory for the worker to reuse; offline, missing pages show as errors instead of ending early |
@@ -36,7 +83,7 @@ An Android client for [LANraragi](https://github.com/Difegue/LANraragi), built u
 | 📊 **阅读统计 / Reading Stats** | 阅读量、分服务器统计与标签偏好分析 / Reading totals, per-server breakdown and tag-preference analysis |
 | 🖼️ **页面预览 / Page Previews** | 详情页全页面缩略图网格，支持跳页与密度调节 / Per-page thumbnail grid on detail page with jump-to-page and configurable density |
 | ⬇️ **离线下载 / Offline Download** | 后台下载整本档案，断点续传 + 断网自动等网恢复 / Background archive download with resume and automatic recovery after network loss |
-| ☑️ **多选批量 / Batch Operations** | 列表长按多选：批量下载、加分类、加入合订本（无合订本时直接新建）、清 NEW、删除 / Long-press multi-select for batch download, categorize, add to tankoubon (creates one when none exists), clear-new, delete |
+| ☑️ **多选批量 / Batch Operations** | 长按后滑动即可连续多选：批量下载、加分类、加入合订本（带汇入动画，无合订本时直接新建）、清 NEW、删除 / Long-press then slide to select a run of rows: batch download, categorize, add to tankoubon (with a merge animation; creates one when none exists), clear-new, delete |
 | 🏷️ **标签翻译 / Tag Translation** | 中文环境下自动翻译标签 / Auto-translate tags in Chinese locale (EhTagDatabase) |
 | ⭐ **档案评分 / Archive Rating** | 基于标签的 emoji 星级评分 / Tag-based emoji star rating |
 | 📁 **分类管理 / Category Management** | 浏览、创建、编辑 LANraragi 分类 / Browse, create, edit LANraragi categories |
@@ -51,37 +98,6 @@ An Android client for [LANraragi](https://github.com/Difegue/LANraragi), built u
 > 兼容所有较新的 LANraragi 版本；页面标注、合订本、隐藏已读完等 0.9.8 新能力在旧版服务器上自动降级。
 >
 > Works with any reasonably recent LANraragi; 0.9.8-only capabilities (stamps, tankoubons, hide-finished) degrade gracefully on older servers.
-
-## 📥 下载 | Download
-
-| 渠道 / Channel | 链接 / Link |
-|---|---|
-| GitHub Releases | [最新版本 / Latest](https://github.com/Xslx98/LRReader/releases) |
-
-> Release 仅提供 arm64-v8a APK（Android 9+）。应用内可自动检查并安装更新。
->
-> Releases ship an arm64-v8a APK only (Android 9+). The app can check for and install updates itself.
-
-## 🚀 首次使用 | First Use
-
-1. **安装并打开 App**，首次启动进入引导页，填写服务器地址与 API Key。
-   **Install and open the app.** The first launch shows an onboarding page asking for the server address and API Key.
-2. **服务器地址**：填 LANraragi 的地址与端口，例如 `192.168.1.100:3000`。不写协议时默认尝试 `https://`，局域网 IP 会再回退到 `http://`（明文连接会要求你确认一次）。公网访问建议走反向代理的 HTTPS。
-   **Server address**: the LANraragi host and port, e.g. `192.168.1.100:3000`. Without a scheme the app tries `https://` first and falls back to `http://` for LAN addresses (you confirm the cleartext connection once). Prefer HTTPS behind a reverse proxy for remote access.
-3. **API Key 从哪来**（以 LANraragi 网页端为准）：
-   **Where the API Key comes from** (in the LANraragi web UI):
-   1. 打开 LANraragi 网页，点 **Admin Login** 登录（管理员密码默认为 `kamimamita`，请尽快修改），再点 **Settings**（即 `/config` 页面）进入 Admin Settings。
-      Open the LANraragi web UI, log in via **Admin Login** (the default admin password is `kamimamita` — change it), then open **Settings** (the `/config` page) to reach Admin Settings.
-   2. 左侧选择 **Security** 分类，勾选 **Enable Password**（未启用密码时不显示密码相关字段）。
-      Pick the **Security** category and tick **Enable Password** (the password-related fields only appear once it is enabled).
-   3. 在 **API Key** 文本框填入任意一串字符串（这不是登录密码，空字符串无效），点 **Save Settings**。
-      Type any string into the **API Key** field (it is not the login password; an empty key does not work) and click **Save Settings**.
-   4. 把这串 Key 填进 App。App 会按 LANraragi 客户端 API 的要求自动以 `Authorization: Bearer <base64(key)>` 发送，无需自己编码。
-      Enter that key in the app. It is sent as `Authorization: Bearer <base64(key)>` exactly as the LANraragi client API expects; no manual encoding needed.
-   - 服务器**没有**启用密码时 API Key 可留空；启用了 **No-Fun Mode** 时连阅读也需要密码，所有接口都必须带 Key。
-     If the server has **no** password enabled the key can stay empty; with **No-Fun Mode** on, every API call (reading included) requires the key.
-4. **测试连接并保存**。之后可在抽屉「切换服务器」中添加更多实例，每个实例各存一份 Key（加密保存）。
-   **Test the connection and save.** More instances can be added later under "Switch Server" in the drawer; each keeps its own encrypted key.
 
 ## 🛠️ 构建 | Build
 
