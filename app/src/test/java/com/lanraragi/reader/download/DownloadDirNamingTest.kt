@@ -24,6 +24,28 @@ class DownloadDirNamingTest {
     }
 
     @Test
+    fun baseName_fallsBackToArcidForDotOnlyTitles() {
+        // "." / ".." would resolve to the download root or its parent.
+        assertEquals(arcid, DownloadDirNaming.baseName(arcid, "."))
+        assertEquals(arcid, DownloadDirNaming.baseName(arcid, ".."))
+        assertEquals(arcid, DownloadDirNaming.baseName(arcid, " . "))
+        assertEquals(arcid, DownloadDirNaming.baseName(arcid, "...."))
+        assertEquals(".hack", DownloadDirNaming.baseName(arcid, ".hack"))
+    }
+
+    @Test
+    fun isSafeName_rejectsPathTraversalAndBlankNames() {
+        assertFalse(DownloadDirNaming.isSafeName("."))
+        assertFalse(DownloadDirNaming.isSafeName(".."))
+        assertFalse(DownloadDirNaming.isSafeName(""))
+        assertFalse(DownloadDirNaming.isSafeName("  "))
+        assertFalse(DownloadDirNaming.isSafeName("a/b"))
+        assertFalse(DownloadDirNaming.isSafeName("a\\b"))
+        assertTrue(DownloadDirNaming.isSafeName("My Gallery"))
+        assertTrue(DownloadDirNaming.isSafeName(".hack"))
+    }
+
+    @Test
     fun uniqueName_returnsBaseWhenFree() {
         assertEquals("Title", DownloadDirNaming.uniqueName("Title") { false })
     }

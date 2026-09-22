@@ -11,6 +11,7 @@ import com.lanraragi.reader.client.api.OrphanProfileException
 import com.lanraragi.reader.client.api.resolvePageUrl
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.dao.DownloadInfo
+import com.lanraragi.reader.gallery.ReaderPageCache
 import com.lanraragi.reader.spider.SpiderDen
 import com.lanraragi.reader.spider.SpiderQueen
 import kotlinx.coroutines.CancellationException
@@ -120,6 +121,10 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
 
     fun cancel() {
         cancelled = true
+        // A cancelled worker must not report anything more; the scheduler
+        // also fences late events by worker identity.
+        listener = null
+        onNetworkWaitEvent = null
         job?.cancel()
         // Page downloads run on `scope` (siblings of `job`); cancel the whole
         // scope so any coroutine suspended in NetworkWaitBudget.awaitNetworkOrExpire
@@ -333,7 +338,10 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                 .getArchiveSnapshot(arcId, info.serverProfileId)?.pagecount
         }.getOrNull() ?: return false
         if (pagecount <= 0) return false
-        val dir = runCatching { getDownloadDir() }.getOrNull() ?: return false
+        // Lookup only: a verifier must not create a directory it then reports on.
+        val uni = runCatching { SpiderDen.findGalleryDownloadDir(arcId) }.getOrNull() ?: return false
+        if ("file" != uni.uri.scheme) return false
+        val dir = File(uni.uri.path ?: return false)
         if (!LocalArchiveVerifier.isComplete(dir, pagecount)) return false
         if (BuildConfig.DEBUG) {
             Log.d(TAG, "Page-list fetch failed but archive is complete on disk; reporting finish")
@@ -509,34 +517,33 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
             ServiceRegistry.dataModule.profileLookupCache,
         )
 
+    /**
+     * The archive's download directory, allocated (with its pointer) on
+     * first use. There is deliberately no fallback location: a second
+     * naming rule outside [SpiderDen] produced unpointed, undeduplicated
+     * directories the reader never found. A null result fails the download
+     * with a reason instead.
+     */
     private suspend fun getDownloadDir(): File? {
-        // Use the same download location as SpiderDen (DownloadSettings.getDownloadLocation())
-        // so downloaded files are visible in the user-configured directory
         try {
-            val uniDir = SpiderDen.getGalleryDownloadDir(info.arcid, info.title)
-            if (uniDir != null && uniDir.ensureDir()) {
-                val uri = uniDir.uri
-                if ("file" == uri.scheme) {
-                    return File(uri.path ?: return null)
-                }
+            val uniDir = SpiderDen.allocateGalleryDownloadDir(info.arcid, info.title) ?: return null
+            val uri = uniDir.uri
+            if ("file" == uri.scheme) {
+                return File(uri.path ?: return null)
             }
+            Log.w(TAG, "Download root is not a file:// directory; cannot download")
         } catch (e: Exception) {
-            Log.w(TAG, "Failed to get gallery download dir from SpiderDen, using fallback", e)
+            Log.w(TAG, "Failed to allocate the gallery download dir", e)
         }
-        // Fallback: app-private external files directory
-        val baseDir = File(context.getExternalFilesDir(null), "download")
-        if (!baseDir.exists()) baseDir.mkdirs()
-        val archiveDir = File(baseDir, sanitizeFilename(info.title))
-        if (!archiveDir.exists()) archiveDir.mkdirs()
-        return archiveDir
+        return null
     }
 
     companion object {
         private const val TAG = "LRRDownloadWorker"
         private const val BUFFER_SIZE = 262144         // 256KB — reduces syscall overhead on LAN
-        // 1KB minimum valid image; internal so LocalArchiveVerifier applies
-        // the same threshold as the resume skip.
-        internal const val MIN_IMAGE_SIZE = 1024L
+        // Same floor as the reader (see ReaderPageCache.MIN_IMAGE_SIZE);
+        // internal so LocalArchiveVerifier applies it like the resume skip.
+        internal const val MIN_IMAGE_SIZE = ReaderPageCache.MIN_IMAGE_SIZE
         private const val MAX_RETRY = 2                // Try up to 2 times per page
         private const val MAX_PAGE_SIZE = 200L * 1024 * 1024 // 200MB per page
         /** Settle delay after the network returns before re-attempting, so a
@@ -650,12 +657,6 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                 Log.w(TAG, "Failed to validate image file", e)
                 false
             }
-        }
-
-        @JvmStatic
-        private fun sanitizeFilename(name: String?): String {
-            if (name == null) return "unknown"
-            return name.replace(Regex("[\\\\/:*?\"<>|]"), "_").trim()
         }
     }
 }

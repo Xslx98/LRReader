@@ -65,7 +65,8 @@ class HistoryRepository(
                     historyTime = info.time,
                     historyMode = info.mode,
                 )
-            }
+            },
+            ::mergeSnapshotJson,
         )
         trimHistory(historyInfoList.map { it.serverProfileId })
     }
@@ -211,7 +212,10 @@ class HistoryRepository(
         historyTime: Long,
         historyMode: Int,
     ) {
-        dao.upsertHistory(arcid, serverProfileId, archiveJson, historyTime, historyMode)
+        dao.upsertHistoryBatch(
+            listOf(HistoryUpsertRow(arcid, serverProfileId, archiveJson, historyTime, historyMode)),
+            ::mergeSnapshotJson,
+        )
     }
 
     private suspend fun trimHistory(profileIds: Collection<Long>) {
@@ -223,7 +227,35 @@ class HistoryRepository(
         }
     }
 
-    private companion object {
-        const val DEFAULT_HISTORY_MAX = 100
+    internal companion object {
+        private const val DEFAULT_HISTORY_MAX = 100
+
+        /**
+         * Overlay an incoming history snapshot onto the stored one. Fields
+         * a lossy view cannot know (HistoryInfo/DownloadInfo.toArchive()
+         * zero pagecount and progress and drop the summary) never erase a
+         * stored value; everything the incoming snapshot does know wins.
+         */
+        fun mergeSnapshot(existing: Archive, incoming: Archive): Archive = incoming.copy(
+            title = incoming.title.ifBlank { existing.title },
+            thumbnailUrl = incoming.thumbnailUrl.ifBlank { existing.thumbnailUrl },
+            extension = incoming.extension.ifBlank { existing.extension },
+            filename = incoming.filename.ifBlank { existing.filename },
+            tags = incoming.tags.ifEmpty { existing.tags },
+            pagecount = if (incoming.pagecount > 0) incoming.pagecount else existing.pagecount,
+            progress = if (incoming.progress > 0) incoming.progress else existing.progress,
+            summary = incoming.summary ?: existing.summary,
+        )
+
+        fun mergeSnapshotJson(existingJson: String?, incomingJson: String): String {
+            if (existingJson == null) return incomingJson
+            val existing = decodeOrNull(existingJson) ?: return incomingJson
+            val incoming = decodeOrNull(incomingJson) ?: return incomingJson
+            return mergeSnapshot(existing, incoming).toArchiveJson()
+        }
+
+        private fun decodeOrNull(json: String): Archive? = runCatching {
+            ArchiveLocalStateJson.decodeFromString(Archive.serializer(), json)
+        }.getOrNull()
     }
 }

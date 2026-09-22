@@ -153,7 +153,7 @@ class DownloadDbRepository(
 
     /**
      * Resolve the persisted download tree URI for [arcid]. SpiderDen
-     * uses this in [com.lanraragi.reader.spider.SpiderDen.getGalleryDownloadDir]
+     * uses this in [com.lanraragi.reader.spider.SpiderDen.findGalleryDownloadDir]
      * to keep already-downloaded archives reachable after the user
      * changes [com.lanraragi.reader.settings.DownloadSettings.getDownloadLocation].
      * Returns NULL for legacy rows that have not been backfilled yet
@@ -418,12 +418,15 @@ class DownloadDbRepository(
         }
     }
 
+    /** Every stored `arcid → dirname` pointer. */
+    suspend fun getAllDownloadDirnamePointers(): Map<String, String> =
+        downloadDao.loadAllDirnames().mapNotNull { row -> row.dirname?.let { row.arcid to it } }.toMap()
+
+    /** Every stored dirname, for allocating a name no other arcid claims. */
+    suspend fun getAllDownloadDirnames(): List<String> = downloadDao.loadAllDirnameValues()
+
     suspend fun removeDownloadDirname(arcid: String) {
         downloadDao.deleteDirnameByKey(arcid)
-    }
-
-    suspend fun clearDownloadDirname() {
-        downloadDao.deleteAllDirnames()
     }
 
     // ═══════════════════════════════════════════════════════════

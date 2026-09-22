@@ -16,6 +16,17 @@ class DownloadPageNamingTest {
     }
 
     @Test
+    fun pageFile_usesAsciiDigitsUnderAnyDefaultLocale() {
+        val saved = java.util.Locale.getDefault()
+        try {
+            java.util.Locale.setDefault(java.util.Locale.forLanguageTag("ar-EG-u-nu-arab"))
+            assertEquals("0012.png", DownloadPageNaming.pageFile(java.io.File("d"), 11, "p/12.png").name)
+        } finally {
+            java.util.Locale.setDefault(saved)
+        }
+    }
+
+    @Test
     fun pageFile_defaultsToJpgWhenPathHasNoExtension() {
         assertEquals(File(dir, "0003.jpg"), DownloadPageNaming.pageFile(dir, 2, "noext"))
     }

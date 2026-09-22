@@ -145,4 +145,27 @@ class DownloadDirMigrationTest {
         row(arcid, "NoPtr")
         assertEquals(RowResult.NO_POINTER, migration.migrateRow(repo.getAllDownloadInfo().single()))
     }
+
+    @Test
+    fun renameInterruptedAfterThePointerWasWritten_isCompletedOnTheNextBoot() = runTest {
+        row(arcid, "My Gallery")
+        legacyDir(arcid, "My Gallery")
+        // Pointer already repointed, directory still legacy-named.
+        repo.putDownloadDirname(arcid, "My Gallery")
+
+        val outcome = migration.run()
+
+        assertEquals(1, outcome.results[RowResult.RENAMED])
+        assertTrue(File(root, "My Gallery/0001.jpg").exists())
+        assertFalse(File(root, "$arcid-My Gallery").exists())
+        assertEquals("My Gallery", repo.getDownloadDirname(arcid))
+    }
+
+    @Test
+    fun newStylePointerWithItsDirectoryPresent_isLeftAlone() = runTest {
+        row(arcid, "Fresh")
+        File(root, "Fresh").mkdirs()
+        repo.putDownloadDirname(arcid, "Fresh")
+        assertEquals(1, migration.run().results[RowResult.ALREADY_NEW])
+    }
 }

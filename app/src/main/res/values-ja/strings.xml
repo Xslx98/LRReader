@@ -496,9 +496,6 @@
     <string name="settings_advanced_dump_logcat_summary">ログを内部ストレージに保存します</string>
     <string name="settings_advanced_dump_logcat_failed">ログをエクスポートできませんでした</string>
     <string name="settings_advanced_dump_logcat_to">ログを「%s」にエクスポートしました</string>
-    <string name="settings_advanced_clear_download_path_cache">ギャラリーのダウンロードパスを消去する</string>
-    <string name="settings_advanced_clear_download_path_cache_summary">ギャラリーのダウンロードパスは無効のようです。もう一度ダウンロードする必要があると表示されている場合は、ダウンロードパスのキャッシュを消去してみてください。</string>
-    <string name="settings_advanced_clear_download_path_cache_message">ギャラリーのダウンロードパスのキャッシュを消去しますか？</string>
     <string name="settings_advanced_clear_memory_cache">メモリキャッシュを消去する</string>
     <string name="settings_advanced_clear_memory_cache_summary">サムネイルとギャラリー情報のメモリキャッシュをクリアします</string>
     <string name="settings_advanced_read_cache_size">閲覧キャッシュのサイズ</string>
@@ -594,6 +591,9 @@
     <string name="settings_download_cleaning">ダウンロード項目を整理中</string>
     <plurals name="settings_download_clean_invalid_done">
         <item quantity="other">%d 件のダウンロード項目を整理しました</item>
+    </plurals>
+    <plurals name="settings_download_clean_redundancy_confirm">
+        <item quantity="other">ダウンロードリストにない %d 個のフォルダを削除しますか？</item>
     </plurals>
     <string name="settings_download_clean_invalid_no_invalid">整理が必要なダウンロード項目はありません</string>
 

@@ -285,13 +285,14 @@ class DownloadManager(
     fun startRangeDownload(arcidList: List<String>) {
         repo.assertMainThread()
         var update = false
+        val changed = ArrayList<DownloadInfo>()
         val downloadOrder = DownloadSettings.getDownloadOrder()
         if (downloadOrder) {
             for (arcid in arcidList) {
                 val info = repo.allInfoMap[arcid] ?: continue
                 if (info.state == DownloadState.NONE || info.state == DownloadState.FAILED || info.state == DownloadState.FINISH) {
                     DownloadResumeBanner.markResumed(arcid)
-                    update = true; info.state = DownloadState.WAIT; scheduler.waitList.add(info); repo.persistInfo(info)
+                    update = true; info.state = DownloadState.WAIT; scheduler.waitList.add(info); changed.add(info)
                 }
             }
         } else {
@@ -299,25 +300,29 @@ class DownloadManager(
                 val info = repo.allInfoMap[arcid] ?: continue
                 if (info.state == DownloadState.NONE || info.state == DownloadState.FAILED || info.state == DownloadState.FINISH) {
                     DownloadResumeBanner.markResumed(arcid)
-                    update = true; info.state = DownloadState.WAIT; scheduler.waitList.add(info); repo.persistInfo(info)
+                    update = true; info.state = DownloadState.WAIT; scheduler.waitList.add(info); changed.add(info)
                 }
             }
         }
+        // One transaction for the whole range instead of one per row.
+        if (changed.isNotEmpty()) repo.persistInfoBatch(changed)
         if (update) { eventBus.forEachListener { it.onUpdateAll() }; scheduler.ensureDownload() }
     }
 
     fun startAllDownload() {
         repo.assertMainThread()
         var update = false
+        val changed = ArrayList<DownloadInfo>()
         val downloadOrder = DownloadSettings.getDownloadOrder()
         for (info in repo.allInfoList) {
             if (info.state == DownloadState.NONE || info.state == DownloadState.FAILED) {
                 DownloadResumeBanner.markResumed(info.arcid)
                 update = true; info.state = DownloadState.WAIT
                 if (downloadOrder) scheduler.waitList.add(info) else scheduler.waitList.add(0, info)
-                repo.persistInfo(info)
+                changed.add(info)
             }
         }
+        if (changed.isNotEmpty()) repo.persistInfoBatch(changed)
         if (update) { eventBus.forEachListener { it.onUpdateAll() }; scheduler.ensureDownload() }
     }
 
@@ -581,12 +586,14 @@ class DownloadManager(
         repo.assertMainThread()
         if (label != null && !repo.containLabel(label)) { Log.e(TAG, "Not exits label: $label"); return }
         val dstList = repo.getInfoListForLabel(label) ?: run { Log.e(TAG, "Can't find label with label: $label"); return }
+        val changed = ArrayList<DownloadInfo>()
         for (info in list) {
             if (ObjectUtils.equal(info.label, label)) continue
             val srcList = repo.getInfoListForLabel(info.label)
             if (srcList == null) { Log.e(TAG, "Can't find label with label: " + info.label); continue }
-            srcList.remove(info); info.label = label; DownloadRepository.insertSorted(dstList, info); repo.persistInfo(info)
+            srcList.remove(info); info.label = label; DownloadRepository.insertSorted(dstList, info); changed.add(info)
         }
+        if (changed.isNotEmpty()) repo.persistInfoBatch(changed)
         eventBus.forEachListener { it.onReload() }
     }
 

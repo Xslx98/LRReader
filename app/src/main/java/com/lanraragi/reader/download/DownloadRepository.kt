@@ -19,6 +19,7 @@ package com.lanraragi.reader.download
 import android.content.Context
 import android.os.Looper
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.dao.DownloadLabel
@@ -29,6 +30,8 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import java.util.Collections
 
@@ -507,58 +510,80 @@ class DownloadRepository(
     // DB persistence helpers
     // ═══════════════════════════════════════════════════════════
 
-    /** Persist [info] to the downloads table on a background thread. */
-    fun persistInfo(info: DownloadInfo) {
+    /**
+     * Every download-row write goes through this single-consumer queue, so
+     * writes reach Room in the order they were issued. Separate `launch`es
+     * on the IO pool could reorder a stop-path persist after the delete
+     * that follows it, bringing a deleted download back.
+     */
+    private val dbWrites = Channel<suspend () -> Unit>(Channel.UNLIMITED)
+
+    init {
         scope.launch {
+            for (write in dbWrites) write()
+        }
+    }
+
+    private fun enqueueDbWrite(failure: String, block: suspend () -> Unit) {
+        dbWrites.trySend {
             try {
-                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
+                block()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to persist download info arcid=${info.arcid}", e)
+                Log.e(TAG, failure, e)
             }
+        }
+    }
+
+    /** Suspends until every write issued so far has been applied (tests). */
+    @VisibleForTesting
+    internal suspend fun awaitDbWrites() {
+        val done = CompletableDeferred<Unit>()
+        dbWrites.send { done.complete(Unit) }
+        done.await()
+    }
+
+    /** Persist a snapshot of [info] to the downloads table, in issue order. */
+    fun persistInfo(info: DownloadInfo) {
+        val snapshot = info.snapshot()
+        enqueueDbWrite("Failed to persist download info") {
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(snapshot)
         }
     }
 
     /** Persist [info] to the history table on a background thread. */
     fun persistHistory(info: DownloadInfo) {
+        val archive = info.toArchive()
         scope.launch {
             try {
-                ServiceRegistry.dataModule.historyRepository.putHistoryInfo(info.toArchive())
+                ServiceRegistry.dataModule.historyRepository.putHistoryInfo(archive)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to persist history info arcid=${info.arcid}", e)
             }
         }
     }
 
-    /** Remove download info from the DB by arcid on a background thread. */
+    /** Remove download info from the DB by arcid, in issue order. */
     fun removeInfoFromDbByArcid(arcid: String) {
-        scope.launch {
-            try {
-                ServiceRegistry.dataModule.downloadDbRepository.removeDownloadInfoByArcid(arcid)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to remove download info arcid=$arcid from DB", e)
-            }
+        enqueueDbWrite("Failed to remove download info from DB") {
+            ServiceRegistry.dataModule.downloadDbRepository.removeDownloadInfoByArcid(arcid)
         }
     }
 
-    /** Batch-remove download infos from the DB by arcids on a background thread. */
+    /** Batch-remove download infos from the DB by arcids, in issue order. */
     fun removeInfoBatchFromDbByArcids(arcids: List<String>) {
-        scope.launch {
-            try {
-                ServiceRegistry.dataModule.downloadDbRepository.removeDownloadInfoBatchByArcids(arcids)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to batch-remove download infos from DB", e)
-            }
+        val snapshot = arcids.toList()
+        enqueueDbWrite("Failed to batch-remove download infos from DB") {
+            ServiceRegistry.dataModule.downloadDbRepository.removeDownloadInfoBatchByArcids(snapshot)
         }
     }
 
-    /** Batch-persist download infos on a background thread. */
+    /** Batch-persist snapshots of download infos, in issue order. */
     fun persistInfoBatch(list: List<DownloadInfo>) {
-        scope.launch {
-            try {
-                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfoBatch(list)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to batch-persist download infos", e)
-            }
+        val snapshots = list.map { it.snapshot() }
+        enqueueDbWrite("Failed to batch-persist download infos") {
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfoBatch(snapshots)
         }
     }
 
@@ -627,16 +652,13 @@ class DownloadRepository(
         labelSet.add(label)
         labelInfoMap[label] = ArrayList()
 
-        scope.launch {
-            try {
-                val saved = ServiceRegistry.dataModule.downloadDbRepository.addDownloadLabel(label)
-                runOnMainThread {
-                    newLabel.id = saved.id
-                    newLabel.time = saved.time
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to persist new label: $label", e)
-            }
+        // The id is assigned inside the queued write, before any later
+        // rename/delete of this label runs: those match the row by id, and
+        // a main-thread hop here used to leave them a null id (a no-op).
+        enqueueDbWrite("Failed to persist new label") {
+            val saved = ServiceRegistry.dataModule.downloadDbRepository.addDownloadLabel(label)
+            newLabel.id = saved.id
+            newLabel.time = saved.time
         }
 
         return true
@@ -646,12 +668,8 @@ class DownloadRepository(
         assertMainThread()
         val item = labelList.removeAt(fromPosition)
         labelList.add(toPosition, item)
-        scope.launch {
-            try {
-                ServiceRegistry.dataModule.downloadDbRepository.moveDownloadLabel(fromPosition, toPosition)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to persist label move from=$fromPosition to=$toPosition", e)
-            }
+        enqueueDbWrite("Failed to persist label move") {
+            ServiceRegistry.dataModule.downloadDbRepository.moveDownloadLabel(fromPosition, toPosition)
         }
     }
 
@@ -682,14 +700,10 @@ class DownloadRepository(
         labelInfoMap[to] = list
 
         val labelToUpdate = rawLabel
-        val infosToUpdate = ArrayList(list)
-        scope.launch {
-            try {
-                ServiceRegistry.dataModule.downloadDbRepository.updateDownloadLabel(labelToUpdate)
-                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfoBatch(infosToUpdate)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to persist label rename from=$from to=$to", e)
-            }
+        val infosToUpdate = list.map { it.snapshot() }
+        enqueueDbWrite("Failed to persist label rename") {
+            ServiceRegistry.dataModule.downloadDbRepository.updateDownloadLabel(labelToUpdate)
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfoBatch(infosToUpdate)
         }
 
         return list
@@ -724,14 +738,10 @@ class DownloadRepository(
         }
 
         val labelToRemove = removedLabel
-        val infosToUpdate = ArrayList(list)
-        scope.launch {
-            try {
-                ServiceRegistry.dataModule.downloadDbRepository.removeDownloadLabel(labelToRemove)
-                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfoBatch(infosToUpdate)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to persist label deletion: $label", e)
-            }
+        val infosToUpdate = list.map { it.snapshot() }
+        enqueueDbWrite("Failed to persist label deletion") {
+            ServiceRegistry.dataModule.downloadDbRepository.removeDownloadLabel(labelToRemove)
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfoBatch(infosToUpdate)
         }
 
         return list
@@ -768,13 +778,7 @@ class DownloadRepository(
             info.label = label
             insertSorted(dstList, info)
 
-            scope.launch {
-                try {
-                    ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to persist label change for arcid=${info.arcid}", e)
-                }
-            }
+            persistInfo(info)
         }
     }
 

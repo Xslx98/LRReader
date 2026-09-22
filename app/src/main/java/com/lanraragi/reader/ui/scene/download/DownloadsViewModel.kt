@@ -470,13 +470,16 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
         if (deleteFiles) {
             // Snapshot the list to avoid concurrent modification
             val infos = ArrayList(downloadInfoList)
+            // Each info carries the row's root captured before the rows were
+            // removed — see DownloadLabelHelper.performDelete.
+            val targets = infos.map { it.arcid to it.downloadRootUri }
             ServiceRegistry.coroutineModule.ioScope.launch {
-                for (info in infos) {
-                    // Resolve BEFORE dropping the DIRNAME pointer — see
-                    // DownloadLabelHelper.performDelete for why the order matters.
-                    val file = SpiderDen.getGalleryDownloadDir(info.arcid, info.title)
-                    ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(info.arcid)
-                    file?.delete()
+                for ((arcid, rootUri) in targets) {
+                    try {
+                        SpiderDen.deleteGalleryDownloadDir(arcid, rootUri)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to delete download files for $arcid", e)
+                    }
                 }
             }
         }

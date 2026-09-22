@@ -576,9 +576,6 @@
     <string name="settings_advanced_dump_logcat_summary">儲存日誌到儲存裝置</string>
     <string name="settings_advanced_dump_logcat_failed">導出日誌失敗</string>
     <string name="settings_advanced_dump_logcat_to">已儲存日誌至 %s</string>
-    <string name="settings_advanced_clear_download_path_cache">清除下載路徑的快取</string>
-    <string name="settings_advanced_clear_download_path_cache_summary">畫廊下載路徑可能錯了，所以需要重新下載。清除畫廊下載路徑快取可能可以解決這個問題。</string>
-    <string name="settings_advanced_clear_download_path_cache_message">清除畫廊下載路徑快取？</string>
     <string name="settings_advanced_clear_memory_cache">清理記憶體快取</string>
     <string name="settings_advanced_clear_memory_cache_summary">清理縮圖、畫廊資訊的記憶體快取</string>
     <string name="settings_advanced_read_cache_size">閲讀快取大小</string>
@@ -703,6 +700,9 @@
     <string name="settings_download_cleaning">正在清理下載項</string>
     <plurals name="settings_download_clean_invalid_done">
         <item quantity="other">完成清理 %d 個下載項</item>
+    </plurals>
+    <plurals name="settings_download_clean_redundancy_confirm">
+        <item quantity="other">刪除 %d 個不在下載列表中的資料夾？</item>
     </plurals>
     <string name="settings_download_clean_invalid_no_invalid">沒有需要清空的下載項</string>
 

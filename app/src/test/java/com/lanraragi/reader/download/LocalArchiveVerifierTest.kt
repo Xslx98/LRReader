@@ -17,7 +17,7 @@ class LocalArchiveVerifierTest {
     @get:Rule
     val tmp = TemporaryFolder()
 
-    /** JPEG magic + padding, comfortably above MIN_IMAGE_SIZE. */
+    /** JPEG magic + padding, above MIN_IMAGE_SIZE. */
     private fun jpegBytes(size: Int = 2048): ByteArray =
         ByteArray(size).also {
             it[0] = 0xFF.toByte(); it[1] = 0xD8.toByte(); it[2] = 0xFF.toByte(); it[3] = 0xE0.toByte()
@@ -35,6 +35,14 @@ class LocalArchiveVerifierTest {
         page(dir, "0003.webp")
         File(dir, ".nomedia").writeBytes(ByteArray(0))
         assertTrue(LocalArchiveVerifier.isComplete(dir, pagecount = 3))
+    }
+
+    @Test
+    fun `tiny but valid images count as downloaded pages`() {
+        // A blank 1-bit separator page can be a few dozen bytes.
+        val dir = tmp.newFolder()
+        page(dir, "0001.png", jpegBytes(size = 67))
+        assertTrue(LocalArchiveVerifier.isComplete(dir, pagecount = 1))
     }
 
     @Test
@@ -63,7 +71,7 @@ class LocalArchiveVerifierTest {
     @Test
     fun `undersized file fails even when validator accepts`() {
         val dir = tmp.newFolder()
-        page(dir, "0001.jpg", jpegBytes(size = 16))
+        page(dir, "0001.jpg", jpegBytes(size = LRRDownloadWorker.MIN_IMAGE_SIZE.toInt() - 1))
         assertFalse(LocalArchiveVerifier.isComplete(dir, pagecount = 1, validate = { true }))
     }
 

@@ -356,7 +356,7 @@ class ArchiveLocalStateDaoTest {
                     historyMode = 0,
                 )
             }
-        )
+        ) { _, incoming -> incoming }
 
         assertEquals(listOf("hb-3", "hb-2", "hb-1"), dao.getHistoryByServer(1L).map { it.arcid })
     }

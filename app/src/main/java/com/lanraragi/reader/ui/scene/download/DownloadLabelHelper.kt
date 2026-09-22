@@ -17,6 +17,7 @@ package com.lanraragi.reader.ui.scene.download
 
 import android.content.Context
 import android.content.DialogInterface
+import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import com.lanraragi.framework.app.CheckBoxDialogBuilder
 import com.lanraragi.reader.R
@@ -31,6 +32,8 @@ import kotlinx.coroutines.launch
  * All methods take explicit parameters; no Callback interface.
  */
 object DownloadLabelHelper {
+
+    private const val TAG = "DownloadLabelHelper"
 
     /**
      * Shows a delete confirmation dialog for a single gallery.
@@ -96,18 +99,21 @@ object DownloadLabelHelper {
      * dialog invocation.
      */
     fun performDelete(archive: Archive, deleteFiles: Boolean) {
-        ServiceRegistry.dataModule.downloadManager.deleteDownload(archive.arcid)
+        val manager = ServiceRegistry.dataModule.downloadManager
+        // Capture the row's root BEFORE removing it: afterwards the stored
+        // root is gone and resolution falls back to the current download
+        // location, which may hold a different archive under the same name.
+        val rootUri = manager.getDownloadInfo(archive.arcid)?.downloadRootUri
+        manager.deleteDownload(archive.arcid)
         DownloadSettings.putRemoveImageFiles(deleteFiles)
         if (deleteFiles) {
             val arcid = archive.arcid
-            val title = archive.title
             ServiceRegistry.coroutineModule.ioScope.launch {
-                // Resolve BEFORE dropping the DIRNAME pointer: it is the only
-                // arcid → directory link (title-only naming, v1.23.0); resolving
-                // without it mints a fresh "(2)" sibling and deletes that instead.
-                val dir = SpiderDen.getGalleryDownloadDir(arcid, title)
-                ServiceRegistry.dataModule.downloadDbRepository.removeDownloadDirname(arcid)
-                dir?.delete()
+                try {
+                    SpiderDen.deleteGalleryDownloadDir(arcid, rootUri)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to delete download files for $arcid", e)
+                }
             }
         }
     }

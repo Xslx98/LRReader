@@ -18,13 +18,22 @@ object DownloadDirNaming {
 
     /**
      * The name a fresh directory for [arcid] / [title] starts from. An
-     * empty or fully-stripped title falls back to the arcid so the
-     * directory is still addressable and unique.
+     * empty, fully-stripped or dot-only title falls back to the arcid so
+     * the directory is still addressable and unique — a title of "." or
+     * ".." would otherwise resolve to the download root or its parent.
      */
     fun baseName(arcid: String, title: String?): String {
         val sanitised = title?.let { FileUtils.sanitizeFilename(it) }.orEmpty().trim()
-        return sanitised.ifEmpty { arcid }
+        return if (sanitised.all { it == '.' }) arcid else sanitised
     }
+
+    /**
+     * Whether [name] is a single child segment of the download root. A
+     * stored pointer that fails this (blank, "." / "..", or containing a
+     * separator) must never be resolved, written into or deleted.
+     */
+    fun isSafeName(name: String): Boolean =
+        name.isNotBlank() && name != "." && name != ".." && '/' !in name && '\\' !in name
 
     /** True for a directory name produced by the old `<arcid>-<title>` rule. */
     fun isLegacyName(arcid: String, dirname: String): Boolean = dirname.startsWith("$arcid-")
