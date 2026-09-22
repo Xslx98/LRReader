@@ -92,11 +92,9 @@ class TankGalleryProvider(
     /** Global cap on concurrent prefetch downloads (mirrors LRRGalleryProvider). */
     private val prefetchSemaphore = Semaphore(PREFETCH_PARALLELISM)
 
-    /** Global 0-indexed start page: SP save for this tank, else the seed's server progress. */
+    /** Global 0-indexed start page: see [TankProgress] (server first, unsynced local page wins). */
     @Volatile
-    private var startPageValue: Int =
-        loadReadingProgress(appContext, seed.tankId).takeIf { it > 0 }
-            ?: 0
+    private var startPageValue: Int = TankProgress.start0(appContext, seed.tankId, seed.serverProgress)
 
     @Volatile
     private var startPageBaseline = 0
@@ -112,6 +110,7 @@ class TankGalleryProvider(
         LRRTankoubonApi.updateTankProgress(
             ServiceRegistry.networkModule.okHttpClient, url, seed.tankId, page0 + 1
         )
+        TankProgress.markSynced(appContext, seed.tankId, page0)
     }
 
     // ==================== Lifecycle ====================
@@ -120,6 +119,8 @@ class TankGalleryProvider(
         super.start()
         userNavigated = false
         startPageBaseline = startPageValue
+        // A page saved while offline never reached the server: push it now.
+        TankProgress.pendingPage0(appContext, seed.tankId).takeIf { it >= 0 }?.let(progressSyncer::submit)
 
         if (seed.tankId.isEmpty() || seed.members.isEmpty()) {
             errorState = true
@@ -204,6 +205,7 @@ class TankGalleryProvider(
         if (page != startPageBaseline) userNavigated = true
         startPageValue = page
         saveReadingProgress(appContext, seed.tankId, page)
+        TankProgress.markPending(appContext, seed.tankId, page)
         progressSyncer.submit(page)
     }
 
