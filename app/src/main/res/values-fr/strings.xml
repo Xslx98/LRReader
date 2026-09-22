@@ -693,6 +693,7 @@
     <plurals name="settings_download_clean_redundancy_confirm">
         <item quantity="one">Supprimer %d dossier absent de la liste des téléchargements ?</item>
         <item quantity="other">Supprimer %d dossiers absents de la liste des téléchargements ?</item>
+        <item quantity="many">Supprimer %d dossiers absents de la liste des téléchargements ?</item>
     </plurals>
     <string name="settings_download_clean_invalid_no_invalid">Aucun élément de téléchargement invalide</string>
 

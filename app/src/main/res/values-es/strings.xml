@@ -704,6 +704,7 @@
     <plurals name="settings_download_clean_redundancy_confirm">
         <item quantity="one">¿Eliminar %d carpeta que no está en la lista de descargas?</item>
         <item quantity="other">¿Eliminar %d carpetas que no están en la lista de descargas?</item>
+        <item quantity="many">¿Eliminar %d carpetas que no están en la lista de descargas?</item>
     </plurals>
     <string name="settings_download_clean_invalid_no_invalid">No hay elementos de descarga no válidos</string>
 
