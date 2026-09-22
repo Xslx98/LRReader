@@ -18,6 +18,7 @@ import com.lanraragi.reader.event.TankMembershipChangedEvent
 import com.lanraragi.reader.ui.scene.TankDialogs
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.tankoubon.TankTagSyncer
 import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
@@ -222,6 +223,11 @@ object TankoubonDialogHelper {
                 val client = ServiceRegistry.networkModule.okHttpClient
                 val joined = mutableListOf<TankMembershipChangedEvent.JoinedTank>()
                 val left = mutableListOf<String>()
+                // Rule 3 needs the tank's PRE-removal tags and member tags
+                // (spec 2026-09-22 §5.2): snapshot every tank being left first.
+                val beforeRemoval = tanks.indices
+                    .filter { originalChecked[it] && !checked[it] }
+                    .mapNotNull { TankTagSyncer.snapshot(client, serverUrl, tanks[it].id) }
                 // Sequential on purpose: the server appends members in call
                 // order, and a locked tank should fail fast and visibly.
                 for (i in tanks.indices) {
@@ -239,6 +245,9 @@ object TankoubonDialogHelper {
                         left += tankId
                     }
                 }
+                // Materialize tank tags after the membership writes (best-effort).
+                for (tank in joined) TankTagSyncer.afterAdd(client, serverUrl, tank.id)
+                for (snap in beforeRemoval) TankTagSyncer.afterRemove(client, serverUrl, snap, listOf(arcid))
                 val newIds = tanks.indices.filter { checked[it] }.map { tanks[it].id }
                 Handler(Looper.getMainLooper()).post {
                     Toast.makeText(activity, R.string.tank_op_done, Toast.LENGTH_SHORT).show()

@@ -17,6 +17,7 @@ import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.download.TankMembershipSync
 import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
 import com.lanraragi.reader.tankoubon.TankMemberOrderOps
+import com.lanraragi.reader.tankoubon.TankTagSyncer
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -184,6 +185,12 @@ class TankoubonDetailViewModel : ViewModel() {
     /** Delay before the second best-effort cover re-apply (Minion dequeues every ~5 s). */
     internal var coverReapplyDelayMs: Long = COVER_REAPPLY_DELAY_MS
 
+    /** Tank tag materialization seams (spec 2026-09-22 §5.2 "remove"); replaceable for tests. */
+    internal var tagSyncSnapshot: suspend (OkHttpClient, String, String) -> TankTagSyncer.Snapshot? =
+        { client, url, id -> TankTagSyncer.snapshot(client, url, id) }
+    internal var tagSyncAfterRemove: suspend (OkHttpClient, String, TankTagSyncer.Snapshot, List<String>) -> Boolean =
+        { client, url, snap, removed -> TankTagSyncer.afterRemove(client, url, snap, removed) }
+
     internal var baseUrlResolver: suspend (Long) -> String = { id ->
         resolveSourceBaseUrl(id, ServiceRegistry.dataModule.profileLookupCache)
     }
@@ -289,12 +296,15 @@ class TankoubonDetailViewModel : ViewModel() {
         val firstBefore = memberIds.firstOrNull()
         val remaining = _members.value.filter { it.arcid !in arcids }
         mutateAndReload { client, url ->
+            // Rule 3 (spec 2026-09-22 §5.2) needs the pre-removal tank + member tags.
+            val before = tagSyncSnapshot(client, url, tankId)
             for (arcid in arcids) {
                 LRRTankoubonApi.removeFromTankoubon(client, url, tankId, arcid)
                 // Downloaded-tank grouping follows: the member's download row (if
                 // any) reappears as a standalone download.
                 ServiceRegistry.dataModule.downloadManager.untagTankMemberAsync(tankId, arcid)
             }
+            if (before != null) tagSyncAfterRemove(client, url, before, arcids)
             val remainingIds = remaining.map { it.arcid }
             if (firstBefore != null && firstBefore in arcids) {
                 // Removing the first member queues a cover regeneration upstream.

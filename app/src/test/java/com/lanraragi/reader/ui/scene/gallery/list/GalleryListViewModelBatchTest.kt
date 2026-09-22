@@ -109,6 +109,9 @@ class GalleryListViewModelBatchTest {
     /** VM with the base-URL resolution pinned to the MockWebServer (no profile registry needed). */
     private fun newVm(): GalleryListViewModel = GalleryListViewModel().also { vm ->
         vm.baseUrlResolver = { mockBaseUrl() }
+        // Tag materialization has its own wire tests (TankTagSyncerTest); keep
+        // the request counts here about the membership writes.
+        vm.tankTagSyncAfterAdd = { _, _, _ -> false }
     }
 
     private fun jsonResponse(code: Int, body: String) = MockResponse()
