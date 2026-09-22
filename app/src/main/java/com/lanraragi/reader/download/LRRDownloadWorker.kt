@@ -333,7 +333,10 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                 .getArchiveSnapshot(arcId, info.serverProfileId)?.pagecount
         }.getOrNull() ?: return false
         if (pagecount <= 0) return false
-        val dir = runCatching { getDownloadDir() }.getOrNull() ?: return false
+        // Lookup only: a verifier must not create a directory it then reports on.
+        val uni = runCatching { SpiderDen.findGalleryDownloadDir(arcId) }.getOrNull() ?: return false
+        if ("file" != uni.uri.scheme) return false
+        val dir = File(uni.uri.path ?: return false)
         if (!LocalArchiveVerifier.isComplete(dir, pagecount)) return false
         if (BuildConfig.DEBUG) {
             Log.d(TAG, "Page-list fetch failed but archive is complete on disk; reporting finish")
@@ -513,7 +516,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         // Use the same download location as SpiderDen (DownloadSettings.getDownloadLocation())
         // so downloaded files are visible in the user-configured directory
         try {
-            val uniDir = SpiderDen.getGalleryDownloadDir(info.arcid, info.title)
+            val uniDir = SpiderDen.allocateGalleryDownloadDir(info.arcid, info.title)
             if (uniDir != null && uniDir.ensureDir()) {
                 val uri = uniDir.uri
                 if ("file" == uri.scheme) {

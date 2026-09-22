@@ -27,7 +27,7 @@ interface DownloadDirResolver {
      * straight to `ACTION_DIR`.
      *
      * Resolution:
-     *  1. Primary — [SpiderDen.getGalleryDownloadDir] maps arcid → the DB
+     *  1. Primary — [SpiderDen.findGalleryDownloadDir] maps arcid → the DB
      *     `dirname` under the recorded root. Directories are title-named
      *     (DownloadDirNaming), so the persisted pointer is the only
      *     arcid → directory link; there is no prefix to scan for.
@@ -55,7 +55,7 @@ interface DownloadDirResolver {
 
         override suspend fun localDownloadDir(context: Context, archive: Archive): File? {
             // 1. Primary resolution.
-            fileDirFromUni(SpiderDen.getGalleryDownloadDir(archive.arcid, archive.title))
+            fileDirFromUni(SpiderDen.findGalleryDownloadDir(archive.arcid))
                 ?.let { primary -> if (hasImageFiles(primary)) return primary }
 
             // 2. Legacy app-private fallback.
@@ -74,7 +74,9 @@ interface DownloadDirResolver {
             }.getOrDefault(false)
             if (!tracked) return null
             val uni = runCatching {
-                SpiderDen.getGalleryDownloadDir(archive.arcid, archive.title)
+                // Tracked download: the reader writes pages through into this
+                // directory, so it may allocate it ahead of the worker.
+                SpiderDen.allocateGalleryDownloadDir(archive.arcid, archive.title)
             }.getOrNull() ?: return null
             val uri = uni.uri
             if ("file" != uri.scheme) return null
