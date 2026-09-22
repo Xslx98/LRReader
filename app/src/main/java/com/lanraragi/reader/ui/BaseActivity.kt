@@ -93,7 +93,7 @@ abstract class BaseActivity : AppCompatActivity() {
      */
     protected open fun onForegroundLockCheck() {
         if (!AppLockGate.shouldRelock) return
-        if (!SecuritySettings.hasPattern()) {
+        if (!SecuritySettings.isLockEnabled()) {
             // Pattern was removed while we were backgrounded — drop the
             // stale flag so it can't fire spuriously later.
             AppLockGate.consumeShouldRelock()

@@ -188,9 +188,9 @@ class MainActivity : StageActivity(),
     override fun getContainerViewId(): Int = R.id.fragment_container
 
     override fun getLaunchAnnouncer(): Announcer {
-        return if (SecuritySettings.hasPattern()) {
+        return if (SecuritySettings.isLockEnabled()) {
             Announcer(SecurityScene::class.java)
-        } else if (!LRRAuthManager.isConfigured()) {
+        } else if (!LRRAuthManager.isConfiguredFast()) {
             // LANraragi: show server config if not yet configured
             Announcer(ServerConfigScene::class.java)
         } else {
@@ -203,12 +203,12 @@ class MainActivity : StageActivity(),
     // LANraragi: simplified -- only security gate and server config gate remain
     private fun processAnnouncer(announcer: Announcer): Announcer {
         if (sceneCount == 0) {
-            if (SecuritySettings.hasPattern()) {
+            if (SecuritySettings.isLockEnabled()) {
                 val newArgs = Bundle()
                 newArgs.putString(SolidScene.KEY_TARGET_SCENE, announcer.clazz.name)
                 newArgs.putBundle(SolidScene.KEY_TARGET_ARGS, announcer.args)
                 return Announcer(SecurityScene::class.java).setArgs(newArgs)
-            } else if (!LRRAuthManager.isConfigured()) {
+            } else if (!LRRAuthManager.isConfiguredFast()) {
                 val newArgs = Bundle()
                 newArgs.putString(SolidScene.KEY_TARGET_SCENE, announcer.clazz.name)
                 newArgs.putBundle(SolidScene.KEY_TARGET_ARGS, announcer.args)
@@ -857,7 +857,7 @@ class MainActivity : StageActivity(),
         if (!AppLockGate.consumeShouldRelock()) return
         // Always consume above so a removed pattern doesn't leave the flag set
         // forever. Push SecurityScene only if a pattern is still configured.
-        if (!SecuritySettings.hasPattern()) return
+        if (!SecuritySettings.isLockEnabled()) return
         // Skip if SecurityScene is already on top — avoids stacking a
         // duplicate when the user backgrounds the lock prompt itself.
         val top = topSceneClass

@@ -765,7 +765,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
      * since process death = cold start = lock comes from `getLaunchAnnouncer`.
      */
     override fun onForegroundLockCheck() {
-        if (AppLockGate.shouldRelock && SecuritySettings.hasPattern()) {
+        if (AppLockGate.shouldRelock && SecuritySettings.isLockEnabled()) {
             buildResumeIntent()?.let { AppLockGate.stashResumeIntent(it) }
         }
         super.onForegroundLockCheck()

@@ -871,6 +871,10 @@
     <string name="lrr_empty_namespace">分类名不能为空</string>
     <string name="lrr_keystore_failed_title">凭据存储不可用</string>
     <string name="lrr_keystore_failed_message">设备密钥库不可用，无法加载 API Key。请重新输入服务器凭据。</string>
+    <string name="security_storage_unavailable_message">设备的安全存储暂时不可用，无法验证应用锁。可以重试，或重置应用锁：这会清除图案和所有已保存的服务器 API Key，书库和下载不受影响。</string>
+    <string name="security_storage_retry">重试</string>
+    <string name="security_reset_app_lock">重置应用锁</string>
+    <string name="security_reset_app_lock_confirm">重置应用锁并清除所有已保存的 API Key？之后需要重新输入服务器凭据。</string>
     <string name="lrr_boot_load_failed_title">启动错误</string>
     <string name="lrr_boot_load_failed_message">启动时无法加载已保存的服务器配置。当前以无配置状态运行，您可能需要重新配置或重新安装。\n\n详细信息：%1$s</string>
     <string name="lrr_boot_load_failed_retry">重试</string>

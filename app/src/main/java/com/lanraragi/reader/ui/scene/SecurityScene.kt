@@ -39,7 +39,8 @@ import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.framework.widget.lockpattern.LockPatternUtils
 import com.lanraragi.framework.widget.lockpattern.LockPatternView
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
-import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
+import com.lanraragi.reader.LRReaderApplication
+import com.lanraragi.reader.client.api.LRRAuthManager
 
 class SecurityScene : SolidScene(),
     LockPatternView.OnPatternListener {
@@ -134,7 +135,7 @@ class SecurityScene : SolidScene(),
     override fun onResume() {
         super.onResume()
 
-        if (isFingerprintAuthAvailable()) {
+        if (secureStorageAvailable && isFingerprintAuthAvailable()) {
             val promptInfo = BiometricPrompt.PromptInfo.Builder()
                 .setTitle(getString(R.string.settings_privacy_pattern_protection_title))
                 .setNegativeButtonText(getString(android.R.string.cancel))
@@ -209,7 +210,46 @@ class SecurityScene : SolidScene(),
             handleUiEvent(event)
         }
 
+        // Fail closed: with the secure store unreadable the pattern cannot be
+        // checked, but the app stays locked. Offer a retry or a reset.
+        secureStorageAvailable = LRRAuthManager.isSecureStorageAvailable()
+        if (!secureStorageAvailable) {
+            patternView.isEnabled = false
+            showStorageUnavailableDialog()
+        }
+
         return view
+    }
+
+    private var secureStorageAvailable = true
+
+    private fun showStorageUnavailableDialog() {
+        val ctx = ehContext ?: return
+        AlertDialog.Builder(ctx)
+            .setTitle(R.string.lrr_keystore_failed_title)
+            .setMessage(R.string.security_storage_unavailable_message)
+            .setCancelable(false)
+            .setPositiveButton(R.string.security_storage_retry) { _, _ ->
+                // A fresh process re-opens the keystore; a transient failure
+                // (system update, biometric re-enrolment) often clears.
+                (ctx.applicationContext as LRReaderApplication).restart()
+            }
+            .setNegativeButton(R.string.security_reset_app_lock) { _, _ -> confirmResetAppLock() }
+            .show()
+    }
+
+    private fun confirmResetAppLock() {
+        val ctx = ehContext ?: return
+        AlertDialog.Builder(ctx)
+            .setMessage(R.string.security_reset_app_lock_confirm)
+            .setCancelable(false)
+            .setPositiveButton(R.string.security_reset_app_lock) { _, _ ->
+                LRRAuthManager.resetAppLockAndCredentials(ctx)
+                AppLockGate.reset()
+                (ctx.applicationContext as LRReaderApplication).restart()
+            }
+            .setNegativeButton(android.R.string.cancel) { _, _ -> showStorageUnavailableDialog() }
+            .show()
     }
 
     override fun onDestroyView() {

@@ -804,6 +804,10 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_empty_namespace">Kategorie darf nicht leer sein</string>
     <string name="lrr_keystore_failed_title">Anmeldedatenspeicher nicht verfügbar</string>
     <string name="lrr_keystore_failed_message">Der Schlüsselspeicher des Geräts ist nicht verfügbar. Ihr API-Schlüssel konnte nicht geladen werden. Bitte geben Sie Ihre Serveranmeldedaten erneut ein.</string>
+    <string name="security_storage_unavailable_message">Die App-Sperre kann nicht geprüft werden, weil der sichere Speicher des Geräts gerade nicht verfügbar ist. Versuche es erneut oder setze die App-Sperre zurück: Dabei werden das Muster und alle gespeicherten Server-API-Schlüssel entfernt. Bibliothek und Downloads bleiben erhalten.</string>
+    <string name="security_storage_retry">Erneut versuchen</string>
+    <string name="security_reset_app_lock">App-Sperre zurücksetzen</string>
+    <string name="security_reset_app_lock_confirm">App-Sperre zurücksetzen und alle gespeicherten API-Schlüssel entfernen? Du musst deine Server-Zugangsdaten danach neu eingeben.</string>
     <string name="lrr_boot_load_failed_title">Startfehler</string>
     <string name="lrr_boot_load_failed_message">Beim Start konnten Ihre gespeicherten Server-Profile nicht geladen werden. Die App läuft ohne geladenes Profil; eine Neukonfiguration oder Neuinstallation ist möglicherweise erforderlich.\n\nDetails: %1$s</string>
     <string name="lrr_boot_load_failed_retry">Wiederholen</string>
