@@ -769,6 +769,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
             tankName = s.name,
             profileId = s.profileId,
             members = s.members.map { TankMemberSeed(it.arcid, it.title, it.pagecount) },
+            serverProgress = s.progress,
         )
         TankSeedStore.publish(seed)
         startActivity(GalleryOpenHelper.buildTankReadIntent(ctx, seed, startGlobalPage))

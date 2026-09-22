@@ -17,6 +17,8 @@ class TankSessionSeed(
     val tankName: String,
     val profileId: Long,
     val members: List<TankMemberSeed>,
+    /** The server's 1-indexed tank progress when known at capture time; 0 = unknown (offline). */
+    val serverProgress: Int = 0,
 ) : Parcelable {
 
     override fun describeContents(): Int = 0
@@ -26,6 +28,7 @@ class TankSessionSeed(
         dest.writeString(tankName)
         dest.writeLong(profileId)
         dest.writeTypedList(members)
+        dest.writeInt(serverProgress)
     }
 
     companion object {
@@ -38,7 +41,8 @@ class TankSessionSeed(
                     val profileId = parcel.readLong()
                     val members = ArrayList<TankMemberSeed>()
                     parcel.readTypedList(members, TankMemberSeed.CREATOR)
-                    return TankSessionSeed(tankId, tankName, profileId, members)
+                    val serverProgress = parcel.readInt()
+                    return TankSessionSeed(tankId, tankName, profileId, members, serverProgress)
                 }
 
                 override fun newArray(size: Int): Array<TankSessionSeed?> = arrayOfNulls(size)
