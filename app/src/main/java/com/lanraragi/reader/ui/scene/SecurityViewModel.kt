@@ -13,28 +13,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import javax.crypto.Cipher
 
 /**
- * ViewModel for [SecurityScene]. Manages pattern verification state,
- * retry counting, and lockout tracking.
+ * ViewModel for [SecurityScene]. Manages pattern verification state
+ * and lockout tracking.
  *
  * The Scene retains ownership of BiometricPrompt (requires Fragment),
- * View references, and sensor/shake detection (hardware lifecycle).
- * The ViewModel owns verification logic and retry/lockout state.
+ * and View references.
+ * The ViewModel owns verification logic and lockout state.
  */
 class SecurityViewModel : ViewModel() {
 
     companion object {
         private const val TAG = "SecurityViewModel"
-        const val MAX_RETRY_TIMES = 5
     }
-
-    // -------------------------------------------------------------------------
-    // Retry state
-    // -------------------------------------------------------------------------
-
-    private val _retryTimes = MutableStateFlow(MAX_RETRY_TIMES)
-
-    /** Current remaining retry attempts before the Scene finishes. */
-    val retryTimes: StateFlow<Int> = _retryTimes.asStateFlow()
 
     // -------------------------------------------------------------------------
     // Lockout state
@@ -60,9 +50,6 @@ class SecurityViewModel : ViewModel() {
 
         /** Pattern verification failed — Scene should show error display. */
         data object PatternFailed : SecurityUiEvent
-
-        /** All retries exhausted — Scene should finish. */
-        data object RetriesExhausted : SecurityUiEvent
 
         /**
          * KeyStore-bound pattern needs biometric authentication.
@@ -91,18 +78,6 @@ class SecurityViewModel : ViewModel() {
 
     /** One-shot events for the Scene to react to. */
     val uiEvent: SharedFlow<SecurityUiEvent> = _uiEvent.asSharedFlow()
-
-    // -------------------------------------------------------------------------
-    // State restoration
-    // -------------------------------------------------------------------------
-
-    /**
-     * Restores retry count from saved instance state.
-     * Called by the Scene in [SecurityScene.onCreate].
-     */
-    fun restoreRetryTimes(times: Int) {
-        _retryTimes.value = times
-    }
 
     // -------------------------------------------------------------------------
     // Pattern verification
@@ -188,13 +163,14 @@ class SecurityViewModel : ViewModel() {
         )
     }
 
+    /**
+     * A wrong pattern never dismisses the lock screen: brute force is
+     * throttled by the persistent, escalating lockout instead (the old
+     * "5 tries then finish()" popped the prompt and revealed the scene
+     * underneath).
+     */
     private fun onVerificationFailed() {
-        _retryTimes.value = _retryTimes.value - 1
         refreshLockout()
-        if (_retryTimes.value <= 0) {
-            _uiEvent.tryEmit(SecurityUiEvent.RetriesExhausted)
-        } else {
-            _uiEvent.tryEmit(SecurityUiEvent.PatternFailed)
-        }
+        _uiEvent.tryEmit(SecurityUiEvent.PatternFailed)
     }
 }

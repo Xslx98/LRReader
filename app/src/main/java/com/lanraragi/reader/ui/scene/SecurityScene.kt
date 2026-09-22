@@ -51,7 +51,6 @@ class SecurityScene : SolidScene(),
         private const val SUCCESS_DELAY_MILLIS = 100L
         private const val LOCKOUT_UPDATE_INTERVAL_MS = 1000L
 
-        private const val KEY_RETRY_TIMES = "retry_times"
 
         /**
          * If true, this scene was pushed by the foreground re-lock flow
@@ -103,14 +102,19 @@ class SecurityScene : SolidScene(),
 
     override fun needShowLeftDrawer(): Boolean = false
 
+    /**
+     * Back never dismisses the lock screen (the default finish() revealed
+     * the scene underneath): it sends the whole app to the background, like
+     * the system lock screen. The prompt is still there on return.
+     */
+    override fun onBackPressed() {
+        activity?.moveTaskToBack(true)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         viewModel = ViewModelProvider(requireActivity())[SecurityViewModel::class.java]
-
-        if (savedInstanceState != null) {
-            viewModel.restoreRetryTimes(savedInstanceState.getInt(KEY_RETRY_TIMES))
-        }
     }
 
     override fun onDestroy() {
@@ -157,11 +161,6 @@ class SecurityScene : SolidScene(),
 
         mBiometricPrompt?.cancelAuthentication()
         mHandler.removeCallbacks(mLockoutUpdateRunnable)
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putInt(KEY_RETRY_TIMES, viewModel.retryTimes.value)
     }
 
     override fun onCreateView2(
@@ -315,16 +314,6 @@ class SecurityScene : SolidScene(),
                 if (viewModel.lockoutState.value.isLockedOut) {
                     mHandler.postDelayed(mLockoutUpdateRunnable, LOCKOUT_UPDATE_INTERVAL_MS)
                 }
-            }
-
-            is SecurityUiEvent.RetriesExhausted -> {
-                val patternView = mPatternView ?: return
-                patternView.setDisplayMode(LockPatternView.DisplayMode.Wrong)
-                updateLockoutUi()
-                if (viewModel.lockoutState.value.isLockedOut) {
-                    mHandler.postDelayed(mLockoutUpdateRunnable, LOCKOUT_UPDATE_INTERVAL_MS)
-                }
-                finish()
             }
 
             is SecurityUiEvent.NeedBiometricVerification -> {
