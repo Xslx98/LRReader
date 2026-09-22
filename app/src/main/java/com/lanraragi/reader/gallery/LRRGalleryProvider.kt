@@ -191,9 +191,11 @@ class LRRGalleryProvider(
                 ServiceRegistry.coroutineModule.exceptionHandler
         )
 
-        // Prepare cache directory (handles .nomedia and LRU access timestamp)
-        cacheDir = ReaderPageCache.ensureCacheDir(context, arcId)
-        store = downloadDir?.let { HybridPageStore(it, cacheDir) }?.also { it.ensureDir() }
+        // Paths only here (start() runs on the main thread); the directories,
+        // .nomedia markers and LRU access stamp are created first thing on
+        // IO below, before any page can be requested.
+        cacheDir = ReaderPageCache.getCacheDir(context, arcId)
+        store = downloadDir?.let { HybridPageStore(it, cacheDir) }
 
         // Shared page-streaming client (no call cap, no HTTP cache) — see
         // INetworkModule.pageStreamClient for the rationale.
@@ -201,6 +203,8 @@ class LRRGalleryProvider(
 
         // Load page list and metadata on background threads
         providerScope?.launch {
+            ReaderPageCache.ensureCacheDir(context, arcId)
+            store?.ensureDir()
             try {
                 // Wait for the source-profile URL before any fetch. Unlike
                 // the Dir provider (whose file list is local and resolves in

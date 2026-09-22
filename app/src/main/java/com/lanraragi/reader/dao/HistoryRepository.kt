@@ -90,19 +90,22 @@ class HistoryRepository(
         memberIds: List<String>,
         tankPseudo: Archive,
     ): TankFoldResult? {
-        val members = memberIds.mapNotNull { arcid ->
-            dao.loadByArcidAndProfile(arcid, profileId)?.takeIf { it.historyTime != null }
-        }
+        // One query per chunk (SQLite caps bound variables), not one per member.
+        val members = memberIds.distinct().chunked(SQL_IN_CHUNK).flatMap { dao.historyRowsFor(profileId, it) }
         if (members.isEmpty()) return null
         val newest = members.maxOf { it.historyTime ?: 0L }
         val existing = dao.loadByArcidAndProfile(tankId, profileId)?.takeIf { it.historyTime != null }
         val tankTime = maxOf(newest, existing?.historyTime ?: 0L)
         val json = existing?.archiveJson
             ?: tankPseudo.copy(lastreadtime = tankTime / 1000L).toArchiveJson()
-        if (existing == null || tankTime != existing.historyTime) {
-            upsertHistorySubsystem(tankId, profileId, json, tankTime, existing?.historyMode ?: 0)
-        }
-        for (row in members) dao.clearHistoryAndPruneForProfile(row.arcid, profileId)
+        val writeTank = existing == null || tankTime != existing.historyTime
+        dao.foldTankHistory(
+            tankId, profileId,
+            tankJson = if (writeTank) json else null,
+            tankTime = tankTime,
+            tankMode = existing?.historyMode ?: 0,
+            memberArcids = members.map { it.arcid },
+        )
         return TankFoldResult(members.map { it.arcid }, tankTime)
     }
 
@@ -246,6 +249,7 @@ class HistoryRepository(
 
     internal companion object {
         private const val DEFAULT_HISTORY_MAX = 100
+        private const val SQL_IN_CHUNK = 500
 
         /**
          * Overlay an incoming history snapshot onto the stored one. Fields

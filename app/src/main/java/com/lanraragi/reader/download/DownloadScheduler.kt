@@ -401,6 +401,7 @@ internal class DownloadScheduler(
             }
             is DownloadEvent.OnFinish -> {
                 val info = event.taskInfo
+                DownloadSizeCache.invalidate(info.arcid)
                 // A cancelled worker (user pressed stop, or the row was being
                 // deleted) can still post a late onFinish before its coroutine
                 // fully unwinds: cancel() makes awaitAll() throw, the worker

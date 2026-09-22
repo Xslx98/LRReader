@@ -301,6 +301,12 @@ object ReaderPageCache : Cacheable {
         if (!parentDir.exists() || !parentDir.isDirectory) return
 
         val archiveDirs = parentDir.listFiles() ?: return
+        // Drop access stamps whose directory is gone (the OS clears app
+        // caches on its own): the prefs file otherwise grows forever.
+        val sp0 = appContext.getSharedPreferences(SP_CACHE_ACCESS, Context.MODE_PRIVATE)
+        val present = archiveDirs.mapTo(HashSet()) { it.name }
+        val stale = sp0.all.keys.filter { it !in present }
+        if (stale.isNotEmpty()) sp0.edit { stale.forEach { remove(it) } }
         if (archiveDirs.isEmpty()) return
 
         var totalSize: Long = 0

@@ -77,7 +77,9 @@ class TankoubonDetailViewModelCoverTest {
                         MockResponse().setBody("""{"success":1}""")
                     }
                     path.startsWith("/api/tankoubons/$TANK/full") -> MockResponse().setBody(fullJson())
-                    path.startsWith("/api/tankoubons/$TANK/thumbnail") -> MockResponse().setBody("x")
+                    // HEAD (cover probes) must not carry a body, or it corrupts the connection.
+                    path.startsWith("/api/tankoubons/$TANK/thumbnail") ->
+                        if (request.method == "HEAD") MockResponse() else MockResponse().setBody("x")
                     else -> MockResponse().setResponseCode(404)
                 }
             }
