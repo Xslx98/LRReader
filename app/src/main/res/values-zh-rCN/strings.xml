@@ -338,6 +338,7 @@
     <string name="tank_view_detail">详情</string>
     <string name="tank_detail_pages">%1$d/%2$dP</string>
     <string name="tank_tag_sync_failed">「%1$s」标签归并失败</string>
+    <string name="tank_category_sync_failed">「%1$s」分类同步失败</string>
     <string name="tank_reset_tags">重置为成员并集</string>
     <string name="tank_reset_tags_confirm">用成员标签的并集替换合订本标签？手写标签会丢失，评分保留。</string>
     <string name="tank_delete_confirm">删除这个合订本？其中的档案不会被删除，但合订本自身的简介、附加标签和阅读进度将一并丢失。</string>
