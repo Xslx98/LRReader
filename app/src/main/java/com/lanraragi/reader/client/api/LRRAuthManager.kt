@@ -47,6 +47,15 @@ object LRRAuthManager {
     private const val PREF_NAME = "lrr_auth_encrypted"
     private const val PLAIN_PREF_NAME = "lrr_auth_plain"
     private const val KEY_WAS_CONFIGURED = "was_configured"
+
+    /**
+     * Plain-prefs mirrors of two facts that live in encrypted storage, so a
+     * launch decision needs no keystore work and a keystore failure cannot
+     * make a locked app look unlocked (fail closed). Absent = not yet
+     * written by this version; callers then fall back to the secure store.
+     */
+    private const val KEY_LOCK_ENABLED = "app_lock_enabled"
+    private const val KEY_CONFIGURED_HINT = "server_configured"
     private const val KEY_SERVER_URL = "server_url"
     private const val KEY_API_KEY = "api_key"
     private const val KEY_SERVER_NAME = "server_name"
@@ -184,6 +193,7 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun scheduleInitialize(context: Context, scope: CoroutineScope): Job {
+        sAppContext = context.applicationContext
         sInitScheduled = true
         return scope.launch {
             Trace.beginSection("LRRApp.LRRAuthManager.init")
@@ -271,6 +281,14 @@ object LRRAuthManager {
         if (prefs?.getString(KEY_SERVER_URL, null) != null) {
             plainPrefs.edit { putBoolean(KEY_WAS_CONFIGURED, true) }
         }
+        if (prefs != null) {
+            // Refresh the plain mirrors from the source of truth (also
+            // migrates installs from before they existed).
+            plainPrefs.edit {
+                putBoolean(KEY_LOCK_ENABLED, hasPatternIn(prefs))
+                putBoolean(KEY_CONFIGURED_HINT, !prefs.getString(KEY_SERVER_URL, null).isNullOrEmpty())
+            }
+        }
     }
 
     /**
@@ -335,6 +353,7 @@ object LRRAuthManager {
             cleanUrl = cleanUrl.substring(0, cleanUrl.length - 1)
         }
         prefs.edit { putString(KEY_SERVER_URL, cleanUrl) }
+        sPlainPrefs?.edit { putBoolean(KEY_CONFIGURED_HINT, cleanUrl.isNotEmpty()) }
     }
 
     /**
@@ -698,7 +717,81 @@ object LRRAuthManager {
     fun hasPattern(): Boolean {
         awaitInit()
         val prefs = sPrefs ?: return false
-        return prefs.contains(KEY_PATTERN_HASH_V2) || prefs.contains(KEY_PATTERN_ENCRYPTED)
+        return hasPatternIn(prefs)
+    }
+
+    private fun hasPatternIn(prefs: SharedPreferences): Boolean =
+        prefs.contains(KEY_PATTERN_HASH_V2) || prefs.contains(KEY_PATTERN_ENCRYPTED)
+
+    /** Plain prefs readable without waiting for (or depending on) the keystore. */
+    private fun fastPlainPrefs(): SharedPreferences? =
+        sPlainPrefs ?: sAppContext?.getSharedPreferences(PLAIN_PREF_NAME, Context.MODE_PRIVATE)
+
+    /**
+     * Whether an app lock is set, from the plain mirror — true even when the
+     * secure store (and so the pattern itself) is unreadable. Null when the
+     * mirror has not been written yet.
+     */
+    @JvmStatic
+    fun lockEnabledHint(): Boolean? {
+        val plain = fastPlainPrefs() ?: return null
+        return if (plain.contains(KEY_LOCK_ENABLED)) plain.getBoolean(KEY_LOCK_ENABLED, false) else null
+    }
+
+    /** Whether a server URL is set, from the plain mirror; null when unknown. */
+    @JvmStatic
+    fun configuredHint(): Boolean? {
+        val plain = fastPlainPrefs() ?: return null
+        return if (plain.contains(KEY_CONFIGURED_HINT)) plain.getBoolean(KEY_CONFIGURED_HINT, false) else null
+    }
+
+    /**
+     * [isConfigured] without waiting for the keystore when the plain mirror
+     * is known — for the synchronous launch decision.
+     */
+    @JvmStatic
+    fun isConfiguredFast(): Boolean = configuredHint() ?: isConfigured()
+
+    /** False when EncryptedSharedPreferences could not be opened this process. */
+    @JvmStatic
+    fun isSecureStorageAvailable(): Boolean {
+        awaitInit()
+        return sPrefs != null
+    }
+
+    /**
+     * Last resort when the secure store is unreadable: drop the encrypted
+     * store (pattern, API keys, server URL) and its master key, and clear
+     * the lock state, so the next process start begins unlocked with no
+     * saved credentials. The caller restarts the process.
+     */
+    @JvmStatic
+    fun resetAppLockAndCredentials(context: Context) {
+        awaitInit()
+        sProfileKeyCache.clear()
+        sPrefs = null
+        context.applicationContext.deleteSharedPreferences(PREF_NAME)
+        try {
+            val keyStore = KeyStore.getInstance("AndroidKeyStore")
+            keyStore.load(null)
+            if (keyStore.containsAlias(MasterKey.DEFAULT_MASTER_KEY_ALIAS)) {
+                keyStore.deleteEntry(MasterKey.DEFAULT_MASTER_KEY_ALIAS)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to delete the credential master key", e)
+        }
+        deletePatternKeystoreKey()
+        fastPlainPrefs()?.edit(commit = true) {
+            putBoolean(KEY_LOCK_ENABLED, false)
+            putBoolean(KEY_CONFIGURED_HINT, false)
+            remove(KEY_WAS_CONFIGURED)
+            remove(KEY_PATTERN_KEYSTORE_BOUND)
+            remove(KEY_PATTERN_FAIL_COUNT)
+            remove(KEY_PATTERN_LOCKOUT_UNTIL_LEGACY)
+            remove(KEY_LOCKOUT_DURATION)
+            remove(KEY_LOCKOUT_START_ELAPSED)
+            remove(KEY_LOCKOUT_BOOT)
+        }
     }
 
     /**
@@ -718,7 +811,10 @@ object LRRAuthManager {
                 remove(KEY_PATTERN_ENCRYPTED)
                 remove(KEY_PATTERN_IV)
             }
-            sPlainPrefs?.edit { remove(KEY_PATTERN_KEYSTORE_BOUND) }
+            sPlainPrefs?.edit {
+                remove(KEY_PATTERN_KEYSTORE_BOUND)
+                putBoolean(KEY_LOCK_ENABLED, false)
+            }
             deletePatternKeystoreKey()
             resetFailures()
             return
@@ -736,7 +832,10 @@ object LRRAuthManager {
                 remove(KEY_PATTERN_ENCRYPTED)
                 remove(KEY_PATTERN_IV)
             }
-            sPlainPrefs?.edit { putBoolean(KEY_PATTERN_KEYSTORE_BOUND, false) }
+            sPlainPrefs?.edit {
+                putBoolean(KEY_PATTERN_KEYSTORE_BOUND, false)
+                putBoolean(KEY_LOCK_ENABLED, true)
+            }
         } catch (e: Exception) {
             throw RuntimeException("PBKDF2WithHmacSHA256 not available on this device", e)
         } finally {
@@ -776,7 +875,10 @@ object LRRAuthManager {
                 putString(KEY_PATTERN_SALT, Base64.encodeToString(salt, Base64.NO_WRAP))
                 remove(KEY_PATTERN_HASH_V2)
             }
-            sPlainPrefs?.edit { putBoolean(KEY_PATTERN_KEYSTORE_BOUND, true) }
+            sPlainPrefs?.edit {
+                putBoolean(KEY_PATTERN_KEYSTORE_BOUND, true)
+                putBoolean(KEY_LOCK_ENABLED, true)
+            }
         } catch (e: Exception) {
             throw RuntimeException("Failed to encrypt pattern hash with KeyStore cipher", e)
         } finally {
@@ -976,6 +1078,8 @@ object LRRAuthManager {
         sPrefs?.edit { clear() }
         sPlainPrefs?.edit {
             remove(KEY_PATTERN_KEYSTORE_BOUND)
+            remove(KEY_LOCK_ENABLED)
+            remove(KEY_CONFIGURED_HINT)
             remove(KEY_PATTERN_FAIL_COUNT)
             remove(KEY_PATTERN_LOCKOUT_UNTIL_LEGACY)
             remove(KEY_LOCKOUT_DURATION)

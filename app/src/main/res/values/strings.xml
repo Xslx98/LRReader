@@ -924,6 +924,10 @@
     <string name="lrr_allow_cleartext_required">Plain HTTP requires explicit consent. Tick the box or use HTTPS.</string>
     <string name="lrr_keystore_failed_title">Credential Storage Unavailable</string>
     <string name="lrr_keystore_failed_message">The device keystore is unavailable. Your API key could not be loaded. Please re-enter your server credentials.</string>
+    <string name="security_storage_unavailable_message">The app lock can\'t be checked because the device\'s secure storage is unavailable right now. Try again, or reset the app lock: this removes the pattern and every saved server API key. Your library and downloads are kept.</string>
+    <string name="security_storage_retry">Try again</string>
+    <string name="security_reset_app_lock">Reset app lock</string>
+    <string name="security_reset_app_lock_confirm">Reset the app lock and remove every saved API key? You will need to re-enter your server credentials.</string>
     <string name="lrr_boot_load_failed_title">Startup Error</string>
     <string name="lrr_boot_load_failed_message">Could not load your saved server profiles at startup. The app is running with no profile loaded; you may need to reconfigure or reinstall.\n\nDetails: %1$s</string>
     <string name="lrr_boot_load_failed_retry">Retry</string>

@@ -897,6 +897,10 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_empty_namespace">La categoría no puede estar vacía</string>
     <string name="lrr_keystore_failed_title">Almacenamiento de credenciales no disponible</string>
     <string name="lrr_keystore_failed_message">El almacén de claves del dispositivo no está disponible. No se pudo cargar la clave API. Por favor, vuelva a introducir las credenciales del servidor.</string>
+    <string name="security_storage_unavailable_message">No se puede comprobar el bloqueo de la aplicación porque el almacenamiento seguro del dispositivo no está disponible ahora. Vuelve a intentarlo o restablece el bloqueo: se eliminarán el patrón y todas las claves API guardadas. La biblioteca y las descargas se conservan.</string>
+    <string name="security_storage_retry">Reintentar</string>
+    <string name="security_reset_app_lock">Restablecer bloqueo</string>
+    <string name="security_reset_app_lock_confirm">¿Restablecer el bloqueo y eliminar todas las claves API guardadas? Tendrás que volver a introducir las credenciales del servidor.</string>
     <string name="lrr_boot_load_failed_title">Error de inicio</string>
     <string name="lrr_boot_load_failed_message">No se pudieron cargar tus perfiles de servidor guardados al iniciar. La aplicación se está ejecutando sin un perfil cargado; es posible que necesites reconfigurar o reinstalar.\n\nDetalles: %1$s</string>
     <string name="lrr_boot_load_failed_retry">Reintentar</string>

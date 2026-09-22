@@ -901,6 +901,10 @@ Cette action est irréversible.</string>
     <string name="lrr_empty_namespace">La catégorie ne peut pas être vide</string>
     <string name="lrr_keystore_failed_title">Stockage des identifiants indisponible</string>
     <string name="lrr_keystore_failed_message">Le magasin de clés de l\'appareil est indisponible. Votre clé API n\'a pas pu être chargée. Veuillez saisir à nouveau vos identifiants de serveur.</string>
+    <string name="security_storage_unavailable_message">Le verrouillage de l\'application ne peut pas être vérifié car le stockage sécurisé de l\'appareil est indisponible pour le moment. Réessayez ou réinitialisez le verrouillage : le schéma et toutes les clés API enregistrées seront supprimés. La bibliothèque et les téléchargements sont conservés.</string>
+    <string name="security_storage_retry">Réessayer</string>
+    <string name="security_reset_app_lock">Réinitialiser le verrouillage</string>
+    <string name="security_reset_app_lock_confirm">Réinitialiser le verrouillage et supprimer toutes les clés API enregistrées ? Vous devrez saisir à nouveau les identifiants du serveur.</string>
     <string name="lrr_boot_load_failed_title">Erreur de démarrage</string>
     <string name="lrr_boot_load_failed_message">Impossible de charger vos profils serveur enregistrés au démarrage. L\'application fonctionne sans profil chargé ; vous devrez peut-être reconfigurer ou réinstaller.\n\nDétails : %1$s</string>
     <string name="lrr_boot_load_failed_retry">Réessayer</string>
