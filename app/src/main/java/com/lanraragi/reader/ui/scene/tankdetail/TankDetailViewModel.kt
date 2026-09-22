@@ -11,6 +11,7 @@ import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.domain.mergeRatingIntoTags
 import com.lanraragi.reader.domain.parseRatingFromTags
 import com.lanraragi.reader.download.TankGroupReconciler
 import com.lanraragi.reader.download.TankMembershipSync
@@ -20,9 +21,13 @@ import com.lanraragi.reader.ui.scene.gallery.detail.FavoriteState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 
@@ -131,6 +136,21 @@ class TankDetailViewModel : ViewModel() {
 
     private var loadJob: Job? = null
 
+    private val _ratingError = MutableSharedFlow<String>(extraBufferCapacity = 1)
+
+    /** A rating PUT failed (already rolled back); carries the user-facing message. */
+    val ratingError: SharedFlow<String> = _ratingError.asSharedFlow()
+
+    private var ratingJob: Job? = null
+
+    /**
+     * The tank's rating as first loaded ONLINE this session (unrated = 0),
+     * NaN until then. The scene compares it with the current rating on back
+     * to decide whether to hand a rating result to the list.
+     */
+    var initialRating: Float = Float.NaN
+        private set
+
     // -------------------------------------------------------------------------
     // Seams (production defaults; replaceable for tests)
     // -------------------------------------------------------------------------
@@ -192,6 +212,7 @@ class TankDetailViewModel : ViewModel() {
                 url = baseUrlResolver(profileId)
                 val client = ServiceRegistry.networkModule.okHttpClient
                 val online = fetchOnline(client, url)
+                if (initialRating.isNaN()) initialRating = online.rating.coerceAtLeast(0f)
                 _state.value = online
                 _loadState.value = LoadState.Loaded
                 syncMembership(url, online)
@@ -223,6 +244,43 @@ class TankDetailViewModel : ViewModel() {
                     val ctx = ServiceRegistry.appModule.getContext()
                     _loadState.value = LoadState.Error(friendlyError(ctx, e))
                 }
+            }
+        }
+    }
+
+    /**
+     * Sets the tank's OWN rating (spec 2026-09-22 §4.2): the `rating:` slot
+     * of the tank tag string is replaced via [mergeRatingIntoTags] and the
+     * whole string PUT as `metadata.tags`. Optimistic — [state] shows the
+     * new rating at once — with rollback to the previous tag string plus a
+     * [ratingError] on failure. Ignored offline, and a no-op when the value
+     * already matches (saves the round trip). Never touches member ratings.
+     *
+     * The merge base is this page's loaded tag string (kept current by the
+     * page's own tag edits), not a fresh fetch: `/full` is the only GET and
+     * would re-download every member's metadata per star tap.
+     */
+    fun submitRating(rating: Float) {
+        val current = _state.value ?: return
+        if (current.offline) return
+        val url = current.baseUrl ?: return
+        val previousTags = current.tags
+        val next = rating.coerceIn(0f, MAX_STARS)
+        if (current.rating.coerceAtLeast(0f) == next) return
+        val merged = mergeRatingIntoTags(previousTags, next)
+        _state.value = current.copy(tags = merged)
+        ratingJob?.cancel()
+        ratingJob = viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val client = ServiceRegistry.networkModule.okHttpClient
+                LRRTankoubonApi.updateTankoubon(client, url, tankId, tags = merged)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Tank rating PUT failed; rolling back", e)
+                _state.update { s -> if (s != null && s.tags == merged) s.copy(tags = previousTags) else s }
+                val ctx = ServiceRegistry.appModule.getContext()
+                _ratingError.tryEmit(friendlyError(ctx, e))
             }
         }
     }
@@ -323,6 +381,7 @@ class TankDetailViewModel : ViewModel() {
     companion object {
         private const val TAG = "TankDetailViewModel"
         private const val RATING_PREFIX = "rating:"
+        private const val MAX_STARS = 5f
 
         /** Splits a LANraragi comma-separated tag string into trimmed non-empty entries. */
         fun splitTags(tags: String): List<String> =

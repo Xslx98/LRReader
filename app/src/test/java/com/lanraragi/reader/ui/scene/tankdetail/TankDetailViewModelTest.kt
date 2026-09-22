@@ -14,8 +14,19 @@ import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.LoadState
 import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.OfflineTank
 import java.io.File
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.onSubscription
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -52,6 +63,7 @@ class TankDetailViewModelTest {
 
     private lateinit var server: MockWebServer
     private lateinit var ctx: Context
+    private lateinit var eventScope: CoroutineScope
 
     @Volatile
     private var fullStatus = 200
@@ -61,6 +73,12 @@ class TankDetailViewModelTest {
 
     @Volatile
     private var tankTags: String? = "artist:foo, rating:4, language:english"
+
+    @Volatile
+    private var putStatus = 200
+
+    /** `metadata.tags` of every PUT /api/tankoubons/{id} the mock received. */
+    private val putTags = CopyOnWriteArrayList<String>()
 
     @Volatile
     private var categoriesJson = """[
@@ -78,6 +96,15 @@ class TankDetailViewModelTest {
             override fun dispatch(request: RecordedRequest): MockResponse {
                 val path = request.path.orEmpty()
                 return when {
+                    request.method == "PUT" && path == "/api/tankoubons/$TANK" -> {
+                        val body = Json.parseToJsonElement(request.body.readUtf8()).jsonObject
+                        putTags.add(body.getValue("metadata").jsonObject.getValue("tags").jsonPrimitive.content)
+                        if (putStatus == 200) {
+                            MockResponse().setBody("""{"success":1}""")
+                        } else {
+                            MockResponse().setResponseCode(putStatus)
+                        }
+                    }
                     path.startsWith("/api/tankoubons/$TANK/full") ->
                         if (fullStatus == 200) {
                             MockResponse().setBody(fullJson())
@@ -127,10 +154,12 @@ class TankDetailViewModelTest {
             override fun removeTempCache(key: String): Any? = null
         }
         ServiceRegistry.initializeForTest(network = testNetworkModule, app = testAppModule)
+        eventScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     }
 
     @After
     fun tearDown() {
+        eventScope.cancel()
         Dispatchers.resetMain()
         LRRAuthManager.clear()
         TankoubonSupportGate.clear()
@@ -301,6 +330,89 @@ class TankDetailViewModelTest {
         assertEquals(TANK, vm.tankId)
         assertEquals(0L, vm.profileId)
         assertEquals("Seed Name", vm.seedName)
+    }
+
+    // ---- rating (spec §4.2) ----
+
+    private fun collectErrors(vm: TankDetailViewModel): CopyOnWriteArrayList<String> {
+        val events = CopyOnWriteArrayList<String>()
+        val subscribed = CompletableDeferred<Unit>()
+        eventScope.launch {
+            vm.ratingError.onSubscription { subscribed.complete(Unit) }.collect { events.add(it) }
+        }
+        runBlocking { subscribed.await() }
+        return events
+    }
+
+    private fun loadedVm(): TankDetailViewModel {
+        val vm = newVm()
+        vm.load()
+        awaitSettled(vm)
+        return vm
+    }
+
+    @Test
+    fun submitRating_putsWholeTagStringWithRatingSlotReplaced() {
+        val vm = loadedVm()
+        assertEquals(4f, vm.initialRating, 0f)
+
+        vm.submitRating(2f)
+
+        // Optimistic: the state shows the new rating before the PUT lands.
+        assertEquals(2f, vm.state.value!!.rating, 0f)
+        awaitCondition { putTags.size == 1 }
+        assertEquals("artist:foo, language:english, rating:⭐⭐", putTags.single())
+        assertEquals(listOf("artist:foo", "language:english"), vm.state.value!!.tagsForDisplay)
+        assertEquals("initial rating is the loaded value, not the edit", 4f, vm.initialRating, 0f)
+    }
+
+    @Test
+    fun submitRating_failureRollsBackTagsAndReportsError() {
+        putStatus = 500
+        val vm = loadedVm()
+        val errors = collectErrors(vm)
+
+        vm.submitRating(1f)
+
+        awaitCondition { errors.size == 1 }
+        assertEquals("artist:foo, rating:4, language:english", vm.state.value!!.tags)
+        assertEquals(4f, vm.state.value!!.rating, 0f)
+    }
+
+    @Test
+    fun submitRating_sameValueIsANoOp() {
+        val vm = loadedVm()
+
+        vm.submitRating(4f)
+
+        Thread.sleep(200)
+        assertTrue(putTags.isEmpty())
+    }
+
+    @Test
+    fun submitRating_zeroStripsTheRatingTag() {
+        val vm = loadedVm()
+
+        vm.submitRating(0f)
+
+        awaitCondition { putTags.size == 1 }
+        assertEquals("artist:foo, language:english", putTags.single())
+        assertEquals(-1f, vm.state.value!!.rating, 0f)
+    }
+
+    @Test
+    fun submitRating_isIgnoredOffline() {
+        fullStatus = 500
+        val vm = newVm(offline = OfflineTank("T", listOf(archive(ID_A, "a", 10))))
+        vm.load()
+        awaitSettled(vm)
+
+        vm.submitRating(3f)
+
+        Thread.sleep(200)
+        assertTrue(putTags.isEmpty())
+        assertEquals("", vm.state.value!!.tags)
+        assertTrue(vm.initialRating.isNaN())
     }
 
     private fun archive(id: String, title: String, pages: Int) = Archive(
