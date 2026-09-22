@@ -39,14 +39,15 @@ class QuickSearchNameReconcilerTest {
     fun `translations on rewrites only tag-shaped names`() {
         val tag = qs("artist:someone", keyword = "artist:someone")
         val category = qs("Favourites", keyword = null, categoryId = "SET_1")
-        val twoColons = qs("a:b:c", keyword = "a:b:c")
+        // A value with its own colon is still one namespace:value tag.
+        val colonInValue = qs("artist:re:zero", keyword = "artist:re:zero")
 
-        val changed = QuickSearchNameReconciler.reconcile(listOf(tag, category, twoColons), true, upper)
+        val changed = QuickSearchNameReconciler.reconcile(listOf(tag, category, colonInValue), true, upper)
 
-        assertEquals(listOf(tag), changed)
+        assertEquals(listOf(tag, colonInValue), changed)
         assertEquals("ARTIST:SOMEONE", tag.name)
         assertEquals("Favourites", category.name)
-        assertEquals("a:b:c", twoColons.name)
+        assertEquals("ARTIST:RE:ZERO", colonInValue.name)
     }
 
     @Test

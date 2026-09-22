@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
+import com.lanraragi.reader.domain.splitNamespace
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.reader.R
 
@@ -55,8 +56,7 @@ class GalleryFilterHelper(private val callback: Callback) {
      * Strips namespace prefix before adding.
      */
     fun searchTagBuild(tagName: String): String {
-        val list = tagName.split(":").dropLastWhile { it.isEmpty() }.toTypedArray()
-        val key = if (list.size == 2) list[1] else list[0]
+        val key = splitNamespace(tagName).last()
 
         if (!filterTagList.contains(key)) {
             filterTagList.add(key)

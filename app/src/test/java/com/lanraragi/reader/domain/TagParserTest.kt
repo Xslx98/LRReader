@@ -111,4 +111,11 @@ class TagParserTest {
     fun explicitlyNamespacedValues_matchesOnlyThatNamespace() {
         assertEquals(setOf("a", "b c"), explicitlyNamespacedValues("misc:a, misc: b c, artist:a, a", "misc"))
     }
+
+    @Test
+    fun splitNamespace_splitsAtTheFirstColonOnly() {
+        assertEquals(listOf("artist", "re:zero"), splitNamespace("artist:re:zero").toList())
+        assertEquals(listOf("english"), splitNamespace(" english ").toList())
+        assertEquals(listOf(":odd"), splitNamespace(":odd").toList())
+    }
 }

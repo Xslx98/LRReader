@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
+import com.lanraragi.reader.domain.splitNamespace
 import com.lanraragi.reader.dao.QuickSearch
 
 /**
@@ -31,9 +32,9 @@ internal object QuickSearchNameReconciler {
         val changed = mutableListOf<QuickSearch>()
         for (qs in list) {
             val name = qs.name ?: continue
-            val parts = name.split(":")
+            val parts = splitNamespace(name)
             if (parts.size != 2) continue
-            val translated = translate(parts.toTypedArray())
+            val translated = translate(parts)
             if (translated != name) {
                 qs.name = translated
                 changed.add(qs)

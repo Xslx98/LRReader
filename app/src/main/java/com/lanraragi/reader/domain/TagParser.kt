@@ -105,3 +105,18 @@ fun toLrrTagString(groups: List<TagGroup>, explicitBucketValues: Set<String>): S
             }
         }
     }.joinToString(", ")
+
+/**
+ * Split a `namespace:value` tag at its FIRST colon: `[namespace, value]`,
+ * or `[value]` for a bare tag. A value may itself contain colons
+ * (`artist:re:zero`); `split(":")` cut those apart.
+ */
+fun splitNamespace(tag: String): Array<String> {
+    val trimmed = tag.trim()
+    val colonIdx = trimmed.indexOf(':')
+    return if (colonIdx > 0) {
+        arrayOf(trimmed.substring(0, colonIdx).trim(), trimmed.substring(colonIdx + 1).trim())
+    } else {
+        arrayOf(trimmed)
+    }
+}
