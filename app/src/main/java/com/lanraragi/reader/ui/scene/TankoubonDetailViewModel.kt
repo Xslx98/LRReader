@@ -16,6 +16,7 @@ import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.download.TankMembershipSync
 import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
+import com.lanraragi.reader.tankoubon.TankCategorySyncer
 import com.lanraragi.reader.tankoubon.TankMemberOrderOps
 import com.lanraragi.reader.tankoubon.TankTagSyncer
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
@@ -191,6 +192,12 @@ class TankoubonDetailViewModel : ViewModel() {
     internal var tagSyncAfterRemove: suspend (OkHttpClient, String, TankTagSyncer.Snapshot, List<String>) -> Boolean =
         { client, url, snap, removed -> TankTagSyncer.afterRemove(client, url, snap, removed) }
 
+    /** Static-category promotion seams (spec 2026-09-22 §6); replaceable for tests. */
+    internal var categorySyncAfterRemove: suspend (OkHttpClient, String, TankTagSyncer.Snapshot, List<String>) -> Boolean =
+        { client, url, snap, removed -> TankCategorySyncer.afterRemove(client, url, snap, removed) }
+    internal var categoryDissolve: suspend (OkHttpClient, String, String, String) -> Boolean =
+        { client, url, id, name -> TankCategorySyncer.onDissolve(client, url, id, name) }
+
     internal var baseUrlResolver: suspend (Long) -> String = { id ->
         resolveSourceBaseUrl(id, ServiceRegistry.dataModule.profileLookupCache)
     }
@@ -304,7 +311,10 @@ class TankoubonDetailViewModel : ViewModel() {
                 // any) reappears as a standalone download.
                 ServiceRegistry.dataModule.downloadManager.untagTankMemberAsync(tankId, arcid)
             }
-            if (before != null) tagSyncAfterRemove(client, url, before, arcids)
+            if (before != null) {
+                tagSyncAfterRemove(client, url, before, arcids)
+                categorySyncAfterRemove(client, url, before, arcids)
+            }
             val remainingIds = remaining.map { it.arcid }
             if (firstBefore != null && firstBefore in arcids) {
                 // Removing the first member queues a cover regeneration upstream.
@@ -362,6 +372,9 @@ class TankoubonDetailViewModel : ViewModel() {
             val url = requireBaseUrl() ?: return@launch
             try {
                 val client = ServiceRegistry.networkModule.okHttpClient
+                // Upstream leaves the deleted id dangling in static categories
+                // (spec 2026-09-22 §6): clear it first, while the tank still exists.
+                categoryDissolve(client, url, tankId, _tankName.value)
                 LRRTankoubonApi.deleteTankoubon(client, url, tankId)
                 coverChoices.remove(tankId)
                 // Dissolve the downloaded-tank grouping (files/rows stay:
