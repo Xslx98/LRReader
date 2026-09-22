@@ -54,3 +54,7 @@ bugs/
 # MemPalace local config (per-machine, not for repo)
 mempalace.yaml
 entities.json
+
+# JVM crash dumps (hs_err / C2 replay files)
+hs_err_pid*.log
+replay_pid*.log
