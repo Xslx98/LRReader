@@ -18,6 +18,7 @@ import com.lanraragi.reader.domain.parseRatingFromTags
 import com.lanraragi.reader.download.TankGroupReconciler
 import com.lanraragi.reader.download.TankMembershipSync
 import com.lanraragi.reader.gallery.TankPageMath
+import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import com.lanraragi.reader.ui.scene.gallery.detail.FavoriteState
 import kotlinx.coroutines.CancellationException
@@ -149,6 +150,16 @@ class TankDetailViewModel : ViewModel() {
 
     private var ratingJob: Job? = null
 
+    /** One-shot outcomes of the overflow operations. */
+    sealed interface Event {
+        /** The tank was deleted server-side; the scene closes itself. */
+        data object Deleted : Event
+        data class Error(val message: String) : Event
+    }
+
+    private val _events = MutableSharedFlow<Event>(extraBufferCapacity = 4)
+    val events: SharedFlow<Event> = _events.asSharedFlow()
+
     /**
      * The tank's rating as first loaded ONLINE this session (unrated = 0),
      * NaN until then. The scene compares it with the current rating on back
@@ -184,6 +195,14 @@ class TankDetailViewModel : ViewModel() {
 
     /** Membership follow seam (spec 2026-09-21 §1/§3), fed after a successful online load. */
     internal var membershipSync: TankMembershipSyncFactory.Runner = TankMembershipSyncFactory.runnerSafely()
+
+    /** After a delete: forget the remembered cover choice (spec 2026-09-22-tank-cover §4). */
+    internal var forgetCoverChoice: (String) -> Unit = { TankCoverChoiceStore.default.remove(it) }
+
+    /** After a delete: dissolve the downloaded-tank grouping; member downloads survive standalone. */
+    internal var dissolveDownloadGroup: (String) -> Unit = {
+        ServiceRegistry.dataModule.downloadManager.dissolveTankGroupAsync(it)
+    }
 
     // -------------------------------------------------------------------------
     // API
@@ -295,6 +314,31 @@ class TankDetailViewModel : ViewModel() {
                 _state.update { s -> if (s != null && s.tags == merged) s.copy(tags = previousTags) else s }
                 val ctx = ServiceRegistry.appModule.getContext()
                 _ratingError.tryEmit(friendlyError(ctx, e))
+            }
+        }
+    }
+
+    /**
+     * Deletes the tank server-side (never its archives): drops the
+     * remembered cover choice and dissolves the downloaded-tank grouping
+     * (member download rows survive as standalone downloads), then emits
+     * [Event.Deleted]. Ignored offline.
+     */
+    fun deleteTank() {
+        val current = _state.value ?: return
+        val url = current.baseUrl ?: return
+        if (current.offline) return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                LRRTankoubonApi.deleteTankoubon(ServiceRegistry.networkModule.okHttpClient, url, tankId)
+                forgetCoverChoice(tankId)
+                dissolveDownloadGroup(tankId)
+                _events.tryEmit(Event.Deleted)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                val ctx = ServiceRegistry.appModule.getContext()
+                _events.tryEmit(Event.Error(friendlyError(ctx, e)))
             }
         }
     }

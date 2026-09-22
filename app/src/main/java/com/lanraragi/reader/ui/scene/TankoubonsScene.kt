@@ -26,6 +26,7 @@ import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.framework.widget.LoadImageViewNew
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.ui.scene.tankdetail.TankDetailScene
 import com.lanraragi.reader.client.api.TankoubonSupportGate
 
 /**
@@ -247,6 +248,7 @@ class TankoubonsScene : BaseScene() {
         val ctx = ehContext ?: return
 
         val items = arrayOf(
+            getString(R.string.tank_view_detail),
             getString(R.string.tank_download),
             getString(R.string.tank_auto_sort),
             getString(R.string.tank_manage_members),
@@ -257,10 +259,11 @@ class TankoubonsScene : BaseScene() {
             .setTitle(tank.name)
             .setItems(items) { _, which ->
                 when (which) {
-                    0 -> viewModel.fillTank(tank)
-                    1 -> viewModel.autoSort(tank)
-                    2 -> openTankDetail(tank)
-                    3 -> showDeleteDialog(tank)
+                    0 -> openTankDetailPage(tank)
+                    1 -> viewModel.fillTank(tank)
+                    2 -> viewModel.autoSort(tank)
+                    3 -> openTankDetail(tank)
+                    4 -> showDeleteDialog(tank)
                 }
             }
             .show()
@@ -324,6 +327,7 @@ class TankoubonsScene : BaseScene() {
         }
     }
 
+    /** Member management sub-page (rename / reorder / remove / cover). */
     private fun openTankDetail(tank: LRRTankoubonApi.Tankoubon) {
         val args = Bundle().apply {
             putString(TankoubonDetailScene.KEY_TANK_ID, tank.id)
@@ -331,6 +335,16 @@ class TankoubonsScene : BaseScene() {
             putLong(TankoubonDetailScene.KEY_PROFILE_ID, LRRAuthManager.getActiveProfileId())
         }
         startScene(Announcer(TankoubonDetailScene::class.java).setArgs(args))
+    }
+
+    /** Long-press 「详情」 → the tank DETAIL page (spec 2026-09-22 §3); tap stays "read". */
+    private fun openTankDetailPage(tank: LRRTankoubonApi.Tankoubon) {
+        val args = Bundle().apply {
+            putString(TankDetailScene.KEY_TANK_ID, tank.id)
+            putString(TankDetailScene.KEY_TANK_NAME, tank.name)
+            putLong(TankDetailScene.KEY_PROFILE_ID, LRRAuthManager.getActiveProfileId())
+        }
+        startScene(Announcer(TankDetailScene::class.java).setArgs(args))
     }
 
     // ==================== Adapter ====================
