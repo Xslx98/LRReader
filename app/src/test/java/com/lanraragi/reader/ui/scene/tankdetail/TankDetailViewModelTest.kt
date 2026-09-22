@@ -126,7 +126,9 @@ class TankDetailViewModelTest {
                         } else {
                             MockResponse().setResponseCode(fullStatus)
                         }
-                    path.startsWith("/api/tankoubons/$TANK/thumbnail") -> MockResponse().setBody("x")
+                    // HEAD (cover probes) must not carry a body, or it corrupts the connection.
+                    path.startsWith("/api/tankoubons/$TANK/thumbnail") ->
+                        if (request.method == "HEAD") MockResponse() else MockResponse().setBody("x")
                     path.startsWith("/api/categories") ->
                         if (categoriesStatus == 200) {
                             MockResponse().setBody(categoriesJson)

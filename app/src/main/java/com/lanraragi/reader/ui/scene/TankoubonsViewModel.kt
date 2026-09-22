@@ -1,5 +1,7 @@
 package com.lanraragi.reader.ui.scene
 
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import android.content.Context
 import android.content.Intent
 import android.util.Log
@@ -237,6 +239,7 @@ class TankoubonsViewModel : ViewModel() {
                 _tanks.value = tanks
                 _isLoading.value = false
                 syncMembership(serverUrl, tanks)
+                refreshCoverFallbacks(serverUrl, tanks)
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to load tankoubons", e)
@@ -313,6 +316,7 @@ class TankoubonsViewModel : ViewModel() {
             val tanks = fetchAllTanks(serverUrl)
             _tanks.value = tanks
             syncMembership(serverUrl, tanks)
+            refreshCoverFallbacks(serverUrl, tanks)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
             Log.e(TAG, "Failed to reload tankoubons after CRUD", e)
@@ -363,8 +367,27 @@ class TankoubonsViewModel : ViewModel() {
         // Fresh server truth in hand — revalidate covers. Must precede the
         // callers' _tanks publication so cover binds already see the new stamp.
         TankCoverCacheStamp.bump()
-        _coverFallbacks.value = probeCoverFallbacks(serverUrl, all)
         return ArrayList(all)
+    }
+
+    /** Tanks whose generated cover was confirmed: never probed again by this list. */
+    private val confirmedCovers = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
+    /**
+     * Cover probing runs AFTER the list is published (the list used to wait
+     * for one probe per tank on every load), and only for tanks without a
+     * confirmed cover; a stand-in appears when its probe answers.
+     */
+    private fun refreshCoverFallbacks(serverUrl: String, tanks: List<LRRTankoubonApi.Tankoubon>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                _coverFallbacks.value = probeCoverFallbacks(serverUrl, tanks)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "tank cover probe failed")
+            }
+        }
     }
 
     /**
@@ -381,17 +404,21 @@ class TankoubonsViewModel : ViewModel() {
         tanks: List<LRRTankoubonApi.Tankoubon>,
     ): Map<String, CoverFallback> = coroutineScope {
         val client = ServiceRegistry.networkModule.okHttpClient
-        tanks.filter { it.archives.isNotEmpty() }
+        val gate = Semaphore(PROBE_PARALLELISM)
+        tanks.filter { it.archives.isNotEmpty() && it.id !in confirmedCovers }
             .map { tank ->
                 async {
                     val missing = try {
-                        !LRRTankoubonApi.hasTankThumbnail(client, serverUrl, tank.id)
+                        gate.withPermit { !LRRTankoubonApi.hasTankThumbnail(client, serverUrl, tank.id) }
                     } catch (ce: CancellationException) {
                         throw ce
                     } catch (ignored: Exception) {
                         false
                     }
-                    if (!missing) return@async null
+                    if (!missing) {
+                        confirmedCovers += tank.id
+                        return@async null
+                    }
                     val arcid = tank.archives.first()
                     val fallback = try {
                         CoverFallback(arcid, archiveThumbnailUrl(serverUrl, arcid))
@@ -419,6 +446,7 @@ class TankoubonsViewModel : ViewModel() {
 
     private companion object {
         const val MAX_PAGES = 100
+        const val PROBE_PARALLELISM = 6
         const val HTTP_LOCKED = 423
         const val TAG = "TankoubonsViewModel"
     }
