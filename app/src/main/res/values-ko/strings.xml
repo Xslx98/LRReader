@@ -664,6 +664,9 @@
     <plurals name="settings_download_clean_invalid_done">
         <item quantity="other">%d 개의 다운로드 항목을 정리했습니다</item>
     </plurals>
+    <plurals name="settings_download_clean_redundancy_confirm">
+        <item quantity="other">다운로드 목록에 없는 폴더 %d개를 삭제할까요?</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">정리할 다운로드 항목이 없습니다</string>
 
     <string name="nav_server_config">서버 전환</string>

@@ -609,6 +609,10 @@
         <item quantity="one">%d Download-Element bereinigt</item>
         <item quantity="other">%d Download-Elemente bereinigt</item>
     </plurals>
+    <plurals name="settings_download_clean_redundancy_confirm">
+        <item quantity="one">%d Ordner löschen, der nicht in der Downloadliste ist?</item>
+        <item quantity="other">%d Ordner löschen, die nicht in der Downloadliste sind?</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">Keine ungültigen Download-Elemente vorhanden</string>
 
     <string name="nav_server_config">Server wechseln</string>

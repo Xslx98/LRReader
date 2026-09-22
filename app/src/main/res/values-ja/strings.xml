@@ -595,6 +595,9 @@
     <plurals name="settings_download_clean_invalid_done">
         <item quantity="other">%d 件のダウンロード項目を整理しました</item>
     </plurals>
+    <plurals name="settings_download_clean_redundancy_confirm">
+        <item quantity="other">ダウンロードリストにない %d 個のフォルダを削除しますか？</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">整理が必要なダウンロード項目はありません</string>
 
     <string name="nav_server_config">サーバー切替</string>

@@ -671,6 +671,9 @@
     <plurals name="settings_download_clean_invalid_done">
         <item quantity="other">完成清理 %d 個下載項</item>
     </plurals>
+    <plurals name="settings_download_clean_redundancy_confirm">
+        <item quantity="other">刪除 %d 個不在下載清單中的資料夾？</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">沒有需要清空的下載項</string>
 
     <string name="nav_server_config">站點切換</string>

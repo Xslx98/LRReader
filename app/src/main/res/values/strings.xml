@@ -28,6 +28,10 @@
         <item quantity="one">Cleaned %d download item</item>
         <item quantity="other">Cleaned %d download items</item>
     </plurals>
+    <plurals name="settings_download_clean_redundancy_confirm">
+        <item quantity="one">Delete %d folder not in the download list?</item>
+        <item quantity="other">Delete %d folders not in the download list?</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">No invalid download items to clean</string>
     <string name="settings_download_export_no_items">No items to export</string>
     <string name="settings_download_export_failed">Failed to export download items</string>
