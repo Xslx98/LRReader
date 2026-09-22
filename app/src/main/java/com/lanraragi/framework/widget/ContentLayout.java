@@ -177,6 +177,8 @@ public class ContentLayout extends FrameLayout {
         private static final String TAG = ContentHelper.class.getSimpleName();
 
         private static final int CHECK_DUPLICATE_RANGE = 50;
+        /** Past this many rows a whole-list update skips the diff (see dispatchDiffUpdates). */
+        private static final int MAX_FULL_DIFF = 200;
 
         private static final String KEY_SUPER = "super";
         private static final String KEY_SHOWN_VIEW = "shown_view";
@@ -502,12 +504,26 @@ public class ContentLayout extends FrameLayout {
          * official docs</a>) to avoid the full-invalidation cost of
          * {@code notifyDataSetChanged()}.
          *
-         * <p>{@link DiffUtil#calculateDiff} runs on the calling thread (main).
-         * For the list sizes typical here (≤ hundreds) this is sub-millisecond;
-         * the O(N) Myers diff is fast for small lists.</p>
+         * <p>{@link DiffUtil#calculateDiff} runs on the calling thread (main)
+         * over the ENTIRE accumulated list, so its cost grows with scroll
+         * depth: past {@link #MAX_FULL_DIFF} rows the old rows are dropped
+         * and the new ones inserted as two range notifications instead.</p>
          */
-        @SuppressLint("NotifyDataSetChanged")
         private void dispatchDiffUpdates(@NonNull List<E> oldData) {
+            if (oldData.size() > MAX_FULL_DIFF || mData.size() > MAX_FULL_DIFF) {
+                if (!oldData.isEmpty()) notifyItemRangeRemoved(0, oldData.size());
+                if (!mData.isEmpty()) notifyItemRangeInserted(0, mData.size());
+                return;
+            }
+            dispatchWindowDiff(oldData, mData, 0);
+        }
+
+        /**
+         * Diff [oldData] against [newData], which occupy the same window of
+         * the adapter starting at [offset]; rows outside it are unchanged.
+         * Runs on the calling thread (main), so callers keep windows small.
+         */
+        private void dispatchWindowDiff(@NonNull List<E> oldData, @NonNull List<E> newData, int offset) {
             DiffUtil.DiffResult result = DiffUtil.calculateDiff(new DiffUtil.Callback() {
                 @Override
                 public int getOldListSize() {
@@ -516,12 +532,12 @@ public class ContentLayout extends FrameLayout {
 
                 @Override
                 public int getNewListSize() {
-                    return mData.size();
+                    return newData.size();
                 }
 
                 @Override
                 public boolean areItemsTheSame(int oldPos, int newPos) {
-                    return isDuplicate(oldData.get(oldPos), mData.get(newPos));
+                    return isDuplicate(oldData.get(oldPos), newData.get(newPos));
                 }
 
                 @Override
@@ -531,18 +547,18 @@ public class ContentLayout extends FrameLayout {
                     // update metadata between requests, assume content changed
                     // when the item is present in both lists — the rebind cost
                     // is negligible compared to full-layout invalidation.
-                    return oldData.get(oldPos).equals(mData.get(newPos));
+                    return oldData.get(oldPos).equals(newData.get(newPos));
                 }
             });
             result.dispatchUpdatesTo(new ListUpdateCallback() {
                 @Override
                 public void onInserted(int position, int count) {
-                    notifyItemRangeInserted(position, count);
+                    notifyItemRangeInserted(offset + position, count);
                 }
 
                 @Override
                 public void onRemoved(int position, int count) {
-                    notifyItemRangeRemoved(position, count);
+                    notifyItemRangeRemoved(offset + position, count);
                 }
 
                 @Override
@@ -550,12 +566,12 @@ public class ContentLayout extends FrameLayout {
                     // Granular move — a full notifyDataSetChanged here used
                     // to defeat the diff that was just computed (every
                     // refresh with any content delta rebound all rows).
-                    notifyItemMoved(fromPosition, toPosition);
+                    notifyItemMoved(offset + fromPosition, offset + toPosition);
                 }
 
                 @Override
                 public void onChanged(int position, int count, @Nullable Object payload) {
-                    notifyItemRangeChanged(position, count);
+                    notifyItemRangeChanged(offset + position, count);
                 }
             });
         }
@@ -629,11 +645,12 @@ public class ContentLayout extends FrameLayout {
 
             mPages = Math.max(mEndPage, pages);
 
-            // Snapshot before mutation for DiffUtil
-            ArrayList<E> oldSnapshot = new ArrayList<>(mData);
-
             int oldIndexStart = mCurrentTaskPage == mStartPage ? 0 : mPageDivider.get(mCurrentTaskPage - mStartPage - 1);
             int oldIndexEnd = mPageDivider.get(mCurrentTaskPage - mStartPage);
+            // Snapshot of the refreshed page only: every other row is
+            // untouched, so diffing just this window keeps the main-thread
+            // cost at one page however far the list was scrolled.
+            ArrayList<E> oldWindow = new ArrayList<>(mData.subList(oldIndexStart, oldIndexEnd));
             List<E> toRemove = mData.subList(oldIndexStart, oldIndexEnd);
             onRemoveData(toRemove);
             toRemove.clear();
@@ -641,7 +658,7 @@ public class ContentLayout extends FrameLayout {
             int newIndexEnd = oldIndexStart + data.size();
             mData.addAll(oldIndexStart, data);
             onAddData(data);
-            dispatchDiffUpdates(oldSnapshot);
+            dispatchWindowDiff(oldWindow, new ArrayList<>(mData.subList(oldIndexStart, newIndexEnd)), oldIndexStart);
 
             for (int i = mCurrentTaskPage - mStartPage, n = mPageDivider.size(); i < n; i++) {
                 mPageDivider.set(i, mPageDivider.get(i) - oldIndexEnd + newIndexEnd);
