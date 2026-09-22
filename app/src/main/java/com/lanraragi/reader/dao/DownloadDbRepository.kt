@@ -418,6 +418,10 @@ class DownloadDbRepository(
         }
     }
 
+    /** Every stored `arcid → dirname` pointer. */
+    suspend fun getAllDownloadDirnamePointers(): Map<String, String> =
+        downloadDao.loadAllDirnames().mapNotNull { row -> row.dirname?.let { row.arcid to it } }.toMap()
+
     /** Every stored dirname, for allocating a name no other arcid claims. */
     suspend fun getAllDownloadDirnames(): List<String> = downloadDao.loadAllDirnameValues()
 
