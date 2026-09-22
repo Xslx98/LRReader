@@ -119,6 +119,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         const val DATA_IN_EVENT = "data_in_event"
         const val KEY_PAGE = "page"
         const val KEY_CURRENT_INDEX = "current_index"
+        const val KEY_PENDING_SAVE_FILE = "pending_save_file"
 
         // NotifyTask keys
         private const val NOTIFY_KEY_LAYOUT_MODE = 0
@@ -333,6 +334,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         mTankSeed = savedInstanceState.getParcelable(KEY_TANK_SEED)
         mPage = savedInstanceState.getInt(KEY_PAGE, -1)
         mSliderController.currentIndex = savedInstanceState.getInt(KEY_CURRENT_INDEX)
+        mImageOps.pendingSaveFileName = savedInstanceState.getString(KEY_PENDING_SAVE_FILE)
         buildProvider()
     }
 
@@ -345,6 +347,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         mTankSeed?.let { outState.putParcelable(KEY_TANK_SEED, it) }
         outState.putInt(KEY_PAGE, mPage)
         outState.putInt(KEY_CURRENT_INDEX, mSliderController.currentIndex)
+        outState.putString(KEY_PENDING_SAVE_FILE, mImageOps.pendingSaveFileName)
     }
 
     /**

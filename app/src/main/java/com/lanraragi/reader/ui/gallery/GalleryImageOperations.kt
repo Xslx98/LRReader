@@ -16,6 +16,7 @@
 
 package com.lanraragi.reader.ui.gallery
 
+import android.provider.DocumentsContract
 import android.app.Activity
 import android.content.ContentValues
 import android.content.Intent
@@ -85,7 +86,13 @@ class GalleryImageOperations(private val mActivity: Activity) {
     /** Null (local directory session without server context) hides the cover entry. */
     var coverTarget: CoverTarget? = null
 
-    private var mCacheFileName: String? = null
+    /**
+     * Cache file awaiting the "Save to" picker's result. The host Activity
+     * saves and restores it: after a recreation while the picker is open
+     * the result arrives in a new instance, which otherwise opened
+     * `<cache>/null` and left an empty file at the chosen location.
+     */
+    var pendingSaveFileName: String? = null
 
     // --- Share ---
 
@@ -261,7 +268,7 @@ class GalleryImageOperations(private val mActivity: Activity) {
                 Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
                 return@launch
             }
-            mCacheFileName = filename
+            pendingSaveFileName = filename
             val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE)
                 type = "image/*"
@@ -285,13 +292,15 @@ class GalleryImageOperations(private val mActivity: Activity) {
         }
         val resultData = result.data ?: return
         val uri = resultData.data ?: return
-        val filepath = mActivity.cacheDir.toString() + "/" + mCacheFileName
-        val cacheFile = File(filepath)
+        val cacheName = pendingSaveFileName
+        pendingSaveFileName = null
+        val cacheFile = cacheName?.let { File(mActivity.cacheDir, it) }
 
         (mActivity as ComponentActivity).lifecycleScope.launch {
             val success = withContext(Dispatchers.IO) {
                 var ok = false
                 try {
+                    if (cacheFile == null) throw java.io.FileNotFoundException("No pending save")
                     FileInputStream(cacheFile).use { input ->
                         mActivity.contentResolver.openOutputStream(uri)?.use { output ->
                             IOUtils.copy(input, output)
@@ -304,8 +313,13 @@ class GalleryImageOperations(private val mActivity: Activity) {
                     // the CEH-less lifecycleScope coroutine.
                     Log.e(TAG, "Failed to copy image to chosen location", e)
                 }
-                if (!cacheFile.delete()) {
+                if (cacheFile != null && !cacheFile.delete()) {
                     cacheFile.deleteOnExit()
+                }
+                if (!ok) {
+                    // The picker already created the document; don't leave
+                    // an empty file behind in the user's folder.
+                    runCatching { DocumentsContract.deleteDocument(mActivity.contentResolver, uri) }
                 }
                 ok
             }
