@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Tankoubon detail page (spec 2026-09-22 §4): the same composition as
+  scene_gallery_detail (header / info / actions / tags / previews) so a
+  tank reads like a single archive. The archive-only tankoubons include is
+  omitted; a members section is inserted between tags and previews.
+-->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ScrollView
+        android:id="@+id/scroll_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scrollbars="none"
+        android:overScrollMode="never">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <include
+                    layout="@layout/gallery_detail_progress"/>
+
+                <LinearLayout
+                    android:id="@+id/below_header"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:divider="?attr/galleryDetailDivider"
+                    android:showDividers="middle"
+                    android:dividerPadding="@dimen/keyline_margin">
+
+                    <!-- Offline banner: shown when the page was built from the
+                         downloaded-tank snapshot; editing is disabled then. -->
+                    <LinearLayout
+                        android:id="@+id/source_error_banner"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:visibility="gone"
+                        android:padding="@dimen/keyline_margin"
+                        android:background="?attr/galleryDetailHeaderBackgroundColor">
+
+                        <TextView
+                            android:id="@+id/source_error_text"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:textColor="@android:color/white"
+                            style="@style/TextAppearance.AppCompat.Body2"/>
+
+                        <Button
+                            android:id="@+id/source_error_retry"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/lrr_retry"
+                            android:textColor="@android:color/white"
+                            style="?attr/borderlessButtonStyle"/>
+                    </LinearLayout>
+
+                    <include
+                        layout="@layout/gallery_detail_header"/>
+
+                    <include
+                        layout="@layout/gallery_detail_info"/>
+
+                    <include
+                        layout="@layout/gallery_detail_actions"/>
+
+                    <include
+                        layout="@layout/gallery_detail_tags"/>
+
+                    <include
+                        layout="@layout/gallery_detail_previews"/>
+
+                </LinearLayout>
+
+            </FrameLayout>
+        </LinearLayout>
+
+    </ScrollView>
+
+    <com.lanraragi.framework.widget.ProgressView
+        android:id="@+id/progress_view"
+        style="@style/ProgressView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"/>
+
+    <TextView
+        android:id="@+id/tip"
+        android:layout_width="228dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center_horizontal"
+        android:drawablePadding="8dp"
+        style="@style/TextAppearance.AppCompat.Medium"/>
+
+</FrameLayout>

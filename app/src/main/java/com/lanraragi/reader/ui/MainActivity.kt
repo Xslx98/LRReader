@@ -69,6 +69,7 @@ import com.lanraragi.reader.ui.scene.gallery.list.QuickSearchScene
 import com.lanraragi.reader.ui.scene.SecurityScene
 import com.lanraragi.reader.ui.scene.SolidScene
 import com.lanraragi.reader.ui.scene.TankoubonDetailScene
+import com.lanraragi.reader.ui.scene.tankdetail.TankDetailScene
 import com.lanraragi.reader.ui.scene.TankoubonsScene
 import com.lanraragi.reader.client.LRRUrlOpener
 import com.lanraragi.reader.widget.AppDrawerLayout
@@ -126,6 +127,7 @@ class MainActivity : StageActivity(),
             registerLaunchMode(LRRCategoriesScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
             registerLaunchMode(TankoubonsScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
             registerLaunchMode(TankoubonDetailScene::class.java, SceneFragment.LAUNCH_MODE_STANDARD)
+            registerLaunchMode(TankDetailScene::class.java, SceneFragment.LAUNCH_MODE_STANDARD)
             registerLaunchMode(HistoryScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TOP)
             registerLaunchMode(
                 com.lanraragi.reader.ui.scene.stats.ReadingStatsScene::class.java,
@@ -145,6 +147,7 @@ class MainActivity : StageActivity(),
             SceneFactory.register(LRRCategoriesScene::class.java.name) { LRRCategoriesScene() }
             SceneFactory.register(TankoubonsScene::class.java.name) { TankoubonsScene() }
             SceneFactory.register(TankoubonDetailScene::class.java.name) { TankoubonDetailScene() }
+            SceneFactory.register(TankDetailScene::class.java.name) { TankDetailScene() }
             SceneFactory.register(HistoryScene::class.java.name) { HistoryScene() }
             SceneFactory.register(
                 com.lanraragi.reader.ui.scene.stats.ReadingStatsScene::class.java.name
