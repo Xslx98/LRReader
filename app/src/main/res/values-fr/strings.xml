@@ -337,6 +337,9 @@
     <string name="tank_page_divider">Chapitre %1$d · %2$s</string>
     <string name="tank_view_detail">Détails</string>
     <string name="tank_detail_pages">%1$d/%2$dP</string>
+    <string name="tank_tag_sync_failed">Échec de la fusion des tags de « %1$s »</string>
+    <string name="tank_reset_tags">Réinitialiser à l’union des membres</string>
+    <string name="tank_reset_tags_confirm">Remplacer les tags du tankoubon par l’union des tags de ses membres ? Les tags saisis à la main sont perdus ; la note est conservée.</string>
     <string name="tank_delete_confirm">Supprimer ce tankoubon ? Les archives qu\'il contient ne seront pas supprimées, mais le résumé, les tags supplémentaires et la progression de lecture du tankoubon seront perdus.</string>
     <string name="tank_locked">Tankoubon verrouillé, réessayez plus tard</string>
     <string name="tank_op_done">Terminé</string>

@@ -338,6 +338,9 @@
     <string name="tank_page_divider">Capítulo %1$d · %2$s</string>
     <string name="tank_view_detail">Detalles</string>
     <string name="tank_detail_pages">%1$d/%2$dP</string>
+    <string name="tank_tag_sync_failed">Error al fusionar etiquetas de “%1$s”</string>
+    <string name="tank_reset_tags">Restablecer a la unión de los miembros</string>
+    <string name="tank_reset_tags_confirm">¿Sustituir las etiquetas del tankoubon por la unión de las de sus miembros? Se pierden las etiquetas manuales; se conserva la valoración.</string>
     <string name="tank_delete_confirm">¿Eliminar este tankoubon? Los archivos que contiene no se eliminarán, pero se perderán el resumen, las etiquetas adicionales y el progreso de lectura del propio tankoubon.</string>
     <string name="tank_locked">El tankoubon está bloqueado, inténtalo más tarde</string>
     <string name="tank_op_done">Hecho</string>

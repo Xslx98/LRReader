@@ -14,6 +14,7 @@ import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRArchivePagingSource
 import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.tankoubon.TankTagSyncer
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.api.LRRClientProvider
@@ -465,6 +466,7 @@ class GalleryListViewModel : ViewModel() {
                 }
                 if (op is BatchOp.AddToTankoubon) {
                     seedTankCoverIfNeeded(op, succeeded, archives)
+                    syncTankTagsAfterAdd(op, succeeded, archives)
                 }
                 _batchResultEvent.tryEmit(
                     BatchResult(op = op, succeeded = succeeded, failed = failed, owner = owner)
@@ -506,6 +508,33 @@ class GalleryListViewModel : ViewModel() {
             throw ce
         } catch (ignored: Exception) {
             // Cosmetic — see KDoc.
+        }
+    }
+
+    /** Tank tag materialization seam (spec 2026-09-22 §5.2 "add"); replaceable for tests. */
+    internal var tankTagSyncAfterAdd: suspend (client: okhttp3.OkHttpClient, baseUrl: String, tankId: String) -> Boolean =
+        { client, baseUrl, tankId -> TankTagSyncer.afterAdd(client, baseUrl, tankId) }
+
+    /**
+     * After the appends landed: the tank's own tags become `tank ∪ members`
+     * (best-effort, one write per batch; failures surface as the shell's
+     * Snackbar, never as a batch failure).
+     */
+    private suspend fun syncTankTagsAfterAdd(
+        op: BatchOp.AddToTankoubon,
+        succeeded: List<String>,
+        archives: List<Archive>,
+    ) {
+        val first = succeeded.firstOrNull() ?: return
+        val profileId = archives.firstOrNull { it.arcid == first }?.serverProfileId ?: return
+        try {
+            withContext(Dispatchers.IO) {
+                tankTagSyncAfterAdd(LRRClientProvider.getClient(), baseUrlResolver(profileId), op.tankId)
+            }
+        } catch (ce: CancellationException) {
+            throw ce
+        } catch (ignored: Exception) {
+            // Best-effort: the syncer already reported; the batch result stands.
         }
     }
 

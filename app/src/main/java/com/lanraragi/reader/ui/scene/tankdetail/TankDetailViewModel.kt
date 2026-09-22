@@ -19,6 +19,7 @@ import com.lanraragi.reader.download.TankGroupReconciler
 import com.lanraragi.reader.download.TankMembershipSync
 import com.lanraragi.reader.gallery.TankPageMath
 import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
+import com.lanraragi.reader.tankoubon.TankTagSyncer
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import com.lanraragi.reader.ui.scene.gallery.detail.FavoriteState
 import kotlinx.coroutines.CancellationException
@@ -196,6 +197,14 @@ class TankDetailViewModel : ViewModel() {
     /** Membership follow seam (spec 2026-09-21 §1/§3), fed after a successful online load. */
     internal var membershipSync: TankMembershipSyncFactory.Runner = TankMembershipSyncFactory.runnerSafely()
 
+    /** First-open auto-fill seam (spec 2026-09-22 §4.5): returns the written tag string, or null. */
+    internal var autoFill: suspend (OkHttpClient, String, LRRTankoubonApi.TankoubonFull) -> String? =
+        { client, url, full -> TankTagSyncer.autoFillIfNeeded(client, url, full) }
+
+    /** 「重置为成员并集」 seam (spec 2026-09-22 §5.4). */
+    internal var resetTagsOp: suspend (OkHttpClient, String, String) -> Boolean =
+        { client, url, id -> TankTagSyncer.reset(client, url, id) }
+
     /** After a delete: forget the remembered cover choice (spec 2026-09-22-tank-cover §4). */
     internal var forgetCoverChoice: (String) -> Unit = { TankCoverChoiceStore.default.remove(it) }
 
@@ -319,6 +328,28 @@ class TankDetailViewModel : ViewModel() {
     }
 
     /**
+     * 「重置为成员并集」 (spec 2026-09-22 §5.4): drop every tank tag outside
+     * the excluded namespaces and rewrite the members' union (rating kept),
+     * then reload server truth. Ignored offline; a failed write is reported
+     * by the syncer's Snackbar and the page simply reloads.
+     */
+    fun resetTags() {
+        val current = _state.value ?: return
+        val url = current.baseUrl ?: return
+        if (current.offline) return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                resetTagsOp(ServiceRegistry.networkModule.okHttpClient, url, tankId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (ignored: Exception) {
+                // Best-effort: the syncer already reported.
+            }
+            load()
+        }
+    }
+
+    /**
      * Deletes the tank server-side (never its archives): drops the
      * remembered cover choice and dissolves the downloaded-tank grouping
      * (member download rows survive as standalone downloads), then emits
@@ -350,6 +381,9 @@ class TankDetailViewModel : ViewModel() {
     private suspend fun fetchOnline(client: OkHttpClient, url: String): TankDetailState {
         val full = LRRTankoubonApi.getTankoubonFull(client, url, tankId).result
         TankoubonSupportGate.markSupported(url)
+        // First-open auto-fill (spec 2026-09-22 §4.5): a legacy tank with no
+        // tags of its own gets the members' union written once, silently.
+        val tags = autoFill(client, url, full) ?: full.tags.orEmpty()
         // Member ORDER is `archives` (the list a reorder PUTs); full_data is
         // only the metadata lookup — never trust its order. Multi-profile red
         // line: explicit source context for the mapper.
@@ -367,7 +401,7 @@ class TankDetailViewModel : ViewModel() {
             baseUrl = url,
             name = full.name,
             summary = full.summary,
-            tags = full.tags.orEmpty(),
+            tags = tags,
             members = members,
             progress = full.progress,
             offline = false,
