@@ -249,7 +249,7 @@ internal class GalleryBatchOpsHelper(
         // exited only once a tank is actually picked.
         val selected = takeSelection() ?: return
         TankoubonDialogHelper.pickTankoubon(
-            callback.activity, callback.activeProfileId()
+            callback.activity, callback.activeProfileId(), selected.map { it.title }
         ) { tank ->
             callback.viewModel.runBatch(
                 GalleryListViewModel.BatchOp.AddToTankoubon(

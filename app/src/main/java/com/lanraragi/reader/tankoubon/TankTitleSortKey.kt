@@ -29,33 +29,15 @@ data class TankTitleSortKey(
 
     companion object {
 
-        private const val UNITS = "话話回卷章集期"
-        private const val RANGE = "[-~～–—至]"
-        private val NUMERAL = "[0-9]+|[${ChineseNumeral.ALPHABET}]+"
-
-        /** 第N话 / 第N / N话, Chinese or Arabic numerals, optional range. */
-        private val CJK_EPISODE = Regex(
-            "第\\s*($NUMERAL)(?:\\s*$RANGE\\s*(?:$NUMERAL))?\\s*[$UNITS]?" +
-                "|($NUMERAL)(?:\\s*$RANGE\\s*(?:$NUMERAL))?\\s*[$UNITS]"
-        )
-
-        /** Vol 3 / Ch.03 / Chapter 3 / Ep3 / Episode 3 / #3. */
-        private val LATIN_EPISODE = Regex(
-            "(?:\\b(?:vol|volume|ch|chapter|ep|episode)\\.?\\s*|#\\s*)([0-9]+)",
-            RegexOption.IGNORE_CASE,
-        )
+        // Marker regexes live in EpisodeMarkers (shared with TankNameSuggester).
+        private val CJK_EPISODE get() = EpisodeMarkers.CJK_EPISODE
+        private val LATIN_EPISODE get() = EpisodeMarkers.LATIN_EPISODE
+        private val SUB_ORDER get() = EpisodeMarkers.SUB_ORDER
+        private const val EXTRA_MARKER = EpisodeMarkers.EXTRA_MARKER
 
         private val FIRST_NUMBER = Regex("[0-9]+")
 
-        /** 上/中/下 as a marker (bracketed / spaced / at the end / with 篇編部), 前篇/后篇. */
-        private val SUB_ORDER = Regex(
-            "(?:^|[\\s（(\\[【・·\\-—])([上中下])(?:[篇編部])?(?=$|[\\s）)\\]】・·\\-—])" +
-                "|([前后後])[篇編]"
-        )
-
         private val NATURAL_TOKEN = Regex("[0-9]+|[^0-9]+")
-
-        private const val EXTRA_MARKER = "番外"
 
         val comparator: Comparator<TankTitleSortKey> = Comparator { a, b ->
             when {
@@ -92,8 +74,7 @@ data class TankTitleSortKey(
             return LATIN_EPISODE.find(text)?.groups?.get(1)?.value?.toIntOrNull()
         }
 
-        private fun numeralValue(raw: String): Int? =
-            raw.toIntOrNull() ?: ChineseNumeral.parse(raw)
+        private fun numeralValue(raw: String): Int? = EpisodeMarkers.numeralValue(raw)
 
         private fun findSubOrder(text: String): Int {
             val m = SUB_ORDER.find(text) ?: return 0
@@ -104,22 +85,7 @@ data class TankTitleSortKey(
             }
         }
 
-        /** Fullwidth digits / letters / `＃` / `．` / space → ASCII so width never matters. */
-        private fun normalizeWidth(s: String): String = buildString(s.length) {
-            for (c in s) {
-                append(
-                    when (c) {
-                        in '０'..'９' -> '0' + (c - '０')
-                        in 'Ａ'..'Ｚ' -> 'A' + (c - 'Ａ')
-                        in 'ａ'..'ｚ' -> 'a' + (c - 'ａ')
-                        '＃' -> '#'
-                        '．' -> '.'
-                        '　' -> ' '
-                        else -> c
-                    }
-                )
-            }
-        }
+        private fun normalizeWidth(s: String): String = EpisodeMarkers.normalizeWidth(s)
 
         private fun compareNullable(a: Int?, b: Int?): Int = when {
             a == null -> 1

@@ -30,6 +30,7 @@ internal object TankDialogs {
         context: Context,
         @StringRes titleRes: Int,
         initial: String,
+        selectInitial: Boolean = false,
         onOk: (String) -> Unit,
     ) {
         val nameInput = EditText(context).apply {
@@ -37,6 +38,9 @@ internal object TankDialogs {
             setText(initial)
             isSingleLine = true
             inputType = InputType.TYPE_CLASS_TEXT
+            // A pre-filled SUGGESTION is selected whole so one keystroke replaces
+            // it; a rename keeps the caret at the end as before.
+            if (selectInitial && initial.isNotEmpty()) selectAll()
         }
         AlertDialog.Builder(context)
             .setTitle(titleRes)
