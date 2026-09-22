@@ -11,6 +11,7 @@ import com.lanraragi.reader.client.TankCoverCacheStamp
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.tankoubon.TankCategorySyncer
 import com.lanraragi.reader.client.api.archiveThumbnailUrl
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.download.TankMembershipSync
@@ -278,6 +279,9 @@ class TankoubonsViewModel : ViewModel() {
                 val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
                 val client = ServiceRegistry.networkModule.okHttpClient
 
+                // Upstream leaves the deleted id dangling in static categories
+                // (spec 2026-09-22 §6): clear it first, while the tank still exists.
+                TankCategorySyncer.onDissolve(client, serverUrl, tankId, TankCategorySyncer.nameOf(client, serverUrl, tankId))
                 LRRTankoubonApi.deleteTankoubon(client, serverUrl, tankId)
                 // Dissolve any downloaded-tank grouping; member downloads
                 // reappear standalone (files untouched).

@@ -18,6 +18,7 @@ import com.lanraragi.reader.domain.parseRatingFromTags
 import com.lanraragi.reader.download.TankGroupReconciler
 import com.lanraragi.reader.download.TankMembershipSync
 import com.lanraragi.reader.gallery.TankPageMath
+import com.lanraragi.reader.tankoubon.TankCategorySyncer
 import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
 import com.lanraragi.reader.tankoubon.TankTagSyncer
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
@@ -205,6 +206,12 @@ class TankDetailViewModel : ViewModel() {
     internal var resetTagsOp: suspend (OkHttpClient, String, String) -> Boolean =
         { client, url, id -> TankTagSyncer.reset(client, url, id) }
 
+    /** Static-category promotion seams (spec 2026-09-22 §6): reset and dissolve. */
+    internal var resetCategoriesOp: suspend (OkHttpClient, String, String, String, List<String>) -> Boolean =
+        { client, url, id, name, members -> TankCategorySyncer.reset(client, url, id, name, members) }
+    internal var categoryDissolve: suspend (OkHttpClient, String, String, String) -> Boolean =
+        { client, url, id, name -> TankCategorySyncer.onDissolve(client, url, id, name) }
+
     /** After a delete: forget the remembered cover choice (spec 2026-09-22-tank-cover §4). */
     internal var forgetCoverChoice: (String) -> Unit = { TankCoverChoiceStore.default.remove(it) }
 
@@ -339,7 +346,9 @@ class TankDetailViewModel : ViewModel() {
         if (current.offline) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                resetTagsOp(ServiceRegistry.networkModule.okHttpClient, url, tankId)
+                val client = ServiceRegistry.networkModule.okHttpClient
+                resetTagsOp(client, url, tankId)
+                resetCategoriesOp(client, url, tankId, current.name, current.memberIds)
             } catch (e: CancellationException) {
                 throw e
             } catch (ignored: Exception) {
@@ -361,7 +370,11 @@ class TankDetailViewModel : ViewModel() {
         if (current.offline) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                LRRTankoubonApi.deleteTankoubon(ServiceRegistry.networkModule.okHttpClient, url, tankId)
+                val client = ServiceRegistry.networkModule.okHttpClient
+                // Upstream leaves the deleted id dangling in static categories
+                // (spec 2026-09-22 §6): clear it first, while the tank still exists.
+                categoryDissolve(client, url, tankId, current.name)
+                LRRTankoubonApi.deleteTankoubon(client, url, tankId)
                 forgetCoverChoice(tankId)
                 dissolveDownloadGroup(tankId)
                 _events.tryEmit(Event.Deleted)
