@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene
 
+import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.AppProxySelector
@@ -189,7 +190,7 @@ class TankoubonDetailViewModelCoverTest {
         vm.applyOrder(listOf(ID_EP1, ID_EP2, ID_EXTRA), undoable = false)
 
         awaitCondition { vm.memberIds == listOf(ID_EP1, ID_EP2, ID_EXTRA) }
-        Thread.sleep(200)
+        awaitViewModelIdle(vm)
         assertTrue("no cover PUT expected, got $coverPuts", coverPuts.isEmpty())
     }
 
@@ -202,7 +203,7 @@ class TankoubonDetailViewModelCoverTest {
         vm.applyOrder(listOf(ID_EP1, ID_EP2, ID_EXTRA), undoable = false)
 
         awaitCondition { store.get(TANK) == null }
-        Thread.sleep(200)
+        awaitViewModelIdle(vm)
         assertTrue(coverPuts.isEmpty())
         assertNull(store.get(TANK))
     }

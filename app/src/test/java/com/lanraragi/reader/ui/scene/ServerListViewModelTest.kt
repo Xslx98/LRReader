@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene
 
+import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
@@ -596,8 +597,7 @@ class ServerListViewModelTest {
 
         vm.verifyActiveProfile(server.url("").toString().removeSuffix("/"))
 
-        // Wait for coroutine to complete
-        Thread.sleep(2000)
+        awaitViewModelIdle(vm)
 
         assertTrue("Should not emit any error event on success",
             events.none { it is ServerListViewModel.ServerListUiEvent.ShowToast })

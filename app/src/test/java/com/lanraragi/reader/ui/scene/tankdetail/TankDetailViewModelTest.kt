@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.tankdetail
 
+import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.AppProxySelector
@@ -306,7 +307,7 @@ class TankDetailViewModelTest {
 
         vm.resetTags()
 
-        Thread.sleep(200)
+        awaitViewModelIdle(vm)
         assertTrue(putTags.isEmpty())
     }
 
@@ -457,7 +458,7 @@ class TankDetailViewModelTest {
 
         vm.submitRating(4f)
 
-        Thread.sleep(200)
+        awaitViewModelIdle(vm)
         assertTrue(putTags.isEmpty())
     }
 
@@ -481,7 +482,7 @@ class TankDetailViewModelTest {
 
         vm.submitRating(3f)
 
-        Thread.sleep(200)
+        awaitViewModelIdle(vm)
         assertTrue(putTags.isEmpty())
         assertEquals("", vm.state.value!!.tags)
     }
@@ -535,7 +536,7 @@ class TankDetailViewModelTest {
 
         vm.deleteTank()
 
-        Thread.sleep(200)
+        awaitViewModelIdle(vm)
         assertEquals(0, deletes.get())
     }
 
