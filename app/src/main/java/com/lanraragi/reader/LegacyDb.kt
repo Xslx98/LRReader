@@ -27,13 +27,7 @@ import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.dao.*
 import com.lanraragi.reader.mapper.toArchiveJson
 import com.lanraragi.framework.util.ExceptionUtils
-import com.lanraragi.framework.lib.yorozuya.IOUtils
 import com.lanraragi.reader.domain.Archive
-
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.IOException
 
 /**
  * Unified database access layer.
@@ -316,62 +310,4 @@ object LegacyDb {
         }
         sHasOldDB = false
     }
-
-    // ═══════════════════════════════════════════════════════════
-    // EXPORT (Raw SQLite — Room not involved)
-    // ═══════════════════════════════════════════════════════════
-
-    fun exportDB(context: Context, file: File): Boolean {
-        // Reject symlinks — canonical path must match absolute path
-        val canonical = try { file.canonicalPath } catch (e: IOException) {
-            Log.w(TAG, "Resolve canonical path for export", e)
-            return false
-        }
-        val absolute = file.absolutePath
-        if (canonical != absolute) {
-            Log.e(TAG, "exportDB: symlink detected, rejected")
-            return false
-        }
-
-        // Restrict target to app-scoped external directories
-        val externalDir = context.getExternalFilesDir(null)?.canonicalPath
-        val cacheDir = context.externalCacheDir?.canonicalPath
-        if ((externalDir == null || !canonical.startsWith(externalDir)) &&
-            (cacheDir == null || !canonical.startsWith(cacheDir))) {
-            Log.e(TAG, "exportDB: target path outside app scope, rejected")
-            return false
-        }
-
-        // Flush the WAL into eh.db before the raw copy. Room journals in WAL mode, so
-        // committed transactions live in eh.db-wal until a checkpoint; a plain file copy
-        // of eh.db alone would silently omit the most recent writes from the backup.
-        try {
-            sDatabase.query("PRAGMA wal_checkpoint(TRUNCATE)", null).use { it.moveToFirst() }
-        } catch (e: Exception) {
-            // Throwable-arg Log.w survives R8's -assumenosideeffects strip;
-            // gate it so release builds dead-code-eliminate the whole call.
-            if (BuildConfig.DEBUG) {
-                Log.w(TAG, "WAL checkpoint before export failed; backup may miss recent writes", e)
-            }
-        }
-
-        val dbFile = context.getDatabasePath("eh.db")
-        if (dbFile == null || !dbFile.isFile) return false
-        var inputStream: java.io.InputStream? = null
-        var outputStream: java.io.OutputStream? = null
-        try {
-            inputStream = FileInputStream(dbFile)
-            outputStream = FileOutputStream(file)
-            IOUtils.copy(inputStream, outputStream)
-            return true
-        } catch (e: IOException) {
-            Log.e(TAG, "Failed to export DB", e)
-        } finally {
-            IOUtils.closeQuietly(inputStream)
-            IOUtils.closeQuietly(outputStream)
-        }
-        file.delete()
-        return false
-    }
-
 }
