@@ -225,7 +225,13 @@ object TankoubonDialogHelper {
         serverUrl: String,
         onChanged: (List<String>) -> Unit,
     ) {
-        (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
+        // App-scoped, not the Activity's lifecycleScope: this is a multi-step
+        // server write (membership, then tag materialization and category
+        // promotion); cutting it off on a rotation left the server
+        // half-updated. Feedback goes through the app context and the
+        // process-wide event bus; the Activity callback only runs if alive.
+        val appContext = activity.applicationContext
+        ServiceRegistry.coroutineModule.ioScope.launch {
             try {
                 val client = ServiceRegistry.networkModule.okHttpClient
                 val joined = mutableListOf<TankMembershipChangedEvent.JoinedTank>()
@@ -264,13 +270,13 @@ object TankoubonDialogHelper {
                 }
                 val newIds = tanks.indices.filter { checked[it] }.map { tanks[it].id }
                 Handler(Looper.getMainLooper()).post {
-                    Toast.makeText(activity, R.string.tank_op_done, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(appContext, R.string.tank_op_done, Toast.LENGTH_SHORT).show()
                     if (joined.isNotEmpty() || left.isNotEmpty()) {
                         AppEventBus.postTankMembershipChangedEvent(
                             TankMembershipChangedEvent(arcid, joined, left)
                         )
                     }
-                    onChanged(newIds)
+                    if (!activity.isDestroyed) onChanged(newIds)
                 }
             } catch (ce: CancellationException) {
                 throw ce
@@ -312,11 +318,15 @@ object TankoubonDialogHelper {
         TankDialogs.showNameInputDialog(
             activity, R.string.tank_create, suggestedName.orEmpty(), selectInitial = true,
         ) { name ->
-            (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
+            // App-scoped so a rotation cannot cut the create off (see
+            // applyMembershipChanges); the follow-up needs a live Activity.
+            ServiceRegistry.coroutineModule.ioScope.launch {
                 try {
                     val client = ServiceRegistry.networkModule.okHttpClient
                     val newId = LRRTankoubonApi.createTankoubon(client, serverUrl, name)
-                    Handler(Looper.getMainLooper()).post { onCreated(newId, name) }
+                    Handler(Looper.getMainLooper()).post {
+                        if (!activity.isDestroyed) onCreated(newId, name)
+                    }
                 } catch (ce: CancellationException) {
                     throw ce
                 } catch (e: Exception) {
@@ -328,14 +338,15 @@ object TankoubonDialogHelper {
 
     private fun postErrorToast(activity: Activity, serverUrl: String?, e: Exception) {
         val unsupported = serverUrl != null && TankoubonSupportGate.markFrom(serverUrl, e)
+        val appContext = activity.applicationContext
         Handler(Looper.getMainLooper()).post {
             when {
                 unsupported ->
-                    Toast.makeText(activity, R.string.tankoubons_unsupported, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(appContext, R.string.tankoubons_unsupported, Toast.LENGTH_SHORT).show()
                 e is LRRHttpException && e.code == HTTP_LOCKED ->
-                    Toast.makeText(activity, R.string.tank_locked, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(appContext, R.string.tank_locked, Toast.LENGTH_SHORT).show()
                 else ->
-                    Toast.makeText(activity, friendlyError(activity, e), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(appContext, friendlyError(appContext, e), Toast.LENGTH_SHORT).show()
             }
         }
     }
