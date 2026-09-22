@@ -2,6 +2,7 @@ package com.lanraragi.reader.ui.scene.tankdetail
 
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -21,6 +22,7 @@ import com.lanraragi.reader.client.ArchiveCoverStamps
 import com.lanraragi.reader.client.LRRCacheKeyFactory
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.domain.buildRatingEmoji
 import com.lanraragi.reader.download.DownloadState
 import com.lanraragi.reader.download.TankFillDispatcher
 import com.lanraragi.reader.gallery.TankMemberSeed
@@ -28,10 +30,13 @@ import com.lanraragi.reader.gallery.TankSeedStore
 import com.lanraragi.reader.gallery.TankSessionSeed
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.ui.scene.BaseScene
+import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.LoadState
 import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.TankDetailState
 import com.lanraragi.reader.ui.widget.bindSourceServerBadge
 import com.lanraragi.reader.util.collectFlow
+import com.lanraragi.reader.util.collectFlowWhileCreated
+import kotlin.math.ceil
 
 /**
  * Tankoubon detail page (spec 2026-09-22 §4): a tank rendered like a
@@ -144,6 +149,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener {
         mHeart = ViewUtils.`$$`(heartGroup, R.id.heart) as TextView
         mHeartOutline = ViewUtils.`$$`(heartGroup, R.id.heart_outline) as TextView
         ensureHeartDrawables()
+        setupRatingBar()
 
         // Tags and previews are bound by later steps; collapsed until then.
         ViewUtils.`$$`(belowHeader, R.id.tags).visibility = View.GONE
@@ -212,6 +218,29 @@ class TankDetailScene : BaseScene(), View.OnClickListener {
             if (state != null) bindState(state)
         }
         collectFlow(viewLifecycleOwner, viewModel.favoriteState) { bindHeart() }
+        // Rolled back already; re-render from the VM and tell the user.
+        collectFlowWhileCreated(viewLifecycleOwner, viewModel.ratingError) { message ->
+            viewModel.state.value?.let { bindRating(it.rating) }
+            ehContext?.let { Toast.makeText(it, message, Toast.LENGTH_SHORT).show() }
+        }
+    }
+
+    /**
+     * Hands a changed rating back to the launching list (same contract as
+     * the archive page: [GalleryDetailScene.KEY_ARCID] +
+     * [GalleryDetailScene.KEY_RATING_RESULT]) so the folded tank row's
+     * stars update without a refresh.
+     */
+    override fun onBackPressed() {
+        val s = viewModel.state.value
+        val initial = viewModel.initialRating
+        if (s != null && !initial.isNaN() && s.rating.coerceAtLeast(0f) != initial) {
+            val data = Bundle()
+            data.putString(GalleryDetailScene.KEY_ARCID, s.tankId)
+            data.putFloat(GalleryDetailScene.KEY_RATING_RESULT, s.rating.coerceAtLeast(0f))
+            setResult(RESULT_OK, data)
+        }
+        finish()
     }
 
     private fun showLoading() {
@@ -291,6 +320,38 @@ class TankDetailScene : BaseScene(), View.OnClickListener {
         if (binding == mCoverBinding) return
         mCoverBinding = binding
         thumb.load(key, url)
+    }
+
+    /**
+     * Interactive rating, same gesture contract as the archive page:
+     * stepSize 0.5 for smooth drag feedback, the value ceiled to whole
+     * stars on release (read on the next frame — dispatchTouchEvent runs
+     * the listener BEFORE RatingBar applies the UP coordinates), then one
+     * business entry point: [TankDetailViewModel.submitRating]. Read-only
+     * while offline.
+     */
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
+    private fun setupRatingBar() {
+        val rating = mRating ?: return
+        rating.setIsIndicator(false)
+        rating.stepSize = RATING_STEP
+        rating.onRatingBarChangeListener = RatingBar.OnRatingBarChangeListener { _, value, fromUser ->
+            if (!fromUser || viewModel.state.value == null) return@OnRatingBarChangeListener
+            mRatingText?.text = buildRatingEmoji(ceil(value).toInt())
+        }
+        rating.setOnTouchListener { _, event ->
+            val s = viewModel.state.value
+            if (s == null || s.offline) return@setOnTouchListener true
+            if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
+                rating.post {
+                    if (viewModel.state.value == null) return@post
+                    val finalRating = ceil(rating.rating).coerceIn(0f, MAX_STARS)
+                    bindRating(finalRating)
+                    viewModel.submitRating(finalRating)
+                }
+            }
+            false
+        }
     }
 
     private fun bindRating(rating: Float) {
@@ -442,5 +503,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener {
         const val KEY_PROFILE_ID = "tank_profile_id"
 
         private const val REVEAL_DURATION_MS = 300L
+        private const val RATING_STEP = 0.5f
+        private const val MAX_STARS = 5f
     }
 }
