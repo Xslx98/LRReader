@@ -3,41 +3,54 @@ package com.lanraragi.reader.settings
 import android.content.Intent
 
 /**
- * Process-wide flag that drives "re-prompt for the security pattern when the
- * app returns to the foreground", plus an optional resume intent so the user
- * can be put back where they were after unlock (e.g. reader auto-resume).
+ * Process-wide app-lock state: whether the lock has been passed in this
+ * process since the app last came to the foreground, plus an optional
+ * resume intent so the user can be put back where they were after unlock
+ * (e.g. the reader on its current page).
+ *
+ * A process starts LOCKED. That is what closes the process-death hole: a
+ * restored scene stack or an Activity launched directly by a widget,
+ * shortcut or notification finds [isLocked] true and is routed through the
+ * lock screen, instead of relying on the cold-start launch scene.
  *
  * LRReaderApplication wires a `ProcessLifecycleOwner` observer that calls
- * [onAppBackgrounded] from `ON_STOP`. BaseActivity / MainActivity read the flag
- * from `onResume` to decide whether to bounce the user back to SecurityScene.
+ * [onAppBackgrounded] from `ON_STOP`; BaseActivity / MainActivity check
+ * [isLocked] from `onCreate` and `onResume`.
  *
  * Reads/writes happen on the main thread in normal use; fields are marked
- * `@Volatile` defensively so a future caller from another thread cannot see
- * a stale value.
+ * `@Volatile` defensively.
  */
 object AppLockGate {
 
     @Volatile
-    private var relockPending: Boolean = false
+    private var unlocked: Boolean = false
 
     @Volatile
     private var resumeIntent: Intent? = null
 
-    val shouldRelock: Boolean
-        get() = relockPending
-
-    /** Called from `ProcessLifecycleOwner.ON_STOP`. Always sets the flag —
-     *  consumers gate on `SecuritySettings.hasPattern()` so we don't have to
-     *  touch EncryptedSharedPreferences from the lifecycle observer. */
-    fun onAppBackgrounded() {
-        relockPending = true
+    /**
+     * True while an app lock is set and has not been passed since the
+     * process started or the app last went to the background. With no lock
+     * set the process counts as unlocked, so setting a pattern does not lock
+     * the user out until the app next leaves the foreground.
+     */
+    fun isLocked(): Boolean {
+        if (unlocked) return false
+        if (!SecuritySettings.isLockEnabled()) {
+            unlocked = true
+            return false
+        }
+        return true
     }
 
-    /** Atomically read + clear the relock flag. */
-    fun consumeShouldRelock(): Boolean {
-        val v = relockPending
-        relockPending = false
-        return v
+    /** Called after the pattern (or fingerprint) was verified. */
+    fun markUnlocked() {
+        unlocked = true
+    }
+
+    /** Called from `ProcessLifecycleOwner.ON_STOP`. */
+    fun onAppBackgrounded() {
+        unlocked = false
     }
 
     /**
@@ -56,9 +69,18 @@ object AppLockGate {
         return v
     }
 
-    /** Drop all state. Called when the user clears their pattern, and from tests. */
+    /**
+     * Drop all state and count as unlocked. Called when the user clears
+     * their pattern (they just proved access), and from tests.
+     */
     fun reset() {
-        relockPending = false
+        unlocked = true
+        resumeIntent = null
+    }
+
+    /** Back to the fresh-process state. Tests only. */
+    internal fun resetForTesting() {
+        unlocked = false
         resumeIntent = null
     }
 }

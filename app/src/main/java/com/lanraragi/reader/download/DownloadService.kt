@@ -36,6 +36,7 @@ import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.R
+import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.util.LauncherIcon
 import com.lanraragi.framework.util.ReadableTime
@@ -561,7 +562,7 @@ class DownloadService : Service(), DownloadListener {
         }
         val total = snap?.total ?: -1
         val dlBuilder = mDownloadingBuilder ?: return
-        dlBuilder.setContentTitle(tank?.name ?: info.title)
+        dlBuilder.setContentTitle(redacted(tank?.name ?: info.title))
             .setContentText(text)
             .setContentInfo(if (total == -1 || finished == -1) null else "$finished/$total")
             .setProgress(total, finished, false)
@@ -643,8 +644,11 @@ class DownloadService : Service(), DownloadListener {
 
         val text: String
         val needStyle: Boolean
+        // With an app lock set, a single result is reported by count only,
+        // never by title (see redacted()).
+        val redact = SecuritySettings.isLockEnabled()
         if (sFinishedCount != 0 && sFailedCount == 0) {
-            if (sFinishedCount == 1) {
+            if (sFinishedCount == 1 && !redact) {
                 val firstTitle = sItemTitleArray.values.firstOrNull()
                 if (firstTitle != null) {
                     text = getString(
@@ -663,7 +667,7 @@ class DownloadService : Service(), DownloadListener {
                 needStyle = true
             }
         } else if (sFinishedCount == 0 && sFailedCount != 0) {
-            if (sFailedCount == 1) {
+            if (sFailedCount == 1 && !redact) {
                 val firstTitle = sItemTitleArray.values.firstOrNull()
                 if (firstTitle != null) {
                     text = getString(
@@ -687,7 +691,7 @@ class DownloadService : Service(), DownloadListener {
         }
 
         val style: NotificationCompat.InboxStyle?
-        if (needStyle) {
+        if (needStyle && !redact) {
             style = NotificationCompat.InboxStyle()
             style.setBigContentTitle(getString(R.string.stat_download_done_title))
             for ((arcid, fin) in sItemStateArray) {
@@ -732,7 +736,7 @@ class DownloadService : Service(), DownloadListener {
             mPausedArcids.add(info.arcid)
             ensureDownloadingBuilder()
             val dlBuilder = mDownloadingBuilder ?: return
-            dlBuilder.setContentTitle(info.title)
+            dlBuilder.setContentTitle(redacted(info.title))
                 .setContentText(getString(R.string.download_waiting_for_network))
                 .setContentInfo(null)
                 .setProgress(0, 0, true)
@@ -749,7 +753,15 @@ class DownloadService : Service(), DownloadListener {
 
     /** Notification title: the tank's name for a member, the archive's title otherwise. */
     private fun notificationTitle(info: DownloadInfo): String? =
-        mDownloadManager?.tankGroupFor(info.arcid)?.name ?: info.title
+        redacted(mDownloadManager?.tankGroupFor(info.arcid)?.name ?: info.title)
+
+    /**
+     * With an app lock set, what is being downloaded is private: titles are
+     * replaced by the generic service name everywhere they would show (the
+     * shade, the lock screen, the done summary).
+     */
+    private fun redacted(title: String?): String? =
+        if (SecuritySettings.isLockEnabled()) getString(R.string.download_service) else title
 
     /** Whole-tank progress over the members' rows + live snapshots (main thread). */
     private fun tankProgress(tank: TankGroupIndex.Ref): ProgressSnapshot? {
@@ -923,7 +935,7 @@ class DownloadService : Service(), DownloadListener {
 
         // Intent targets — string constants to avoid importing UI layer classes.
         // Values must match the actual constants in the respective UI classes.
-        private val TARGET_ACTIVITY: String = com.lanraragi.reader.ui.MainActivity::class.java.name
+        private const val TARGET_ACTIVITY: String = com.lanraragi.reader.ui.MainActivity.INTERNAL_SCENE_ENTRY
         private const val ACTION_START_SCENE = "start_scene"
         private const val KEY_SCENE_NAME = "stage_activity_scene_name"
         private const val KEY_SCENE_ARGS = "stage_activity_scene_args"

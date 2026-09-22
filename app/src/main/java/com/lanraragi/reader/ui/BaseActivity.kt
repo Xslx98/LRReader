@@ -54,6 +54,15 @@ abstract class BaseActivity : AppCompatActivity() {
         setTheme(getThemeResId(AppearanceSettings.getTheme()))
         super.onCreate(savedInstanceState)
 
+        // Process-level app lock: an Activity created while the app is
+        // locked (restored after process death, or launched directly by a
+        // widget / shortcut / notification) never shows its content; it
+        // hands off to the lock screen and finishes. Subclasses must return
+        // early from onCreate when isFinishing.
+        if (!hostsLockScreen() && AppLockGate.isLocked()) {
+            redirectToLockScreen()
+        }
+
         // Analytics stub (Firebase removed)
         @Suppress("UNUSED_EXPRESSION")
         Analytics.isEnabled
@@ -70,41 +79,51 @@ abstract class BaseActivity : AppCompatActivity() {
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
+        // With an app lock set, the recents thumbnail must not show the last
+        // screen. Unlike FLAG_SECURE this keeps screenshots working.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            setRecentsScreenshotEnabled(!SecuritySettings.isLockEnabled())
+        }
         onForegroundLockCheck()
     }
 
+
     /**
-     * Called from [onResume] after the secure-flag check. Default behavior:
-     * surface MainActivity (the SecurityScene host) so it can re-prompt the
-     * pattern. MainActivity is declared `singleTask` in the manifest, so
-     * `FLAG_ACTIVITY_CLEAR_TOP` correctly handles both topologies:
-     *   - this activity sits above MainActivity in the same task → the
-     *     intermediate activities (including this one) are popped;
-     *   - this activity is the root of its own task (e.g. GalleryActivity
-     *     launched via Samsung S-Pen `REMOTE_ACTION` intent-filter) →
-     *     MainActivity's existing task is brought to foreground, or a fresh
-     *     MainActivity task is created.
+     * True for the Activity that hosts the lock screen itself (MainActivity).
+     * Every other Activity is redirected there while the app is locked.
+     */
+    protected open fun hostsLockScreen(): Boolean = false
+
+    /**
+     * The intent to relaunch once the lock is passed, or null to land on
+     * MainActivity's current scene (GalleryActivity returns itself on its
+     * current page).
+     */
+    protected open fun lockResumeIntent(): Intent? = null
+
+    /**
+     * Called from [onResume] after the secure-flag check: while the app is
+     * locked, surface MainActivity (the lock-screen host). MainActivity is
+     * `singleTask`, so `FLAG_ACTIVITY_CLEAR_TOP` handles both topologies —
+     * this activity above MainActivity in the same task (popped), or the
+     * root of its own task (MainActivity's task is brought forward).
      *
-     * MainActivity overrides this to push SecurityScene directly instead of
-     * launching itself.
+     * MainActivity overrides this to push SecurityScene directly.
      *
      * Subclasses that override [onResume] and run additional work after
      * `super.onResume()` should bail out via `if (isFinishing) return`.
      */
     protected open fun onForegroundLockCheck() {
-        if (!AppLockGate.shouldRelock) return
-        if (!SecuritySettings.hasPattern()) {
-            // Pattern was removed while we were backgrounded — drop the
-            // stale flag so it can't fire spuriously later.
-            AppLockGate.consumeShouldRelock()
-            return
-        }
-        // Leave the flag set: MainActivity's own onResume will consume it and
-        // push SecurityScene. Routing through MainActivity guarantees the
-        // lock prompt always appears even when this activity is the task root.
-        val intent = Intent(this, MainActivity::class.java)
-            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        startActivity(intent)
+        if (!AppLockGate.isLocked()) return
+        redirectToLockScreen()
+    }
+
+    private fun redirectToLockScreen() {
+        lockResumeIntent()?.let { AppLockGate.stashResumeIntent(it) }
+        startActivity(
+            Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        )
+        finish()
     }
 
     override fun attachBaseContext(newBase: Context) {

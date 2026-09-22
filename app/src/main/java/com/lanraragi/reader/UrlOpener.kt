@@ -50,7 +50,7 @@ object UrlOpener {
         if (ehUrl) {
             val announcer = LRRUrlOpener.parseUrl(url)
             if (announcer != null) {
-                val intent = Intent(context, MainActivity::class.java).apply {
+                val intent = MainActivity.internalSceneIntent(context).apply {
                     action = StageActivity.ACTION_START_SCENE
                     putExtra(StageActivity.KEY_SCENE_NAME, announcer.clazz.name)
                     putExtra(StageActivity.KEY_SCENE_ARGS, announcer.args)

@@ -7,6 +7,7 @@ import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import com.lanraragi.reader.R
+import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.HistoryRepository
 import com.lanraragi.reader.gallery.ReadingSessionEnd
@@ -65,7 +66,9 @@ object ContinueReadingShortcut : ReadingSessionEvents.Listener {
         profileId: Long,
     ) {
         val archive = historyRepository.getArchiveSnapshot(arcid, profileId) ?: return
-        val title = archive.title.ifBlank { context.getString(R.string.shortcut_continue_reading) }
+        // With an app lock set the launcher must not reveal what is being read.
+        val title = archive.title.takeUnless { SecuritySettings.isLockEnabled() || it.isBlank() }
+            ?: context.getString(R.string.shortcut_continue_reading)
         val intent = Intent(context, MainActivity::class.java).apply {
             action = ACTION_CONTINUE_READING
             putExtra(KEY_ARCID, arcid)
@@ -80,6 +83,15 @@ object ContinueReadingShortcut : ReadingSessionEvents.Listener {
         // pushDynamicShortcut replaces the same-id shortcut and respects the
         // launcher count limit + background rate limit.
         ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
+    }
+
+    /**
+     * Re-publish the current shortcut, e.g. after the app lock was switched
+     * on or off, so its label matches the redaction rule.
+     */
+    suspend fun refresh(context: Context, historyRepository: HistoryRepository) {
+        val (arcid, profileId) = currentTarget(context) ?: return
+        publish(context, historyRepository, arcid, profileId)
     }
 
     /** (arcid, profileId) the published shortcut deep-links to, or null when absent. */

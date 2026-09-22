@@ -16,9 +16,6 @@
 
 package com.lanraragi.reader.ui.scene
 
-import android.content.Context
-import android.hardware.Sensor
-import android.hardware.SensorManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -39,14 +36,14 @@ import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.ui.scene.SecurityViewModel.SecurityUiEvent
 import com.lanraragi.reader.util.collectFlow
-import com.lanraragi.framework.hardware.ShakeDetector
 import com.lanraragi.framework.widget.lockpattern.LockPatternUtils
 import com.lanraragi.framework.widget.lockpattern.LockPatternView
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
-import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
+import com.lanraragi.reader.LRReaderApplication
+import com.lanraragi.reader.client.api.LRRAuthManager
 
 class SecurityScene : SolidScene(),
-    LockPatternView.OnPatternListener, ShakeDetector.OnShakeListener {
+    LockPatternView.OnPatternListener {
 
     companion object {
         private const val TAG = "SecurityScene"
@@ -54,7 +51,6 @@ class SecurityScene : SolidScene(),
         private const val SUCCESS_DELAY_MILLIS = 100L
         private const val LOCKOUT_UPDATE_INTERVAL_MS = 1000L
 
-        private const val KEY_RETRY_TIMES = "retry_times"
 
         /**
          * If true, this scene was pushed by the foreground re-lock flow
@@ -70,18 +66,19 @@ class SecurityScene : SolidScene(),
 
     private fun dismissAfterUnlock() {
         if (ehContext == null || !isAdded) return
-        if (isRelockMode) {
-            // Capture context + resume intent BEFORE finishing — finish()
-            // detaches this fragment so ehContext may turn null right after.
-            val ctx = ehContext
-            val resumeIntent = AppLockGate.consumeResumeIntent()
-            finish()
-            if (ctx != null && resumeIntent != null) {
-                ctx.startActivity(resumeIntent)
-            }
-        } else {
+        AppLockGate.markUnlocked()
+        // Capture context + resume intent BEFORE finishing — finish()
+        // detaches this fragment so ehContext may turn null right after.
+        val ctx = ehContext
+        val resumeIntent = AppLockGate.consumeResumeIntent()
+        if (!isRelockMode) {
             startSceneForCheckStep(CHECK_STEP_SECURITY, arguments)
-            finish()
+        }
+        finish()
+        // An Activity redirected here while locked (reader restored after
+        // process death, continue-reading widget) is reopened.
+        if (ctx != null && resumeIntent != null) {
+            ctx.startActivity(resumeIntent)
         }
     }
 
@@ -91,9 +88,6 @@ class SecurityScene : SolidScene(),
     private lateinit var mFingerprintIcon: ImageView
     private var mLockoutText: TextView? = null
 
-    private var mSensorManager: SensorManager? = null
-    private var mAccelerometer: Sensor? = null
-    private var mShakeDetector: ShakeDetector? = null
     private var mBiometricPrompt: BiometricPrompt? = null
 
     private val mHandler = Handler(Looper.getMainLooper())
@@ -109,35 +103,23 @@ class SecurityScene : SolidScene(),
 
     override fun needShowLeftDrawer(): Boolean = false
 
+    /**
+     * Back never dismisses the lock screen (the default finish() revealed
+     * the scene underneath): it sends the whole app to the background, like
+     * the system lock screen. The prompt is still there on return.
+     */
+    override fun onBackPressed() {
+        activity?.moveTaskToBack(true)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         viewModel = ViewModelProvider(requireActivity())[SecurityViewModel::class.java]
-
-        val context = ehContext ?: return
-        val sensorMgr = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
-        mSensorManager = sensorMgr
-        if (sensorMgr != null) {
-            val accelerometer = sensorMgr.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-            mAccelerometer = accelerometer
-            if (accelerometer != null) {
-                val detector = ShakeDetector()
-                detector.setOnShakeListener(this)
-                mShakeDetector = detector
-            }
-        }
-
-        if (savedInstanceState != null) {
-            viewModel.restoreRetryTimes(savedInstanceState.getInt(KEY_RETRY_TIMES))
-        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-
-        mSensorManager = null
-        mAccelerometer = null
-        mShakeDetector = null
 
         // If a re-lock prompt is being torn down without a successful unlock
         // (user pressed back, scene replaced, etc.), drop the stashed reader
@@ -158,12 +140,7 @@ class SecurityScene : SolidScene(),
     override fun onResume() {
         super.onResume()
 
-        val shakeDetector = mShakeDetector
-        if (shakeDetector != null) {
-            mSensorManager?.registerListener(shakeDetector, mAccelerometer, SensorManager.SENSOR_DELAY_UI)
-        }
-
-        if (isFingerprintAuthAvailable()) {
+        if (secureStorageAvailable && isFingerprintAuthAvailable()) {
             val promptInfo = BiometricPrompt.PromptInfo.Builder()
                 .setTitle(getString(R.string.settings_privacy_pattern_protection_title))
                 .setNegativeButtonText(getString(android.R.string.cancel))
@@ -183,17 +160,8 @@ class SecurityScene : SolidScene(),
     override fun onPause() {
         super.onPause()
 
-        val shakeDetector = mShakeDetector
-        if (shakeDetector != null) {
-            mSensorManager?.unregisterListener(shakeDetector)
-        }
         mBiometricPrompt?.cancelAuthentication()
         mHandler.removeCallbacks(mLockoutUpdateRunnable)
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putInt(KEY_RETRY_TIMES, viewModel.retryTimes.value)
     }
 
     override fun onCreateView2(
@@ -242,7 +210,58 @@ class SecurityScene : SolidScene(),
             handleUiEvent(event)
         }
 
+        // Fail closed: with the secure store unreadable the pattern cannot be
+        // checked, but the app stays locked. Offer a retry or a reset.
+        secureStorageAvailable = LRRAuthManager.isSecureStorageAvailable()
+        if (!secureStorageAvailable) {
+            patternView.isEnabled = false
+            showStorageUnavailableDialog()
+        }
+
         return view
+    }
+
+    private var secureStorageAvailable = true
+
+    private fun showStorageUnavailableDialog() {
+        val ctx = ehContext ?: return
+        AlertDialog.Builder(ctx)
+            .setTitle(R.string.lrr_keystore_failed_title)
+            .setMessage(R.string.security_storage_unavailable_message)
+            .setCancelable(false)
+            .setPositiveButton(R.string.security_storage_retry) { _, _ ->
+                // A fresh process re-opens the keystore; a transient failure
+                // (system update, biometric re-enrolment) often clears.
+                (ctx.applicationContext as LRReaderApplication).restart()
+            }
+            .setNegativeButton(R.string.security_reset_app_lock) { _, _ -> confirmResetAppLock() }
+            .show()
+    }
+
+    private fun showPatternUnverifiableDialog() {
+        mPatternView?.isEnabled = false
+        val ctx = ehContext ?: return
+        AlertDialog.Builder(ctx)
+            .setMessage(R.string.security_pattern_unverifiable_message)
+            .setCancelable(false)
+            .setPositiveButton(R.string.security_reset_app_lock) { _, _ ->
+                confirmResetAppLock(onCancel = ::showPatternUnverifiableDialog)
+            }
+            .show()
+    }
+
+    private fun confirmResetAppLock(onCancel: () -> Unit = ::showStorageUnavailableDialog) {
+        val ctx = ehContext ?: return
+        AlertDialog.Builder(ctx)
+            .setMessage(R.string.security_reset_app_lock_confirm)
+            .setCancelable(false)
+            .setPositiveButton(R.string.security_reset_app_lock) { _, _ ->
+                LRRAuthManager.resetAppLockAndCredentials(ctx)
+                AppLockGate.reset()
+                (ctx.applicationContext as LRReaderApplication).restart()
+            }
+            .setNegativeButton(android.R.string.cancel) { _, _ -> onCancel() }
+            .show()
     }
 
     override fun onDestroyView() {
@@ -298,19 +317,18 @@ class SecurityScene : SolidScene(),
                 }
             }
 
-            is SecurityUiEvent.RetriesExhausted -> {
-                val patternView = mPatternView ?: return
-                patternView.setDisplayMode(LockPatternView.DisplayMode.Wrong)
-                updateLockoutUi()
-                if (viewModel.lockoutState.value.isLockedOut) {
-                    mHandler.postDelayed(mLockoutUpdateRunnable, LOCKOUT_UPDATE_INTERVAL_MS)
-                }
-                finish()
-            }
-
             is SecurityUiEvent.NeedBiometricVerification -> {
                 verifyWithBiometric(event.pattern)
             }
+
+            is SecurityUiEvent.VerifiedAfterFingerprintChange -> {
+                ehContext?.let {
+                    Toast.makeText(it, R.string.security_fingerprint_changed, Toast.LENGTH_LONG).show()
+                }
+                dismissAfterUnlock()
+            }
+
+            is SecurityUiEvent.PatternUnverifiable -> showPatternUnverifiableDialog()
         }
     }
 
@@ -380,32 +398,6 @@ class SecurityScene : SolidScene(),
         } else {
             mPatternView?.isEnabled = true
             mLockoutText?.visibility = View.GONE
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // Shake detector
-    // -------------------------------------------------------------------------
-
-    override fun onShake(count: Int) {
-        if (count == 10) {
-            if (activity2 == null) return
-            try {
-                SecuritySettings.setPattern("")
-            } catch (e: LRRSecureStorageUnavailableException) {
-                val ctx = ehContext ?: return
-                AlertDialog.Builder(ctx)
-                    .setTitle(R.string.lrr_keystore_failed_title)
-                    .setMessage(R.string.lrr_secure_storage_write_failed)
-                    .setPositiveButton(android.R.string.ok, null)
-                    .show()
-                return
-            }
-            // Pattern just cleared — drop any pending re-lock state so the
-            // user isn't bounced back to a now-impossible lock prompt next
-            // time they background the app.
-            AppLockGate.reset()
-            dismissAfterUnlock()
         }
     }
 

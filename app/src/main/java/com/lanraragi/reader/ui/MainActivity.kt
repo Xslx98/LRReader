@@ -21,6 +21,7 @@ import android.util.Log
 import com.lanraragi.reader.appwidget.ContinueReadingWidget
 import android.content.Context
 import android.content.Intent
+import androidx.annotation.VisibleForTesting
 import android.net.ConnectivityManager
 import android.os.Bundle
 import android.os.Handler
@@ -104,6 +105,34 @@ class MainActivity : StageActivity(),
     NavigationView.OnNavigationItemSelectedListener, DrawerLayout.DrawerListener {
 
     companion object {
+        /**
+         * Non-exported alias of MainActivity (see the manifest). In-app
+         * start_scene intents (notifications, URL opener) target it, so
+         * MainActivity can tell them from intents sent by other apps.
+         */
+        const val INTERNAL_SCENE_ENTRY = "com.lanraragi.reader.ui.InternalSceneEntry"
+
+        /**
+         * Scenes another app may open through the exported MainActivity:
+         * only what notifications posted by older versions still target.
+         */
+        private val EXTERNAL_SCENE_ALLOWLIST = setOf(DownloadsScene::class.java.name)
+
+        @VisibleForTesting
+        internal fun isSceneIntentAccepted(
+            componentClass: String?,
+            clazzName: String,
+            isRegistered: (String) -> Boolean,
+        ): Boolean {
+            if (!isRegistered(clazzName)) return false
+            return componentClass == INTERNAL_SCENE_ENTRY || clazzName in EXTERNAL_SCENE_ALLOWLIST
+        }
+
+        /** An intent for [INTERNAL_SCENE_ENTRY]. */
+        @JvmStatic
+        fun internalSceneIntent(context: Context): Intent =
+            Intent().setClassName(context.packageName, INTERNAL_SCENE_ENTRY)
+
         private const val TAG = "MainActivity"
         private const val KEY_NAV_CHECKED_ITEM = "nav_checked_item"
 
@@ -188,9 +217,9 @@ class MainActivity : StageActivity(),
     override fun getContainerViewId(): Int = R.id.fragment_container
 
     override fun getLaunchAnnouncer(): Announcer {
-        return if (SecuritySettings.hasPattern()) {
+        return if (SecuritySettings.isLockEnabled()) {
             Announcer(SecurityScene::class.java)
-        } else if (!LRRAuthManager.isConfigured()) {
+        } else if (!LRRAuthManager.isConfiguredFast()) {
             // LANraragi: show server config if not yet configured
             Announcer(ServerConfigScene::class.java)
         } else {
@@ -203,12 +232,12 @@ class MainActivity : StageActivity(),
     // LANraragi: simplified -- only security gate and server config gate remain
     private fun processAnnouncer(announcer: Announcer): Announcer {
         if (sceneCount == 0) {
-            if (SecuritySettings.hasPattern()) {
+            if (SecuritySettings.isLockEnabled()) {
                 val newArgs = Bundle()
                 newArgs.putString(SolidScene.KEY_TARGET_SCENE, announcer.clazz.name)
                 newArgs.putBundle(SolidScene.KEY_TARGET_ARGS, announcer.args)
                 return Announcer(SecurityScene::class.java).setArgs(newArgs)
-            } else if (!LRRAuthManager.isConfigured()) {
+            } else if (!LRRAuthManager.isConfiguredFast()) {
                 val newArgs = Bundle()
                 newArgs.putString(SolidScene.KEY_TARGET_SCENE, announcer.clazz.name)
                 newArgs.putBundle(SolidScene.KEY_TARGET_ARGS, announcer.args)
@@ -485,6 +514,9 @@ class MainActivity : StageActivity(),
             }
         } else {
             onRestore(savedState)
+            // A scene stack restored after process death must not show
+            // before the lock: push the lock screen over it right away.
+            onForegroundLockCheck()
         }
         TagTranslationDatabase.update(this)
 
@@ -853,15 +885,23 @@ class MainActivity : StageActivity(),
      * successful unlock just pops it back to the previous scene without
      * resetting navigation.
      */
+    override fun hostsLockScreen(): Boolean = true
+
+    /**
+     * start_scene is only honoured for registered scenes, and — when it did
+     * not arrive through the non-exported [INTERNAL_SCENE_ENTRY] alias, i.e.
+     * possibly from another app — only for [EXTERNAL_SCENE_ALLOWLIST].
+     */
+    override fun acceptSceneIntent(intent: Intent, clazzName: String): Boolean =
+        isSceneIntentAccepted(intent.component?.className, clazzName, SceneFactory::isRegistered)
+
     override fun onForegroundLockCheck() {
-        if (!AppLockGate.consumeShouldRelock()) return
-        // Always consume above so a removed pattern doesn't leave the flag set
-        // forever. Push SecurityScene only if a pattern is still configured.
-        if (!SecuritySettings.hasPattern()) return
-        // Skip if SecurityScene is already on top — avoids stacking a
-        // duplicate when the user backgrounds the lock prompt itself.
-        val top = topSceneClass
-        if (top != null && SecurityScene::class.java.isAssignableFrom(top)) return
+        if (!AppLockGate.isLocked()) return
+        // Skip if SecurityScene is already on top (the cold-start launch
+        // scene, or the user backgrounded the lock prompt itself), and while
+        // no scene exists yet (the launch announcer is the lock screen).
+        val top = topSceneClass ?: return
+        if (SecurityScene::class.java.isAssignableFrom(top)) return
         val args = Bundle().apply {
             putBoolean(SecurityScene.KEY_RELOCK_MODE, true)
         }

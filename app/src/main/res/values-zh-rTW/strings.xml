@@ -855,6 +855,12 @@
     <string name="lrr_empty_namespace">分類名不能為空</string>
     <string name="lrr_keystore_failed_title">憑證儲存不可用</string>
     <string name="lrr_keystore_failed_message">裝置金鑰庫不可用，無法載入 API Key。請重新輸入伺服器憑證。</string>
+    <string name="security_storage_unavailable_message">裝置的安全儲存空間暫時無法使用，無法驗證應用程式鎖。可以重試，或重設應用程式鎖：這會清除圖案和所有已儲存的伺服器 API Key，書庫和下載不受影響。</string>
+    <string name="security_storage_retry">重試</string>
+    <string name="security_reset_app_lock">重設應用程式鎖</string>
+    <string name="security_reset_app_lock_confirm">重設應用程式鎖並清除所有已儲存的 API Key？之後需要重新輸入伺服器憑證。</string>
+    <string name="security_fingerprint_changed">裝置的指紋已變更，指紋解鎖已關閉。可在隱私設定中重新開啟。</string>
+    <string name="security_pattern_unverifiable_message">裝置的指紋已變更，而這個圖案的儲存方式只能用舊的指紋金鑰驗證。請重設應用程式鎖以繼續：這會清除圖案和所有已儲存的伺服器 API Key，書庫和下載不受影響。</string>
     <string name="lrr_boot_load_failed_title">啟動錯誤</string>
     <string name="lrr_boot_load_failed_message">啟動時無法載入已儲存的伺服器設定檔。目前以無設定檔狀態執行，您可能需要重新設定或重新安裝。\n\n詳細資訊：%1$s</string>
     <string name="lrr_boot_load_failed_retry">重試</string>
