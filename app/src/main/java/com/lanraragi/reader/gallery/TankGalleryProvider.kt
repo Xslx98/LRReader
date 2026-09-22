@@ -164,11 +164,15 @@ class TankGalleryProvider(
                 // every member's real page list up front — local dirs
                 // resolve instantly, each correction remaps and re-notifies,
                 // and the reader grows out of its empty state.
-                var index = 0
-                while (!stopped) {
-                    val slot = slotAt(index) ?: break
-                    runCatching { countedSourceFor(indexOfSlot(slot).coerceAtLeast(0)) }
-                    index++
+                // Walk a snapshot: counting can drop a deleted member, which
+                // shifts every later slot down one — an index walk skipped
+                // the member right after each dropped one.
+                val snapshot = synchronized(slotsLock) { slots.toList() }
+                for (slot in snapshot) {
+                    if (stopped) break
+                    val index = indexOfSlot(slot)
+                    if (index < 0) continue
+                    runCatching { countedSourceFor(index) }
                 }
             } else {
                 val entry = (if (initialPageOverride >= 0) initialPageOverride else startPageValue)
