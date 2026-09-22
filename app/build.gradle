@@ -35,7 +35,6 @@ android {
         testOptions.unitTests.includeAndroidResources = true
         testOptions.unitTests.returnDefaultValues = true
         ndk {
-            moduleName "native-lib"
             abiFilters "arm64-v8a"
         }
         externalNativeBuild {
@@ -225,7 +224,6 @@ dependencies {
     implementation libs.advrecyclerview
 
     implementation libs.okhttp
-    debugImplementation libs.request.inspector
 
     // Room database (replaces GreenDAO)
     implementation libs.room.runtime
@@ -245,11 +243,6 @@ dependencies {
 
 configurations.configureEach {
     resolutionStrategy {
-        force libs.seven332.glgallery
-        force libs.seven332.glview
-        force libs.seven332.glview.image
-        force libs.seven332.image
-
         exclude group: 'com.github.seven332', module: 'okhttp'
     }
 }
