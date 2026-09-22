@@ -193,9 +193,10 @@ class DownloadDbRepository(
      * load, patch, and rewrite the JSON column.
      */
     suspend fun updateRating(arcid: String, rating: Float) {
-        val row = archiveLocalStateDao.loadDownloadRowByArcid(arcid) ?: return
-        val archive = ArchiveLocalStateJson.decodeFromString(Archive.serializer(), row.archiveJson)
-        archiveLocalStateDao.updateArchiveJsonForDownload(arcid, archive.copy(rating = rating).toArchiveJson())
+        archiveLocalStateDao.patchArchiveJsonForDownload(arcid) { json ->
+            ArchiveLocalStateJson.decodeFromString(Archive.serializer(), json)
+                .copy(rating = rating).toArchiveJson()
+        }
     }
 
     suspend fun removeDownloadInfoByArcid(arcid: String) {
@@ -289,10 +290,15 @@ class DownloadDbRepository(
         name: String,
         memberIdsInOrder: List<String>,
     ) {
+        // A group keeps the profile that first downloaded it. Download rows
+        // are unique per arcid, so a second profile on the same server
+        // "downloading" the tank reuses the same member rows; taking the
+        // group over made the owner's tank card fall apart into singles.
+        val owner = tankGroupDao.getById(tankId)?.serverProfileId?.takeIf { it > 0 } ?: serverProfileId
         tankGroupDao.upsert(
             TankDownloadGroup(
                 tankId = tankId,
-                serverProfileId = serverProfileId,
+                serverProfileId = owner,
                 name = name,
                 memberIdsJson = ArchiveLocalStateJson.encodeToString(
                     ListSerializer(String.serializer()), memberIdsInOrder
@@ -319,13 +325,19 @@ class DownloadDbRepository(
         serverMemberIds: List<String>,
         activeProfileId: Long,
     ): TankGroupReconciler.Result? {
-        val group = tankGroupDao.getById(tankId) ?: return null
-        val result = TankGroupReconciler.reconcile(group, serverName, serverMemberIds, activeProfileId)
-            ?: return null
-        tankGroupDao.upsert(result.group)
+        var result: TankGroupReconciler.Result? = null
+        tankGroupDao.modify(tankId) { group ->
+            val r = TankGroupReconciler.reconcile(group, serverName, serverMemberIds, activeProfileId)
+            result = r
+            r?.group ?: group
+        }
+        val applied = result ?: return null
+        return applied.also { applyReconcileTags(tankId, it) }
+    }
+
+    private suspend fun applyReconcileTags(tankId: String, result: TankGroupReconciler.Result) {
         for (arcid in result.added) archiveLocalStateDao.setDownloadTankId(arcid, tankId)
         for (arcid in result.removed) archiveLocalStateDao.setDownloadTankId(arcid, null)
-        return result
     }
 
     /**
@@ -375,18 +387,17 @@ class DownloadDbRepository(
      */
     suspend fun removeTankGroupMember(tankId: String, arcid: String) {
         archiveLocalStateDao.setDownloadTankId(arcid, null)
-        val group = tankGroupDao.getById(tankId) ?: return
-        val remaining = getTankGroupMemberIds(tankId).filterNot { it == arcid }
-        if (remaining.isEmpty()) {
-            tankGroupDao.delete(tankId)
-        } else {
-            tankGroupDao.upsert(
+        tankGroupDao.modify(tankId) { group ->
+            val remaining = TankGroupReconciler.decode(group.memberIdsJson).filterNot { it == arcid }
+            if (remaining.isEmpty()) {
+                null
+            } else {
                 group.copy(
                     memberIdsJson = ArchiveLocalStateJson.encodeToString(
                         ListSerializer(String.serializer()), remaining
                     )
                 )
-            )
+            }
         }
     }
 

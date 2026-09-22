@@ -283,6 +283,29 @@ class ServerListViewModelTest {
     }
 
     @Test
+    fun testAndAddProfile_keystoreUnavailable_rollsBackTheRowAndKeepsTheOldActive() {
+        val oldId = insertProfile("Old", "https://old.example.com", isActive = true)
+        server.enqueue(MockResponse().setResponseCode(200)
+            .setBody("""{"name":"New Server","version":"0.9.8","archives_per_page":100}"""))
+        LRRAuthManager.simulateStorageUnavailableForTesting()
+
+        val vm = ServerListViewModel()
+        val events = collectEvents(vm)
+        vm.testAndAddProfile("New", server.url("").toString().removeSuffix("/"), "new-key", true)
+
+        awaitCondition {
+            events.any { it is ServerListViewModel.ServerListUiEvent.SecureStorageError }
+        }
+        val rows = runBlocking { db.miscDao().getAllServerProfiles() }
+        assertEquals("the keyless new row is rolled back", listOf(oldId), rows.map { it.id })
+        assertTrue("the old profile stays active", rows.single().isActive)
+
+        LRRAuthManager.initializeForTesting(
+            ctx.getSharedPreferences("server_vm_test_restore_add", Context.MODE_PRIVATE)
+        )
+    }
+
+    @Test
     fun testAndSaveEditedProfile_keystoreUnavailable_leavesRoomUnchanged() {
         // The connection test succeeds (the probe carries the key explicitly and
         // never touches the keystore), but committing the edit must not mutate
