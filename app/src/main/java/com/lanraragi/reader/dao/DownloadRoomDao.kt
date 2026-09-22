@@ -25,6 +25,9 @@ interface DownloadRoomDao {
     @Update
     suspend fun updateDirname(dirname: DownloadDirname)
 
+    @Query("SELECT * FROM DOWNLOAD_DIRNAME WHERE DIRNAME IS NOT NULL")
+    suspend fun loadAllDirnames(): List<DownloadDirname>
+
     @Query("SELECT DIRNAME FROM DOWNLOAD_DIRNAME WHERE DIRNAME IS NOT NULL")
     suspend fun loadAllDirnameValues(): List<String>
 
