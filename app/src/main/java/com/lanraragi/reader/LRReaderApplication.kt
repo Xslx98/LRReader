@@ -247,6 +247,8 @@ class LRReaderApplication : RecordingApplication() {
         // Continue-reading home-screen widget rides the same seam (issue #9);
         // per-event work no-ops unless a widget instance is actually placed.
         com.lanraragi.reader.appwidget.ContinueReadingWidget.install()
+        // Keeps the history snapshot's progress at where sessions end (A20).
+        com.lanraragi.reader.gallery.ReadingSnapshotRecorder.install()
 
         // Daily reading aggregate rides the same seam (issue #20): one row per
         // (day x profile), accumulating history for future trend features.

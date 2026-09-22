@@ -124,6 +124,24 @@ class HistoryRepository(
     }
 
     /**
+     * Record where a reading session ended: the snapshot's progress pair
+     * becomes [progress1] (1-indexed) at "now", as the server records it
+     * after our progress PUT. No-op without a row.
+     */
+    suspend fun recordSessionProgress(arcid: String, profileId: Long, progress1: Int) {
+        if (progress1 <= 0) return
+        val row = dao.loadByArcidAndProfile(arcid, profileId) ?: return
+        val archive = runCatching {
+            ArchiveLocalStateJson.decodeFromString(Archive.serializer(), row.archiveJson)
+        }.getOrNull() ?: return
+        dao.updateArchiveJsonForProfile(
+            arcid,
+            profileId,
+            archive.copy(progress = progress1, lastreadtime = System.currentTimeMillis() / 1000L).toArchiveJson(),
+        )
+    }
+
+    /**
      * Update the rating for a history entry identified by [arcid].
      * The rating lives in `archive_json` — load, patch, write back.
      */

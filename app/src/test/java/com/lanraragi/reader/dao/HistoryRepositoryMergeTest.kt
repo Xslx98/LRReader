@@ -84,4 +84,13 @@ class HistoryRepositoryMergeTest {
         assertEquals(30, merged.progress)
         assertEquals("new", merged.summary)
     }
+
+    @Test
+    fun recordSessionProgress_movesTheSnapshotToWhereTheSessionEnded() = runTest {
+        repo.putHistoryInfo(archive(pagecount = 100, progress = 10, summary = null, tags = emptyMap()))
+        repo.recordSessionProgress("a1", 1L, 80)
+        val stored = repo.getArchiveSnapshot("a1", 1L)!!
+        assertEquals(80, stored.progress)
+        assertEquals(100, stored.pagecount)
+    }
 }
