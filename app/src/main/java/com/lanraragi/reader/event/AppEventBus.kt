@@ -55,4 +55,15 @@ object AppEventBus {
         _archiveCoverChangedEvent.tryEmit(event)
     }
 
+    // Non-sticky: a tank tag materialization failed after its membership
+    // write succeeded (spec 2026-09-22 §5.3); the shell shows a Snackbar.
+    private val _tankTagSyncFailedEvent = MutableSharedFlow<TankTagSyncFailedEvent>(
+        extraBufferCapacity = 16
+    )
+    val tankTagSyncFailedEvent = _tankTagSyncFailedEvent.asSharedFlow()
+
+    fun postTankTagSyncFailedEvent(event: TankTagSyncFailedEvent) {
+        _tankTagSyncFailedEvent.tryEmit(event)
+    }
+
 }
