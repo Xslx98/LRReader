@@ -81,6 +81,9 @@
                         layout="@layout/gallery_detail_tags"/>
 
                     <include
+                        layout="@layout/tank_detail_members"/>
+
+                    <include
                         layout="@layout/gallery_detail_previews"/>
 
                 </LinearLayout>
