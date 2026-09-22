@@ -369,6 +369,9 @@
     <string name="tank_manage_members">成員管理</string>
     <string name="not_rated">未評分</string>
     <string name="tank_detail_offline">離線：顯示已下載副本，評分、分類與標籤無法編輯</string>
+    <string name="tank_detail_members">成員</string>
+    <string name="tank_member_more">+%1$d</string>
+    <string name="tank_member_view_detail">檢視單本詳情</string>
     <string name="tank_delete_confirm">刪除這個合訂本？其中的檔案不會被刪除，但合訂本自身的簡介、附加標籤和閱讀進度將一併遺失。</string>
     <string name="tank_locked">合訂本已被鎖定，請稍後再試</string>
     <string name="tank_op_done">完成</string>

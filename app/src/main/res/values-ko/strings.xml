@@ -339,6 +339,9 @@
     <string name="tank_manage_members">구성원 관리</string>
     <string name="not_rated">평가 없음</string>
     <string name="tank_detail_offline">오프라인: 다운로드한 사본을 표시 중이며 평점, 카테고리, 태그는 편집할 수 없습니다</string>
+    <string name="tank_detail_members">구성원</string>
+    <string name="tank_member_more">+%1$d</string>
+    <string name="tank_member_view_detail">이 아카이브 상세 보기</string>
     <string name="tank_delete_confirm">이 단행본을 삭제할까요? 안의 아카이브는 삭제되지 않지만, 단행본 자체의 요약·추가 태그·읽기 진행도는 사라집니다.</string>
     <string name="tank_locked">단행본이 잠겨 있습니다. 나중에 다시 시도하세요</string>
     <string name="tank_op_done">완료</string>

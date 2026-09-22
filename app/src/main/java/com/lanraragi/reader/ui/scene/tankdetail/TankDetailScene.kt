@@ -10,10 +10,14 @@ import android.widget.LinearLayout
 import android.widget.RatingBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.widget.PopupMenu
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.hippo.android.resource.AttrResources
 import com.hippo.ripple.Ripple
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.framework.util.DrawableManager
 import com.lanraragi.framework.view.ViewTransition
 import com.lanraragi.framework.widget.LoadImageView
@@ -23,14 +27,19 @@ import com.lanraragi.reader.client.ArchiveCoverStamps
 import com.lanraragi.reader.client.LRRCacheKeyFactory
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.buildRatingEmoji
 import com.lanraragi.reader.download.DownloadState
 import com.lanraragi.reader.download.TankFillDispatcher
+import com.lanraragi.reader.gallery.GalleryProvider2
 import com.lanraragi.reader.gallery.TankMemberSeed
+import com.lanraragi.reader.gallery.TankPageMath
 import com.lanraragi.reader.gallery.TankSeedStore
 import com.lanraragi.reader.gallery.TankSessionSeed
+import com.lanraragi.reader.tankoubon.TankMemberStrip
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.ui.scene.BaseScene
+import com.lanraragi.reader.ui.scene.TankoubonDetailScene
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.ui.scene.gallery.detail.CategoryDialogHelper
 import com.lanraragi.reader.ui.scene.gallery.detail.FavoriteState
@@ -64,6 +73,10 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
     private var mTagsLayout: LinearLayout? = null
     private var mNoTags: TextView? = null
     private var mEditTagsBtn: View? = null
+
+    private var mMembersRecycler: RecyclerView? = null
+    private var mMembersAdapter: TankMemberStripAdapter? = null
+    private var mMembersManage: View? = null
 
     private var mViewTransition: ViewTransition? = null
     private var mViewTransition2: ViewTransition? = null
@@ -171,6 +184,19 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         mNoTags = ViewUtils.`$$`(tagsLayout, R.id.no_tags) as TextView
         mEditTagsBtn = ViewUtils.`$$`(tagsLayout, R.id.edit_tags_btn).also { it.setOnClickListener(this) }
 
+        val membersSection = ViewUtils.`$$`(belowHeader, R.id.tank_members)
+        mMembersManage = ViewUtils.`$$`(membersSection, R.id.tank_members_manage).also { it.setOnClickListener(this) }
+        val membersAdapter = TankMemberStripAdapter(
+            onMemberClick = { openMemberSession(it) },
+            onMemberLongClick = { member, anchor -> showMemberMenu(member, anchor) },
+            onMoreClick = { openMemberManagement() },
+        )
+        mMembersAdapter = membersAdapter
+        mMembersRecycler = (ViewUtils.`$$`(membersSection, R.id.tank_members_recycler) as RecyclerView).apply {
+            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+            adapter = membersAdapter
+        }
+
         // Previews are bound by a later step; collapsed until then.
         ViewUtils.`$$`(belowHeader, R.id.previews).visibility = View.GONE
 
@@ -194,6 +220,11 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         mTagsLayout = null
         mNoTags = null
         mEditTagsBtn = null
+        // Detach so the pool drops holders referencing this view tree.
+        mMembersRecycler?.adapter = null
+        mMembersRecycler = null
+        mMembersAdapter = null
+        mMembersManage = null
         mViewTransition = null
         mViewTransition2 = null
         mTip = null
@@ -221,7 +252,10 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         super.onResume()
         // The reader may have changed the cover (stamp bumped) or the
         // downloads list may have changed member states while we were away.
-        viewModel.state.value?.let { bindCover(it) }
+        viewModel.state.value?.let {
+            bindCover(it)
+            bindMembers(it)
+        }
         updateDownloadText()
     }
 
@@ -312,6 +346,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         bindRating(s.rating)
         bindHeart()
         bindTags(s)
+        bindMembers(s)
         updateDownloadText()
         val banner = mOfflineBanner ?: return
         if (s.offline) {
@@ -444,6 +479,74 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
     }
 
     // -------------------------------------------------------------------------
+    // Members strip (spec 2026-09-22 §4.6)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Greyed = missing members of a DOWNLOADED tank (the downloads card's
+     * INCOMPLETE state seen per member); a tank that is not downloaded
+     * greys nothing. DownloadManager lookups are main-thread only — this
+     * runs from the state collector on Main.
+     */
+    private fun bindMembers(s: TankDetailState) {
+        val dm = ServiceRegistry.dataModule.downloadManager
+        val tankDownloaded = s.members.any { dm.tankGroupFor(it.arcid)?.tankId == s.tankId }
+        val greyed = s.members
+            .filter { TankMemberStrip.isGreyed(tankDownloaded, dm.getDownloadState(it.arcid)) }
+            .mapTo(HashSet()) { it.arcid }
+        mMembersAdapter?.submit(s.members, greyed)
+        // Management writes to the source server — no server offline.
+        mMembersManage?.visibility = if (s.offline) View.GONE else View.VISIBLE
+    }
+
+    /**
+     * Member tap (v1.24.0 sealing rule): the WHOLE-TANK session positioned
+     * on that member — saved tank progress inside it restores, otherwise
+     * its first page.
+     */
+    private fun openMemberSession(member: Archive) {
+        val ctx = ehContext ?: return
+        val s = viewModel.state.value ?: return
+        val index = s.members.indexOfFirst { it.arcid == member.arcid }
+        if (index < 0) return
+        val start = TankPageMath.anchoredStart(
+            s.members.map { it.pagecount },
+            index,
+            GalleryProvider2.loadReadingProgress(ctx, s.tankId),
+        )
+        openTankSession(startGlobalPage = start)
+    }
+
+    /** Long-press: the only door to a member's own detail page (needed to edit its tags). */
+    private fun showMemberMenu(member: Archive, anchor: View) {
+        val ctx = ehContext ?: return
+        PopupMenu(ctx, anchor).apply {
+            menu.add(R.string.tank_member_view_detail).setOnMenuItemClickListener {
+                openMemberDetail(member)
+                true
+            }
+            show()
+        }
+    }
+
+    private fun openMemberDetail(member: Archive) {
+        val args = Bundle()
+        args.putString(GalleryDetailScene.KEY_ACTION, GalleryDetailScene.ACTION_ARCHIVE)
+        args.putParcelable(GalleryDetailScene.KEY_ARCHIVE, member)
+        startScene(Announcer(GalleryDetailScene::class.java).setArgs(args))
+    }
+
+    /** 「管理成员」 / "+N": the member-management sub-page (rename / reorder / remove / cover). */
+    private fun openMemberManagement() {
+        val s = viewModel.state.value ?: return
+        val args = Bundle()
+        args.putString(TankoubonDetailScene.KEY_TANK_ID, s.tankId)
+        args.putString(TankoubonDetailScene.KEY_TANK_NAME, s.name)
+        args.putLong(TankoubonDetailScene.KEY_PROFILE_ID, s.profileId)
+        startScene(Announcer(TankoubonDetailScene::class.java).setArgs(args))
+    }
+
+    // -------------------------------------------------------------------------
     // Download card
     // -------------------------------------------------------------------------
 
@@ -567,6 +670,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
             v === mDownload -> downloadTank()
             v === mHeartGroup -> showCategoryDialog()
             v === mEditTagsBtn -> showTagEditDialog()
+            v === mMembersManage -> openMemberManagement()
             else -> (v.getTag(R.id.tag) as? String)?.let { openTagSearch(it) }
         }
     }
