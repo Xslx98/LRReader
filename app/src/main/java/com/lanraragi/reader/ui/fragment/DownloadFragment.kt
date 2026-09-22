@@ -21,6 +21,7 @@ import android.content.Intent
 import android.util.Log
 import android.media.MediaScannerConnection
 import android.net.Uri
+import android.content.Context
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -291,40 +292,47 @@ class DownloadFragment : PreferenceFragmentCompat(),
 
     // --- Clean invalid download task ---
 
+    /** Progress dialog of the running clean; dropped with the view (never leaked). */
+    @Suppress("DEPRECATION")
+    private var cleanDialog: ProgressDialog? = null
+
+    /**
+     * Deletes empty directories in the download location. The scan runs on
+     * the app scope (a rotation neither cancels it nor loses its result);
+     * the dialog belongs to this view and is dismissed with it, and the
+     * result toast uses the application context.
+     */
     @Suppress("DEPRECATION")
     private fun executeCleanInvalidDownload() {
-        if (activity == null) return
+        val host = activity ?: return
+        val appContext = host.applicationContext
 
-        val dialog = ProgressDialog(activity)
+        val dialog = ProgressDialog(host)
         dialog.setTitle(R.string.settings_download_cleaning)
         dialog.isIndeterminate = false
         dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
         dialog.setCancelable(false)
         dialog.show()
+        cleanDialog = dialog
 
-        lifecycleScope.launch(Dispatchers.IO) {
+        ServiceRegistry.coroutineModule.ioScope.launch {
             val logs = mutableListOf<String>()
             var invalidCount = 0
 
             val downloadDir = DownloadSettings.getDownloadLocation()
-            if (downloadDir == null || !downloadDir.isDirectory) {
-                mainHandler.post { dismissAndShowCleanResult(dialog, 0) }
-                return@launch
-            }
-
-            val files = downloadDir.listFiles()
-            if (files == null) {
-                mainHandler.post { dismissAndShowCleanResult(dialog, 0) }
+            val files = downloadDir?.takeIf { it.isDirectory }?.listFiles()
+            if (downloadDir == null || files == null) {
+                mainHandler.post { finishClean(dialog, appContext, 0) }
                 return@launch
             }
 
             val total = files.size
-            mainHandler.post { dialog.max = total; dialog.progress = 0 }
+            mainHandler.post { if (cleanDialog === dialog) { dialog.max = total; dialog.progress = 0 } }
 
             for (i in files.indices) {
                 val dir = files[i]
                 val progress = i + 1
-                mainHandler.post { dialog.progress = progress }
+                mainHandler.post { if (cleanDialog === dialog) dialog.progress = progress }
 
                 if (!dir.isDirectory) {
                     continue
@@ -344,34 +352,44 @@ class DownloadFragment : PreferenceFragmentCompat(),
             }
 
             val resultCount = invalidCount
-            mainHandler.post { dismissAndShowCleanResult(dialog, resultCount) }
+            mainHandler.post { finishClean(dialog, appContext, resultCount) }
         }
     }
 
     @Suppress("DEPRECATION")
-    private fun dismissAndShowCleanResult(dialog: ProgressDialog, result: Int) {
-        if (isAdded && activity != null) {
+    private fun finishClean(dialog: ProgressDialog, appContext: Context, result: Int) {
+        if (cleanDialog === dialog) {
+            cleanDialog = null
             try {
                 if (dialog.isShowing) dialog.dismiss()
             } catch (e: IllegalArgumentException) {
                 ExceptionUtils.throwIfFatal(e)
             }
-            if (result > 0) {
-                Toast.makeText(
-                    activity,
-                    resources.getQuantityString(
-                        R.plurals.settings_download_clean_invalid_done, result, result
-                    ),
-                    Toast.LENGTH_LONG
-                ).show()
-            } else {
-                Toast.makeText(
-                    activity,
-                    R.string.settings_download_clean_invalid_no_invalid,
-                    Toast.LENGTH_SHORT
-                ).show()
+        }
+        if (result > 0) {
+            Toast.makeText(
+                appContext,
+                appContext.resources.getQuantityString(
+                    R.plurals.settings_download_clean_invalid_done, result, result
+                ),
+                Toast.LENGTH_LONG
+            ).show()
+        } else {
+            Toast.makeText(appContext, R.string.settings_download_clean_invalid_no_invalid, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    override fun onDestroyView() {
+        cleanDialog?.let { dialog ->
+            try {
+                if (dialog.isShowing) dialog.dismiss()
+            } catch (e: IllegalArgumentException) {
+                ExceptionUtils.throwIfFatal(e)
             }
         }
+        cleanDialog = null
+        super.onDestroyView()
     }
 
     private fun saveCleanLog(downloadDir: UniFile, logs: List<String>) {

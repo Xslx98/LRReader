@@ -335,22 +335,30 @@ class ServerListViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val newId = withContext(Dispatchers.IO) {
-                    // Durable Room write first: a failure falls to the outer
-                    // catch (AddConnectionFailed) with the live global auth
-                    // untouched — no silent switch to an unpersisted server.
-                    profileRepository.deactivateAll()
+                    // Row first, INACTIVE: a failure falls to the outer catch
+                    // (AddConnectionFailed) with the old active profile and the
+                    // live global auth untouched.
                     val newProfile = ServerProfile(
                         id = 0,
                         name = name,
                         url = resolvedUrl,
-                        isActive = true,
+                        isActive = false,
                         allowCleartext = savedAllowCleartext
                     )
                     val id = profileRepository.insert(newProfile)
-                    // Keystore per-profile key + live global auth LAST, only
-                    // once the profile row exists.
+                    // Then its key; only a profile whose key is stored becomes
+                    // active (one atomic UPDATE), else the row is rolled back —
+                    // never an active profile without its key.
                     try {
                         LRRAuthManager.setApiKeyForProfile(id, finalKey)
+                    } catch (e: LRRSecureStorageUnavailableException) {
+                        profileRepository.delete(newProfile.copy(id = id))
+                        _uiEvent.emit(ServerListUiEvent.SecureStorageError)
+                        return@withContext -1L
+                    }
+                    profileRepository.activateExclusive(id)
+                    // Live global auth LAST.
+                    try {
                         LRRAuthManager.setActiveProfileId(id)
                         LRRAuthManager.setServerUrl(resolvedUrl)
                         LRRAuthManager.setApiKey(finalKey)

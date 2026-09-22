@@ -576,6 +576,28 @@ interface ArchiveLocalStateDao {
         deleteAllEmptyRows()
     }
 
+    // ── archive_json patches ───────────────────────────────────
+    //
+    // Load + patch + write of one row's archive_json in ONE generated
+    // transaction: done as separate statements, a history or download
+    // upsert landing in between was overwritten with the stale patch.
+    // [patch] returns the new json, or null to leave the row alone; it runs
+    // inside the transaction, so keep it pure.
+
+    @Transaction
+    suspend fun patchArchiveJsonForProfile(arcid: String, profileId: Long, patch: (String) -> String?) {
+        val row = loadByArcidAndProfile(arcid, profileId) ?: return
+        val next = patch(row.archiveJson) ?: return
+        updateArchiveJsonForProfile(arcid, profileId, next)
+    }
+
+    @Transaction
+    suspend fun patchArchiveJsonForDownload(arcid: String, patch: (String) -> String?) {
+        val row = loadDownloadRowByArcid(arcid) ?: return
+        val next = patch(row.archiveJson) ?: return
+        updateArchiveJsonForDownload(arcid, next)
+    }
+
     // ── Merged download upserts ────────────────────────────────
     //
     // The download upsert's archive_json merge used to READ the existing row

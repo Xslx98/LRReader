@@ -141,30 +141,41 @@ class ServerConfigViewModel : ViewModel() {
                 // here is reported below with the live global auth still on the
                 // previous server, so a persistence error never silently switches
                 // traffic to an unpersisted candidate.
+                // The active flag moves only after the key is stored (below),
+                // in one atomic UPDATE: never zero active profiles, never an
+                // active one without its key.
                 val existing = profileRepository.findByUrl(resolvedUrl)
-                profileRepository.deactivateAll()
+                val inserted: ServerProfile?
                 val profileId = if (existing != null) {
+                    inserted = null
                     val updated = ServerProfile(
                         existing.id,
                         info.name ?: existing.name,
                         resolvedUrl,
-                        true,
+                        existing.isActive,
                         savedAllowCleartext
                     )
                     profileRepository.update(updated)
                     existing.id
                 } else {
                     val profileName = info.name ?: "LANraragi"
-                    profileRepository.insert(
-                        ServerProfile(0, profileName, resolvedUrl, true, savedAllowCleartext)
-                    )
+                    val row = ServerProfile(0, profileName, resolvedUrl, false, savedAllowCleartext)
+                    val id = profileRepository.insert(row)
+                    inserted = row.copy(id = id)
+                    id
                 }
 
-                // Keystore per-profile key + live global auth LAST, only once the
-                // profile row is committed. (API key rides EncryptedSharedPreferences,
-                // not Room.) bumpServerConfigVersion drives GalleryListScene's
+                // Keystore per-profile key, then activation, then live global
+                // auth LAST. (API key rides EncryptedSharedPreferences, not
+                // Room.) bumpServerConfigVersion drives GalleryListScene's
                 // auto-refresh, so re-onboarding refreshes the list like add/edit.
-                LRRAuthManager.setApiKeyForProfile(profileId, apiKey)
+                try {
+                    LRRAuthManager.setApiKeyForProfile(profileId, apiKey)
+                } catch (e: LRRSecureStorageUnavailableException) {
+                    inserted?.let { profileRepository.delete(it) }
+                    throw e
+                }
+                profileRepository.activateExclusive(profileId)
                 LRRAuthManager.setActiveProfileId(profileId)
                 LRRAuthManager.setServerUrl(resolvedUrl)
                 LRRAuthManager.setApiKey(apiKey)

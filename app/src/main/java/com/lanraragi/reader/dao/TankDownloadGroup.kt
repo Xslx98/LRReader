@@ -14,6 +14,7 @@ import androidx.room.Dao
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
@@ -65,4 +66,20 @@ interface TankDownloadGroupDao {
 
     @Query("SELECT * FROM TANK_DOWNLOAD_GROUP")
     suspend fun getAll(): List<TankDownloadGroup>
+
+    /**
+     * Read-modify-write of one group row in a single transaction, so two
+     * concurrent member removals (or a removal racing a reconcile) cannot
+     * each write back a list missing the other's change. [transform]
+     * returns the new row, or null to delete it; it runs inside the
+     * transaction, so keep it pure. Returns the written row (null when
+     * deleted or absent).
+     */
+    @Transaction
+    suspend fun modify(tankId: String, transform: (TankDownloadGroup) -> TankDownloadGroup?): TankDownloadGroup? {
+        val group = getById(tankId) ?: return null
+        val next = transform(group)
+        if (next == null) delete(tankId) else upsert(next)
+        return next
+    }
 }

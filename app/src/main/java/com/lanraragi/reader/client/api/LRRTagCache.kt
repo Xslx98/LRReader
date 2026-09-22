@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import java.util.concurrent.atomic.AtomicInteger
 import android.util.Log
 import com.lanraragi.reader.client.api.data.LRRTagStat
 import com.lanraragi.reader.module.Cacheable
@@ -31,6 +32,13 @@ object LRRTagCache : Cacheable {
 
     private const val TTL_MS = 10 * 60 * 1000L // 10 minutes
 
+    /**
+     * Bumped by [clear] (profile switch). A refresh that started before the
+     * switch compares it before publishing, so it cannot repopulate the
+     * cache with the previous server's tags.
+     */
+    private val generation = AtomicInteger(0)
+
     /** Prevents concurrent network refreshes. */
     private val refreshMutex = Mutex()
 
@@ -49,11 +57,14 @@ object LRRTagCache : Cacheable {
             refreshMutex.withLock {
                 // Double-check after acquiring lock
                 if (needsRefresh()) {
+                    val startedIn = generation.get()
                     try {
                         val fetched = LRRDatabaseApi.getTagStats()
                         val keys = fetched.map { "${it.namespace ?: ""}:${it.text}".lowercase() }
-                        snapshot = CacheSnapshot(fetched, keys)
-                        lastFetchTime = System.currentTimeMillis()
+                        if (generation.get() == startedIn) {
+                            snapshot = CacheSnapshot(fetched, keys)
+                            lastFetchTime = System.currentTimeMillis()
+                        }
                     } catch (e: CancellationException) {
                         throw e // never swallow cooperative cancellation
                     } catch (e: Exception) {
@@ -113,6 +124,7 @@ object LRRTagCache : Cacheable {
      * tags from the previous server do not appear as suggestions.
      */
     fun clear() {
+        generation.incrementAndGet()
         snapshot = CacheSnapshot(emptyList(), emptyList())
         lastFetchTime = 0
     }
