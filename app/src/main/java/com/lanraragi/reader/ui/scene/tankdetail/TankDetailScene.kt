@@ -61,6 +61,8 @@ import com.lanraragi.reader.ui.widget.bindSourceServerBadge
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.util.collectFlowWhileCreated
 import kotlin.math.ceil
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 /**
  * Tankoubon detail page (spec 2026-09-22 §4): a tank rendered like a
@@ -299,6 +301,16 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
             if (state != null) bindState(state)
         }
         collectFlow(viewLifecycleOwner, viewModel.favoriteState) { bindHeart() }
+        // Member download rows change while this page is up (the Download
+        // button just enqueued them, or the worker finished): keep the button
+        // text and the greyed members in step without waiting for a resume.
+        val memberStates = ServiceRegistry.dataModule.downloadDbRepository.observeDownloads()
+            .map { rows -> rows.map { it.arcid to it.state }.sortedBy { it.first } }
+            .distinctUntilChanged()
+        collectFlow(viewLifecycleOwner, memberStates) {
+            updateDownloadText()
+            viewModel.state.value?.let { bindMembers(it) }
+        }
         collectFlowWhileCreated(viewLifecycleOwner, viewModel.events) { event ->
             when (event) {
                 TankDetailViewModel.Event.Deleted -> {
