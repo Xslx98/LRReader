@@ -576,6 +576,32 @@ interface ArchiveLocalStateDao {
         deleteAllEmptyRows()
     }
 
+    /** History rows of [profileId] among [arcids] (one query instead of one per id). */
+    @Query(
+        "SELECT * FROM ARCHIVE_LOCAL_STATE WHERE SERVER_PROFILE_ID = :profileId " +
+            "AND HISTORY_TIME IS NOT NULL AND ARCID IN (:arcids)"
+    )
+    suspend fun historyRowsFor(profileId: Long, arcids: List<String>): List<ArchiveLocalState>
+
+    /**
+     * Fold member history rows into a tank's history row in ONE
+     * transaction: optionally write the tank row, then clear every member's
+     * history flag (pruning rows left empty).
+     */
+    @Suppress("LongParameterList")
+    @Transaction
+    suspend fun foldTankHistory(
+        tankId: String,
+        profileId: Long,
+        tankJson: String?,
+        tankTime: Long,
+        tankMode: Int,
+        memberArcids: List<String>,
+    ) {
+        if (tankJson != null) upsertHistory(tankId, profileId, tankJson, tankTime, tankMode)
+        for (arcid in memberArcids) clearHistoryAndPruneForProfile(arcid, profileId)
+    }
+
     // ── archive_json patches ───────────────────────────────────
     //
     // Load + patch + write of one row's archive_json in ONE generated
