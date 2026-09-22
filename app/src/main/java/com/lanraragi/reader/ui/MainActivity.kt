@@ -709,7 +709,7 @@ class MainActivity : StageActivity(),
                 try {
                     applicationContext.deleteDatabase(AppDatabase.DB_NAME)
                 } catch (t: Throwable) {
-                    Log.w(TAG, "deleteDatabase failed during boot-failure reset", t)
+                    Log.e(TAG, "deleteDatabase failed during boot-failure reset", t)
                 }
             }
             triggerRebirth()
