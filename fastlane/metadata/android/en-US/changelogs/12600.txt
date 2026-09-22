@@ -1,0 +1,3 @@
+Tankoubon detail page: a tankoubon now opens like a single archive (cover, rating, category, tags, members strip, page previews); member management moved to its sub-page.
+Tankoubon tags are kept as the union of member tags and follow membership changes; static categories follow members into the tankoubon.
+Batch/detail "add to tankoubon" merges rows into the tankoubon with an animation; long-press then slide to multi-select; set a tankoubon cover from any page.
