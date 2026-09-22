@@ -36,6 +36,7 @@ import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.R
+import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.util.LauncherIcon
 import com.lanraragi.framework.util.ReadableTime
@@ -561,7 +562,7 @@ class DownloadService : Service(), DownloadListener {
         }
         val total = snap?.total ?: -1
         val dlBuilder = mDownloadingBuilder ?: return
-        dlBuilder.setContentTitle(tank?.name ?: info.title)
+        dlBuilder.setContentTitle(redacted(tank?.name ?: info.title))
             .setContentText(text)
             .setContentInfo(if (total == -1 || finished == -1) null else "$finished/$total")
             .setProgress(total, finished, false)
@@ -687,7 +688,7 @@ class DownloadService : Service(), DownloadListener {
         }
 
         val style: NotificationCompat.InboxStyle?
-        if (needStyle) {
+        if (needStyle && !SecuritySettings.isLockEnabled()) {
             style = NotificationCompat.InboxStyle()
             style.setBigContentTitle(getString(R.string.stat_download_done_title))
             for ((arcid, fin) in sItemStateArray) {
@@ -732,7 +733,7 @@ class DownloadService : Service(), DownloadListener {
             mPausedArcids.add(info.arcid)
             ensureDownloadingBuilder()
             val dlBuilder = mDownloadingBuilder ?: return
-            dlBuilder.setContentTitle(info.title)
+            dlBuilder.setContentTitle(redacted(info.title))
                 .setContentText(getString(R.string.download_waiting_for_network))
                 .setContentInfo(null)
                 .setProgress(0, 0, true)
@@ -749,7 +750,15 @@ class DownloadService : Service(), DownloadListener {
 
     /** Notification title: the tank's name for a member, the archive's title otherwise. */
     private fun notificationTitle(info: DownloadInfo): String? =
-        mDownloadManager?.tankGroupFor(info.arcid)?.name ?: info.title
+        redacted(mDownloadManager?.tankGroupFor(info.arcid)?.name ?: info.title)
+
+    /**
+     * With an app lock set, what is being downloaded is private: titles are
+     * replaced by the generic service name everywhere they would show (the
+     * shade, the lock screen, the done summary).
+     */
+    private fun redacted(title: String?): String? =
+        if (SecuritySettings.isLockEnabled()) getString(R.string.download_service) else title
 
     /** Whole-tank progress over the members' rows + live snapshots (main thread). */
     private fun tankProgress(tank: TankGroupIndex.Ref): ProgressSnapshot? {
