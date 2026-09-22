@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.client.api.*
 import com.lanraragi.reader.client.api.data.*
 import kotlinx.coroutines.test.runTest
@@ -57,7 +58,7 @@ class LRRSearchApiTest {
         assertEquals(1, result.data.size)
         assertEquals(50, result.recordsTotal)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("GET", req.method)
         val path = req.path!!
         assertTrue(path.startsWith("/api/search"))
@@ -79,7 +80,7 @@ class LRRSearchApiTest {
             sortby = null, order = null, newonly = false
         )
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         val path = req.path!!
         // groupby_tanks must be explicitly disabled — the server defaults it to
         // true, which returns 15-char TANK_ ids the archive pipeline can't render.
@@ -108,7 +109,7 @@ class LRRSearchApiTest {
 
         LRRSearchApi.getRandomArchives(client, baseUrl, filter = null, count = 5)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         val path = req.path!!
         assertTrue(path.startsWith("/api/search/random"))
         assertTrue(path.contains("count=5"))
@@ -126,7 +127,7 @@ class LRRSearchApiTest {
             hideCompleted = true
         )
 
-        val path = server.takeRequest().path!!
+        val path = server.awaitRequest().path!!
         assertTrue(path.contains("hidecompleted=true"))
     }
 
@@ -143,7 +144,7 @@ class LRRSearchApiTest {
             sortby = null, order = null, newonly = false
         )
 
-        assertFalse(server.takeRequest().path!!.contains("hidecompleted"))
+        assertFalse(server.awaitRequest().path!!.contains("hidecompleted"))
     }
 
     @Test
@@ -154,7 +155,7 @@ class LRRSearchApiTest {
             client, baseUrl, filter = null, count = 5, hideCompleted = true
         )
 
-        val path = server.takeRequest().path!!
+        val path = server.awaitRequest().path!!
         assertTrue(path.contains("hidecompleted=true"))
     }
 
@@ -164,6 +165,6 @@ class LRRSearchApiTest {
 
         LRRSearchApi.getRandomArchives(client, baseUrl, filter = null, count = 5)
 
-        assertFalse(server.takeRequest().path!!.contains("hidecompleted"))
+        assertFalse(server.awaitRequest().path!!.contains("hidecompleted"))
     }
 }

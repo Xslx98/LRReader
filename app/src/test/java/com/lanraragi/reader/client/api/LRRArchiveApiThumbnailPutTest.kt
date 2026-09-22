@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.awaitRequest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
@@ -43,7 +44,7 @@ class LRRArchiveApiThumbnailPutTest {
 
         LRRArchiveApi.updateThumbnail(client, baseUrl, arcid, page1 = 47)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("PUT", req.method)
         assertEquals("/api/archives/$arcid/thumbnail?page=47", req.path)
     }

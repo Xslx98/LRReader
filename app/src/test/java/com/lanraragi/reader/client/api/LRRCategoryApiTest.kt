@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.client.api.*
 import com.lanraragi.reader.client.api.data.*
 import kotlinx.coroutines.test.runTest
@@ -48,7 +49,7 @@ class LRRCategoryApiTest {
         assertFalse(cats[0].isDynamic())
         assertTrue(cats[1].isDynamic())
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("GET", req.method)
         assertEquals("/api/categories", req.path)
     }
@@ -60,7 +61,7 @@ class LRRCategoryApiTest {
         val catId = LRRCategoryApi.createCategory(client, baseUrl, "NewCat", search = "tag:test", pinned = true)
         assertEquals("new_cat", catId)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("PUT", req.method)
         assertEquals("/api/categories", req.path)
         val body = req.body.readUtf8()
@@ -74,7 +75,7 @@ class LRRCategoryApiTest {
 
         LRRCategoryApi.addToCategory(client, baseUrl, "SET_aaaaaaaaaa", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("PUT", req.method)
         assertEquals("/api/categories/SET_aaaaaaaaaa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", req.path)
     }
@@ -85,7 +86,7 @@ class LRRCategoryApiTest {
 
         LRRCategoryApi.removeFromCategory(client, baseUrl, "SET_aaaaaaaaaa", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("DELETE", req.method)
         assertEquals("/api/categories/SET_aaaaaaaaaa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", req.path)
     }
@@ -96,7 +97,7 @@ class LRRCategoryApiTest {
 
         LRRCategoryApi.addToCategory(client, baseUrl, "SET_aaaaaaaaaa", "TANK_1700000000")
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("PUT", req.method)
         assertEquals("/api/categories/SET_aaaaaaaaaa/TANK_1700000000", req.path)
     }
@@ -107,7 +108,7 @@ class LRRCategoryApiTest {
 
         LRRCategoryApi.removeFromCategory(client, baseUrl, "SET_aaaaaaaaaa", "TANK_1700000000")
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("DELETE", req.method)
         assertEquals("/api/categories/SET_aaaaaaaaaa/TANK_1700000000", req.path)
     }
@@ -128,7 +129,7 @@ class LRRCategoryApiTest {
 
         LRRCategoryApi.deleteCategory(client, baseUrl, "SET_aaaaaaaaaa")
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("DELETE", req.method)
         assertEquals("/api/categories/SET_aaaaaaaaaa", req.path)
     }

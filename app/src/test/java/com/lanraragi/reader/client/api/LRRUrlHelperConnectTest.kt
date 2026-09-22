@@ -9,6 +9,7 @@
  */
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.awaitRequest
 import android.content.Context
 import android.util.Base64
 import androidx.test.core.app.ApplicationProvider
@@ -97,7 +98,7 @@ class LRRUrlHelperConnectTest {
         val expected = "Bearer " + Base64.encodeToString(
             "candidate-key".toByteArray(Charsets.UTF_8), Base64.NO_WRAP
         )
-        assertEquals(expected, server.takeRequest().getHeader("Authorization"))
+        assertEquals(expected, server.awaitRequest().getHeader("Authorization"))
         // The whole point of NET-7:
         assertEquals("http://prior.example.com:3000", LRRAuthManager.getServerUrl())
     }
@@ -107,7 +108,7 @@ class LRRUrlHelperConnectTest {
         server.enqueue(MockResponse().setResponseCode(200).setBody(infoJson))
         val result = LRRUrlHelper.connectWithFallback(client, baseUrl(), null)
         assertEquals(baseUrl(), result.asSuccess().resolvedUrl)
-        assertNull(server.takeRequest().getHeader("Authorization"))
+        assertNull(server.awaitRequest().getHeader("Authorization"))
     }
 
     @Test

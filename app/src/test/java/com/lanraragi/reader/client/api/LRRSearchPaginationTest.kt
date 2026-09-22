@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.client.api.*
 import com.lanraragi.reader.client.api.data.*
 import androidx.paging.PagingSource
@@ -142,7 +143,7 @@ class LRRSearchPaginationTest {
 
         source.load(PagingSource.LoadParams.Refresh(null, 2, false))
 
-        assertTrue(server.takeRequest().path!!.contains("hidecompleted=true"))
+        assertTrue(server.awaitRequest().path!!.contains("hidecompleted=true"))
     }
 
     @Test
@@ -159,7 +160,7 @@ class LRRSearchPaginationTest {
 
         source.load(PagingSource.LoadParams.Refresh(null, 2, false))
 
-        assertFalse(server.takeRequest().path!!.contains("hidecompleted"))
+        assertFalse(server.awaitRequest().path!!.contains("hidecompleted"))
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -180,7 +181,7 @@ class LRRSearchPaginationTest {
             listOf(archiveJson("x1", "X")), total = 2
         )))
         source.load(PagingSource.LoadParams.Refresh(null, 1, false))
-        val req0 = server.takeRequest()
+        val req0 = server.awaitRequest()
         val path0 = req0.path!!
         assertTrue("filter param missing", path0.contains("filter=artist"))
         assertTrue("category param missing", path0.contains("category=SET_aaaaaaaaaa"))
@@ -193,7 +194,7 @@ class LRRSearchPaginationTest {
             listOf(archiveJson("x2", "Y")), total = 2
         )))
         source.load(PagingSource.LoadParams.Append(1, 1, false))
-        val req1 = server.takeRequest()
+        val req1 = server.awaitRequest()
         val path1 = req1.path!!
         assertTrue("start offset for page 1", path1.contains("start=1"))
         assertTrue("filter preserved on page 1", path1.contains("filter=artist"))
@@ -220,7 +221,7 @@ class LRRSearchPaginationTest {
             listOf(archiveJson("o1", "Old")), total = 1
         )))
         source1.load(PagingSource.LoadParams.Refresh(null, 3, false))
-        val req1 = server.takeRequest()
+        val req1 = server.awaitRequest()
         assertTrue(req1.path!!.contains("filter=old"))
 
         // Invalidate and create new source with different filter
@@ -230,7 +231,7 @@ class LRRSearchPaginationTest {
             listOf(archiveJson("n1", "New")), total = 1
         )))
         val result = source2.load(PagingSource.LoadParams.Refresh(null, 3, false))
-        val req2 = server.takeRequest()
+        val req2 = server.awaitRequest()
 
         assertTrue(req2.path!!.contains("filter=new"))
         assertFalse("start omitted on fresh source", req2.path!!.contains("start="))

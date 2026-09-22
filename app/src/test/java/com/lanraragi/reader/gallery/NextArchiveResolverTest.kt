@@ -1,5 +1,6 @@
 package com.lanraragi.reader.gallery
 
+import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
@@ -82,7 +83,7 @@ class NextArchiveResolverTest {
 
         resolver.resolve(id('a'))
 
-        assertFalse(server.takeRequest().path!!.contains("hidecompleted"))
+        assertFalse(server.awaitRequest().path!!.contains("hidecompleted"))
     }
 
     @Test

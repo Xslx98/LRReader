@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.client.api.*
 import com.lanraragi.reader.client.api.data.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -64,7 +65,7 @@ class LRRUrlBuilderSecurityTest {
 
         LRRServerApi.getServerInfo(client, baseUrl)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("GET", req.method)
         assertEquals(
             "Sub-path baseUrl must produce a clean /sub/api/info path",
@@ -80,7 +81,7 @@ class LRRUrlBuilderSecurityTest {
 
         LRRDatabaseApi.getDatabaseStats(client, baseUrl)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("/lrr/api/database/stats", req.path)
     }
 
@@ -91,7 +92,7 @@ class LRRUrlBuilderSecurityTest {
 
         LRRCategoryApi.getCategories(client, baseUrl)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("/lrr/api/categories", req.path)
     }
 
@@ -102,7 +103,7 @@ class LRRUrlBuilderSecurityTest {
 
         LRRShinobuApi.getShinobuStatus(client, baseUrl)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("/lrr/api/shinobu", req.path)
     }
 

@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.client.api.*
 import com.lanraragi.reader.client.api.data.*
 import kotlinx.coroutines.test.runTest
@@ -42,7 +43,7 @@ class LRRMiscApiTest {
         val jobId = LRRMiscApi.downloadUrl(client, baseUrl, "https://example.com/file.zip", catid = "SET_aaaaaaaaaa")
         assertEquals(42, jobId)
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertEquals("POST", req.method)
         assertTrue(req.path!!.contains("/api/download_url"))
         assertTrue(req.path!!.contains("url="))
@@ -78,7 +79,7 @@ class LRRMiscApiTest {
 
         LRRMiscApi.downloadUrl(client, baseUrl, "https://example.com/file.zip")
 
-        val req = server.takeRequest()
+        val req = server.awaitRequest()
         assertFalse(req.path!!.contains("catid"))
     }
 }
