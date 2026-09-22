@@ -29,12 +29,6 @@
         android:title="@string/settings_advanced_dump_logcat"
         app:allowDividerAbove="true" />
 
-    <com.lanraragi.reader.preference.ClearDownloadPathCachePreference
-        android:key="clear_download_path_cache"
-        android:summary="@string/settings_advanced_clear_download_path_cache_summary"
-        android:title="@string/settings_advanced_clear_download_path_cache"
-        app:allowDividerAbove="true" />
-
     <Preference
         android:key="clear_memory_cache"
         android:summary="@string/settings_advanced_clear_memory_cache_summary"

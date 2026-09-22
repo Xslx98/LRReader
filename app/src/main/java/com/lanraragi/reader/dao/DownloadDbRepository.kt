@@ -429,10 +429,6 @@ class DownloadDbRepository(
         downloadDao.deleteDirnameByKey(arcid)
     }
 
-    suspend fun clearDownloadDirname() {
-        downloadDao.deleteAllDirnames()
-    }
-
     // ═══════════════════════════════════════════════════════════
     // DOWNLOAD LABELS (separate table, not touched by L1)
     // ═══════════════════════════════════════════════════════════
