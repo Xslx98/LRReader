@@ -223,7 +223,7 @@
     <!-- History -->
     <string name="no_history">閲覧履歴はここに表示されます</string>
     <string name="clear_all">すべて削除</string>
-    <string name="clear_all_history">閲覧履歴をすべて削除しますか？</string>
+    <string name="clear_all_history">このサーバーの閲覧履歴を削除しますか？</string>
     <string name="show_definition">ヘルプを表示</string>
     <!-- Set Security -->
     <string name="set_pattern_protection">パターン保護を設定</string>

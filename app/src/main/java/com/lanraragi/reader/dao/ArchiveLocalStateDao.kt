@@ -230,6 +230,12 @@ interface ArchiveLocalStateDao {
     )
     suspend fun clearAllHistorySubsystems()
 
+    @Query(
+        "UPDATE ARCHIVE_LOCAL_STATE SET HISTORY_TIME = NULL, HISTORY_MODE = 0, HISTORY_SCROLL_FRACTION = NULL " +
+            "WHERE HISTORY_TIME IS NOT NULL AND SERVER_PROFILE_ID = :profileId"
+    )
+    suspend fun clearHistorySubsystemsForProfile(profileId: Long)
+
     /**
      * Trim history: clear the history subsystem on every row that
      * isn't in the top [maxCount] by HISTORY_TIME desc. Pair with
@@ -561,6 +567,12 @@ interface ArchiveLocalStateDao {
     @Transaction
     suspend fun clearAllHistoryAndPruneEmptyRows() {
         clearAllHistorySubsystems()
+        deleteAllEmptyRows()
+    }
+
+    @Transaction
+    suspend fun clearHistoryForProfileAndPruneEmptyRows(profileId: Long) {
+        clearHistorySubsystemsForProfile(profileId)
         deleteAllEmptyRows()
     }
 

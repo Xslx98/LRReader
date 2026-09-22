@@ -93,4 +93,25 @@ class HistoryRepositoryMergeTest {
         assertEquals(80, stored.progress)
         assertEquals(100, stored.pagecount)
     }
+
+    @Test
+    fun clearHistory_clearsOnlyTheActiveProfile() = runTest {
+        val prefs = ApplicationProvider.getApplicationContext<Context>()
+            .getSharedPreferences("history_clear_test", Context.MODE_PRIVATE)
+        com.lanraragi.reader.client.api.LRRAuthManager.initializeForTesting(prefs)
+        try {
+            com.lanraragi.reader.client.api.LRRAuthManager.setActiveProfileId(1L)
+            repo.putHistoryInfo(archive(pagecount = 5, progress = 1, summary = null, tags = emptyMap()))
+            repo.putHistoryInfo(
+                archive(pagecount = 5, progress = 1, summary = null, tags = emptyMap()).copy(serverProfileId = 2L)
+            )
+
+            repo.clearHistory()
+
+            assertEquals(null, dao.loadByArcidAndProfile("a1", 1L))
+            assertEquals(true, dao.loadByArcidAndProfile("a1", 2L)?.historyTime != null)
+        } finally {
+            com.lanraragi.reader.client.api.LRRAuthManager.clear()
+        }
+    }
 }

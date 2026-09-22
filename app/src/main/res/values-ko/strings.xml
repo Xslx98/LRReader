@@ -262,7 +262,7 @@
     <!-- History -->
     <string name="no_history">읽은 갤러리가 여기에 표시됩니다.</string>
     <string name="clear_all">모두 지우기</string>
-    <string name="clear_all_history">모든 방문 기록을 지우시겠습니까?</string>
+    <string name="clear_all_history">이 서버의 읽기 기록을 지우시겠습니까?</string>
 
     <string name="show_definition">정의 표시</string>
 
