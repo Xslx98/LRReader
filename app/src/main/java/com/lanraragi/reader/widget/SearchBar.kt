@@ -16,6 +16,12 @@
 
 package com.lanraragi.reader.widget
 
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.findViewTreeLifecycleOwner
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import com.lanraragi.reader.domain.splitNamespace
 import android.animation.Animator
 import android.animation.ObjectAnimator
@@ -78,6 +84,7 @@ class SearchBar : CardView,
         private const val STATE_KEY_STATE = "state"
 
         private const val ANIMATE_TIME = 300L
+        private const val LRR_SUGGEST_DEBOUNCE_MS = 150L
 
         const val STATE_NORMAL = 0
         const val STATE_SEARCH = 1
@@ -167,6 +174,42 @@ class SearchBar : CardView,
         mListHeader.visibility = GONE
     }
 
+    private var lrrSuggestJob: Job? = null
+
+    private fun scheduleLrrSuggestions(text: String, exclude: Set<String>) {
+        lrrSuggestJob?.cancel()
+        if (text.isEmpty()) return
+        // The view tree's lifecycle scope: the work ends with the screen.
+        val scope = findViewTreeLifecycleOwner()?.lifecycleScope ?: return
+        lrrSuggestJob = scope.launch {
+            delay(LRR_SUGGEST_DEBOUNCE_MS)
+            val tags = withContext(Dispatchers.Default) { LRRTagCache.suggest(text) }
+            run {
+                // Typed on meanwhile: a newer run owns the list.
+                if (mEditText.text?.toString() != text) return@run
+                var added = false
+                for (tag in tags) {
+                    val ns = tag.namespace
+                    val fullTag = if (ns.isNullOrEmpty()) tag.text else "$ns:${tag.text}"
+                    if (fullTag.lowercase() !in exclude) {
+                        mSuggestionList.add(TagSuggestion(null, fullTag))
+                        added = true
+                    }
+                }
+                if (added) {
+                    addListHeader()
+                    @Suppress("NotifyDataSetChanged")
+                    mSuggestionAdapter.notifyDataSetChanged()
+                }
+            }
+        }
+    }
+
+    override fun onDetachedFromWindow() {
+        lrrSuggestJob?.cancel()
+        super.onDetachedFromWindow()
+    }
+
     private fun updateSuggestions(scrollToTop: Boolean = true) {
         mSuggestionList.clear()
         val editable = mEditText.text
@@ -231,17 +274,9 @@ class SearchBar : CardView,
             }
         }
 
-        // LRR server tag suggestions (from in-memory cache, no network call)
-        if (text.isNotEmpty()) {
-            val lrrTags = LRRTagCache.suggest(text)
-            for (tag in lrrTags) {
-                val ns = tag.namespace
-                val fullTag = if (ns.isNullOrEmpty()) tag.text else "$ns:${tag.text}"
-                if (fullTag.lowercase() !in existingTagKeys) {
-                    mSuggestionList.add(TagSuggestion(null, fullTag))
-                }
-            }
-        }
+        // LRR server tag suggestions: scanning the whole server tag list is
+        // done off the main thread, debounced, and appended when ready.
+        scheduleLrrSuggestions(text, existingTagKeys.toHashSet())
 
         if (mSuggestionList.isEmpty()) {
             removeListHeader()

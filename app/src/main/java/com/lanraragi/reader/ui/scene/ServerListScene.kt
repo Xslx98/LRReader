@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene
 
+import kotlinx.coroutines.launch
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -213,8 +214,16 @@ class ServerListScene : BaseScene() {
             return
         }
 
-        // Clear caches so previous server's content doesn't appear under new server
-        ServiceRegistry.clearAllCaches()
+        // Clear caches so previous server's content doesn't appear under new
+        // server. Off the main thread: the disk caches delete their files
+        // and may wait for in-flight readers.
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            try {
+                ServiceRegistry.clearAllCaches()
+            } catch (e: Exception) {
+                android.util.Log.w("ServerListScene", "Cache clear after profile switch failed")
+            }
+        }
 
         // Reload download manager on main thread (repo.assertMainThread)
         ServiceRegistry.dataModule.downloadManager.reload()

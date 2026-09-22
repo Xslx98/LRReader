@@ -19,6 +19,7 @@ package com.lanraragi.reader.download
 import android.content.Context
 import android.os.Looper
 import android.util.Log
+import androidx.core.content.edit
 import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.DownloadInfo
@@ -127,19 +128,39 @@ class DownloadManager(
                 }
                 if (snapshots.isEmpty()) return@launch
 
-                // Fetch metadata for each archive and collect rating changes.
+                // Per source profile (ratings live on the archive's source
+                // server, not the active one): at most once a day, skipped
+                // whole when the server is unreachable, bulk via the search
+                // listing when the library is small (DownloadRatingSync).
+                val prefs = mContext.getSharedPreferences(RATING_SYNC_PREFS, android.content.Context.MODE_PRIVATE)
+                val now = System.currentTimeMillis()
+                val sync = DownloadRatingSync(
+                    probe = { url -> com.lanraragi.reader.client.api.probeSourceHealthy(client, url) },
+                    searchPage = { url, start ->
+                        val result = com.lanraragi.reader.client.api.LRRSearchApi.searchArchives(
+                            client, url, filter = null, category = null, start = start,
+                            sortby = null, order = null, newonly = false,
+                        )
+                        DownloadRatingSync.Page(result.data.map { it.arcid to it.tags }, result.recordsTotal)
+                    },
+                    fetchTags = { url, arcid ->
+                        com.lanraragi.reader.client.api.LRRArchiveApi.getArchiveMetadata(client, url, arcid).tags
+                    },
+                )
                 val changes = ArrayList<Pair<RatingSyncSnapshot, Float>>()
-                for (snap in snapshots) {
-                    try {
-                        // Route to the archive's *source* server (resolved from its
-                        // serverProfileId), not the active one — a cross-profile download
-                        // otherwise hits the wrong server and, since arcids are content
-                        // hashes, could read another server's rating for the same id.
-                        val baseUrl = com.lanraragi.reader.client.api
-                            .resolveSourceBaseUrl(snap.serverProfileId, cache)
-                        val archive = com.lanraragi.reader.client.api.LRRArchiveApi
-                            .getArchiveMetadata(client, baseUrl, snap.arcid)
-                        val serverRating = parseRatingFromTags(archive.tags)
+                for ((profileId, group) in snapshots.groupBy { it.serverProfileId }) {
+                    val key = "last_$profileId"
+                    if (now - prefs.getLong(key, 0L) < DownloadRatingSync.SYNC_INTERVAL_MS) continue
+                    val baseUrl = try {
+                        com.lanraragi.reader.client.api.resolveSourceBaseUrl(profileId, cache)
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        continue
+                    }
+                    val serverRatings = sync.ratings(baseUrl, group.mapTo(HashSet()) { it.arcid }) ?: continue
+                    for (snap in group) {
+                        val serverRating = serverRatings[snap.arcid] ?: continue
                         // Only update if server has a meaningful rating that
                         // differs from the local value. -1 = no rating tag on
                         // server, 0 = unrated locally; treat both as "unrated".
@@ -148,9 +169,8 @@ class DownloadManager(
                         if (serverEffective != localEffective) {
                             changes.add(snap to if (serverRating < 0) 0f else serverRating)
                         }
-                    } catch (e: Exception) {
-                        // Skip this archive on error, continue with next
                     }
+                    prefs.edit { putLong(key, now) }
                 }
 
                 if (changes.isEmpty()) return@launch
@@ -623,6 +643,7 @@ class DownloadManager(
 
     companion object {
         private val TAG = DownloadManager::class.java.simpleName
+        private const val RATING_SYNC_PREFS = "download_rating_sync"
         const val DOWNLOAD_INFO_HEADER = "gid,token,title,title_jpn,thumb,category,posted,uploader,rating,rated,simple_lang,simple_tags,thumb_width,thumb_height,span_size,span_index,span_group_index,favorite_slot,favorite_name,pages"
         @JvmField val DATE_DESC_COMPARATOR: Comparator<DownloadInfo> = Comparator { lhs, rhs ->
             val dif = lhs.time - rhs.time
