@@ -1,0 +1,5 @@
+Reliability and security release from a full code audit (62 fixes).
+App lock: can no longer be bypassed via Back, process restore, widgets or shortcuts; titles are hidden while locked; shake-to-reset is removed.
+Downloads: cleanup and path-cache tools no longer delete or orphan downloads; same-titled archives get separate folders.
+Tags and ratings are no longer corrupted on save; tankoubons resume at server progress.
+Faster cold start, long lists and search suggestions.
