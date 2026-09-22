@@ -834,6 +834,15 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
                 true
             }
             if (!s.offline) {
+                menu.add(R.string.tank_reset_tags).setOnMenuItemClickListener {
+                    AlertDialog.Builder(ctx)
+                        .setTitle(R.string.tank_reset_tags)
+                        .setMessage(R.string.tank_reset_tags_confirm)
+                        .setPositiveButton(android.R.string.ok) { _, _ -> viewModel.resetTags() }
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show()
+                    true
+                }
                 menu.add(R.string.tank_delete).setOnMenuItemClickListener {
                     TankDialogs.showDeleteConfirm(ctx) { viewModel.deleteTank() }
                     true
