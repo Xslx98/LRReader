@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene
 
+import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
@@ -414,8 +415,8 @@ class TankoubonsViewModelTest {
         assertEquals("First", vm.tanks.value[0].name)
         assertEquals("Second", vm.tanks.value[1].name)
         assertEquals("Should have requested exactly two pages", 2, server.requestCount)
-        assertEquals("/api/tankoubons", server.takeRequest().path)
-        assertEquals("/api/tankoubons?page=1", server.takeRequest().path)
+        assertEquals("/api/tankoubons", server.awaitRequest().path)
+        assertEquals("/api/tankoubons?page=1", server.awaitRequest().path)
     }
 
     @Test
@@ -517,8 +518,8 @@ class TankoubonsViewModelTest {
         vm.autoSort(tank)
 
         awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.Sorted } }
-        assertTrue(server.takeRequest().path!!.startsWith("/api/tankoubons/${tank.id}/full"))
-        val put = server.takeRequest()
+        assertTrue(server.awaitRequest().path!!.startsWith("/api/tankoubons/${tank.id}/full"))
+        val put = server.awaitRequest()
         assertEquals("PUT", put.method)
         assertEquals("/api/tankoubons/${tank.id}", put.path)
         assertTrue(put.body.readUtf8().contains(""""archives":["${arcId(3)}","${arcId(1)}","${arcId(2)}"]"""))
@@ -555,7 +556,7 @@ class TankoubonsViewModelTest {
         vm.restoreOrder("TANK_0000000001", listOf(arcId(2), arcId(1)))
 
         awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.ShowSuccess } }
-        val put = server.takeRequest()
+        val put = server.awaitRequest()
         assertEquals("PUT", put.method)
         assertTrue(put.body.readUtf8().contains(""""archives":["${arcId(2)}","${arcId(1)}"]"""))
     }

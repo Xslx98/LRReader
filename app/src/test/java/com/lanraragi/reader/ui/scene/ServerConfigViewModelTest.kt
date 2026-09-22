@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene
 
+import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.room.Room
@@ -294,7 +295,7 @@ class ServerConfigViewModelTest {
 
         awaitViewModelIdle(vm)
 
-        val recorded = server.takeRequest()
+        val recorded = server.awaitRequest()
         val expected = "Bearer " + android.util.Base64.encodeToString(
             "candidate-key".toByteArray(Charsets.UTF_8), android.util.Base64.NO_WRAP
         )
