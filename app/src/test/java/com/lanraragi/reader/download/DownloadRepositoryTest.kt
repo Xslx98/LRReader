@@ -412,6 +412,25 @@ class DownloadRepositoryTest {
     }
 
     @Test
+    fun labelDeletedRightAfterCreation_isGoneFromTheDb() {
+        val pool = java.util.concurrent.Executors.newFixedThreadPool(4)
+        val ioScope = CoroutineScope(kotlinx.coroutines.SupervisorJob() + pool.asCoroutineDispatcher())
+        try {
+            val ordered = DownloadRepository(context, ioScope, Dispatchers.Unconfined)
+            ordered.addLabel("fresh")
+            ordered.deleteLabel("fresh")
+            ordered.addLabel("renamed-before")
+            ordered.renameLabel("renamed-before", "renamed-after")
+            runBlocking { ordered.awaitDbWrites() }
+            val names = runBlocking { db.downloadDao().getAllDownloadLabels() }.map { it.label }
+            assertEquals(listOf("renamed-after"), names)
+        } finally {
+            ioScope.cancel()
+            pool.shutdownNow()
+        }
+    }
+
+    @Test
     fun persistInfo_writesTheValuesAtCallTime() {
         val info = makeInfo(0, "snap", "Before").apply { serverProfileId = 1L }
         repo.persistInfo(info)

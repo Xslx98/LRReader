@@ -652,16 +652,13 @@ class DownloadRepository(
         labelSet.add(label)
         labelInfoMap[label] = ArrayList()
 
-        scope.launch {
-            try {
-                val saved = ServiceRegistry.dataModule.downloadDbRepository.addDownloadLabel(label)
-                runOnMainThread {
-                    newLabel.id = saved.id
-                    newLabel.time = saved.time
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to persist new label: $label", e)
-            }
+        // The id is assigned inside the queued write, before any later
+        // rename/delete of this label runs: those match the row by id, and
+        // a main-thread hop here used to leave them a null id (a no-op).
+        enqueueDbWrite("Failed to persist new label") {
+            val saved = ServiceRegistry.dataModule.downloadDbRepository.addDownloadLabel(label)
+            newLabel.id = saved.id
+            newLabel.time = saved.time
         }
 
         return true
@@ -671,12 +668,8 @@ class DownloadRepository(
         assertMainThread()
         val item = labelList.removeAt(fromPosition)
         labelList.add(toPosition, item)
-        scope.launch {
-            try {
-                ServiceRegistry.dataModule.downloadDbRepository.moveDownloadLabel(fromPosition, toPosition)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to persist label move from=$fromPosition to=$toPosition", e)
-            }
+        enqueueDbWrite("Failed to persist label move") {
+            ServiceRegistry.dataModule.downloadDbRepository.moveDownloadLabel(fromPosition, toPosition)
         }
     }
 
@@ -707,14 +700,10 @@ class DownloadRepository(
         labelInfoMap[to] = list
 
         val labelToUpdate = rawLabel
-        val infosToUpdate = ArrayList(list)
-        scope.launch {
-            try {
-                ServiceRegistry.dataModule.downloadDbRepository.updateDownloadLabel(labelToUpdate)
-                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfoBatch(infosToUpdate)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to persist label rename from=$from to=$to", e)
-            }
+        val infosToUpdate = list.map { it.snapshot() }
+        enqueueDbWrite("Failed to persist label rename") {
+            ServiceRegistry.dataModule.downloadDbRepository.updateDownloadLabel(labelToUpdate)
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfoBatch(infosToUpdate)
         }
 
         return list
@@ -749,14 +738,10 @@ class DownloadRepository(
         }
 
         val labelToRemove = removedLabel
-        val infosToUpdate = ArrayList(list)
-        scope.launch {
-            try {
-                ServiceRegistry.dataModule.downloadDbRepository.removeDownloadLabel(labelToRemove)
-                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfoBatch(infosToUpdate)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to persist label deletion: $label", e)
-            }
+        val infosToUpdate = list.map { it.snapshot() }
+        enqueueDbWrite("Failed to persist label deletion") {
+            ServiceRegistry.dataModule.downloadDbRepository.removeDownloadLabel(labelToRemove)
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfoBatch(infosToUpdate)
         }
 
         return list
