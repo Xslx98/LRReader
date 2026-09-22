@@ -297,6 +297,14 @@ class LRRGalleryProvider(
                     notifyDataChanged()
                     return@launch
                 }
+                if (pages.isEmpty()) {
+                    // An archive with no pages: say so, instead of letting the
+                    // start-page clamp throw into the generic "failed" error.
+                    errorMessage = GetText.getString(R.string.error_empty)
+                    stateRef.updateAndGet { it.copy(count = GalleryProvider.STATE_ERROR) }
+                    notifyDataChanged()
+                    return@launch
+                }
                 stateRef.set(ProviderState(paths = pages, count = pages.size))
                 Log.d(TAG, "Extracted ${pages.size} pages for $arcId")
 
@@ -419,6 +427,9 @@ class LRRGalleryProvider(
 
                 // Start preloading from resolved page
                 preloadPages(finalPage)
+            } catch (e: CancellationException) {
+                // stop() mid-start: the reader is closing, nothing to report.
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to extract archive: ${e.message}", e)
                 errorMessage = "Failed to load pages: ${e.message}"
