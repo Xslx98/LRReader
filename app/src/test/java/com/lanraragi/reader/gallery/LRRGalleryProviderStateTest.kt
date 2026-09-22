@@ -7,6 +7,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.atomic.AtomicReference
 
@@ -90,9 +91,22 @@ class LRRGalleryProviderStateTest {
     fun `rapid stop toggle always converges`() {
         val ref = AtomicReference(ProviderState(paths = arrayOf("/a"), count = 1))
         val latch = CountDownLatch(2)
-        Thread { repeat(10_000) { ref.updateAndGet { it.copy(stopped = true) } }; latch.countDown() }.start()
-        Thread { repeat(10_000) { val s = ref.get(); if (s.paths != null) assertEquals(1, s.count) }; latch.countDown() }.start()
-        latch.await()
+        val errors = mutableListOf<Throwable>()
+        // Failures on a bare thread never reach JUnit (and would skip the
+        // countDown), so collect them and assert on the test thread.
+        fun worker(body: () -> Unit) = Thread {
+            try {
+                body()
+            } catch (e: Throwable) {
+                synchronized(errors) { errors.add(e) }
+            } finally {
+                latch.countDown()
+            }
+        }.start()
+        worker { repeat(10_000) { ref.updateAndGet { it.copy(stopped = true) } } }
+        worker { repeat(10_000) { val s = ref.get(); if (s.paths != null) assertEquals(1, s.count) } }
+        assertTrue("workers did not finish", latch.await(30, TimeUnit.SECONDS))
+        assertTrue("Concurrent errors: $errors", errors.isEmpty())
         assertTrue(ref.get().stopped)
     }
 
