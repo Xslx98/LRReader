@@ -111,4 +111,38 @@ class DownloadDirAllocatorTest {
         assertNotEquals(root.parentFile!!.absolutePath, dir!!.uri.path)
         assertEquals("Real", repo.getDownloadDirname("a1"))
     }
+
+    @Test
+    fun delete_usesTheCapturedRootNotTheCurrentLocation() = runTest {
+        val oldRoot = tmp.newFolder("old-root")
+        val a = DownloadDirAllocator(repo) { uri -> UniFile.fromFile(if (uri == "old") oldRoot else root) }
+        a.allocate("x", "Vol 1", rootUriOverride = "old")
+        File(oldRoot, "Vol 1/0001.jpg").writeBytes(ByteArray(10))
+        // Another archive lives under the same name in the current root.
+        File(root, "Vol 1").mkdirs()
+        File(root, "Vol 1/0001.jpg").writeBytes(ByteArray(10))
+
+        assertTrue(a.delete("x", rootUriOverride = "old"))
+
+        assertTrue(!File(oldRoot, "Vol 1").exists())
+        assertTrue(File(root, "Vol 1/0001.jpg").exists())
+        assertNull(repo.getDownloadDirname("x"))
+    }
+
+    @Test
+    fun delete_refusesUnsafePointersAndKeepsTheRoot() = runTest {
+        File(root, "keep.jpg").writeBytes(ByteArray(10))
+        repo.putDownloadDirname("x", ".")
+        assertTrue(!allocator.delete("x", null))
+        repo.putDownloadDirname("x", "..")
+        assertTrue(!allocator.delete("x", null))
+        assertTrue(File(root, "keep.jpg").exists())
+    }
+
+    @Test
+    fun delete_withoutPointer_deletesNothing() = runTest {
+        File(root, "Vol 1").mkdirs()
+        assertTrue(!allocator.delete("x", null))
+        assertTrue(File(root, "Vol 1").exists())
+    }
 }
