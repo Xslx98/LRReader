@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene
 
+import com.lanraragi.reader.tankoubon.TankListCache
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import android.content.Context
@@ -367,6 +368,7 @@ class TankoubonsViewModel : ViewModel() {
         // Fresh server truth in hand — revalidate covers. Must precede the
         // callers' _tanks publication so cover binds already see the new stamp.
         TankCoverCacheStamp.bump()
+        TankListCache.put(serverUrl, all)
         return ArrayList(all)
     }
 

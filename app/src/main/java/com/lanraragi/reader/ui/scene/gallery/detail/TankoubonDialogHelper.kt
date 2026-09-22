@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.detail
 
+import com.lanraragi.reader.tankoubon.TankListCache
 import android.app.Activity
 import android.os.Handler
 import android.os.Looper
@@ -148,6 +149,7 @@ object TankoubonDialogHelper {
                     page++
                 }
                 if (arcid != null) TankoubonSupportGate.markSupported(url)
+                TankListCache.put(url, tanks)
                 Handler(Looper.getMainLooper()).post { onLoaded(tanks, memberIds, url) }
             } catch (ce: CancellationException) {
                 // Lifecycle teardown cancelled the fetch; not an error to toast.
@@ -268,6 +270,7 @@ object TankoubonDialogHelper {
                     TankTagSyncer.afterRemove(client, serverUrl, snap, listOf(arcid))
                     TankCategorySyncer.afterRemove(client, serverUrl, snap, listOf(arcid))
                 }
+                TankListCache.invalidate(serverUrl)
                 val newIds = tanks.indices.filter { checked[it] }.map { tanks[it].id }
                 Handler(Looper.getMainLooper()).post {
                     Toast.makeText(appContext, R.string.tank_op_done, Toast.LENGTH_SHORT).show()
@@ -324,6 +327,7 @@ object TankoubonDialogHelper {
                 try {
                     val client = ServiceRegistry.networkModule.okHttpClient
                     val newId = LRRTankoubonApi.createTankoubon(client, serverUrl, name)
+                    TankListCache.invalidate(serverUrl)
                     Handler(Looper.getMainLooper()).post {
                         if (!activity.isDestroyed) onCreated(newId, name)
                     }
