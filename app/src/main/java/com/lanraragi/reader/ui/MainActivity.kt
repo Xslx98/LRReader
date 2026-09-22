@@ -549,11 +549,12 @@ class MainActivity : StageActivity(),
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 AppEventBus.tankTagSyncFailedEvent.collect { event ->
                     val host = mDrawerLayout ?: return@collect
-                    Snackbar.make(
-                        host,
-                        getString(R.string.tank_tag_sync_failed, event.tankName),
-                        Snackbar.LENGTH_LONG,
-                    ).show()
+                    val resId = when (event.kind) {
+                        com.lanraragi.reader.event.TankTagSyncFailedEvent.Kind.TAGS -> R.string.tank_tag_sync_failed
+                        com.lanraragi.reader.event.TankTagSyncFailedEvent.Kind.CATEGORIES ->
+                            R.string.tank_category_sync_failed
+                    }
+                    Snackbar.make(host, getString(resId, event.tankName), Snackbar.LENGTH_LONG).show()
                 }
             }
         }
