@@ -279,6 +279,28 @@ class DownloadSchedulerTest {
     }
 
     @Test
+    fun eventsFromAWorkerThatIsNoLongerActive_areDropped() {
+        val info = makeInfo(7L)
+        val stale = LRRDownloadWorker(context, info)
+        val current = LRRDownloadWorker(context, info)
+        scheduler.activeTasks.add(info)
+        scheduler.activeWorkers[info] = current
+        info.state = DownloadState.DOWNLOAD
+
+        scheduler.PerTaskListener(info, stale).onFinish(10, 10, 10)
+        scheduler.PerTaskListener(info, stale).onGetPages(99)
+        ShadowLooper.idleMainLooper()
+
+        assertEquals(DownloadState.DOWNLOAD, info.state)
+        assertTrue(info in scheduler.activeTasks)
+        assertNotEquals(99, info.pagecount)
+
+        scheduler.PerTaskListener(info, current).onGetPages(42)
+        ShadowLooper.idleMainLooper()
+        assertEquals(42, info.pagecount)
+    }
+
+    @Test
     fun dispatchEvent_onFinish_removesFromActive() {
         val info = makeInfo(1L)
         // Manually add to activeTasks to simulate an in-progress download

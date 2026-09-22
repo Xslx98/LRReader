@@ -93,15 +93,16 @@ internal class DownloadScheduler(
             val worker = LRRDownloadWorker(context, info)
             activeTasks.add(info)
             activeWorkers[info] = worker
-            worker.listener = PerTaskListener(info)
+            val listener = PerTaskListener(info, worker)
+            worker.listener = listener
             worker.onNetworkWaitEvent = { ev ->
                 when (ev) {
                     LRRDownloadWorker.NetworkWaitEvent.WAITING ->
-                        postEvent(DownloadEvent.OnNetworkWait(info, true))
+                        listener.post(DownloadEvent.OnNetworkWait(info, true))
                     LRRDownloadWorker.NetworkWaitEvent.RESUMED ->
-                        postEvent(DownloadEvent.OnNetworkWait(info, false))
+                        listener.post(DownloadEvent.OnNetworkWait(info, false))
                     LRRDownloadWorker.NetworkWaitEvent.TIMED_OUT ->
-                        postEvent(DownloadEvent.OnNetworkTimeout(info))
+                        listener.post(DownloadEvent.OnNetworkTimeout(info))
                 }
             }
             info.state = DownloadState.DOWNLOAD
@@ -462,13 +463,6 @@ internal class DownloadScheduler(
         }
     }
 
-    /**
-     * Post a [DownloadEvent] to the main thread for dispatch.
-     */
-    private fun postEvent(event: DownloadEvent) {
-        eventBus.postToMain { dispatchEvent(event) }
-    }
-
     // ═══════════════════════════════════════════════════════════
     // Per-task listener (bridges worker callbacks to events)
     // ═══════════════════════════════════════════════════════════
@@ -477,31 +471,46 @@ internal class DownloadScheduler(
      * Bridges [SpiderQueen.OnSpiderListener] callbacks from
      * [LRRDownloadWorker] into the [DownloadEvent] sealed interface,
      * posting them to the main thread for dispatch.
+     *
+     * Every event is fenced by worker identity: it is dispatched only if
+     * [mWorker] is still the active worker for its task. A cancelled
+     * worker keeps running until its coroutines unwind and may post
+     * OnGetPages (persisting a just-deleted row back) or a late OnFinish
+     * that would otherwise be attributed to a restarted task's new worker.
      */
-    internal inner class PerTaskListener(private val mInfo: DownloadInfo) : SpiderQueen.OnSpiderListener {
+    internal inner class PerTaskListener(
+        private val mInfo: DownloadInfo,
+        private val mWorker: LRRDownloadWorker,
+    ) : SpiderQueen.OnSpiderListener {
+
+        fun post(event: DownloadEvent) {
+            eventBus.postToMain {
+                if (activeWorkers[mInfo] === mWorker) dispatchEvent(event)
+            }
+        }
 
         override fun onGetPages(pages: Int) {
-            postEvent(DownloadEvent.OnGetPages(mInfo, pages))
+            post(DownloadEvent.OnGetPages(mInfo, pages))
         }
 
         override fun onGet509(index: Int) {
-            postEvent(DownloadEvent.OnGet509)
+            post(DownloadEvent.OnGet509)
         }
 
         override fun onPageDownload(index: Int, contentLength: Long, receivedSize: Long, bytesRead: Int) {
-            postEvent(DownloadEvent.OnPageDownload(mInfo, index, contentLength, receivedSize, bytesRead))
+            post(DownloadEvent.OnPageDownload(mInfo, index, contentLength, receivedSize, bytesRead))
         }
 
         override fun onPageSuccess(index: Int, finished: Int, downloaded: Int, total: Int) {
-            postEvent(DownloadEvent.OnPageSuccess(mInfo, index, finished, downloaded, total))
+            post(DownloadEvent.OnPageSuccess(mInfo, index, finished, downloaded, total))
         }
 
         override fun onPageFailure(index: Int, error: String, finished: Int, downloaded: Int, total: Int) {
-            postEvent(DownloadEvent.OnPageFailure(mInfo, index, error, finished, downloaded, total))
+            post(DownloadEvent.OnPageFailure(mInfo, index, error, finished, downloaded, total))
         }
 
         override fun onFinish(finished: Int, downloaded: Int, total: Int) {
-            postEvent(DownloadEvent.OnFinish(mInfo, finished, downloaded, total))
+            post(DownloadEvent.OnFinish(mInfo, finished, downloaded, total))
         }
 
         override fun onGetImageSuccess(index: Int, image: Image) {
