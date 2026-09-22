@@ -60,6 +60,7 @@ import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.TankDetailSt
 import com.lanraragi.reader.ui.widget.bindSourceServerBadge
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.util.collectFlowWhileCreated
+import java.util.Locale
 import kotlin.math.ceil
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -386,7 +387,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         bindSourceBadge()
         bindCover(s)
         val displayProgress = if (s.progress > 0) s.progress else 1
-        mPages?.text = "$displayProgress/${s.totalPages}P"
+        mPages?.text = getString(R.string.tank_detail_pages, displayProgress, s.totalPages)
         mSize?.text = resources.getQuantityString(R.plurals.lrr_category_archives, s.memberCount, s.memberCount)
         bindRating(s.rating)
         bindHeart()
@@ -462,7 +463,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
 
     private fun bindRating(rating: Float) {
         if (rating > 0f) {
-            mRatingText?.text = String.format("%.0f★", rating)
+            mRatingText?.text = String.format(Locale.getDefault(), "%.0f★", rating)
             mRating?.rating = rating
         } else {
             mRatingText?.setText(R.string.not_rated)
