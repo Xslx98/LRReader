@@ -1,5 +1,7 @@
 package com.lanraragi.reader.ui.scene.gallery.detail
 
+import com.lanraragi.reader.event.AppEventBus
+import com.lanraragi.reader.event.ArchiveRatingChangedEvent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.LegacyDb
@@ -253,6 +255,7 @@ class GalleryDetailViewModel : ViewModel() {
                 // download list — keeps the Downloads page rating in sync
                 // without requiring a manual refresh.
                 syncRatingToDownloadInfo(arcid, rating)
+                AppEventBus.postArchiveRatingChangedEvent(ArchiveRatingChangedEvent(arcid, rating))
                 if (BuildConfig.DEBUG) android.util.Log.d(TAG, "Rating saved: $rating for $arcid")
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e

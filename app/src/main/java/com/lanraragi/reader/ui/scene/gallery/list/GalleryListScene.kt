@@ -318,6 +318,17 @@ class GalleryListScene : BaseScene(),
             if (position >= 0) adapter?.notifyItemChanged(position)
         }
 
+        // Rating saved on the detail page: update the row in place. Whole-
+        // lifetime like the cover collector — this list is covered then.
+        collectFlowWhileCreated(this, AppEventBus.archiveRatingChangedEvent) { event ->
+            val list = mHelper?.getData() ?: return@collectFlowWhileCreated
+            val i = list.indexOfFirst { it.arcid == event.arcid }
+            if (i >= 0) {
+                list[i] = list[i].copy(rating = event.rating)
+                adapter?.notifyItemChanged(i)
+            }
+        }
+
         // Detail-page Tankoubons › Edit: same whole-lifetime collection and
         // onResume replay as deletions — the edit happens while this list is
         // covered, and the merge animation must play after the pop-back.
@@ -384,26 +395,6 @@ class GalleryListScene : BaseScene(),
         mUrlBuilder = null
         // The DownloadInfoListener is managed by the ViewModel and unregistered
         // in its onCleared() — no cleanup needed here.
-    }
-
-    override fun onSceneResult(requestCode: Int, resultCode: Int, data: android.os.Bundle?) {
-        if (requestCode == GalleryItemActionHelper.REQUEST_CODE_GALLERY_DETAIL
-            && resultCode == RESULT_OK && data != null
-        ) {
-            val arcid = data.getString(GalleryDetailScene.KEY_ARCID)
-            val rating = data.getFloat(GalleryDetailScene.KEY_RATING_RESULT, Float.NaN)
-            if (arcid != null && !rating.isNaN()) {
-                val list = mHelper?.getData() ?: return
-                for (i in list.indices) {
-                    if (list[i].arcid == arcid) {
-                        list[i] = list[i].copy(rating = rating)
-                        adapter?.notifyItemChanged(i)
-                        break
-                    }
-                }
-            }
-        }
-        super.onSceneResult(requestCode, resultCode, data)
     }
 
     fun onUpdateUrlBuilder() {
