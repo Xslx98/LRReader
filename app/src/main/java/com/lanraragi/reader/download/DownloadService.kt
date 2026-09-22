@@ -46,6 +46,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -223,40 +227,63 @@ class DownloadService : Service(), DownloadListener {
             startForegroundPlaceholder()
         }
 
-        // 2. Await init off the main thread, then hand the intent back to
-        //    main-thread handleIntent which is where the DownloadManager
-        //    mutators live.
+        // 2. Queue the command. One consumer awaits init once and then
+        //    handles commands strictly in arrival order on the main thread
+        //    (the DownloadManager mutators live there). A launch per command
+        //    raced: commands could run out of order, and after an init
+        //    timeout against a not-yet-loaded repository.
+        //    A null intent is a START_STICKY restart: the in-memory queue did
+        //    not survive process death, so there is nothing to resume — the
+        //    consumer just re-checks whether to stop, otherwise the
+        //    placeholder notification and the wakelocks taken in onCreate
+        //    would be held indefinitely.
+        ensureCommandConsumer()
+        commands.trySend(intent)
+        return START_STICKY
+    }
+
+    private val commands = Channel<Intent?>(Channel.UNLIMITED)
+    private var commandConsumer: Job? = null
+
+    private fun ensureCommandConsumer() {
+        if (commandConsumer != null) return
         val dm = mDownloadManager
-        if (intent != null) {
-            serviceScope.launch {
-                try {
-                    dm?.awaitInitAsync()
-                } catch (e: Exception) {
-                    Log.e(TAG, "awaitInitAsync failed; processing intent anyway", e)
-                }
+        commandConsumer = serviceScope.launch {
+            awaitDownloadManagerInit(dm)
+            for (intent in commands) {
                 withContext(Dispatchers.Main) {
-                    try {
-                        handleIntent(intent)
-                    } catch (e: NullPointerException) {
-                        Log.e(TAG, "Unexpected NPE in handleIntent — intent=$intent", e)
+                    if (intent == null) {
+                        checkStopSelf()
+                    } else {
+                        try {
+                            handleIntent(intent)
+                        } catch (e: NullPointerException) {
+                            Log.e(TAG, "Unexpected NPE in handleIntent — intent=$intent", e)
+                        }
                     }
                 }
             }
-        } else {
-            // START_STICKY restart with a null intent: the in-memory download queue did
-            // not survive process death, so there is nothing to resume. Await init then
-            // stop, otherwise the placeholder foreground notification and the CPU/Wi-Fi
-            // wakelocks (acquired in onCreate) would be held indefinitely.
-            serviceScope.launch {
-                try {
-                    dm?.awaitInitAsync()
-                } catch (e: Exception) {
-                    Log.e(TAG, "awaitInitAsync failed on null-intent restart", e)
-                }
-                withContext(Dispatchers.Main) { checkStopSelf() }
+        }
+    }
+
+    /**
+     * Waits for the repository load; commands stay queued meanwhile rather
+     * than running against an empty repository after a timeout.
+     */
+    private suspend fun awaitDownloadManagerInit(dm: DownloadManager?) {
+        while (dm != null) {
+            try {
+                dm.awaitInitAsync()
+                return
+            } catch (e: TimeoutCancellationException) {
+                Log.w(TAG, "Download manager still loading; commands stay queued")
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "awaitInitAsync failed; processing commands anyway", e)
+                return
             }
         }
-        return START_STICKY
     }
 
     /**
