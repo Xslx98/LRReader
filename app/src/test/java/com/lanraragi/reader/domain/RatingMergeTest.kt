@@ -46,4 +46,13 @@ class RatingMergeTest {
     fun numericRatingIsReplacedToo() {
         assertEquals("artist:foo, rating:⭐", mergeRatingIntoTags("artist:foo, rating:4", 1f))
     }
+
+    @Test
+    fun otherTagsContainingRatingAreLeftIntact() {
+        assertEquals(
+            "content_rating:safe, age_rating:18, rating:⭐⭐",
+            mergeRatingIntoTags("content_rating:safe, rating:⭐, age_rating:18", 2f)
+        )
+        assertEquals("content_rating:safe", mergeRatingIntoTags("content_rating:safe, rating:⭐", 0f))
+    }
 }

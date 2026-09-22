@@ -52,23 +52,22 @@ private fun countStars(value: String): Int {
     return count
 }
 
-private val RATING_TAG_WITH_LEADING_COMMA = Regex(",\\s*rating:[^,]*")
-private val RATING_TAG_WITH_TRAILING_COMMA = Regex("rating:[^,]*\\s*,?\\s*")
-private val EDGE_COMMAS = Regex("^,\\s*|,\\s*$")
-
 /**
  * Build the LANraragi tag string with the rating slot replaced. A
  * [rating] of 0 (or less) strips the rating tag entirely (LRR semantic
  * for "unrated"); any positive value writes `rating:⭐⭐⭐...` (rounded to
  * the nearest star). Every other tag is preserved in order.
+ *
+ * A tag is the rating tag only when the whole tag starts with `rating:` —
+ * the same rule as [parseRatingFromTags]. Matching `rating:` anywhere also
+ * cut into other tags (`content_rating:safe`, `age_rating:18`).
  */
 fun mergeRatingIntoTags(originalTags: String?, rating: Float): String {
     val cleaned = (originalTags ?: "")
-        .replace(RATING_TAG_WITH_LEADING_COMMA, "")
-        .replace(RATING_TAG_WITH_TRAILING_COMMA, "")
-        .trim()
-        .replace(EDGE_COMMAS, "")
-        .trim()
+        .splitToSequence(',')
+        .map { it.trim() }
+        .filter { it.isNotEmpty() && !it.startsWith(RATING_TAG_PREFIX) }
+        .joinToString(", ")
     if (rating <= 0f) return cleaned
     val ratingTag = RATING_TAG_PREFIX + buildRatingEmoji(rating.roundToInt())
     return if (cleaned.isEmpty()) ratingTag else "$cleaned, $ratingTag"
