@@ -388,9 +388,9 @@ class DirGalleryProvider : GalleryProvider2 {
                         // in-flight HTTP attempt actually abort near the same
                         // deadline (a blocking execute() would otherwise hold
                         // the thread past the coroutine cancel). Call the
-                        // suspend API directly — wrapping it in runSuspend
-                        // (runBlocking) blocks the IO thread and defeats the
-                        // timeout entirely.
+                        // suspend API directly — wrapping it in runBlocking
+                        // blocks the IO thread and defeats the timeout
+                        // entirely.
                         withTimeoutOrNull(METADATA_TIMEOUT_MS) {
                             try {
                                 val client = ServiceRegistry.networkModule.okHttpClient

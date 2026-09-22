@@ -16,9 +16,9 @@ import kotlinx.coroutines.flow.asSharedFlow
  * Provides properly configured [CoroutineScope] instances for the application.
  *
  * **Why this module exists:**
- * The codebase currently bridges suspend functions to Java via `runBlocking`.
- * As Java→Kotlin migration progresses and UI code starts using `launch {}`,
- * every launch site needs a [CoroutineExceptionHandler] to prevent silent crashes.
+ * Production code has no `runBlocking` bridge; background work is launched
+ * with `launch {}`, and every launch site needs a [CoroutineExceptionHandler]
+ * to prevent silent crashes.
  *
  * **Design rationale (per official Kotlin docs):**
  * - [CoroutineExceptionHandler] is invoked only on **uncaught** exceptions in
