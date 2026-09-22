@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.detail
 
+import com.lanraragi.reader.tankoubon.TankListCache
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.ArchiveRatingChangedEvent
 import androidx.lifecycle.ViewModel
@@ -67,7 +68,6 @@ class GalleryDetailViewModel : ViewModel() {
         const val STATE_FAILED = 3
         private const val HTTP_BAD_REQUEST = 400
         private const val HTTP_NOT_FOUND = 404
-        private const val MAX_TANK_PAGES = 100
     }
 
     // -------------------------------------------------------------------------
@@ -406,18 +406,19 @@ class GalleryDetailViewModel : ViewModel() {
                     _archiveTankoubons.value = emptyList()
                     return@launch
                 }
-                // id → name/count via the list endpoint (same data the
-                // membership dialog needs). Server pages are 0-based.
+                // id → name/count via the list endpoint, through a short-lived
+                // per-server cache so each detail open doesn't page the whole
+                // tank list again.
                 val idSet = ids.toSet()
-                val all = mutableListOf<LRRTankoubonApi.Tankoubon>()
-                var page = 0
-                while (page < MAX_TANK_PAGES) {
-                    val r = LRRTankoubonApi.getTankoubons(client, serverUrl, page)
-                    all.addAll(r.result)
-                    if (r.result.isEmpty() || all.size >= r.total) break
-                    page++
+                val all = TankListCache.get(client, serverUrl)
+                val found = all.filter { it.id in idSet }
+                // A tank created since the cached copy: refresh once.
+                _archiveTankoubons.value = if (found.size < idSet.size) {
+                    TankListCache.invalidate(serverUrl)
+                    TankListCache.get(client, serverUrl).filter { it.id in idSet }
+                } else {
+                    found
                 }
-                _archiveTankoubons.value = all.filter { it.id in idSet }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
