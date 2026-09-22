@@ -117,7 +117,9 @@ object DeleteArchiveHelper {
         if (arcid.isEmpty()) return
 
         val componentActivity = activity as ComponentActivity
-        componentActivity.lifecycleScope.launch(Dispatchers.IO) {
+        // App-scoped: once the DELETE is sent, a rotation must not cancel it
+        // before ArchiveDeletedEvent is posted (lists would keep the row).
+        ServiceRegistry.coroutineModule.ioScope.launch {
             try {
                 // Resolve the owning server from the archive's source profile,
                 // not the active profile (see show()'s serverProfileId doc).
