@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Tank detail members strip (spec 2026-09-22 §4.6): label + "Manage members"
+  entry, then a horizontal row of member cover cards (first 8) with a "+N"
+  tail card. Sits between the tags and previews includes.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tank_members"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="@dimen/keyline_margin"
+    android:paddingBottom="@dimen/keyline_margin">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="@dimen/keyline_margin"
+        android:paddingEnd="@dimen/keyline_margin"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:id="@+id/tank_members_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/tank_detail_members"
+            android:textColor="?attr/textColorThemePrimary"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/tank_members_manage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="@string/tank_manage_members"
+            android:textColor="?attr/textColorThemeAccent"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"/>
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/tank_members_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="@dimen/keyline_margin"
+        android:paddingEnd="@dimen/keyline_margin"
+        android:clipToPadding="false"
+        android:overScrollMode="never"/>
+
+</LinearLayout>

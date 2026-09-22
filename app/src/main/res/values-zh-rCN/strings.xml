@@ -329,6 +329,14 @@
     <string name="tank_download">下载合订本</string>
     <string name="tank_delete">删除合订本</string>
     <string name="tank_manage_members">成员管理</string>
+    <string name="not_rated">未评分</string>
+    <string name="tank_detail_offline">离线：显示已下载副本，评分、分类与标签不可编辑</string>
+    <string name="tank_detail_members">成员</string>
+    <string name="tank_member_more">+%1$d</string>
+    <string name="tank_member_view_detail">查看单本详情</string>
+    <string name="tank_page_divider">第 %1$d 章 · %2$s</string>
+    <string name="tank_view_detail">详情</string>
+    <string name="tank_detail_pages">%1$d/%2$dP</string>
     <string name="tank_delete_confirm">删除这个合订本？其中的档案不会被删除，但合订本自身的简介、附加标签和阅读进度将一并丢失。</string>
     <string name="tank_locked">合订本已被锁定，请稍后再试</string>
     <string name="tank_op_done">完成</string>

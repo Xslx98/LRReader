@@ -91,6 +91,38 @@ class LRRCategoryApiTest {
     }
 
     @Test
+    fun addToCategory_acceptsTankoubonId() = runTest {
+        server.enqueue(MockResponse().setBody("""{"operation":"add_to_category","success":1}"""))
+
+        LRRCategoryApi.addToCategory(client, baseUrl, "SET_aaaaaaaaaa", "TANK_1700000000")
+
+        val req = server.takeRequest()
+        assertEquals("PUT", req.method)
+        assertEquals("/api/categories/SET_aaaaaaaaaa/TANK_1700000000", req.path)
+    }
+
+    @Test
+    fun removeFromCategory_acceptsTankoubonId() = runTest {
+        server.enqueue(MockResponse().setBody("""{"operation":"remove_from_category","success":1}"""))
+
+        LRRCategoryApi.removeFromCategory(client, baseUrl, "SET_aaaaaaaaaa", "TANK_1700000000")
+
+        val req = server.takeRequest()
+        assertEquals("DELETE", req.method)
+        assertEquals("/api/categories/SET_aaaaaaaaaa/TANK_1700000000", req.path)
+    }
+
+    @Test
+    fun addToCategory_rejectsMalformedTankoubonId() = runTest {
+        try {
+            LRRCategoryApi.addToCategory(client, baseUrl, "SET_aaaaaaaaaa", "TANK_x")
+            fail("expected validation failure")
+        } catch (e: LRRClientValidationException) {
+            assertEquals(0, server.requestCount)
+        }
+    }
+
+    @Test
     fun deleteCategory_sendsDelete() = runTest {
         server.enqueue(MockResponse().setBody("""{"operation":"delete_category","success":1}"""))
 

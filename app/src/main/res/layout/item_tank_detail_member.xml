@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One member cover card of the tank detail members strip (spec 2026-09-22 §4.6). -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="@dimen/gallery_list_thumb_width"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="8dp"
+    android:orientation="vertical"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
+
+    <com.lanraragi.framework.widget.LoadImageViewNew
+        android:id="@+id/member_thumb"
+        android:layout_width="@dimen/gallery_list_thumb_width"
+        android:layout_height="@dimen/gallery_list_thumb_height"
+        android:scaleType="centerCrop"/>
+
+    <TextView
+        android:id="@+id/member_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:textColor="?attr/textColorThemePrimary"
+        android:textSize="@dimen/text_little_small"/>
+
+</LinearLayout>
