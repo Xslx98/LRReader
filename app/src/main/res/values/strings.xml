@@ -422,6 +422,8 @@
     <string name="tank_download">Download tankoubon</string>
     <string name="tank_delete">Delete tankoubon</string>
     <string name="tank_manage_members">Manage members</string>
+    <string name="not_rated">Not rated</string>
+    <string name="tank_detail_offline">Offline: showing the downloaded copy; rating, category and tags can\'t be edited</string>
     <string name="tank_delete_confirm">Delete this tankoubon? Archives inside are not deleted, but the tankoubon\'s own summary, additional tags and reading progress will be lost.</string>
     <string name="tank_locked">Tankoubon is locked, try again later</string>
     <string name="tank_op_done">Done</string>
