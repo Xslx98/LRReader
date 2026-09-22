@@ -2,6 +2,7 @@ package com.lanraragi.reader.client.api
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.SystemClock
 import android.os.Trace
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
@@ -66,11 +67,18 @@ object LRRAuthManager {
 
     // Persistent failure lockout (stored in plain SharedPreferences)
     private const val KEY_PATTERN_FAIL_COUNT = "pattern_fail_count"
-    private const val KEY_PATTERN_LOCKOUT_UNTIL = "pattern_lockout_until"
+    /** Pre-2026-09 wall-clock deadline; only removed now. */
+    private const val KEY_PATTERN_LOCKOUT_UNTIL_LEGACY = "pattern_lockout_until"
+    private const val KEY_LOCKOUT_DURATION = "pattern_lockout_duration_ms"
+    private const val KEY_LOCKOUT_START_ELAPSED = "pattern_lockout_start_elapsed"
+    private const val KEY_LOCKOUT_BOOT = "pattern_lockout_boot_count"
     private const val LOCKOUT_THRESHOLD_FIRST = 5
-    private const val LOCKOUT_THRESHOLD_SECOND = 10
-    private const val LOCKOUT_DURATION_FIRST_MS = 30_000L  // 30 seconds
-    private const val LOCKOUT_DURATION_SECOND_MS = 300_000L  // 5 minutes
+
+    /**
+     * Lockout after the 5th, 6th, 7th, 8th and every later consecutive
+     * failure. Escalating: a flat cap let brute force run at a steady rate.
+     */
+    private val LOCKOUT_DURATIONS_MS = longArrayOf(30_000L, 60_000L, 300_000L, 900_000L, 3_600_000L)
 
     @Volatile
     private var sPrefs: SharedPreferences? = null
@@ -118,8 +126,22 @@ object LRRAuthManager {
         _serverConfigVersion.incrementAndGet()
     }
 
-    /** Overridable clock source for testing lockout logic. */
-    internal var clockMillis: () -> Long = { System.currentTimeMillis() }
+    /**
+     * Monotonic clock for the lockout (overridable in tests). Deliberately not
+     * wall-clock time: moving the system date forward must not end a lockout.
+     */
+    internal var clockMillis: () -> Long = { SystemClock.elapsedRealtime() }
+
+    /** Boot counter; a change means [clockMillis] restarted from zero. */
+    internal var bootCount: () -> Int = { readBootCount() }
+
+    @Volatile
+    private var sAppContext: Context? = null
+
+    private fun readBootCount(): Int {
+        val resolver = sAppContext?.contentResolver ?: return -1
+        return android.provider.Settings.Global.getInt(resolver, android.provider.Settings.Global.BOOT_COUNT, -1)
+    }
 
     // ── Async-init readiness gate (INF-9) ───────────────────────────────
 
@@ -202,6 +224,7 @@ object LRRAuthManager {
     }
 
     private fun initializeInner(context: Context) {
+        sAppContext = context.applicationContext
         val plainPrefs = context.applicationContext
             .getSharedPreferences(PLAIN_PREF_NAME, Context.MODE_PRIVATE)
         sPlainPrefs = plainPrefs
@@ -276,7 +299,7 @@ object LRRAuthManager {
         sProfileKeyCache.clear()
         sNeedsReauthentication = false
         sActiveProfileId = prefs.getLong(KEY_ACTIVE_PROFILE_ID, 0L)
-        clockMillis = { System.currentTimeMillis() }
+        clockMillis = { SystemClock.elapsedRealtime() }
         openInitGate()
     }
 
@@ -492,30 +515,38 @@ object LRRAuthManager {
      * @return true if the pattern is currently locked out due to too many failed attempts.
      */
     @JvmStatic
-    fun isLockedOut(): Boolean {
-        awaitInit()
-        val plain = sPlainPrefs ?: return false
-        val lockoutUntil = plain.getLong(KEY_PATTERN_LOCKOUT_UNTIL, 0L)
-        if (lockoutUntil == 0L) return false
-        return clockMillis() < lockoutUntil
-    }
+    fun isLockedOut(): Boolean = getLockoutRemainingMs() > 0
 
     /**
      * @return the remaining lockout duration in milliseconds, or 0 if not locked out.
+     *
+     * Measured on the monotonic clock within one boot. After a reboot the
+     * clock restarts, so the lockout is re-anchored and its full duration
+     * runs again — rebooting never shortens it.
      */
     @JvmStatic
     fun getLockoutRemainingMs(): Long {
         awaitInit()
         val plain = sPlainPrefs ?: return 0L
-        val lockoutUntil = plain.getLong(KEY_PATTERN_LOCKOUT_UNTIL, 0L)
-        if (lockoutUntil == 0L) return 0L
-        val remaining = lockoutUntil - clockMillis()
-        return if (remaining > 0) remaining else 0L
+        val duration = plain.getLong(KEY_LOCKOUT_DURATION, 0L)
+        if (duration <= 0L) return 0L
+        val now = clockMillis()
+        val start = plain.getLong(KEY_LOCKOUT_START_ELAPSED, now)
+        val boot = bootCount()
+        if (plain.getInt(KEY_LOCKOUT_BOOT, boot) != boot || now < start) {
+            plain.edit {
+                putLong(KEY_LOCKOUT_START_ELAPSED, now)
+                putInt(KEY_LOCKOUT_BOOT, boot)
+            }
+            return duration
+        }
+        return (duration - (now - start)).coerceAtLeast(0L)
     }
 
     /**
-     * Record a failed pattern attempt. Increments the persistent counter and sets
-     * lockout timestamps at thresholds (5 failures = 30s, 10 failures = 5min).
+     * Record a failed pattern attempt. Increments the persistent counter and,
+     * from the 5th consecutive failure on, starts an escalating lockout
+     * (30 s, 1 min, 5 min, 15 min, then 1 h for every further failure).
      */
     @JvmStatic
     fun recordFailure() {
@@ -524,19 +555,12 @@ object LRRAuthManager {
         val count = plain.getInt(KEY_PATTERN_FAIL_COUNT, 0) + 1
         plain.edit {
             putInt(KEY_PATTERN_FAIL_COUNT, count)
-            when {
-                count >= LOCKOUT_THRESHOLD_SECOND -> {
-                    putLong(
-                        KEY_PATTERN_LOCKOUT_UNTIL,
-                        clockMillis() + LOCKOUT_DURATION_SECOND_MS
-                    )
-                }
-                count >= LOCKOUT_THRESHOLD_FIRST -> {
-                    putLong(
-                        KEY_PATTERN_LOCKOUT_UNTIL,
-                        clockMillis() + LOCKOUT_DURATION_FIRST_MS
-                    )
-                }
+            remove(KEY_PATTERN_LOCKOUT_UNTIL_LEGACY)
+            if (count >= LOCKOUT_THRESHOLD_FIRST) {
+                val level = (count - LOCKOUT_THRESHOLD_FIRST).coerceAtMost(LOCKOUT_DURATIONS_MS.size - 1)
+                putLong(KEY_LOCKOUT_DURATION, LOCKOUT_DURATIONS_MS[level])
+                putLong(KEY_LOCKOUT_START_ELAPSED, clockMillis())
+                putInt(KEY_LOCKOUT_BOOT, bootCount())
             }
         }
     }
@@ -550,7 +574,10 @@ object LRRAuthManager {
         val plain = sPlainPrefs ?: return
         plain.edit {
             remove(KEY_PATTERN_FAIL_COUNT)
-            remove(KEY_PATTERN_LOCKOUT_UNTIL)
+            remove(KEY_PATTERN_LOCKOUT_UNTIL_LEGACY)
+            remove(KEY_LOCKOUT_DURATION)
+            remove(KEY_LOCKOUT_START_ELAPSED)
+            remove(KEY_LOCKOUT_BOOT)
         }
     }
 
@@ -950,7 +977,10 @@ object LRRAuthManager {
         sPlainPrefs?.edit {
             remove(KEY_PATTERN_KEYSTORE_BOUND)
             remove(KEY_PATTERN_FAIL_COUNT)
-            remove(KEY_PATTERN_LOCKOUT_UNTIL)
+            remove(KEY_PATTERN_LOCKOUT_UNTIL_LEGACY)
+            remove(KEY_LOCKOUT_DURATION)
+            remove(KEY_LOCKOUT_START_ELAPSED)
+            remove(KEY_LOCKOUT_BOOT)
         }
         deletePatternKeystoreKey()
         sActiveProfileId = 0
