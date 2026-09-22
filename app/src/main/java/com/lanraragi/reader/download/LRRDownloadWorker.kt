@@ -512,26 +512,25 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
             ServiceRegistry.dataModule.profileLookupCache,
         )
 
+    /**
+     * The archive's download directory, allocated (with its pointer) on
+     * first use. There is deliberately no fallback location: a second
+     * naming rule outside [SpiderDen] produced unpointed, undeduplicated
+     * directories the reader never found. A null result fails the download
+     * with a reason instead.
+     */
     private suspend fun getDownloadDir(): File? {
-        // Use the same download location as SpiderDen (DownloadSettings.getDownloadLocation())
-        // so downloaded files are visible in the user-configured directory
         try {
-            val uniDir = SpiderDen.allocateGalleryDownloadDir(info.arcid, info.title)
-            if (uniDir != null && uniDir.ensureDir()) {
-                val uri = uniDir.uri
-                if ("file" == uri.scheme) {
-                    return File(uri.path ?: return null)
-                }
+            val uniDir = SpiderDen.allocateGalleryDownloadDir(info.arcid, info.title) ?: return null
+            val uri = uniDir.uri
+            if ("file" == uri.scheme) {
+                return File(uri.path ?: return null)
             }
+            Log.w(TAG, "Download root is not a file:// directory; cannot download")
         } catch (e: Exception) {
-            Log.w(TAG, "Failed to get gallery download dir from SpiderDen, using fallback", e)
+            Log.w(TAG, "Failed to allocate the gallery download dir", e)
         }
-        // Fallback: app-private external files directory
-        val baseDir = File(context.getExternalFilesDir(null), "download")
-        if (!baseDir.exists()) baseDir.mkdirs()
-        val archiveDir = File(baseDir, sanitizeFilename(info.title))
-        if (!archiveDir.exists()) archiveDir.mkdirs()
-        return archiveDir
+        return null
     }
 
     companion object {
@@ -653,12 +652,6 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                 Log.w(TAG, "Failed to validate image file", e)
                 false
             }
-        }
-
-        @JvmStatic
-        private fun sanitizeFilename(name: String?): String {
-            if (name == null) return "unknown"
-            return name.replace(Regex("[\\\\/:*?\"<>|]"), "_").trim()
         }
     }
 }
