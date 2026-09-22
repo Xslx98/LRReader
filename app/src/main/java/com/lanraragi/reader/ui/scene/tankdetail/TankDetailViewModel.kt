@@ -1,0 +1,331 @@
+package com.lanraragi.reader.ui.scene.tankdetail
+
+import android.util.Log
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.client.TankCoverCacheStamp
+import com.lanraragi.reader.client.api.LRRCategoryApi
+import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.client.api.TankoubonSupportGate
+import com.lanraragi.reader.client.api.friendlyError
+import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.domain.parseRatingFromTags
+import com.lanraragi.reader.download.TankGroupReconciler
+import com.lanraragi.reader.download.TankMembershipSync
+import com.lanraragi.reader.gallery.TankPageMath
+import com.lanraragi.reader.ui.TankMembershipSyncFactory
+import com.lanraragi.reader.ui.scene.gallery.detail.FavoriteState
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
+
+/**
+ * ViewModel for the tankoubon DETAIL page (spec 2026-09-22 §4): the page
+ * that makes a tank look like a single archive. Loads
+ * `GET /api/tankoubons/{id}/full` into a [TankDetailState] (members in
+ * `archives` order, page totals/offsets, the tank's OWN tags and rating)
+ * and the static-category heart state; when the fetch fails it falls back
+ * to the downloaded-tank snapshot (`TANK_DOWNLOAD_GROUP` + member
+ * `archive_json`) as an OFFLINE state with editing disabled.
+ *
+ * Member management (rename / reorder / remove / cover) stays in
+ * [com.lanraragi.reader.ui.scene.TankoubonDetailViewModel]; this class
+ * only owns what the detail page renders.
+ */
+class TankDetailViewModel : ViewModel() {
+
+    /** Immutable render model of a loaded tank. */
+    data class TankDetailState(
+        val tankId: String,
+        val profileId: Long,
+        /** Source base URL; null in offline mode when resolution failed. */
+        val baseUrl: String?,
+        val name: String,
+        val summary: String?,
+        /** Raw tank tag string as the server holds it ("" when none). */
+        val tags: String,
+        /** Ordered members (server `archives` order), mapped with source context. */
+        val members: List<Archive>,
+        /** Global 1-indexed reading progress (0/1 = nothing meaningful). */
+        val progress: Int,
+        /** True = built from the local download snapshot; rating/category/tag editing disabled. */
+        val offline: Boolean,
+        /** First member as cover stand-in when the server reported no generated cover; null otherwise. */
+        val coverFallbackMember: Archive?,
+    ) {
+        val memberIds: List<String> = members.map { it.arcid }
+
+        /** Prefix-sum global page offsets, see [TankPageMath.pageOffsets]. */
+        val pageOffsets: List<Int> = TankPageMath.pageOffsets(members.map { it.pagecount })
+
+        val totalPages: Int = pageOffsets.last()
+
+        val memberCount: Int = members.size
+
+        /** The tank's own rating (its `rating:` tag), never derived from members. */
+        val rating: Float = parseRatingFromTags(tags)
+
+        /** Tank tags for the chips: every `ns:value` except the rating tag, server order. */
+        val tagsForDisplay: List<String> = splitTags(tags).filterNot { it.startsWith(RATING_PREFIX, ignoreCase = true) }
+    }
+
+    /** Snapshot of a downloaded tank used when the server is unreachable. */
+    data class OfflineTank(val name: String, val members: List<Archive>)
+
+    /** Load lifecycle; [state] is only non-null in [Loaded]. */
+    sealed interface LoadState {
+        data object Idle : LoadState
+        data object Loading : LoadState
+        data object Loaded : LoadState
+
+        /** The source server lacks the 0.9.8 tankoubon routes and nothing is downloaded. */
+        data object Unsupported : LoadState
+        data class Error(val message: String) : LoadState
+    }
+
+    // -------------------------------------------------------------------------
+    // Identity (set once by init)
+    // -------------------------------------------------------------------------
+
+    /** LANraragi tank id (TANK_-prefixed); set once by [init]. */
+    var tankId: String = ""
+        private set
+
+    /** Source profile that owns this tank; set once by [init]. */
+    var profileId: Long = 0L
+        private set
+
+    /** Name from the nav arg, for an instant toolbar title before [load] lands. */
+    var seedName: String = ""
+        private set
+
+    private var initialized = false
+
+    // -------------------------------------------------------------------------
+    // State
+    // -------------------------------------------------------------------------
+
+    private val _state = MutableStateFlow<TankDetailState?>(null)
+
+    /** Loaded tank; null until the first successful (online or offline) load. */
+    val state: StateFlow<TankDetailState?> = _state.asStateFlow()
+
+    private val _loadState = MutableStateFlow<LoadState>(LoadState.Idle)
+    val loadState: StateFlow<LoadState> = _loadState.asStateFlow()
+
+    private val _favoriteState = MutableStateFlow<FavoriteState?>(null)
+
+    /**
+     * Static-category membership of the TANK id (null = unknown / not yet
+     * resolved / offline). Dynamic categories are ignored: they match
+     * server-side and cannot be toggled.
+     */
+    val favoriteState: StateFlow<FavoriteState?> = _favoriteState.asStateFlow()
+
+    private var loadJob: Job? = null
+
+    // -------------------------------------------------------------------------
+    // Seams (production defaults; replaceable for tests)
+    // -------------------------------------------------------------------------
+
+    internal var baseUrlResolver: suspend (Long) -> String = { id ->
+        resolveSourceBaseUrl(id, ServiceRegistry.dataModule.profileLookupCache)
+    }
+
+    /**
+     * Offline fallback: the downloaded-tank group of ([tankId], [profileId])
+     * with its members rebuilt from the member rows' `archive_json`
+     * snapshots, in group order; null when the tank is not downloaded.
+     */
+    internal var offlineSource: suspend (tankId: String, profileId: Long) -> OfflineTank? = { id, pid ->
+        val data = ServiceRegistry.dataModule
+        val group = data.downloadDbRepository.getTankGroup(id)
+        if (group == null || group.serverProfileId != pid) {
+            null
+        } else {
+            val members = TankGroupReconciler.decode(group.memberIdsJson)
+                .mapNotNull { arcid -> data.historyRepository.getArchiveSnapshot(arcid, pid) }
+            OfflineTank(group.name, members)
+        }
+    }
+
+    /** Membership follow seam (spec 2026-09-21 §1/§3), fed after a successful online load. */
+    internal var membershipSync: TankMembershipSyncFactory.Runner = TankMembershipSyncFactory.runnerSafely()
+
+    // -------------------------------------------------------------------------
+    // API
+    // -------------------------------------------------------------------------
+
+    /**
+     * Applies the nav args. Idempotent: only the FIRST call wins, so a view
+     * recreation over a retained ViewModel keeps the loaded state intact.
+     */
+    fun init(tankId: String, name: String, profileId: Long) {
+        if (initialized) return
+        initialized = true
+        this.tankId = tankId
+        this.profileId = profileId
+        this.seedName = name
+    }
+
+    /**
+     * Fetches the tank; a repeated call cancels the in-flight one
+     * (last-write-wins). Online success publishes [LoadState.Loaded] with an
+     * online [TankDetailState] and then resolves the category heart; any
+     * fetch failure tries [offlineSource] first and only reports
+     * [LoadState.Unsupported] (404, gate flipped) or [LoadState.Error] when
+     * nothing is downloaded.
+     */
+    fun load() {
+        _loadState.value = LoadState.Loading
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch(Dispatchers.IO) {
+            var url: String? = null
+            try {
+                url = baseUrlResolver(profileId)
+                val client = ServiceRegistry.networkModule.okHttpClient
+                val online = fetchOnline(client, url)
+                _state.value = online
+                _loadState.value = LoadState.Loaded
+                syncMembership(url, online)
+                resolveFavorite(client, url)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                val unsupported = url != null && TankoubonSupportGate.markFrom(url, e)
+                val snapshot = loadOfflineQuietly()
+                if (snapshot != null && snapshot.members.isNotEmpty()) {
+                    _favoriteState.value = null
+                    _state.value = TankDetailState(
+                        tankId = tankId,
+                        profileId = profileId,
+                        baseUrl = url,
+                        name = snapshot.name,
+                        summary = null,
+                        tags = "",
+                        members = snapshot.members,
+                        progress = 0,
+                        offline = true,
+                        coverFallbackMember = null,
+                    )
+                    _loadState.value = LoadState.Loaded
+                } else if (unsupported) {
+                    _loadState.value = LoadState.Unsupported
+                } else {
+                    Log.e(TAG, "Failed to load tankoubon detail", e)
+                    val ctx = ServiceRegistry.appModule.getContext()
+                    _loadState.value = LoadState.Error(friendlyError(ctx, e))
+                }
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Internals
+    // -------------------------------------------------------------------------
+
+    private suspend fun fetchOnline(client: OkHttpClient, url: String): TankDetailState {
+        val full = LRRTankoubonApi.getTankoubonFull(client, url, tankId).result
+        TankoubonSupportGate.markSupported(url)
+        // Member ORDER is `archives` (the list a reorder PUTs); full_data is
+        // only the metadata lookup — never trust its order. Multi-profile red
+        // line: explicit source context for the mapper.
+        val byId = full.fullData.associateBy { it.arcid }
+        val ordered = full.archives.mapNotNull { byId[it] } +
+            full.fullData.filter { it.arcid !in full.archives }
+        val members = ordered.map { it.toArchive(sourceProfileId = profileId, sourceBaseUrl = url) }
+        val fallback = resolveCoverFallback(client, url, members)
+        // Fresh server truth — revalidate the cover before publishing so the
+        // header bind already sees the new stamp.
+        TankCoverCacheStamp.bump()
+        return TankDetailState(
+            tankId = tankId,
+            profileId = profileId,
+            baseUrl = url,
+            name = full.name,
+            summary = full.summary,
+            tags = full.tags.orEmpty(),
+            members = members,
+            progress = full.progress,
+            offline = false,
+            coverFallbackMember = fallback,
+        )
+    }
+
+    /**
+     * Heart = membership of the TANK id in any STATIC category (dynamic
+     * ones are skipped, as for archives). Failure is non-fatal: the prior
+     * state is kept rather than blinking to "not favorited".
+     */
+    private suspend fun resolveFavorite(client: OkHttpClient, url: String) {
+        try {
+            val names = LRRCategoryApi.getCategories(client, url)
+                .filter { !it.isDynamic() && tankId in it.archives }
+                .mapNotNull { it.name }
+            _favoriteState.value = if (names.isEmpty()) {
+                FavoriteState(isFavorited = false, name = null)
+            } else {
+                FavoriteState(isFavorited = true, name = names.first())
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to query categories for the tank heart")
+        }
+    }
+
+    private suspend fun loadOfflineQuietly(): OfflineTank? = try {
+        offlineSource(tankId, profileId)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.w(TAG, "Offline tank snapshot unavailable")
+        null
+    }
+
+    /**
+     * Probe for a generated cover; a missing one (the probe also queues
+     * server-side generation) elects the first member as the stand-in.
+     * Probe failure or an empty tank keep the normal tank route.
+     */
+    private suspend fun resolveCoverFallback(client: OkHttpClient, url: String, members: List<Archive>): Archive? {
+        val first = members.firstOrNull() ?: return null
+        val hasCover = try {
+            LRRTankoubonApi.hasTankThumbnail(client, url, tankId)
+        } catch (ce: CancellationException) {
+            throw ce
+        } catch (ignored: Exception) {
+            true
+        }
+        return if (hasCover) null else first
+    }
+
+    private fun syncMembership(url: String, s: TankDetailState) {
+        val truth = listOf(TankMembershipSync.TankTruth(tankId, s.name, s.memberIds, s.progress, s.totalPages))
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                membershipSync.sync(profileId, url, truth)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "tank membership sync failed")
+            }
+        }
+    }
+
+    companion object {
+        private const val TAG = "TankDetailViewModel"
+        private const val RATING_PREFIX = "rating:"
+
+        /** Splits a LANraragi comma-separated tag string into trimmed non-empty entries. */
+        fun splitTags(tags: String): List<String> =
+            tags.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+    }
+}
