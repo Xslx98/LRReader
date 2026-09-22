@@ -848,6 +848,12 @@
     <string name="lrr_empty_namespace">หมวดหมู่ไม่สามารถเว้นว่างได้</string>
     <string name="lrr_keystore_failed_title">ที่เก็บข้อมูลรับรองไม่พร้อมใช้งาน</string>
     <string name="lrr_keystore_failed_message">คีย์สโตร์ของอุปกรณ์ไม่พร้อมใช้งาน ไม่สามารถโหลด API Key ได้ กรุณากรอกข้อมูลรับรองเซิร์ฟเวอร์อีกครั้ง</string>
+    <string name="security_storage_unavailable_message">ไม่สามารถตรวจสอบการล็อกแอปได้เพราะที่เก็บข้อมูลที่ปลอดภัยของอุปกรณ์ไม่พร้อมใช้งานในขณะนี้ ลองอีกครั้ง หรือรีเซ็ตการล็อกแอป ซึ่งจะลบรูปแบบและ API Key ของเซิร์ฟเวอร์ที่บันทึกไว้ทั้งหมด คลังและการดาวน์โหลดยังคงอยู่</string>
+    <string name="security_storage_retry">ลองอีกครั้ง</string>
+    <string name="security_reset_app_lock">รีเซ็ตการล็อกแอป</string>
+    <string name="security_reset_app_lock_confirm">รีเซ็ตการล็อกแอปและลบ API Key ที่บันทึกไว้ทั้งหมดหรือไม่ คุณจะต้องป้อนข้อมูลรับรองของเซิร์ฟเวอร์ใหม่</string>
+    <string name="security_fingerprint_changed">ลายนิ้วมือของอุปกรณ์มีการเปลี่ยนแปลง จึงปิดการปลดล็อกด้วยลายนิ้วมือแล้ว เปิดใหม่ได้ในการตั้งค่าความเป็นส่วนตัว</string>
+    <string name="security_pattern_unverifiable_message">ลายนิ้วมือของอุปกรณ์มีการเปลี่ยนแปลง และรูปแบบนี้ถูกบันทึกในแบบที่ตรวจสอบได้ด้วยคีย์ลายนิ้วมือเดิมเท่านั้น โปรดรีเซ็ตการล็อกแอปเพื่อดำเนินการต่อ ซึ่งจะลบรูปแบบและ API Key ของเซิร์ฟเวอร์ที่บันทึกไว้ทั้งหมด คลังและการดาวน์โหลดยังคงอยู่</string>
     <string name="lrr_boot_load_failed_title">เกิดข้อผิดพลาดในการเริ่มต้น</string>
     <string name="lrr_boot_load_failed_message">ไม่สามารถโหลดโปรไฟล์เซิร์ฟเวอร์ที่บันทึกไว้เมื่อเริ่มต้น แอปกำลังทำงานโดยไม่มีโปรไฟล์ใด ๆ คุณอาจต้องตั้งค่าใหม่หรือติดตั้งแอปใหม่\n\nรายละเอียด: %1$s</string>
     <string name="lrr_boot_load_failed_retry">ลองใหม่</string>

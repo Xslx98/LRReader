@@ -377,6 +377,9 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
             )
         }
         super.onCreate(savedInstanceState)
+        // Locked: BaseActivity handed off to the lock screen (this intent is
+        // stashed to resume after unlock). Build nothing.
+        if (isFinishing) return
         // StrictMode policies are installed app-wide (debug only) in
         // LRReaderApplication. The block that used to sit here installed an EMPTY
         // VmPolicy (detectFileUriExposure() was called after build()) — a
@@ -757,23 +760,17 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         mInputHandler.resumeAutoRead()
     }
 
-    /**
-     * Before the BaseActivity default bounces us back to MainActivity for the
-     * security prompt, stash a self-resume intent so SecurityScene can
-     * re-launch the reader on the same page after a successful unlock.
-     * The stash is process-scoped — process death drops it, which is fine
-     * since process death = cold start = lock comes from `getLaunchAnnouncer`.
-     */
-    override fun onForegroundLockCheck() {
-        if (AppLockGate.shouldRelock && SecuritySettings.hasPattern()) {
-            buildResumeIntent()?.let { AppLockGate.stashResumeIntent(it) }
-        }
-        super.onForegroundLockCheck()
-    }
+
+    /** Reopen the reader on the page it is showing once the lock is passed. */
+    override fun lockResumeIntent(): Intent? = buildResumeIntent()
 
     private fun buildResumeIntent(): Intent? {
         val original = intent ?: return null
-        val currentPage = mSliderController.currentIndex.takeIf { it >= 0 } ?: mPage
+        // Before onCreate finished (redirected straight from onCreate) there
+        // is no current page yet: keep the page the original intent asked for.
+        val currentPage = mSliderController.currentIndex.takeIf { it >= 0 }
+            ?: mPage.takeIf { mGalleryProvider != null }
+            ?: original.getIntExtra(KEY_PAGE, -1)
         return Intent(this, GalleryActivity::class.java).apply {
             action = original.action
             // Preserve action-specific extras (filename / uri / archive),

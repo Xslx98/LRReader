@@ -55,6 +55,21 @@ object SecuritySettings {
     }
 
     /**
+     * Whether the app lock is on — the value every lock gate must use.
+     *
+     * Reads the plain-prefs mirror, so it needs no keystore work (safe on the
+     * launch path) and FAILS CLOSED: when the secure store cannot be opened,
+     * [hasPattern] reports false, but the mirror still says the app is
+     * locked. Falls back to [hasPattern] only before this version has
+     * written the mirror (first launch after upgrading).
+     */
+    @JvmStatic
+    fun isLockEnabled(): Boolean {
+        val hint = LRRAuthManager.lockEnabledHint() ?: return hasPattern()
+        return hint || !Settings.getString(KEY_SECURITY, "").isNullOrEmpty()
+    }
+
+    /**
      * Hash and store [pattern] in EncryptedSharedPreferences.
      * Pass null or empty string to clear the pattern.
      */

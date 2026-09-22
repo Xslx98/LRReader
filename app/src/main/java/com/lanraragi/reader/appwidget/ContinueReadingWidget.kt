@@ -10,6 +10,7 @@ import android.view.View
 import android.widget.RemoteViews
 import androidx.annotation.VisibleForTesting
 import com.lanraragi.reader.R
+import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.HistoryRepository
 import com.lanraragi.reader.dao.ProfileRepository
@@ -149,12 +150,14 @@ object ContinueReadingWidget : ReadingSessionEvents.Listener {
                 )
             )
         } else {
-            val title = archive.title.ifBlank {
-                context.getString(R.string.shortcut_continue_reading)
-            }
+            // With an app lock set the home screen must not reveal what is
+            // being read: generic label, no progress.
+            val redact = SecuritySettings.isLockEnabled()
+            val title = archive.title.takeUnless { redact || it.isBlank() }
+                ?: context.getString(R.string.shortcut_continue_reading)
             views.setViewVisibility(R.id.appwidget_title, View.VISIBLE)
             views.setTextViewText(R.id.appwidget_title, title)
-            val progress = progressText(archive.progress, archive.pagecount)
+            val progress = if (redact) null else progressText(archive.progress, archive.pagecount)
             if (progress != null) {
                 views.setViewVisibility(R.id.appwidget_progress, View.VISIBLE)
                 views.setTextViewText(R.id.appwidget_progress, progress)

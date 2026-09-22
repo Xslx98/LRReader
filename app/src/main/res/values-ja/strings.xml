@@ -784,6 +784,12 @@
     <string name="lrr_empty_namespace">名前空間は空にできません</string>
     <string name="lrr_keystore_failed_title">認証情報ストレージが利用不可</string>
     <string name="lrr_keystore_failed_message">デバイスのキーストアが利用できません。API キーを読み込めませんでした。サーバーの認証情報を再入力してください。</string>
+    <string name="security_storage_unavailable_message">端末の安全なストレージが現在利用できないため、アプリロックを確認できません。再試行するか、アプリロックをリセットしてください。リセットするとパターンと保存済みのすべてのサーバー API キーが削除されます。ライブラリとダウンロードは残ります。</string>
+    <string name="security_storage_retry">再試行</string>
+    <string name="security_reset_app_lock">アプリロックをリセット</string>
+    <string name="security_reset_app_lock_confirm">アプリロックをリセットし、保存済みのすべての API キーを削除しますか？サーバーの認証情報を再入力する必要があります。</string>
+    <string name="security_fingerprint_changed">端末の指紋が変更されたため、指紋ロック解除をオフにしました。プライバシー設定で再度オンにできます。</string>
+    <string name="security_pattern_unverifiable_message">端末の指紋が変更され、このパターンは古い指紋キーでしか確認できない方式で保存されています。続けるにはアプリロックをリセットしてください。パターンと保存済みのすべてのサーバー API キーが削除されます。ライブラリとダウンロードは残ります。</string>
     <string name="lrr_boot_load_failed_title">起動エラー</string>
     <string name="lrr_boot_load_failed_message">起動時に保存済みのサーバープロファイルを読み込めませんでした。プロファイルが読み込まれていない状態で実行中です。再設定または再インストールが必要かもしれません。\n\n詳細：%1$s</string>
     <string name="lrr_boot_load_failed_retry">再試行</string>
