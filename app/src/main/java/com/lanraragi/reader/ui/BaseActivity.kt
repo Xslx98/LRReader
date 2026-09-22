@@ -79,6 +79,11 @@ abstract class BaseActivity : AppCompatActivity() {
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
+        // With an app lock set, the recents thumbnail must not show the last
+        // screen. Unlike FLAG_SECURE this keeps screenshots working.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            setRecentsScreenshotEnabled(!SecuritySettings.isLockEnabled())
+        }
         onForegroundLockCheck()
     }
 
