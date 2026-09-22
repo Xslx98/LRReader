@@ -119,8 +119,18 @@ class HistoryRepository(
         dao.clearHistoryAndPruneForProfile(arcid, profileId)
     }
 
+    /**
+     * Clear the history the History list shows: the active profile's
+     * (other servers' history is not on screen and must survive), or every
+     * profile's when none is active — mirroring [getHistoryLazyList].
+     */
     suspend fun clearHistory() {
-        dao.clearAllHistoryAndPruneEmptyRows()
+        val profileId = LRRAuthManager.getActiveProfileId()
+        if (profileId > 0) {
+            dao.clearHistoryForProfileAndPruneEmptyRows(profileId)
+        } else {
+            dao.clearAllHistoryAndPruneEmptyRows()
+        }
     }
 
     /**

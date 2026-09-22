@@ -257,7 +257,7 @@
     <!-- History -->
     <string name="no_history">歷史紀錄將會顯示在這裡</string>
     <string name="clear_all">全部清除</string>
-    <string name="clear_all_history">清除所有歷史紀錄？</string>
+    <string name="clear_all_history">清除此伺服器的閱讀紀錄？</string>
 
     <string name="show_definition">檢視定義</string>
 
