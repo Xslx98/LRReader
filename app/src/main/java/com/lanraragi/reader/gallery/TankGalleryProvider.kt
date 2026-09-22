@@ -364,17 +364,20 @@ class TankGalleryProvider(
                     }
                     throw e
                 }
-                val index = indexOfSlot(slot)
-                if (index >= 0) {
-                    val oldTotal = pageMap.total
-                    val changed = pageMap.correct(index, realCount)
-                    slot.counted = true
-                    if (changed) {
-                        onMapRemapped(oldTotal)
+                // Look the slot up and correct the map under ONE lock hold:
+                // a concurrent dropMember between the two would shift
+                // indices and correct the wrong member's page count.
+                var oldTotal = 0
+                var changed = false
+                synchronized(slotsLock) {
+                    val index = slots.indexOf(slot)
+                    if (index >= 0) {
+                        oldTotal = pageMap.total
+                        changed = pageMap.correct(index, realCount)
                     }
-                } else {
                     slot.counted = true
                 }
+                if (changed) onMapRemapped(oldTotal)
             }
             return source
         }
