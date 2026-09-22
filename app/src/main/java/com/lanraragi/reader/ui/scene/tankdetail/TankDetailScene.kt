@@ -6,6 +6,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.RatingBar
 import android.widget.TextView
 import android.widget.Toast
@@ -30,9 +31,13 @@ import com.lanraragi.reader.gallery.TankSeedStore
 import com.lanraragi.reader.gallery.TankSessionSeed
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.ui.scene.BaseScene
+import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.ui.scene.gallery.detail.CategoryDialogHelper
 import com.lanraragi.reader.ui.scene.gallery.detail.FavoriteState
 import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
+import com.lanraragi.reader.ui.scene.gallery.detail.GalleryTagHelper
+import com.lanraragi.reader.ui.scene.gallery.detail.TagEditDialog
+import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
 import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.LoadState
 import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.TankDetailState
 import com.lanraragi.reader.ui.widget.bindSourceServerBadge
@@ -52,9 +57,13 @@ import kotlin.math.ceil
  * The ViewModel is SCENE-scoped: the scene is LAUNCH_MODE_STANDARD, so
  * two stacked detail pages must not share state.
  */
-class TankDetailScene : BaseScene(), View.OnClickListener {
+class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListener {
 
     private lateinit var viewModel: TankDetailViewModel
+
+    private var mTagsLayout: LinearLayout? = null
+    private var mNoTags: TextView? = null
+    private var mEditTagsBtn: View? = null
 
     private var mViewTransition: ViewTransition? = null
     private var mViewTransition2: ViewTransition? = null
@@ -157,8 +166,12 @@ class TankDetailScene : BaseScene(), View.OnClickListener {
         ensureHeartDrawables()
         setupRatingBar()
 
-        // Tags and previews are bound by later steps; collapsed until then.
-        ViewUtils.`$$`(belowHeader, R.id.tags).visibility = View.GONE
+        val tagsLayout = ViewUtils.`$$`(belowHeader, R.id.tags) as LinearLayout
+        mTagsLayout = tagsLayout
+        mNoTags = ViewUtils.`$$`(tagsLayout, R.id.no_tags) as TextView
+        mEditTagsBtn = ViewUtils.`$$`(tagsLayout, R.id.edit_tags_btn).also { it.setOnClickListener(this) }
+
+        // Previews are bound by a later step; collapsed until then.
         ViewUtils.`$$`(belowHeader, R.id.previews).visibility = View.GONE
 
         val progress = ViewUtils.`$$`(mainView, R.id.progress)
@@ -177,6 +190,10 @@ class TankDetailScene : BaseScene(), View.OnClickListener {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        GalleryTagHelper.destroy()
+        mTagsLayout = null
+        mNoTags = null
+        mEditTagsBtn = null
         mViewTransition = null
         mViewTransition2 = null
         mTip = null
@@ -294,6 +311,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener {
         mSize?.text = resources.getQuantityString(R.plurals.lrr_category_archives, s.memberCount, s.memberCount)
         bindRating(s.rating)
         bindHeart()
+        bindTags(s)
         updateDownloadText()
         val banner = mOfflineBanner ?: return
         if (s.offline) {
@@ -512,13 +530,52 @@ class TankDetailScene : BaseScene(), View.OnClickListener {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Tags (spec 2026-09-22 §4.4): the tank's OWN tags, single layer, editable
+    // -------------------------------------------------------------------------
+
+    private fun bindTags(s: TankDetailState) {
+        val ctx = ehContext ?: return
+        val layout = mTagsLayout ?: return
+        val noTags = mNoTags ?: return
+        GalleryTagHelper.bindTags(ctx, layoutInflater2, layout, noTags, s.tagGroups, this, this)
+        // Editing writes to the source server — no server offline.
+        mEditTagsBtn?.visibility = if (s.offline) View.GONE else View.VISIBLE
+    }
+
+    /** The shared dialog on the tank id with the tankoubon writer; a save reloads server truth. */
+    private fun showTagEditDialog() {
+        val s = viewModel.state.value ?: return
+        if (s.offline) return
+        TagEditDialog.show(activity2, s.tankId, s.tagGroups, s.profileId, TagEditDialog.tankoubonWriter) {
+            viewModel.load()
+        }
+    }
+
+    /** Chip tap = tag search on the active server, as on the archive page. */
+    private fun openTagSearch(tag: String) {
+        val lub = ListUrlBuilder()
+        lub.mode = ListUrlBuilder.MODE_TAG
+        lub.keyword = tag
+        GalleryListScene.startScene(this, lub)
+    }
+
     override fun onClick(v: View) {
         when {
             v === mTip -> reload()
             v === mRead -> openTankSession(startGlobalPage = -1)
             v === mDownload -> downloadTank()
             v === mHeartGroup -> showCategoryDialog()
+            v === mEditTagsBtn -> showTagEditDialog()
+            else -> (v.getTag(R.id.tag) as? String)?.let { openTagSearch(it) }
         }
+    }
+
+    override fun onLongClick(v: View): Boolean {
+        val tag = v.getTag(R.id.tag) as? String ?: return false
+        val ctx = ehContext ?: return false
+        GalleryTagHelper.showTagDialog(this, ctx, tag)
+        return true
     }
 
     companion object {

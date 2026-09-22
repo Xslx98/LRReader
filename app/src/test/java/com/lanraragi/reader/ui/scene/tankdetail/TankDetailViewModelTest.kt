@@ -7,6 +7,7 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.module.IAppModule
 import com.lanraragi.reader.module.INetworkModule
 import com.lanraragi.reader.module.NetworkMonitor
@@ -228,7 +229,10 @@ class TankDetailViewModelTest {
         val state = vm.state.value!!
         assertEquals("artist:foo, rating:4, language:english", state.tags)
         assertEquals(4f, state.rating, 0f)
-        assertEquals(listOf("artist:foo", "language:english"), state.tagsForDisplay)
+        assertEquals(
+            listOf(TagGroup("artist", listOf("foo")), TagGroup("rating", listOf("4")), TagGroup("language", listOf("english"))),
+            state.tagGroups,
+        )
     }
 
     @Test
@@ -241,7 +245,7 @@ class TankDetailViewModelTest {
         val state = vm.state.value!!
         assertEquals("", state.tags)
         assertEquals("no rating tag = the shared -1 sentinel, as for archives", -1f, state.rating, 0f)
-        assertTrue(state.tagsForDisplay.isEmpty())
+        assertTrue(state.tagGroups.isEmpty())
     }
 
     @Test
@@ -362,7 +366,7 @@ class TankDetailViewModelTest {
         assertEquals(2f, vm.state.value!!.rating, 0f)
         awaitCondition { putTags.size == 1 }
         assertEquals("artist:foo, language:english, rating:⭐⭐", putTags.single())
-        assertEquals(listOf("artist:foo", "language:english"), vm.state.value!!.tagsForDisplay)
+        assertEquals(listOf("artist", "language", "rating"), vm.state.value!!.tagGroups.map { it.namespace })
         assertEquals("initial rating is the loaded value, not the edit", 4f, vm.initialRating, 0f)
     }
 

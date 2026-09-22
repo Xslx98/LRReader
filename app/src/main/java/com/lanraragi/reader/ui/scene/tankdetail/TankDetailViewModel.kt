@@ -11,7 +11,9 @@ import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.domain.mergeRatingIntoTags
+import com.lanraragi.reader.domain.parseLrrTagString
 import com.lanraragi.reader.domain.parseRatingFromTags
 import com.lanraragi.reader.download.TankGroupReconciler
 import com.lanraragi.reader.download.TankMembershipSync
@@ -77,8 +79,12 @@ class TankDetailViewModel : ViewModel() {
         /** The tank's own rating (its `rating:` tag), never derived from members. */
         val rating: Float = parseRatingFromTags(tags)
 
-        /** Tank tags for the chips: every `ns:value` except the rating tag, server order. */
-        val tagsForDisplay: List<String> = splitTags(tags).filterNot { it.startsWith(RATING_PREFIX, ignoreCase = true) }
+        /**
+         * The tank's own tags grouped by namespace for the chips and the
+         * edit dialog — ALL of them, rating included: the dialog PUTs the
+         * whole string back, so hiding a namespace here would drop it on save.
+         */
+        val tagGroups: List<TagGroup> = parseLrrTagString(tags).map { (ns, values) -> TagGroup(ns, values) }
     }
 
     /** Snapshot of a downloaded tank used when the server is unreachable. */
@@ -388,11 +394,6 @@ class TankDetailViewModel : ViewModel() {
 
     companion object {
         private const val TAG = "TankDetailViewModel"
-        private const val RATING_PREFIX = "rating:"
         private const val MAX_STARS = 5f
-
-        /** Splits a LANraragi comma-separated tag string into trimmed non-empty entries. */
-        fun splitTags(tags: String): List<String> =
-            tags.split(',').map { it.trim() }.filter { it.isNotEmpty() }
     }
 }
