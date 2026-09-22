@@ -196,6 +196,31 @@ class DownloadInfo() : Parcelable {
      * simpleLanguage is intentionally not refreshed because LRR never
      * populates it; the column has no producer in the post-L1 schema.
      */
+    /**
+     * An independent copy of the persisted fields. Background DB writes
+     * take one on the calling (main) thread, so a later main-thread
+     * mutation can never race the IO read of the live object.
+     */
+    fun snapshot(): DownloadInfo {
+        val src = this
+        return DownloadInfo().apply {
+            arcid = src.arcid
+            title = src.title
+            thumb = src.thumb
+            rating = src.rating
+            simpleLanguage = src.simpleLanguage
+            serverProfileId = src.serverProfileId
+            state = src.state
+            legacy = src.legacy
+            time = src.time
+            label = src.label
+            archiveUri = src.archiveUri
+            downloadRootUri = src.downloadRootUri
+            tankId = src.tankId
+            pagecount = src.pagecount
+        }
+    }
+
     fun updateInfo(archive: Archive) {
         arcid = archive.arcid
         title = archive.title

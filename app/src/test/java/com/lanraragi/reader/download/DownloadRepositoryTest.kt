@@ -14,6 +14,7 @@ import com.lanraragi.reader.containedTestScope
 import com.lanraragi.reader.module.CoroutineModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -389,6 +390,35 @@ class DownloadRepositoryTest {
         assertTrue(repo.containDownloadInfo("abc123"))
         repo.removeInfo(info)
         assertFalse(repo.containDownloadInfo("abc123"))
+    }
+
+    @Test
+    fun persistThenRemove_onAMultiThreadedScope_neverResurrectsTheRow() {
+        val pool = java.util.concurrent.Executors.newFixedThreadPool(4)
+        val ioScope = CoroutineScope(kotlinx.coroutines.SupervisorJob() + pool.asCoroutineDispatcher())
+        try {
+            val ordered = DownloadRepository(context, ioScope, Dispatchers.Unconfined)
+            repeat(40) { i ->
+                val info = makeInfo(0, "order-$i", "T$i").apply { serverProfileId = 1L }
+                ordered.persistInfo(info)
+                ordered.removeInfoFromDbByArcid(info.arcid)
+            }
+            runBlocking { ordered.awaitDbWrites() }
+            assertTrue(runBlocking { db.archiveLocalStateDao().getAllDownloads() }.isEmpty())
+        } finally {
+            ioScope.cancel()
+            pool.shutdownNow()
+        }
+    }
+
+    @Test
+    fun persistInfo_writesTheValuesAtCallTime() {
+        val info = makeInfo(0, "snap", "Before").apply { serverProfileId = 1L }
+        repo.persistInfo(info)
+        info.title = "After"
+        runBlocking { repo.awaitDbWrites() }
+        val stored = runBlocking { db.archiveLocalStateDao().loadByArcidAndProfile("snap", 1L) }!!
+        assertTrue(stored.archiveJson.contains("Before"))
     }
 
     // ═══════════════════════════════════════════════════════════
