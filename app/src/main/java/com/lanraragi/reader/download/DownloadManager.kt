@@ -19,6 +19,7 @@ package com.lanraragi.reader.download
 import android.content.Context
 import android.os.Looper
 import android.util.Log
+import androidx.core.content.edit
 import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.DownloadInfo
@@ -169,7 +170,7 @@ class DownloadManager(
                             changes.add(snap to if (serverRating < 0) 0f else serverRating)
                         }
                     }
-                    prefs.edit().putLong(key, now).apply()
+                    prefs.edit { putLong(key, now) }
                 }
 
                 if (changes.isEmpty()) return@launch
