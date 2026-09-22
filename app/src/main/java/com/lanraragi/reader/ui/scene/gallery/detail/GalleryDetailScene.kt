@@ -1037,7 +1037,8 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     private fun showTankMembershipDialog() {
         val arcid = viewModel.getEffectiveArcid() ?: return
         TankoubonDialogHelper.showMembershipDialog(
-            activity2, arcid, viewModel.getSourceProfileId()
+            activity2, arcid, viewModel.getSourceProfileId(),
+            archiveTitle = viewModel.getEffectiveArchive()?.title,
         ) { viewModel.loadArchiveTankoubons() }
     }
 
