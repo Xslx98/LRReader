@@ -141,6 +141,9 @@ detekt {
     config.setFrom("$rootDir/config/detekt/detekt.yml")
     buildUponDefaultConfig = true
     source.setFrom("src/main/java")
+    // Pre-existing findings; new ones fail the build (maxIssues: 0).
+    // detektMain/type-resolution tasks use per-variant siblings of this file.
+    baseline = file("$rootDir/config/detekt/baseline.xml")
 }
 
 // W0-5: forbid string-concatenated baseUrl in LRR API code.

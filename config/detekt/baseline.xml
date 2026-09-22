@@ -1,0 +1,308 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ComplexCondition:DownloadFragment.kt$DownloadFragment$lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".gif") || lower.endsWith(".webp")</ID>
+    <ID>ComplexCondition:GalleryDetailScene.kt$GalleryDetailScene$(oldState == STATE_INIT || oldState == STATE_FAILED || oldState == STATE_REFRESH) &amp;&amp; (state == STATE_NORMAL || state == STATE_REFRESH_HEADER) &amp;&amp; AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme)</ID>
+    <ID>ComplexCondition:GalleryDetailScene.kt$GalleryDetailScene$di != null &amp;&amp; di.thumb != null &amp;&amp; di.thumb != result.archive.thumbnailUrl &amp;&amp; di.arcid == result.archive.arcid</ID>
+    <ID>ComplexCondition:GalleryInputHandler.kt$GalleryInputHandler$keyCode == KeyEvent.KEYCODE_PAGE_UP || keyCode == KeyEvent.KEYCODE_PAGE_DOWN || keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_DPAD_UP || keyCode == KeyEvent.KEYCODE_DPAD_RIGHT || keyCode == KeyEvent.KEYCODE_DPAD_DOWN || keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_SPACE || keyCode == KeyEvent.KEYCODE_MENU</ID>
+    <ID>ComplexCondition:GalleryListScene.kt$GalleryListScene$ListUrlBuilder.MODE_NORMAL == builder.mode &amp;&amp; LRRUtils.NONE == category &amp;&amp; builder.categoryId == null &amp;&amp; TextUtils.isEmpty(keyword)</ID>
+    <ID>ComplexCondition:GalleryListScene.kt$GalleryListScene$filterHelper != null &amp;&amp; urlBuilder != null &amp;&amp; filterHelper.filterOpen &amp;&amp; filterHelper.removeLastFilterTag()</ID>
+    <ID>ComplexCondition:GalleryListScene.kt$GalleryListScene$helper == null || root == null || !::recyclerView.isInitialized || succeeded.isEmpty()</ID>
+    <ID>ComplexCondition:GalleryListScene.kt$GalleryListScene.&lt;no name provided&gt;$provisional != null &amp;&amp; insertAt != null &amp;&amp; insertAt in plan.removals &amp;&amp; insertAt &lt; helper.size()</ID>
+    <ID>ComplexCondition:LRRApiUtils.kt$arcid.length != 40 || !arcid.all { it.isDigit() || it in 'a'..'f' || it in 'A'..'F' }</ID>
+    <ID>ComplexCondition:QuickSearchViewModel.kt$QuickSearchViewModel$fromPosition &lt; 0 || fromPosition &gt;= currentList.size || toPosition &lt; 0 || toPosition &gt;= currentList.size</ID>
+    <ID>ComplexCondition:ReaderPageCache.kt$ReaderPageCache$header[0] == 0x47.toByte() &amp;&amp; header[1] == 0x49.toByte() &amp;&amp; header[2] == 0x46.toByte() &amp;&amp; header[3] == 0x38.toByte()</ID>
+    <ID>ComplexCondition:ReaderPageCache.kt$ReaderPageCache$header[0] == 0x89.toByte() &amp;&amp; header[1] == 0x50.toByte() &amp;&amp; header[2] == 0x4E.toByte() &amp;&amp; header[3] == 0x47.toByte()</ID>
+    <ID>ComplexCondition:ReaderPageCache.kt$ReaderPageCache$read &gt;= 12 &amp;&amp; header[0] == 'R'.code.toByte() &amp;&amp; header[1] == 'I'.code.toByte() &amp;&amp; header[2] == 'F'.code.toByte() &amp;&amp; header[3] == 'F'.code.toByte() &amp;&amp; header[8] == 'W'.code.toByte() &amp;&amp; header[9] == 'E'.code.toByte() &amp;&amp; header[10] == 'B'.code.toByte() &amp;&amp; header[11] == 'P'.code.toByte()</ID>
+    <ID>ComplexCondition:ReaderPageCache.kt$ReaderPageCache$read &gt;= 12 &amp;&amp; header[0] == 0x00.toByte() &amp;&amp; header[1] == 0x00.toByte() &amp;&amp; header[2] == 0x00.toByte() &amp;&amp; header[3] == 0x0C.toByte() &amp;&amp; header[4] == 0x4A.toByte() &amp;&amp; header[5] == 0x58.toByte() &amp;&amp; header[6] == 0x4C.toByte() &amp;&amp; header[7] == 0x20.toByte() &amp;&amp; header[8] == 0x0D.toByte() &amp;&amp; header[9] == 0x0A.toByte() &amp;&amp; header[10] == 0x87.toByte() &amp;&amp; header[11] == 0x0A.toByte()</ID>
+    <ID>ComplexCondition:ReaderPageCache.kt$ReaderPageCache$read &gt;= 12 &amp;&amp; header[4] == 'f'.code.toByte() &amp;&amp; header[5] == 't'.code.toByte() &amp;&amp; header[6] == 'y'.code.toByte() &amp;&amp; header[7] == 'p'.code.toByte() &amp;&amp; String(header, 8, 4, Charsets.US_ASCII) in ISO_BMFF_IMAGE_BRANDS</ID>
+    <ID>ComplexCondition:TankMergeAnimator.kt$TankMergeAnimator$window == null || root.width &lt;= 0 || root.height &lt;= 0 || plan.flyerPositions.isEmpty()</ID>
+    <ID>CyclomaticComplexMethod:ArchiverDownloadProgress.kt$ArchiverDownloadProgress$fun initThread(arcid: String?)</ID>
+    <ID>CyclomaticComplexMethod:CommonOperations.kt$CommonOperations$@JvmStatic fun startDownload(activity: MainActivity, archives: List&lt;Archive&gt;, forceDefault: Boolean)</ID>
+    <ID>CyclomaticComplexMethod:DirGalleryProvider.kt$DirGalleryProvider$override fun start()</ID>
+    <ID>CyclomaticComplexMethod:DownloadBatchOpsHelper.kt$DownloadBatchOpsHelper$fun onClickSecondaryFab(fab: FloatingActionButton, position: Int)</ID>
+    <ID>CyclomaticComplexMethod:DownloadListInfosExecutor.kt$DownloadListInfosExecutor.Companion$private fun merge(arr: Array&lt;DownloadInfo&gt;, left: Int, mid: Int, right: Int, sortType: Int)</ID>
+    <ID>CyclomaticComplexMethod:DownloadManager.kt$DownloadManager$private fun syncRatingsFromServer()</ID>
+    <ID>CyclomaticComplexMethod:DownloadScheduler.kt$DownloadScheduler$internal fun dispatchEvent(event: DownloadEvent)</ID>
+    <ID>CyclomaticComplexMethod:DownloadService.kt$DownloadService$override fun onFinish(info: DownloadInfo)</ID>
+    <ID>CyclomaticComplexMethod:DownloadService.kt$DownloadService$private fun handleIntent(intent: Intent?)</ID>
+    <ID>CyclomaticComplexMethod:GalleryActivity.kt$GalleryActivity$@Suppress("WrongConstant") private fun onCreateView(savedInstanceState: Bundle?)</ID>
+    <ID>CyclomaticComplexMethod:GallerySearchHelper.kt$GallerySearchHelper.Companion$@JvmStatic fun getSuitableTitleForUrlBuilder( resources: Resources, urlBuilder: ListUrlBuilder, appName: Boolean ): String?</ID>
+    <ID>CyclomaticComplexMethod:GalleryStateHelper.kt$GalleryStateHelper$fun setState(newState: Int, animation: Boolean)</ID>
+    <ID>CyclomaticComplexMethod:LRRApiUtils.kt$@JvmName("friendlyError") fun friendlyError(context: Context, e: Exception): String</ID>
+    <ID>CyclomaticComplexMethod:LRRDownloadWorker.kt$LRRDownloadWorker$@Throws(IOException::class) private fun downloadPage( client: OkHttpClient, pagePath: String, outFile: File, index: Int, total: Int )</ID>
+    <ID>CyclomaticComplexMethod:LRRDownloadWorker.kt$LRRDownloadWorker$private suspend fun doDownload()</ID>
+    <ID>CyclomaticComplexMethod:LRRDownloadWorker.kt$LRRDownloadWorker.Companion$@JvmStatic fun validateImageHeader(header: ByteArray, read: Int): Boolean</ID>
+    <ID>CyclomaticComplexMethod:LRRGalleryProvider.kt$LRRGalleryProvider$override fun start()</ID>
+    <ID>CyclomaticComplexMethod:LRReaderApplication.kt$LRReaderApplication$@SuppressLint("StaticFieldLeak") // Safe: Application instance is process-scoped override fun onCreate()</ID>
+    <ID>CyclomaticComplexMethod:LegacyDb.kt$LegacyDb$suspend fun mergeOldDB(context: Context)</ID>
+    <ID>CyclomaticComplexMethod:ListUrlBuilder.kt$ListUrlBuilder$fun build(): String</ID>
+    <ID>CyclomaticComplexMethod:ListUrlBuilder.kt$ListUrlBuilder$fun setQuery(query: String?)</ID>
+    <ID>CyclomaticComplexMethod:ReaderPageCache.kt$ReaderPageCache$@Throws(IOException::class) fun downloadToFile( client: OkHttpClient, url: String, cacheFile: File, pageIndex: Int = 0, progressCallback: ProgressCallback? = null, onCallCreated: ((Call) -&gt; Unit)? = null )</ID>
+    <ID>CyclomaticComplexMethod:ReaderPageCache.kt$ReaderPageCache$fun validateImageFile(file: File): Boolean</ID>
+    <ID>CyclomaticComplexMethod:SearchBar.kt$SearchBar$private fun updateSuggestions(scrollToTop: Boolean = true)</ID>
+    <ID>CyclomaticComplexMethod:TagTranslationDatabase.kt$TagTranslationDatabase.Companion$@JvmStatic fun update(context: Context)</ID>
+    <ID>EmptyFunctionBlock:AppProxySelector.kt$AppProxySelector.NullProxySelector${}</ID>
+    <ID>EmptyFunctionBlock:BookmarksDraw.kt$BookmarksDraw.ScrollListener${}</ID>
+    <ID>EmptyFunctionBlock:DownloadLabelsScene.kt$DownloadLabelsScene.LabelAdapter${}</ID>
+    <ID>EmptyFunctionBlock:GalleryActivity.kt$GalleryActivity.NotifyTask.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:GalleryDetailViewModel.kt$GalleryDetailViewModel.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:GalleryListScene.kt$GalleryListScene.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:GalleryMenuHelper.kt$GalleryMenuHelper.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:HistoryScene.kt$HistoryScene.HistoryAdapter${}</ID>
+    <ID>EmptyFunctionBlock:LegacyDb.kt$LegacyDb.OldDBHelper${}</ID>
+    <ID>EmptyFunctionBlock:MainActivity.kt$MainActivity${ }</ID>
+    <ID>EmptyFunctionBlock:QuickSearchScene.kt$QuickSearchScene.QuickSearchAdapter${}</ID>
+    <ID>EmptyFunctionBlock:SearchLayout.kt$SearchLayout.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:SecurityScene.kt$SecurityScene${}</ID>
+    <ID>EmptyFunctionBlock:ServerConfigScene.kt$ServerConfigScene.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:ServerListDialogHelper.kt$ServerListDialogHelper.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:SpiderQueen.kt$SpiderQueen${}</ID>
+    <ID>EmptyFunctionBlock:TagEditDialog.kt$TagEditDialog.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:ThumbDataContainer.kt$ThumbDataContainer${ }</ID>
+    <ID>ExplicitGarbageCollectionCall:AdvancedFragment.kt$AdvancedFragment$gc()</ID>
+    <ID>FunctionOnlyReturningConstant:LRRUrlOpener.kt$LRRUrlOpener$@JvmStatic fun parseUrl(url: String?): Announcer?</ID>
+    <ID>FunctionOnlyReturningConstant:SpiderQueen.kt$SpiderQueen$fun forceRequest(index: Int): Any?</ID>
+    <ID>FunctionOnlyReturningConstant:SpiderQueen.kt$SpiderQueen$fun getError(): String</ID>
+    <ID>FunctionOnlyReturningConstant:SpiderQueen.kt$SpiderQueen$fun getStartPage(): Int</ID>
+    <ID>FunctionOnlyReturningConstant:SpiderQueen.kt$SpiderQueen$fun request(index: Int): Any?</ID>
+    <ID>FunctionOnlyReturningConstant:SpiderQueen.kt$SpiderQueen$fun save(index: Int, dir: UniFile, filename: String): UniFile?</ID>
+    <ID>FunctionOnlyReturningConstant:SpiderQueen.kt$SpiderQueen$fun save(index: Int, file: UniFile): Boolean</ID>
+    <ID>FunctionParameterNaming:QuickSearch.kt$QuickSearch.Companion$`object`: JSONObject</ID>
+    <ID>ImplicitDefaultLocale:DetailHeaderBinder.kt$DetailHeaderBinder$String.format("%.0f★", archive.rating)</ID>
+    <ID>ImplicitDefaultLocale:ReaderPageCache.kt$ReaderPageCache$String.format( "Unknown image format: %02X %02X %02X %02X", header[0], header[1], header[2], header[3] )</ID>
+    <ID>InstanceOfCheckForException:AppUpdater.kt$AppUpdater$t is CancellationException</ID>
+    <ID>InstanceOfCheckForException:DetailActionHandler.kt$DetailActionHandler$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:DownloadsScene.kt$DownloadsScene$e is kotlinx.coroutines.CancellationException</ID>
+    <ID>InstanceOfCheckForException:GalleryDetailViewModel.kt$GalleryDetailViewModel$catEx is kotlinx.coroutines.CancellationException</ID>
+    <ID>InstanceOfCheckForException:GalleryDetailViewModel.kt$GalleryDetailViewModel$e is kotlinx.coroutines.CancellationException</ID>
+    <ID>InstanceOfCheckForException:GalleryListDataHelper.kt$GalleryListDataHelper$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:HistoryScene.kt$HistoryScene$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:LRRCategoriesViewModel.kt$LRRCategoriesViewModel$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:LRRDownloadWorker.kt$LRRDownloadWorker$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:MainActivity.kt$MainActivity$e is kotlinx.coroutines.CancellationException</ID>
+    <ID>InstanceOfCheckForException:PageThumbnailRepository.kt$PageThumbnailRepository$e is LRRHttpException</ID>
+    <ID>InstanceOfCheckForException:ServerConfigViewModel.kt$ServerConfigViewModel$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:ServerListViewModel.kt$ServerListViewModel$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:TagTranslationDatabase.kt$TagTranslationDatabase.Companion$t is CancellationException</ID>
+    <ID>InstanceOfCheckForException:TankoubonDetailViewModel.kt$TankoubonDetailViewModel$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:TankoubonDetailViewModel.kt$TankoubonDetailViewModel$e is LRRHttpException</ID>
+    <ID>InstanceOfCheckForException:TankoubonsViewModel.kt$TankoubonsViewModel$e is CancellationException</ID>
+    <ID>LargeClass:GalleryActivity.kt$GalleryActivity : BaseActivityListenerCallbackSettingsCallback</ID>
+    <ID>LargeClass:GalleryDetailScene.kt$GalleryDetailScene : BaseSceneOnClickListenerOnLongClickListener</ID>
+    <ID>LargeClass:GalleryListScene.kt$GalleryListScene : BaseSceneOnItemClickListenerOnItemLongClickListenerOnClickListener</ID>
+    <ID>LargeClass:LRRAuthManager.kt$LRRAuthManager</ID>
+    <ID>LargeClass:MainActivity.kt$MainActivity : StageActivityOnNavigationItemSelectedListenerDrawerListener</ID>
+    <ID>LargeClass:TankDetailScene.kt$TankDetailScene : BaseSceneOnClickListenerOnLongClickListener</ID>
+    <ID>LongMethod:AppDatabase.kt$AppDatabase.Companion.&lt;no name provided&gt;$override fun migrate(db: SupportSQLiteDatabase)</ID>
+    <ID>LongMethod:CommonOperations.kt$CommonOperations$@JvmStatic fun startDownload(activity: MainActivity, archives: List&lt;Archive&gt;, forceDefault: Boolean)</ID>
+    <ID>LongMethod:Crash.kt$Crash$@SuppressLint("HardwareIds") @Throws(IOException::class) private fun collectInfo(context: Context, fw: FileWriter)</ID>
+    <ID>LongMethod:DirGalleryProvider.kt$DirGalleryProvider$override fun start()</ID>
+    <ID>LongMethod:DownloadScheduler.kt$DownloadScheduler$internal fun dispatchEvent(event: DownloadEvent)</ID>
+    <ID>LongMethod:DownloadService.kt$DownloadService$override fun onFinish(info: DownloadInfo)</ID>
+    <ID>LongMethod:DownloadsScene.kt$DownloadsScene$@Suppress("DEPRECATION") override fun onCreateView3( inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle? ): View?</ID>
+    <ID>LongMethod:GalleryActivity.kt$GalleryActivity$@Suppress("WrongConstant") private fun onCreateView(savedInstanceState: Bundle?)</ID>
+    <ID>LongMethod:GalleryDetailScene.kt$GalleryDetailScene$override fun onCreateView2( inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle? ): View?</ID>
+    <ID>LongMethod:GalleryDrawerHelper.kt$GalleryDrawerHelper$fun showAddQuickSearchDialog( list: List&lt;QuickSearch&gt;, adapter: ArrayAdapter&lt;QuickSearch&gt;, listView: ListView, tip: TextView )</ID>
+    <ID>LongMethod:GalleryListScene.kt$GalleryListScene$override fun onCreateView2( inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle? ): View</ID>
+    <ID>LongMethod:GalleryStateHelper.kt$GalleryStateHelper$fun setState(newState: Int, animation: Boolean)</ID>
+    <ID>LongMethod:HistoryScene.kt$HistoryScene$override fun onCreateView3( inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle? ): View?</ID>
+    <ID>LongMethod:LRRDownloadWorker.kt$LRRDownloadWorker$@Throws(IOException::class) private fun downloadPage( client: OkHttpClient, pagePath: String, outFile: File, index: Int, total: Int )</ID>
+    <ID>LongMethod:LRRDownloadWorker.kt$LRRDownloadWorker$private suspend fun doDownload()</ID>
+    <ID>LongMethod:LRRGalleryProvider.kt$LRRGalleryProvider$override fun start()</ID>
+    <ID>LongMethod:LRReaderApplication.kt$LRReaderApplication$@SuppressLint("StaticFieldLeak") // Safe: Application instance is process-scoped override fun onCreate()</ID>
+    <ID>LongMethod:LegacyDb.kt$LegacyDb$suspend fun mergeOldDB(context: Context)</ID>
+    <ID>LongMethod:ListUrlBuilder.kt$ListUrlBuilder$fun build(): String</ID>
+    <ID>LongMethod:MainActivity.kt$MainActivity$override fun onCreate2(savedInstanceState: Bundle?)</ID>
+    <ID>LongMethod:TagEditDialog.kt$TagEditDialog$fun rebuildViews()</ID>
+    <ID>LongMethod:TankDetailScene.kt$TankDetailScene$override fun onCreateView2( inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?, ): View?</ID>
+    <ID>LongParameterList:CategoryDialogHelper.kt$CategoryDialogHelper$( activity: Activity, staticCats: List&lt;LRRCategory&gt;, names: Array&lt;String&gt;, checked: BooleanArray, originalChecked: BooleanArray, arcid: String, serverUrl: String, callback: Callback? )</ID>
+    <ID>LongParameterList:DetailHeaderBinder.kt$DetailHeaderBinder$( private val viewModel: GalleryDetailViewModel, private val lifecycleOwner: LifecycleOwner, private val thumb: LoadImageView, private val title: TextView, private val uploader: TextView, private val pages: TextView, private val size: TextView, private val ratingText: TextView, private val rating: RatingBar, private val heart: TextView, private val heartOutline: TextView, private val archiverDownloadProgress: ArchiverDownloadProgress, private val colorBg: View, private val tags: LinearLayout, private val noTags: TextView, private val sourceBadge: TextView, )</ID>
+    <ID>LongParameterList:GalleryMenuHelper.kt$GalleryMenuHelper.SettingsCallback$( screenRotation: Int, layoutMode: Int, scaleMode: Int, startPosition: Int, keepScreenOn: Boolean, showClock: Boolean, showProgress: Boolean, showBattery: Boolean, showPageInterval: Boolean, volumePage: Boolean, reverseVolumePage: Boolean, readingFullscreen: Boolean, customScreenLightness: Boolean, screenLightness: Int, transferTime: Int )</ID>
+    <ID>LongParameterList:LRRArchivePagingSource.kt$LRRArchivePagingSource$( private val client: OkHttpClient, private val baseUrl: String, private val filter: String?, private val category: String?, private val sortby: String?, private val order: String?, private val newonly: Boolean = false, private val untaggedonly: Boolean = false, private val includeTanksProvider: () -&gt; Boolean = { AppearanceSettings.getGroupTanks() &amp;&amp; !TankoubonSupportGate.isUnsupported(baseUrl) }, private val hideCompletedProvider: () -&gt; Boolean = { AppearanceSettings.getHideCompleted() } )</ID>
+    <ID>LongParameterList:LRRSearchApi.kt$LRRSearchApi$( client: OkHttpClient, baseUrl: String, filter: String?, category: String?, start: Int, sortby: String?, order: String?, newonly: Boolean, untaggedonly: Boolean = false, groupbyTanks: Boolean = false, hideCompleted: Boolean = false )</ID>
+    <ID>LongParameterList:LRRSearchApi.kt$LRRSearchApi$( client: OkHttpClient, baseUrl: String, filter: String?, count: Int, category: String? = null, newonly: Boolean = false, untaggedonly: Boolean = false, groupbyTanks: Boolean = false, hideCompleted: Boolean = false )</ID>
+    <ID>LongParameterList:QuickSearch.kt$QuickSearch$( @PrimaryKey(autoGenerate = true) @ColumnInfo(name = "_id") @JvmField var id: Long? = null, @ColumnInfo(name = "NAME") @JvmField var name: String? = null, @ColumnInfo(name = "MODE") @JvmField var mode: Int = 0, @ColumnInfo(name = "CATEGORY") @JvmField var category: Int = 0, @ColumnInfo(name = "KEYWORD") @JvmField var keyword: String? = null, /** LANraragi category id filter (schema v31); null = no category. */ @ColumnInfo(name = "CATEGORY_ID") @JvmField var categoryId: String? = null, /** Display-only name for [categoryId]; back-filled after a categories fetch. */ @ColumnInfo(name = "CATEGORY_NAME") @JvmField var categoryName: String? = null, @ColumnInfo(name = "ADVANCE_SEARCH") @JvmField var advanceSearch: Int = 0, @ColumnInfo(name = "MIN_RATING") @JvmField var minRating: Int = 0, @ColumnInfo(name = "PAGE_FROM") @JvmField var pageFrom: Int = 0, @ColumnInfo(name = "PAGE_TO") @JvmField var pageTo: Int = 0, @ColumnInfo(name = "TIME") @JvmField var time: Long = 0 )</ID>
+    <ID>LoopWithTooManyJumpStatements:DirGalleryProvider.kt$DirGalleryProvider$while</ID>
+    <ID>LoopWithTooManyJumpStatements:DirPreloadPolicy.kt$DirPreloadPolicy$for</ID>
+    <ID>LoopWithTooManyJumpStatements:DownloadFragment.kt$DownloadFragment$for</ID>
+    <ID>LoopWithTooManyJumpStatements:DownloadManager.kt$DownloadManager$for</ID>
+    <ID>LoopWithTooManyJumpStatements:DownloadRepository.kt$DownloadRepository$for</ID>
+    <ID>LoopWithTooManyJumpStatements:DownloadsScene.kt$DownloadsScene$for</ID>
+    <ID>LoopWithTooManyJumpStatements:LRRDownloadWorker.kt$LRRDownloadWorker$while</ID>
+    <ID>LoopWithTooManyJumpStatements:LRRGalleryProvider.kt$LRRGalleryProvider$for</ID>
+    <ID>LoopWithTooManyJumpStatements:LocalArchiveVerifier.kt$LocalArchiveVerifier$for</ID>
+    <ID>LoopWithTooManyJumpStatements:QuickSearchNameReconciler.kt$QuickSearchNameReconciler$for</ID>
+    <ID>LoopWithTooManyJumpStatements:QuickSearchRepository.kt$QuickSearchRepository$for</ID>
+    <ID>LoopWithTooManyJumpStatements:TagTranslationDatabase.kt$TagTranslationDatabase$while</ID>
+    <ID>LoopWithTooManyJumpStatements:TankGalleryProvider.kt$TankGalleryProvider$for</ID>
+    <ID>MatchingDeclarationName:ArchiveSourceResolver.kt$OrphanProfileException : IOException</ID>
+    <ID>MaxLineLength:AppDatabase.kt$AppDatabase.Companion$"(ARCID, SERVER_PROFILE_ID, ARCHIVE_JSON, DOWNLOAD_STATE, DOWNLOAD_LEGACY, DOWNLOAD_TIME, DOWNLOAD_LABEL, DOWNLOAD_ARCHIVE_URI) "</ID>
+    <ID>MaxLineLength:AppDatabase.kt$AppDatabase.Companion$.</ID>
+    <ID>MaxLineLength:AppDatabase.kt$AppDatabase.Companion$db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_SERVER_PROFILE_ID` ON `ARCHIVE_LOCAL_STATE` (`SERVER_PROFILE_ID`)")</ID>
+    <ID>MaxLineLength:AppDatabase.kt$AppDatabase.Companion.&lt;no name provided&gt;$db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_DOWNLOAD_LABEL` ON `ARCHIVE_LOCAL_STATE` (`DOWNLOAD_LABEL`)")</ID>
+    <ID>MaxLineLength:AppDatabase.kt$AppDatabase.Companion.&lt;no name provided&gt;$db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_DOWNLOAD_TIME` ON `ARCHIVE_LOCAL_STATE` (`DOWNLOAD_TIME`)")</ID>
+    <ID>MaxLineLength:AppDatabase.kt$AppDatabase.Companion.&lt;no name provided&gt;$db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_FAVORITE_TIME` ON `ARCHIVE_LOCAL_STATE` (`FAVORITE_TIME`)")</ID>
+    <ID>MaxLineLength:AppDatabase.kt$AppDatabase.Companion.&lt;no name provided&gt;$db.execSQL("CREATE INDEX IF NOT EXISTS `index_ARCHIVE_LOCAL_STATE_SERVER_PROFILE_ID` ON `ARCHIVE_LOCAL_STATE` (`SERVER_PROFILE_ID`)")</ID>
+    <ID>MaxLineLength:BasePreference.kt$BasePreference$constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) : super(context, attrs, defStyleAttr, defStyleRes)</ID>
+    <ID>MaxLineLength:DownloadManager.kt$DownloadManager$val list = repo.getInfoListForLabel(info.label) ?: run { Log.e(TAG, "Can't find download info list with label: $label"); return }</ID>
+    <ID>MaxLineLength:DownloadManager.kt$DownloadManager.Companion$const val DOWNLOAD_INFO_HEADER = "gid,token,title,title_jpn,thumb,category,posted,uploader,rating,rated,simple_lang,simple_tags,thumb_width,thumb_height,span_size,span_index,span_group_index,favorite_slot,favorite_name,pages"</ID>
+    <ID>MaxLineLength:DownloadsScene.kt$DownloadsScene$mPaginationIndicator?.setPerPageCountChoices(viewModel.perPageCountChoices, mPaginationHelper?.getPageSizePos(viewModel.pageSize.value) ?: 0)</ID>
+    <ID>MaxLineLength:DownloadsScene.kt$DownloadsScene.BatchOpsHelperCallback$override val mFabLayout: FabLayout? get() = if (this@DownloadsScene::mFabLayout.isInitialized) this@DownloadsScene.mFabLayout else null</ID>
+    <ID>MaxLineLength:DownloadsScene.kt$DownloadsScene.SelectionHelperCallback$override val mFabLayout: FabLayout? get() = if (this@DownloadsScene::mFabLayout.isInitialized) this@DownloadsScene.mFabLayout else null</ID>
+    <ID>MaxLineLength:EntityMapper.kt$*</ID>
+    <ID>MaxLineLength:FileUtils.kt$FileUtils.Companion$("content://com.android.externalstorage.documents/document/primary%3ADownload/" + LegacyCategoryConfig.TORRENT_PATH).toUri()</ID>
+    <ID>MaxLineLength:LRRServerInfo.kt$LRRServerInfo$@JvmField @SerialName("server_resizes_images") @Serializable(with = FlexibleBooleanSerializer::class) var serverResizesImages: Boolean = false</ID>
+    <ID>MaxLineLength:LRRServerInfo.kt$LRRServerInfo$@JvmField @SerialName("server_tracks_progress") @Serializable(with = FlexibleBooleanSerializer::class) var serverTracksProgress: Boolean = false</ID>
+    <ID>MaxLineLength:TextUrl.kt$TextUrl$Pattern.compile("(http|https)://[a-z0-9A-Z%-]+(\\.[a-z0-9A-Z%-]+)+(:\\d{1,5})?(/[a-zA-Z0-9-_~:#@!&amp;',;=%/\\*\\.\\?\\+\\$\\[\\]\\(\\)]+)?/?")</ID>
+    <ID>MayBeConst:LRRUtils.kt$LRRUtils$@JvmField val ALL_CATEGORY: Int = UNKNOWN - 1</ID>
+    <ID>MayBeConst:PrivacySettings.kt$PrivacySettings$// --- Enable Analytics --- @JvmField val KEY_ENABLE_ANALYTICS = "enable_analytics"</ID>
+    <ID>MayBeConst:SolidScene.kt$SolidScene.Companion$@JvmField val KEY_TARGET_ARGS = "target_args"</ID>
+    <ID>MayBeConst:SolidScene.kt$SolidScene.Companion$@JvmField val KEY_TARGET_SCENE = "target_scene"</ID>
+    <ID>MayBeConst:UpdateSettings.kt$UpdateSettings$// --- Last Update Time (1-day throttle for auto-check) --- @JvmField val KEY_LAST_UPDATE_TIME = "last_update_time"</ID>
+    <ID>NestedBlockDepth:Crash.kt$Crash$@SuppressLint("HardwareIds") @Throws(IOException::class) private fun collectInfo(context: Context, fw: FileWriter)</ID>
+    <ID>NestedBlockDepth:DirImageFiles.kt$DirImageFiles$fun decode(context: Context, file: UniFile): Image?</ID>
+    <ID>NestedBlockDepth:DownloadAdapter.kt$DownloadAdapter$override fun onBindViewHolder( holder: DownloadHolder, position: Int, payloads: MutableList&lt;Any&gt; )</ID>
+    <ID>NestedBlockDepth:DownloadFragment.kt$DownloadFragment$private fun collectImagePaths(dir: UniFile?, paths: MutableList&lt;String&gt;)</ID>
+    <ID>NestedBlockDepth:DownloadFragment.kt$DownloadFragment$private fun saveCleanLog(downloadDir: UniFile, logs: List&lt;String&gt;)</ID>
+    <ID>NestedBlockDepth:FileUtils.kt$FileUtils.Companion$@JvmStatic fun getFileName(context: Context, uri: Uri): String?</ID>
+    <ID>NestedBlockDepth:GalleryInputHandler.kt$GalleryInputHandler$fun handleGenericMotion(view: View?, motionEvent: MotionEvent): Boolean</ID>
+    <ID>NestedBlockDepth:Image.kt$Image$@Synchronized fun texImage(init: Boolean, offsetX: Int, offsetY: Int, width: Int, height: Int)</ID>
+    <ID>NestedBlockDepth:ImageBitmapHelper.kt$ImageBitmapHelper$override fun decode( isPipe: InputStreamPipe, hardware: Boolean, targetWidth: Int, targetHeight: Int ): Image?</ID>
+    <ID>NestedBlockDepth:LRRAuthManager.kt$LRRAuthManager$@JvmStatic fun verifyPattern(input: String?): Boolean</ID>
+    <ID>NestedBlockDepth:LRRAuthManager.kt$LRRAuthManager$@JvmStatic fun verifyPatternWithCipher(input: String?, authenticatedCipher: Cipher): Boolean</ID>
+    <ID>NestedBlockDepth:LRRDownloadWorker.kt$LRRDownloadWorker$@Throws(IOException::class) private fun downloadPage( client: OkHttpClient, pagePath: String, outFile: File, index: Int, total: Int )</ID>
+    <ID>NestedBlockDepth:LRRDownloadWorker.kt$LRRDownloadWorker$private suspend fun doDownload()</ID>
+    <ID>NestedBlockDepth:LRRGalleryProvider.kt$LRRGalleryProvider$override fun save(index: Int, file: UniFile): Boolean</ID>
+    <ID>NestedBlockDepth:LRRUrlHelper.kt$LRRUrlHelper$@Suppress("ReturnCount", "ThrowsCount") suspend fun connectWithFallback( testClient: OkHttpClient, rawInput: String, apiKey: String?, allowCleartext: Boolean = false ): ConnectResult</ID>
+    <ID>NestedBlockDepth:LegacyDb.kt$LegacyDb$suspend fun mergeOldDB(context: Context)</ID>
+    <ID>NestedBlockDepth:LegacySearchHistoryImporter.kt$LegacySearchHistoryImporter$suspend fun importIfPresent(context: Context, db: AppDatabase, activeProfileId: Long)</ID>
+    <ID>NestedBlockDepth:ReaderPageCache.kt$ReaderPageCache$@Throws(IOException::class) fun downloadToFile( client: OkHttpClient, url: String, cacheFile: File, pageIndex: Int = 0, progressCallback: ProgressCallback? = null, onCallCreated: ((Call) -&gt; Unit)? = null )</ID>
+    <ID>NestedBlockDepth:SearchBar.kt$SearchBar$private fun updateSuggestions(scrollToTop: Boolean = true)</ID>
+    <ID>NestedBlockDepth:SearchEditText.kt$SearchEditText$override fun onKeyPreIme(keyCode: Int, event: KeyEvent): Boolean</ID>
+    <ID>NestedBlockDepth:TagTranslationDatabase.kt$TagTranslationDatabase.Companion$private suspend fun save(client: OkHttpClient, url: String, file: File): Boolean</ID>
+    <ID>PrintStackTrace:FileUtils.kt$FileUtils.Companion$e</ID>
+    <ID>PrintStackTrace:Image.kt$Image.Companion$e</ID>
+    <ID>PrintStackTrace:LogCat.kt$LogCat$e</ID>
+    <ID>PrintStackTrace:ThumbDataContainer.kt$ThumbDataContainer$e</ID>
+    <ID>PrintStackTrace:VersionPreference.kt$VersionPreference$e</ID>
+    <ID>ProtectedMemberInFinalClass:DownloadListInfosExecutor.kt$DownloadListInfosExecutor$protected fun searchingInBackground(): List&lt;DownloadInfo&gt;?</ID>
+    <ID>ReturnCount:DownloadBatchOpsHelper.kt$DownloadBatchOpsHelper$fun onClickSecondaryFab(fab: FloatingActionButton, position: Int)</ID>
+    <ID>ReturnCount:DownloadDirMigration.kt$DownloadDirMigration$suspend fun migrateRow(info: DownloadInfo): RowResult</ID>
+    <ID>ReturnCount:DownloadGalleryOpenHelper.kt$DownloadGalleryOpenHelper$fun onItemClick(position: Int): Boolean</ID>
+    <ID>ReturnCount:DownloadGalleryOpenHelper.kt$DownloadGalleryOpenHelper$fun updateReadProcess(result: ActivityResult)</ID>
+    <ID>ReturnCount:ExceptionUtils.kt$ExceptionUtils$@JvmStatic fun getReadableString(e: Throwable): String</ID>
+    <ID>ReturnCount:GalleryInputHandler.kt$GalleryInputHandler$fun handleKeyDown(keyCode: Int, event: KeyEvent?): Boolean</ID>
+    <ID>ReturnCount:LRRAuthManager.kt$LRRAuthManager$@JvmStatic fun verifyPattern(input: String?): Boolean</ID>
+    <ID>ReturnCount:LRRAuthManager.kt$LRRAuthManager$@JvmStatic fun verifyPatternWithCipher(input: String?, authenticatedCipher: Cipher): Boolean</ID>
+    <ID>ReturnCount:LRRDownloadWorker.kt$LRRDownloadWorker$private suspend fun doDownload()</ID>
+    <ID>ReturnCount:LRRDownloadWorker.kt$LRRDownloadWorker$private suspend fun reportIfLocallyComplete(): Boolean</ID>
+    <ID>ReturnCount:LRRUrl.kt$LRRUrl$@JvmStatic fun getFixedPreviewThumbUrl(originUrl: String): String</ID>
+    <ID>ReturnCount:LRRUtils.kt$LRRUtils$@JvmStatic fun getCategoryColor(category: Int): Int</ID>
+    <ID>ReturnCount:MainActivity.kt$MainActivity$private fun handleIntent(intent: Intent?): Boolean</ID>
+    <ID>ReturnCount:NaturalComparator.kt$NaturalComparator$override fun compare(o1: String?, o2: String?): Int</ID>
+    <ID>ReturnCount:PageThumbnailsViewModel.kt$PageThumbnailsViewModel$fun requestPage(page: Int)</ID>
+    <ID>ReturnCount:ReaderPageCache.kt$ReaderPageCache$fun validateImageFile(file: File): Boolean</ID>
+    <ID>ReturnCount:StampOverlayView.kt$StampOverlayView$@SuppressLint("ClickableViewAccessibility") // performClick IS called on the tap path (onTouchUp) override fun onTouchEvent(event: MotionEvent): Boolean</ID>
+    <ID>SafeCast:BaseScene.kt$BaseScene$if (activity is MainActivity) activity else null</ID>
+    <ID>SpreadOperator:DownloadListInfosExecutor.kt$DownloadListInfosExecutor$(*arr)</ID>
+    <ID>SwallowedException:ArchiverDownloadProgress.kt$ArchiverDownloadProgress$@Suppress("TooGenericExceptionCaught") e: RuntimeException</ID>
+    <ID>SwallowedException:ContinueReadingShortcut.kt$ContinueReadingShortcut$e: Exception</ID>
+    <ID>SwallowedException:ContinueReadingWidget.kt$ContinueReadingWidget$e: Exception</ID>
+    <ID>SwallowedException:ContinueReadingWidgetProvider.kt$ContinueReadingWidgetProvider$e: Exception</ID>
+    <ID>SwallowedException:Crash.kt$Crash$e: android.content.pm.PackageManager.NameNotFoundException</ID>
+    <ID>SwallowedException:DailyReadingAggregateRecorder.kt$DailyReadingAggregateRecorder$e: Exception</ID>
+    <ID>SwallowedException:DirGalleryProvider.kt$DirGalleryProvider$e: CancellationException</ID>
+    <ID>SwallowedException:DirGalleryProvider.kt$DirGalleryProvider$e: IOException</ID>
+    <ID>SwallowedException:DirTankMemberSource.kt$DirTankMemberSource$e: IOException</ID>
+    <ID>SwallowedException:DownloadAdapter.kt$DownloadAdapter$e: IllegalStateException</ID>
+    <ID>SwallowedException:DownloadAdapter.kt$DownloadAdapter$e: NullPointerException</ID>
+    <ID>SwallowedException:DownloadDirCache.kt$DownloadDirCache$e: Exception</ID>
+    <ID>SwallowedException:DownloadFragment.kt$DownloadFragment$e: IOException</ID>
+    <ID>SwallowedException:DownloadListInfosExecutor.kt$DownloadListInfosExecutor$e: Exception</ID>
+    <ID>SwallowedException:DownloadManager.kt$DownloadManager$e: Exception</ID>
+    <ID>SwallowedException:DownloadRatingSync.kt$DownloadRatingSync$e: Exception</ID>
+    <ID>SwallowedException:DownloadService.kt$DownloadService$e: TimeoutCancellationException</ID>
+    <ID>SwallowedException:GalleryActivity.kt$GalleryActivity$e: Exception</ID>
+    <ID>SwallowedException:GalleryImageOperations.kt$GalleryImageOperations$e: IllegalArgumentException</ID>
+    <ID>SwallowedException:GalleryUploadHelper.kt$GalleryUploadHelper$e: Exception</ID>
+    <ID>SwallowedException:HistoryTankRedirect.kt$HistoryTankRedirect$e: Exception</ID>
+    <ID>SwallowedException:Image.kt$Image.Companion$e: UnsatisfiedLinkError</ID>
+    <ID>SwallowedException:ImageBitmapHelper.kt$ImageBitmapHelper$e: IOException</ID>
+    <ID>SwallowedException:LRRCategoriesViewModel.kt$LRRCategoriesViewModel$e: Exception</ID>
+    <ID>SwallowedException:LRRDownloadWorker.kt$LRRDownloadWorker$e: CancellationException</ID>
+    <ID>SwallowedException:LRReaderApplication.kt$LRReaderApplication$e: Exception</ID>
+    <ID>SwallowedException:LegacySearchHistoryImporter.kt$LegacySearchHistoryImporter$e: Exception</ID>
+    <ID>SwallowedException:ProfileSearchHistoryStore.kt$ProfileSearchHistoryStore$e: Exception</ID>
+    <ID>SwallowedException:QuickSearch.kt$QuickSearch$e: JSONException</ID>
+    <ID>SwallowedException:ReaderPageCache.kt$ReaderPageCache$e: TimeoutCancellationException</ID>
+    <ID>SwallowedException:ReadingSnapshotRecorder.kt$ReadingSnapshotRecorder$e: Exception</ID>
+    <ID>SwallowedException:ServerListScene.kt$ServerListScene$e: Exception</ID>
+    <ID>SwallowedException:ServerListScene.kt$ServerListScene$e: LRRSecureStorageUnavailableException</ID>
+    <ID>SwallowedException:ServerListViewModel.kt$ServerListViewModel$e: LRRSecureStorageUnavailableException</ID>
+    <ID>SwallowedException:SetSecurityActivity.kt$SetSecurityActivity$e: Exception</ID>
+    <ID>SwallowedException:SetSecurityActivity.kt$SetSecurityActivity$e: LRRSecureStorageUnavailableException</ID>
+    <ID>SwallowedException:SetSecurityActivity.kt$SetSecurityActivity.&lt;no name provided&gt;$e: LRRSecureStorageUnavailableException</ID>
+    <ID>SwallowedException:TankDetailViewModel.kt$TankDetailViewModel$e: Exception</ID>
+    <ID>SwallowedException:TankMemberSource.kt$LrrTankMemberSource$e: IOException</ID>
+    <ID>SwallowedException:TankMembershipSync.kt$TankMembershipSync$e: Exception</ID>
+    <ID>SwallowedException:TankoubonDetailViewModel.kt$TankoubonDetailViewModel$e: Exception</ID>
+    <ID>SwallowedException:TankoubonsViewModel.kt$TankoubonsViewModel$e: Exception</ID>
+    <ID>SwallowedException:ThumbDataContainer.kt$ThumbDataContainer$e: ExecutionException</ID>
+    <ID>SwallowedException:ThumbDataContainer.kt$ThumbDataContainer$e: TimeoutException</ID>
+    <ID>ThrowsCount:ExceptionUtils.kt$ExceptionUtils$@JvmStatic fun throwIfFatal(t: Throwable)</ID>
+    <ID>ThrowsCount:GalleryListViewModel.kt$GalleryListViewModel$fun uploadArchive(req: UploadRequest)</ID>
+    <ID>ThrowsCount:LRRApiUtils.kt$internal suspend fun &lt;T&gt; retryOnFailure( maxRetries: Int = 2, block: suspend () -&gt; T ): T</ID>
+    <ID>ThrowsCount:LRRAuthInterceptor.kt$internal fun matchesConfiguredServer( requestUrl: HttpUrl, serverUrlString: String ): ServerMatchResult</ID>
+    <ID>ThrowsCount:LRRAuthManager.kt$LRRAuthManager$@JvmStatic @Throws(GeneralSecurityException::class) fun getDecryptCipher(): Cipher</ID>
+    <ID>ThrowsCount:LRRCleartextRejectionInterceptor.kt$LRRCleartextRejectionInterceptor$private fun enforceActiveBased( chain: Interceptor.Chain, request: okhttp3.Request, url: HttpUrl, ): Response</ID>
+    <ID>ThrowsCount:LRRDownloadWorker.kt$LRRDownloadWorker$@Throws(IOException::class) private fun downloadPage( client: OkHttpClient, pagePath: String, outFile: File, index: Int, total: Int )</ID>
+    <ID>ThrowsCount:LRRDownloadWorker.kt$LRRDownloadWorker$private suspend fun doDownload()</ID>
+    <ID>ThrowsCount:LRRGalleryProvider.kt$LRRGalleryProvider$@Throws(IOException::class) private suspend fun downloadPageToCache( index: Int, progressCallback: ReaderPageCache.ProgressCallback? = null )</ID>
+    <ID>ThrowsCount:ReaderPageCache.kt$ReaderPageCache$@Throws(IOException::class) fun downloadToFile( client: OkHttpClient, url: String, cacheFile: File, pageIndex: Int = 0, progressCallback: ProgressCallback? = null, onCallCreated: ((Call) -&gt; Unit)? = null )</ID>
+    <ID>ThrowsCount:TankGalleryProvider.kt$TankGalleryProvider$private suspend fun countedSourceFor(memberIndex: Int): TankMemberSource</ID>
+    <ID>ThrowsCount:TankMemberSource.kt$LrrTankMemberSource$@Throws(IOException::class) private suspend fun downloadPage(page0: Int, onPercent: ((Float) -&gt; Unit)?)</ID>
+    <ID>TooGenericExceptionThrown:Image.kt$Image$throw Exception("Android 9 解码失败", e)</ID>
+    <ID>TooGenericExceptionThrown:LRRAuthManager.kt$LRRAuthManager$throw RuntimeException("Failed to encrypt pattern hash with KeyStore cipher", e)</ID>
+    <ID>TooGenericExceptionThrown:LRRAuthManager.kt$LRRAuthManager$throw RuntimeException("PBKDF2WithHmacSHA256 not available on this device", e)</ID>
+    <ID>UnusedParameter:Analytics.kt$Analytics$context: Context</ID>
+    <ID>UnusedParameter:Analytics.kt$Analytics$scene: SceneFragment</ID>
+    <ID>UnusedParameter:AppHelper.kt$AppHelper$context: Context?</ID>
+    <ID>UnusedParameter:GalleryDrawerHelper.kt$GalleryDrawerHelper$savedInstanceState: Bundle?</ID>
+    <ID>UnusedParameter:GalleryInputHandler.kt$GalleryInputHandler$event: KeyEvent?</ID>
+    <ID>UnusedParameter:GalleryInputHandler.kt$GalleryInputHandler$view: View?</ID>
+    <ID>UnusedParameter:LRRDownloadWorker.kt$LRRDownloadWorker$total: Int</ID>
+    <ID>UnusedParameter:LRRUrlOpener.kt$LRRUrlOpener$url: String?</ID>
+    <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$dir: UniFile</ID>
+    <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$file: UniFile</ID>
+    <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$filename: String</ID>
+    <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$index: Int</ID>
+    <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$listener: OnSpiderListener?</ID>
+    <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$page: Int</ID>
+    <ID>UnusedPrivateMember:AppHelper.kt$AppHelper$private fun isWifiProxy(context: Context?): Boolean</ID>
+    <ID>UnusedPrivateMember:DownloadsViewModel.kt$DownloadsViewModel.Companion$private fun deleteFileAsync(vararg files: UniFile?)</ID>
+    <ID>UnusedPrivateProperty:AppConfig.kt$AppConfig$private const val APP_DIRNAME = "LRReader"</ID>
+    <ID>UnusedPrivateProperty:DownloadGalleryOpenHelper.kt$DownloadGalleryOpenHelper$val context = callback.ehContext ?: return false</ID>
+    <ID>UnusedPrivateProperty:DownloadRepository.kt$DownloadRepository$private val context: Context</ID>
+    <ID>UnusedPrivateProperty:DownloadScheduler.kt$DownloadScheduler$private val scope: CoroutineScope</ID>
+    <ID>UnusedPrivateProperty:ExceptionUtils.kt$ExceptionUtils$private val TAG: String = ExceptionUtils::class.java.getSimpleName()</ID>
+    <ID>UnusedPrivateProperty:GalleryAdapterNew.kt$GalleryAdapterNew$private var mShowFavourite: Boolean</ID>
+    <ID>UnusedPrivateProperty:GalleryDetailScene.kt$GalleryDetailScene.Companion$private const val REQUEST_CODE_COMMENT_GALLERY = 0</ID>
+    <ID>UnusedPrivateProperty:GalleryListScene.kt$GalleryListScene.Companion$private const val TAG = "GalleryListScene"</ID>
+    <ID>UnusedPrivateProperty:GallerySearchHelper.kt$GallerySearchHelper$private val mCallback: Callback</ID>
+    <ID>UnusedPrivateProperty:LRRCategoriesScene.kt$LRRCategoriesScene.Companion$private const val TAG = "LRRCategoriesScene"</ID>
+    <ID>UnusedPrivateProperty:LRRClientProvider.kt$LRRClientProvider$val ctx = appContext ?: throw IllegalStateException("LRRClientProvider not initialized. Call init(context) first.")</ID>
+    <ID>UnusedPrivateProperty:LRRUrl.kt$LRRUrl$private const val URL_PREFIX_THUMB_EX = "https://exhentai.org/t/"</ID>
+    <ID>UnusedPrivateProperty:QuickSearchScene.kt$QuickSearchScene.Companion$private const val TAG = "QuickSearchScene"</ID>
+    <ID>UnusedPrivateProperty:SecurityScene.kt$SecurityScene.Companion$private const val TAG = "SecurityScene"</ID>
+    <ID>UseCheckOrError:DownloadAdapter.kt$DownloadAdapter$throw IllegalStateException("Cannot get LayoutInflater: Fragment is not attached and Context/Activity is null")</ID>
+    <ID>UseCheckOrError:DownloadService.kt$DownloadService$throw IllegalStateException("No bindService")</ID>
+    <ID>UseCheckOrError:LRRClientProvider.kt$LRRClientProvider$throw IllegalStateException("LRRClientProvider not initialized. Call init(context) first.")</ID>
+    <ID>UtilityClassWithPublicConstructor:FileUtils.kt$FileUtils</ID>
+    <ID>VariableNaming:DownloadListInfosExecutor.kt$DownloadListInfosExecutor$@Suppress("unused") private val TAG = "DownloadSearchingExecutor"</ID>
+    <ID>VariableNaming:DownloadService.kt$DownloadService$private val TAG = "DownloadService"</ID>
+    <ID>VariableNaming:DownloadService.kt$DownloadService$private var CHANNEL_ID: String? = null</ID>
+    <ID>VariableNaming:DownloadService.kt$DownloadService$private var COMPLETE_CHANNEL_ID: String? = null</ID>
+  </CurrentIssues>
+</SmellBaseline>
