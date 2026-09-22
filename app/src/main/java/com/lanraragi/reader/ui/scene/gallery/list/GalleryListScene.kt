@@ -65,7 +65,7 @@ import com.lanraragi.reader.settings.GuideSettings
 import com.lanraragi.reader.tankoubon.TankPseudoArchive
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.ListMultiSelectHelper
-import com.lanraragi.reader.ui.scene.TankoubonDetailScene
+import com.lanraragi.reader.ui.scene.tankdetail.TankDetailScene
 import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.reader.widget.SearchLayout
@@ -949,7 +949,7 @@ class GalleryListScene : BaseScene(),
         if (archive != null && !isTankoubonId(archive.arcid)) {
             publishReadingContext(archive, position)
         }
-        // Tank rows route to TankoubonDetailScene inside the helper funnel.
+        // Tank rows route to TankDetailScene inside the helper funnel.
         return itemActionHelper?.onItemClick(view, archive) ?: false
     }
 
@@ -1151,13 +1151,17 @@ class GalleryListScene : BaseScene(),
         return first to last
     }
 
+    /** Post-merge Snackbar "Open" → the tank DETAIL page (spec 2026-09-22 §3). */
     private fun openTankoubonDetail(tankId: String, tankName: String) {
         val args = Bundle().apply {
-            putString(TankoubonDetailScene.KEY_TANK_ID, tankId)
-            putString(TankoubonDetailScene.KEY_TANK_NAME, tankName)
-            putLong(TankoubonDetailScene.KEY_PROFILE_ID, LRRAuthManager.getActiveProfileId())
+            putString(TankDetailScene.KEY_TANK_ID, tankId)
+            putString(TankDetailScene.KEY_TANK_NAME, tankName)
+            putLong(TankDetailScene.KEY_PROFILE_ID, LRRAuthManager.getActiveProfileId())
         }
-        startScene(Announcer(TankoubonDetailScene::class.java).setArgs(args))
+        startScene(
+            Announcer(TankDetailScene::class.java).setArgs(args)
+                .setRequestCode(this, GalleryItemActionHelper.REQUEST_CODE_GALLERY_DETAIL)
+        )
     }
 
     private fun removeArchiveLocally(arcid: String) {

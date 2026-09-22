@@ -23,6 +23,8 @@ import com.hippo.android.resource.AttrResources
 import com.lanraragi.framework.drawable.RoundSideRectDrawable
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.api.LRRArchiveApi
+import com.lanraragi.reader.client.api.LRRTankoubonApi
+import okhttp3.OkHttpClient
 import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
@@ -46,6 +48,27 @@ object TagEditDialog {
 
     fun interface Callback {
         fun onTagsUpdated()
+    }
+
+    /**
+     * Where a saved tag string goes. The dialog edits ONE tag string; the
+     * writer decides which server object owns it (an archive's metadata or
+     * a tankoubon's own `metadata.tags`, spec 2026-09-22 §4.4).
+     */
+    fun interface TagWriter {
+        suspend fun write(client: OkHttpClient, baseUrl: String, id: String, tags: String)
+    }
+
+    /** Default: `PUT /api/archives/{id}/metadata`. */
+    @JvmField
+    val archiveWriter: TagWriter = TagWriter { client, baseUrl, id, tags ->
+        LRRArchiveApi.updateMetadata(client, baseUrl, id, tags = tags)
+    }
+
+    /** Tankoubon: `PUT /api/tankoubons/{id}` with only `metadata.tags` (whole-string replace). */
+    @JvmField
+    val tankoubonWriter: TagWriter = TagWriter { client, baseUrl, id, tags ->
+        LRRTankoubonApi.updateTankoubon(client, baseUrl, id, tags = tags)
     }
 
     /**
@@ -109,12 +132,14 @@ object TagEditDialog {
      * @param callback  called on the UI thread after a successful update
      */
     @JvmStatic
+    @JvmOverloads
     fun show(
         activity: Activity?,
         arcid: String?,
         tagGroups: List<TagGroup>?,
         serverProfileId: Long,
-        callback: Callback?
+        writer: TagWriter = archiveWriter,
+        callback: Callback?,
     ) {
         if (activity == null || arcid.isNullOrEmpty()) return
 
@@ -241,7 +266,7 @@ object TagEditDialog {
             .setView(scrollView)
             .setPositiveButton(R.string.lrr_save) { _, _ ->
                 val newTags = editableGroupsToString(groups)
-                performUpdate(activity, arcid, newTags, serverProfileId, callback)
+                performUpdate(activity, arcid, newTags, serverProfileId, callback, writer)
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
@@ -549,12 +574,14 @@ object TagEditDialog {
             .show()
     }
 
+    @Suppress("LongParameterList")
     private fun performUpdate(
         activity: Activity,
         arcid: String,
         tags: String,
         serverProfileId: Long,
-        callback: Callback?
+        callback: Callback?,
+        writer: TagWriter,
     ) {
         (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
             try {
@@ -565,12 +592,7 @@ object TagEditDialog {
                     serverProfileId,
                     ServiceRegistry.dataModule.profileLookupCache,
                 )
-                LRRArchiveApi.updateMetadata(
-                    LRRClientProvider.getClient(),
-                    baseUrl,
-                    arcid,
-                    tags = tags
-                )
+                writer.write(LRRClientProvider.getClient(), baseUrl, arcid, tags)
                 activity.runOnUiThread {
                     Toast.makeText(activity, R.string.lrr_tags_updated, Toast.LENGTH_SHORT).show()
                     callback?.onTagsUpdated()

@@ -17,8 +17,7 @@ import com.lanraragi.reader.client.api.probeSourceHealthy
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
-import com.lanraragi.reader.domain.buildRatingEmoji
-import kotlin.math.roundToInt
+import com.lanraragi.reader.domain.mergeRatingIntoTags
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.download.DownloadInfoListener
 import com.lanraragi.reader.download.DownloadManager
@@ -67,12 +66,6 @@ class GalleryDetailViewModel : ViewModel() {
         private const val HTTP_BAD_REQUEST = 400
         private const val HTTP_NOT_FOUND = 404
         private const val MAX_TANK_PAGES = 100
-
-        // Compiled once — mergeRatingIntoTags used to compile all three per
-        // rating change.
-        private val RATING_TAG_WITH_LEADING_COMMA = Regex(",\\s*rating:[^,]*")
-        private val RATING_TAG_WITH_TRAILING_COMMA = Regex("rating:[^,]*\\s*,?\\s*")
-        private val EDGE_COMMAS = Regex("^,\\s*|,\\s*$")
     }
 
     // -------------------------------------------------------------------------
@@ -270,23 +263,6 @@ class GalleryDetailViewModel : ViewModel() {
                 }
             }
         }
-    }
-
-    /**
-     * Build the LANraragi tag string with the rating slot replaced. A
-     * [rating] of 0 strips the rating tag entirely (LRR semantic for
-     * "unrated"); any positive value writes `rating:⭐⭐⭐...`.
-     */
-    private fun mergeRatingIntoTags(originalTags: String?, rating: Float): String {
-        val cleaned = (originalTags ?: "")
-            .replace(RATING_TAG_WITH_LEADING_COMMA, "")
-            .replace(RATING_TAG_WITH_TRAILING_COMMA, "")
-            .trim()
-            .replace(EDGE_COMMAS, "")
-            .trim()
-        if (rating <= 0f) return cleaned
-        val ratingTag = "rating:" + buildRatingEmoji(rating.roundToInt())
-        return if (cleaned.isEmpty()) ratingTag else "$cleaned, $ratingTag"
     }
 
     /**

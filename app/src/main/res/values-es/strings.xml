@@ -330,6 +330,14 @@
     <string name="tank_download">Descargar tankoubon</string>
     <string name="tank_delete">Eliminar tankoubon</string>
     <string name="tank_manage_members">Gestionar miembros</string>
+    <string name="not_rated">Sin valorar</string>
+    <string name="tank_detail_offline">Sin conexión: se muestra la copia descargada; no se pueden editar valoración, categoría ni etiquetas</string>
+    <string name="tank_detail_members">Miembros</string>
+    <string name="tank_member_more">+%1$d</string>
+    <string name="tank_member_view_detail">Ver detalles del archivo</string>
+    <string name="tank_page_divider">Capítulo %1$d · %2$s</string>
+    <string name="tank_view_detail">Detalles</string>
+    <string name="tank_detail_pages">%1$d/%2$dP</string>
     <string name="tank_delete_confirm">¿Eliminar este tankoubon? Los archivos que contiene no se eliminarán, pero se perderán el resumen, las etiquetas adicionales y el progreso de lectura del propio tankoubon.</string>
     <string name="tank_locked">El tankoubon está bloqueado, inténtalo más tarde</string>
     <string name="tank_op_done">Hecho</string>
