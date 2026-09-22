@@ -140,15 +140,10 @@ class HistoryRepository(
      */
     suspend fun recordSessionProgress(arcid: String, profileId: Long, progress1: Int) {
         if (progress1 <= 0) return
-        val row = dao.loadByArcidAndProfile(arcid, profileId) ?: return
-        val archive = runCatching {
-            ArchiveLocalStateJson.decodeFromString(Archive.serializer(), row.archiveJson)
-        }.getOrNull() ?: return
-        dao.updateArchiveJsonForProfile(
-            arcid,
-            profileId,
-            archive.copy(progress = progress1, lastreadtime = System.currentTimeMillis() / 1000L).toArchiveJson(),
-        )
+        val now = System.currentTimeMillis() / 1000L
+        dao.patchArchiveJsonForProfile(arcid, profileId) { json ->
+            decodeOrNull(json)?.copy(progress = progress1, lastreadtime = now)?.toArchiveJson()
+        }
     }
 
     /**
@@ -156,9 +151,9 @@ class HistoryRepository(
      * The rating lives in `archive_json` — load, patch, write back.
      */
     suspend fun updateRating(arcid: String, profileId: Long, rating: Float) {
-        val row = dao.loadByArcidAndProfile(arcid, profileId) ?: return
-        val archive = ArchiveLocalStateJson.decodeFromString(Archive.serializer(), row.archiveJson)
-        dao.updateArchiveJsonForProfile(arcid, profileId, archive.copy(rating = rating).toArchiveJson())
+        dao.patchArchiveJsonForProfile(arcid, profileId) { json ->
+            decodeOrNull(json)?.copy(rating = rating)?.toArchiveJson()
+        }
     }
 
     /**
@@ -170,15 +165,9 @@ class HistoryRepository(
      * are skipped.
      */
     suspend fun resetReadingProgress(arcid: String, profileId: Long) {
-        val row = dao.loadByArcidAndProfile(arcid, profileId) ?: return
-        val archive = runCatching {
-            ArchiveLocalStateJson.decodeFromString(Archive.serializer(), row.archiveJson)
-        }.getOrNull() ?: return
-        dao.updateArchiveJsonForProfile(
-            arcid,
-            profileId,
-            archive.copy(progress = 0, lastreadtime = 0L).toArchiveJson(),
-        )
+        dao.patchArchiveJsonForProfile(arcid, profileId) { json ->
+            decodeOrNull(json)?.copy(progress = 0, lastreadtime = 0L)?.toArchiveJson()
+        }
     }
 
     /**
@@ -282,7 +271,7 @@ class HistoryRepository(
             return mergeSnapshot(existing, incoming).toArchiveJson()
         }
 
-        private fun decodeOrNull(json: String): Archive? = runCatching {
+        fun decodeOrNull(json: String): Archive? = runCatching {
             ArchiveLocalStateJson.decodeFromString(Archive.serializer(), json)
         }.getOrNull()
     }
