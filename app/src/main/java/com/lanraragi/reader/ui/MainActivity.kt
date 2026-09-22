@@ -21,6 +21,7 @@ import android.util.Log
 import com.lanraragi.reader.appwidget.ContinueReadingWidget
 import android.content.Context
 import android.content.Intent
+import androidx.annotation.VisibleForTesting
 import android.net.ConnectivityManager
 import android.os.Bundle
 import android.os.Handler
@@ -104,6 +105,34 @@ class MainActivity : StageActivity(),
     NavigationView.OnNavigationItemSelectedListener, DrawerLayout.DrawerListener {
 
     companion object {
+        /**
+         * Non-exported alias of MainActivity (see the manifest). In-app
+         * start_scene intents (notifications, URL opener) target it, so
+         * MainActivity can tell them from intents sent by other apps.
+         */
+        const val INTERNAL_SCENE_ENTRY = "com.lanraragi.reader.ui.InternalSceneEntry"
+
+        /**
+         * Scenes another app may open through the exported MainActivity:
+         * only what notifications posted by older versions still target.
+         */
+        private val EXTERNAL_SCENE_ALLOWLIST = setOf(DownloadsScene::class.java.name)
+
+        @VisibleForTesting
+        internal fun isSceneIntentAccepted(
+            componentClass: String?,
+            clazzName: String,
+            isRegistered: (String) -> Boolean,
+        ): Boolean {
+            if (!isRegistered(clazzName)) return false
+            return componentClass == INTERNAL_SCENE_ENTRY || clazzName in EXTERNAL_SCENE_ALLOWLIST
+        }
+
+        /** An intent for [INTERNAL_SCENE_ENTRY]. */
+        @JvmStatic
+        fun internalSceneIntent(context: Context): Intent =
+            Intent().setClassName(context.packageName, INTERNAL_SCENE_ENTRY)
+
         private const val TAG = "MainActivity"
         private const val KEY_NAV_CHECKED_ITEM = "nav_checked_item"
 
@@ -857,6 +886,14 @@ class MainActivity : StageActivity(),
      * resetting navigation.
      */
     override fun hostsLockScreen(): Boolean = true
+
+    /**
+     * start_scene is only honoured for registered scenes, and — when it did
+     * not arrive through the non-exported [INTERNAL_SCENE_ENTRY] alias, i.e.
+     * possibly from another app — only for [EXTERNAL_SCENE_ALLOWLIST].
+     */
+    override fun acceptSceneIntent(intent: Intent, clazzName: String): Boolean =
+        isSceneIntentAccepted(intent.component?.className, clazzName, SceneFactory::isRegistered)
 
     override fun onForegroundLockCheck() {
         if (!AppLockGate.isLocked()) return
