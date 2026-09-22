@@ -658,6 +658,9 @@
     <plurals name="settings_download_clean_invalid_done">
         <item quantity="other">ล้าง %d รายการดาวน์โหลดแล้ว</item>
     </plurals>
+    <plurals name="settings_download_clean_redundancy_confirm">
+        <item quantity="other">ลบ %d โฟลเดอร์ที่ไม่อยู่ในรายการดาวน์โหลดหรือไม่?</item>
+    </plurals>
     <string name="settings_download_clean_invalid_no_invalid">ไม่มีรายการดาวน์โหลดที่ไม่ถูกต้อง</string>
 
     <string name="nav_server_config">เปลี่ยนเซิร์ฟเวอร์</string>
