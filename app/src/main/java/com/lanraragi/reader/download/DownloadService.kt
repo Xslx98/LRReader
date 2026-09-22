@@ -644,8 +644,11 @@ class DownloadService : Service(), DownloadListener {
 
         val text: String
         val needStyle: Boolean
+        // With an app lock set, a single result is reported by count only,
+        // never by title (see redacted()).
+        val redact = SecuritySettings.isLockEnabled()
         if (sFinishedCount != 0 && sFailedCount == 0) {
-            if (sFinishedCount == 1) {
+            if (sFinishedCount == 1 && !redact) {
                 val firstTitle = sItemTitleArray.values.firstOrNull()
                 if (firstTitle != null) {
                     text = getString(
@@ -664,7 +667,7 @@ class DownloadService : Service(), DownloadListener {
                 needStyle = true
             }
         } else if (sFinishedCount == 0 && sFailedCount != 0) {
-            if (sFailedCount == 1) {
+            if (sFailedCount == 1 && !redact) {
                 val firstTitle = sItemTitleArray.values.firstOrNull()
                 if (firstTitle != null) {
                     text = getString(
@@ -688,7 +691,7 @@ class DownloadService : Service(), DownloadListener {
         }
 
         val style: NotificationCompat.InboxStyle?
-        if (needStyle && !SecuritySettings.isLockEnabled()) {
+        if (needStyle && !redact) {
             style = NotificationCompat.InboxStyle()
             style.setBigContentTitle(getString(R.string.stat_download_done_title))
             for ((arcid, fin) in sItemStateArray) {
