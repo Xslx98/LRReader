@@ -12,6 +12,8 @@ import com.lanraragi.reader.dao.HistoryInfo
 import com.lanraragi.reader.dao.HistoryRepository
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.dao.ServerProfile
+import com.lanraragi.reader.mapper.toArchive
+import com.lanraragi.reader.mapper.toArchiveJson
 import com.lanraragi.reader.ui.ContinueReadingShortcut
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.runBlocking
@@ -84,6 +86,16 @@ class ContinueReadingWidgetTest {
             this.serverProfileId = profileId
             this.time = time
         }
+
+    /** Seed history rows with explicit times (production writes stamp "now"). */
+    private suspend fun seedHistory(vararg infos: HistoryInfo) {
+        val dao = db.archiveLocalStateDao()
+        for (info in infos) {
+            dao.insertOrIgnoreHistory(
+                info.arcid, info.serverProfileId, info.toArchive().toArchiveJson(), info.time, info.mode
+            )
+        }
+    }
 
     /** Inflate the RemoteViews into real views for content assertions. */
     private fun applied(views: android.widget.RemoteViews): View =
@@ -194,11 +206,9 @@ class ContinueReadingWidgetTest {
     @Test
     fun latestArchive_picksMostRecentHistoryRow() = runBlocking {
         insertProfile(7L)
-        historyRepository.putHistoryInfoList(
-            listOf(
-                historyInfo("e".repeat(40), 7L, "Older", time = 1_000L),
-                historyInfo("f".repeat(40), 7L, "Newer", time = 2_000L),
-            )
+        seedHistory(
+            historyInfo("e".repeat(40), 7L, "Older", time = 1_000L),
+            historyInfo("f".repeat(40), 7L, "Newer", time = 2_000L),
         )
 
         assertEquals(
@@ -211,11 +221,9 @@ class ContinueReadingWidgetTest {
     fun latestArchive_spansProfiles() = runBlocking {
         insertProfile(7L)
         insertProfile(9L)
-        historyRepository.putHistoryInfoList(
-            listOf(
-                historyInfo("g".repeat(40), 7L, "Profile7", time = 1_000L),
-                historyInfo("h".repeat(40), 9L, "Profile9", time = 5_000L),
-            )
+        seedHistory(
+            historyInfo("g".repeat(40), 7L, "Profile7", time = 1_000L),
+            historyInfo("h".repeat(40), 9L, "Profile9", time = 5_000L),
         )
 
         assertEquals(
@@ -230,11 +238,9 @@ class ContinueReadingWidgetTest {
         // leftover): the newest row belongs to a profile that no longer
         // exists and must be skipped, not resurrected as a dead-end target.
         insertProfile(7L)
-        historyRepository.putHistoryInfoList(
-            listOf(
-                historyInfo("j".repeat(40), 7L, "Live", time = 1_000L),
-                historyInfo("k".repeat(40), 99L, "Orphan", time = 9_000L),
-            )
+        seedHistory(
+            historyInfo("j".repeat(40), 7L, "Live", time = 1_000L),
+            historyInfo("k".repeat(40), 99L, "Orphan", time = 9_000L),
         )
 
         assertEquals(

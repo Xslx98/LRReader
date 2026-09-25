@@ -97,21 +97,4 @@ class HistoryRepositoryLastreadtimeTest {
             row.historyTime!! in beforeMs..afterMs
         )
     }
-
-    @Test
-    fun putHistoryInfoList_convertsMillisecondViewTime_toEpochSecondLastreadtime() = runTest {
-        val info = HistoryInfo()
-        info.arcid = "arc-list"
-        info.title = "T"
-        info.serverProfileId = 1L
-        info.time = 1_700_000_001_234L
-        info.mode = 1
-
-        repo.putHistoryInfoList(listOf(info))
-
-        val row = dao.loadByArcidAndProfile("arc-list", 1L)
-        assertNotNull(row)
-        assertEquals(1_700_000_001L, decodeStored(row!!).lastreadtime)
-        assertEquals(1_700_000_001_234L, row.historyTime)
-    }
 }
