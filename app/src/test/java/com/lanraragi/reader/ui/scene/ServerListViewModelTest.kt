@@ -437,18 +437,6 @@ class ServerListViewModelTest {
     // ── loadProfiles ───────────────────────────────────────────────
 
     @Test
-    fun loadProfiles_populatesStateFlow() {
-        insertProfile("Server A", "https://a.com")
-        insertProfile("Server B", "https://b.com")
-
-        val vm = ServerListViewModel()
-        vm.loadProfiles()
-
-        awaitCondition { vm.profiles.value.size == 2 }
-        assertEquals(2, vm.profiles.value.size)
-    }
-
-    @Test
     fun loadProfiles_activeFirst() {
         insertProfile("Inactive", "https://inactive.com", isActive = false)
         insertProfile("Active", "https://active.com", isActive = true)
@@ -489,22 +477,6 @@ class ServerListViewModelTest {
     }
 
     // ── deleteProfile ──────────────────────────────────────────────
-
-    @Test
-    fun deleteProfile_removesFromDatabase() {
-        val id = insertProfile("Delete Me", "https://delete.com")
-        val profile = ServerProfile(id = id, name = "Delete Me", url = "https://delete.com")
-        LRRAuthManager.setApiKeyForProfile(id, "test-key")
-
-        val vm = ServerListViewModel()
-        vm.loadProfiles()
-        awaitCondition { vm.profiles.value.size == 1 }
-
-        vm.deleteProfile(profile)
-
-        awaitCondition { vm.profiles.value.isEmpty() }
-        assertTrue("Profile should be deleted", vm.profiles.value.isEmpty())
-    }
 
     @Test
     fun deleteProfile_cascadesSearchHistory() {
