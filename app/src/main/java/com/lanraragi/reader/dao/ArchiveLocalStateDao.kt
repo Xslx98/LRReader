@@ -668,17 +668,6 @@ interface ArchiveLocalStateDao {
     // Flow-observer rationale as the pair-wrappers above: this must stay a
     // DAO @Transaction method, never repository-level withTransaction.
 
-    @Transaction
-    suspend fun upsertDownloadBatch(rows: List<DownloadUpsertRow>) {
-        for (r in rows) {
-            upsertDownload(
-                r.arcid, r.serverProfileId, r.archiveJson, r.downloadState,
-                r.downloadLegacy, r.downloadTime, r.downloadLabel,
-                r.downloadArchiveUri, r.downloadRootUri
-            )
-        }
-    }
-
     /**
      * History upserts merge into the row's existing `archive_json` instead
      * of replacing it: the row is shared with the download subsystem, and

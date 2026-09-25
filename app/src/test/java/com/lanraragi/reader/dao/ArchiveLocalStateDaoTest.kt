@@ -317,31 +317,37 @@ class ArchiveLocalStateDaoTest {
     // ── Batch wrappers (single-transaction bulk writes) ──
 
     @Test
-    fun upsertDownloadBatch_writesAllRows_preservesSiblingColumns() = runTest {
+    fun upsertDownloadBatchMerged_writesAllRows_preservesSiblingColumns() = runTest {
         // Pre-existing history-bearing row: the batch download upsert must
-        // keep its history columns (same contract as the per-row upsert).
+        // keep its history columns (same contract as the per-row upsert),
+        // and the row builder must see each row's stored state to merge on.
         dao.upsert(row("b-hist", serverProfileId = 1L, historyTime = 777L))
+        val sawStoredRow = mutableMapOf<String, Boolean>()
 
-        dao.upsertDownloadBatch(
-            listOf("b-hist", "b-new1", "b-new2").mapIndexed { i, arcid ->
-                DownloadUpsertRow(
-                    arcid = arcid,
-                    serverProfileId = 1L,
-                    archiveJson = """{"arcid":"$arcid"}""",
-                    downloadState = DownloadState.WAIT,
-                    downloadLegacy = 0,
-                    downloadTime = 1000L + i,
-                    downloadLabel = null,
-                    downloadArchiveUri = null,
-                    downloadRootUri = null,
-                )
+        dao.upsertDownloadBatchMerged(
+            listOf("b-hist", "b-new1", "b-new2").map { id ->
+                DownloadInfo().apply { arcid = id; serverProfileId = 1L }
             }
-        )
+        ) { info, existing ->
+            sawStoredRow[info.arcid] = existing != null
+            DownloadUpsertRow(
+                arcid = info.arcid,
+                serverProfileId = 1L,
+                archiveJson = """{"arcid":"${info.arcid}"}""",
+                downloadState = DownloadState.WAIT,
+                downloadLegacy = 0,
+                downloadTime = 1000L,
+                downloadLabel = null,
+                downloadArchiveUri = null,
+                downloadRootUri = null,
+            )
+        }
 
         assertEquals(3, dao.getAllDownloads().size)
         val histRow = dao.loadByArcidAndProfile("b-hist", 1L)!!
         assertEquals(777L, histRow.historyTime)
         assertEquals(DownloadState.WAIT, histRow.downloadState)
+        assertEquals(mapOf("b-hist" to true, "b-new1" to false, "b-new2" to false), sawStoredRow)
     }
 
     @Test
