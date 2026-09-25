@@ -85,16 +85,6 @@ object AppearanceSettings {
         return true
     }
 
-    // --- Gallery Site ---
-    const val KEY_GALLERY_SITE = "gallery_site"
-    private const val DEFAULT_GALLERY_SITE = 0
-
-    @JvmStatic
-    fun getGallerySite(): Int = Settings.getIntFromStr(KEY_GALLERY_SITE, DEFAULT_GALLERY_SITE)
-
-    @JvmStatic
-    fun putGallerySite(value: Int) = Settings.putIntToStr(KEY_GALLERY_SITE, value)
-
     // --- Launch Page ---
     private const val KEY_LAUNCH_PAGE = "launch_page"
     private const val DEFAULT_LAUNCH_PAGE = 0

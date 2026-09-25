@@ -161,10 +161,6 @@
         <item>640</item>
     </string-array>
 
-    <string-array name="tag_menu_entries">
-        <item>@string/show_definition</item>
-    </string-array>
-
     <string-array name="app_language_entries">
         <item>@string/app_language_system</item>
         <item>@string/app_language_de</item>

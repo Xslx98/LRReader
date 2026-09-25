@@ -97,8 +97,7 @@
     <string name="update_ignore">Ignorar</string>
 
     <!-- Gallery List -->
-    <string name="gallery_list_search_bar_hint_exhentai">Buscar LANraragi</string>
-    <string name="gallery_list_search_bar_hint_e_hentai">Buscar LANraragi</string>
+    <string name="gallery_list_search_bar_hint">Buscar LANraragi</string>
     <string name="gallery_list_empty_hit">El mundo es grande y el panda está sentado solo</string>
     <string name="gallery_tag_copy">etiqueta copiada</string>
 
@@ -151,7 +150,6 @@
     <string name="share">Compartir</string>
     <string name="no_tags">Sin etiquetas</string>
     <string name="refresh">Actualizar</string>
-    <string name="open_in_other_app">Abrir en otra aplicación</string>
     <string name="file_chooser_title">Abrir con</string>
     <string name="favorited">Categoría</string>
     <string name="not_favorited">No En categorías</string>
@@ -264,7 +262,6 @@
     <string name="clear_all">Limpiar todo</string>
     <string name="clear_all_history">¿Borrar el historial de lectura de este servidor?</string>
 
-    <string name="show_definition">Mostrar definición</string>
 
     <!-- Set Security -->
     <string name="set_pattern_protection">Establecer protección por patrón</string>

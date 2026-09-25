@@ -96,8 +96,7 @@
     <string name="update_ignore">忽略</string>
 
     <!-- Gallery List -->
-    <string name="gallery_list_search_bar_hint_exhentai">搜索 LANraragi</string>
-    <string name="gallery_list_search_bar_hint_e_hentai">搜索 LANraragi</string>
+    <string name="gallery_list_search_bar_hint">搜索 LANraragi</string>
     <string name="gallery_list_empty_hit">什么都没有找到</string>
     <string name="search">搜索</string>
 
@@ -153,7 +152,6 @@
     <string name="share">分享</string>
     <string name="no_tags">暂无标签</string>
     <string name="refresh">刷新</string>
-    <string name="open_in_other_app">在其他应用中打开</string>
     <string name="file_chooser_title">选择打开方式</string>
     <string name="favorited">已分类</string>
     <string name="not_favorited">未分类</string>
@@ -256,7 +254,6 @@
     <string name="clear_all">全部清除</string>
     <string name="clear_all_history">清除此服务器的阅读历史？</string>
 
-    <string name="show_definition">查看定义</string>
 
     <!-- Set Security -->
     <string name="set_pattern_protection">设置图案保护</string>

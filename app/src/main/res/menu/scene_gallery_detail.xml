@@ -26,8 +26,4 @@
         android:id="@+id/action_lrr_delete"
         android:title="@string/lrr_delete_archive"/>
 
-    <item
-        android:id="@+id/action_open_in_other_app"
-        android:title="@string/open_in_other_app"/>
-
 </menu>

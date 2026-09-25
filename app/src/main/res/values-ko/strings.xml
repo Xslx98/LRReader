@@ -102,8 +102,7 @@
     <string name="update_ignore">무시</string>
 
     <!-- Gallery List -->
-    <string name="gallery_list_search_bar_hint_exhentai">LANraragi 검색</string>
-    <string name="gallery_list_search_bar_hint_e_hentai">LANraragi 검색</string>
+    <string name="gallery_list_search_bar_hint">LANraragi 검색</string>
     <string name="gallery_list_empty_hit">LANraragi에서 아카이브를 찾을 수 없습니다</string>
     <string name="search">검색</string>
 
@@ -161,7 +160,6 @@
     <string name="share">공유</string>
     <string name="no_tags">태그 없음</string>
     <string name="refresh">새로고침</string>
-    <string name="open_in_other_app">다른 앱에서 열기</string>
     <string name="file_chooser_title">다음으로 열기</string>
     <string name="favorited">카테고리에 있음</string>
     <string name="not_favorited">카테고리에 없음</string>
@@ -264,7 +262,6 @@
     <string name="clear_all">모두 지우기</string>
     <string name="clear_all_history">이 서버의 읽기 기록을 지우시겠습니까?</string>
 
-    <string name="show_definition">정의 표시</string>
 
     <!-- Set Security -->
     <string name="set_pattern_protection">패턴 보호 사용</string>

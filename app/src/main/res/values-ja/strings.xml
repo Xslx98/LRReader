@@ -83,8 +83,7 @@
     <string name="update_snackbar_action">表示</string>
     <string name="update_ignore">無視</string>
     <!-- Gallery List -->
-    <string name="gallery_list_search_bar_hint_exhentai">LANraragi を検索</string>
-    <string name="gallery_list_search_bar_hint_e_hentai">LANraragi を検索</string>
+    <string name="gallery_list_search_bar_hint">LANraragi を検索</string>
     <string name="gallery_list_empty_hit">何も見つかりませんでした。</string>
     <string name="gallery_tag_copy">タグをコピーしました</string>
     <string name="search">検索</string>
@@ -129,7 +128,6 @@
     <string name="share">共有</string>
     <string name="no_tags">タグなし</string>
     <string name="refresh">更新</string>
-    <string name="open_in_other_app">他のアプリで開く</string>
     <string name="file_chooser_title">アプリで開く</string>
     <string name="favorited">カテゴリ済み</string>
     <string name="not_favorited">未カテゴリ</string>
@@ -224,7 +222,6 @@
     <string name="no_history">閲覧履歴はここに表示されます</string>
     <string name="clear_all">すべて削除</string>
     <string name="clear_all_history">このサーバーの閲覧履歴を削除しますか？</string>
-    <string name="show_definition">ヘルプを表示</string>
     <!-- Set Security -->
     <string name="set_pattern_protection">パターン保護を設定</string>
     <string name="set_pattern_protection_tip">パターンを描いてパターン保護を設定します。\n空白のまま続行してパターン保護をクリアします。</string>

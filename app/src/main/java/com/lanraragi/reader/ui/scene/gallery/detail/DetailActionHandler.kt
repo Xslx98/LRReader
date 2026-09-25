@@ -13,8 +13,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.UrlOpener
-import com.lanraragi.reader.client.LRRUrl
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.dao.DownloadInfo
@@ -82,13 +80,6 @@ internal class DetailActionHandler(
         deleteItem?.isVisible = isLrrConnected
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                R.id.action_open_in_other_app -> {
-                    val url = getGalleryDetailUrl()
-                    val act = scene.activity2
-                    if (url != null && act != null) {
-                        UrlOpener.openUrl(act, url, false)
-                    }
-                }
                 R.id.action_refresh -> {
                     scene.requestRefresh()
                 }
@@ -245,15 +236,6 @@ internal class DetailActionHandler(
      * The scene uses this to update the favorite heart drawable.
      */
     var onFavoriteChanged: ((arcid: String) -> Unit)? = null
-
-    private fun getGalleryDetailUrl(): String? {
-        // EH-style URL is used only by the "open in other app" share menu.
-        // The leading numeric segment is meaningless for LRR archives so we
-        // hard-code 0; the arcid is the part the receiving app actually
-        // cares about.
-        val arcid = viewModel.getEffectiveArcid() ?: return null
-        return LRRUrl.getGalleryDetailUrl(0L, arcid, 0, false)
-    }
 
     fun destroy() {
         popupMenu = null
