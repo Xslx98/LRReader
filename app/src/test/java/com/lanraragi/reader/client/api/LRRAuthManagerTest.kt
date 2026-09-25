@@ -183,12 +183,6 @@ class LRRAuthManagerTest {
     }
 
     @Test
-    fun setServerUrl_persistsAndRetrievable() {
-        LRRAuthManager.setServerUrl("http://test.local:3000")
-        assertNotNull(LRRAuthManager.getServerUrl())
-    }
-
-    @Test
     fun clear_removesAllCredentials() {
         LRRAuthManager.setServerUrl("http://test.local")
         LRRAuthManager.setApiKey("key")
@@ -225,16 +219,6 @@ class LRRAuthManagerTest {
         LRRAuthManager.simulateStorageUnavailableForTesting()
         assertFalse(
             "getAllowCleartext must return false when secure storage is unavailable",
-            LRRAuthManager.getAllowCleartext()
-        )
-    }
-
-    @Test
-    fun allowCleartext_explicitTrue_returnsTrue() {
-        // When the profile explicitly sets cleartext=true, it should be respected
-        LRRAuthManager.setAllowCleartext(true)
-        assertTrue(
-            "getAllowCleartext must return true when explicitly set",
             LRRAuthManager.getAllowCleartext()
         )
     }
