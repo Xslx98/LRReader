@@ -9,14 +9,12 @@
  */
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.awaitRequest
 import android.util.Base64
-import com.lanraragi.reader.AppProxySelector
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.module.INetworkModule
 import com.lanraragi.reader.module.NetworkMonitor
 import kotlinx.coroutines.runBlocking
-import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -59,14 +57,7 @@ class LRRServerApiAuthHeaderTest {
         // reports offline, tripping retryOnFailure's fast-fail. Install a
         // throwing stub — retryOnFailure's runCatching treats it as online.
         ServiceRegistry.initializeForTest(
-            network = object : INetworkModule {
-                override val cache: Cache get() = throw UnsupportedOperationException()
-                override val proxySelector: AppProxySelector get() = throw UnsupportedOperationException()
-                override val okHttpClient: OkHttpClient get() = throw UnsupportedOperationException()
-                override val longReadClient: OkHttpClient get() = throw UnsupportedOperationException()
-                override val uploadClient: OkHttpClient get() = throw UnsupportedOperationException()
-                override val networkMonitor: NetworkMonitor get() = throw UnsupportedOperationException()
-            }
+            network = stubNetworkModule()
         )
         server = MockWebServer()
         server.start()
