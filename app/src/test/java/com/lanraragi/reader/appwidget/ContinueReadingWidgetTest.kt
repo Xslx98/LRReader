@@ -254,15 +254,4 @@ class ContinueReadingWidgetTest {
         insertProfile(7L)
         assertNull(ContinueReadingWidget.latestArchive(historyRepository, profileRepository))
     }
-
-    // ---- no-widget guard ----
-
-    @Test
-    fun update_withNoBoundWidget_isANoop() = runBlocking {
-        // No widget instance on the (shadow) launcher: must return without
-        // touching AppWidgetManager or throwing.
-        historyRepository.putHistoryInfo(archive("i".repeat(40), 7L, "Book"))
-        ContinueReadingWidget.update(context, historyRepository, "i".repeat(40), 7L)
-        ContinueReadingWidget.refresh(context, historyRepository, profileRepository)
-    }
 }

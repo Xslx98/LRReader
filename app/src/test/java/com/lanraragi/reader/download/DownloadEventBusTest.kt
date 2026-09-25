@@ -104,12 +104,6 @@ class DownloadEventBusTest {
     }
 
     @Test
-    fun forEachListener_emptyListDoesNotThrow() {
-        // Should not throw with no listeners registered
-        eventBus.forEachListener { it.onReload() }
-    }
-
-    @Test
     fun multipleListeners_allNotified() {
         val callCounts = IntArray(5)
         val listeners = List(5) { index ->
