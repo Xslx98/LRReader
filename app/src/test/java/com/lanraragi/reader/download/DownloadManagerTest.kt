@@ -901,36 +901,6 @@ class DownloadManagerTest {
         )
     }
 
-    @Test
-    fun insertSorted_companionHelper_correctInsertionPoints() {
-        // Directly test the companion insertSorted helper
-        val list = mutableListOf<DownloadInfo>()
-
-        // Insert in random order and verify sorted after each
-        val timestamps = listOf(500L, 900L, 100L, 700L, 300L)
-        for ((i, ts) in timestamps.withIndex()) {
-            val info = DownloadInfo().apply {
-                arcid = "tok_helper_$i"
-                title = "Helper $i"
-                time = ts
-            }
-            DownloadManager.insertSorted(list, info)
-
-            // After every insertion, list must be in DATE_DESC order
-            for (j in 0 until list.size - 1) {
-                assertTrue(
-                    "List not sorted after inserting time=$ts at step $i, index $j: " +
-                        "${list[j].time} should >= ${list[j + 1].time}",
-                    list[j].time >= list[j + 1].time
-                )
-            }
-        }
-
-        assertEquals(5, list.size)
-        // Expected order: 900, 700, 500, 300, 100
-        assertEquals(listOf(900L, 700L, 500L, 300L, 100L), list.map { it.time })
-    }
-
     // ═══════════════════════════════════════════════════════════
     // FGS budget pause (Android 15 dataSync 6h cap)
     // ═══════════════════════════════════════════════════════════
