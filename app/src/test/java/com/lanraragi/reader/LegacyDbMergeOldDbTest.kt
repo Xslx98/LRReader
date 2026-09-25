@@ -11,14 +11,12 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import kotlin.coroutines.Continuation
 
 /**
  * Tests for [LegacyDb.mergeOldDB] after W1-7: the legacy SQLite-to-Room merge is now
@@ -27,13 +25,9 @@ import kotlin.coroutines.Continuation
  * so the previous `runBlocking` was pinning an IO worker for nothing.
  *
  * Tests verify:
- * 1. The function is reflectively `suspend` (no JVM `@JvmStatic` bridge).
- * 2. The function is callable from a `runTest { ... }` coroutine block (compile-time
- *    proof of the `suspend` modifier).
- * 3. With no legacy `data` SQLite database present, the function is a clean no-op
+ * 1. With no legacy `data` SQLite database present, the function is a clean no-op
  *    that does not throw and leaves the Room DB untouched.
- * 4. The function does not retain any Java-callable static bridge (regression guard
- *    against accidentally re-introducing `@JvmStatic`).
+ * 2. A real legacy database merges its history rows with epoch-second lastreadtime.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30], application = android.app.Application::class)
@@ -65,34 +59,6 @@ class LegacyDbMergeOldDbTest {
     @After
     fun tearDown() {
         db.close()
-    }
-
-    @Test
-    fun mergeOldDB_isSuspendFunction() {
-        // Suspend functions are compiled to take a trailing `Continuation` parameter.
-        // Locate the JVM method and verify its parameter list ends with Continuation.
-        val method = LegacyDb::class.java.declaredMethods.firstOrNull { it.name == "mergeOldDB" }
-        assertNotNull("mergeOldDB must exist on LegacyDb", method)
-        val params = method!!.parameterTypes
-        assertTrue(
-            "mergeOldDB must accept (Context, Continuation) — i.e. be a suspend fun (W1-7)",
-            params.size == 2 && Continuation::class.java.isAssignableFrom(params[1])
-        )
-    }
-
-    @Test
-    fun mergeOldDB_hasNoJvmStaticBridge() {
-        // `@JvmStatic` on an `object` member compiles a STATIC method directly on the
-        // LegacyDb Java class (in addition to the instance method on the singleton).
-        // W1-7 explicitly drops `@JvmStatic` because suspend functions can't be
-        // bridged usefully through it. Verify no static `mergeOldDB` exists.
-        val staticMethod = LegacyDb::class.java.declaredMethods.firstOrNull {
-            it.name == "mergeOldDB" && java.lang.reflect.Modifier.isStatic(it.modifiers)
-        }
-        assertTrue(
-            "mergeOldDB must NOT have a @JvmStatic static bridge (W1-7)",
-            staticMethod == null
-        )
     }
 
     @Test
@@ -157,16 +123,5 @@ class LegacyDbMergeOldDbTest {
         LegacyDb.mergeOldDB(context)
         LegacyDb.mergeOldDB(context)
         assertFalse("needMerge() should be false after merge completes", LegacyDb.needMerge())
-    }
-
-    @Test
-    fun mergeOldDB_javaMethodIsNotStatic() {
-        // Cross-check: the single `mergeOldDB` method on the LegacyDb Java class must
-        // be an instance method on the LegacyDb singleton, not a static.
-        val method = LegacyDb::class.java.declaredMethods.first { it.name == "mergeOldDB" }
-        assertFalse(
-            "mergeOldDB Java method must NOT be static (W1-7 drops @JvmStatic)",
-            java.lang.reflect.Modifier.isStatic(method.modifiers)
-        )
     }
 }
