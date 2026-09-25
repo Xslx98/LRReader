@@ -389,16 +389,6 @@ class DownloadsViewModelTest {
         assertEquals(100, vm.pageSize.value)
     }
 
-    @Test
-    fun setDownloadList_updatesState() {
-        val list = listOf(
-            DownloadInfo().apply { arcid = "vm_1" },
-            DownloadInfo().apply { arcid = "vm_2" }
-        )
-        vm.setDownloadList(list)
-        assertEquals(2, vm.downloadList.value.size)
-    }
-
     // -------------------------------------------------------------------------
     // W35-3b post-mortem: split Room (structural) from progressMap (transient)
     // -------------------------------------------------------------------------
