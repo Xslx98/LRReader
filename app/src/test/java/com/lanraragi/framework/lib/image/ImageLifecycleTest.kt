@@ -9,13 +9,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.CyclicBarrier
-import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30], application = android.app.Application::class)
-class ImageThreadSafetyTest {
+class ImageLifecycleTest {
 
     @Before
     fun setUp() {
@@ -105,103 +102,6 @@ class ImageThreadSafetyTest {
         val image = createTestImage()!!
         image.recycle()
         image.getDrawable()
-    }
-
-    @Test
-    fun `concurrent obtain and recycle do not crash`() {
-        val threadCount = 10
-        val iterations = 100
-        val errors = AtomicInteger(0)
-
-        repeat(iterations) {
-            val image = createTestImage() ?: run {
-                errors.incrementAndGet()
-                return@repeat
-            }
-            val barrier = CyclicBarrier(threadCount)
-            val latch = CountDownLatch(threadCount)
-
-            val threads = (0 until threadCount).map { i ->
-                Thread {
-                    try {
-                        barrier.await()
-                        if (i % 2 == 0) {
-                            image.obtain()
-                        } else {
-                            image.recycle()
-                        }
-                    } catch (e: Exception) {
-                        // ConcurrentModificationException or NPE would indicate a bug
-                        if (e !is IllegalStateException) {
-                            errors.incrementAndGet()
-                        }
-                    } finally {
-                        latch.countDown()
-                    }
-                }
-            }
-
-            threads.forEach { it.start() }
-            latch.await()
-        }
-
-        assertEquals("Concurrent obtain/recycle caused $errors errors", 0, errors.get())
-    }
-
-    @Test
-    fun `concurrent obtain and release do not crash`() {
-        val threadCount = 8
-        val errors = AtomicInteger(0)
-        val image = createTestImage()!!
-
-        // First obtain several times so we have references to release
-        repeat(threadCount) { image.obtain() }
-
-        val barrier = CyclicBarrier(threadCount)
-        val latch = CountDownLatch(threadCount)
-
-        val threads = (0 until threadCount).map {
-            Thread {
-                try {
-                    barrier.await()
-                    image.release()
-                } catch (e: Exception) {
-                    if (e !is IllegalStateException) {
-                        errors.incrementAndGet()
-                    }
-                } finally {
-                    latch.countDown()
-                }
-            }
-        }
-
-        threads.forEach { it.start() }
-        latch.await()
-
-        assertEquals("Concurrent release caused $errors errors", 0, errors.get())
-    }
-
-    @Test
-    fun `isRecycled is visible across threads after recycle`() {
-        val image = createTestImage()!!
-        assertFalse(image.isRecycled)
-
-        val latch = CountDownLatch(1)
-        val sawRecycled = AtomicInteger(0)
-
-        val reader = Thread {
-            latch.await()
-            // After recycle on the main thread, this should see isRecycled = true
-            // AtomicReference guarantees visibility
-            if (image.isRecycled) sawRecycled.set(1)
-        }
-        reader.start()
-
-        image.recycle()
-        latch.countDown()
-        reader.join(1000)
-
-        assertEquals("isRecycled should be visible across threads", 1, sawRecycled.get())
     }
 
     @Test

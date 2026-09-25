@@ -307,17 +307,6 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     }
 
     // -------------------------------------------------------------------------
-    // List mutation (for filter/sort/search results)
-    // -------------------------------------------------------------------------
-
-    /**
-     * Replaces the current download list.
-     */
-    fun setDownloadList(list: List<DownloadInfo>) {
-        _downloadList.value = list
-    }
-
-    // -------------------------------------------------------------------------
     // Filter loading state
     // -------------------------------------------------------------------------
 

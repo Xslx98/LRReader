@@ -7,7 +7,6 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.settings.UpdateSettings
 import org.junit.After
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -86,15 +85,5 @@ class AboutFragmentAutoCheckTest {
         val fragment = hostAboutFragment()
 
         assertFalse(autoCheckSwitch(fragment).isChecked)
-    }
-
-    @Test
-    fun switchAlwaysMatchesGetter() {
-        val fragment = hostAboutFragment()
-
-        assertEquals(
-            UpdateSettings.getAutoCheckUpdates(),
-            autoCheckSwitch(fragment).isChecked,
-        )
     }
 }

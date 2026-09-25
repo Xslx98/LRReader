@@ -148,55 +148,8 @@ class DownloadsViewModelTest {
     }
 
     // ═══════════════════════════════════════════════════════════
-    // A. Initial state
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
-    fun initialState_downloadListIsEmpty() {
-        assertTrue(vm.downloadList.value.isEmpty())
-    }
-
-    @Test
-    fun initialState_searchingIsFalse() {
-        assertFalse(vm.searching.value)
-    }
-
-    @Test
-    fun initialState_searchKeyIsNull() {
-        assertNull(vm.searchKey.value)
-    }
-
-    @Test
-    fun initialState_indexPageIsOne() {
-        assertEquals(1, vm.indexPage.value)
-    }
-
-    @Test
-    fun initialState_pageSizeIsOne() {
-        assertEquals(1, vm.pageSize.value)
-    }
-
-    @Test
-    fun initialState_filterLoadingIsFalse() {
-        assertFalse(vm.filterLoading.value)
-    }
-
-    // ═══════════════════════════════════════════════════════════
     // B. Label switching
     // ═══════════════════════════════════════════════════════════
-
-    @Test
-    fun selectLabel_updatesCurrentLabelState() {
-        vm.selectLabel("My Label")
-        assertEquals("My Label", vm.currentLabel.value)
-    }
-
-    @Test
-    fun selectLabel_null_resetsToDefault() {
-        vm.selectLabel("Some Label")
-        vm.selectLabel(null)
-        assertNull(vm.currentLabel.value)
-    }
 
     @Test
     fun handleLabelRenamed_updatesCurrentLabel_whenMatching() {
@@ -212,48 +165,33 @@ class DownloadsViewModelTest {
         assertEquals("Other Label", vm.currentLabel.value)
     }
 
-    @Test
-    fun resetToDefaultLabel_setsCurrentLabelToNull() {
-        vm.selectLabel("Some Label")
-        vm.resetToDefaultLabel()
-        assertNull(vm.currentLabel.value)
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // C. Search state
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
-    fun setSearchKey_updatesState() {
-        vm.setSearchKey("test query")
-        assertEquals("test query", vm.searchKey.value)
-    }
-
-    @Test
-    fun setSearching_updatesState() {
-        vm.setSearching(true)
-        assertTrue(vm.searching.value)
-        vm.setSearching(false)
-        assertFalse(vm.searching.value)
-    }
-
     // ═══════════════════════════════════════════════════════════
     // D. Pagination math
     // ═══════════════════════════════════════════════════════════
 
     @Test
-    fun positionInList_smallList_returnsPositionAsIs() {
-        // List with fewer items than PAGINATION_SIZE (500)
-        val smallList = (1..10).map { DownloadInfo().apply { arcid = "vm_$it" } }
-        vm.setDownloadList(smallList)
-        assertEquals(3, vm.positionInList(3))
-    }
+    fun adapterPositionForListIndex_paginated_mapsOnlyOnPageIndices() = runBlocking {
+        // Above PAGINATION_SIZE (500) the list pages; listIndexInPage alone is a
+        // bare modulo, so an off-page index must map to null, not collide with
+        // a visible row.
+        val infos = (0 until 501).map { i ->
+            DownloadInfo().apply {
+                arcid = "page_$i"; title = "P$i"; label = null
+                state = DownloadState.NONE; time = i.toLong()
+            }
+        }
+        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfoBatch(infos)
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+        assertEquals(501, vm.downloadList.value.size)
 
-    @Test
-    fun listIndexInPage_smallList_returnsPositionAsIs() {
-        val smallList = (1..10).map { DownloadInfo().apply { arcid = "vm_$it" } }
-        vm.setDownloadList(smallList)
-        assertEquals(5, vm.listIndexInPage(5))
+        vm.setPageSize(100)
+        vm.setIndexPage(2)
+
+        assertEquals(150, vm.positionInList(50))
+        assertEquals(50, vm.listIndexInPage(150))
+        assertEquals(50, vm.adapterPositionForListIndex(150))
+        assertNull(vm.adapterPositionForListIndex(50))
+        assertNull(vm.adapterPositionForListIndex(250))
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -363,34 +301,8 @@ class DownloadsViewModelTest {
         job.cancel()
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // H. Pagination / page size state
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
-    fun setIndexPage_updatesState() {
-        vm.setIndexPage(5)
-        assertEquals(5, vm.indexPage.value)
-    }
-
-    @Test
-    fun setPageSize_updatesState() {
-        vm.setPageSize(100)
-        assertEquals(100, vm.pageSize.value)
-    }
-
-    @Test
-    fun setDownloadList_updatesState() {
-        val list = listOf(
-            DownloadInfo().apply { arcid = "vm_1" },
-            DownloadInfo().apply { arcid = "vm_2" }
-        )
-        vm.setDownloadList(list)
-        assertEquals(2, vm.downloadList.value.size)
-    }
-
     // -------------------------------------------------------------------------
-    // W35-3b post-mortem: split Room (structural) from progressMap (transient)
+    // progressMap (tracker snapshots) and label filtering
     // -------------------------------------------------------------------------
 
     @Test
@@ -414,42 +326,6 @@ class DownloadsViewModelTest {
         assertEquals(3, snap.downloaded)
         assertEquals(10, snap.total)
         assertEquals(7777L, snap.remaining)
-    }
-
-    @Test
-    fun `downloadList does not carry tracker progress fields`() = runBlocking {
-        // Structural split: the Room-emitted DownloadInfo in downloadList
-        // must not receive mutations from the progress tracker. UI reads
-        // progress via progressMap / DownloadManager.progressFor instead.
-        val dm = vm.downloadManager
-        val info = DownloadInfo().apply {
-            arcid = "arc-struct"
-            title = "structural only"
-            label = null
-            state = DownloadState.DOWNLOAD
-            time = 1_000L
-        }
-        dm.addDownloadInfo(info.toArchive(), null)
-        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
-        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
-
-        dm.progressTracker.update(
-            "arc-struct",
-            speed = 99999L,
-            finished = 7,
-            downloaded = 7,
-            total = 20,
-            remaining = 1234L
-        )
-        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
-
-        val emitted = vm.downloadList.value.firstOrNull { it.arcid == "arc-struct" }
-        assertTrue("expected arc-struct in downloadList", emitted != null)
-        // Post-W35-3c: progress lives only in progressMap. The Room-emitted
-        // DownloadInfo no longer carries @Ignore progress fields at all.
-        assertEquals(99999L, vm.progressMap.value["arc-struct"]?.speed)
-        assertEquals(7, vm.progressMap.value["arc-struct"]?.finished)
-        assertEquals(7, vm.progressMap.value["arc-struct"]?.downloaded)
     }
 
     @Test

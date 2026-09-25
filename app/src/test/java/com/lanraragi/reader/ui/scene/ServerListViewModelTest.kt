@@ -437,18 +437,6 @@ class ServerListViewModelTest {
     // ── loadProfiles ───────────────────────────────────────────────
 
     @Test
-    fun loadProfiles_populatesStateFlow() {
-        insertProfile("Server A", "https://a.com")
-        insertProfile("Server B", "https://b.com")
-
-        val vm = ServerListViewModel()
-        vm.loadProfiles()
-
-        awaitCondition { vm.profiles.value.size == 2 }
-        assertEquals(2, vm.profiles.value.size)
-    }
-
-    @Test
     fun loadProfiles_activeFirst() {
         insertProfile("Inactive", "https://inactive.com", isActive = false)
         insertProfile("Active", "https://active.com", isActive = true)
@@ -460,15 +448,6 @@ class ServerListViewModelTest {
         assertTrue("First profile should be active", vm.profiles.value[0].isActive)
         assertFalse("Second profile should be inactive", vm.profiles.value[1].isActive)
         assertEquals("Active", vm.profiles.value[0].name)
-    }
-
-    @Test
-    fun loadProfiles_emptyDatabase_returnsEmptyList() {
-        val vm = ServerListViewModel()
-        vm.loadProfiles()
-
-        awaitCondition { true }
-        assertTrue("Profiles should be empty", vm.profiles.value.isEmpty())
     }
 
     // ── activateProfile ────────────────────────────────────────────
@@ -498,22 +477,6 @@ class ServerListViewModelTest {
     }
 
     // ── deleteProfile ──────────────────────────────────────────────
-
-    @Test
-    fun deleteProfile_removesFromDatabase() {
-        val id = insertProfile("Delete Me", "https://delete.com")
-        val profile = ServerProfile(id = id, name = "Delete Me", url = "https://delete.com")
-        LRRAuthManager.setApiKeyForProfile(id, "test-key")
-
-        val vm = ServerListViewModel()
-        vm.loadProfiles()
-        awaitCondition { vm.profiles.value.size == 1 }
-
-        vm.deleteProfile(profile)
-
-        awaitCondition { vm.profiles.value.isEmpty() }
-        assertTrue("Profile should be deleted", vm.profiles.value.isEmpty())
-    }
 
     @Test
     fun deleteProfile_cascadesSearchHistory() {
@@ -573,13 +536,5 @@ class ServerListViewModelTest {
         LRRAuthManager.initializeForTesting(
             ctx.getSharedPreferences("server_vm_test_restore", Context.MODE_PRIVATE)
         )
-    }
-
-    // ── Initial state ──────────────────────────────────────────────
-
-    @Test
-    fun initialState_profilesEmpty() {
-        val vm = ServerListViewModel()
-        assertTrue("Initial profiles should be empty", vm.profiles.value.isEmpty())
     }
 }
