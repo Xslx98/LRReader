@@ -111,7 +111,6 @@ class GalleryDetailViewModelTest {
         vm.setArchive(archive("tok"))
         vm.setArchiveDetail(archiveDetail("tok"))
         vm.updateFavoriteState(FavoriteState(isFavorited = true, name = "slot"))
-        vm.updateCurrentRating(4f)
         vm.setState(GalleryDetailViewModel.STATE_NORMAL)
 
         vm.resetForNewEntry()
@@ -142,18 +141,6 @@ class GalleryDetailViewModelTest {
 
         vm.updateFavoriteState(null)
         assertNull(vm.favoriteState.value)
-    }
-
-    @Test
-    fun updateCurrentRating_storesAndExposesViaFlow() {
-        val vm = GalleryDetailViewModel()
-        assertNull(vm.currentRating.value)
-
-        vm.updateCurrentRating(3f)
-        assertEquals(3f, vm.currentRating.value)
-
-        vm.updateCurrentRating(5f)
-        assertEquals(5f, vm.currentRating.value)
     }
 
     @Test

@@ -187,16 +187,6 @@ class GalleryDetailViewModel : ViewModel() {
     }
 
     /**
-     * Record the rating the user is currently looking at. Called by the
-     * rating-bar touch-release handler with the integer-rounded value, and
-     * by detail load with the server-side value. onBackPressed reads this
-     * to detect a session-local change.
-     */
-    fun updateCurrentRating(rating: Float) {
-        _currentRating.value = rating
-    }
-
-    /**
      * Submit a new rating to LANraragi with **optimistic UI**: the
      * ViewModel-visible state ([_currentRating], [_archiveDetail]),
      * the in-memory LRU detail cache, and the local DownloadInfo row are
