@@ -160,72 +160,38 @@ class LRRApiUtilsTest {
     // ── friendlyError ──────────────────────────────────────────────
 
     @Test
-    fun friendlyError_httpException_401() {
-        val msg = friendlyError(ctx, LRRHttpException(401))
-        assertFalse(msg.isBlank())
+    fun friendlyError_mapsEachErrorKindToItsLocalizedMessage() {
+        // Exact strings: a deleted branch would fall through to e.message
+        // ("HTTP 401", "refused", …), which a non-blank check cannot catch.
+        val cases = listOf(
+            LRRHttpException(401) to ctx.getString(R.string.lrr_auth_failed_check_key),
+            LRRHttpException(403) to ctx.getString(R.string.lrr_auth_failed_check_key),
+            LRRHttpException(404) to ctx.getString(R.string.lrr_not_found_404),
+            LRRHttpException(500) to ctx.getString(R.string.lrr_server_error_code, 500),
+            LRRHttpException(503) to ctx.getString(R.string.lrr_server_error_code, 503),
+            LRRHttpException(418) to ctx.getString(R.string.lrr_request_failed_code, 418),
+            LRROfflineException() to ctx.getString(R.string.lrr_offline_error),
+            LRRCleartextRefusedException("x") to ctx.getString(R.string.lrr_cleartext_refused_error),
+            LRRPlaintextRefusedException("x") to ctx.getString(R.string.lrr_plaintext_refused),
+            LRREmptyBodyException() to ctx.getString(R.string.lrr_empty_response),
+            LRRMissingFieldException("pages") to ctx.getString(R.string.lrr_malformed_response),
+            SocketTimeoutException("timeout") to ctx.getString(R.string.lrr_timeout_error),
+            // OkHttp callTimeout throws a bare InterruptedIOException.
+            java.io.InterruptedIOException("timeout") to ctx.getString(R.string.lrr_timeout_error),
+            ConnectException("refused") to ctx.getString(R.string.lrr_connect_error_check),
+            UnknownHostException("bad.host") to ctx.getString(R.string.lrr_dns_error),
+            SSLException("handshake failed") to ctx.getString(R.string.lrr_ssl_error),
+        )
+        for ((e, expected) in cases) {
+            assertEquals("${e.javaClass.simpleName} ${(e as? LRRHttpException)?.code ?: ""}",
+                expected, friendlyError(ctx, e))
+        }
     }
 
     @Test
-    fun friendlyError_httpException_404() {
-        val msg = friendlyError(ctx, LRRHttpException(404))
-        assertFalse(msg.isBlank())
-    }
-
-    @Test
-    fun friendlyError_httpException_503() {
-        val msg = friendlyError(ctx, LRRHttpException(503))
-        assertFalse(msg.isBlank())
-    }
-
-    @Test
-    fun friendlyError_httpException_unknownCode() {
-        val msg = friendlyError(ctx, LRRHttpException(418))
-        assertFalse(msg.isBlank())
-        assertTrue("Should include HTTP code", msg.contains("418"))
-    }
-
-    @Test
-    fun friendlyError_timeout() {
-        val msg = friendlyError(ctx, SocketTimeoutException("timeout"))
-        assertFalse(msg.isBlank())
-    }
-
-    @Test
-    fun friendlyError_callTimeoutInterruptedIOException() {
-        // OkHttp callTimeout throws a bare InterruptedIOException, which must
-        // map to the same localized timeout message as SocketTimeoutException.
-        val msg = friendlyError(ctx, java.io.InterruptedIOException("timeout"))
-        assertEquals(ctx.getString(R.string.lrr_timeout_error), msg)
-    }
-
-    @Test
-    fun friendlyError_connect() {
-        val msg = friendlyError(ctx, ConnectException("refused"))
-        assertFalse(msg.isBlank())
-    }
-
-    @Test
-    fun friendlyError_dns() {
-        val msg = friendlyError(ctx, UnknownHostException("bad.host"))
-        assertFalse(msg.isBlank())
-    }
-
-    @Test
-    fun friendlyError_ssl() {
-        val msg = friendlyError(ctx, SSLException("handshake failed"))
-        assertFalse(msg.isBlank())
-    }
-
-    @Test
-    fun friendlyError_emptyBodyException() {
-        val msg = friendlyError(ctx, LRREmptyBodyException())
-        assertEquals(ctx.getString(R.string.lrr_empty_response), msg)
-    }
-
-    @Test
-    fun friendlyError_missingFieldException() {
-        val msg = friendlyError(ctx, LRRMissingFieldException("pages"))
-        assertEquals(ctx.getString(R.string.lrr_malformed_response), msg)
+    fun friendlyError_serverErrorMessageTakesPrecedenceOverTheStatusCode() {
+        val msg = friendlyError(ctx, LRRHttpException(401, serverError = "Archive is locked"))
+        assertEquals("Archive is locked", msg)
     }
 
     @Test
