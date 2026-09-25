@@ -242,18 +242,28 @@ class DownloadsViewModelTest {
     // ═══════════════════════════════════════════════════════════
 
     @Test
-    fun positionInList_smallList_returnsPositionAsIs() {
-        // List with fewer items than PAGINATION_SIZE (500)
-        val smallList = (1..10).map { DownloadInfo().apply { arcid = "vm_$it" } }
-        vm.setDownloadList(smallList)
-        assertEquals(3, vm.positionInList(3))
-    }
+    fun adapterPositionForListIndex_paginated_mapsOnlyOnPageIndices() = runBlocking {
+        // Above PAGINATION_SIZE (500) the list pages; listIndexInPage alone is a
+        // bare modulo, so an off-page index must map to null, not collide with
+        // a visible row.
+        val infos = (0 until 501).map { i ->
+            DownloadInfo().apply {
+                arcid = "page_$i"; title = "P$i"; label = null
+                state = DownloadState.NONE; time = i.toLong()
+            }
+        }
+        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfoBatch(infos)
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+        assertEquals(501, vm.downloadList.value.size)
 
-    @Test
-    fun listIndexInPage_smallList_returnsPositionAsIs() {
-        val smallList = (1..10).map { DownloadInfo().apply { arcid = "vm_$it" } }
-        vm.setDownloadList(smallList)
-        assertEquals(5, vm.listIndexInPage(5))
+        vm.setPageSize(100)
+        vm.setIndexPage(2)
+
+        assertEquals(150, vm.positionInList(50))
+        assertEquals(50, vm.listIndexInPage(150))
+        assertEquals(50, vm.adapterPositionForListIndex(150))
+        assertNull(vm.adapterPositionForListIndex(50))
+        assertNull(vm.adapterPositionForListIndex(250))
     }
 
     // ═══════════════════════════════════════════════════════════
