@@ -482,11 +482,7 @@ class DownloadManagerTest {
         // dispatch, so a fixed sleep races it under full-suite load (observed
         // flaking at 200 ms). Poll with a generous deadline instead; the
         // normal case still completes in a few iterations.
-        val deadline = System.currentTimeMillis() + 5_000
-        while ("reload" !in events && System.currentTimeMillis() < deadline) {
-            Thread.sleep(20)
-            org.robolectric.shadows.ShadowLooper.idleMainLooper()
-        }
+        awaitUntil(timeoutMs = 5_000, message = "reload never reported") { "reload" in events }
 
         // After reload, our download should be present (DB may also contain
         // data from prior tests since the in-memory DB is shared in the suite)
@@ -693,13 +689,9 @@ class DownloadManagerTest {
                 // from processing the mainHandler.post dispatched by the IO
                 // coroutine — a deadlock. Instead, poll: drain the looper then
                 // sleep briefly until the publish phase has landed.
-                var initDone = false
-                for (attempt in 0 until 500) {
-                    org.robolectric.shadows.ShadowLooper.idleMainLooper()
-                    if (freshManager.labelList.size == labelCount) { initDone = true; break }
-                    Thread.sleep(1)
+                awaitUntil(timeoutMs = 5_000, message = "iter=$iteration: init did not complete within timeout") {
+                    freshManager.labelList.size == labelCount
                 }
-                assertTrue("iter=$iteration: init did not complete within timeout", initDone)
                 assertEquals(
                     "iter=$iteration: published label count mismatch",
                     labelCount,
