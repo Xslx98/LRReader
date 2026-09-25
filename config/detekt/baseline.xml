@@ -37,7 +37,6 @@
     <ID>CyclomaticComplexMethod:LRRGalleryProvider.kt$LRRGalleryProvider$override fun start()</ID>
     <ID>CyclomaticComplexMethod:LRReaderApplication.kt$LRReaderApplication$@SuppressLint("StaticFieldLeak") // Safe: Application instance is process-scoped override fun onCreate()</ID>
     <ID>CyclomaticComplexMethod:LegacyDb.kt$LegacyDb$suspend fun mergeOldDB(context: Context)</ID>
-    <ID>CyclomaticComplexMethod:ListUrlBuilder.kt$ListUrlBuilder$fun build(): String</ID>
     <ID>CyclomaticComplexMethod:ListUrlBuilder.kt$ListUrlBuilder$fun setQuery(query: String?)</ID>
     <ID>CyclomaticComplexMethod:ReaderPageCache.kt$ReaderPageCache$@Throws(IOException::class) fun downloadToFile( client: OkHttpClient, url: String, cacheFile: File, pageIndex: Int = 0, progressCallback: ProgressCallback? = null, onCallCreated: ((Call) -&gt; Unit)? = null )</ID>
     <ID>CyclomaticComplexMethod:ReaderPageCache.kt$ReaderPageCache$fun validateImageFile(file: File): Boolean</ID>
@@ -113,7 +112,6 @@
     <ID>LongMethod:LRRGalleryProvider.kt$LRRGalleryProvider$override fun start()</ID>
     <ID>LongMethod:LRReaderApplication.kt$LRReaderApplication$@SuppressLint("StaticFieldLeak") // Safe: Application instance is process-scoped override fun onCreate()</ID>
     <ID>LongMethod:LegacyDb.kt$LegacyDb$suspend fun mergeOldDB(context: Context)</ID>
-    <ID>LongMethod:ListUrlBuilder.kt$ListUrlBuilder$fun build(): String</ID>
     <ID>LongMethod:MainActivity.kt$MainActivity$override fun onCreate2(savedInstanceState: Bundle?)</ID>
     <ID>LongMethod:TagEditDialog.kt$TagEditDialog$fun rebuildViews()</ID>
     <ID>LongMethod:TankDetailScene.kt$TankDetailScene$override fun onCreateView2( inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?, ): View?</ID>
@@ -198,7 +196,6 @@
     <ID>ReturnCount:LRRAuthManager.kt$LRRAuthManager$@JvmStatic fun verifyPatternWithCipher(input: String?, authenticatedCipher: Cipher): Boolean</ID>
     <ID>ReturnCount:LRRDownloadWorker.kt$LRRDownloadWorker$private suspend fun doDownload()</ID>
     <ID>ReturnCount:LRRDownloadWorker.kt$LRRDownloadWorker$private suspend fun reportIfLocallyComplete(): Boolean</ID>
-    <ID>ReturnCount:LRRUrl.kt$LRRUrl$@JvmStatic fun getFixedPreviewThumbUrl(originUrl: String): String</ID>
     <ID>ReturnCount:LRRUtils.kt$LRRUtils$@JvmStatic fun getCategoryColor(category: Int): Int</ID>
     <ID>ReturnCount:MainActivity.kt$MainActivity$private fun handleIntent(intent: Intent?): Boolean</ID>
     <ID>ReturnCount:NaturalComparator.kt$NaturalComparator$override fun compare(o1: String?, o2: String?): Int</ID>
@@ -293,7 +290,6 @@
     <ID>UnusedPrivateProperty:GallerySearchHelper.kt$GallerySearchHelper$private val mCallback: Callback</ID>
     <ID>UnusedPrivateProperty:LRRCategoriesScene.kt$LRRCategoriesScene.Companion$private const val TAG = "LRRCategoriesScene"</ID>
     <ID>UnusedPrivateProperty:LRRClientProvider.kt$LRRClientProvider$val ctx = appContext ?: throw IllegalStateException("LRRClientProvider not initialized. Call init(context) first.")</ID>
-    <ID>UnusedPrivateProperty:LRRUrl.kt$LRRUrl$private const val URL_PREFIX_THUMB_EX = "https://exhentai.org/t/"</ID>
     <ID>UnusedPrivateProperty:QuickSearchScene.kt$QuickSearchScene.Companion$private const val TAG = "QuickSearchScene"</ID>
     <ID>UnusedPrivateProperty:SecurityScene.kt$SecurityScene.Companion$private const val TAG = "SecurityScene"</ID>
     <ID>UseCheckOrError:DownloadAdapter.kt$DownloadAdapter$throw IllegalStateException("Cannot get LayoutInflater: Fragment is not attached and Context/Activity is null")</ID>

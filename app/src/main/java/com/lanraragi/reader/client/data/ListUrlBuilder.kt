@@ -22,23 +22,13 @@ import android.text.TextUtils
 import android.util.Log
 import androidx.annotation.IntDef
 import com.lanraragi.reader.client.LegacyCategoryConfig
-import com.lanraragi.reader.client.LRRUrl
 import com.lanraragi.reader.client.LRRUtils
 import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.widget.AdvanceSearchTable
-import com.lanraragi.reader.widget.GalleryInfoContentHelper
 import com.lanraragi.framework.lib.yorozuya.NumberUtils
 import com.lanraragi.framework.lib.yorozuya.StringUtils
-import com.lanraragi.framework.network.UrlBuilder
-import com.lanraragi.framework.widget.ContentLayout.ContentHelper.GOTO_FIRST_PAGE
-import com.lanraragi.framework.widget.ContentLayout.ContentHelper.GOTO_LAST_PAGE
-import com.lanraragi.framework.widget.ContentLayout.ContentHelper.GOTO_NEXT_PAGE
-import com.lanraragi.framework.widget.ContentLayout.ContentHelper.GOTO_PREV_PAGE
-import com.lanraragi.framework.widget.ContentLayout.ContentHelper.TYPE_SOMEWHERE
 import java.io.UnsupportedEncodingException
 import java.net.URLDecoder
-import java.net.URLEncoder
-import java.util.regex.Pattern
 
 class ListUrlBuilder : Cloneable, Parcelable {
 
@@ -77,9 +67,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
      */
     @JvmField
     var categoryName: String? = null
-
-    @JvmField
-    var follow: String? = null
 
     @JvmField
     var advanceSearch: Int = -1
@@ -162,7 +149,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
     fun setCategoryId(value: String?) { categoryId = value }
     fun getCategoryName(): String? = categoryName
     fun setCategoryName(value: String?) { categoryName = value }
-    fun setFollow(value: String?) { follow = value }
     fun getAdvanceSearch(): Int = advanceSearch
     fun setAdvanceSearch(value: Int) { advanceSearch = value }
     fun getMinRating(): Int = minRating
@@ -183,7 +169,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
         keyword = lub.keyword
         categoryId = lub.categoryId
         categoryName = lub.categoryName
-        follow = lub.follow
         advanceSearch = lub.advanceSearch
         minRating = lub.minRating
         pageFrom = lub.pageFrom
@@ -344,136 +329,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
         }
     }
 
-    fun build(pageAction: Int, helper: GalleryInfoContentHelper): String? {
-        return when (pageAction) {
-            GOTO_PREV_PAGE -> helper.prevHref
-            GOTO_NEXT_PAGE, TYPE_SOMEWHERE -> helper.nextHref
-            GOTO_LAST_PAGE -> helper.lastHref
-            else -> helper.firstHref // GOTO_FIRST_PAGE and default
-        }
-    }
-
-    fun jumpHrefBuild(urlOld: String, appendParam: String): String {
-        val seekM = PATTERN_SEEK_DATE.matcher(urlOld)
-        val jumpM = PATTERN_JUMP_NODE.matcher(urlOld)
-
-        return when {
-            seekM.find() -> urlOld.replace(seekM.group(0)!!, appendParam)
-            jumpM.find() -> urlOld.replace(jumpM.group(0)!!, appendParam)
-            else -> "$urlOld&$appendParam"
-        }
-    }
-
-    fun build(): String {
-        return when (mode) {
-            MODE_UPLOADER -> buildString {
-                append(LRRUrl.getHost())
-                append("uploader/")
-                try {
-                    append(URLEncoder.encode(keyword, "UTF-8"))
-                } catch (e: UnsupportedEncodingException) {
-                    Log.d(TAG, "Encode uploader keyword", e)
-                }
-                if (pageIndex != 0) {
-                    append('/').append(pageIndex)
-                }
-            }
-
-            MODE_TAG -> buildString {
-                append(LRRUrl.getHost())
-                append("tag/")
-                try {
-                    append(URLEncoder.encode(keyword, "UTF-8"))
-                } catch (e: UnsupportedEncodingException) {
-                    Log.d(TAG, "Encode tag keyword", e)
-                }
-                if (pageIndex != 0) {
-                    append('/').append(pageIndex)
-                }
-            }
-
-            MODE_FILTER -> buildString {
-                append(LRRUrl.getHost())
-                append("?")
-                if (pageIndex != 0) {
-                    append("page=").append(pageIndex).append('&')
-                }
-                append("f_search=")
-                try {
-                    append(URLEncoder.encode(keyword, "UTF-8"))
-                } catch (e: UnsupportedEncodingException) {
-                    Log.d(TAG, "Encode filter keyword", e)
-                }
-            }
-
-            MODE_WHATS_HOT -> LRRUrl.getPopularUrl()
-
-            MODE_TOP_LIST -> buildString {
-                append(LRRUrl.getTopListUrl())
-                append("?")
-                append(follow)
-                if (pageIndex != 0) {
-                    if (pageIndex in 1..199) {
-                        append("&p=")
-                        append(pageIndex)
-                    } else {
-                        // Invalid page range — return dummy URL
-                        clear()
-                        append("127.0.0.1:8888")
-                    }
-                }
-            }
-
-            else -> {
-                // MODE_NORMAL, MODE_SUBSCRIPTION
-                val url = if (mode == MODE_NORMAL) LRRUrl.getHost() else LRRUrl.getWatchedUrl()
-                val ub = UrlBuilder(url)
-                if (category != LRRUtils.NONE) {
-                    ub.addQuery("f_cats", category.inv() and LegacyCategoryConfig.ALL_CATEGORY)
-                }
-                // Search key
-                keyword?.trim()?.takeIf { it.isNotEmpty() }?.let {
-                    try {
-                        ub.addQuery("f_search", URLEncoder.encode(keyword, "UTF-8"))
-                    } catch (e: UnsupportedEncodingException) {
-                        Log.d(TAG, "Encode search keyword", e)
-                    }
-                }
-                // Page index
-                if (pageIndex != 0) {
-                    ub.addQuery("page", pageIndex)
-                }
-                // Advance search
-                if (advanceSearch != -1) {
-                    ub.addQuery("advsearch", "1")
-                    if (advanceSearch and AdvanceSearchTable.SNAME != 0) ub.addQuery("f_sname", "on")
-                    if (advanceSearch and AdvanceSearchTable.STAGS != 0) ub.addQuery("f_stags", "on")
-                    if (advanceSearch and AdvanceSearchTable.SDESC != 0) ub.addQuery("f_sdesc", "on")
-                    if (advanceSearch and AdvanceSearchTable.STORR != 0) ub.addQuery("f_storr", "on")
-                    if (advanceSearch and AdvanceSearchTable.STO != 0) ub.addQuery("f_sto", "on")
-                    if (advanceSearch and AdvanceSearchTable.SDT1 != 0) ub.addQuery("f_sdt1", "on")
-                    if (advanceSearch and AdvanceSearchTable.SDT2 != 0) ub.addQuery("f_sdt2", "on")
-                    if (advanceSearch and AdvanceSearchTable.SH != 0) ub.addQuery("f_sh", "on")
-                    if (advanceSearch and AdvanceSearchTable.SFL != 0) ub.addQuery("f_sfl", "on")
-                    if (advanceSearch and AdvanceSearchTable.SFU != 0) ub.addQuery("f_sfu", "on")
-                    if (advanceSearch and AdvanceSearchTable.SFT != 0) ub.addQuery("f_sft", "on")
-                    // Min star rating
-                    if (minRating != -1) {
-                        ub.addQuery("f_sr", "on")
-                        ub.addQuery("f_srdd", minRating)
-                    }
-                    // Pages
-                    if (pageFrom != -1 || pageTo != -1) {
-                        ub.addQuery("f_sp", "on")
-                        ub.addQuery("f_spf", if (pageFrom != -1) pageFrom.toString() else "")
-                        ub.addQuery("f_spt", if (pageTo != -1) pageTo.toString() else "")
-                    }
-                }
-                ub.build()
-            }
-        }
-    }
-
     override fun describeContents(): Int = 0
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
@@ -491,8 +346,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
 
     companion object {
         private const val TAG = "ListUrlBuilder"
-        private val PATTERN_SEEK_DATE = Pattern.compile("seek=(\\d+)-(\\d+)-(\\d+)")
-        private val PATTERN_JUMP_NODE = Pattern.compile("jump=(\\d)[ymwd]")
 
         // Mode constants
         const val MODE_NORMAL = 0x0
