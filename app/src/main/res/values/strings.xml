@@ -184,8 +184,7 @@
     <string name="update_ignore">Ignore</string>
 
     <!-- Gallery List -->
-    <string name="gallery_list_search_bar_hint_exhentai">Search LANraragi</string>
-    <string name="gallery_list_search_bar_hint_e_hentai">Search LANraragi</string>
+    <string name="gallery_list_search_bar_hint">Search LANraragi</string>
     <string name="gallery_list_empty_hit">No archives found in LANraragi</string>
 
     <string name="gallery_tag_copy">tag copied</string>
@@ -244,7 +243,6 @@
     <string name="share">Share</string>
     <string name="no_tags">No tags</string>
     <string name="refresh">Refresh</string>
-    <string name="open_in_other_app">Open with other app</string>
     <string name="file_chooser_title">Open with</string>
     <string name="favorited">Categorized</string>
     <string name="not_favorited">Not categorized</string>
@@ -352,8 +350,6 @@
     <string name="no_history">Viewed galleries will be shown here</string>
     <string name="clear_all">Clear all</string>
     <string name="clear_all_history">Clear this server\'s reading history?</string>
-
-    <string name="show_definition">Show definition</string>
 
     <!-- Set Security -->
     <string name="set_pattern_protection">Set pattern protection</string>

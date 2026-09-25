@@ -131,8 +131,7 @@
     <string name="update_ignore">略過</string>
 
     <!-- Gallery List -->
-    <string name="gallery_list_search_bar_hint_exhentai">在 LANraragi 搜尋</string>
-    <string name="gallery_list_search_bar_hint_e_hentai">在 LANraragi 搜尋</string>
+    <string name="gallery_list_search_bar_hint">在 LANraragi 搜尋</string>
     <string name="gallery_list_empty_hit">甚麼都沒有找到</string>
 
     <string name="gallery_tag_copy">標籤已複製</string>
@@ -191,7 +190,6 @@
     <string name="share">分享</string>
     <string name="no_tags">暫無標籤</string>
     <string name="refresh">重新載入</string>
-    <string name="open_in_other_app">用其他應用程式打開</string>
     <string name="file_chooser_title">選擇開啟方式</string>
     <string name="favorited">已分類</string>
     <string name="not_favorited">未分類</string>
@@ -294,7 +292,6 @@
     <string name="clear_all">全部清除</string>
     <string name="clear_all_history">清除此伺服器的閲讀紀錄？</string>
 
-    <string name="show_definition">顯示定義</string>
 
     <!-- Set Security -->
     <string name="set_pattern_protection">設定圖形解鎖</string>

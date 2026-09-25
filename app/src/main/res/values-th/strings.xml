@@ -101,8 +101,7 @@
     <string name="update_ignore">ข้ามไป</string>
 
     <!-- Gallery List -->
-    <string name="gallery_list_search_bar_hint_exhentai">ค้นหาใน LANraragi</string>
-    <string name="gallery_list_search_bar_hint_e_hentai">ค้นหาใน LANraragi</string>
+    <string name="gallery_list_search_bar_hint">ค้นหาใน LANraragi</string>
     <string name="gallery_list_empty_hit">โลกนั้นนะมันกว้างงงงงใหญ่ไพรศาล และแพนด้านั่งโดดเดี่ยวเดียวดายในโลกกลมๆ</string>
 
     <string name="gallery_tag_copy">คัดลอกแท็กแล้ว</string>
@@ -160,7 +159,6 @@
     <string name="share">แชร์</string>
     <string name="no_tags">ไม่มีแท็ก</string>
     <string name="refresh">รีเฟรช</string>
-    <string name="open_in_other_app">เปิดด้วยแอปอื่น</string>
     <string name="file_chooser_title">เปิดด้วย</string>
     <string name="favorited">เพิ่มในหมวดหมู่แล้ว</string>
     <string name="not_favorited">ยังไม่เพิ่มหมวดหมู่</string>
@@ -262,7 +260,6 @@
     <string name="clear_all">ลบทั้งหมด</string>
     <string name="clear_all_history">ล้างประวัติการอ่านของเซิร์ฟเวอร์นี้หรือไม่?</string>
 
-    <string name="show_definition">แสดงความหมาย</string>
     <string name="copy_tag">คัดลอกแท็ก</string>
 
     <!-- Set Security -->
