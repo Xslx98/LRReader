@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene
 
+import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
@@ -158,14 +159,6 @@ class TankoubonDetailViewModelTest {
             """"archives":[$archives],"full_data":[$data]},"total":1,"filtered":1}"""
     }
 
-    private fun awaitCondition(timeoutMs: Long = 5000, condition: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (!condition() && System.currentTimeMillis() < deadline) {
-            Thread.sleep(50)
-        }
-        assertTrue("Condition not met within ${timeoutMs}ms", condition())
-    }
-
     private fun collectEvents(vm: TankoubonDetailViewModel): CopyOnWriteArrayList<TankDetailUiEvent> {
         val events = CopyOnWriteArrayList<TankDetailUiEvent>()
         val subscribed = CompletableDeferred<Unit>()
@@ -181,7 +174,7 @@ class TankoubonDetailViewModelTest {
         vm.baseUrlResolver = { LRRAuthManager.getServerUrl()!! }
         vm.init(TANK, "Tank", profileId = 0L)
         vm.load()
-        awaitCondition { vm.members.value.size == 3 && !vm.isLoading.value }
+        awaitUntil { vm.members.value.size == 3 && !vm.isLoading.value }
         return vm
     }
 
@@ -192,7 +185,7 @@ class TankoubonDetailViewModelTest {
 
         vm.applyOrder(listOf(ID_EP1, ID_EP2, ID_EXTRA), undoable = false)
 
-        awaitCondition { putBodies.size == 1 }
+        awaitUntil { putBodies.size == 1 }
         assertEquals(listOf(ID_EP1, ID_EP2, ID_EXTRA), putBodies[0])
         assertEquals(listOf(ID_EP1, ID_EP2, ID_EXTRA), vm.members.value.map { it.arcid })
         assertEquals(listOf(ID_EP1, ID_EP2, ID_EXTRA), vm.memberIds)
@@ -207,7 +200,7 @@ class TankoubonDetailViewModelTest {
 
         vm.sortByTitle()
 
-        awaitCondition { events.any { it is TankDetailUiEvent.OrderApplied } }
+        awaitUntil { events.any { it is TankDetailUiEvent.OrderApplied } }
         assertEquals(listOf(ID_EP1, ID_EP2, ID_EXTRA), putBodies.single())
         val undo = events.filterIsInstance<TankDetailUiEvent.OrderApplied>().single()
         assertEquals(listOf(ID_EP2, ID_EXTRA, ID_EP1), undo.previousOrder)
@@ -220,7 +213,7 @@ class TankoubonDetailViewModelTest {
 
         vm.reverseOrder()
 
-        awaitCondition { events.any { it is TankDetailUiEvent.OrderApplied } }
+        awaitUntil { events.any { it is TankDetailUiEvent.OrderApplied } }
         assertEquals(listOf(ID_EP1, ID_EXTRA, ID_EP2), putBodies.single())
     }
 
@@ -232,7 +225,7 @@ class TankoubonDetailViewModelTest {
 
         vm.sortByTitle()
 
-        awaitCondition {
+        awaitUntil {
             events.any { it is TankDetailUiEvent.ShowSuccess && it.messageResId == R.string.tank_already_sorted }
         }
         assertTrue(putBodies.isEmpty())
@@ -246,8 +239,8 @@ class TankoubonDetailViewModelTest {
 
         vm.sortByTitle()
 
-        awaitCondition { events.any { it is TankDetailUiEvent.ShowError } }
-        awaitCondition { vm.members.value.map { it.arcid } == listOf(ID_EP2, ID_EXTRA, ID_EP1) }
+        awaitUntil { events.any { it is TankDetailUiEvent.ShowError } }
+        awaitUntil { vm.members.value.map { it.arcid } == listOf(ID_EP2, ID_EXTRA, ID_EP1) }
         assertEquals(listOf(ID_EP2, ID_EXTRA, ID_EP1), vm.memberIds)
         assertTrue(events.none { it is TankDetailUiEvent.OrderApplied })
     }
@@ -260,8 +253,8 @@ class TankoubonDetailViewModelTest {
 
         vm.sortByTitle()
 
-        awaitCondition { events.any { it is TankDetailUiEvent.ShowError } }
-        awaitCondition { vm.members.value.map { it.arcid } == listOf(ID_EP2, ID_EXTRA, ID_EP1) }
+        awaitUntil { events.any { it is TankDetailUiEvent.ShowError } }
+        awaitUntil { vm.members.value.map { it.arcid } == listOf(ID_EP2, ID_EXTRA, ID_EP1) }
         assertEquals(listOf(ID_EP2, ID_EXTRA, ID_EP1), vm.memberIds)
     }
 

@@ -8,6 +8,7 @@ import com.lanraragi.framework.beerbelly.SimpleDiskCache
 import com.lanraragi.reader.LegacyDb
 import com.lanraragi.reader.FavouriteStatusRouter
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.FavoritesRepository
@@ -107,14 +108,6 @@ class QuickSearchViewModelTest {
         db.close()
     }
 
-    private fun awaitCondition(timeoutMs: Long = 5000, condition: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (!condition() && System.currentTimeMillis() < deadline) {
-            Thread.sleep(50)
-        }
-        assertTrue("Condition not met within ${timeoutMs}ms", condition())
-    }
-
     /**
      * Subscribe to [vm.uiEvent] on [eventScope] and **block until the
      * subscription is actually live**. The ViewModel's SharedFlow has
@@ -158,7 +151,7 @@ class QuickSearchViewModelTest {
         val vm = QuickSearchViewModel()
         vm.loadQuickSearches()
 
-        awaitCondition { vm.quickSearches.value.size == 2 }
+        awaitUntil { vm.quickSearches.value.size == 2 }
         assertEquals(2, vm.quickSearches.value.size)
     }
 
@@ -171,15 +164,15 @@ class QuickSearchViewModelTest {
 
         val vm = QuickSearchViewModel()
         vm.loadQuickSearches()
-        awaitCondition { vm.quickSearches.value.size == 2 }
+        awaitUntil { vm.quickSearches.value.size == 2 }
 
         val events = collectEvents(vm)
 
         vm.deleteQuickSearch(qs2)
-        awaitCondition { vm.quickSearches.value.size == 1 }
+        awaitUntil { vm.quickSearches.value.size == 1 }
 
         assertEquals("Keep", vm.quickSearches.value[0].name)
-        awaitCondition { events.isNotEmpty() }
+        awaitUntil { events.isNotEmpty() }
         assertTrue("Should emit Deleted event",
             events.any { it is QuickSearchViewModel.QuickSearchUiEvent.Deleted })
     }
@@ -194,7 +187,7 @@ class QuickSearchViewModelTest {
 
         val vm = QuickSearchViewModel()
         vm.loadQuickSearches()
-        awaitCondition { vm.quickSearches.value.size == 3 }
+        awaitUntil { vm.quickSearches.value.size == 3 }
 
         // Move item from position 0 to position 2
         vm.moveQuickSearch(0, 2)
@@ -211,7 +204,7 @@ class QuickSearchViewModelTest {
 
         val vm = QuickSearchViewModel()
         vm.loadQuickSearches()
-        awaitCondition { vm.quickSearches.value.size == 2 }
+        awaitUntil { vm.quickSearches.value.size == 2 }
 
         val before = vm.quickSearches.value.map { it.name }
         vm.moveQuickSearch(0, 0)
@@ -226,7 +219,7 @@ class QuickSearchViewModelTest {
 
         val vm = QuickSearchViewModel()
         vm.loadQuickSearches()
-        awaitCondition { vm.quickSearches.value.size == 1 }
+        awaitUntil { vm.quickSearches.value.size == 1 }
 
         val sizeBefore = vm.quickSearches.value.size
         vm.moveQuickSearch(0, 5) // out of bounds

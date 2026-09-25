@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene
 
+import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
@@ -138,14 +139,6 @@ class TankoubonDetailViewModelCoverTest {
             """"archives":[$archives],"full_data":[$data]},"total":1,"filtered":1}"""
     }
 
-    private fun awaitCondition(timeoutMs: Long = 5000, condition: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (!condition() && System.currentTimeMillis() < deadline) {
-            Thread.sleep(50)
-        }
-        assertTrue("Condition not met within ${timeoutMs}ms", condition())
-    }
-
     private fun loadedVm(store: TankCoverChoiceStore): TankoubonDetailViewModel {
         val vm = TankoubonDetailViewModel()
         vm.baseUrlResolver = { LRRAuthManager.getServerUrl()!! }
@@ -153,7 +146,7 @@ class TankoubonDetailViewModelCoverTest {
         vm.coverReapplyDelayMs = 0L
         vm.init(TANK, "Tank", profileId = 5L)
         vm.load()
-        awaitCondition { vm.members.value.size == 3 && !vm.isLoading.value }
+        awaitUntil { vm.members.value.size == 3 && !vm.isLoading.value }
         return vm
     }
 
@@ -164,7 +157,7 @@ class TankoubonDetailViewModelCoverTest {
 
         vm.setCover(memberIndex = 1, page0 = 3)
 
-        awaitCondition { coverPuts.size == 1 }
+        awaitUntil { coverPuts.size == 1 }
         assertEquals(listOf(14), coverPuts.toList())
         assertEquals(TankCoverChoiceStore.Choice(ID_EXTRA, 3, 5L), store.get(TANK))
     }
@@ -178,7 +171,7 @@ class TankoubonDetailViewModelCoverTest {
         // EP1 moves from index 2 (global 23) to index 0 (global 3).
         vm.applyOrder(listOf(ID_EP1, ID_EP2, ID_EXTRA), undoable = false)
 
-        awaitCondition { coverPuts.size == 2 }
+        awaitUntil { coverPuts.size == 2 }
         assertEquals(listOf(3, 3), coverPuts.toList())
         assertEquals(TankCoverChoiceStore.Choice(ID_EP1, 2, 5L), store.get(TANK))
     }
@@ -189,7 +182,7 @@ class TankoubonDetailViewModelCoverTest {
 
         vm.applyOrder(listOf(ID_EP1, ID_EP2, ID_EXTRA), undoable = false)
 
-        awaitCondition { vm.memberIds == listOf(ID_EP1, ID_EP2, ID_EXTRA) }
+        awaitUntil { vm.memberIds == listOf(ID_EP1, ID_EP2, ID_EXTRA) }
         awaitViewModelIdle(vm)
         assertTrue("no cover PUT expected, got $coverPuts", coverPuts.isEmpty())
     }
@@ -202,7 +195,7 @@ class TankoubonDetailViewModelCoverTest {
 
         vm.applyOrder(listOf(ID_EP1, ID_EP2, ID_EXTRA), undoable = false)
 
-        awaitCondition { store.get(TANK) == null }
+        awaitUntil { store.get(TANK) == null }
         awaitViewModelIdle(vm)
         assertTrue(coverPuts.isEmpty())
         assertNull(store.get(TANK))

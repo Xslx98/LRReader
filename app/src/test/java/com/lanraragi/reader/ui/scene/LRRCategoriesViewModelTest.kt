@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.AppProxySelector
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.module.IAppModule
 import com.lanraragi.reader.module.INetworkModule
 import com.lanraragi.reader.module.NetworkMonitor
@@ -44,7 +45,7 @@ import java.util.concurrent.TimeUnit
  * Uses MockWebServer to simulate the LANraragi category API and Robolectric
  * for Android context. ServiceRegistry is initialized with test modules.
  *
- * The ViewModel dispatches work to `Dispatchers.IO`. Tests use [awaitCondition]
+ * The ViewModel dispatches work to `Dispatchers.IO`. Tests use [awaitUntil]
  * to wait for IO-dispatched coroutines to complete.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -115,14 +116,6 @@ class LRRCategoriesViewModelTest {
         server.shutdown()
     }
 
-    private fun awaitCondition(timeoutMs: Long = 5000, condition: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (!condition() && System.currentTimeMillis() < deadline) {
-            Thread.sleep(50)
-        }
-        assertTrue("Condition not met within ${timeoutMs}ms", condition())
-    }
-
     /**
      * Subscribe to [vm.uiEvent] on [eventScope] and **block until the
      * subscription is actually live**. The ViewModel's SharedFlow has
@@ -158,7 +151,7 @@ class LRRCategoriesViewModelTest {
         val vm = LRRCategoriesViewModel()
         vm.loadCategories()
 
-        awaitCondition { vm.categories.value.size == 2 }
+        awaitUntil { vm.categories.value.size == 2 }
         assertEquals("Favorites", vm.categories.value[0].name)
         assertEquals("Dynamic", vm.categories.value[1].name)
     }
@@ -174,7 +167,7 @@ class LRRCategoriesViewModelTest {
         val vm = LRRCategoriesViewModel(categoryNameSync = { synced.add(it) })
         vm.loadCategories()
 
-        awaitCondition { synced.isNotEmpty() }
+        awaitUntil { synced.isNotEmpty() }
         assertEquals(listOf("SET_aaaaaaaaaa", "c2"), synced.single().map { it.id })
     }
 
@@ -188,7 +181,7 @@ class LRRCategoriesViewModelTest {
         val vm = LRRCategoriesViewModel()
         vm.loadCategories()
 
-        awaitCondition { vm.categories.value.size == 2 }
+        awaitUntil { vm.categories.value.size == 2 }
         assertTrue("First item should be pinned", vm.categories.value[0].isPinned())
         assertFalse("Second item should not be pinned", vm.categories.value[1].isPinned())
         assertEquals("Pinned", vm.categories.value[0].name)
@@ -205,7 +198,7 @@ class LRRCategoriesViewModelTest {
         val vm = LRRCategoriesViewModel()
         vm.loadCategories()
 
-        awaitCondition { !vm.isLoading.value }
+        awaitUntil { !vm.isLoading.value }
         assertEquals("Should skip empty/null names", 1, vm.categories.value.size)
         assertEquals("Valid", vm.categories.value[0].name)
     }
@@ -220,7 +213,7 @@ class LRRCategoriesViewModelTest {
         vm.loadCategories()
         assertTrue("Should be loading after loadCategories call", vm.isLoading.value)
 
-        awaitCondition { !vm.isLoading.value }
+        awaitUntil { !vm.isLoading.value }
     }
 
     @Test
@@ -233,8 +226,8 @@ class LRRCategoriesViewModelTest {
 
         vm.loadCategories()
 
-        awaitCondition { !vm.isLoading.value }
-        awaitCondition { events.isNotEmpty() }
+        awaitUntil { !vm.isLoading.value }
+        awaitUntil { events.isNotEmpty() }
         assertTrue("Should have emitted an error event",
             events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowError })
     }
@@ -246,7 +239,7 @@ class LRRCategoriesViewModelTest {
         val vm = LRRCategoriesViewModel()
         vm.loadCategories()
 
-        awaitCondition { !vm.isLoading.value }
+        awaitUntil { !vm.isLoading.value }
         assertTrue("Categories should be empty", vm.categories.value.isEmpty())
     }
 
@@ -266,11 +259,11 @@ class LRRCategoriesViewModelTest {
 
         vm.createCategory("NewCat", null, false)
 
-        awaitCondition { vm.categories.value.isNotEmpty() }
+        awaitUntil { vm.categories.value.isNotEmpty() }
         // The ShowSuccess event is delivered to the collector asynchronously
         // (on eventScope), so the categories reload completing does not imply
         // the event has landed in [events] yet — poll the event itself too.
-        awaitCondition { events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess } }
+        awaitUntil { events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess } }
         assertTrue("Should emit ShowSuccess",
             events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess })
         assertEquals(1, vm.categories.value.size)
@@ -291,9 +284,9 @@ class LRRCategoriesViewModelTest {
 
         vm.editCategory("SET_aaaaaaaaaa", "Edited", null, true)
 
-        awaitCondition { vm.categories.value.isNotEmpty() }
+        awaitUntil { vm.categories.value.isNotEmpty() }
         // Same async event delivery as in the createCategory test above.
-        awaitCondition { events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess } }
+        awaitUntil { events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess } }
         assertTrue("Should emit ShowSuccess",
             events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess })
         assertEquals("Edited", vm.categories.value[0].name)
@@ -311,7 +304,7 @@ class LRRCategoriesViewModelTest {
 
         vm.deleteCategory("SET_aaaaaaaaaa")
 
-        awaitCondition { events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess } }
+        awaitUntil { events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess } }
         assertTrue("Should emit ShowSuccess",
             events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess })
     }
@@ -325,7 +318,7 @@ class LRRCategoriesViewModelTest {
 
         vm.deleteCategory("nonexistent")
 
-        awaitCondition { events.isNotEmpty() }
+        awaitUntil { events.isNotEmpty() }
         assertTrue("Should emit ShowError on 404",
             events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowError })
     }
