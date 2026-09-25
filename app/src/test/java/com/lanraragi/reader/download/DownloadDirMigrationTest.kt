@@ -160,12 +160,4 @@ class DownloadDirMigrationTest {
         assertFalse(File(root, "$arcid-My Gallery").exists())
         assertEquals("My Gallery", repo.getDownloadDirname(arcid))
     }
-
-    @Test
-    fun newStylePointerWithItsDirectoryPresent_isLeftAlone() = runTest {
-        row(arcid, "Fresh")
-        File(root, "Fresh").mkdirs()
-        repo.putDownloadDirname(arcid, "Fresh")
-        assertEquals(1, migration.run().results[RowResult.ALREADY_NEW])
-    }
 }

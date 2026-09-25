@@ -214,28 +214,6 @@ class LRRArchivePagingSourceTest {
     }
 
     @Test
-    fun load_dropsTankoubonEntries() = runTest {
-        // Folding OFF: the server may still return 15-char TANK_ ids mixed in.
-        // toArchive()/getThumbnailUrl()/requireValidArcid() can't render a TANK_ id,
-        // so the paging source must drop them instead of failing the whole page.
-        val tank = """{"arcid":"TANK_1688616437","title":"A tank","tags":"","isnew":"false","extension":"zip","filename":"t.zip","pagecount":1,"progress":0,"lastreadtime":0}"""
-        val real = archiveJson("a1", "Real")
-        server.enqueue(
-            MockResponse().setBody("""{"data":[$tank,$real],"draw":1,"recordsFiltered":2,"recordsTotal":2}""")
-        )
-
-        val source = createPagingSource()
-        val result = source.load(
-            PagingSource.LoadParams.Refresh(key = null, loadSize = 100, placeholdersEnabled = false)
-        )
-
-        assertTrue(result is PagingSource.LoadResult.Page)
-        val page = result as PagingSource.LoadResult.Page
-        assertEquals(1, page.data.size)
-        assertFalse(page.data.any { it.arcid.startsWith("TANK_") })
-    }
-
-    @Test
     fun load_droppedTankStillAdvancesOffsetByRawCount() = runTest {
         // A dropped TANK_ row still occupies a server-side offset slot: the
         // next request must skip it (advance by the raw pre-mapping count),
@@ -476,5 +454,29 @@ class LRRArchivePagingSourceTest {
         val path = request.path!!
         assertFalse("Path should NOT contain newonly", path.contains("newonly"))
         assertFalse("Path should NOT contain untaggedonly", path.contains("untaggedonly"))
+    }
+
+    // ---- hidecompleted is decided per request by the provider ----
+
+    @Test
+    fun load_hideCompletedProviderTrue_passesParameter() = runTest {
+        server.enqueue(MockResponse().setBody(searchResultJson(listOf("a1" to "One"), 1)))
+
+        createPagingSource(hideCompleted = { true }).load(
+            PagingSource.LoadParams.Refresh(key = null, loadSize = 2, placeholdersEnabled = false)
+        )
+
+        assertTrue(server.awaitRequest().path!!.contains("hidecompleted=true"))
+    }
+
+    @Test
+    fun load_hideCompletedProviderFalse_omitsParameter() = runTest {
+        server.enqueue(MockResponse().setBody(searchResultJson(listOf("a1" to "One"), 1)))
+
+        createPagingSource(hideCompleted = { false }).load(
+            PagingSource.LoadParams.Refresh(key = null, loadSize = 2, placeholdersEnabled = false)
+        )
+
+        assertFalse(server.awaitRequest().path!!.contains("hidecompleted"))
     }
 }

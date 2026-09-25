@@ -69,9 +69,6 @@ object ServiceRegistry {
      * Install test doubles for any subset of modules. Any module left `null` keeps
      * whatever was previously installed (typically nothing in a fresh test), allowing
      * callers to layer mocks on top of a previous [initializeForTest] call.
-     *
-     * Use [com.lanraragi.reader.TestServiceRegistryHelper] for the common case of
-     * wiring an in-memory database + a `MockWebServer`-backed OkHttp client.
      */
     @androidx.annotation.VisibleForTesting
     fun initializeForTest(

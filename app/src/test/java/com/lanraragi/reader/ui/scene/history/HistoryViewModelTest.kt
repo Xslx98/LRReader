@@ -4,7 +4,6 @@ import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.LegacyDb
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.dao.AppDatabase
@@ -62,10 +61,6 @@ class HistoryViewModelTest {
             .setQueryExecutor { it.run() }
             .setTransactionExecutor { it.run() }
             .build()
-
-        val dbField = LegacyDb::class.java.getDeclaredField("sDatabase")
-        dbField.isAccessible = true
-        dbField.set(LegacyDb, db)
 
         // Provide a DataModule with HistoryRepository so the ViewModel can resolve it
         ServiceRegistry.initializeForTest(

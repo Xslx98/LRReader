@@ -1,35 +1,30 @@
 package com.lanraragi.reader.ui.scene
 
+import com.lanraragi.reader.stubAppModule
+import com.lanraragi.reader.stubNetworkModule
+import com.lanraragi.reader.awaitUntil
+import com.lanraragi.reader.collectInto
 import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.LegacyDb
-import com.lanraragi.reader.AppProxySelector
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.MiscRoomDao
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.dao.SearchHistoryRepository
 import com.lanraragi.reader.dao.ServerProfile
-import com.lanraragi.reader.module.IAppModule
 import com.lanraragi.reader.module.IDataModule
-import com.lanraragi.reader.module.INetworkModule
-import com.lanraragi.reader.module.NetworkMonitor
 import com.lanraragi.reader.client.api.LRRAuthManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.onSubscription
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
-import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -43,7 +38,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
-import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 
 /**
@@ -74,10 +68,6 @@ class ServerListViewModelTest {
             .allowMainThreadQueries()
             .build()
 
-        val field = LegacyDb::class.java.getDeclaredField("sDatabase")
-        field.isAccessible = true
-        field.set(LegacyDb, db)
-
         LRRAuthManager.initialize(ctx)
         LRRAuthManager.initializeForTesting(
             ctx.getSharedPreferences("server_vm_test", Context.MODE_PRIVATE)
@@ -88,28 +78,9 @@ class ServerListViewModelTest {
             .readTimeout(2, TimeUnit.SECONDS)
             .build()
 
-        val testNetworkModule = object : INetworkModule {
-            override val cache: Cache get() = Cache(File(ctx.cacheDir, "test-cache"), 1024)
-            override val proxySelector: AppProxySelector get() = throw UnsupportedOperationException()
-            override val okHttpClient: OkHttpClient = client
-            override val longReadClient: OkHttpClient = client
-            override val uploadClient: OkHttpClient = client
-            override val networkMonitor: NetworkMonitor get() = throw UnsupportedOperationException()
-        }
+        val testNetworkModule = stubNetworkModule(client, File(ctx.cacheDir, "test-cache"))
 
-        val testAppModule = object : IAppModule {
-            override fun getContext(): Context = ctx
-            override fun initialize() {}
-            override fun putGlobalStuff(o: Any): Int = 0
-            override fun containGlobalStuff(id: Int): Boolean = false
-            override fun getGlobalStuff(id: Int): Any? = null
-            override fun removeGlobalStuff(id: Int): Any? = null
-            override fun removeGlobalStuff(o: Any) {}
-            override fun putTempCache(key: String, o: Any): String = key
-            override fun containTempCache(key: String): Boolean = false
-            override fun getTempCache(key: String): Any? = null
-            override fun removeTempCache(key: String): Any? = null
-        }
+        val testAppModule = stubAppModule(ctx)
 
         val testDataModule = object : IDataModule {
             override val searchHistoryRepository get() = SearchHistoryRepository(db.browsingDao(), db)
@@ -142,43 +113,6 @@ class ServerListViewModelTest {
         LRRAuthManager.clear()
         db.close()
         server.shutdown()
-    }
-
-    private fun awaitCondition(timeoutMs: Long = 5000, condition: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (!condition() && System.currentTimeMillis() < deadline) {
-            Thread.sleep(50)
-        }
-        assertTrue("Condition not met within ${timeoutMs}ms", condition())
-    }
-
-    /**
-     * Start collecting [ServerListViewModel.uiEvent] and synchronously wait
-     * until the collector has actually subscribed before returning.
-     *
-     * `_uiEvent` is a MutableSharedFlow with replay = 0 and
-     * extraBufferCapacity = 4: a `tryEmit` issued while no subscribers are
-     * active is silently dropped, not buffered. The previous
-     * `eventScope.launch { collect { ... } }` pattern raced with the test
-     * body — on CI's slower scheduler the `collect` coroutine had not yet
-     * registered when `vm.deleteProfile(...)` fired, so the event was lost
-     * and [awaitCondition] timed out.
-     *
-     * [onSubscription] runs its callback after the flow registers the
-     * collector but before the first value is delivered, so completing the
-     * deferred there guarantees the subscription is live by the time this
-     * helper returns.
-     */
-    private fun collectEvents(vm: ServerListViewModel): CopyOnWriteArrayList<ServerListViewModel.ServerListUiEvent> {
-        val events = CopyOnWriteArrayList<ServerListViewModel.ServerListUiEvent>()
-        val subscribed = CompletableDeferred<Unit>()
-        eventScope.launch {
-            vm.uiEvent
-                .onSubscription { subscribed.complete(Unit) }
-                .collect { events.add(it) }
-        }
-        runBlocking { subscribed.await() }
-        return events
     }
 
     private fun insertProfile(name: String, url: String, isActive: Boolean = false): Long {
@@ -214,11 +148,11 @@ class ServerListViewModelTest {
         server.enqueue(MockResponse().setResponseCode(401).setBody("Unauthorized"))
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         // Explicit http:// scheme → single probe, no https ladder.
         vm.testAndAddProfile("X", server.url("").toString().removeSuffix("/"), "candidate-key", true)
 
-        awaitCondition {
+        awaitUntil {
             events.any { it is ServerListViewModel.ServerListUiEvent.AddConnectionFailed }
         }
         assertEquals("http://prior.example.com:3000", LRRAuthManager.getServerUrl())
@@ -240,11 +174,11 @@ class ServerListViewModelTest {
         )
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         val url = server.url("").toString().removeSuffix("/") // http://127.0.0.1:port (LAN)
         vm.testAndAddProfile("Mock", url, "k", allowCleartext = false)
 
-        awaitCondition {
+        awaitUntil {
             events.any { it is ServerListViewModel.ServerListUiEvent.ProfileAdded }
         }
 
@@ -272,11 +206,11 @@ class ServerListViewModelTest {
         )
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         val newUrl = server.url("").toString().removeSuffix("/")
         vm.testAndAddProfile("New", newUrl, "new-key", allowCleartext = true)
 
-        awaitCondition {
+        awaitUntil {
             events.any { it is ServerListViewModel.ServerListUiEvent.AddConnectionFailed }
         }
         assertEquals("global URL must stay on the old server", "https://old.example.com", LRRAuthManager.getServerUrl())
@@ -291,10 +225,10 @@ class ServerListViewModelTest {
         LRRAuthManager.simulateStorageUnavailableForTesting()
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         vm.testAndAddProfile("New", server.url("").toString().removeSuffix("/"), "new-key", true)
 
-        awaitCondition {
+        awaitUntil {
             events.any { it is ServerListViewModel.ServerListUiEvent.SecureStorageError }
         }
         val rows = runBlocking { db.miscDao().getAllServerProfiles() }
@@ -318,11 +252,11 @@ class ServerListViewModelTest {
         LRRAuthManager.simulateStorageUnavailableForTesting()
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         val newUrl = server.url("").toString().removeSuffix("/")
         vm.testAndSaveEditedProfile(profile, 0, "New Name", newUrl, "new-key", allowCleartext = true)
 
-        awaitCondition {
+        awaitUntil {
             events.any { it is ServerListViewModel.ServerListUiEvent.SecureStorageError }
         }
 
@@ -360,11 +294,11 @@ class ServerListViewModelTest {
         )
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         val newUrl = server.url("").toString().removeSuffix("/")
         vm.testAndSaveEditedProfile(profile, 0, "New Name", newUrl, "new-key", allowCleartext = true)
 
-        awaitCondition {
+        awaitUntil {
             events.any { it is ServerListViewModel.ServerListUiEvent.EditConnectionFailed }
         }
     }
@@ -392,11 +326,11 @@ class ServerListViewModelTest {
         )
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         val newUrl = server.url("").toString().removeSuffix("/")
         vm.testAndSaveEditedProfile(profile, 0, "New Name", newUrl, "new-key", allowCleartext = true)
 
-        awaitCondition {
+        awaitUntil {
             events.any { it is ServerListViewModel.ServerListUiEvent.EditConnectionFailed }
         }
         assertEquals("global URL must stay on the old server", "https://old.example.com", LRRAuthManager.getServerUrl())
@@ -421,11 +355,11 @@ class ServerListViewModelTest {
         )
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         val newUrl = server.url("").toString().removeSuffix("/") // explicit http LAN, no fallback
         vm.testAndSaveEditedProfile(profile, 0, "New", newUrl, "k", allowCleartext = true)
 
-        awaitCondition {
+        awaitUntil {
             events.any { it is ServerListViewModel.ServerListUiEvent.EditSaved }
         }
 
@@ -444,7 +378,7 @@ class ServerListViewModelTest {
         val vm = ServerListViewModel()
         vm.loadProfiles()
 
-        awaitCondition { vm.profiles.value.size == 2 }
+        awaitUntil { vm.profiles.value.size == 2 }
         assertTrue("First profile should be active", vm.profiles.value[0].isActive)
         assertFalse("Second profile should be inactive", vm.profiles.value[1].isActive)
         assertEquals("Active", vm.profiles.value[0].name)
@@ -459,11 +393,11 @@ class ServerListViewModelTest {
         val profileB = ServerProfile(id = id2, name = "B", url = "https://b.com", isActive = false)
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.activateProfile(profileB)
 
-        awaitCondition { events.any { it is ServerListViewModel.ServerListUiEvent.ProfileActivated } }
+        awaitUntil { events.any { it is ServerListViewModel.ServerListUiEvent.ProfileActivated } }
 
         val allProfiles = runBlocking { db.miscDao().getAllServerProfiles() }
         val profileAFromDb = allProfiles.find { it.id == id1 }
@@ -488,11 +422,11 @@ class ServerListViewModelTest {
 
         val vm = ServerListViewModel()
         vm.loadProfiles()
-        awaitCondition { vm.profiles.value.size == 1 }
+        awaitUntil { vm.profiles.value.size == 1 }
 
         vm.deleteProfile(profile)
 
-        awaitCondition { runBlocking { historyRepo.recentSearches(id) }.isEmpty() }
+        awaitUntil { runBlocking { historyRepo.recentSearches(id) }.isEmpty() }
     }
 
     @Test
@@ -504,10 +438,10 @@ class ServerListViewModelTest {
 
         val vm = ServerListViewModel()
         vm.loadProfiles()
-        awaitCondition { vm.profiles.value.size == 2 }
+        awaitUntil { vm.profiles.value.size == 2 }
 
         vm.deleteProfile(toDelete)
-        awaitCondition { vm.profiles.value.size == 1 }
+        awaitUntil { vm.profiles.value.size == 1 }
 
         assertEquals("Keep", vm.profiles.value[0].name)
     }
@@ -520,11 +454,11 @@ class ServerListViewModelTest {
         LRRAuthManager.simulateStorageUnavailableForTesting()
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.deleteProfile(profile)
 
-        awaitCondition { events.isNotEmpty() }
+        awaitUntil { events.isNotEmpty() }
         assertTrue("Should emit SecureStorageError",
             events.any { it is ServerListViewModel.ServerListUiEvent.SecureStorageError })
 

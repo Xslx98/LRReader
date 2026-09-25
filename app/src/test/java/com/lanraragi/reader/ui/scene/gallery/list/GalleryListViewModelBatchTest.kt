@@ -2,11 +2,9 @@ package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.AppProxySelector
+import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.event.AppEventBus
-import com.lanraragi.reader.module.INetworkModule
-import com.lanraragi.reader.module.NetworkMonitor
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.lanraragi.reader.domain.Archive
@@ -23,7 +21,6 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.withTimeout
-import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
@@ -84,14 +81,7 @@ class GalleryListViewModelBatchTest {
             .readTimeout(5, TimeUnit.SECONDS)
             .writeTimeout(5, TimeUnit.SECONDS)
             .build()
-        val testNetworkModule = object : INetworkModule {
-            override val cache: Cache get() = Cache(File(ctx.cacheDir, "batch-test-cache"), 1024)
-            override val proxySelector: AppProxySelector get() = throw UnsupportedOperationException()
-            override val okHttpClient: OkHttpClient = client
-            override val longReadClient: OkHttpClient = client
-            override val uploadClient: OkHttpClient = client
-            override val networkMonitor: NetworkMonitor get() = throw UnsupportedOperationException()
-        }
+        val testNetworkModule = stubNetworkModule(client, File(ctx.cacheDir, "batch-test-cache"))
         ServiceRegistry.initializeForTest(network = testNetworkModule)
     }
 
