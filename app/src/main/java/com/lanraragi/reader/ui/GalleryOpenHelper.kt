@@ -112,7 +112,7 @@ object GalleryOpenHelper {
         // dir is only used when there is no network to stream from.
         val downloadDir = getLocalDownloadDir(context, archive)
         val localComplete = downloadDir != null &&
-            (knownComplete ?: isLocalCopyComplete(downloadDir, archive.pagecount))
+            (knownComplete ?: DownloadDirResolver.isLocalCopyComplete(downloadDir, archive.pagecount))
         val networkAvailable = ServiceRegistry.networkModule.networkMonitor.isAvailable
         if (downloadDir != null && (localComplete || !networkAvailable)) {
             if (!localComplete && BuildConfig.DEBUG) {
@@ -154,7 +154,7 @@ object GalleryOpenHelper {
                 Log.i(
                     TAG,
                     "[ROUTE] incomplete local copy for arcid=${archive.arcid}" +
-                        " (${countImageFiles(downloadDir)}/${archive.pagecount})," +
+                        " (${DownloadDirResolver.countImageFiles(downloadDir)}/${archive.pagecount})," +
                         " streaming from server in hybrid mode"
                 )
             }
@@ -213,17 +213,4 @@ object GalleryOpenHelper {
     @JvmStatic
     suspend fun getLocalDownloadDir(context: Context, archive: Archive): File? =
         DownloadDirResolver.localDownloadDir(context, archive)
-
-    /** See [DownloadDirResolver.hasImageFiles]. */
-    @JvmStatic
-    fun hasImageFiles(dir: File): Boolean = DownloadDirResolver.hasImageFiles(dir)
-
-    /** See [DownloadDirResolver.countImageFiles]. */
-    @JvmStatic
-    fun countImageFiles(dir: File): Int = DownloadDirResolver.countImageFiles(dir)
-
-    /** See [DownloadDirResolver.isLocalCopyComplete]. */
-    @JvmStatic
-    fun isLocalCopyComplete(dir: File, expectedPages: Int): Boolean =
-        DownloadDirResolver.isLocalCopyComplete(dir, expectedPages)
 }

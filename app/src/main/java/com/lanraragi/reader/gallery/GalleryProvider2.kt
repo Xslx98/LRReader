@@ -65,7 +65,7 @@ abstract class GalleryProvider2 : GalleryProvider() {
 
     companion object {
         // Single source of truth for "is this a local page file", shared by
-        // routing (GalleryOpenHelper.hasImageFiles) and the reader's dir
+        // routing (DownloadDirResolver.hasImageFiles) and the reader's dir
         // lister (DirImageFiles). Keep it a subset
         // of what the download worker writes AND what the system decoder reads
         // (Image.kt: ImageDecoder/BitmapFactory). Extensions include the dot.
