@@ -81,8 +81,13 @@ class OrderedPageWindowTest {
                 if (i == 0) gate.await()
             }
         }
-        // Let the free workers drain everything they can while page 0 blocks.
-        delay(300)
+        // Wait until the free workers have reached the window edge (pages
+        // 0..workers-1 started), then give a window-violating implementation
+        // a moment to issue a page past it before sampling.
+        withTimeout(5_000) {
+            while (!started.containsAll((0 until workers).toList())) delay(5)
+        }
+        delay(200)
         maxStartedWhileBlocked.set(started.max())
         gate.complete(Unit)
         withTimeout(5_000) { run.join() }
@@ -105,8 +110,11 @@ class OrderedPageWindowTest {
 
     @Test
     fun zeroPagesCompletesImmediately() = runBlocking {
-        OrderedPageWindow.run(scope, total = 0, workers = 8, isCancelled = { false }) {
-            error("must not be called")
+        // A regression that waits for pages that never come must fail, not hang the suite.
+        withTimeout(5_000) {
+            OrderedPageWindow.run(scope, total = 0, workers = 8, isCancelled = { false }) {
+                error("must not be called")
+            }
         }
     }
 }
