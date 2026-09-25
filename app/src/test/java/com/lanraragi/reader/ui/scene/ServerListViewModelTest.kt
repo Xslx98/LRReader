@@ -8,7 +8,6 @@ import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.LegacyDb
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.MiscRoomDao
@@ -68,10 +67,6 @@ class ServerListViewModelTest {
         db = Room.inMemoryDatabaseBuilder(ctx, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-
-        val field = LegacyDb::class.java.getDeclaredField("sDatabase")
-        field.isAccessible = true
-        field.set(LegacyDb, db)
 
         LRRAuthManager.initialize(ctx)
         LRRAuthManager.initializeForTesting(

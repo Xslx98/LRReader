@@ -6,7 +6,6 @@ import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.LegacyDb
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.dao.AppDatabase
@@ -83,10 +82,6 @@ class ServerConfigViewModelTest {
             .setQueryExecutor { it.run() }
             .setTransactionExecutor { it.run() }
             .build()
-
-        val dbField = LegacyDb::class.java.getDeclaredField("sDatabase")
-        dbField.isAccessible = true
-        dbField.set(LegacyDb, db)
 
         server = MockWebServer()
         server.start()

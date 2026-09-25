@@ -3,7 +3,6 @@ package com.lanraragi.reader.download
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.LegacyDb
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.client.api.LRRAuthManager
@@ -29,9 +28,8 @@ import com.lanraragi.reader.download.DownloadState
 /**
  * Unit tests for [DownloadRepository] — collection management and DB persistence.
  *
- * Uses Robolectric for Android Context + an in-memory Room database injected
- * into [LegacyDb] via reflection to avoid the AppDatabase singleton cache and
- * the Settings dependency in [LegacyDb.initialize].
+ * Uses Robolectric for Android Context + an in-memory Room database served
+ * through a test DataModule.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], application = android.app.Application::class)
@@ -46,7 +44,7 @@ class DownloadRepositoryTest {
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
 
-        // Initialize Settings (needed by LegacyDb internals)
+        // Initialize Settings
         Settings.initialize(context)
 
         // Initialize CoroutineModule for ServiceRegistry
@@ -78,11 +76,6 @@ class DownloadRepositoryTest {
             .setQueryExecutor { it.run() }
             .setTransactionExecutor { it.run() }
             .build()
-
-        // Inject into LegacyDb via reflection
-        val dbField = LegacyDb::class.java.getDeclaredField("sDatabase")
-        dbField.isAccessible = true
-        dbField.set(LegacyDb, db)
 
         ServiceRegistry.initializeForTest(
             data = object : com.lanraragi.reader.module.IDataModule {

@@ -7,7 +7,6 @@ import com.lanraragi.reader.awaitUntil
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.LegacyDb
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.module.IDataModule
@@ -58,9 +57,6 @@ class GalleryListViewModelUploadTest {
         db = Room.inMemoryDatabaseBuilder(ctx, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        val field = LegacyDb::class.java.getDeclaredField("sDatabase")
-        field.isAccessible = true
-        field.set(LegacyDb, db)
 
         LRRAuthManager.initialize(ctx)
         LRRAuthManager.initializeForTesting(

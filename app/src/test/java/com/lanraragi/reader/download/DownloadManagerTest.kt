@@ -4,7 +4,6 @@ import com.lanraragi.reader.awaitUntil
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.LegacyDb
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.mapper.toArchive
@@ -32,9 +31,8 @@ import com.lanraragi.reader.download.DownloadState
 /**
  * Unit tests for [DownloadManager] — the core download state management class.
  *
- * Uses Robolectric for Android Context + an in-memory Room database injected
- * into [LegacyDb] via reflection to avoid the AppDatabase singleton cache and
- * the Settings dependency in [LegacyDb.initialize].
+ * Uses Robolectric for Android Context + an in-memory Room database served
+ * through a test DataModule.
  */
 
 @RunWith(RobolectricTestRunner::class)
@@ -92,14 +90,9 @@ class DownloadManagerTest {
             .setTransactionExecutor { it.run() }
             .build()
 
-        // Inject into LegacyDb via reflection (bypass LegacyDb.initialize which has Settings dependency)
-        val dbField = LegacyDb::class.java.getDeclaredField("sDatabase")
-        dbField.isAccessible = true
-        dbField.set(LegacyDb, db)
-
         // Provide a DataModule with downloadDbRepository so that
         // DownloadRepository (the in-memory layer) can resolve DB operations
-        // through ServiceRegistry instead of the deprecated LegacyDb methods.
+        // through ServiceRegistry.
         ServiceRegistry.initializeForTest(
             data = object : com.lanraragi.reader.module.IDataModule {
                 override val searchHistoryRepository get() = throw NotImplementedError("not needed")
