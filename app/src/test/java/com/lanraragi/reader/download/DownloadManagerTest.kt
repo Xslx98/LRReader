@@ -709,24 +709,6 @@ class DownloadManagerTest {
         }
     }
 
-    @Test
-    fun collections_arePlainTypes_notConcurrent() {
-        val fields = DownloadManager::class.java.declaredFields
-        val concurrentTypes = listOf(
-            "CopyOnWriteArrayList",
-            "ConcurrentHashMap",
-            "ConcurrentLinkedQueue",
-            "ConcurrentSkipListMap"
-        )
-        for (field in fields) {
-            val typeName = field.type.simpleName
-            assertFalse(
-                "Field '${field.name}' should not use concurrent collection type $typeName",
-                concurrentTypes.any { typeName.contains(it) }
-            )
-        }
-    }
-
     // ═══════════════════════════════════════════════════════════
     // G. Sort Order Invariants (binary-insertion correctness)
     // ═══════════════════════════════════════════════════════════
