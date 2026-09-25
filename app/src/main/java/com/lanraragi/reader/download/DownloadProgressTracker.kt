@@ -76,13 +76,6 @@ class DownloadProgressTracker {
         _progressFlow.value = _progressFlow.value.toMutableMap().apply { remove(arcid) }
     }
 
-    /** Remove all entries. Used by [DownloadManager.reload]. */
-    fun clearAll() {
-        assertMainThread()
-        if (_progressFlow.value.isEmpty()) return
-        _progressFlow.value = emptyMap()
-    }
-
     private fun assertMainThread() {
         // Unit tests run without an Android Looper; skip the check when no
         // main looper is available (tests exercise single-threaded).

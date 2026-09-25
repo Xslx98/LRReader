@@ -52,25 +52,6 @@ class HistoryRepository(
         trimHistory(listOf(archive.serverProfileId))
     }
 
-    suspend fun putHistoryInfoList(historyInfoList: List<HistoryInfo>) {
-        if (historyInfoList.isEmpty()) return
-        // Single DAO transaction: a legacy import of N rows is one commit,
-        // not N (the per-row loop paid N fsyncs).
-        dao.upsertHistoryBatch(
-            historyInfoList.map { info ->
-                HistoryUpsertRow(
-                    arcid = info.arcid,
-                    serverProfileId = info.serverProfileId,
-                    archiveJson = info.toArchive().toArchiveJson(),
-                    historyTime = info.time,
-                    historyMode = info.mode,
-                )
-            },
-            ::mergeSnapshotJson,
-        )
-        trimHistory(historyInfoList.map { it.serverProfileId })
-    }
-
     /** Outcome of [foldMembersIntoTank]: which member rows lost their history flag. */
     class TankFoldResult(val foldedArcids: List<String>, val tankHistoryTime: Long)
 

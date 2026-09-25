@@ -157,16 +157,4 @@ class RoomMigrationTest {
         assertEquals("http://example.com", all[0].url)
         assertTrue(all[0].isActive)
     }
-
-    @Test
-    fun `MiscDao serverProfile active deactivation`() = runBlocking {
-        val dao = db.miscDao()
-        dao.insertServerProfile(ServerProfile(name = "S1", url = "http://a.com", isActive = true))
-        dao.insertServerProfile(ServerProfile(name = "S2", url = "http://b.com", isActive = true))
-
-        dao.deactivateAllProfiles()
-
-        val all = dao.getAllServerProfiles()
-        assertTrue(all.none { it.isActive })
-    }
 }

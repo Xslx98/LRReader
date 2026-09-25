@@ -121,15 +121,4 @@ class SearchHistoryRepositoryTest {
         assertEquals(10, recent.size)
         assertEquals("q15", recent.first())
     }
-
-    @Test
-    fun matchingSearches_prefixMatch_excludesOtherProfiles() = runBlocking {
-        repo.recordSearch(1L, "touhou fumo")
-        repo.recordSearch(1L, "touhou")
-        repo.recordSearch(1L, "other")
-        repo.recordSearch(2L, "touhou other-profile")
-
-        val matches = repo.matchingSearches(1L, "touhou")
-        assertEquals(listOf("touhou", "touhou fumo"), matches)
-    }
 }

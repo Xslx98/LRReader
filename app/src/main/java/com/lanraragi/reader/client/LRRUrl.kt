@@ -165,11 +165,6 @@ object LRRUrl {
     }
 
     @JvmStatic
-    fun getPageUrl(gid: Long, index: Int, pToken: String?): String {
-        return getHost() + "s/" + pToken + '/' + gid + '-' + (index + 1)
-    }
-
-    @JvmStatic
     fun getAddFavorites(gid: Long, arcid: String?): String {
         return getHost() + "gallerypopups.php?gid=" + gid + "&t=" + arcid + "&act=addfav"
     }

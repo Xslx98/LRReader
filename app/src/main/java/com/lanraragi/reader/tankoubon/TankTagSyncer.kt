@@ -24,9 +24,6 @@ object TankTagSyncer {
     /** Tank tags + member raw tags captured BEFORE a removal (rule 3 needs "before"). */
     class Snapshot(val tankId: String, val tankName: String, val tankTags: String?, val memberTags: Map<String, String>)
 
-    /** Event sink; replaceable for tests. */
-    internal var failureSink: (TankTagSyncFailedEvent) -> Unit = { AppEventBus.postTankTagSyncFailedEvent(it) }
-
     /** Reads the tank's current tags and member tags, or null when the fetch fails (no event: nothing was written). */
     suspend fun snapshot(client: OkHttpClient, baseUrl: String, tankId: String): Snapshot? = try {
         toSnapshot(LRRTankoubonApi.getTankoubonFull(client, baseUrl, tankId).result)
@@ -111,7 +108,7 @@ object TankTagSyncer {
             throw e
         } catch (ignored: Exception) {
             Log.w(TAG, "tank tag write failed")
-            failureSink(TankTagSyncFailedEvent(snap.tankId, snap.tankName))
+            AppEventBus.postTankTagSyncFailedEvent(TankTagSyncFailedEvent(snap.tankId, snap.tankName))
             false
         }
     }

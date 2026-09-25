@@ -99,6 +99,16 @@ class TagParserTest {
     }
 
     @Test
+    fun toLrrTagString_skipsBlankTagsAndEmptyGroups() {
+        val groups = listOf(
+            TagGroup("artist", listOf("picasso", "", "  ", "monet")),
+            TagGroup("parody", emptyList()),
+        )
+        assertEquals("artist:picasso, artist:monet", toLrrTagString(groups, emptySet()))
+        assertEquals("", toLrrTagString(emptyList(), emptySet()))
+    }
+
+    @Test
     fun toLrrTagString_keepsExplicitMiscTags() {
         val raw = "misc:kept, bare"
         val groups = parseLrrTagString(raw).map { (ns, values) -> TagGroup(ns, values) }

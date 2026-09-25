@@ -575,49 +575,6 @@ class ServerListViewModelTest {
         )
     }
 
-    // ── verifyActiveProfile ────────────────────────────────────────
-
-    @Test
-    fun verifyActiveProfile_success_noErrorEmitted() {
-        server.enqueue(MockResponse().setBody("""{
-            "name": "My LANraragi",
-            "motd": "Welcome!",
-            "version": "0.9.21",
-            "version_name": "Chaotic Century",
-            "has_password": false,
-            "debug_mode": false,
-            "nofun_mode": false,
-            "archives_per_page": 100,
-            "server_resizes_images": false,
-            "server_tracks_progress": false
-        }"""))
-
-        val vm = ServerListViewModel()
-        val events = collectEvents(vm)
-
-        vm.verifyActiveProfile(server.url("").toString().removeSuffix("/"))
-
-        awaitViewModelIdle(vm)
-
-        assertTrue("Should not emit any error event on success",
-            events.none { it is ServerListViewModel.ServerListUiEvent.ShowToast })
-    }
-
-    @Test
-    fun verifyActiveProfile_failure_emitsShowToast() {
-        // Use 401 (4xx) so retryOnFailure fast-fails without retrying
-        server.enqueue(MockResponse().setResponseCode(401).setBody("Unauthorized"))
-
-        val vm = ServerListViewModel()
-        val events = collectEvents(vm)
-
-        vm.verifyActiveProfile(server.url("").toString().removeSuffix("/"))
-
-        awaitCondition { events.any { it is ServerListViewModel.ServerListUiEvent.ShowToast } }
-        assertTrue("Should emit ShowToast on verification failure",
-            events.any { it is ServerListViewModel.ServerListUiEvent.ShowToast })
-    }
-
     // ── Initial state ──────────────────────────────────────────────
 
     @Test

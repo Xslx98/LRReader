@@ -15,8 +15,6 @@
  */
 package com.lanraragi.reader.dao
 
-import android.os.Parcel
-import android.os.Parcelable
 
 /**
  * In-memory view over the history subsystem of an `ARCHIVE_LOCAL_STATE`
@@ -27,7 +25,7 @@ import android.os.Parcelable
  * columns are non-null when the archive is in reading history). The
  * repository layer translates between this view and the unified row.
  */
-class HistoryInfo() : Parcelable {
+class HistoryInfo {
 
     @JvmField
     var arcid: String = ""
@@ -56,38 +54,4 @@ class HistoryInfo() : Parcelable {
     /** Display tags; populated by the mapper from Archive.flatTags. */
     @JvmField
     var simpleTags: Array<String>? = null
-
-    private constructor(`in`: Parcel) : this() {
-        arcid = `in`.readString() ?: ""
-        title = `in`.readString()
-        thumb = `in`.readString()
-        rating = `in`.readFloat()
-        simpleLanguage = `in`.readString()
-        serverProfileId = `in`.readLong()
-        mode = `in`.readInt()
-        time = `in`.readLong()
-        simpleTags = `in`.createStringArray()
-    }
-
-    override fun describeContents(): Int = 0
-
-    override fun writeToParcel(dest: Parcel, flags: Int) {
-        dest.writeString(arcid)
-        dest.writeString(title)
-        dest.writeString(thumb)
-        dest.writeFloat(rating)
-        dest.writeString(simpleLanguage)
-        dest.writeLong(serverProfileId)
-        dest.writeInt(mode)
-        dest.writeLong(time)
-        dest.writeStringArray(simpleTags)
-    }
-
-    companion object {
-        @JvmField
-        val CREATOR: Parcelable.Creator<HistoryInfo> = object : Parcelable.Creator<HistoryInfo> {
-            override fun createFromParcel(source: Parcel): HistoryInfo = HistoryInfo(source)
-            override fun newArray(size: Int): Array<HistoryInfo?> = arrayOfNulls(size)
-        }
-    }
 }

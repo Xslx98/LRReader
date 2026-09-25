@@ -27,32 +27,6 @@ object LRRDatabaseApi {
         com.lanraragi.reader.ServiceRegistry.networkModule.largeFileClient
 
     /**
-     * GET /api/database/stats — Get tag statistics.
-     */
-    @JvmStatic
-    suspend fun getDatabaseStats(
-        client: OkHttpClient,
-        baseUrl: String
-    ): String = withContext(Dispatchers.IO) {
-        val url = parseBaseUrl(baseUrl).newBuilder()
-            .addPathSegments("api/database/stats")
-            .build()
-        val request = Request.Builder()
-            .url(url)
-            .get()
-            .build()
-        client.newCall(request).await().use { response ->
-            ensureSuccess(response)
-            response.body?.string()
-                ?: throw LRREmptyBodyException()
-        }
-    }
-
-    @JvmStatic
-    suspend fun getDatabaseStats(): String =
-        getDatabaseStats(longCallClient(), LRRClientProvider.getBaseUrl())
-
-    /**
      * GET /api/database/stats — Get tag statistics as typed objects.
      */
     @JvmStatic
@@ -78,67 +52,4 @@ object LRRDatabaseApi {
     @JvmStatic
     suspend fun getTagStats(): List<LRRTagStat> =
         getTagStats(longCallClient(), LRRClientProvider.getBaseUrl())
-}
-
-/**
- * API class for LANraragi Shinobu (file watcher) operations.
- *
- * Endpoints:
- * - GET  /api/shinobu         — Get status
- * - POST /api/shinobu/stop    — Stop watcher (future)
- * - POST /api/shinobu/restart — Restart watcher
- */
-object LRRShinobuApi {
-
-    /**
-     * GET /api/shinobu — Get Shinobu (file watcher) status.
-     */
-    @JvmStatic
-    suspend fun getShinobuStatus(
-        client: OkHttpClient,
-        baseUrl: String
-    ): String = withContext(Dispatchers.IO) {
-        val url = parseBaseUrl(baseUrl).newBuilder()
-            .addPathSegments("api/shinobu")
-            .build()
-        val request = Request.Builder()
-            .url(url)
-            .get()
-            .build()
-        client.newCall(request).await().use { response ->
-            ensureSuccess(response)
-            response.body?.string()
-                ?: throw LRREmptyBodyException()
-        }
-    }
-
-    /**
-     * POST /api/shinobu/restart — Restart Shinobu.
-     */
-    @JvmStatic
-    suspend fun restartShinobu(
-        client: OkHttpClient,
-        baseUrl: String
-    ) = withContext(Dispatchers.IO) {
-        val url = parseBaseUrl(baseUrl).newBuilder()
-            .addPathSegments("api/shinobu/restart")
-            .build()
-        val request = Request.Builder()
-            .url(url)
-            .post(EMPTY_REQUEST_BODY)
-            .build()
-        client.newCall(request).await().use { response ->
-            ensureSuccess(response)
-        }
-    }
-
-    // ==================== Simplified overloads ====================
-
-    @JvmStatic
-    suspend fun getShinobuStatus(): String =
-        getShinobuStatus(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl())
-
-    @JvmStatic
-    suspend fun restartShinobu() =
-        restartShinobu(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl())
 }

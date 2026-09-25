@@ -103,13 +103,13 @@ class LegacyDbMergeOldDbTest {
         // helper closes, and the function returns cleanly without touching Room.
         LegacyDb.mergeOldDB(context)
 
-        // Verify the Room DB was not mutated as a side effect.
-        // Post-L1-4: legacy tables gone — check the unified
-        // ARCHIVE_LOCAL_STATE table for downloads / history /
-        // favorites, plus the still-distinct quick-search table.
-        assertTrue(db.archiveLocalStateDao().getAllDownloads().isEmpty())
-        assertTrue(db.archiveLocalStateDao().getAllHistory().isEmpty())
-        assertTrue(db.archiveLocalStateDao().getAllFavorites().isEmpty())
+        // Verify the Room DB was not mutated as a side effect: no row in the
+        // unified ARCHIVE_LOCAL_STATE table (any subsystem), and none in the
+        // still-distinct quick-search table.
+        db.openHelper.readableDatabase.query("SELECT COUNT(*) FROM ARCHIVE_LOCAL_STATE").use {
+            it.moveToFirst()
+            assertEquals(0, it.getInt(0))
+        }
         assertTrue(db.browsingDao().getAllQuickSearch().isEmpty())
     }
 
