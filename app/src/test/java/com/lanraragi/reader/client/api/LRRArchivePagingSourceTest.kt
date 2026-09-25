@@ -477,4 +477,28 @@ class LRRArchivePagingSourceTest {
         assertFalse("Path should NOT contain newonly", path.contains("newonly"))
         assertFalse("Path should NOT contain untaggedonly", path.contains("untaggedonly"))
     }
+
+    // ---- hidecompleted is decided per request by the provider ----
+
+    @Test
+    fun load_hideCompletedProviderTrue_passesParameter() = runTest {
+        server.enqueue(MockResponse().setBody(searchResultJson(listOf("a1" to "One"), 1)))
+
+        createPagingSource(hideCompleted = { true }).load(
+            PagingSource.LoadParams.Refresh(key = null, loadSize = 2, placeholdersEnabled = false)
+        )
+
+        assertTrue(server.awaitRequest().path!!.contains("hidecompleted=true"))
+    }
+
+    @Test
+    fun load_hideCompletedProviderFalse_omitsParameter() = runTest {
+        server.enqueue(MockResponse().setBody(searchResultJson(listOf("a1" to "One"), 1)))
+
+        createPagingSource(hideCompleted = { false }).load(
+            PagingSource.LoadParams.Refresh(key = null, loadSize = 2, placeholdersEnabled = false)
+        )
+
+        assertFalse(server.awaitRequest().path!!.contains("hidecompleted"))
+    }
 }
