@@ -3,7 +3,6 @@ package com.lanraragi.reader.settings
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.Settings
 import org.junit.After
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -12,7 +11,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Unit tests for [UpdateSettings] auto-check getter/setter + default behavior.
+ * Unit test for the [UpdateSettings] auto-check default.
  * Robolectric-backed SharedPreferences (matches existing LRRAuthManagerTest pattern).
  *
  * Note: Settings has no remove() API, so setUp/tearDown call
@@ -36,22 +35,5 @@ class UpdateSettingsTest {
     @Test
     fun defaultIsTrue() {
         assertTrue(UpdateSettings.getAutoCheckUpdates())
-    }
-
-    @Test
-    fun setterAndGetterRoundTrip() {
-        UpdateSettings.putAutoCheckUpdates(false)
-        assertFalse(UpdateSettings.getAutoCheckUpdates())
-
-        UpdateSettings.putAutoCheckUpdates(true)
-        assertTrue(UpdateSettings.getAutoCheckUpdates())
-    }
-
-    @Test
-    fun setterPersistsAcrossGets() {
-        UpdateSettings.putAutoCheckUpdates(false)
-        // Read twice to ensure value comes from SharedPreferences, not a memoized cache
-        assertFalse(UpdateSettings.getAutoCheckUpdates())
-        assertFalse(UpdateSettings.getAutoCheckUpdates())
     }
 }

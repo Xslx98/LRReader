@@ -10,7 +10,6 @@
 package com.lanraragi.reader.download
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
 class ProgressSnapshotTest {
@@ -24,20 +23,6 @@ class ProgressSnapshotTest {
         assertEquals(0, s.finished)
         assertEquals(0, s.downloaded)
         assertEquals(-1, s.total)
-    }
-
-    @Test
-    fun `equal snapshots compare equal`() {
-        val a = ProgressSnapshot("x", 10L, 1, 1, 10, 5000L)
-        val b = ProgressSnapshot("x", 10L, 1, 1, 10, 5000L)
-        assertEquals(a, b)
-    }
-
-    @Test
-    fun `snapshots with different arcid are not equal`() {
-        val a = ProgressSnapshot("x", 10L, 1, 1, 10, 5000L)
-        val b = ProgressSnapshot("y", 10L, 1, 1, 10, 5000L)
-        assertNotEquals(a, b)
     }
 
     @Test

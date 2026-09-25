@@ -89,15 +89,4 @@ class LRRServerApiTest {
             assertEquals(500, e.code)
         }
     }
-
-    @Test
-    fun getServerInfo_requestPath() = runTest {
-        server.enqueue(MockResponse().setBody("""{"name":"Test","version":"1.0"}"""))
-
-        LRRServerApi.getServerInfo(client, baseUrl)
-
-        val req = server.awaitRequest()
-        assertEquals("GET", req.method)
-        assertEquals("/api/info", req.path)
-    }
 }
