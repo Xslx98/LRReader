@@ -1,6 +1,7 @@
 package com.lanraragi.reader.ui.scene
 
 import com.lanraragi.reader.awaitUntil
+import com.lanraragi.reader.collectInto
 import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
@@ -15,15 +16,11 @@ import com.lanraragi.reader.ui.scene.TankoubonDetailViewModel.TankDetailUiEvent
 import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.onSubscription
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -159,16 +156,6 @@ class TankoubonDetailViewModelTest {
             """"archives":[$archives],"full_data":[$data]},"total":1,"filtered":1}"""
     }
 
-    private fun collectEvents(vm: TankoubonDetailViewModel): CopyOnWriteArrayList<TankDetailUiEvent> {
-        val events = CopyOnWriteArrayList<TankDetailUiEvent>()
-        val subscribed = CompletableDeferred<Unit>()
-        eventScope.launch {
-            vm.uiEvent.onSubscription { subscribed.complete(Unit) }.collect { events.add(it) }
-        }
-        runBlocking { subscribed.await() }
-        return events
-    }
-
     private fun loadedVm(): TankoubonDetailViewModel {
         val vm = TankoubonDetailViewModel()
         vm.baseUrlResolver = { LRRAuthManager.getServerUrl()!! }
@@ -181,7 +168,7 @@ class TankoubonDetailViewModelTest {
     @Test
     fun applyOrder_putsTheFullOrderAndUpdatesMembers() {
         val vm = loadedVm()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.applyOrder(listOf(ID_EP1, ID_EP2, ID_EXTRA), undoable = false)
 
@@ -196,7 +183,7 @@ class TankoubonDetailViewModelTest {
     @Test
     fun sortByTitle_putsEpisodeOrderAndEmitsPreviousOrderForUndo() {
         val vm = loadedVm()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.sortByTitle()
 
@@ -209,7 +196,7 @@ class TankoubonDetailViewModelTest {
     @Test
     fun reverseOrder_putsReversedOrder() {
         val vm = loadedVm()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.reverseOrder()
 
@@ -221,7 +208,7 @@ class TankoubonDetailViewModelTest {
     fun sortByTitle_whenAlreadySorted_reportsWithoutPut() {
         serverOrder = listOf(ID_EP1, ID_EP2, ID_EXTRA)
         val vm = loadedVm()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.sortByTitle()
 
@@ -235,7 +222,7 @@ class TankoubonDetailViewModelTest {
     fun applyOrder_failureRollsBackToServerOrderAndReportsError() {
         putStatus = 500
         val vm = loadedVm()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.sortByTitle()
 
@@ -248,7 +235,7 @@ class TankoubonDetailViewModelTest {
     @Test
     fun applyOrder_failureWithUnreachableServerStillRollsBackLocally() {
         val vm = loadedVm()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         server.shutdown()
 
         vm.sortByTitle()
