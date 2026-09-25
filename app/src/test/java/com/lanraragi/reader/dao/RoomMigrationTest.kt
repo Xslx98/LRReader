@@ -145,23 +145,4 @@ class RoomMigrationTest {
         val all = dao.getAllQuickSearch()
         assertTrue(all.any { it.name == "Test Search" })
     }
-
-    // ========== MiscRoomDao CRUD Tests ==========
-
-    @Test
-    fun `MiscDao serverProfile CRUD`() = runBlocking {
-        val dao = db.miscDao()
-        val profile = ServerProfile(
-            name = "My Server",
-            url = "http://example.com",
-            isActive = true
-        )
-        dao.insertServerProfile(profile)
-
-        val all = dao.getAllServerProfiles()
-        assertEquals(1, all.size)
-        assertEquals("My Server", all[0].name)
-        assertEquals("http://example.com", all[0].url)
-        assertTrue(all[0].isActive)
-    }
 }

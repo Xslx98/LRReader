@@ -1,17 +1,17 @@
 package com.lanraragi.reader.ui.scene.tankdetail
 
+import com.lanraragi.reader.stubAppModule
+import com.lanraragi.reader.stubNetworkModule
+import com.lanraragi.reader.awaitUntil
+import com.lanraragi.reader.collectInto
 import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.AppProxySelector
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.TagGroup
-import com.lanraragi.reader.module.IAppModule
-import com.lanraragi.reader.module.INetworkModule
-import com.lanraragi.reader.module.NetworkMonitor
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.LoadState
 import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.OfflineTank
@@ -19,14 +19,11 @@ import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -34,7 +31,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
-import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
@@ -150,27 +146,8 @@ class TankDetailViewModelTest {
         LRRAuthManager.initializeForTesting(ctx.getSharedPreferences("tank_detail_test", Context.MODE_PRIVATE))
         LRRAuthManager.setServerUrl(server.url("").toString().removeSuffix("/"))
 
-        val testNetworkModule = object : INetworkModule {
-            override val cache: Cache get() = Cache(File(ctx.cacheDir, "test-cache"), 1024)
-            override val proxySelector: AppProxySelector get() = throw UnsupportedOperationException()
-            override val okHttpClient: OkHttpClient = client
-            override val longReadClient: OkHttpClient = client
-            override val uploadClient: OkHttpClient = client
-            override val networkMonitor: NetworkMonitor get() = throw UnsupportedOperationException()
-        }
-        val testAppModule = object : IAppModule {
-            override fun getContext(): Context = ctx
-            override fun initialize() {}
-            override fun putGlobalStuff(o: Any): Int = 0
-            override fun containGlobalStuff(id: Int): Boolean = false
-            override fun getGlobalStuff(id: Int): Any? = null
-            override fun removeGlobalStuff(id: Int): Any? = null
-            override fun removeGlobalStuff(o: Any) {}
-            override fun putTempCache(key: String, o: Any): String = key
-            override fun containTempCache(key: String): Boolean = false
-            override fun getTempCache(key: String): Any? = null
-            override fun removeTempCache(key: String): Any? = null
-        }
+        val testNetworkModule = stubNetworkModule(client, File(ctx.cacheDir, "test-cache"))
+        val testAppModule = stubAppModule(ctx)
         ServiceRegistry.initializeForTest(network = testNetworkModule, app = testAppModule)
         eventScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     }
@@ -197,14 +174,6 @@ class TankDetailViewModelTest {
             """"total":1,"filtered":1}"""
     }
 
-    private fun awaitCondition(timeoutMs: Long = 5000, condition: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (!condition() && System.currentTimeMillis() < deadline) {
-            Thread.sleep(50)
-        }
-        assertTrue("Condition not met within ${timeoutMs}ms", condition())
-    }
-
     private fun newVm(offline: OfflineTank? = null): TankDetailViewModel {
         val vm = TankDetailViewModel()
         vm.baseUrlResolver = { LRRAuthManager.getServerUrl()!! }
@@ -224,7 +193,7 @@ class TankDetailViewModelTest {
     private val categoryCalls = CopyOnWriteArrayList<String>()
 
     private fun awaitSettled(vm: TankDetailViewModel) =
-        awaitCondition { vm.loadState.value !is LoadState.Loading && vm.loadState.value !is LoadState.Idle }
+        awaitUntil { vm.loadState.value !is LoadState.Loading && vm.loadState.value !is LoadState.Idle }
 
     @Test
     fun load_ordersMembersByArchivesAndComputesTotals() {
@@ -291,11 +260,11 @@ class TankDetailViewModelTest {
 
         vm.resetTags()
 
-        awaitCondition { putTags.size == 1 }
+        awaitUntil { putTags.size == 1 }
         assertEquals("rating:4, artist:foo", putTags.single())
-        awaitCondition { categoryCalls.isNotEmpty() }
+        awaitUntil { categoryCalls.isNotEmpty() }
         assertEquals(listOf("reset $TANK 3"), categoryCalls)
-        awaitCondition { vm.loadState.value is LoadState.Loaded && !vm.state.value!!.offline }
+        awaitUntil { vm.loadState.value is LoadState.Loaded && !vm.state.value!!.offline }
     }
 
     @Test
@@ -316,7 +285,7 @@ class TankDetailViewModelTest {
         val vm = newVm()
         vm.load()
         awaitSettled(vm)
-        awaitCondition { vm.favoriteState.value != null }
+        awaitUntil { vm.favoriteState.value != null }
 
         val fav = vm.favoriteState.value!!
         assertTrue(fav.isFavorited)
@@ -401,16 +370,6 @@ class TankDetailViewModelTest {
 
     // ---- rating (spec §4.2) ----
 
-    private fun collectErrors(vm: TankDetailViewModel): CopyOnWriteArrayList<String> {
-        val events = CopyOnWriteArrayList<String>()
-        val subscribed = CompletableDeferred<Unit>()
-        eventScope.launch {
-            vm.ratingError.onSubscription { subscribed.complete(Unit) }.collect { events.add(it) }
-        }
-        runBlocking { subscribed.await() }
-        return events
-    }
-
     private fun loadedVm(): TankDetailViewModel {
         val vm = newVm()
         vm.load()
@@ -430,11 +389,11 @@ class TankDetailViewModelTest {
 
         // Optimistic: the state shows the new rating before the PUT lands.
         assertEquals(2f, vm.state.value!!.rating, 0f)
-        awaitCondition { putTags.size == 1 }
+        awaitUntil { putTags.size == 1 }
         assertEquals("artist:foo, language:english, rating:⭐⭐", putTags.single())
         assertEquals(listOf("artist", "language", "rating"), vm.state.value!!.tagGroups.map { it.namespace })
         // The saved rating is announced to covered list scenes.
-        awaitCondition { ratingEvents.isNotEmpty() }
+        awaitUntil { ratingEvents.isNotEmpty() }
         assertEquals(2f, ratingEvents.single().rating, 0f)
         collector.cancel()
     }
@@ -443,11 +402,11 @@ class TankDetailViewModelTest {
     fun submitRating_failureRollsBackTagsAndReportsError() {
         putStatus = 500
         val vm = loadedVm()
-        val errors = collectErrors(vm)
+        val errors = vm.ratingError.collectInto(eventScope)
 
         vm.submitRating(1f)
 
-        awaitCondition { errors.size == 1 }
+        awaitUntil { errors.size == 1 }
         assertEquals("artist:foo, rating:4, language:english", vm.state.value!!.tags)
         assertEquals(4f, vm.state.value!!.rating, 0f)
     }
@@ -468,7 +427,7 @@ class TankDetailViewModelTest {
 
         vm.submitRating(0f)
 
-        awaitCondition { putTags.size == 1 }
+        awaitUntil { putTags.size == 1 }
         assertEquals("artist:foo, language:english", putTags.single())
         assertEquals(-1f, vm.state.value!!.rating, 0f)
     }
@@ -489,24 +448,14 @@ class TankDetailViewModelTest {
 
     // ---- delete (spec §4.8) ----
 
-    private fun collectEvents(vm: TankDetailViewModel): CopyOnWriteArrayList<TankDetailViewModel.Event> {
-        val events = CopyOnWriteArrayList<TankDetailViewModel.Event>()
-        val subscribed = CompletableDeferred<Unit>()
-        eventScope.launch {
-            vm.events.onSubscription { subscribed.complete(Unit) }.collect { events.add(it) }
-        }
-        runBlocking { subscribed.await() }
-        return events
-    }
-
     @Test
     fun deleteTank_deletesServerSideThenForgetsCoverAndDissolvesGroup() {
         val vm = loadedVm()
-        val events = collectEvents(vm)
+        val events = vm.events.collectInto(eventScope)
 
         vm.deleteTank()
 
-        awaitCondition { events.any { it is TankDetailViewModel.Event.Deleted } }
+        awaitUntil { events.any { it is TankDetailViewModel.Event.Deleted } }
         assertEquals(1, deletes.get())
         assertEquals(listOf(TANK), forgotten)
         assertEquals(listOf(TANK), dissolved)
@@ -517,11 +466,11 @@ class TankDetailViewModelTest {
     fun deleteTank_failureReportsErrorAndTouchesNothingLocal() {
         deleteStatus = 500
         val vm = loadedVm()
-        val events = collectEvents(vm)
+        val events = vm.events.collectInto(eventScope)
 
         vm.deleteTank()
 
-        awaitCondition { events.any { it is TankDetailViewModel.Event.Error } }
+        awaitUntil { events.any { it is TankDetailViewModel.Event.Error } }
         assertTrue(events.none { it is TankDetailViewModel.Event.Deleted })
         assertTrue(forgotten.isEmpty())
         assertTrue(dissolved.isEmpty())

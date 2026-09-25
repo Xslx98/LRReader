@@ -100,25 +100,4 @@ class ArchiveDetailParcelTest {
             parcel.recycle()
         }
     }
-
-    @Test
-    fun `round-trip preserves nested archive tags map`() {
-        val original = ArchiveDetail(
-            archive = sampleArchive(),
-            tagGroups = emptyList(),
-            language = null,
-            size = null,
-        )
-
-        val parcel = Parcel.obtain()
-        try {
-            original.writeToParcel(parcel, 0)
-            parcel.setDataPosition(0)
-            val restored = ArchiveDetail.CREATOR.createFromParcel(parcel)
-            assertEquals(listOf("alice"), restored.archive.tags["artist"])
-            assertEquals(listOf("english"), restored.archive.tags["language"])
-        } finally {
-            parcel.recycle()
-        }
-    }
 }

@@ -5,7 +5,6 @@ import androidx.collection.LruCache
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.framework.beerbelly.SimpleDiskCache
-import com.lanraragi.reader.LegacyDb
 import com.lanraragi.reader.FavouriteStatusRouter
 import java.io.File
 import com.lanraragi.reader.ServiceRegistry
@@ -84,10 +83,6 @@ class DownloadsViewModelTest {
             .setQueryExecutor { it.run() }
             .setTransactionExecutor { it.run() }
             .build()
-
-        val dbField = LegacyDb::class.java.getDeclaredField("sDatabase")
-        dbField.isAccessible = true
-        dbField.set(LegacyDb, db)
 
         LRRAuthManager.setServerUrl("http://localhost:3000")
 

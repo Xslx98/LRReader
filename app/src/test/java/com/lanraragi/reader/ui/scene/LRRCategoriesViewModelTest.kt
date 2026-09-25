@@ -2,26 +2,21 @@ package com.lanraragi.reader.ui.scene
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.AppProxySelector
+import com.lanraragi.reader.stubAppModule
+import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.module.IAppModule
-import com.lanraragi.reader.module.INetworkModule
-import com.lanraragi.reader.module.NetworkMonitor
+import com.lanraragi.reader.awaitUntil
+import com.lanraragi.reader.collectInto
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.data.LRRCategory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.onSubscription
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
-import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -44,7 +39,7 @@ import java.util.concurrent.TimeUnit
  * Uses MockWebServer to simulate the LANraragi category API and Robolectric
  * for Android context. ServiceRegistry is initialized with test modules.
  *
- * The ViewModel dispatches work to `Dispatchers.IO`. Tests use [awaitCondition]
+ * The ViewModel dispatches work to `Dispatchers.IO`. Tests use [awaitUntil]
  * to wait for IO-dispatched coroutines to complete.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -75,28 +70,9 @@ class LRRCategoriesViewModelTest {
         )
         LRRAuthManager.setServerUrl(server.url("").toString().removeSuffix("/"))
 
-        val testNetworkModule = object : INetworkModule {
-            override val cache: Cache get() = Cache(File(ctx.cacheDir, "test-cache"), 1024)
-            override val proxySelector: AppProxySelector get() = throw UnsupportedOperationException()
-            override val okHttpClient: OkHttpClient = client
-            override val longReadClient: OkHttpClient = client
-            override val uploadClient: OkHttpClient = client
-            override val networkMonitor: NetworkMonitor get() = throw UnsupportedOperationException()
-        }
+        val testNetworkModule = stubNetworkModule(client, File(ctx.cacheDir, "test-cache"))
 
-        val testAppModule = object : IAppModule {
-            override fun getContext(): Context = ctx
-            override fun initialize() {}
-            override fun putGlobalStuff(o: Any): Int = 0
-            override fun containGlobalStuff(id: Int): Boolean = false
-            override fun getGlobalStuff(id: Int): Any? = null
-            override fun removeGlobalStuff(id: Int): Any? = null
-            override fun removeGlobalStuff(o: Any) {}
-            override fun putTempCache(key: String, o: Any): String = key
-            override fun containTempCache(key: String): Boolean = false
-            override fun getTempCache(key: String): Any? = null
-            override fun removeTempCache(key: String): Any? = null
-        }
+        val testAppModule = stubAppModule(ctx)
 
         ServiceRegistry.initializeForTest(
             network = testNetworkModule,
@@ -115,37 +91,6 @@ class LRRCategoriesViewModelTest {
         server.shutdown()
     }
 
-    private fun awaitCondition(timeoutMs: Long = 5000, condition: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (!condition() && System.currentTimeMillis() < deadline) {
-            Thread.sleep(50)
-        }
-        assertTrue("Condition not met within ${timeoutMs}ms", condition())
-    }
-
-    /**
-     * Subscribe to [vm.uiEvent] on [eventScope] and **block until the
-     * subscription is actually live**. The ViewModel's SharedFlow has
-     * `replay = 0`, so an emission that fires before the collector is
-     * registered is silently dropped — a race that surfaced as a flaky
-     * `deleteCategory_error_emitsShowError` failure on slower CI runners.
-     * Always go through this helper instead of `eventScope.launch { collect }`
-     * directly when the test needs to observe a single subsequent emission.
-     */
-    private fun collectEvents(
-        vm: LRRCategoriesViewModel
-    ): CopyOnWriteArrayList<LRRCategoriesViewModel.CategoriesUiEvent> {
-        val events = CopyOnWriteArrayList<LRRCategoriesViewModel.CategoriesUiEvent>()
-        val subscribed = CompletableDeferred<Unit>()
-        eventScope.launch {
-            vm.uiEvent
-                .onSubscription { subscribed.complete(Unit) }
-                .collect { events.add(it) }
-        }
-        runBlocking { subscribed.await() }
-        return events
-    }
-
     // ── loadCategories ─────────────────────────────────────────────
 
     @Test
@@ -158,7 +103,7 @@ class LRRCategoriesViewModelTest {
         val vm = LRRCategoriesViewModel()
         vm.loadCategories()
 
-        awaitCondition { vm.categories.value.size == 2 }
+        awaitUntil { vm.categories.value.size == 2 }
         assertEquals("Favorites", vm.categories.value[0].name)
         assertEquals("Dynamic", vm.categories.value[1].name)
     }
@@ -174,7 +119,7 @@ class LRRCategoriesViewModelTest {
         val vm = LRRCategoriesViewModel(categoryNameSync = { synced.add(it) })
         vm.loadCategories()
 
-        awaitCondition { synced.isNotEmpty() }
+        awaitUntil { synced.isNotEmpty() }
         assertEquals(listOf("SET_aaaaaaaaaa", "c2"), synced.single().map { it.id })
     }
 
@@ -188,7 +133,7 @@ class LRRCategoriesViewModelTest {
         val vm = LRRCategoriesViewModel()
         vm.loadCategories()
 
-        awaitCondition { vm.categories.value.size == 2 }
+        awaitUntil { vm.categories.value.size == 2 }
         assertTrue("First item should be pinned", vm.categories.value[0].isPinned())
         assertFalse("Second item should not be pinned", vm.categories.value[1].isPinned())
         assertEquals("Pinned", vm.categories.value[0].name)
@@ -205,7 +150,7 @@ class LRRCategoriesViewModelTest {
         val vm = LRRCategoriesViewModel()
         vm.loadCategories()
 
-        awaitCondition { !vm.isLoading.value }
+        awaitUntil { !vm.isLoading.value }
         assertEquals("Should skip empty/null names", 1, vm.categories.value.size)
         assertEquals("Valid", vm.categories.value[0].name)
     }
@@ -220,7 +165,7 @@ class LRRCategoriesViewModelTest {
         vm.loadCategories()
         assertTrue("Should be loading after loadCategories call", vm.isLoading.value)
 
-        awaitCondition { !vm.isLoading.value }
+        awaitUntil { !vm.isLoading.value }
     }
 
     @Test
@@ -229,12 +174,12 @@ class LRRCategoriesViewModelTest {
         server.enqueue(MockResponse().setResponseCode(401).setBody("Unauthorized"))
 
         val vm = LRRCategoriesViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.loadCategories()
 
-        awaitCondition { !vm.isLoading.value }
-        awaitCondition { events.isNotEmpty() }
+        awaitUntil { !vm.isLoading.value }
+        awaitUntil { events.isNotEmpty() }
         assertTrue("Should have emitted an error event",
             events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowError })
     }
@@ -246,7 +191,7 @@ class LRRCategoriesViewModelTest {
         val vm = LRRCategoriesViewModel()
         vm.loadCategories()
 
-        awaitCondition { !vm.isLoading.value }
+        awaitUntil { !vm.isLoading.value }
         assertTrue("Categories should be empty", vm.categories.value.isEmpty())
     }
 
@@ -262,15 +207,15 @@ class LRRCategoriesViewModelTest {
         ]"""))
 
         val vm = LRRCategoriesViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.createCategory("NewCat", null, false)
 
-        awaitCondition { vm.categories.value.isNotEmpty() }
+        awaitUntil { vm.categories.value.isNotEmpty() }
         // The ShowSuccess event is delivered to the collector asynchronously
         // (on eventScope), so the categories reload completing does not imply
         // the event has landed in [events] yet — poll the event itself too.
-        awaitCondition { events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess } }
+        awaitUntil { events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess } }
         assertTrue("Should emit ShowSuccess",
             events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess })
         assertEquals(1, vm.categories.value.size)
@@ -287,13 +232,13 @@ class LRRCategoriesViewModelTest {
         ]"""))
 
         val vm = LRRCategoriesViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.editCategory("SET_aaaaaaaaaa", "Edited", null, true)
 
-        awaitCondition { vm.categories.value.isNotEmpty() }
+        awaitUntil { vm.categories.value.isNotEmpty() }
         // Same async event delivery as in the createCategory test above.
-        awaitCondition { events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess } }
+        awaitUntil { events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess } }
         assertTrue("Should emit ShowSuccess",
             events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess })
         assertEquals("Edited", vm.categories.value[0].name)
@@ -307,11 +252,11 @@ class LRRCategoriesViewModelTest {
         server.enqueue(MockResponse().setBody("[]"))
 
         val vm = LRRCategoriesViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.deleteCategory("SET_aaaaaaaaaa")
 
-        awaitCondition { events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess } }
+        awaitUntil { events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess } }
         assertTrue("Should emit ShowSuccess",
             events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess })
     }
@@ -321,11 +266,11 @@ class LRRCategoriesViewModelTest {
         server.enqueue(MockResponse().setResponseCode(404).setBody("Not Found"))
 
         val vm = LRRCategoriesViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.deleteCategory("nonexistent")
 
-        awaitCondition { events.isNotEmpty() }
+        awaitUntil { events.isNotEmpty() }
         assertTrue("Should emit ShowError on 404",
             events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowError })
     }

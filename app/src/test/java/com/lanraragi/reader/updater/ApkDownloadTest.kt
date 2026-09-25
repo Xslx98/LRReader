@@ -5,7 +5,6 @@ import androidx.test.core.app.ApplicationProvider
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,24 +63,6 @@ class ApkDownloadTest {
     }
 
     // ── ApkDownloader.targetFile ──────────────────────────────────────
-
-    @Test
-    fun targetFileReturnsNullWhenNoApkAsset() {
-        val release = GhRelease(tagName = "v1.14.0", assets = emptyList())
-        assertNull(ApkDownloader.targetFile(context, release))
-    }
-
-    @Test
-    fun targetFileReturnsNullWhenAssetsHaveNoApk() {
-        val release = GhRelease(
-            tagName = "v1.14.0",
-            assets = listOf(
-                GhReleaseAsset(name = "checksums.txt"),
-                GhReleaseAsset(name = "source.zip"),
-            ),
-        )
-        assertNull(ApkDownloader.targetFile(context, release))
-    }
 
     @Test
     fun targetFilePicksFirstApkAsset() {

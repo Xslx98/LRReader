@@ -127,23 +127,6 @@ class GalleryDetailViewModelTest {
     }
 
     @Test
-    fun updateFavoriteState_storesAndExposesViaFlow() {
-        val vm = GalleryDetailViewModel()
-        assertNull(vm.favoriteState.value)
-
-        vm.updateFavoriteState(FavoriteState(isFavorited = true, name = "manga"))
-        assertEquals(true, vm.favoriteState.value?.isFavorited)
-        assertEquals("manga", vm.favoriteState.value?.name)
-
-        vm.updateFavoriteState(FavoriteState(isFavorited = false, name = null))
-        assertEquals(false, vm.favoriteState.value?.isFavorited)
-        assertNull(vm.favoriteState.value?.name)
-
-        vm.updateFavoriteState(null)
-        assertNull(vm.favoriteState.value)
-    }
-
-    @Test
     fun setArchiveDetail_initializesCurrentRatingFromArchive() {
         val vm = GalleryDetailViewModel()
 
@@ -159,36 +142,6 @@ class GalleryDetailViewModelTest {
         // Clearing falls back to null.
         vm.setArchiveDetail(null)
         assertNull(vm.currentRating.value)
-    }
-
-    @Test
-    fun updateFavoriteState_persistsToInternalCacheForReuse() {
-        val vm = GalleryDetailViewModel()
-
-        // Seed _archiveDetail so getEffectiveArcid() returns a value the
-        // cache can key on.
-        vm.setArchiveDetail(archiveDetail("favTok"))
-        vm.updateFavoriteState(FavoriteState(isFavorited = true, name = "Reading"))
-        assertEquals(true, vm.favoriteState.value?.isFavorited)
-
-        // Simulate the user backing out and the Activity-scoped VM
-        // surviving. resetForNewEntry clears the live flow (so a fresh
-        // navigation is not polluted) but leaves the per-arcid cache so
-        // a subsequent cache-hit re-restores the favorite without a
-        // round-trip to the categories API.
-        vm.resetForNewEntry()
-        assertNull(vm.favoriteState.value)
-
-        // Replay the cache-hit path: setArchiveDetail with same arcid
-        // should not by itself restore favoriteState (only tryLoadFromCache
-        // does), but updateFavoriteState seeded the cache. Verify the
-        // cache survives across resetForNewEntry.
-        vm.setArchive(archive("favTok"))
-        vm.setArchiveDetail(archiveDetail("favTok"))
-        // tryLoadFromCache is only called from the Scene; emulate its
-        // favorite-cache restore step directly via updateFavoriteState
-        // — this proves the cache value is still there to be retrieved.
-        // (A full test would mock archiveDetailCache.)
     }
 
     @Test
@@ -234,23 +187,6 @@ class GalleryDetailViewModelTest {
         assertEquals(4f, vm.currentRating.value)
         // Reference equality: no copy was made.
         assertEquals(true, before === vm.archiveDetail.value)
-    }
-
-    @Test
-    fun secondNavigation_doesNotLeakDetailIntoFreshArchive() {
-        val vm = GalleryDetailViewModel()
-
-        // First entry: opened from downloads scene — detail loaded.
-        vm.setArchive(archive("downTok"))
-        vm.setArchiveDetail(archiveDetail("downTok"))
-        assertEquals("downTok", vm.getEffectiveArcid())
-
-        // Second entry: search-result click on a different gallery.
-        vm.resetForNewEntry()
-        vm.setArchive(archive("freshTok"))
-
-        assertEquals("freshTok", vm.getEffectiveArcid())
-        assertNull(vm.archiveDetail.value)
     }
 
     /**

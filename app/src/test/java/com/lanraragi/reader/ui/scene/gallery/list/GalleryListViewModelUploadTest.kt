@@ -1,17 +1,15 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
+import com.lanraragi.reader.stubAppModule
+import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.awaitRequest
+import com.lanraragi.reader.awaitUntil
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.LegacyDb
-import com.lanraragi.reader.AppProxySelector
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.AppDatabase
-import com.lanraragi.reader.module.IAppModule
 import com.lanraragi.reader.module.IDataModule
-import com.lanraragi.reader.module.INetworkModule
-import com.lanraragi.reader.module.NetworkMonitor
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRClientProvider
 import kotlinx.coroutines.Dispatchers
@@ -19,7 +17,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
-import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -60,9 +57,6 @@ class GalleryListViewModelUploadTest {
         db = Room.inMemoryDatabaseBuilder(ctx, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        val field = LegacyDb::class.java.getDeclaredField("sDatabase")
-        field.isAccessible = true
-        field.set(LegacyDb, db)
 
         LRRAuthManager.initialize(ctx)
         LRRAuthManager.initializeForTesting(
@@ -77,29 +71,8 @@ class GalleryListViewModelUploadTest {
             .writeTimeout(2, TimeUnit.SECONDS)
             .build()
 
-        val testNetworkModule = object : INetworkModule {
-            override val cache: Cache get() = Cache(File(ctx.cacheDir, "upload-test-cache"), 1024)
-            override val proxySelector: AppProxySelector get() = throw UnsupportedOperationException()
-            override val okHttpClient: OkHttpClient = client
-            override val longReadClient: OkHttpClient = client
-            override val uploadClient: OkHttpClient = client
-            // retryOnFailure reads this via runCatching{}.getOrDefault(false), so
-            // throwing here is treated as "online" — exactly what we want in tests.
-            override val networkMonitor: NetworkMonitor get() = throw UnsupportedOperationException()
-        }
-        val testAppModule = object : IAppModule {
-            override fun getContext(): Context = ctx
-            override fun initialize() {}
-            override fun putGlobalStuff(o: Any): Int = 0
-            override fun containGlobalStuff(id: Int): Boolean = false
-            override fun getGlobalStuff(id: Int): Any? = null
-            override fun removeGlobalStuff(id: Int): Any? = null
-            override fun removeGlobalStuff(o: Any) {}
-            override fun putTempCache(key: String, o: Any): String = key
-            override fun containTempCache(key: String): Boolean = false
-            override fun getTempCache(key: String): Any? = null
-            override fun removeTempCache(key: String): Any? = null
-        }
+        val testNetworkModule = stubNetworkModule(client, File(ctx.cacheDir, "upload-test-cache"))
+        val testAppModule = stubAppModule(ctx)
         val testDataModule = object : IDataModule {
             override val searchHistoryRepository get() = throw NotImplementedError("Not needed for these tests")
             override val profileRepository get() = throw NotImplementedError("not needed")
@@ -135,17 +108,12 @@ class GalleryListViewModelUploadTest {
         openStream = { ByteArrayInputStream(bytes) }
     )
 
-    private fun awaitTerminal(vm: GalleryListViewModel, timeoutMs: Long = 5000): GalleryListViewModel.UploadUiState {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
+    private fun awaitTerminal(vm: GalleryListViewModel): GalleryListViewModel.UploadUiState {
+        awaitUntil {
             val s = vm.uploadState.value
-            if (s is GalleryListViewModel.UploadUiState.DuplicateSkipped ||
+            s is GalleryListViewModel.UploadUiState.DuplicateSkipped ||
                 s is GalleryListViewModel.UploadUiState.Success ||
                 s is GalleryListViewModel.UploadUiState.Failed
-            ) {
-                return s
-            }
-            Thread.sleep(25)
         }
         return vm.uploadState.value
     }
