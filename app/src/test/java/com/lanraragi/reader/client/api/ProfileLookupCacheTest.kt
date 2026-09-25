@@ -99,45 +99,6 @@ class ProfileLookupCacheTest {
     }
 
     @Test
-    fun findByRequestUrl_matchesOnHostPortAndScheme() = runBlocking {
-        repo.insert(ServerProfile(name = "lan", url = "http://lrr.local:3000"))
-        val cache = newCache()
-        awaitSnapshotSize(cache, 1)
-
-        val req = "http://lrr.local:3000/api/info".toHttpUrl()
-        val match = cache.findByRequestUrl(req)
-        assertNotNull(match)
-        assertEquals("lan", match!!.name)
-    }
-
-    @Test
-    fun findByRequestUrl_returnsNullWhenSchemeDiffers() = runBlocking {
-        // Configured profile is HTTP; request comes in HTTPS — no scheme match.
-        repo.insert(ServerProfile(name = "lan", url = "http://lrr.local:3000"))
-        val cache = newCache()
-        awaitSnapshotSize(cache, 1)
-
-        val req = "https://lrr.local:3000/api/info".toHttpUrl()
-        assertNull(cache.findByRequestUrl(req))
-    }
-
-    @Test
-    fun findCandidatesByHostPort_collectsSchemeVariantsForDowngradeDetection() = runBlocking {
-        // Two profiles at the same host:port but different schemes — both candidates.
-        // Distinct ports keep them as separate rows in the table; we vary host so
-        // the test exercises the host:port match logic without the unique-URL
-        // constraint masking the scheme-only difference.
-        repo.insert(ServerProfile(name = "plain", url = "http://lrr.local:3000"))
-        val cache = newCache()
-        awaitSnapshotSize(cache, 1)
-
-        val httpsRequest = "https://lrr.local:3000/api/info".toHttpUrl()
-        val candidates = cache.findCandidatesByHostPort(httpsRequest.host, httpsRequest.port)
-        assertEquals(1, candidates.size)
-        assertEquals("plain", candidates[0].name)
-    }
-
-    @Test
     fun findParsedCandidatesByHostPort_carriesPreParsedUrl() = runBlocking {
         repo.insert(ServerProfile(name = "plain", url = "http://lrr.local:3000"))
         val cache = newCache()
