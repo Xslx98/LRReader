@@ -286,14 +286,17 @@ class DownloadManagerTest {
             manager.startDownload(gallery.toArchive(), null)
         }
 
+        // A worker with no server behind it may already have failed; only the
+        // rows that were still queued or running are the stop's to change.
+        val before = (1..3).associate { "tok_$it" to manager.getDownloadState("tok_$it") }
+        val live = before.filterValues { it == DownloadState.WAIT || it == DownloadState.DOWNLOAD }
+        assertTrue("setup must leave something queued or running to stop", live.isNotEmpty())
+
         manager.stopAllDownload()
 
-        for (i in 1..3) {
-            val state = manager.getDownloadState("tok_$i")
-            assertTrue(
-                "Expected STATE_NONE or STATE_DOWNLOAD after stop, got $state",
-                state == DownloadState.NONE || state == DownloadState.DOWNLOAD
-            )
+        for ((arcid, state) in before) {
+            val expected = if (arcid in live) DownloadState.NONE else state
+            assertEquals("$arcid (was $state)", expected, manager.getDownloadState(arcid))
         }
     }
 
