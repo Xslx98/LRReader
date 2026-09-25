@@ -105,9 +105,6 @@ interface ArchiveLocalStateDao {
     @Query("SELECT * FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :profileId")
     suspend fun loadByArcidAndProfile(arcid: String, profileId: Long): ArchiveLocalState?
 
-    @Query("DELETE FROM ARCHIVE_LOCAL_STATE WHERE ARCID = :arcid")
-    suspend fun deleteByArcid(arcid: String)
-
     // ── Download subsystem ─────────────────────────────────────
 
     @Query(
@@ -144,13 +141,6 @@ interface ArchiveLocalStateDao {
             "WHERE ARCID IN (:arcids) AND DOWNLOAD_STATE IS NOT NULL"
     )
     suspend fun getDownloadsByArcids(arcids: List<String>): List<ArchiveLocalState>
-
-    @Query(
-        "SELECT * FROM ARCHIVE_LOCAL_STATE " +
-            "WHERE DOWNLOAD_STATE IS NOT NULL AND SERVER_PROFILE_ID = :profileId " +
-            "ORDER BY DOWNLOAD_TIME DESC"
-    )
-    fun observeDownloadsByServer(profileId: Long): Flow<List<ArchiveLocalState>>
 
     @Query(
         "SELECT * FROM ARCHIVE_LOCAL_STATE " +
@@ -200,13 +190,6 @@ interface ArchiveLocalStateDao {
     suspend fun countHistoryForProfile(profileId: Long): Int
 
     // ── Favorite subsystem ─────────────────────────────────────
-
-    @Query(
-        "SELECT * FROM ARCHIVE_LOCAL_STATE " +
-            "WHERE FAVORITE_TIME IS NOT NULL " +
-            "ORDER BY FAVORITE_TIME DESC"
-    )
-    suspend fun getAllFavorites(): List<ArchiveLocalState>
 
     // ── Subsystem-scoped writes ────────────────────────────────
     //
