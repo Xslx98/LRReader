@@ -11,7 +11,6 @@ import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.dao.DownloadDbRepository
-import com.lanraragi.reader.dao.DownloadLabel
 import com.lanraragi.reader.module.CoroutineModule
 import com.lanraragi.reader.containedTestScope
 import kotlinx.coroutines.CoroutineScope
