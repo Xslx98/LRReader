@@ -1,6 +1,6 @@
 package com.lanraragi.reader.domain
 
-import kotlinx.serialization.json.Json
+import com.lanraragi.reader.dao.ArchiveLocalStateJson
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -15,13 +15,9 @@ import org.junit.Test
  */
 class ArchiveJsonTest {
 
-    private val json = Json {
-        // Forgive future producers/consumers that ship extra fields.
-        ignoreUnknownKeys = true
-        // Keep nulls out of the JSON for compactness; null is the default
-        // for `summary` and the parser fills it back on decode.
-        encodeDefaults = false
-    }
+    // The production encoder for the ARCHIVE_JSON column, not a local copy:
+    // a change to its forward-compat settings must fail these tests.
+    private val json = ArchiveLocalStateJson
 
     private fun sampleArchive(
         arcid: String = "deadbeef",
