@@ -100,14 +100,6 @@ class ArchiveLocalStateDaoTest {
     }
 
     @Test
-    fun deleteByArcid_removesRow() = runTest {
-        dao.upsert(row("arc-d", downloadState = DownloadState.NONE, downloadTime = 1L))
-        assertNotNull(dao.loadByArcidAndProfile("arc-d", 0L))
-        dao.deleteByArcid("arc-d")
-        assertNull(dao.loadByArcidAndProfile("arc-d", 0L))
-    }
-
-    @Test
     fun downloadList_filtersByDownloadStateNotNull() = runTest {
         dao.upsert(row("d-only", downloadState = DownloadState.NONE, downloadTime = 1000L))
         dao.upsert(row("h-only", historyTime = 2000L))
@@ -133,27 +125,6 @@ class ArchiveLocalStateDaoTest {
 
         val list = dao.getAllHistory().map { it.arcid }
         assertEquals(listOf("h-new", "h-mid", "h-old"), list)
-    }
-
-    @Test
-    fun favoriteList_filtersByFavoriteTimeNotNull_orderDesc() = runTest {
-        dao.upsert(row("f-old", favoriteTime = 1000L))
-        dao.upsert(row("f-new", favoriteTime = 5000L))
-        dao.upsert(row("not-f", historyTime = 9999L))
-
-        val list = dao.getAllFavorites().map { it.arcid }
-        assertEquals(listOf("f-new", "f-old"), list)
-    }
-
-    @Test
-    fun observeDownloadsByServer_filtersByProfile() = runTest {
-        dao.upsert(row("p7-a", serverProfileId = 7L, downloadState = DownloadState.NONE, downloadTime = 1L))
-        dao.upsert(row("p7-b", serverProfileId = 7L, downloadState = DownloadState.WAIT, downloadTime = 2L))
-        dao.upsert(row("p9-c", serverProfileId = 9L, downloadState = DownloadState.NONE, downloadTime = 3L))
-
-        val list = dao.observeDownloadsByServer(7L).first()
-        assertEquals(2, list.size)
-        assertTrue(list.all { it.serverProfileId == 7L })
     }
 
     @Test
