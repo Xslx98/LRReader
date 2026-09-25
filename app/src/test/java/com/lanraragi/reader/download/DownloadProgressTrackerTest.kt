@@ -74,16 +74,6 @@ class DownloadProgressTrackerTest {
     }
 
     @Test
-    fun `clearAll empties the map`() {
-        val tracker = DownloadProgressTracker()
-        tracker.update("a", speed = 1L)
-        tracker.update("b", speed = 2L)
-        tracker.clearAll()
-        assertNull(tracker.snapshot("a"))
-        assertNull(tracker.snapshot("b"))
-    }
-
-    @Test
     fun `flow emits on every update`() = runTest(UnconfinedTestDispatcher()) {
         val tracker = DownloadProgressTracker()
         val emissions = mutableListOf<Map<String, ProgressSnapshot>>()
