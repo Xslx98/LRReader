@@ -266,7 +266,9 @@ class TankoubonDetailViewModelTest {
 
         vm.setCover(memberIndex = 1, page0 = 3)
 
-        awaitUntil { coverPuts.size == 1 }
+        // The mock logs the PUT on receipt; the choice is stored only after
+        // the response returns, so wait for that final effect.
+        awaitUntil { store.get(TANK) != null }
         assertEquals(listOf(14), coverPuts.toList())
         assertEquals(TankCoverChoiceStore.Choice(ID_EXTRA, 3, 5L), store.get(TANK))
     }
