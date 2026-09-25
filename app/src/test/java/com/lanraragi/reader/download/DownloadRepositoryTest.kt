@@ -137,7 +137,7 @@ class DownloadRepositoryTest {
     fun containDownloadInfo_returnsTrueForExisting() {
         assertFalse(repo.containDownloadInfo("tok1"))
 
-        val info = makeInfo(1001L, "tok1", "Gallery One")
+        val info = makeInfo("tok1", "Gallery One")
         repo.addInfo(info)
 
         assertTrue(repo.containDownloadInfo("tok1"))
@@ -149,7 +149,7 @@ class DownloadRepositoryTest {
 
     @Test
     fun addAndRemoveInfo() {
-        val info = makeInfo(2001L, "tok2001", "Add Remove Test")
+        val info = makeInfo("tok2001", "Add Remove Test")
         repo.addInfo(info)
 
         assertTrue(repo.containDownloadInfo("tok2001"))
@@ -224,7 +224,7 @@ class DownloadRepositoryTest {
         repo.addLabel("OldName")
 
         // Add an info with that label
-        val info = makeInfo(3001L, "tok3001", "Labeled").apply { label = "OldName" }
+        val info = makeInfo("tok3001", "Labeled").apply { label = "OldName" }
         repo.allInfoList.add(info)
         repo.allInfoMap[info.arcid] = info
         repo.labelInfoMap["OldName"]!!.add(info)
@@ -254,7 +254,7 @@ class DownloadRepositoryTest {
     fun deleteLabel_movesInfosToDefault() {
         repo.addLabel("ToDelete")
 
-        val info = makeInfo(4001L, "tok4001", "Will Move").apply {
+        val info = makeInfo("tok4001", "Will Move").apply {
             label = "ToDelete"
             time = 500L
         }
@@ -281,10 +281,10 @@ class DownloadRepositoryTest {
 
     @Test
     fun replaceInfo_updatesMapAndList() {
-        val oldInfo = makeInfo(5001L, "tok5001", "Old")
+        val oldInfo = makeInfo("tok5001", "Old")
         repo.addInfo(oldInfo)
 
-        val newInfo = makeInfo(5002L, "tok5002", "New")
+        val newInfo = makeInfo("tok5002", "New")
         repo.replaceInfo(newInfo, oldInfo)
 
         assertFalse(repo.containDownloadInfo("tok5001"))
@@ -301,7 +301,7 @@ class DownloadRepositoryTest {
         // Non-existent returns INVALID
         assertEquals(DownloadState.INVALID, repo.getDownloadState("nonexistent"))
 
-        val info = makeInfo(6001L, "tok6001", "State Test").apply {
+        val info = makeInfo("tok6001", "State Test").apply {
             state = DownloadState.FINISH
         }
         repo.addInfo(info)
@@ -319,7 +319,7 @@ class DownloadRepositoryTest {
 
         val timestamps = listOf(500L, 900L, 100L)
         for ((i, ts) in timestamps.withIndex()) {
-            val info = makeInfo((7000 + i).toLong(), "tok_sort_$i", "Sort $i").apply {
+            val info = makeInfo("tok_sort_$i", "Sort $i").apply {
                 time = ts
             }
             DownloadRepository.insertSorted(list, info)
@@ -345,7 +345,7 @@ class DownloadRepositoryTest {
         try {
             val ordered = DownloadRepository(context, ioScope, Dispatchers.Unconfined)
             repeat(40) { i ->
-                val info = makeInfo(0, "order-$i", "T$i").apply { serverProfileId = 1L }
+                val info = makeInfo("order-$i", "T$i").apply { serverProfileId = 1L }
                 ordered.persistInfo(info)
                 ordered.removeInfoFromDbByArcid(info.arcid)
             }
@@ -378,7 +378,7 @@ class DownloadRepositoryTest {
 
     @Test
     fun persistInfo_writesTheValuesAtCallTime() {
-        val info = makeInfo(0, "snap", "Before").apply { serverProfileId = 1L }
+        val info = makeInfo("snap", "Before").apply { serverProfileId = 1L }
         repo.persistInfo(info)
         info.title = "After"
         runBlocking { repo.awaitDbWrites() }
@@ -390,7 +390,7 @@ class DownloadRepositoryTest {
     // Helpers
     // ═══════════════════════════════════════════════════════════
 
-    private fun makeInfo(@Suppress("UNUSED_PARAMETER") gid: Long, arcid: String, title: String): DownloadInfo {
+    private fun makeInfo(arcid: String, title: String): DownloadInfo {
         return DownloadInfo().apply {
             this.arcid = arcid
             this.title = title
