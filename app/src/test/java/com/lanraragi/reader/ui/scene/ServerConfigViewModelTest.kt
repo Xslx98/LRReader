@@ -23,6 +23,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import okhttp3.Cache
@@ -168,6 +169,11 @@ class ServerConfigViewModelTest {
 
     @Test
     fun attemptConnection_success_emitsConnectSuccessAndPersistsProfile() {
+        val oldId = runBlocking {
+            db.miscDao().insertServerProfile(
+                ServerProfile(name = "Old", url = "https://old.example.com", isActive = true)
+            )
+        }
         server.enqueue(MockResponse().setBody(SERVER_INFO_JSON).setResponseCode(200))
 
         val vm = ServerConfigViewModel()
@@ -186,6 +192,10 @@ class ServerConfigViewModelTest {
         assertEquals("Test Server", successes.first().serverInfo.name)
         assertTrue(successes.first().navigateOnSuccess)
         assertFalse(vm.connecting.value)
+        val rows = runBlocking { db.miscDao().getAllServerProfiles() }
+        val saved = rows.single { it.id != oldId }
+        assertEquals(baseUrl, saved.url)
+        assertEquals("the connected profile is the only active one", listOf(saved.id), rows.filter { it.isActive }.map { it.id })
 
         job.cancel()
     }
