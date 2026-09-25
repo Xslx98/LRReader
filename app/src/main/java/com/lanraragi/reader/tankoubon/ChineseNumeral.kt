@@ -19,7 +19,7 @@ object ChineseNumeral {
     /** Every character [parse] accepts, for building a regex character class. */
     val ALPHABET: String = (DIGITS.keys + UNITS.keys).joinToString("")
 
-    fun isNumeralChar(c: Char): Boolean = c in DIGITS || c in UNITS
+    private fun isNumeralChar(c: Char): Boolean = c in DIGITS || c in UNITS
 
     /** The value of [text], or null when it is not entirely a numeral. */
     fun parse(text: String): Int? {
