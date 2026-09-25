@@ -65,8 +65,7 @@ class ServerProfileSwitchTest {
         )
 
         // Switch to Server B
-        dao.deactivateAllProfiles()
-        dao.updateServerProfile(ServerProfile(id2, "Server B", "http://192.168.1.20:3000", true))
+        dao.setActiveProfileExclusive(id2)
 
         val profiles = dao.getAllServerProfiles()
         val a = profiles.first { it.id == id1 }
@@ -168,8 +167,7 @@ class ServerProfileSwitchTest {
         LRRAuthManager.setApiKeyForProfile(id2, "office_key")
 
         // Simulate switch to Office
-        dao.deactivateAllProfiles()
-        dao.updateServerProfile(ServerProfile(id2, "Office", "https://office.lan:3000", true))
+        dao.setActiveProfileExclusive(id2)
         LRRAuthManager.setServerUrl("https://office.lan:3000")
         LRRAuthManager.setApiKey(LRRAuthManager.getApiKeyForProfile(id2))
         LRRAuthManager.setActiveProfileId(id2)
