@@ -37,46 +37,6 @@ class LRRDatabaseApiTest {
         server.shutdown()
     }
 
-    // ── getDatabaseStats ───────────────────────────────────────────
-
-    @Test
-    fun getDatabaseStats_success() = runTest {
-        val statsJson = """[
-            {"namespace":"artist","text":"foo","weight":5},
-            {"namespace":"date_added","text":"1700000","weight":10}
-        ]"""
-        server.enqueue(MockResponse().setBody(statsJson))
-
-        val result = LRRDatabaseApi.getDatabaseStats(client, baseUrl)
-        assertTrue(result.contains("artist"))
-        assertTrue(result.contains("foo"))
-
-        val req = server.awaitRequest()
-        assertEquals("GET", req.method)
-        assertEquals("/api/database/stats", req.path)
-    }
-
-    @Test
-    fun getDatabaseStats_emptyResult() = runTest {
-        server.enqueue(MockResponse().setBody("[]"))
-
-        val result = LRRDatabaseApi.getDatabaseStats(client, baseUrl)
-        assertEquals("[]", result)
-    }
-
-    @Test
-    fun getDatabaseStats_serverError() = runTest {
-        repeat(3) {
-            server.enqueue(MockResponse().setResponseCode(500).setBody("Internal error"))
-        }
-        try {
-            LRRDatabaseApi.getDatabaseStats(client, baseUrl)
-            fail("Should have thrown IOException")
-        } catch (e: LRRHttpException) {
-            assertEquals(500, e.code)
-        }
-    }
-
     // ── getTagStats (typed) ───────────────────────────────────────
 
     @Test

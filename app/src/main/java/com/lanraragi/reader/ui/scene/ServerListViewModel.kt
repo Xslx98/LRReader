@@ -9,7 +9,6 @@ import com.lanraragi.reader.appwidget.ContinueReadingWidget
 import com.lanraragi.reader.ui.ContinueReadingShortcut
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
-import com.lanraragi.reader.client.api.LRRServerApi
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.client.api.data.LRRServerInfo
 import kotlinx.coroutines.CancellationException
@@ -399,33 +398,6 @@ class ServerListViewModel : ViewModel() {
                 // Room insert succeeds).
                 Log.e(TAG, "Failed to add profile", e)
                 _uiEvent.emit(ServerListUiEvent.AddConnectionFailed(e))
-            }
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // Connection verification
-    // -------------------------------------------------------------------------
-
-    /**
-     * Test connection to the active server after profile edits.
-     * Shows a toast on failure via [uiEvent].
-     */
-    fun verifyActiveProfile(url: String) {
-        viewModelScope.launch {
-            try {
-                val testClient = withContext(Dispatchers.IO) {
-                    LRRUrlHelper.buildTestClient(ServiceRegistry.networkModule.okHttpClient)
-                }
-                withContext(Dispatchers.IO) {
-                    // Always targets the active profile; the test client strips
-                    // LRRAuthInterceptor (NET-7), so attach the active key here.
-                    LRRServerApi.getServerInfo(testClient, url, LRRAuthManager.getApiKey())
-                }
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                Log.e(TAG, "Verification failed for $url", e)
-                _uiEvent.emit(ServerListUiEvent.ShowToast(e.message ?: "Unknown error"))
             }
         }
     }

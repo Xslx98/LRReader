@@ -7,7 +7,9 @@ import org.junit.Test
 
 class TankTitleSortKeyTest {
 
-    private fun sorted(vararg titles: String) = TankTitleSortKey.sortedTitles(titles.toList())
+    // Through the production sort (id == title), so every table below guards
+    // the order users actually get, including the title/id tie-break.
+    private fun sorted(vararg titles: String) = TankMemberOrderOps.sortByTitle(titles.toList()) { it }
 
     private fun episode(title: String) = TankTitleSortKey.parse(title).episode
 

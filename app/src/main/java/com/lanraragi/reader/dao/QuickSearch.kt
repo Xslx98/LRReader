@@ -5,8 +5,6 @@ import androidx.room.Entity
 import androidx.room.Ignore
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import org.json.JSONException
-import org.json.JSONObject
 
 /**
  * Entity mapped to table "QUICK_SEARCH".
@@ -80,43 +78,4 @@ class QuickSearch(
             ?: ""
 
     override fun toString(): String = displayName
-
-    fun toJson(): JSONObject {
-        return try {
-            JSONObject().apply {
-                put("name", name)
-                put("mode", mode)
-                put("category", category)
-                put("keyword", keyword)
-                put("categoryId", categoryId)
-                put("categoryName", categoryName)
-                put("advanceSearch", advanceSearch)
-                put("minRating", minRating)
-                put("pageFrom", pageFrom)
-                put("pageTo", pageTo)
-                put("time", time)
-            }
-        } catch (e: JSONException) {
-            JSONObject()
-        }
-    }
-
-    companion object {
-        @JvmStatic
-        fun quickSearchFromJson(`object`: JSONObject): QuickSearch {
-            return QuickSearch().apply {
-                name = `object`.optString("name", null)
-                mode = `object`.optInt("mode", 0)
-                category = `object`.optInt("category", 0)
-                keyword = `object`.optString("keyword", null)
-                categoryId = `object`.optString("categoryId", null)
-                categoryName = `object`.optString("categoryName", null)
-                advanceSearch = `object`.optInt("advanceSearch", 0)
-                minRating = `object`.optInt("minRating", 0)
-                pageFrom = `object`.optInt("pageFrom", 0)
-                pageTo = `object`.optInt("pageTo", 0)
-                time = `object`.optLong("time", 0)
-            }
-        }
-    }
 }

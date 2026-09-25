@@ -645,10 +645,5 @@ class DownloadManager(
         private val TAG = DownloadManager::class.java.simpleName
         private const val RATING_SYNC_PREFS = "download_rating_sync"
         const val DOWNLOAD_INFO_HEADER = "gid,token,title,title_jpn,thumb,category,posted,uploader,rating,rated,simple_lang,simple_tags,thumb_width,thumb_height,span_size,span_index,span_group_index,favorite_slot,favorite_name,pages"
-        @JvmField val DATE_DESC_COMPARATOR: Comparator<DownloadInfo> = Comparator { lhs, rhs ->
-            val dif = lhs.time - rhs.time
-            when { dif > 0 -> -1; dif < 0 -> 1; else -> 0 }
-        }
-        internal fun insertSorted(list: MutableList<DownloadInfo>, item: DownloadInfo) { DownloadRepository.insertSorted(list, item) }
     }
 }

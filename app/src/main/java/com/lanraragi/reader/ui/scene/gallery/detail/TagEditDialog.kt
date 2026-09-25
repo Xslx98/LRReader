@@ -126,17 +126,6 @@ object TagEditDialog {
         val tags: MutableList<String>
     )
 
-    /**
-     * Reconstruct the LANraragi-format tag string from a [TagGroup] list:
-     * "namespace:tag1, namespace:tag2, bare, ...". Only a fallback — the
-     * save path prefers the server's own string (see [performUpdate]).
-     */
-    @JvmStatic
-    fun tagsToString(tagGroups: List<TagGroup>?): String {
-        if (tagGroups.isNullOrEmpty()) return ""
-        return toLrrTagString(tagGroups, emptySet())
-    }
-
     /** Snapshot of the editable model as domain groups. */
     private fun snapshotGroups(groups: List<EditableTagGroup>): List<TagGroup> =
         groups.map { TagGroup(it.namespace, it.tags.toList()) }

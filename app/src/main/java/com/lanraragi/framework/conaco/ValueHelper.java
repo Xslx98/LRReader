@@ -38,14 +38,11 @@ public interface ValueHelper<V> {
     /**
      * Decode with a target-size hint (pixels); the decoded value should keep
      * both dimensions at or above the target. Non-positive targets mean no
-     * hint. Default implementation ignores the hint so legacy helpers keep
-     * their behavior.
+     * hint.
      */
     @Nullable
-    default V decode(@NonNull InputStreamPipe isPipe, boolean hardware,
-            int targetWidth, int targetHeight) {
-        return decode(isPipe, hardware);
-    }
+    V decode(@NonNull InputStreamPipe isPipe, boolean hardware,
+            int targetWidth, int targetHeight);
 
     /**
      * Get the size of the object

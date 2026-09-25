@@ -22,9 +22,6 @@ import okhttp3.OkHttpClient
  */
 object TankCategorySyncer {
 
-    /** Event sink; replaceable for tests. */
-    internal var failureSink: (TankTagSyncFailedEvent) -> Unit = { AppEventBus.postTankTagSyncFailedEvent(it) }
-
     /** After [addedIds] joined [tankId]: the tank joins their static categories. */
     suspend fun afterAdd(client: OkHttpClient, baseUrl: String, tankId: String, tankName: String, addedIds: Collection<String>): Boolean =
         apply(client, baseUrl, tankId, tankName) { TankCategoryPromotion.onAdd(it, tankId, addedIds) }
@@ -94,7 +91,9 @@ object TankCategorySyncer {
             throw e
         } catch (ignored: Exception) {
             Log.w(TAG, "category write failed")
-            failureSink(TankTagSyncFailedEvent(tankId, tankName, TankTagSyncFailedEvent.Kind.CATEGORIES))
+            AppEventBus.postTankTagSyncFailedEvent(
+                TankTagSyncFailedEvent(tankId, tankName, TankTagSyncFailedEvent.Kind.CATEGORIES)
+            )
             false
         }
 

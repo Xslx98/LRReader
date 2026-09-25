@@ -15,8 +15,6 @@
  */
 package com.lanraragi.reader.dao
 
-import android.os.Parcel
-import android.os.Parcelable
 import com.lanraragi.reader.download.DownloadState
 import com.lanraragi.reader.domain.Archive
 
@@ -33,11 +31,8 @@ import com.lanraragi.reader.domain.Archive
  * preserved because the W36-era listeners and adapters mutate this
  * object in place. Demoting to an immutable data class would force a
  * larger UI refactor; that work belongs to a follow-up.
- *
- * Parcelable is kept because [DownloadInfo] still flows through Intent
- * extras in a few places (DownloadService, GalleryActivity).
  */
-class DownloadInfo() : Parcelable {
+class DownloadInfo {
 
     // ── Display fields (from Archive payload) ──
 
@@ -136,55 +131,10 @@ class DownloadInfo() : Parcelable {
      * Synthetic tank card only (spec 2026-09-21 §4): number of ids on the
      * group row that have NO download row yet — the card renders
      * INCOMPLETE and its start control fills the gap. Always 0 on real
-     * rows; never persisted or parcelled.
+     * rows; never persisted.
      */
     @JvmField
     var tankMissingCount: Int = 0
-
-    // ── Parcelable ──
-
-    private constructor(`in`: Parcel) : this() {
-        arcid = `in`.readString() ?: ""
-        title = `in`.readString()
-        thumb = `in`.readString()
-        rating = `in`.readFloat()
-        simpleLanguage = `in`.readString()
-        serverProfileId = `in`.readLong()
-        state = DownloadState.fromCode(`in`.readInt())
-        legacy = `in`.readInt()
-        time = `in`.readLong()
-        label = `in`.readString()
-        archiveUri = `in`.readString()
-        downloadRootUri = `in`.readString()
-        tankId = `in`.readString()
-        pagecount = `in`.readInt()
-        simpleTags = `in`.createStringArray()
-        @Suppress("UNCHECKED_CAST")
-        tgList = `in`.readArrayList(String::class.java.classLoader) as? ArrayList<String>
-        fileSize = `in`.readLong()
-    }
-
-    override fun describeContents(): Int = 0
-
-    override fun writeToParcel(dest: Parcel, flags: Int) {
-        dest.writeString(arcid)
-        dest.writeString(title)
-        dest.writeString(thumb)
-        dest.writeFloat(rating)
-        dest.writeString(simpleLanguage)
-        dest.writeLong(serverProfileId)
-        dest.writeInt(state.code)
-        dest.writeInt(legacy)
-        dest.writeLong(time)
-        dest.writeString(label)
-        dest.writeString(archiveUri)
-        dest.writeString(downloadRootUri)
-        dest.writeString(tankId)
-        dest.writeInt(pagecount)
-        dest.writeStringArray(simpleTags)
-        dest.writeList(tgList)
-        dest.writeLong(fileSize)
-    }
 
     /**
      * Refresh display fields from a re-fetched [Archive]. Called from
@@ -228,13 +178,5 @@ class DownloadInfo() : Parcelable {
         rating = archive.rating
         // simpleTags is recomputed by the adapter from the live Archive
         // on the next bind, so no copy is needed here.
-    }
-
-    companion object {
-        @JvmField
-        val CREATOR: Parcelable.Creator<DownloadInfo> = object : Parcelable.Creator<DownloadInfo> {
-            override fun createFromParcel(source: Parcel): DownloadInfo = DownloadInfo(source)
-            override fun newArray(size: Int): Array<DownloadInfo?> = arrayOfNulls(size)
-        }
     }
 }

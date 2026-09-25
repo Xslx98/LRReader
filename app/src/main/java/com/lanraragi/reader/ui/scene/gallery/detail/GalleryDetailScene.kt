@@ -1142,11 +1142,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         }
     }
 
-    internal fun onGetGalleryDetailUpdateFailure(e: Exception) {
-        Analytics.recordException(e)
-        adjustViewVisibility(STATE_NORMAL, true)
-    }
-
     companion object {
         private const val REQUEST_CODE_COMMENT_GALLERY = 0
 

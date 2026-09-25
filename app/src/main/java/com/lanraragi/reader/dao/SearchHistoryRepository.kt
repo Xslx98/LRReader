@@ -37,15 +37,6 @@ class SearchHistoryRepository(
     suspend fun recentSearches(profileId: Long, limit: Int = RECENT_DISPLAY_LIMIT): List<String> =
         dao.getRecentSearchHistory(profileId, limit).map { it.query }
 
-    suspend fun matchingSearches(
-        profileId: Long,
-        prefix: String,
-        limit: Int = RECENT_DISPLAY_LIMIT
-    ): List<String> {
-        if (prefix.isBlank()) return recentSearches(profileId, limit)
-        return dao.getMatchingSearchHistory(profileId, escapeLike(prefix), limit).map { it.query }
-    }
-
     suspend fun deleteEntry(profileId: Long, query: String) =
         dao.deleteSearchHistoryEntry(profileId, query)
 
@@ -53,9 +44,6 @@ class SearchHistoryRepository(
 
     /** Profile-deletion cascade hook — same operation, kept for call-site intent. */
     suspend fun deleteAllForProfile(profileId: Long) = clearAll(profileId)
-
-    private fun escapeLike(s: String): String =
-        s.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
     companion object {
         const val MAX_ENTRIES = 50

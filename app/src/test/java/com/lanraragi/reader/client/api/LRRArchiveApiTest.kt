@@ -213,13 +213,6 @@ class LRRArchiveApiTest {
         }
     }
 
-    @Test
-    fun getPageUrl_buildsCorrectUrl() {
-        val url = LRRArchiveApi.getPageUrl("https://server.test", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "./page 1.jpg")
-        assertTrue(url.startsWith("https://server.test/api/archives/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/page"))
-        assertTrue(url.contains("path="))
-    }
-
     // ── uploadArchive ──────────────────────────────────────────────
 
     @Test
@@ -358,14 +351,6 @@ class LRRArchiveApiTest {
         assertTrue(path.contains("no_fallback=true"))
     }
 
-    @Test
-    fun getPageThumbnailUrl_isOneIndexed() {
-        val url = LRRArchiveApi.getPageThumbnailUrl(
-            baseUrl, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 0
-        )
-        assertTrue("expected page=1 for grid index 0, url: $url", url.contains("page=1"))
-    }
-
     // ── computeFileChecksum ─────────────────────────────────────────
 
     @Test
@@ -455,4 +440,3 @@ class LRRArchiveApiTest {
         )
     }
 }
-
