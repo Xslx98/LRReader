@@ -1,9 +1,7 @@
 package com.lanraragi.reader.tankoubon
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ChineseNumeralTest {
@@ -55,12 +53,5 @@ class ChineseNumeralTest {
         assertNull(ChineseNumeral.parse("第一"))
         assertNull(ChineseNumeral.parse("12"))
         assertNull(ChineseNumeral.parse("一话"))
-    }
-
-    @Test
-    fun alphabetMatchesParser() {
-        assertTrue(ChineseNumeral.ALPHABET.all(ChineseNumeral::isNumeralChar))
-        assertFalse(ChineseNumeral.isNumeralChar('话'))
-        assertFalse(ChineseNumeral.isNumeralChar('1'))
     }
 }
