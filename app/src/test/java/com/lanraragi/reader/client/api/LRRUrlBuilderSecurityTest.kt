@@ -75,11 +75,11 @@ class LRRUrlBuilderSecurityTest {
     }
 
     @Test
-    fun getDatabaseStats_subpathBaseUrl_buildsCleanPath() = runTest {
+    fun getTagStats_subpathBaseUrl_buildsCleanPath() = runTest {
         server.enqueue(MockResponse().setBody("[]"))
         val baseUrl = server.url("/lrr/").toString().removeSuffix("/") + "/"
 
-        LRRDatabaseApi.getDatabaseStats(client, baseUrl)
+        LRRDatabaseApi.getTagStats(client, baseUrl)
 
         val req = server.awaitRequest()
         assertEquals("/lrr/api/database/stats", req.path)
