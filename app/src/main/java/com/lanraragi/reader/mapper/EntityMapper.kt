@@ -64,23 +64,6 @@ fun Archive.toDownloadInfoView(): DownloadInfo {
 }
 
 /**
- * Build a fresh [HistoryInfo] view from an [Archive] domain model.
- * History-specific fields (`time`, `mode`) keep their defaults; the
- * caller is expected to stamp `time = System.currentTimeMillis()`
- * before insert (`HistoryRepository` does so).
- */
-fun Archive.toHistoryInfoView(): HistoryInfo {
-    val hi = HistoryInfo()
-    hi.arcid = arcid
-    hi.title = title
-    hi.thumb = thumbnailUrl
-    hi.rating = rating
-    hi.simpleTags = flatTags.toTypedArray()
-    hi.serverProfileId = serverProfileId
-    return hi
-}
-
-/**
  * Recover an [Archive] from a [DownloadInfo] view. Lossy: tags
  * collapse to a flat list (the `simpleTags` field), `progress` / `extension` / `filename` reset to defaults (`pagecount` is carried) — these are
  * server-driven and round-trip via the next LRR detail fetch.
