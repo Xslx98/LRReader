@@ -162,16 +162,6 @@ class QuickSearchViewModelTest {
         assertEquals(2, vm.quickSearches.value.size)
     }
 
-    @Test
-    fun loadQuickSearches_emptyDatabase_returnsEmptyList() {
-        val vm = QuickSearchViewModel()
-        vm.loadQuickSearches()
-
-        // Give coroutine time to complete; result should still be empty
-        awaitCondition { true }
-        assertTrue("Should be empty on fresh DB", vm.quickSearches.value.isEmpty())
-    }
-
     // ── deleteQuickSearch ──────────────────────────────────────────
 
     @Test

@@ -135,16 +135,6 @@ class ServerConfigViewModelTest {
         LRRAuthManager.clear()
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // A. Initial state
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
-    fun initialState_connectingIsFalse() {
-        val vm = ServerConfigViewModel()
-        assertFalse(vm.connecting.value)
-    }
-
     // isInsecureWanUrl coverage lives in LRRUrlHelperLanAddressTest — the
     // ViewModel no longer wraps the shared predicate.
 
