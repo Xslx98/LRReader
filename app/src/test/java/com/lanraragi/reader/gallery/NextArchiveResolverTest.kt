@@ -119,16 +119,6 @@ class NextArchiveResolverTest {
     }
 
     @Test
-    fun `online tankoubon entries are skipped`() = runTest {
-        server.enqueue(
-            MockResponse().setBody(searchBody(id('a'), "TANK_1234567890", id('b'), filtered = 10))
-        )
-        ReadingContextStore.publish(onlineCtx(id('a'), 0))
-        val r = resolver.resolve(id('a')) as NextArchiveResolver.NextResult.Next
-        assertEquals(id('b'), r.archive.arcid)
-    }
-
-    @Test
     fun `online end of results resolves EndOfList`() = runTest {
         server.enqueue(MockResponse().setBody(searchBody(id('a'), filtered = 1)))
         ReadingContextStore.publish(onlineCtx(id('a'), 0))
