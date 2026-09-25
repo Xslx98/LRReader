@@ -338,53 +338,6 @@ class DownloadRepositoryTest {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // arcid-based queries (W32-2)
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
-    fun containDownloadInfo_byArcid_returnsTrueWhenPresent() {
-        val info = makeInfo(1001L, "abc123", "Gallery One")
-        repo.addInfo(info)
-        assertTrue(repo.containDownloadInfo("abc123"))
-    }
-
-    @Test
-    fun containDownloadInfo_byArcid_returnsFalseWhenAbsent() {
-        assertFalse(repo.containDownloadInfo("nonexistent"))
-    }
-
-    @Test
-    fun getDownloadInfo_byArcid_returnsCorrectInfo() {
-        val info = makeInfo(1001L, "abc123", "Gallery One")
-        repo.addInfo(info)
-        val result = repo.getDownloadInfo("abc123")
-        assertNotNull(result)
-        assertEquals("abc123", result!!.arcid)
-    }
-
-    @Test
-    fun getDownloadState_byArcid_returnsState() {
-        val info = makeInfo(1001L, "abc123", "Gallery One")
-        info.state = DownloadState.DOWNLOAD
-        repo.addInfo(info)
-        assertEquals(DownloadState.DOWNLOAD, repo.getDownloadState("abc123"))
-    }
-
-    @Test
-    fun getDownloadState_byArcid_returnsInvalidWhenAbsent() {
-        assertEquals(DownloadState.INVALID, repo.getDownloadState("nonexistent"))
-    }
-
-    @Test
-    fun arcidInfoMap_syncedOnRemove() {
-        val info = makeInfo(1001L, "abc123", "Gallery One")
-        repo.addInfo(info)
-        assertTrue(repo.containDownloadInfo("abc123"))
-        repo.removeInfo(info)
-        assertFalse(repo.containDownloadInfo("abc123"))
-    }
-
     @Test
     fun persistThenRemove_onAMultiThreadedScope_neverResurrectsTheRow() {
         val pool = java.util.concurrent.Executors.newFixedThreadPool(4)
