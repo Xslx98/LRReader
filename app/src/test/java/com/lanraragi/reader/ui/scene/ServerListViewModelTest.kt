@@ -160,6 +160,30 @@ class ServerListViewModelTest {
     }
 
     @Test
+    fun testAndAddProfile_success_makesTheNewProfileTheSoleActiveOneAndSwitchesAuth() {
+        val oldId = insertProfile("Old", "https://old.example.com", isActive = true)
+        server.enqueue(
+            MockResponse().setResponseCode(200)
+                .setBody("""{"name":"New","version":"0.9.8","archives_per_page":100}""")
+        )
+
+        val vm = ServerListViewModel()
+        val events = vm.uiEvent.collectInto(eventScope)
+        val url = server.url("").toString().removeSuffix("/")
+        vm.testAndAddProfile("New", url, "new-key", allowCleartext = false)
+
+        awaitUntil {
+            events.any { it is ServerListViewModel.ServerListUiEvent.ProfileAdded }
+        }
+        val rows = runBlocking { db.miscDao().getAllServerProfiles() }
+        val added = rows.single { it.id != oldId }
+        assertEquals("exactly one active profile", listOf(added.id), rows.filter { it.isActive }.map { it.id })
+        assertEquals(added.id, LRRAuthManager.getActiveProfileId())
+        assertEquals(url, LRRAuthManager.getServerUrl())
+        assertEquals("new-key", LRRAuthManager.getApiKey())
+    }
+
+    @Test
     fun testAndAddProfile_resolvesHttp_persistsCleartextAllowedSoProfileStaysUsable() {
         // A profile that resolves to plain HTTP must be persisted with
         // allowCleartext = true regardless of the gate flag, or the production
