@@ -27,32 +27,6 @@ object LRRDatabaseApi {
         com.lanraragi.reader.ServiceRegistry.networkModule.largeFileClient
 
     /**
-     * GET /api/database/stats — Get tag statistics.
-     */
-    @JvmStatic
-    suspend fun getDatabaseStats(
-        client: OkHttpClient,
-        baseUrl: String
-    ): String = withContext(Dispatchers.IO) {
-        val url = parseBaseUrl(baseUrl).newBuilder()
-            .addPathSegments("api/database/stats")
-            .build()
-        val request = Request.Builder()
-            .url(url)
-            .get()
-            .build()
-        client.newCall(request).await().use { response ->
-            ensureSuccess(response)
-            response.body?.string()
-                ?: throw LRREmptyBodyException()
-        }
-    }
-
-    @JvmStatic
-    suspend fun getDatabaseStats(): String =
-        getDatabaseStats(longCallClient(), LRRClientProvider.getBaseUrl())
-
-    /**
      * GET /api/database/stats — Get tag statistics as typed objects.
      */
     @JvmStatic
