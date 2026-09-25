@@ -1,19 +1,17 @@
 package com.lanraragi.reader.ui.scene.tankdetail
 
+import com.lanraragi.reader.stubAppModule
+import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.collectInto
 import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.AppProxySelector
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.TagGroup
-import com.lanraragi.reader.module.IAppModule
-import com.lanraragi.reader.module.INetworkModule
-import com.lanraragi.reader.module.NetworkMonitor
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.LoadState
 import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.OfflineTank
@@ -33,7 +31,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
-import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
@@ -149,27 +146,8 @@ class TankDetailViewModelTest {
         LRRAuthManager.initializeForTesting(ctx.getSharedPreferences("tank_detail_test", Context.MODE_PRIVATE))
         LRRAuthManager.setServerUrl(server.url("").toString().removeSuffix("/"))
 
-        val testNetworkModule = object : INetworkModule {
-            override val cache: Cache get() = Cache(File(ctx.cacheDir, "test-cache"), 1024)
-            override val proxySelector: AppProxySelector get() = throw UnsupportedOperationException()
-            override val okHttpClient: OkHttpClient = client
-            override val longReadClient: OkHttpClient = client
-            override val uploadClient: OkHttpClient = client
-            override val networkMonitor: NetworkMonitor get() = throw UnsupportedOperationException()
-        }
-        val testAppModule = object : IAppModule {
-            override fun getContext(): Context = ctx
-            override fun initialize() {}
-            override fun putGlobalStuff(o: Any): Int = 0
-            override fun containGlobalStuff(id: Int): Boolean = false
-            override fun getGlobalStuff(id: Int): Any? = null
-            override fun removeGlobalStuff(id: Int): Any? = null
-            override fun removeGlobalStuff(o: Any) {}
-            override fun putTempCache(key: String, o: Any): String = key
-            override fun containTempCache(key: String): Boolean = false
-            override fun getTempCache(key: String): Any? = null
-            override fun removeTempCache(key: String): Any? = null
-        }
+        val testNetworkModule = stubNetworkModule(client, File(ctx.cacheDir, "test-cache"))
+        val testAppModule = stubAppModule(ctx)
         ServiceRegistry.initializeForTest(network = testNetworkModule, app = testAppModule)
         eventScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     }

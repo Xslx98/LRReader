@@ -1,5 +1,7 @@
 package com.lanraragi.reader.ui.scene
 
+import com.lanraragi.reader.stubAppModule
+import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.collectInto
 import com.lanraragi.reader.awaitViewModelIdle
@@ -7,17 +9,13 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.LegacyDb
-import com.lanraragi.reader.AppProxySelector
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.MiscRoomDao
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.dao.SearchHistoryRepository
 import com.lanraragi.reader.dao.ServerProfile
-import com.lanraragi.reader.module.IAppModule
 import com.lanraragi.reader.module.IDataModule
-import com.lanraragi.reader.module.INetworkModule
-import com.lanraragi.reader.module.NetworkMonitor
 import com.lanraragi.reader.client.api.LRRAuthManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +26,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
-import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -86,28 +83,9 @@ class ServerListViewModelTest {
             .readTimeout(2, TimeUnit.SECONDS)
             .build()
 
-        val testNetworkModule = object : INetworkModule {
-            override val cache: Cache get() = Cache(File(ctx.cacheDir, "test-cache"), 1024)
-            override val proxySelector: AppProxySelector get() = throw UnsupportedOperationException()
-            override val okHttpClient: OkHttpClient = client
-            override val longReadClient: OkHttpClient = client
-            override val uploadClient: OkHttpClient = client
-            override val networkMonitor: NetworkMonitor get() = throw UnsupportedOperationException()
-        }
+        val testNetworkModule = stubNetworkModule(client, File(ctx.cacheDir, "test-cache"))
 
-        val testAppModule = object : IAppModule {
-            override fun getContext(): Context = ctx
-            override fun initialize() {}
-            override fun putGlobalStuff(o: Any): Int = 0
-            override fun containGlobalStuff(id: Int): Boolean = false
-            override fun getGlobalStuff(id: Int): Any? = null
-            override fun removeGlobalStuff(id: Int): Any? = null
-            override fun removeGlobalStuff(o: Any) {}
-            override fun putTempCache(key: String, o: Any): String = key
-            override fun containTempCache(key: String): Boolean = false
-            override fun getTempCache(key: String): Any? = null
-            override fun removeTempCache(key: String): Any? = null
-        }
+        val testAppModule = stubAppModule(ctx)
 
         val testDataModule = object : IDataModule {
             override val searchHistoryRepository get() = SearchHistoryRepository(db.browsingDao(), db)
