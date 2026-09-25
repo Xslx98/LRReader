@@ -1,5 +1,11 @@
 package com.lanraragi.reader.tankoubon
 
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
+import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.TankTagSyncFailedEvent
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
@@ -47,6 +53,7 @@ class TankTagSyncerTest {
     @Volatile
     private var membershipTouched = false
     private val failures = CopyOnWriteArrayList<TankTagSyncFailedEvent>()
+    private val eventScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
 
     @Before
     fun setUp() {
@@ -69,11 +76,13 @@ class TankTagSyncerTest {
         server.start()
         baseUrl = server.url("").toString().removeSuffix("/")
         client = OkHttpClient.Builder().connectTimeout(1, TimeUnit.SECONDS).readTimeout(1, TimeUnit.SECONDS).build()
-        TankTagSyncer.failureSink = { failures.add(it) }
+        // Observe the real event bus (subscribed synchronously: Unconfined).
+        eventScope.launch { AppEventBus.tankTagSyncFailedEvent.collect { failures.add(it) } }
     }
 
     @After
     fun tearDown() {
+        eventScope.cancel()
         server.shutdown()
         assertFalse("a tag sync PUT must never carry the membership list", membershipTouched)
     }
