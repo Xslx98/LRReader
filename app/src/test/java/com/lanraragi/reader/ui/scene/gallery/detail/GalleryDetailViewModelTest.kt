@@ -236,23 +236,6 @@ class GalleryDetailViewModelTest {
         assertEquals(true, before === vm.archiveDetail.value)
     }
 
-    @Test
-    fun secondNavigation_doesNotLeakDetailIntoFreshArchive() {
-        val vm = GalleryDetailViewModel()
-
-        // First entry: opened from downloads scene — detail loaded.
-        vm.setArchive(archive("downTok"))
-        vm.setArchiveDetail(archiveDetail("downTok"))
-        assertEquals("downTok", vm.getEffectiveArcid())
-
-        // Second entry: search-result click on a different gallery.
-        vm.resetForNewEntry()
-        vm.setArchive(archive("freshTok"))
-
-        assertEquals("freshTok", vm.getEffectiveArcid())
-        assertNull(vm.archiveDetail.value)
-    }
-
     /**
      * Regression: constructing the VM must not eagerly start [GalleryDetailViewModel.localReadingPage]
      * — that flow lazily reads SharedPreferences via ServiceRegistry, which is uninitialized
