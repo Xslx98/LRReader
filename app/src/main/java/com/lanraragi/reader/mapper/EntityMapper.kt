@@ -7,7 +7,6 @@ import com.lanraragi.reader.dao.ArchiveLocalStateJson
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.dao.DownloadObservedRow
 import com.lanraragi.reader.dao.HistoryInfo
-import com.lanraragi.reader.dao.LocalFavoriteInfo
 import com.lanraragi.reader.download.DownloadState
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
@@ -15,10 +14,9 @@ import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.domain.groupFlatTags
 
 // ═══════════════════════════════════════════════════════════════════
-//  Archive ↔ in-memory subsystem views (DownloadInfo / HistoryInfo /
-//  LocalFavoriteInfo).
+//  Archive ↔ in-memory subsystem views (DownloadInfo / HistoryInfo).
 //
-//  Post-L1 the three "Info" types are no longer Room entities — they
+//  Post-L1 the "Info" types are no longer Room entities — they
 //  are mutable in-memory views the UI/Adapter/sync code reads and
 //  writes. Persistence lives on `ArchiveLocalState`. These bridge
 //  functions intentionally do NOT touch the database; their job is to
@@ -134,7 +132,7 @@ fun HistoryInfo.toArchive(): Archive {
 //  ArchiveLocalState row → in-memory views.
 //
 //  The repository layer reads ARCHIVE_LOCAL_STATE rows and hands
-//  callers DownloadInfo / HistoryInfo / LocalFavoriteInfo via the
+//  callers DownloadInfo / HistoryInfo via the
 //  toXxxView() functions below. Each constructs an [Archive] from
 //  the row's `archive_json` payload and overlays the subsystem
 //  columns onto the view.
@@ -236,25 +234,6 @@ fun ArchiveLocalState.toHistoryInfoView(): HistoryInfo {
     info.serverProfileId = serverProfileId
     info.mode = historyMode
     info.time = historyTime ?: 0L
-    return info
-}
-
-/**
- * Build a [LocalFavoriteInfo] view from an [ArchiveLocalState] row.
- */
-fun ArchiveLocalState.toLocalFavoriteInfoView(): LocalFavoriteInfo {
-    val archive = decodeArchive(arcid, archiveJson)
-    val info = LocalFavoriteInfo()
-    info.arcid = arcid
-    info.title = archive.title
-    info.thumb = archive.thumbnailUrl
-    info.rating = archive.rating
-    // LRR API never populates simpleLanguage; column has no producer post-L1.
-    // See DownloadInfo.updateInfo for the canonical explanation.
-    info.simpleLanguage = null
-    info.simpleTags = archive.flatTags.toTypedArray()
-    info.serverProfileId = serverProfileId
-    info.time = favoriteTime ?: 0L
     return info
 }
 
