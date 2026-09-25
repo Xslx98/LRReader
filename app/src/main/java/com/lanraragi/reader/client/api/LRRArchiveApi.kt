@@ -371,49 +371,6 @@ object LRRArchiveApi {
     }
 
     /**
-     * Construct the URL for fetching a specific page image.
-     *
-     * @param pagePath Page path from extractArchive() result
-     */
-    @JvmStatic
-    fun getPageUrl(baseUrl: String, arcid: String, pagePath: String): String {
-        return parseBaseUrl(baseUrl).newBuilder()
-            .addPathSegments("api/archives")
-            .addPathSegment(requireValidArcid(arcid))
-            .addPathSegment("page")
-            .addQueryParameter("path", pagePath)
-            .build()
-            .toString()
-    }
-
-    /**
-     * Construct the URL for a per-page thumbnail.
-     *
-     * `no_fallback=true` tells LANraragi to return 202 + a job
-     * descriptor rather than substituting the cover thumbnail while
-     * the page-specific thumbnail is being generated. Without this
-     * we cannot tell "thumb ready" from "cover stand-in" and the
-     * preview grid would render the same cover for every page until
-     * the user reopens the detail page.
-     *
-     * @param page 0-indexed page number. Converted to the server's 1-indexed
-     *   page on the wire (`page + 1`): LANraragi stores per-page thumbnails as
-     *   1.jpg..N.jpg and treats `page=0` as the cover, so sending the raw
-     *   0-indexed value shows every tile one page off (and never the last page).
-     */
-    @JvmStatic
-    fun getPageThumbnailUrl(baseUrl: String, arcid: String, page: Int): String {
-        return parseBaseUrl(baseUrl).newBuilder()
-            .addPathSegments("api/archives")
-            .addPathSegment(requireValidArcid(arcid))
-            .addPathSegment("thumbnail")
-            .addQueryParameter("page", (page + 1).toString())
-            .addQueryParameter("no_fallback", "true")
-            .build()
-            .toString()
-    }
-
-    /**
      * GET /api/archives/:id/thumbnail?page=N — Fetch a single page thumbnail.
      *
      * Returns [PageThumbnailFetchResult.Ready] when the server has the
@@ -422,6 +379,11 @@ object LRRArchiveApi {
      * (HTTP 202 + JSON job descriptor). The caller is responsible for
      * polling on Pending (typically with backoff) until either a Ready
      * lands or a retry budget is exhausted.
+     *
+     * `no_fallback=true` makes the server answer 202 + a job descriptor
+     * instead of substituting the cover while the page thumbnail is being
+     * generated; without it "thumb ready" is indistinguishable from "cover
+     * stand-in" and the preview grid would show the cover for every page.
      *
      * Unlike most archive endpoints this one is **not** wrapped in
      * [retryOnFailure]: the per-page thumbnail loader runs its own
@@ -561,10 +523,6 @@ object LRRArchiveApi {
     @JvmStatic
     suspend fun getFileList(arcid: String): Array<String> =
         getFileList(ServiceRegistry.networkModule.longReadClient, LRRClientProvider.getBaseUrl(), arcid)
-
-    @JvmStatic
-    fun getPageUrl(arcid: String, pagePath: String): String =
-        getPageUrl(LRRClientProvider.getBaseUrl(), arcid, pagePath)
 
     @JvmStatic
     suspend fun clearNewFlag(arcid: String) =
