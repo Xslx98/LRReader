@@ -160,7 +160,6 @@
     <string name="share">แชร์</string>
     <string name="no_tags">ไม่มีแท็ก</string>
     <string name="refresh">รีเฟรช</string>
-    <string name="open_in_other_app">เปิดด้วยแอปอื่น</string>
     <string name="file_chooser_title">เปิดด้วย</string>
     <string name="favorited">เพิ่มในหมวดหมู่แล้ว</string>
     <string name="not_favorited">ยังไม่เพิ่มหมวดหมู่</string>
