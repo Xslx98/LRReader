@@ -82,15 +82,18 @@ class ServerProfileDaoTest {
     }
 
     @Test
-    fun deactivateAll() = runTest {
+    fun setActiveProfileExclusive_leavesOnlyTheTargetActive() = runTest {
+        // The production profile switch (ProfileRepository.activateExclusive):
+        // one statement, so there is never a moment with zero or two actives.
         dao.insertServerProfile(ServerProfile(name = "A", url = "https://a.com", isActive = true))
         dao.insertServerProfile(ServerProfile(name = "B", url = "https://b.com", isActive = true))
+        val target = dao.insertServerProfile(ServerProfile(name = "C", url = "https://c.com", isActive = false))
 
-        dao.deactivateAllProfiles()
+        dao.setActiveProfileExclusive(target)
 
         val all = dao.getAllServerProfiles()
-        assertEquals(2, all.size)
-        assertTrue(all.all { !it.isActive })
+        assertEquals(3, all.size)
+        assertEquals(listOf(target), all.filter { it.isActive }.map { it.id })
     }
 
     @Test
