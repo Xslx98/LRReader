@@ -3,7 +3,6 @@ package com.lanraragi.reader.download
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.LegacyDb
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.client.api.LRRAuthManager
@@ -65,10 +64,6 @@ class DownloadManagerOrphanLabelBatchTest {
             .setQueryExecutor { it.run() }
             .setTransactionExecutor { it.run() }
             .build()
-
-        val dbField = LegacyDb::class.java.getDeclaredField("sDatabase")
-        dbField.isAccessible = true
-        dbField.set(LegacyDb, db)
 
         ServiceRegistry.initializeForTest(
             data = object : com.lanraragi.reader.module.IDataModule {
