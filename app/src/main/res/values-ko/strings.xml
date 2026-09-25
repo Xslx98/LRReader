@@ -263,7 +263,6 @@
     <string name="clear_all">모두 지우기</string>
     <string name="clear_all_history">이 서버의 읽기 기록을 지우시겠습니까?</string>
 
-    <string name="show_definition">정의 표시</string>
 
     <!-- Set Security -->
     <string name="set_pattern_protection">패턴 보호 사용</string>

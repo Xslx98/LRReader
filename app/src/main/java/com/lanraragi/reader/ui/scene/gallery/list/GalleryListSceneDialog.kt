@@ -8,9 +8,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.AppearanceSettings
-import com.lanraragi.reader.UrlOpener
 import com.lanraragi.reader.client.TagTranslationDatabase
-import com.lanraragi.reader.client.LRRUrl
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.util.TagTranslationUtil
 
@@ -23,13 +21,6 @@ class GalleryListSceneDialog(val baseScene: BaseScene) {
     }
 
     fun showTagLongPressDialog(ehTags: TagTranslationDatabase?) {
-        val temp: String?
-        val index = tagName!!.indexOf(':')
-        temp = if (index >= 0) {
-            tagName!!.substring(index + 1)
-        } else {
-            tagName
-        }
         val title = if (AppearanceSettings.getShowTagTranslations()) {
             TagTranslationUtil.getTagCN(tagName, ehTags) + "(" + tagName + ")"
         } else {
@@ -37,13 +28,6 @@ class GalleryListSceneDialog(val baseScene: BaseScene) {
         }
         AlertDialog.Builder(context!!)
             .setTitle(title)
-            .setItems(R.array.tag_menu_entries) { _: DialogInterface?, which: Int ->
-                when (which) {
-                    0 -> UrlOpener.openUrl(
-                        context, LRRUrl.getTagDefinitionUrl(temp), false
-                    )
-                }
-            }
             .setNegativeButton(R.string.copy_tag) { _: DialogInterface?, _: Int -> copyTag(tagName) }
             .show()
     }

@@ -352,8 +352,6 @@
     <string name="clear_all">Clear all</string>
     <string name="clear_all_history">Clear this server\'s reading history?</string>
 
-    <string name="show_definition">Show definition</string>
-
     <!-- Set Security -->
     <string name="set_pattern_protection">Set pattern protection</string>
     <string name="set_pattern_protection_tip">Draw a pattern to set pattern protection\nLeave blank to clear pattern protection</string>

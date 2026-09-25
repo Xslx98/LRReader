@@ -263,7 +263,6 @@
     <string name="clear_all">Limpiar todo</string>
     <string name="clear_all_history">¿Borrar el historial de lectura de este servidor?</string>
 
-    <string name="show_definition">Mostrar definición</string>
 
     <!-- Set Security -->
     <string name="set_pattern_protection">Establecer protección por patrón</string>

@@ -255,7 +255,6 @@
     <string name="clear_all">全部清除</string>
     <string name="clear_all_history">清除此服务器的阅读历史？</string>
 
-    <string name="show_definition">查看定义</string>
 
     <!-- Set Security -->
     <string name="set_pattern_protection">设置图案保护</string>

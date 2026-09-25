@@ -209,7 +209,6 @@
     <string name="no_history">Deiner Lesungsverlauf wird hier angezeigt.</string>
     <string name="clear_all">Verlaufdaten löschen</string>
     <string name="clear_all_history">Leseverlauf dieses Servers löschen?</string>
-    <string name="show_definition">Definition anzeigen</string>
     <string name="set_pattern_protection">Sperrmuster festlegen</string>
     <string name="set_pattern_protection_tip">Zeichne ein Muster, um es als Sperrmuster festzulegen.\nLasse frei, um das Sperrmuster zu entfernen.</string>
     <string name="set">Festlegen</string>
