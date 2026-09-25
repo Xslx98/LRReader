@@ -1,11 +1,15 @@
 package com.lanraragi.reader.ui.scene.gallery.detail
 
+import androidx.collection.LruCache
+import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.gallery.ReadingProgressTracker
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
+import com.lanraragi.reader.module.IDataModule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -142,6 +146,42 @@ class GalleryDetailViewModelTest {
         // Clearing falls back to null.
         vm.setArchiveDetail(null)
         assertNull(vm.currentRating.value)
+    }
+
+    @Test
+    fun tryLoadFromCache_restoresTheFavoriteStateResolvedOnAnEarlierVisit() {
+        // Reopening a gallery whose detail is cached skips the network fetch,
+        // so the heart icon must come back from the per-arcid favorite cache
+        // instead of flashing "not favorited" until some later refresh.
+        val detailCache = LruCache<String, ArchiveDetail>(4)
+        ServiceRegistry.initializeForTest(coroutine = null, data = detailCacheOnly(detailCache))
+        val vm = GalleryDetailViewModel()
+
+        vm.setArchiveDetail(archiveDetail("favTok"))
+        vm.updateFavoriteState(FavoriteState(isFavorited = true, name = "Reading"))
+        detailCache.put("favTok", archiveDetail("favTok"))
+
+        vm.resetForNewEntry()
+        vm.setArchive(archive("favTok"))
+
+        assertTrue(vm.tryLoadFromCache())
+        assertEquals(FavoriteState(isFavorited = true, name = "Reading"), vm.favoriteState.value)
+    }
+
+    /** Only [IDataModule.archiveDetailCache] is live; everything else is unreachable here. */
+    private fun detailCacheOnly(cache: LruCache<String, ArchiveDetail>): IDataModule = object : IDataModule {
+        override val favouriteStatusRouter get() = throw UnsupportedOperationException()
+        override val downloadManager get() = throw UnsupportedOperationException()
+        override val historyRepository get() = throw UnsupportedOperationException()
+        override val profileRepository get() = throw UnsupportedOperationException()
+        override val profileLookupCache get() = throw UnsupportedOperationException()
+        override val quickSearchRepository get() = throw UnsupportedOperationException()
+        override val searchHistoryRepository get() = throw UnsupportedOperationException()
+        override val favoritesRepository get() = throw UnsupportedOperationException()
+        override val downloadDbRepository get() = throw UnsupportedOperationException()
+        override val archiveDetailCache get() = cache
+        override val spiderInfoCache get() = throw UnsupportedOperationException()
+        override fun clearArchiveDetailCache() = cache.evictAll()
     }
 
     @Test
