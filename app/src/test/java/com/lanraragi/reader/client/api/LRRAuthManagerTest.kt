@@ -95,10 +95,12 @@ class LRRAuthManagerTest {
     }
 
     @Test
-    fun clearApiKeyForProfile_removesKey() {
+    fun clearApiKeyForProfile_removesOnlyThatProfilesKey() {
+        LRRAuthManager.setApiKeyForProfile(41L, "keep-me")
         LRRAuthManager.setApiKeyForProfile(42L, "profile-key")
         LRRAuthManager.clearApiKeyForProfile(42L)
         assertNull(LRRAuthManager.getApiKeyForProfile(42L))
+        assertEquals("keep-me", LRRAuthManager.getApiKeyForProfile(41L))
     }
 
     @Test
