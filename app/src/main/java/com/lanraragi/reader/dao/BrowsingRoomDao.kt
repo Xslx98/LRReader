@@ -59,16 +59,6 @@ interface BrowsingRoomDao {
     )
     suspend fun getRecentSearchHistory(profileId: Long, limit: Int): List<SearchHistoryEntry>
 
-    @Query(
-        "SELECT * FROM SEARCH_HISTORY WHERE SERVER_PROFILE_ID = :profileId " +
-            "AND QUERY LIKE :prefix || '%' ESCAPE '\\' ORDER BY LAST_USED DESC LIMIT :limit"
-    )
-    suspend fun getMatchingSearchHistory(
-        profileId: Long,
-        prefix: String,
-        limit: Int
-    ): List<SearchHistoryEntry>
-
     /** Keep the [keep] most-recent rows for the profile, delete the rest. */
     @Query(
         "DELETE FROM SEARCH_HISTORY WHERE SERVER_PROFILE_ID = :profileId AND QUERY IN (" +
