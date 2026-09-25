@@ -1,5 +1,6 @@
 package com.lanraragi.reader.mapper
 
+import com.lanraragi.reader.dao.HistoryInfo
 import com.lanraragi.reader.domain.Archive
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -53,17 +54,6 @@ class EntityMapperTest {
     }
 
     @Test
-    fun `Archive toHistoryInfoView populates display fields`() {
-        val hi = archive().toHistoryInfoView()
-
-        assertEquals("ga1", hi.arcid)
-        assertEquals("Direct Archive", hi.title)
-        assertEquals("https://example.com/g.jpg", hi.thumb)
-        assertEquals(3.0f, hi.rating)
-        assertEquals(9L, hi.serverProfileId)
-    }
-
-    @Test
     fun `Archive toDegradedArchiveDetail seeds tagGroups for cache-first render`() {
         // The detail page falls back to this mapper when the live LRR
         // metadata fetch hasn't returned (cross-server source offline,
@@ -88,11 +78,12 @@ class EntityMapperTest {
     @Test
     fun `HistoryInfo toArchive converts millisecond view time to epoch-second lastreadtime`() {
         // HISTORY_TIME column semantics are device milliseconds; the Archive
-        // field (and thus any persisted archive_json built from this mapper,
-        // e.g. HistoryRepository.putHistoryInfoList) is epoch SECONDS —
-        // LANraragi `lastreadtime` semantics.
-        val hi = archive().toHistoryInfoView()
-        hi.time = 1_700_000_001_234L
+        // field (and thus any archive_json built from this mapper) is epoch
+        // SECONDS — LANraragi `lastreadtime` semantics.
+        val hi = HistoryInfo().apply {
+            arcid = "ga1"
+            time = 1_700_000_001_234L
+        }
 
         assertEquals(1_700_000_001L, hi.toArchive().lastreadtime)
     }
