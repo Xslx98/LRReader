@@ -302,7 +302,7 @@ class DownloadsViewModelTest {
     }
 
     // -------------------------------------------------------------------------
-    // W35-3b post-mortem: split Room (structural) from progressMap (transient)
+    // progressMap (tracker snapshots) and label filtering
     // -------------------------------------------------------------------------
 
     @Test
