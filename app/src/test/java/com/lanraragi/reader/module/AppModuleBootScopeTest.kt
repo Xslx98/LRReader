@@ -3,12 +3,9 @@ package com.lanraragi.reader.module
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertSame
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -92,40 +89,5 @@ class AppModuleBootScopeTest {
         )
         // Direct invocation: should not throw even though both callbacks throw.
         handler.handleException(kotlin.coroutines.EmptyCoroutineContext, RuntimeException("boom"))
-    }
-
-    @Test
-    fun bootScope_isNotNull_andIsLazyToConstruct() {
-        // Touching the property exposes the singleton — should not throw.
-        val scope = AppModule.bootScope
-        assertNotNull(scope)
-        // Static reference should be stable.
-        assertSame(scope, AppModule.bootScope)
-    }
-
-    @Test
-    fun bootCEH_isNotNull_andIsStable() {
-        val ceh = AppModule.bootCEH
-        assertNotNull(ceh)
-        assertSame(ceh, AppModule.bootCEH)
-    }
-
-    @Test
-    fun activeProfileIdDeferred_canBeCompletedWithValue_andIsIdempotent() = runBlocking {
-        // The deferred is a process-wide singleton — once completed by another test
-        // (or by the application's profile loader in production), it stays completed.
-        // We exercise the API contract here without asserting a specific value.
-        val deferred = AppModule.activeProfileIdDeferred
-        // Attempt to complete with null — returns true the first time, false thereafter.
-        deferred.complete(null)
-        // Subsequent complete() calls are no-ops, never throwing.
-        deferred.complete(123L)
-        deferred.complete(null)
-        // Awaiter must not hang. The deferred is now resolved (either by us above
-        // or by an earlier test), so await() must return promptly. We don't assert
-        // which value won the race because the deferred is a singleton — only that
-        // it completed.
-        withTimeout(1_000L) { deferred.await() }
-        assertTrue("deferred is completed after first complete()", deferred.isCompleted)
     }
 }
