@@ -16,7 +16,7 @@ import org.robolectric.annotation.Config
  * [ContentLayout.ContentHelper] turns each page result into granular adapter
  * notifications (audit A64): a whole-list refresh is diffed, a very long list
  * falls back to one remove + one insert, and a single-page refresh is diffed
- * only inside that page's window, shifted to the page's adapter position.
+ * against that page and notified at the page's adapter position.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30], application = android.app.Application::class)
@@ -101,7 +101,7 @@ class ContentHelperDiffDispatchTest {
     }
 
     @Test
-    fun refreshingTheLastPage_diffsOnlyThatPageAtItsAdapterOffset() {
+    fun refreshingTheLastPage_notifiesAtThatPagesAdapterOffset() {
         helper.refresh()
         helper.deliver(rows("a", "b", "c"), pages = 2, nextPage = 1)
         pullFooter() // next page
