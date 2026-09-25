@@ -25,14 +25,8 @@ import com.lanraragi.reader.client.LegacyCategoryConfig
 import com.lanraragi.reader.client.LRRUtils
 import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.widget.AdvanceSearchTable
-import com.lanraragi.reader.widget.GalleryInfoContentHelper
 import com.lanraragi.framework.lib.yorozuya.NumberUtils
 import com.lanraragi.framework.lib.yorozuya.StringUtils
-import com.lanraragi.framework.widget.ContentLayout.ContentHelper.GOTO_FIRST_PAGE
-import com.lanraragi.framework.widget.ContentLayout.ContentHelper.GOTO_LAST_PAGE
-import com.lanraragi.framework.widget.ContentLayout.ContentHelper.GOTO_NEXT_PAGE
-import com.lanraragi.framework.widget.ContentLayout.ContentHelper.GOTO_PREV_PAGE
-import com.lanraragi.framework.widget.ContentLayout.ContentHelper.TYPE_SOMEWHERE
 import java.io.UnsupportedEncodingException
 import java.net.URLDecoder
 
@@ -73,9 +67,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
      */
     @JvmField
     var categoryName: String? = null
-
-    @JvmField
-    var follow: String? = null
 
     @JvmField
     var advanceSearch: Int = -1
@@ -158,7 +149,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
     fun setCategoryId(value: String?) { categoryId = value }
     fun getCategoryName(): String? = categoryName
     fun setCategoryName(value: String?) { categoryName = value }
-    fun setFollow(value: String?) { follow = value }
     fun getAdvanceSearch(): Int = advanceSearch
     fun setAdvanceSearch(value: Int) { advanceSearch = value }
     fun getMinRating(): Int = minRating
@@ -179,7 +169,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
         keyword = lub.keyword
         categoryId = lub.categoryId
         categoryName = lub.categoryName
-        follow = lub.follow
         advanceSearch = lub.advanceSearch
         minRating = lub.minRating
         pageFrom = lub.pageFrom
@@ -337,15 +326,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
             }
         } else {
             advanceSearch = -1
-        }
-    }
-
-    fun build(pageAction: Int, helper: GalleryInfoContentHelper): String? {
-        return when (pageAction) {
-            GOTO_PREV_PAGE -> helper.prevHref
-            GOTO_NEXT_PAGE, TYPE_SOMEWHERE -> helper.nextHref
-            GOTO_LAST_PAGE -> helper.lastHref
-            else -> helper.firstHref // GOTO_FIRST_PAGE and default
         }
     }
 
