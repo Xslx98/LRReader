@@ -1,5 +1,7 @@
 package com.lanraragi.reader.client.api
 
+import javax.crypto.spec.PBEKeySpec
+import javax.crypto.SecretKeyFactory
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Base64
@@ -248,6 +250,16 @@ class PatternLockoutTest {
     // ── PBKDF2 iteration migration (100K → 200K) ──────────────────
 
     /**
+     * Independent PBKDF2WithHmacSHA256 (256-bit key) with a literal iteration
+     * count, so a change to the production constants fails these tests
+     * instead of silently moving the expected value with them.
+     */
+    private fun pbkdf2(pattern: String, salt: ByteArray, iterations: Int): ByteArray =
+        SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+            .generateSecret(PBEKeySpec(pattern.toCharArray(), salt, iterations, 256))
+            .encoded
+
+    /**
      * Helper: manually write a legacy (V1 / 100K-iteration) PBKDF2 hash into
      * SharedPreferences, bypassing [LRRAuthManager.setPattern] which now uses 200K.
      */
@@ -255,7 +267,7 @@ class PatternLockoutTest {
         val prefs: SharedPreferences = ctx.getSharedPreferences("lockout_test", Context.MODE_PRIVATE)
         val salt = ByteArray(16)
         SecureRandom().nextBytes(salt)
-        val hash = LRRAuthManager.computePbkdf2Hash(pattern, salt, LRRAuthManager.ITERATIONS_V1)
+        val hash = pbkdf2(pattern, salt, 100_000)
         prefs.edit()
             .putString("pattern_hash_v2", Base64.encodeToString(hash, Base64.NO_WRAP))
             .putString("pattern_salt", Base64.encodeToString(salt, Base64.NO_WRAP))
@@ -286,9 +298,7 @@ class PatternLockoutTest {
         val storedHashStr = prefs.getString("pattern_hash_v2", null)!!
         val storedHash = Base64.decode(storedHashStr, Base64.NO_WRAP)
 
-        val expectedV2Hash = LRRAuthManager.computePbkdf2Hash(
-            pattern, salt, LRRAuthManager.ITERATIONS_CURRENT
-        )
+        val expectedV2Hash = pbkdf2(pattern, salt, 200_000)
         assertArrayEquals("Stored hash should be re-hashed with 200K iterations",
             expectedV2Hash, storedHash)
     }
