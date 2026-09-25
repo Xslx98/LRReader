@@ -102,6 +102,13 @@ class LRRAuthManagerTest {
     }
 
     @Test
+    fun setApiKeyForProfile_emptyString_readsAsNoKey() {
+        LRRAuthManager.setApiKeyForProfile(5L, "some_key")
+        LRRAuthManager.setApiKeyForProfile(5L, "")
+        assertNull(LRRAuthManager.getApiKeyForProfile(5L))
+    }
+
+    @Test
     fun profileKeysAreIsolated() {
         LRRAuthManager.setApiKeyForProfile(1L, "key-1")
         LRRAuthManager.setApiKeyForProfile(2L, "key-2")
