@@ -1,6 +1,7 @@
 package com.lanraragi.reader.ui.scene
 
 import com.lanraragi.reader.awaitRequest
+import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
@@ -51,7 +52,7 @@ import java.util.concurrent.TimeUnit
  * for Android context. ServiceRegistry is initialized with test modules.
  * Harness mirrors [LRRCategoriesViewModelTest].
  *
- * The ViewModel dispatches work to `Dispatchers.IO`. Tests use [awaitCondition]
+ * The ViewModel dispatches work to `Dispatchers.IO`. Tests use [awaitUntil]
  * to wait for IO-dispatched coroutines to complete.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -122,14 +123,6 @@ class TankoubonsViewModelTest {
         server.shutdown()
     }
 
-    private fun awaitCondition(timeoutMs: Long = 5000, condition: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (!condition() && System.currentTimeMillis() < deadline) {
-            Thread.sleep(50)
-        }
-        assertTrue("Condition not met within ${timeoutMs}ms", condition())
-    }
-
     /**
      * Subscribe to [vm.uiEvent] on [eventScope] and **block until the
      * subscription is actually live**. The ViewModel's SharedFlow has
@@ -182,8 +175,8 @@ class TankoubonsViewModelTest {
         val vm = TankoubonsViewModel()
         vm.loadTankoubons()
 
-        awaitCondition { vm.tanks.value.size == 1 }
-        awaitCondition { TankCoverCacheStamp.value > before }
+        awaitUntil { vm.tanks.value.size == 1 }
+        awaitUntil { TankCoverCacheStamp.value > before }
     }
 
     @Test
@@ -195,7 +188,7 @@ class TankoubonsViewModelTest {
         val before = TankCoverCacheStamp.value
         vm.loadTankoubons()
 
-        awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.ShowError } }
+        awaitUntil { events.any { it is TankoubonsViewModel.TankUiEvent.ShowError } }
         assertEquals(before, TankCoverCacheStamp.value)
     }
 
@@ -212,7 +205,7 @@ class TankoubonsViewModelTest {
 
         vm.loadTankoubons()
 
-        awaitCondition { calls.size == 1 }
+        awaitUntil { calls.size == 1 }
         val (_, url, truth) = calls.single()
         assertEquals(LRRAuthManager.getServerUrl(), url)
         val tank = truth.single()
@@ -234,7 +227,7 @@ class TankoubonsViewModelTest {
 
         vm.loadTankoubons()
 
-        awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.ShowError } }
+        awaitUntil { events.any { it is TankoubonsViewModel.TankUiEvent.ShowError } }
         assertTrue(calls.isEmpty())
     }
 
@@ -259,11 +252,11 @@ class TankoubonsViewModelTest {
 
         vm.openTank(tank)
 
-        awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.OpenReader } }
+        awaitUntil { events.any { it is TankoubonsViewModel.TankUiEvent.OpenReader } }
         val open = events.filterIsInstance<TankoubonsViewModel.TankUiEvent.OpenReader>().single()
         assertEquals("test.open", open.intent.action)
         assertEquals(listOf("TANK_0000000001"), seen)
-        awaitCondition { vm.openingTankId.value == null }
+        awaitUntil { vm.openingTankId.value == null }
     }
 
     @Test
@@ -274,9 +267,9 @@ class TankoubonsViewModelTest {
 
         vm.openTank(LRRTankoubonApi.Tankoubon(id = "TANK_0000000001", name = "Alpha"))
 
-        awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.ShowError } }
+        awaitUntil { events.any { it is TankoubonsViewModel.TankUiEvent.ShowError } }
         assertFalse(events.any { it is TankoubonsViewModel.TankUiEvent.OpenReader })
-        awaitCondition { vm.openingTankId.value == null }
+        awaitUntil { vm.openingTankId.value == null }
     }
 
     @Test
@@ -287,7 +280,7 @@ class TankoubonsViewModelTest {
 
         vm.fillTank(LRRTankoubonApi.Tankoubon(id = "TANK_0000000001", name = "Alpha"))
 
-        awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.FillTank } }
+        awaitUntil { events.any { it is TankoubonsViewModel.TankUiEvent.FillTank } }
         val fill = events.filterIsInstance<TankoubonsViewModel.TankUiEvent.FillTank>().single()
         assertEquals("TANK_0000000001", fill.tankId)
         assertEquals("Alpha", fill.name)
@@ -329,7 +322,7 @@ class TankoubonsViewModelTest {
         val vm = TankoubonsViewModel()
         vm.loadTankoubons()
 
-        awaitCondition { vm.tanks.value.size == 1 }
+        awaitUntil { vm.tanks.value.size == 1 }
         assertEquals(
             mapOf("TANK_0000000001" to arcId(1)),
             vm.coverFallbacks.value.mapValues { it.value.arcid }
@@ -350,7 +343,7 @@ class TankoubonsViewModelTest {
         val vm = TankoubonsViewModel()
         vm.loadTankoubons()
 
-        awaitCondition { vm.tanks.value.size == 1 }
+        awaitUntil { vm.tanks.value.size == 1 }
         assertTrue(vm.coverFallbacks.value.isEmpty())
     }
 
@@ -365,7 +358,7 @@ class TankoubonsViewModelTest {
         val vm = TankoubonsViewModel()
         vm.loadTankoubons()
 
-        awaitCondition { vm.tanks.value.size == 1 }
+        awaitUntil { vm.tanks.value.size == 1 }
         assertTrue("empty tank must not be probed", dispatcher.probePaths.isEmpty())
         assertTrue(vm.coverFallbacks.value.isEmpty())
     }
@@ -385,12 +378,12 @@ class TankoubonsViewModelTest {
         val vm = TankoubonsViewModel()
         vm.loadTankoubons()
 
-        awaitCondition { vm.tanks.value.size == 2 }
+        awaitUntil { vm.tanks.value.size == 2 }
         assertEquals("Alpha", vm.tanks.value[0].name)
         assertEquals(2, vm.tanks.value[0].archives.size)
         assertEquals(5, vm.tanks.value[0].progress)
         assertEquals("Beta", vm.tanks.value[1].name)
-        awaitCondition { !vm.isLoading.value }
+        awaitUntil { !vm.isLoading.value }
     }
 
     @Test
@@ -411,7 +404,7 @@ class TankoubonsViewModelTest {
         val vm = TankoubonsViewModel()
         vm.loadTankoubons()
 
-        awaitCondition { vm.tanks.value.size == 2 }
+        awaitUntil { vm.tanks.value.size == 2 }
         assertEquals("First", vm.tanks.value[0].name)
         assertEquals("Second", vm.tanks.value[1].name)
         assertEquals("Should have requested exactly two pages", 2, server.requestCount)
@@ -428,7 +421,7 @@ class TankoubonsViewModelTest {
 
         val vm = TankoubonsViewModel()
         vm.loadTankoubons()
-        awaitCondition { vm.tanks.value.size == 1 }
+        awaitUntil { vm.tanks.value.size == 1 }
 
         // Reload: page 1 succeeds (partial), page 2 blows up mid-pagination
         server.enqueue(MockResponse().setBody(pageJson(
@@ -439,8 +432,8 @@ class TankoubonsViewModelTest {
         val events = collectEvents(vm)
         vm.loadTankoubons()
 
-        awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.ShowError } }
-        awaitCondition { !vm.isLoading.value }
+        awaitUntil { events.any { it is TankoubonsViewModel.TankUiEvent.ShowError } }
+        awaitUntil { !vm.isLoading.value }
         assertEquals("Failed reload must not publish a partial list", 1, vm.tanks.value.size)
         assertEquals("Stable", vm.tanks.value[0].name)
     }
@@ -458,7 +451,7 @@ class TankoubonsViewModelTest {
 
         vm.create("NewTank")
 
-        awaitCondition { events.isNotEmpty() }
+        awaitUntil { events.isNotEmpty() }
         val error = events.filterIsInstance<TankoubonsViewModel.TankUiEvent.ShowError>().first()
         assertEquals(
             "423 must map to the dedicated locked message",
@@ -481,11 +474,11 @@ class TankoubonsViewModelTest {
 
         vm.create("NewTank")
 
-        awaitCondition { vm.tanks.value.isNotEmpty() }
+        awaitUntil { vm.tanks.value.isNotEmpty() }
         // The ShowSuccess event is delivered to the collector asynchronously
         // (on eventScope), so the tanks reload completing does not imply the
         // event has landed in [events] yet — poll the event itself too.
-        awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.ShowSuccess } }
+        awaitUntil { events.any { it is TankoubonsViewModel.TankUiEvent.ShowSuccess } }
         assertTrue("Should emit ShowSuccess",
             events.any { it is TankoubonsViewModel.TankUiEvent.ShowSuccess })
         assertEquals(1, vm.tanks.value.size)
@@ -517,7 +510,7 @@ class TankoubonsViewModelTest {
 
         vm.autoSort(tank)
 
-        awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.Sorted } }
+        awaitUntil { events.any { it is TankoubonsViewModel.TankUiEvent.Sorted } }
         assertTrue(server.awaitRequest().path!!.startsWith("/api/tankoubons/${tank.id}/full"))
         val put = server.awaitRequest()
         assertEquals("PUT", put.method)
@@ -538,7 +531,7 @@ class TankoubonsViewModelTest {
 
         vm.autoSort(tank)
 
-        awaitCondition {
+        awaitUntil {
             events.any {
                 it is TankoubonsViewModel.TankUiEvent.ShowSuccess && it.messageResId == R.string.tank_already_sorted
             }
@@ -555,7 +548,7 @@ class TankoubonsViewModelTest {
 
         vm.restoreOrder("TANK_0000000001", listOf(arcId(2), arcId(1)))
 
-        awaitCondition { events.any { it is TankoubonsViewModel.TankUiEvent.ShowSuccess } }
+        awaitUntil { events.any { it is TankoubonsViewModel.TankUiEvent.ShowSuccess } }
         val put = server.awaitRequest()
         assertEquals("PUT", put.method)
         assertTrue(put.body.readUtf8().contains(""""archives":["${arcId(2)}","${arcId(1)}"]"""))

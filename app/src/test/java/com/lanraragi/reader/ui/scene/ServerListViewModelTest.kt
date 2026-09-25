@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene
 
+import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.room.Room
@@ -144,14 +145,6 @@ class ServerListViewModelTest {
         server.shutdown()
     }
 
-    private fun awaitCondition(timeoutMs: Long = 5000, condition: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (!condition() && System.currentTimeMillis() < deadline) {
-            Thread.sleep(50)
-        }
-        assertTrue("Condition not met within ${timeoutMs}ms", condition())
-    }
-
     /**
      * Start collecting [ServerListViewModel.uiEvent] and synchronously wait
      * until the collector has actually subscribed before returning.
@@ -162,7 +155,7 @@ class ServerListViewModelTest {
      * `eventScope.launch { collect { ... } }` pattern raced with the test
      * body — on CI's slower scheduler the `collect` coroutine had not yet
      * registered when `vm.deleteProfile(...)` fired, so the event was lost
-     * and [awaitCondition] timed out.
+     * and [awaitUntil] timed out.
      *
      * [onSubscription] runs its callback after the flow registers the
      * collector but before the first value is delivered, so completing the
@@ -218,7 +211,7 @@ class ServerListViewModelTest {
         // Explicit http:// scheme → single probe, no https ladder.
         vm.testAndAddProfile("X", server.url("").toString().removeSuffix("/"), "candidate-key", true)
 
-        awaitCondition {
+        awaitUntil {
             events.any { it is ServerListViewModel.ServerListUiEvent.AddConnectionFailed }
         }
         assertEquals("http://prior.example.com:3000", LRRAuthManager.getServerUrl())
@@ -244,7 +237,7 @@ class ServerListViewModelTest {
         val url = server.url("").toString().removeSuffix("/") // http://127.0.0.1:port (LAN)
         vm.testAndAddProfile("Mock", url, "k", allowCleartext = false)
 
-        awaitCondition {
+        awaitUntil {
             events.any { it is ServerListViewModel.ServerListUiEvent.ProfileAdded }
         }
 
@@ -276,7 +269,7 @@ class ServerListViewModelTest {
         val newUrl = server.url("").toString().removeSuffix("/")
         vm.testAndAddProfile("New", newUrl, "new-key", allowCleartext = true)
 
-        awaitCondition {
+        awaitUntil {
             events.any { it is ServerListViewModel.ServerListUiEvent.AddConnectionFailed }
         }
         assertEquals("global URL must stay on the old server", "https://old.example.com", LRRAuthManager.getServerUrl())
@@ -294,7 +287,7 @@ class ServerListViewModelTest {
         val events = collectEvents(vm)
         vm.testAndAddProfile("New", server.url("").toString().removeSuffix("/"), "new-key", true)
 
-        awaitCondition {
+        awaitUntil {
             events.any { it is ServerListViewModel.ServerListUiEvent.SecureStorageError }
         }
         val rows = runBlocking { db.miscDao().getAllServerProfiles() }
@@ -322,7 +315,7 @@ class ServerListViewModelTest {
         val newUrl = server.url("").toString().removeSuffix("/")
         vm.testAndSaveEditedProfile(profile, 0, "New Name", newUrl, "new-key", allowCleartext = true)
 
-        awaitCondition {
+        awaitUntil {
             events.any { it is ServerListViewModel.ServerListUiEvent.SecureStorageError }
         }
 
@@ -364,7 +357,7 @@ class ServerListViewModelTest {
         val newUrl = server.url("").toString().removeSuffix("/")
         vm.testAndSaveEditedProfile(profile, 0, "New Name", newUrl, "new-key", allowCleartext = true)
 
-        awaitCondition {
+        awaitUntil {
             events.any { it is ServerListViewModel.ServerListUiEvent.EditConnectionFailed }
         }
     }
@@ -396,7 +389,7 @@ class ServerListViewModelTest {
         val newUrl = server.url("").toString().removeSuffix("/")
         vm.testAndSaveEditedProfile(profile, 0, "New Name", newUrl, "new-key", allowCleartext = true)
 
-        awaitCondition {
+        awaitUntil {
             events.any { it is ServerListViewModel.ServerListUiEvent.EditConnectionFailed }
         }
         assertEquals("global URL must stay on the old server", "https://old.example.com", LRRAuthManager.getServerUrl())
@@ -425,7 +418,7 @@ class ServerListViewModelTest {
         val newUrl = server.url("").toString().removeSuffix("/") // explicit http LAN, no fallback
         vm.testAndSaveEditedProfile(profile, 0, "New", newUrl, "k", allowCleartext = true)
 
-        awaitCondition {
+        awaitUntil {
             events.any { it is ServerListViewModel.ServerListUiEvent.EditSaved }
         }
 
@@ -444,7 +437,7 @@ class ServerListViewModelTest {
         val vm = ServerListViewModel()
         vm.loadProfiles()
 
-        awaitCondition { vm.profiles.value.size == 2 }
+        awaitUntil { vm.profiles.value.size == 2 }
         assertTrue("First profile should be active", vm.profiles.value[0].isActive)
         assertFalse("Second profile should be inactive", vm.profiles.value[1].isActive)
         assertEquals("Active", vm.profiles.value[0].name)
@@ -463,7 +456,7 @@ class ServerListViewModelTest {
 
         vm.activateProfile(profileB)
 
-        awaitCondition { events.any { it is ServerListViewModel.ServerListUiEvent.ProfileActivated } }
+        awaitUntil { events.any { it is ServerListViewModel.ServerListUiEvent.ProfileActivated } }
 
         val allProfiles = runBlocking { db.miscDao().getAllServerProfiles() }
         val profileAFromDb = allProfiles.find { it.id == id1 }
@@ -488,11 +481,11 @@ class ServerListViewModelTest {
 
         val vm = ServerListViewModel()
         vm.loadProfiles()
-        awaitCondition { vm.profiles.value.size == 1 }
+        awaitUntil { vm.profiles.value.size == 1 }
 
         vm.deleteProfile(profile)
 
-        awaitCondition { runBlocking { historyRepo.recentSearches(id) }.isEmpty() }
+        awaitUntil { runBlocking { historyRepo.recentSearches(id) }.isEmpty() }
     }
 
     @Test
@@ -504,10 +497,10 @@ class ServerListViewModelTest {
 
         val vm = ServerListViewModel()
         vm.loadProfiles()
-        awaitCondition { vm.profiles.value.size == 2 }
+        awaitUntil { vm.profiles.value.size == 2 }
 
         vm.deleteProfile(toDelete)
-        awaitCondition { vm.profiles.value.size == 1 }
+        awaitUntil { vm.profiles.value.size == 1 }
 
         assertEquals("Keep", vm.profiles.value[0].name)
     }
@@ -524,7 +517,7 @@ class ServerListViewModelTest {
 
         vm.deleteProfile(profile)
 
-        awaitCondition { events.isNotEmpty() }
+        awaitUntil { events.isNotEmpty() }
         assertTrue("Should emit SecureStorageError",
             events.any { it is ServerListViewModel.ServerListUiEvent.SecureStorageError })
 

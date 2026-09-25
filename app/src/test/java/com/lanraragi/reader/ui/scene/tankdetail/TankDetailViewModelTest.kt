@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.tankdetail
 
+import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
@@ -197,14 +198,6 @@ class TankDetailViewModelTest {
             """"total":1,"filtered":1}"""
     }
 
-    private fun awaitCondition(timeoutMs: Long = 5000, condition: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (!condition() && System.currentTimeMillis() < deadline) {
-            Thread.sleep(50)
-        }
-        assertTrue("Condition not met within ${timeoutMs}ms", condition())
-    }
-
     private fun newVm(offline: OfflineTank? = null): TankDetailViewModel {
         val vm = TankDetailViewModel()
         vm.baseUrlResolver = { LRRAuthManager.getServerUrl()!! }
@@ -224,7 +217,7 @@ class TankDetailViewModelTest {
     private val categoryCalls = CopyOnWriteArrayList<String>()
 
     private fun awaitSettled(vm: TankDetailViewModel) =
-        awaitCondition { vm.loadState.value !is LoadState.Loading && vm.loadState.value !is LoadState.Idle }
+        awaitUntil { vm.loadState.value !is LoadState.Loading && vm.loadState.value !is LoadState.Idle }
 
     @Test
     fun load_ordersMembersByArchivesAndComputesTotals() {
@@ -291,11 +284,11 @@ class TankDetailViewModelTest {
 
         vm.resetTags()
 
-        awaitCondition { putTags.size == 1 }
+        awaitUntil { putTags.size == 1 }
         assertEquals("rating:4, artist:foo", putTags.single())
-        awaitCondition { categoryCalls.isNotEmpty() }
+        awaitUntil { categoryCalls.isNotEmpty() }
         assertEquals(listOf("reset $TANK 3"), categoryCalls)
-        awaitCondition { vm.loadState.value is LoadState.Loaded && !vm.state.value!!.offline }
+        awaitUntil { vm.loadState.value is LoadState.Loaded && !vm.state.value!!.offline }
     }
 
     @Test
@@ -316,7 +309,7 @@ class TankDetailViewModelTest {
         val vm = newVm()
         vm.load()
         awaitSettled(vm)
-        awaitCondition { vm.favoriteState.value != null }
+        awaitUntil { vm.favoriteState.value != null }
 
         val fav = vm.favoriteState.value!!
         assertTrue(fav.isFavorited)
@@ -430,11 +423,11 @@ class TankDetailViewModelTest {
 
         // Optimistic: the state shows the new rating before the PUT lands.
         assertEquals(2f, vm.state.value!!.rating, 0f)
-        awaitCondition { putTags.size == 1 }
+        awaitUntil { putTags.size == 1 }
         assertEquals("artist:foo, language:english, rating:⭐⭐", putTags.single())
         assertEquals(listOf("artist", "language", "rating"), vm.state.value!!.tagGroups.map { it.namespace })
         // The saved rating is announced to covered list scenes.
-        awaitCondition { ratingEvents.isNotEmpty() }
+        awaitUntil { ratingEvents.isNotEmpty() }
         assertEquals(2f, ratingEvents.single().rating, 0f)
         collector.cancel()
     }
@@ -447,7 +440,7 @@ class TankDetailViewModelTest {
 
         vm.submitRating(1f)
 
-        awaitCondition { errors.size == 1 }
+        awaitUntil { errors.size == 1 }
         assertEquals("artist:foo, rating:4, language:english", vm.state.value!!.tags)
         assertEquals(4f, vm.state.value!!.rating, 0f)
     }
@@ -468,7 +461,7 @@ class TankDetailViewModelTest {
 
         vm.submitRating(0f)
 
-        awaitCondition { putTags.size == 1 }
+        awaitUntil { putTags.size == 1 }
         assertEquals("artist:foo, language:english", putTags.single())
         assertEquals(-1f, vm.state.value!!.rating, 0f)
     }
@@ -506,7 +499,7 @@ class TankDetailViewModelTest {
 
         vm.deleteTank()
 
-        awaitCondition { events.any { it is TankDetailViewModel.Event.Deleted } }
+        awaitUntil { events.any { it is TankDetailViewModel.Event.Deleted } }
         assertEquals(1, deletes.get())
         assertEquals(listOf(TANK), forgotten)
         assertEquals(listOf(TANK), dissolved)
@@ -521,7 +514,7 @@ class TankDetailViewModelTest {
 
         vm.deleteTank()
 
-        awaitCondition { events.any { it is TankDetailViewModel.Event.Error } }
+        awaitUntil { events.any { it is TankDetailViewModel.Event.Error } }
         assertTrue(events.none { it is TankDetailViewModel.Event.Deleted })
         assertTrue(forgotten.isEmpty())
         assertTrue(dissolved.isEmpty())
