@@ -96,8 +96,7 @@
     <string name="update_ignore">忽略</string>
 
     <!-- Gallery List -->
-    <string name="gallery_list_search_bar_hint_exhentai">搜索 LANraragi</string>
-    <string name="gallery_list_search_bar_hint_e_hentai">搜索 LANraragi</string>
+    <string name="gallery_list_search_bar_hint">搜索 LANraragi</string>
     <string name="gallery_list_empty_hit">什么都没有找到</string>
     <string name="search">搜索</string>
 

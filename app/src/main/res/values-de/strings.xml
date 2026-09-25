@@ -77,8 +77,7 @@
     <string name="update_snackbar_text">Neue Version %1$s verfügbar</string>
     <string name="update_snackbar_action">Anzeigen</string>
     <string name="update_ignore">Ignorieren</string>
-    <string name="gallery_list_search_bar_hint_exhentai">LANraragi durchsuchen</string>
-    <string name="gallery_list_search_bar_hint_e_hentai">LANraragi durchsuchen</string>
+    <string name="gallery_list_search_bar_hint">LANraragi durchsuchen</string>
     <string name="gallery_list_empty_hit">Die Welt ist so groß und der Panda sitzt ganz allein</string>
     <string name="gallery_tag_copy">Etikett kopiert</string>
     <string name="search">Suchen</string>

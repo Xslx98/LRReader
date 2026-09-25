@@ -7,12 +7,10 @@ import android.text.SpannableStringBuilder
 import android.text.TextUtils
 import android.text.style.ImageSpan
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.LRRUrl
 import com.lanraragi.reader.client.LRRUtils
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.client.api.data.LRRSearchResult
-import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.framework.lib.yorozuya.MathUtils
 import com.lanraragi.framework.scene.Announcer
@@ -149,14 +147,7 @@ class GallerySearchHelper(private val mCallback: Callback) {
             val resources = context.resources
             val searchImage = DrawableManager.getVectorDrawable(context, R.drawable.v_magnify_x24)
             val ssb = SpannableStringBuilder("   ")
-            ssb.append(
-                resources.getString(
-                    if (LRRUrl.SITE_EX == AppearanceSettings.getGallerySite())
-                        R.string.gallery_list_search_bar_hint_exhentai
-                    else
-                        R.string.gallery_list_search_bar_hint_e_hentai
-                )
-            )
+            ssb.append(resources.getString(R.string.gallery_list_search_bar_hint))
             val textSize = (searchBar.editTextTextSize * 1.25).toInt()
             if (searchImage != null) {
                 searchImage.setBounds(0, 0, textSize, textSize)

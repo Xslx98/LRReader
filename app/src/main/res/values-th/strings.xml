@@ -101,8 +101,7 @@
     <string name="update_ignore">ข้ามไป</string>
 
     <!-- Gallery List -->
-    <string name="gallery_list_search_bar_hint_exhentai">ค้นหาใน LANraragi</string>
-    <string name="gallery_list_search_bar_hint_e_hentai">ค้นหาใน LANraragi</string>
+    <string name="gallery_list_search_bar_hint">ค้นหาใน LANraragi</string>
     <string name="gallery_list_empty_hit">โลกนั้นนะมันกว้างงงงงใหญ่ไพรศาล และแพนด้านั่งโดดเดี่ยวเดียวดายในโลกกลมๆ</string>
 
     <string name="gallery_tag_copy">คัดลอกแท็กแล้ว</string>
