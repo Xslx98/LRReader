@@ -1,6 +1,7 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
 import com.lanraragi.reader.awaitRequest
+import com.lanraragi.reader.awaitUntil
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
@@ -135,17 +136,12 @@ class GalleryListViewModelUploadTest {
         openStream = { ByteArrayInputStream(bytes) }
     )
 
-    private fun awaitTerminal(vm: GalleryListViewModel, timeoutMs: Long = 5000): GalleryListViewModel.UploadUiState {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
+    private fun awaitTerminal(vm: GalleryListViewModel): GalleryListViewModel.UploadUiState {
+        awaitUntil {
             val s = vm.uploadState.value
-            if (s is GalleryListViewModel.UploadUiState.DuplicateSkipped ||
+            s is GalleryListViewModel.UploadUiState.DuplicateSkipped ||
                 s is GalleryListViewModel.UploadUiState.Success ||
                 s is GalleryListViewModel.UploadUiState.Failed
-            ) {
-                return s
-            }
-            Thread.sleep(25)
         }
         return vm.uploadState.value
     }

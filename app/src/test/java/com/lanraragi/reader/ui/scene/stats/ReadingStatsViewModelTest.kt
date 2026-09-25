@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
+import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.HistoryRepository
 import com.lanraragi.reader.dao.ProfileRepository
@@ -93,15 +94,10 @@ class ReadingStatsViewModelTest {
 
         val vm = ReadingStatsViewModel()
         vm.load()
-        // load() hops to Dispatchers.IO; poll until the Unconfined resume lands.
-        // Poll the exact asserted condition (isLoading reset happens AFTER the
-        // stats emission) — polling stats alone races the final assert.
-        val deadline = System.currentTimeMillis() + 5_000
-        while ((vm.stats.value == null || vm.isLoading.value) &&
-            System.currentTimeMillis() < deadline
-        ) {
-            Thread.sleep(10)
-        }
+        // load() hops to Dispatchers.IO; wait until the Unconfined resume lands.
+        // Wait on the exact asserted condition (isLoading reset happens AFTER the
+        // stats emission) — waiting on stats alone races the final assert.
+        awaitUntil { vm.stats.value != null && !vm.isLoading.value }
 
         val stats = vm.stats.value!!
         assertEquals(2, stats.totalArchives)

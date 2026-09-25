@@ -1,6 +1,7 @@
 package com.lanraragi.reader.ui.scene
 
 import com.lanraragi.reader.awaitRequest
+import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.room.Room
@@ -38,7 +39,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import org.robolectric.shadows.ShadowLooper
 import java.io.File
 import java.util.concurrent.TimeUnit
 
@@ -265,13 +265,9 @@ class ServerConfigViewModelTest {
 
         vm.attemptConnection("http://198.51.100.7:3000", "candidate-key", true)
 
-        // The gate fires synchronously (no network), so a short poll suffices;
+        // The gate fires synchronously (no network), so a short wait suffices;
         // before delegation this window would elapse with no SecurityException.
-        val deadline = System.currentTimeMillis() + 3000
-        while (failures.isEmpty() && System.currentTimeMillis() < deadline) {
-            ShadowLooper.idleMainLooper()
-            Thread.sleep(20)
-        }
+        awaitUntil(timeoutMs = 3000) { failures.isNotEmpty() }
 
         assertTrue(
             "explicit WAN http must be refused with a cleartext-refusal error",
