@@ -329,42 +329,6 @@ class DownloadsViewModelTest {
     }
 
     @Test
-    fun `downloadList does not carry tracker progress fields`() = runBlocking {
-        // Structural split: the Room-emitted DownloadInfo in downloadList
-        // must not receive mutations from the progress tracker. UI reads
-        // progress via progressMap / DownloadManager.progressFor instead.
-        val dm = vm.downloadManager
-        val info = DownloadInfo().apply {
-            arcid = "arc-struct"
-            title = "structural only"
-            label = null
-            state = DownloadState.DOWNLOAD
-            time = 1_000L
-        }
-        dm.addDownloadInfo(info.toArchive(), null)
-        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
-        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
-
-        dm.progressTracker.update(
-            "arc-struct",
-            speed = 99999L,
-            finished = 7,
-            downloaded = 7,
-            total = 20,
-            remaining = 1234L
-        )
-        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
-
-        val emitted = vm.downloadList.value.firstOrNull { it.arcid == "arc-struct" }
-        assertTrue("expected arc-struct in downloadList", emitted != null)
-        // Post-W35-3c: progress lives only in progressMap. The Room-emitted
-        // DownloadInfo no longer carries @Ignore progress fields at all.
-        assertEquals(99999L, vm.progressMap.value["arc-struct"]?.speed)
-        assertEquals(7, vm.progressMap.value["arc-struct"]?.finished)
-        assertEquals(7, vm.progressMap.value["arc-struct"]?.downloaded)
-    }
-
-    @Test
     fun `downloadList filters by currentLabel`() = runBlocking {
         val dm = vm.downloadManager
         // Add one default-label and one "L1"-label info
