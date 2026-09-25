@@ -77,38 +77,11 @@ class ProfileLookupCache(
         _snapshot.value.firstOrNull { it.id == id }
 
     /**
-     * Returns the profile whose configured URL matches [requestUrl] on
-     * host + port + scheme, or null if no profile matches. Match logic
-     * mirrors [matchesConfiguredServer]: pure string equality on the
-     * normalised HttpUrl fields, no DNS, no I/O.
-     */
-    fun findByRequestUrl(requestUrl: HttpUrl): ServerProfile? {
-        for (candidate in parsedProfiles) {
-            if (requestUrl.host == candidate.url.host &&
-                requestUrl.port == candidate.url.port &&
-                requestUrl.scheme == candidate.url.scheme
-            ) {
-                return candidate.profile
-            }
-        }
-        return null
-    }
-
-    /**
-     * Returns every profile whose configured URL matches [host] + [port]
-     * regardless of scheme. Used to detect scheme-downgrade attempts: if
-     * the request URL matches a profile on host + port but not on scheme,
-     * treat it as a credential-downgrade attempt before injecting the
-     * bearer token.
-     */
-    fun findCandidatesByHostPort(host: String, port: Int): List<ServerProfile> =
-        findParsedCandidatesByHostPort(host, port).map { it.profile }
-
-    /**
-     * Parsed-URL variant of [findCandidatesByHostPort] for the network
-     * interceptors, which need the candidate's scheme (and suspicious-
-     * component fields) — hands back the pre-parsed [HttpUrl] so the hot
-     * path never re-parses profile URLs.
+     * Every profile whose configured URL matches [host] + [port], regardless
+     * of scheme, with its pre-parsed [HttpUrl]. The network interceptors pick
+     * the key from the scheme-matching candidate and treat a host:port match
+     * on another scheme as a credential-downgrade attempt; handing back the
+     * parsed URL keeps profile URLs from being re-parsed on the hot path.
      */
     fun findParsedCandidatesByHostPort(host: String, port: Int): List<ProfileUrlCandidate> {
         val out = mutableListOf<ProfileUrlCandidate>()
