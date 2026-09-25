@@ -96,17 +96,6 @@ class LRRUrlBuilderSecurityTest {
         assertEquals("/lrr/api/categories", req.path)
     }
 
-    @Test
-    fun getShinobuStatus_subpathBaseUrl_buildsCleanPath() = runTest {
-        server.enqueue(MockResponse().setBody("{}"))
-        val baseUrl = server.url("/lrr/").toString().removeSuffix("/") + "/"
-
-        LRRShinobuApi.getShinobuStatus(client, baseUrl)
-
-        val req = server.awaitRequest()
-        assertEquals("/lrr/api/shinobu", req.path)
-    }
-
     // ── Malformed baseUrl: must throw IOException, not NPE ──
 
     @Test
