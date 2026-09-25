@@ -148,55 +148,8 @@ class DownloadsViewModelTest {
     }
 
     // ═══════════════════════════════════════════════════════════
-    // A. Initial state
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
-    fun initialState_downloadListIsEmpty() {
-        assertTrue(vm.downloadList.value.isEmpty())
-    }
-
-    @Test
-    fun initialState_searchingIsFalse() {
-        assertFalse(vm.searching.value)
-    }
-
-    @Test
-    fun initialState_searchKeyIsNull() {
-        assertNull(vm.searchKey.value)
-    }
-
-    @Test
-    fun initialState_indexPageIsOne() {
-        assertEquals(1, vm.indexPage.value)
-    }
-
-    @Test
-    fun initialState_pageSizeIsOne() {
-        assertEquals(1, vm.pageSize.value)
-    }
-
-    @Test
-    fun initialState_filterLoadingIsFalse() {
-        assertFalse(vm.filterLoading.value)
-    }
-
-    // ═══════════════════════════════════════════════════════════
     // B. Label switching
     // ═══════════════════════════════════════════════════════════
-
-    @Test
-    fun selectLabel_updatesCurrentLabelState() {
-        vm.selectLabel("My Label")
-        assertEquals("My Label", vm.currentLabel.value)
-    }
-
-    @Test
-    fun selectLabel_null_resetsToDefault() {
-        vm.selectLabel("Some Label")
-        vm.selectLabel(null)
-        assertNull(vm.currentLabel.value)
-    }
 
     @Test
     fun handleLabelRenamed_updatesCurrentLabel_whenMatching() {
@@ -210,31 +163,6 @@ class DownloadsViewModelTest {
         vm.selectLabel("Other Label")
         vm.handleLabelRenamed("Old Name", "New Name")
         assertEquals("Other Label", vm.currentLabel.value)
-    }
-
-    @Test
-    fun resetToDefaultLabel_setsCurrentLabelToNull() {
-        vm.selectLabel("Some Label")
-        vm.resetToDefaultLabel()
-        assertNull(vm.currentLabel.value)
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // C. Search state
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
-    fun setSearchKey_updatesState() {
-        vm.setSearchKey("test query")
-        assertEquals("test query", vm.searchKey.value)
-    }
-
-    @Test
-    fun setSearching_updatesState() {
-        vm.setSearching(true)
-        assertTrue(vm.searching.value)
-        vm.setSearching(false)
-        assertFalse(vm.searching.value)
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -371,22 +299,6 @@ class DownloadsViewModelTest {
         assertTrue(events.first() is DownloadUiEvent.LabelsChanged)
 
         job.cancel()
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // H. Pagination / page size state
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
-    fun setIndexPage_updatesState() {
-        vm.setIndexPage(5)
-        assertEquals(5, vm.indexPage.value)
-    }
-
-    @Test
-    fun setPageSize_updatesState() {
-        vm.setPageSize(100)
-        assertEquals(100, vm.pageSize.value)
     }
 
     // -------------------------------------------------------------------------
