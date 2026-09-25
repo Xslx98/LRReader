@@ -48,13 +48,6 @@ data class TankTitleSortKey(
             }
         }
 
-        /** Titles in sort order; a pure function over the given list. */
-        fun sortedTitles(titles: List<String>): List<String> =
-            titles.map { it to parse(it) }.sortedWith { a, b ->
-                val c = comparator.compare(a.second, b.second)
-                if (c != 0) c else a.first.compareTo(b.first)
-            }.map { it.first }
-
         fun parse(title: String): TankTitleSortKey {
             val text = normalizeWidth(title)
             return TankTitleSortKey(

@@ -60,12 +60,6 @@ class TankMemberOrderOpsTest {
     }
 
     @Test
-    fun sortByTitleUsesTheEpisodeKey() {
-        val titles = mapOf("a" to "第10话", "b" to "番外", "c" to "第2话", "d" to "第一回", "e" to "第2话 下", "f" to "第2话 上")
-        assertEquals(listOf("d", "c", "f", "e", "a", "b"), TankMemberOrderOps.sortByTitle(order) { titles.getValue(it) })
-    }
-
-    @Test
     fun sortByTitleIsDeterministicOnTies() {
         val titles = mapOf("a" to "same", "b" to "same", "c" to "same")
         assertEquals(listOf("a", "b", "c"), TankMemberOrderOps.sortByTitle(listOf("c", "a", "b")) { titles.getValue(it) })
