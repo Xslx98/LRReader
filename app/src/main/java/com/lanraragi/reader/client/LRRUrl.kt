@@ -16,41 +16,12 @@
 
 package com.lanraragi.reader.client
 
-import com.lanraragi.reader.settings.AppearanceSettings
-import com.lanraragi.framework.network.UrlBuilder
-
 /**
  * appurl请求设置
  */
 object LRRUrl {
 
     const val SITE_EX = 1
-
-    private const val HOST_EX = "https://exhentai.org/"
-    private const val HOST_E = "https://e-hentai.org/"
-
-    @JvmStatic
-    fun getHost(): String {
-        return when (AppearanceSettings.getGallerySite()) {
-            SITE_EX -> HOST_EX
-            else -> HOST_E
-        }
-    }
-
-    /**
-     * 获取画廊详情地址
-     */
-    @JvmStatic
-    fun getGalleryDetailUrl(gid: Long, arcid: String?, index: Int, allComment: Boolean): String {
-        val builder = UrlBuilder(getHost() + "g/" + gid + '/' + (arcid ?: "") + '/')
-        if (index != 0) {
-            builder.addQuery("p", index)
-        }
-        if (allComment) {
-            builder.addQuery("hc", 1)
-        }
-        return builder.build()
-    }
 
     @JvmStatic
     fun getTagDefinitionUrl(tag: String?): String {
