@@ -22,9 +22,4 @@ package com.lanraragi.reader.client
 object LRRUrl {
 
     const val SITE_EX = 1
-
-    @JvmStatic
-    fun getTagDefinitionUrl(tag: String?): String {
-        return "https://ehwiki.org/wiki/" + (tag?.replace(' ', '_') ?: "")
-    }
 }
