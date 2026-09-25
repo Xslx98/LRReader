@@ -1,6 +1,7 @@
 package com.lanraragi.reader.ui.scene.tankdetail
 
 import com.lanraragi.reader.awaitUntil
+import com.lanraragi.reader.collectInto
 import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
@@ -20,14 +21,11 @@ import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -394,16 +392,6 @@ class TankDetailViewModelTest {
 
     // ---- rating (spec §4.2) ----
 
-    private fun collectErrors(vm: TankDetailViewModel): CopyOnWriteArrayList<String> {
-        val events = CopyOnWriteArrayList<String>()
-        val subscribed = CompletableDeferred<Unit>()
-        eventScope.launch {
-            vm.ratingError.onSubscription { subscribed.complete(Unit) }.collect { events.add(it) }
-        }
-        runBlocking { subscribed.await() }
-        return events
-    }
-
     private fun loadedVm(): TankDetailViewModel {
         val vm = newVm()
         vm.load()
@@ -436,7 +424,7 @@ class TankDetailViewModelTest {
     fun submitRating_failureRollsBackTagsAndReportsError() {
         putStatus = 500
         val vm = loadedVm()
-        val errors = collectErrors(vm)
+        val errors = vm.ratingError.collectInto(eventScope)
 
         vm.submitRating(1f)
 
@@ -482,20 +470,10 @@ class TankDetailViewModelTest {
 
     // ---- delete (spec §4.8) ----
 
-    private fun collectEvents(vm: TankDetailViewModel): CopyOnWriteArrayList<TankDetailViewModel.Event> {
-        val events = CopyOnWriteArrayList<TankDetailViewModel.Event>()
-        val subscribed = CompletableDeferred<Unit>()
-        eventScope.launch {
-            vm.events.onSubscription { subscribed.complete(Unit) }.collect { events.add(it) }
-        }
-        runBlocking { subscribed.await() }
-        return events
-    }
-
     @Test
     fun deleteTank_deletesServerSideThenForgetsCoverAndDissolvesGroup() {
         val vm = loadedVm()
-        val events = collectEvents(vm)
+        val events = vm.events.collectInto(eventScope)
 
         vm.deleteTank()
 
@@ -510,7 +488,7 @@ class TankDetailViewModelTest {
     fun deleteTank_failureReportsErrorAndTouchesNothingLocal() {
         deleteStatus = 500
         val vm = loadedVm()
-        val events = collectEvents(vm)
+        val events = vm.events.collectInto(eventScope)
 
         vm.deleteTank()
 

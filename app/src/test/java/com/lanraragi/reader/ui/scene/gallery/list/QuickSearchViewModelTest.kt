@@ -9,6 +9,7 @@ import com.lanraragi.reader.LegacyDb
 import com.lanraragi.reader.FavouriteStatusRouter
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.awaitUntil
+import com.lanraragi.reader.collectInto
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.FavoritesRepository
@@ -19,14 +20,11 @@ import com.lanraragi.reader.dao.QuickSearchRepository
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.module.CoroutineModule
 import com.lanraragi.reader.module.IDataModule
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.onSubscription
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -39,7 +37,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Unit tests for [QuickSearchViewModel].
@@ -108,28 +105,6 @@ class QuickSearchViewModelTest {
         db.close()
     }
 
-    /**
-     * Subscribe to [vm.uiEvent] on [eventScope] and **block until the
-     * subscription is actually live**. The ViewModel's SharedFlow has
-     * `replay = 0`, so an emission that fires before the collector is
-     * registered is silently dropped. Always go through this helper instead
-     * of `eventScope.launch { collect }` directly when the test needs to
-     * observe a single subsequent emission.
-     */
-    private fun collectEvents(
-        vm: QuickSearchViewModel
-    ): CopyOnWriteArrayList<QuickSearchViewModel.QuickSearchUiEvent> {
-        val events = CopyOnWriteArrayList<QuickSearchViewModel.QuickSearchUiEvent>()
-        val subscribed = CompletableDeferred<Unit>()
-        eventScope.launch {
-            vm.uiEvent
-                .onSubscription { subscribed.complete(Unit) }
-                .collect { events.add(it) }
-        }
-        runBlocking { subscribed.await() }
-        return events
-    }
-
     private fun insertQuickSearch(name: String, time: Long): QuickSearch {
         return runBlocking {
             val qs = QuickSearch().apply {
@@ -166,7 +141,7 @@ class QuickSearchViewModelTest {
         vm.loadQuickSearches()
         awaitUntil { vm.quickSearches.value.size == 2 }
 
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.deleteQuickSearch(qs2)
         awaitUntil { vm.quickSearches.value.size == 1 }

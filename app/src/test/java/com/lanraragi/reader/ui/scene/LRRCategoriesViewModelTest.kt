@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.AppProxySelector
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.awaitUntil
+import com.lanraragi.reader.collectInto
 import com.lanraragi.reader.module.IAppModule
 import com.lanraragi.reader.module.INetworkModule
 import com.lanraragi.reader.module.NetworkMonitor
@@ -14,11 +15,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.onSubscription
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -116,29 +113,6 @@ class LRRCategoriesViewModelTest {
         server.shutdown()
     }
 
-    /**
-     * Subscribe to [vm.uiEvent] on [eventScope] and **block until the
-     * subscription is actually live**. The ViewModel's SharedFlow has
-     * `replay = 0`, so an emission that fires before the collector is
-     * registered is silently dropped — a race that surfaced as a flaky
-     * `deleteCategory_error_emitsShowError` failure on slower CI runners.
-     * Always go through this helper instead of `eventScope.launch { collect }`
-     * directly when the test needs to observe a single subsequent emission.
-     */
-    private fun collectEvents(
-        vm: LRRCategoriesViewModel
-    ): CopyOnWriteArrayList<LRRCategoriesViewModel.CategoriesUiEvent> {
-        val events = CopyOnWriteArrayList<LRRCategoriesViewModel.CategoriesUiEvent>()
-        val subscribed = CompletableDeferred<Unit>()
-        eventScope.launch {
-            vm.uiEvent
-                .onSubscription { subscribed.complete(Unit) }
-                .collect { events.add(it) }
-        }
-        runBlocking { subscribed.await() }
-        return events
-    }
-
     // ── loadCategories ─────────────────────────────────────────────
 
     @Test
@@ -222,7 +196,7 @@ class LRRCategoriesViewModelTest {
         server.enqueue(MockResponse().setResponseCode(401).setBody("Unauthorized"))
 
         val vm = LRRCategoriesViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.loadCategories()
 
@@ -255,7 +229,7 @@ class LRRCategoriesViewModelTest {
         ]"""))
 
         val vm = LRRCategoriesViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.createCategory("NewCat", null, false)
 
@@ -280,7 +254,7 @@ class LRRCategoriesViewModelTest {
         ]"""))
 
         val vm = LRRCategoriesViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.editCategory("SET_aaaaaaaaaa", "Edited", null, true)
 
@@ -300,7 +274,7 @@ class LRRCategoriesViewModelTest {
         server.enqueue(MockResponse().setBody("[]"))
 
         val vm = LRRCategoriesViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.deleteCategory("SET_aaaaaaaaaa")
 
@@ -314,7 +288,7 @@ class LRRCategoriesViewModelTest {
         server.enqueue(MockResponse().setResponseCode(404).setBody("Not Found"))
 
         val vm = LRRCategoriesViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.deleteCategory("nonexistent")
 

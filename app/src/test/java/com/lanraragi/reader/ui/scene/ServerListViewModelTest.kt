@@ -1,6 +1,7 @@
 package com.lanraragi.reader.ui.scene
 
 import com.lanraragi.reader.awaitUntil
+import com.lanraragi.reader.collectInto
 import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.room.Room
@@ -21,11 +22,8 @@ import com.lanraragi.reader.client.api.LRRAuthManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.onSubscription
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -44,7 +42,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
-import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 
 /**
@@ -145,35 +142,6 @@ class ServerListViewModelTest {
         server.shutdown()
     }
 
-    /**
-     * Start collecting [ServerListViewModel.uiEvent] and synchronously wait
-     * until the collector has actually subscribed before returning.
-     *
-     * `_uiEvent` is a MutableSharedFlow with replay = 0 and
-     * extraBufferCapacity = 4: a `tryEmit` issued while no subscribers are
-     * active is silently dropped, not buffered. The previous
-     * `eventScope.launch { collect { ... } }` pattern raced with the test
-     * body — on CI's slower scheduler the `collect` coroutine had not yet
-     * registered when `vm.deleteProfile(...)` fired, so the event was lost
-     * and [awaitUntil] timed out.
-     *
-     * [onSubscription] runs its callback after the flow registers the
-     * collector but before the first value is delivered, so completing the
-     * deferred there guarantees the subscription is live by the time this
-     * helper returns.
-     */
-    private fun collectEvents(vm: ServerListViewModel): CopyOnWriteArrayList<ServerListViewModel.ServerListUiEvent> {
-        val events = CopyOnWriteArrayList<ServerListViewModel.ServerListUiEvent>()
-        val subscribed = CompletableDeferred<Unit>()
-        eventScope.launch {
-            vm.uiEvent
-                .onSubscription { subscribed.complete(Unit) }
-                .collect { events.add(it) }
-        }
-        runBlocking { subscribed.await() }
-        return events
-    }
-
     private fun insertProfile(name: String, url: String, isActive: Boolean = false): Long {
         return runBlocking { db.miscDao().insertServerProfile(ServerProfile(name = name, url = url, isActive = isActive)) }
     }
@@ -207,7 +175,7 @@ class ServerListViewModelTest {
         server.enqueue(MockResponse().setResponseCode(401).setBody("Unauthorized"))
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         // Explicit http:// scheme → single probe, no https ladder.
         vm.testAndAddProfile("X", server.url("").toString().removeSuffix("/"), "candidate-key", true)
 
@@ -233,7 +201,7 @@ class ServerListViewModelTest {
         )
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         val url = server.url("").toString().removeSuffix("/") // http://127.0.0.1:port (LAN)
         vm.testAndAddProfile("Mock", url, "k", allowCleartext = false)
 
@@ -265,7 +233,7 @@ class ServerListViewModelTest {
         )
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         val newUrl = server.url("").toString().removeSuffix("/")
         vm.testAndAddProfile("New", newUrl, "new-key", allowCleartext = true)
 
@@ -284,7 +252,7 @@ class ServerListViewModelTest {
         LRRAuthManager.simulateStorageUnavailableForTesting()
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         vm.testAndAddProfile("New", server.url("").toString().removeSuffix("/"), "new-key", true)
 
         awaitUntil {
@@ -311,7 +279,7 @@ class ServerListViewModelTest {
         LRRAuthManager.simulateStorageUnavailableForTesting()
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         val newUrl = server.url("").toString().removeSuffix("/")
         vm.testAndSaveEditedProfile(profile, 0, "New Name", newUrl, "new-key", allowCleartext = true)
 
@@ -353,7 +321,7 @@ class ServerListViewModelTest {
         )
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         val newUrl = server.url("").toString().removeSuffix("/")
         vm.testAndSaveEditedProfile(profile, 0, "New Name", newUrl, "new-key", allowCleartext = true)
 
@@ -385,7 +353,7 @@ class ServerListViewModelTest {
         )
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         val newUrl = server.url("").toString().removeSuffix("/")
         vm.testAndSaveEditedProfile(profile, 0, "New Name", newUrl, "new-key", allowCleartext = true)
 
@@ -414,7 +382,7 @@ class ServerListViewModelTest {
         )
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         val newUrl = server.url("").toString().removeSuffix("/") // explicit http LAN, no fallback
         vm.testAndSaveEditedProfile(profile, 0, "New", newUrl, "k", allowCleartext = true)
 
@@ -452,7 +420,7 @@ class ServerListViewModelTest {
         val profileB = ServerProfile(id = id2, name = "B", url = "https://b.com", isActive = false)
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.activateProfile(profileB)
 
@@ -513,7 +481,7 @@ class ServerListViewModelTest {
         LRRAuthManager.simulateStorageUnavailableForTesting()
 
         val vm = ServerListViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.deleteProfile(profile)
 

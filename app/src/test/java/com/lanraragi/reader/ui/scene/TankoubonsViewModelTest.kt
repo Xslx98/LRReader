@@ -2,6 +2,7 @@ package com.lanraragi.reader.ui.scene
 
 import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.awaitUntil
+import com.lanraragi.reader.collectInto
 import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
@@ -20,11 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.onSubscription
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -123,28 +120,6 @@ class TankoubonsViewModelTest {
         server.shutdown()
     }
 
-    /**
-     * Subscribe to [vm.uiEvent] on [eventScope] and **block until the
-     * subscription is actually live**. The ViewModel's SharedFlow has
-     * `replay = 0`, so an emission that fires before the collector is
-     * registered is silently dropped. Always go through this helper instead
-     * of `eventScope.launch { collect }` directly when the test needs to
-     * observe a single subsequent emission.
-     */
-    private fun collectEvents(
-        vm: TankoubonsViewModel
-    ): CopyOnWriteArrayList<TankoubonsViewModel.TankUiEvent> {
-        val events = CopyOnWriteArrayList<TankoubonsViewModel.TankUiEvent>()
-        val subscribed = CompletableDeferred<Unit>()
-        eventScope.launch {
-            vm.uiEvent
-                .onSubscription { subscribed.complete(Unit) }
-                .collect { events.add(it) }
-        }
-        runBlocking { subscribed.await() }
-        return events
-    }
-
     /** Valid 40-char hex arcid for member [i] (cover fallbacks re-validate ids). */
     private fun arcId(i: Int) = i.toString(16).padStart(40, '0')
 
@@ -184,7 +159,7 @@ class TankoubonsViewModelTest {
         server.enqueue(MockResponse().setResponseCode(500).setBody("boom"))
 
         val vm = TankoubonsViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         val before = TankCoverCacheStamp.value
         vm.loadTankoubons()
 
@@ -223,7 +198,7 @@ class TankoubonsViewModelTest {
         val calls = CopyOnWriteArrayList<Long>()
         val vm = TankoubonsViewModel()
         vm.membershipSync = TankMembershipSyncFactory.Runner { p, _, _ -> calls.add(p) }
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.loadTankoubons()
 
@@ -247,7 +222,7 @@ class TankoubonsViewModelTest {
         val vm = TankoubonsViewModel()
         val seen = CopyOnWriteArrayList<String>()
         vm.resumeIntentBuilder = { _, tankId, _ -> seen.add(tankId); android.content.Intent("test.open") }
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         val tank = LRRTankoubonApi.Tankoubon(id = "TANK_0000000001", name = "Alpha")
 
         vm.openTank(tank)
@@ -263,7 +238,7 @@ class TankoubonsViewModelTest {
     fun openTank_failure_emitsError_andClearsRowLoading() {
         val vm = TankoubonsViewModel()
         vm.resumeIntentBuilder = { _, _, _ -> throw java.io.IOException("offline") }
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.openTank(LRRTankoubonApi.Tankoubon(id = "TANK_0000000001", name = "Alpha"))
 
@@ -276,7 +251,7 @@ class TankoubonsViewModelTest {
     fun fillTank_fetchesMembership_andEmitsMembersInTankOrder() {
         server.enqueue(MockResponse().setBody(fullJson("TANK_0000000001", "Alpha", arcId(2), arcId(1))))
         val vm = TankoubonsViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.fillTank(LRRTankoubonApi.Tankoubon(id = "TANK_0000000001", name = "Alpha"))
 
@@ -429,7 +404,7 @@ class TankoubonsViewModelTest {
         )))
         server.enqueue(MockResponse().setResponseCode(500).setBody("Internal Server Error"))
 
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
         vm.loadTankoubons()
 
         awaitUntil { events.any { it is TankoubonsViewModel.TankUiEvent.ShowError } }
@@ -447,7 +422,7 @@ class TankoubonsViewModelTest {
         ))
 
         val vm = TankoubonsViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.create("NewTank")
 
@@ -470,7 +445,7 @@ class TankoubonsViewModelTest {
         )))
 
         val vm = TankoubonsViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.create("NewTank")
 
@@ -506,7 +481,7 @@ class TankoubonsViewModelTest {
         server.enqueue(MockResponse().setBody("""{"success":1}"""))
         server.enqueue(MockResponse().setBody(pageJson(1, tankJson(tank.id, "Alpha", archiveCount = 3))))
         val vm = TankoubonsViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.autoSort(tank)
 
@@ -527,7 +502,7 @@ class TankoubonsViewModelTest {
             tank.id, arcId(1) to "第1话", arcId(2) to "第2话"
         )))
         val vm = TankoubonsViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.autoSort(tank)
 
@@ -544,7 +519,7 @@ class TankoubonsViewModelTest {
         server.enqueue(MockResponse().setBody("""{"success":1}"""))
         server.enqueue(MockResponse().setBody(pageJson(1, tankJson("TANK_0000000001", "Alpha", archiveCount = 2))))
         val vm = TankoubonsViewModel()
-        val events = collectEvents(vm)
+        val events = vm.uiEvent.collectInto(eventScope)
 
         vm.restoreOrder("TANK_0000000001", listOf(arcId(2), arcId(1)))
 
