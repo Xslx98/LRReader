@@ -51,10 +51,6 @@ class GalleryStateHelper(private val callback: Callback) {
         }
     }
 
-    fun resetShowActionFab() {
-        mShowActionFab = true
-    }
-
     fun setState(newState: Int) {
         setState(newState, true)
     }
