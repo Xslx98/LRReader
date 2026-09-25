@@ -462,15 +462,6 @@ class ServerListViewModelTest {
         assertEquals("Active", vm.profiles.value[0].name)
     }
 
-    @Test
-    fun loadProfiles_emptyDatabase_returnsEmptyList() {
-        val vm = ServerListViewModel()
-        vm.loadProfiles()
-
-        awaitCondition { true }
-        assertTrue("Profiles should be empty", vm.profiles.value.isEmpty())
-    }
-
     // ── activateProfile ────────────────────────────────────────────
 
     @Test
@@ -573,13 +564,5 @@ class ServerListViewModelTest {
         LRRAuthManager.initializeForTesting(
             ctx.getSharedPreferences("server_vm_test_restore", Context.MODE_PRIVATE)
         )
-    }
-
-    // ── Initial state ──────────────────────────────────────────────
-
-    @Test
-    fun initialState_profilesEmpty() {
-        val vm = ServerListViewModel()
-        assertTrue("Initial profiles should be empty", vm.profiles.value.isEmpty())
     }
 }

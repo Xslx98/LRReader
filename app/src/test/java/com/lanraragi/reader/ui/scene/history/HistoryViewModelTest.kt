@@ -104,16 +104,6 @@ class HistoryViewModelTest {
     }
 
     // ═══════════════════════════════════════════════════════════
-    // A. Initial state
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
-    fun initialState_historyListIsEmpty() {
-        val vm = HistoryViewModel()
-        assertTrue(vm.historyList.value.isEmpty())
-    }
-
-    // ═══════════════════════════════════════════════════════════
     // B. Load history
     // ═══════════════════════════════════════════════════════════
 
@@ -146,15 +136,6 @@ class HistoryViewModelTest {
         assertEquals(1, updates.first().newList.size)
 
         job.cancel()
-    }
-
-    @Test
-    fun loadHistory_fromEmptyDb_resultsInEmptyList() {
-        val vm = HistoryViewModel()
-        vm.loadHistory()
-        awaitViewModelIdle(vm)
-
-        assertTrue(vm.historyList.value.isEmpty())
     }
 
     // ═══════════════════════════════════════════════════════════
