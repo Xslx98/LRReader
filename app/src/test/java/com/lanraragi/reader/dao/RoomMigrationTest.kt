@@ -121,6 +121,13 @@ class RoomMigrationTest {
         val result = dao.loadDirname("arcid_8001")
         assertNotNull(result)
         assertEquals("/storage/gallery_8001", result!!.dirname)
+
+        result.dirname = "/storage/gallery_8001_renamed"
+        dao.updateDirname(result)
+        assertEquals("/storage/gallery_8001_renamed", dao.loadDirname("arcid_8001")?.dirname)
+
+        dao.deleteDirnameByKey("arcid_8001")
+        assertNull(dao.loadDirname("arcid_8001"))
     }
 
     // ========== BrowsingRoomDao CRUD Tests (residual table) ==========
