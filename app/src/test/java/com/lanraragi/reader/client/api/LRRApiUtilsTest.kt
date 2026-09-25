@@ -59,87 +59,24 @@ class LRRApiUtilsTest {
     }
 
     @Test
-    fun ensureSuccess_401() {
-        server.enqueue(MockResponse().setResponseCode(401))
+    fun ensureSuccess_nonSuccessCodes_throwWithTheStatusCode() {
         val client = okhttp3.OkHttpClient()
-        val request = okhttp3.Request.Builder().url(server.url("/")).build()
-        try {
-            client.newCall(request).execute().use { response -> ensureSuccess(response) }
-            fail("Should have thrown")
-        } catch (e: LRRHttpException) {
-            assertEquals(401, e.code)
-        }
-    }
-
-    @Test
-    fun ensureSuccess_403() {
-        server.enqueue(MockResponse().setResponseCode(403))
-        val client = okhttp3.OkHttpClient()
-        val request = okhttp3.Request.Builder().url(server.url("/")).build()
-        try {
-            client.newCall(request).execute().use { response -> ensureSuccess(response) }
-            fail("Should have thrown")
-        } catch (e: LRRHttpException) {
-            assertEquals(403, e.code)
-        }
-    }
-
-    @Test
-    fun ensureSuccess_404() {
-        server.enqueue(MockResponse().setResponseCode(404))
-        val client = okhttp3.OkHttpClient()
-        val request = okhttp3.Request.Builder().url(server.url("/")).build()
-        try {
-            client.newCall(request).execute().use { response -> ensureSuccess(response) }
-            fail("Should have thrown")
-        } catch (e: LRRHttpException) {
-            assertEquals(404, e.code)
-        }
-    }
-
-    @Test
-    fun ensureSuccess_500() {
-        server.enqueue(MockResponse().setResponseCode(500))
-        val client = okhttp3.OkHttpClient()
-        val request = okhttp3.Request.Builder().url(server.url("/")).build()
-        try {
-            client.newCall(request).execute().use { response -> ensureSuccess(response) }
-            fail("Should have thrown")
-        } catch (e: LRRHttpException) {
-            assertEquals(500, e.code)
-        }
-    }
-
-    @Test
-    fun ensureSuccess_502() {
-        server.enqueue(MockResponse().setResponseCode(502))
-        val client = okhttp3.OkHttpClient()
-        val request = okhttp3.Request.Builder().url(server.url("/")).build()
-        try {
-            client.newCall(request).execute().use { response -> ensureSuccess(response) }
-            fail("Should have thrown")
-        } catch (e: LRRHttpException) {
-            assertEquals(502, e.code)
-        }
-    }
-
-    @Test
-    fun ensureSuccess_unknownCode() {
-        server.enqueue(MockResponse().setResponseCode(418))
-        val client = okhttp3.OkHttpClient()
-        val request = okhttp3.Request.Builder().url(server.url("/")).build()
-        try {
-            client.newCall(request).execute().use { response -> ensureSuccess(response) }
-            fail("Should have thrown")
-        } catch (e: LRRHttpException) {
-            assertEquals(418, e.code)
+        for (code in listOf(401, 403, 404, 418, 500, 502)) {
+            server.enqueue(MockResponse().setResponseCode(code))
+            val request = okhttp3.Request.Builder().url(server.url("/")).build()
+            try {
+                client.newCall(request).execute().use { response -> ensureSuccess(response) }
+                fail("HTTP $code should have thrown")
+            } catch (e: LRRHttpException) {
+                assertEquals(code, e.code)
+            }
         }
     }
 
     @Test
     fun ensureSuccess_htmlBodyDoesNotLeakIntoMessage() {
-        // Body is never read — ensureSuccess() throws LRRHttpException(code) immediately.
-        // HTML cannot appear in the exception message regardless of response body content.
+        // ensureSuccess() reads the body only to extract a JSON `error` field;
+        // a non-JSON proxy error page must never leak into the message.
         server.enqueue(
             MockResponse()
                 .setResponseCode(503)
