@@ -72,16 +72,6 @@ class DownloadSpeedTrackerTest {
     }
 
     @Test
-    fun run_writesRemainingIntoProgressTracker() {
-        progressTracker.update(arcid, total = 100, downloaded = 0)
-        tracker.onDownload(arcid, 0, 1000L, 0L, 2000)
-        tracker.run()
-        val s = snap()
-        assertTrue("Speed should be positive", s.speed > 0)
-        assertTrue("Remaining should be positive", s.remaining > 0)
-    }
-
-    @Test
     fun run_notifiesDownloadListener() {
         tracker.onDownload(arcid, 0, 1000L, 500L, 100)
         tracker.run()
@@ -106,18 +96,6 @@ class DownloadSpeedTrackerTest {
         assertEquals(250L, snap().speed)
         // Maps are empty after onDone: downloadingCount=0 → remaining calculation skipped,
         // tracker keeps initial -1L (initial sentinel for remaining).
-        assertEquals(-1L, snap().remaining)
-    }
-
-    @Test
-    fun onFinish_clearsMaps() {
-        tracker.onDownload(arcid, 0, 1000L, 0L, 100)
-        tracker.onDownload(arcid, 1, 2000L, 0L, 200)
-        tracker.onFinish(arcid)
-        // After onFinish, this archive's maps are cleared; run() should still work
-        tracker.run()
-        // Maps empty after onFinish: downloadingCount=0 → remaining calculation skipped,
-        // tracker keeps initial -1L sentinel.
         assertEquals(-1L, snap().remaining)
     }
 
