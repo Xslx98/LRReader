@@ -42,6 +42,10 @@ class TankTagSyncerTest {
     private var putStatus = 200
 
     private val putBodies = CopyOnWriteArrayList<String>()
+    // Recorded on the MockWebServer thread, asserted on the test thread:
+    // an assertion inside the dispatcher only surfaces as a failed PUT.
+    @Volatile
+    private var membershipTouched = false
     private val failures = CopyOnWriteArrayList<TankTagSyncFailedEvent>()
 
     @Before
@@ -53,7 +57,7 @@ class TankTagSyncerTest {
                 return when {
                     request.method == "PUT" && path == "/api/tankoubons/$TANK" -> {
                         val body = Json.parseToJsonElement(request.body.readUtf8()).jsonObject
-                        assertFalse("membership must stay untouched", body.containsKey("archives"))
+                        if (body.containsKey("archives")) membershipTouched = true
                         putBodies.add(body.getValue("metadata").jsonObject.getValue("tags").jsonPrimitive.content)
                         MockResponse().setResponseCode(putStatus).setBody("""{"success":1}""")
                     }
@@ -71,6 +75,7 @@ class TankTagSyncerTest {
     @After
     fun tearDown() {
         server.shutdown()
+        assertFalse("a tag sync PUT must never carry the membership list", membershipTouched)
     }
 
     private fun fullJson(): String {

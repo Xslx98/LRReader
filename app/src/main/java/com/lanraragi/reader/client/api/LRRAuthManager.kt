@@ -1076,33 +1076,6 @@ object LRRAuthManager {
     }
 
     /**
-     * Compute a PBKDF2WithHmacSHA256 hash with the given parameters.
-     * Exposed as `internal` so tests can create legacy-iteration hashes for migration tests.
-     */
-    @JvmStatic
-    internal fun computePbkdf2Hash(
-        pattern: String,
-        salt: ByteArray,
-        iterations: Int
-    ): ByteArray {
-        val patChars = pattern.toCharArray()
-        val spec = PBEKeySpec(patChars, salt, iterations, PBKDF2_KEY_BITS)
-        try {
-            val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-            return factory.generateSecret(spec).encoded
-        } finally {
-            spec.clearPassword()
-            patChars.fill('\u0000')
-        }
-    }
-
-    /** Legacy iteration count, exposed for migration tests. */
-    internal const val ITERATIONS_V1 = PBKDF2_ITERATIONS_V1
-
-    /** Current iteration count, exposed for migration tests. */
-    internal const val ITERATIONS_CURRENT = PBKDF2_ITERATIONS
-
-    /**
      * Clear all stored credentials.
      */
     @JvmStatic
