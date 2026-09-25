@@ -96,8 +96,7 @@
     <string name="update_ignore">忽略</string>
 
     <!-- Gallery List -->
-    <string name="gallery_list_search_bar_hint_exhentai">在 LANraragi 中搜尋</string>
-    <string name="gallery_list_search_bar_hint_e_hentai">在 LANraragi 搜尋</string>
+    <string name="gallery_list_search_bar_hint">在 LANraragi 搜尋</string>
     <string name="gallery_list_empty_hit">什麼都沒找到</string>
 
     <string name="gallery_tag_copy">已複製標籤</string>

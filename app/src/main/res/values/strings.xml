@@ -184,8 +184,7 @@
     <string name="update_ignore">Ignore</string>
 
     <!-- Gallery List -->
-    <string name="gallery_list_search_bar_hint_exhentai">Search LANraragi</string>
-    <string name="gallery_list_search_bar_hint_e_hentai">Search LANraragi</string>
+    <string name="gallery_list_search_bar_hint">Search LANraragi</string>
     <string name="gallery_list_empty_hit">No archives found in LANraragi</string>
 
     <string name="gallery_tag_copy">tag copied</string>

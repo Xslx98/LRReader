@@ -131,8 +131,7 @@
     <string name="update_ignore">略過</string>
 
     <!-- Gallery List -->
-    <string name="gallery_list_search_bar_hint_exhentai">在 LANraragi 搜尋</string>
-    <string name="gallery_list_search_bar_hint_e_hentai">在 LANraragi 搜尋</string>
+    <string name="gallery_list_search_bar_hint">在 LANraragi 搜尋</string>
     <string name="gallery_list_empty_hit">甚麼都沒有找到</string>
 
     <string name="gallery_tag_copy">標籤已複製</string>

@@ -94,8 +94,7 @@
     <string name="update_ignore">Ignorer</string>
 
     <!-- Gallery List -->
-    <string name="gallery_list_search_bar_hint_exhentai">Chercher sur LANraragi</string>
-    <string name="gallery_list_search_bar_hint_e_hentai">Chercher sur LANraragi</string>
+    <string name="gallery_list_search_bar_hint">Chercher sur LANraragi</string>
     <string name="gallery_list_empty_hit">Le monde est grand et le panda s\'assied tout seul.</string>
     <string name="gallery_tag_copy">tag copié</string>
 

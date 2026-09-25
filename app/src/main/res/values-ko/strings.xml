@@ -102,8 +102,7 @@
     <string name="update_ignore">무시</string>
 
     <!-- Gallery List -->
-    <string name="gallery_list_search_bar_hint_exhentai">LANraragi 검색</string>
-    <string name="gallery_list_search_bar_hint_e_hentai">LANraragi 검색</string>
+    <string name="gallery_list_search_bar_hint">LANraragi 검색</string>
     <string name="gallery_list_empty_hit">LANraragi에서 아카이브를 찾을 수 없습니다</string>
     <string name="search">검색</string>
 
