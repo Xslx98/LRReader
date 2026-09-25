@@ -154,19 +154,27 @@ class ServerConfigViewModelTest {
 
     @Test
     fun attemptConnection_whileAlreadyConnecting_isIgnored() {
+        // Hold the first response so the second call lands while it is in flight.
+        server.enqueue(
+            MockResponse().setResponseCode(200).setBody(SERVER_INFO_JSON)
+                .setBodyDelay(500, java.util.concurrent.TimeUnit.MILLISECONDS)
+        )
+        server.enqueue(MockResponse().setResponseCode(200).setBody(SERVER_INFO_JSON))
+
         val vm = ServerConfigViewModel()
+        val successes = mutableListOf<ServerConfigViewModel.ConnectSuccess>()
+        val job = CoroutineScope(Dispatchers.Unconfined).launch {
+            vm.connectSuccess.collect { successes.add(it) }
+        }
+        val baseUrl = server.url("").toString().removeSuffix("/")
 
-        // Manually set connecting to true via reflection
-        val connectingField = ServerConfigViewModel::class.java.getDeclaredField("_connecting")
-        connectingField.isAccessible = true
-        @Suppress("UNCHECKED_CAST")
-        (connectingField.get(vm) as kotlinx.coroutines.flow.MutableStateFlow<Boolean>).value = true
+        vm.attemptConnection(baseUrl, null, false)
+        vm.attemptConnection(baseUrl, null, false)
+        awaitViewModelIdle(vm)
 
-        // This should return immediately without changing state
-        vm.attemptConnection("localhost", null, false)
-
-        // Still connecting (was not reset by the guard)
-        assertTrue(vm.connecting.value)
+        assertEquals("the second attempt must not reach the server", 1, server.requestCount)
+        assertEquals(1, successes.size)
+        job.cancel()
     }
 
     // ═══════════════════════════════════════════════════════════
