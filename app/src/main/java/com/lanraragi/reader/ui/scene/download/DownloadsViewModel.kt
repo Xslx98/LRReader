@@ -382,6 +382,13 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
         filterCallback.onDownloadSearchSuccess(applySearch(_backList.value))
     }
 
+    /** Drop the search when the Downloads page goes away; the label list shows again. */
+    fun clearSearch() {
+        _searchKey.value = null
+        _searching.value = false
+        _downloadList.value = _backList.value
+    }
+
     // -------------------------------------------------------------------------
     // Pagination
     // -------------------------------------------------------------------------

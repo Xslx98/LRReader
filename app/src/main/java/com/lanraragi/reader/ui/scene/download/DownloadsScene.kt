@@ -242,6 +242,9 @@ class DownloadsScene : ToolbarScene(),
     override fun onDestroy() {
         super.onDestroy()
         mActionFabDrawable = null
+        // The ViewModel is activity-scoped: without this, reopening Downloads
+        // would show a list silently filtered by the last search.
+        if (::viewModel.isInitialized && activity?.isChangingConfigurations != true) viewModel.clearSearch()
     }
 
     fun updateForLabel() {
