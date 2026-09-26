@@ -238,6 +238,12 @@
     </plurals>
     <string name="download_resume_view_action">Voir</string>
     <string name="download_resume_retry_action">Réessayer</string>
+    <plurals name="download_resume_interrupted_snackbar">
+        <item quantity="one">%d téléchargement a été interrompu</item>
+        <item quantity="other">%d téléchargements ont été interrompus</item>
+        <item quantity="many">%d téléchargements ont été interrompus</item>
+    </plurals>
+    <string name="download_resume_resume_action">Reprendre</string>
     <string name="remember_download_label">Enregistrer le label de téléchargement</string>
     <string name="default_download_label">Label de téléchargement par défaut</string>
     <string name="added_to_download_list">Ajouté à la liste de téléchargement</string>

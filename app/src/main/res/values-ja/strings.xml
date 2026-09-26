@@ -204,6 +204,10 @@
     </plurals>
     <string name="download_resume_view_action">表示</string>
     <string name="download_resume_retry_action">再試行</string>
+    <plurals name="download_resume_interrupted_snackbar">
+        <item quantity="other">%d 件のダウンロードが中断されました</item>
+    </plurals>
+    <string name="download_resume_resume_action">再開</string>
     <string name="remember_download_label">ダウンロードラベルを記憶する</string>
     <string name="default_download_label">デフォルトのダウンロードラベル</string>
     <string name="added_to_download_list">ダウンロードリストに追加しました</string>

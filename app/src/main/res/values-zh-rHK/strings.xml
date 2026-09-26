@@ -271,6 +271,10 @@
     </plurals>
     <string name="download_resume_view_action">查看</string>
     <string name="download_resume_retry_action">重試</string>
+    <plurals name="download_resume_interrupted_snackbar">
+        <item quantity="other">%d 個下載被中斷</item>
+    </plurals>
+    <string name="download_resume_resume_action">恢復</string>
     <string name="remember_download_label">記住下載標籤</string>
     <string name="default_download_label">預設下載標籤</string>
     <string name="added_to_download_list">已新增至下載列表</string>
