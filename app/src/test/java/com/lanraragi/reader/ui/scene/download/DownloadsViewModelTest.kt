@@ -386,6 +386,26 @@ class DownloadsViewModelTest {
     }
 
     @Test
+    fun `a state filter applied during a search keeps the search`() = runBlocking {
+        val repo = ServiceRegistry.dataModule.downloadDbRepository
+        fun row(id: String, artist: String, state: DownloadState) = DownloadInfo().apply {
+            arcid = id; title = "Title $id"; label = null; this.state = state
+            time = id.hashCode().toLong(); simpleTags = arrayOf("artist:$artist")
+        }
+        repo.putDownloadInfo(row("hit-done", "wanted", DownloadState.FINISH))
+        repo.putDownloadInfo(row("hit-idle", "wanted", DownloadState.NONE))
+        repo.putDownloadInfo(row("miss-done", "other", DownloadState.FINISH))
+        awaitUntil { vm.backList.value.size == 3 }
+
+        vm.setSearchKey("artist:wanted")
+        vm.startSearching("artist:wanted")
+        vm.gotoFilterAndSort(com.lanraragi.reader.R.id.download_done)
+        awaitUntil { !vm.filterLoading.value }
+
+        assertEquals(listOf("hit-done"), vm.downloadList.value.map { it.arcid })
+    }
+
+    @Test
     fun `progressMap re-emits every tracker update`() = runBlocking {
         val dm = vm.downloadManager
         val seen = mutableListOf<Long>()

@@ -360,7 +360,8 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
      */
     fun gotoFilterAndSort(id: Int) {
         _filterLoading.value = true
-        val executor = DownloadListInfosExecutor(_backList.value, downloadManager)
+        // Filter/sort the searched list, so a filter narrows the search rather than replacing it.
+        val executor = DownloadListInfosExecutor(applySearch(_backList.value), downloadManager)
         executor.setDownloadSearchingListener(filterCallback)
         executor.executeFilterAndSort(id)
     }
