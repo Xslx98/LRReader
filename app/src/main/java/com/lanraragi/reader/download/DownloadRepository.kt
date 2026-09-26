@@ -162,7 +162,9 @@ class DownloadRepository(
         // Persist the reset of any WAIT/DOWNLOAD rows left over from a previous process:
         // an in-flight download cannot survive process death, so without this the
         // Room-Flow-driven list would render those ghosts as "downloading" forever.
-        downloadDbRepo.resetTransientDownloadStates()
+        // The reset queue is offered back on the next foreground (A47) rather than
+        // resumed silently: the user decides whether to spend the data.
+        DownloadResumeBanner.markInterrupted(downloadDbRepo.resetTransientDownloadStates())
         val loadedLabels = downloadDbRepo.getAllDownloadLabels()
         val loadedInfos = downloadDbRepo.getAllDownloadInfo()
 

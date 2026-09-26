@@ -233,6 +233,10 @@
     </plurals>
     <string name="download_resume_view_action">查看</string>
     <string name="download_resume_retry_action">重试</string>
+    <plurals name="download_resume_interrupted_snackbar">
+        <item quantity="other">%d 个下载被中断</item>
+    </plurals>
+    <string name="download_resume_resume_action">恢复</string>
     <string name="remember_download_label">记住下载标签</string>
     <string name="default_download_label">默认下载标签</string>
     <string name="added_to_download_list">已添加至下载列表</string>

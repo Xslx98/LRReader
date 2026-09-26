@@ -330,6 +330,11 @@
     </plurals>
     <string name="download_resume_view_action">View</string>
     <string name="download_resume_retry_action">Retry</string>
+    <plurals name="download_resume_interrupted_snackbar">
+        <item quantity="one">%d download was interrupted</item>
+        <item quantity="other">%d downloads were interrupted</item>
+    </plurals>
+    <string name="download_resume_resume_action">Resume</string>
     <string name="remember_download_label">Remember download label</string>
     <string name="default_download_label">Default download label</string>
     <string name="added_to_download_list">Added to download list</string>

@@ -89,10 +89,12 @@ import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.client.api.parseBaseUrl
 import com.lanraragi.reader.gallery.TankSessionRouter
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import com.lanraragi.framework.lib.yorozuya.ResourcesUtils
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import java.io.File
@@ -111,6 +113,9 @@ class MainActivity : StageActivity(),
          * MainActivity can tell them from intents sent by other apps.
          */
         const val INTERNAL_SCENE_ENTRY = "com.lanraragi.reader.ui.InternalSceneEntry"
+
+        /** How long onStart waits for the download list to load before showing the resume banner. */
+        private const val DOWNLOADS_INIT_WAIT_MS = 10_000L
 
         /**
          * Scenes another app may open through the exported MainActivity:
@@ -726,10 +731,35 @@ class MainActivity : StageActivity(),
         (application as LRReaderApplication).restart()
     }
 
+    /** Waits for the download list before showing the resume banner; one per start. */
+    private var resumeBannerJob: Job? = null
+
     override fun onStart() {
         super.onStart()
         // LANraragi: EhViewer auto-update check disabled
-        maybeShowDownloadResumeBanner()
+        resumeBannerJob?.cancel()
+        resumeBannerJob = lifecycleScope.launch {
+            // At cold start the download list loads in the background and records
+            // downloads a killed process left queued (A47) as it goes; wait for it
+            // so they are offered now rather than on the next foreground. Past the
+            // timeout, show whatever is already recorded.
+            withTimeoutOrNull(DOWNLOADS_INIT_WAIT_MS) {
+                withContext(Dispatchers.IO) {
+                    ServiceRegistry.dataModule.downloadManager.awaitInitAsync(timeoutMs = Long.MAX_VALUE)
+                }
+            }
+            if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+                maybeShowDownloadResumeBanner()
+            }
+        }
+    }
+
+    override fun onStop() {
+        // A waiter from this start must not consume the banner for the next one:
+        // two waiters would each consume, the second Snackbar replacing the first.
+        resumeBannerJob?.cancel()
+        resumeBannerJob = null
+        super.onStop()
     }
 
     /**
@@ -751,25 +781,34 @@ class MainActivity : StageActivity(),
                     startScene(Announcer(DownloadsScene::class.java))
                 }.show()
             }
-            is DownloadResumeBanner.Snapshot.TimedOut -> {
-                Snackbar.make(
-                    host,
-                    resources.getQuantityString(
-                        R.plurals.download_resume_timed_out_snackbar, snapshot.count, snapshot.count
-                    ),
-                    Snackbar.LENGTH_LONG,
-                ).setAction(R.string.download_resume_retry_action) {
-                    val intent = Intent(this, DownloadService::class.java)
-                        .setAction(DownloadService.ACTION_START_RANGE)
-                        .putStringArrayListExtra(
-                            DownloadService.KEY_ARCID_LIST,
-                            ArrayList(snapshot.arcids),
-                        )
-                    startService(intent)
-                }.show()
-            }
+            is DownloadResumeBanner.Snapshot.TimedOut -> showRequeueSnackbar(
+                host,
+                resources.getQuantityString(
+                    R.plurals.download_resume_timed_out_snackbar, snapshot.count, snapshot.count
+                ),
+                R.string.download_resume_retry_action,
+                snapshot.arcids,
+            )
+            is DownloadResumeBanner.Snapshot.Interrupted -> showRequeueSnackbar(
+                host,
+                resources.getQuantityString(
+                    R.plurals.download_resume_interrupted_snackbar, snapshot.count, snapshot.count
+                ),
+                R.string.download_resume_resume_action,
+                snapshot.arcids,
+            )
             DownloadResumeBanner.Snapshot.None -> { /* nothing to show */ }
         }
+    }
+
+    /** A Snackbar whose action puts [arcids] back in the download queue. */
+    private fun showRequeueSnackbar(host: View, message: String, actionRes: Int, arcids: List<String>) {
+        Snackbar.make(host, message, Snackbar.LENGTH_LONG).setAction(actionRes) {
+            val intent = Intent(this, DownloadService::class.java)
+                .setAction(DownloadService.ACTION_START_RANGE)
+                .putStringArrayListExtra(DownloadService.KEY_ARCID_LIST, ArrayList(arcids))
+            startService(intent)
+        }.show()
     }
 
     private fun getThemeText(): String {

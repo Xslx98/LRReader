@@ -163,9 +163,22 @@ interface ArchiveLocalStateDao {
      * progress, dead stop button). A NULL DOWNLOAD_STATE means "not a download", so the
      * predicate never touches history/favorite-only rows. Codes are the frozen
      * [com.lanraragi.reader.download.DownloadState] integers.
+     *
+     * Returns the arcids that were reset, read in the same transaction, so the
+     * interrupted queue can be offered back to the user.
      */
+    @Transaction
+    suspend fun resetTransientDownloadStates(): List<String> {
+        val arcids = getTransientDownloadArcids()
+        clearTransientDownloadStates()
+        return arcids
+    }
+
+    @Query("SELECT ARCID FROM ARCHIVE_LOCAL_STATE WHERE DOWNLOAD_STATE = 1 OR DOWNLOAD_STATE = 2")
+    suspend fun getTransientDownloadArcids(): List<String>
+
     @Query("UPDATE ARCHIVE_LOCAL_STATE SET DOWNLOAD_STATE = 0 WHERE DOWNLOAD_STATE = 1 OR DOWNLOAD_STATE = 2")
-    suspend fun resetTransientDownloadStates()
+    suspend fun clearTransientDownloadStates()
 
     // ── History subsystem ──────────────────────────────────────
 
