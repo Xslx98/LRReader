@@ -242,6 +242,9 @@ class DownloadsScene : ToolbarScene(),
     override fun onDestroy() {
         super.onDestroy()
         mActionFabDrawable = null
+        // The ViewModel is activity-scoped: without this, reopening Downloads
+        // would show a list silently filtered by the last search.
+        if (::viewModel.isInitialized && activity?.isChangingConfigurations != true) viewModel.clearSearch()
     }
 
     fun updateForLabel() {
@@ -465,6 +468,11 @@ class DownloadsScene : ToolbarScene(),
         collectFlow(viewLifecycleOwner, viewModel.filterSearchDone) {
             if (!isAdded) return@collectFlow
             updateAdapter()
+            // The downloadList collector skips updates while searching, so the
+            // count in the title and the empty view must be refreshed here.
+            updateTitle()
+            updatePaginationIndicator()
+            updateView()
         }
 
         // ── Observe DownloadInfoListener events from ViewModel (sealed dispatch) ──

@@ -23,33 +23,17 @@ class DownloadListInfosExecutor {
 
     private val mList: List<DownloadInfo>?
     private var resultList: List<DownloadInfo>? = null
-    private val mSearchKey: String
 
     @Suppress("unused")
     private var mDownloadManager: DownloadManager? = null
 
-    constructor(mList: List<DownloadInfo>?, searchKey: String) {
-        this.mList = mList
-        this.mSearchKey = searchKey
-    }
-
     constructor(mList: List<DownloadInfo>?, downloadManager: DownloadManager?) {
         this.mList = mList
-        this.mSearchKey = ""
         mDownloadManager = downloadManager
     }
 
     fun setDownloadSearchingListener(downloadSearchCallback: DownloadSearchCallback?) {
         mDownloadSearchCallback = downloadSearchCallback
-    }
-
-    fun executeSearching() {
-        ServiceRegistry.coroutineModule.ioScope.launch {
-            resultList = searchingInBackground()
-            withContext(Dispatchers.Main) {
-                resultList?.let { mDownloadSearchCallback?.onDownloadSearchSuccess(it) }
-            }
-        }
     }
 
     fun executeFilterAndSort(id: Int) {
@@ -129,52 +113,6 @@ class DownloadListInfosExecutor {
             }
         }
         return list
-    }
-
-    protected fun searchingInBackground(): List<DownloadInfo>? {
-        if (mDownloadSearchCallback == null) {
-            return ArrayList()
-        }
-        if (mSearchKey.isEmpty()) {
-            return mList
-        }
-        if (mList == null) {
-            return ArrayList()
-        }
-        val cache = ArrayList<DownloadInfo>()
-
-        for (info in mList) {
-            if (info.title?.contains(mSearchKey) == true) {
-                cache.add(info)
-            } else if (matchTag(mSearchKey, info)) {
-                cache.add(info)
-            }
-        }
-
-        return cache
-    }
-
-    private fun matchTag(searchKey: String, info: DownloadInfo): Boolean {
-        // info.tgList is populated from the LRR API response by
-        // LRRArchive.toGalleryInfo() when the archive is fetched. The
-        // pre-LRR EhViewer path would fall back to a Gallery_Tags Room
-        // cache via searchTagList(gid), but that cache was dead code
-        // (insertGalleryTags/updateGalleryTags had zero callers) and
-        // was removed in the C5 cleanup (2026-04-08) along with the
-        // LegacyDb.queryGalleryTags blockingDb bridge.
-        val tagList = info.tgList ?: return false
-
-        val searchTags = searchKey.split("  ")
-
-        var result = true
-        for (searchTag in searchTags) {
-            if (!tagList.contains(searchTag)) {
-                result = false
-                break
-            }
-        }
-
-        return result
     }
 
     /**
