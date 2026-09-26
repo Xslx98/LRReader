@@ -237,6 +237,10 @@
     </plurals>
     <string name="download_resume_view_action">ดู</string>
     <string name="download_resume_retry_action">ลองใหม่</string>
+    <plurals name="download_resume_interrupted_snackbar">
+        <item quantity="other">การดาวน์โหลด %d รายการถูกขัดจังหวะ</item>
+    </plurals>
+    <string name="download_resume_resume_action">ดำเนินการต่อ</string>
     <string name="remember_download_label">จดจำป้ายชื่อดาวน์โหลด</string>
     <string name="default_download_label">ป้ายชื่อดาวน์โหลดเริ่มต้น</string>
     <string name="added_to_download_list">เพิ่มเข้าในรายการดาวน์โหลดแล้ว</string>

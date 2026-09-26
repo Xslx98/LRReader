@@ -241,6 +241,10 @@
     </plurals>
     <string name="download_resume_view_action">보기</string>
     <string name="download_resume_retry_action">재시도</string>
+    <plurals name="download_resume_interrupted_snackbar">
+        <item quantity="other">다운로드 %d개가 중단되었습니다</item>
+    </plurals>
+    <string name="download_resume_resume_action">재개</string>
     <string name="remember_download_label">다운로드 레이블 기억</string>
     <string name="default_download_label">기본 다운로드 레이블</string>
     <string name="added_to_download_list">다운로드 목록에 추가됨</string>

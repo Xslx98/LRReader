@@ -751,25 +751,34 @@ class MainActivity : StageActivity(),
                     startScene(Announcer(DownloadsScene::class.java))
                 }.show()
             }
-            is DownloadResumeBanner.Snapshot.TimedOut -> {
-                Snackbar.make(
-                    host,
-                    resources.getQuantityString(
-                        R.plurals.download_resume_timed_out_snackbar, snapshot.count, snapshot.count
-                    ),
-                    Snackbar.LENGTH_LONG,
-                ).setAction(R.string.download_resume_retry_action) {
-                    val intent = Intent(this, DownloadService::class.java)
-                        .setAction(DownloadService.ACTION_START_RANGE)
-                        .putStringArrayListExtra(
-                            DownloadService.KEY_ARCID_LIST,
-                            ArrayList(snapshot.arcids),
-                        )
-                    startService(intent)
-                }.show()
-            }
+            is DownloadResumeBanner.Snapshot.TimedOut -> showRequeueSnackbar(
+                host,
+                resources.getQuantityString(
+                    R.plurals.download_resume_timed_out_snackbar, snapshot.count, snapshot.count
+                ),
+                R.string.download_resume_retry_action,
+                snapshot.arcids,
+            )
+            is DownloadResumeBanner.Snapshot.Interrupted -> showRequeueSnackbar(
+                host,
+                resources.getQuantityString(
+                    R.plurals.download_resume_interrupted_snackbar, snapshot.count, snapshot.count
+                ),
+                R.string.download_resume_resume_action,
+                snapshot.arcids,
+            )
             DownloadResumeBanner.Snapshot.None -> { /* nothing to show */ }
         }
+    }
+
+    /** A Snackbar whose action puts [arcids] back in the download queue. */
+    private fun showRequeueSnackbar(host: View, message: String, actionRes: Int, arcids: List<String>) {
+        Snackbar.make(host, message, Snackbar.LENGTH_LONG).setAction(actionRes) {
+            val intent = Intent(this, DownloadService::class.java)
+                .setAction(DownloadService.ACTION_START_RANGE)
+                .putStringArrayListExtra(DownloadService.KEY_ARCID_LIST, ArrayList(arcids))
+            startService(intent)
+        }.show()
     }
 
     private fun getThemeText(): String {

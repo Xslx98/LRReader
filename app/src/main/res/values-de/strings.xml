@@ -193,6 +193,11 @@
     </plurals>
     <string name="download_resume_view_action">Anzeigen</string>
     <string name="download_resume_retry_action">Wiederholen</string>
+    <plurals name="download_resume_interrupted_snackbar">
+        <item quantity="one">%d Download wurde unterbrochen</item>
+        <item quantity="other">%d Downloads wurden unterbrochen</item>
+    </plurals>
+    <string name="download_resume_resume_action">Fortsetzen</string>
     <string name="remember_download_label">Download-Etikette merken</string>
     <string name="default_download_label">Standard-Download-Etikette</string>
     <string name="added_to_download_list">Zu Download-Liste hinzugefügt</string>
