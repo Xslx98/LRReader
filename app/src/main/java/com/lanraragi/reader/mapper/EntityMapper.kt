@@ -11,6 +11,7 @@ import com.lanraragi.reader.download.DownloadState
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.domain.TagGroup
+import com.lanraragi.reader.domain.flattenTagGroups
 import com.lanraragi.reader.domain.groupFlatTags
 
 // ═══════════════════════════════════════════════════════════════════
@@ -57,15 +58,15 @@ fun Archive.toDownloadInfoView(): DownloadInfo {
     di.title = title
     di.thumb = thumbnailUrl
     di.rating = rating
-    di.simpleTags = flatTags.toTypedArray()
+    di.simpleTags = flattenTagGroups(tags).toTypedArray()
     di.serverProfileId = serverProfileId
     di.pagecount = pagecount
     return di
 }
 
 /**
- * Recover an [Archive] from a [DownloadInfo] view. Lossy: tags
- * collapse to a flat list (the `simpleTags` field), `progress` / `extension` / `filename` reset to defaults (`pagecount` is carried) — these are
+ * Recover an [Archive] from a [DownloadInfo] view. Lossy: tags round-trip
+ * through the flat `simpleTags` field, but `progress` / `extension` / `filename` reset to defaults (`pagecount` is carried) — these are
  * server-driven and round-trip via the next LRR detail fetch.
  */
 fun DownloadInfo.toArchive(): Archive {
@@ -162,7 +163,7 @@ fun ArchiveLocalState.toDownloadInfoView(): DownloadInfo {
     // LRR API never populates simpleLanguage; column has no producer post-L1.
     // See DownloadInfo.updateInfo for the canonical explanation.
     info.simpleLanguage = null
-    info.simpleTags = archive.flatTags.toTypedArray()
+    info.simpleTags = flattenTagGroups(archive.tags).toTypedArray()
     info.serverProfileId = serverProfileId
     info.state = downloadState ?: DownloadState.NONE
     info.legacy = downloadLegacy
@@ -187,7 +188,7 @@ fun DownloadObservedRow.toDownloadInfoView(): DownloadInfo {
     info.thumb = archive.thumbnailUrl
     info.rating = archive.rating
     info.simpleLanguage = null
-    info.simpleTags = archive.flatTags.toTypedArray()
+    info.simpleTags = flattenTagGroups(archive.tags).toTypedArray()
     info.serverProfileId = serverProfileId
     info.state = downloadState ?: DownloadState.NONE
     info.legacy = downloadLegacy
@@ -213,7 +214,7 @@ fun ArchiveLocalState.toHistoryInfoView(): HistoryInfo {
     // LRR API never populates simpleLanguage; column has no producer post-L1.
     // See DownloadInfo.updateInfo for the canonical explanation.
     info.simpleLanguage = null
-    info.simpleTags = archive.flatTags.toTypedArray()
+    info.simpleTags = flattenTagGroups(archive.tags).toTypedArray()
     info.serverProfileId = serverProfileId
     info.mode = historyMode
     info.time = historyTime ?: 0L
