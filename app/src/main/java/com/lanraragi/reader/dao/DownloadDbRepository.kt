@@ -73,11 +73,10 @@ class DownloadDbRepository(
      * Persist the boot-time reset of transient WAIT/DOWNLOAD rows to NONE so the
      * Room-Flow-driven download list (which reads raw rows) agrees with the in-memory
      * normalization in [getAllDownloadInfo]. Call once at process start only — at
-     * runtime those states are real.
+     * runtime those states are real. Returns the arcids that were reset.
      */
-    suspend fun resetTransientDownloadStates() {
+    suspend fun resetTransientDownloadStates(): List<String> =
         archiveLocalStateDao.resetTransientDownloadStates()
-    }
 
     /**
      * Returns a [Flow] that emits the current download list whenever

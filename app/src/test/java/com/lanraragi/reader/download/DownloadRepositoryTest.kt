@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.dao.AppDatabase
@@ -336,6 +337,31 @@ class DownloadRepositoryTest {
                 list[i].time >= list[i + 1].time
             )
         }
+    }
+
+    @Test
+    fun loadAfterProcessDeath_offersTheResetQueueBackAsInterrupted() {
+        // A47: rows left WAIT/DOWNLOAD by a killed process are reset to NONE on
+        // load; they must be offered back instead of silently dropping out.
+        DownloadResumeBanner.clear()
+        runBlocking {
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(
+                makeInfo("queued", "Queued").apply { state = DownloadState.WAIT; serverProfileId = 1L }
+            )
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(
+                makeInfo("done", "Done").apply { state = DownloadState.FINISH; serverProfileId = 1L }
+            )
+        }
+
+        val restarted = DownloadRepository(context, testScope, Dispatchers.Unconfined)
+        restarted.startLoading {}
+        awaitUntil { restarted.initDeferred.isCompleted }
+
+        assertEquals(
+            DownloadResumeBanner.Snapshot.Interrupted(listOf("queued"), 1),
+            DownloadResumeBanner.consume(),
+        )
+        assertEquals(DownloadState.NONE, restarted.getDownloadState("queued"))
     }
 
     @Test
