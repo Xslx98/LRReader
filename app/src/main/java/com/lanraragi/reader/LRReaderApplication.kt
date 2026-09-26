@@ -163,6 +163,10 @@ class LRReaderApplication : RecordingApplication() {
             com.lanraragi.framework.network.StatusCodeException.initialize(this)
         }
         trace("LRRApp.Settings.init") { Settings.initialize(this) }
+        // Before any DownloadManager exists: its first load records the queue a
+        // killed process left behind, which must reach disk (A47).
+        com.lanraragi.reader.download.DownloadResumeBanner.interruptedStore =
+            com.lanraragi.reader.download.PrefsInterruptedStore(Settings.getPreferences())
         trace("LRRApp.ReadableTime.init") { ReadableTime.initialize(this) }
         trace("LRRApp.AppConfig.init") { AppConfig.initialize(this) }
         // Skip SpiderDen disk cache in LRR mode — it's EH-specific and wastes 40-640MB
