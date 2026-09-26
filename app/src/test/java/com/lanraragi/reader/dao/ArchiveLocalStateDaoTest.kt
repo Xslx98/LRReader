@@ -136,8 +136,10 @@ class ArchiveLocalStateDaoTest {
         dao.upsert(row("nonez", downloadState = DownloadState.NONE, downloadTime = 5L))
         dao.upsert(row("history", historyTime = 6L)) // not a download
 
-        dao.resetTransientDownloadStates()
+        val reset = dao.resetTransientDownloadStates()
 
+        // The reset rows are reported so the interrupted queue can be offered back (A47).
+        assertEquals(setOf("waiting", "active"), reset.toSet())
         assertEquals(DownloadState.NONE, dao.loadByArcidAndProfile("waiting", 0L)!!.downloadState)
         assertEquals(DownloadState.NONE, dao.loadByArcidAndProfile("active", 0L)!!.downloadState)
         assertEquals(DownloadState.FINISH, dao.loadByArcidAndProfile("done", 0L)!!.downloadState)
