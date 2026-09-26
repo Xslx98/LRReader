@@ -1,7 +1,10 @@
 package com.lanraragi.reader.mapper
 
+import com.lanraragi.reader.dao.ArchiveLocalState
+import com.lanraragi.reader.dao.DownloadObservedRow
 import com.lanraragi.reader.dao.HistoryInfo
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.download.DownloadState
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -46,11 +49,10 @@ class EntityMapperTest {
         assertEquals("https://example.com/g.jpg", di.thumb)
         assertEquals(3.0f, di.rating)
         assertEquals(9L, di.serverProfileId)
-        // simpleTags is the flattened "namespace:value" array consumed by
-        // the search index; verify it round-trips through the Archive
-        // tag map.
+        // simpleTags is the flattened "namespace:value" form the views carry
+        // (and the CSV export writes); groupFlatTags reads it back.
         val flat = di.simpleTags?.toList()
-        assertEquals(listOf("alice", "bob", "english"), flat)
+        assertEquals(listOf("artist:alice", "artist:bob", "language:english"), flat)
     }
 
     @Test
@@ -88,18 +90,47 @@ class EntityMapperTest {
         assertEquals(1_700_000_001L, hi.toArchive().lastreadtime)
     }
 
-    @Test
-    fun `DownloadInfo toArchive groups simple tags by namespace`() {
-        val di = archive().toDownloadInfoView()
-        // Mimic a tag-namespaced flat array as written by the legacy
-        // import path; the forward mapper writes namespace-less values,
-        // but the inverse parser must still cope.
-        di.simpleTags = arrayOf("artist:alice", "language:english", "raw")
-        val back = di.toArchive()
+    // Downloading an archive persisted its tags through the flat view
+    // (startDownload -> history write). The views used to flatten to bare
+    // values, so every tag came back under misc: the stats page then counted
+    // artists and languages as plain tags. Each view producer must round-trip.
+    private val namespacedTags = mapOf(
+        "artist" to listOf("alice", "re:zero"),
+        "language" to listOf("english"),
+        "misc" to listOf("raw", "re:zero"),
+    )
 
-        assertEquals(listOf("alice"), back.tags["artist"])
-        assertEquals(listOf("english"), back.tags["language"])
-        assertEquals(listOf("raw"), back.tags["misc"])
+    private fun storedRow() = ArchiveLocalState(
+        arcid = "ga1",
+        serverProfileId = 9L,
+        archiveJson = archive().copy(tags = namespacedTags).toArchiveJson(),
+        downloadState = DownloadState.FINISH,
+        historyTime = 1_700_000_001_234L,
+    )
+
+    @Test
+    fun `DownloadInfo view round-trips tag namespaces`() {
+        val original = archive().copy(tags = namespacedTags)
+
+        assertEquals(namespacedTags, original.toDownloadInfoView().toArchive().tags)
+    }
+
+    @Test
+    fun `HistoryInfo view built from a stored row round-trips tag namespaces`() {
+        assertEquals(namespacedTags, storedRow().toHistoryInfoView().toArchive().tags)
+    }
+
+    @Test
+    fun `DownloadInfo views built from stored rows round-trip tag namespaces`() {
+        val row = storedRow()
+        val observed = DownloadObservedRow(
+            arcid = row.arcid, serverProfileId = row.serverProfileId, archiveJson = row.archiveJson,
+            downloadState = DownloadState.FINISH, downloadLegacy = 0, downloadTime = 1L,
+            downloadLabel = null, downloadArchiveUri = null, downloadRootUri = null, downloadTankId = null,
+        )
+
+        assertEquals(namespacedTags, row.toDownloadInfoView().toArchive().tags)
+        assertEquals(namespacedTags, observed.toDownloadInfoView().toArchive().tags)
     }
 
     @Test
