@@ -1,0 +1,4 @@
+Fixes for downloads and tags.
+Downloads cut off by the system killing the app now come back as a "downloads were interrupted" prompt with a one-tap Resume.
+Starting a download no longer strips tag namespaces (artist, language...), which skewed Reading statistics.
+The Downloads page search now finds archives by tag (artist:name or just a value, comma-separated), keeps its results while downloads update, and shows the right count.
