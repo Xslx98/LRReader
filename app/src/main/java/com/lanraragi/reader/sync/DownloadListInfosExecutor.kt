@@ -23,33 +23,17 @@ class DownloadListInfosExecutor {
 
     private val mList: List<DownloadInfo>?
     private var resultList: List<DownloadInfo>? = null
-    private val mSearchKey: String
 
     @Suppress("unused")
     private var mDownloadManager: DownloadManager? = null
 
-    constructor(mList: List<DownloadInfo>?, searchKey: String) {
-        this.mList = mList
-        this.mSearchKey = searchKey
-    }
-
     constructor(mList: List<DownloadInfo>?, downloadManager: DownloadManager?) {
         this.mList = mList
-        this.mSearchKey = ""
         mDownloadManager = downloadManager
     }
 
     fun setDownloadSearchingListener(downloadSearchCallback: DownloadSearchCallback?) {
         mDownloadSearchCallback = downloadSearchCallback
-    }
-
-    fun executeSearching() {
-        ServiceRegistry.coroutineModule.ioScope.launch {
-            resultList = searchingInBackground()
-            withContext(Dispatchers.Main) {
-                resultList?.let { mDownloadSearchCallback?.onDownloadSearchSuccess(it) }
-            }
-        }
     }
 
     fun executeFilterAndSort(id: Int) {
@@ -129,19 +113,6 @@ class DownloadListInfosExecutor {
             }
         }
         return list
-    }
-
-    protected fun searchingInBackground(): List<DownloadInfo>? {
-        if (mDownloadSearchCallback == null) {
-            return ArrayList()
-        }
-        if (mSearchKey.isEmpty()) {
-            return mList
-        }
-        if (mList == null) {
-            return ArrayList()
-        }
-        return mList.filter { DownloadSearchMatcher.matches(it, mSearchKey) }
     }
 
     /**

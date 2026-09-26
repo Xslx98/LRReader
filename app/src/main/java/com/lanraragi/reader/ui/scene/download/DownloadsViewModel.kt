@@ -371,14 +371,14 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     }
 
     /**
-     * Execute a search on the current label's list (not the previous result,
-     * which a new key must be able to widen).
+     * Apply [searchKey] to the current label's list (not the previous result,
+     * which a new key must be able to widen). Filtering runs here, on the
+     * caller's thread: a background pass could land after the collector had
+     * already published a newer label's list and overwrite it.
      */
     fun startSearching(searchKey: String) {
-        _filterLoading.value = true
-        val executor = DownloadListInfosExecutor(_backList.value, searchKey)
-        executor.setDownloadSearchingListener(filterCallback)
-        executor.executeSearching()
+        _searchKey.value = searchKey
+        filterCallback.onDownloadSearchSuccess(applySearch(_backList.value))
     }
 
     // -------------------------------------------------------------------------
