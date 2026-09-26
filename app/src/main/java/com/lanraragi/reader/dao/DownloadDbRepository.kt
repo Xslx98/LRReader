@@ -230,8 +230,8 @@ class DownloadDbRepository(
         existing: ArchiveLocalState?,
     ): DownloadUpsertRow {
         // Merge into any existing archive_json instead of overwriting it with the lossy
-        // DownloadInfo.toArchive() (which zeroes pagecount/progress/summary and drops tag
-        // namespaces). The row is shared with history/favorites and pagecount<=0 makes
+        // DownloadInfo.toArchive() (which zeroes pagecount/progress/summary). The row is
+        // shared with history/favorites and pagecount<=0 makes
         // GalleryOpenHelper treat a partial download as "complete" — wholesale rewriting
         // it on every state transition is what regressed truncated local reads. Overlay
         // only the display fields the DownloadInfo actually owns. [existing] is

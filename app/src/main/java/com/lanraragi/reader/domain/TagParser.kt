@@ -44,6 +44,19 @@ fun groupFlatTags(simpleTags: Array<String>?): Map<String, List<String>> {
 }
 
 /**
+ * Inverse of [groupFlatTags]: flatten a namespace map to `namespace:value`
+ * strings that group back to the same map. Values in the
+ * [BARE_TAG_BUCKET] are written bare, unless they contain a colon, which
+ * would otherwise read back as a namespace.
+ */
+fun flattenTagGroups(tags: Map<String, List<String>>): List<String> =
+    tags.flatMap { (namespace, values) ->
+        values.map { value ->
+            if (namespace == BARE_TAG_BUCKET && ':' !in value) value else "$namespace:$value"
+        }
+    }
+
+/**
  * Strip the namespace prefix from a `namespace:value` tag, returning the
  * value alone. Bare tags (no colon) are returned trimmed.
  */
