@@ -20,6 +20,7 @@ import com.lanraragi.reader.download.TankDownloadGrouping
 import com.lanraragi.reader.download.TankProgressAggregate
 import com.lanraragi.reader.spider.SpiderDen
 import com.lanraragi.reader.sync.DownloadListInfosExecutor
+import com.lanraragi.reader.sync.DownloadSearchMatcher
 import com.lanraragi.framework.unifile.UniFile
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -138,7 +139,9 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
                 } else {
                     grouped.display.filter { it.label == label }
                 }
-                _downloadList.value = filtered
+                // The active search applies to every emission, or the next
+                // table change would republish the whole label list.
+                _downloadList.value = applySearch(filtered)
                 _backList.value = filtered
             }
         }
@@ -206,13 +209,9 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
     /** The unfiltered list for the current label. Used as source for filter/sort/search. */
     val backList: StateFlow<List<DownloadInfo>> = _backList.asStateFlow()
 
-    init {
-        downloadManager.addDownloadInfoListener(this)
-        startObservingRoomFlow()
-    }
-
     // -------------------------------------------------------------------------
-    // Search state
+    // Search state (declared before init: the Room collector it starts reads
+    // the search key, possibly synchronously)
     // -------------------------------------------------------------------------
 
     private val _searching = MutableStateFlow(false)
@@ -224,6 +223,11 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
 
     /** The current search query text. */
     val searchKey: StateFlow<String?> = _searchKey.asStateFlow()
+
+    init {
+        downloadManager.addDownloadInfoListener(this)
+        startObservingRoomFlow()
+    }
 
     // -------------------------------------------------------------------------
     // Pagination state
@@ -356,19 +360,33 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
      */
     fun gotoFilterAndSort(id: Int) {
         _filterLoading.value = true
-        val executor = DownloadListInfosExecutor(_backList.value, downloadManager)
+        // Filter/sort the searched list, so a filter narrows the search rather than replacing it.
+        val executor = DownloadListInfosExecutor(applySearch(_backList.value), downloadManager)
         executor.setDownloadSearchingListener(filterCallback)
         executor.executeFilterAndSort(id)
     }
 
+    private fun applySearch(list: List<DownloadInfo>): List<DownloadInfo> {
+        val key = _searchKey.value
+        return if (key.isNullOrBlank()) list else list.filter { DownloadSearchMatcher.matches(it, key) }
+    }
+
     /**
-     * Execute a search on the current download list.
+     * Apply [searchKey] to the current label's list (not the previous result,
+     * which a new key must be able to widen). Filtering runs here, on the
+     * caller's thread: a background pass could land after the collector had
+     * already published a newer label's list and overwrite it.
      */
     fun startSearching(searchKey: String) {
-        _filterLoading.value = true
-        val executor = DownloadListInfosExecutor(_downloadList.value, searchKey)
-        executor.setDownloadSearchingListener(filterCallback)
-        executor.executeSearching()
+        _searchKey.value = searchKey
+        filterCallback.onDownloadSearchSuccess(applySearch(_backList.value))
+    }
+
+    /** Drop the search when the Downloads page goes away; the label list shows again. */
+    fun clearSearch() {
+        _searchKey.value = null
+        _searching.value = false
+        _downloadList.value = _backList.value
     }
 
     // -------------------------------------------------------------------------

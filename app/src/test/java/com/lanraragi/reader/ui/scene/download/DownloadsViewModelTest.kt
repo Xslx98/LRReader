@@ -19,6 +19,7 @@ import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.module.CoroutineModule
 import com.lanraragi.reader.module.IDataModule
 import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.containedTestScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -355,6 +356,53 @@ class DownloadsViewModelTest {
         val l1List = vm.downloadList.value
         assertTrue(l1List.any { it.arcid == "b" })
         assertFalse(l1List.any { it.arcid == "a" })
+    }
+
+    @Test
+    fun `search results survive the next download-list emission`() = runBlocking {
+        // The Room collector used to republish the whole label list on every
+        // emission (starting with the one updateForLabel triggers), wiping the
+        // search result the Downloads search had just set.
+        val repo = ServiceRegistry.dataModule.downloadDbRepository
+        fun row(id: String, artist: String, time: Long) = DownloadInfo().apply {
+            arcid = id; title = "Title $id"; label = null; state = DownloadState.NONE
+            this.time = time; simpleTags = arrayOf("artist:$artist")
+        }
+        repo.putDownloadInfo(row("hit", "wanted", 1L))
+        repo.putDownloadInfo(row("miss", "other", 2L))
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+
+        vm.setSearchKey("artist:wanted")
+        vm.updateForLabel()
+        vm.startSearching("artist:wanted")
+        awaitUntil { vm.downloadList.value.map { it.arcid } == listOf("hit") }
+
+        // Any later change to the downloads table re-emits the list; wait until
+        // that emission has reached the ViewModel before asserting.
+        repo.putDownloadInfo(row("miss", "other", 3L))
+        awaitUntil { vm.backList.value.any { it.arcid == "miss" && it.time == 3L } }
+
+        assertEquals(listOf("hit"), vm.downloadList.value.map { it.arcid })
+    }
+
+    @Test
+    fun `a state filter applied during a search keeps the search`() = runBlocking {
+        val repo = ServiceRegistry.dataModule.downloadDbRepository
+        fun row(id: String, artist: String, state: DownloadState) = DownloadInfo().apply {
+            arcid = id; title = "Title $id"; label = null; this.state = state
+            time = id.hashCode().toLong(); simpleTags = arrayOf("artist:$artist")
+        }
+        repo.putDownloadInfo(row("hit-done", "wanted", DownloadState.FINISH))
+        repo.putDownloadInfo(row("hit-idle", "wanted", DownloadState.NONE))
+        repo.putDownloadInfo(row("miss-done", "other", DownloadState.FINISH))
+        awaitUntil { vm.backList.value.size == 3 }
+
+        vm.setSearchKey("artist:wanted")
+        vm.startSearching("artist:wanted")
+        vm.gotoFilterAndSort(com.lanraragi.reader.R.id.download_done)
+        awaitUntil { !vm.filterLoading.value }
+
+        assertEquals(listOf("hit-done"), vm.downloadList.value.map { it.arcid })
     }
 
     @Test
